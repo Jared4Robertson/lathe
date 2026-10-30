@@ -63,6 +63,24 @@
 {"entity_id":"LA-AUT-EN11","position":3,"name":"Capability","meaning":"The capability it sits in.","type_aggregate_id":"LA-AUT-A4","required":true,"column_name":"capability_id"}
 {"entity_id":"LA-AUT-EN11","position":4,"name":"Goal","meaning":"What the actor wants to reach, in a sentence.","type":"text","required":true}
 {"entity_id":"LA-AUT-EN11","position":5,"name":"Notes","meaning":"Longer notes, such as the order in which refusals are reported.","type":"text","required":false}
+{"entity_id":"LA-AUT-EN110","position":1,"name":"ID","meaning":"The requirement's ID: its aggregate's or read model's ID and SR<nn>, such as TL-LEND-A1-SR01.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-AUT-EN110","position":2,"name":"Title","meaning":"The requirement in a few words.","type_value_object_id":"LA-VO02","required":true}
+{"entity_id":"LA-AUT-EN110","position":3,"name":"Aggregate","meaning":"The aggregate whose data it is about; exactly one of aggregate and read model is given.","type_value_object_id":"LA-VO01","required":false,"column_name":"aggregate_id"}
+{"entity_id":"LA-AUT-EN110","position":4,"name":"Read model","meaning":"The read model whose data it is about; exactly one of aggregate and read model is given.","type_value_object_id":"LA-VO01","required":false,"column_name":"read_model_id"}
+{"entity_id":"LA-AUT-EN110","position":5,"name":"Statement","meaning":"What must be kept and how well, stated with MUST, MUST NOT, SHOULD or MAY.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN111","position":1,"name":"ID","meaning":"The test's ID: its storage requirement's ID and T<nn>, such as TL-LEND-A1-SR01-T01.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-AUT-EN111","position":2,"name":"Title","meaning":"What the test shows, in a sentence.","type_value_object_id":"LA-VO02","required":true}
+{"entity_id":"LA-AUT-EN111","position":3,"name":"Storage requirement","meaning":"The storage requirement it proves.","type_value_object_id":"LA-VO01","required":true,"column_name":"storage_requirement_id"}
+{"entity_id":"LA-AUT-EN111","position":4,"name":"Run by","meaning":"How the test runs: its level, its state, and its file or why it is manual.","type_value_object_id":"LA-VO14","required":true}
+{"entity_id":"LA-AUT-EN111","position":5,"name":"When","meaning":"What the test does, opening with any state it sets up beyond the test data sets it starts from.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN111","position":6,"name":"Then","meaning":"What the test expects.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN111","position":7,"name":"Notes","meaning":"Longer notes on the test, such as when to run it.","type":"text","required":false}
+{"entity_id":"LA-AUT-EN112","position":1,"name":"ID","meaning":"The data store's ID: its product's or domain's ID and STORE<nn>, such as TL-STORE01.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-AUT-EN112","position":2,"name":"Title","meaning":"Its name in code or config, such as DATABASE_URL, dataDir or localStorage.","type_value_object_id":"LA-VO02","required":true}
+{"entity_id":"LA-AUT-EN112","position":3,"name":"Product","meaning":"The product it sits under, when several of its domains use it; exactly one of product and domain is given.","type_value_object_id":"LA-VO01","required":false,"column_name":"product_id"}
+{"entity_id":"LA-AUT-EN112","position":4,"name":"Domain","meaning":"The domain it sits under, when one domain alone uses it; exactly one of product and domain is given.","type_value_object_id":"LA-VO01","required":false,"column_name":"domain_id"}
+{"entity_id":"LA-AUT-EN112","position":5,"name":"Kind","meaning":"database, object store, file folder, file, browser storage or memory.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN112","position":6,"name":"Description","meaning":"Where it is and what keeps it there.","type":"text","required":true}
 {"entity_id":"LA-AUT-EN12","position":1,"name":"ID","meaning":"The requirement's ID: its use case's ID and R<nn>, such as TL-LEND-UC01-R01.","type_value_object_id":"LA-VO01","required":true}
 {"entity_id":"LA-AUT-EN12","position":2,"name":"Title","meaning":"The requirement in a few words.","type_value_object_id":"LA-VO02","required":true}
 {"entity_id":"LA-AUT-EN12","position":3,"name":"Use case","meaning":"The use case it belongs to.","type_value_object_id":"LA-VO01","required":true,"column_name":"use_case_id"}

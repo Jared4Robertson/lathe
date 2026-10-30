@@ -229,6 +229,8 @@
 {"source_id":"LA-AUT-UC30-R01-T51","target_id":"LA-AUT-TD121"}
 {"source_id":"LA-AUT-UC30-R01-T52","target_id":"LA-AUT-TD121"}
 {"source_id":"LA-AUT-UC30-R01-T53","target_id":"LA-AUT-TD121"}
+{"source_id":"LA-AUT-UC31-R50-T01","target_id":"LA-AUT-TD130"}
+{"source_id":"LA-AUT-UC32-R50-T01","target_id":"LA-AUT-TD131"}
 {"source_id":"LA-CHK-DS01-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-CHK-INV01-T","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-CHK-INV02-T","target_id":"LA-AUT-TD02"}

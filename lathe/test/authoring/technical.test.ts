@@ -22,7 +22,8 @@ const technical = () =>
 
 describe('files', () => {
   it('LA-AUT-UC17-R10-T01 A technical record names the file that builds it and a test the file that runs it, each relative to the repo root', async () => {
-    for (const kind of [...technical(), ...Object.keys(ALLOWED_LEVELS)]) expect(schema.tables[kind].columns.find((c) => c.name === 'file'), kind).toMatchObject({ kind: 'text', required: false });
+    // Every technical kind but the data store, which names where data lives rather than code.
+    for (const kind of [...technical().filter((k) => k !== 'data_store'), ...Object.keys(ALLOWED_LEVELS)]) expect(schema.tables[kind].columns.find((c) => c.name === 'file'), kind).toMatchObject({ kind: 'text', required: false });
     expect(record(good, 'EX-LEND-CMD01-H').fields.file).toBe('src/loans.ts');
     expect(record(good, 'EX-LEND-UC01-R01-T01').fields.file).toBe('test/api.test.ts');
     expect(obligation(good, 'EX-LEND', 'uc_requirement')).toMatchObject({ total: 2, built: 2, proved: 2 });
@@ -100,6 +101,13 @@ describe('the technical specification', () => {
         expect(schema.tables.persists.unique).toEqual(expect.arrayContaining([['source_id'], ['target_id']]));
         continue;
       }
+      // A data store is where data lives, not code: it sits under its product or a domain, and the repositories, readers
+      // and tables stored in it each name it, one store each.
+      if (kind === 'data_store') {
+        expect(parentsOf(schema, 'data_store')).toEqual(['product.product_id', 'domain.domain_id']);
+        expect(schema.tables.stored_in.unique).toEqual(expect.arrayContaining([['source_id']]));
+        continue;
+      }
       // An entry point and a tooling record implement no design record: each sits under the domain it starts or serves.
       if (kind === 'entry_point' || kind === 'tooling') {
         expect(parentsOf(schema, kind)).toEqual(['domain.domain_id']);
@@ -126,7 +134,7 @@ describe('the technical specification', () => {
     expect(schema.tables.repository_share).toMatchObject({ role: 'part', ownerColumn: 'repository_id' });
     expect(requiredOf(schema, 'repository_share')).toEqual(['repository_id', 'aggregate_id', 'reason']);
     const reason = 'One generic store persists every table.';
-    const one = without(without(complete(), 'persists', (r) => r.source_id === 'EX-LEND-REPO02'), 'repository', (r) => r.id === 'EX-LEND-REPO02');
+    const one = without(without(without(complete(), 'persists', (r) => r.source_id === 'EX-LEND-REPO02'), 'stored_in', (r) => r.source_id === 'EX-LEND-REPO02'), 'repository', (r) => r.id === 'EX-LEND-REPO02');
     const shared = adding(one, { repository_share: [{ repository_id: 'EX-LEND-REPO01', aggregate_id: 'EX-LEND-A2', reason }] });
     const ws = await loadData(shared);
     expect(ws.exceptions).toEqual([{ repository: 'EX-LEND-REPO01', aggregate: 'EX-LEND-A2', reason }]);
@@ -179,7 +187,8 @@ describe('standards', () => {
     const meets = schema.relations.meets;
     expect(meets).toMatchObject({ role: null, forwardLabel: 'Meets', reverseLabel: 'Met by' });
     expect(meets.pairs.every((p) => p.target === 'standard_rule')).toBe(true);
-    expect(meets.pairs.map((p) => p.source).sort()).toEqual(technical().sort());
+    // Every technical kind meets standard rules but the data store, which names no code (a rule it met could never be built).
+    expect(meets.pairs.map((p) => p.source).sort()).toEqual(technical().filter((k) => k !== 'data_store').sort());
     expect(parentsOf(schema, 'standard_rule_test')).toEqual(['standard_rule.standard_rule_id']);
     expect([schema.kinds.standard_rule_test].map((k) => [k.stage, k.idPattern, k.obligation])).toEqual([['test-plan', '<standard rule>-T<nn>', false]]);
     expect(ALLOWED_LEVELS.standard_rule_test).toEqual(['unit', 'integration', 'service', 'system', 'browser']);
