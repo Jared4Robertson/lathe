@@ -7,6 +7,7 @@ import type { ReadView } from '../../../src/platform/data/rules.ts';
 import { openStore, type Store } from '../../../src/platform/data/store.ts';
 import { StoreError } from '../../../src/platform/data/problems.ts';
 import { complete, without, writeData, type Data } from '../../helpers.ts';
+import type { ProductServes, RecordServes } from '../../../src/traceability/serves/read-model.ts';
 
 const open: Store[] = [];
 afterEach(async () => { for (const s of open.splice(0)) await s.close(); });
@@ -25,13 +26,13 @@ describe('LA-TRC-UC20-R01-T01 get-serves names the outcomes a record serves and 
     expect(runQuery(data, GET_SERVES, { id: 'EX-V01-R01' })).toEqual({ id: 'EX-V01-R01', outcomes: ['EX-BO01'], useCases: ['EX-LEND-UC01', 'EX-LEND-UC02'] });
     expect(runQuery(data, GET_SERVES, { id: 'EX-LEND' })).toEqual({ id: 'EX-LEND', outcomes: [], useCases: [] });
     expect(() => runQuery(data, GET_SERVES, { id: 'EX-NONE' })).toThrow(StoreError);
-    expect(GET_SERVES.text(runQuery(data, GET_SERVES, { id: 'EX-LEND-A1' }))).toBe('EX-LEND-A1 serves EX-BO01 through EX-LEND-UC01');
+    expect(GET_SERVES.text(runQuery(data, GET_SERVES, { id: 'EX-LEND-A1' }) as RecordServes)).toBe('EX-LEND-A1 serves EX-BO01 through EX-LEND-UC01');
   });
 });
 
 describe('LA-TRC-UC20-R02-T03 list-serves lists a product\'s records by the outcomes they serve, and the aggregates, read models and obligations none reaches', () => {
   it('lists every reached record of the space, and none unserved when every one is reached', async () => {
-    const all = runQuery(await view(complete()), LIST_SERVES, { product_id: 'EX' });
+    const all = runQuery(await view(complete()), LIST_SERVES, { product_id: 'EX' }) as ProductServes;
     expect(all.unserved).toEqual([]);
     expect(all.served.find((s) => s.id === 'EX-LEND-RM01')).toEqual({ id: 'EX-LEND-RM01', outcomes: ['EX-BO01'], useCases: ['EX-LEND-UC01'] });
     expect(all.served.some((s) => s.id === 'EX-BO01')).toBe(false);
@@ -39,7 +40,7 @@ describe('LA-TRC-UC20-R02-T03 list-serves lists a product\'s records by the outc
 
   it('lists a read model no step reaches as serving none, and refuses an unknown product', async () => {
     const data = await view(without(complete(), 'invokes', (r) => r.target_id === 'EX-LEND-QRY01'));
-    expect(runQuery(data, LIST_SERVES, { product_id: 'EX' }).unserved).toEqual(['EX-LEND-RM01']);
+    expect((runQuery(data, LIST_SERVES, { product_id: 'EX' }) as ProductServes).unserved).toEqual(['EX-LEND-RM01']);
     expect(() => runQuery(data, LIST_SERVES, { product_id: 'NOPE' })).toThrow(StoreError);
   });
 });
