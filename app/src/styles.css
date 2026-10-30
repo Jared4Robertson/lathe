@@ -435,6 +435,8 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .stage-key-entry { display: inline-flex; align-items: center; gap: 5px; min-height: 20px; white-space: nowrap; }
 .stage-key-entry[data-group-start] { padding-left: 12px; border-left: 1px solid var(--float-border); }
 .stage-key-sample { flex: none; display: inline-flex; align-items: center; line-height: 0; }
+/* What scroll does, the key bar's last entry on every stage (scrollKeyEntry): a mouse with its wheel. */
+.stage-key-scroll { flex: none; overflow: visible; fill: none; stroke: var(--ink); stroke-width: 1.5; stroke-linecap: round; }
 @media (pointer: coarse) { .focus-stage { --key-clear-left: calc(4px + var(--touch-target) + 6px + 8px); } }
 /* On a phone: a Key chip at the foot of the stage, opening the entries with their meanings as a sheet. */
 .stage-key-chip { position: absolute; z-index: 6; bottom: var(--stage-foot); left: 50%; translate: -50% 0; padding: 4px 12px; border: 1px solid var(--float-border); border-radius: 999px; background: var(--sheet); box-shadow: var(--float-shadow); font-size: 0.8rem; }
@@ -990,6 +992,9 @@ a.row-link.row-link:focus-visible { outline: none; }
 .setting output { font: 0.78rem var(--mono); color: var(--muted); margin-left: 6px; font-weight: 400; }
 .setting select, .setting input[type="text"] { font: inherit; font-size: 0.88rem; padding: 5px 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--sheet); color: var(--ink); }
 .setting input[type="range"] { accent-color: var(--steel); }
+/* A setting that is on or off (Appearance's Scroll to zoom): the checkbox as a switch, its name beside it. */
+.setting-switch { display: inline-flex; gap: 8px; align-items: center; font-size: 0.88rem; cursor: pointer; }
+.setting-switch input { width: 16px; height: 16px; margin: 0; accent-color: var(--steel); cursor: pointer; }
 .field-problem { margin: 0; font-size: 0.78rem; color: var(--error); }
 .spec-page select:focus-visible, .color-text:focus-visible, .color-swatch:focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
 /* ---------- End of themes ---------- */
