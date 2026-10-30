@@ -229,7 +229,7 @@ describe('the ERD stage', () => {
     await boxesShown();
     const key = within(modelPane()).getByRole('region', { name: 'Key' });
     // The boxes, the pick and the fade, then the lines, each a sample and a word or two.
-    expect(within(key).getAllByRole('listitem').map((li) => li.querySelector('.stage-key-words')?.textContent)).toEqual(['Domain', 'Aggregate', 'Entity', 'Root entity', 'Picked out', 'Faded', 'Has one (1:1)', 'Has many (1:n)', 'Reference by ID']);
+    expect(within(key).getAllByRole('listitem').map((li) => li.querySelector('.stage-key-words')?.textContent)).toEqual(['Domain', 'Aggregate', 'Entity', 'Root entity', 'Picked out', 'Faded', 'Has one (1:1)', 'Has many (1:n)', 'Reference by ID', 'Scroll pans']);
     expect(key.querySelector('.erd-key-line.rel-references.is-dashed')).not.toBeNull();
     expect(key.querySelector('.erd-key-line.rel-has_many:not(.is-dashed)')).not.toBeNull();
     // The stage's key bar along the bottom, a floating panel the open space leaves room for.
