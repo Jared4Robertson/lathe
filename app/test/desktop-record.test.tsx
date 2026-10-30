@@ -29,8 +29,7 @@ function desktop() {
     copyRecordId: vi.fn<(id: string) => void>(),
     showRecordMenu: vi.fn<(id: string) => void>(),
     chat: desktopBridgeStub().chat,
-    onAppRequest: () => () => {},
-  };
+    onAppRequest: () => () => {} };
   host.latheDesktop = bridge;
   return { bridge, setFullScreen: (value: boolean) => fullScreen?.(value) };
 }
@@ -85,7 +84,7 @@ describe('desktop record actions', () => {
     await openApp('/DM-SHOP-UC01');
     await heading();
     // The window's own product's errors (Demo shop's and the workspace's), not Notebook's.
-    const index = indexOf(workspace());
+    const index = recordIndexOf(workspace());
     const errors = workspace().problems.filter((p) => p.severity === 'error' && index.byId.get(p.record ?? '')?.product !== 'NF').length;
     expect(errors).toBe(2);
     await waitFor(() => expect(bridge.setErrorCount).toHaveBeenLastCalledWith(errors));

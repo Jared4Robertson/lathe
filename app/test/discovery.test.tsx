@@ -27,8 +27,7 @@ function withOutcomes() {
   setRow(w, 'business_outcome', 'DM-BO02', { measured_outside: 'Counted from the payment provider\'s refund report each month.' });
   addRows(w, 'test_data_set', {
     id: 'DM-SHOP-TD01', title: 'A basket with two items', domain_id: 'DM-SHOP', environment: 'A fresh in-memory store.', records: 'One shopper and a basket of two items.',
-    prepare: 'Run the basket seed.', reset: 'Drop the store.', file: 'test/basket-seed.ts',
-  });
+    prepare: 'Run the basket seed.', reset: 'Drop the store.', file: 'test/basket-seed.ts' });
   addRows(w, 'starts_from', { source_id: 'DM-SHOP-UC01-R01-T01', target_id: 'DM-SHOP-TD01' });
   setRow(w, 'use_case_test', 'DM-SHOP-UC01-R01-T01', { size: 'volume', smoke: true });
   return w;
@@ -56,7 +55,7 @@ describe('discovery', () => {
   });
 
   it('LA-V92-R75-T01 A test shows its size and markers under Run by, and where it starts from', () => {
-    const index = indexOf(withOutcomes());
+    const index = recordIndexOf(withOutcomes());
     const trace = () => screen.getByRole('heading', { level: 2, name: 'Traceability' }).closest('section') as HTMLElement;
     render(<RecordContent index={index} id="DM-SHOP-UC01-R01-T01" onNavigate={vi.fn()} />);
     const runBy = within(trace()).getByRole('heading', { level: 3, name: 'Run by' }).closest('section') as HTMLElement;
@@ -69,7 +68,7 @@ describe('discovery', () => {
   });
 
   it('LA-V92-R76-T01 A test shows the outcomes it measures', () => {
-    const index = indexOf(withOutcomes());
+    const index = recordIndexOf(withOutcomes());
     const trace = () => screen.getByRole('heading', { level: 2, name: 'Traceability' }).closest('section') as HTMLElement;
     const show = (id: string) => render(<RecordContent index={index} id={id} onNavigate={vi.fn()} />);
 

@@ -53,16 +53,14 @@ const LAYOUTS: Layout[] = [
     frame: (map, focus, depth, w, h) => frameOnMap(map as GraphMap, focus, depth, w, h, maxZoomFor(map)),
     drawn: (map, v, focus, w, h) => drawnFor(map as GraphMap, v, w, h, [focus]),
     height: (map, id) => { const n = map.nodes.get(id)!; return n.text * (labelHeight(n.lines) + 2 * BORDER); },
-    size: (map, id) => map.nodes.get(id)!.h,
-  },
+    size: (map, id) => map.nodes.get(id)!.h },
   {
     name: 'Nested',
     map: nestedMap,
     frame: (map, focus, _depth, w, h) => frameNested(map, focus, w, h, maxZoomFor(map)),
     drawn: (map, v, focus, w, h) => drawnNested(map, v, w, h, [focus]),
     height: (map, id) => { const n = map.nodes.get(id)!; return n.text * labelHeight(n.lines); },
-    size: (map, id) => map.nodes.get(id)!.w,
-  },
+    size: (map, id) => map.nodes.get(id)!.w },
 ];
 
 /** Every drawn box with no name, or whose label does not fit it, named with its layout, focus, depth, pane and size on screen. */
@@ -116,7 +114,7 @@ describe('every drawn box shows its name', () => {
   // and the tests only frame and read them.
   let whole: SpecIndex;
   beforeAll(async () => {
-    whole = indexOf(await repoData());
+    whole = recordIndexOf(await repoData());
     for (const product of whole.products) for (const layout of LAYOUTS) layout.map(spaceIndex(whole, product.id), product.id);
   }, 60_000);
 

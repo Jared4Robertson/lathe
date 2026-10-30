@@ -32,8 +32,7 @@ const shopCoverage = (): Coverage => ({
     gap('DM-SHOP-INV01', 'invariant', 'proved'),
     gap('DM-SHOP-UC01-R02', 'uc_requirement', 'built'),
     gap('DM-SHOP-UC01-R02', 'uc_requirement', 'proved'),
-  ],
-});
+  ] });
 
 const payCoverage = (): Coverage => ({
   product: 'DM',
@@ -48,8 +47,7 @@ const payCoverage = (): Coverage => ({
   gaps: [
     gap('DM-PAY-UC01-R01', 'uc_requirement', 'designed'),
     gap('DM-PAY-UC01-R01', 'uc_requirement', 'proved'),
-  ],
-});
+  ] });
 
 /** What DM shares: its value object's constraint and its view's requirement. */
 const dmCoverage = (): Coverage => ({
@@ -67,8 +65,7 @@ const dmCoverage = (): Coverage => ({
     gap('DM-VO01-C01', 'constraint', 'proved'),
     gap('DM-V01-R01', 'view_requirement', 'designed'),
     gap('DM-V01-R01', 'view_requirement', 'proved'),
-  ],
-});
+  ] });
 
 const noteCoverage = (): Coverage => ({
   product: 'NF',
@@ -80,8 +77,7 @@ const noteCoverage = (): Coverage => ({
   tests: { automated: 0, manual: 0, not_automated: 0 },
   proved_by: {},
   pattern_rules: {},
-  gaps: [],
-});
+  gaps: [] });
 
 export function workspace(): ServedData {
   return fixture('workspace', {
@@ -93,6 +89,5 @@ export function workspace(): ServedData {
       { severity: 'error', check: 'lone-domain', record: 'NF-NOTE', message: 'NF-NOTE has no use cases yet.' },
       { severity: 'error', check: 'engine', record: null, message: 'The checks could not read a file.' },
     ],
-    coverage: [shopCoverage(), payCoverage(), dmCoverage(), noteCoverage()],
-  });
+    coverage: [shopCoverage(), payCoverage(), dmCoverage(), noteCoverage()] });
 }

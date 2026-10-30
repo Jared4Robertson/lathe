@@ -35,7 +35,7 @@ describe('traceability', () => {
   it('LA-V92-R56-T01 An obligation lists Designed by, Built by, then Proved by, as its chain holds them; a build record is marked built or not', () => {
     // A UC requirement is designed by its fulfilling steps, their flows, the views they happen in and what they invoke,
     // and built by the handlers of what they invoke: the engine's chain, which the Trace stage draws too.
-    const index = indexOf(workspace());
+    const index = recordIndexOf(workspace());
     let trace = show(index, 'DM-SHOP-UC01-R01');
     expect(groupTitles(trace)).toEqual(['Designed by', 'Built by', 'Proved by']);
     expect(groupIds(trace, 'Designed by')).toEqual(index.chains.get('DM-SHOP-UC01-R01')!.design);
@@ -49,7 +49,7 @@ describe('traceability', () => {
     cleanup();
 
     // An invariant is designed by its aggregate and built only by its rule.
-    const model = indexOf(modelWorkspace());
+    const model = recordIndexOf(modelWorkspace());
     trace = show(model, 'P-D-INV01');
     expect(groupTitles(trace)).toEqual(['Designed by', 'Built by', 'Proved by']);
     expect(groupIds(trace, 'Designed by')).toEqual(['P-D-A3']);
@@ -65,7 +65,7 @@ describe('traceability', () => {
   });
 
   it('LA-V92-R57-T01 Gap callouts say not designed, not built and not proved (or not automated yet), agree with coverage, link to their check, and a pattern rule has one line per domain', () => {
-    const index = indexOf(workspace());
+    const index = recordIndexOf(workspace());
     // Coverage reports DM-SHOP-UC01-R02 not-proved; its step invokes nothing, so nothing builds it.
     let trace = show(index, 'DM-SHOP-UC01-R02');
     expect(gapKinds(trace)).toEqual(['not-built', 'not-proved']);
@@ -84,7 +84,7 @@ describe('traceability', () => {
     cleanup();
 
     // A pattern rule, per following domain, proved by its tests that name the domain; it needs no design.
-    const patterns = indexOf(patternWorkspace());
+    const patterns = recordIndexOf(patternWorkspace());
     const r01 = patterns.byId.get('DM-PAT-AUDIT-R01')!;
     expect(owingDomains(patterns, r01)).toEqual(['DM-SHOP']);
     // R03 applies only when `who` is clerk, which DM-SHOP marks not applicable: no domain owes it.
@@ -112,7 +112,7 @@ describe('traceability', () => {
   });
 
   it('LA-V101-R10-T01 A use case shows a UC requirement table (Designed, Built, Proved) under its groups, then its links', () => {
-    const trace = show(indexOf(patternWorkspace()), 'DM-SHOP-UC01');
+    const trace = show(recordIndexOf(patternWorkspace()), 'DM-SHOP-UC01');
     const table = within(trace).getByRole('table');
     expect(within(table).getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['UC requirement', 'Designed', 'Built', 'Proved']);
     const rows = [...table.querySelectorAll('tbody tr[data-requirement]')] as HTMLElement[];
@@ -128,7 +128,7 @@ describe('traceability', () => {
   });
 
   it('LA-V92-R59-T01 A test shows Proves (its parent) and how it is run: its level, its state, and the file that runs it or why it is manual', () => {
-    const index = indexOf(workspace());
+    const index = recordIndexOf(workspace());
     let trace = show(index, 'DM-SHOP-UC01-R01-T01');
     expect(groupTitles(trace)).toEqual(['Proves', 'Run by']);
     expect(groupIds(trace, 'Proves')).toEqual(['DM-SHOP-UC01-R01']);
@@ -140,7 +140,7 @@ describe('traceability', () => {
     cleanup();
 
     // A manual flow test: no file, its reason.
-    const model = indexOf(modelWorkspace());
+    const model = recordIndexOf(modelWorkspace());
     trace = show(model, 'P-D-UC01-FL01-T');
     expect(groupIds(trace, 'Proves')).toEqual(['P-D-UC01-FL01']);
     const manual = within(trace).getByRole('heading', { level: 3, name: 'Run by' }).closest('section') as HTMLElement;
@@ -153,7 +153,7 @@ describe('traceability', () => {
 
   it('LA-PAT-RECORD-PAGE-R07-T01 No page shows a relation code as a heading or label: wiki, record facts, graph and ERD view read the labels', async () => {
     const w = modelWorkspace();
-    const index = indexOf(w);
+    const index = recordIndexOf(w);
     const codes = new Set(Object.keys(w.schema.relations));
     const raw = (text: string) => {
       const t = text.replace(/\d+$/, '').trim();
@@ -178,7 +178,7 @@ describe('traceability', () => {
   }, 120_000);
 
   it('LA-PAT-RECORD-PAGE-R07-T01 A record\'s links out show under their forward label and its links in under their reverse label; what its chain holds is not repeated beside it', () => {
-    const index = indexOf(modelWorkspace());
+    const index = recordIndexOf(modelWorkspace());
     // A policy: its command, what proves it, then the event it hears.
     let trace = show(index, 'P-D-PO02');
     expect(groupTitles(trace)).toEqual(['Designed by', 'Proved by', 'Hears']);

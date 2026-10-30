@@ -27,8 +27,7 @@ function twoDomains(): ServedData {
   );
   addRows(ws, 'pattern_rule_test', {
     id: 'DM-PAT-AUDIT-R01-T02', title: 'A payment is recorded', pattern_rule_id: 'DM-PAT-AUDIT-R01', domain_id: 'DM-PAY', level: 'service', state: 'not automated yet',
-    when: 'A shopper pays for the basket by card.', then: 'The payment is in the audit record.',
-  });
+    when: 'A shopper pays for the basket by card.', then: 'The payment is in the audit record.' });
   return withStandings(ws, 'DM-PAY', { R01: 'owed', R02: 'not-applicable', R03: 'waived' });
 }
 
@@ -41,7 +40,7 @@ function payItself(): ServedData {
   return withStandings(ws, 'DM-PAY', { R01: 'owed', R02: 'owed', R03: 'waived' });
 }
 
-const index = () => indexOf(twoDomains());
+const index = () => recordIndexOf(twoDomains());
 const rowOf = (scope: HTMLElement, id: string) => within(scope).getByRole('link', { name: new RegExp(`^${id}(?!-)`) }).closest('.record-row') as HTMLElement;
 
 /** A row's text without its actions' toolbar: the follower and the values it gives. */
@@ -80,8 +79,7 @@ describe('pattern logic', () => {
       applies: false,
       why: 'not-applicable',
       setting: 'retention',
-      reasons: [{ useCase: 'DM-PAY-UC01', reason: 'Payments keep no records' }],
-    });
+      reasons: [{ useCase: 'DM-PAY-UC01', reason: 'Payments keep no records' }] });
     // DM-SHOP follows it itself, so the rule applies there.
     expect(ruleStatus(ix, r02, 'DM-SHOP', patternsFollowedBy(ix, 'DM-SHOP')[0])).toMatchObject({ applies: true, provedBy: [] });
   });
@@ -135,7 +133,7 @@ describe('Patterns we follow, on the domain page', () => {
 
   it('LA-V91-R54-T05 A pattern the domain itself follows is listed, followed by the whole domain, and every rule applies', async () => {
     const ws = payItself();
-    const ix = indexOf(ws);
+    const ix = recordIndexOf(ws);
     expect(patternsFollowedBy(ix, 'DM-PAY').map((f) => [f.pattern.id, f.byDomain, f.useCases.length])).toEqual([['DM-PAT-AUDIT', true, 0]]);
     // A rule with a setting still applies: no use case of the domain can mark it not applicable.
     const ruleWithSetting = ix.workspace.records.find((r) => r.parent === 'DM-PAT-AUDIT' && textOf(r.row, 'setting'))!;
@@ -176,7 +174,7 @@ describe('Patterns we follow, on the domain page', () => {
     const marks = { owed: /proved$/, 'not-applicable': /^not applicable$/, waived: /^Waived here/ };
     for (const ws of [twoDomains(), payItself()]) {
       const data = await servedByEngine(ws);
-      const ix = indexOf(data);
+      const ix = recordIndexOf(data);
       for (const followed of ['DM-PAY', 'DM-SHOP'].flatMap((domain) => patternsFollowedBy(ix, domain).filter((f) => f.pattern.id === 'DM-PAT-AUDIT').map((f) => ({ ...f, domain })))) {
         const standings = ix.coverage.get(followed.domain)!.pattern_rules;
         await openApp(`/${followed.domain}`, { data });

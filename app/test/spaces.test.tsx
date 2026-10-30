@@ -47,7 +47,7 @@ describe('product spaces', () => {
     expect(colorField('url(x)')).toBeNull();
     expect(colorOf('TL')).toBe(colorOf('TL'));
     expect(colorOf('TL')).not.toBe(colorOf('LA'));
-    const index = indexOf(spacesWorkspace());
+    const index = recordIndexOf(spacesWorkspace());
     expect(spaceOf({ id: 'NF', title: 'Notebook', color: String(index.byId.get('NF')!.row.color) }).color).toBe('#335577');
     expect(spaceOf({ id: 'DM', title: 'Demo shop' }).color).toBe(colorOf('DM'));
   });
@@ -66,7 +66,7 @@ describe('product spaces', () => {
   });
 
   it('LA-EXP-DS02-T01 The current space is the product of the page, its Checks page included', () => {
-    const index = indexOf(spacesWorkspace());
+    const index = recordIndexOf(spacesWorkspace());
     expect(productOfPath(index, '/NF-NOTE')).toBe('NF');
     expect(productOfPath(index, '/DM-SHOP-UC01-R01')).toBe('DM');
     expect(productOfPath(index, '/DM-SHOP/use_case')).toBe('DM');
@@ -208,7 +208,7 @@ describe('product spaces', () => {
   });
 
   it('LA-V64-R04-T01 Quick find searches the current space only', async () => {
-    const index = indexOf(spacesWorkspace());
+    const index = recordIndexOf(spacesWorkspace());
     const ranked = rankItems(findItems(spaceIndex(index, 'NF')), 'n', 50);
     expect(ranked.some((i) => i.id === 'NF-NOTE')).toBe(true);
     expect(ranked.filter((i) => /^[A-Z]/.test(i.id)).every((i) => i.id.startsWith('NF'))).toBe(true);

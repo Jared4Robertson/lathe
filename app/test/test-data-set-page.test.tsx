@@ -20,8 +20,7 @@ function withDataSet(): ServedData {
   const w = workspace();
   addRows(w, 'test_data_set', {
     id: 'DM-SHOP-TD01', title: 'A basket with two items', domain_id: 'DM-SHOP', environment: 'A fresh in-memory store.', records: 'One shopper and a basket of two items.',
-    prepare: 'Run the basket seed.', reset: 'Drop the store.', file: 'test/basket-seed.ts', description: 'A shopper part-way through shopping.',
-  });
+    prepare: 'Run the basket seed.', reset: 'Drop the store.', file: 'test/basket-seed.ts', description: 'A shopper part-way through shopping.' });
   addRows(w, 'starts_from', { source_id: 'DM-SHOP-UC01-R01-T01', target_id: 'DM-SHOP-TD01' });
   return w;
 }

@@ -40,8 +40,7 @@ const KEYS: Record<string, string> = {
   'lathe:themes': 'app/src/platform/appearance/repository.ts',
   'lathe:theme': 'app/src/platform/appearance/repository.ts',
   'lathe:color-mode': 'app/src/platform/appearance/repository.ts',
-  'lathe:theme-css': 'app/src/platform/appearance/repository.ts',
-};
+  'lathe:theme-css': 'app/src/platform/appearance/repository.ts' };
 const CODE_KINDS = ['repository', 'command_handler', 'event_handler', 'query_handler', 'projection', 'reader', 'data_model', 'rule', 'adapter', 'value_type'];
 
 describe('LA-STD-PRINCIPLES-R02-T03 Each app aggregate of Exploring and Platform is reached only through its repository, and its handlers, policies and rules are the records\' one to one', () => {

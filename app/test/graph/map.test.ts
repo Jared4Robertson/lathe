@@ -16,7 +16,7 @@ import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } fr
 
 /** The test workspaces' indexes, built once, so a map found by its index is the one the test laid out. */
 let built: SpecIndex[] | null = null;
-const indexes = (): SpecIndex[] => (built ??= [testIndex(), indexOf(groupedWorkspace()), indexOf(manyOfOneKindWorkspace())]);
+const indexes = (): SpecIndex[] => (built ??= [testIndex(), recordIndexOf(groupedWorkspace()), recordIndexOf(manyOfOneKindWorkspace())]);
 const maps = (): GraphMap[] => indexes().map((index) => graphMap(index, 'P'));
 
 /** A synthetic tree: `n` roots, each with `k` children, each with `k` leaves. */

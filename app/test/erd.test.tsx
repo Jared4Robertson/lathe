@@ -100,8 +100,7 @@ describe('the ERD stage', () => {
       'P-D-EN03|references|P-D-EN01': 'none-arrow dashed',
       'P-D-EN03|references|P-D-EN02': 'none-arrow dashed',
       'P-D-EN05|references|P-D-EN02': 'none-arrow dashed',
-      'P-D-EN06|references|P-D-EN01': 'none-arrow dashed',
-    });
+      'P-D-EN06|references|P-D-EN01': 'none-arrow dashed' });
     expect(map.lines.find((l) => l.id === 'P-D-EN02|references|P-E-EN01')).toMatchObject({ via: ['Member.Account'] });
     // A region lays out its aggregates along the references between them; the product its regions, along those between domains.
     const sizes = new Map<string, { width: number; height: number }>();
@@ -151,8 +150,7 @@ describe('the ERD stage', () => {
       'P-D-EN03|has_many|P-D-EN05': 'one-many',
       'P-D-EN03|references|P-D-EN01': 'none-arrow dashed',
       'P-D-EN03|references|P-D-EN02': 'none-arrow dashed',
-      'P-D-EN05|references|P-D-EN02': 'none-arrow dashed',
-    });
+      'P-D-EN05|references|P-D-EN02': 'none-arrow dashed' });
     // A crow's foot has three prongs and a bar; one is two bars; an arrow one stroke.
     expect(endPath({ x: 0, y: 0 }, { x: 100, y: 0 }, 'many').match(/M/g)).toHaveLength(4);
     expect(endPath({ x: 0, y: 0 }, { x: 100, y: 0 }, 'one').match(/M/g)).toHaveLength(2);
@@ -194,8 +192,7 @@ describe('the ERD stage', () => {
     const map: ErdMap = {
       product: 'P',
       boxes: [box('D', 'domain'), ...SIZES.map(([id]) => box(id, 'aggregate', 'D'))],
-      lines: REFS.map(([s, t]) => ({ id: s + t, source: s, target: t, relation: 'references' as const, sourceEnd: 'none' as const, targetEnd: 'arrow' as const, dashed: true, via: [] })),
-    };
+      lines: REFS.map(([s, t]) => ({ id: s + t, source: s, target: t, relation: 'references' as const, sourceEnd: 'none' as const, targetEnd: 'arrow' as const, dashed: true, via: [] })) };
     const sizes = new Map(SIZES.map(([id, width, height]) => [id, { width, height }]));
     const shape = (n: { width?: number; height?: number }) => (n.width ?? 0) / (n.height ?? 1);
     const wrapped = await elkLayout(groupGraph(map, 'D', sizes, 'MULTI_EDGE'));

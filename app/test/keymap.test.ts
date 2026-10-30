@@ -15,8 +15,7 @@ import {
   resolveCommands,
   usesArrows,
   usesEnter,
-  walkMove,
-} from '../src/shell/keymap';
+  walkMove } from '../src/shell/keymap';
 import { OVERRIDES_KEY, overridesFrom } from '../src/platform/keymap/read-model';
 import { keymapReader } from '../src/platform/keymap/reader';
 import { listKeyboardCommands } from '../src/platform/keymap/queries';

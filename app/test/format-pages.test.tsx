@@ -180,12 +180,12 @@ describe('format reference pages', () => {
   });
 
   it('LA-V64-R05-T01 Quick find finds kinds and checks by name and leads to their pages', async () => {
-    const items = findItems(indexOf(workspace()), ['event-not-by-outbox']);
+    const items = findItems(recordIndexOf(workspace()), ['event-not-by-outbox']);
     const kind = rankItems(items, 'Kind: Use case')[0];
     expect(kind).toMatchObject({ title: 'Kind: Use case', to: '?page=format/kinds/use_case' });
     expect(rankItems(items, 'event-not-by')[0]).toMatchObject({ title: 'Check: event-not-by-outbox', to: '?page=format/checks/event-not-by-outbox' });
     // A check that reports a problem now is found even before the reference loads.
-    expect(rankItems(findItems(indexOf(workspace()), []), 'not-proved')[0]).toMatchObject({ title: 'Check: not-proved' });
+    expect(rankItems(findItems(recordIndexOf(workspace()), []), 'not-proved')[0]).toMatchObject({ title: 'Check: not-proved' });
 
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });

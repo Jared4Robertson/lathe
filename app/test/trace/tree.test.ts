@@ -23,7 +23,7 @@ function withOutcomes() {
     { id: 'P-BO01', title: 'More things lent', product_id: 'P', statement: 'Members borrow more.', measure: 'Loans a month', target: 'Up a tenth' },
     { id: 'P-BO02', title: 'Fewer lost things', product_id: 'P', statement: 'Fewer things go missing.', measure: 'Things lost a year', target: 'Down a half' });
   addRows(data, 'serves', { source_id: 'P-D-CAP01', target_id: 'P-BO01' }, { source_id: 'P-D-CAP01', target_id: 'P-BO02' });
-  return indexOf(data);
+  return recordIndexOf(data);
 }
 
 const FADE = { focusFade: 0.25 };
@@ -85,7 +85,7 @@ describe('the Trace stage\'s tree', () => {
     // A specification nothing implements or proves, as coverage reports it: gap boxes before its chain.
     const data = modelWorkspace();
     data.coverage[0].gaps.push(gap('P-D-SP01', 'specification', 'built'), gap('P-D-SP01', 'specification', 'proved'));
-    const index = indexOf(data);
+    const index = recordIndexOf(data);
     const map = traceMap(index, tracesOf(index, 'P'), 'P');
     const gaps = childrenOf(map, 'P-D-SP01').map((k) => map.nodes.get(k)!).filter((n) => n.role === 'gap');
     expect(gaps.map((n) => n.words?.title)).toEqual(['Not built', 'Not proved']);
@@ -113,7 +113,7 @@ describe('the Trace stage\'s tree', () => {
     // Where everything is reached there is no mark.
     const data = modelWorkspace();
     for (const c of data.coverage) c.gaps = c.gaps.filter((g) => g.missing !== 'record-untraced');
-    expect(traceMap(indexOf(data), tracesOf(indexOf(data), 'P'), 'P').nodes.has(UNTRACED)).toBe(false);
+    expect(traceMap(recordIndexOf(data), tracesOf(recordIndexOf(data), 'P'), 'P').nodes.has(UNTRACED)).toBe(false);
   });
 
   it('LA-V98-R08-T02 Focusing stands each kind of record on its box and keeps what is under it at full strength', () => {
@@ -171,7 +171,7 @@ describe('the Trace stage\'s tree', () => {
   });
 
   it('LA-V98-R06-T03 Only what is in view is drawn, at most 260 boxes, the runs too small to see as bars', async () => {
-    const index = spaceIndex(indexOf(await repoData({ chains: true })), 'LA');
+    const index = spaceIndex(recordIndexOf(await repoData({ chains: true })), 'LA');
     const map = traceMap(index, tracesOf(index, 'LA'), 'LA');
     expect(map.map.nodes.size).toBeGreaterThan(MAX_DRAWN * 10);
     // Far out, the whole tree: at most the budget as boxes, the rest as bars.
@@ -189,7 +189,7 @@ describe('the Trace stage\'s tree', () => {
   }, 120_000);
 
   it("LA-V98-R03-T05 An outcome's use cases and a domain's parents read when focused: the camera frames their column", async () => {
-    const index = spaceIndex(indexOf(await repoData({ chains: true })), 'LA');
+    const index = spaceIndex(recordIndexOf(await repoData({ chains: true })), 'LA');
     const map = traceMap(index, tracesOf(index, 'LA'), 'LA');
     // The outcome holding the most use cases, and the Traceability domain under Not under an outcome.
     const outcome = [...map.map.nodes.values()].filter((n) => index.byId.get(n.id)?.kind === 'business_outcome').sort((a, b) => b.children.length - a.children.length)[0];

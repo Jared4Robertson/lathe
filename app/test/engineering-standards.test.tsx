@@ -88,7 +88,7 @@ describe('standards in the nav and the wiki', () => {
 
 describe('standards in the graph', () => {
   it('LA-V93-R71-T01 The graph draws a standard as stacked boxes with a ruler in the product\'s Technical specification', () => {
-    const ix = indexOf(standardWorkspace());
+    const ix = recordIndexOf(standardWorkspace());
     const n = neighborhood(ix, 'DM-STD-CODE', 1);
     expect(n.edges.map((e) => `${e.source} ${e.relation} ${e.target}`)).toEqual(expect.arrayContaining([
       'DM/technical-specification/standard parent DM-STD-CODE',

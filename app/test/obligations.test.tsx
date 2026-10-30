@@ -25,8 +25,7 @@ const section = (name: string | RegExp) => {
 /** The workspace with a manual test of DM-SHOP-UC01-R02 beside the automated and the not automated yet ones. */
 function workspace(): ServedData {
   return addRows(productKindWorkspace(), 'use_case_test', {
-    id: 'DM-SHOP-UC01-R02-T01', title: 'A person fills a basket to 50', uc_requirement_id: 'DM-SHOP-UC01-R02', level: 'browser', state: 'manual', manual_reason: 'A person fills the basket by hand.',
-  });
+    id: 'DM-SHOP-UC01-R02-T01', title: 'A person fills a basket to 50', uc_requirement_id: 'DM-SHOP-UC01-R02', level: 'browser', state: 'manual', manual_reason: 'A person fills the basket by hand.' });
 }
 const served = () => ({ data: workspace() });
 const card = (title: string) => within(section(/^Domains/)).getByText(title).closest('.card') as HTMLElement;
@@ -159,7 +158,7 @@ describe('obligation kinds and test states', () => {
   it('LA-V92-R52-T01 The record content takes a record ID and sends the links it follows to its host', async () => {
     cleanup();
     window.history.replaceState(null, '', '/graph/DM-SHOP-UC01-R01');
-    const index = indexOf(workspace());
+    const index = recordIndexOf(workspace());
     const onNavigate = vi.fn();
     const { container } = render(<RecordContent index={index} id="DM-SHOP-UC01-R01" onNavigate={onNavigate} />);
     // It sizes itself by its own width (a CSS container), so it reads at half the screen.

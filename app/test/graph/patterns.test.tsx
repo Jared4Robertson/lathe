@@ -7,7 +7,7 @@ import { patternWorkspace } from '../fixtures/patterns';
 // Patterns in the graph: a pattern's rules sit under it, one column to its right. A domain's or use
 // case's `follows` link is the Trace stage's and the wiki card's, never drawn in the graph.
 
-const index = () => indexOf(patternWorkspace());
+const index = () => recordIndexOf(patternWorkspace());
 const edge = (e: { source: string; relation: string; target: string }) => `${e.source} ${e.relation} ${e.target}`;
 
 describe('patterns in the graph', () => {

@@ -81,8 +81,7 @@ describe('LA-V101-R02-T01 the Use case editor writes only through the aggregate\
     await waitFor(() => expect(commands).toHaveLength(1));
     expect(commands[0]).toEqual({
       route: '/api/use-case/add-flow-step',
-      input: { flow_id: 'DM-SHOP-UC01-FL01', id: 'DM-SHOP-UC01-FL01-S04', title: 'Shop saves the basket', path: 'main', position: 3, fulfills: ['DM-SHOP-UC01-R01'] },
-    });
+      input: { flow_id: 'DM-SHOP-UC01-FL01', id: 'DM-SHOP-UC01-FL01-S04', title: 'Shop saves the basket', path: 'main', position: 3, fulfills: ['DM-SHOP-UC01-R01'] } });
     await waitFor(() => expect(window.location.pathname).toBe('/DM-SHOP-UC01-FL01-S04'));
   });
 

@@ -1,6 +1,7 @@
 import type { ServedData } from '../read-view';
-import type { Coverage, Problem, RecordedException } from '../../../lathe/src/types';
-import { fixture, indexOf } from './load';
+import type { Coverage, Problem } from '../../../lathe/src/types';
+import { fixture } from './load';
+import { recordIndexOf } from '../read-view';
 import { gap, obligation } from './workspace';
 
 // A product with a whole domain model, for the ERD view, the graph and the record pages
@@ -21,11 +22,6 @@ export const PROBLEMS: Problem[] = [
   { severity: 'warning', check: 'not-proved', record: 'P-D-INV02', message: 'No test proves invariant P-D-INV02.' },
 ];
 
-/** The recorded exceptions, as the engine lists them: Return thing's command_change row, then LoanRepository's repository_share row. */
-export const EXCEPTIONS: RecordedException[] = [
-  { command: 'P-D-CMD02', aggregate: 'P-D-A1', reason: 'The thing must be lendable again in the same transaction as its return.' },
-  { repository: 'P-D-REPO01', aggregate: 'P-D-A4', reason: 'Shelves are stored with the loans that take things off them.' },
-];
 
 const coverage = (): Coverage[] => [{
   product: 'P',
@@ -48,17 +44,15 @@ const coverage = (): Coverage[] => [{
     gap('P-D-CMD03', 'command', 'record-untraced'),
     gap('P-D-QRY01', 'query', 'record-untraced'),
     gap('P-D-UC01-FL01-S02', 'flow_step', 'record-untraced'),
-  ],
-}, {
+  ] }, {
   product: 'P',
   domain: 'P-E',
   obligations: [],
   tests: { automated: 0, manual: 0, not_automated: 0 },
   proved_by: {},
   pattern_rules: {},
-  gaps: [gap('P-E-CMD01', 'command', 'record-untraced')],
-}];
+  gaps: [gap('P-E-CMD01', 'command', 'record-untraced')] }];
 
-export const modelWorkspace = (): ServedData => fixture('model', { problems: structuredClone(PROBLEMS), exceptions: structuredClone(EXCEPTIONS), coverage: coverage() });
+export const modelWorkspace = (): ServedData => fixture('model', { problems: structuredClone(PROBLEMS), coverage: coverage() });
 
-export const modelIndex = () => indexOf(modelWorkspace());
+export const modelIndex = () => recordIndexOf(modelWorkspace());

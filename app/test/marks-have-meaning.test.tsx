@@ -22,8 +22,7 @@ const CHANGE_MARKS: ChangeMark[] = ['is-added', 'is-changed', 'is-removed', 'is-
 const CHANGES = changesKeyEntries(new Set(CHANGE_MARKS));
 /** The graph drawing every look, shape, mark and badge, in a layout. */
 const everything = (layout: GraphDrawn['layout']): GraphDrawn => ({
-  looks: new Set(BOX_LOOKS), shapes: new Set(Object.keys(SHAPES) as Shape[]), marks: new Set(Object.keys(MARKS) as Mark[]), badges: new Set(BADGE_TONES), layout,
-});
+  looks: new Set(BOX_LOOKS), shapes: new Set(Object.keys(SHAPES) as Shape[]), marks: new Set(Object.keys(MARKS) as Mark[]), badges: new Set(BADGE_TONES), layout });
 /** A key bar of entries, each once. */
 const bar = (entries: KeyEntry[]) => render(<StageKey entries={[...new Map(entries.map((e) => [e.id, e])).values()]} />);
 const CSS = readFileSync(path.resolve(import.meta.dirname, '../src/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
@@ -73,7 +72,7 @@ describe('LA-V94-R05-T02 the ERD view key', () => {
   });
 
   it('Every box, badge and line an ERD draws is in its key, with what it means', () => {
-    const index = indexOf(modelWorkspace());
+    const index = recordIndexOf(modelWorkspace());
     const focuses = index.workspace.records.filter((r) => ['product', 'domain', 'aggregate', 'entity'].includes(r.kind)).map((r) => r.id);
     const missing: string[] = [];
     let drawn = 0;

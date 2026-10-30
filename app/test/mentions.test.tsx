@@ -13,8 +13,7 @@ import { indexOf, setRow } from './fixtures/load';
 
 const links = (titles: Record<string, string>) => ({
   titles: new Map(Object.entries(titles)),
-  href: (id: string) => `/${id}`,
-});
+  href: (id: string) => `/${id}` });
 const body = () => document.querySelector('.record-main .markdown, .spec-body .markdown') as HTMLElement;
 
 /**
@@ -65,7 +64,7 @@ describe('record IDs in text fields', () => {
   it('LA-PAT-RECORD-PAGE-R05-T01 IDs in code blocks, code with other text, links and longer IDs are not linked; a lone-ID code span is', proveLaV92R18T02);
 
   const proveLaV92R18T03 = () => {
-    const ix = indexOf(withText());
+    const ix = recordIndexOf(withText());
     const uc = ix.byId.get('DM-SHOP-UC01')!;
     const p = proseLinks(ix, `${String(uc.row.goal)} See DM-SHOP-UC01.`, uc.id);
     expect([...p.titles]).toEqual([['DM-PAT-AUDIT', 'Audited action'], ['DM-SHOP-INV01', 'A basket holds at most 50 items']]);
@@ -101,7 +100,7 @@ describe('record IDs in text fields', () => {
     // A mention is not a link between records: not in the links out among its facts, not in the graph.
     expect(within(facts()).getByRole('heading', { name: 'Links out' })).toBeInTheDocument();
     expect(within(facts()).queryByRole('link', { name: /^DM-SHOP-UC01/ })).toBeNull();
-    const ix = indexOf(withText());
+    const ix = recordIndexOf(withText());
     expect(neighborhood(ix, 'DM-PAY-UC01', 2).nodes.map((n) => n.id)).not.toContain('DM-SHOP-UC01');
 
     const ws = setRow(withText(), 'domain', 'DM-SHOP', { description: 'Shopping starts at DM-SHOP-UC01.' });

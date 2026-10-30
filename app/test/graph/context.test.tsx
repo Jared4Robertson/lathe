@@ -118,7 +118,7 @@ describe('the graph tree, its depth and its camera', () => {
     ];
     expect(keyboardOrder(boxes)).toEqual(['a', 'c', 'b']);
     // The summary counts the framed picture: the domain, its parent and three levels below it.
-    const n = neighborhood(indexOf(w), 'P-D', 3);
+    const n = neighborhood(recordIndexOf(w), 'P-D', 3);
     await waitFor(() => expect(document.querySelector('.header-strip-counts')!.textContent).toBe(graphSummary(n)));
     expect(graphSummary(n)).toBe('33 records · 27 groups · 59 links');
   });
@@ -199,8 +199,7 @@ describe('the graph tree, its depth and its camera', () => {
   const NESTED_KEYS = { ArrowUp: 'out', ArrowDown: 'in', ArrowLeft: 'previous', ArrowRight: 'next' } as const;
   const ARROWS = {
     tree: { ArrowLeft: 'out', ArrowRight: 'in', ArrowUp: 'previous', ArrowDown: 'next' },
-    nested: NESTED_KEYS,
-  } as const;
+    nested: NESTED_KEYS } as const;
   const STEP_BUTTONS = { out: 'Step out to the parent', in: 'Step in to the first child', previous: 'Step to the previous sibling', next: 'Step to the next sibling' };
   const MARKS: Record<string, string> = { ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓' };
   const MOVE_OF = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' } as const;

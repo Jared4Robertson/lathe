@@ -27,8 +27,7 @@ function fakeServer(api: () => Promise<unknown>) {
     middlewares: { use: (m: Middleware) => middlewares.push(m) },
     ssrLoadModule: vi.fn(api),
     watcher: { add: (dir: string) => watched.push(dir), on: (_event: string, l: WatchListener) => listeners.push(l) },
-    ws: { send: (payload: unknown) => sent.push(payload) },
-  };
+    ws: { send: (payload: unknown) => sent.push(payload) } };
   return { server, middlewares, listeners, watched, sent };
 }
 
@@ -41,13 +40,11 @@ async function request(middleware: Middleware, url: string, { method = 'GET', bo
   const req = Object.assign(Readable.from(body === undefined ? [] : [Buffer.from(body)]), {
     url,
     method,
-    headers: { host: '127.0.0.1:5300', ...headers },
-  }) as unknown as IncomingMessage;
+    headers: { host: '127.0.0.1:5300', ...headers } }) as unknown as IncomingMessage;
   const res = {
     statusCode: 200,
     setHeader: (name: string, value: string) => { answer[name.toLowerCase()] = value; },
-    end: (chunk?: string | Buffer) => { text = chunk ? chunk.toString() : ''; },
-  } as unknown as ServerResponse;
+    end: (chunk?: string | Buffer) => { text = chunk ? chunk.toString() : ''; } } as unknown as ServerResponse;
   await middleware(req, res, () => { nextCalled = true; });
   return { status: res.statusCode, headers: answer, body: text, json: () => JSON.parse(text), nextCalled };
 }
@@ -129,8 +126,7 @@ describe('dev API plugin', () => {
       table: 'use_case',
       key: 'EX-NOTE-UC01',
       before: { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer writes a note.' },
-      after: { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a thought.' },
-    });
+      after: { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a thought.' } });
     expect(answer.changes).toContainEqual(expect.objectContaining({ table: 'uc_requirement', key: 'EX-NOTE-UC01-R01', before: null }));
   });
 

@@ -10,7 +10,7 @@ import { joinSchemas } from '../../../lathe/src/server/api';
 
 export async function repoData({ chains = false } = {}): Promise<ServedData> {
   const repo = path.resolve(import.meta.dirname, '../../..');
-  const data: ServedData = { schema: undefined as unknown as ServedData['schema'], sources: [], placements: {}, problems: [], exceptions: [], coverage: [], chains: [] };
+  const data: ServedData = { schema: undefined as unknown as ServedData['schema'], sources: [], problems: [], coverage: [], chains: [] };
   const schemas: ServedData['schema'][] = [];
   for (const root of [repo, path.join(repo, 'examples/tool-library')]) {
     const store = await openStore(root);
@@ -19,7 +19,6 @@ export async function repoData({ chains = false } = {}): Promise<ServedData> {
       const tables: ServedData['sources'][number]['tables'] = {};
       for (const table of store.schema.loadOrder) if (store.rows(table).length) tables[table] = store.rows(table);
       data.sources.push({ dataDir: path.relative(repo, store.dataDir), tables });
-      Object.assign(data.placements, await store.placements());
       if (chains) data.chains.push(...(await readWorkspace(store, loadConfig(root))).chains);
     } finally {
       await store.close();

@@ -15,8 +15,7 @@ import {
   recordChoices,
   referrersOf,
   removedWith,
-  suggestId,
-} from '../src/edit/form';
+  suggestId } from '../src/edit/form';
 import { indexOf } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { modelWorkspace } from './fixtures/model';
@@ -25,7 +24,7 @@ import { patternWorkspace } from './fixtures/patterns';
 // The record form, generated from the schema description.
 
 describe('form generation from the schema', () => {
-  const index = indexOf(workspace());
+  const index = recordIndexOf(workspace());
   const { schema } = index.workspace;
 
   it('LA-V92-R30-T02 gives every column but the ID and the parent columns an input, in the table\'s order', () => {
@@ -76,7 +75,7 @@ describe('form generation from the schema', () => {
   });
 
   it('LA-V92-R30-T03 offers a field naming a record the records of its kind in the same product', () => {
-    const model = indexOf(modelWorkspace());
+    const model = recordIndexOf(modelWorkspace());
     const field = partForms(model.workspace.schema, 'entity').find((p) => p.table === 'entity_field')!.fields.find((f) => f.name === 'type_aggregate_id')!;
     expect(recordChoices(model, field, 'P').map((r) => r.id)).toEqual(['P-D-A1', 'P-D-A2', 'P-D-A3', 'P-D-A4', 'P-E-A1']);
     expect(recordChoices(index, field, 'NF').map((r) => r.id)).toEqual(['NF-NOTE-A1']);
@@ -120,7 +119,7 @@ describe('form generation from the schema', () => {
 
 describe('IDs for new records', () => {
   it('LA-V92-R31-T03 suggests the next free number in the kind\'s convention, or the start of a named ID', () => {
-    const index = indexOf(workspace());
+    const index = recordIndexOf(workspace());
     expect(suggestId(index, 'uc_requirement', 'DM-SHOP-UC01')).toBe('DM-SHOP-UC01-R03');
     expect(suggestId(index, 'use_case', 'DM-SHOP-CAP01')).toBe('DM-SHOP-UC02');
     expect(suggestId(index, 'aggregate', 'DM-SHOP')).toBe('DM-SHOP-A2');
@@ -144,7 +143,7 @@ describe('IDs for new records', () => {
 
 describe('parent columns of a new record', () => {
   it('LA-V92-R31-T03 fills the one column naming the parent\'s kind', () => {
-    const index = indexOf(workspace());
+    const index = recordIndexOf(workspace());
     expect(parentValues(index, 'endpoint', 'DM-SHOP-QRY01')).toEqual({ query_id: 'DM-SHOP-QRY01' });
     expect(parentValues(index, 'endpoint', 'DM-SHOP-CMD01')).toEqual({ command_id: 'DM-SHOP-CMD01' });
     expect(parentValues(index, 'question', 'DM-SHOP')).toEqual({ domain_id: 'DM-SHOP' });
@@ -154,7 +153,7 @@ describe('parent columns of a new record', () => {
 
 describe('commands from a draft', () => {
   it('LA-V92-R08-T02 adds a new record with its parent column, parts and links in one write', () => {
-    const index = indexOf(workspace());
+    const index = recordIndexOf(workspace());
     const draft = newDraft(index, 'use_case', 'DM-SHOP-CAP01');
     expect(draft.id).toBe('DM-SHOP-UC02');
     draft.values.title = 'Empty the basket';
@@ -170,7 +169,7 @@ describe('commands from a draft', () => {
   });
 
   it('LA-V92-R31-T03 adds a kind with no owner without a parent column: its ID gives its product', () => {
-    const index = indexOf(workspace());
+    const index = recordIndexOf(workspace());
     const draft = newDraft(index, 'view', 'DM');
     expect(draft).toMatchObject({ id: 'DM-V02', parent: '' });
     draft.values.title = 'Checkout';
@@ -179,7 +178,7 @@ describe('commands from a draft', () => {
   });
 
   it('LA-V92-R08-T02 a form opened and left as it was sends no write', () => {
-    const index = indexOf(workspace());
+    const index = recordIndexOf(workspace());
     const record = index.byId.get('DM-SHOP-UC01-FL01-S01')!;
     const draft = draftOf(index, record);
     expect(draftProblems(index, 'flow_step', draft, false).size).toBe(0);
@@ -187,7 +186,7 @@ describe('commands from a draft', () => {
   });
 
   it('LA-V92-R29-T02 changes only what changed: the columns set or cleared, a move, links taken and added, and a part table written again', () => {
-    const index = indexOf(workspace());
+    const index = recordIndexOf(workspace());
     const record = index.byId.get('DM-SHOP-UC01-FL01-S01')!;
     const draft = draftOf(index, record);
     expect(draft.parent).toBe('DM-SHOP-UC01-FL01');
@@ -225,7 +224,7 @@ describe('commands from a draft', () => {
   });
 
   it('LA-V92-R30-T02 finds what the form can see before it writes: a missing or taken ID, a required field, a bad number, no parent', () => {
-    const index = indexOf(patternWorkspace());
+    const index = recordIndexOf(patternWorkspace());
     const draft = newDraft(index, 'capability', null);
     draft.id = 'DM-SHOP-UC01';
     draft.values.position = 'two';
@@ -239,7 +238,7 @@ describe('commands from a draft', () => {
 
 describe('before a removal', () => {
   it('LA-V92-R32-T03 names what still references the record, and what goes with it', () => {
-    const index = indexOf(patternWorkspace());
+    const index = recordIndexOf(patternWorkspace());
     const referrers = referrersOf(index, 'DM-SHOP-UC01').map((r) => `${r.id} ${r.how}`);
     expect(referrers).toEqual(['DM-SHOP-UC01-FL01 sits under it', 'DM-SHOP-UC01-R01 sits under it', 'DM-SHOP-UC01-R02 sits under it']);
     expect(referrersOf(index, 'DM-PAT-AUDIT').map((r) => r.how)).toEqual(expect.arrayContaining(['links to it (follows)', 'names it in a setting value row']));

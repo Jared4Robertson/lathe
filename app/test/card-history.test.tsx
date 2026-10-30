@@ -39,8 +39,7 @@ describe('a record\'s History in the wiki card', () => {
       return {
         state: 'ok', id: q.get('id'), files: ['data/use_case.jsonl', 'data/use_case_actor.jsonl'],
         uncommitted: skip ? [] : [{ table: 'use_case', key: 'P-D-UC01', change: 'changed', fields: [{ name: 'title', before: 'Lend', after: 'Lend a thing' }] }],
-        commits: skip ? [commit(21)] : Array.from({ length: 20 }, (_, i) => commit(i + 1)), more: !skip,
-      };
+        commits: skip ? [commit(21)] : Array.from({ length: 20 }, (_, i) => commit(i + 1)), more: !skip };
     });
     // Nothing is read until the Reader asks.
     const show = await card().findByRole('button', { name: 'Show the history' });

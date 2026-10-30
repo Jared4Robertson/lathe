@@ -58,7 +58,7 @@ describe('the rules the graph keeps', () => {
     // An aggregate's children of three kinds: a group per kind.
     expect(treeChildren(index, 'P-D-A3')).toEqual(['P-D-A3/entity', 'P-D-A3/invariant', 'P-D-A3/domain_event']);
     // A use case with seven UC requirements and nothing else: they hang straight under it, no group.
-    const seven = indexOf(manyOfOneKindWorkspace());
+    const seven = recordIndexOf(manyOfOneKindWorkspace());
     const kids = treeChildren(seven, 'P-D-UC02');
     expect(kids.length).toBe(7);
     for (const id of kids) expect(seven.byId.get(id)?.kind).toBe('uc_requirement');

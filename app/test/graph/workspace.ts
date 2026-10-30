@@ -7,7 +7,7 @@ import { modelWorkspace } from '../fixtures/model';
 
 export const testWorkspace = (): ServedData => modelWorkspace();
 
-export const testIndex = () => indexOf(testWorkspace());
+export const testIndex = () => recordIndexOf(testWorkspace());
 
 /** A second use case, P-D-UC02, in P-D-CAP01, with `count` UC requirements. */
 function withReturns(count: number): ServedData {

@@ -64,8 +64,7 @@ describe('LA-V122-R07-T01 the following\'s editor writes only through the Patter
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{
       route: '/api/pattern-following/change-setting-values',
-      input: { follower_id: 'DM-SHOP', pattern_id: 'DM-PAT-AUDIT', setting_values: [{ setting: 'retention', value: '2 years' }, { setting: 'who', not_applicable: 'Shoppers act for themselves.' }] },
-    }]));
+      input: { follower_id: 'DM-SHOP', pattern_id: 'DM-PAT-AUDIT', setting_values: [{ setting: 'retention', value: '2 years' }, { setting: 'who', not_applicable: 'Shoppers act for themselves.' }] } }]));
     expect(writes).toEqual([]);
   });
 
@@ -96,8 +95,7 @@ describe('LA-V122-R07-T01 the following\'s editor writes only through the Patter
     await user.click(within(form).getByRole('button', { name: 'Follow' }));
     await waitFor(() => expect(commands).toEqual([{
       route: '/api/pattern-following/follow-pattern',
-      input: { pattern_id: 'DM-PAT-AUDIT', follower_id: 'DM-PAY', setting_values: [{ setting: 'retention', value: '30 days' }, { setting: 'who', not_applicable: 'Payments are anonymous.' }] },
-    }]));
+      input: { pattern_id: 'DM-PAT-AUDIT', follower_id: 'DM-PAY', setting_values: [{ setting: 'retention', value: '30 days' }, { setting: 'who', not_applicable: 'Payments are anonymous.' }] } }]));
   });
 });
 
