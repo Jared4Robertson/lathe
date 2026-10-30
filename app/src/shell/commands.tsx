@@ -533,6 +533,8 @@ declare global {
     showRecordMenu: (id: string) => void;
     /** The chat panel's Claude Code (LA-PLT-UC19). */
     chat: import('../chat/types').ChatBridge;
+    /** The chat's dictation (LA-PLT-UC20-R01): on-device speech recognition, where the Mac has it. */
+    voice: import('../chat/types').VoiceBridge;
     /** Answers the app bridge's questions for Lathe's MCP tools: what the Reader is looking at, and opening a record. */
     onAppRequest: (handler: (request: import('../chat/types').AppRequest) => unknown) => () => void;
   }

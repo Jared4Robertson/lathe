@@ -75,3 +75,40 @@ export interface ChatBridge {
   /** Subscribes to the chat's patches; the first is the whole chat, when the window has one. */
   onPatch: (listener: (patch: ChatPatch) => void) => () => void;
 }
+
+// ---------- Voice (LA-PLT-UC20), as desktop/src/voice.ts sends it ----------
+
+/** Whether the window can dictate: on-device recognition there (macOS 26 or later), the microphone's permission, and end-of-turn detection. */
+export interface VoiceSupport {
+  available: boolean;
+  /** Why it cannot, said to the Owner; null when it can. */
+  reason: string | null;
+  microphone: 'granted' | 'denied' | 'restricted' | 'not-determined' | 'unknown';
+  /** Whether the helper reads the voice's pitch for Quick mode; without it, a fixed pause sends. */
+  endOfTurn: boolean;
+}
+
+/** A word heard, with its times in seconds since listening began. */
+export interface VoiceWord { text: string; start: number; end: number }
+
+/** What the shell hears, and whether it listens. Times are seconds since listening began; each start begins them again. */
+export type VoiceEvent =
+  /** Listening began, or stopped: asked to, the window went behind another (it listens only in front), the helper ended, or the microphone was refused or failed. */
+  | { type: 'listening'; on: boolean; why: 'started' | 'stopped' | 'background' | 'ended' | 'denied' | 'failed'; message: string | null }
+  /** The on-device speech model is being installed (the first time only). */
+  | { type: 'preparing' }
+  /** The words so far of the utterance being heard; the recognizer may still change them. */
+  | { type: 'volatile'; text: string }
+  /** An utterance's words, settled, with their times. */
+  | { type: 'final'; words: VoiceWord[] }
+  /** The voice started. */
+  | { type: 'speech'; at: number }
+  /** The voice stopped, with how its pitch moved at the end. */
+  | { type: 'silence'; at: number; pitch: 'falling' | 'rising' | 'level' | null };
+
+export interface VoiceBridge {
+  support: () => Promise<VoiceSupport>;
+  /** Asks the shell to listen, or to stop; it asks macOS for the microphone the first time, and listens only while the window is in front. */
+  listen: (on: boolean) => Promise<'listening' | 'background' | 'denied' | 'unavailable' | 'stopped'>;
+  onEvent: (listener: (event: VoiceEvent) => void) => () => void;
+}
