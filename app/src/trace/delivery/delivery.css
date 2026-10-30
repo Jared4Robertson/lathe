@@ -1,6 +1,6 @@
 /* The Trace stage's Delivery view (LA-V98): its list (DeliveryList.tsx), on a phone and as the canvas's accessible layer, and its key's own samples. */
 .delivery-pick { display: grid; gap: 4px; margin-block-end: 12px; font-size: 0.85rem; color: var(--muted); }
-.delivery-pick select { min-block-size: 44px; font: inherit; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 0 8px; }
+.delivery-pick select { inline-size: 100%; max-inline-size: 100%; min-block-size: 44px; font: inherit; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 0 8px; }
 .delivery-stage { margin-block-end: 16px; }
 .delivery-row-box { display: flex; align-items: stretch; gap: 6px; margin-inline-start: calc(var(--depth, 0) * 14px); }
 .delivery-row-box > .trace-col-row { flex: 1 1 auto; min-inline-size: 0; }
