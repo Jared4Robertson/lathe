@@ -131,3 +131,56 @@
 .chat-input:focus-visible { outline: 2px solid var(--steel); outline-offset: 0; }
 .chat-send:not(:disabled) { color: var(--steel); }
 .chat-stop { color: var(--error); }
+
+/* Voice (LA-V99-R04, voice/VoiceControls.tsx): the Voice menu under the head, the mic button, the line saying
+   what the chat hears, Quick mode's countdown on Send, and what the Owner reads before macOS asks for the microphone. */
+.chat-context-controls { flex: none; display: flex; align-items: center; gap: 4px; }
+.chat-voice { position: relative; flex: none; }
+.chat-voice-button.button { display: inline-flex; align-items: center; gap: 4px; min-height: 26px; padding: 2px 6px; border: 1px solid transparent; border-radius: 6px; background: none; color: var(--muted); font: 600 0.8rem/1.2 var(--body); cursor: pointer; }
+.chat-voice-button:hover { background: var(--hover-bg); color: var(--ink); }
+.chat-voice-button:focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
+.chat-voice-button.is-on { color: var(--steel); border-color: var(--float-border); background: var(--steel-bg); }
+.chat-voice-menu { position: absolute; z-index: 6; top: calc(100% + 4px); right: 0; width: min(320px, calc(var(--chat-width, 400px) - 24px)); max-height: 70vh; overflow-y: auto; display: grid; gap: 8px; padding: 8px 10px; border: 1px solid var(--float-border); border-radius: 8px; background: var(--sheet); box-shadow: var(--float-shadow); font-size: 0.8rem; color: var(--ink); }
+.chat-voice-switch { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; }
+.chat-voice-switch input { flex: none; margin: 2px 0 0; accent-color: var(--steel); }
+.chat-voice-switch-text { display: grid; gap: 1px; }
+.chat-voice-switch-name { font-weight: 600; font-size: 0.84rem; }
+.chat-voice-switch-detail, .chat-voice-note { color: var(--muted); font-size: 0.76rem; }
+.chat-voice-note { margin: 0; }
+.chat-voice-phrases { display: grid; gap: 6px; padding-top: 8px; border-top: 1px solid var(--float-border); }
+.chat-voice-field { display: grid; gap: 2px; }
+.chat-voice-field.is-command { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 8px; }
+.chat-voice-field label { font-weight: 600; }
+.chat-voice-field.is-command label { font-weight: 400; color: var(--muted); }
+.chat-voice-field input { min-width: 0; padding: 3px 6px; border: 1px solid var(--rule); border-radius: 4px; background: var(--paper); color: var(--ink); font: inherit; }
+.chat-voice-field input:focus-visible { outline: 2px solid var(--steel); outline-offset: 0; }
+.chat-voice-wake { display: flex; gap: 6px; }
+.chat-voice-wake input { flex: 1; }
+.chat-voice-problems { margin: 0; padding-left: 16px; color: var(--error); }
+.chat-voice-actions { display: flex; align-items: center; gap: 8px; }
+.chat-voice-saved { color: var(--muted); }
+
+.chat-voice-status { flex: none; display: flex; align-items: center; gap: 6px; padding: 6px 12px 0; font-size: 0.78rem; color: var(--muted); }
+.chat-voice-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.chat-voice-status.is-waiting .chat-voice-dot { background: none; border: 2px solid var(--steel); box-sizing: border-box; }
+.chat-voice-status.is-dictating, .chat-voice-status.is-counting { color: var(--ink); }
+.chat-voice-status.is-dictating .chat-voice-dot { background: var(--error); animation: chat-voice-pulse 1.4s ease-in-out infinite; }
+.chat-voice-status.is-counting .chat-voice-dot { background: var(--steel); }
+@keyframes chat-voice-pulse { 50% { opacity: 0.35; } }
+
+.chat-mic.is-waiting { color: var(--steel); }
+.chat-mic.is-dictating { color: var(--sheet); background: var(--error); }
+.chat-mic.is-dictating:hover { background: var(--error); opacity: 0.9; }
+
+.chat-send.is-counting { position: relative; }
+.chat-send-countdown { position: absolute; inset: 2px; border-radius: 50%; background: conic-gradient(var(--steel) var(--chat-countdown, 0turn), transparent 0); -webkit-mask: radial-gradient(circle, transparent 58%, #000 60%); mask: radial-gradient(circle, transparent 58%, #000 60%); animation-name: chat-send-countdown; animation-timing-function: linear; animation-fill-mode: forwards; pointer-events: none; }
+@property --chat-countdown { syntax: '<angle>'; inherits: false; initial-value: 0turn; }
+@keyframes chat-send-countdown { to { --chat-countdown: 1turn; } }
+
+.chat-voice-intro { flex: none; margin: 8px 12px 0; padding: 8px 10px; border: 1px solid var(--steel); border-radius: 6px; background: var(--sheet); font-size: 0.82rem; color: var(--ink); }
+.chat-voice-intro p { margin: 0 0 8px; }
+.chat-voice-intro-title { font-weight: 700; }
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-voice-status.is-dictating .chat-voice-dot { animation: none; }
+}

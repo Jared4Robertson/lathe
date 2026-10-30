@@ -13,6 +13,8 @@ const tsc = path.join(desktop, 'node_modules', '.bin', 'tsc');
 const args = process.argv.slice(2);
 
 const build = () => spawnSync(tsc, ['-p', 'tsconfig.build.json'], { cwd: desktop, stdio: 'inherit' }).status === 0;
+// The chat's speech helper, once at the start (scripts/speech.ts builds it only when its source changed).
+spawnSync(process.execPath, [path.join(desktop, 'scripts', 'speech.ts')], { cwd: desktop, stdio: 'inherit' });
 
 let electron: ChildProcess | null = null;
 let restarting = false;
