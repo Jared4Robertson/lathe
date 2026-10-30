@@ -1,10 +1,11 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { graphMap } from '../../src/graph/map';
 import { plateOf } from '../../src/graph/plate';
-import { keepLabel, STICKY_READ_PX, stickyLabel, stickyRoom, type ScreenBox } from '../../src/graph/sticky';
-import { TITLE_FONT, textMeasure } from '../../src/graph/text';
+import { keepLabel, labelStrip, STICKY_READ_PX, stickyLabel, stickyRoom, type ScreenBox } from '../../src/graph/sticky';
+import { CHILD_READ_PX, FRAME_PADDING, frameOnMap, STRIP_MOST } from '../../src/graph/camera';
+import { BORDER, LABEL_PAD, TITLE_FONT, textMeasure } from '../../src/graph/text';
 import { testIndex } from './workspace';
+import { graphMap, layoutTree } from './maps';
 
 // A box only partly in the open space draws its label in its visible part, or not at all (graph/sticky.ts, LA-EXP-DS06).
 
@@ -42,8 +43,9 @@ describe('LA-EXP-DS06-T14 a label the open space cuts is laid out in the box\'s 
     expect(title.map((l) => l.text).join('')).toBe(plate.title);
     expect(title[0].px).toBeLessThanOrEqual(own + 1e-9);
     expect(title[0].px).toBeGreaterThanOrEqual(STICKY_READ_PX);
-    // Centered in the visible part of the label's content box (its shape keeps some of the box's right end).
-    const roomRight = X(plate.label.x + plate.label.w);
+    // Centered in the visible part of its room: the label's content box and its side padding but twice a border (its
+    // shape keeps some of the box's right end).
+    const roomRight = X(plate.label.x + plate.label.w + (LABEL_PAD - 2 * BORDER) * plate.text);
     const lefts = s.lines.map((l) => l.x);
     const rights = s.lines.map((l) => l.x + m.em(l.text.trimEnd(), l.face) * l.px);
     expect((Math.min(...lefts) + Math.max(...rights)) / 2).toBeCloseTo((seen.left + roomRight) / 2, 0);
@@ -112,5 +114,34 @@ describe('LA-EXP-DS06-T15 a focused box is never left without its label: the cam
     expect(at(kept).kind).not.toBe('hidden');
     // A pixel less and it would not be drawn.
     expect(at({ ...kept, x: kept.x - 1.5 }).kind).toBe('hidden');
+  });
+});
+
+describe('LA-EXP-DS09-T15 a focus framed as a strip beside its children reads at 11 px or more', () => {
+  it('widens the strip as its label needs, never past its share of the width', () => {
+    // A parent with a long label and many children, whose column is framed at reading size with the parent as a strip.
+    const kids = Array.from({ length: 40 }, (_, i) => `c${i}`);
+    const labelOf = (id: string) => (id === 'p'
+      ? { title: 'Every list that can grow stays at ten rows', meta: 'Pattern · LA-PAT-RECORD-PAGE-WITH-A-LONG-NAME', shape: 'stack' as const, marks: 1, marked: true }
+      : { title: `A rule ${id}`, meta: `Pattern rule · ${id}`, shape: 'stadium' as const });
+    const map = layoutTree(['root'], (id) => (id === 'root' ? ['p', 'q'] : id === 'p' ? kids : []), labelOf);
+    const node = map.nodes.get('p')!;
+    const plate = plateOf(testIndex(), 'p', { view: 'tree', node, plain: { kind: 'pattern', kindLabel: 'Pattern', title: labelOf('p').title, meta: labelOf('p').meta, stage: 'use-cases', dashed: false } });
+    const titlePx = (v: { x: number; y: number; zoom: number }, w: number, h: number) => {
+      const s = stickyLabel(plate, v.zoom, (x) => v.x + x * v.zoom, (y) => v.y + y * v.zoom, { left: 0, top: 0, right: w, bottom: h });
+      if (s.kind === 'placed') return plate.text * v.zoom * TITLE_FONT;
+      return s.kind === 'moved' ? Math.max(...s.lines.filter((l) => l.face === 'title').map((l) => l.px)) : 0;
+    };
+    for (const [w, h] of [[547, 600], [900, 700]]) {
+      const plain = frameOnMap(map, 'p', 1, w, h);
+      const v = frameOnMap(map, 'p', 1, w, h, undefined, labelStrip(plate, h, CHILD_READ_PX));
+      expect(titlePx(v, w, h), `${w} wide`).toBeGreaterThanOrEqual(CHILD_READ_PX - 1e-6);
+      expect(titlePx(v, w, h)).toBeGreaterThanOrEqual(Math.min(CHILD_READ_PX, titlePx(plain, w, h)) - 1e-6);
+      // Its children's column still shows beside the strip, the strip taking no more than its share of the width before
+      // the frame's padding.
+      const child = map.nodes.get('c0')!;
+      expect(child.x * v.zoom + v.x).toBeLessThan(w - 100);
+      expect((node.x + node.w) * v.zoom + v.x).toBeLessThanOrEqual(Math.max(w * STRIP_MOST + FRAME_PADDING, (node.x + node.w) * plain.zoom + plain.x) + 1);
+    }
   });
 });

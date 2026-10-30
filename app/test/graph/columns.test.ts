@@ -1,8 +1,8 @@
 import { recordIndexOf } from '../read-view';
 import { describe, expect, it } from 'vitest';
 import { neighborhood, type Neighborhood } from '../../src/graph/model';
-import { graphMap } from '../../src/graph/map';
 import { groupedWorkspace, testIndex } from './workspace';
+import { graphMap } from './maps';
 
 // Columns follow the parent/child tree: in the one map a level is a column, so every sibling shares
 // one, and the framed picture (the records the graph frames at its depth) counts its columns the same way.
