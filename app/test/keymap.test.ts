@@ -33,7 +33,7 @@ describe('the keymap', () => {
     }
   });
 
-  it('LA-PLT-INV01-T No binding is used twice where both can apply, nor starts a sequence of its own', () => {
+  it('LA-VO61-C03-T No binding is used twice where both can apply, nor starts a sequence of its own', () => {
     for (const mac of [true, false]) expect(duplicateBindings(COMMANDS, mac)).toEqual([]);
     // The check itself finds a clash, including a sequence that starts with a whole binding.
     const clash = [...COMMANDS, { id: 'x', title: 'X', group: 'View' as const, keys: ['Mod+B'], when: 'page' as const }];
