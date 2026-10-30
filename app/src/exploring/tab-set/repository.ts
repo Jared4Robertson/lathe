@@ -32,8 +32,12 @@ export class TabSetRepository extends BrowserRepository<TabSets> {
   }
 
   protected read(): TabSets {
+    const sets = readSets(readPref<unknown>(SETS_KEY, null, isAny, 'session'));
+    // A stored set of another form is dropped from storage too, not only from what is read: stale state never lasts.
+    const raw = storedText(SETS_KEY, 'session');
+    if (raw !== null && raw !== JSON.stringify(sets)) writePref(SETS_KEY, sets, 'session');
     return {
-      sets: readSets(readPref<unknown>(SETS_KEY, null, isAny, 'session')),
+      sets,
       view: readView(readPref<unknown>(VIEW_KEY, null, isAny, 'session')),
       stage: parseStage(readPref<unknown>(STAGE_KEY, null, isAny) as string | null) ?? DEFAULT_STAGE,
       cameras: this.#cameras,
