@@ -1,48 +1,49 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { saveSessionSettings, sessionSettings, SETTINGS_KEY } from '../src/graph/settings';
-import { isNumber, readPref, writePref } from '../src/shell/prefs';
-import { STORAGE_KEYS, themeStore } from '../src/theme/store';
+import { SessionSettingsRepository, SETTINGS_KEY } from '../src/exploring/session-settings/repository';
+import { AppearanceRepository, APPEARANCE_KEYS } from '../src/platform/appearance/repository';
+import { PanelRepository } from '../src/platform/panel/repository';
 import { desktopBridgeStub, openApp } from './helpers';
 
 // Storage tests for the app's browser storage: what local storage (LA-STORE01) keeps in this browser from one launch
 // to the next, where losing it costs only the choice, and what session storage (LA-STORE02) keeps for the session
-// alone. Each writes through the app's own code, then reads back with a fresh read of the browser's storage, as the
-// next launch or the next page of the session does.
+// alone. Each saves through the aggregate's own repository, then loads through a new one, as the next launch or the
+// next page of the session does.
 
 afterEach(() => vi.restoreAllMocks());
 
 describe('LA-PLT-A2-SR01 a panel\'s size and whether it shows are kept in this browser, and losing them is acceptable', () => {
   it('LA-PLT-A2-SR01-T01 a panel\'s width reads back from local storage, and the app works on when storage refuses', () => {
-    writePref('lathe:nav-width', 312);
+    const panels = new PanelRepository().load();
+    new PanelRepository().save({ ...panels, nav: { width: 312, collapsed: true } });
     expect(window.localStorage.getItem('lathe:nav-width')).toBe('312');
     expect(window.sessionStorage.getItem('lathe:nav-width')).toBeNull();
-    expect(readPref('lathe:nav-width', 280, isNumber)).toBe(312);
+    expect(new PanelRepository().load().nav).toEqual({ width: 312, collapsed: true });
     vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => { throw new Error('blocked'); });
-    expect(() => writePref('lathe:nav-width', 400)).not.toThrow();
-    expect(readPref('lathe:nav-width', 280, isNumber)).toBe(280);
+    expect(() => new PanelRepository().save({ ...panels, nav: { width: 400, collapsed: false } })).not.toThrow();
+    expect(new PanelRepository().load()).toEqual(panels);
   });
 });
 
 describe('LA-PLT-A4-SR01 the person\'s themes, chosen theme and color mode are kept in this browser', () => {
   it('LA-PLT-A4-SR01-T01 the themes and choices saved read back from local storage, and a blocked storage loses only the choice', () => {
-    const state = { ...themeStore.load(), custom: [], chosen: 'lathe-dark', mode: 'dark' } as Parameters<typeof themeStore.save>[0];
-    themeStore.save(state, ':root { --page: #000; }');
-    expect(window.localStorage.getItem(STORAGE_KEYS.chosen)).toBe(JSON.stringify('lathe-dark'));
-    expect(themeStore.load()).toMatchObject({ chosen: 'lathe-dark', mode: 'dark' });
+    const appearance = new AppearanceRepository().load();
+    new AppearanceRepository().save({ ...appearance, mode: 'dark' });
+    expect(window.localStorage.getItem(APPEARANCE_KEYS.mode)).toBe(JSON.stringify('dark'));
+    expect(new AppearanceRepository().load()).toMatchObject({ mode: 'dark' });
     vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => { throw new Error('blocked'); });
-    expect(() => themeStore.save({ ...state, mode: 'light' }, '')).not.toThrow();
+    expect(() => new AppearanceRepository().save({ ...appearance, mode: 'light' })).not.toThrow();
   });
 });
 
 describe('LA-EXP-A6-SR01 the session\'s settings are kept for the browser session alone', () => {
   it('LA-EXP-A6-SR01-T01 the settings saved read back from session storage, and none is written to local storage', () => {
-    const settings = sessionSettings();
-    saveSessionSettings({ ...settings, graph: { ...settings.graph, layout: 'nested', minimap: true } });
+    const settings = new SessionSettingsRepository().load();
+    new SessionSettingsRepository().save({ ...settings, graph: { ...settings.graph, layout: 'nested', minimap: true } });
     expect(window.localStorage.getItem(SETTINGS_KEY)).toBeNull();
     expect(JSON.parse(window.sessionStorage.getItem(SETTINGS_KEY)!)).toMatchObject({ layout: 'nested', minimap: true });
-    expect(sessionSettings().graph).toEqual({ layout: 'nested', minimap: true });
+    expect(new SessionSettingsRepository().load().graph).toEqual({ layout: 'nested', minimap: true });
   });
 });
 
