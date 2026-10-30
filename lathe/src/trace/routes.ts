@@ -31,7 +31,7 @@ import type { DuckDBConnection } from '@duckdb/node-api';
 import { otherProductHolds, type LatheConfig } from '../config.ts';
 import type { GapRule } from '../coverage.ts';
 import type { Store } from '../platform/data/store.ts';
-import { keptByText } from '../platform/kept-by-text.ts';
+import { keptByText } from '../platform/data/kept-by-text.ts';
 import { walkFiles } from './source-files.ts';
 
 /** The HTTP methods an endpoint may have, in capitals. */
