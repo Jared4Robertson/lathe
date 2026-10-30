@@ -80,7 +80,7 @@ describe('an obligation\'s chain', () => {
 describe('the matrix under a record or group', () => {
   const { index, traces } = traced(testWorkspace());
 
-  it('LA-V98-R03-T01 A matrix has one row per obligation under the focus, in the nav\'s order, grouped by parent', () => {
+  it('LA-V98-R10-T03 A matrix has one row per obligation under the focus, in the nav\'s order, grouped by parent', () => {
     // A use case: its requirements, under it.
     const uc = traceMatrix(index, traces, 'P-D-UC01');
     expect(uc.map((g) => g.parent?.id)).toEqual(['P-D-UC01']);
@@ -106,7 +106,7 @@ describe('the matrix under a record or group', () => {
     expect(traceMatrix(index, traces, 'P-D-UC01-R01-T01')).toEqual([]);
   });
 
-  it('LA-V98-R03-T07 A business outcome\'s matrix is the obligations under the capabilities serving it, as the tree draws them under it', () => {
+  it('LA-V98-R10-T04 A business outcome\'s matrix is the obligations under the capabilities serving it', () => {
     const data = modelWorkspace();
     addRows(data, 'business_outcome',
       { id: 'P-BO01', title: 'More things lent', product_id: 'P', statement: 'Members borrow more.', measure: 'Loans a month', target: 'Up a tenth' },

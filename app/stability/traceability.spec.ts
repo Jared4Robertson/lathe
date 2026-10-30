@@ -2,9 +2,10 @@ import { expect, test } from '@playwright/test';
 import { openPage } from './measure';
 import { rowsOf, servedWorkspace, testsText } from './flows';
 import { PRODUCT } from './scenarios';
-import { expectKeyWhole, traceDrawn, traceLayout, traceSceneOf } from './scene';
-import type { ColumnScene, ColumnsHost } from '../src/trace/TraceColumns';
-import { TITLE_FONT } from '../src/graph/text';
+import { expectKeyWhole, traceDrawn, traceSceneOf } from './scene';
+import { keepData } from './scenarios';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { openStore } from '../../lathe/src/platform/data/index';
 import { servesOf } from '../../lathe/src/trace/serves';
@@ -19,6 +20,9 @@ import { servesOf } from '../../lathe/src/trace/serves';
 const TRC = 'LA-TRC';
 /** A domain that follows patterns. */
 const EXP = 'LA-EXP';
+const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+/** The CLI over the suite's copy of the data: an Agent's write while the page is open. */
+const lathe = (...args: string[]) => execFileSync('node', [path.join(repo, 'lathe/bin/lathe.ts'), ...args, '--root', process.env.STABILITY_ROOT!], { stdio: 'pipe' }).toString();
 /** A UC requirement with a flow step that fulfills it, in a view, and a test. */
 const REQUIREMENT = 'LA-TRC-UC10-R03';
 const WIKI = '.wiki-panel';
@@ -57,11 +61,9 @@ test.describe('Traceability flows', () => {
   });
 
   test('LA-TRC-UC10-FL01-T trace obligations on the Trace stage', async ({ page }) => {
-    // The tree's scenario (the columns' is LA-V98-R13-T07).
-    await traceLayout(page, 'tree');
     const spec = await servedWorkspace();
     // The chain: the steps that fulfill it, their flows, what they invoke and where they happen, the handlers of what
-    // they invoke, the tests under it and the files those name.
+    // they invoke, the tests under it.
     const steps = rowsOf(spec, 'fulfills').filter((l) => l.target_id === REQUIREMENT).map((l) => String(l.source_id));
     const flows = rowsOf(spec, 'flow_step').filter((s) => steps.includes(String(s.id))).map((s) => String(s.flow_id));
     const operations = rowsOf(spec, 'invokes').filter((l) => steps.includes(String(l.source_id))).map((l) => String(l.target_id));
@@ -72,140 +74,119 @@ test.describe('Traceability flows', () => {
     const pane = page.locator('.focus-stage');
     const column = (name: string) => pane.locator('.trace-column').filter({ has: page.locator('.trace-column-name', { hasText: new RegExp(`^${name}`) }) });
     const ids = (name: string) => column(name).locator('a.card-title code').allTextContents();
-    type Scene = Awaited<ReturnType<typeof traceSceneOf>>;
-    /** The record IDs drawn under a box of the product's tree (by its key) at full strength: under the focus, the rest faded (LA-PAT-APP-UX-R19). */
-    const drawnUnder = (scene: Scene, key: string) => {
-      const parent = new Map(scene.boxes.map((b) => [b.key, b.parent]));
-      const below = (k: string) => { for (let at = parent.get(k) ?? null; at !== null; at = parent.get(at) ?? null) if (at === key) return true; return false; };
-      return [...new Set(scene.boxes.filter((b) => b.strength === 1 && below(b.key)).map((b) => b.id))].sort();
-    };
-    // S01, S02: the requirement's Trace stage: the camera on its box in the product's tree, its chain to its right, its use case its parent, and the same in the table under it.
+    // S01, S02: the requirement's Trace stage: its box in the Obligations column, its use case to its left with a line to
+    // it, what builds it and its tests to its right with lines from it, framed; the same chain in the table under it.
     const useCase = String(rowsOf(spec, 'uc_requirement').find((r) => r.id === REQUIREMENT)!.use_case_id);
     await openPage(page, `/${REQUIREMENT}?stage=trace`);
     await traceDrawn(page);
     const chain = await traceSceneOf(page, true);
-    const idOf = (scene: Scene, key: string | null) => scene.boxes.find((b) => b.key === key)?.id;
-    expect([...new Set(chain.boxes.filter((b) => b.focus).map((b) => b.id))]).toEqual([REQUIREMENT]);
-    // Each copy of the requirement under its use case, the use case under an outcome its capability serves.
-    const requirementKey = chain.boxes.find((b) => b.id === REQUIREMENT)!.key;
-    const ucBox = chain.boxes.find((b) => b.key === chain.boxes.find((r) => r.key === requirementKey)!.parent)!;
-    expect(ucBox.id).toBe(useCase);
-    expect(chain.boxes.find((b) => b.key === ucBox.parent)!.kind).toBe('business_outcome');
+    expect(chain.columns.map((c) => c.name)).toEqual(['Outcomes', 'Use cases', 'Obligations', 'Built by', 'Proved by']);
+    expect(chain.boxes.filter((b) => b.focus).map((b) => b.key)).toEqual([REQUIREMENT]);
+    expect(new Set(chain.boxes.map((b) => b.key)).size, 'each record once').toBe(chain.boxes.length);
+    const lines = chain.lines.map((l) => `${l.kind}:${l.from}>${l.to}`);
+    expect(lines).toContain(`reaches:${useCase}>${REQUIREMENT}`);
+    for (const h of handlers) expect(lines, h).toContain(`built:${REQUIREMENT}>${h}`);
+    for (const t of tests) expect(lines, t).toContain(`proved:${REQUIREMENT}>${t}`);
     const own = (await traceSceneOf(page)).boxes.find((b) => b.focus)!;
     expect(own.rect.left >= chain.canvas.left && own.rect.left + own.rect.width <= chain.canvas.left + chain.canvas.width, 'the camera frames the requirement').toBe(true);
-    expect(drawnUnder(chain, requirementKey)).toEqual(expect.arrayContaining([...new Set([...steps, ...flows, ...views, ...operations, ...handlers, ...tests])]));
-    expect(chain.lines.some((l) => l.link && l.source === requirementKey && tests.some((t) => l.target === `${requirementKey}|${t}`))).toBe(true);
     await expect(pane.locator('.trace-access [aria-current="page"]')).toContainText(REQUIREMENT);
     expect((await ids('Design')).sort()).toEqual([...new Set([...steps, ...flows, ...views, ...operations])].sort());
     expect((await ids('Tests')).sort()).toEqual([...tests].sort());
-    // S03: the use case's tree, a box per requirement under each copy at full strength, framed; then an outcome's, the use
-    // cases of the capabilities serving it; then the domain's, under Not under an outcome.
+    // S03: the use case's path: its requirements lit, the rest faded; then an outcome's, a line to each use case of the
+    // capabilities serving it; then the domain, which has no box: the table's matrix around it.
     const requirements = rowsOf(spec, 'uc_requirement').filter((r) => r.use_case_id === useCase).map((r) => String(r.id));
     await openPage(page, `/${useCase}?stage=trace`);
-    await traceDrawn(page);
+    await traceDrawn(page, 900);
     const uc = await traceSceneOf(page, true);
-    const ucKey = uc.boxes.find((b) => b.id === useCase)!.key;
-    expect(uc.boxes.filter((b) => b.parent === ucKey && b.strength === 1).map((b) => b.id).sort()).toEqual([...requirements].sort());
-    expect(uc.boxes.filter((b) => b.id === useCase).every((b) => b.focus)).toBe(true);
+    for (const r of requirements) expect(uc.boxes.find((b) => b.key === r)!.strength, r).toBe(1);
+    expect(uc.boxes.some((b) => b.strength < 1), 'off the path, faded').toBe(true);
     const rows = pane.locator('.trace-matrix tbody tr:not(.group-row)');
     await expect(rows).toHaveCount(requirements.length);
-    const outcome = idOf(chain, ucBox.parent)!;
+    const capability = String(rowsOf(spec, 'use_case').find((u) => u.id === useCase)!.capability_id);
+    const outcome = rowsOf(spec, 'serves').filter((l) => l.source_id === capability).map((l) => String(l.target_id)).sort()[0];
     const serving = rowsOf(spec, 'serves').filter((l) => l.target_id === outcome).map((l) => String(l.source_id));
     await openPage(page, `/${outcome}?stage=trace`);
     await traceDrawn(page);
     const outcomeScene = await traceSceneOf(page, true);
     await expectKeyWhole(page);
     const servedUseCases = rowsOf(spec, 'use_case').filter((u) => serving.includes(String(u.capability_id))).map((u) => String(u.id));
-    const underOutcome = outcomeScene.boxes.filter((b) => b.parent === outcome);
-    expect(underOutcome.map((b) => b.id)).toContain(useCase);
-    for (const b of underOutcome) expect(servedUseCases, b.id).toContain(b.id);
+    expect(outcomeScene.lines.filter((l) => l.kind === 'serves' && l.from === outcome).map((l) => l.to).sort()).toEqual([...servedUseCases].sort());
     await openPage(page, `/${TRC}?stage=trace`);
     await traceDrawn(page);
     const domain = await traceSceneOf(page, true);
-    expect(domain.boxes.find((b) => b.key === TRC)).toMatchObject({ focus: true, parent: 'outside' });
-    expect(domain.boxes.filter((b) => b.parent === TRC).every((b) => b.strength === 1)).toBe(true);
-    expect(domain.boxes.some((b) => b.kind === 'capability'), 'no capability is drawn').toBe(false);
+    expect(domain.boxes.some((b) => b.focus), 'a domain has no box').toBe(false);
+    expect(domain.boxes.some((b) => b.kind === 'capability' || b.kind === 'domain'), 'no capability or domain is drawn').toBe(false);
     expect(await pane.locator('.trace-matrix tr.group-row').count()).toBeGreaterThan(1);
-    // S04: Gaps only fades the complete branches and keeps every box in its place; each gap's box at full strength. The table keeps the rows with one.
+    // S04: Gaps only fades what is off the gaps' paths and keeps every box in its place; each gap's box at full strength. The table keeps the rows with one.
     const before = (await traceSceneOf(page, true)).boxes.length;
     await pane.getByRole('checkbox', { name: 'Gaps only' }).check();
     await traceDrawn(page);
     const gapped = await traceSceneOf(page, true);
     expect(gapped.boxes.length, 'no box is taken out').toBe(before);
     expect(gapped.boxes.filter((b) => b.role === 'gap').every((b) => b.dashed && b.strength === 1)).toBe(true);
-    expect(gapped.boxes.some((b) => b.role === 'record' && b.strength < 1), 'the complete branches are faded').toBe(true);
+    expect(gapped.boxes.some((b) => b.role === 'record' && b.strength < 1), 'the complete paths are faded').toBe(true);
     const left = await rows.count();
     for (let i = 0; i < Math.min(left, 20); i++) await expect(rows.nth(i).locator('td.is-gap').first()).toBeAttached();
-    // The arrows walk the tree as the Graph's Tree (LA-V61-R49): from the requirement, Right goes in to the first of its chain, Left back out.
+    // The arrows walk the view (LA-V61-R49): from the requirement, Left goes along a link to a use case reaching it, Right back to a box it links to.
     await openPage(page, `/${REQUIREMENT}?stage=trace`);
     await traceDrawn(page);
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
-    await page.keyboard.press('ArrowRight');
-    await page.waitForURL((u) => u.pathname !== `/${REQUIREMENT}`);
-    expect([...flows, ...steps, ...views, ...operations, ...tests]).toContain(decodeURIComponent(new URL(page.url()).pathname.slice(1)));
     await page.keyboard.press('ArrowLeft');
-    await page.waitForURL((u) => u.pathname === `/${REQUIREMENT}`);
-    // Every stage works on every focus (LA-PAT-APP-UX-R17): on a step, its copy in each chain that holds it drawn as the focus, the requirement's among them.
+    await page.waitForURL((u) => u.pathname !== `/${REQUIREMENT}`);
+    const reachedBy = chain.lines.filter((l) => l.kind === 'reaches' && l.to === REQUIREMENT).map((l) => l.from);
+    expect(reachedBy).toContain(decodeURIComponent(new URL(page.url()).pathname.slice(1)));
+    // Every stage works on every focus (LA-PAT-APP-UX-R17): a step, which the view does not draw, marked in the table's rows that hold it.
     await openPage(page, `/${steps[0]}?stage=trace`);
     await traceDrawn(page);
-    const held = await traceSceneOf(page, true);
-    const focused = held.boxes.filter((b) => b.focus);
-    expect(focused.every((b) => b.id === steps[0] && b.strength === 1)).toBe(true);
-    expect(focused.some((b) => b.key === `${requirementKey}|${steps[0]}`)).toBe(true);
+    expect((await traceSceneOf(page, true)).boxes.some((b) => b.focus)).toBe(false);
     await expect(pane.locator('.trace-matrix td [aria-current="page"]').first()).toContainText(steps[0]);
   });
 
-  test('LA-V98-R13-T07 the Trace stage as columns: the path to a requirement readable, the walk and a click moving along it, the tree a click away', async ({ page }) => {
+  test('LA-V98-R08-T04 focusing an outcome or a test lights its whole path both ways and fades the rest; hovering a box lights its path', async ({ page }) => {
     const spec = await servedWorkspace();
+    const test0 = rowsOf(spec, 'use_case_test').find((t) => t.uc_requirement_id === REQUIREMENT)!;
     const useCase = String(rowsOf(spec, 'uc_requirement').find((r) => r.id === REQUIREMENT)!.use_case_id);
     const capability = String(rowsOf(spec, 'use_case').find((u) => u.id === useCase)!.capability_id);
-    // The first outcome the capability serves: the requirement's first place, under that outcome and its use case.
-    const outcome = rowsOf(spec, 'serves').filter((l) => l.source_id === capability).map((l) => String(l.target_id)).sort()[0];
-    const ucKey = `${outcome}|${useCase}`;
-    const requirementKey = `${outcome}|${REQUIREMENT}`;
-    const requirements = rowsOf(spec, 'uc_requirement').filter((r) => r.use_case_id === useCase);
-    const pane = page.locator('.focus-stage');
-    const columnsOf = (whole = false): Promise<ColumnScene> => page.evaluate((w) => (document.querySelector('.focus-stage .trace-flow') as ColumnsHost).traceScene!(w), whole);
-    await openPage(page, `/${REQUIREMENT}?stage=trace`);
-    await traceDrawn(page);
-    await expect(pane.locator('.trace-flow')).toHaveAttribute('data-layout', 'columns');
-    // S01: a column for each box on the path from the product (outcome, use case, requirement), each chosen box the next
-    // one on it, the requirement's chain last.
-    const whole = await columnsOf(true);
-    expect(whole.columns.map((c) => c.parent).slice(0, 4)).toEqual(['LA', outcome, ucKey, requirementKey]);
-    expect(whole.boxes.filter((b) => b.chosen).map((b) => b.key)).toEqual([outcome, ucKey, requirementKey]);
-    expect(whole.boxes.find((b) => b.key === ucKey)!.count).toBe(requirements.length);
-    // The column above the use case's compact, its boxes titles alone; the rest one size; every title at 11 px at least.
-    expect(whole.columns.map((c) => c.compact).slice(0, 4)).toEqual([true, false, false, false]);
-    expect(new Set(whole.boxes.filter((b) => !b.compact).map((b) => `${Math.round(b.rect.width)}x${Math.round(b.rect.height)}`)).size).toBe(1);
-    for (const b of whole.boxes) expect(b.textScale * TITLE_FONT * whole.camera.zoom, b.key).toBeGreaterThanOrEqual(11);
-    // In view: the requirement's box and its chain's column whole, the use case's column beside them.
-    const now = await columnsOf();
-    const shows = (b: ColumnScene['boxes'][number]) => b.rect.left >= now.canvas.left && b.rect.left + b.rect.width <= now.canvas.left + now.canvas.width && b.rect.top + b.rect.height <= now.canvas.top + now.canvas.height;
-    expect(shows(now.boxes.find((b) => b.focus)!), 'the requirement is in view').toBe(true);
-    expect(now.boxes.some((b) => b.column === whole.columns.length - 1 && shows(b)), 'its chain is in view').toBe(true);
-    // S02: the walk: Right in to the first of its chain, a column more; Left back out.
-    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
-    await page.keyboard.press('ArrowRight');
-    await page.waitForURL((u) => u.pathname !== `/${REQUIREMENT}`);
-    await traceDrawn(page);
-    expect((await columnsOf(true)).boxes.filter((b) => b.chosen).map((b) => b.key)).toContain(requirementKey);
-    await page.keyboard.press('ArrowLeft');
-    await page.waitForURL((u) => u.pathname === `/${REQUIREMENT}`);
-    // S03: a click on a sibling requirement's box focuses it, on the same stage.
-    await traceDrawn(page);
-    const sibling = (await columnsOf()).boxes.find((b) => b.parent === ucKey && b.key !== requirementKey)!;
-    await page.mouse.click(sibling.rect.left + sibling.rect.width / 2, sibling.rect.top + sibling.rect.height / 2);
-    await page.waitForURL((u) => u.pathname === `/${sibling.id}`);
-    expect(new URL(page.url()).searchParams.get('stage')).toBe('trace');
-    // S04: Tree draws the same focus on the product's tree; v brings the columns back.
-    await pane.getByRole('group', { name: 'Layout' }).getByRole('button', { name: 'Tree' }).click();
-    await expect(pane.locator('.trace-flow:not([data-layout])')).toHaveAttribute('data-ready', 'true');
-    await traceDrawn(page);
-    expect((await traceSceneOf(page, true)).boxes.filter((b) => b.focus).map((b) => b.id)).toContain(sibling.id);
-    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
-    await page.keyboard.press('v');
-    await expect(pane.locator('.trace-flow')).toHaveAttribute('data-layout', 'columns');
+    const outcomes = rowsOf(spec, 'serves').filter((l) => l.source_id === capability).map((l) => String(l.target_id));
+    // An outcome: its use cases, their obligations and what builds and proves them lit; another outcome faded.
+    await openPage(page, `/${outcomes[0]}?stage=trace`);
+    await traceDrawn(page, 900);
+    const lit = await traceSceneOf(page, true);
+    for (const k of [outcomes[0], useCase, REQUIREMENT, String(test0.id)]) expect(lit.boxes.find((b) => b.key === k)!.strength, k).toBe(1);
+    expect(lit.boxes.some((b) => b.column === 0 && b.key !== outcomes[0] && b.strength < 1), 'another outcome faded').toBe(true);
+    expect(lit.lines.filter((l) => l.lit).some((l) => l.from === outcomes[0] && l.to === useCase)).toBe(true);
+    // A test: back to its requirement, the use cases reaching it and their outcomes; its siblings faded.
+    await openPage(page, `/${test0.id}?stage=trace`);
+    await traceDrawn(page, 900);
+    const back = await traceSceneOf(page, true);
+    for (const k of [String(test0.id), REQUIREMENT, useCase, ...outcomes]) expect(back.boxes.find((b) => b.key === k)!.strength, k).toBe(1);
+    expect(back.boxes.filter((b) => b.column === 4 && b.key !== test0.id).every((b) => b.strength < 1)).toBe(true);
+    // Hovering the requirement lights its path while the pointer is on it.
+    const box = (await traceSceneOf(page)).boxes.find((b) => b.key === REQUIREMENT)!;
+    await page.mouse.move(box.rect.left + box.rect.width / 2, box.rect.top + box.rect.height / 2);
+    await expect.poll(async () => (await traceSceneOf(page, true)).boxes.find((b) => b.key === useCase)?.lit).toBe(true);
+    expect((await traceSceneOf(page, true)).boxes.find((b) => b.key === REQUIREMENT)!.hover).toBe(true);
+  });
+
+  test('LA-V98-R12-T03 a record added while the Trace is open keeps every column\'s order and the camera, the new box in its place', async ({ page }) => {
+    const restore = keepData();
+    try {
+      const useCase = String(rowsOf(await servedWorkspace(), 'uc_requirement').find((r) => r.id === REQUIREMENT)!.use_case_id);
+      await openPage(page, `/${REQUIREMENT}?stage=trace`);
+      await traceDrawn(page, 900);
+      const before = await traceSceneOf(page, true);
+      const order = (scene: typeof before) => [0, 1, 2, 3, 4].map((c) => scene.boxes.filter((b) => b.column === c).sort((a, b) => a.rect.top - b.rect.top).map((b) => b.key));
+      const added = `${useCase}-R98`;
+      lathe('add', 'uc_requirement', '--id', added, '--title', 'Added while the Reader watched', '--use_case_id', useCase, '--statement', 'A box added MUST keep the others in their order.');
+      await expect.poll(async () => (await traceSceneOf(page, true)).boxes.some((b) => b.key === added), { timeout: 20_000 }).toBe(true);
+      await page.waitForTimeout(900);
+      const after = await traceSceneOf(page, true);
+      expect(after.camera, 'the camera stays put').toEqual(before.camera);
+      const was = order(before);
+      order(after).forEach((c, i) => expect(c.filter((k) => k !== added), `column ${i}`).toEqual(was[i]));
+    } finally {
+      restore();
+    }
   });
 
   test('LA-TRC-UC11-FL01-T see every obligation kind and test state', async ({ page }) => {

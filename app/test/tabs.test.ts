@@ -36,7 +36,7 @@ const stepTab = (set: TabSet, key: string, to: number) => on(set, step, { key, t
 const duplicateTab = (set: TabSet, key: string) => on(set, duplicate, { key });
 const updateView = (set: TabSet, _key: string, change: (v: PlaceView) => PlaceView) => on(set, changeView, { change });
 
-const view: PlaceView = { depth: 2, hiddenKinds: ['term'], card: { open: false, expanded: true } };
+const view: PlaceView = { depth: 2, hiddenKinds: ['term'], trace: 'delivery', card: { open: false, expanded: true } };
 const at = (set: TabSet) => set.tabs.map((t) => `${hereOf(t.place).address}${t.key === set.active ? '<' : ''}`);
 /** Two tabs, A and B, B active. */
 const two = () => newTab(newTab(emptyTabs(), '/A?stage=graph', DEFAULT_VIEW), '/B?stage=erd', view);
@@ -157,7 +157,7 @@ describe('the tab model', () => {
     const stored = {
       active: 't9',
       tabs: [
-        { key: 't1', place: { history: [{ address: '/A', note: { cardScroll: 12 } }, { address: '/bad' }, { address: '/C', note: [] }], at: 2, view: { depth: 7, hiddenKinds: ['x', 3], card: { open: false } } } },
+        { key: 't1', place: { history: [{ address: '/A', note: { cardScroll: 12 } }, { address: '/bad' }, { address: '/C', note: [] }], at: 2, view: { depth: 7, hiddenKinds: ['x', 3], trace: 'tree', card: { open: false } } } },
         { key: 't1', place: { history: [{ address: '/dup' }], at: 0 } },
         { key: 't2', place: { history: [{ address: '/bad' }], at: 0 } },
         { key: 't3', place: 'nope' },
@@ -165,7 +165,7 @@ describe('the tab model', () => {
       ] };
     expect(parseTabSet(stored, isPage)).toEqual({
       active: 't1',
-      tabs: [{ key: 't1', place: { history: [{ address: '/A', note: { cardScroll: 12 } }, { address: '/C', note: {} }], at: 1, view: { depth: 1, hiddenKinds: ['x'], card: { open: false, expanded: false } } } }] });
+      tabs: [{ key: 't1', place: { history: [{ address: '/A', note: { cardScroll: 12 } }, { address: '/C', note: {} }], at: 1, view: { depth: 1, hiddenKinds: ['x'], trace: 'all-at-once', card: { open: false, expanded: false } } } }] });
     expect(parseTabSet({ tabs: [] }, isPage)).toBeNull();
     expect(parseTabSet('x', isPage)).toBeNull();
     expect(readPlace({ history: [{ address: '/bad' }], at: 0 }, isPage)).toBeNull();
