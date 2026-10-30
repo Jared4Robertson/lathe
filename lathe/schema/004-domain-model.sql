@@ -1,6 +1,7 @@
 -- The domain model: domains, aggregates, entities, value objects and the fields of each, the four kinds of rule
--- (constraint, invariant, specification, policy), domain events, commands, read models, queries, domain services and
--- glossary terms. Each record has exactly one parent, except value objects and specifications, which have no owner.
+-- (constraint, invariant, specification, policy), domain events, commands, read models, queries, domain services,
+-- storage requirements and glossary terms. Each record has exactly one parent, except value objects and specifications,
+-- which have no owner.
 
 CREATE TYPE subdomain_type AS ENUM ('core', 'supporting', 'generic');
 -- The basic types a field may have, in place of a value object or a reference to an aggregate.
@@ -185,6 +186,21 @@ COMMENT ON COLUMN domain_service.title IS 'What it works out, such as Late fee.'
 COMMENT ON COLUMN domain_service.domain_id IS 'The domain it belongs to.';
 COMMENT ON COLUMN domain_service.statement IS 'What it must work out, from what, stated with MUST, SHOULD or MAY.';
 
+CREATE TABLE storage_requirement (
+  id VARCHAR PRIMARY KEY REFERENCES record_id (id),
+  title VARCHAR NOT NULL CHECK (trim(title) <> ''),
+  aggregate_id VARCHAR REFERENCES aggregate (id),
+  read_model_id VARCHAR REFERENCES read_model (id),
+  statement VARCHAR NOT NULL CHECK (trim(statement) <> ''),
+  CHECK ((aggregate_id IS NULL) <> (read_model_id IS NULL))
+);
+COMMENT ON TABLE storage_requirement IS 'What the business needs kept of one aggregate or read model, its parent, and how well: whichever apply of durability (it survives a restart or a crash), atomicity (saved whole or not at all, such as a loan with its outbox event), retention and deletion (how long it is kept, and deleted on request), recovery (backups, and how much may be lost) and capacity (how much, how fast). It is built by its aggregate''s repository, or its read model''s reader, naming a file that exists and the data store it is stored in, and proved by its storage requirement tests.';
+COMMENT ON COLUMN storage_requirement.id IS 'The requirement''s ID: its aggregate''s or read model''s ID and SR<nn>, such as TL-LEND-A1-SR01.';
+COMMENT ON COLUMN storage_requirement.title IS 'The requirement in a few words, such as A loan is saved with its outbox event.';
+COMMENT ON COLUMN storage_requirement.aggregate_id IS 'The aggregate whose data it is about; exactly one of aggregate and read model is given.';
+COMMENT ON COLUMN storage_requirement.read_model_id IS 'The read model whose data it is about; exactly one of aggregate and read model is given.';
+COMMENT ON COLUMN storage_requirement.statement IS 'What must be kept and how well, stated with MUST, MUST NOT, SHOULD or MAY.';
+
 CREATE TABLE term (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
@@ -330,7 +346,8 @@ INSERT INTO meta_kind VALUES
   ('query', 'Query', 'domain-model', 13, false, '<P>-<D>-QRY<nn>', 'TL-LEND-QRY01', 'domain', NULL),
   ('policy', 'Policy', 'domain-model', 14, true, '<P>-<D>-PO<nn>', 'TL-LEND-PO01', 'domain', NULL),
   ('domain_service', 'Domain service', 'domain-model', 15, true, '<P>-<D>-DS<nn>', 'TL-LEND-DS01', 'domain', NULL),
-  ('term', 'Term', 'domain-model', 16, false, '<P>-<D>-TM<nn>', 'TL-LEND-TM01', 'domain', NULL);
+  ('storage_requirement', 'Storage requirement', 'domain-model', 16, true, '<aggregate or read model>-SR<nn>', 'TL-LEND-A1-SR01', 'parent', NULL),
+  ('term', 'Term', 'domain-model', 17, false, '<P>-<D>-TM<nn>', 'TL-LEND-TM01', 'domain', NULL);
 INSERT INTO meta_kind_parent VALUES
   ('domain', 'product', 1, 'product_id'),
   ('aggregate', 'domain', 1, 'domain_id'),
@@ -343,6 +360,8 @@ INSERT INTO meta_kind_parent VALUES
   ('query', 'read_model', 1, 'read_model_id'),
   ('policy', 'command', 1, 'command_id'),
   ('domain_service', 'domain', 1, 'domain_id'),
+  ('storage_requirement', 'aggregate', 1, 'aggregate_id'),
+  ('storage_requirement', 'read_model', 2, 'read_model_id'),
   ('term', 'domain', 1, 'domain_id');
 INSERT INTO meta_table VALUES
   ('domain', 'kind', NULL), ('aggregate', 'kind', NULL), ('entity', 'kind', NULL), ('entity_field', 'part', 'entity_id'),
@@ -350,4 +369,4 @@ INSERT INTO meta_table VALUES
   ('invariant', 'kind', NULL), ('specification', 'kind', NULL), ('domain_event', 'kind', NULL),
   ('event_field', 'part', 'domain_event_id'), ('command', 'kind', NULL), ('command_change', 'part', 'command_id'), ('read_model', 'kind', NULL),
   ('read_model_field', 'part', 'read_model_id'), ('query', 'kind', NULL), ('policy', 'kind', NULL),
-  ('domain_service', 'kind', NULL), ('term', 'kind', NULL);
+  ('domain_service', 'kind', NULL), ('storage_requirement', 'kind', NULL), ('term', 'kind', NULL);

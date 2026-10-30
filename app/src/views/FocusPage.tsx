@@ -3,7 +3,11 @@ import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRe
 import { Icon } from '../components/icons';
 import { ResizeHandle } from '../components/ResizeHandle';
 import { expandAllOnPage } from '../components/TreeList';
-import { CARD_MAX, CARD_MIN, DEFAULT_GRAPH_SETTINGS, useSessionSettings } from '../graph/settings';
+import { CARD_MAX, CARD_MIN, DEFAULT_GRAPH_SETTINGS } from '../exploring/session-settings/model';
+import { useSessionSettings } from '../exploring/session-settings/use-session-settings';
+import { chooseGraphLayout } from '../exploring/session-settings/commands/choose-graph-layout';
+import { showOrHideMinimap } from '../exploring/session-settings/commands/show-or-hide-minimap';
+import { resizeWikiCard } from '../exploring/session-settings/commands/resize-wiki-card';
 import type { GraphSettings } from '../graph/GraphPage';
 import { isGroup } from '../graph/model';
 import { Link, navigate, onLeaveEntry } from '../router';
@@ -18,8 +22,10 @@ import { createOpenSpaceStore, usePageRoom, useOpenSpaceMeasure, useRoom } from 
 import { PageActions, PageBar, STAGE_COMMANDS } from './PageBar';
 import { createPeekStore } from './peek';
 import { TAB_PANEL_ID, tabId, tabLabel } from './TabStrip';
-import { rememberedStage, rememberStage, useNewPlaceOpener, usePlace, withStageIn, type TabsApi } from './usePlace';
+import { rememberedStage, useNewPlaceOpener, usePlace, withStageIn, type TabsApi } from './usePlace';
 import { hereOf, type PlaceView } from './place';
+import { runTabSetCommand } from '../exploring/tab-set/run';
+import { rememberStage } from '../exploring/tab-set/commands/remember-stage';
 import { takeMenuRecord } from '../shell/desktopRecord';
 import { usePreview } from './preview';
 import { WikiCard } from './WikiCard';
@@ -42,7 +48,7 @@ import { useLiveVersion } from '../changes/marks';
 //
 // The page shows one place (usePlace.ts): on the web the browser tab's, in the desktop app the active tab's (useTabs.ts),
 // each with its own stage, focus, camera, depth, filters, wiki card and history. How the graph is laid out, the
-// minimap and the wiki card's width are the window's, not a place's (graph/settings.ts).
+// minimap and the wiki card's width are the window's, not a place's (exploring/session-settings).
 
 const GraphView = lazy(() => import('../graph/GraphPage').then((m) => ({ default: m.GraphView })));
 const ErdView = lazy(() => import('../erd/ErdView').then((m) => ({ default: m.ErdView })));
@@ -144,13 +150,13 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
   const setStage = useCallback((next: StageName) => {
     if (next === stage) return;
     // A phone's switch leaves the stage remembered for a wide screen alone.
-    if (!narrow) rememberStage(next);
+    if (!narrow) runTabSetCommand(rememberStage, { stage: next });
     navigate(withStageIn(place.address, next), true);
     announce(`${STAGE_LABELS[next]} stage`);
   }, [stage, narrow, place.address, announce]);
   // The stage a link names becomes the one remembered, for the first tab of a new session.
   const linked = stageFromSearch(search);
-  useEffect(() => { if (linked && !narrow) rememberStage(linked); }, [linked, narrow]);
+  useEffect(() => { if (linked && !narrow) runTabSetCommand(rememberStage, { stage: linked }); }, [linked, narrow]);
   // Focus lost with the stage it was on (a key switched the stage) lands on the new stage's button
   // in the switch. On a first load focus stays at the start, where Tab finds the skip link.
   const shownStage = useRef(stage);
@@ -173,18 +179,19 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
   // How the graph is laid out, the minimap and the wiki card's width are the window's, whatever the place; the depth,
   // the kind filters and the card's open and expanded state are the place's (LA-V93-R72): moving through the stage
   // never changes either.
-  const { graph: look, setGraph, card, setCard } = useSessionSettings();
+  const { graph: look, card } = useSessionSettings();
   const { view, setView } = place;
   const filters = useMemo(() => ({ hiddenKinds: new Set(view.hiddenKinds) }), [view.hiddenKinds]);
   const settings = useMemo<GraphSettings>(() => ({ ...look, depth: view.depth, filters }), [look, view.depth, filters]);
   const onSettings = useCallback((next: GraphSettings) => {
-    setGraph({ layout: next.layout, minimap: next.minimap });
+    chooseGraphLayout({ layout: next.layout });
+    showOrHideMinimap({ shown: next.minimap });
     setView((v) => {
       const kinds = [...next.filters.hiddenKinds];
       const same = next.depth === v.depth && kinds.length === v.hiddenKinds.length && kinds.every((k) => v.hiddenKinds.includes(k));
       return same ? v : { ...v, depth: next.depth, hiddenKinds: kinds };
     });
-  }, [setGraph, setView]);
+  }, [setView]);
   const setCardView = useCallback((patch: Partial<PlaceView['card']>) => setView((v) => (
     Object.entries(patch).every(([k, x]) => v.card[k as keyof PlaceView['card']] === x) ? v : { ...v, card: { ...v.card, ...patch } }
   )), [setView]);
@@ -214,8 +221,8 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
   const cardExpanded = preview === null && view.card.expanded;
   // Made once per width, so the memoized card draws again only for a new page.
   const cardHandle = useMemo(() => (
-    <CardHandle width={card.width} onWidth={(width) => setCard({ width })} onReset={() => setCard({ width: null })} onCollapse={collapseCard} />
-  ), [card.width, setCard, collapseCard]);
+    <CardHandle width={card.width} onWidth={(width) => resizeWikiCard({ width })} onReset={() => resizeWikiCard({ width: null })} onCollapse={collapseCard} />
+  ), [card.width, collapseCard]);
   useEffect(() => { setSheet(false); }, [narrow]);
 
   // What the page shows, for Claude's app_focus tool in the desktop chat (LA-PLT-UC19-R06).

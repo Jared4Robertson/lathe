@@ -12,7 +12,7 @@
 {"id":"LA-EXP-DS11-SV","title":"erdMap","domain_service_id":"LA-EXP-DS11","file":"app/src/erd/erd.ts"}
 {"id":"LA-PLT-DS01-SV","title":"formatBinding","domain_service_id":"LA-PLT-DS01","file":"app/src/shell/keymap.ts"}
 {"id":"LA-PLT-DS02-SV","title":"auditContrast","domain_service_id":"LA-PLT-DS02","file":"app/src/theme/audit.ts"}
-{"id":"LA-PLT-DS03-SV","title":"windowFor","domain_service_id":"LA-PLT-DS03","file":"desktop/src/windowState.ts"}
+{"id":"LA-PLT-DS03-SV","title":"windowFor","domain_service_id":"LA-PLT-DS03","file":"desktop/src/product-window/model.ts"}
 {"id":"LA-PLT-DS04-SV","title":"openOnLaunch","domain_service_id":"LA-PLT-DS04","file":"desktop/src/main.ts"}
 {"id":"LA-TRC-DS01-SV","title":"mentionsId","domain_service_id":"LA-TRC-DS01","file":"lathe/src/index.ts"}
 {"id":"LA-TRC-DS02-SV","title":"ALLOWED_LEVELS","domain_service_id":"LA-TRC-DS02","file":"lathe/src/coverage.ts"}

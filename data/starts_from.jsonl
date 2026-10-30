@@ -231,6 +231,8 @@
 {"source_id":"LA-AUT-UC30-R01-T51","target_id":"LA-AUT-TD121"}
 {"source_id":"LA-AUT-UC30-R01-T52","target_id":"LA-AUT-TD121"}
 {"source_id":"LA-AUT-UC30-R01-T53","target_id":"LA-AUT-TD121"}
+{"source_id":"LA-AUT-UC31-R50-T01","target_id":"LA-AUT-TD130"}
+{"source_id":"LA-AUT-UC32-R50-T01","target_id":"LA-AUT-TD131"}
 {"source_id":"LA-CHK-DS01-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-CHK-INV01-T","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-CHK-INV02-T","target_id":"LA-AUT-TD02"}
@@ -357,12 +359,6 @@
 {"source_id":"LA-EXP-DS10-T07","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-EXP-DS10-T08","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-EXP-DS11-T01","target_id":"LA-EXP-TD01"}
-{"source_id":"LA-EXP-INV01-T","target_id":"LA-EXP-TD01"}
-{"source_id":"LA-EXP-INV02-T","target_id":"LA-EXP-TD01"}
-{"source_id":"LA-EXP-INV03-T","target_id":"LA-EXP-TD01"}
-{"source_id":"LA-EXP-INV04-T","target_id":"LA-EXP-TD01"}
-{"source_id":"LA-EXP-INV05-T","target_id":"LA-EXP-TD01"}
-{"source_id":"LA-EXP-INV09-T","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-EXP-PO01-T","target_id":"LA-EXP-TD02"}
 {"source_id":"LA-EXP-PO02-T","target_id":"LA-EXP-TD02"}
 {"source_id":"LA-EXP-PO03-T","target_id":"LA-EXP-TD02"}
@@ -397,6 +393,12 @@
 {"source_id":"LA-PAT-AGGREGATE-COMMANDS-R02-T01","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-PAT-AGGREGATE-COMMANDS-R02-T02","target_id":"LA-CHK-TD01"}
 {"source_id":"LA-PAT-AGGREGATE-COMMANDS-R02-T03","target_id":"LA-TRC-TD02"}
+{"source_id":"LA-PAT-AGGREGATE-COMMANDS-R03-T01","target_id":"LA-AUT-TD01"}
+{"source_id":"LA-PAT-AGGREGATE-COMMANDS-R04-T01","target_id":"LA-AUT-TD01"}
+{"source_id":"LA-PAT-AGGREGATE-COMMANDS-R05-T01","target_id":"LA-AUT-TD01"}
+{"source_id":"LA-PAT-AGGREGATE-COMMANDS-R06-T01","target_id":"LA-AUT-TD01"}
+{"source_id":"LA-PAT-AGGREGATE-COMMANDS-R07-T01","target_id":"LA-AUT-TD01"}
+{"source_id":"LA-PAT-AGGREGATE-COMMANDS-R08-T01","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-PAT-AGGREGATE-TESTS-R03-T01","target_id":"LA-AUT-TD40"}
 {"source_id":"LA-PAT-AGGREGATE-TESTS-R03-T02","target_id":"LA-CHK-TD01"}
 {"source_id":"LA-PAT-AGGREGATE-TESTS-R03-T03","target_id":"LA-TRC-TD02"}
@@ -458,12 +460,6 @@
 {"source_id":"LA-PLT-INV02-T","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-PLT-INV03-T","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-PLT-INV04-T","target_id":"LA-EXP-TD01"}
-{"source_id":"LA-PLT-INV15-T","target_id":"LA-AUT-TD01"}
-{"source_id":"LA-PLT-INV16-T","target_id":"LA-AUT-TD01"}
-{"source_id":"LA-PLT-INV17-T","target_id":"LA-AUT-TD01"}
-{"source_id":"LA-PLT-INV18-T","target_id":"LA-AUT-TD01"}
-{"source_id":"LA-PLT-INV19-T","target_id":"LA-AUT-TD01"}
-{"source_id":"LA-PLT-INV20-T","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-PLT-PO01-T","target_id":"LA-PLT-TD03"}
 {"source_id":"LA-PLT-PO03-T","target_id":"LA-PLT-TD03"}
 {"source_id":"LA-PLT-UC01-FL06-T","target_id":"LA-AUT-TD02"}
@@ -813,6 +809,7 @@
 {"source_id":"LA-V61-R46-T01","target_id":"LA-EXP-TD02"}
 {"source_id":"LA-V61-R47-T01","target_id":"LA-EXP-TD02"}
 {"source_id":"LA-V61-R48-T01","target_id":"LA-EXP-TD02"}
+{"source_id":"LA-V61-R50-T01","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-V62-R01-T01","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-V62-R01-T02","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-V62-R02-T01","target_id":"LA-EXP-TD01"}
@@ -872,6 +869,8 @@
 {"source_id":"LA-V90-R20-T01","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-V90-R20-T02","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-V90-R21-T01","target_id":"LA-EXP-TD01"}
+{"source_id":"LA-V90-R73-T01","target_id":"LA-EXP-TD01"}
+{"source_id":"LA-V90-R74-T01","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-V91-R01-T01","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-V91-R02-T01","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-V91-R03-T01","target_id":"LA-EXP-TD01"}
@@ -1033,6 +1032,9 @@
 {"source_id":"LA-V96-R19-T01","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-V96-R20-T01","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-V96-R26-T01","target_id":"LA-EXP-TD01"}
+{"source_id":"LA-V96-R33-T01","target_id":"LA-EXP-TD01"}
+{"source_id":"LA-V96-R34-T01","target_id":"LA-EXP-TD01"}
+{"source_id":"LA-V96-R35-T01","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-V97-R01-T01","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-V98-R01-T01","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-V98-R02-T01","target_id":"LA-EXP-TD01"}

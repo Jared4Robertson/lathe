@@ -1,6 +1,45 @@
-// Each folder's window size and position, remembered between launches. Pure functions over a
-// plain object, so they are unit-tested; main.ts reads and writes the object as JSON.
+// Product window (LA-PLT-A6): the desktop windows open on product folders, one per folder, while the shell runs;
+// each folder's window place (size and position), remembered between launches; and the chrome colors the pages
+// last sent, so a new window opens in the theme's shell color (LA-V68-R01). The places are pure functions over a
+// plain object, so they are unit-tested.
+import type { BrowserWindow, WebContentsView } from 'electron';
 import path from 'node:path';
+import type { ChatState } from '../chat.ts';
+import type { ChatSession } from '../chatSession.ts';
+import type { Chrome, SavedChrome } from '../chrome.ts';
+import type { LaunchModel } from '../launch.ts';
+import type { DataFiles } from '../records.ts';
+
+/** A window open on a product folder. Its server is the App server's (app-server/). */
+export interface OpenWindow {
+  folder: string;
+  product: string;
+  win: BrowserWindow;
+  chrome?: Chrome;
+  /** The launch view or error page over the app's page, while it shows. */
+  overlay?: { view: WebContentsView; model: LaunchModel };
+  /** The text the launch view showed, for the smoke run. */
+  launchSeen?: string;
+  /** The product's check errors, as the page last reported them. */
+  errors: number;
+  dataFiles: DataFiles | null;
+  /** Bumped on each launch, so an old watch stops. */
+  launchRun: number;
+  /** The window's name on the app bridge. */
+  key: string;
+  /** The chat panel's Claude Code, once a session is opened. */
+  chat?: ChatSession;
+  /** The chat state the page last got, and the timer that sends the next patch. */
+  chatSent: ChatState | null;
+  chatTimer?: NodeJS.Timeout;
+}
+
+/** The whole aggregate: the open windows by folder, the saved places by folder, and the saved chrome. */
+export interface ProductWindows {
+  open: ReadonlyMap<string, OpenWindow>;
+  places: WindowStates;
+  chrome: SavedChrome;
+}
 
 export interface Bounds {
   x?: number;
