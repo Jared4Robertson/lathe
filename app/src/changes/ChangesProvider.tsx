@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { useSessionSettings } from '../graph/settings';
+import { useSessionSettings } from '../exploring/session-settings/use-session-settings';
+import { turnChangesLensOnOrOff } from '../exploring/session-settings/commands/turn-changes-lens-on-or-off';
+import { chooseChangesBaseline } from '../exploring/session-settings/commands/choose-changes-baseline';
+import { turnFollowOnOrOff } from '../exploring/session-settings/commands/turn-follow-on-or-off';
+import { markProductLookedAt } from '../exploring/session-settings/commands/mark-product-looked-at';
 import type { SpecIndex } from '../specs/data';
 import { changesSince, ChangesContext, createLiveStore, loadBaseline, markNow, reloadChanges, type Baseline, type ChangesApi, type Since } from './changes';
 
@@ -11,7 +15,7 @@ const FOLLOW_NOTE_MS = 6000;
  * card's Changes section and the Changes panel. `index` is the whole workspace's, as loaded; `product` the space's.
  */
 export function ChangesProvider({ index, product, children }: { index: SpecIndex | null; product: string | null; children: ReactNode }) {
-  const { changes: settings, setChanges } = useSessionSettings();
+  const { changes: settings } = useSessionSettings();
   const [live] = useState(createLiveStore);
 
   // The live changes: each reload against the data before it.
@@ -31,12 +35,11 @@ export function ChangesProvider({ index, product, children }: { index: SpecIndex
     if (!now) return;
     live.clear(at);
     void markNow(now, at).then((mark) => {
-      if (mark) setChanges({ looked: { ...readLooked(), [at]: mark } });
+      if (mark) markProductLookedAt({ product: at, mark });
     });
-  }, [live, setChanges]);
+  }, [live]);
   const lookedRef = useRef(settings.looked);
   lookedRef.current = settings.looked;
-  const readLooked = () => lookedRef.current;
   // Leaving a product is looking at it; a product entered with no moment of its own takes this one.
   const shown = useRef<string | null>(null);
   useEffect(() => {
@@ -50,18 +53,18 @@ export function ChangesProvider({ index, product, children }: { index: SpecIndex
   const setLens = useCallback((on: boolean) => {
     // Dismissing the lens is looking at what it showed.
     if (!on && settings.lens && product) look(product);
-    setChanges({ lens: on });
-  }, [settings.lens, product, look, setChanges]);
-  const setSince = useCallback((since: Since) => setChanges({ since }), [setChanges]);
+    turnChangesLensOnOrOff({ on });
+  }, [settings.lens, product, look]);
+  const setSince = useCallback((since: Since) => chooseChangesBaseline({ since }), []);
   const [followNote, setFollowNote] = useState<string | null>(null);
   const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (noteTimer.current) clearTimeout(noteTimer.current); }, []);
   const setFollow = useCallback((on: boolean, note?: string) => {
-    setChanges({ follow: on });
+    turnFollowOnOrOff({ on });
     if (noteTimer.current) clearTimeout(noteTimer.current);
     setFollowNote(!on && note ? note : null);
     if (!on && note) noteTimer.current = setTimeout(() => setFollowNote(null), FOLLOW_NOTE_MS);
-  }, [setChanges]);
+  }, []);
 
   // The baseline's rows, read again with every reload (the last commit may have moved), and the diff against them.
   const mark = product ? settings.looked[product] : undefined;

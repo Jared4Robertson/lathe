@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { openApp } from './helpers';
 import { auditContrast } from '../src/theme/audit';
 import { themeCss } from '../src/theme/css';
-import { STORAGE_KEYS } from '../src/theme/store';
+import { APPEARANCE_KEYS as STORAGE_KEYS } from '../src/platform/appearance/repository';
 import { BUILT_IN_THEMES, parseTheme, toFile } from '../src/theme/theme';
 
 // Themes (LA-PLT-UC07): choosing one with a live preview, the mode, the Appearance page and its

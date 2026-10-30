@@ -1,23 +1,23 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { applyTheme } from './apply';
 import { useDesktopChrome } from '../shell/desktopChrome';
-import { themeStore, type ThemeState } from './store';
-import {
-  BUILT_IN_THEMES,
-  DEFAULT_THEME_ID,
-  LATHE,
-  freshName,
-  newThemeId,
-  parseTheme,
-  toFile,
-  type ModeChoice,
-  type Theme,
-  type ThemeFile,
-} from './theme';
+import { useAggregate } from '../shell/prefs';
+import { appearanceRepository } from '../platform/appearance/repository';
+import { themesReader } from '../platform/appearance/reader';
+import { getThemeFile, listThemes } from '../platform/appearance/queries';
+import { chooseTheme } from '../platform/appearance/commands/choose-theme';
+import { chooseColorMode } from '../platform/appearance/commands/choose-color-mode';
+import { duplicateTheme } from '../platform/appearance/commands/duplicate-theme';
+import { importThemeFile } from '../platform/appearance/commands/import-theme-file';
+import { editTheme } from '../platform/appearance/commands/edit-theme';
+import { resetTheme } from '../platform/appearance/commands/reset-theme';
+import { deleteTheme } from '../platform/appearance/commands/delete-theme';
+import { BUILT_IN_THEMES, LATHE, type ModeChoice, type Theme, type ThemeFile } from './theme';
 
 // The person's themes: the built-ins and their own, the one chosen, and the Light, Dark or System
-// choice. Every change applies at once (no reload) and is kept in the theme store. A preview (the
-// theme picker arrowing through its list) applies without being kept, until it is kept or undone.
+// choice, read through the Themes read model (platform/appearance). Every change is one of the Appearance's commands,
+// which keeps it, and applies at once (no reload). A preview (the theme picker arrowing through its list) applies
+// without being kept, until it is kept or undone.
 
 export interface ThemesApi {
   themes: readonly Theme[];
@@ -50,84 +50,36 @@ export function useThemes(): ThemesApi {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<ThemeState>(() => {
-    const loaded = themeStore.load();
-    return { custom: loaded.custom ?? [], chosen: loaded.chosen ?? DEFAULT_THEME_ID, mode: loaded.mode ?? 'system' };
-  });
+  const appearance = useAggregate(appearanceRepository);
+  const reader = useMemo(() => themesReader(appearance), [appearance]);
+  const { themes, active, mode } = useMemo(() => listThemes(reader), [reader]);
   const [shown, setShown] = useState<{ theme?: Theme; mode?: ModeChoice } | null>(null);
 
-  const themes = useMemo(() => [...BUILT_IN_THEMES, ...state.custom], [state.custom]);
-  const active = themes.find((t) => t.id === state.chosen) ?? LATHE;
-
-  // Apply what shows; keep what is chosen. The first run also writes the stylesheet index.html reads.
-  const kept = useRef('');
-  useEffect(() => {
-    const css = applyTheme(shown?.theme ?? active, shown?.mode ?? state.mode);
-    if (shown) return;
-    const key = JSON.stringify([state, css]);
-    if (kept.current === key) return;
-    kept.current = key;
-    themeStore.save(state, css);
-  }, [active, state, shown]);
+  // The stylesheet the early script in index.html reads is written with each save; the first run writes it too.
+  useEffect(() => { appearanceRepository.save(appearanceRepository.load()); }, []);
+  // Apply what shows.
+  useEffect(() => { applyTheme(shown?.theme ?? active, shown?.mode ?? mode); }, [active, mode, shown]);
 
   // In the desktop app, the window's chrome follows what shows (LA-V67-R06).
-  useDesktopChrome(shown?.theme ?? active, shown?.mode ?? state.mode);
+  useDesktopChrome(shown?.theme ?? active, shown?.mode ?? mode);
 
-  const choose = useCallback((id: string) => { setShown(null); setState((s) => ({ ...s, chosen: id })); }, []);
-  const setMode = useCallback((mode: ModeChoice) => { setShown(null); setState((s) => ({ ...s, mode })); }, []);
+  const choose = useCallback((id: string) => { setShown(null); chooseTheme({ id }); }, []);
+  const setMode = useCallback((m: ModeChoice) => { setShown(null); chooseColorMode({ mode: m }); }, []);
   const preview = useCallback((p: { theme?: Theme; mode?: ModeChoice } | null) => setShown(p), []);
-
-  const duplicate = useCallback((id: string) => {
-    const source = themes.find((t) => t.id === id) ?? LATHE;
-    const name = freshName(source.name, themes.map((t) => t.name));
-    const basedOn = source.builtIn ? source.id : source.basedOn ?? DEFAULT_THEME_ID;
-    const copy: Theme = { ...toFile(source), name, id: newThemeId(name, themes.map((t) => t.id)), builtIn: false, basedOn };
-    setState((s) => ({ ...s, custom: [...s.custom, copy], chosen: copy.id }));
-    setShown(null);
-    return copy.id;
-  }, [themes]);
-
-  const update = useCallback((id: string, change: (file: ThemeFile) => ThemeFile) => {
-    setState((s) => ({
-      ...s,
-      custom: s.custom.map((t) => {
-        if (t.id !== id) return t;
-        const parsed = parseTheme(toFile(change(toFile(t))));
-        return parsed.ok ? { ...parsed.theme, id, builtIn: false, basedOn: t.basedOn } : t;
-      }),
-    }));
-  }, []);
-
-  const remove = useCallback((id: string) => {
-    setState((s) => ({ ...s, custom: s.custom.filter((t) => t.id !== id), chosen: s.chosen === id ? DEFAULT_THEME_ID : s.chosen }));
-  }, []);
-
+  const duplicate = useCallback((id: string) => { const copy = duplicateTheme({ id }); setShown(null); return copy; }, []);
+  const update = useCallback((id: string, change: (file: ThemeFile) => ThemeFile) => editTheme({ id, change }), []);
+  const remove = useCallback((id: string) => deleteTheme({ id }), []);
+  const reset = useCallback((id: string) => resetTheme({ id }), []);
+  const importFile = useCallback((text: string) => importThemeFile({ text }), []);
+  const exportFile = useCallback((id: string) => getThemeFile(reader, { id }), [reader]);
   const basedOn = useCallback((id: string) => {
-    const base = themes.find((t) => t.id === id)?.basedOn;
+    const base = reader.theme(id)?.basedOn;
     return BUILT_IN_THEMES.find((t) => t.id === base) ?? LATHE;
-  }, [themes]);
-
-  const reset = useCallback((id: string) => {
-    const base = basedOn(id);
-    update(id, (file) => ({ ...toFile(base), name: file.name }));
-  }, [basedOn, update]);
-
-  const importFile = useCallback((text: string) => {
-    let json: unknown;
-    try { json = JSON.parse(text); } catch { return { ok: false as const, error: 'The file is not JSON.' }; }
-    const parsed = parseTheme(json);
-    if (!parsed.ok) return parsed;
-    const name = themes.some((t) => t.name === parsed.theme.name) ? freshName(parsed.theme.name, themes.map((t) => t.name)) : parsed.theme.name;
-    const theme: Theme = { ...parsed.theme, name, id: newThemeId(name, themes.map((t) => t.id)), builtIn: false };
-    setState((s) => ({ ...s, custom: [...s.custom, theme] }));
-    return { ok: true as const, theme };
-  }, [themes]);
-
-  const exportFile = useCallback((id: string) => `${JSON.stringify(toFile(themes.find((t) => t.id === id) ?? LATHE), null, 2)}\n`, [themes]);
+  }, [reader]);
 
   const api = useMemo<ThemesApi>(() => ({
-    themes, active, mode: state.mode, choose, setMode, preview, duplicate, update, remove, reset, importFile, exportFile, basedOn,
-  }), [themes, active, state.mode, choose, setMode, preview, duplicate, update, remove, reset, importFile, exportFile, basedOn]);
+    themes, active, mode, choose, setMode, preview, duplicate, update, remove, reset, importFile, exportFile, basedOn,
+  }), [themes, active, mode, choose, setMode, preview, duplicate, update, remove, reset, importFile, exportFile, basedOn]);
 
   return <ThemesContext.Provider value={api}>{children}</ThemesContext.Provider>;
 }

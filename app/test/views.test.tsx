@@ -9,7 +9,7 @@ import { addressOf, parseStage, stageFromSearch, withStage } from '../src/views/
 import { CARD_GAP, CARD_GAP_Y, frameInsets, openInsets, OPEN_GAP } from '../src/views/openSpace';
 import { settleWhenHidden } from '../src/views/WikiCard';
 import { NARROW_QUERY } from '../src/shell/useNarrow';
-import { SETTINGS_KEY } from '../src/graph/settings';
+import { SETTINGS_KEY } from '../src/exploring/session-settings/repository';
 import { colorOf } from '../src/theme/audit';
 import { contrast, over } from '../src/theme/contrast';
 import { BUILT_IN_THEMES } from '../src/theme/theme';
