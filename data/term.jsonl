@@ -3,10 +3,8 @@
 {"id":"LA-AUT-TM10","title":"Designed, built, proved","domain_id":"LA-AUT","meaning":"An obligation's three states: its implementation specified, every technical record of it naming a file that exists, its test written at a level its kind allows.","group_name":"Proof"}
 {"id":"LA-AUT-TM11","title":"Technical record","domain_id":"LA-AUT","meaning":"The one record of a technical kind that implements a design record, naming its file.","group_name":"Proof"}
 {"id":"LA-AUT-TM13","title":"Product kind","domain_id":"LA-AUT","meaning":"A kind a product declares for itself, in any stage, under any kind.","group_name":"Records"}
-{"id":"LA-AUT-TM14","title":"Command layer","domain_id":"LA-AUT","meaning":"The commands every writer uses to change data, each one transaction that the store accepts or refuses whole: the CLI, the MCP tools and the app send only these.","group_name":"Writing"}
 {"id":"LA-AUT-TM16","title":"Reference","domain_id":"LA-AUT","meaning":"Every kind, relation, stage and check of a product, with the columns of each, generated from its schema and check rows.","group_name":"Writing"}
-{"id":"LA-AUT-TM17","title":"Refusal","domain_id":"LA-AUT","meaning":"A write the store does not accept, with every reason and no data changed.","group_name":"Writing"}
-{"id":"LA-AUT-TM18","title":"Recorded exception","domain_id":"LA-AUT","meaning":"Another aggregate of its domain that a command also changes in its transaction, named with the reason.","group_name":"Writing"}
+{"id":"LA-AUT-TM17","title":"Refusal","domain_id":"LA-AUT","meaning":"A command the store does not accept, with every reason and no data changed.","group_name":"Writing"}
 {"id":"LA-AUT-TM19","title":"Pattern","domain_id":"LA-AUT","meaning":"Behavior several use cases share, written once with its rules and settings; each use case or domain that follows it answers its settings.","group_name":"Use cases and design"}
 {"id":"LA-AUT-TM20","title":"Standard","domain_id":"LA-AUT","meaning":"Engineering rules the product's code follows, which technical records meet and standard rule tests prove.","group_name":"Build and test"}
 {"id":"LA-AUT-TM21","title":"Domain","domain_id":"LA-AUT","meaning":"An area of the business with its own model and language: a product is split into domains, each owning its records end to end.","group_name":"Domain model"}
@@ -73,8 +71,7 @@
 {"id":"LA-PLT-TM07","title":"Product folder","domain_id":"LA-PLT","meaning":"A folder with a `lathe.config.json` or a `data/` folder, which Lathe opens."}
 {"id":"LA-PLT-TM08","title":"Product window","domain_id":"LA-PLT","meaning":"One desktop window showing one product folder."}
 {"id":"LA-PLT-TM09","title":"App server","domain_id":"LA-PLT","meaning":"What a window or `lathe serve` serves Lathe from."}
-{"id":"LA-PLT-TM11","title":"Write","domain_id":"LA-PLT","meaning":"One or more commands to the data, all taking effect or none."}
-{"id":"LA-PLT-TM12","title":"Refusal reason","domain_id":"LA-PLT","meaning":"One reason the store refused a write or a load: the rule broken and where."}
+{"id":"LA-PLT-TM12","title":"Refusal reason","domain_id":"LA-PLT","meaning":"One reason the store refused a command or a load: the rule broken and where."}
 {"id":"LA-PLT-TM13","title":"Record","domain_id":"LA-PLT","meaning":"One thing of a kind in a product's specs, kept as one row: an ID unique across every kind, a title, typed columns, and at most one other record it sits under.","group_name":"Data files"}
 {"id":"LA-PLT-TM14","title":"Kind","domain_id":"LA-PLT","meaning":"A sort of thing a product's specs describe, with its own columns and the shape of its IDs. Lathe has fifty; a product may declare more.","group_name":"Data files"}
 {"id":"LA-PLT-TM15","title":"Parent","domain_id":"LA-PLT","meaning":"The one record a record sits under, named by one of its kind's parent columns.","group_name":"Data files"}
@@ -91,6 +88,4 @@
 {"id":"LA-TRC-TM07","title":"Not automated yet","domain_id":"LA-TRC","meaning":"A test written before its code exists, to show what will prove an obligation. It never counts as proof."}
 {"id":"LA-TRC-TM08","title":"Follower","domain_id":"LA-TRC","meaning":"A domain or use case that follows a pattern."}
 {"id":"LA-TRC-TM09","title":"Owed","domain_id":"LA-TRC","meaning":"A pattern rule a domain must prove for itself, because it follows the rule's pattern."}
-{"id":"LA-TRC-TM10","title":"Not applicable","domain_id":"LA-TRC","meaning":"A pattern rule a domain does not owe, because every following use case there marks its setting not applicable."}
-{"id":"LA-TRC-TM11","title":"Waived","domain_id":"LA-TRC","meaning":"A pattern rule a domain does not owe, because no follower there gives a value that meets its applies-when setting."}
 {"id":"LA-TRC-TM12","title":"Trace","domain_id":"LA-TRC","meaning":"The records that design, build and prove one obligation, and the files they name."}

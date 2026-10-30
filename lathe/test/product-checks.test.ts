@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { LATHE_DATA_DIR, loadWorkspace, openStore, StoreError, type Workspace } from '../src/index.ts';
-import { adding, build, complete, loadData, ofCheck, removeData, writeData } from './helpers.ts';
+import { adding, build, complete, loadData, ofCheck, removeData, run, writeData } from './helpers.ts';
 
 const latheChecks = readFileSync(path.join(LATHE_DATA_DIR, 'check.jsonl'), 'utf8')
   .split('\n')
@@ -68,7 +68,7 @@ describe("a product's own checks", () => {
 
   it("LA-CHK-INV01-T A product check named like one of Lathe's checks is refused by the store, naming Lathe's file", async () => {
     const { store, check } = await clashing();
-    const clash = store.add('check', { ...check, severity: 'error' });
+    const clash = run(store, 'check add-check', { ...check, severity: 'error' });
     await expect(clash).rejects.toThrow(StoreError);
     await expect(clash).rejects.toMatchObject({ problems: [expect.objectContaining({ rule: 'primary-key', message: expect.stringContaining("one of Lathe's own (lathe/data/check.jsonl)") })] });
     await store.close();

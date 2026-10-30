@@ -1,5 +1,5 @@
-// The Pattern following read model (LA-TRC-RM10), shaped for its readers: a following whole (the value, or the reason
-// it does not apply, its follower gives each setting of its pattern), the patterns a domain or use case follows, and a
+// The Pattern following read model (LA-TRC-RM10), shaped for its readers: a following whole (the value its follower
+// gives each setting of its pattern), the patterns a domain or use case follows, and a
 // pattern's followers by domain, as the Pattern page's Followed by reads them (whether the domain itself follows it,
 // and each of its use cases that does, each with its setting values). The projection (followingTableFrom) is the only
 // code that reads the source rows and the only code that writes the read model's table; the query handlers read that
@@ -8,11 +8,10 @@ import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { CapabilityRow, SettingValueRow, UseCaseRow } from '../../platform/data/tables.ts';
 
-/** The value a follower gives one setting, or why it does not apply. */
+/** The value a follower gives one setting. */
 export interface SettingLine {
   setting: string;
-  value: string | null;
-  notApplicable: string | null;
+  value: string;
 }
 
 /** One following, whole: its follower, its pattern and the value it gives each setting, by setting name. */
@@ -59,7 +58,7 @@ function grouped<T>(rows: Row[], ...columns: string[]): Map<string, T[]> {
   return found;
 }
 
-const lineOf = (v: SettingValueRow): SettingLine => ({ setting: v.setting, value: v.value ?? null, notApplicable: v.not_applicable ?? null });
+const lineOf = (v: SettingValueRow): SettingLine => ({ setting: v.setting, value: v.value });
 
 /** The projection: the read model's table, built from the rows on each read (in memory; nothing keeps it). */
 export function followingTableFrom(view: ReadView): FollowingTable {

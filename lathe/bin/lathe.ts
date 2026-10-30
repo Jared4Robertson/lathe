@@ -2,11 +2,10 @@
 // The Lathe command line. Run `lathe help` for usage.
 import path from 'node:path';
 import { parseArgs } from 'node:util';
-import { CONFIG_FILE, exceptionsText, loadProducts, mergeDataFiles, SCHEMA_VERSION, SchemaVersionError, upgradeProduct, type Problem, type Workspace } from '../src/index.ts';
+import { CONFIG_FILE, loadProducts, mergeDataFiles, SCHEMA_VERSION, SchemaVersionError, upgradeProduct, type Problem, type Workspace } from '../src/index.ts';
 import { forOneCommand } from '../src/platform/data/store.ts';
 import { coverageLines, productFolder } from '../src/cli/operations.ts';
 import { INIT_NEXT, InitError, initProduct } from '../src/cli/init.ts';
-import { DATA_COMMANDS, DATA_USAGE, runDataCommand } from '../src/cli/writers.ts';
 import { APP_USAGE, runAppCommand } from '../src/cli/app-tools.ts';
 import { AGGREGATE_COMMANDS, AGGREGATE_USAGE, runAggregateCommand } from '../src/cli/aggregates.ts';
 
@@ -20,26 +19,23 @@ Commands:
            print what changed and anything left to do by hand. Refuses a git working tree with changes,
            or no git, so the upgrade is one reviewable commit.
   check    Load the data and check it: the product's, and that of each other product its ${CONFIG_FILE}
-           lists under products, each on its own. Prints errors, warnings, the recorded exceptions (each
-           command that also changes another aggregate, and each repository that also persists one, with
-           its reason) and coverage (one line per domain and obligation kind) per product; exits 1 on any
-           error.
+           lists under products, each on its own. Prints errors, warnings and coverage (one line per domain
+           and obligation kind) per product; exits 1 on any error.
            --json prints { products: [{ root, workspace }] } instead.
   serve    Serve the web app for the product repo and each product it lists.  --port 5330 (default)
   merge-data <base> <ours> <theirs> <path>
            Git's merge driver for data/*.jsonl files (%O %A %B %P): merges the three versions row by row,
            writes the result over <ours>, and exits 1 on a real clash or a row that breaks its table's rules.
-  mcp      Serve the data commands as MCP tools over stdio (the Claude Code plugin starts it).
+  mcp      Serve every aggregate's commands and queries, and the check, as MCP tools over stdio (the Claude
+           Code plugin starts it).
 
 ${AGGREGATE_USAGE}
-${DATA_USAGE}
 ${APP_USAGE}
 Options for every command:
   --root <dir>   The product repo (default: the current folder).
 `;
 
-// The data commands read their own flags, one per column of the schema, and the app commands theirs.
-const dataCommand = (DATA_COMMANDS as readonly string[]).includes(process.argv[2] ?? '');
+// The aggregates' commands read their own flags, one per field, and the app commands theirs.
 const appCommand = process.argv[2] === 'app';
 // `lathe check` runs the checks, and `lathe check <command>` one of the Check aggregate's commands: an aggregate whose
 // name is also one of the commands above is reached with a command after it.
@@ -48,7 +44,7 @@ const aggregateCommand =
   AGGREGATE_COMMANDS.includes(process.argv[2] ?? '') && (!TOP_COMMANDS.includes(process.argv[2]) || /^[a-z]/.test(process.argv[3] ?? ''));
 const { positionals, values } = parseArgs({
   allowPositionals: true,
-  args: dataCommand || appCommand || aggregateCommand ? [] : process.argv.slice(2),
+  args: appCommand || aggregateCommand ? [] : process.argv.slice(2),
   options: {
     root: { type: 'string' },
     json: { type: 'boolean' },
@@ -86,7 +82,7 @@ async function check() {
   process.exitCode = errors ? 1 : 0;
 }
 
-/** One product's check: its errors, warnings, recorded exceptions and coverage, then its counts. */
+/** One product's check: its errors, warnings and coverage, then its counts. */
 function printProduct(productRoot: string, workspace: Workspace) {
   const errors = workspace.problems.filter((p) => p.severity === 'error');
   const warnings = workspace.problems.filter((p) => p.severity === 'warning');
@@ -94,7 +90,6 @@ function printProduct(productRoot: string, workspace: Workspace) {
   console.log(`Checked ${workspace.records.length} records in ${productRoot}`);
   if (errors.length) console.log(`\nErrors (${errors.length}):\n${errors.map(line).join('\n')}`);
   if (warnings.length) console.log(`\nWarnings (${warnings.length}):\n${warnings.map(line).join('\n')}`);
-  if (workspace.exceptions.length) console.log(`\n${exceptionsText(workspace.exceptions)}`);
   const covered = coverageLines(workspace.coverage);
   if (covered.length) console.log(`\nCoverage:\n${covered.join('\n')}`);
   console.log(`\n${count(errors.length, 'error')}, ${count(warnings.length, 'warning')}.`);
@@ -175,8 +170,6 @@ if (command !== 'serve' && command !== 'mcp') forOneCommand();
 try {
   if (aggregateCommand) {
     process.exitCode = await runAggregateCommand(process.argv.slice(2));
-  } else if (dataCommand) {
-    process.exitCode = await runDataCommand(process.argv.slice(2));
   } else if (appCommand) {
     process.exitCode = await runAppCommand(process.argv.slice(2));
   } else if (values.help || command === 'help') {

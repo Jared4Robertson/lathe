@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { LATHE_DATA_DIR, loadWorkspace, openStore, PACKAGE_DIR, tableText, type Row, type Workspace } from '../src/index.ts';
-import { adding, build, complete, removeData } from './helpers.ts';
+import { adding, build, complete, removeData, run } from './helpers.ts';
 
 const temps: string[] = [];
 const tempDir = () => {
@@ -105,7 +105,7 @@ describe('checks', () => {
 
 describe('loading', () => {
   it('LA-PLT-UC01-R01-T01 loadWorkspace returns the Workspace contract', () => {
-    expect(Object.keys(ws).sort()).toEqual(['chains', 'coverage', 'exceptions', 'kinds', 'links', 'problems', 'records', 'relations', 'stages']);
+    expect(Object.keys(ws).sort()).toEqual(['chains', 'coverage', 'kinds', 'links', 'problems', 'records', 'relations', 'stages']);
     expect(Object.keys(ws.chains[0]).sort()).toEqual(['build', 'design', 'files', 'links', 'obligation', 'tests']);
     expect(Object.keys(ws.kinds[0]).sort()).toEqual(['description', 'id_scope', 'kind', 'label', 'obligation', 'parent_kinds', 'position', 'required_fields', 'stage']);
     expect(ws.stages.map((s) => s.stage)).toEqual(['discovery', 'domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan']);
@@ -183,7 +183,7 @@ describe('loading', () => {
 
   it('LA-AUT-UC03-R02-T01 Removing a kind while a record of it is left is refused, since its rows would have no table', async () => {
     const again = await openStore(await withMemo());
-    await expect(again.remove('product_kind', { name: 'memo' })).rejects.toThrow(/memo/);
+    await expect(run(again, 'product remove-product-kind', { name: 'memo' })).rejects.toThrow(/memo/);
     await again.close();
   });
 
@@ -195,7 +195,7 @@ describe('loading', () => {
     expect(listing(fresh)).toEqual(before);
 
     const store = await openStore(fresh);
-    await store.set('use_case', 'EX-LEND-UC01', { title: 'Borrow a tool for a week' });
+    await run(store, 'use-case change-use-case', { id: 'EX-LEND-UC01', title: 'Borrow a tool for a week' });
     await store.close();
     const second = await loadWorkspace(fresh);
     expect(second.records.find((r) => r.id === 'EX-LEND-UC01')?.title).toBe('Borrow a tool for a week');
@@ -211,6 +211,6 @@ describe('the Tool Library', () => {
     expect(tl.problems.filter((p) => p.severity === 'error')).toEqual([]);
     const lending = tl.coverage.find((c) => c.domain === 'TL-LEND')!;
     for (const o of lending.obligations) expect(o.designed, o.kind).toBe(o.total);
-    expect(lending.obligations.find((o) => o.kind === 'pattern_rule')).toMatchObject({ total: 3, proved: 3, proof_only: true });
+    expect(lending.obligations.find((o) => o.kind === 'pattern_rule')).toMatchObject({ total: 2, proved: 2, proof_only: true });
   });
 });

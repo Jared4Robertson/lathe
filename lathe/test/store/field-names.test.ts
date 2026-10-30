@@ -2,6 +2,7 @@
 // letter case (migration 004). Exact names were unique already; these names differ only in spacing or case.
 import { afterAll, describe, expect, it } from 'vitest';
 import { openStore, StoreError, type StoreProblem } from '../../src/index.ts';
+import { run } from '../helpers.ts';
 import { everyKind, removeData, withTable, writeData } from './fixture.ts';
 
 afterAll(removeData);
@@ -40,10 +41,11 @@ describe('LA-AUT-INV16-T A field name is unique in its entity or event trimmed a
     expect(await loadRefused(rm)).toEqual([expect.objectContaining({ table: 'read_model_field', line: 2 })]);
   });
 
-  it('refuses the same through the command layer, and changes nothing', async () => {
+  it("refuses the same through the entity's and the event's own commands, and changes nothing", async () => {
     const store = await openStore(writeData(everyKind()));
-    await expect(store.add('entity_field', { ...loanId, position: 9, name: 'loan ID' })).rejects.toBeInstanceOf(StoreError);
-    await expect(store.add('event_field', { ...eventLoanId, position: 9, name: 'Loan id ' })).rejects.toBeInstanceOf(StoreError);
+    const field = ({ entity_id: _e, domain_event_id: _d, position: _p, ...rest }: Record<string, unknown>) => rest;
+    await expect(run(store, 'aggregate change-entity', { id: 'TL-LEND-EN01', fields: [...store.rows('entity_field').map(field), field({ ...loanId, name: 'loan ID' })] })).rejects.toBeInstanceOf(StoreError);
+    await expect(run(store, 'domain-event change-domain-event', { id: 'TL-LEND-EV01', fields: [field(eventLoanId), field({ ...eventLoanId, name: 'Loan id ' })] })).rejects.toBeInstanceOf(StoreError);
     expect(store.rows('entity_field')).toHaveLength(3);
     expect(store.rows('event_field')).toHaveLength(1);
     await store.close();

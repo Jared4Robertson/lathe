@@ -14,7 +14,7 @@
 {"id":"LA-AUT-INV12-RL","title":"aggregate-root","invariant_id":"LA-AUT-INV12","file":"lathe/src/authoring/aggregate/rules.ts"}
 {"id":"LA-AUT-INV13-RL","title":"entity-table","invariant_id":"LA-AUT-INV13","file":"lathe/src/authoring/table/rules.ts"}
 {"id":"LA-AUT-INV14-RL","title":"one-primary-key","invariant_id":"LA-AUT-INV14","file":"lathe/src/authoring/table/rules.ts"}
-{"id":"LA-AUT-INV41-RL","title":"repository-share-unpersisted","invariant_id":"LA-AUT-INV41","file":"lathe/src/authoring/domain/rules.ts"}
+{"id":"LA-AUT-INV41-RL","title":"one-repository","invariant_id":"LA-AUT-INV41","file":"lathe/src/authoring/domain/rules.ts"}
 {"id":"LA-AUT-INV42-RL","title":"flow-id-interface","invariant_id":"LA-AUT-INV42","file":"lathe/src/authoring/use-case/rules.ts"}
 {"id":"LA-AUT-INV43-RL","title":"step-fits-interface","invariant_id":"LA-AUT-INV43","file":"lathe/src/authoring/use-case/rules.ts"}
 {"id":"LA-AUT-INV50-RL","title":"question-owner-role","invariant_id":"LA-AUT-INV50","file":"lathe/src/authoring/product/rules.ts"}

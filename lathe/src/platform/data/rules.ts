@@ -66,5 +66,5 @@ export function beyondFirst<R>(rows: readonly R[], keyOf: (row: R) => string | n
 
 /** Refuses the command with every problem its aggregate's rules found, when they found any. */
 export function refuseBroken(problems: readonly RuleProblem[]): void {
-  if (problems.length) throw new StoreError(problems.map((p) => ({ rule: p.rule, table: p.table, message: p.message, command: 0 })));
+  if (problems.length) throw new StoreError(problems.map((p) => ({ rule: p.rule, table: p.table, message: p.message })));
 }

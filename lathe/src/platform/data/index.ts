@@ -1,9 +1,9 @@
-// The data layer's public interface: the schema, loading the data files, writing them and the merge driver.
+// The data layer's public interface: the schema, loading the data files and the merge driver. Writes are each
+// aggregate's own commands (platform/commands/run.ts).
 export { openStore, Store, LATHE_DATA_DIR } from './store.ts';
-export type { StoreOptions, WriteResult } from './store.ts';
+export type { StoreOptions } from './store.ts';
 export { StoreError, formatProblem } from './problems.ts';
 export type { Origin, StoreProblem } from './problems.ts';
-export type { Command, KeyInput } from './generic-write.ts';
 export { readMigrations, applyMigrations, describeSchema, SCHEMA_DIR, STORED_ROLES } from './schema.ts';
 export type {
   ColumnDescription,

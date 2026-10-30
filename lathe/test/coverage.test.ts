@@ -268,24 +268,16 @@ describe('pattern rules', () => {
     expect(obligation(ws, 'EX-SHOP', 'pattern_rule')).toMatchObject({ total: 0 });
   });
 
-  /** The complete product where every following use case marks the rule's setting not applicable. */
-  const notApplicable = () => changing(changing(complete(), 'pattern_rule', () => true, { setting: 'record' }), 'setting_value', () => true, { value: undefined, not_applicable: 'Adds nothing.' });
-
-  it('LA-TRC-SP02-T a rule whose setting every following use case marks not applicable is waived there', async () => {
-    expect(obligation(await loadData(notApplicable()), 'EX-LEND', 'pattern_rule')).toMatchObject({ total: 0 });
+  it('LA-TRC-UC07-R01-T01 a domain that follows the pattern itself owes every one of its rules', async () => {
+    const itself = await loadData(adding(complete(), {
+      pattern: [{ id: 'EX-PAT-LOG', title: 'Logged action', product_id: 'EX', description: 'An action written to the log.' }],
+      pattern_rule: [{ id: 'EX-PAT-LOG-R01', title: 'Each action is logged', pattern_id: 'EX-PAT-LOG', statement: 'Each action MUST be logged.' }],
+      follows: [{ source_id: 'EX-LEND', target_id: 'EX-PAT-LOG' }],
+    }));
+    expect(obligation(itself, 'EX-LEND', 'pattern_rule')).toMatchObject({ total: 2, proved: 1 });
+    expect(itself.coverage.find((c) => c.domain === 'EX-LEND')?.pattern_rules).toEqual(['EX-PAT-ACT-R01', 'EX-PAT-LOG-R01']);
   });
 
-  it('LA-TRC-UC07-R01-T01 a domain that follows the pattern itself owes the rule all the same', async () => {
-    const itself = await loadData(adding(notApplicable(), { follows: [{ source_id: 'EX-LEND', target_id: 'EX-PAT-ACT' }] }));
-    expect(obligation(itself, 'EX-LEND', 'pattern_rule')).toMatchObject(covered(1));
-  });
-
-  it('LA-TRC-SP03-T a rule no follower meets the applies-when setting of is waived in that domain', async () => {
-    const when = (value: string, negated = false) => changing(complete(), 'pattern_rule', () => true, { applies_when_setting: 'record', applies_when_value: value, applies_when_negated: negated });
-    expect(obligation(await loadData(when(' tool ')), 'EX-LEND', 'pattern_rule')).toMatchObject({ total: 1 });
-    expect(obligation(await loadData(when('Loan')), 'EX-LEND', 'pattern_rule')).toMatchObject({ total: 0 });
-    expect(obligation(await loadData(when('Loan', true)), 'EX-LEND', 'pattern_rule')).toMatchObject({ total: 1 });
-  });
 });
 
 describe('LA-TRC-UC01-R05-T01 minimums', () => {
@@ -307,14 +299,6 @@ describe('LA-TRC-UC01-R05-T01 minimums', () => {
     expect(new Set(GAP_RULES.map((g) => g.name)).size).toBe(GAP_RULES.length);
     for (const g of GAP_RULES) expect(g.summary, g.name).toMatch(/^An? .+\.$/);
     expect(gaps(clean)).toEqual([]);
-  });
-
-  it('LA-AUT-UC12-R07-T01 An aggregate changed only through a recorded exception (command_change) has a command', async () => {
-    const lone = adding(complete(), { aggregate: [{ id: 'EX-LEND-A3', title: 'Shelf', domain_id: 'EX-LEND', identity: 'Shelf ID', description: 'A shelf the tools sit on.' }] });
-    const ofCommand = (ws: Workspace) => gaps(ws).filter((g) => g.startsWith('aggregate-without-command'));
-    expect(ofCommand(await loadData(lone))).toEqual(['aggregate-without-command EX-LEND-A3']);
-    const changed = adding(lone, { command_change: [{ command_id: 'EX-LEND-CMD01', aggregate_id: 'EX-LEND-A3', reason: 'Opening a loan takes the tool off its shelf.' }] });
-    expect(ofCommand(await loadData(changed))).toEqual([]);
   });
 
   it('an entity kept in its root\'s table needs no table of its own', async () => {
@@ -397,14 +381,10 @@ describe('pattern rules, domain by domain', () => {
       pattern: [{ id: 'EX-PAT-LOG', title: 'Logged action', product_id: 'EX', description: 'An action written to the log.' }],
       pattern_rule: [{ id: 'EX-PAT-LOG-R01', title: 'Each action is logged', pattern_id: 'EX-PAT-LOG', statement: 'Each action MUST be logged.' }],
     });
-  /** A follower of EX-PAT-ACT with its value of record, or with record not applicable (null). */
-  const sale = (follower: string, value: string | null): Data => ({
+  /** A follower of EX-PAT-ACT with its value of record. */
+  const sale = (follower: string, value: string): Data => ({
     follows: [{ source_id: follower, target_id: 'EX-PAT-ACT' }],
-    setting_value: [
-      value === null
-        ? { follower_id: follower, pattern_id: 'EX-PAT-ACT', setting: 'record', not_applicable: 'Saves nothing.' }
-        : { follower_id: follower, pattern_id: 'EX-PAT-ACT', setting: 'record', value },
-    ],
+    setting_value: [{ follower_id: follower, pattern_id: 'EX-PAT-ACT', setting: 'record', value }],
   });
   const merge = (...parts: Data[]) => parts.reduce((all, part) => adding(all, part), {} as Data);
 
@@ -423,16 +403,6 @@ describe('pattern rules, domain by domain', () => {
     expect(obligation(ws, 'EX-SHOP', 'pattern_rule')).toMatchObject({ total: 1, proved: 0, not_automated: 0 });
     const planned = adding(data, { pattern_rule_test: [{ id: 'EX-PAT-ACT-R01-T02', title: 'A sale reads the same', pattern_rule_id: 'EX-PAT-ACT-R01', domain_id: 'EX-SHOP', level: 'service', state: 'not automated yet', when: 'The clerk saves a sale.', then: 'The sale reads the same everywhere.' }] });
     expect(obligation(await loadData(planned), 'EX-SHOP', 'pattern_rule')).toMatchObject({ total: 1, proved: 0, not_automated: 1 });
-  });
-
-  it('LA-TRC-UC04-R04-T01 a rule is not counted where every following use case marks its setting not applicable; one value, or no setting, counts it', async () => {
-    const withSetting = changing(shop(logged()), 'pattern_rule', (r) => r.id === 'EX-PAT-ACT-R01', { setting: 'record' });
-    const following: Data = { follows: [{ source_id: 'EX-SHOP-UC01', target_id: 'EX-PAT-LOG' }] };
-    const none = await loadData(adding(withSetting, merge(sale('EX-SHOP-UC01', null), sale('EX-SHOP-UC02', null), following)));
-    expect(obligation(none, 'EX-SHOP', 'pattern_rule')).toMatchObject({ total: 1 });
-    expect(none.coverage.find((c) => c.domain === 'EX-SHOP')?.gaps.filter((g) => g.kind === 'pattern_rule').map((g) => g.id)).toEqual(['EX-PAT-LOG-R01']);
-    const one = await loadData(adding(withSetting, merge(sale('EX-SHOP-UC01', null), sale('EX-SHOP-UC02', 'Price'), following)));
-    expect(obligation(one, 'EX-SHOP', 'pattern_rule')).toMatchObject({ total: 2 });
   });
 
   it('LA-TRC-UC04-R05-T01 a not-proved warning names the pattern rule and each domain that owes it, and says when its test there is not automated yet', async () => {
@@ -460,29 +430,22 @@ describe('pattern rules, domain by domain', () => {
     expect(records(ofCheck(ws, 'not-proved'))).toEqual(['EX-HR01']);
   });
 
-  it('LA-TRC-UC04-R09-T01 a waived rule adds nothing to its domain: no count, no gap, no not-proved warning, and its test there counts nothing', async () => {
-    const waived = changing(complete(), 'pattern_rule', () => true, { applies_when_setting: 'record', applies_when_value: 'Loan', applies_when_negated: false });
-    const ws = await loadData(waived);
-    expect(obligation(ws, 'EX-LEND', 'pattern_rule')).toMatchObject({ total: 0, proved: 0 });
-    expect(gaps(ws)).toEqual([]);
-    expect(ofCheck(ws, 'not-proved')).toEqual([]);
-    expect(ofCheck(ws, 'pattern-rule-test-outside-followers').map((p) => p.severity)).toEqual(['warning']);
-  });
-
   it('LA-TRC-SP01-T a domain follows a pattern itself or through any of its use cases', async () => {
     // EX-LEND follows EX-PAT-ACT through its use case, and EX-PAT-LOG itself.
     const ws = await loadData(adding(logged(), { follows: [{ source_id: 'EX-LEND', target_id: 'EX-PAT-LOG' }] }));
     expect(obligation(ws, 'EX-LEND', 'pattern_rule')).toMatchObject({ total: 2, proved: 1 });
     expect(ws.coverage.find((c) => c.domain === 'EX-LEND')?.gaps.map((g) => g.id)).toEqual(['EX-PAT-LOG-R01']);
+    // A domain that follows neither owes neither.
+    expect(ws.coverage.find((c) => c.domain === null)?.pattern_rules).toEqual([]);
   });
 
-  it('LA-TRC-UC07-R02-T01 a domain following a pattern itself and through a use case counts each rule once; one following only through use cases that all mark the setting not applicable counts none', async () => {
+  it('LA-TRC-UC07-R02-T01 a domain following a pattern itself and through a use case counts each rule once', async () => {
     const both = await loadData(adding(complete(), { follows: [{ source_id: 'EX-LEND', target_id: 'EX-PAT-ACT' }] }));
     expect(obligation(both, 'EX-LEND', 'pattern_rule')).toMatchObject(covered(1));
-    const withSetting = changing(shop(), 'pattern_rule', () => true, { setting: 'record' });
-    const none = await loadData(adding(withSetting, merge(sale('EX-SHOP-UC01', null), sale('EX-SHOP-UC02', null))));
-    expect(obligation(none, 'EX-SHOP', 'pattern_rule')).toMatchObject({ total: 0 });
-    expect(none.coverage.find((c) => c.domain === 'EX-SHOP')?.gaps.filter((g) => g.kind === 'pattern_rule')).toEqual([]);
+    expect(both.coverage.find((c) => c.domain === 'EX-LEND')?.pattern_rules).toEqual(['EX-PAT-ACT-R01']);
+    // Two use cases of one domain following it count it once there too.
+    const twice = await loadData(adding(shop(), merge(sale('EX-SHOP-UC01', 'Sale'), sale('EX-SHOP-UC02', 'Price'))));
+    expect(obligation(twice, 'EX-SHOP', 'pattern_rule')).toMatchObject({ total: 1 });
   });
 
   it('LA-TRC-UC07-R03-T01 a pattern may have no settings: its followers give none, and its rules are owed wherever it is followed', async () => {

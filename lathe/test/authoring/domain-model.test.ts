@@ -162,9 +162,7 @@ describe('commands, events and policies', () => {
     expect(pairsOf(schema, 'checks')).toEqual(['command>specification']);
     expect(pairsOf(schema, 'hears')).toEqual(['policy>domain_event']);
     expect(schema.tables.hears.unique).toContainEqual(['source_id']);
-    expect(schema.tables.command_change).toMatchObject({ role: 'part', ownerColumn: 'command_id' });
-    expect(requiredOf(schema, 'command_change')).toEqual(['command_id', 'aggregate_id', 'reason']);
-    described(reference, ['domain_event', 'command', 'policy'], ['command_change', 'raises', 'checks', 'hears']);
+    described(reference, ['domain_event', 'command', 'policy'], ['raises', 'checks', 'hears']);
     expect(reference.relations.find((r) => r.relation === 'raises')).toMatchObject({ forward_label: 'Raises', reverse_label: 'Raised by' });
     expect(reference.relations.find((r) => r.relation === 'hears')).toMatchObject({ forward_label: 'Hears', reverse_label: 'Heard by' });
   });
@@ -199,27 +197,13 @@ describe('commands, events and policies', () => {
     expect(twice).toEqual([expect.objectContaining({ file: 'data/event_field.jsonl', line: 2 })]);
   });
 
-  it('LA-AUT-UC12-R06-T01 A command changes its own aggregate; another of its domain changed in the same transaction is recorded with its reason and listed as a recorded exception', async () => {
+  it('LA-AUT-UC12-R06-T01 A command changes only its own aggregate, the one of the entity it sits under, and the schema keeps no way to record another', async () => {
     expect(schema.tables.command.columns.find((c) => c.name === 'entity_id')!.required).toBe(true);
-    const ws = await loadData(adding(complete(), {
-      command_change: [{ command_id: 'EX-LEND-CMD01', aggregate_id: 'EX-LEND-A2', reason: 'The tool must never show as lent without its loan.' }],
-    }));
-    expect(ws.exceptions).toEqual([{ command: 'EX-LEND-CMD01', aggregate: 'EX-LEND-A2', reason: 'The tool must never show as lent without its loan.' }]);
+    expect(Object.keys(schema.tables).filter((t) => /^command_|exception|_share$/.test(t))).toEqual(['command_handler']);
+    const ws = await loadData(complete());
     expect(ws.problems).toEqual([]);
-    const change = everyKind().command_change[0];
-    // No reason, its own aggregate, or an aggregate of another domain is refused.
-    const { reason: _, ...unreasoned } = change;
-    expect((await refusals(withTable(everyKind(), 'command_change', [unreasoned]))).map((p) => p.message)).toEqual(['command_change.reason is required']);
-    expect(await refusals(withTable(everyKind(), 'command_change', [{ ...change, aggregate_id: 'TL-LEND-A1' }]))).toEqual([
-      expect.objectContaining({ rule: 'command-change-in-domain', message: expect.stringContaining('cannot also record that same aggregate') }),
-    ]);
-    const other = adding(withTable(everyKind(), 'command_change', [{ ...change, aggregate_id: 'TL-SHOP-A1' }]), {
-      domain: [{ id: 'TL-SHOP', title: 'Shop', product_id: 'TL', subdomain_type: 'supporting', description: 'Selling spare parts.' }],
-      aggregate: [{ id: 'TL-SHOP-A1', title: 'Sale', domain_id: 'TL-SHOP', identity: 'Sale ID', description: 'One sale of parts.' }],
-    });
-    expect(await refusals(other)).toEqual([
-      expect.objectContaining({ rule: 'command-change-in-domain', message: expect.stringContaining('TL-SHOP-A1, an aggregate of another domain') }),
-    ]);
+    // Data naming another aggregate a command changes has no table to load into.
+    expect(await refusals(adding(complete(), { command_change: [{ command_id: 'EX-LEND-CMD01', aggregate_id: 'EX-LEND-A2', reason: 'Both at once.' }] }))).not.toEqual([]);
   });
 });
 

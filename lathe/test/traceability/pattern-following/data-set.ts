@@ -9,7 +9,7 @@ import { writeData } from '../../helpers.ts';
 
 const open: Store[] = [];
 
-/** A store where TL-LEND-UC01 follows TL-PAT-ACT, giving record a value and required_input a reason it does not apply. */
+/** A store where TL-LEND-UC01 follows TL-PAT-ACT, giving record and required_input each a value. */
 export async function patternFollowingDataSet(): Promise<Store> {
   const store = await openStore(
     writeData({
@@ -31,7 +31,7 @@ export async function patternFollowingDataSet(): Promise<Store> {
   open.push(store);
   await runCommand(store, FOLLOW_PATTERN, {
     follower_id: 'TL-LEND-UC01', pattern_id: 'TL-PAT-ACT',
-    setting_values: [{ setting: 'record', value: 'The loan.' }, { setting: 'required_input', not_applicable: 'The member is scanned at the desk.' }],
+    setting_values: [{ setting: 'record', value: 'The loan.' }, { setting: 'required_input', value: 'No input: the member is scanned at the desk.' }],
   });
   return store;
 }

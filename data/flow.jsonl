@@ -1,5 +1,3 @@
-{"id":"LA-AUT-UC01-FL03","title":"Change a product's data through the CLI","use_case_id":"LA-AUT-UC01","interface_id":"LA-IF03"}
-{"id":"LA-AUT-UC01-FL04","title":"Change a product's data through the MCP tools","use_case_id":"LA-AUT-UC01","interface_id":"LA-IF04"}
 {"id":"LA-AUT-UC02-FL01","title":"Split a product into domains by capability in the web app","use_case_id":"LA-AUT-UC02","interface_id":"LA-IF01"}
 {"id":"LA-AUT-UC02-FL03","title":"Split a product into domains by capability through the CLI","use_case_id":"LA-AUT-UC02","interface_id":"LA-IF03"}
 {"id":"LA-AUT-UC02-FL04","title":"Split a product into domains by capability through the MCP tools","use_case_id":"LA-AUT-UC02","interface_id":"LA-IF04"}
@@ -106,8 +104,6 @@
 {"id":"LA-EXP-UC12-FL02","title":"Look up a record's history in the desktop app","use_case_id":"LA-EXP-UC12","interface_id":"LA-IF02"}
 {"id":"LA-EXP-UC13-FL01","title":"Read a domain's endpoints and integrations in the web app","use_case_id":"LA-EXP-UC13","interface_id":"LA-IF01"}
 {"id":"LA-EXP-UC13-FL02","title":"Read a domain's endpoints and integrations in the desktop app","use_case_id":"LA-EXP-UC13","interface_id":"LA-IF02"}
-{"id":"LA-EXP-UC14-FL01","title":"Fix a record while reading in the web app","use_case_id":"LA-EXP-UC14","interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC14-FL02","title":"Fix a record while reading in the desktop app","use_case_id":"LA-EXP-UC14","interface_id":"LA-IF02"}
 {"id":"LA-EXP-UC15-FL01","title":"Watch the spec change in the web app","use_case_id":"LA-EXP-UC15","interface_id":"LA-IF01"}
 {"id":"LA-EXP-UC15-FL02","title":"Watch the spec change in the desktop app","use_case_id":"LA-EXP-UC15","interface_id":"LA-IF02"}
 {"id":"LA-PLT-UC01-FL06","title":"Load the workspace through the package API","use_case_id":"LA-PLT-UC01","interface_id":"LA-IF06"}

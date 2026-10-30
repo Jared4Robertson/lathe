@@ -4,7 +4,7 @@ import { existsSync, readdirSync, statSync, type Dirent } from 'node:fs';
 import { glob, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
-import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL, COVERAGE_PROOFS_SQL, COVERAGE_TESTS_SQL, PATTERN_RULE_STANDING_SQL, coverageViewsSql, FACT_TABLES_SQL, TEST_KINDS, TRACE_FILES_SQL, TRACE_LINKS_SQL, TRACE_OBLIGATIONS_SQL } from './coverage.ts';
+import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL, COVERAGE_PROOFS_SQL, COVERAGE_TESTS_SQL, OWED_PATTERN_RULES_SQL, coverageViewsSql, FACT_TABLES_SQL, TEST_KINDS, TRACE_FILES_SQL, TRACE_LINKS_SQL, TRACE_OBLIGATIONS_SQL } from './coverage.ts';
 import { CONFIG_FILE, loadConfig, productClash, workspaceProducts, type LatheConfig } from './config.ts';
 import { readPackageFacts } from './trace/packages.ts';
 import { readTestCases } from './trace/test-cases.ts';
@@ -16,7 +16,7 @@ import { SCHEMA_DIR } from './platform/data/schema.ts';
 import { gatherTableFacts, TABLE_FACTS_SQL } from './trace/tables.ts';
 import type { Row } from './platform/data/rows.ts';
 import { gatherRouteFacts, writeRouteFacts } from './trace/routes.ts';
-import type { Coverage, CoverageGap, Kind, ObligationCoverage, PatternRuleStanding, Problem, RecordedException, RelationRule, SpecLink, SpecRecord, StageRule, TestCounts, TraceChain, Workspace } from './types.ts';
+import type { Coverage, CoverageGap, Kind, ObligationCoverage, Problem, RelationRule, SpecLink, SpecRecord, StageRule, TestCounts, TraceChain, Workspace } from './types.ts';
 
 export type * from './types.ts';
 export type * from './reference.ts';
@@ -236,12 +236,12 @@ async function computeCoverage(store: Store): Promise<Coverage[]> {
     const c = await store.connect();
     try { return await readRows<T>(c, sql); } finally { c.closeSync(); }
   };
-  const [counts, gaps, tests, proofs, standings] = await Promise.all([
+  const [counts, gaps, tests, proofs, owed] = await Promise.all([
     on<Scoped<ObligationCoverage>>(COVERAGE_COUNTS_SQL),
     on<Scoped<CoverageGap>>(COVERAGE_GAPS_SQL),
     on<Scoped<TestCounts>>(COVERAGE_TESTS_SQL),
     on<Scoped<{ id: string; test_id: string }>>(COVERAGE_PROOFS_SQL),
-    on<Scoped<{ id: string; standing: PatternRuleStanding }>>(PATTERN_RULE_STANDING_SQL),
+    on<Scoped<{ id: string }>>(OWED_PATTERN_RULES_SQL),
   ]);
   const key = (r: { product: string; domain: string | null }) => `${r.product}\u0000${r.domain ?? ''}`;
   const group = <T extends { product: string; domain: string | null }>(rows: T[]) => {
@@ -252,7 +252,7 @@ async function computeCoverage(store: Store): Promise<Coverage[]> {
   const countsBy = group(counts);
   const gapsBy = group(gaps);
   const proofsBy = group(proofs);
-  const standingsBy = group(standings);
+  const owedBy = group(owed);
   const provedBy = (scope: { product: string; domain: string | null }) => {
     const by: Record<string, string[]> = {};
     for (const p of proofsBy.get(key(scope)) ?? []) (by[p.id] ??= []).push(p.test_id);
@@ -265,7 +265,7 @@ async function computeCoverage(store: Store): Promise<Coverage[]> {
     obligations: (countsBy.get(key(t)) ?? []).map(({ kind, label, total, designed, built, proved, not_automated, proof_only }) => ({ kind, label, total, designed, built, proved, not_automated, proof_only })),
     tests: { automated: t.automated, manual: t.manual, not_automated: t.not_automated },
     proved_by: provedBy(t),
-    pattern_rules: Object.fromEntries((standingsBy.get(key(t)) ?? []).map((p) => [p.id, p.standing])),
+    pattern_rules: (owedBy.get(key(t)) ?? []).map((p) => p.id),
     gaps: (gapsBy.get(key(t)) ?? []).map(({ id, kind, missing, message }) => ({ id, kind, missing, message })),
   }));
 }
@@ -373,26 +373,8 @@ async function readRecords(store: Store, order: string[]): Promise<{ kinds: Kind
   return { kinds, stages, relations, records, links };
 }
 
-/** The recorded exceptions as lathe check prints them: a heading with their count, then one line each. */
-export function exceptionsText(exceptions: RecordedException[]): string {
-  const line = (e: RecordedException) =>
-    'command' in e
-      ? `  ${e.command} also changes aggregate ${e.aggregate} in the same transaction: ${e.reason}`
-      : `  ${e.repository} also persists aggregate ${e.aggregate}: ${e.reason}`;
-  return `Recorded exceptions (${exceptions.length}):\n${exceptions.map(line).join('\n')}`;
-}
-
-/** Every recorded exception: each command_change, by command and aggregate, then each repository_share, by repository and aggregate. */
-export function recordedExceptions(store: Store): RecordedException[] {
-  return [
-    ...store.rows('command_change').map((r) => ({ command: String(r.command_id), aggregate: String(r.aggregate_id), reason: String(r.reason) })),
-    ...store.rows('repository_share').map((r) => ({ repository: String(r.repository_id), aggregate: String(r.aggregate_id), reason: String(r.reason) })),
-  ];
-}
-
 /**
- * The workspace of an open store: its records and links, every check's problems, the recorded exceptions, and
- * coverage. The config's root resolves the files records name; its source and test globs find the source files.
+ * The workspace of an open store: its records and links, every check's problems, coverage and chains. The config's root resolves the files records name; its source and test globs find the source files.
  */
 export async function readWorkspace(store: Store, config: Pick<LatheConfig, 'root' | 'source' | 'tests' | 'routers' | 'packages'>, timings?: Partial<LoadTimings>): Promise<Workspace> {
   let mark = performance.now();
@@ -438,13 +420,13 @@ export async function readWorkspace(store: Store, config: Pick<LatheConfig, 'roo
   lap('checks');
   const [coverage, chains] = await Promise.all([computeCoverage(store), computeChains(store, read.records, order)]);
   lap('coverage');
-  return { ...read, problems, exceptions: recordedExceptions(store), coverage, chains };
+  return { ...read, problems, coverage, chains };
 }
 
 /** A workspace whose data did not load: no records, and the store's refusals as data-refused errors. */
 function refusedWorkspace(error: StoreError): Workspace {
   return {
-    kinds: [], stages: [], relations: [], records: [], links: [], exceptions: [], coverage: [], chains: [],
+    kinds: [], stages: [], relations: [], records: [], links: [], coverage: [], chains: [],
     problems: error.problems.map((p) => ({ severity: 'error', check: 'data-refused', record: p.key && /^[A-Z][A-Z0-9]*(-[A-Z0-9]+)*$/.test(p.key) ? p.key : null, message: formatProblem(p) })),
   };
 }

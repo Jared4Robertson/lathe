@@ -88,14 +88,14 @@ export class Transaction implements ReadView {
 
   /** Refuses the command: nothing changes, and the reason is reported under the rule's name. */
   refuse(rule: string, message: string): never {
-    throw new StoreError([{ rule, message, command: 0 }]);
+    throw new StoreError([{ rule, message }]);
   }
 }
 
-/** The draft's tables, to change: for data-files.ts and the generic write layer only (a test holds it to that). */
-export function draftOf(tx: Transaction): { tables: Tables; changed: Set<string>; origins: WeakMap<Row, Origin>; builtIn: WeakSet<Row> } {
+/** The draft's tables, to change: for data-files.ts only (a test holds it to that). */
+export function draftOf(tx: Transaction): { tables: Tables } {
   const draft = drafts.get(tx)!;
-  return { tables: draft.tables, changed: draft.changed, origins: draft.host.origins, builtIn: draft.host.builtIn };
+  return { tables: draft.tables };
 }
 
 /** Makes the table's rows the transaction's own copy, to change. */
@@ -106,12 +106,6 @@ export function editableTable(tx: Transaction, name: string): Map<string, Row> {
     draft.changed.add(name);
   }
   return draft.tables.get(name)!;
-}
-
-/** Builds the schema again from the draft's declarations, for a write that changes a product's own kinds. */
-export async function rebuildSchema(tx: Transaction): Promise<void> {
-  const draft = drafts.get(tx)!;
-  draft.schema = (await draft.host.buildSchema(draft.tables, draft.host.origins)).schema;
 }
 
 /**

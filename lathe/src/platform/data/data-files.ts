@@ -49,7 +49,6 @@ export class DataFiles {
     const current = draftOf(this.tx).tables.get(table)?.get(key);
     if (current && this.tx.isBuiltIn(current)) this.tx.refuse('built-in', `${table} ${describeKey(description, current)} is Lathe's own (lathe/data/${table}.jsonl), so it cannot change`);
     editableTable(this.tx, table).set(key, normal);
-    draftOf(this.tx).origins.set(normal, { command: 0 });
   }
 
   /** Deletes the row with the row's key from its table. */

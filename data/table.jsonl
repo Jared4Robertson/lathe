@@ -28,7 +28,6 @@
 {"id":"LA-AUT-EN34-TB","title":"specification","entity_id":"LA-AUT-EN34","name":"specification","storage":"table","file":"lathe/schema/004-domain-model.sql"}
 {"id":"LA-AUT-EN35-TB","title":"event_field","entity_id":"LA-AUT-EN35","name":"event_field","storage":"table","file":"lathe/schema/004-domain-model.sql"}
 {"id":"LA-AUT-EN36-TB","title":"command","entity_id":"LA-AUT-EN36","name":"command","storage":"table","file":"lathe/schema/004-domain-model.sql"}
-{"id":"LA-AUT-EN37-TB","title":"command_change","entity_id":"LA-AUT-EN37","name":"command_change","storage":"table","file":"lathe/schema/004-domain-model.sql"}
 {"id":"LA-AUT-EN38-TB","title":"read_model","entity_id":"LA-AUT-EN38","name":"read_model","storage":"table","file":"lathe/schema/004-domain-model.sql"}
 {"id":"LA-AUT-EN39-TB","title":"read_model_field","entity_id":"LA-AUT-EN39","name":"read_model_field","storage":"table","file":"lathe/schema/004-domain-model.sql"}
 {"id":"LA-AUT-EN40-TB","title":"query","entity_id":"LA-AUT-EN40","name":"query","storage":"table","file":"lathe/schema/004-domain-model.sql"}
@@ -154,7 +153,7 @@
 {"id":"LA-TRC-RM01-TB","title":"coverage_count","read_model_id":"LA-TRC-RM01","name":"coverage_count","storage":"view","file":"lathe/src/coverage.ts"}
 {"id":"LA-TRC-RM02-TB","title":"coverage_gap","read_model_id":"LA-TRC-RM02","name":"coverage_gap","storage":"materialized view","file":"lathe/src/coverage.ts"}
 {"id":"LA-TRC-RM03-TB","title":"coverage_tests","read_model_id":"LA-TRC-RM03","name":"coverage_tests","storage":"view","file":"lathe/src/coverage.ts"}
-{"id":"LA-TRC-RM04-TB","title":"pattern_rule_standing","read_model_id":"LA-TRC-RM04","name":"pattern_rule_standing","storage":"table","file":"lathe/src/coverage.ts"}
+{"id":"LA-TRC-RM04-TB","title":"owed_pattern_rules","read_model_id":"LA-TRC-RM04","name":"owed_pattern_rules","storage":"table","file":"lathe/src/coverage.ts"}
 {"id":"LA-TRC-RM05-TB","title":"file_facts","read_model_id":"LA-TRC-RM05","name":"file_facts","storage":"table","file":"lathe/src/coverage.ts"}
 {"id":"LA-TRC-RM06-TB","title":"Trace","read_model_id":"LA-TRC-RM06","name":"Trace","storage":"in memory","file":"app/src/specs/trace.ts"}
 {"id":"LA-TRC-RM07-TB","title":"table_facts","read_model_id":"LA-TRC-RM07","name":"table_facts","storage":"table","file":"lathe/src/trace/tables.ts"}

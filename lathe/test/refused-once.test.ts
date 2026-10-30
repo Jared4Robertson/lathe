@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { LATHE_DATA_DIR, openStore, StoreError } from '../src/index.ts';
-import { adding, build, changing, complete, refusals, removeData, type Data } from './helpers.ts';
+import { adding, build, changing, complete, refusals, removeData, run, type Data } from './helpers.ts';
 
 afterAll(removeData);
 
@@ -70,14 +70,14 @@ describe("a test's run by", () => {
 });
 
 describe('pattern settings and product kinds', () => {
-  it('LA-TRC-INV01-T A setting value gives a value or a not-applicable reason, never both, never neither, and never an empty reason', async () => {
-    const both = await refusals(changing(complete(), 'setting_value', () => true, { not_applicable: 'Adds nothing.' }));
-    const neither = await refusals(changing(complete(), 'setting_value', () => true, { value: undefined }));
-    for (const problems of [both, neither]) expect(problems).toEqual([expect.objectContaining({ rule: 'check', table: 'setting_value', file: 'data/setting_value.jsonl', line: 1 })]);
-    expect(await refusals(changing(complete(), 'setting_value', () => true, { value: undefined, not_applicable: '' }))).toEqual([
-      expect.objectContaining({ rule: 'column', message: expect.stringContaining('setting_value.not_applicable "" is empty') }),
+  it('LA-TRC-INV01-T A setting value gives a value, never none and never an empty one', async () => {
+    expect(await refusals(changing(complete(), 'setting_value', () => true, { value: undefined }))).toEqual([
+      expect.objectContaining({ table: 'setting_value', file: 'data/setting_value.jsonl', line: 1, message: expect.stringContaining('value') }),
     ]);
-    expect(await refusals(changing(complete(), 'setting_value', () => true, { value: undefined, not_applicable: 'Adds nothing.' }))).toEqual([]);
+    expect(await refusals(changing(complete(), 'setting_value', () => true, { value: '' }))).toEqual([
+      expect.objectContaining({ table: 'setting_value', file: 'data/setting_value.jsonl', line: 1 }),
+    ]);
+    expect(await refusals(complete())).toEqual([]);
   });
 
   it("LA-TRC-UC07-R06-T01 A product kind named like one of Lathe's tables is refused", async () => {
@@ -128,10 +128,10 @@ describe('checks and product settings', () => {
         expect(error).toBeInstanceOf(StoreError);
         return (error as StoreError).problems.map((p) => p.rule);
       };
-      expect(await refused(store.set('check', { name: 'too-many-children' }, { severity: 'error' }))).toEqual(['built-in']);
-      expect(await refused(store.remove('check', { name: 'too-many-children' }))).toEqual(['built-in']);
+      expect(await refused(run(store, 'check change-check', { name: 'too-many-children', severity: 'error' }))).toEqual(['built-in']);
+      expect(await refused(run(store, 'check remove-check', { name: 'too-many-children' }))).toEqual(['built-in']);
       // A write of the product's own leaves them where they are, and writes none of them into the product's folder.
-      await store.add('check', check().check[0]);
+      await run(store, 'check add-check', check().check[0]);
       expect(store.rows('check').filter((r) => store.isBuiltIn(r)).length).toBe(before.trim().split('\n').length);
     } finally {
       await store.close();
