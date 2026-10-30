@@ -3,6 +3,10 @@
 //   POST /api/<aggregate>/<command>   the command's input -> WriteAnswer: one aggregate command, such as /api/use-case/add-flow-step
 //   GET  /api/<slice>/<query>?<field>=<value>   the query's answer: one read, such as /api/use-case/get-use-case?id=<ID>; the
 //        Record changes read (list-record-changes) is given the product's rows at the commit its `since` names, from git
+//   POST /api/snapshot            { product_id } -> { snapshot }: keeps the product's rows as a chat's turn begins
+//   POST /api/turn-changes        { snapshot } -> RecordChange[]: the records changed since the snapshot, each with its fields, parts and links
+//   POST /api/undo                { snapshot, order } -> WriteAnswer: rolls the product back to the snapshot through the aggregates' own
+//        commands (undo.ts), 422 with every reason when something since depends on what the turn made
 //   GET  /api/history?id=<ID>     HistoryAnswer: the commits that changed the record's rows (&skip=<n> for older ones)
 //   GET  /api/reference           the workspace's own product's Reference (reference.ts): kinds, tables, relations, folders, checks
 //
@@ -25,7 +29,9 @@ import type { DataChange } from './events.ts';
 import { baseline, parseSince } from './baseline.ts';
 import { ALL_COMMANDS, ALL_QUERIES } from '../commands.ts';
 import { flagValue, InputError, type AnyCommand, type AnyQuery } from '../platform/commands/definition.ts';
-import { answerQuery, runCommand, runQuery } from '../platform/commands/run.ts';
+import { answerQuery, runCommand, runConditionally, runQuery } from '../platform/commands/run.ts';
+import { recordChanges } from '../changes.ts';
+import { planUndo, UndoRefusal } from './undo.ts';
 import type { CheckRun, ReadView } from '../platform/data/rules.ts';
 import { recordHistory } from './history.ts';
 
@@ -478,6 +484,51 @@ async function readAtBaseline(config: LatheConfig, definition: AnyQuery, params:
   });
 }
 
+// ---------- Undoing a turn ----------
+
+/** The rows of a product kept when a chat's turn began, by the token the page was given; the oldest go past this many. */
+const SNAPSHOT_LIMIT = 24;
+const SNAPSHOTS_KEY = Symbol.for('lathe.server.snapshots');
+const snapshots: Map<string, { root: string; tables: Record<string, Row[]> }> = ((globalThis as Record<symbol, unknown>)[SNAPSHOTS_KEY] as Map<string, { root: string; tables: Record<string, Row[]> }> | undefined) ??
+  ((globalThis as Record<symbol, unknown>)[SNAPSHOTS_KEY] = new Map<string, { root: string; tables: Record<string, Row[]> }>());
+let snapshotCount = 0;
+
+/** Keeps the rows of the product now, for the undo of the turn that begins: its token. */
+async function takeSnapshot(workspace: string, productId: string): Promise<string> {
+  const products = workspaceProducts(workspace);
+  const root = await productRoot(products, [productId]);
+  const tables = await withStore(root, async (opened) => tablesOf(opened.store));
+  const token = `snapshot-${Date.now().toString(36)}-${++snapshotCount}`;
+  snapshots.set(token, { root, tables });
+  for (const old of [...snapshots.keys()].slice(0, Math.max(0, snapshots.size - SNAPSHOT_LIMIT))) snapshots.delete(old);
+  return token;
+}
+
+/** Rolls the product back to a snapshot through the aggregates' own commands (undo.ts): 200 with the rows changed, 422 with every reason when it cannot. */
+async function runUndo(workspace: string, token: string, order: string[]): Promise<{ status: number; answer: WriteAnswer | { error: string } }> {
+  const kept = snapshots.get(token);
+  if (!kept) return { status: 422, answer: { ok: false, error: 'That turn can no longer be undone: the server no longer holds the data from before it.', problems: [{ rule: 'undo', message: 'the snapshot from before the turn is gone' }] } };
+  const config = workspaceProducts(workspace).find((p) => p.root === kept.root);
+  if (!config) return { status: 404, answer: { error: 'That product is no longer in the workspace.' } };
+  return withStore(config.root, async (opened) => {
+    try {
+      const steps = planUndo(opened.store.schema, kept.tables, tablesOf(opened.store), order);
+      const committed = await runConditionally(opened.store, steps);
+      if (committed.tables.length) {
+        announce(config.root, { tables: committed.tables, readModels: touchedReadModels(opened.store, committed.tables) });
+        scheduleChecks(opened);
+      }
+      snapshots.delete(token);
+      return { status: 200, answer: { ok: true, tables: committed.tables, files: committed.files, changes: committed.changes } };
+    } catch (error) {
+      if (error instanceof UndoRefusal) return { status: 422, answer: { ok: false, error: error.message, problems: error.reasons.map((message) => ({ rule: 'undo', message })) } };
+      if (error instanceof InputError) return { status: 422, answer: { ok: false, error: error.message, problems: [{ rule: 'undo', message: error.message }] } };
+      if (error instanceof StoreError) return { status: 422, answer: { ok: false, error: error.message, problems: error.problems } };
+      throw error;
+    }
+  });
+}
+
 // ---------- Routing ----------
 
 /**
@@ -514,6 +565,37 @@ export async function handleApi(root: string, req: IncomingMessage, res: ServerR
     try {
       const { status, answer } = await runRead(root, read, new URL(req.url ?? '/', 'http://localhost').searchParams);
       send(res, status, answer, { 'cache-control': 'no-store' });
+    } catch (error) {
+      send(res, 500, { error: storeMessage(error) });
+    }
+    return true;
+  }
+  if (pathname === '/api/snapshot' || pathname === '/api/undo' || pathname === '/api/turn-changes') {
+    if (req.method !== 'POST') return (send(res, 405, { error: 'Method not allowed' }), true);
+    if (crossSite(req)) return (send(res, 403, { error: 'Writes come only from this server\'s own pages.' }), true);
+    let body: Record<string, unknown>;
+    try {
+      body = JSON.parse(await readBody(req, WRITE_BODY_LIMIT)) as Record<string, unknown>;
+      if (typeof body !== 'object' || body === null || Array.isArray(body)) throw new Error('not an object');
+    } catch {
+      return (send(res, 400, { error: 'The body is a JSON object.' }), true);
+    }
+    try {
+      if (pathname === '/api/snapshot') {
+        if (typeof body.product_id !== 'string') return (send(res, 400, { error: 'Give the product as product_id.' }), true);
+        send(res, 200, { snapshot: await takeSnapshot(root, body.product_id) }, { 'cache-control': 'no-store' });
+      } else if (pathname === '/api/turn-changes') {
+        const kept = typeof body.snapshot === 'string' ? snapshots.get(body.snapshot) : undefined;
+        if (!kept) return (send(res, 404, { error: 'The data from before that turn is no longer kept.' }), true);
+        const changes = await withStore(kept.root, async (opened) => recordChanges(opened.store.schema, kept.tables, tablesOf(opened.store)));
+        send(res, 200, changes, { 'cache-control': 'no-store' });
+      } else {
+        if (typeof body.snapshot !== 'string' || !Array.isArray(body.order) || !body.order.every((id) => typeof id === 'string')) {
+          return (send(res, 400, { error: 'Give the snapshot as snapshot and the IDs the turn touched, in order, as order.' }), true);
+        }
+        const { status, answer } = await runUndo(root, body.snapshot, body.order as string[]);
+        send(res, status, answer, { 'cache-control': 'no-store' });
+      }
     } catch (error) {
       send(res, 500, { error: storeMessage(error) });
     }

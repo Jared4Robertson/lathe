@@ -7,6 +7,10 @@ import { addRows, removeRows, setRow } from '../fixtures/load';
 import { modelWorkspace } from '../fixtures/model';
 import { recordIndexOf, type ServedData } from '../read-view';
 import { traced } from '../trace/traces';
+import { delivered } from '../trace/deliveries';
+import { orderGraph } from '../../src/trace/delivery/delivery-order';
+import { layOutDelivery } from '../../src/trace/delivery/delivery-layout';
+import { cellKey, DELIVERY_STAGES } from '../../src/trace/delivery/delivery';
 import { graphMap, groundMap, layoutNested, layoutTree, nestedMap } from './maps';
 
 // A change moves only what it changed (LA-PAT-APP-UX-R22, LA-EXP-DS05, LA-EXP-DS07): adding, removing, renaming or
@@ -201,6 +205,11 @@ describe('LA-PAT-APP-UX-R22 a problem badge appearing moves nothing', () => {
     expect(headerChangedOutside(before, after, [])).toEqual([]);
   });
   it('LA-EXP-DS12-T04 on the Graph\'s Map', () => same(groundMap(recordIndexOf(product())), groundMap(recordIndexOf(withProblem()))));
+  it('LA-V98-R20-T02 on the Trace\'s Delivery view', () => {
+    const layOut = (d: ServedData) => { const { graph } = delivered(d); return layOutDelivery(graph, orderGraph(graph, null), { open: new Set(graph.rows.map((r) => cellKey(r.useCase, 'use-case'))), step: null }); };
+    const [before, after] = [layOut(product()), layOut(withProblem())];
+    expect([...after.places]).toEqual([...before.places]);
+  });
   it('LA-V98-R12-T03 on the Trace\'s All-at-once view', () => {
     const layOut = (d: ServedData) => { const { index, traces } = traced(d); return layOutGraph(allGraph(index, traces, 'P'), null); };
     const [before, after] = [layOut(product()), layOut(withProblem())];
@@ -244,5 +253,27 @@ describe.each(CHANGES)('$name keeps every box outside its parent where it was', 
     });
     if (records.includes('P-D-UC01-R03')) expect(after.places.has('P-D-UC01-R03')).toBe(true);
     if (records.includes('P-D-UC01-R02-T01')) expect(after.places.has('P-D-UC01-R02')).toBe(false);
+  });
+
+  it('LA-V98-R20-T02 on the Trace\'s Delivery view: the rows keep their order, a closed row its place, and an open one moves only the rows below it', () => {
+    const { graph: was } = delivered(product());
+    const { graph: now } = delivered(changedData());
+    const shown = orderGraph(was, null);
+    const order = orderGraph(now, shown);
+    expect(order.rows).toEqual(shown.rows);
+    // Every row closed: every box of every row keeps its place.
+    const closed = { open: new Set<string>(), step: null };
+    const [a, b] = [layOutDelivery(was, shown, closed), layOutDelivery(now, order, closed)];
+    expect([...b.rows]).toEqual([...a.rows]);
+    expect([...b.places]).toEqual([...a.places]);
+    // Every row open: the rows above the first changed row keep every box where it was.
+    const open = { open: new Set(now.rows.flatMap((r) => DELIVERY_STAGES.map((s) => cellKey(r.useCase, s)))), step: null };
+    const [c, d] = [layOutDelivery(was, shown, open), layOutDelivery(now, order, open)];
+    const changedRows = order.rows.filter((u) => JSON.stringify(was.rowOf.get(u)?.data) !== JSON.stringify(now.rowOf.get(u)?.data));
+    const first = Math.min(...changedRows.map((u) => order.rows.indexOf(u)));
+    for (const u of order.rows.slice(0, first)) {
+      expect(d.rows.get(u)).toEqual(c.rows.get(u));
+      for (const [key, p] of c.places) if (was.items.get(key)?.row === u) expect(d.places.get(key), key).toEqual(p);
+    }
   });
 });

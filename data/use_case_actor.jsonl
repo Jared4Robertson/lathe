@@ -99,6 +99,8 @@
 {"use_case_id":"LA-PLT-UC18","position":1,"role_name":"Agent"}
 {"use_case_id":"LA-PLT-UC19","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-PLT-UC20","position":1,"role_name":"Owner"}
+{"use_case_id":"LA-PLT-UC21","position":1,"role_name":"Owner"}
+{"use_case_id":"LA-PLT-UC22","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-TRC-UC01","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-TRC-UC02","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-TRC-UC03","position":1,"role_name":"Owner"}
