@@ -1,13 +1,21 @@
 // The window's own pages (LA-V68-R01, LA-V69-R01): a calm launch view over the window from the moment it
 // opens until the page has the product's specs, and an error page when Lathe cannot load the folder.
 // Both are static/launch.html, drawn over the app's page in a view of their own and given a model as
-// JSON in the address; the About window is static/about.html the same way. Their buttons reach the
-// main process through local-preload.cts, and parseLocalAction checks each before it runs. Pure, so
+// JSON in the address; the About window is static/about.html the same way. The error page's buttons reach the
+// main process through local-preload.cts, each on its command's own channel, and parseLocalAction checks each
+// before it runs; About's links open in the system browser only when About shows them (aboutLink). Pure, so
 // test/launch.test.ts covers it.
 import type { Chrome } from './chrome.ts';
 import { displayPath } from './folders.ts';
 
-export type LocalAction = 'retry' | 'open-another' | 'reveal' | 'open-repo' | 'open-reference';
+export type LocalAction = 'retry' | 'open-another' | 'reveal';
+
+/** The channel each button sends on (local-preload.cts): one per command it runs. */
+export const LOCAL_ACTION_CHANNELS: Record<LocalAction, string> = {
+  retry: 'lathe:retry-app-server',
+  'open-another': 'lathe:open-product-folder',
+  reveal: 'lathe:reveal-product-folder',
+};
 
 export interface PageAction {
   id: LocalAction;
@@ -48,10 +56,16 @@ export function errorModel(product: string, folder: string, message: string, col
   };
 }
 
+/** A link of the About window's, which opens in the system browser. */
+export interface PageLink {
+  label: string;
+  url: string;
+}
+
 export interface AboutModel {
   name: string;
   versions: { label: string; value: string }[];
-  actions: PageAction[];
+  links: PageLink[];
   colors: Chrome;
 }
 
@@ -70,9 +84,9 @@ export function aboutModel(versions: { app: string; engine: string | null; elect
       { label: 'Chromium', value: versions.chrome },
       { label: 'Node.js', value: versions.node },
     ],
-    actions: [
-      { id: 'open-repo', label: 'Source Code' },
-      { id: 'open-reference', label: 'Data Reference' },
+    links: [
+      { label: 'Source Code', url: REPO_URL },
+      { label: 'Data Reference', url: REFERENCE_URL },
     ],
     colors,
   };
@@ -88,6 +102,11 @@ export function parseLocalAction(input: unknown, offered: readonly PageAction[])
   return offered.find((a) => a.id === input)?.id ?? null;
 }
 
+/** A link the About window opens, when it is one of the links it shows; else null. */
+export function aboutLink(url: string, model: AboutModel): string | null {
+  return model.links.find((l) => l.url === url)?.url ?? null;
+}
+
 /** The address query a local page reads its model from. */
 export function modelQuery(model: LaunchModel | AboutModel): Record<string, string> {
   return { model: JSON.stringify(model) };
@@ -101,8 +120,8 @@ export function launchStep(specs: unknown): 'wait' | 'ready' | 'error' {
   return specs === 'ready' ? 'ready' : specs === 'error' ? 'error' : 'wait';
 }
 
-/** The spec API's error message from its JSON body, or the status when it has none. */
-export function specErrorMessage(status: number, body: unknown): string {
+/** The app server's error message from its JSON body (its list of the products, the first read every page makes), or the status when it has none. */
+export function serverErrorMessage(status: number, body: unknown): string {
   const error = body && typeof body === 'object' ? (body as { error?: unknown }).error : undefined;
-  return typeof error === 'string' && error.trim() ? error.trim() : `GET /api/spec answered ${status}.`;
+  return typeof error === 'string' && error.trim() ? error.trim() : `GET /api/product/list-products answered ${status}.`;
 }

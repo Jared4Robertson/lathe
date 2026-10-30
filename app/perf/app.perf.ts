@@ -7,7 +7,7 @@ import { BUDGETS } from './budgets';
 import { installProbes, quiet, record, work } from './measure';
 import { focusDrawn, reachableBoxes, sceneOf } from '../stability/scene';
 
-// LA-PAT-APP-UX-R11-T01, LA-V61-R37-T01 to T04, LA-V96-R21-T01, LA-V96-R24-T03 and LA-V96-R29-T02: the app's performance budgets (LA-PAT-APP-UX-R11), on the production build.
+// LA-PAT-APP-UX-R11-T01, LA-V96-R21-T01, LA-V96-R24-T03, LA-V96-R29-T02 and LA-V96-R29-T04: the app's performance budgets (LA-PAT-APP-UX-R11), on the production build.
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const RECORD = '/LA-PLT-UC05';
@@ -42,7 +42,7 @@ test.describe('performance', () => {
     await record({ name: 'first-load JavaScript (gzip)', value: kb, unit: 'KB', budget: BUDGETS.firstLoadKb, detail: `${initial.map((c) => c.file).join(', ')}; largest: ${largest}` });
   });
 
-  test('LA-V61-R37-T01 a record page is interactive within 1.5 s', async ({ page }) => {
+  test('LA-PAT-APP-UX-R11-T01 a record page is interactive within 1.5 s', async ({ page }) => {
     await installProbes(page);
     // A warm server: the server has loaded the data once, as it has for any page after the first.
     await page.goto(RECORD);
@@ -65,7 +65,7 @@ test.describe('performance', () => {
     await record({ name: 'record page interactive', value: times[1], unit: 'ms', budget: BUDGETS.interactiveMs, detail: `median of 3: ${times.map(Math.round).join(', ')} ms` });
   });
 
-  test('LA-V61-R37-T02 a stage switch takes under 100 ms of main-thread work', async ({ page }) => {
+  test('LA-PAT-APP-UX-R11-T01 a stage switch takes under 100 ms of main-thread work', async ({ page }) => {
     await open(page, `${RECORD}?stage=graph`);
     await boxesDrawn(page);
     // Warm: the ERD's code and ELK load on the first switch; time later ones.
@@ -106,7 +106,7 @@ test.describe('performance', () => {
   });
 
   // In the Tree and Nested layouts (LA-V93-R21): the same budgets.
-  for (const layout of ['Tree', 'Nested'] as const) test(`LA-V61-R37-T03 a graph re-center at depth 3 takes under 500 ms of main-thread work, and glides at 60 Hz, in the ${layout} layout`, async ({ page }) => {
+  for (const layout of ['Tree', 'Nested'] as const) test(`LA-PAT-APP-UX-R11-T01 a graph re-center at depth 3 takes under 500 ms of main-thread work, and glides at 60 Hz, in the ${layout} layout`, async ({ page }) => {
     const label = layout === 'Tree' ? 'graph re-center at depth 3' : `${layout} graph re-center at depth 3`;
     await open(page, `${RECORD}?stage=graph`);
     await boxesDrawn(page);
@@ -144,7 +144,7 @@ test.describe('performance', () => {
     await record({ name: `${label}: frames over 20 ms`, value: Math.max(...slow), unit: 'frames', budget: BUDGETS.recenterSlowFrames + 1, detail: `worst of 3: ${slow.join(', ')}; at most ${BUDGETS.recenterSlowFrames}` });
   });
 
-  test('LA-V61-R37-T04 switching to the ERD stage takes under 100 ms of main-thread work', async ({ page }) => {
+  test('LA-PAT-APP-UX-R11-T01 switching to the ERD stage takes under 100 ms of main-thread work', async ({ page }) => {
     await open(page, AGGREGATE);
     const first = await work(page, async () => {
       await page.keyboard.press('Control+2');
@@ -185,12 +185,11 @@ test.describe('performance', () => {
   });
 
   test("LA-V98-R06-T02 the Trace stage's first frame lays the product's map out within its budget; every switch and focus after it within the stage switch budget", async ({ page }) => {
-    // The tree's map (LA-V98-R13 pins its layout), laid out and drawn, with the table under it.
-    await page.addInitScript(() => window.sessionStorage.setItem('lathe:trace-layout', JSON.stringify('tree')));
+    // The All-at-once view, laid out in its worker and drawn, with the table under it.
     const drawnTrace = '.focus-stage .trace-flow[data-ready]';
     const rows = '.focus-stage .trace-matrix tbody tr';
     // A use case's page, as the other stage switches are measured: the Trace stage switched to once, which loads its code and lays the
-    // product's one map out (the first frame of the product map), then again, which reuses the map.
+    // product's one view out (the first frame of the product's view), then again, which reuses the layout.
     await open(page, RECORD);
     const first = await work(page, async () => {
       await page.keyboard.press('Control+3');
@@ -206,8 +205,8 @@ test.describe('performance', () => {
     });
     await record({ name: 'Trace stage: first frame of the product map (loads its code, lays the map out)', value: first.workMs, unit: 'ms', budget: BUDGETS.traceMapFirstFrameMs, detail: `longest frame ${Math.round(first.worstFrameMs)} ms` });
     await record({ name: 'stage switch: to the Trace', value: again.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `longest frame ${Math.round(again.worstFrameMs)} ms` });
-    // Focusing the product from a domain's Trace stage: the map is the same, so only the camera moves (to the product and its children),
-    // and the table's first page and its Untraced section are drawn.
+    // Focusing the product from a domain's Trace stage: the view is the same, so only the camera moves (to the first
+    // outcome, every column across), and the table's first page and its Untraced section are drawn.
     await open(page, `${DOMAIN}?stage=trace`, drawnTrace);
     const product = await work(page, async () => {
       await page.evaluate(() => { window.history.pushState(null, '', '/LA?stage=trace'); window.dispatchEvent(new PopStateEvent('popstate')); });
@@ -219,7 +218,7 @@ test.describe('performance', () => {
       return { drawn: now.boxes.length, bars: now.bars, whole: host.traceScene!(true).boxes.length };
     });
     expect(scene.drawn).toBeLessThanOrEqual(260);
-    await record({ name: 'Trace stage: the product focused, its whole map in view', value: product.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `${scene.drawn} of ${scene.whole} boxes drawn, ${scene.bars} bars; longest frame ${Math.round(product.worstFrameMs)} ms` });
+    await record({ name: 'Trace stage: the product focused, its All-at-once view framed', value: product.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `${scene.drawn} of ${scene.whole} boxes drawn, ${scene.bars} bars; longest frame ${Math.round(product.worstFrameMs)} ms` });
     // Panning the product's trace: a frame draws only what is in view, so a drag stays within the frame budget.
     const canvas = page.locator('.focus-stage .trace-flow canvas');
     const box = (await canvas.boundingBox())!;
@@ -253,20 +252,46 @@ test.describe('performance', () => {
     await open(page, `${DOMAIN}?stage=graph`);
     await boxesDrawn(page);
     await quiet(page, 900);
-    // 50 records the graph draws, retitled in one write through the CLI, as an Agent writes; then put back.
-    const drawn = (await sceneOf(page)).boxes.filter((b) => !b.group && !b.focus).slice(0, 50);
+    // 50 records the graph draws, retitled in one write through their own commands, as an Agent writes; then put back.
+    // Records of kinds with a Change command that takes a title (perf/retitle.ts).
+    const retitle = path.resolve(here, 'retitle.ts');
+    const kinds = new Set(JSON.parse(execFileSync('node', [retitle, '--kinds'], { encoding: 'utf8' })) as string[]);
+    const drawn = (await sceneOf(page)).boxes.filter((b) => !b.group && !b.focus && kinds.has(b.kind)).slice(0, 50);
     expect(drawn.length, '50 records drawn').toBe(50);
     const root = process.env.PERF_ROOT!;
     const titleOf = (kind: string, id: string) => readFileSync(path.join(root, 'data', `${kind}.jsonl`), 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l) as { id: string; title: string }).find((r) => r.id === id)!.title;
     const titles = drawn.map((b) => ({ kind: b.kind, id: b.id, title: titleOf(b.kind, b.id) }));
-    const write = (title: (was: string) => string) => execFileSync('node', [path.resolve(here, '../../lathe/bin/lathe.ts'), 'set', '--json', '-', '--root', root], {
-      input: JSON.stringify(titles.map((t) => ({ [t.kind]: { id: t.id, title: title(t.title) } }))), stdio: ['pipe', 'pipe', 'pipe'],
+    // One write of the 50, each through its own Change command, as an Agent writes (perf/retitle.ts).
+    const write = (title: (was: string) => string) => execFileSync('node', [retitle, '--root', root], {
+      input: JSON.stringify(titles.map((t) => ({ kind: t.kind, id: t.id, title: title(t.title) }))), stdio: ['pipe', 'pipe', 'pipe'],
     });
     const r = await work(page, async () => {
       write((was) => `${was} (changed)`);
       await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => b.change === 'changed').length, { timeout: 20_000 }).toBeGreaterThanOrEqual(drawn.length);
     }, 900);
     await record({ name: 'marking 50 changes at once', value: r.workMs, unit: 'ms', budget: BUDGETS.markChangesMs, detail: `longest frame ${Math.round(r.worstFrameMs)} ms, ${r.slowFrames} of ${r.frames} frames over 20 ms` });
+    write((was) => was);
+  });
+  test('LA-V96-R29-T04 with Highlight changes on, marking 50 changes at once, with their pills and roll-ups, takes under 500 ms of main-thread work', async ({ page }) => {
+    await open(page, `${DOMAIN}?stage=graph`);
+    await boxesDrawn(page);
+    await quiet(page, 900);
+    await page.locator('.focus-stage').getByRole('group', { name: 'Changes' }).getByRole('button', { name: 'Highlight changes' }).click();
+    const retitle = path.resolve(here, 'retitle.ts');
+    const kinds = new Set(JSON.parse(execFileSync('node', [retitle, '--kinds'], { encoding: 'utf8' })) as string[]);
+    const drawn = (await sceneOf(page)).boxes.filter((b) => !b.group && !b.focus && kinds.has(b.kind)).slice(0, 50);
+    expect(drawn.length, '50 records drawn').toBe(50);
+    const root = process.env.PERF_ROOT!;
+    const titleOf = (kind: string, id: string) => readFileSync(path.join(root, 'data', `${kind}.jsonl`), 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l) as { id: string; title: string }).find((r) => r.id === id)!.title;
+    const titles = drawn.map((b) => ({ kind: b.kind, id: b.id, title: titleOf(b.kind, b.id) }));
+    const write = (title: (was: string) => string) => execFileSync('node', [retitle, '--root', root], {
+      input: JSON.stringify(titles.map((t) => ({ kind: t.kind, id: t.id, title: title(t.title) }))), stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    const r = await work(page, async () => {
+      write((was) => `${was} (changed)`);
+      await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => b.pill === 'changed').length, { timeout: 20_000 }).toBeGreaterThanOrEqual(drawn.length);
+    }, 900);
+    await record({ name: 'marking 50 changes at once under Highlight changes', value: r.workMs, unit: 'ms', budget: BUDGETS.markChangesMs, detail: `longest frame ${Math.round(r.worstFrameMs)} ms, ${r.slowFrames} of ${r.frames} frames over 20 ms` });
     write((was) => was);
   });
 });

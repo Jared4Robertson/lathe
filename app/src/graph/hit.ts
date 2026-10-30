@@ -37,10 +37,3 @@ export function hitPlate<T extends Pick<Plate, 'x' | 'y' | 'w' | 'h' | 'outline'
   for (let i = plates.length - 1; i >= 0; i--) if (inPlate(plates[i], at)) return plates[i];
   return null;
 }
-
-/** Whether a box in the map shows in a pane through a camera: its bounding box meets the pane. */
-export function onScreen(r: { x: number; y: number; w: number; h: number }, cam: { cx: number; cy: number; zoom: number; w: number; h: number }): boolean {
-  const left = (r.x - cam.cx) * cam.zoom + cam.w / 2;
-  const top = (r.y - cam.cy) * cam.zoom + cam.h / 2;
-  return left + r.w * cam.zoom >= 0 && left <= cam.w && top + r.h * cam.zoom >= 0 && top <= cam.h;
-}

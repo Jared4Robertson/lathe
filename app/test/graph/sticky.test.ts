@@ -1,10 +1,11 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { graphMap } from '../../src/graph/map';
 import { plateOf } from '../../src/graph/plate';
-import { STICKY_READ_PX, stickyLabel, type ScreenBox } from '../../src/graph/sticky';
-import { LABEL_PAD, TITLE_FONT, textMeasure } from '../../src/graph/text';
+import { keepLabel, labelStrip, STICKY_READ_PX, stickyLabel, stickyRoom, type ScreenBox } from '../../src/graph/sticky';
+import { CHILD_READ_PX, FRAME_PADDING, frameOnMap, STRIP_MOST } from '../../src/graph/camera';
+import { BORDER, LABEL_PAD, TITLE_FONT, textMeasure } from '../../src/graph/text';
 import { testIndex } from './workspace';
+import { graphMap, layoutTree } from './maps';
 
 // A box only partly in the open space draws its label in its visible part, or not at all (graph/sticky.ts, LA-EXP-DS06).
 
@@ -42,8 +43,9 @@ describe('LA-EXP-DS06-T14 a label the open space cuts is laid out in the box\'s 
     expect(title.map((l) => l.text).join('')).toBe(plate.title);
     expect(title[0].px).toBeLessThanOrEqual(own + 1e-9);
     expect(title[0].px).toBeGreaterThanOrEqual(STICKY_READ_PX);
-    // Centered in the visible part of the label's room (its shape keeps some of the box's right end).
-    const roomRight = X(plate.label.x + plate.label.w + LABEL_PAD * plate.text);
+    // Centered in the visible part of its room: the label's content box and its side padding but twice a border (its
+    // shape keeps some of the box's right end).
+    const roomRight = X(plate.label.x + plate.label.w + (LABEL_PAD - 2 * BORDER) * plate.text);
     const lefts = s.lines.map((l) => l.x);
     const rights = s.lines.map((l) => l.x + m.em(l.text.trimEnd(), l.face) * l.px);
     expect((Math.min(...lefts) + Math.max(...rights)) / 2).toBeCloseTo((seen.left + roomRight) / 2, 0);
@@ -51,5 +53,95 @@ describe('LA-EXP-DS06-T14 a label the open space cuts is laid out in the box\'s 
 
   it('draws no label when the visible part cannot hold it at the readable floor', () => {
     expect(stickyLabel(plate, zoom, X, Y, { left: 880, top: -10, right: 2000, bottom: 2000 }).kind).toBe('hidden');
+  });
+});
+
+describe('LA-EXP-DS06-T14 a moved label lies on its box\'s one fill, never across an edge or a decoration', () => {
+  const index = testIndex();
+  const map = graphMap(index, 'P');
+  it('lays every cut label out inside its content box, clear of the edge, the focus\'s wider edge and the shape\'s decoration', () => {
+    const m = textMeasure();
+    let moved = 0;
+    for (const node of map.nodes.values()) {
+      const plate = plateOf(index, node.id, { view: 'tree', node });
+      const zoom = 900 / node.w;
+      const X = (x: number) => (x - node.x) * zoom;
+      const Y = (y: number) => (y - node.y) * zoom;
+      // A panel covers the box's left third; the label is laid out in what shows.
+      const open: ScreenBox = { left: 300, top: -10, right: 2000, bottom: 2000 };
+      const s = stickyLabel(plate, zoom, X, Y, open);
+      if (s.kind !== 'moved') continue;
+      moved++;
+      const room = stickyRoom(plate, X, Y, open);
+      // The padding round the content box holds every edge and decoration the box draws: a stack's front sheet, a page's fold.
+      expect(room.left).toBeGreaterThanOrEqual(X(plate.x + plate.border) - 1e-6);
+      expect(room.right).toBeLessThanOrEqual(X(plate.x + plate.w - plate.border) + 1e-6);
+      for (const l of s.lines) {
+        const { ascent, descent } = m.metrics(l.face);
+        const width = m.em(l.text.trimEnd(), l.face) * l.px;
+        expect(l.x, `${node.id} ${l.text}`).toBeGreaterThanOrEqual(room.left - 1e-6);
+        expect(l.x + width, `${node.id} ${l.text}`).toBeLessThanOrEqual(room.right + 1e-6);
+        expect(l.baseline - ascent * l.px, `${node.id} ${l.text}`).toBeGreaterThanOrEqual(room.top - 1e-6);
+        expect(l.baseline + descent * l.px, `${node.id} ${l.text}`).toBeLessThanOrEqual(room.bottom + 1e-6);
+      }
+    }
+    expect(moved).toBeGreaterThan(0);
+  });
+});
+
+describe('LA-EXP-DS06-T15 a focused box is never left without its label: the camera moves to where its visible part holds it', () => {
+  const index = testIndex();
+  const map = graphMap(index, 'P');
+  const node = map.nodes.get('P-D')!;
+  const plate = plateOf(index, 'P-D', { view: 'tree', node });
+  // The domain's box 900 px wide from x = 0; a panel covers all but its right 20 px.
+  const zoom = 900 / node.w;
+  const v = { x: -node.x * zoom, y: -node.y * zoom, zoom };
+  const open: ScreenBox = { left: 880, top: -10, right: 2000, bottom: 2000 };
+  const at = (cam: typeof v) => stickyLabel(plate, cam.zoom, (x) => cam.x + x * cam.zoom, (y) => cam.y + y * cam.zoom, open);
+
+  it('leaves a camera that draws the label as it is', () => {
+    const wide: ScreenBox = { left: 300, top: -10, right: 2000, bottom: 2000 };
+    expect(keepLabel(plate, v, wide)).toEqual(v);
+  });
+
+  it('moves a camera whose cut leaves the label no room right, as little as it takes, at the same zoom', () => {
+    expect(at(v).kind).toBe('hidden');
+    const kept = keepLabel(plate, v, open);
+    expect(kept.zoom).toBe(zoom);
+    expect(kept.y).toBe(v.y);
+    expect(kept.x).toBeGreaterThan(v.x);
+    expect(at(kept).kind).not.toBe('hidden');
+    // A pixel less and it would not be drawn.
+    expect(at({ ...kept, x: kept.x - 1.5 }).kind).toBe('hidden');
+  });
+});
+
+describe('LA-EXP-DS09-T15 a focus framed as a strip beside its children reads at 11 px or more', () => {
+  it('widens the strip as its label needs, never past its share of the width', () => {
+    // A parent with a long label and many children, whose column is framed at reading size with the parent as a strip.
+    const kids = Array.from({ length: 40 }, (_, i) => `c${i}`);
+    const labelOf = (id: string) => (id === 'p'
+      ? { title: 'Every list that can grow stays at ten rows', meta: 'Pattern · LA-PAT-RECORD-PAGE-WITH-A-LONG-NAME', shape: 'stack' as const, marks: 1 }
+      : { title: `A rule ${id}`, meta: `Pattern rule · ${id}`, shape: 'stadium' as const });
+    const map = layoutTree(['root'], (id) => (id === 'root' ? ['p', 'q'] : id === 'p' ? kids : []), labelOf);
+    const node = map.nodes.get('p')!;
+    const plate = plateOf(testIndex(), 'p', { view: 'tree', node, plain: { kind: 'pattern', kindLabel: 'Pattern', title: labelOf('p').title, meta: labelOf('p').meta, stage: 'use-cases', dashed: false } });
+    const titlePx = (v: { x: number; y: number; zoom: number }, w: number, h: number) => {
+      const s = stickyLabel(plate, v.zoom, (x) => v.x + x * v.zoom, (y) => v.y + y * v.zoom, { left: 0, top: 0, right: w, bottom: h });
+      if (s.kind === 'placed') return plate.text * v.zoom * TITLE_FONT;
+      return s.kind === 'moved' ? Math.max(...s.lines.filter((l) => l.face === 'title').map((l) => l.px)) : 0;
+    };
+    for (const [w, h] of [[547, 600], [900, 700]]) {
+      const plain = frameOnMap(map, 'p', 1, w, h);
+      const v = frameOnMap(map, 'p', 1, w, h, undefined, labelStrip(plate, h, CHILD_READ_PX));
+      expect(titlePx(v, w, h), `${w} wide`).toBeGreaterThanOrEqual(CHILD_READ_PX - 1e-6);
+      expect(titlePx(v, w, h)).toBeGreaterThanOrEqual(Math.min(CHILD_READ_PX, titlePx(plain, w, h)) - 1e-6);
+      // Its children's column still shows beside the strip, the strip taking no more than its share of the width before
+      // the frame's padding.
+      const child = map.nodes.get('c0')!;
+      expect(child.x * v.zoom + v.x).toBeLessThan(w - 100);
+      expect((node.x + node.w) * v.zoom + v.x).toBeLessThanOrEqual(Math.max(w * STRIP_MOST + FRAME_PADDING, (node.x + node.w) * plain.zoom + plain.x) + 1);
+    }
   });
 });

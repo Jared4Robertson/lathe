@@ -5,8 +5,10 @@ that breaks the model cannot be saved. Each stored table is one file, `data/<tab
 per line, sorted by key. Every record has exactly one parent, a foreign key such as a UC requirement's
 `use_case_id`, except the kinds with no owner (value objects, specifications, views, integrations and UI
 components), which exist because other records use them. Other relationships are links, a row of their relation's
-table, and an ID is unique across every kind. Every write goes through the command layer (the CLI, the app and the
-plugin's tools), which validates it in one transaction and rewrites the lines it changed; git is the history.
+table, and an ID is unique across every kind. Every write is one command of the aggregate it changes, such as Add a
+flow step (`lathe use-case add-flow-step`, the plugin's `use_case_add_flow_step` tool, or
+`POST /api/use-case/add-flow-step` from the app): it checks the aggregate's rules in one transaction and rewrites the
+lines it changed, or is refused with every reason; git is the history. Each aggregate reads through its own queries.
 
 The model is drawn from domain-driven design, CQRS and event storming, in six stages: discovery (the business
 outcomes the product exists to achieve), the domain model, use cases on top of it, their interaction design, the
@@ -24,12 +26,6 @@ returning `severity`, `record` and `message` for each problem. An error means th
 something to look at. Lathe's own checks are in `lathe/data/check.jsonl`, loaded beside every product's data; a
 product adds its own as rows of its `data/check.jsonl` with its `product_id`. What the schema enforces is never a
 check: the store refuses it.
-
-**Recorded exceptions** are deliberate deviations recorded with their reason: a command that also changes another
-aggregate of its domain in the same transaction (a `command_change` row), or a repository that also persists an
-aggregate with no repository of its own (a `repository_share` row), such as one generic store. They are not
-problems: `lathe check` and the Checks panel list every one in a section of their own, with its command or
-repository, aggregate and reason, so each stays visible.
 
 **Coverage** counts every obligation as designed, built and proved, per domain and for the product outside every
 domain, and lists as gaps each obligation still short of one, and each record short of a minimum the schema leaves to
@@ -57,6 +53,7 @@ A business outcome: a measurable change the product exists to bring about, which
 - **ID:** `<P>-BO<nn>`, such as `TL-BO01`; it starts with its parent's ID
 - **Links out:** Measured by ([`measured_by`](#relation-measured_by))
 - **Links in:** Questions about this ([`about`](#relation-about)), Served by ([`serves`](#relation-serves))
+- **Checks:** [`outcome-target-undated`](#check-outcome-target-undated)
 - **Gaps:** [`outcome-not-served`](#gap-outcome-not-served), [`outcome-not-measured`](#gap-outcome-not-measured)
 
 <a id="table-business_outcome"></a>
@@ -78,6 +75,18 @@ A business outcome: a measurable change the product exists to bring about, which
 - **Rule:** `("trim"(measure) != '')`
 - **Rule:** `("trim"("target") != '')`
 - **Rule:** `("trim"(measured_outside) != '')`
+
+### Checks: discovery
+
+<a id="check-outcome-target-undated"></a>
+
+### `outcome-target-undated`
+
+**Warning** · Lathe's · Kinds: [`business_outcome`](#kind-business_outcome)
+
+A business outcome whose target says no date by which it is reached.
+
+An outcome is a change someone would miss, with a measure and a target by a date (LA-STD-MODELING-R13): without a date the target can never be missed, so it measures nothing. The target says by when, as a year (by 2027) or a span from a known event (within six months of the first release, by the end of the first year). Give the target its date with the Business outcome's change command.
 
 ### Coverage gaps: discovery
 
@@ -101,7 +110,7 @@ Domains and their aggregates, entities, value objects, rules (constraints, invar
 A part of the product with its own model, language and owner, for one business capability: what DDD calls a bounded context. Domains meet only through published events.
 
 - **Parents:** [`product`](#kind-product) (`product_id`)
-- **Children:** [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model), [`domain_service`](#kind-domain_service), [`term`](#kind-term), [`capability`](#kind-capability), [`repository`](#kind-repository), [`table`](#kind-table), [`test_data_set`](#kind-test_data_set), [`question`](#kind-question)
+- **Children:** [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model), [`domain_service`](#kind-domain_service), [`term`](#kind-term), [`capability`](#kind-capability), [`data_store`](#kind-data_store), [`repository`](#kind-repository), [`table`](#kind-table), [`entry_point`](#kind-entry_point), [`tooling`](#kind-tooling), [`test_data_set`](#kind-test_data_set), [`question`](#kind-question)
 - **Obligation:** no
 - **ID:** `<P>-<D>`, such as `TL-LEND`; it starts with its parent's ID
 - **Links out:** Follows ([`follows`](#relation-follows))
@@ -131,12 +140,12 @@ A part of the product with its own model, language and owner, for one business c
 The consistency boundary: a cluster of entities changed together as one unit, by one command at a time. Other aggregates follow its changes through events, and refer to it by ID only.
 
 - **Parents:** [`domain`](#kind-domain) (`domain_id`)
-- **Children:** [`entity`](#kind-entity), [`invariant`](#kind-invariant), [`domain_event`](#kind-domain_event), [`command`](#kind-command)
+- **Children:** [`entity`](#kind-entity), [`invariant`](#kind-invariant), [`domain_event`](#kind-domain_event), [`storage_requirement`](#kind-storage_requirement)
 - **Obligation:** no
 - **ID:** `<P>-<D>-A<n>`, such as `TL-LEND-A1`; it starts with its domain's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about)), Persisted by ([`persists`](#relation-persists)), Read by ([`reads`](#relation-reads))
-- **Checks:** [`has-crosses-aggregate`](#check-has-crosses-aggregate), [`aggregate-too-large`](#check-aggregate-too-large)
+- **Checks:** [`aggregate-too-large`](#check-aggregate-too-large), [`serves-no-outcome`](#check-serves-no-outcome)
 - **Gaps:** [`aggregate-without-root`](#gap-aggregate-without-root), [`aggregate-without-command`](#gap-aggregate-without-command), [`aggregate-without-repository`](#gap-aggregate-without-repository)
 
 <a id="table-aggregate"></a>
@@ -162,13 +171,13 @@ The consistency boundary: a cluster of entities changed together as one unit, by
 A record the domain keeps, with an identity: its aggregate's root or one of its children. Its fields are entity_field rows; the value objects it has are the ones its fields are typed with.
 
 - **Parents:** [`aggregate`](#kind-aggregate) (`aggregate_id`)
-- **Children:** [`data_model`](#kind-data_model), [`table`](#kind-table)
+- **Children:** [`command`](#kind-command), [`data_model`](#kind-data_model), [`table`](#kind-table)
 - **Obligation:** no
 - **ID:** `<P>-<D>-EN<nn>`, such as `TL-LEND-EN01`; it starts with its domain's ID
 - **Links out:** Has many ([`has_many`](#relation-has_many)), Has one ([`has_one`](#relation-has_one))
 - **Links in:** Questions about this ([`about`](#relation-about)), Part of ([`has_many`](#relation-has_many)), Part of ([`has_one`](#relation-has_one))
 - **Parts:** [`entity_field`](#table-entity_field)
-- **Checks:** [`has-crosses-aggregate`](#check-has-crosses-aggregate), [`entity-unreferenced`](#check-entity-unreferenced), [`aggregate-too-large`](#check-aggregate-too-large)
+- **Checks:** [`entity-unreferenced`](#check-entity-unreferenced), [`aggregate-too-large`](#check-aggregate-too-large)
 - **Gaps:** [`entity-without-fields`](#gap-entity-without-fields), [`entity-without-data-model`](#gap-entity-without-data-model), [`entity-without-table`](#gap-entity-without-table)
 
 <a id="table-entity"></a>
@@ -284,6 +293,7 @@ A value object's own rule, checked when the value is created, such as an email a
 - **ID:** `<value object>-C<nn>`, such as `TL-VO01-C01`; it starts with its parent's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
+- **Checks:** [`serves-no-outcome`](#check-serves-no-outcome)
 
 <a id="table-constraint"></a>
 
@@ -302,17 +312,18 @@ A value object's own rule, checked when the value is created, such as an email a
 
 ### Invariant (`invariant`)
 
-A rule that holds for one aggregate on every change. Uniqueness across records (no two members share an email) is an invariant, enforced by a unique key of the table.
+A rule that holds for one aggregate on every change, enforced by its rule (rule) in the aggregate's code. Uniqueness across records (no two members share an email) is an invariant too, which a unique key of the table may back up.
 
 - **Parents:** [`aggregate`](#kind-aggregate) (`aggregate_id`)
-- **Children:** [`invariant_test`](#kind-invariant_test)
+- **Children:** [`rule`](#kind-rule), [`invariant_test`](#kind-invariant_test)
 - **Obligation:** yes: designed, built and proved
   - **Designed:** By construction, under its aggregate.
-  - **Built:** A data model of one of its aggregate's entities, or the table whose unique key names it, names a file that exists.
+  - **Built:** Its rule names a file that exists.
   - **Proved:** Its invariant test.
 - **ID:** `<P>-<D>-INV<nn>`, such as `TL-LEND-INV01`; it starts with its domain's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
+- **Checks:** [`serves-no-outcome`](#check-serves-no-outcome)
 
 <a id="table-invariant"></a>
 
@@ -342,7 +353,7 @@ A named predicate over one or more aggregates of one domain (Evans), such as Mem
 - **ID:** `<P>-<D>-SP<nn>`, such as `TL-LEND-SP01`; it starts with its domain's ID
 - **Links out:** Reads ([`reads`](#relation-reads))
 - **Links in:** Questions about this ([`about`](#relation-about)), Checked by ([`checks`](#relation-checks)), Selects for ([`selects_by`](#relation-selects_by))
-- **Checks:** [`specification-unused`](#check-specification-unused), [`specification-title-article`](#check-specification-title-article)
+- **Checks:** [`specification-unused`](#check-specification-unused), [`specification-title-article`](#check-specification-title-article), [`serves-no-outcome`](#check-serves-no-outcome)
 - **Gaps:** [`specification-reads-nothing`](#gap-specification-reads-nothing)
 
 <a id="table-specification"></a>
@@ -417,15 +428,14 @@ One field a domain event carries, in order. A published event's fields are a con
 
 ### Command (`command`)
 
-A request to change exactly one aggregate, its parent. It checks specifications, raises events and may call domain services, all of its own domain.
+A request to change exactly one aggregate: the one its entity belongs to. It sits under the entity it changes, and checks specifications, raises events and may call domain services, all of its own domain.
 
-- **Parents:** [`aggregate`](#kind-aggregate) (`aggregate_id`)
+- **Parents:** [`entity`](#kind-entity) (`entity_id`)
 - **Children:** [`policy`](#kind-policy), [`endpoint`](#kind-endpoint), [`command_handler`](#kind-command_handler)
 - **Obligation:** no
 - **ID:** `<P>-<D>-CMD<nn>`, such as `TL-LEND-CMD01`; it starts with its domain's ID
 - **Links out:** Calls ([`calls`](#relation-calls)), Checks ([`checks`](#relation-checks)), Raises ([`raises`](#relation-raises))
 - **Links in:** Questions about this ([`about`](#relation-about)), Invoked by ([`invokes`](#relation-invokes))
-- **Parts:** [`command_change`](#table-command_change)
 - **Gaps:** [`command-without-handler`](#gap-command-without-handler)
 
 <a id="table-command"></a>
@@ -434,27 +444,12 @@ A request to change exactly one aggregate, its parent. It checks specifications,
 | --- | --- | --- | --- |
 | `id` | VARCHAR → `record_id` | yes | The command's ID, such as TL-LEND-CMD01. |
 | `title` | VARCHAR | yes | What it asks for, in the imperative, such as Open a loan. |
-| `aggregate_id` | VARCHAR → [`aggregate`](#table-aggregate) | yes | The aggregate it changes. |
+| `entity_id` | VARCHAR → [`entity`](#table-entity) | yes | The entity it changes, the root or a child; its aggregate is the one the command changes. |
 | `description` | VARCHAR | yes | What it changes and when it is refused, in a sentence or two; how its handler does it belongs to the handler. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `("trim"(description) != '')`
-
-<a id="table-command_change"></a>
-
-#### `command_change`
-
-A recorded exception to one aggregate per command: another aggregate of the same domain the command changes in the same transaction, and why. lathe check and the Checks page list every one under Recorded exceptions, always visible and never a warning.
-
-| Column | Type | Required | Meaning |
-| --- | --- | --- | --- |
-| `command_id` | VARCHAR → [`command`](#table-command) | yes | The command that also changes the aggregate. |
-| `aggregate_id` | VARCHAR → [`aggregate`](#table-aggregate) | yes | The other aggregate it changes in the same transaction: of the command's domain, never its own. |
-| `reason` | VARCHAR | yes | Why the change cannot follow through an event and a policy. |
-
-- **Key:** `command_id`, `aggregate_id`
-- **Rule:** `("trim"(reason) != '')`
 
 <a id="kind-read_model"></a>
 
@@ -463,13 +458,14 @@ A recorded exception to one aggregate per command: another aggregate of the same
 A view of its domain's data shaped for reading, which reads one or more of the domain's aggregates. Its fields are read_model_field rows, and it is stored in a table of its own.
 
 - **Parents:** [`domain`](#kind-domain) (`domain_id`)
-- **Children:** [`query`](#kind-query), [`table`](#kind-table), [`projection`](#kind-projection)
+- **Children:** [`query`](#kind-query), [`storage_requirement`](#kind-storage_requirement), [`table`](#kind-table), [`projection`](#kind-projection), [`reader`](#kind-reader)
 - **Obligation:** no
 - **ID:** `<P>-<D>-RM<nn>`, such as `TL-LEND-RM01`; it starts with its domain's ID
 - **Links out:** Calls ([`calls`](#relation-calls)), Fed by ([`fed_by`](#relation-fed_by)), Reads ([`reads`](#relation-reads))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Parts:** [`read_model_field`](#table-read_model_field)
-- **Gaps:** [`read-model-without-fields`](#gap-read-model-without-fields), [`read-model-reads-nothing`](#gap-read-model-reads-nothing), [`read-model-without-query`](#gap-read-model-without-query), [`read-model-without-projection`](#gap-read-model-without-projection), [`read-model-without-table`](#gap-read-model-without-table)
+- **Checks:** [`serves-no-outcome`](#check-serves-no-outcome)
+- **Gaps:** [`read-model-without-fields`](#gap-read-model-without-fields), [`read-model-reads-nothing`](#gap-read-model-reads-nothing), [`read-model-without-query`](#gap-read-model-without-query), [`read-model-without-projection`](#gap-read-model-without-projection), [`read-model-without-reader`](#gap-read-model-without-reader), [`read-model-without-table`](#gap-read-model-without-table)
 
 <a id="table-read_model"></a>
 
@@ -553,7 +549,7 @@ Whenever an event, then a command (event storming). It belongs to the command it
 - **ID:** `<P>-<D>-PO<nn>`, such as `TL-LEND-PO01`; it starts with its domain's ID
 - **Links out:** Hears ([`hears`](#relation-hears))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`event-not-by-outbox`](#check-event-not-by-outbox)
+- **Checks:** [`event-not-by-outbox`](#check-event-not-by-outbox), [`serves-no-outcome`](#check-serves-no-outcome)
 - **Gaps:** [`policy-hears-nothing`](#gap-policy-hears-nothing)
 
 <a id="table-policy"></a>
@@ -584,6 +580,7 @@ Domain logic that belongs to no single entity and is not a yes-or-no check, such
 - **ID:** `<P>-<D>-DS<nn>`, such as `TL-LEND-DS01`; it starts with its domain's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about)), Called by ([`calls`](#relation-calls))
+- **Checks:** [`serves-no-outcome`](#check-serves-no-outcome)
 - **Gaps:** [`domain-service-not-called`](#gap-domain-service-not-called)
 
 <a id="table-domain_service"></a>
@@ -599,6 +596,38 @@ Domain logic that belongs to no single entity and is not a yes-or-no check, such
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `("trim"("statement") != '')`
 
+<a id="kind-storage_requirement"></a>
+
+### Storage requirement (`storage_requirement`)
+
+What the business needs kept of one aggregate or read model, its parent, and how well: whichever apply of durability (it survives a restart or a crash), atomicity (saved whole or not at all, such as a loan with its outbox event), retention and deletion (how long it is kept, and deleted on request), recovery (backups, and how much may be lost) and capacity (how much, how fast). It is built by its aggregate's repository, or its read model's reader, naming a file that exists and the data store it is stored in, and proved by its storage requirement tests.
+
+- **Parents:** [`aggregate`](#kind-aggregate) (`aggregate_id`), [`read_model`](#kind-read_model) (`read_model_id`)
+- **Children:** [`storage_requirement_test`](#kind-storage_requirement_test)
+- **Obligation:** yes: designed, built and proved
+  - **Designed:** By construction, under its aggregate or read model.
+  - **Built:** Its aggregate's repository, or its read model's reader, names a file that exists and the data store it is stored in.
+  - **Proved:** One of its storage requirement tests.
+- **ID:** `<aggregate or read model>-SR<nn>`, such as `TL-LEND-A1-SR01`; it starts with its parent's ID
+- **Links out:** none
+- **Links in:** Questions about this ([`about`](#relation-about))
+- **Checks:** [`serves-no-outcome`](#check-serves-no-outcome)
+
+<a id="table-storage_requirement"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The requirement's ID: its aggregate's or read model's ID and SR<nn>, such as TL-LEND-A1-SR01. |
+| `title` | VARCHAR | yes | The requirement in a few words, such as A loan is saved with its outbox event. |
+| `aggregate_id` | VARCHAR → [`aggregate`](#table-aggregate) | no | The aggregate whose data it is about; exactly one of aggregate and read model is given. |
+| `read_model_id` | VARCHAR → [`read_model`](#table-read_model) | no | The read model whose data it is about; exactly one of aggregate and read model is given. |
+| `statement` | VARCHAR | yes | What must be kept and how well, stated with MUST, MUST NOT, SHOULD or MAY. |
+
+- **Key:** `id`
+- **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"("statement") != '')`
+- **Rule:** `((aggregate_id IS NULL) != (read_model_id IS NULL))`
+
 <a id="kind-term"></a>
 
 ### Term (`term`)
@@ -609,8 +638,9 @@ A word of the domain's glossary and what it means there, so specs, code and conv
 - **Children:** none
 - **Obligation:** no
 - **ID:** `<P>-<D>-TM<nn>`, such as `TL-LEND-TM01`; it starts with its domain's ID
-- **Links out:** none
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links out:** Builds on ([`builds_on`](#relation-builds_on))
+- **Links in:** Questions about this ([`about`](#relation-about)), Built on by ([`builds_on`](#relation-builds_on))
+- **Checks:** [`term-used-unlinked`](#check-term-used-unlinked)
 
 <a id="table-term"></a>
 
@@ -656,17 +686,17 @@ A specification has no owner: it exists because commands check it and queries se
 
 An event a policy hears, whose aggregate is stored in a database table, whose event type is not delivered by outbox.
 
-An event a policy hears is delivered by outbox: saved in the same transaction as its aggregate and delivered reliably afterwards, since a lost reaction is a lost change. That is every event a policy hears whose aggregate is stored in a database table (an entity of the aggregate has a table whose storage is `table`), in its own domain or, when published, in another. An event inside one process with no transaction to join, such as one whose aggregate is kept in browser storage, a file or in memory and is heard in the same browser tab or process, is exempt. So is an event that only keeps read models current (fed_by), where those read models are rebuilt from the data on every load: it may be delivered in process, since the next load rebuilds what a lost delivery missed. Its event type records the delivery; one a policy hears that is delivered in process, with no delivery given, or no event type at all, leaves the reaction to chance. Give the event an event type delivered by outbox.
+An event a policy hears, whose aggregate is stored in a database table (an entity of the aggregate has a table whose storage is `table`), in its own domain or, when published, in another, is delivered by outbox: saved in the same transaction as its aggregate and delivered reliably afterwards, since a lost reaction is a lost change. Its event type records the delivery; one delivered in process, with no delivery given, or no event type at all, leaves the reaction to chance. The rule reads the aggregate's storage because an outbox joins the database transaction that saves the aggregate. Give the event an event type delivered by outbox.
 
-<a id="check-has-crosses-aggregate"></a>
+<a id="check-term-used-unlinked"></a>
 
-### `has-crosses-aggregate`
+### `term-used-unlinked`
 
-**Error** · Lathe's · Kinds: [`entity`](#kind-entity), [`aggregate`](#kind-aggregate)
+**Warning** · Lathe's · Kinds: [`term`](#kind-term)
 
-A `has_one` or `has_many` link stays inside its aggregate.
+A term's meaning uses another term of its product by title without a builds_on link to it.
 
-These relations link an entity to its parts, and parts belong to their aggregate, so both ends sit in the same aggregate. Aggregates refer to each other by ID only: a field typed by the other aggregate. Type a field by the other aggregate instead, or move the part into the aggregate.
+Definitions build up, never in a circle (LA-STD-MODELING-R12): a term is defined only by plain words and terms below it, and names each one it uses with builds_on, so the store can refuse a loop. The check reads each meaning in lower case, with text in backticks left out as code, and looks for every other term of the product by title as a whole word, singular or plural (a title ending in a consonant and y also as -ies); a shorter title found only inside a longer term's title (Domain inside Domain event) does not count. It cannot tell a word used in another sense, so it is a warning. Link the term with builds_on to the term it uses, or say it in plain words.
 
 <a id="check-entity-unreferenced"></a>
 
@@ -676,7 +706,7 @@ These relations link an entity to its parts, and parts belong to their aggregate
 
 A child entity that its aggregate's root does not reach.
 
-Each child entity is a part of its aggregate's root, so a `has_one` or `has_many` reaches it from the root, directly or through other children of the same aggregate. Links that cross aggregates (has-crosses-aggregate) do not count. Link the child from the root or from another child with `has_one` or `has_many`.
+Each child entity is a part of its aggregate's root, so a `has_one` or `has_many` reaches it from the root, directly or through other children of the same aggregate. Link the child from the root or from another child with `has_one` or `has_many`.
 
 <a id="check-event-tense"></a>
 
@@ -728,6 +758,16 @@ A query whose title does not start with Get, List or Find.
 
 A query asks for data and changes nothing, so its title starts with the verb that says what comes back: Get for one thing, List for several, Find for a search, such as "Get a member's loans", "List overdue loans" or "Find a tool by name". A query titled like a command ("Check the workspace", "Export a theme") reads as a change. Retitle the query with Get, List or Find.
 
+<a id="check-serves-no-outcome"></a>
+
+### `serves-no-outcome`
+
+**Warning** · Lathe's · Kinds: [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model), [`constraint`](#kind-constraint), [`invariant`](#kind-invariant), [`specification`](#kind-specification), [`policy`](#kind-policy), [`domain_service`](#kind-domain_service), [`storage_requirement`](#kind-storage_requirement), [`uc_requirement`](#kind-uc_requirement), [`view_requirement`](#kind-view_requirement), [`api_requirement`](#kind-api_requirement), [`pattern_rule`](#kind-pattern_rule), [`standard_rule`](#kind-standard_rule)
+
+An aggregate, read model or obligation no business outcome reaches: no use case whose capability serves an outcome reaches it.
+
+Everything in a product serves at least one business outcome (LA-STD-MODELING-R13). A record serves an outcome when a use case whose capability serves that outcome reaches it: through its steps, the commands and queries they invoke and what those change, check, call and read, the views they happen in, the endpoints that expose them, the integrations they exchange with and the patterns it follows (the Serves reach, LA-TRC-DS06, worked out on every load and never stored). An aggregate, read model or obligation none reaches is built for no one the product exists for: write the use case that needs it, with a step that invokes what reaches it, or remove it.
+
 ### Coverage gaps: domain model
 
 Each is reported in coverage, under the record that falls short, never as a problem.
@@ -736,7 +776,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | --- | --- | --- |
 | <a id="gap-domain-without-aggregate"></a>`domain-without-aggregate` | [`domain`](#kind-domain), [`aggregate`](#kind-aggregate) | A domain with no aggregate. |
 | <a id="gap-aggregate-without-root"></a>`aggregate-without-root` | [`aggregate`](#kind-aggregate), [`entity`](#kind-entity) | An aggregate with no root entity. |
-| <a id="gap-aggregate-without-command"></a>`aggregate-without-command` | [`aggregate`](#kind-aggregate), [`command`](#kind-command) | An aggregate no command changes, directly or through a recorded exception. |
+| <a id="gap-aggregate-without-command"></a>`aggregate-without-command` | [`aggregate`](#kind-aggregate), [`command`](#kind-command) | An aggregate no command changes. |
 | <a id="gap-entity-without-fields"></a>`entity-without-fields` | [`entity`](#kind-entity), `entity_field` | An entity with no fields. |
 | <a id="gap-value-object-without-fields"></a>`value-object-without-fields` | [`value_object`](#kind-value_object), `value_object_field` | A value object with no fields. |
 | <a id="gap-event-without-fields"></a>`event-without-fields` | [`domain_event`](#kind-domain_event), `event_field` | A domain event that carries no fields. |
@@ -841,12 +881,12 @@ One rule a use case must follow, whatever the interface: a step of each of the u
 - **Children:** [`use_case_test`](#kind-use_case_test)
 - **Obligation:** yes: designed, built and proved
   - **Designed:** A step of each of its use case's flows fulfills it: one flow per interface the use case happens through, and at least one.
-  - **Built:** Every record that carries out its fulfilling steps names a file that exists, and there is at least one: the handler of each command or query a step invokes, with the predicates and services of what that command or query checks, selects by or calls; each UI component of the view a step happens in; the adapter of each integration a step exchanges with, or a record of a product's own kind under that integration.
+  - **Built:** Every record that carries out its fulfilling steps names a file that exists, and there is at least one: the handler of each command or query a step invokes, with the predicates and services of what that command or query checks, selects by or calls; and the adapter of each integration a step exchanges with. It also rests on those specifications and domain services, and is built only while each of them is.
   - **Proved:** One of its use case tests.
 - **ID:** `<use case>-R<nn>`, such as `TL-LEND-UC01-R01`; it starts with its parent's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about)), Fulfilled by ([`fulfills`](#relation-fulfills))
-- **Checks:** [`lone-child`](#check-lone-child)
+- **Checks:** [`lone-child`](#check-lone-child), [`serves-no-outcome`](#check-serves-no-outcome)
 
 <a id="table-uc_requirement"></a>
 
@@ -915,18 +955,18 @@ One setting of a pattern, in order: what each follower decides.
 
 ### Pattern rule (`pattern_rule`)
 
-One rule of a pattern. Every domain that follows the pattern owes it, unless it names a setting all of that domain's followers mark Not applicable, or its applies-when condition is met by no follower there.
+One rule of a pattern. Every domain that follows the pattern owes it, with no exception: a rule that holds for only some followers belongs to their use cases, not to the pattern.
 
 - **Parents:** [`pattern`](#kind-pattern) (`pattern_id`)
 - **Children:** [`pattern_rule_test`](#kind-pattern_rule_test)
 - **Obligation:** yes: designed, built and proved
-  - **Designed:** Wherever it is owed: by each domain that follows its pattern, itself or through a use case, unless waived there by a setting.
+  - **Designed:** Wherever it is owed: by each domain that follows its pattern, itself or through a use case.
   - **Built:** Not asked: proof only.
   - **Proved:** Its pattern rule test naming the owing domain.
 - **ID:** `<pattern>-R<nn>`, such as `TL-PAT-LIBRARIAN-ACTION-R01`; it starts with its parent's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`pattern-rule-test-outside-followers`](#check-pattern-rule-test-outside-followers), [`lone-child`](#check-lone-child)
+- **Checks:** [`pattern-rule-test-outside-followers`](#check-pattern-rule-test-outside-followers), [`lone-child`](#check-lone-child), [`serves-no-outcome`](#check-serves-no-outcome)
 
 <a id="table-pattern_rule"></a>
 
@@ -937,18 +977,11 @@ One rule of a pattern. Every domain that follows the pattern owes it, unless it 
 | `pattern_id` | VARCHAR → [`pattern`](#table-pattern) | yes | The pattern it belongs to. |
 | `statement` | VARCHAR | yes | The rule, stated with MUST, MUST NOT, SHOULD or MAY. |
 | `group_name` | VARCHAR | no | A short heading it is shown under among its siblings, such as Validation or Paging. |
-| `setting` | VARCHAR | no | A setting of its pattern the rule depends on: in a domain whose following use cases all mark it Not applicable, the rule does not apply. |
-| `applies_when_setting` | VARCHAR | no | The setting of its pattern its applies-when condition reads; the rule is waived in a domain where no follower gives that setting a value that meets it. |
-| `applies_when_negated` | BOOLEAN | no | false: the condition is <setting> is <value>; true: <setting> is not <value>. |
-| `applies_when_value` | VARCHAR | no | The value the condition compares with, trimmed and in any letter case. |
 | `notes` | VARCHAR | no | Longer notes on how the rule applies. |
 
 - **Key:** `id`
-- **Foreign key:** `(pattern_id, setting) -> pattern_setting (pattern_id, name)`
-- **Foreign key:** `(pattern_id, applies_when_setting) -> pattern_setting (pattern_id, name)`
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `("trim"("statement") != '')`
-- **Rule:** `(((applies_when_setting IS NULL) = (applies_when_negated IS NULL)) AND ((applies_when_setting IS NULL) = (applies_when_value IS NULL)))`
 
 ### Checks: use cases
 
@@ -960,7 +993,7 @@ One rule of a pattern. Every domain that follows the pattern owes it, unless it 
 
 A use case that follows a pattern gives each of the pattern's settings.
 
-Each setting of the pattern (a pattern_setting row) needs a setting_value row from each use case that follows it: a value, or a reason it is not applicable. A domain that follows a pattern itself owes every rule and gives no settings. Give the missing setting a value, or say why it is not applicable.
+Each setting of the pattern (a pattern_setting row) needs a setting_value row from each use case that follows it: the value the use case gives it. A domain that follows a pattern itself owes every rule and gives no settings. Give the missing setting a value.
 
 <a id="check-pattern-not-followed"></a>
 
@@ -990,7 +1023,7 @@ A level that holds one record groups nothing. A capability with exactly one chil
 
 A capability or use case title that breaks its naming convention: an interface named in it, a capability starting with The or an -ing word, or a list.
 
-A capability is named as a noun phrase for a lasting ability of the business, two to four words: subject and activity noun, such as Invoice management or Member registration, or a single noun when the area is clear on its own, such as Catalog or Lending. A use case is named for one goal of its actor, verb first: verb and object, such as Borrow a tool or Approve an invoice, two to six words. Neither names a screen, a tool or a technology: a use case happens through interfaces, with one flow each, so the interface belongs to its flows, not its title. The check reads only the mechanical parts, in any letter case and as whole words: a use case or capability title that holds one of its product's interface titles or the words command line, CLI, desktop app, web app, MCP, API, agent tools, command layer or page (or their plurals); a capability title of two or more words that starts with "The" or with an -ing word (a word of five or more letters ending in -ing, other than the few that are not verbs, such as thing, string and evening), so a single noun such as Lending passes; and either title that holds a list, a comma followed later by "and" or "or". Two goals joined by "and" with no comma are not read, nor is a use case title that does not start with a verb. Rename the capability or use case by the convention.
+A capability is named as a noun phrase for a lasting ability of the business, two to four words: subject and activity noun, such as Invoice management or Member registration, or a single noun when the area is clear on its own, such as Catalog or Lending. A use case is named for one goal of its actor, verb first: verb and object, such as Borrow a tool or Approve an invoice, two to six words. Neither names a screen, a tool or a technology: a use case happens through interfaces, with one flow each, so the interface belongs to its flows, not its title. The check reads only the mechanical parts, in any letter case and as whole words: a use case or capability title that holds one of its product's interface titles or the words command line, CLI, desktop app, web app, MCP, API, agent tools, command layer or page (or their plurals); a capability title of two or more words that starts with "The" or with an -ing word (a word of five or more letters ending in -ing, other than the few that are not verbs, such as thing, string and evening), so a single noun such as Lending passes; either title that holds a list, a comma followed later by "and" or "or"; and a use case title that starts with a CRUD verb (create, read, update, delete, change or edit) and holds the word record, records or data, since a use case names the domain's own verb for its goal (Borrow a tool, Model an aggregate), never a verb over a record or data. Two goals joined by "and" with no comma are not read, nor is a use case title that does not start with a verb. Rename the capability or use case by the convention.
 
 ### Coverage gaps: use cases
 
@@ -1131,18 +1164,18 @@ A screen or page a person uses. It has no owner: it exists because flow steps ha
 
 ### View requirement (`view_requirement`)
 
-One rule a view must follow, such as what it shows while loading or a field's limits.
+One rule a view must follow, such as what it shows while loading or a field's limits. The UI components whose code does what it says build it (builds).
 
 - **Parents:** [`view`](#kind-view) (`view_id`)
 - **Children:** [`view_test`](#kind-view_test)
 - **Obligation:** yes: designed, built and proved
   - **Designed:** By construction, under its view.
-  - **Built:** Every UI component that renders its view names a file that exists, and there is at least one.
+  - **Built:** Every UI component that builds it names a file that exists, and there is at least one.
   - **Proved:** One of its view tests.
 - **ID:** `<view>-R<nn>`, such as `TL-V01-R01`; it starts with its parent's ID
 - **Links out:** none
-- **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`lone-child`](#check-lone-child)
+- **Links in:** Questions about this ([`about`](#relation-about)), Built by ([`builds`](#relation-builds))
+- **Checks:** [`lone-child`](#check-lone-child), [`serves-no-outcome`](#check-serves-no-outcome)
 
 <a id="table-view_requirement"></a>
 
@@ -1208,7 +1241,7 @@ One rule an endpoint must follow, such as an error's response or a limit on its 
 - **ID:** `<endpoint>-R<nn>`, such as `TL-LEND-EP01-R01`; it starts with its parent's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`lone-child`](#check-lone-child)
+- **Checks:** [`lone-child`](#check-lone-child), [`serves-no-outcome`](#check-serves-no-outcome)
 
 <a id="table-api_requirement"></a>
 
@@ -1235,7 +1268,7 @@ An outside system the product exchanges with, such as a payment provider or a ma
 - **Obligation:** no
 - **ID:** `<P>-INT<nn>`, such as `TL-INT01`; it starts with its product's ID
 - **Links out:** none
-- **Links in:** Questions about this ([`about`](#relation-about)), Exchanged with by ([`exchanges_with`](#relation-exchanges_with))
+- **Links in:** Questions about this ([`about`](#relation-about)), Exchanged with by ([`exchanges_with`](#relation-exchanges_with)), Provides ([`provided_by`](#relation-provided_by))
 - **Checks:** [`integration-unused`](#check-integration-unused)
 - **Gaps:** [`integration-without-adapter`](#gap-integration-without-adapter)
 
@@ -1343,21 +1376,52 @@ Each is reported in coverage, under the record that falls short, never as a prob
 
 The technical record that implements each design record, such as a command's handler or an entity's table, and the standards code meets.
 
+<a id="kind-data_store"></a>
+
+### Data store (`data_store`)
+
+Where data actually lives: a database, a bucket, a folder of files, browser storage or memory. Every repository, reader and table names the one it is stored in (stored_in). One that is a service someone else runs, which the user must provide, such as a managed database or a bucket, is reached through its integration (provided_by); one the product owns outright, such as a local file or browser storage, has none.
+
+- **Parents:** [`product`](#kind-product) (`product_id`), [`domain`](#kind-domain) (`domain_id`)
+- **Children:** none
+- **Obligation:** no
+- **ID:** `<P>-STORE<nn> or <P>-<D>-STORE<nn>`, such as `TL-STORE01`; it starts with its parent's ID
+- **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
+- **Links out:** Provided by ([`provided_by`](#relation-provided_by))
+- **Links in:** Questions about this ([`about`](#relation-about)), Stores ([`stored_in`](#relation-stored_in))
+- **Gaps:** [`data-store-unused`](#gap-data-store-unused)
+
+<a id="table-data_store"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The data store's ID: its product's ID and STORE<nn>, or its domain's ID and STORE<nn>, such as TL-STORE01. |
+| `title` | VARCHAR | yes | Its name in code or config, such as DATABASE_URL, dataDir or localStorage. |
+| `product_id` | VARCHAR → [`product`](#table-product) | no | The product it sits under, when several of its domains use it; exactly one of product and domain is given. |
+| `domain_id` | VARCHAR → [`domain`](#table-domain) | no | The domain it sits under, when one domain alone uses it; exactly one of product and domain is given. |
+| `kind` | ENUM('database', 'object store', 'file folder', 'file', 'browser storage', 'memory') | yes | database: a database server or file, such as PostgreSQL or SQLite; object store: a bucket of objects, such as S3; file folder: a folder of files the program reads and writes; file: one file the program reads and writes whole; browser storage: kept by the browser, such as local or session storage or its history; memory: kept only while the program runs, and rebuilt on each start. |
+| `description` | VARCHAR | yes | Where it is and what keeps it there, in a sentence or two: its location, who runs it and how it is reached. |
+
+- **Key:** `id`
+- **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
+- **Rule:** `((product_id IS NULL) != (domain_id IS NULL))`
+
 <a id="kind-repository"></a>
 
 ### Repository (`repository`)
 
-Loads and saves its aggregate, whole: the way command handlers reach the aggregate's storage. It persists exactly one aggregate, linked with persists, and sits under its domain, or, for one several domains share, under the domain that holds what they share. One that also persists other aggregates records each as a repository share, with its reason.
+Loads and saves its aggregate, whole: the way command handlers reach the aggregate's storage, in the one data store it names (stored_in). It persists exactly one aggregate, linked with persists, and sits under its domain, or, for one several domains share, under the domain that holds what they share.
 
 - **Parents:** [`domain`](#kind-domain) (`domain_id`)
 - **Children:** none
 - **Obligation:** no
 - **ID:** `<domain>-REPO<nn>`, such as `TL-LEND-REPO01`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
-- **Links out:** Meets ([`meets`](#relation-meets)), Persists ([`persists`](#relation-persists))
+- **Links out:** Meets ([`meets`](#relation-meets)), Persists ([`persists`](#relation-persists)), Stored in ([`stored_in`](#relation-stored_in))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Parts:** [`repository_share`](#table-repository_share)
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest), [`repository-persists-nothing`](#check-repository-persists-nothing)
+- **Gaps:** [`stored-nowhere`](#gap-stored-nowhere)
 
 <a id="table-repository"></a>
 
@@ -1372,22 +1436,6 @@ Loads and saves its aggregate, whole: the way command handlers reach the aggrega
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `("trim"(description) != '')`
-
-<a id="table-repository_share"></a>
-
-#### `repository_share`
-
-A recorded exception to one repository per aggregate: another aggregate the repository also persists, and why. lathe check and the Checks page list every one under Recorded exceptions, always visible and never a warning.
-
-| Column | Type | Required | Meaning |
-| --- | --- | --- | --- |
-| `repository_id` | VARCHAR → [`repository`](#table-repository) | yes | The repository that also persists the aggregate. |
-| `aggregate_id` | VARCHAR → [`aggregate`](#table-aggregate) | yes | The other aggregate it persists: never its own, and one no other repository persists. |
-| `reason` | VARCHAR | yes | Why the aggregate has no repository of its own. |
-
-- **Key:** `repository_id`, `aggregate_id`
-- **Unique:** `aggregate_id`
-- **Rule:** `("trim"(reason) != '')`
 
 <a id="kind-data_model"></a>
 
@@ -1421,14 +1469,14 @@ Its entity in code: the entity's data, behavior and mapping to its table. A comm
 
 ### Table (`table`)
 
-Where an entity or a read model, its parent, is stored, in a database or not; or, under a domain, a table of the domain's own infrastructure that implements no design record, such as its outbox. Its columns follow from its parent's fields, a value object's fields flattened into columns, so it stores only what fields cannot say: its keys and indexes (table_key rows). An entity's table holds its rows, the source of truth: a table, normalized, or the browser storage, file or memory that keeps them; a read model's is a projection that can be rebuilt, usually a view over its domain's entity tables, or computed in memory on each load.
+Where an entity or a read model, its parent, is stored, in a database or not; or, under a domain, a table of the domain's own infrastructure that implements no design record, such as its outbox. It is kept in the one data store it names (stored_in). Its columns follow from its parent's fields, a value object's fields flattened into columns, so it stores only what fields cannot say: its keys and indexes (table_key rows). An entity's table holds its rows, the source of truth: a table, normalized, or the browser storage, file or memory that keeps them; a read model's is a projection that can be rebuilt, usually a view over its domain's entity tables, or computed in memory on each load.
 
 - **Parents:** [`entity`](#kind-entity) (`entity_id`), [`read_model`](#kind-read_model) (`read_model_id`), [`domain`](#kind-domain) (`domain_id`)
 - **Children:** none
 - **Obligation:** no
 - **ID:** `<entity or read model>-TB, or <domain>-TB<nn>`, such as `TL-LEND-EN01-TB`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
-- **Links out:** Meets ([`meets`](#relation-meets))
+- **Links out:** Meets ([`meets`](#relation-meets)), Stored in ([`stored_in`](#relation-stored_in))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Parts:** [`table_key`](#table-table_key)
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`table-schema-mismatch`](#check-table-schema-mismatch), [`package-not-in-manifest`](#check-package-not-in-manifest)
@@ -1506,6 +1554,33 @@ Its value object in code, which checks the value object's constraints when a val
 
 - **Key:** `id`
 - **Unique:** `value_object_id`
+- **Rule:** `("trim"(title) != '')`
+
+<a id="kind-rule"></a>
+
+### Rule (`rule`)
+
+Enforces its invariant: the rule in its aggregate's code, run by the aggregate's commands before saving, which refuses a change that would break it. Lathe's own rules sit in each aggregate's rules.ts and also run over all data on every load. An invariant is built only through its rule.
+
+- **Parents:** [`invariant`](#kind-invariant) (`invariant_id`)
+- **Children:** none
+- **Obligation:** no
+- **ID:** `<invariant>-RL`, such as `TL-LEND-INV01-RL`; it starts with its parent's ID
+- **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
+- **Links out:** Meets ([`meets`](#relation-meets))
+- **Links in:** Questions about this ([`about`](#relation-about))
+
+<a id="table-rule"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The rule's ID: its invariant's ID and RL, such as TL-LEND-INV01-RL. |
+| `title` | VARCHAR | yes | Its name in code, the name its refusal carries, such as step-fulfills-own-use-case or email_taken. |
+| `invariant_id` | VARCHAR → [`invariant`](#table-invariant) | yes | The invariant it enforces; one rule each. |
+| `file` | VARCHAR | no | The file that holds its code, from the product root, such as its aggregate's rules.ts; it may not exist yet, and several records may share one file. |
+
+- **Key:** `id`
+- **Unique:** `invariant_id`
 - **Rule:** `("trim"(title) != '')`
 
 <a id="kind-predicate"></a>
@@ -1589,6 +1664,35 @@ Fills its read model's table and keeps it current, from events or as a view's qu
 | `read_model_id` | VARCHAR → [`read_model`](#table-read_model) | yes | The read model it fills; one projection each. |
 | `file` | VARCHAR | no | The file that holds its code, from the product root; it may not exist yet, and several records may share one file. |
 | `description` | VARCHAR | yes | How it fills its read model and when it is rebuilt, in a sentence or two. |
+
+- **Key:** `id`
+- **Unique:** `read_model_id`
+- **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
+
+<a id="kind-reader"></a>
+
+### Reader (`reader`)
+
+Reads its read model's table for its query handlers: the way query handlers reach a read model's storage, in the one data store it names (stored_in). It reads exactly one read model, its parent, and nothing else; a query handler reads only through its own read model's reader, and the projection alone fills the table it reads.
+
+- **Parents:** [`read_model`](#kind-read_model) (`read_model_id`)
+- **Children:** none
+- **Obligation:** no
+- **ID:** `<read model>-RD`, such as `TL-LEND-RM01-RD`; it starts with its parent's ID
+- **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
+- **Links out:** Meets ([`meets`](#relation-meets)), Stored in ([`stored_in`](#relation-stored_in))
+- **Links in:** Questions about this ([`about`](#relation-about))
+
+<a id="table-reader"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The reader's ID: its read model's ID and RD, such as TL-LEND-RM01-RD. |
+| `title` | VARCHAR | yes | Its name in code, such as OverdueLoansReader. |
+| `read_model_id` | VARCHAR → [`read_model`](#table-read_model) | yes | The read model it reads; one reader each. |
+| `file` | VARCHAR | no | The file that holds its code, from the product root; it may not exist yet, and several records may share one file. |
+| `description` | VARCHAR | yes | How it reads its read model's table: where the table is kept and how a query handler is given the reader, in a sentence or two. |
 
 - **Key:** `id`
 - **Unique:** `read_model_id`
@@ -1717,13 +1821,13 @@ Its domain service in code. It never uses a repository or an outside system: its
 
 ### UI component (`ui_component`)
 
-A piece of the user interface that renders one or more views. It has no owner: it exists because views use it, and its product follows from its ID.
+A piece of the user interface that renders one or more views and builds the view requirements its code does (builds). It has no owner: it exists because views use it, and its product follows from its ID.
 
 - **Parents:** none (no owner: it exists because other records use it)
 - **Children:** none
 - **Obligation:** no
 - **ID:** `<P>-UI<nn>`, such as `TL-UI01`; it starts with its product's ID
-- **Links out:** Meets ([`meets`](#relation-meets)), Renders ([`renders`](#relation-renders))
+- **Links out:** Builds ([`builds`](#relation-builds)), Meets ([`meets`](#relation-meets)), Renders ([`renders`](#relation-renders))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`ui-component-unused`](#check-ui-component-unused), [`view-route-not-in-file`](#check-view-route-not-in-file), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
@@ -1800,6 +1904,60 @@ Talks to its integration's outside system, so the rest of the code does not.
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `("trim"(description) != '')`
 
+<a id="kind-entry_point"></a>
+
+### Entry point (`entry_point`)
+
+A start-up file: what runs first and wires the rest together, such as a server's main file or a desktop app's main process. No design record is implemented by it alone, so it sits under the domain it starts.
+
+- **Parents:** [`domain`](#kind-domain) (`domain_id`)
+- **Children:** none
+- **Obligation:** no
+- **ID:** `<domain>-ENTRY<nn>`, such as `TL-LEND-ENTRY01`; it starts with its parent's ID
+- **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
+- **Links out:** Meets ([`meets`](#relation-meets))
+- **Links in:** Questions about this ([`about`](#relation-about))
+
+<a id="table-entry_point"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The entry point's ID: its domain's ID and ENTRY<nn>, such as TL-LEND-ENTRY01. |
+| `title` | VARCHAR | yes | Its file's name, or its name in code, such as server.ts. |
+| `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The domain it starts. |
+| `file` | VARCHAR | no | The start-up file, from the product root; it may not exist yet. |
+| `description` | VARCHAR | yes | What it does at start-up, in a sentence or two: what it reads, opens and serves. |
+
+- **Key:** `id`
+- **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
+
+<a id="kind-tooling"></a>
+
+### Tooling (`tooling`)
+
+A dev script or config file outside the running product: a build, a generator, a watcher, or a config of the tools it is checked and tested with, such as a type checker's or a test runner's. Its title and file say what it is.
+
+- **Parents:** [`domain`](#kind-domain) (`domain_id`)
+- **Children:** none
+- **Obligation:** no
+- **ID:** `<domain>-TOOL<nn>`, such as `TL-LEND-TOOL01`; it starts with its parent's ID
+- **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
+- **Links out:** Meets ([`meets`](#relation-meets))
+- **Links in:** Questions about this ([`about`](#relation-about))
+
+<a id="table-tooling"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The tooling record's ID: its domain's ID and TOOL<nn>, such as TL-LEND-TOOL01. |
+| `title` | VARCHAR | yes | Its file's name, such as vitest.config.ts. |
+| `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The domain whose code it builds, checks or tests. |
+| `file` | VARCHAR | no | The script or config file, or the folder of them, from the product root; it may not exist yet. |
+
+- **Key:** `id`
+- **Rule:** `("trim"(title) != '')`
+
 <a id="kind-standard"></a>
 
 ### Standard (`standard`)
@@ -1841,7 +1999,7 @@ One rule of a standard. Technical records that follow it link to it with meets; 
 - **ID:** `<standard>-R<nn>`, such as `TL-STD-CODE-R01`; it starts with its parent's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about)), Met by ([`meets`](#relation-meets))
-- **Checks:** [`lone-child`](#check-lone-child)
+- **Checks:** [`lone-child`](#check-lone-child), [`serves-no-outcome`](#check-serves-no-outcome)
 
 <a id="table-standard_rule"></a>
 
@@ -1907,7 +2065,7 @@ A package_use row says a technical record uses a package, so that every dependen
 
 A repository that persists no aggregate.
 
-A repository exists to load and save its aggregate, whole, and says which with its one persists link; other aggregates it also persists are recorded exceptions (repository_share rows). One that persists none is a leftover, or its link is missing. Link the aggregate it persists with persists, or remove it.
+A repository exists to load and save its aggregate, whole, and says which with its one persists link. One that persists none is a leftover, or its link is missing. Link the aggregate it persists with persists, or remove it.
 
 ### Coverage gaps: technical specification
 
@@ -1915,17 +2073,20 @@ Each is reported in coverage, under the record that falls short, never as a prob
 
 | Gap | Kinds | What it reports |
 | --- | --- | --- |
-| <a id="gap-aggregate-without-repository"></a>`aggregate-without-repository` | [`aggregate`](#kind-aggregate), [`repository`](#kind-repository) | An aggregate no repository persists, directly or through a recorded exception. |
+| <a id="gap-aggregate-without-repository"></a>`aggregate-without-repository` | [`aggregate`](#kind-aggregate), [`repository`](#kind-repository) | An aggregate no repository persists. |
 | <a id="gap-entity-without-data-model"></a>`entity-without-data-model` | [`entity`](#kind-entity), [`data_model`](#kind-data_model) | An entity with no data model. |
 | <a id="gap-entity-without-table"></a>`entity-without-table` | [`entity`](#kind-entity), [`table`](#kind-table) | An entity with no table. |
 | <a id="gap-value-object-without-value-type"></a>`value-object-without-value-type` | [`value_object`](#kind-value_object), [`value_type`](#kind-value_type) | A value object with no value type. |
 | <a id="gap-event-without-event-type"></a>`event-without-event-type` | [`domain_event`](#kind-domain_event), [`event_type`](#kind-event_type) | A domain event with no event type. |
 | <a id="gap-read-model-without-projection"></a>`read-model-without-projection` | [`read_model`](#kind-read_model), [`projection`](#kind-projection) | A read model with no projection. |
+| <a id="gap-read-model-without-reader"></a>`read-model-without-reader` | [`read_model`](#kind-read_model), [`reader`](#kind-reader) | A read model with no reader. |
 | <a id="gap-read-model-without-table"></a>`read-model-without-table` | [`read_model`](#kind-read_model), [`table`](#kind-table) | A read model with no table. |
 | <a id="gap-command-without-handler"></a>`command-without-handler` | [`command`](#kind-command), [`command_handler`](#kind-command_handler) | A command with no command handler. |
 | <a id="gap-query-without-handler"></a>`query-without-handler` | [`query`](#kind-query), [`query_handler`](#kind-query_handler) | A query with no query handler. |
 | <a id="gap-endpoint-without-handler"></a>`endpoint-without-handler` | [`endpoint`](#kind-endpoint), [`endpoint_handler`](#kind-endpoint_handler) | An endpoint with no endpoint handler. |
 | <a id="gap-integration-without-adapter"></a>`integration-without-adapter` | [`integration`](#kind-integration), [`adapter`](#kind-adapter) | An integration with no adapter. |
+| <a id="gap-stored-nowhere"></a>`stored-nowhere` | [`repository`](#kind-repository), [`reader`](#kind-reader), [`table`](#kind-table), [`data_store`](#kind-data_store) | A repository, reader or table that names no data store. |
+| <a id="gap-data-store-unused"></a>`data-store-unused` | [`data_store`](#kind-data_store), [`repository`](#kind-repository), [`reader`](#kind-reader), [`table`](#kind-table) | A data store no repository, reader or table is stored in. |
 | <a id="gap-package-not-accounted-for"></a>`package-not-accounted-for` | [`product`](#kind-product), `package_use` | A product whose package.json files list a package no record of it uses. |
 | <a id="gap-table-without-file"></a>`table-without-file` | [`table`](#kind-table) | A table stored in a database table that names no file creating it. |
 | <a id="gap-view-without-ui-component"></a>`view-without-ui-component` | [`view`](#kind-view), [`ui_component`](#kind-ui_component) | A view no UI component renders. |
@@ -2168,6 +2329,47 @@ Proves its domain service: from the inputs given, the value or decision it retur
 | `id` | VARCHAR → `record_id` | yes | The test's ID: its domain service's ID and T<nn>, such as TL-LEND-DS01-T01. |
 | `title` | VARCHAR | yes | What the test shows, in a sentence. |
 | `domain_service_id` | VARCHAR → [`domain_service`](#table-domain_service) | yes | The domain service it proves. |
+| `level` | ENUM('unit', 'integration', 'service', 'system', 'browser') | yes | How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. |
+| `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
+| `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
+| `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
+| `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
+| `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
+| `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
+| `when` | VARCHAR | yes | What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from). |
+| `then` | VARCHAR | yes | What the test expects. |
+| `notes` | VARCHAR | no | Longer notes on the test, such as when to run it. |
+
+- **Key:** `id`
+- **Rule:** `("trim"(title) != '')`
+- **Rule:** `smoke`
+- **Rule:** `"external"`
+- **Rule:** `("trim"("when") != '')`
+- **Rule:** `("trim"("then") != '')`
+- **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
+- **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
+
+<a id="kind-storage_requirement_test"></a>
+
+### Storage requirement test (`storage_requirement_test`)
+
+Proves its storage requirement at the level that can observe it: a round trip, a restart, a failed save that leaves nothing behind, a deletion, a restore.
+
+- **Parents:** [`storage_requirement`](#kind-storage_requirement) (`storage_requirement_id`)
+- **Children:** none
+- **Obligation:** no
+- **Run by levels:** `integration`, `service`, `system`, `browser`
+- **ID:** `<storage requirement>-T<nn>`, such as `TL-LEND-A1-SR01-T01`; it starts with its parent's ID
+- **Links out:** Starts from ([`starts_from`](#relation-starts_from))
+- **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
+
+<a id="table-storage_requirement_test"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The test's ID: its storage requirement's ID and T<nn>, such as TL-LEND-A1-SR01-T01. |
+| `title` | VARCHAR | yes | What the test shows, in a sentence. |
+| `storage_requirement_id` | VARCHAR → [`storage_requirement`](#table-storage_requirement) | yes | The storage requirement it proves. |
 | `level` | ENUM('unit', 'integration', 'service', 'system', 'browser') | yes | How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. |
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
@@ -2531,11 +2733,11 @@ A test's level says only how it runs, cheapest first: unit (in process, no stora
 
 ### `pattern-rule-test-outside-followers`
 
-**Error or warning** · Lathe's · Kinds: [`pattern_rule_test`](#kind-pattern_rule_test), [`pattern_rule`](#kind-pattern_rule), [`domain`](#kind-domain)
+**Error** · Lathe's · Kinds: [`pattern_rule_test`](#kind-pattern_rule_test), [`pattern_rule`](#kind-pattern_rule), [`domain`](#kind-domain)
 
-A pattern rule test names a domain that follows its pattern and owes its rule.
+A pattern rule test names a domain that follows its pattern.
 
-A pattern rule test proves its rule in one domain that follows the pattern: the domain itself follows it, or one of its use cases does. A test naming a domain that does not follow the pattern proves the rule where nothing owes it, an error. One naming a following domain where the rule is waived (every following use case there marks its setting not applicable, or no follower there meets its applies-when setting) counts for nothing, a warning. Name a domain that owes the rule, link the domain or its use case to the pattern with `follows`, or remove the test.
+A pattern rule test proves its rule in one domain that follows the pattern: the domain itself follows it, or one of its use cases does, and every such domain owes every rule of the pattern. A test naming a domain that does not follow the pattern proves the rule where nothing owes it. Name a domain that follows the pattern, link the domain or its use case to the pattern with `follows`, or remove the test.
 
 <a id="check-test-data-set-unused"></a>
 
@@ -2606,7 +2808,7 @@ The product, the roles its records name and its open questions, which belong to 
 A product: the root of a set of specifications.
 
 - **Parents:** none (a root record)
-- **Children:** [`business_outcome`](#kind-business_outcome), [`domain`](#kind-domain), [`pattern`](#kind-pattern), [`interface`](#kind-interface), [`standard`](#kind-standard), [`question`](#kind-question)
+- **Children:** [`business_outcome`](#kind-business_outcome), [`domain`](#kind-domain), [`pattern`](#kind-pattern), [`interface`](#kind-interface), [`data_store`](#kind-data_store), [`standard`](#kind-standard), [`question`](#kind-question)
 - **Obligation:** no
 - **ID:** `<P>`, such as `TL`
 - **Links out:** none
@@ -2738,7 +2940,7 @@ A pair of kinds a product lets a relation link. A new relation name gets its own
 | `source_kind` | VARCHAR | yes | The kind a link starts from. |
 | `target_kind` | VARCHAR | yes | The kind a link points at, or * for any record. |
 | `product_id` | VARCHAR → [`product`](#table-product) | yes | The product that declares it. |
-| `role` | ENUM('design', 'proof') | no | design or proof, for a new relation that counts toward coverage. A new relation's links stay inside one product. |
+| `role` | ENUM('design', 'build', 'proof') | no | design, build or proof, for a new relation that counts toward coverage: a design or build link's source builds its target once it names a file that exists, and a proof link's source proves it. A new relation's links stay inside one product. |
 | `forward_label` | VARCHAR | yes | The link read from its source. |
 | `reverse_label` | VARCHAR | yes | The link read from its target. |
 | `description` | VARCHAR | yes | What a link between these kinds means. |
@@ -2797,11 +2999,11 @@ A product's typed settings for its checks. A product without a row takes the def
 
 #### `package_use`
 
-A package a technical record uses: a dependency one of the product's package.json files lists, which the record accounts for, such as the package an adapter calls or a tooling record runs. Only a record of a kind in the technical specification may name one.
+A package a technical record uses: a dependency one of the product's package.json files lists, which the record accounts for, such as the package an adapter calls or a tooling record runs. Only a technical record names one: its record_id is one (technical_record).
 
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
-| `record_id` | VARCHAR → `record_id` | yes | The technical record that uses the package: an adapter, a UI component, or a record of a product's own technical kind such as a tooling record. |
+| `record_id` | VARCHAR → `technical_record` | yes | The technical record that uses the package: an adapter, a UI component, an entry point, a tooling record, or a record of a product's own technical kind. |
 | `package` | VARCHAR | yes | The package's name as package.json lists it, such as @duckdb/node-api. |
 
 - **Key:** `record_id`, `package`
@@ -2811,20 +3013,19 @@ A package a technical record uses: a dependency one of the product's package.jso
 
 #### `setting_value`
 
-The value a use case or domain gives one setting of a pattern it follows: a value, or Not applicable with the reason.
+The value a use case or domain gives one setting of a pattern it follows. A follower owes every rule of the pattern; a value such as No input is a value like any other, never a way out of a rule.
 
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
 | `follower_id` | VARCHAR | yes | The use case or domain that follows the pattern. |
 | `pattern_id` | VARCHAR | yes | The pattern it follows. |
 | `setting` | VARCHAR | yes | The setting, one of the pattern's. |
-| `value` | VARCHAR | no | The value it gives the setting. |
-| `not_applicable` | VARCHAR | no | Why the setting does not apply to it, in place of a value. |
+| `value` | VARCHAR | yes | The value it gives the setting. |
 
 - **Key:** `follower_id`, `pattern_id`, `setting`
 - **Foreign key:** `(follower_id, pattern_id) -> follows (source_id, target_id)`
 - **Foreign key:** `(pattern_id, setting) -> pattern_setting (pattern_id, name)`
-- **Rule:** `(("value" IS NULL) != (not_applicable IS NULL))`
+- **Rule:** `("trim"("value") != '')`
 
 ## Relations
 
@@ -2842,6 +3043,32 @@ The open question concerns the record.
 | From | To | Meaning |
 | --- | --- | --- |
 | [`question`](#kind-question) | any record | The open question concerns that record. |
+
+<a id="relation-builds"></a>
+
+### `builds`
+
+The UI component builds the view requirement: its code does what the requirement says. A view requirement is built only through the components that build it, never through any component that renders its view.
+
+- **Reads:** Builds / Built by
+- **Role:** build
+
+| From | To | Meaning |
+| --- | --- | --- |
+| [`ui_component`](#kind-ui_component) | [`view_requirement`](#kind-view_requirement) | The UI component's code does what the view requirement says. |
+
+<a id="relation-builds_on"></a>
+
+### `builds_on`
+
+The term is defined with the other term: its meaning uses it, so the other term is defined first and never builds on it in turn, through any chain.
+
+- **Reads:** Builds on / Built on by
+- **Role:** none
+
+| From | To | Meaning |
+| --- | --- | --- |
+| [`term`](#kind-term) | [`term`](#kind-term) | The term's meaning uses the other term, which is defined before it. |
 
 <a id="relation-calls"></a>
 
@@ -3011,6 +3238,7 @@ The business outcome is measured by the test or record: a test of any kind, or a
 | [`business_outcome`](#kind-business_outcome) | [`policy_test`](#kind-policy_test) | The business outcome is measured by the policy test. |
 | [`business_outcome`](#kind-business_outcome) | [`specification_test`](#kind-specification_test) | The business outcome is measured by the specification test. |
 | [`business_outcome`](#kind-business_outcome) | [`standard_rule_test`](#kind-standard_rule_test) | The business outcome is measured by the standard rule test. |
+| [`business_outcome`](#kind-business_outcome) | [`storage_requirement_test`](#kind-storage_requirement_test) | The business outcome is measured by the storage requirement test. |
 | [`business_outcome`](#kind-business_outcome) | [`use_case_test`](#kind-use_case_test) | The business outcome is measured by the use case test. |
 | [`business_outcome`](#kind-business_outcome) | [`view_test`](#kind-view_test) | The business outcome is measured by the view test. |
 
@@ -3029,14 +3257,18 @@ The technical record follows the standard rule: it shows where the rule is appli
 | [`command_handler`](#kind-command_handler) | [`standard_rule`](#kind-standard_rule) | The command handler follows the standard rule. |
 | [`data_model`](#kind-data_model) | [`standard_rule`](#kind-standard_rule) | The data model follows the standard rule. |
 | [`endpoint_handler`](#kind-endpoint_handler) | [`standard_rule`](#kind-standard_rule) | The endpoint handler follows the standard rule. |
+| [`entry_point`](#kind-entry_point) | [`standard_rule`](#kind-standard_rule) | The entry point follows the standard rule. |
 | [`event_handler`](#kind-event_handler) | [`standard_rule`](#kind-standard_rule) | The event handler follows the standard rule. |
 | [`event_type`](#kind-event_type) | [`standard_rule`](#kind-standard_rule) | The event type follows the standard rule. |
 | [`predicate`](#kind-predicate) | [`standard_rule`](#kind-standard_rule) | The predicate follows the standard rule. |
 | [`projection`](#kind-projection) | [`standard_rule`](#kind-standard_rule) | The projection follows the standard rule. |
 | [`query_handler`](#kind-query_handler) | [`standard_rule`](#kind-standard_rule) | The query handler follows the standard rule. |
+| [`reader`](#kind-reader) | [`standard_rule`](#kind-standard_rule) | The reader follows the standard rule. |
 | [`repository`](#kind-repository) | [`standard_rule`](#kind-standard_rule) | The repository follows the standard rule. |
+| [`rule`](#kind-rule) | [`standard_rule`](#kind-standard_rule) | The rule follows the standard rule. |
 | [`service`](#kind-service) | [`standard_rule`](#kind-standard_rule) | The service follows the standard rule. |
 | [`table`](#kind-table) | [`standard_rule`](#kind-standard_rule) | The table follows the standard rule. |
+| [`tooling`](#kind-tooling) | [`standard_rule`](#kind-standard_rule) | The tooling record follows the standard rule. |
 | [`ui_component`](#kind-ui_component) | [`standard_rule`](#kind-standard_rule) | The UI component follows the standard rule. |
 | [`value_type`](#kind-value_type) | [`standard_rule`](#kind-standard_rule) | The value type follows the standard rule. |
 
@@ -3044,7 +3276,7 @@ The technical record follows the standard rule: it shows where the rule is appli
 
 ### `persists`
 
-The repository loads and saves the aggregate, whole: one repository per aggregate, and one aggregate per repository. Another aggregate a repository also persists is a recorded exception, a repository_share row.
+The repository loads and saves the aggregate, whole: one repository per aggregate, and one aggregate per repository.
 
 - **Reads:** Persists / Persisted by
 - **Role:** none
@@ -3052,6 +3284,19 @@ The repository loads and saves the aggregate, whole: one repository per aggregat
 | From | To | Meaning |
 | --- | --- | --- |
 | [`repository`](#kind-repository) | [`aggregate`](#kind-aggregate) | The repository loads and saves the aggregate, whole. |
+
+<a id="relation-provided_by"></a>
+
+### `provided_by`
+
+The data store is a service someone else runs, which the user must provide, reached through the integration: a managed database or a bucket. A store the product owns outright, such as a local file or browser storage, has none.
+
+- **Reads:** Provided by / Provides
+- **Role:** none
+
+| From | To | Meaning |
+| --- | --- | --- |
+| [`data_store`](#kind-data_store) | [`integration`](#kind-integration) | The data store is a service someone else runs, reached through the integration. |
 
 <a id="relation-raises"></a>
 
@@ -3140,8 +3385,24 @@ The test starts from the test data set: it is prepared before the test and reset
 | [`policy_test`](#kind-policy_test) | [`test_data_set`](#kind-test_data_set) | The policy test starts from the test data set. |
 | [`specification_test`](#kind-specification_test) | [`test_data_set`](#kind-test_data_set) | The specification test starts from the test data set. |
 | [`standard_rule_test`](#kind-standard_rule_test) | [`test_data_set`](#kind-test_data_set) | The standard rule test starts from the test data set. |
+| [`storage_requirement_test`](#kind-storage_requirement_test) | [`test_data_set`](#kind-test_data_set) | The storage requirement test starts from the test data set. |
 | [`use_case_test`](#kind-use_case_test) | [`test_data_set`](#kind-test_data_set) | The use case test starts from the test data set. |
 | [`view_test`](#kind-view_test) | [`test_data_set`](#kind-test_data_set) | The view test starts from the test data set. |
+
+<a id="relation-stored_in"></a>
+
+### `stored_in`
+
+The repository, reader or table is kept in the data store: each names exactly one, where its data actually lives.
+
+- **Reads:** Stored in / Stores
+- **Role:** none
+
+| From | To | Meaning |
+| --- | --- | --- |
+| [`reader`](#kind-reader) | [`data_store`](#kind-data_store) | The reader reads its read model's table in the data store. |
+| [`repository`](#kind-repository) | [`data_store`](#kind-data_store) | The repository loads and saves its aggregate in the data store. |
+| [`table`](#kind-table) | [`data_store`](#kind-data_store) | The table is kept in the data store. |
 
 ## Checks of any kind
 
@@ -3165,7 +3426,7 @@ Coverage counts an obligation as designed once its implementation is specified: 
 
 An obligation not every file of what implements it exists for yet, as coverage counts it.
 
-Coverage counts an obligation as built once every technical record that implements it names a file that exists, and there is at least one: a constraint's value type, an invariant's data model (any one of its aggregate's) or the table whose unique key names it, a specification's predicate, a policy's event handler, a domain service's service, a UC requirement's command or query handlers with the predicates and services of what they check or call, or the UI components of the views its steps happen in, a view requirement's UI components, an API requirement's endpoint handler, a standard rule's meeting records. A pattern rule asks for proof only. This warning names exactly the obligations coverage lists as not built. Add the technical record with its file, or write each file it names.
+Coverage counts an obligation as built once every one of the specific technical records that implement it names a file that exists, and there is at least one: a constraint's value type, an invariant's rule, a specification's predicate, a policy's event handler, a domain service's service, a UC requirement's command or query handlers (of what its fulfilling steps invoke) with the predicates and services of what they check, select by or call, and the adapter of each integration its steps exchange with, a view requirement's UI components that build it, an API requirement's endpoint handler, a standard rule's meeting records. Nothing else counts: no data model, unique key or UI component that only renders the view. A pattern rule asks for proof only. This warning names exactly the obligations coverage lists as not built. Add the technical record with its file, or write each file it names.
 
 <a id="check-not-proved"></a>
 
@@ -3185,7 +3446,7 @@ Coverage counts an obligation as proved once a test of it is automated or manual
 
 A record with more children of one kind than its product's max_children setting.
 
-The setting is the product's product_setting row (15 when it has none). A parent with that many children of one kind is missing a level between them, such as a capability or another aggregate. Children are counted per kind. Tests are exempt: they are read under what they prove. Children are also counted per group, read from the record_group view, since each group reads under its own heading: a flow's steps per path, since each path reads as its own list, and the records of every kind with a `group_name` (terms, UC requirements, view requirements, API requirements, pattern rules, standard rules and a product's own kinds) per `group_name`; the ungrouped ones are one list. Paths and groups are compared trimmed and in any letter case. Add a level, or a group, and move the children into it.
+The setting is the product's product_setting row (15 when it has none). A parent with that many children of one kind is missing a level between them, such as a capability or another aggregate. It counts a parent's children of each kind of the five design stages, discovery to the technical specification, since those are read as lists under their parent; a test is read under what it proves. Children are also counted per group, read from the record_group view, since each group reads under its own heading: a flow's steps per path, since each path reads as its own list, and the records of every kind with a `group_name` (terms, UC requirements, view requirements, API requirements, pattern rules, standard rules and a product's own kinds) per `group_name`; the ungrouped ones are one list. Paths and groups are compared trimmed and in any letter case. Add a level, or a group, and move the children into it.
 
 <a id="check-data-refused"></a>
 

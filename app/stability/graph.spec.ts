@@ -141,9 +141,9 @@ test.describe('graph', () => {
       for (const b of s.boxes) {
         const r = b.rect;
         // Boxes wholly in the canvas and big enough on screen to read.
-        if (r.left < c.left || r.left + r.width > c.left + c.width || r.top < c.top || r.top + r.height > c.top + c.height || r.width < 60) continue;
+        if (r.left < c.left || r.left + r.width > c.left + c.width || r.top < c.top || r.top + r.height > c.top + c.height || r.width < 60 || b.block) continue;
         const parts = [
-          ...b.lines.filter((l) => !l.bar).map((l) => ({ what: l.text, left: l.rect.left, top: l.rect.top, right: l.rect.left + l.drawnWidth, bottom: l.rect.top + l.rect.height })),
+          ...b.lines.map((l) => ({ what: l.text, left: l.rect.left, top: l.rect.top, right: l.rect.left + l.drawnWidth, bottom: l.rect.top + l.rect.height })),
           ...b.badges.map((x) => ({ what: `badge ${x.label}`, left: x.rect.left, top: x.rect.top, right: x.rect.left + x.rect.width, bottom: x.rect.top + x.rect.height })),
         ];
         const e = 1.5;
@@ -299,6 +299,52 @@ test.describe('graph', () => {
     });
   });
 
+  test('LA-V93-R07-T09 the wheel pans the Graph and the ERD, and with Scroll to zoom on zooms them, Ctrl with the wheel panning', async ({ page }) => {
+    await openPage(page, `${DOMAIN}?stage=graph`);
+    await nodes(page);
+    const camera = async () => (await sceneOf(page)).camera;
+    const canvas = (await page.locator(DRAWING).boundingBox())!;
+    await page.mouse.move(canvas.x + canvas.width / 2, canvas.y + canvas.height / 2);
+    // A new scroll each time: past the pause that ends the one before, so a change of move is not dropped as its momentum.
+    const pause = () => page.waitForTimeout(300);
+    // Off, the default: scroll pans, the zoom unchanged.
+    let before = await camera();
+    await page.mouse.wheel(0, 120);
+    await expect.poll(async () => (await camera()).y).not.toBe(before.y);
+    expect((await camera()).zoom).toBe(before.zoom);
+    await expect(page.locator('.stage-key [data-key-entry="scroll"]')).toHaveText('Scroll pans');
+
+    // On, from Appearance: scroll zooms in on scrolling up, and the key says so.
+    await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Appearance' }).click();
+    await page.getByRole('switch', { name: 'Scroll to zoom' }).check();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.stage-key [data-key-entry="scroll"]')).toHaveText('Scroll zooms');
+    await page.mouse.move(canvas.x + canvas.width / 2, canvas.y + canvas.height / 2);
+    await pause();
+    before = await camera();
+    await page.mouse.wheel(0, -240);
+    await expect.poll(async () => (await camera()).zoom).toBeGreaterThan(before.zoom);
+    // Ctrl held with scroll pans.
+    await pause();
+    await page.keyboard.down('Control');
+    before = await camera();
+    await page.mouse.wheel(0, 120);
+    await expect.poll(async () => (await camera()).y).not.toBe(before.y);
+    expect((await camera()).zoom).toBe(before.zoom);
+    await page.keyboard.up('Control');
+
+    // The ERD follows the same rule, the setting kept.
+    await openPage(page, `${DOMAIN}?stage=erd`);
+    await page.locator('.erd-flow .react-flow__node').first().waitFor();
+    await page.waitForTimeout(500);
+    const erdZoom = () => page.locator('.erd-flow .react-flow__viewport').evaluate((el) => new DOMMatrixReadOnly(getComputedStyle(el).transform).a);
+    const pane = (await page.locator(ERD_CANVAS).boundingBox())!;
+    await page.mouse.move(pane.x + pane.width / 2, pane.y + pane.height / 2);
+    const zoomBefore = await erdZoom();
+    await page.mouse.wheel(0, -240);
+    await expect.poll(erdZoom).toBeGreaterThan(zoomBefore);
+  });
+
   test('LA-V61-R32-T01 move around the ERD', async ({ page }) => {
     await openPage(page, `${DOMAIN}?stage=erd`);
     await page.locator('.erd-flow .react-flow__node').first().waitFor();
@@ -356,7 +402,7 @@ async function labeledInView(page: Page, orFocus = false): Promise<{ id: string;
   const c = s.canvas;
   const order = orFocus ? [...s.boxes.filter((b) => !b.focus), ...s.boxes.filter((b) => b.focus)] : s.boxes.filter((b) => !b.focus);
   for (const b of order) {
-    if (!b.id.startsWith('LA-') || b.lines.every((l) => l.bar)) continue;
+    if (!b.id.startsWith('LA-') || b.block) continue;
     const r = b.label;
     const l = Math.max(r.left, c.left + 60); const rt = Math.min(r.left + r.width, c.left + c.width - 30);
     const t = Math.max(r.top, c.top + 20); const bt = Math.min(r.top + r.height, c.top + c.height - 30);

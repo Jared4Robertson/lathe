@@ -1,16 +1,17 @@
-// A product's data at a baseline, from git (LA-EXP-EP02, for LA-EXP-QRY13): the rows its data files held at a commit, which the
-// record diff (../changes.ts) compares the data now with. It backs GET /api/baseline in api.ts.
+// A product's data at a baseline, from git: the rows its data files held at a commit, which the Record changes read
+// (LA-EXP-QRY13, exploring/record-changes) compares the data now with. api.ts `runRead` reads it for the query's
+// `since` and gives it with the data (`ReadView.baseline`):
 //
-//   GET /api/baseline?product=<ID>&since=commit    the last commit (HEAD)
-//   GET /api/baseline?product=<ID>&since=branch    where the branch left the default branch (their merge base)
-//   GET /api/baseline?product=<ID>&since=<hash>    a commit the app noted, for "since I last looked"
+//   since=commit    the last commit (HEAD)
+//   since=branch    where the branch left the default branch (their merge base)
+//   since=<hash>    a commit the app noted, for "since I last looked"
 //
 // git runs as for a record's history (history.ts runGit): an argument array, no shell, nothing that writes, with a
 // time limit. A commit's rows never change, so each is read once and kept. A product folder that is not a git repo,
 // or a repo with no commits yet, is an answer, not an error.
 import path from 'node:path';
-import type { Row } from '../store/rows.ts';
-import type { SchemaDescription } from '../store/schema.ts';
+import type { Row } from '../platform/data/rows.ts';
+import type { SchemaDescription } from '../platform/data/schema.ts';
 import type { BaselineAnswer, BaselineSince } from './contract.ts';
 import { runGit } from './history.ts';
 

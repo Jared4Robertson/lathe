@@ -1,0 +1,194 @@
+// One write, as a transaction: a draft of every table, which a command's handler changes through its aggregate's
+// repository (data-files.ts) and nothing else, then the commit. The commit holds the new state to every key,
+// constraint and integrity query of the schema and every aggregate's rules over all data (the store builds it in a
+// fresh database, or holds only what the changed tables can break), and only when it passes makes it the current
+// state and rewrites the data files of the tables that changed.
+//
+// Only the store creates a transaction (Store.transact), one at a time; only data-files.ts changes its draft.
+import { existsSync, readFileSync } from 'node:fs';
+import { mkdir, rename, rm, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import type { RowChange } from '../../server/contract.ts';
+import { describeKey, normalizeRow, rowKey, sortRows, tableText, type Row } from './rows.ts';
+import type { SchemaDescription, TableDescription } from './schema.ts';
+import { StoreError, problemAt, type Origin, type StoreProblem } from './problems.ts';
+import type { ReadView } from './rules.ts';
+
+/** Every table's rows by key. */
+export type Tables = Map<string, Map<string, Row>>;
+
+/** The tables whose rows declare a product's own kinds and relations: a change to them changes the schema. */
+export const DECLARATION_TABLES = ['product_kind', 'product_kind_field', 'product_relation'] as const;
+
+/** What the store lends a transaction: its current state, and how it builds and adopts a new one. */
+export interface TransactionHost {
+  readonly dataDir: string;
+  readonly schema: SchemaDescription;
+  readonly schemaDb: string;
+  readonly tables: Tables;
+  readonly origins: WeakMap<Row, Origin>;
+  readonly builtIn: WeakSet<Row>;
+  buildSchema(tables: Tables, origins: WeakMap<Row, Origin>): Promise<{ schemaDb: string; schema: SchemaDescription }>;
+  /**
+   * Holds the state, whose changed tables are given, to every refusal of its whole build: built in a fresh database
+   * (its name), or held without one (null) when the store can hold it so; throws a StoreError when it is refused.
+   */
+  build(schemaDb: string, schema: SchemaDescription, tables: Tables, origins: WeakMap<Row, Origin>, changed: ReadonlySet<string>): Promise<string | null>;
+  /** Makes the state the store's current one, with its database when it was built in one. */
+  adopt(state: { tables: Tables; schema: SchemaDescription; schemaDb: string; dataDb: string | null }): Promise<void>;
+}
+
+/** What a committed transaction changed. */
+export interface Committed {
+  /** The tables whose rows changed. */
+  tables: string[];
+  /** The data files written or removed, relative to the data folder. */
+  files: string[];
+  /** Each row added, changed or removed, before and after. */
+  changes: RowChange[];
+}
+
+interface Draft {
+  host: TransactionHost;
+  tables: Tables;
+  changed: Set<string>;
+  schema: SchemaDescription;
+}
+
+const drafts = new WeakMap<Transaction, Draft>();
+
+/** One write in progress: the tables as the command leaves them, read-only to everything but data-files.ts. */
+export class Transaction implements ReadView {
+  constructor(host: TransactionHost) {
+    drafts.set(this, { host, tables: new Map(host.tables), changed: new Set(), schema: host.schema });
+  }
+
+  /** The schema, Lathe's and the product's own kinds and relations. */
+  get schema(): SchemaDescription {
+    return drafts.get(this)!.schema;
+  }
+
+  /** A table's rows as the transaction has them, sorted by key. */
+  rows(table: string): Row[] {
+    const description = this.schema.tables[table];
+    const rows = [...(drafts.get(this)!.tables.get(table)?.values() ?? [])];
+    return description ? sortRows(description, rows) : rows;
+  }
+
+  /** The record with this ID, with its kind, or undefined. */
+  record(id: string): { kind: string; row: Row } | undefined {
+    const { tables } = drafts.get(this)!;
+    for (const kind of Object.keys(this.schema.kinds)) {
+      const row = tables.get(kind)?.get(id);
+      if (row) return { kind, row };
+    }
+    return undefined;
+  }
+
+  /** Whether the row is one of Lathe's own, which no write changes. */
+  isBuiltIn(row: Row): boolean {
+    return drafts.get(this)!.host.builtIn.has(row);
+  }
+
+  /** Refuses the command: nothing changes, and the reason is reported under the rule's name. */
+  refuse(rule: string, message: string): never {
+    throw new StoreError([{ rule, message }]);
+  }
+}
+
+/** The draft's tables, to change: for data-files.ts only (a test holds it to that). */
+export function draftOf(tx: Transaction): { tables: Tables } {
+  const draft = drafts.get(tx)!;
+  return { tables: draft.tables };
+}
+
+/** Makes the table's rows the transaction's own copy, to change. */
+export function editableTable(tx: Transaction, name: string): Map<string, Row> {
+  const draft = drafts.get(tx)!;
+  if (!draft.changed.has(name)) {
+    draft.tables.set(name, new Map(draft.tables.get(name) ?? []));
+    draft.changed.add(name);
+  }
+  return draft.tables.get(name)!;
+}
+
+/**
+ * Commits the transaction: holds the new state to every key, check and rule, then makes it current and rewrites the
+ * files of the tables that changed. Nothing changes when anything is refused.
+ */
+export async function commit(tx: Transaction): Promise<Committed> {
+  const draft = drafts.get(tx)!;
+  const { host, tables, changed } = draft;
+  const origins = host.origins;
+  let schema = host.schema;
+  let schemaDb = host.schemaDb;
+  if (DECLARATION_TABLES.some((t) => changed.has(t))) {
+    const built = await host.buildSchema(tables, origins);
+    schemaDb = built.schemaDb;
+    schema = built.schema;
+    // Rows of product kinds are checked again against their (possibly changed) columns.
+    const problems: StoreProblem[] = [];
+    for (const name of Object.keys(schema.kinds).filter((k) => schema.kinds[k].productId !== null)) {
+      for (const row of tables.get(name)?.values() ?? []) {
+        const result = normalizeRow(schema.tables[name], row);
+        if ('problem' in result) problems.push(problemAt(origins, row, { rule: 'column', table: name, key: String(row.id), message: result.problem }));
+      }
+    }
+    for (const name of tables.keys()) {
+      if (!schema.tables[name] && tables.get(name)!.size) problems.push({ rule: 'unknown-table', table: name, message: `${name} has rows but is no longer a kind or relation` });
+    }
+    if (problems.length) throw new StoreError(problems);
+  }
+  const before = host.tables;
+  const dataDb = await host.build(schemaDb, schema, tables, origins, changed);
+  await host.adopt({ tables, schema, schemaDb, dataDb });
+  const names = [...changed].sort();
+  const files = await writeFiles(host.dataDir, schema, tables, host.builtIn, origins, names);
+  return { tables: names, files, changes: rowChanges(schema, before, tables, names) };
+}
+
+// The rows of the tables a write changed, before and after, paired by key.
+function rowChanges(schema: SchemaDescription, before: Tables, after: Tables, names: string[]): RowChange[] {
+  const changes: RowChange[] = [];
+  for (const name of names) {
+    const table = schema.tables[name];
+    if (!table) continue;
+    const old = before.get(name) ?? new Map<string, Row>();
+    const now = after.get(name) ?? new Map<string, Row>();
+    for (const row of sortRows(table, [...now.values()])) {
+      const was = old.get(rowKey(table, row));
+      if (!was) changes.push({ table: name, key: describeKey(table, row), before: null, after: row });
+      else if (was !== row && JSON.stringify(was) !== JSON.stringify(row)) changes.push({ table: name, key: describeKey(table, row), before: was, after: row });
+    }
+    for (const row of sortRows(table, [...old.values()])) if (!now.has(rowKey(table, row))) changes.push({ table: name, key: describeKey(table, row), before: row, after: null });
+  }
+  return changes;
+}
+
+// Rewrites the files of the changed tables, each through a temporary file so a reader never sees half of one. An
+// empty table has no file, and Lathe's own rows are never written into the product's folder.
+async function writeFiles(dataDir: string, schema: SchemaDescription, tables: Tables, builtIn: WeakSet<Row>, origins: WeakMap<Row, Origin>, changed: string[]): Promise<string[]> {
+  await mkdir(dataDir, { recursive: true });
+  const written: string[] = [];
+  for (const name of changed) {
+    const file = path.join(dataDir, `${name}.jsonl`);
+    const rows = [...(tables.get(name)?.values() ?? [])].filter((row) => !builtIn.has(row));
+    const table: TableDescription | undefined = schema.tables[name];
+    if (!rows.length || !table) {
+      if (existsSync(file)) {
+        await rm(file);
+        written.push(`${name}.jsonl`);
+      }
+      continue;
+    }
+    const text = tableText(table, rows);
+    const display = path.join(path.basename(dataDir), `${name}.jsonl`);
+    sortRows(table, rows).forEach((row, index) => origins.set(row, { file: display, line: index + 1 }));
+    if (existsSync(file) && readFileSync(file, 'utf8') === text) continue;
+    const temporary = `${file}.${process.pid}.tmp`;
+    await writeFile(temporary, text);
+    await rename(temporary, file);
+    written.push(`${name}.jsonl`);
+  }
+  return written;
+}

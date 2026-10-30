@@ -1,4 +1,4 @@
-// The focus fade (LA-EXP-DS09): in every layout the focus and everything under it are drawn at
+// The focus fade (LA-EXP-DS09): in the Tree and Nested layouts the focus and everything under it are drawn at
 // full strength, and everything else (its siblings, other branches, the levels above) faded well
 // back, at `--focus-fade`. In the Nested layout, where the focus's ancestors contain
 // it, each ancestor keeps a faint outline and name as a trail, at `--focus-trail`; their other
@@ -15,6 +15,8 @@ export interface FadeLook { focusFade: number; focusTrail: number }
 
 /** For a focus, how strongly each box is drawn: 1 for the focus and what lies under it, the trail's strength for an ancestor in Nested, the fade's for the rest. */
 export function focusStrength(map: FadeMap, focus: string, look: FadeLook): (id: string) => number {
+  // The Map is explored by panning (LA-EXP-DS12): nothing fades; its focus is ringed and its links drawn.
+  if (map.view === 'map') return () => 1;
   const ancestors = new Set<string>();
   for (let at = map.nodes.get(focus)?.parent ?? null; at !== null; at = map.nodes.get(at)?.parent ?? null) ancestors.add(at);
   const known = new Map<string, number>();

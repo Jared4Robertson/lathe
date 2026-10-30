@@ -1,5 +1,6 @@
-import type { GraphMap, MapNode, PlacedMap } from './map';
+import { COLUMN_GAP_SHARE, MAX_COLUMN_SHARE, type GraphMap, type MapNode, type PlacedMap } from './map';
 import { TITLE_FONT } from './text';
+import type { GroundMap } from './ground';
 
 // The camera over the one map (LA-EXP-DS09). Focusing a node, by a click, the address, Back and
 // Forward, the step keys or the trail, moves the camera only: it frames the focus and the levels
@@ -24,10 +25,21 @@ export const PARENT_STRIP_MAX = 96;
 /** The least share of the zoom the width allows that taking in whole rows may leave the focus (frameOnMap). */
 export const ROWS_KEEP = 0.8;
 /**
- * The most the camera zooms in (LA-EXP-DS09): enough to frame the deepest leaf of a large product's
- * map and read its label, which is very small against the product's box (map.ts).
+ * The least the camera's zoom-in limit is (LA-EXP-DS09); a map whose smallest box needs more gets more (maxZoomFor).
  */
-export const MAX_ZOOM = 64;
+export const MAX_ZOOM = 256;
+/** How tall, in CSS pixels, a map's smallest box may be drawn when zoomed in all the way. */
+export const DEEPEST_PX = 400;
+
+/**
+ * The most the camera zooms in on a map (LA-EXP-DS09): enough to draw its smallest box DEEPEST_PX on its shorter side,
+ * and never less than MAX_ZOOM, so however deep a product's map grows, its deepest leaf can be framed and read.
+ */
+export function maxZoomFor(map: { nodes: ReadonlyMap<string, { w: number; h: number }> }): number {
+  let smallest = Infinity;
+  for (const n of map.nodes.values()) smallest = Math.min(smallest, n.w, n.h);
+  return Number.isFinite(smallest) && smallest > 0 ? Math.max(MAX_ZOOM, DEEPEST_PX / smallest) : MAX_ZOOM;
+}
 /** The least the camera zooms out: the whole of any product's map in a phone's pane. */
 export const MIN_ZOOM = 1e-4;
 
@@ -93,7 +105,7 @@ function placeRows(row: readonly MapNode[], i: number, j: number, fit: { top: nu
 /**
  * The camera that frames a focus (LA-EXP-DS09): the focus and its descendants down to `depth` levels below it fill the
  * pane, the parent's level showing in a strip at the left edge (the frame starts at the parent's right edge, past the
- * strip). A node with fewer levels below it frames what it has. Zoomed in no further than `max` (MAX_ZOOM; the Trace
+ * strip). A node with fewer levels below it frames what it has. Zoomed in no further than `max` (maxZoomFor; the Trace
  * stage's deeper tree takes more).
  *
  * No box of the framed levels is cut at an edge. Top and bottom, the frame takes whole rows of the focus's level, the
@@ -106,7 +118,7 @@ function placeRows(row: readonly MapNode[], i: number, j: number, fit: { top: nu
  * column is short boxes), it frames the children's column instead (frameChildren): the children read, and the focus
  * keeps the strip at the left edge.
  */
-export function frameOnMap(map: GraphMap, focus: string, depth: number, width: number, height: number, max = MAX_ZOOM): Viewport {
+export function frameOnMap(map: GraphMap, focus: string, depth: number, width: number, height: number, max = MAX_ZOOM, stripFor?: StripFor): Viewport {
   const node = map.nodes.get(focus);
   if (!node || width <= 0 || height <= 0) return { x: width / 2, y: height / 2, zoom: 1 };
   const v = frameFocus(map, node, depth, width, height, max);
@@ -114,9 +126,17 @@ export function frameOnMap(map: GraphMap, focus: string, depth: number, width: n
   const first = map.nodes.get(node.children[0])!;
   const read = Math.min(max, CHILD_READ_PX / (first.text * TITLE_FONT));
   if (!(first.text > 0) || v.zoom >= read * (1 - 1e-9)) return v;
-  const children = frameChildren(map, node, depth, width, height, read, max);
+  const children = frameChildren(map, node, depth, width, height, read, max, stripFor);
   return children.zoom > v.zoom ? children : v;
 }
+
+/**
+ * The least width on screen, at a zoom, the focus's strip needs for its label to read (its title at CHILD_READ_PX or
+ * more), when its children's column is framed (frameChildren); 0 when the label needs no more than the strip has.
+ */
+export type StripFor = (zoom: number) => number;
+/** The most of the pane's width the focus's strip may take for its label to read: the children's column keeps the rest. */
+export const STRIP_MOST = 0.45;
 
 /**
  * Whole rows of the focus's level, from `left` (the parent's right edge, or the focus's own when its children's column
@@ -153,15 +173,25 @@ function frameRows(map: GraphMap, node: MapNode, depth: number, width: number, h
 }
 
 /**
+ * The width a focus's own frame always gives it, over its own width: the focus and its children's column at its widest
+ * (MAX_COLUMN_SHARE of its width, after its gap). A column narrowed by many children, or a narrow column next that leaves
+ * little gap to end the frame in, never zooms the focus in further, so its header reads at the same size on screen
+ * however its children and the levels past them grow (LA-EXP-DS06, LA-EXP-DS09).
+ */
+export const FOCUS_SPAN = 1 + MAX_COLUMN_SHARE * (1 + COLUMN_GAP_SHARE);
+
+/**
  * The focus's own frame: whole rows of its level from the parent's right edge, the parent's level in a strip at the left
- * edge (frameOnMap), before its children's rule.
+ * edge (frameOnMap), before its children's rule. Zoomed in no further than frames FOCUS_SPAN of the focus's width with
+ * the padding past it: what width is left over goes to the parent's strip.
  */
 export function frameFocus(map: GraphMap, node: MapNode, depth: number, width: number, height: number, max = MAX_ZOOM): Viewport {
   // From the parent's right edge (the gap to the focus included), or the focus's left edge for a root.
   const parent = node.parent === null ? null : map.nodes.get(node.parent)!;
   const left = parent ? parent.x + parent.w : node.x;
   const strip = parent ? Math.min(PARENT_STRIP_MAX, width * PARENT_STRIP) : 0;
-  return frameRows(map, node, depth, width, height, max, left, strip, null);
+  const span = Math.min(max, (width - strip - 2 * FRAME_PADDING) / (node.x + FOCUS_SPAN * node.w - left));
+  return frameRows(map, node, depth, width, height, span, left, strip, null);
 }
 
 /**
@@ -172,9 +202,22 @@ export function frameFocus(map: GraphMap, node: MapNode, depth: number, width: n
  * focus with many children), whole rows of its children from the first, as many as read. Should the width not let
  * the children read, they are framed as large as it lets them be.
  */
-function frameChildren(map: GraphMap, node: MapNode, depth: number, width: number, height: number, read: number, max: number): Viewport {
+function frameChildren(map: GraphMap, node: MapNode, depth: number, width: number, height: number, read: number, max: number, stripFor?: StripFor): Viewport {
+  // The strip the parent's level keeps in the focus's own frame, widened as the focus's label needs to read (its title
+  // at CHILD_READ_PX, as its children's), up to STRIP_MOST of the width: the strip and the zoom settle together.
+  const base = Math.min(PARENT_STRIP_MAX, width * PARENT_STRIP);
+  let v = childrenFrame(map, node, depth, width, height, read, max, base);
+  for (let round = 0, strip = base; stripFor && round < 4; round++) {
+    const need = Math.min(width * STRIP_MOST, Math.max(base, stripFor(v.zoom)));
+    if (need <= strip + 0.5) break;
+    strip = need;
+    v = childrenFrame(map, node, depth, width, height, read, max, strip);
+  }
+  return v;
+}
+
+function childrenFrame(map: GraphMap, node: MapNode, depth: number, width: number, height: number, read: number, max: number, strip: number): Viewport {
   const left = node.x + node.w;
-  const strip = Math.min(PARENT_STRIP_MAX, width * PARENT_STRIP);
   const zoomFor = (edge: { right: number; pad: number }) => Math.min(max, (width - strip - FRAME_PADDING - edge.pad) / (edge.right - left));
   const level = map.byLevel[node.level];
   const own = level.indexOf(node);
@@ -277,6 +320,13 @@ export const glideDuration = (speed: number, S: number) => speed * Math.min(2, M
 
 // ---------- Level of detail ----------
 
+/**
+ * A box whose title would be drawn smaller than this on screen, in CSS pixels, is drawn as a plain block, with no label,
+ * icons, badges, fields or decoration (LA-EXP-DS10): below it no text can be read. Every canvas stage's (paint.ts) and
+ * the ERD's.
+ */
+export const BLOCK_BELOW_PX = 5;
+
 /** A node too small to see on screen (in pixels) is not drawn: its parent draws a bar for it and its siblings that are as small. */
 export const MIN_DRAWN = 3;
 /** The most boxes a picture draws (LA-PAT-APP-UX-R11): a level that would pass it is drawn as bars. */
@@ -372,11 +422,29 @@ export const drawnKey = (d: Drawn) => `${d.boxes.map((b) => b.id).join(' ')}|${d
 // ---------- The Nested view (LA-EXP-DS09) ----------
 
 /** The camera that frames a focus in the Nested map: its box fills the pane within the padding, centered, zoomed in no further than MAX_ZOOM. */
-export function frameNested(map: PlacedMap, focus: string, width: number, height: number): Viewport {
+export function frameNested(map: PlacedMap, focus: string, width: number, height: number, max = MAX_ZOOM): Viewport {
   const node = map.nodes.get(focus);
   if (!node || width <= 0 || height <= 0) return { x: width / 2, y: height / 2, zoom: 1 };
-  const zoom = Math.min(MAX_ZOOM, (width - 2 * FRAME_PADDING) / Math.max(1, node.w), (height - 2 * FRAME_PADDING) / Math.max(1, node.h));
+  const zoom = Math.min(max, (width - 2 * FRAME_PADDING) / Math.max(1, node.w), (height - 2 * FRAME_PADDING) / Math.max(1, node.h));
   return { x: width / 2 - (node.x + node.w / 2) * zoom, y: height / 2 - (node.y + node.h / 2) * zoom, zoom };
+}
+
+/** The Map's street level (LA-EXP-DS12): the zoom at which every record's text reads at its own size, as the page's text does. */
+export const STREET_ZOOM = 1;
+
+/**
+ * The camera that frames a focus in the Map (LA-EXP-DS12): a record at street level, centered in the pane, or, when it
+ * is too big to show whole there (a use case with its flows), its top left corner at the frame's padding, so its name
+ * and its first records read; a district, neighborhood or area whole, zoomed out as far as it needs, never in past
+ * street level. The Map's walk, quick open and Frame all land here.
+ */
+export function frameGround(map: GroundMap, focus: string, width: number, height: number, max = MAX_ZOOM): Viewport {
+  const node = map.nodes.get(focus);
+  if (!node || width <= 0 || height <= 0) return { x: width / 2, y: height / 2, zoom: STREET_ZOOM };
+  const fit = Math.min((width - 2 * FRAME_PADDING) / Math.max(1, node.w), (height - 2 * FRAME_PADDING) / Math.max(1, node.h));
+  const zoom = Math.min(max, STREET_ZOOM, node.role === 'record' ? Infinity : fit);
+  const along = (start: number, size: number, room: number) => (size * zoom <= room - 2 * FRAME_PADDING ? room / 2 - (start + size / 2) * zoom : FRAME_PADDING - start * zoom);
+  return { x: along(node.x, node.w, width), y: along(node.y, node.h, height), zoom };
 }
 
 /**

@@ -1,13 +1,13 @@
 // What the flow tests share: a temporary product repo, the real `lathe` command run on it as a child process, and the
-// store's own writes for the records a flow starts from. Each flow test seeds what its use case assumes exists, then
+// data files of the records a flow starts from, written as prepared data, as every other fixture is. Each flow test seeds what its use case assumes exists, then
 // walks the flow's steps through the command, as the Owner or an Agent would.
 import { spawn, spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { vi } from 'vitest';
-import { openStore, SCHEMA_VERSION, type Command, type Row, type Workspace } from '../../src/index.ts';
+import { SCHEMA_VERSION, type Row, type Workspace } from '../../src/index.ts';
 
 // Each flow runs the command many times, each a new process that loads the product.
 vi.setConfig({ testTimeout: 180_000, hookTimeout: 180_000 });
@@ -25,12 +25,16 @@ export interface Product {
   run(...args: string[]): string;
   /** Runs the command and expects the store to refuse it; returns the refusal. */
   refused(...args: string[]): string;
+  /** Runs one aggregate command, named as the CLI names it ('domain add-domain'), with its input as flags; returns its output. */
+  command(name: string, input: Record<string, unknown>): string;
+  /** Runs one aggregate command, as command does, and expects the refusal; returns it. */
+  refuse(name: string, input: Record<string, unknown>): string;
   /** Runs `lathe check`; returns its status and output. */
   check(): Result;
   /** Runs `lathe check --json` and parses the workspace it prints. */
   workspace(): Workspace;
-  /** Writes the commands through the store in one transaction: what the flow starts from. */
-  seed(commands: Command[]): Promise<void>;
+  /** Writes the rows into the product's data files: what the flow starts from. Its first command loads and checks them. */
+  seed(rows: Seed[]): Promise<void>;
   /** Reads a file of the product repo. */
   read(file: string): string;
   /** Writes a file of the product repo (code a technical record or test names, or a config). */
@@ -73,15 +77,16 @@ export function product(): Product {
       }
       return result.stderr;
     },
+    command(name, input) {
+      return this.run(...name.split(' '), ...flags(input));
+    },
+    refuse(name, input) {
+      return this.refused(...name.split(' '), ...flags(input));
+    },
     check: () => lathe('check'),
     workspace: () => (JSON.parse(lathe('check', '--json').stdout) as { products: { workspace: Workspace }[] }).products[0].workspace,
-    async seed(commands) {
-      const store = await openStore(root);
-      try {
-        await store.apply(commands);
-      } finally {
-        await store.close();
-      }
+    async seed(rows) {
+      for (const { table, row } of rows) appendFileSync(path.join(root, 'data', `${table}.jsonl`), `${JSON.stringify(row)}\n`);
     },
     read: (file) => readFileSync(path.join(root, file), 'utf8'),
     write(file, text) {
@@ -130,24 +135,35 @@ export function mcp(root: string) {
   };
 }
 
-/** A row as `lathe add` flags. */
-export const flags = (row: Row): string[] => Object.entries(row).flatMap(([column, value]) => [`--${column}`, Array.isArray(value) ? value.join(',') : String(value)]);
+/** One row of a data file a flow starts from. */
+export interface Seed {
+  table: string;
+  row: Row;
+}
 
-/** Adds a row through the store, as a seed command. */
-export const add = (table: string, row: Row): Command => ({ op: 'add', table, row });
-/** Links two records through the store, as a seed command. */
-export const link = (source: string, relation: string, target: string): Command => ({ op: 'link', relation, source, target });
+/** An input as an aggregate command's flags: --<field> <value>, a list's flag once per item, an object as JSON. */
+export const flags = (input: Record<string, unknown>): string[] =>
+  Object.entries(input).flatMap(([field, value]) =>
+    Array.isArray(value)
+      ? value.flatMap((item) => [`--${field}`, typeof item === 'object' ? JSON.stringify(item) : String(item)])
+      : [`--${field}`, typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value)],
+  );
+
+/** A row a flow starts from. */
+export const add = (table: string, row: Row): Seed => ({ table, row });
+/** A link a flow starts from. */
+export const link = (source: string, relation: string, target: string): Seed => ({ table: relation, row: { source_id: source, target_id: target } });
 
 /**
  * The lending domain most flows start from: a domain with a loan aggregate, its root entity, a command raising an
  * event, and a capability with a use case and one requirement.
  */
-export const LENDING: Command[] = [
+export const LENDING: Seed[] = [
   add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }),
   add('aggregate', { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', identity: 'Loan ID', description: 'One tool lent to one member, with its return.' }),
   add('entity', { id: 'TL-LEND-EN01', title: 'Loan', aggregate_id: 'TL-LEND-A1', role: 'root', description: 'The loan itself.' }),
   add('entity_field', { entity_id: 'TL-LEND-EN01', position: 1, name: 'Loan ID', meaning: 'The loan number.', type: 'whole number', required: true, column_name: 'id' }),
-  add('command', { id: 'TL-LEND-CMD01', title: 'Open a loan', aggregate_id: 'TL-LEND-A1', description: 'Lends a free tool to a member.' }),
+  add('command', { id: 'TL-LEND-CMD01', title: 'Open a loan', entity_id: 'TL-LEND-EN01', description: 'Lends a free tool to a member.' }),
   add('domain_event', { id: 'TL-LEND-EV01', title: 'Loan opened', aggregate_id: 'TL-LEND-A1', published: false, description: 'A tool went out on loan.' }),
   link('TL-LEND-CMD01', 'raises', 'TL-LEND-EV01'),
   add('capability', { id: 'TL-LEND-CAP01', title: 'Lending', domain_id: 'TL-LEND', position: 1, description: 'Lending tools and taking them back.' }),

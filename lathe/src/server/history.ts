@@ -9,9 +9,10 @@
 // - A product folder that is not a git repo, or a machine without git, is an answer, not an error.
 import { spawn } from 'node:child_process';
 import path from 'node:path';
-import type { Row, Value } from '../store/rows.ts';
-import type { SchemaDescription, TableDescription } from '../store/schema.ts';
+import type { Row, Value } from '../platform/data/rows.ts';
+import type { SchemaDescription, TableDescription } from '../platform/data/schema.ts';
 import type { FieldChange, HistoryAnswer, HistoryChange, HistoryCommit } from './contract.ts';
+import { compareIds } from '../platform/data/ids.ts';
 
 /** How long one git command may run. */
 export const GIT_TIME_LIMIT_MS = 5000;
@@ -139,7 +140,7 @@ export function changesInDiff(diff: string, tables: Map<string, TableDescription
   }
   // The record's own row first, then the tables in order.
   const order = [...tables.keys()];
-  return changes.sort((a, b) => order.indexOf(a.table) - order.indexOf(b.table) || a.key.localeCompare(b.key, 'en', { numeric: true }));
+  return changes.sort((a, b) => order.indexOf(a.table) - order.indexOf(b.table) || compareIds(a.key, b.key));
 }
 
 const FIELD = '\x1f';

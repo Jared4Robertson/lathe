@@ -1,7 +1,7 @@
 // What a window loads: Lathe's own server (`serve()` from the built package) for the opened folder, from the
 // product's own installed Lathe when it has one and the app's bundled copy otherwise, or in development the app's
-// Vite dev server (devSource.ts). Each window owns its server and
-// stops it when it closes.
+// Vite dev server (devSource.ts). The App server aggregate (app-server/) keeps each window's server, and stops it
+// when the window closes.
 import { existsSync, readFileSync } from 'node:fs';
 import type { Server } from 'node:http';
 import path from 'node:path';
@@ -57,19 +57,25 @@ export function latheLabel(choice: LatheChoice): string {
   return choice.source === 'product' ? `its own Lathe${version}` : `bundled Lathe${version}`;
 }
 
-/** Starts `serve()` in this process on a free local port (never 5199) for the folder. */
-export async function startServe(modulePath: string, folder: string): Promise<AppServer> {
+/**
+ * Starts `serve()` in this process for the folder on a local port, never 5199: the port it had last time when that is
+ * free (`port`, so the page keeps its origin and with it its local storage), else a free one.
+ */
+export async function startServe(modulePath: string, folder: string, port?: number): Promise<AppServer> {
   if (!existsSync(modulePath)) throw new Error(`Lathe is not built (${modulePath} is missing). In the Lathe repo, run: npm --prefix lathe run build`);
   const { serve } = (await import(pathToFileURL(modulePath).href)) as { serve: Serve };
   for (let tries = 0; tries < 5; tries++) {
-    const { server, stop } = serve({ root: folder, port: 0 });
-    await new Promise<void>((resolve, reject) => {
-      server.once('listening', resolve);
-      server.once('error', reject);
+    const wanted = tries === 0 && port && port !== SHARED_PORT ? port : 0;
+    const { server, stop } = serve({ root: folder, port: wanted });
+    const listening = await new Promise<boolean>((resolve) => {
+      server.once('listening', () => resolve(true));
+      // The port it had last time is taken now (another app took it): try a free one, and the origin changes.
+      server.once('error', () => resolve(false));
     });
+    if (!listening) { await stop().catch(() => {}); continue; }
     const address = server.address();
-    const port = typeof address === 'object' && address ? address.port : 0;
-    if (port && port !== SHARED_PORT) return { url: `http://127.0.0.1:${port}`, label: 'serve', stop };
+    const got = typeof address === 'object' && address ? address.port : 0;
+    if (got && got !== SHARED_PORT) return { url: `http://127.0.0.1:${got}`, label: 'serve', stop };
     await stop();
   }
   throw new Error('Could not start Lathe on a free local port.');

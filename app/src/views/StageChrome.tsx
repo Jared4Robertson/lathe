@@ -2,13 +2,14 @@ import { createPortal } from 'react-dom';
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '../components/Button';
 import { Icon } from '../components/icons';
-import { useRunCommand, useRunWalk } from '../shell/commands';
-import { COMMANDS, WALK_COMMANDS } from '../shell/keymap';
+import { useKeymap, useRunCommand, useRunWalk } from '../shell/commands';
+import { WALK_COMMANDS, walkLetter } from '../shell/keymap';
 import { Tooltip } from '../shell/Tooltip';
 import { BottomSheet } from '../shell/BottomSheet';
 import { useNarrow } from '../shell/useNarrow';
 import { MOVES, type Move } from './levels';
 import { ChangesTools } from '../changes/ChangesTools';
+import { useScrollToZoom } from '../platform/appearance/use-scroll-to-zoom';
 
 // One stage chrome (LA-PAT-APP-UX-R21): every stage (Graph, ERD, Trace) has the same controls in the same places, built
 // from these three components, so no stage can drift.
@@ -24,8 +25,8 @@ import { ChangesTools } from '../changes/ChangesTools';
 // - StageKey is the stage's key, a bar along the bottom of the open space on the camera's row, between the camera and
 //   the minimap: each thing the stage draws now (a color, a shape, a line, a mark) as a small sample and a word or two,
 //   its whole meaning in its tooltip. Each stage gives its own entries (graph/key.tsx, erd/erdKey.tsx,
-//   trace/TraceKey.tsx, and changes/ChangesKey.tsx's live marks on every stage). On a phone it is a Key chip that opens
-//   it as a sheet.
+//   trace/TraceKey.tsx, and changes/ChangesKey.tsx's live marks on every stage), and the bar ends with what scroll does
+//   on every stage (pans, or zooms with Scroll to zoom on). On a phone it is a Key chip that opens it as a sheet.
 
 /** The toolbar's groups: the walk's steps (with Out and In), Frame, the Changes controls, and the stage's primary and secondary controls. */
 type ToolbarGroup = 'steps' | 'frame' | 'changes' | 'primary' | 'secondary';
@@ -62,11 +63,9 @@ export const TOOLBAR_FORMS: Readonly<Record<ToolbarTier, ToolbarForm>> = {
   menu: { names: false, picker: false, letters: false, narrow: true, folded: ['steps', 'changes', 'secondary'] },
 };
 
-/** The arrow each step button shows, and the letter that takes the same step. */
-const STEP_MARKS: Readonly<Record<Move, { mark: string; letter: string }>> = {
-  left: { mark: '←', letter: 'A' }, right: { mark: '→', letter: 'D' }, up: { mark: '↑', letter: 'W' }, down: { mark: '↓', letter: 'S' }, out: { mark: 'Out', letter: '' }, in: { mark: 'In', letter: '' },
-};
-const titleOf = (move: Move) => COMMANDS.find((c) => c.id === WALK_COMMANDS[move])!.title;
+/** The mark each step button shows; beside it, the plain letter that takes the same step as the person bound it (A for Left by default). */
+const STEP_MARKS: Readonly<Record<Move, string>> = { left: '←', right: '→', up: '↑', down: '↓', out: 'Out', in: 'In' };
+const ARROW_MOVES: readonly Move[] = ['left', 'right', 'up', 'down'];
 
 export interface StageToolbarProps {
   /** Whether a move goes anywhere from the focus: a step that goes nowhere is shown disabled. */
@@ -81,6 +80,8 @@ export interface StageToolbarProps {
 
 export function StageToolbar({ can, walkLabels = {}, own, measureKey }: StageToolbarProps) {
   const runWalk = useRunWalk();
+  const keymap = useKeymap();
+  const titleOf = (move: Move) => keymap.commands.find((c) => c.id === WALK_COMMANDS[move])!.title;
   const runCommand = useRunCommand();
   const room = useRef<HTMLDivElement>(null);
   const toolbar = useRef<HTMLDivElement>(null);
@@ -120,7 +121,8 @@ export function StageToolbar({ can, walkLabels = {}, own, measureKey }: StageToo
     <div className="stage-steps" role="group" aria-label="Walk the stage">
       {MOVES.map((move) => {
         const label = walkLabels[move] ?? titleOf(move);
-        const { mark, letter } = STEP_MARKS[move];
+        const mark = STEP_MARKS[move];
+        const letter = ARROW_MOVES.includes(move) ? walkLetter(move, keymap.commands, keymap.mac) : '';
         return (
           <Tooltip key={move} label={label} command={WALK_COMMANDS[move]}>
             <Button className={`stage-step is-${move}`} aria-label={label} disabled={!can(move)} onClick={() => runWalk(move)}>
@@ -195,9 +197,27 @@ export interface KeyEntry {
   meaning: string;
 }
 
+/** The key bar's last entry: what scroll does on the stage now, by the person's Scroll to zoom (graph/gestures.ts's wheelMove). */
+export function scrollKeyEntry(scrollToZoom: boolean): KeyEntry {
+  return {
+    id: 'scroll',
+    group: 'scroll',
+    sample: (
+      <svg className="stage-key-scroll" width="10" height="14" viewBox="0 0 10 14" aria-hidden="true">
+        <rect x="0.75" y="0.75" width="8.5" height="12.5" rx="4.25" />
+        <path d="M5 3.5v3" />
+      </svg>
+    ),
+    words: scrollToZoom ? 'Scroll zooms' : 'Scroll pans',
+    meaning: scrollToZoom
+      ? 'Scroll zooms about the pointer; Cmd or Ctrl with scroll pans, Shift with scroll pans sideways, and a pinch zooms. Scroll to zoom is on, in Appearance.'
+      : 'Scroll pans; Shift with scroll pans sideways, and Cmd or Ctrl with scroll or a pinch zooms. Scroll to zoom is off, in Appearance.',
+  };
+}
+
 /**
  * The stage's key (LA-V96-R30): a frosted bar along the bottom of the open space, centered between the camera and the
- * minimap, holding only what the stage draws now. It counts as a floating panel at the bottom (`data-floating`), so the
+ * minimap, holding only what the stage draws now, then what scroll does. It counts as a floating panel at the bottom (`data-floating`), so the
  * camera frames above it. Too long for one row it wraps to as many rows as it needs, every entry whole, never cut or
  * scrolled out of sight; it takes focus as one named region, which never walks the stage. On a phone it is a Key chip
  * that opens the entries, with their meanings, as a sheet.
@@ -208,13 +228,14 @@ export function StageKey({ entries, beside }: { entries: readonly KeyEntry[]; be
   return phone ? <KeyChip entries={entries} /> : <KeyBar entries={entries} beside={beside} />;
 }
 
-/** `beside`: a minimap in the bottom right corner, which the bar keeps clear of. */
+/** `beside`: a minimap in the bottom right corner, which the bar keeps clear of. A phone has no wheel, so only the bar says what scroll does. */
 function KeyBar({ entries, beside }: { entries: readonly KeyEntry[]; beside?: 'minimap' }) {
+  const scrollToZoom = useScrollToZoom();
   return (
     <div className="stage-key-room" data-beside={beside}>
       <section className="stage-key" role="region" aria-label="Key" tabIndex={0} data-floating="bottom">
         <ul className="stage-key-list">
-          <KeyItems entries={entries} />
+          <KeyItems entries={[...entries, scrollKeyEntry(scrollToZoom)]} />
         </ul>
       </section>
     </div>

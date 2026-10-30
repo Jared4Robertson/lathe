@@ -17,7 +17,7 @@
 {"value_object_id":"LA-VO14","position":4,"name":"Manual reason","meaning":"Why a person runs it; given when manual, and only then.","type":"text","required":false,"column_name":"manual_reason"}
 {"value_object_id":"LA-VO15","position":1,"name":"Type","meaning":"text, integer, boolean or date.","type":"text","required":true,"example":"text"}
 {"value_object_id":"LA-VO16","position":1,"name":"Stage","meaning":"domain-model, use-cases, interaction-design, technical-specification or test-plan.","type":"text","required":true,"example":"use-cases"}
-{"value_object_id":"LA-VO17","position":1,"name":"Role","meaning":"design or proof.","type":"text","required":true,"example":"proof"}
+{"value_object_id":"LA-VO17","position":1,"name":"Role","meaning":"design, build or proof.","type":"text","required":true,"example":"proof"}
 {"value_object_id":"LA-VO18","position":1,"name":"Group","meaning":"The heading as first written; two groups are one when they are equal trimmed and in any letter case.","type":"text","required":true,"example":"Missing links"}
 {"value_object_id":"LA-VO41","position":1,"name":"Name","meaning":"Lower-case letters and digits in words joined by single hyphens, such as too-many-children.","type":"text","required":true,"column_name":"name","example":"too-many-children"}
 {"value_object_id":"LA-VO42","position":1,"name":"Severity","meaning":"error, warning, or error_or_warning when the check's query says which for each row.","type":"text","required":true,"column_name":"severity","example":"warning"}
@@ -41,9 +41,10 @@
 {"value_object_id":"LA-VO90","position":1,"name":"Path","meaning":"The page's path: a record's bare ID, a group's place in the graph's tree, or one of the app's own pages.","type":"text","required":true,"example":"/LA-AUT-A1"}
 {"value_object_id":"LA-VO90","position":2,"name":"Stage","meaning":"The stage shown, named only in the `stage` query parameter.","type_value_object_id":"LA-VO91","required":false,"example":"erd"}
 {"value_object_id":"LA-VO91","position":1,"name":"Stage","meaning":"graph, erd or trace.","type":"text","required":true,"example":"graph"}
-{"value_object_id":"LA-VO92","position":1,"name":"Layout","meaning":"tree or nested.","type":"text","required":true}
-{"value_object_id":"LA-VO92","position":3,"name":"Minimap","meaning":"Whether the minimap shows.","type":"yes/no","required":true}
-{"value_object_id":"LA-VO92","position":6,"name":"Wiki card width","meaning":"The wiki card's width in pixels, 360 to 900, or none for a third of the open space.","type":"whole number","required":false}
+{"value_object_id":"LA-VO92","position":1,"name":"Layout","meaning":"tree, nested or map.","type":"text","required":true}
+{"value_object_id":"LA-VO92","position":2,"name":"Minimap","meaning":"Whether the minimap shows.","type":"yes/no","required":true}
+{"value_object_id":"LA-VO92","position":3,"name":"All links","meaning":"Whether the Map draws every link between the records drawn, not only the focus's and the selection's.","type":"yes/no","required":true}
+{"value_object_id":"LA-VO92","position":4,"name":"Wiki card width","meaning":"The wiki card's width in pixels, 360 to 900, or none for a third of the open space.","type":"whole number","required":false}
 {"value_object_id":"LA-VO93","position":1,"name":"Limit","meaning":"The most entities an aggregate should hold.","type":"whole number","required":true}
 {"value_object_id":"LA-VO94","position":1,"name":"Depth","meaning":"How many levels below the focus the camera frames, 1 to 3.","type":"whole number","required":true,"example":"2"}
 {"value_object_id":"LA-VO94","position":2,"name":"Hidden kinds","meaning":"The kinds the filters hide.","type":"text","required":false,"example":"flow_step"}

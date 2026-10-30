@@ -5,7 +5,7 @@ import path from 'node:path';
 import { DuckDBInstance } from '@duckdb/node-api';
 import { describe, expect, it } from 'vitest';
 import { applyMigrations, describeSchema, PACKAGE_DIR, readMigrations } from '../../src/index.ts';
-import { renderTableTypes } from '../../src/store/types-file.ts';
+import { renderTableTypes } from '../../src/platform/data/types-file.ts';
 
 const instance = await DuckDBInstance.create(':memory:');
 const connection = await instance.connect();
@@ -30,7 +30,7 @@ describe('the schema description', () => {
     }
   });
 
-  describe('LA-STD-PRINCIPLES-R02-T01 every kind is stored one way', () => {
+  describe('every kind is stored one way', () => {
     it('LA-AUT-UC03-R04-T01 gives every kind an id in the registry, a title and its parent columns', () => {
       for (const kind of Object.values(schema.kinds)) {
         const table = schema.tables[kind.name];
@@ -84,7 +84,7 @@ describe('the schema description', () => {
   it('LA-AUT-UC03-R06-T02 makes each obligation kind a member of the obligation supertype', () => {
     const obligations = Object.values(schema.kinds).filter((k) => k.obligation).map((k) => k.name).sort();
     expect(obligations).toEqual(schema.supertypes.obligation);
-    expect(obligations).toEqual(['api_requirement', 'constraint', 'domain_service', 'invariant', 'pattern_rule', 'policy', 'specification', 'standard_rule', 'uc_requirement', 'view_requirement']);
+    expect(obligations).toEqual(['api_requirement', 'constraint', 'domain_service', 'invariant', 'pattern_rule', 'policy', 'specification', 'standard_rule', 'storage_requirement', 'uc_requirement', 'view_requirement']);
   });
 
   it("LA-AUT-UC03-R04-T02 fits each relation's pairs to its link table's ends", () => {
@@ -111,8 +111,8 @@ describe('the schema description', () => {
     }
   });
 
-  it('LA-AUT-UC03-R03-T01 matches the generated row types in src/store/tables.ts (npm run schema)', () => {
-    const file = readFileSync(path.join(PACKAGE_DIR, 'src', 'store', 'tables.ts'), 'utf8');
+  it('LA-AUT-UC03-R03-T01 matches the generated row types in src/platform/data/tables.ts (npm run schema)', () => {
+    const file = readFileSync(path.join(PACKAGE_DIR, 'src', 'platform', 'data', 'tables.ts'), 'utf8');
     expect(file).toBe(renderTableTypes(schema));
   });
 });

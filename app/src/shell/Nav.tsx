@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
+import { forwardRef, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
 import { Button } from '../components/Button';
 import { PaletteIcon } from '../theme/ThemeCommands';
 import { Icon } from '../components/icons';
@@ -6,12 +6,25 @@ import { LongList } from '../components/LongList';
 import { treeParent } from '../graph/tree';
 import { LatheLogo } from '../LatheLogo';
 import { Link, useLocation } from '../router';
-import { parseSpecRoute, type SpecIndex, type SpecRecord, type SpecState, type Stage } from '../specs/data';
-import { branchOf, domainFolders, productFolders, sharedKey, type Folder, type StageFolders } from '../specs/folders';
+import { parseSpecRoute } from '../views/spec-route';
+import { type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
+import { type DataState } from '../exploring/record-summaries/reads';
+import type { Stage } from '../../../lathe/src/platform/data/schema';
+import { branchOf, ownerFolders, sharedKey, type Folder, type StageFolders } from '../exploring/folder-tree/folders';
 import { recordText, StageMark } from '../specs/parts';
+import { useProblems } from '../checking/problems/reads';
+import { useChanges } from '../changes/changes';
+import { navChanges, rollupText, type ChangeCounts } from '../changes/rollup';
 import { useRunCommand, useShortcutHint } from './commands';
 import { SPACE_KEYS, spaceCommandId } from './keymap';
-import { isBool, usePref } from './prefs';
+import { useAggregate } from './prefs';
+import { foldOrUnfoldNavRow } from '../exploring/nav-row/commands/fold-or-unfold-nav-row';
+import { foldOrUnfoldNavSection } from '../exploring/nav-row/commands/fold-or-unfold-nav-section';
+import { openNavBranch } from '../exploring/nav-row/commands/open-nav-branch';
+import { isFolderOpen, isSectionOpen } from '../exploring/nav-row/model';
+import { navRowRepository } from '../exploring/nav-row/repository';
+import { noteSpacesListed } from '../exploring/space/commands/note-spaces-listed';
+import { spaceRepository } from '../exploring/space/repository';
 import { SpaceMark, useSpaces, type Space } from './spaces';
 import { Tooltip } from './Tooltip';
 import { trapTab } from './useNarrow';
@@ -38,7 +51,7 @@ import { overlaysOf, panelHref } from '../views/overlays';
 
 export interface NavProps {
   /** The specs as the current space sees them: its own index. */
-  spec: SpecState;
+  spec: DataState;
   path: string;
   collapsed: boolean;
   onToggleCollapsed: () => void;
@@ -51,10 +64,6 @@ export interface NavProps {
 }
 
 type SectionId = 'tools';
-const SECTIONS_KEY = 'lathe:nav-sections';
-/** Whether the last workspace loaded had two or more products, so the rail is drawn where it will stay before the specs load. */
-const RAIL_KEY = 'lathe:space-rail';
-const isOpenMap = (v: unknown): v is Record<string, boolean> => !!v && typeof v === 'object' && !Array.isArray(v) && Object.values(v).every(isBool);
 
 const here = (path: string, to: string) => (path === to ? 'page' : undefined);
 
@@ -68,9 +77,9 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
   const { index } = spec;
   const spaces = useSpaces();
   const space = spaces?.current ?? null;
-  const [sections, setSections] = usePref<Record<string, boolean>>(SECTIONS_KEY, {}, isOpenMap);
-  const isOpen = (id: SectionId) => sections[id] !== false;
-  const toggle = (id: SectionId) => setSections((s) => ({ ...s, [id]: !(s[id] !== false) }));
+  const rows = useAggregate(navRowRepository);
+  const isOpen = (id: SectionId) => isSectionOpen(rows, id);
+  const toggle = (id: SectionId) => foldOrUnfoldNavSection({ section: id, open: !isOpen(id) });
   const scroller = useRef<HTMLDivElement>(null);
   const checksKeys = useShortcutHint('openChecks');
   // Whether the nav is used from the keyboard: then the selected row also shows a focus outline, as in VS Code.
@@ -84,17 +93,18 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
   const appearanceOpen = panel === 'appearance' || panel === 'theme';
   const current = sectionOf(panel);
   useEffect(() => {
-    if (current) setSections((s) => (s[current] === false ? { ...s, [current]: true } : s));
-  }, [current, setSections]);
+    if (current) foldOrUnfoldNavSection({ section: current, open: true });
+  }, [current]);
 
   // The nav's lists wait for the specs, so nothing is drawn and then pushed down.
   const loaded = index !== null || !!spec.error;
-  // The space rail shows only with two or more products. Until the specs load, it shows as it did last time, so the
-  // panel beside it does not move sideways once they have.
+  // The space rail shows only with two or more products. Until the specs and the products are read, it shows as it did
+  // last time, so the panel beside it does not move sideways once they are.
   const several = (spaces?.spaces.length ?? 0) > 1;
-  const [railBefore, setRailBefore] = usePref<boolean>(RAIL_KEY, true, isBool);
-  const showRail = index ? several : railBefore;
-  useEffect(() => { if (index) setRailBefore(several); }, [index, several, setRailBefore]);
+  const railBefore = useAggregate(spaceRepository).several;
+  const listed = !!index && !!spaces?.read;
+  const showRail = listed ? several : railBefore;
+  useEffect(() => { if (listed) noteSpacesListed({ several }); }, [listed, several]);
 
   // The address last followed from a link in the nav (its rows or its rail). Only that move may
   // reshape the nav; once the address moves on another way, it is forgotten.
@@ -124,18 +134,20 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
     reveal.current = null;
   });
 
-  const problems = index?.workspace.problems ?? [];
-  const errors = problems.filter((p) => p.severity === 'error').length;
-  const warnings = problems.length - errors;
+  // The space's counts as its Checks panel gives them (list-problems): its own problems and the workspace's.
+  const problemsRead = useProblems(index?.product ?? null, index);
+  const counted = index && problemsRead.state === 'read' && problemsRead.answer.product === index.product ? problemsRead.answer : null;
+  const errors = counted?.errors ?? 0;
+  const warnings = counted?.warnings ?? 0;
   const checkBadges = (
     <span className="nav-badges">
       {/* The words beside each count are for a screen reader, so the row's name holds what it shows (LA-V61-R44). */}
       {errors > 0 && <span className="nav-badge error" title={`${errors} error${errors === 1 ? '' : 's'}`}>{errors}{' '}<span className="sr-only">error{errors === 1 ? '' : 's'}</span></span>}{' '}
       {warnings > 0 && <span className="nav-badge warning" title={`${warnings} warning${warnings === 1 ? '' : 's'}`}>{warnings}{' '}<span className="sr-only">warning{warnings === 1 ? '' : 's'}</span></span>}
-      {problems.length === 0 && index && <span className="nav-badge">0{' '}<span className="sr-only">problems</span></span>}
+      {counted && errors + warnings === 0 && <span className="nav-badge">0{' '}<span className="sr-only">problems</span></span>}
     </span>
   );
-  const sourceNote = index ? <span>Data from <code>{index.workspace.dataDir}/</code></span> : <span>Loading the data…</span>;
+  const sourceNote = index ? <span>{index.byId.size} records in <code>{index.product}</code></span> : <span>Loading the data…</span>;
 
   const className = ['menu', 'panel', collapsed && !drawer ? 'is-rail' : '', drawer ? 'is-drawer' : '', drawer && drawerOpen ? 'is-open' : '', keyboard ? 'is-keyboard' : ''].filter(Boolean).join(' ');
 
@@ -285,10 +297,9 @@ function SpaceRail({ spaces, current, lastPage, loaded, top, bottom }: SpaceRail
   );
 }
 
-const FOLDERS_KEY = 'lathe:nav-folders';
 
 /** The nav rows open on the current page: the page's record's domain, stage and folder (or the product's folder). */
-function currentBranch(index: SpecIndex, path: string): string[] {
+function currentBranch(index: RecordIndex, path: string): string[] {
   const route = parseSpecRoute(path.split('?')[0], index);
   if (!route) return [];
   if (route.page === 'domain') return [`domain:${route.domain}`];
@@ -316,20 +327,19 @@ function currentBranch(index: SpecIndex, path: string): string[] {
  * own (remembered for the session) and shows its count, and the current page's branch opens itself.
  * A stage or folder with no records is left out. Names and order come from the schema's stages and kinds.
  */
-function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: Space; path: string; reveal: boolean }) {
-  const domains = index.domainsOf.get(space.id) ?? [];
-  const own = productFolders(index, space.id);
-  const [opened, setOpened] = usePref<Record<string, boolean>>(FOLDERS_KEY, {}, isOpenMap, 'session');
-  const isOpen = (key: string) => opened[key] === true;
+function SpaceItems({ index, space, path, reveal }: { index: RecordIndex; space: Space; path: string; reveal: boolean }) {
+  const domains = index.product === space.id ? index.domains : [];
+  const own = ownerFolders(index, space.id);
+  // With Highlight changes on, each row counts the records under it that are new, changed or removed (changes/rollup.ts).
+  const { highlight, byId: changed } = useChanges();
+  const rolled = useMemo(() => (highlight ? navChanges(index, changed) : null), [highlight, index, changed]);
+  const rows = useAggregate(navRowRepository);
+  const isOpen = (key: string) => isFolderOpen(rows, key);
   const branch = currentBranch(index, path).join('\n');
   const branchKeys = branch ? branch.split('\n') : [];
   /** A closed row that holds the current page is marked, and opening it opens the branch down to the page. */
   const holds = (key: string) => !isOpen(key) && branchKeys.includes(key);
-  const toggle = (key: string) => setOpened((o) => {
-    if (o[key] === true) return { ...o, [key]: false };
-    const at = branchKeys.indexOf(key);
-    return { ...o, ...Object.fromEntries((at >= 0 ? branchKeys.slice(at) : [key]).map((k) => [k, true])) };
-  });
+  const toggle = (key: string) => foldOrUnfoldNavRow({ key, branch: branchKeys });
 
   // The current page's branch opens itself on the nav's first draw and after a move made in the nav,
   // before paint; a move made elsewhere leaves the rows where they are (LA-V61-R28).
@@ -338,11 +348,10 @@ function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: S
     const first = firstDraw.current;
     firstDraw.current = false;
     if (!branch || (!first && !reveal)) return;
-    const keys = branch.split('\n');
-    setOpened((o) => (keys.every((k) => o[k] === true) ? o : { ...o, ...Object.fromEntries(keys.map((k) => [k, true])) }));
-  }, [branch, reveal, setOpened]);
+    openNavBranch({ branch: branch.split('\n') });
+  }, [branch, reveal]);
 
-  const recordRows = (records: SpecRecord[], label: string, depth: number) => (
+  const recordRows = (records: RecordSummary[], label: string, depth: number) => (
     <LongList
       label={label}
       className="nav-records"
@@ -359,13 +368,13 @@ function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: S
     />
   );
   const folderRow = (folder: Folder, owner: string, depth: number) => (
-    <NavFolder key={folder.key} id={folder.key} depth={depth} label={folder.label} count={folder.count} open={isOpen(folder.key)} holds={holds(folder.key)} onToggle={() => toggle(folder.key)}>
+    <NavFolder key={folder.key} id={folder.key} depth={depth} label={folder.label} count={folder.count} changes={rolled?.ofRecords(folder.records.map((r) => r.id))} open={isOpen(folder.key)} holds={holds(folder.key)} onToggle={() => toggle(folder.key)}>
       {recordRows(folder.records, `${folder.label} of ${owner}`, depth + 1)}
     </NavFolder>
   );
   // An owner's stages with records, each folding its folders with records, or a stage with one folder its records.
   const stageRows = (stages: StageFolders[], owner: string, depth: number) => stages.filter((stage) => stage.count > 0).map((stage) => (
-    <NavFolder key={stage.key} id={stage.key} depth={depth} label={stage.label} count={stage.count} open={isOpen(stage.key)} holds={holds(stage.key)} onToggle={() => toggle(stage.key)} stage={stage.stage}>
+    <NavFolder key={stage.key} id={stage.key} depth={depth} label={stage.label} count={stage.count} changes={rolled?.ofRecords(stage.folders.flatMap((f) => f.records.map((r) => r.id)))} open={isOpen(stage.key)} holds={holds(stage.key)} onToggle={() => toggle(stage.key)} stage={stage.stage}>
       {stage.direct ? recordRows(stage.direct.records, `${stage.label} of ${owner}`, depth + 1) : (
         <ul className="nav-tree" aria-label={`${stage.label} of ${owner}`}>
           {stage.folders.filter((f) => f.count > 0).map((f) => folderRow(f, owner, depth + 1))}
@@ -389,7 +398,7 @@ function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: S
       {ownStages.length > 0 && (
         // What the product shares, in one folder before the domains, as the graph's tree has it.
         <ul className="nav-tree nav-shared" aria-label={`Shared in ${space.title}`}>
-          <NavFolder id={sharedKey(space.id)} depth={0} label="Shared" count={ownStages.reduce((n, s) => n + s.count, 0)} open={isOpen(sharedKey(space.id))} holds={holds(sharedKey(space.id))} onToggle={() => toggle(sharedKey(space.id))}>
+          <NavFolder id={sharedKey(space.id)} depth={0} label="Shared" count={ownStages.reduce((n, s) => n + s.count, 0)} changes={rolled?.ofRecords(ownStages.flatMap((s) => s.folders.flatMap((f) => f.records.map((r) => r.id))))} open={isOpen(sharedKey(space.id))} holds={holds(sharedKey(space.id))} onToggle={() => toggle(sharedKey(space.id))}>
             <ul className="nav-tree" aria-label={`Stages of ${space.title}`}>
               {stageRows(ownStages, space.title, 1)}
             </ul>
@@ -407,7 +416,7 @@ function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: S
             const key = `domain:${domain.id}`;
             const open = isOpen(key);
             const bodyId = `nav-domain-${domain.id.replace(/[^A-Za-z0-9_-]/g, '-')}`;
-            const { stages, loose } = open ? domainFolders(index, domain.id) : { stages: [], loose: [] };
+            const { stages, loose } = open ? ownerFolders(index, domain.id) : { stages: [], loose: [] };
             return (
               <>
                 <NavRow
@@ -424,6 +433,7 @@ function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: S
                     <span className="nav-label">{domain.title}</span>
                   </Link>
                 </NavRow>
+                <NavChanges depth={0} counts={rolled?.ofDomain(domain.id)} />
                 {open && (
                   <ul className="nav-tree" id={bodyId} aria-label={`Folders of ${domain.title}`}>
                     {stageRows(stages, domain.title, 1)}
@@ -446,6 +456,7 @@ function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: S
                     <span className="nav-label">{folder.label}</span> <span className="nav-badge quiet">{folder.count}</span>
                   </Link>
                 </NavRow>
+                <NavChanges depth={0} counts={rolled?.ofRecords(folder.records.map((r) => r.id))} />
               </li>
             );
           })}
@@ -470,11 +481,26 @@ function NavRow({ depth, selected = false, holds = false, chevron, children }: {
   );
 }
 
+/** A row's changes with Highlight changes on: "+3 ~5 −1" in each change's color on a line under the row, so no label gives up room; the words are for a screen reader and the tooltip. */
+function NavChanges({ counts, depth }: { counts: ChangeCounts | undefined; depth: number }) {
+  if (!counts) return null;
+  return (
+    <div className="nav-changes" style={{ '--depth': depth } as CSSProperties} title={rollupText(counts)}>
+      <span className="sr-only">{rollupText(counts)}</span>
+      <span aria-hidden="true" className="nav-changes-marks">
+        {counts.added > 0 && <span className="is-added">+{counts.added}</span>}
+        {counts.changed > 0 && <span className="is-changed">~{counts.changed}</span>}
+        {counts.removed > 0 && <span className="is-removed">−{counts.removed}</span>}
+      </span>
+    </div>
+  );
+}
+
 /**
  * A foldable nav row (a stage or a folder) with its count, holding its rows below it when open. The button is the
  * row. A stage's row carries its stage's color mark.
  */
-function NavFolder({ id, depth, label, count, open, holds = false, onToggle, stage, children }: { id: string; depth: number; label: string; count: number; open: boolean; holds?: boolean; onToggle: () => void; stage?: Stage; children: ReactNode }) {
+function NavFolder({ id, depth, label, count, changes, open, holds = false, onToggle, stage, children }: { id: string; depth: number; label: string; count: number; changes?: ChangeCounts; open: boolean; holds?: boolean; onToggle: () => void; stage?: Stage; children: ReactNode }) {
   const bodyId = `nav-folder-${id.replace(/[^A-Za-z0-9_-]/g, '-')}`;
   return (
     <li className={`nav-folder${stage ? ' is-stage' : ''}`}>
@@ -484,6 +510,7 @@ function NavFolder({ id, depth, label, count, open, holds = false, onToggle, sta
         <span className="nav-label">{label}</span>
         <span className="nav-badge quiet">{count}</span>
       </button>
+      <NavChanges depth={depth} counts={changes} />
       {open && <div id={bodyId} className="nav-folder-body">{children}</div>}
     </li>
   );

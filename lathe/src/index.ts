@@ -1,21 +1,24 @@
 // The Lathe engine: loads a product's data/ folder through the store into the typed tables, runs the checks (rows of
 // the check table, Lathe's and the product's) against them, and computes coverage from views over them.
-import { existsSync, readdirSync, statSync, type Dirent } from 'node:fs';
-import { glob, readFile, stat } from 'node:fs/promises';
+import { existsSync, readdirSync, statSync } from 'node:fs';
+import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
-import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL, COVERAGE_PROOFS_SQL, COVERAGE_TESTS_SQL, PATTERN_RULE_STANDING_SQL, coverageViewsSql, FACT_TABLES_SQL, TEST_KINDS, TRACE_FILES_SQL, TRACE_LINKS_SQL, TRACE_OBLIGATIONS_SQL } from './coverage.ts';
+import { servesOf } from './trace/serves.ts';
+import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL, COVERAGE_PROOFS_SQL, COVERAGE_TESTS_SQL, OWED_PATTERN_RULES_SQL, coverageViewsSql, FACT_TABLES_SQL, TEST_KINDS, TRACE_FILES_SQL, TRACE_LINKS_SQL, TRACE_OBLIGATIONS_SQL } from './coverage.ts';
 import { CONFIG_FILE, loadConfig, productClash, workspaceProducts, type LatheConfig } from './config.ts';
 import { readPackageFacts } from './trace/packages.ts';
 import { readTestCases } from './trace/test-cases.ts';
-import { isTraced, normalizePath, sourceFiles } from './trace/source-files.ts';
+import { isTraced, matching, normalizePath, sourceFiles, walkFiles } from './trace/source-files.ts';
 import { orderChecks, referenceOf, type Reference } from './reference.ts';
-import { formatProblem, openStore, Store, StoreError, LATHE_DATA_DIR, type StoreOptions } from './store/store.ts';
-import { SCHEMA_DIR } from './store/schema.ts';
+import { formatProblem, StoreError } from './platform/data/problems.ts';
+import { openStore, Store, LATHE_DATA_DIR, type StoreOptions } from './platform/data/store.ts';
+import { SCHEMA_DIR } from './platform/data/schema.ts';
 import { gatherTableFacts, TABLE_FACTS_SQL } from './trace/tables.ts';
-import type { Row } from './store/rows.ts';
+import type { Row } from './platform/data/rows.ts';
 import { gatherRouteFacts, writeRouteFacts } from './trace/routes.ts';
-import type { Coverage, CoverageGap, Kind, ObligationCoverage, PatternRuleStanding, Problem, RecordedException, RelationRule, SpecLink, SpecRecord, StageRule, TestCounts, TraceChain, Workspace } from './types.ts';
+import type { Coverage, CoverageGap, Kind, ObligationCoverage, Problem, RelationRule, SpecLink, SpecRecord, StageRule, TestCounts, TraceChain, Workspace } from './types.ts';
+import { compareIds } from './platform/data/ids.ts';
 
 export type * from './types.ts';
 export type * from './reference.ts';
@@ -24,7 +27,9 @@ export { ALLOWED_LEVELS, GAP_RULES, OBLIGATION_COVERAGE, type GapRule } from './
 export { loadConfig, readConfig, workspaceProducts, productClash, PACKAGE_DIR, CONFIG_FILE, DEFAULT_MAX_CHILDREN, DEFAULT_SOURCE, DEFAULT_TESTS, SCHEMA_VERSION, SchemaVersionError, schemaVersionMessage, type LatheConfig } from './config.ts';
 export { upgradeProduct, readConverters, UPGRADES_DIR, type Converter, type ConverterStep, type RawData, type UpgradeNotes, type UpgradeResult } from './upgrade.ts';
 // The database-first store: the schema, loading data/*.jsonl, the command layer and the merge driver.
-export * from './store/index.ts';
+export * from './platform/data/index.ts';
+export { ALL_COMMANDS, ALL_QUERIES } from './commands.ts';
+export { runCommand } from './platform/commands/run.ts';
 
 export interface LoadOptions {
   /** The data folder, in place of the one lathe.config.json names. */
@@ -49,7 +54,7 @@ export interface LoadTimings {
   total: number;
   /**
    * The steps inside the phases, by name: the store's (reading the files, the schema, each table's insert,
-   * record_scope, each validation query, the commit), then the file facts, the coverage tables, each check (checks
+   * record_scope, each integrity query, each aggregate's rules, the commit), then the file facts, the coverage tables, each check (checks
    * run side by side, so theirs overlap) and the records read back. `perf/engine.ts --profile` prints them.
    */
   steps: Record<string, number>;
@@ -134,12 +139,8 @@ interface TestCaseFact {
 // dist, a dot-folder or another product's folder, one with its own lathe.config.json) and the files test records
 // name, read as text (test-cases.ts says what is recognized).
 async function gatherTestCases(root: string, globs: readonly string[], facts: FileFact[]): Promise<TestCaseFact[]> {
-  const skip = (entry: Dirent) =>
-    entry.isDirectory() && (entry.name === 'node_modules' || entry.name === 'dist' || entry.name.startsWith('.') || existsSync(path.join(entry.parentPath, entry.name, CONFIG_FILE)));
-  const files = new Set<string>();
-  for await (const entry of glob([...globs], { cwd: root, exclude: skip, withFileTypes: true })) {
-    if (entry.isFile()) files.add(normalizePath(path.relative(root, path.join(entry.parentPath, entry.name))));
-  }
+  const skip = (folder: string, name: string) => name === 'node_modules' || name === 'dist' || name.startsWith('.') || existsSync(path.join(root, folder, CONFIG_FILE));
+  const files = new Set(matching(await walkFiles(root, skip), globs));
   const tests = new Set(TEST_KINDS);
   for (const f of facts) if (f.path !== null && f.file_exists && tests.has(f.kind)) files.add(f.path);
   const read = await Promise.all([...files].sort().map(async (file) => {
@@ -235,12 +236,12 @@ async function computeCoverage(store: Store): Promise<Coverage[]> {
     const c = await store.connect();
     try { return await readRows<T>(c, sql); } finally { c.closeSync(); }
   };
-  const [counts, gaps, tests, proofs, standings] = await Promise.all([
+  const [counts, gaps, tests, proofs, owed] = await Promise.all([
     on<Scoped<ObligationCoverage>>(COVERAGE_COUNTS_SQL),
     on<Scoped<CoverageGap>>(COVERAGE_GAPS_SQL),
     on<Scoped<TestCounts>>(COVERAGE_TESTS_SQL),
     on<Scoped<{ id: string; test_id: string }>>(COVERAGE_PROOFS_SQL),
-    on<Scoped<{ id: string; standing: PatternRuleStanding }>>(PATTERN_RULE_STANDING_SQL),
+    on<Scoped<{ id: string }>>(OWED_PATTERN_RULES_SQL),
   ]);
   const key = (r: { product: string; domain: string | null }) => `${r.product}\u0000${r.domain ?? ''}`;
   const group = <T extends { product: string; domain: string | null }>(rows: T[]) => {
@@ -251,11 +252,11 @@ async function computeCoverage(store: Store): Promise<Coverage[]> {
   const countsBy = group(counts);
   const gapsBy = group(gaps);
   const proofsBy = group(proofs);
-  const standingsBy = group(standings);
+  const owedBy = group(owed);
   const provedBy = (scope: { product: string; domain: string | null }) => {
     const by: Record<string, string[]> = {};
     for (const p of proofsBy.get(key(scope)) ?? []) (by[p.id] ??= []).push(p.test_id);
-    for (const ids of Object.values(by)) ids.sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
+    for (const ids of Object.values(by)) ids.sort(compareIds);
     return by;
   };
   return tests.map((t) => ({
@@ -264,7 +265,7 @@ async function computeCoverage(store: Store): Promise<Coverage[]> {
     obligations: (countsBy.get(key(t)) ?? []).map(({ kind, label, total, designed, built, proved, not_automated, proof_only }) => ({ kind, label, total, designed, built, proved, not_automated, proof_only })),
     tests: { automated: t.automated, manual: t.manual, not_automated: t.not_automated },
     proved_by: provedBy(t),
-    pattern_rules: Object.fromEntries((standingsBy.get(key(t)) ?? []).map((p) => [p.id, p.standing])),
+    pattern_rules: (owedBy.get(key(t)) ?? []).map((p) => p.id),
     gaps: (gapsBy.get(key(t)) ?? []).map(({ id, kind, missing, message }) => ({ id, kind, missing, message })),
   }));
 }
@@ -281,7 +282,7 @@ async function computeChains(store: Store, records: SpecRecord[], order: string[
   const kindOf = new Map(records.map((r) => [r.id, r.kind]));
   const rank = new Map(order.map((k, i) => [k, i]));
   const of = (id: string) => rank.get(kindOf.get(id) ?? '') ?? rank.size;
-  const sorted = (ids: Iterable<string>) => [...new Set(ids)].sort((a, b) => of(a) - of(b) || a.localeCompare(b, 'en', { numeric: true }));
+  const sorted = (ids: Iterable<string>) => [...new Set(ids)].sort((a, b) => of(a) - of(b) || compareIds(a, b));
   const fileOf = new Map(files.map((f) => [f.record, f.file]));
   const by = new Map<string, typeof links>();
   for (const l of links) by.set(l.obligation_id, [...(by.get(l.obligation_id) ?? []), l]);
@@ -372,26 +373,8 @@ async function readRecords(store: Store, order: string[]): Promise<{ kinds: Kind
   return { kinds, stages, relations, records, links };
 }
 
-/** The recorded exceptions as lathe check prints them: a heading with their count, then one line each. */
-export function exceptionsText(exceptions: RecordedException[]): string {
-  const line = (e: RecordedException) =>
-    'command' in e
-      ? `  ${e.command} also changes aggregate ${e.aggregate} in the same transaction: ${e.reason}`
-      : `  ${e.repository} also persists aggregate ${e.aggregate}: ${e.reason}`;
-  return `Recorded exceptions (${exceptions.length}):\n${exceptions.map(line).join('\n')}`;
-}
-
-/** Every recorded exception: each command_change, by command and aggregate, then each repository_share, by repository and aggregate. */
-export function recordedExceptions(store: Store): RecordedException[] {
-  return [
-    ...store.rows('command_change').map((r) => ({ command: String(r.command_id), aggregate: String(r.aggregate_id), reason: String(r.reason) })),
-    ...store.rows('repository_share').map((r) => ({ repository: String(r.repository_id), aggregate: String(r.aggregate_id), reason: String(r.reason) })),
-  ];
-}
-
 /**
- * The workspace of an open store: its records and links, every check's problems, the recorded exceptions, and
- * coverage. The config's root resolves the files records name; its source and test globs find the source files.
+ * The workspace of an open store: its records and links, every check's problems, coverage and chains. The config's root resolves the files records name; its source and test globs find the source files.
  */
 export async function readWorkspace(store: Store, config: Pick<LatheConfig, 'root' | 'source' | 'tests' | 'routers' | 'packages'>, timings?: Partial<LoadTimings>): Promise<Workspace> {
   let mark = performance.now();
@@ -400,6 +383,8 @@ export async function readWorkspace(store: Store, config: Pick<LatheConfig, 'roo
     if (timings) timings[phase] = Math.round((now - mark) * 10) / 10;
     mark = now;
   };
+  // The checks and coverage run SQL over the data.
+  await store.ensureDatabase();
   const steps = timings ? (timings.steps ??= {}) : undefined;
   const step = async <T,>(name: string, run: () => Promise<T>): Promise<T> => {
     const start = performance.now();
@@ -423,6 +408,8 @@ export async function readWorkspace(store: Store, config: Pick<LatheConfig, 'roo
   await connection.run(FACT_TABLES_SQL);
   await append(connection, 'file_facts', facts.map((f) => [f.record, f.kind, f.file, f.path, f.file_exists, f.contains_id]));
   await append(connection, 'source_file', sources.map((f) => [f.file, f.traced]));
+  const served = await step('serves', async () => servesOf({ schema: store.schema, rows: (table) => store.rows(table) }));
+  await append(connection, 'record_serves', [...served].flatMap(([record, s]) => s.outcomes.map((outcome) => [record, outcome])));
   await append(connection, 'test_case', cases.map((c) => [c.file, c.position, c.line, c.name]));
   await append(connection, 'test_case_id', cases.flatMap((c) => c.ids.map((id) => [c.file, c.position, id])));
   await writeRouteFacts(connection, routes);
@@ -437,13 +424,13 @@ export async function readWorkspace(store: Store, config: Pick<LatheConfig, 'roo
   lap('checks');
   const [coverage, chains] = await Promise.all([computeCoverage(store), computeChains(store, read.records, order)]);
   lap('coverage');
-  return { ...read, problems, exceptions: recordedExceptions(store), coverage, chains };
+  return { ...read, problems, coverage, chains };
 }
 
 /** A workspace whose data did not load: no records, and the store's refusals as data-refused errors. */
 function refusedWorkspace(error: StoreError): Workspace {
   return {
-    kinds: [], stages: [], relations: [], records: [], links: [], exceptions: [], coverage: [], chains: [],
+    kinds: [], stages: [], relations: [], records: [], links: [], coverage: [], chains: [],
     problems: error.problems.map((p) => ({ severity: 'error', check: 'data-refused', record: p.key && /^[A-Z][A-Z0-9]*(-[A-Z0-9]+)*$/.test(p.key) ? p.key : null, message: formatProblem(p) })),
   };
 }
@@ -460,6 +447,11 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
     if (error instanceof StoreError) return refusedWorkspace(error);
     throw error;
   }
+  // The checks run SQL, so the database is built here, where the open is timed (a load of validated files skips it).
+  await store.ensureDatabase().catch(async (error) => {
+    await store.close();
+    throw error;
+  });
   if (timings) timings.open = Math.round((performance.now() - started) * 10) / 10;
   try {
     return await readWorkspace(store, config, timings);

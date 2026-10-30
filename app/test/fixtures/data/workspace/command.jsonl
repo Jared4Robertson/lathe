@@ -1,1 +1,1 @@
-{"id":"DM-SHOP-CMD01","title":"Add item","aggregate_id":"DM-SHOP-A1","description":"Puts an item in the basket."}
+{"id":"DM-SHOP-CMD01","title":"Add item","entity_id":"DM-SHOP-EN01","description":"Puts an item in the basket."}

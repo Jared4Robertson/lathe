@@ -4,30 +4,134 @@
 {"read_model_id":"LA-AUT-RM01","position":4,"name":"Stages","meaning":"Each stage's position, label and description.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM01","position":5,"name":"Checks","meaning":"Each check's name, severity, summary, explanation and kinds, Lathe's, the engine's own and the product's.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM02","position":1,"name":"ID","meaning":"The record.","type_value_object_id":"LA-VO01","required":true}
-{"read_model_id":"LA-AUT-RM02","position":2,"name":"Kind","meaning":"Its kind.","type_value_object_id":"LA-VO06","required":true}
-{"read_model_id":"LA-AUT-RM02","position":3,"name":"Row","meaning":"Its columns.","type":"text","required":true}
-{"read_model_id":"LA-AUT-RM02","position":4,"name":"Parts","meaning":"Its part rows.","type":"text","required":true}
-{"read_model_id":"LA-AUT-RM02","position":5,"name":"Children","meaning":"The records under it.","type":"text","required":true}
-{"read_model_id":"LA-AUT-RM02","position":6,"name":"Links","meaning":"Its links out and in, by relation.","type":"text","required":true}
-{"read_model_id":"LA-AUT-RM02","position":7,"name":"Data file","meaning":"The data file that holds its row.","type":"text","required":false}
-{"read_model_id":"LA-CHK-RM01","position":1,"name":"Check","meaning":"The check that found it, or the engine's own `data-refused`.","type_aggregate_id":"LA-CHK-A1","required":true,"column_name":"check_name","example":"value-object-unused"}
-{"read_model_id":"LA-CHK-RM01","position":2,"name":"Severity","meaning":"`error` or `warning`: whether the data is broken or has work still to do.","type":"text","required":true,"example":"error"}
-{"read_model_id":"LA-CHK-RM01","position":3,"name":"Record","meaning":"The ID of the record it is about; none for the whole workspace.","type":"text","required":false,"example":"TL-VO05"}
-{"read_model_id":"LA-CHK-RM01","position":4,"name":"Message","meaning":"What is wrong, naming the IDs involved, and the fix.","type":"text","required":true,"example":"Value object TL-VO05 is used by no field. Type a field with it, or remove it."}
-{"read_model_id":"LA-EXP-RM01","position":1,"name":"Product","meaning":"The space's product.","type_aggregate_id":"LA-AUT-A1","required":true}
-{"read_model_id":"LA-EXP-RM01","position":2,"name":"Record","meaning":"A record's ID.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM01","position":3,"name":"Kind","meaning":"Its kind.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM01","position":4,"name":"Title","meaning":"Its title.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM01","position":5,"name":"Parent","meaning":"Its parent's ID.","type":"text","required":false}
-{"read_model_id":"LA-EXP-RM01","position":6,"name":"Problems","meaning":"How many problems name it.","type":"whole number","required":true}
-{"read_model_id":"LA-EXP-RM02","position":1,"name":"Product","meaning":"The product whose nav it is.","type_aggregate_id":"LA-AUT-A1","required":true}
-{"read_model_id":"LA-EXP-RM02","position":2,"name":"Domain","meaning":"The domain the row is in, or none in Shared.","type_aggregate_id":"LA-AUT-A1","required":false}
-{"read_model_id":"LA-EXP-RM02","position":3,"name":"Stage","meaning":"The stage the row is in.","type":"text","required":false}
-{"read_model_id":"LA-EXP-RM02","position":4,"name":"Row","meaning":"A record's ID, or a stage's or kind group's address.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM02","position":5,"name":"Parent row","meaning":"The row it sits in.","type":"text","required":false}
-{"read_model_id":"LA-EXP-RM02","position":6,"name":"Position","meaning":"Its place among its siblings.","type":"whole number","required":true}
-{"read_model_id":"LA-EXP-RM02","position":7,"name":"Label","meaning":"The name shown: a stage's own name, a kind group's plural label (`plural()`), a record's title.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM02","position":8,"name":"Count","meaning":"How many records it holds; an empty stage or kind group is not a row.","type":"whole number","required":true}
+{"read_model_id":"LA-AUT-RM02","position":2,"name":"Data file","meaning":"The data file that holds its row.","type":"text","required":false}
+{"read_model_id":"LA-AUT-RM11","position":1,"name":"Use case","meaning":"The use case's row: its ID, title, capability, goal and notes.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM11","position":2,"name":"Actors","meaning":"Its actors' roles, in order: the first is the main actor.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM11","position":3,"name":"Requirements","meaning":"Its UC requirements by ID, each with its use case tests (and the test data sets they start from) and the steps of its use case that fulfill it.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM11","position":4,"name":"Flows","meaning":"Its flows by the interface each goes through, each with its steps path by path, the main path first and each in position order (with the requirements each fulfills, what it invokes, the view it happens in and the integrations it exchanges with), and its flow test.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM11","position":5,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the use case: the use case, a UC requirement, a use case test, a flow, a flow step or a flow test.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM21","position":1,"name":"Product","meaning":"The product's row.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM21","position":2,"name":"Roles","meaning":"Its roles, in order.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM21","position":3,"name":"Declarations","meaning":"Its product kinds with their fields, and its product relations.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM21","position":4,"name":"Questions","meaning":"Its open questions, each with the records it is about.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM21","position":5,"name":"Interfaces","meaning":"Its interfaces, each with the flows through it and the product's use cases with no flow through it, by capability.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM21","position":6,"name":"Outcomes","meaning":"Its business outcomes, each with its statement, measure, target and the capabilities that serve it.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM21","position":7,"name":"Domains","meaning":"Its domains, by ID, with their titles.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM22","position":1,"name":"Pattern","meaning":"The pattern's row: its ID, title, product, description and notes.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM22","position":2,"name":"Settings","meaning":"Its settings in order, each a name and what a follower decides in it.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM22","position":3,"name":"Rules","meaning":"Its rules by ID, each with its tests and the test data sets they start from.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM22","position":4,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the pattern: the pattern, a pattern rule or a pattern rule test.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM23","position":1,"name":"Standard","meaning":"The standard's row: its ID, title, product and description.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM23","position":2,"name":"Rules","meaning":"Its rules by ID, each with the records that meet it and its tests (with the test data sets they start from).","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM23","position":3,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the standard: the standard, a standard rule or a standard rule test.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM24","position":1,"name":"Domain","meaning":"The domain's row: its ID, title, product, subdomain type, description and notes.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM24","position":2,"name":"Capabilities","meaning":"Its capabilities by position, each with the business outcomes it serves and its use cases by ID.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM24","position":3,"name":"Terms","meaning":"Its glossary bottom-up (each term after every term it builds on, otherwise by title): each term, what it means and the terms it builds on.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM24","position":4,"name":"Domain services","meaning":"Its domain services by ID, each with its service (the standard rules it meets and packages it uses) and its tests (with the test data sets they start from).","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM24","position":5,"name":"Repositories","meaning":"Its repositories by ID, each with the aggregate it persists (and any other it also persists, with its reason), the standard rules it meets and the packages it uses.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM24","position":6,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the domain: the domain, a capability, a term, a domain service, a service, a domain service test or a repository.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM25","position":1,"name":"Specification","meaning":"The specification's row: its ID, title and statement.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM25","position":2,"name":"Domain","meaning":"The domain its ID names.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM25","position":3,"name":"Reads","meaning":"The aggregates it reads, by ID.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM25","position":4,"name":"Predicate","meaning":"Its predicate, if written, with the standard rules it meets and the packages it uses.","type":"text","required":false}
+{"read_model_id":"LA-AUT-RM25","position":5,"name":"Test","meaning":"Its test, if written, with the test data sets it starts from.","type":"text","required":false}
+{"read_model_id":"LA-AUT-RM25","position":6,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the specification: the specification, its predicate or its test.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM26","position":1,"name":"Aggregate","meaning":"The aggregate's row: its ID, title, domain, description, identity and notes.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM26","position":2,"name":"Entities","meaning":"Its entities, the root first, then by ID: each with its fields in order, the entities it holds by has_one and has_many, its data model with the standard rules it meets and the packages it uses, and the commands and tables under it by ID.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM26","position":3,"name":"Invariants","meaning":"Its invariants by ID, each with its rule (with the standard rules it meets and the packages it uses), and its test with the test data sets the test starts from.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM26","position":4,"name":"Domain events","meaning":"The domain events that happen to it, by ID, each with whether it is published, the commands that raise it and the policies that hear it.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM26","position":5,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the aggregate: the aggregate, an entity, an invariant, a data model, a rule or an invariant test.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM27","position":1,"name":"Domain event","meaning":"The event's row: its ID, title, aggregate, whether it is published, and description.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM27","position":2,"name":"Fields","meaning":"The fields it carries, by position.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM27","position":3,"name":"Event type","meaning":"Its shape in code, with the standard rules it meets and the packages it uses, when it has one.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM27","position":4,"name":"Raised and heard by","meaning":"The commands that raise it and the policies that hear it, each by ID.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM27","position":5,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the event: the domain event or its event type.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM28","position":1,"name":"Command","meaning":"The command's row: its ID, title, entity and description.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM28","position":2,"name":"Links","meaning":"The events it raises, the specifications it checks and the domain services it calls, each by ID.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM28","position":3,"name":"Handler","meaning":"Its command handler, with the standard rules it meets and the packages it uses.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM28","position":4,"name":"Policies","meaning":"Its policies by ID, each with the event it hears, its event handler (with the standard rules it meets and the packages it uses) and its test (with the test data sets it starts from).","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM28","position":5,"name":"Endpoints","meaning":"The endpoints that expose it, by ID.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM28","position":6,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the command: the command, its handler, a policy, or a policy's event handler or test.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM29","position":1,"name":"Value object","meaning":"The value object's row: its ID, title and description.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM29","position":2,"name":"Product","meaning":"The product its ID names.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM29","position":3,"name":"Fields","meaning":"Its fields in order, each with its type and whether it is required.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM29","position":4,"name":"Constraints","meaning":"Its constraints by ID, each with its test, if written, and the test data sets that test starts from.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM29","position":5,"name":"Value type","meaning":"Its value type, if written, with the standard rules it meets and the packages it uses.","type":"text","required":false}
+{"read_model_id":"LA-AUT-RM29","position":6,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the value object: the value object, a constraint, its value type or a constraint test.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM30","position":1,"name":"Read model","meaning":"The read model's row: its ID, title, domain and description.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM30","position":2,"name":"Fields","meaning":"Its fields in order, each with its type and whether it is required.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM30","position":3,"name":"Links","meaning":"The aggregates it reads, the domain services its projection calls and the events that feed it.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM30","position":4,"name":"Queries","meaning":"Its queries by ID, each with the specifications it selects by, the domain services it calls and its handler.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM30","position":5,"name":"Projection","meaning":"Its projection, if written, with the standard rules it meets and the packages it uses.","type":"text","required":false}
+{"read_model_id":"LA-AUT-RM30","position":6,"name":"Reader","meaning":"Its reader, if written, with the standard rules it meets and the packages it uses.","type":"text","required":false}
+{"read_model_id":"LA-AUT-RM30","position":7,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the read model: the read model, a query, its projection, its reader or a query handler.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM32","position":1,"name":"View","meaning":"The view's row: its ID, title, route, description and notes.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM32","position":2,"name":"Requirements","meaning":"Its view requirements by ID, each with its view tests (with the test data sets they start from).","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM32","position":3,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the view: the view, a view requirement or a view test.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM33","position":1,"name":"Endpoint","meaning":"The endpoint's row: its ID, title, method, route, description and notes, and the command or query it exposes.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM33","position":2,"name":"Handler","meaning":"Its endpoint handler's row, when it has one, with the standard rules it meets and the packages it uses.","type":"text","required":false}
+{"read_model_id":"LA-AUT-RM33","position":3,"name":"Requirements","meaning":"Its API requirements by ID, each with its endpoint tests (with the test data sets they start from).","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM33","position":4,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the endpoint: the endpoint, an API requirement, its endpoint handler or an endpoint test.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM34","position":1,"name":"Integration","meaning":"The integration's row: its ID, title, outside system and description.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM34","position":2,"name":"Adapter","meaning":"Its adapter's row, when it has one, with the standard rules it meets and the packages it uses.","type":"text","required":false}
+{"read_model_id":"LA-AUT-RM34","position":3,"name":"Tests","meaning":"Its integration tests by ID, with the test data sets each starts from.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM34","position":4,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the integration: the integration, its adapter or an integration test.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM35","position":1,"name":"UI component","meaning":"The UI component's row: its ID, title, file and description.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM35","position":2,"name":"Renders","meaning":"The views it renders, the view requirements it builds, the standard rules it meets and the packages it uses, each list sorted.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM35","position":3,"name":"Record","meaning":"The record the page is about, by ID, and its kind: the UI component.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM36","position":1,"name":"Outcome","meaning":"The outcome's row.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM36","position":2,"name":"Measured by","meaning":"The tests and records that measure it.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM36","position":3,"name":"Served by","meaning":"The capabilities that serve it.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM37","position":1,"name":"Test data set","meaning":"The test data set's row: its ID, title, domain, environment, accounts, records, prepare, reset, file and description.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM37","position":2,"name":"Started from by","meaning":"The tests that start from it, by ID.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM37","position":3,"name":"Record","meaning":"The record the page is about: the test data set, by ID.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM38","position":1,"name":"Table","meaning":"The table's row: its ID, title, name, storage and file.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM38","position":2,"name":"Parent","meaning":"The entity or read model it stores, or the domain whose own infrastructure it is, with its kind.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM38","position":3,"name":"Keys","meaning":"Its keys in order: their type, columns, name, invariant, target table and condition.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM38","position":4,"name":"Meets","meaning":"The standard rules it meets.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM38","position":5,"name":"Packages","meaning":"The packages it uses.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM39","position":1,"name":"Record","meaning":"The record's ID, its kind and the kind's label, and the record it sits under.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM39","position":2,"name":"Values","meaning":"Its title and declared fields, by column.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM39","position":3,"name":"Links","meaning":"The links it starts, by relation.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM39","position":4,"name":"Packages","meaning":"The packages it uses.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM40","position":1,"name":"Entry point","meaning":"The entry point's row.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM40","position":2,"name":"Packages","meaning":"The packages it uses.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM40","position":3,"name":"Meets","meaning":"The standard rules it meets.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM41","position":1,"name":"Tooling","meaning":"The tooling record's row.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM41","position":2,"name":"Packages","meaning":"The packages it uses.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM41","position":3,"name":"Meets","meaning":"The standard rules it meets.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM42","position":1,"name":"Requirement","meaning":"The requirement's row: its ID, title, parent and statement.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM42","position":2,"name":"Parent","meaning":"The aggregate or read model it is about, with its kind and title.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM42","position":3,"name":"Builder","meaning":"The repository or reader that builds it, with its file and the data store it names.","type":"text","required":false}
+{"read_model_id":"LA-AUT-RM42","position":4,"name":"Tests","meaning":"Its storage requirement tests, each with the test data sets it starts from.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM42","position":5,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the requirement.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM43","position":1,"name":"Store","meaning":"The data store's row: its ID, title, parent, kind and description.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM43","position":2,"name":"Parent","meaning":"The product or domain it sits under.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM43","position":3,"name":"Provided by","meaning":"The integration that reaches it, when someone else runs it.","type":"text","required":false}
+{"read_model_id":"LA-AUT-RM43","position":4,"name":"Stores","meaning":"The repositories, readers and tables stored in it, by ID.","type":"text","required":true}
+{"read_model_id":"LA-CHK-RM01","position":1,"name":"Product","meaning":"The product whose space it is.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-CHK-RM01","position":2,"name":"Counts","meaning":"Its errors and warnings, the workspace's among them.","type":"text","required":true,"example":"2 errors · 3 warnings"}
+{"read_model_id":"LA-CHK-RM01","position":3,"name":"Own problems","meaning":"The problems of its records by check, in the order of each check's first problem: errors before warnings, then by check and record. Each names its severity, check, record and message.","type":"text","required":true}
+{"read_model_id":"LA-CHK-RM01","position":4,"name":"Workspace problems","meaning":"The problems that belong to no product, about no record or an ID no record has, by check in the same order. Every product's space shows them.","type":"text","required":true}
+{"read_model_id":"LA-CHK-RM10","position":1,"name":"Name","meaning":"The check's name.","type":"text","required":true}
+{"read_model_id":"LA-CHK-RM10","position":2,"name":"Product","meaning":"The product it belongs to, or none for one of Lathe's own.","type_value_object_id":"LA-VO01","required":false}
+{"read_model_id":"LA-CHK-RM10","position":3,"name":"Check","meaning":"Its place in the run order, severity, summary, explanation, query and kinds.","type":"text","required":true}
+{"read_model_id":"LA-CHK-RM11","position":1,"name":"Product","meaning":"The product.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-CHK-RM11","position":2,"name":"Limits","meaning":"Its children limit and entities limit, and whether it set them or takes the defaults.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM01","position":1,"name":"Product","meaning":"The product whose space it is.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-EXP-RM01","position":2,"name":"Record","meaning":"A record's ID, kind, title and parent.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM01","position":3,"name":"Place","meaning":"The product and domain it sits in, as the records' scope places it.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM01","position":4,"name":"Group","meaning":"The heading it is listed under, or none.","type":"text","required":false}
+{"read_model_id":"LA-EXP-RM01","position":5,"name":"Test state","meaning":"A test's state and level, or none for a record that is no test.","type":"text","required":false}
+{"read_model_id":"LA-EXP-RM01","position":6,"name":"Names","meaning":"What it names in code: its file, or a table's name.","type":"text","required":false}
+{"read_model_id":"LA-EXP-RM01","position":7,"name":"Data file","meaning":"Its kind's data file and its line there.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM01","position":8,"name":"Digest","meaning":"A digest of its own row, the part rows it owns and the links it starts: it changes when they do.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM01","position":9,"name":"Links","meaning":"The links among the space's records: source, relation and target.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM02","position":1,"name":"Product","meaning":"The product whose tree it is.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-EXP-RM02","position":2,"name":"Owner","meaning":"Shared (the product) or a domain, with its title.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM02","position":3,"name":"Stage","meaning":"A stage of the owner, its folders and whether it shows its one folder directly.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM02","position":4,"name":"Folder","meaning":"One kind's folder: its key and the records that start a branch in it, in order.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM02","position":5,"name":"Entry","meaning":"A record in its folder: its ID, kind and title, and what folds under it.","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM03","position":1,"name":"Product","meaning":"The product the map is of.","type_aggregate_id":"LA-AUT-A1","required":true}
 {"read_model_id":"LA-EXP-RM03","position":2,"name":"Layout","meaning":"`tree` or `nested`.","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM03","position":3,"name":"Node","meaning":"A record's ID, or a stage's or kind group's address.","type":"text","required":true}
@@ -40,12 +144,9 @@
 {"read_model_id":"LA-EXP-RM03","position":10,"name":"Text scale","meaning":"Its label's scale, shared with its siblings (DS06).","type":"decimal","required":true}
 {"read_model_id":"LA-EXP-RM03","position":11,"name":"Label","meaning":"Its kind and ID line and its title, broken into lines.","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM03","position":12,"name":"Count","meaning":"A kind group's or stage's number of members.","type":"whole number","required":false}
-{"read_model_id":"LA-EXP-RM04","position":1,"name":"Product","meaning":"The product the map is of.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM04","position":2,"name":"Item","meaning":"A box (a domain, an aggregate or an entity) or a line.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM04","position":3,"name":"From","meaning":"A line's start.","type":"text","required":false}
-{"read_model_id":"LA-EXP-RM04","position":4,"name":"To","meaning":"A line's end.","type":"text","required":false}
-{"read_model_id":"LA-EXP-RM04","position":5,"name":"Relation","meaning":"What a line stands for: `has_one`, `has_many` or a reference field.","type":"text","required":false}
-{"read_model_id":"LA-EXP-RM04","position":6,"name":"Parent","meaning":"The box a box sits in: an aggregate's domain, an entity's aggregate; none for a domain.","type":"text","required":false}
+{"read_model_id":"LA-EXP-RM04","position":1,"name":"Product","meaning":"The product the map is of.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-EXP-RM04","position":2,"name":"Box","meaning":"A domain, an aggregate or an entity: its title, the box it sits in, whether it is the root or empty, and an entity's fields with their types.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM04","position":3,"name":"Line","meaning":"A has-one, has-many or reference line: its source and target entity, its ends, and the fields a reference stands for.","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM05","position":1,"name":"Record","meaning":"The record's ID.","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM05","position":2,"name":"Commit","meaning":"The commit's hash, or `working` for changes not committed yet.","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM05","position":3,"name":"Date","meaning":"When it was committed.","type":"date and time","required":true}
@@ -57,12 +158,12 @@
 {"read_model_id":"LA-EXP-RM06","position":3,"name":"Color","meaning":"The icon's color (DS01).","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM06","position":4,"name":"Place","meaning":"Its place in the rail, which Alt and its number opens (DS01).","type":"whole number","required":true}
 {"read_model_id":"LA-EXP-RM06","position":5,"name":"Domains","meaning":"How many domains it has, for the products page.","type":"whole number","required":true}
-{"read_model_id":"LA-EXP-RM07","position":1,"name":"Record","meaning":"The record's ID.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM07","position":2,"name":"Change","meaning":"Added, removed or changed.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM07","position":3,"name":"Fields","meaning":"Each changed column, its value before and after.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM07","position":4,"name":"Parts","meaning":"The part rows it owns, added, removed or changed.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM07","position":5,"name":"Links","meaning":"The links it starts, added and removed.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM07","position":6,"name":"Baseline","meaning":"What it is measured from: the last commit, where the branch left main, the Reader's last look, or the data before a reload or a chat turn.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM07","position":1,"name":"Product","meaning":"The product.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-EXP-RM07","position":2,"name":"Baseline","meaning":"What it is measured from: its commit and subject, or why there is none.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM07","position":3,"name":"Record","meaning":"A record that differs: its ID, kind and title, and whether it was added, removed or changed.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM07","position":4,"name":"Fields","meaning":"Each changed column of its own row, its value before and after.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM07","position":5,"name":"Parts","meaning":"The part rows it owns, added, removed or changed.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM07","position":6,"name":"Links","meaning":"The links it starts, added and removed.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM01","position":1,"name":"Data folder","meaning":"Where the product's data files were read from, as `lathe.config.json` names it.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM01","position":2,"name":"Records","meaning":"Every record with its kind, columns, part rows, parent, product and domain.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM01","position":3,"name":"Links","meaning":"Every link, with its relation and both ends.","type":"text","required":true}
@@ -73,8 +174,11 @@
 {"read_model_id":"LA-PLT-RM02","position":1,"name":"Command ID","meaning":"The command.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM02","position":2,"name":"Title","meaning":"What the palette and the sheet call it, or the title its handler gives (\"Switch to Lathe\").","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM02","position":3,"name":"Group","meaning":"Where the sheet lists it.","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM02","position":4,"name":"Shown keys","meaning":"Its bindings with the person's overrides, as the platform shows them (DS01).","type":"text","required":false}
+{"read_model_id":"LA-PLT-RM02","position":4,"name":"Shown keys","meaning":"Its keys as the person bound them, as the platform shows them (DS01).","type_value_object_id":"LA-VO61","required":false}
 {"read_model_id":"LA-PLT-RM02","position":5,"name":"ARIA keys","meaning":"What `aria-keyshortcuts` says; none for a sequence.","type":"text","required":false}
+{"read_model_id":"LA-PLT-RM02","position":6,"name":"Default keys","meaning":"Its keys on this platform before the person changed them.","type_value_object_id":"LA-VO61","required":false}
+{"read_model_id":"LA-PLT-RM02","position":7,"name":"Changed","meaning":"The person changed its keys: the sheet offers Reset.","type":"yes/no","required":true}
+{"read_model_id":"LA-PLT-RM02","position":8,"name":"Customizable","meaning":"The person may bind its keys: not the browser's own, nor an ARIA control's.","type":"yes/no","required":true}
 {"read_model_id":"LA-PLT-RM03","position":1,"name":"Theme ID","meaning":"The theme.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM03","position":2,"name":"Name","meaning":"What it is called.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM03","position":3,"name":"Built in","meaning":"Whether Lathe ships it.","type":"yes/no","required":true}
@@ -91,13 +195,22 @@
 {"read_model_id":"LA-PLT-RM06","position":3,"name":"Stage","meaning":"The stage shown: graph, erd or trace.","type":"text","required":false}
 {"read_model_id":"LA-PLT-RM06","position":4,"name":"Selected","meaning":"The record selected on the stage or in the wiki card, by ID, kind and title.","type":"text","required":false}
 {"read_model_id":"LA-PLT-RM06","position":5,"name":"Product","meaning":"The space's product.","type":"text","required":false}
-{"read_model_id":"LA-TRC-RM01","position":1,"name":"Domain","meaning":"The domain counted.","type_aggregate_id":"LA-AUT-A1","required":true,"example":"TL-LEND"}
-{"read_model_id":"LA-TRC-RM01","position":2,"name":"Obligation kind","meaning":"The obligation kind counted.","type":"text","required":true,"column_name":"kind","example":"invariant"}
-{"read_model_id":"LA-TRC-RM01","position":3,"name":"Total","meaning":"How many the domain owes.","type":"whole number","required":true,"example":"6"}
-{"read_model_id":"LA-TRC-RM01","position":4,"name":"Designed","meaning":"How many have their design specified (UC02-R02).","type":"whole number","required":true,"example":"6"}
-{"read_model_id":"LA-TRC-RM01","position":5,"name":"Built","meaning":"How many have every technical record of that design naming a file that exists.","type":"whole number","required":true,"example":"6"}
-{"read_model_id":"LA-TRC-RM01","position":6,"name":"Proved","meaning":"How many an automated or manual test proves, at a level its kind allows.","type":"whole number","required":true,"example":"6"}
-{"read_model_id":"LA-TRC-RM01","position":7,"name":"Not automated yet","meaning":"How many are not proved but have a test not automated yet.","type":"whole number","required":true,"column_name":"not_automated","example":"0"}
+{"read_model_id":"LA-PLT-RM08","position":1,"name":"Kind","meaning":"A kind: its label, stage, place in reading order, parent kinds and columns, whether it is an obligation, its ID scope and the product that declares it.","type":"text","required":true}
+{"read_model_id":"LA-PLT-RM08","position":2,"name":"Stage","meaning":"A stage with its label and description, in order.","type":"text","required":true}
+{"read_model_id":"LA-PLT-RM08","position":3,"name":"Relation","meaning":"A pair of kinds a relation may link, with its role and its words read from each end.","type":"text","required":true}
+{"read_model_id":"LA-PLT-RM08","position":4,"name":"Columns","meaning":"Each table's columns, as their fields' inputs take them.","type":"text","required":true}
+{"read_model_id":"LA-PLT-RM09","position":1,"name":"Available","meaning":"Whether the Mac can recognize speech on-device here.","type":"yes/no","required":true,"example":"yes"}
+{"read_model_id":"LA-PLT-RM09","position":2,"name":"Reason","meaning":"Why not, said to the Owner, when it cannot.","type":"text","required":false,"example":"On-device dictation needs macOS 26 or later."}
+{"read_model_id":"LA-PLT-RM09","position":3,"name":"Microphone","meaning":"macOS's answer for the microphone: granted, denied, restricted, not determined or unknown.","type":"text","required":true,"example":"not-determined"}
+{"read_model_id":"LA-PLT-RM09","position":4,"name":"End of turn","meaning":"Whether Quick mode can read the voice's pitch, or waits a fixed pause.","type":"yes/no","required":true,"example":"yes"}
+{"read_model_id":"LA-PLT-RM10","position":1,"name":"Name","meaning":"What the Owner types after the slash, with its plugin prefix.","type":"text","required":true,"example":"lathe:check-and-fix"}
+{"read_model_id":"LA-PLT-RM10","position":2,"name":"Description","meaning":"The first sentence of the skill's or command's description.","type":"text","required":false,"example":"Run lathe check, fix every error it reports."}
+{"read_model_id":"LA-PLT-RM10","position":3,"name":"Kind","meaning":"skill or command.","type":"text","required":true,"example":"skill"}
+{"read_model_id":"LA-TRC-RM01","position":1,"name":"Product","meaning":"The product.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-TRC-RM01","position":2,"name":"Domain","meaning":"The domain counted, or none for the product's records outside every domain.","type":"text","required":false}
+{"read_model_id":"LA-TRC-RM01","position":3,"name":"Obligation kind","meaning":"The obligation kind counted, with its total, designed, built, proved and not automated yet, and whether only proof is asked of it.","type":"text","required":true,"example":"invariant"}
+{"read_model_id":"LA-TRC-RM01","position":4,"name":"Tests","meaning":"The scope's tests by state: automated, manual, not automated yet.","type":"text","required":true}
+{"read_model_id":"LA-TRC-RM01","position":5,"name":"Gaps","meaning":"Each record's gap: an obligation not designed, built or proved, or a record short of a minimum.","type":"text","required":true}
 {"read_model_id":"LA-TRC-RM02","position":1,"name":"Domain","meaning":"The domain that owes the obligation.","type_aggregate_id":"LA-AUT-A1","required":true,"example":"TL-LEND"}
 {"read_model_id":"LA-TRC-RM02","position":2,"name":"Obligation","meaning":"The obligation's ID.","type":"text","required":true,"column_name":"id","example":"TL-LEND-EP06-R03"}
 {"read_model_id":"LA-TRC-RM02","position":3,"name":"Kind","meaning":"The obligation's kind.","type":"text","required":true,"example":"api_requirement"}
@@ -108,18 +221,40 @@
 {"read_model_id":"LA-TRC-RM03","position":4,"name":"Not automated yet","meaning":"The domain's tests not automated yet.","type":"whole number","required":true,"column_name":"not_automated","example":"0"}
 {"read_model_id":"LA-TRC-RM04","position":1,"name":"Domain","meaning":"A domain that follows the rule's pattern.","type_aggregate_id":"LA-AUT-A1","required":true,"example":"TL-LEND"}
 {"read_model_id":"LA-TRC-RM04","position":2,"name":"Pattern rule","meaning":"The rule's ID.","type":"text","required":true,"column_name":"id","example":"TL-PAT-LIBRARIAN-ACTION-R01"}
-{"read_model_id":"LA-TRC-RM04","position":3,"name":"Standing","meaning":"`owed`, `not applicable` or `waived` (SP02 to SP04).","type":"text","required":true,"example":"owed"}
 {"read_model_id":"LA-TRC-RM05","position":1,"name":"Record","meaning":"The test or technical record that names the file.","type":"text","required":true,"example":"TL-LEND-INV01-T"}
 {"read_model_id":"LA-TRC-RM05","position":2,"name":"File","meaning":"The file, from the product root.","type":"text","required":true,"example":"test/domain-rules.test.ts"}
 {"read_model_id":"LA-TRC-RM05","position":3,"name":"Exists","meaning":"Whether the file exists.","type":"yes/no","required":true,"column_name":"file_exists","example":"yes"}
 {"read_model_id":"LA-TRC-RM05","position":4,"name":"Names its ID","meaning":"For a test, whether the file names the test's ID as a whole ID (DS01).","type":"yes/no","required":true,"column_name":"contains_id","example":"yes"}
 {"read_model_id":"LA-TRC-RM06","position":1,"name":"Record","meaning":"The record traced.","type":"text","required":true,"example":"TL-LEND-UC03-R02"}
-{"read_model_id":"LA-TRC-RM06","position":2,"name":"Group","meaning":"The group it falls in, by its label: Designed by, Built by (Met by, for a standard rule), Proved by, or a link's label.","type":"text","required":true,"example":"Proved by"}
-{"read_model_id":"LA-TRC-RM06","position":3,"name":"Linked record","meaning":"The record in the group.","type":"text","required":true,"example":"TL-LEND-UC03-R02-T01"}
-{"read_model_id":"LA-TRC-RM06","position":4,"name":"Mark","meaning":"built or not built for a build record; the state for a test.","type":"text","required":false,"example":"automated"}
+{"read_model_id":"LA-TRC-RM06","position":2,"name":"Chain","meaning":"For an obligation: Designed by, Built by (Met by, for a standard rule) and Proved by, and which build records are built.","type":"text","required":false}
+{"read_model_id":"LA-TRC-RM06","position":3,"name":"Judgment","meaning":"How each domain owing it stands on it: what designs, builds and proves it there, and its gaps.","type":"text","required":false}
+{"read_model_id":"LA-TRC-RM06","position":4,"name":"Requirements","meaning":"For a use case: its UC requirements, each with its group and its judgment.","type":"text","required":false}
+{"read_model_id":"LA-TRC-RM06","position":5,"name":"Run by","meaning":"For a test: what it proves, its level, state, file, size and markers.","type":"text","required":false}
+{"read_model_id":"LA-TRC-RM06","position":6,"name":"Links","meaning":"Its other links by direction and relation, with their words.","type":"text","required":true}
 {"read_model_id":"LA-TRC-RM07","position":1,"name":"Record","meaning":"The table record.","type":"text","required":true,"example":"LA-TRC-RM07-TB"}
 {"read_model_id":"LA-TRC-RM07","position":2,"name":"Name","meaning":"The table's name, as the spec gives it.","type":"text","required":true,"example":"table_facts"}
 {"read_model_id":"LA-TRC-RM07","position":3,"name":"File","meaning":"The file it names, from the product root.","type":"text","required":true,"example":"lathe/src/trace/tables.ts"}
 {"read_model_id":"LA-TRC-RM07","position":4,"name":"Part","meaning":"What is expected: table, column, primary, unique or foreign.","type":"text","required":true,"example":"column"}
 {"read_model_id":"LA-TRC-RM07","position":5,"name":"Expected","meaning":"The table's name, the column, or the key's columns and target table.","type":"text","required":true,"example":"found"}
 {"read_model_id":"LA-TRC-RM07","position":6,"name":"Found","meaning":"Whether the file defines it.","type":"yes/no","required":true,"example":"yes"}
+{"read_model_id":"LA-TRC-RM10","position":1,"name":"Follower","meaning":"The domain or use case that follows the pattern.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-TRC-RM10","position":2,"name":"Pattern","meaning":"The pattern it follows.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-TRC-RM10","position":3,"name":"Settings","meaning":"Each setting with its value, by setting name.","type":"text","required":true}
+{"read_model_id":"LA-TRC-RM10","position":4,"name":"Domain","meaning":"The domain the follower sits in: a domain is its own, a use case its capability's. A pattern's followers are grouped by it, with whether the domain itself follows the pattern.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-TRC-RM11","position":1,"name":"Product","meaning":"The product whose space it is: its own records and those of no product.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-TRC-RM11","position":2,"name":"Obligation","meaning":"An obligation of the space with a chain or a gap.","type":"text","required":true,"example":"TL-LEND-UC03-R02"}
+{"read_model_id":"LA-TRC-RM11","position":3,"name":"Chain","meaning":"What designs it, what builds it and its tests, each in the engine's order, the files the build records and tests name with the records naming each, and the chain's links from the record nearer the obligation to the one it leads to.","type":"text","required":true}
+{"read_model_id":"LA-TRC-RM11","position":4,"name":"Gaps","meaning":"What coverage reports it misses wherever it is owed, in the order designed, built, proved.","type":"text","required":false,"example":"proved"}
+{"read_model_id":"LA-TRC-RM11","position":5,"name":"Proof only","meaning":"Whether only proof is asked of its kind (a pattern rule), so its design and build are not owed.","type":"yes/no","required":true,"example":"false"}
+{"read_model_id":"LA-TRC-RM11","position":6,"name":"Untraced","meaning":"The records coverage reports untraced: of a kind a chain reaches, and reached by none.","type":"text","required":false,"example":"TL-LEND-CMD04"}
+{"read_model_id":"LA-TRC-RM12","position":1,"name":"Record","meaning":"The record.","type":"text","required":true,"example":"LA-AUT-A11"}
+{"read_model_id":"LA-TRC-RM12","position":2,"name":"Outcomes","meaning":"The business outcomes it serves, in ID order; none when no use case whose capability serves one reaches it.","type":"text","required":true}
+{"read_model_id":"LA-TRC-RM12","position":3,"name":"Use cases","meaning":"The use cases that reach it, through which it serves them.","type":"text","required":true}
+{"read_model_id":"LA-TRC-RM12","position":4,"name":"Serves none","meaning":"For a product: its aggregates, read models and obligations no outcome reaches.","type":"text","required":false}
+{"read_model_id":"LA-TRC-RM13","position":1,"name":"Product","meaning":"The product whose space it is: its own use cases and those of no product.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-TRC-RM13","position":2,"name":"Use case","meaning":"A use case of the space: one row each.","type":"text","required":true,"example":"LA-AUT-UC06"}
+{"read_model_id":"LA-TRC-RM13","position":3,"name":"Outcomes","meaning":"The business outcomes its capability serves, in ID order.","type":"text","required":false,"example":"LA-BO06"}
+{"read_model_id":"LA-TRC-RM13","position":4,"name":"Requirements","meaning":"Its UC requirements, each with what coverage reports it misses and its tests.","type":"text","required":false}
+{"read_model_id":"LA-TRC-RM13","position":5,"name":"Flows","meaning":"Its flows, one per interface, each with its steps in path order (what each fulfills, its view, endpoints and integrations, and its technical chain) and its flow test.","type":"text","required":false}
+{"read_model_id":"LA-TRC-RM13","position":6,"name":"Lower obligations","meaning":"What its acceptance tests rest on: its steps' view and API requirements and its aggregates' invariants and storage requirements, each with its gaps and tests.","type":"text","required":false}
+{"read_model_id":"LA-TRC-RM13","position":7,"name":"Status","meaning":"Per stage: its flows and requirements not designed, its handlers and obligations not built, its tests and what is not proved.","type":"text","required":true,"example":"3 flows, all designed · 6 handlers, 2 not built · 20 tests, all proved"}

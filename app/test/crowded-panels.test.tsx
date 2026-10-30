@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { act, fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { CARD_MIN } from '../src/graph/settings';
+import { CARD_MIN } from '../src/exploring/session-settings/model';
 import { crowded, crowdedLabel, openWidth, STAGE_MIN, type CrowdPanel, type Room } from '../src/views/openSpace';
 import './graph/setup';
 import { openApp } from './helpers';
@@ -17,8 +17,7 @@ const SRC = join(__dirname, '..', 'src');
 const NONE = new Set<CrowdPanel>();
 /** Every panel open at its default width: the nav 336 and the chat 400 px, and the wiki card. */
 const room = (width: number, patch: Partial<Room> = {}): Room => ({
-  width, inset: 8, nav: { open: true, width: 336, rail: 56 }, card: true, chat: 400, tool: null, held: NONE, ...patch,
-});
+  width, inset: 8, nav: { open: true, width: 336, rail: 56 }, card: true, chat: 400, tool: null, held: NONE, ...patch });
 const sorted = (set: ReadonlySet<CrowdPanel>) => [...set].sort();
 
 function setWidth(width: number) {

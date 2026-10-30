@@ -1,6 +1,6 @@
 {"id":"LA-IF01","title":"Web app","product_id":"LA","kind":"web app","description":"The app in a browser, served by `lathe serve` or the dev server: the Reader and the Owner read, trace and edit the spec on its pages."}
 {"id":"LA-IF02","title":"Desktop app","product_id":"LA","kind":"desktop","description":"The macOS app: the same pages in a window of their own, with native menus, Lathe's own title bar, the Dock and the file manager."}
 {"id":"LA-IF03","title":"CLI","product_id":"LA","kind":"CLI","description":"The `lathe` command and the package scripts, run in a terminal by the Owner or by an Agent: each step runs the CLI command that exposes its command or query."}
-{"id":"LA-IF04","title":"MCP tools","product_id":"LA","kind":"agent tools","description":"The Claude Code plugin's MCP tools, skills and hooks, which an Agent uses to write and check a spec through the command layer."}
+{"id":"LA-IF04","title":"MCP tools","product_id":"LA","kind":"agent tools","description":"The Claude Code plugin's MCP tools, skills and hooks, which an Agent uses to write a spec with each aggregate's own commands and check it."}
 {"id":"LA-IF05","title":"HTTP API","product_id":"LA","kind":"API","description":"The local server's JSON API under /api, which the app calls and which refuses requests from other sites."}
 {"id":"LA-IF06","title":"Package API","product_id":"LA","kind":"other","description":"The package's exports in code, such as loadWorkspace and openStore, which an Agent's script calls."}

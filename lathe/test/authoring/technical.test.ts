@@ -21,8 +21,9 @@ const technical = () =>
   Object.values(schema.kinds).filter((k) => k.productId === null && k.stage === 'technical-specification' && !k.name.startsWith('standard')).map((k) => k.name).sort();
 
 describe('files', () => {
-  it('LA-AUT-UC01-R04-T01 A technical record names the file that builds it and a test the file that runs it, each relative to the repo root', async () => {
-    for (const kind of [...technical(), ...Object.keys(ALLOWED_LEVELS)]) expect(schema.tables[kind].columns.find((c) => c.name === 'file'), kind).toMatchObject({ kind: 'text', required: false });
+  it('LA-AUT-UC17-R10-T01 A technical record names the file that builds it and a test the file that runs it, each relative to the repo root', async () => {
+    // Every technical kind but the data store, which names where data lives rather than code.
+    for (const kind of [...technical().filter((k) => k !== 'data_store'), ...Object.keys(ALLOWED_LEVELS)]) expect(schema.tables[kind].columns.find((c) => c.name === 'file'), kind).toMatchObject({ kind: 'text', required: false });
     expect(record(good, 'EX-LEND-CMD01-H').fields.file).toBe('src/loans.ts');
     expect(record(good, 'EX-LEND-UC01-R01-T01').fields.file).toBe('test/api.test.ts');
     expect(obligation(good, 'EX-LEND', 'uc_requirement')).toMatchObject({ total: 2, built: 2, proved: 2 });
@@ -41,7 +42,7 @@ describe('files', () => {
 });
 
 describe('the interaction design', () => {
-  it('LA-AUT-UC18-R04-T01 An endpoint sits under the one command or query it exposes, and a step reaches it only through that command or query', async () => {
+  it('LA-AUT-UC26-R01-T01 An endpoint sits under the one command or query it exposes, and a step reaches it only through that command or query', async () => {
     expect(parentsOf(schema, 'endpoint')).toEqual(['command.command_id', 'query.query_id']);
     expect(schema.tables.endpoint.checks).toContainEqual('((command_id IS NULL) != (query_id IS NULL))');
     expect(record(good, 'EX-LEND-EP01')).toMatchObject({ parent: 'EX-LEND-CMD01', domain: 'EX-LEND' });
@@ -55,7 +56,7 @@ describe('the interaction design', () => {
     expect(direct).toEqual([expect.objectContaining({ table: 'invokes', file: 'data/invokes.jsonl', line: 1 })]);
   });
 
-  it('LA-AUT-UC18-R05-T01 A view or an integration has no owner and takes its product from its ID, and one no step uses is an error', async () => {
+  it('LA-AUT-UC18-R05-T01 LA-AUT-UC27-R01-T01 A view or an integration has no owner and takes its product from its ID, and one no step uses is an error', async () => {
     for (const kind of ['view', 'integration']) {
       expect(parentsOf(schema, kind), kind).toEqual([]);
       expect(schema.kinds[kind].idScope, kind).toBe('product');
@@ -70,7 +71,7 @@ describe('the interaction design', () => {
     expect(await refusals(adding(everyKind(), { view: [{ id: 'XX-V09', title: 'Lost', description: 'A page of no product.' }] }))).toEqual([expect.objectContaining({ rule: 'id-prefix', key: 'XX-V09' })]);
   });
 
-  it('LA-AUT-UC18-R06-T01 A rule of the interaction design is a view requirement under its view or an API requirement under its endpoint', () => {
+  it('LA-AUT-UC18-R06-T01 LA-AUT-UC26-R02-T01 A rule of the interaction design is a view requirement under its view or an API requirement under its endpoint', () => {
     expect(parentsOf(schema, 'view_requirement')).toEqual(['view.view_id']);
     expect(parentsOf(schema, 'api_requirement')).toEqual(['endpoint.endpoint_id']);
     const rules = Object.values(schema.kinds).filter((k) => k.stage === 'interaction-design' && k.obligation).map((k) => k.name).sort();
@@ -100,6 +101,18 @@ describe('the technical specification', () => {
         expect(schema.tables.persists.unique).toEqual(expect.arrayContaining([['source_id'], ['target_id']]));
         continue;
       }
+      // A data store is where data lives, not code: it sits under its product or a domain, and the repositories, readers
+      // and tables stored in it each name it, one store each.
+      if (kind === 'data_store') {
+        expect(parentsOf(schema, 'data_store')).toEqual(['product.product_id', 'domain.domain_id']);
+        expect(schema.tables.stored_in.unique).toEqual(expect.arrayContaining([['source_id']]));
+        continue;
+      }
+      // An entry point and a tooling record implement no design record: each sits under the domain it starts or serves.
+      if (kind === 'entry_point' || kind === 'tooling') {
+        expect(parentsOf(schema, kind)).toEqual(['domain.domain_id']);
+        continue;
+      }
       for (const p of parents) expect(designStages.includes(schema.kinds[p.kind].stage!), `${kind} under ${p.kind}`).toBe(true);
       if (kind !== 'table') {
         expect(parents, kind).toHaveLength(1);
@@ -117,33 +130,17 @@ describe('the technical specification', () => {
     expect(gaps(ws)).toEqual(['built EX-LEND-DS01', 'built EX-LEND-UC01-R01']);
   });
 
-  it('LA-AUT-UC17-R09-T01 A repository that also persists another aggregate records it with its reason, listed as a recorded exception', async () => {
-    expect(schema.tables.repository_share).toMatchObject({ role: 'part', ownerColumn: 'repository_id' });
-    expect(requiredOf(schema, 'repository_share')).toEqual(['repository_id', 'aggregate_id', 'reason']);
-    const reason = 'One generic store persists every table.';
-    const one = without(without(complete(), 'persists', (r) => r.source_id === 'EX-LEND-REPO02'), 'repository', (r) => r.id === 'EX-LEND-REPO02');
-    const shared = adding(one, { repository_share: [{ repository_id: 'EX-LEND-REPO01', aggregate_id: 'EX-LEND-A2', reason }] });
-    const ws = await loadData(shared);
-    expect(ws.exceptions).toEqual([{ repository: 'EX-LEND-REPO01', aggregate: 'EX-LEND-A2', reason }]);
-    expect(ws.problems).toEqual([]);
-    // The aggregate it also persists has a repository.
+  it('LA-AUT-UC02-R06-T01 A repository persists exactly one aggregate, and an aggregate no repository persists is a gap', async () => {
+    expect(Object.keys(schema.tables).filter((t) => t.startsWith('repository_'))).toEqual([]);
+    const one = without(without(without(complete(), 'persists', (r) => r.source_id === 'EX-LEND-REPO02'), 'stored_in', (r) => r.source_id === 'EX-LEND-REPO02'), 'repository', (r) => r.id === 'EX-LEND-REPO02');
     expect(gaps(await loadData(one)).filter((g) => g.startsWith('aggregate-without-repository'))).toEqual(['aggregate-without-repository EX-LEND-A2']);
-    expect(gaps(ws).filter((g) => g.startsWith('aggregate-without-repository'))).toEqual([]);
-    // No reason is refused, and so is its own aggregate, or one another repository persists or records.
-    const share = shared.repository_share[0];
-    const { reason: _, ...unreasoned } = share;
-    expect((await refusals(withTable(one, 'repository_share', [unreasoned]))).map((p) => p.message)).toEqual(['repository_share.reason is required']);
-    expect(await refusals(withTable(one, 'repository_share', [{ ...share, aggregate_id: 'EX-LEND-A1' }]))).toEqual([
-      expect.objectContaining({ rule: 'repository-share-unpersisted', message: 'EX-LEND-REPO01 cannot also record EX-LEND-A1, the aggregate it persists' }),
+    // A second aggregate for one repository, or a second repository for one aggregate, is refused.
+    expect(await refusals(adding(one, { persists: [{ source_id: 'EX-LEND-REPO01', target_id: 'EX-LEND-A2' }] }))).toEqual([
+      expect.objectContaining({ rule: 'unique', file: 'data/persists.jsonl', line: 2 }),
     ]);
-    expect(await refusals(withTable(complete(), 'repository_share', [share]))).toEqual([
-      expect.objectContaining({ rule: 'repository-share-unpersisted', message: 'EX-LEND-REPO01 cannot also record EX-LEND-A2, which EX-LEND-REPO02 persists: an aggregate has one repository' }),
+    expect(await refusals(adding(one, { repository: [{ id: 'EX-LEND-REPO03', title: 'LoanStore', domain_id: 'EX-LEND', file: 'src/loans.ts', description: 'Keeps loans a second time.' }], persists: [{ source_id: 'EX-LEND-REPO03', target_id: 'EX-LEND-A1' }] }))).toEqual([
+      expect.objectContaining({ rule: 'unique', file: 'data/persists.jsonl', message: expect.stringContaining('has the same target_id') }),
     ]);
-    const twice = adding(withTable(complete(), 'persists', [{ source_id: 'EX-LEND-REPO01', target_id: 'EX-LEND-A1' }]), {
-      aggregate: [{ id: 'EX-LEND-A3', title: 'Shelf', domain_id: 'EX-LEND', identity: 'Shelf ID', description: 'A shelf the tools sit on.' }],
-      repository_share: [{ ...share, aggregate_id: 'EX-LEND-A3' }, { repository_id: 'EX-LEND-REPO02', aggregate_id: 'EX-LEND-A3', reason }],
-    });
-    expect(await refusals(twice)).toEqual([expect.objectContaining({ rule: 'unique', file: 'data/repository_share.jsonl', line: 2 })]);
   });
 
   it("LA-AUT-UC17-R08-T01 A table stores its name, its storage and its keys, its columns following from its record's fields", async () => {
@@ -174,7 +171,8 @@ describe('standards', () => {
     const meets = schema.relations.meets;
     expect(meets).toMatchObject({ role: null, forwardLabel: 'Meets', reverseLabel: 'Met by' });
     expect(meets.pairs.every((p) => p.target === 'standard_rule')).toBe(true);
-    expect(meets.pairs.map((p) => p.source).sort()).toEqual(technical().sort());
+    // Every technical kind meets standard rules but the data store, which names no code (a rule it met could never be built).
+    expect(meets.pairs.map((p) => p.source).sort()).toEqual(technical().filter((k) => k !== 'data_store').sort());
     expect(parentsOf(schema, 'standard_rule_test')).toEqual(['standard_rule.standard_rule_id']);
     expect([schema.kinds.standard_rule_test].map((k) => [k.stage, k.idPattern, k.obligation])).toEqual([['test-plan', '<standard rule>-T<nn>', false]]);
     expect(ALLOWED_LEVELS.standard_rule_test).toEqual(['unit', 'integration', 'service', 'system', 'browser']);
@@ -209,6 +207,7 @@ describe('standards', () => {
       standard_rule: [{ id: 'EX-STD-CODE-R02', title: 'Typed errors', standard_id: 'EX-STD-CODE', statement: 'Code MUST throw typed errors.' }],
       ui_component: [{ id: 'EX-UI02', title: 'ErrorBanner', file: 'web/errors.tsx', description: 'Shows errors as EX-STD-CODE-R02 asks.' }],
       renders: [{ source_id: 'EX-UI02', target_id: 'EX-V01' }],
+      builds: [{ source_id: 'EX-UI02', target_id: 'EX-V01-R01' }],
     }));
     expect(gaps(ws)).toEqual(['designed EX-STD-CODE-R02', 'proved EX-STD-CODE-R02']);
     expect(ofCheck(ws, 'not-proved')).toEqual([expect.objectContaining({ severity: 'warning', record: 'EX-STD-CODE-R02', message: 'Standard rule EX-STD-CODE-R02 is not proved yet.' })]);

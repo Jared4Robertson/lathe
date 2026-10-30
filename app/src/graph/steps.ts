@@ -4,13 +4,14 @@
 // keep each view's keys: in the Tree view Left out, Right in, Up and Down across the siblings; in the Nested
 // view, which draws children inside their parent, Up out, Down in, Left and Right across. Across goes on, past the last
 // sibling, to the next parent's first child at that level (levels.ts). The ERD stage walks its map through `useWalk`
-// (erd/walk.ts), the Trace stage its tree by the Tree's keys (trace/walk.ts).
+// (erd/walk.ts), the Trace stage its columns and links (trace/all-walk.ts).
 import { useCallback } from 'react';
-import { kindLabel, type SpecIndex } from '../specs/data';
+import { kindLabel, type RecordIndex } from '../exploring/record-summaries/record-index';
 import { useStageWalk } from '../shell/commands';
 import { levelMove, type Move, type StageLevels } from '../views/levels';
 import { groupKindLabel, groupName, groupOwner, isGraphNode, isGroup, nodeChildren, nodeParent } from './model';
 import { mapRootOf } from './map';
+import { groundChildren, groundParent, groundTree } from './ground';
 import type { GraphLayout } from './GraphPage';
 
 /** Whether a view draws children inside their parent (Nested), and so steps out and in by Up and Down. */
@@ -33,20 +34,27 @@ export function graphWalkLabels(layout: GraphLayout): Record<Move, string> {
   return { left: says('left'), right: says('right'), up: says('up'), down: says('down'), out: 'Out to the parent', in: 'In to the first child' };
 }
 
-const levelsCache = new WeakMap<SpecIndex, Map<string, StageLevels>>();
-/** The graph's tree under one product as levels: the product, its stages and domains, and down to every record, in the nav's order. */
-export function graphLevels(index: SpecIndex, root: string): StageLevels {
+const levelsCache = new WeakMap<RecordIndex, Map<string, StageLevels>>();
+/**
+ * The graph's tree under one product as levels: the product, its stages and domains, and down to every record, in the
+ * nav's order; in the Map, the Map's own tree (ground.ts): its districts, neighborhoods, areas and records, each record
+ * holding only its composition.
+ */
+export function graphLevels(index: RecordIndex, root: string, layout: GraphLayout = 'tree'): StageLevels {
   let byRoot = levelsCache.get(index);
   if (!byRoot) { byRoot = new Map(); levelsCache.set(index, byRoot); }
-  const known = byRoot.get(root);
+  const map = layout === 'map';
+  const key = `${map ? 'map' : 'tree'}|${root}`;
+  const known = byRoot.get(key);
   if (known) return known;
-  const children = (id: string) => nodeChildren(index, id).filter((c) => isGraphNode(index, c));
+  const parentOf = (id: string) => (map ? groundParent(index, id) : nodeParent(index, id));
+  const children = (id: string) => (map ? groundChildren(index, id) : nodeChildren(index, id)).filter((c) => isGraphNode(index, c));
   const levels: StageLevels = {
     root,
-    parent: (id) => (id === root ? null : nodeParent(index, id)),
+    parent: (id) => (id === root ? null : parentOf(id)),
     children,
     across: (id, direction) => {
-      const up = nodeParent(index, id);
+      const up = parentOf(id);
       if (up === null) return null;
       const siblings = children(up);
       const at = siblings.indexOf(id);
@@ -54,19 +62,21 @@ export function graphLevels(index: SpecIndex, root: string): StageLevels {
       return siblings[at + (direction === 'right' || direction === 'down' ? 1 : -1)] ?? null;
     },
   };
-  byRoot.set(root, levels);
+  byRoot.set(key, levels);
   return levels;
 }
 
 /** Where a move goes from a node in a view: by the view's keys, over its product's tree. */
-export function graphTarget(index: SpecIndex, focus: string, layout: GraphLayout, move: Move): string | null {
+export function graphTarget(index: RecordIndex, focus: string, layout: GraphLayout, move: Move): string | null {
   if (!isGraphNode(index, focus)) return null;
-  const to = levelMove(graphLevels(index, mapRootOf(index, focus)), focus, graphMove(layout, move));
+  const root = layout === 'map' ? groundTree(index).root : mapRootOf(index, focus);
+  if (root === null || (layout === 'map' && focus !== root && groundParent(index, focus) === null)) return null;
+  const to = levelMove(graphLevels(index, root, layout), focus, graphMove(layout, move));
   return to && isGraphNode(index, to) ? to : null;
 }
 
 /** What a step says to a screen reader: the new focus as the graph's box names it, "Use case Borrow a tool", "Use cases in LA-D". */
-export function stepName(index: SpecIndex, id: string): string {
+export function stepName(index: RecordIndex, id: string): string {
   if (isGroup(index, id)) return `${groupKindLabel(index, id)} ${groupName(index, id)} in ${groupOwner(index, id)}`;
   const record = index.byId.get(id);
   return record ? `${kindLabel(index, record.kind)} ${record.title}` : id;
@@ -77,7 +87,7 @@ export function stepName(index: SpecIndex, id: string): string {
  * moves the focus there, as a click does. `follow` says, before the move, whether keyboard focus follows to the new
  * focus's box (and so is read out there); otherwise the walk is announced.
  */
-export function useGraphWalk(index: SpecIndex, focus: string, layout: GraphLayout, onNavigate: (id: string) => void, follow?: (to: string) => boolean) {
+export function useGraphWalk(index: RecordIndex, focus: string, layout: GraphLayout, onNavigate: (id: string) => void, follow?: (to: string) => boolean) {
   const target = useCallback((move: Move) => graphTarget(index, focus, layout, move), [index, focus, layout]);
   useWalk(index, focus, target, onNavigate, follow);
 }
@@ -86,7 +96,7 @@ export function useGraphWalk(index: SpecIndex, focus: string, layout: GraphLayou
  * Registers a stage's walk by its own target: `target` says where a move goes from the focus, or null. The walk moves
  * the focus there, as a click does, and announces it unless `follow` takes keyboard focus there.
  */
-export function useWalk(index: SpecIndex, focus: string, target: (move: Move) => string | null, onNavigate: (id: string) => void, follow?: (to: string) => boolean) {
+export function useWalk(index: RecordIndex, focus: string, target: (move: Move) => string | null, onNavigate: (id: string) => void, follow?: (to: string) => boolean) {
   const walk = useCallback((move: Move) => {
     const to = target(move);
     if (!to) return null;

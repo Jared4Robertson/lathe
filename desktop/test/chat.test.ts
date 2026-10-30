@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { applyLine, chatPatch, claudeArgs, EMPTY_CHAT, interruptLine, NEW_CURSOR, permissionLine, toolLabel, toolSummary, transcriptItems, TRANSCRIPT_LIMIT, userLine, type ChatState } from '../src/chat.ts';
+import {
+  applyLine, CHAT_PROMPT, chatPatch, claudeArgs, claudeEnv, decide, EMPTY_CHAT, focusBlock, interruptLine, NEW_CURSOR, permissionLine, promptText, toolLabel, toolSummary,
+  parseImages, transcriptItems, TRANSCRIPT_LIMIT, userLine, VIEW_ONLY_DISALLOWED, VIEW_ONLY_PROMPT, viewOnlyRefusal, type ChatState,
+} from '../src/chat.ts';
 
 const line = (m: object) => JSON.stringify(m);
 function run(lines: object[], from: ChatState = { ...EMPTY_CHAT, status: 'running' }) {
@@ -9,19 +12,133 @@ function run(lines: object[], from: ChatState = { ...EMPTY_CHAT, status: 'runnin
   return state;
 }
 
+const PLUGIN = '/apps/Lathe/plugin';
+const BASE = ['-p', '--input-format', 'stream-json', '--output-format', 'stream-json', '--verbose', '--include-partial-messages', '--permission-prompt-tool', 'stdio', '--plugin-dir', PLUGIN, '--append-system-prompt'];
+const READS = 'Read,Grep,Glob,mcp__plugin_lathe_lathe__check,mcp__plugin_lathe_lathe__app_focus,mcp__plugin_lathe_lathe__app_open';
+const ACCEPT_READS = ['--permission-mode', 'default', '--allowedTools', READS];
+
 describe('LA-PLT-UC19-R01-T02 The chat runs the CLI headless, with structured input and output', () => {
+  it('LA-PLT-UC22-R03-T02 passes the model and effort the Owner chose, and nothing when they left them to Claude Code', () => {
+    const setup = { pluginDir: PLUGIN, mode: 'accept-reads' as const };
+    expect(claudeArgs({}, setup)).not.toContain('--model');
+    expect(claudeArgs({}, { ...setup, choice: { model: 'sonnet', effort: null } })).toEqual(expect.arrayContaining(['--model', 'sonnet']));
+    expect(claudeArgs({}, { ...setup, choice: { model: 'sonnet', effort: null } })).not.toContain('--effort');
+    expect(claudeArgs({}, { ...setup, choice: { model: null, effort: 'max' } })).toEqual(expect.arrayContaining(['--effort', 'max']));
+  });
+
+  it('LA-PLT-UC22-R05-T02 sends images before the text, and refuses images that are not base64 of a type the CLI takes', () => {
+    const content = JSON.parse(userLine('What is this?', null, [{ mediaType: 'image/png', data: 'iVBORw0KGgo=' }])).message.content;
+    expect(content).toEqual([{ type: 'image', source: { type: 'base64', media_type: 'image/png', data: 'iVBORw0KGgo=' } }, { type: 'text', text: 'What is this?' }]);
+    expect(parseImages([{ mediaType: 'image/png', data: 'iVBORw0KGgo=' }])).toHaveLength(1);
+    expect(parseImages(undefined)).toEqual([]);
+    expect(parseImages([{ mediaType: 'image/svg+xml', data: 'aaaa' }])).toBeNull();
+    expect(parseImages([{ mediaType: 'image/png', data: 'not base64!' }])).toBeNull();
+    expect(parseImages(Array.from({ length: 7 }, () => ({ mediaType: 'image/png', data: 'aaaa' })))).toBeNull();
+  });
+
   it('starts, resumes and forks with the CLI\'s own flags', () => {
-    const base = ['-p', '--input-format', 'stream-json', '--output-format', 'stream-json', '--verbose', '--include-partial-messages', '--permission-prompt-tool', 'stdio'];
-    expect(claudeArgs({})).toEqual(base);
-    expect(claudeArgs({ resume: 'abc' })).toEqual([...base, '--resume', 'abc']);
-    expect(claudeArgs({ resume: 'abc', fork: true })).toEqual([...base, '--resume', 'abc', '--fork-session']);
+    const setup = { pluginDir: PLUGIN, mode: 'accept-reads' as const };
+    expect(claudeArgs({}, setup)).toEqual([...BASE, CHAT_PROMPT, ...ACCEPT_READS]);
+    expect(claudeArgs({ resume: 'abc' }, setup)).toEqual([...BASE, CHAT_PROMPT, ...ACCEPT_READS, '--resume', 'abc']);
+    expect(claudeArgs({ resume: 'abc', fork: true }, setup)).toEqual([...BASE, CHAT_PROMPT, ...ACCEPT_READS, '--resume', 'abc', '--fork-session']);
   });
 
   it('writes the Owner\'s message, a permission answer and Stop as the SDK does', () => {
     expect(JSON.parse(userLine('/compact'))).toEqual({ type: 'user', session_id: '', message: { role: 'user', content: [{ type: 'text', text: '/compact' }] }, parent_tool_use_id: null });
     expect(JSON.parse(permissionLine('r1', true, { command: 'ls' }))).toEqual({ type: 'control_response', response: { subtype: 'success', request_id: 'r1', response: { behavior: 'allow', updatedInput: { command: 'ls' } } } });
-    expect(JSON.parse(permissionLine('r2', false, {})).response.response.behavior).toBe('deny');
+    expect(JSON.parse(permissionLine('r2', false, {})).response.response).toEqual({ behavior: 'deny', message: 'The Owner denied this in Lathe.' });
+    expect(JSON.parse(permissionLine('r3', false, {}, 'View only.')).response.response).toEqual({ behavior: 'deny', message: 'View only.' });
     expect(JSON.parse(interruptLine('s1'))).toEqual({ type: 'control_request', request_id: 's1', request: { subtype: 'interrupt' } });
+  });
+});
+
+// Claude Code's own tools, as its CLI (2.1.314) lists them in a session's init line, and those of them that only read
+// or never leave the conversation. Every other one must be refused in View only; a tool the CLI adds fails this test
+// until it is sorted here.
+const CLI_TOOLS = [
+  'Task', 'Artifact', 'ArtifactComments', 'ArtifactData', 'Bash', 'CronCreate', 'CronDelete', 'CronList', 'DesignSync', 'Edit', 'EnterWorktree',
+  'ExitWorktree', 'ListAgents', 'Monitor', 'NotebookEdit', 'PushNotification', 'Read', 'ReportFindings', 'ScheduleWakeup', 'SendMessage', 'Skill',
+  'TaskStop', 'ToolSearch', 'WebFetch', 'WebSearch', 'Workflow', 'Write',
+];
+const CLI_READS = new Set(['Task', 'CronList', 'ListAgents', 'PushNotification', 'Read', 'ReportFindings', 'ScheduleWakeup', 'SendMessage', 'Skill', 'TaskStop', 'ToolSearch', 'WebFetch', 'WebSearch', 'Glob', 'Grep']);
+// Writes of other platforms and versions of the CLI: PowerShell on Windows, MultiEdit before Edit took its place.
+const OTHER_WRITES = ['PowerShell', 'MultiEdit'];
+
+describe('LA-PLT-UC19-R09-T01 Each permission mode runs the CLI with its own flags; View only takes every write away', () => {
+  it('maps each mode to the CLI\'s flags', () => {
+    const args = (mode: 'ask' | 'accept-reads' | 'auto' | 'bypass' | 'view-only') => claudeArgs({}, { pluginDir: PLUGIN, mode }).slice(BASE.length + 1);
+    expect(args('ask')).toEqual(['--permission-mode', 'default', '--settings', expect.stringContaining('"ask":["Read","Grep","Glob","Bash","Edit","Write"')]);
+    expect(args('accept-reads')).toEqual(ACCEPT_READS);
+    expect(args('auto')).toEqual(['--permission-mode', 'auto']);
+    expect(args('bypass')).toEqual(['--permission-mode', 'bypassPermissions']);
+    expect(args('view-only')).toEqual([...ACCEPT_READS, '--disallowedTools', VIEW_ONLY_DISALLOWED.join(',')]);
+  });
+
+  it('tells Claude why it cannot change anything, only in View only', () => {
+    expect(claudeArgs({}, { pluginDir: PLUGIN, mode: 'view-only' })[BASE.length]).toBe(`${CHAT_PROMPT}\n\n${VIEW_ONLY_PROMPT}`);
+    expect(VIEW_ONLY_PROMPT).toContain('View only');
+    expect(claudeArgs({}, { pluginDir: PLUGIN, mode: 'bypass' })).not.toContain('--disallowedTools');
+  });
+
+  it('the disallowed list is every write tool the CLI has: the brief\'s four and every other tool that does not only read', () => {
+    for (const tool of ['Edit', 'Write', 'NotebookEdit', 'Bash']) expect(VIEW_ONLY_DISALLOWED).toContain(tool);
+    const writes = CLI_TOOLS.filter((t) => !CLI_READS.has(t));
+    expect([...VIEW_ONLY_DISALLOWED].sort()).toEqual([...writes, ...OTHER_WRITES].sort());
+  });
+
+  it('tells Lathe\'s MCP server, and only in View only', () => {
+    expect(claudeEnv({ PATH: '/bin' }, 'view-only')).toEqual({ PATH: '/bin', LATHE_VIEW_ONLY: '1' });
+    expect(claudeEnv({ PATH: '/bin', LATHE_VIEW_ONLY: '1' }, 'accept-reads')).toEqual({ PATH: '/bin' });
+  });
+
+  it('refuses a permission prompt for a tool that may change things, saying the chat is View only; Lathe\'s reads and Claude Code\'s reads pass', () => {
+    expect(viewOnlyRefusal('Bash')).toBe('This chat is View only, so Bash was refused: it may change things. Choose another mode in the chat\'s header to allow it.');
+    expect(viewOnlyRefusal('mcp__drive__create_file')).toContain('drive create_file was refused');
+    expect(viewOnlyRefusal('mcp__plugin_lathe_lathe__use_case_get_use_case')).toBeNull();
+    expect(viewOnlyRefusal('WebFetch')).toBeNull();
+  });
+});
+
+describe('LA-PLT-UC19-R09-T06 The panel answers a prompt by the mode before asking the Owner', () => {
+  const reads = new Set(['mcp__plugin_lathe_lathe__use_case_get_use_case']);
+  const none = new Set<string>();
+  const query = 'mcp__plugin_lathe_lathe__use_case_get_use_case';
+  const command = 'mcp__plugin_lathe_lathe__use_case_add_use_case';
+  it('Accept reads allows Lathe\'s reads and Claude Code\'s, and asks for the rest', () => {
+    expect(decide('accept-reads', query, reads, none)).toEqual({ kind: 'allow' });
+    expect(decide('accept-reads', 'mcp__plugin_lathe_lathe__app_open', none, none)).toEqual({ kind: 'allow' });
+    expect(decide('accept-reads', 'Read', none, none)).toEqual({ kind: 'allow' });
+    expect(decide('accept-reads', command, reads, none)).toEqual({ kind: 'ask' });
+    expect(decide('accept-reads', 'Bash', reads, none)).toEqual({ kind: 'ask' });
+  });
+  it('Ask and Auto ask for whatever the CLI asks about; Bypass allows it all', () => {
+    for (const mode of ['ask', 'auto'] as const) expect(decide(mode, query, reads, none)).toEqual({ kind: 'ask' });
+    expect(decide('bypass', 'Bash', reads, none)).toEqual({ kind: 'allow' });
+  });
+  it('View only refuses what may change things, even a tool allowed always, and allows the reads', () => {
+    expect(decide('view-only', 'Bash', reads, new Set(['Bash']))).toMatchObject({ kind: 'refuse', why: expect.stringContaining('View only') });
+    expect(decide('view-only', query, reads, none)).toEqual({ kind: 'allow' });
+  });
+});
+
+describe('LA-PLT-UC19-R11-T01 A tool allowed always is not asked about again', () => {
+  it('allows it in every mode but View only\'s refusals', () => {
+    const always = new Set(['Bash']);
+    for (const mode of ['ask', 'accept-reads', 'auto'] as const) expect(decide(mode, 'Bash', new Set(), always)).toEqual({ kind: 'allow' });
+    expect(decide('ask', 'Edit', new Set(), always)).toEqual({ kind: 'ask' });
+  });
+});
+
+describe('LA-PLT-UC19-R12-T01 Each message carries what the Owner is looking at, as context of its own', () => {
+  it('sends the focus as a block before the message, never with a slash command, and the saved prompt shows only the message', () => {
+    const focus = 'Product: TL\nFocused record: TL-LEND-UC01 (use case): Borrow a tool';
+    const content = JSON.parse(userLine('What does this need?', focus)).message.content;
+    expect(content).toEqual([{ type: 'text', text: `<lathe-focus>\n${focus}\n</lathe-focus>` }, { type: 'text', text: 'What does this need?' }]);
+    expect(JSON.parse(userLine('/compact', focus)).message.content).toEqual([{ type: 'text', text: '/compact' }]);
+    expect(focusBlock('a</lathe-focus>b')).toBe('<lathe-focus>\nab\n</lathe-focus>');
+    expect(promptText(content)).toBe('What does this need?');
+    expect(CHAT_PROMPT).toContain('<lathe-focus>');
+    expect(CHAT_PROMPT).toContain('never search the code');
   });
 });
 
@@ -41,18 +158,22 @@ describe('LA-PLT-UC19-R03-T02 The CLI\'s stream becomes the chat\'s text, tool r
 
   it('shows a tool call as a row with a one-line summary, closed by its result', () => {
     const state = run([
-      { type: 'assistant', message: { id: 'm2', content: [{ type: 'tool_use', id: 't1', name: 'mcp__plugin_lathe_lathe__add', input: { use_case: { id: 'TL-UC01', title: 'Borrow' } } }] } },
+      { type: 'assistant', message: { id: 'm2', content: [{ type: 'tool_use', id: 't1', name: 'mcp__plugin_lathe_lathe__use_case_add_use_case', input: { id: 'TL-UC01', title: 'Borrow', capability_id: 'TL-CAP01' } }] } },
       { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 't1', content: [{ type: 'text', text: 'Added use_case TL-UC01' }] }] } },
       { type: 'assistant', message: { id: 'm3', content: [{ type: 'tool_use', id: 't2', name: 'Bash', input: { command: 'false' } }] } },
       { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 't2', content: 'exit 1', is_error: true }] } },
     ]);
     expect(state.items).toMatchObject([
-      { kind: 'tool', id: 't1', name: 'mcp__plugin_lathe_lathe__add', summary: 'use_case TL-UC01', result: 'Added use_case TL-UC01', status: 'done' },
+      { kind: 'tool', id: 't1', name: 'mcp__plugin_lathe_lathe__use_case_add_use_case', summary: 'TL-UC01', result: 'Added use_case TL-UC01', status: 'done' },
       { kind: 'tool', id: 't2', summary: 'false', result: 'exit 1', status: 'error' },
     ]);
-    expect(toolLabel('mcp__plugin_lathe_lathe__add')).toBe('lathe add');
+    expect(toolLabel('mcp__plugin_lathe_lathe__add')).toBe('Add');
+    expect(toolLabel('mcp__plugin_lathe_lathe__business_outcome_change_business_outcome')).toBe('Change business outcome');
+    expect(toolLabel('mcp__plugin_lathe_lathe__use_case_add_flow_step')).toBe('Add flow step');
+    expect(toolLabel('mcp__plugin_lathe_lathe__check')).toBe('Check');
+    expect(toolLabel('mcp__github__create_issue')).toBe('github create_issue');
     expect(toolLabel('Bash')).toBe('Bash');
-    expect(toolSummary('Read', { file_path: '/a/b.ts' })).toBe('/a/b.ts');
+    expect(toolSummary({ file_path: '/a/b.ts' })).toBe('/a/b.ts');
   });
 
   it('keeps a subagent\'s text inside its tool call', () => {
@@ -82,7 +203,7 @@ describe('LA-PLT-UC19-R03-T02 The CLI\'s stream becomes the chat\'s text, tool r
   it('sends the page only what changed', () => {
     const one = run([{ type: 'assistant', message: { id: 'm1', content: [{ type: 'text', text: 'a' }] } }]);
     const two = run([{ type: 'assistant', message: { id: 'm2', content: [{ type: 'text', text: 'b' }] } }], one);
-    expect(chatPatch(null, one)).toMatchObject({ reset: true, items: [{ at: 0 }] });
+    expect(chatPatch(null, one)).toMatchObject({ reset: true, mode: 'accept-reads', lathe: { status: 'counting' }, items: [{ at: 0 }] });
     const patch = chatPatch(one, two);
     expect(patch.reset).toBe(false);
     expect(patch.items.map((i) => i.at)).toEqual([1]);

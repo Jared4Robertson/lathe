@@ -3,7 +3,12 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ALLOWED_LEVELS, loadWorkspace, openStore, type SchemaDescription, type Workspace } from '../../src/index.ts';
 import { everyKind } from '../store/fixture.ts';
-import { adding, build, changing, complete, gaps, loadData, obligation, ofCheck, records, refusals, removeData, withTable, without } from '../helpers.ts';
+import { ADD_FLOW } from '../../src/authoring/use-case/commands/add-flow.ts';
+import { ADD_FLOW_TEST } from '../../src/authoring/use-case/commands/add-flow-test.ts';
+import { runCommand } from '../../src/platform/commands/run.ts';
+import { StoreError } from '../../src/platform/data/problems.ts';
+import { writeData } from '../helpers.ts';
+import { adding, build, changing, complete, gaps, loadData, obligation, ofCheck, records, refusals, removeData, run, withTable, without } from '../helpers.ts';
 import { described, latheReference, latheSchema, pairsOf, parentsOf, requiredOf } from './shared.ts';
 
 let schema: SchemaDescription;
@@ -17,7 +22,7 @@ const record = (ws: Workspace, id: string) => ws.records.find((r) => r.id === id
 const shop = { id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'supporting', description: 'Selling spare parts.' };
 
 describe('capabilities', () => {
-  it("LA-AUT-UC05-R01-T01 A capability sits under a domain with a required whole-number position, and every use case sits under one of its domain's capabilities", async () => {
+  it("LA-AUT-UC02-R04-T01 A capability sits under a domain with a required whole-number position, and every use case sits under one of its domain's capabilities", async () => {
     expect(parentsOf(schema, 'capability')).toEqual(['domain.domain_id']);
     expect(requiredOf(schema, 'capability')).toEqual(['domain_id', 'position', 'description']);
     expect(schema.tables.capability.columns.find((c) => c.name === 'position')!.kind).toBe('integer');
@@ -37,7 +42,7 @@ describe('capabilities', () => {
     expect(await refusals(elsewhere)).toEqual([expect.objectContaining({ rule: 'id-prefix', key: 'TL-SHOP-UC01', message: expect.stringContaining('in domain TL-LEND, so its ID starts with TL-LEND-') })]);
   });
 
-  it("LA-AUT-UC05-R02-T01 A use case under a capability, and everything under it, belongs to the capability's domain and counts in its coverage", async () => {
+  it("LA-AUT-UC02-R05-T01 A use case under a capability, and everything under it, belongs to the capability's domain and counts in its coverage", async () => {
     for (const id of ['EX-LEND-CAP01', 'EX-LEND-UC01', 'EX-LEND-UC01-R01', 'EX-LEND-UC01-FL01', 'EX-LEND-UC01-FL01-S01', 'EX-LEND-UC01-R01-T01']) {
       expect(record(good, id).domain, id).toBe('EX-LEND');
     }
@@ -47,7 +52,7 @@ describe('capabilities', () => {
     // Moved under another capability of the domain, the use case keeps its domain and its coverage.
     const root = await build(adding(complete(), { capability: [{ id: 'EX-LEND-CAP02', title: 'Stock', domain_id: 'EX-LEND', position: 2, description: 'Keeping the tools in stock.' }] }));
     const store = await openStore(root, { latheDataDir: null });
-    await store.apply([{ op: 'move', id: 'EX-LEND-UC02', parent: 'EX-LEND-CAP02' }]);
+    await run(store, 'use-case move-use-case', { id: 'EX-LEND-UC02', capability_id: 'EX-LEND-CAP02' });
     await store.close();
     const moved = await loadWorkspace(root);
     expect(record(moved, 'EX-LEND-UC02')).toMatchObject({ parent: 'EX-LEND-CAP02', domain: 'EX-LEND' });
@@ -191,16 +196,25 @@ describe('flows', () => {
 });
 
 describe('requirements and tests', () => {
-  it('LA-AUT-UC13-R06-T01 Requirements and rules may name a group, a column whose renaming changes no ID', async () => {
+  it('LA-AUT-UC06-R16-T01 Requirements and rules may name a group, a column whose renaming changes no ID', async () => {
     const grouped = ['uc_requirement', 'view_requirement', 'api_requirement', 'pattern_rule', 'standard_rule'];
     for (const kind of grouped) expect(schema.tables[kind].columns.find((c) => c.name === 'group_name'), kind).toMatchObject({ kind: 'text', required: false });
     expect(good.records.filter((r) => grouped.includes(r.kind)).every((r) => r.fields.group_name === undefined)).toBe(true);
     const root = await build(complete());
     const store = await openStore(root, { latheDataDir: null });
-    const ids = () => store.query<{ id: string }>('SELECT id FROM record_id ORDER BY id');
+    // The data built whole: a write holds its state without building it.
+    const ids = async () => (await store.whole((data) => data.query<{ id: string }>('SELECT id FROM record_id ORDER BY id')))?.value;
     const before = await ids();
-    await store.apply(grouped.map((table) => ({ op: 'set' as const, table, key: complete()[table][0].id as string, changes: { group_name: 'Validation' } })));
-    await store.apply(grouped.map((table) => ({ op: 'set' as const, table, key: complete()[table][0].id as string, changes: { group_name: 'Checks' } })));
+    const changeOf: Record<string, string> = {
+      uc_requirement: 'use-case change-uc-requirement',
+      view_requirement: 'view change-view-requirement',
+      api_requirement: 'endpoint change-api-requirement',
+      pattern_rule: 'pattern change-pattern-rule',
+      standard_rule: 'standard change-standard-rule',
+    };
+    for (const group_name of ['Validation', 'Checks']) {
+      for (const table of grouped) await run(store, changeOf[table], { id: complete()[table][0].id, group_name });
+    }
     expect(await ids()).toEqual(before);
     expect(store.rows('uc_requirement').find((r) => r.id === 'EX-LEND-UC01-R01')).toMatchObject({ id: 'EX-LEND-UC01-R01', group_name: 'Checks' });
     await store.close();
@@ -208,7 +222,7 @@ describe('requirements and tests', () => {
     for (const table of grouped) expect(record(ws, complete()[table][0].id as string).fields.group_name, table).toBe('Checks');
   });
 
-  it('LA-AUT-UC13-R07-T01 Each test is of the test kind named after what it tests, and sits under that one record, which it proves', async () => {
+  it('LA-AUT-UC03-R09-T01 Each test is of the test kind named after what it tests, and sits under that one record, which it proves', async () => {
     // What each test kind's name says it tests: its parent, or the record its parent sits under.
     for (const kind of Object.keys(ALLOWED_LEVELS)) {
       const parents = schema.kinds[kind].parents;
@@ -228,5 +242,30 @@ describe('requirements and tests', () => {
     // A test written under another requirement proves that one instead.
     const moved = await loadData(changing(complete(), 'use_case_test', (t) => t.id === 'EX-LEND-UC02-R01-T01', { id: 'EX-LEND-UC01-R01-T02', uc_requirement_id: 'EX-LEND-UC01-R01' }));
     expect(records(ofCheck(moved, 'not-proved'))).toEqual(['EX-LEND-UC02-R01']);
+  });
+});
+
+describe('LA-AUT-INV100-T the Use case aggregate refuses a second flow through one interface and a second test of a flow', () => {
+  it('refuses each from its command with use-case-one-each, before the unique key underneath', async () => {
+    const store = await openStore(writeData(everyKind()), { latheDataDir: null });
+    try {
+      const refused = async (run: () => Promise<unknown>) => {
+        try {
+          await run();
+        } catch (error) {
+          if (error instanceof StoreError) return error.problems.map((p) => ({ rule: p.rule, message: p.message }));
+          throw error;
+        }
+        throw new Error('not refused');
+      };
+      expect(await refused(() => runCommand(store, ADD_FLOW, { id: 'TL-LEND-UC01-FL01', title: 'Borrow a tool again', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }))).toContainEqual(
+        expect.objectContaining({ rule: 'use-case-one-each', message: 'use case TL-LEND-UC01 already has its flow through TL-IF01, so TL-LEND-UC01-FL01 cannot be a second: a use case has one flow per interface' }),
+      );
+      expect(await refused(() => runCommand(store, ADD_FLOW_TEST, { id: 'TL-LEND-UC01-FL01-T2', title: 'Again', flow_id: 'TL-LEND-UC01-FL01', level: 'browser', state: 'automated', file: 'e2e/again.spec.ts', steps: ['Borrow'], expected_result: 'Listed.' }))).toEqual([
+        { rule: 'use-case-one-each', message: 'flow TL-LEND-UC01-FL01 already has its test, so TL-LEND-UC01-FL01-T2 cannot be a second: a flow has one' },
+      ]);
+    } finally {
+      await store.close();
+    }
   });
 });

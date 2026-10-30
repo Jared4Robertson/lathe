@@ -1,13 +1,16 @@
 // `lathe serve`: serves the built web app and the API for one product repo, with no build tools.
-// Pages reload through server-sent events (GET /api/events, LA-PLT-EP02-H) when the data files change. Its stop waits for the
-// work in progress and closes the database, so the process that ran it exits cleanly (LA-PLT-UC02-R06).
+// When a data file changes, the server reads only the changed files' tables again and tells the pages what changed
+// through server-sent events (GET /api/events, LA-PLT-EP02-H): each `spec:changed` names the tables and read models it
+// changed, so a page reads again only those. Its stop waits for the work in progress and closes the database, so the
+// process that ran it exits cleanly (LA-PLT-UC02-R06).
 import { existsSync, watch, type FSWatcher } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import path from 'node:path';
 import { PACKAGE_DIR } from '../config.ts';
-import { closeEngine } from '../store/store.ts';
-import { closeStores, handleApi, watchTargets } from './api.ts';
+import { closeEngine } from '../platform/data/store.ts';
+import { closeStores, dataFilesChanged, handleApi, onDataChange, watchTargets } from './api.ts';
+import { DATA_CHANGED, type DataChange } from './events.ts';
 
 /** Where `npm --prefix lathe run build` puts the built web app. */
 export const APP_DIR = path.join(PACKAGE_DIR, 'dist', 'app');
@@ -29,6 +32,9 @@ async function sendFile(res: ServerResponse, file: string) {
   res.setHeader('content-type', TYPES[path.extname(file)] ?? 'application/octet-stream');
   res.end(await readFile(file));
 }
+
+/** How long the server waits after a data file's change for the next, so one write's files make one reload. */
+export const RELOAD_DELAY_MS = 50;
 
 export interface ServeOptions {
   root: string;
@@ -57,19 +63,19 @@ export function serve({ root, port, host = '127.0.0.1', appDir = APP_DIR }: Serv
 
   const clients = new Set<ServerResponse>();
   const watchers: FSWatcher[] = [];
-  const timers = new Set<NodeJS.Timeout>();
-  for (const { dir, event } of watchTargets(root)) {
+  // Each change, written to every page as a named event with what changed.
+  const unsubscribe = onDataChange(root, (change) => {
+    for (const client of clients) client.write(`event: ${DATA_CHANGED}\ndata: ${JSON.stringify(change)}\n\n`);
+  });
+  // A burst of file events (one write's files, a git pull) is read as one reload, a moment after the last.
+  let timer: NodeJS.Timeout | undefined;
+  let reloading: Promise<void> = Promise.resolve();
+  for (const dir of watchTargets(root)) {
     if (!existsSync(dir)) continue;
-    let timer: NodeJS.Timeout | undefined;
     watchers.push(
-      watch(dir, { recursive: true }, () => {
-        if (timer) timers.delete(timer);
+      watch(dir, () => {
         clearTimeout(timer);
-        timer = setTimeout(() => {
-          timers.delete(timer!);
-          for (const client of clients) client.write(`data: ${event}\n\n`);
-        }, 150);
-        timers.add(timer);
+        timer = setTimeout(() => { reloading = reloading.then(() => dataFilesChanged(root)); }, RELOAD_DELAY_MS);
       }),
     );
   }
@@ -94,7 +100,9 @@ export function serve({ root, port, host = '127.0.0.1', appDir = APP_DIR }: Serv
     try {
       if (pathname === '/api/events') {
         res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' });
-        res.write(': connected\n\n');
+        // Each page is greeted with an empty change, so it knows the channel is open (and, after a reconnect, that
+        // anything may have changed while it was closed).
+        res.write(`: connected\n\nevent: ${DATA_CHANGED}\ndata: ${JSON.stringify({ tables: [], readModels: [] } satisfies DataChange)}\n\n`);
         clients.add(res);
         req.on('close', () => clients.delete(res));
         return;
@@ -122,7 +130,9 @@ export function serve({ root, port, host = '127.0.0.1', appDir = APP_DIR }: Serv
   const stop = () =>
     (stopping ??= (async () => {
       for (const watcher of watchers) watcher.close();
-      for (const timer of timers) clearTimeout(timer);
+      clearTimeout(timer);
+      unsubscribe();
+      await reloading;
       for (const client of clients) client.end();
       const closed = new Promise<void>((resolve) => server.close(() => resolve()));
       server.closeAllConnections();

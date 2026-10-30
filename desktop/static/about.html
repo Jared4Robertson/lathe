@@ -75,11 +75,11 @@
         list.appendChild(dd);
       });
       var links = document.getElementById('links');
-      (model.actions || []).forEach(function (action) {
+      (model.links || []).forEach(function (link) {
         var button = document.createElement('button');
         button.type = 'button';
-        button.textContent = action.label;
-        button.addEventListener('click', function () { window.latheLocal && window.latheLocal.act(action.id); });
+        button.textContent = link.label;
+        button.addEventListener('click', function () { window.open(link.url, '_blank'); });
         links.appendChild(button);
       });
     })();

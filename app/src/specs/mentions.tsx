@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { SpecIndex } from './data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { addressOf } from '../views/address';
 import { ID_TOKEN, Markdown, type ProseLinks } from './Markdown';
 
@@ -7,7 +7,7 @@ import { ID_TOKEN, Markdown, type ProseLinks } from './Markdown';
 // ID-shaped token that is a record of the space, other than the record itself.
 
 /** The links a text gets: each record it names, with its title. */
-export function proseLinks(index: SpecIndex, source: string, self: string): ProseLinks {
+export function proseLinks(index: RecordIndex, source: string, self: string): ProseLinks {
   const titles = new Map<string, string>();
   for (const [id] of source.matchAll(ID_TOKEN)) {
     const target = index.byId.get(id);
@@ -17,7 +17,7 @@ export function proseLinks(index: SpecIndex, source: string, self: string): Pros
 }
 
 /** One text field of a record, as Markdown with its record IDs linked. */
-export function Prose({ index, source, self }: { index: SpecIndex; source: string; self: string }) {
+export function Prose({ index, source, self }: { index: RecordIndex; source: string; self: string }) {
   const links = useMemo(() => proseLinks(index, source, self), [index, source, self]);
   return <Markdown source={source} links={links} />;
 }

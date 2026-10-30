@@ -1,7 +1,7 @@
 import { appendFileSync } from 'node:fs';
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
-import { served } from './flows';
+import { servedWorkspace } from './flows';
 import { openPage } from './measure';
 import { keepData, PRODUCT } from './scenarios';
 
@@ -38,7 +38,7 @@ test.describe('Checking flows', () => {
     const restore = keepData();
     try {
       // S01: the product's Checks panel over its stage: its problems counted, errors first, grouped by check.
-      const spec = await served(page);
+      const spec = await servedWorkspace();
       const errors = spec.problems.filter((p) => p.severity === 'error').length;
       await openPage(page, CHECKS, PANEL);
       const main = page.locator(PANEL);
@@ -76,7 +76,7 @@ test.describe('Checking flows', () => {
   test("LA-CHK-UC07-R01-T01 every problem of a product shows in one place, as the data is after its latest change", async ({ page }) => {
     const restore = keepData();
     try {
-      const spec = await served(page);
+      const spec = await servedWorkspace();
       const errors = spec.problems.filter((p) => p.severity === 'error').length;
       await openPage(page, CHECKS, PANEL);
       const main = page.locator(PANEL);
@@ -92,7 +92,7 @@ test.describe('Checking flows', () => {
     const restore = keepData();
     try {
       // S01: the product's Checks panel in the desktop app, its bridge stood in for, sends its error count to the Dock badge.
-      const spec = await served(page);
+      const spec = await servedWorkspace();
       const errors = spec.problems.filter((p) => p.severity === 'error').length;
       await page.addInitScript(desktopBridge);
       await openPage(page, CHECKS, PANEL);

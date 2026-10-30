@@ -1,6 +1,6 @@
 // Routes traced both ways between the records and the code (lathe/src/trace/routes.ts): the route normal form, the
 // route-without-record gap, and the flow that keeps routes and records in step from the command line. The
-// endpoint-route-not-in-file and view-route-not-in-file checks are tested with the other checks, in checks.test.ts.
+// endpoint-route-not-in-file and view-route-not-in-file checks are tested with the other Traceability checks, in traceability/checks.test.ts.
 import { afterAll, describe, expect, it } from 'vitest';
 import { normalRoute, regexRoute, servedRoutes } from '../../src/trace/routes.ts';
 import { writeFileSync } from 'node:fs';
@@ -84,11 +84,11 @@ describe('Routes kept in step from the command line', () => {
     expect(problemsOf(ws, 'endpoint-route-not-in-file')).toEqual([]);
     expect(gapsOf(ws, null).filter((g) => g.startsWith('route-without-record'))).toEqual([]);
     // S04: the record's route changes alone, and the check reports it as an error.
-    tl.run('set', 'TL-LEND-EP01', '--route', '/loans', '--title', 'POST /loans');
+    tl.command('endpoint change-endpoint', { id: 'TL-LEND-EP01', route: '/loans', title: 'POST /loans' });
     const refused = tl.check();
     expect(refused.status).toBe(1);
     expect(refused.stdout).toContain('[endpoint-route-not-in-file] TL-LEND-EP01: Endpoint TL-LEND-EP01 is POST /loans');
-    tl.run('set', 'TL-LEND-EP01', '--route', '/tools/{toolId}/loans', '--title', 'POST /tools/{toolId}/loans');
+    tl.command('endpoint change-endpoint', { id: 'TL-LEND-EP01', route: '/tools/{toolId}/loans', title: 'POST /tools/{toolId}/loans' });
     // S05: the router serves a route no record has; it is a gap until the Agent removes the route nothing uses.
     tl.write('src/router.ts', "// TL-LEND-EP01-H\nrouter.post('/tools/:id/loans', openLoan);\nrouter.get('/loans', listLoans);\n");
     ws = tl.workspace();

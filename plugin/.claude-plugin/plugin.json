@@ -2,7 +2,7 @@
   "name": "lathe",
   "displayName": "Lathe",
   "version": "0.7.0",
-  "description": "Change Lathe specs the Lathe way: skills for each stage, MCP tools that write through the command layer, and a hook that keeps hand edits out of the data files.",
+  "description": "Change Lathe specs the Lathe way: skills for each stage, MCP tools, one per aggregate command and query, and a hook that keeps hand edits out of the data files.",
   "author": { "name": "Jared A Robertson" },
   "keywords": ["specs", "requirements", "traceability", "lathe"],
   "lathe": { "major": 2 }

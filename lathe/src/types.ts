@@ -1,7 +1,7 @@
-// The shape the Lathe engine returns from loadWorkspace(root) and the web app reads from GET /api/spec: the typed
+// The shape the Lathe engine returns from loadWorkspace(root), which `lathe check` and the server's checks' run read: the typed
 // records of the product's data/ folder, read through the store, with the problems the checks found and coverage.
-import type { Row } from './store/rows.ts';
-import type { IdScope, Stage } from './store/schema.ts';
+import type { Row } from './platform/data/rows.ts';
+import type { IdScope, Stage } from './platform/data/schema.ts';
 
 export type { IdScope, Stage };
 
@@ -37,8 +37,8 @@ export interface RelationRule {
   source_kind: string;
   /** A kind, or '*' for any kind. */
   target_kind: string;
-  /** 'design': the link designs its target; 'proof': it proves it; '' otherwise. */
-  role: 'design' | 'proof' | '';
+  /** 'design': the link designs its target; 'build': it builds it; 'proof': it proves it; '' otherwise. */
+  role: 'design' | 'build' | 'proof' | '';
   description: string;
   /** The link in plain words read from the source, in sentence case: "Fulfills". */
   forward_label: string;
@@ -79,32 +79,6 @@ export interface Problem {
   message: string;
 }
 
-/**
- * A recorded exception: a deliberate deviation from one aggregate per command or one repository per aggregate, with
- * the reason. A command that also changes another aggregate of its domain in the same transaction (a command_change
- * row), or a repository that also persists another aggregate (a repository_share row). Not a problem: lathe check lists
- * every one, so each deviation stays deliberate and visible.
- */
-export type RecordedException = CommandException | RepositoryException;
-
-/** A command that also changes another aggregate of its domain in the same transaction: a command_change row. */
-export interface CommandException {
-  /** The command. */
-  command: string;
-  /** The other aggregate it also changes. */
-  aggregate: string;
-  reason: string;
-}
-
-/** A repository that also persists another aggregate, which has no repository of its own: a repository_share row. */
-export interface RepositoryException {
-  /** The repository. */
-  repository: string;
-  /** The other aggregate it also persists. */
-  aggregate: string;
-  reason: string;
-}
-
 /** What one obligation, or one record that falls short of a minimum, still lacks. */
 export interface CoverageGap {
   /** The record that falls short. */
@@ -139,12 +113,6 @@ export interface TestCounts {
   not_automated: number;
 }
 
-/**
- * Whether a domain that follows a pattern owes one of its rules: owed; not applicable, every following use case marking
- * the rule's setting not applicable; or waived, no follower meeting its applies-when condition.
- */
-export type PatternRuleStanding = 'owed' | 'not-applicable' | 'waived';
-
 /** Coverage of one domain, or of the product's records outside every domain (domain null). */
 export interface Coverage {
   product: string;
@@ -160,11 +128,11 @@ export interface Coverage {
    */
   proved_by: Record<string, string[]>;
   /**
-   * For a domain: each rule of each pattern it follows, with its standing there (owed, not applicable or waived), as
-   * the engine works it out; empty outside every domain. The one answer to "does this rule apply here": the app reads
-   * it, never works it out.
+   * For a domain: the rules it owes, every rule of each pattern it follows (itself or through a use case), in ID order,
+   * as the engine works them out; empty outside every domain. The one answer to "does this rule apply here": the app
+   * reads it, never works it out.
    */
-  pattern_rules: Record<string, PatternRuleStanding>;
+  pattern_rules: string[];
   /** The obligations not yet designed, built or proved, then the records short of a minimum (gap rules), by record. */
   gaps: CoverageGap[];
 }
@@ -206,8 +174,6 @@ export interface Workspace {
   records: SpecRecord[];
   links: SpecLink[];
   problems: Problem[];
-  /** Every recorded exception, by command and aggregate. */
-  exceptions: RecordedException[];
   coverage: Coverage[];
   /** Every obligation's traceability chain, by obligation ID. */
   chains: TraceChain[];

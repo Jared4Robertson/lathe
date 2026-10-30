@@ -46,7 +46,7 @@ describe('lathe check', () => {
     expect(lines).toContain('  EX-LEND pattern rule: proof only, 1/1 proved');
     expect(lines).toContain('  EX-LEND constraint: 1/1 designed, 1/1 built, 1/1 proved');
     expect(lines).toContain('  EX Shared standard rule: 1/1 designed, 1/1 built, 1/1 proved');
-    expect(lines).toContain('  EX-LEND tests: 10 automated, 2 manual, 1 not automated yet');
+    expect(lines).toContain('  EX-LEND tests: 11 automated, 2 manual, 1 not automated yet');
 
     const gaps = lathe('check', '--root', short).stdout;
     expect(gaps).toContain('  SP-D records short of a minimum (');
@@ -56,7 +56,7 @@ describe('lathe check', () => {
 
   it("LA-TRC-UC06-R03-T01 After a domain's obligation lines the check prints one line of its tests by state", () => {
     const lines = lathe('check', '--root', broken).stdout.split('\n');
-    const tests = lines.findIndex((l) => l === '  EX-LEND tests: 10 automated, 2 manual, 1 not automated yet');
+    const tests = lines.findIndex((l) => l === '  EX-LEND tests: 11 automated, 2 manual, 1 not automated yet');
     expect(tests).toBeGreaterThan(-1);
     // Every EX-LEND obligation line comes before it, and none after.
     const domainLines = lines.map((l, i) => [l, i] as const).filter(([l]) => /^ {2}EX-LEND [a-z ]+: /.test(l) && !l.startsWith('  EX-LEND tests:'));

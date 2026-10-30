@@ -28,11 +28,11 @@ const same = (a: string, b: string) => {
 };
 
 /**
- * The shared server when GET /api/spec on 5199 answers 200 and its product folder (the
+ * The shared server when GET /api/product/list-products on 5199 answers 200 and its product folder (the
  * x-lathe-root header, or `repoRoot` from a server that predates the header) is `folder`.
  */
 export async function chooseDevSource(folder: string, repoRoot: string, probe: Probe): Promise<DevSource> {
-  const answer = await probe(`${SHARED_URL}/api/spec`);
+  const answer = await probe(`${SHARED_URL}/api/product/list-products`);
   if (!answer || answer.status !== 200) return { kind: 'own' };
   const root = answer.headers[ROOT_HEADER] ? decodeURIComponent(answer.headers[ROOT_HEADER]!) : repoRoot;
   return same(root, folder) ? { kind: 'shared', url: SHARED_URL } : { kind: 'own' };

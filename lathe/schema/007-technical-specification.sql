@@ -1,7 +1,27 @@
 -- The technical specification: one concrete kind implements each design kind, in place of generic components and
 -- layers. The domain layer (data models, value types, predicates, event types, services) stays apart from the
--- application layer (command, query and event handlers, and projections), which alone reads and writes storage. Then
+-- application layer (command, query and event handlers, projections and readers), which alone reads and writes storage. Then
 -- standards and their rules, which technical records meet.
+
+-- The kinds of place data lives in.
+CREATE TYPE data_store_kind AS ENUM ('database', 'object store', 'file folder', 'file', 'browser storage', 'memory');
+
+CREATE TABLE data_store (
+  id VARCHAR PRIMARY KEY REFERENCES record_id (id),
+  title VARCHAR NOT NULL CHECK (trim(title) <> ''),
+  product_id VARCHAR REFERENCES product (id),
+  domain_id VARCHAR REFERENCES domain (id),
+  kind data_store_kind NOT NULL,
+  description VARCHAR NOT NULL CHECK (trim(description) <> ''),
+  CHECK ((product_id IS NULL) <> (domain_id IS NULL))
+);
+COMMENT ON TABLE data_store IS 'Where data actually lives: a database, a bucket, a folder of files, browser storage or memory. Every repository, reader and table names the one it is stored in (stored_in). One that is a service someone else runs, which the user must provide, such as a managed database or a bucket, is reached through its integration (provided_by); one the product owns outright, such as a local file or browser storage, has none.';
+COMMENT ON COLUMN data_store.id IS 'The data store''s ID: its product''s ID and STORE<nn>, or its domain''s ID and STORE<nn>, such as TL-STORE01.';
+COMMENT ON COLUMN data_store.title IS 'Its name in code or config, such as DATABASE_URL, dataDir or localStorage.';
+COMMENT ON COLUMN data_store.product_id IS 'The product it sits under, when several of its domains use it; exactly one of product and domain is given.';
+COMMENT ON COLUMN data_store.domain_id IS 'The domain it sits under, when one domain alone uses it; exactly one of product and domain is given.';
+COMMENT ON COLUMN data_store.kind IS 'database: a database server or file, such as PostgreSQL or SQLite; object store: a bucket of objects, such as S3; file folder: a folder of files the program reads and writes; file: one file the program reads and writes whole; browser storage: kept by the browser, such as local or session storage or its history; memory: kept only while the program runs, and rebuilt on each start.';
+COMMENT ON COLUMN data_store.description IS 'Where it is and what keeps it there, in a sentence or two: its location, who runs it and how it is reached.';
 
 CREATE TABLE repository (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
@@ -10,23 +30,12 @@ CREATE TABLE repository (
   file VARCHAR,
   description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
-COMMENT ON TABLE repository IS 'Loads and saves its aggregate, whole: the way command handlers reach the aggregate''s storage. It persists exactly one aggregate, linked with persists, and sits under its domain, or, for one several domains share, under the domain that holds what they share. One that also persists other aggregates records each as a repository share, with its reason.';
+COMMENT ON TABLE repository IS 'Loads and saves its aggregate, whole: the way command handlers reach the aggregate''s storage, in the one data store it names (stored_in). It persists exactly one aggregate, linked with persists, and sits under its domain, or, for one several domains share, under the domain that holds what they share.';
 COMMENT ON COLUMN repository.id IS 'The repository''s ID: its domain''s ID and REPO<nn>, such as TL-LEND-REPO01.';
 COMMENT ON COLUMN repository.title IS 'Its name in code, such as LoanRepository.';
 COMMENT ON COLUMN repository.domain_id IS 'The domain it sits under: that of the aggregate it persists, or, for one several domains share, the domain that holds what they share.';
 COMMENT ON COLUMN repository.file IS 'The file that holds its code, from the product root; it may not exist yet, and several records may share one file.';
 COMMENT ON COLUMN repository.description IS 'How it keeps its aggregate: where, in what form, and when it loads and saves, in a sentence or two.';
-
-CREATE TABLE repository_share (
-  repository_id VARCHAR NOT NULL REFERENCES repository (id),
-  aggregate_id VARCHAR NOT NULL UNIQUE REFERENCES aggregate (id),
-  reason VARCHAR NOT NULL CHECK (trim(reason) <> ''),
-  PRIMARY KEY (repository_id, aggregate_id)
-);
-COMMENT ON TABLE repository_share IS 'A recorded exception to one repository per aggregate: another aggregate the repository also persists, and why. lathe check and the Checks page list every one under Recorded exceptions, always visible and never a warning.';
-COMMENT ON COLUMN repository_share.repository_id IS 'The repository that also persists the aggregate.';
-COMMENT ON COLUMN repository_share.aggregate_id IS 'The other aggregate it persists: never its own, and one no other repository persists.';
-COMMENT ON COLUMN repository_share.reason IS 'Why the aggregate has no repository of its own.';
 
 CREATE TABLE data_model (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
@@ -51,6 +60,18 @@ COMMENT ON COLUMN value_type.id IS 'The value type''s ID: its value object''s ID
 COMMENT ON COLUMN value_type.title IS 'Its name in code, such as EmailAddress.';
 COMMENT ON COLUMN value_type.value_object_id IS 'The value object it implements; one value type each.';
 COMMENT ON COLUMN value_type.file IS 'The file that holds its code, from the product root; it may not exist yet, and several records may share one file.';
+
+CREATE TABLE rule (
+  id VARCHAR PRIMARY KEY REFERENCES record_id (id),
+  title VARCHAR NOT NULL CHECK (trim(title) <> ''),
+  invariant_id VARCHAR NOT NULL UNIQUE REFERENCES invariant (id),
+  file VARCHAR
+);
+COMMENT ON TABLE rule IS 'Enforces its invariant: the rule in its aggregate''s code, run by the aggregate''s commands before saving, which refuses a change that would break it. Lathe''s own rules sit in each aggregate''s rules.ts and also run over all data on every load. An invariant is built only through its rule.';
+COMMENT ON COLUMN rule.id IS 'The rule''s ID: its invariant''s ID and RL, such as TL-LEND-INV01-RL.';
+COMMENT ON COLUMN rule.title IS 'Its name in code, the name its refusal carries, such as step-fulfills-own-use-case or email_taken.';
+COMMENT ON COLUMN rule.invariant_id IS 'The invariant it enforces; one rule each.';
+COMMENT ON COLUMN rule.file IS 'The file that holds its code, from the product root, such as its aggregate''s rules.ts; it may not exist yet, and several records may share one file.';
 
 CREATE TABLE predicate (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
@@ -93,6 +114,20 @@ COMMENT ON COLUMN projection.title IS 'Its name in code, such as overdueLoans.';
 COMMENT ON COLUMN projection.read_model_id IS 'The read model it fills; one projection each.';
 COMMENT ON COLUMN projection.file IS 'The file that holds its code, from the product root; it may not exist yet, and several records may share one file.';
 COMMENT ON COLUMN projection.description IS 'How it fills its read model and when it is rebuilt, in a sentence or two.';
+
+CREATE TABLE reader (
+  id VARCHAR PRIMARY KEY REFERENCES record_id (id),
+  title VARCHAR NOT NULL CHECK (trim(title) <> ''),
+  read_model_id VARCHAR NOT NULL UNIQUE REFERENCES read_model (id),
+  file VARCHAR,
+  description VARCHAR NOT NULL CHECK (trim(description) <> '')
+);
+COMMENT ON TABLE reader IS 'Reads its read model''s table for its query handlers: the way query handlers reach a read model''s storage, in the one data store it names (stored_in). It reads exactly one read model, its parent, and nothing else; a query handler reads only through its own read model''s reader, and the projection alone fills the table it reads.';
+COMMENT ON COLUMN reader.id IS 'The reader''s ID: its read model''s ID and RD, such as TL-LEND-RM01-RD.';
+COMMENT ON COLUMN reader.title IS 'Its name in code, such as OverdueLoansReader.';
+COMMENT ON COLUMN reader.read_model_id IS 'The read model it reads; one reader each.';
+COMMENT ON COLUMN reader.file IS 'The file that holds its code, from the product root; it may not exist yet, and several records may share one file.';
+COMMENT ON COLUMN reader.description IS 'How it reads its read model''s table: where the table is kept and how a query handler is given the reader, in a sentence or two.';
 
 CREATE TABLE command_handler (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
@@ -192,7 +227,7 @@ CREATE TABLE "table" (
   CHECK (domain_id IS NULL OR storage = 'table'),
   CHECK (entity_id IS NULL OR storage NOT IN ('view', 'materialized view'))
 );
-COMMENT ON TABLE "table" IS 'Where an entity or a read model, its parent, is stored, in a database or not; or, under a domain, a table of the domain''s own infrastructure that implements no design record, such as its outbox. Its columns follow from its parent''s fields, a value object''s fields flattened into columns, so it stores only what fields cannot say: its keys and indexes (table_key rows). An entity''s table holds its rows, the source of truth: a table, normalized, or the browser storage, file or memory that keeps them; a read model''s is a projection that can be rebuilt, usually a view over its domain''s entity tables, or computed in memory on each load.';
+COMMENT ON TABLE "table" IS 'Where an entity or a read model, its parent, is stored, in a database or not; or, under a domain, a table of the domain''s own infrastructure that implements no design record, such as its outbox. It is kept in the one data store it names (stored_in). Its columns follow from its parent''s fields, a value object''s fields flattened into columns, so it stores only what fields cannot say: its keys and indexes (table_key rows). An entity''s table holds its rows, the source of truth: a table, normalized, or the browser storage, file or memory that keeps them; a read model''s is a projection that can be rebuilt, usually a view over its domain''s entity tables, or computed in memory on each load.';
 COMMENT ON COLUMN "table".id IS 'The table''s ID: its entity''s or read model''s ID and TB, such as TL-LEND-EN01-TB.';
 COMMENT ON COLUMN "table".title IS 'The table as people read it, such as Loans.';
 COMMENT ON COLUMN "table".entity_id IS 'The entity it stores; exactly one of entity, read model and domain is given. An entity has at most one table: a child entity marked in_root_table has none and is stored in its root''s.';
@@ -226,13 +261,39 @@ COMMENT ON COLUMN table_key.invariant_id IS 'For a unique key, the invariant it 
 COMMENT ON COLUMN table_key.condition IS 'For a partial unique key, the rows it holds for, such as returned_at IS NULL for one active loan per tool; only a unique key has one.';
 COMMENT ON COLUMN table_key.target_table_id IS 'For a foreign key, the table it points at, of the same domain; required for a foreign key and only for one.';
 
+CREATE TABLE entry_point (
+  id VARCHAR PRIMARY KEY REFERENCES record_id (id),
+  title VARCHAR NOT NULL CHECK (trim(title) <> ''),
+  domain_id VARCHAR NOT NULL REFERENCES domain (id),
+  file VARCHAR,
+  description VARCHAR NOT NULL CHECK (trim(description) <> '')
+);
+COMMENT ON TABLE entry_point IS 'A start-up file: what runs first and wires the rest together, such as a server''s main file or a desktop app''s main process. No design record is implemented by it alone, so it sits under the domain it starts.';
+COMMENT ON COLUMN entry_point.id IS 'The entry point''s ID: its domain''s ID and ENTRY<nn>, such as TL-LEND-ENTRY01.';
+COMMENT ON COLUMN entry_point.title IS 'Its file''s name, or its name in code, such as server.ts.';
+COMMENT ON COLUMN entry_point.domain_id IS 'The domain it starts.';
+COMMENT ON COLUMN entry_point.file IS 'The start-up file, from the product root; it may not exist yet.';
+COMMENT ON COLUMN entry_point.description IS 'What it does at start-up, in a sentence or two: what it reads, opens and serves.';
+
+CREATE TABLE tooling (
+  id VARCHAR PRIMARY KEY REFERENCES record_id (id),
+  title VARCHAR NOT NULL CHECK (trim(title) <> ''),
+  domain_id VARCHAR NOT NULL REFERENCES domain (id),
+  file VARCHAR
+);
+COMMENT ON TABLE tooling IS 'A dev script or config file outside the running product: a build, a generator, a watcher, or a config of the tools it is checked and tested with, such as a type checker''s or a test runner''s. Its title and file say what it is.';
+COMMENT ON COLUMN tooling.id IS 'The tooling record''s ID: its domain''s ID and TOOL<nn>, such as TL-LEND-TOOL01.';
+COMMENT ON COLUMN tooling.title IS 'Its file''s name, such as vitest.config.ts.';
+COMMENT ON COLUMN tooling.domain_id IS 'The domain whose code it builds, checks or tests.';
+COMMENT ON COLUMN tooling.file IS 'The script or config file, or the folder of them, from the product root; it may not exist yet.';
+
 CREATE TABLE ui_component (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   file VARCHAR,
   description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
-COMMENT ON TABLE ui_component IS 'A piece of the user interface that renders one or more views. It has no owner: it exists because views use it, and its product follows from its ID.';
+COMMENT ON TABLE ui_component IS 'A piece of the user interface that renders one or more views and builds the view requirements its code does (builds). It has no owner: it exists because views use it, and its product follows from its ID.';
 COMMENT ON COLUMN ui_component.id IS 'The UI component''s ID: the product prefix and UI<nn>, such as TL-UI01.';
 COMMENT ON COLUMN ui_component.title IS 'Its name in code, such as CatalogPage.';
 COMMENT ON COLUMN ui_component.file IS 'The file that holds its code, from the product root; it may not exist yet.';
@@ -265,55 +326,67 @@ COMMENT ON COLUMN standard_rule.statement IS 'The rule, stated with MUST, MUST N
 COMMENT ON COLUMN standard_rule.group_name IS 'A short heading it is shown under among its siblings.';
 
 INSERT INTO meta_kind VALUES
-  ('repository', 'Repository', 'technical-specification', 30, false, '<domain>-REPO<nn>', 'TL-LEND-REPO01', 'parent', NULL),
-  ('data_model', 'Data model', 'technical-specification', 31, false, '<entity>-DM', 'TL-LEND-EN01-DM', 'parent', NULL),
-  ('value_type', 'Value type', 'technical-specification', 33, false, '<value object>-VT', 'TL-VO01-VT', 'parent', NULL),
-  ('predicate', 'Predicate', 'technical-specification', 34, false, '<specification>-PR', 'TL-LEND-SP01-PR', 'parent', NULL),
-  ('event_type', 'Event type', 'technical-specification', 35, false, '<domain event>-ET', 'TL-LEND-EV01-ET', 'parent', NULL),
-  ('projection', 'Projection', 'technical-specification', 36, false, '<read model>-PJ', 'TL-LEND-RM01-PJ', 'parent', NULL),
-  ('command_handler', 'Command handler', 'technical-specification', 37, false, '<command>-H', 'TL-LEND-CMD01-H', 'parent', NULL),
-  ('query_handler', 'Query handler', 'technical-specification', 38, false, '<query>-H', 'TL-LEND-QRY01-H', 'parent', NULL),
-  ('event_handler', 'Event handler', 'technical-specification', 39, false, '<policy>-H', 'TL-LEND-PO01-H', 'parent', NULL),
-  ('service', 'Service', 'technical-specification', 40, false, '<domain service>-SV', 'TL-LEND-DS01-SV', 'parent', NULL),
-  ('endpoint_handler', 'Endpoint handler', 'technical-specification', 42, false, '<endpoint>-H', 'TL-LEND-EP01-H', 'parent', NULL),
-  ('adapter', 'Adapter', 'technical-specification', 43, false, '<integration>-AD', 'TL-INT01-AD', 'parent', NULL),
-  ('table', 'Table', 'technical-specification', 32, false, '<entity or read model>-TB, or <domain>-TB<nn>', 'TL-LEND-EN01-TB', 'parent', NULL),
-  ('ui_component', 'UI component', 'technical-specification', 41, false, '<P>-UI<nn>', 'TL-UI01', 'product', NULL),
-  ('standard', 'Standard', 'technical-specification', 44, false, '<P>-STD-<name>', 'TL-STD-CODE', 'parent', NULL),
-  ('standard_rule', 'Standard rule', 'technical-specification', 45, true, '<standard>-R<nn>', 'TL-STD-CODE-R01', 'parent', NULL);
+  ('data_store', 'Data store', 'technical-specification', 31, false, '<P>-STORE<nn> or <P>-<D>-STORE<nn>', 'TL-STORE01', 'parent', NULL),
+  ('repository', 'Repository', 'technical-specification', 32, false, '<domain>-REPO<nn>', 'TL-LEND-REPO01', 'parent', NULL),
+  ('data_model', 'Data model', 'technical-specification', 33, false, '<entity>-DM', 'TL-LEND-EN01-DM', 'parent', NULL),
+  ('value_type', 'Value type', 'technical-specification', 35, false, '<value object>-VT', 'TL-VO01-VT', 'parent', NULL),
+  ('rule', 'Rule', 'technical-specification', 36, false, '<invariant>-RL', 'TL-LEND-INV01-RL', 'parent', NULL),
+  ('predicate', 'Predicate', 'technical-specification', 37, false, '<specification>-PR', 'TL-LEND-SP01-PR', 'parent', NULL),
+  ('event_type', 'Event type', 'technical-specification', 38, false, '<domain event>-ET', 'TL-LEND-EV01-ET', 'parent', NULL),
+  ('projection', 'Projection', 'technical-specification', 39, false, '<read model>-PJ', 'TL-LEND-RM01-PJ', 'parent', NULL),
+  ('reader', 'Reader', 'technical-specification', 40, false, '<read model>-RD', 'TL-LEND-RM01-RD', 'parent', NULL),
+  ('command_handler', 'Command handler', 'technical-specification', 41, false, '<command>-H', 'TL-LEND-CMD01-H', 'parent', NULL),
+  ('query_handler', 'Query handler', 'technical-specification', 42, false, '<query>-H', 'TL-LEND-QRY01-H', 'parent', NULL),
+  ('event_handler', 'Event handler', 'technical-specification', 43, false, '<policy>-H', 'TL-LEND-PO01-H', 'parent', NULL),
+  ('service', 'Service', 'technical-specification', 44, false, '<domain service>-SV', 'TL-LEND-DS01-SV', 'parent', NULL),
+  ('endpoint_handler', 'Endpoint handler', 'technical-specification', 46, false, '<endpoint>-H', 'TL-LEND-EP01-H', 'parent', NULL),
+  ('adapter', 'Adapter', 'technical-specification', 47, false, '<integration>-AD', 'TL-INT01-AD', 'parent', NULL),
+  ('entry_point', 'Entry point', 'technical-specification', 48, false, '<domain>-ENTRY<nn>', 'TL-LEND-ENTRY01', 'parent', NULL),
+  ('tooling', 'Tooling', 'technical-specification', 49, false, '<domain>-TOOL<nn>', 'TL-LEND-TOOL01', 'parent', NULL),
+  ('table', 'Table', 'technical-specification', 34, false, '<entity or read model>-TB, or <domain>-TB<nn>', 'TL-LEND-EN01-TB', 'parent', NULL),
+  ('ui_component', 'UI component', 'technical-specification', 45, false, '<P>-UI<nn>', 'TL-UI01', 'product', NULL),
+  ('standard', 'Standard', 'technical-specification', 50, false, '<P>-STD-<name>', 'TL-STD-CODE', 'parent', NULL),
+  ('standard_rule', 'Standard rule', 'technical-specification', 51, true, '<standard>-R<nn>', 'TL-STD-CODE-R01', 'parent', NULL);
 INSERT INTO meta_kind_parent VALUES
+  ('data_store', 'product', 1, 'product_id'),
+  ('data_store', 'domain', 2, 'domain_id'),
   ('repository', 'domain', 1, 'domain_id'),
   ('data_model', 'entity', 1, 'entity_id'),
   ('value_type', 'value_object', 1, 'value_object_id'),
+  ('rule', 'invariant', 1, 'invariant_id'),
   ('predicate', 'specification', 1, 'specification_id'),
   ('event_type', 'domain_event', 1, 'domain_event_id'),
   ('projection', 'read_model', 1, 'read_model_id'),
+  ('reader', 'read_model', 1, 'read_model_id'),
   ('command_handler', 'command', 1, 'command_id'),
   ('query_handler', 'query', 1, 'query_id'),
   ('event_handler', 'policy', 1, 'policy_id'),
   ('service', 'domain_service', 1, 'domain_service_id'),
   ('endpoint_handler', 'endpoint', 1, 'endpoint_id'),
   ('adapter', 'integration', 1, 'integration_id'),
+  ('entry_point', 'domain', 1, 'domain_id'),
+  ('tooling', 'domain', 1, 'domain_id'),
   ('table', 'entity', 1, 'entity_id'), ('table', 'read_model', 2, 'read_model_id'), ('table', 'domain', 3, 'domain_id'),
   ('standard', 'product', 1, 'product_id'),
   ('standard_rule', 'standard', 1, 'standard_id');
 INSERT INTO meta_kind_title VALUES
-  ('repository', 'identifier'), ('data_model', 'identifier'), ('value_type', 'identifier'), ('predicate', 'identifier'),
-  ('event_type', 'identifier'), ('projection', 'identifier'), ('command_handler', 'identifier'), ('query_handler', 'identifier'),
+  ('data_store', 'identifier'), ('repository', 'identifier'), ('data_model', 'identifier'), ('value_type', 'identifier'), ('rule', 'identifier'), ('predicate', 'identifier'),
+  ('event_type', 'identifier'), ('projection', 'identifier'), ('reader', 'identifier'), ('command_handler', 'identifier'), ('query_handler', 'identifier'),
   ('event_handler', 'identifier'), ('service', 'identifier'), ('endpoint_handler', 'identifier'), ('adapter', 'identifier'),
-  ('table', 'identifier');
+  ('entry_point', 'identifier'), ('tooling', 'identifier'), ('table', 'identifier');
 INSERT INTO meta_table VALUES
-  ('repository', 'kind', NULL), ('repository_share', 'part', 'repository_id'), ('data_model', 'kind', NULL), ('value_type', 'kind', NULL), ('predicate', 'kind', NULL), ('event_type', 'kind', NULL), ('projection', 'kind', NULL), ('command_handler', 'kind', NULL), ('query_handler', 'kind', NULL), ('event_handler', 'kind', NULL), ('service', 'kind', NULL), ('endpoint_handler', 'kind', NULL), ('adapter', 'kind', NULL),
+  ('data_store', 'kind', NULL), ('repository', 'kind', NULL), ('data_model', 'kind', NULL), ('value_type', 'kind', NULL), ('rule', 'kind', NULL), ('predicate', 'kind', NULL), ('event_type', 'kind', NULL), ('projection', 'kind', NULL), ('reader', 'kind', NULL), ('command_handler', 'kind', NULL), ('query_handler', 'kind', NULL), ('event_handler', 'kind', NULL), ('service', 'kind', NULL), ('endpoint_handler', 'kind', NULL), ('adapter', 'kind', NULL),
+  ('entry_point', 'kind', NULL), ('tooling', 'kind', NULL),
   ('table', 'kind', NULL), ('table_key', 'part', 'table_id'), ('ui_component', 'kind', NULL), ('standard', 'kind', NULL), ('standard_rule', 'kind', NULL);
 
 -- The packages technical records use: every package a product's package.json files list is named by a record, so each
 -- dependency is accounted for by what it serves.
 CREATE TABLE package_use (
-  record_id VARCHAR NOT NULL REFERENCES record_id (id),
+  record_id VARCHAR NOT NULL REFERENCES technical_record (id),
   package VARCHAR NOT NULL CHECK (regexp_full_match(package, '(@[a-z0-9~-][a-z0-9._~-]*/)?[a-z0-9~-][a-z0-9._~-]*')),
   PRIMARY KEY (record_id, package)
 );
-COMMENT ON TABLE package_use IS 'A package a technical record uses: a dependency one of the product''s package.json files lists, which the record accounts for, such as the package an adapter calls or a tooling record runs. Only a record of a kind in the technical specification may name one.';
-COMMENT ON COLUMN package_use.record_id IS 'The technical record that uses the package: an adapter, a UI component, or a record of a product''s own technical kind such as a tooling record.';
+COMMENT ON TABLE package_use IS 'A package a technical record uses: a dependency one of the product''s package.json files lists, which the record accounts for, such as the package an adapter calls or a tooling record runs. Only a technical record names one: its record_id is one (technical_record).';
+COMMENT ON COLUMN package_use.record_id IS 'The technical record that uses the package: an adapter, a UI component, an entry point, a tooling record, or a record of a product''s own technical kind.';
 COMMENT ON COLUMN package_use.package IS 'The package''s name as package.json lists it, such as @duckdb/node-api.';
 INSERT INTO meta_table VALUES ('package_use', 'part', 'record_id');

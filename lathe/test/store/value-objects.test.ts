@@ -1,6 +1,6 @@
 // The constraints of Authoring's value objects (LA-VO01 ... LA-VO17): each loads the fixture through the store with a
 // bad value, which is refused, and with the good values, which load. Lathe's checks on column values live in two
-// places: the row checks of src/store/rows.ts, made before the database sees a row, and the CHECKs and ENUM types of
+// places: the row checks of src/platform/data/rows.ts, made before the database sees a row, and the CHECKs and ENUM types of
 // schema/*.sql, which the database enforces.
 import { afterAll, describe, expect, it } from 'vitest';
 import type { Row, StoreProblem } from '../../src/index.ts';
@@ -219,18 +219,17 @@ describe("Authoring's value objects", () => {
     expect(await refusals(firstRow('product_kind', { stage: undefined }))).toEqual([]);
   });
 
-  it("LA-VO17-C01-T A relation's role other than design or proof is refused, and none is allowed", async () => {
-    expect(await refusals(firstRow('product_relation', { role: 'evidence' }))).toEqual(notOneOf('product_relation', 'role', 'evidence', ['design', 'proof']));
-    for (const role of ['design', 'proof']) expect(await refusals(firstRow('product_relation', { role })), role).toEqual([]);
+  it("LA-VO17-C01-T A relation's role other than design, build or proof is refused, and none is allowed", async () => {
+    expect(await refusals(firstRow('product_relation', { role: 'evidence' }))).toEqual(notOneOf('product_relation', 'role', 'evidence', ['design', 'build', 'proof']));
+    for (const role of ['design', 'build', 'proof']) expect(await refusals(firstRow('product_relation', { role })), role).toEqual([]);
     expect(await refusals(everyKind())).toEqual([]);
   });
 });
 
-/** The fixture with its pattern's setting renamed, and the rule and setting value that name it renamed with it. */
+/** The fixture with its pattern's setting renamed, and the setting value that names it renamed with it. */
 function withSetting(name: string): Data {
   const data = everyKind();
   data.pattern_setting = [{ ...data.pattern_setting[0], name }];
-  data.pattern_rule = [{ ...data.pattern_rule[0], setting: name, applies_when_setting: name }];
   data.setting_value = [{ ...data.setting_value[0], setting: name }];
   return data;
 }

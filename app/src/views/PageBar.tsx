@@ -3,7 +3,7 @@ import { Button } from '../components/Button';
 import { Icon } from '../components/icons';
 import { ErdIcon } from '../erd/ErdIcon';
 import { Tooltip } from '../shell/Tooltip';
-import type { SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { STAGE_LABELS, STAGE_NAMES, type StageName } from './address';
 import { crowdedLabel } from './openSpace';
 import { TabStrip } from './TabStrip';
@@ -27,7 +27,7 @@ export function StageIcon({ stage, size = 16 }: { stage: StageName; size?: numbe
 }
 
 export interface PageBarProps {
-  index: SpecIndex;
+  index: RecordIndex;
   /** The desktop app's tabs; null on the web. */
   tabs: TabsApi | null;
   /** The stage shown. */

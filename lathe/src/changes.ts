@@ -5,12 +5,13 @@
 // removed or changed, and each link added or removed.
 //
 // It reads only rows and the schema, never a file or git, so the server, the web app's stages and the desktop chat
-// all use it: the Changes lens and panel against a baseline (since the last commit, since the branch left the
+// all use it: Highlight changes and panel against a baseline (since the last commit, since the branch left the
 // default branch, since the Reader last looked), the live marks against the data before a reload, and the chat
 // against the data before a turn.
 import type { FieldChange, HistoryChange } from './server/contract.ts';
-import { describeKey, rowKey, type Row, type Value } from './store/rows.ts';
-import type { SchemaDescription, TableDescription } from './store/schema.ts';
+import { describeKey, rowKey, type Row, type Value } from './platform/data/rows.ts';
+import type { SchemaDescription, TableDescription } from './platform/data/schema.ts';
+import { compareIds } from './platform/data/ids.ts';
 
 export type { FieldChange, HistoryChange };
 
@@ -142,7 +143,7 @@ export function recordChanges(schema: SchemaDescription, before: Tables, after: 
     c.parts = [];
     c.links = { added: [], removed: [] };
   }
-  return out.sort((a, b) => a.id.localeCompare(b.id, 'en', { numeric: true }));
+  return out.sort((a, b) => compareIds(a.id, b.id));
 }
 
 // ---------- A moment's data as a commit and what differed from it ----------

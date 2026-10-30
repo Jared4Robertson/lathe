@@ -1,8 +1,8 @@
+import { recordIndexOf } from './read-view';
 // LA-PAT-APP-CODE-R21: nothing outlives its purpose, and a mark that can't be explained can't ship.
 // Every mark the Graph or the ERD view can draw (a box's shape or fill, a badge, a line style) is
 // listed in that view's key, with words that say what it means.
 import './graph/setup';
-import { indexOf } from './fixtures/load';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { cleanup, render } from '@testing-library/react';
@@ -11,19 +11,19 @@ import { graphKeyEntries, type GraphDrawn } from '../src/graph/key';
 import { BOX_LOOKS } from '../src/graph/paint';
 import { BADGE_TONES } from '../src/graph/plate';
 import { MARKS, SHAPES, type Mark, type Shape } from '../src/graph/shapes';
-import { erdFocus, erdMap, erdStrength } from '../src/erd/erd';
+import { erdFocus, erdStrength } from '../src/erd/erd';
+import { erdOf } from './erd-of';
 import { erdKeyEntries } from '../src/erd/ErdView';
 import { changesKeyEntries, type ChangeMark } from '../src/changes/ChangesKey';
 import { StageKey, type KeyEntry } from '../src/views/StageChrome';
 import { modelWorkspace } from './fixtures/model';
 
-/** The live marks every stage draws, and the Changes lens's dimming: each in every stage's key (changes/ChangesKey.tsx). */
-const CHANGE_MARKS: ChangeMark[] = ['is-added', 'is-changed', 'is-removed', 'is-lens'];
+/** The live marks every stage draws, and Highlight changes's dimming: each in every stage's key (changes/ChangesKey.tsx). */
+const CHANGE_MARKS: ChangeMark[] = ['is-added', 'is-changed', 'is-removed', 'is-dimmed'];
 const CHANGES = changesKeyEntries(new Set(CHANGE_MARKS));
 /** The graph drawing every look, shape, mark and badge, in a layout. */
 const everything = (layout: GraphDrawn['layout']): GraphDrawn => ({
-  looks: new Set(BOX_LOOKS), shapes: new Set(Object.keys(SHAPES) as Shape[]), marks: new Set(Object.keys(MARKS) as Mark[]), badges: new Set(BADGE_TONES), layout,
-});
+  looks: new Set(BOX_LOOKS), shapes: new Set(Object.keys(SHAPES) as Shape[]), marks: new Set(Object.keys(MARKS) as Mark[]), badges: new Set(BADGE_TONES), layout });
 /** A key bar of entries, each once. */
 const bar = (entries: KeyEntry[]) => render(<StageKey entries={[...new Map(entries.map((e) => [e.id, e])).values()]} />);
 const CSS = readFileSync(path.resolve(import.meta.dirname, '../src/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
@@ -54,7 +54,7 @@ describe('LA-V93-R12-T06 the Graph view key', () => {
     for (const badge of BADGE_TONES) needs(`badge ${badge}`, `.graph-mark.${badge}`);
     // The one line the graph draws: parent to child.
     needs('the parent line', '.graph-line');
-    // The live marks (changes/marks.ts) and the Changes lens's dimming.
+    // The live marks (changes/marks.ts) and Highlight changes's dimming.
     for (const mark of CHANGE_MARKS) needs(`live mark ${mark}`, `.change-swatch.${mark}`);
     expect(missing).toEqual([]);
   });
@@ -73,16 +73,17 @@ describe('LA-V94-R05-T02 the ERD view key', () => {
   });
 
   it('Every box, badge and line an ERD draws is in its key, with what it means', () => {
-    const index = indexOf(modelWorkspace());
-    const focuses = index.workspace.records.filter((r) => ['product', 'domain', 'aggregate', 'entity'].includes(r.kind)).map((r) => r.id);
+    const data = modelWorkspace();
+    const index = recordIndexOf(data);
+    const focuses = [...index.byId.values()].filter((r) => ['product', 'domain', 'aggregate', 'entity'].includes(r.kind)).map((r) => r.id);
     const missing: string[] = [];
     let drawn = 0;
     for (const focus of focuses) {
       const at = erdFocus(index, focus);
       if (!at) continue;
-      const map = erdMap(index, at.product);
+      const map = erdOf(data, at.product);
       const strength = erdStrength(map, at.scope, { focusFade: 0.25 });
-      const { container, unmount } = bar([...erdKeyEntries(map, at, index.workspace.relations), ...CHANGES]);
+      const { container, unmount } = bar([...erdKeyEntries(map, at, index.meta.relations), ...CHANGES]);
       const needs = (what: string, selector: string) => {
         const el = container.querySelector(selector);
         if (!el || meaning(el) === '') missing.push(`${focus}: ${what} (${selector})`);
@@ -99,7 +100,7 @@ describe('LA-V94-R05-T02 the ERD view key', () => {
         if (box.root) needs('root badge', '.erd-root');
         if (strength(box.id) < 1) needs('faded box', '.erd-key-faded');
       }
-      // A box the data's reload added or changed (has-change is-added, is-changed), a removed one's ghost, the lens.
+      // A box the data's reload added or changed (has-change is-added, is-changed), a removed one's ghost, Highlight changes.
       for (const mark of CHANGE_MARKS) needs(`live mark ${mark}`, `.change-swatch.${mark}`);
       unmount();
     }

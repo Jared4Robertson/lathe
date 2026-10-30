@@ -4,8 +4,11 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { vi } from 'vitest';
-import { loadWorkspace, openStore, StoreError, type Problem, type Row, type StoreProblem, type Workspace } from '../src/index.ts';
-import { tableText } from '../src/store/rows.ts';
+import { loadWorkspace, openStore, StoreError, type Problem, type Row, type Store, type StoreProblem, type Workspace } from '../src/index.ts';
+import { ALL_COMMANDS } from '../src/commands.ts';
+import { runCommand } from '../src/platform/commands/run.ts';
+import type { Committed } from '../src/platform/data/transaction.ts';
+import { tableText } from '../src/platform/data/rows.ts';
 import { DATABASE_STORAGES, expectedColumns } from '../src/trace/tables.ts';
 import { writeData, type Data } from './store/fixture.ts';
 
@@ -106,6 +109,25 @@ export const gaps = (ws: Workspace) => ws.coverage.flatMap((c) => c.gaps.map((g)
 /** One obligation kind's coverage in a domain, or in the product outside the domains (domain null). */
 export const obligation = (ws: Workspace, domain: string | null, kind: string) => ws.coverage.find((c) => c.domain === domain)?.obligations.find((o) => o.kind === kind);
 
+/** Runs one aggregate command on the store, named as the CLI names it: run(store, 'view add-view', {...}). */
+export async function run(store: Store, command: string, input: Record<string, unknown>): Promise<Committed> {
+  const [aggregate, name] = command.split(' ');
+  const definition = ALL_COMMANDS.find((d) => d.slice.name === aggregate && d.name === name);
+  if (!definition) throw new Error(`there is no command ${command}`);
+  return runCommand(store, definition, input);
+}
+
+/** The reasons the store refuses one aggregate command; throws when the command goes through. */
+export async function refusedBy(store: Store, command: string, input: Record<string, unknown>): Promise<StoreProblem[]> {
+  try {
+    await run(store, command, input);
+  } catch (error) {
+    if (error instanceof StoreError) return error.problems;
+    throw error;
+  }
+  throw new Error(`${command} went through, but it should have been refused.`);
+}
+
 /** What the store refuses when the rows are written as data files and loaded, or [] when they load. */
 export async function refusals(data: Data): Promise<StoreProblem[]> {
   try {
@@ -176,15 +198,16 @@ export function complete(): Data {
       { domain_event_id: 'EX-LEND-EV02', position: 1, name: 'Tool', meaning: 'Which tool.', type_aggregate_id: 'EX-LEND-A2', required: true },
     ],
     command: [
-      { id: 'EX-LEND-CMD01', title: 'Open a loan', aggregate_id: 'EX-LEND-A1', description: 'Lends a free tool to a member.' },
-      { id: 'EX-LEND-CMD02', title: 'Add a tool', aggregate_id: 'EX-LEND-A2', description: 'Puts a named tool in the catalog.' },
-      { id: 'EX-LEND-CMD03', title: 'Remind the borrower', aggregate_id: 'EX-LEND-A1', description: 'Mails the borrower their due date.' },
+      { id: 'EX-LEND-CMD01', title: 'Open a loan', entity_id: 'EX-LEND-EN01', description: 'Lends a free tool to a member.' },
+      { id: 'EX-LEND-CMD02', title: 'Add a tool', entity_id: 'EX-LEND-EN03', description: 'Puts a named tool in the catalog.' },
+      { id: 'EX-LEND-CMD03', title: 'Remind the borrower', entity_id: 'EX-LEND-EN01', description: 'Mails the borrower their due date.' },
     ],
     read_model: [{ id: 'EX-LEND-RM01', title: 'Free tools', domain_id: 'EX-LEND', description: 'The tools on no active loan.' }],
     read_model_field: [{ read_model_id: 'EX-LEND-RM01', position: 1, name: 'Tool', meaning: 'A free tool.', type_aggregate_id: 'EX-LEND-A2', required: true }],
     query: [{ id: 'EX-LEND-QRY01', title: 'List free tools', read_model_id: 'EX-LEND-RM01', description: 'The free tools, by name.' }],
     policy: [{ id: 'EX-LEND-PO01', title: 'Remind on loan', command_id: 'EX-LEND-CMD03', statement: 'Whenever a loan is opened, the library MUST remind the borrower.' }],
     domain_service: [{ id: 'EX-LEND-DS01', title: 'Due date', domain_id: 'EX-LEND', statement: 'The due date MUST be 14 days after the loan starts.' }],
+    storage_requirement: [{ id: 'EX-LEND-A1-SR01', title: 'A loan survives a restart', aggregate_id: 'EX-LEND-A1', statement: 'A saved loan MUST survive a restart, and a failed save MUST leave nothing behind.' }],
     term: [{ id: 'EX-LEND-TM01', title: 'Loan', domain_id: 'EX-LEND', meaning: 'One tool lent to one member until it is returned.' }],
 
     capability: [{ id: 'EX-LEND-CAP01', title: 'Lending', domain_id: 'EX-LEND', position: 1, description: 'Lending tools and taking them back.' }],
@@ -230,6 +253,15 @@ export function complete(): Data {
       { source_id: 'EX-LEND-REPO01', target_id: 'EX-LEND-A1' },
       { source_id: 'EX-LEND-REPO02', target_id: 'EX-LEND-A2' },
     ],
+    data_store: [{ id: 'EX-STORE01', title: 'DATABASE_URL', product_id: 'EX', kind: 'database', description: "The library's database." }],
+    stored_in: [
+      { source_id: 'EX-LEND-REPO01', target_id: 'EX-STORE01' },
+      { source_id: 'EX-LEND-REPO02', target_id: 'EX-STORE01' },
+      { source_id: 'EX-LEND-RM01-RD', target_id: 'EX-STORE01' },
+      { source_id: 'EX-LEND-EN01-TB', target_id: 'EX-STORE01' },
+      { source_id: 'EX-LEND-EN03-TB', target_id: 'EX-STORE01' },
+      { source_id: 'EX-LEND-RM01-TB', target_id: 'EX-STORE01' },
+    ],
     data_model: [
       { id: 'EX-LEND-EN01-DM', title: 'Loan', entity_id: 'EX-LEND-EN01', file: 'src/model.ts' },
       { id: 'EX-LEND-EN02-DM', title: 'Return', entity_id: 'EX-LEND-EN02', file: 'src/model.ts' },
@@ -245,12 +277,14 @@ export function complete(): Data {
       { table_id: 'EX-LEND-EN03-TB', position: 1, type: 'primary', columns: ['id'] },
     ],
     value_type: [{ id: 'EX-VO01-VT', title: 'EmailAddress', value_object_id: 'EX-VO01', file: 'src/email.ts' }],
+    rule: [{ id: 'EX-LEND-INV01-RL', title: 'tool-on-loan', invariant_id: 'EX-LEND-INV01', file: 'src/loans.ts' }],
     predicate: [{ id: 'EX-LEND-SP01-PR', title: 'isFree', specification_id: 'EX-LEND-SP01', file: 'src/loans.ts' }],
     event_type: [
       { id: 'EX-LEND-EV01-ET', title: 'LoanOpened', domain_event_id: 'EX-LEND-EV01', delivery: 'outbox', file: 'src/events.ts' },
       { id: 'EX-LEND-EV02-ET', title: 'ToolAdded', domain_event_id: 'EX-LEND-EV02', delivery: 'in process', file: 'src/events.ts' },
     ],
     projection: [{ id: 'EX-LEND-RM01-PJ', title: 'freeTools', read_model_id: 'EX-LEND-RM01', file: 'src/schema.sql', description: 'A view over the loans and tools tables.' }],
+    reader: [{ id: 'EX-LEND-RM01-RD', title: 'FreeToolsReader', read_model_id: 'EX-LEND-RM01', file: 'src/schema.sql', description: 'Reads the free tools view for the query handler.' }],
     command_handler: [
       { id: 'EX-LEND-CMD01-H', title: 'openLoan', command_id: 'EX-LEND-CMD01', file: 'src/loans.ts', description: 'Saves the loan and its event in one transaction.' },
       { id: 'EX-LEND-CMD02-H', title: 'addTool', command_id: 'EX-LEND-CMD02', file: 'src/tools.ts', description: 'Inserts the tool and its event in one transaction.' },
@@ -269,6 +303,7 @@ export function complete(): Data {
     invariant_test: [{ id: 'EX-LEND-INV01-T', title: 'A second loan is refused', invariant_id: 'EX-LEND-INV01', ...automated('integration', 'test/loans.test.ts'), when: 'Lends a tool on loan again', then: 'Expects a refusal' }],
     specification_test: [{ id: 'EX-LEND-SP01-T', title: 'Free tools', specification_id: 'EX-LEND-SP01', ...automated('unit', 'test/loans.test.ts'), when: 'Asks which tools are free', then: 'Expects only the tool on no loan' }],
     policy_test: [{ id: 'EX-LEND-PO01-T', title: 'A reminder follows a loan', policy_id: 'EX-LEND-PO01', ...automated('integration', 'test/loans.test.ts'), when: 'Opens a loan', then: 'Expects a reminder' }],
+    storage_requirement_test: [{ id: 'EX-LEND-A1-SR01-T01', title: 'A loan survives a restart', storage_requirement_id: 'EX-LEND-A1-SR01', ...automated('integration', 'test/storage.test.ts'), when: 'Opens a loan, then restarts the database', then: 'Expects the loan read back' }],
     domain_service_test: [{ id: 'EX-LEND-DS01-T01', title: 'Fourteen days', domain_service_id: 'EX-LEND-DS01', ...automated('unit', 'test/dates.test.ts'), when: 'Works out the due date of a loan', then: 'Expects 14 days after it starts' }],
     use_case_test: [
       { id: 'EX-LEND-UC01-R01-T01', title: 'A lent tool is refused', uc_requirement_id: 'EX-LEND-UC01-R01', ...automated('service', 'test/api.test.ts'), when: 'Borrows a tool on loan', then: 'Expects a refusal' },
@@ -314,6 +349,7 @@ export function complete(): Data {
     ],
     exchanges_with: [{ source_id: 'EX-LEND-UC01-FL01-S02', target_id: 'EX-INT01' }],
     renders: [{ source_id: 'EX-UI01', target_id: 'EX-V01' }],
+    builds: [{ source_id: 'EX-UI01', target_id: 'EX-V01-R01' }],
     follows: [{ source_id: 'EX-LEND-UC02', target_id: 'EX-PAT-ACT' }],
     setting_value: [{ follower_id: 'EX-LEND-UC02', pattern_id: 'EX-PAT-ACT', setting: 'record', value: 'Tool' }],
     meets: [{ source_id: 'EX-LEND-CMD01-H', target_id: 'EX-STD-CODE-R01' }],
@@ -341,12 +377,13 @@ export function sparse(): Data {
     entity: [{ id: 'SP-D-EN01', title: 'Return', aggregate_id: 'SP-D-A1', role: 'child', description: 'The tool coming back.' }],
     value_object: [{ id: 'SP-VO01', title: 'Email address', description: 'Where a member gets mail.' }],
     domain_event: [{ id: 'SP-D-EV01', title: 'Tool added', aggregate_id: 'SP-D-A2', published: false, description: 'A tool joined the catalog.' }],
-    command: [{ id: 'SP-D-CMD01', title: 'Add a tool', aggregate_id: 'SP-D-A2', description: 'Puts a tool in the catalog.' }],
+    command: [{ id: 'SP-D-CMD01', title: 'Add a tool', entity_id: 'SP-D-EN01', description: 'Puts a tool in the catalog.' }],
     read_model: [
       { id: 'SP-D-RM01', title: 'Free tools', domain_id: 'SP-D', description: 'The tools on no loan.' },
       { id: 'SP-D-RM02', title: 'Loans', domain_id: 'SP-D', description: 'Every loan.' },
     ],
     table: [{ id: 'SP-D-TB01', title: 'Outbox', domain_id: 'SP-D', name: 'outbox', storage: 'table' }],
+    data_store: [{ id: 'SP-STORE01', title: 'DATABASE_URL', product_id: 'SP', kind: 'database', description: 'A database nothing is stored in.' }],
     query: [{ id: 'SP-D-QRY01', title: 'List loans', read_model_id: 'SP-D-RM02', description: 'The loans, newest first.' }],
     specification: [{ id: 'SP-D-SP01', title: 'Tool is free', statement: 'A tool is free when no loan names it.' }],
     policy: [{ id: 'SP-D-PO01', title: 'React', command_id: 'SP-D-CMD01', statement: 'Whenever something happens, the library MUST add a tool.' }],

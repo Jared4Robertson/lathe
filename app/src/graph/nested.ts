@@ -1,13 +1,11 @@
-import type { SpecIndex } from '../specs/data';
-import { MAP_SIZE, sizeText, type MapNode, type PlacedMap } from './map';
-import { BORDER, labelHeight, largestFit, linesIn, mapLabel, type MapLabel, textMeasure } from './text';
-import { treeChildren } from './tree';
+import { MAP_SIZE, sizeText, type MapNode, type PlacedMap, type TreeGeometry, type TreeShape } from './map';
+import { BORDER, labelHeight, largestFit, linesIn, type MapLabel, type WrappedLabel } from './text';
 
 // The graph's Nested map (LA-EXP-DS07): the same tree as the Tree map (map.ts), one product's, the
 // product its single root, drawn as nested squares. A product is made of its stages and domains, a domain of
 // its stages, a stage of its folders, a folder of its records, a record of its children:
-// each box holds its children rather than linking to them. Laid out once per spec load, like the
-// Tree map, and never changed by the focus: focusing moves the camera (camera.ts).
+// each box holds its children rather than linking to them. Laid out like the Tree map, off the
+// main thread and again only when what it reads changes (layout.ts), and never changed by the focus: focusing moves the camera (camera.ts).
 //
 // The one rule (LA-EXP-DS06), top-down from the product's square, MAP_SIZE across: siblings are
 // the same size, with the same text.
@@ -15,9 +13,10 @@ import { treeChildren } from './tree';
 //   equal squares in the tree's order, row by row, a gap apart, with the column count that makes
 //   the squares largest. Room the grid leaves is blank: a busy parent packs its children smaller.
 // - Siblings share one text scale: their side over TEXT_SIZE, or the largest below it at which
-//   every sibling's whole label fits, a leaf's centered in its square, a parent's in a header band
-//   at most HEADER_SHARE of its square.
-// - Siblings share one header band too, as tall as the tallest of their labels at that scale.
+//   every sibling's whole label fits both ways, centered in its square (as a leaf's is drawn) and in
+//   a header band at most HEADER_SHARE of its square (as a parent's is), whichever it is now.
+// - Siblings share one header band too, as tall as the tallest of their labels at that scale, every
+//   sibling's counted, a leaf's too: what a sibling holds sizes nothing of the others (LA-PAT-APP-UX-R22).
 // - The padding and the gaps are shares of the box's side, so the layout is the same at any size.
 // Record counts and titles size nothing.
 //
@@ -30,7 +29,7 @@ export const NEST_GAP = 6;
 export const HEADER_SHARE = 0.25;
 
 export interface NestedNode extends MapNode {
-  /** The header band's height, in map units, its siblings' tallest label at their text scale: 0 for a box with no children (its label is centered in it). */
+  /** The header band's height, in map units, its siblings' tallest label at their text scale (every sibling's, a leaf's too): 0 for a box with no children (its label is centered in it). */
   header: number;
   /** Its place in the tree's order, a parent before its children: the keyboard's order. */
   order: number;
@@ -57,82 +56,75 @@ export function gridOf(n: number, w: number, h: number, gap: number): { side: nu
 }
 
 /**
- * Lays out a tree given by its roots, a children function and, for each node, its label (its ID
- * when not given) as nested squares (exported for tests).
+ * Lays out a tree's shape as nested squares (LA-EXP-DS07), each node's label given by `labelOf` (by its place in the
+ * shape): pure, the same shape and labels always giving the same geometry. Each node's five numbers are its x, y, side,
+ * text scale and header band.
  */
-export function layoutNested(roots: readonly string[], childrenOf: (id: string) => readonly string[], labelOf: (id: string) => MapLabel = (id) => ({ title: id, meta: '' })): NestedMap {
-  // The tree, by a walk from the roots; a node reached twice keeps its first place.
-  const parent = new Map<string, string | null>();
-  const level = new Map<string, number>();
-  const kids = new Map<string, string[]>();
-  const order = new Map<string, number>();
-  const visit = (id: string, up: string | null, l: number) => {
-    parent.set(id, up);
-    level.set(id, l);
-    order.set(id, order.size);
-    const own: string[] = [];
-    kids.set(id, own);
-    for (const c of childrenOf(id)) {
-      if (level.has(c)) continue;
-      own.push(c);
-      visit(c, id, l + 1);
-    }
-  };
-  const top: string[] = [];
-  for (const r of roots) { if (!level.has(r)) { top.push(r); visit(r, null, 0); } }
-
-  const nodes = new Map<string, NestedNode>();
-  const byLevelIds: string[][] = [];
+export function placeNested(shape: TreeShape, labelOf: (i: number) => MapLabel): TreeGeometry {
+  const boxes = new Float64Array(shape.ids.length * 5);
   /** Some siblings, each a square `side` across at its place: their shared text and header band, then each one's children inside it. */
-  const place = (ids: readonly string[], side: number, at: readonly { x: number; y: number }[]) => {
+  const place = (ids: readonly number[], side: number, at: readonly { x: number; y: number }[]) => {
     const most = sizeText(side);
-    // Its border grows with its text, never below half (LA-EXP-DS06).
     const border = (s: number) => BORDER * Math.max(0.5, s);
-    const labels = ids.map((id) => labelOf(id));
-    const leaf = ids.map((id) => kids.get(id)!.length === 0);
-    const text = Math.min(...labels.map((label, i) => largestFit(label, leaf[i], side, leaf[i] ? side : HEADER_SHARE * side, most, border)));
-    const lines = labels.map((label, i) => linesIn(label, text > 0 ? (side - 2 * border(text)) / text : Infinity, leaf[i]));
-    const header = Math.max(0, ...lines.map((l, i) => (leaf[i] ? 0 : text * labelHeight(l))));
+    const labels = ids.map((i) => labelOf(i));
+    const leaf = ids.map((i) => shape.children[i].length === 0);
+    // Fitted as if every sibling were both a parent and a leaf, so a sibling gaining its first child or losing its last
+    // changes neither its siblings' text nor their header band (LA-PAT-APP-UX-R22): each label must fit a header band
+    // and, centered, the whole square.
+    const fit = (label: MapLabel, cap: number) => largestFit(label, true, side, side, largestFit(label, false, side, HEADER_SHARE * side, cap, border), border);
+    const text = labels.reduce((t, label) => Math.min(t, fit(label, t)), most);
+    const header = Math.max(0, ...labels.map((label) => text * labelHeight(linesIn(label, text > 0 ? (side - 2 * border(text)) / text : Infinity, false))));
     const pad = NEST_PAD * most;
     const gap = NEST_GAP * most;
-    ids.forEach((id, i) => {
-      const { x, y } = at[i];
-      const own = kids.get(id)!;
-      const l = level.get(id)!;
-      nodes.set(id, { id, parent: parent.get(id)!, children: own, level: l, x, y, w: side, h: side, text, lines: lines[i], centered: leaf[i], header: leaf[i] ? 0 : header, order: order.get(id)! });
-      (byLevelIds[l] ??= []).push(id);
-      if (leaf[i]) return;
+    ids.forEach((i, k) => {
+      const { x, y } = at[k];
+      boxes.set([x, y, side, text, leaf[k] ? 0 : header], i * 5);
+      if (leaf[k]) return;
+      const own = shape.children[i];
       const below = Math.max(header, pad);
       const grid = gridOf(own.length, side - 2 * pad, side - below - pad, gap);
-      place(own, grid.side, own.map((_, k) => ({ x: x + pad + (k % grid.columns) * (grid.side + gap), y: y + below + Math.floor(k / grid.columns) * (grid.side + gap) })));
+      place(own, grid.side, own.map((_, n) => ({ x: x + pad + (n % grid.columns) * (grid.side + gap), y: y + below + Math.floor(n / grid.columns) * (grid.side + gap) })));
     });
   };
   // The roots, each the product's square, in a grid a wide gap apart.
+  const top = shape.roots.map((r) => shape.ids.indexOf(r));
   const rootGap = NEST_GAP * 4 * sizeText(MAP_SIZE);
   const columns = Math.ceil(Math.sqrt(top.length));
   const rows = Math.ceil(top.length / Math.max(1, columns));
   place(top, MAP_SIZE, top.map((_, k) => ({ x: (k % columns) * (MAP_SIZE + rootGap), y: Math.floor(k / columns) * (MAP_SIZE + rootGap) })));
-
   return {
-    view: 'nested',
-    nodes,
-    roots: top,
-    byLevel: byLevelIds.map((ids) => ids.map((id) => nodes.get(id)!)),
+    boxes,
     width: top.length === 0 ? 0 : Math.min(columns, top.length) * (MAP_SIZE + rootGap) - rootGap,
     height: top.length === 0 ? 0 : rows * (MAP_SIZE + rootGap) - rootGap,
   };
 }
 
-const cache = new WeakMap<SpecIndex, Map<string, NestedMap>>();
+/** A Nested map's node: its lines wrapped for its box at its scale when first read (only a drawn box's are). */
+class NestNode implements NestedNode {
+  private wrapped: WrappedLabel | null = null;
+  constructor(
+    readonly id: string, readonly parent: string | null, readonly children: readonly string[], readonly level: number, readonly order: number,
+    readonly x: number, readonly y: number, readonly w: number, readonly h: number, readonly text: number, readonly header: number, private readonly label: MapLabel,
+  ) {}
+  get centered() { return this.children.length === 0; }
+  get lines(): WrappedLabel {
+    const border = BORDER * Math.max(0.5, this.text);
+    return (this.wrapped ??= linesIn(this.label, this.text > 0 ? (this.w - 2 * border) / this.text : Infinity, this.centered));
+  }
+}
 
-/** The Nested map of one product (or of a tree no product reaches), from its root, as the Tree map has it (`mapRootOf`): built on first use, then read. */
-export function nestedMap(index: SpecIndex, root: string): NestedMap {
-  let maps = cache.get(index);
-  if (!maps) { maps = new Map(); cache.set(index, maps); }
-  const key = `${textMeasure().key}|${root}`;
-  const known = maps.get(key);
-  if (known) return known;
-  const map = layoutNested([root], (id) => treeChildren(index, id), (id) => mapLabel(index, id));
-  maps.set(key, map);
-  return map;
+/** A Nested map from a tree's shape, its labels and its geometry (placeNested's, here or in the layout's worker). */
+export function assembleNested(shape: TreeShape, labelOf: (i: number) => MapLabel, geometry: TreeGeometry): NestedMap {
+  const nodes = new Map<string, NestedNode>();
+  const byLevel: NestedNode[][] = [];
+  const { ids } = shape;
+  const { boxes } = geometry;
+  ids.forEach((id, i) => {
+    const up = shape.parents[i];
+    const b = i * 5;
+    const node = new NestNode(id, up < 0 ? null : ids[up], shape.children[i].map((c) => ids[c]), shape.levels[i], i, boxes[b], boxes[b + 1], boxes[b + 2], boxes[b + 2], boxes[b + 3], boxes[b + 4], labelOf(i));
+    nodes.set(id, node);
+    (byLevel[node.level] ??= []).push(node);
+  });
+  return { view: 'nested', nodes, roots: shape.roots, byLevel, width: geometry.width, height: geometry.height };
 }

@@ -1,4 +1,4 @@
-// The schema cache (LA-AUT-UC01-R10): a process attaches the migrated schema from a cache file instead of running the
+// The schema cache (LA-PLT-UC01-R11): a process attaches the migrated schema from a cache file instead of running the
 // migrations, and the result is the same as a schema built afresh. A stale or corrupt file is never used: it is
 // replaced by a schema built afresh. Two processes that start at once with no cache both load, and leave whole files.
 import { execFile } from 'node:child_process';
@@ -9,8 +9,8 @@ import { promisify } from 'node:util';
 import { DuckDBInstance } from '@duckdb/node-api';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { readMigrations, type Migration } from '../../src/index.ts';
-import { baseKey } from '../../src/store/cache.ts';
-import { closeEngine, openStore } from '../../src/store/store.ts';
+import { baseKey } from '../../src/platform/data/cache.ts';
+import { closeEngine, openStore } from '../../src/platform/data/store.ts';
 import { everyKind, removeData, writeData } from './fixture.ts';
 
 const run = promisify(execFile);
@@ -41,7 +41,7 @@ async function load(dir: string) {
   try {
     return {
       schema: store.schema,
-      placements: await store.placements(),
+      scope: await store.query('SELECT id, product_id, domain_id FROM record_scope ORDER BY id'),
       parents: await store.query('SELECT * FROM record_parent ORDER BY id'),
       tables: await store.query("SELECT schema_name, table_name FROM duckdb_tables() WHERE database_name = current_database() ORDER BY ALL"),
     };
@@ -60,7 +60,8 @@ function writeFileAt(dir: string, name: string): string {
 }
 
 const baseFile = (dir: string) => path.join(dir, `${baseKey(readMigrations())}.duckdb`);
-const files = (dir: string) => readdirSync(dir).sort();
+// The schema files; the validated-build stamps beside them are validated-build.test.ts's.
+const files = (dir: string) => readdirSync(dir).filter((f) => f.endsWith('.duckdb')).sort();
 const stamp = (file: string) => {
   const s = statSync(file);
   return `${s.ino} ${s.mtimeMs}`;
@@ -69,7 +70,7 @@ const stamp = (file: string) => {
 const fresh = await load(uncached());
 
 describe('the schema cache', () => {
-  it('LA-AUT-UC01-R10-T01 A cached schema gives what one built afresh gives, and is used without being built again', async () => {
+  it('LA-PLT-UC01-R11-T01 A cached schema gives what one built afresh gives, and is used without being built again', async () => {
     const dir = cacheFolder();
     // The first process builds the schema and caches Lathe's and the product's (the fixture declares a kind).
     expect(await load(dir)).toEqual(fresh);
@@ -83,7 +84,7 @@ describe('the schema cache', () => {
     expect(cached.map((f) => stamp(path.join(dir, f)))).toEqual(was);
   });
 
-  it('LA-AUT-UC01-R10-T02 A stale cache file is never used: a change to a migration changes the key, and a file whose stamp names another key is built afresh', async () => {
+  it('LA-PLT-UC01-R11-T01 A stale cache file is never used: a change to a migration changes the key, and a file whose stamp names another key is built afresh', async () => {
     const migrations = readMigrations();
     const changed: Migration[] = migrations.map((m, i) => (i === migrations.length - 1 ? { ...m, sql: `${m.sql}\n-- changed` } : m));
     expect(baseKey(changed)).not.toBe(baseKey(migrations));
@@ -116,7 +117,7 @@ describe('the schema cache', () => {
     expect(files(dir).map((f) => stamp(path.join(dir, f)))).toEqual(was);
   });
 
-  it('LA-AUT-UC01-R10-T03 A corrupt cache file, garbage or cut short, is never used: the schema is built afresh and cached again', async () => {
+  it('LA-PLT-UC01-R11-T01 A corrupt cache file, garbage or cut short, is never used: the schema is built afresh and cached again', async () => {
     const dir = cacheFolder();
     await load(dir);
     const file = baseFile(dir);
@@ -133,16 +134,16 @@ describe('the schema cache', () => {
     expect(statSync(path.join(dir, product)).size).toBeGreaterThan(1000);
   });
 
-  it('LA-AUT-UC01-R10-T04 Two processes starting at once with no cache both load the same, and leave only whole files', async () => {
+  it('LA-PLT-UC01-R11-T01 Two processes starting at once with no cache both load the same, and leave only whole files', async () => {
     const dir = cacheFolder();
     const index = path.resolve(import.meta.dirname, '../../src/index.ts');
     const script = `import { openStore } from ${JSON.stringify(index)};
 const store = await openStore(${JSON.stringify(root)});
-console.log(JSON.stringify({ tables: Object.keys(store.schema.tables).length, placements: await store.placements() }));
+console.log(JSON.stringify({ tables: Object.keys(store.schema.tables).length, scope: await store.query('SELECT id, product_id, domain_id FROM record_scope ORDER BY id') }));
 await store.close();`;
     const start = () => run(process.execPath, ['--input-type=module', '-e', script], { env: { ...process.env, LATHE_CACHE_DIR: dir } });
     const [a, b] = await Promise.all([start(), start()]);
-    const expected = JSON.stringify({ tables: Object.keys(fresh.schema.tables).length, placements: fresh.placements });
+    const expected = JSON.stringify({ tables: Object.keys(fresh.schema.tables).length, scope: fresh.scope });
     expect(a.stdout.trim()).toBe(expected);
     expect(b.stdout.trim()).toBe(expected);
     // Each wrote its own file and renamed it into place: no half-written file is left, and the files serve the next.

@@ -39,27 +39,29 @@ describe('domain page', () => {
     expect(domainModel.querySelector('h2 .stage-mark.stage-domain-model')).not.toBeNull();
     expect(domainModel.querySelector('h2')).toHaveTextContent(/^Domain model\s*4$/);
 
-    // Domain model: the aggregate with its entities, invariant, event and command folded under it.
+    // Domain model: the aggregate with its entities, invariant and event folded under it; the command sits under the
+    // entity it changes, one level further down.
     const basket = within(section(/^Aggregates/)).getByRole('link', { name: /^DM-SHOP-A1\s*Basket/ }).closest('li') as HTMLElement;
-    expect(basket).toHaveTextContent('5 children');
+    expect(basket).toHaveTextContent('4 children');
     expect(basket.querySelector('ul.nested')).toBeNull();
     await user.click(within(basket).getByRole('button', { name: 'Expand DM-SHOP-A1' }));
-    expect(ids(basket.querySelector('ul.nested') as HTMLElement)).toEqual(['DM-SHOP-EN01', 'DM-SHOP-EN02', 'DM-SHOP-INV01', 'DM-SHOP-EV01', 'DM-SHOP-CMD01']);
+    expect(ids(basket.querySelector('ul.nested') as HTMLElement)).toEqual(['DM-SHOP-EN01', 'DM-SHOP-EN02', 'DM-SHOP-INV01', 'DM-SHOP-EV01']);
+    expect(within(basket).queryByRole('link', { name: /^DM-SHOP-CMD01/ })).toBeNull();
     // The read model folds its query.
     expect(within(section(/^Read models/)).getByRole('link', { name: /^DM-SHOP-RM01/ }).closest('li')).toHaveTextContent('1 query');
 
-    // Use cases: the capability folds its use case, a row naming its actor.
+    // Use cases: the capability folds its use case.
     const buying = within(stageOf('use-cases')).getByRole('link', { name: /^DM-SHOP-CAP01\s*Buying/ }).closest('li') as HTMLElement;
     expect(buying).toHaveTextContent('1 use case');
     await user.click(within(buying).getByRole('button', { name: 'Expand DM-SHOP-CAP01' }));
     const add = within(buying).getByRole('link', { name: /^DM-SHOP-UC01\s*Add/ }).closest('li') as HTMLElement;
-    expect(add).toHaveTextContent('Shopper');
+    expect(add).toHaveTextContent('Add an item to the basket');
 
-    // Interaction design, technical specification and test plan list what starts a branch of their stage, with its fields.
+    // Interaction design, technical specification and test plan list what starts a branch of their stage; a technical
+    // record with what it names in code, a test with its level and file.
     expect(ids(section(/^Flows/))).toEqual(['DM-SHOP-UC01-FL01']);
     expect(ids(section(/^Endpoints/))).toEqual(['DM-SHOP-EP01']);
-    expect(section(/^Endpoints/)).toHaveTextContent('POST · /basket/items');
-    expect(section(/^Tables/)).toHaveTextContent('baskets · table');
+    expect(section(/^Tables/)).toHaveTextContent('baskets');
     expect(ids(section(/^Command handlers/))).toEqual(['DM-SHOP-CMD01-H']);
     expect(section(/^Command handlers/)).toHaveTextContent('src/basket.ts');
     expect(ids(section(/^Use case tests/))).toEqual(['DM-SHOP-UC01-R01-T01']);
@@ -76,9 +78,15 @@ describe('domain page', () => {
     const user = userEvent.setup();
     const search = screen.getByLabelText('Filter records');
 
-    await user.type(search, 'add item');
+    await user.type(search, 'item added');
     // A match folded under a record opens it, just for the match.
-    expect(ids(section(/^Aggregates/))).toEqual(['DM-SHOP-A1', 'DM-SHOP-CMD01']);
+    expect(ids(section(/^Aggregates/))).toEqual(['DM-SHOP-A1', 'DM-SHOP-EV01']);
+    expect(within(section(/^Specifications/)).getByText('Nothing matches.')).toBeInTheDocument();
+
+    await user.clear(search);
+    await user.type(search, 'add item');
+    // A match deeper down (the command under the aggregate's entity) opens the record and the entity that holds it.
+    expect(ids(section(/^Aggregates/))).toEqual(['DM-SHOP-A1', 'DM-SHOP-EN01', 'DM-SHOP-CMD01']);
     expect(within(section(/^Specifications/)).getByText('Nothing matches.')).toBeInTheDocument();
     expect(within(section(/^Command handlers/)).getByText('Nothing matches.')).toBeInTheDocument();
 

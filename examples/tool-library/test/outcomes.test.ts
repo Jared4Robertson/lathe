@@ -1,14 +1,14 @@
-// The outcome report TL-LEND-RP01 (examples/tool-library/data/): it measures TL-BO01 to TL-BO04 for a month from the
+// The outcome report TL-LEND-RP01 (examples/tool-library/data/): it measures TL-BO01, TL-BO02, TL-BO04 and TL-BO05 for a month from the
 // library's records, through the command handlers as the API runs them. Each test name starts with the report's ID.
 import { describe, expect, it } from 'vitest';
 import { borrowTool, returnTool } from '../src/loan-commands.ts';
 import { registerMember } from '../src/member-commands.ts';
 import { DEFAULT_TIME_ZONE } from '../src/model.ts';
-import { getOutcomeMeasures } from '../src/outcomes.ts';
+import { OutcomeMeasuresReader, getOutcomeMeasures } from '../src/outcomes.ts';
 import { addTool, markToolRepaired, reportDamage } from '../src/tool-commands.ts';
 import { lending } from './helpers.ts';
 
-/** March 2026 in the library: four loans, one returned late, one on a tool that needed repair and still out. */
+/** March 2026 in the library: four loans, one returned late, one on a tool that needed repair and still out, and one repair. */
 function march() {
   const l = lending();
   const { clock } = l;
@@ -47,36 +47,36 @@ function march() {
 }
 
 describe('TL-LEND-DS02-T01 Outcome report', () => {
-  it('TL-LEND-RP01 measures loans per tool, late loans, loans of tools needing repair and active members for a month', () => {
+  it('TL-LEND-RP01 measures loans per tool, late loans, days to repair and active members for a month', () => {
     const l = march();
     const now = new Date('2026-04-02T14:00:00.000Z');
-    expect(getOutcomeMeasures(l, '2026-03', now, DEFAULT_TIME_ZONE)).toEqual({
+    expect(getOutcomeMeasures(new OutcomeMeasuresReader(l), '2026-03', now, DEFAULT_TIME_ZONE)).toEqual({
       month: '2026-03',
       // Four loans opened over the three tools in the catalog by 31 March.
       toolsInUse: { loans: 4, tools: 3, loansPerTool: 4 / 3 },
       // Of the four due in March, the drill came back late and the ladder is still out and overdue.
       backOnTime: { due: 4, late: 2, shareLate: 0.5 },
-      // The ladder was lent while it needed repair; the saw only after its repair.
-      damagedLent: 1,
+      // The saw, damaged on 9 March, was repaired on 11 March; the ladder is not repaired yet.
+      backInService: { repaired: 1, medianDays: 2 },
       // Ada, Ben and Cy each opened a loan in the 90 days to 31 March.
       activeMembers: 3,
     });
     // April: no loans opened or due, four tools, and the same three members still within 90 days.
-    expect(getOutcomeMeasures(l, '2026-04', now, DEFAULT_TIME_ZONE)).toEqual({
+    expect(getOutcomeMeasures(new OutcomeMeasuresReader(l), '2026-04', now, DEFAULT_TIME_ZONE)).toEqual({
       month: '2026-04',
       toolsInUse: { loans: 0, tools: 4, loansPerTool: 0 },
       backOnTime: { due: 0, late: 0, shareLate: 0 },
-      damagedLent: 0,
+      backInService: { repaired: 0, medianDays: null },
       activeMembers: 3,
     });
     // By the end of July, March's borrowers are past 90 days.
-    expect(getOutcomeMeasures(l, '2026-07', now, DEFAULT_TIME_ZONE).activeMembers).toBe(0);
+    expect(getOutcomeMeasures(new OutcomeMeasuresReader(l), '2026-07', now, DEFAULT_TIME_ZONE).activeMembers).toBe(0);
   });
 
   it('TL-LEND-RP01 refuses a month that is not YYYY-MM', () => {
     const l = lending();
     for (const month of ['2026-3', '2026-13', 'March']) {
-      expect(() => getOutcomeMeasures(l, month, new Date(), DEFAULT_TIME_ZONE)).toThrow(RangeError);
+      expect(() => getOutcomeMeasures(new OutcomeMeasuresReader(l), month, new Date(), DEFAULT_TIME_ZONE)).toThrow(RangeError);
     }
   });
 });
