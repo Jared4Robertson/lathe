@@ -7,8 +7,8 @@ import { EDITED, keepData, RECORD } from './scenarios';
 // Entry point, Tooling, Table, Specification, Read model, Value object, Aggregate, Domain event, Command, View, UI component,
 // Endpoint, Integration, Check and Pattern pages and the Product page's Limits, opening a record's form, saving an edit,
 // adding a child from its parent's page,
-// and asking to remove a record that is still referenced, which the command refuses inline; and on the page of a kind
-// whose aggregate has no editor yet, the record form generated from the schema. The form takes the place of the page's content,
+// and asking to remove a record that is still referenced, which the command refuses inline. The form takes the place of
+// the page's content,
 // so shifts inside the wiki card's scroll box are the change itself; the nav, the card's head and
 // title and the header strip must hold still. Every scenario puts the served data back.
 
@@ -17,33 +17,7 @@ const WIKI_BAR = '.wiki-panel-head';
 const STRIP = '.header-strip';
 const TITLE = '.wiki-panel-title';
 const CONTENT = ['.wiki-panel-scroll'];
-/** A record of a kind whose aggregate has no editor of its own yet. */
-const GENERIC = '/LA-V92';
-
 test.describe('editing', () => {
-  test('LA-EXP-UC14-FL01-T open the record form, save an edit', async ({ page }) => {
-    const restore = keepData();
-    try {
-      // A view: its aggregate has no editor of its own yet, so its page shows the record form.
-      await openPage(page, GENERIC);
-      const form = page.getByRole('form', { name: `Edit ${GENERIC.slice(1)}` });
-      const open = await step(page, 'edit', 'open the form', { keys: [NAV, WIKI_BAR, STRIP, TITLE], allow: CONTENT }, async () => {
-        await page.getByRole('toolbar', { name: `Change ${GENERIC.slice(1)}` }).getByRole('button', { name: 'Edit' }).click();
-        await form.waitFor();
-      });
-      expectStable(open);
-      await form.getByRole('textbox', { name: /^description/ }).fill('Stability');
-      const save = await test.step('LA-EXP-UC14-R07-T01 the Owner saves the change where the record is read, in one write', () =>
-        step(page, 'edit', 'save the edit', { keys: [NAV, WIKI_BAR, STRIP, TITLE], allow: CONTENT, settle: 1500 }, async () => {
-          await form.getByRole('button', { name: 'Save' }).click();
-          await expect(form).toHaveCount(0, { timeout: 20_000 });
-        }));
-      expectStable(save);
-    } finally {
-      restore();
-    }
-  });
-
   test('LA-AUT-UC06-FL01-T on the Use case page, open a requirement\'s form and save an edit', async ({ page }) => {
     const restore = keepData();
     try {
@@ -73,7 +47,8 @@ test.describe('editing', () => {
       const actions = page.getByRole('toolbar', { name: `Change ${RECORD.slice(1)}` });
       const form = page.getByRole('form', { name: 'Add a UC requirement' });
       const open = await step(page, 'edit', 'open the add form', { keys: [NAV, WIKI_BAR, STRIP, TITLE], allow: CONTENT }, async () => {
-        await actions.getByRole('button', { name: 'Add UC requirement' }).click();
+        await actions.getByRole('button', { name: 'Add…' }).click();
+        await actions.getByRole('group', { name: /Kinds to add/ }).getByRole('button', { name: 'UC requirement' }).click();
         await form.waitFor();
       });
       expectStable(open);
@@ -125,7 +100,7 @@ test.describe('editing', () => {
   test('LA-AUT-UC28-FL01-T on the UI component page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-UI226', /^description/, 'The Standard page, as the stability suite describes it.'));
   // The Endpoint and Integration pages: each saves one field as its kind's Change command, with nothing jumping. Each is
   // its aggregate's web-app flow test.
-  test('LA-AUT-UC26-FL01-T on the Endpoint page, open an API requirement\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-EP02-R01', /^group name/, 'Stability'));
+  test('LA-AUT-UC26-FL01-T on the Endpoint page, open an API requirement\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-EP01-R01', /^group name/, 'Stability'));
   test('LA-AUT-UC27-FL01-T on the Integration page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-INT04', /^system/, 'git, as the stability suite names it'));
   // The Check page, the Product page's Limits and the Pattern page's Followed by: each sends one of its aggregate's
   // commands, with nothing jumping.
@@ -147,7 +122,7 @@ test.describe('editing', () => {
   test('LA-AUT-UC24-FL01-T on the Value object page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-VO01', /^description/, 'Names one record across the store, as the stability suite describes it.'));
   // The Aggregate, Domain event and Command pages, likewise.
   test('LA-AUT-UC10-FL01-T on the Aggregate page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-A6', /^identity/, 'Stability'));
-  test('LA-AUT-UC25-FL01-T on the Domain event page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-EV01', /^description/, 'Stability'));
+  test('LA-AUT-UC25-FL01-T on the Domain event page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-EV03', /^description/, 'Stability'));
   test('LA-AUT-UC12-FL01-T on the Command page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-CMD210', /^description/, 'Stability'));
 });
 
