@@ -75,12 +75,13 @@ test.describe('the map stays where the Reader left it', () => {
       expect(traceMoved).toEqual([]);
       traceAfter.columns.forEach((c, i) => expect(c.filter((k) => k in traceBefore.places), `column ${i}`).toEqual(traceBefore.columns[i].filter((k) => traceAfter.columns[i].includes(k))));
 
-      // Tidy up lays the columns out afresh: the camera stays, and every box is drawn.
+      // Tidy up lays the columns out afresh: every box drawn, and the camera follows the focus's box, keeping it where it was on screen.
       await page.keyboard.press('t');
       await page.waitForTimeout(900);
       const tidied = await traceColumns(page);
-      expect(tidied.camera).toBe(traceAfter.camera);
       expect(Object.keys(tidied.places).sort()).toEqual(Object.keys(traceAfter.places).sort());
+      const [focusWas, focusNow] = [traceAfter.places[USE_CASE].split(',').map(Number), tidied.places[USE_CASE].split(',').map(Number)];
+      expect(Math.abs(focusNow[0] - focusWas[0]) + Math.abs(focusNow[1] - focusWas[1])).toBeLessThan(2);
     } finally {
       restore();
     }
@@ -108,11 +109,10 @@ test.describe('the map stays where the Reader left it', () => {
       expect(moved.filter((b) => b.now.x < b.then!.x || b.now.y < b.then!.y).map((b) => b.key)).toEqual([]);
       expect(moved.filter((b) => b.then!.x + b.then!.w <= uc.x && b.then!.y + b.then!.h <= uc.y).map((b) => b.key)).toEqual([]);
 
-      // Tidy up packs the Map afresh: the use case's requirements in ID order, the camera where it was.
+      // Tidy up packs the Map afresh: the use case's requirements in ID order.
       await page.keyboard.press('t');
       await page.waitForTimeout(900);
       const tidied = await sceneOf(page);
-      expect(JSON.stringify(tidied.camera)).toBe(after.camera);
       const requirements = tidied.boxes.filter((b) => /^LA-EXP-UC15-R\d+$/.test(b.id)).sort((a, b) => a.map.y - b.map.y || a.map.x - b.map.x).map((b) => b.id);
       expect(requirements).toEqual([...requirements].sort());
     } finally {
