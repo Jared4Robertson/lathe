@@ -134,7 +134,7 @@ function Cell({ index, ids, flag, notAutomated = [] }: { index: RecordIndex; ids
 /** A use case's requirements, one row each under their groups: Designed, Built and Proved, each cell linking what does it. */
 function RequirementTable({ index, useCase, requirements }: { index: RecordIndex; useCase: RecordSummary; requirements: RecordTrace['requirements'] }) {
   if (requirements.length === 0) return null;
-  const rows = requirements.map((r) => ({ record: index.byId.get(r.id) ?? { id: r.id, kind: 'uc_requirement', title: r.id, parent: useCase.id, product: useCase.product, domain: useCase.domain, group: r.group, testState: null, file: '', line: 0, digest: '' }, judgment: r.judgment }));
+  const rows = requirements.map((r) => ({ record: index.byId.get(r.id) ?? { id: r.id, kind: 'uc_requirement', title: r.id, parent: useCase.id, product: useCase.product, domain: useCase.domain, group: r.group, testState: null, names: null, level: null, file: '', line: 0, digest: '' }, judgment: r.judgment }));
   const has = (j: Judgment | null, kind: GapKind) => !!j?.gaps.some((g) => g.kind === kind);
   const judgmentOf = new Map(rows.map((r) => [r.record.id, r.judgment]));
   return (

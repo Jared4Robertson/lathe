@@ -13,6 +13,8 @@ const requirement = (n: number, group?: string): RecordSummary => ({
   domain: 'TL-LEND',
   group: group ?? null,
   testState: null,
+  names: null,
+  level: null,
   file: 'uc_requirement.jsonl',
   line: n,
   digest: '' });

@@ -1,13 +1,12 @@
 import { lowerLabel } from '../plural';
 import type { ReactNode } from 'react';
 import { type RecordIndex, type RecordSummary, type SummaryLink } from '../exploring/record-summaries/record-index';
-import { addressOf } from '../views/address';
 import { groupByLabel } from './labels';
 import { Traceability } from './Traceability';
 import { kindPagePath } from '../format/reference';
 import { LongList } from '../components/LongList';
 import { DesktopRecordActions } from '../shell/desktopRecord';
-import { KindBadge, StageFact, ProblemList, RecordLink, Section, SpecLink, TestStateTag, idText, isTestKind, notAutomatedYet } from './parts';
+import { StageFact, ProblemList, RecordLink, Section, SpecLink, TestStateTag, idText, isTestKind, notAutomatedYet } from './parts';
 
 // What every record's page holds around its aggregate's own content (the Record page pattern, LA-PAT-RECORD-PAGE):
 // the eyebrow, its Traceability, its problems, and its facts (kind, stage, a test's state, why it has no parent, its
@@ -37,19 +36,6 @@ function LinkGroups({ index, links, direction }: { index: RecordIndex; links: Su
         );
       })}
     </dl>
-  );
-}
-
-/** The eyebrow over a record's title: its product and its domain as links, and its kind as a badge in its stage's color. */
-export function RecordEyebrow({ index, record }: { index: RecordIndex; record: RecordSummary }) {
-  const product = record.product ? index.byId.get(record.product) : undefined;
-  const domain = record.domain ? index.byId.get(record.domain) : undefined;
-  return (
-    <>
-      {product && record.kind !== 'product' && <><SpecLink to={addressOf(product.id)}>{product.title}</SpecLink> · </>}
-      {domain && product && record.kind !== 'domain' && <><SpecLink to={addressOf(domain.id)}>{domain.title}</SpecLink> · </>}
-      <KindBadge index={index} kind={record.kind} />
-    </>
   );
 }
 

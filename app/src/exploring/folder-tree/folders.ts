@@ -1,9 +1,7 @@
-import type { FolderEntry, FolderTree, Folder as TreeFolder, OwnerFolders as TreeOwner } from '../../../../lathe/src/exploring/folder-tree/read-model';
+import type { FolderEntry, Folder as TreeFolder, OwnerFolders as TreeOwner } from '../../../../lathe/src/exploring/folder-tree/read-model';
 import type { Stage } from '../../../../lathe/src/platform/data/schema';
 import { plural } from '../../plural';
 import { kindLabel, type RecordIndex, type RecordSummary } from '../record-summaries/record-index';
-
-export type { FolderTree };
 
 // The folders a product's records are read in, as the Folder tree read (LA-EXP-RM02, get-folder-tree) gives them: the
 // six stages, in each one folder per kind, the records that start a branch of the stage, and what folds under each.
@@ -51,7 +49,7 @@ function look(index: RecordIndex): Looked {
   if (known) return known;
   const folded = new Map<string, RecordSummary[]>();
   const summaryOf = (e: FolderEntry): RecordSummary =>
-    index.byId.get(e.id) ?? { id: e.id, kind: e.kind, title: e.title, parent: null, product: index.product, domain: null, group: null, testState: null, file: '', line: 0, digest: '' };
+    index.byId.get(e.id) ?? { id: e.id, kind: e.kind, title: e.title, parent: null, product: index.product, domain: null, group: null, testState: null, names: null, level: null, file: '', line: 0, digest: '' };
   const walk = (e: FolderEntry) => {
     if (e.folded.length > 0) folded.set(e.id, e.folded.map(summaryOf));
     e.folded.forEach(walk);
@@ -80,8 +78,6 @@ const NONE: OwnerFolders = { stages: [], loose: [] };
 
 /** A domain's or a product's (its Shared) stages and folders. */
 export const ownerFolders = (index: RecordIndex, owner: string): OwnerFolders => look(index).owners.get(owner) ?? NONE;
-export const domainFolders = ownerFolders;
-export const productFolders = ownerFolders;
 
 /** A record's children that fold under it: those of its own stage, kind by kind. */
 export const foldedChildren = (index: RecordIndex, record: { id: string }): RecordSummary[] => look(index).folded.get(record.id) ?? [];

@@ -33,7 +33,7 @@ describe('LA-EXP-INV30-T the Session settings commands each keep one setting, in
     turnChangesLensOnOrOff({ on: true });
     chooseChangesBaseline({ since: 'branch' });
     turnFollowOnOrOff({ on: true });
-    const mark = { commit: null, at: '2026-10-29T00:00:00Z', delta: {} };
+    const mark = { commit: null, at: '2026-10-29T00:00:00Z', digests: {} };
     markProductLookedAt({ product: 'P', mark });
     expect(stored()).toMatchObject({ lens: true, since: 'branch', follow: true, looked: { P: mark } });
   });

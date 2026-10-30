@@ -1,20 +1,16 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { RecordSummaries } from '../../../../lathe/src/exploring/record-summaries/read-model';
 import type { FolderTree } from '../../../../lathe/src/exploring/folder-tree/read-model';
 import type { ProductProblems } from '../../../../lathe/src/checking/problems/read-model';
 import type { ProductCoverage } from '../../../../lathe/src/traceability/coverage/read-model';
 import { onLatheEvent } from '../../events';
 import { indexMetaModel, type MetaModel } from '../../platform/meta-model/reads';
-import { useRead, useVersionedRead, type Read } from '../../record/read';
+import { useRead, useVersionedRead } from '../../record/read';
 import { buildRecordIndex, type RecordIndex } from './record-index';
 
 // The data the app shows changes when a write goes through or the files change: each is a new version of the data,
 // and every read made for a version reads again for the next (record/read.ts `useRead`). The space's record index
 // (record-index.ts) is built from the reads of that version.
-
-/** A product's coverage (get-coverage), scope by scope: read again whenever the data is (`version`). */
-export const useCoverage = (product: string, version: unknown): Read<ProductCoverage> =>
-  useRead<ProductCoverage>('/api/coverage/get-coverage', { product_id: product }, version);
 
 export interface DataState {
   /** The data's version: a new one after every write that went through and every change to the files. */
@@ -87,8 +83,3 @@ export function useDataVersion(): DataVersion {
   useEffect(() => onLatheEvent('spec:changed', () => setVersion((v) => v + 1)), []);
   return useMemo(() => ({ version, reload, answered }), [version, reload, answered]);
 }
-
-const DataContext = createContext<DataState>({ version: 0, index: null, error: null, reload: async () => {} });
-export const DataProvider = ({ value, children }: { value: DataState; children: ReactNode }) => <DataContext.Provider value={value}>{children}</DataContext.Provider>;
-/** The shell's data state: the version every read follows, the space's index and the reload. */
-export const useData = () => useContext(DataContext);

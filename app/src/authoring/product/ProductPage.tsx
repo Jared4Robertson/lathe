@@ -13,7 +13,7 @@ import { ProblemBadge, ProblemList, RecordLink, Section } from '../../specs/part
 import { CoverageBars, ProductSummary } from '../../specs/ProductHealth';
 import { RecordFrame } from '../../specs/RecordContent';
 import { problemsUnder, StageSections } from '../../specs/SpecPages';
-import { productFolders } from '../../exploring/folder-tree/folders';
+import { ownerFolders } from '../../exploring/folder-tree/folders';
 import { addressOf } from '../../views/address';
 import { kindInProduct, ProductEditor, type DeclarationActions, type ProductRecordKind } from './ProductEditor';
 import { useProduct } from './reads';
@@ -153,7 +153,7 @@ function ProductContent({ index, page, actions }: { index: RecordIndex; page: Pr
   const id = page.product.id;
   const problems = problemsUnder(index, 'product', id);
   // Its business outcomes have a section of their own, so Shared holds the other stages.
-  const shared = productFolders(index, id).stages.filter((s) => s.stage !== 'discovery' && s.count > 0);
+  const shared = ownerFolders(index, id).stages.filter((s) => s.stage !== 'discovery' && s.count > 0);
   const ownCount = shared.reduce((n, s) => n + s.count, 0);
   return (
     <div className="spec-body" data-aggregate="product">

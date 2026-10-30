@@ -21,7 +21,7 @@ const isRead = (r: string) => r === 'GET /api/spec' || r.startsWith('GET /api/ba
 describe('LA-V92-R08-T01 Pages only read until the person acts: the record actions are the only controls that lead to a write, and opening a page or searching it sends none', () => {
   it.each(PAGES)('on %s', async (page) => {
     const user = userEvent.setup();
-    const { requests, writes, commands } = await openApp(page);
+    const { requests, commands } = await openApp(page);
     await screen.findAllByRole('heading', { level: 1 });
     const area = main();
     // No form or editor until Edit, Add or Remove is chosen; outside the stage's own view controls (the graph's filters, the trace's Gaps only, the Changes baseline), the search boxes are the only inputs.
@@ -37,7 +37,6 @@ describe('LA-V92-R08-T01 Pages only read until the person acts: the record actio
     for (const button of buttons.filter(isRecordAction)) expect(actions?.contains(button), `${page}: ${button.textContent}`).toBe(true);
     // Use the page: type in the search box.
     for (const input of inputs) await user.type(input, 'basket');
-    expect(writes, page).toEqual([]);
     expect(commands, page).toEqual([]);
     expect(requests.every(isRead), `${page}: ${requests.join(', ')}`).toBe(true);
   });

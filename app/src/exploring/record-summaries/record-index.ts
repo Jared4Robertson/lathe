@@ -2,7 +2,7 @@ import type { RecordSummaries, RecordSummary, SummaryLink } from '../../../../la
 import type { ListedProblem, ProductProblems } from '../../../../lathe/src/checking/problems/read-model';
 import type { ProductCoverage, ScopeCoverage } from '../../../../lathe/src/traceability/coverage/read-model';
 import type { FolderTree } from '../../../../lathe/src/exploring/folder-tree/read-model';
-import type { MetaIndex, MetaKind } from '../../platform/meta-model/reads';
+import type { MetaIndex } from '../../platform/meta-model/reads';
 
 export type { ListedProblem, RecordSummary, SummaryLink };
 
@@ -76,9 +76,6 @@ export function buildRecordIndex(meta: MetaIndex, summaries: RecordSummaries, fo
 
 /** A kind's label ("Use case"), or its name in words for a kind the meta model does not know. */
 export const kindLabel = (index: RecordIndex, kind: string): string => index.meta.kinds.get(kind)?.label ?? kind.replaceAll('_', ' ');
-
-/** A kind as the meta model describes it. */
-export const kindOf = (index: RecordIndex, kind: string): MetaKind | undefined => index.meta.kinds.get(kind);
 
 /** The gaps coverage records for one record. */
 export const gapsOf = (index: RecordIndex, id: string): string[] => index.gapsFor.get(id) ?? [];

@@ -6,7 +6,7 @@ import { patternsFollowedBy } from './patterns';
 import { CoverageBars } from './ProductHealth';
 import { LongList } from '../components/LongList';
 import { ProblemList, RecordLink, RecordTree, Section, StageMark, gapText, idText, levelBelow, recordText, type SectionLevel } from './parts';
-import { allFolders, domainFolders, foldedChildren, type Folder, type OwnerFolders, type StageFolders } from '../exploring/folder-tree/folders';
+import { allFolders, ownerFolders, foldedChildren, type Folder, type OwnerFolders, type StageFolders } from '../exploring/folder-tree/folders';
 import { ActionsSlotContext } from '../components/ActionsSlot';
 import { byIdOrder, kindLabel, type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
 import { type DataState } from '../exploring/record-summaries/reads';
@@ -132,7 +132,7 @@ export function DomainWiki({ index, id, description = '' }: { index: RecordIndex
   const matches = (r: RecordSummary) => !q || recordText(r).toLowerCase().includes(q);
   const problems = problemsUnder(index, 'domain', id);
 
-  const folders = domainFolders(index, id);
+  const folders = ownerFolders(index, id);
   // Records of the domain that no folder lists and that no listed record folds (misplaced).
   const shown = new Set<string>();
   const walk = (r: RecordSummary) => {

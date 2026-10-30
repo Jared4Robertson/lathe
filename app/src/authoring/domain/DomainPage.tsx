@@ -128,7 +128,7 @@ export function DomainPage({ index, id, summary = false, after }: AggregatePageP
       {summary ? (
         <div className={body}><Summary {...summaryOf(index, page)} />{after}</div>
       ) : page.record.kind === 'domain' ? (
-        <div data-aggregate="domain"><DomainWiki index={index} id={id} />{after}</div>
+        <div data-aggregate="domain"><DomainWiki index={index} id={id} description={page.domain.description ?? ''} />{after}</div>
       ) : (
         <div className={body} data-aggregate="domain">
           <RecordFrame index={index} record={index.byId.get(id)!}><Content index={index} page={page} /></RecordFrame>
