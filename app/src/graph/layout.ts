@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { pageFaces, type GraphFonts } from './fonts';
-import { assembleTree, placeTree, fitCache, type PlacedMap, type TreeGeometry } from './map';
+import { assembleTree, placeTree, fitCache, type FitCache, type PlacedMap, type TreeGeometry, type TreeShape } from './map';
 import { assembleNested, placeNested } from './nested';
+import { assembleGround, placeGround, type GroundRole } from './ground';
 import { probeOf, type LayoutReply, type LayoutRequest, type MapInput } from './layout-input';
-import { textMeasure } from './text';
+import { textMeasure, type MapLabel } from './text';
 
 // Every map is laid out off the page's main thread (LA-PAT-APP-UX-R19, LA-PAT-APP-UX-R11): the Graph's Tree and Nested
 // maps and the Trace stage's, in the layout's worker (layout.worker.ts), and only when what the map reads has changed
@@ -22,8 +23,19 @@ const remember = (packed: string, map: PlacedMap) => {
   return map;
 };
 
-const assemble = (input: MapInput, geometry: TreeGeometry): PlacedMap =>
-  input.view === 'tree' ? assembleTree(input.shape, (i) => input.labels[i], geometry) : assembleNested(input.shape, (i) => input.labels[i], geometry);
+function assemble(input: MapInput, geometry: TreeGeometry): PlacedMap {
+  const labelOf = (i: number) => input.labels[i];
+  if (input.view === 'tree') return assembleTree(input.shape, labelOf, geometry);
+  if (input.view === 'map') return assembleGround(input.shape, labelOf, (i) => input.roles[i], geometry);
+  return assembleNested(input.shape, labelOf, geometry);
+}
+
+/** A map's boxes, laid out by its view's rule (placeTree's, placeNested's or placeGround's). */
+function place(view: MapInput['view'], shape: TreeShape, labelOf: (i: number) => MapLabel, roleOf: (i: number) => GroundRole, cache: FitCache): TreeGeometry {
+  if (view === 'tree') return placeTree(shape, labelOf, cache);
+  if (view === 'map') return placeGround(shape, labelOf, roleOf);
+  return placeNested(shape, labelOf);
+}
 
 /** The page thread's fits (map.ts FitCache), kept across its layouts as the worker keeps its own. */
 const fits = fitCache();
@@ -31,7 +43,7 @@ const fits = fitCache();
 function layOutHere(input: MapInput): PlacedMap {
   const labelOf = (i: number) => input.labels[i];
   const start = performance.now();
-  const geometry = input.view === 'tree' ? placeTree(input.shape, labelOf, fits) : placeNested(input.shape, labelOf);
+  const geometry = place(input.view, input.shape, labelOf, (i) => input.roles[i], fits);
   last = { thread: 'page', ms: performance.now() - start, nodes: input.labels.length, count: (last?.count ?? 0) + 1 };
   return remember(input.packed, assemble(input, geometry));
 }
