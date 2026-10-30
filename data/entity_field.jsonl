@@ -483,7 +483,6 @@
 {"entity_id":"LA-PLT-EN08","position":4,"name":"Chrome","meaning":"The colors its own page last sent for its background and window controls.","type_value_object_id":"LA-VO65","required":false,"example":"#f4f1ea, #1d1b16"}
 {"entity_id":"LA-PLT-EN08","position":5,"name":"Error count","meaning":"The check errors its page last reported, for the Dock badge.","type":"whole number","required":false,"example":"3"}
 {"entity_id":"LA-PLT-EN08","position":6,"name":"Menu keys","meaning":"The keys the person bound in its page, by command, as the page last sent them, which the menu shows while it has focus.","type_value_object_id":"LA-VO61","required":false,"example":"toggleNav: Meta+J"}
-{"entity_id":"LA-PLT-EN08","position":7,"name":"Chat mode","meaning":"The permission mode its chat last ran in, which its next chat starts in: Ask, Accept reads (the default, never kept), Auto, Bypass or View only.","type":"text","required":false,"example":"view-only"}
 {"entity_id":"LA-PLT-EN09","position":1,"name":"Folder","meaning":"The folder.","type":"text","required":true,"example":"~/Development/tool-library"}
 {"entity_id":"LA-PLT-EN09","position":2,"name":"Opened","meaning":"When it was last opened, which orders the list. Not stored by the code (see findings).","type":"date and time","required":true,"example":"2026-10-25T09:14:00Z"}
 {"entity_id":"LA-PLT-EN10","position":1,"name":"Source","meaning":"Which server it is: `serve()` in the shell or from `lathe serve`, a Vite dev server the shell starts, or the shared 5199 dev server.","type":"text","required":true,"example":"serve()"}
@@ -511,6 +510,11 @@
 {"entity_id":"LA-PLT-EN26","position":5,"name":"Cancel words","meaning":"The command words that clear the message.","type":"text","required":true,"example":"cancel"}
 {"entity_id":"LA-PLT-EN26","position":6,"name":"Scratch words","meaning":"The command words that remove the last sentence.","type":"text","required":true,"example":"scratch that"}
 {"entity_id":"LA-PLT-EN26","position":7,"name":"New line words","meaning":"The command words that start a new paragraph.","type":"text","required":true,"example":"new line"}
+{"entity_id":"LA-PLT-EN27","position":1,"name":"Window","meaning":"The product window it is the chat of, by its folder.","type_aggregate_id":"LA-PLT-A6","required":true}
+{"entity_id":"LA-PLT-EN27","position":2,"name":"Session","meaning":"The Claude Code session it runs, once one is opened: new, or a saved one resumed or forked.","type":"text","required":false,"example":"2b0c6f4e-3f5a-4d0e-9b1c-7a8d9e0f1a2b"}
+{"entity_id":"LA-PLT-EN27","position":3,"name":"Chat mode","meaning":"The permission mode its chat last ran in, which its next chat starts in: Ask, Accept reads (the default, never kept), Auto, Bypass or View only.","type":"text","required":false,"example":"view-only"}
+{"entity_id":"LA-PLT-EN27","position":4,"name":"Model and effort","meaning":"The model and effort its session runs with; none leaves either to Claude Code's own default.","type":"text","required":false,"example":"opus, high"}
+{"entity_id":"LA-PLT-EN27","position":5,"name":"Listening","meaning":"Whether the window listens for the voice; it hears only while the window is in front.","type":"yes/no","required":false,"example":"yes"}
 {"entity_id":"LA-TRC-EN05","position":1,"name":"Follower","meaning":"The ID of the domain or use case that follows the pattern.","type":"text","required":true,"column_name":"source_id","example":"TL-LEND-UC01"}
 {"entity_id":"LA-TRC-EN05","position":2,"name":"Pattern","meaning":"The pattern followed.","type_aggregate_id":"LA-AUT-A1","required":true,"column_name":"target_id","example":"TL-PAT-LIBRARIAN-ACTION"}
 {"entity_id":"LA-TRC-EN06","position":1,"name":"Setting","meaning":"One of the pattern's settings (a `pattern_setting` name).","type":"text","required":true,"example":"required_input"}
