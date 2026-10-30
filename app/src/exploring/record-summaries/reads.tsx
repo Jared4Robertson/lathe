@@ -35,7 +35,7 @@ export function useDataState(product: string | null, { version, reload, answered
   const problems = useRead<ProductProblems>('/api/problems/list-problems', input, version);
   const coverage = useRead<ProductCoverage>('/api/coverage/get-coverage', input, version);
   const metaIndex = useMemo(() => (meta.read.state === 'read' ? indexMetaModel(meta.read.answer) : null), [meta.read]);
-  const index = useMemo(() => {
+  const built = useMemo(() => {
     if (!product || !metaIndex || summaries.read.state !== 'read' || summaries.read.answer.product !== product) return null;
     if (folders.state !== 'read' || folders.answer.product !== product) return null;
     return buildRecordIndex(
@@ -48,6 +48,12 @@ export function useDataState(product: string | null, { version, reload, answered
   }, [product, metaIndex, summaries.read, folders, problems, coverage]);
   const refused = [meta.read, summaries.read, folders].find((r) => r.state === 'refused');
   const error = refused?.state === 'refused' ? refused.error : null;
+  // A read refused on a reload (the files caught mid-write, or data the store refuses) keeps the space's last index on
+  // screen, with the error beside it, as the pages say; only a space never read shows the error alone.
+  const last = useRef<RecordIndex | null>(null);
+  if (built) last.current = built;
+  else if (!error || last.current?.product !== product) last.current = null;
+  const index = built ?? last.current;
 
   // A reload is done once the space's reads answer for its version (or the meta model's, outside every space).
   const answered = Math.min(Number(meta.version ?? -1), product ? Number(summaries.version ?? -1) : Infinity);

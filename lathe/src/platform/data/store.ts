@@ -226,18 +226,6 @@ export class Store {
     return (await this.main.runAndReadAll(sql)).getRowObjectsJson() as unknown as T[];
   }
 
-  /**
-   * Where each record with no owner sits, from record_scope: its product, and its domain (a specification's from its
-   * ID; a view's, integration's, UI component's or value object's the one domain that uses it), or null when shared.
-   * What sits under a record follows it, so a reader that walks the parents needs only these.
-   */
-  async placements(): Promise<Record<string, { product: string | null; domain: string | null }>> {
-    const rows = await this.query<{ id: string; product_id: string | null; domain_id: string | null }>(
-      "SELECT s.id, s.product_id, s.domain_id FROM record_scope s JOIN record_parent p ON p.id = s.id WHERE p.parent_id IS NULL AND p.kind <> 'product' ORDER BY s.id",
-    );
-    return Object.fromEntries(rows.map((r) => [r.id, { product: r.product_id, domain: r.domain_id }]));
-  }
-
   /** A table's rows, sorted by key. */
   rows(table: string): Row[] {
     const description = this.currentSchema.tables[table];

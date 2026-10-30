@@ -94,3 +94,30 @@ function layOut(label: MapLabel, w: number, h: number, most: number): Sticky {
   });
   return { kind: 'moved', lines };
 }
+
+/**
+ * A camera that leaves a box's label drawn (the Owner's rule: a focused box is never left without its label): the
+ * camera as it is when the label is drawn under it, placed or moved; else moved right as little as it takes for the
+ * box's visible part to hold the label at the readable floor; else, when no move up to most of the open space's width
+ * does, moved so the box's middle is the open space's, where its label was placed. The zoom never changes, so the label
+ * keeps its size and is never drawn half cut (LA-EXP-DS06).
+ */
+export function keepLabel(p: Plate, v: { x: number; y: number; zoom: number }, open: ScreenBox): { x: number; y: number; zoom: number } {
+  const { zoom } = v;
+  const drawnAt = (shift: number) => stickyLabel(p, zoom, (x) => v.x + shift + x * zoom, (y) => v.y + y * zoom, open).kind !== 'hidden';
+  if (drawnAt(0)) return v;
+  const most = (open.right - open.left) * 0.75;
+  if (!drawnAt(most)) {
+    const middle = (open.left + open.right) / 2 - (p.x + p.w / 2) * zoom;
+    return { ...v, x: Math.max(v.x, middle) };
+  }
+  // The least move that draws it, to a pixel: drawn at `high`, not at `low`.
+  let low = 0;
+  let high = most;
+  while (high - low > 1) {
+    const mid = (low + high) / 2;
+    if (drawnAt(mid)) high = mid;
+    else low = mid;
+  }
+  return { ...v, x: v.x + high };
+}
