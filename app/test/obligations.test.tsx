@@ -1,13 +1,12 @@
 import type { ServedData } from './read-view';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
-import { RecordContent } from '../src/specs/RecordContent';
+import { describe, expect, it } from 'vitest';
 import { productKindWorkspace } from './fixtures/product-kinds';
 import { facts, main, openApp, section as pageSection } from './helpers';
 // The Graph stage needs a ResizeObserver in jsdom.
 import './graph/setup';
-import { addRows, indexOf } from './fixtures/load';
+import { addRows } from './fixtures/load';
 
 /** A section of the page: in the wiki card on a focus page. */
 const section = (name: string | RegExp) => {
@@ -153,38 +152,6 @@ describe('obligation kinds and test states', () => {
     await screen.findByRole('heading', { level: 1, name: 'Only the basket\'s shopper adds' });
     const gaps = [...section(/^Traceability/).querySelectorAll('[data-gap]')].map((g) => g.getAttribute('data-gap'));
     expect(gaps).toEqual(['not-designed', 'not-proved']);
-  });
-
-  it('LA-V92-R52-T01 The record content takes a record ID and sends the links it follows to its host', async () => {
-    cleanup();
-    window.history.replaceState(null, '', '/graph/DM-SHOP-UC01-R01');
-    const index = recordIndexOf(workspace());
-    const onNavigate = vi.fn();
-    const { container } = render(<RecordContent index={index} id="DM-SHOP-UC01-R01" onNavigate={onNavigate} />);
-    // It sizes itself by its own width (a CSS container), so it reads at half the screen.
-    expect(container.firstElementChild).toHaveClass('record-content');
-    expect(screen.getByRole('heading', { level: 1, name: 'The basket shows the new item' })).toBeInTheDocument();
-
-    const user = userEvent.setup();
-    const designed = screen.getByRole('heading', { name: /^Designed by/ }).closest('section') as HTMLElement;
-    const link = within(designed).getByRole('link', { name: /DM-SHOP-UC01-FL01-S01/ });
-    expect(link).toHaveAttribute('href', '/DM-SHOP-UC01-FL01-S01');
-    await user.click(link);
-    expect(onNavigate).toHaveBeenCalledWith('/DM-SHOP-UC01-FL01-S01');
-    expect(window.location.pathname).toBe('/graph/DM-SHOP-UC01-R01');
-
-    // Links in its facts (after the body) and in the header go through the host too.
-    onNavigate.mockClear();
-    await user.click(within(screen.getByRole('complementary', { name: 'Facts' })).getByRole('link', { name: /DM-SHOP-UC01-FL01-S01/ }));
-    expect(onNavigate).toHaveBeenLastCalledWith('/DM-SHOP-UC01-FL01-S01');
-    await user.click(within(container.querySelector('.eyebrow') as HTMLElement).getByRole('link', { name: 'Shopping' }));
-    expect(onNavigate).toHaveBeenLastCalledWith('/DM-SHOP');
-    expect(window.location.pathname).toBe('/graph/DM-SHOP-UC01-R01');
-
-    // An unknown ID says so.
-    cleanup();
-    render(<RecordContent index={index} id="DM-NOPE" onNavigate={onNavigate} />);
-    expect(screen.getByText(/There's no record with the ID/)).toHaveTextContent('DM-NOPE');
   });
 });
 

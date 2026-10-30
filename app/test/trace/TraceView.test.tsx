@@ -12,7 +12,7 @@ import type { ColumnScene, ColumnsHost } from '../../src/trace/TraceColumns';
 import { TRACE_LAYOUT_KEY } from '../../src/trace/layout';
 import { TITLE_FONT } from '../../src/graph/text';
 import { obligationsUnder, untracedUnder } from '../../src/trace/chain';
-import { tracesOf } from './traces';
+import { traced } from './traces';
 import { openApp } from '../helpers';
 
 // The Trace stage (LA-V98): drawn on the canvas, the product's one tree, each obligation's chain to its right with its
@@ -163,8 +163,8 @@ describe('the Trace stage', () => {
     await openApp('/P-D?stage=trace', served());
     await matrix();
     const section = () => within(traceStage()).getByRole('region', { name: /^Untraced/ });
-    const index = modelIndex();
-    const expected = untracedUnder(index, tracesOf(index, 'P'), 'P-D');
+    const { index, traces } = traced(modelWorkspace());
+    const expected = untracedUnder(index, traces, 'P-D');
     const count = expected.reduce((n, g) => n + g.ids.length, 0);
     expect(count).toBeGreaterThan(0);
     await waitFor(() => expect(counts()).toHaveTextContent(`· ${count} untraced`));

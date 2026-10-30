@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { addRows, indexOf } from '../fixtures/load';
+import { addRows } from '../fixtures/load';
+import { recordIndexOf } from '../read-view';
 import { modelWorkspace } from '../fixtures/model';
 import { OUTSIDE, traceTop, UNTRACED } from '../../src/trace/top';
 

@@ -68,14 +68,14 @@ export function traceTop(index: RecordIndex, product: string, untraced: boolean)
   const ids = new Map<string, string>([[product, product]]);
   const obligations: { key: string; id: string }[] = [];
   const add = (parent: string, child: string) => { const list = children.get(parent); if (list) { if (!list.includes(child)) list.push(child); } else children.set(parent, [child]); };
-  const outcomes = index.workspace.records
+  const outcomes = [...index.byId.values()]
     .filter((r) => r.kind === 'business_outcome' && r.product === product)
     .map((r) => r.id)
     .sort((a, b) => byIdOrder({ id: a }, { id: b }));
   for (const o of outcomes) { ids.set(o, o); children.set(o, []); }
 
   // Not under an outcome: each owner's (a domain's, the product's) obligations and their parents, by ID.
-  const domains = (index.domainsOf.get(product) ?? []).map((d) => d.id);
+  const domains = index.domains.filter((d) => d.product === product).map((d) => d.id);
   const owned = new Map<string, string[]>([...domains.map((d) => [d, []] as [string, string[]]), [product, []]]);
   let outside = 0;
   for (const o of obligationsUnder(index, product)) {
