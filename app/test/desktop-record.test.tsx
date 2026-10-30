@@ -29,6 +29,7 @@ function desktop() {
     copyRecordId: vi.fn<(id: string) => void>(),
     showRecordMenu: vi.fn<(id: string) => void>(),
     chat: desktopBridgeStub().chat,
+    voice: desktopBridgeStub().voice,
     onAppRequest: () => () => {} };
   host.latheDesktop = bridge;
   return { bridge, setFullScreen: (value: boolean) => fullScreen?.(value) };

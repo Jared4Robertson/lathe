@@ -8,6 +8,7 @@ import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { PatternRow, PatternRuleRow, PatternRuleTestRow, PatternSettingRow } from '../../platform/data/tables.ts';
 import type { PatternKind } from './model.ts';
+import { byRecordId } from '../../platform/data/ids.ts';
 
 /** A setting as the page shows it: its name and what each follower decides with it, in the pattern's order. */
 export interface SettingOnPage {
@@ -57,8 +58,6 @@ export interface PatternTable {
   kinds: Map<string, string>;
 }
 
-const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id, 'en', { numeric: true });
-
 /** Rows by a column's value, each list in the table's order. */
 function grouped<T>(rows: Row[], column: string): Map<string, T[]> {
   const found = new Map<string, T[]>();
@@ -81,9 +80,9 @@ export function patternTableFrom(view: ReadView): PatternTable {
     const tree: PatternTree = {
       pattern,
       settings: [...(settings.get(root) ?? [])].sort((a, b) => a.position - b.position).map((s) => ({ name: s.name, meaning: s.meaning })),
-      rules: [...(rules.get(root) ?? [])].sort(byId).map((rule) => ({
+      rules: [...(rules.get(root) ?? [])].sort(byRecordId).map((rule) => ({
         rule,
-        tests: [...(tests.get(rule.id) ?? [])].sort(byId).map((test) => ({ test, startsFrom: (startsFrom.get(test.id) ?? []).map((l) => l.target_id).sort() })),
+        tests: [...(tests.get(rule.id) ?? [])].sort(byRecordId).map((test) => ({ test, startsFrom: (startsFrom.get(test.id) ?? []).map((l) => l.target_id).sort() })),
       })),
     };
     for (const r of tree.rules) {
@@ -93,7 +92,7 @@ export function patternTableFrom(view: ReadView): PatternTable {
     patterns.set(root, tree);
     products.get(pattern.product_id)?.push({ id: pattern.id, title: pattern.title });
   }
-  for (const list of products.values()) list.sort(byId);
+  for (const list of products.values()) list.sort(byRecordId);
   const kinds = new Map<string, string>();
   for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
   return { patterns, holding, products, kinds };

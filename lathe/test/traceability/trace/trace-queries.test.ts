@@ -16,6 +16,7 @@ import { closeStores, handleApi } from '../../../src/server/api.ts';
 import type { Coverage, CoverageGap, TraceChain } from '../../../src/types.ts';
 import { closeTwoProducts, twoProducts } from '../../checking/problems/data-set.ts';
 import { openStore } from '../../../src/platform/data/store.ts';
+import { compareIds } from '../../../src/platform/data/ids.ts';
 import { adding, complete, writeData } from '../../helpers.ts';
 
 afterEach(closeTwoProducts);
@@ -93,7 +94,7 @@ describe('LA-TRC-UC10-R05-T03 A product\'s traces read gives each obligation of 
       expect(uc01.reaches).not.toContain('EX-LEND-INV01-T');
       // A use case whose capability serves nothing still reaches its own requirements, serving no outcome.
       expect(ex.useCases.find((u) => u.useCase === 'EX-LEND-UC09')).toEqual({ useCase: 'EX-LEND-UC09', outcomes: [], reaches: ['EX-LEND-UC09-R01'] });
-      expect(ex.useCases.map((u) => u.useCase)).toEqual([...ex.useCases.map((u) => u.useCase)].sort((a, b) => a.localeCompare(b, 'en', { numeric: true })));
+      expect(ex.useCases.map((u) => u.useCase)).toEqual([...ex.useCases.map((u) => u.useCase)].sort(compareIds));
     } finally {
       await store.close();
     }

@@ -11,6 +11,7 @@ import { hitPlate } from '../graph/hit';
 import { PLAIN_LOOK, readLook, useThemeVersion, type Look } from '../graph/look';
 import type { MapNode } from '../graph/map';
 import { readMotion } from '../graph/motion';
+import { followBox, useMorph } from '../graph/morph';
 import { boxColors, GAP_KIND, isBlock, paint, stageColors, type Bar, type Camera, type PaintState } from '../graph/paint';
 import { plateName, plateOf, plateTip, type Plate, type PlainBox } from '../graph/plate';
 import { BORDER, LABEL_PAD, labelHeight, largestFit, linesIn, setTextMeasure, titleWidth, treeLabel, type MapLabel, type TextMeasure, type WrappedLabel } from '../graph/text';
@@ -117,7 +118,7 @@ export function TraceAll(props: TraceAllProps) {
   const laid = useAllLaidOut(props.graph, props.tidy);
   if (!measure || !laid) return <div className="graph-flow trace-flow" data-view="all-at-once" aria-busy="true" />;
   setTextMeasure(measure);
-  return <AllScene {...props} graph={laid.graph} laid={laid.laid} previous={laid.previous} fonts={fonts} theme={theme} />;
+  return <AllScene {...props} graph={laid.graph} laid={laid.laid} fonts={fonts} theme={theme} />;
 }
 
 /** A label's lines cut to a box `height` tall (at text scale 1): its title's last lines dropped, the last kept ending with an ellipsis. */
@@ -171,7 +172,7 @@ function firstFrom(order: readonly string[], places: ReadonlyMap<string, BoxPlac
 /** What one frame draws. */
 interface AllFrame { plates: Plate[]; bars: Bar[]; barred: boolean; lines: number[]; marks: { key: string; x: number; y: number }[] }
 
-function AllScene({ index, focus, graph, laid, previous, gapsOnly, onNavigate, onPeek, space, ring: ringAt, cameraKey, onOpenNew, fonts, theme }: Omit<TraceAllProps, 'tidy'> & { laid: AllLaid; previous: AllLaid | null; fonts: GraphFonts; theme: number }) {
+function AllScene({ index, focus, graph, laid, gapsOnly, onNavigate, onPeek, space, ring: ringAt, cameraKey, onOpenNew, fonts, theme }: Omit<TraceAllProps, 'tidy'> & { laid: AllLaid; fonts: GraphFonts; theme: number }) {
   const wrapper = useRef<AllHost>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
@@ -304,25 +305,22 @@ function AllScene({ index, focus, graph, laid, previous, gapsOnly, onNavigate, o
     paintRef.current();
   }, [size, dpr]);
 
-  // ---- What moved glides from its old place (layout stability) ----
-  const morph = useRef<{ from: ReadonlyMap<string, BoxPlace>; start: number; ms: number } | null>(null);
-  const morphed = useRef<AllLaid | null>(null);
-  if (morphed.current !== laid) {
-    const ms = readMotion().duration;
-    morph.current = previous && morphed.current !== null && ms > 0 ? { from: previous.places, start: performance.now(), ms } : null;
-    morphed.current = laid;
-  }
+  // ---- What moved glides from its old place (layout stability, LA-PAT-APP-UX-R22, graph/morph.ts) ----
+  const morphMap = useMemo(() => ({ view: 'all-at-once', roots: [graph.product], nodes: laid.places }), [laid, graph.product]);
+  const morph = useMorph(morphMap);
   /** A box's place this frame: its layout's, or on its way there from the one before. */
-  const placeAt = (key: string, now: number): BoxPlace | undefined => {
-    const to = laid.places.get(key);
-    const m = morph.current;
-    if (!to || !m) return to;
-    const from = m.from.get(key);
-    const t = Math.min(1, (now - m.start) / m.ms);
-    if (!from || t >= 1 || (from.x === to.x && from.y === to.y)) return to;
-    const e = readMotion().ease(t);
-    return { ...to, x: from.x + (to.x - from.x) * e, y: from.y + (to.y - from.y) * e };
-  };
+  const placeAt = (key: string, now: number): BoxPlace | undefined => morph.box(key, now) ?? undefined;
+  // A new layout with the same focus leaves the camera where it is, unless the focus's own box moved: then it glides with it.
+  const laidBefore = useRef(laid);
+  useLayoutEffect(() => {
+    const was = laidBefore.current;
+    laidBefore.current = laid;
+    if (was === laid || !focusKey) return;
+    const a = was.places.get(focusKey);
+    const b = laid.places.get(focusKey);
+    const v = a && b ? followBox(view.current, a, b, { min: MIN_ZOOM, max: MAX_ZOOM }) : null;
+    if (v) moveTo(v, true);
+  }, [laid]);
 
   // ---- The look, the fade and the plates ----
   const look = useRef<Look>(PLAIN_LOOK);
@@ -509,8 +507,7 @@ function AllScene({ index, focus, graph, laid, previous, gapsOnly, onNavigate, o
       host: wrapper.current, space, dpr, color: p ? boxColors(lk, p).edge : lk.ink,
       box: own ? { left: own.x * v.zoom + v.x, top: own.y * v.zoom + v.y, right: (own.x + own.w) * v.zoom + v.x, bottom: (own.y + own.h) * v.zoom + v.y } : null,
     });
-    const moving = morph.current !== null && now - morph.current.start < morph.current.ms;
-    if (!moving) morph.current = null;
+    const moving = morph.moving(now);
     if (moving || !spot.done || !faded.done || marksMoving(live, frame.plates.map((x) => x.id))) requestPaint();
     else if (sp.to === 0 && sp.lit) { sp.lit = null; sp.links = null; }
   };

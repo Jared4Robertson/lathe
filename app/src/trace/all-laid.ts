@@ -104,6 +104,12 @@ function here(input: LayoutInput): LayoutResult {
   return result;
 }
 
+/** A graph laid out on the page's thread, keeping the order of a layout before it (none orders afresh): the worker's rule, for tests. */
+export function layOutGraph(graph: AllGraph, previous: AllLaid | null): AllLaid {
+  const { input, keys, key } = inputOf(graph, previous);
+  return laidOf(key, keys, layOutColumns(input));
+}
+
 /** The layout of a graph: at once when it is the one shown (or on the page with no worker), else from the worker. */
 function layOut(graph: AllGraph, tidy: boolean): AllLaid | Promise<AllLaid> {
   const shown = lastOf.get(graph.product) ?? null;
@@ -120,23 +126,23 @@ function layOut(graph: AllGraph, tidy: boolean): AllLaid | Promise<AllLaid> {
   });
 }
 
-/** What the scene draws: a layout and the graph it was made from, and the layout shown before it (what moved morphs from there). */
-export interface Laid { laid: AllLaid; graph: AllGraph; previous: AllLaid | null }
+/** What the scene draws: a layout and the graph it was made from. */
+export interface Laid { laid: AllLaid; graph: AllGraph }
 
 /**
  * The layout for a graph: the graph's own once laid out; until then the one shown before, which stays on screen; null
  * before the first. `tidy` (a count the Tidy up button raises) orders the columns afresh once.
  */
 export function useAllLaidOut(graph: AllGraph, tidy: number): Laid | null {
-  const [shown, setShown] = useState<{ graph: AllGraph; tidy: number; laid: AllLaid; previous: AllLaid | null } | null>(null);
+  const [shown, setShown] = useState<{ graph: AllGraph; tidy: number; laid: AllLaid } | null>(null);
   const current = shown?.graph === graph && shown.tidy === tidy ? shown : null;
   useEffect(() => {
     if (current) return;
     let live = true;
     const made = layOut(graph, shown !== null && shown.tidy !== tidy);
-    const show = (laid: AllLaid) => { if (live) setShown((s) => ({ graph, tidy, laid, previous: s && s.laid !== laid ? s.laid : s?.previous ?? null })); };
+    const show = (laid: AllLaid) => { if (live) setShown({ graph, tidy, laid }); };
     if (made instanceof Promise) void made.then(show); else show(made);
     return () => { live = false; };
   }, [graph, tidy, current]);
-  return shown ? { laid: shown.laid, graph: shown.graph, previous: shown.previous } : null;
+  return shown ? { laid: shown.laid, graph: shown.graph } : null;
 }

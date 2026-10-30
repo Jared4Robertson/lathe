@@ -3,6 +3,7 @@
 // and its invariants with the rule that enforces each (built the same way) and their tests. One instance is one aggregate, whole; it holds only the links its own records
 // start.
 import type { Slice } from '../../platform/commands/definition.ts';
+import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { AggregateRow, DataModelRow, EntityFieldRow, EntityRow, InvariantRow, InvariantTestRow, RuleRow } from '../../platform/data/tables.ts';
 
@@ -103,22 +104,6 @@ export function fieldRows(entityId: string, fields: EntityFieldInput[]): EntityF
   return fields.map((field, at) => ({ entity_id: entityId, position: at + 1, ...field }));
 }
 
-// A link table's targets by source, each list sorted.
-function bySource(links: Row[]): Map<string, string[]> {
-  const found = new Map<string, string[]>();
-  for (const l of links) found.set(String(l.source_id), [...(found.get(String(l.source_id)) ?? []), String(l.target_id)]);
-  for (const list of found.values()) list.sort();
-  return found;
-}
-
-// The packages each record uses, sorted.
-function packagesOf(rows: Row[]): Map<string, string[]> {
-  const found = new Map<string, string[]>();
-  for (const r of rows) found.set(String(r.record_id), [...(found.get(String(r.record_id)) ?? []), String(r.package)]);
-  for (const list of found.values()) list.sort();
-  return found;
-}
-
 /** The aggregates in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function aggregatesFrom(rows: (table: string) => Row[], only?: string): Aggregate[] {
   const aggregates = rows('aggregate').filter((r) => only === undefined || r.id === only) as unknown as AggregateRow[];
@@ -133,23 +118,25 @@ export function aggregatesFrom(rows: (table: string) => Row[], only?: string): A
   const rules = (rows('rule') as unknown as RuleRow[]).filter((r) => invariantIds.has(r.invariant_id));
   const invariantTests = (rows('invariant_test') as unknown as InvariantTestRow[]).filter((t) => invariantIds.has(t.invariant_id));
   const [hasOne, hasMany, meets, startsFrom] = ['has_one', 'has_many', 'meets', 'starts_from'].map((table) => bySource(rows(table)));
-  const packages = packagesOf(rows('package_use'));
-  const targets = (links: Map<string, string[]>, source: string) => links.get(source) ?? [];
-  return aggregates.map((aggregate) => {
-    const own = entities.filter((e) => e.aggregate_id === aggregate.id);
-    const ownIds = new Set(own.map((e) => e.id));
-    const ownInvariants = invariants.filter((i) => i.aggregate_id === aggregate.id);
-    const ownInvariantIds = new Set(ownInvariants.map((i) => i.id));
-    return {
-      root: aggregate.id,
-      aggregate,
-      entities: own.map((row) => ({ row, fields: fields.filter((f) => f.entity_id === row.id), hasOne: targets(hasOne, row.id), hasMany: targets(hasMany, row.id) })),
-      invariants: ownInvariants,
-      dataModels: dataModels.filter((d) => ownIds.has(d.entity_id)).map((row) => ({ row, meets: targets(meets, row.id), packages: targets(packages, row.id) })),
-      rules: rules.filter((r) => ownInvariantIds.has(r.invariant_id)).map((row) => ({ row, meets: targets(meets, row.id), packages: targets(packages, row.id) })),
-      invariantTests: invariantTests.filter((t) => ownInvariantIds.has(t.invariant_id)).map((row) => ({ row, startsFrom: targets(startsFrom, row.id) })),
-    };
-  });
+  const packages = bySource(rows('package_use'), 'record_id', 'package');
+  // Each table's rows by the aggregate they sit in, grouped once.
+  const aggregateOfEntity = new Map(entities.map((e) => [e.id, e.aggregate_id]));
+  const aggregateOfInvariant = new Map(invariants.map((i) => [i.id, i.aggregate_id]));
+  const entitiesOf = groupBy(entities, (e) => e.aggregate_id);
+  const invariantsOf = groupBy(invariants, (i) => i.aggregate_id);
+  const fieldsOf = groupBy(fields, (f) => f.entity_id);
+  const dataModelsOf = groupBy(dataModels, (d) => aggregateOfEntity.get(d.entity_id));
+  const rulesOf = groupBy(rules, (r) => aggregateOfInvariant.get(r.invariant_id));
+  const invariantTestsOf = groupBy(invariantTests, (t) => aggregateOfInvariant.get(t.invariant_id));
+  return aggregates.map((aggregate) => ({
+    root: aggregate.id,
+    aggregate,
+    entities: groupOf(entitiesOf, aggregate.id).map((row) => ({ row, fields: groupOf(fieldsOf, row.id), hasOne: groupOf(hasOne, row.id), hasMany: groupOf(hasMany, row.id) })),
+    invariants: groupOf(invariantsOf, aggregate.id),
+    dataModels: groupOf(dataModelsOf, aggregate.id).map((row) => ({ row, meets: groupOf(meets, row.id), packages: groupOf(packages, row.id) })),
+    rules: groupOf(rulesOf, aggregate.id).map((row) => ({ row, meets: groupOf(meets, row.id), packages: groupOf(packages, row.id) })),
+    invariantTests: groupOf(invariantTestsOf, aggregate.id).map((row) => ({ row, startsFrom: groupOf(startsFrom, row.id) })),
+  }));
 }
 
 const links = (source: string, ids: string[]): Row[] => ids.map((target) => ({ source_id: source, target_id: target }));

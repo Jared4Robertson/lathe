@@ -1,3 +1,4 @@
 {"id":"LA-PLT-QRY08-IPC","title":"lathe:chat-sessions","query_id":"LA-PLT-QRY08","file":"desktop/src/preload.cts"}
 {"id":"LA-PLT-QRY09-IPC","title":"lathe:ask-focus","query_id":"LA-PLT-QRY09","file":"desktop/src/preload.cts"}
 {"id":"LA-PLT-QRY10-IPC","title":"lathe:chat-state","query_id":"LA-PLT-QRY10","file":"desktop/src/preload.cts"}
+{"id":"LA-PLT-QRY12-IPC","title":"lathe:voice-support","query_id":"LA-PLT-QRY12","file":"desktop/src/preload.cts"}

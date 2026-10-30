@@ -1,7 +1,7 @@
 // The desktop shell's main process: one window per product folder, each loading Lathe from its own
 // server (servers.ts), the native menus (menu.ts) and Dock (dock.ts), the launch view and error page
 // over a window (launch.ts), the record actions (records.ts, editor.ts), the chat panel's Claude Code
-// (chatSession.ts, claudeSessions.ts) and the app bridge its tools reach the window by (bridge.ts). It only
+// (chatSession.ts, claudeSessions.ts), the chat's voice (voice.ts), and the app bridge its tools reach the window by (bridge.ts). It only
 // wires Electron to the aggregates' commands, policies and queries: the open windows, their places and chrome
 // (product-window/), their servers (app-server/), the recent folders (recent-folders/) and the shell's settings
 // (shell-settings/), each kept by its own repository, the only code that reaches its storage.
@@ -9,7 +9,7 @@
 // Modes: `npm run start` and the packed app run serve() from the built Lathe package; `npm run dev`
 // (LATHE_DESKTOP_DEV=1) loads the app's Vite dev server instead, so app changes hot-reload.
 import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, nativeImage, nativeTheme, screen, session, shell, systemPreferences, WebContentsView, type MenuItemConstructorOptions, type WebContents } from 'electron';
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import os from 'node:os';
@@ -61,6 +61,7 @@ import { optOutOfWindowRestoration } from './persistence.ts';
 import { DataFiles, recordMenuTemplate } from './records.ts';
 import { latheFor, latheLabel, packageVersion, serveModulePath, settleWithin, startDev, startServe } from './servers.ts';
 import { reloadInProgress, runSmoke, smokeFile, writeSmoke, type SmokeResult } from './smoke.ts';
+import { helperBuilt, parseHelperLine, speechHelperPath, voicePlatform, VoiceListener, type Microphone, type VoiceSupport } from './voice.ts';
 
 const DESKTOP_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const REPO_ROOT = path.resolve(DESKTOP_DIR, '..');
@@ -109,7 +110,7 @@ const log = (line: string) => {
   if (DEV) process.stdout.write(line.endsWith('\n') ? line : line + '\n');
 };
 
-/** The chats' stops in progress, which quitting waits for beside the servers' (app-server/). */
+/** The chats' stops in progress (their Claude Code, and their speech helper), which quitting waits for beside the servers' (app-server/). */
 const chatStops = new Set<Promise<void>>();
 
 const dark = () => nativeTheme.shouldUseDarkColors;
@@ -419,7 +420,10 @@ async function openFolder(input: string) {
     lastFocused = win.id;
     updateBadge();
     refreshMenu();
+    entry.voice?.front(true);
   });
+  // The chat listens only while its window is in front (LA-PLT-UC20-R03).
+  win.on('blur', () => entry.voice?.front(false));
   win.on('close', () => {
     clearTimeout(saveTimer);
     keepWindowPlace(folder, win);
@@ -462,6 +466,7 @@ async function openFolder(input: string) {
 function windowClosed(entry: OpenWindow, id: number) {
   void closeProductWindow(productWindows, { folder: entry.folder }, windowClosedReactions);
   void stopChat(entry);
+  void stopVoice(entry);
   if (lastFocused === id) lastFocused = null;
   updateBadge();
 }
@@ -525,6 +530,63 @@ function appBridge(): Promise<Bridge> {
     },
   });
   return bridge;
+}
+
+// --- The chat's voice ----------------------------------------------------------------------------
+
+const SPEECH_HELPER = () => speechHelperPath(app.isPackaged ? { resourcesPath: process.resourcesPath } : null, DESKTOP_DIR);
+/** Whether the helper says this Mac can recognize speech on-device, asked once. */
+let speechProbe: Promise<{ onDevice: boolean; reason: string | null }> | null = null;
+
+function probeSpeech() {
+  speechProbe ??= new Promise((resolve) => {
+    execFile(SPEECH_HELPER(), ['probe'], { timeout: 10_000 }, (error, stdout) => {
+      const line = stdout.split('\n').map(parseHelperLine).find((l) => l?.type === 'support');
+      if (line?.type === 'support') resolve({ onDevice: line.onDevice, reason: line.reason });
+      else resolve({ onDevice: false, reason: error ? `The speech helper did not run: ${error.message}` : 'The speech helper did not answer.' });
+    });
+  });
+  return speechProbe;
+}
+
+/**
+ * A recorded audio file heard in place of the microphone (LATHE_DESKTOP_SPEECH_FIXTURE), at the pace it was spoken: to
+ * try dictation, and take its screenshots, without a microphone or its permission.
+ */
+const SPEECH_FIXTURE = process.env.LATHE_DESKTOP_SPEECH_FIXTURE;
+const microphone = (): Microphone => (SPEECH_FIXTURE ? 'granted' : MAC ? systemPreferences.getMediaAccessStatus('microphone') : 'unknown') as Microphone;
+
+/** Whether the window can dictate (LA-PLT-UC20-R01): macOS 26 or later with the helper built, the Mac able to recognize on-device, and the microphone's permission. */
+async function voiceSupport(): Promise<VoiceSupport> {
+  const platform = voicePlatform(process.platform, os.release(), helperBuilt(SPEECH_HELPER()));
+  if (!platform.available) return { available: false, reason: platform.reason, microphone: 'unknown', endOfTurn: false };
+  const probe = await probeSpeech();
+  if (!probe.onDevice) return { available: false, reason: probe.reason, microphone: microphone(), endOfTurn: false };
+  return { available: true, reason: null, microphone: microphone(), endOfTurn: true };
+}
+
+/** The page asks to listen or stop: the first time, macOS asks for the microphone; the window listens only while in front. */
+async function listen(entry: OpenWindow, on: boolean): Promise<'listening' | 'background' | 'denied' | 'unavailable' | 'stopped'> {
+  if (!on) return entry.voice?.want(false) ?? 'stopped';
+  const support = await voiceSupport();
+  if (!support.available) return 'unavailable';
+  if (support.microphone === 'not-determined' && !(await systemPreferences.askForMediaAccess('microphone'))) return 'denied';
+  if (support.microphone === 'denied' || support.microphone === 'restricted') return 'denied';
+  if (entry.win.isDestroyed()) return 'stopped';
+  entry.voice ??= new VoiceListener(
+    () => spawn(SPEECH_HELPER(), SPEECH_FIXTURE ? ['file', SPEECH_FIXTURE, '--live'] : ['listen'], { stdio: ['pipe', 'pipe', 'ignore'] }),
+    (event) => { if (!entry.win.isDestroyed()) entry.win.webContents.send('lathe:voice', event); },
+    entry.win.isFocused(),
+  );
+  return entry.voice.want(true);
+}
+
+/** The window closed or the app quits: its listening stops. */
+function stopVoice(entry: OpenWindow): Promise<void> {
+  const stop = entry.voice?.close() ?? Promise.resolve();
+  chatStops.add(stop);
+  void stop.finally(() => chatStops.delete(stop));
+  return stop;
 }
 
 /** Sends the chat's changes to its page, at most once a frame. */
@@ -763,10 +825,11 @@ if (!SMOKE && !app.requestSingleInstanceLock()) {
     event.preventDefault();
     if (quit === 'stopping') return;
     quit = 'stopping';
-    // Quitting stops each window's server as closing it would (LA-PLT-PO02), and its chat.
+    // Quitting stops each window's server as closing it would (LA-PLT-PO02), its chat and its listening.
     for (const entry of openWindows().values()) {
       void stopAppServer(appServers, { folder: entry.folder }, log);
       void stopChat(entry);
+      void stopVoice(entry);
     }
     if (bridge) void bridge.then((b) => b.close());
     void settleWithin([...appServers.load().stopping, ...chatStops], QUIT_TIMEOUT).then((all) => {
@@ -846,6 +909,12 @@ if (!SMOKE && !app.requestSingleInstanceLock()) {
   ipcMain.handle('lathe:chat-mode', (event, mode: unknown) => {
     const entry = fromPageCall(event);
     return !!entry && chooseChatMode(productWindows, { folder: entry.folder, mode });
+  });
+  // The chat's voice (the preload's voice): each call from a product window's own page, about that window.
+  ipcMain.handle('lathe:voice-support', (event) => (fromPageCall(event) ? voiceSupport() : null));
+  ipcMain.handle('lathe:voice-listen', (event, on: unknown) => {
+    const entry = fromPageCall(event);
+    return entry ? listen(entry, on === true) : 'unavailable';
   });
   // A page that (re)loads asks for the whole chat.
   ipcMain.handle('lathe:chat-state', (event) => {

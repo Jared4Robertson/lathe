@@ -40,13 +40,30 @@ const push = <K, V>(map: Map<K, V[]>, key: K, value: V) => {
   else map.set(key, [value]);
 };
 
-export const byIdOrder = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id, 'en', { numeric: true });
+// ID order, with the numbers inside IDs compared by value (UC2 before UC10): one collator, made once, since
+// `localeCompare` with options builds one on every comparison.
+const idCollator = new Intl.Collator('en', { numeric: true });
+
+/** Two IDs in ID order. */
+export const compareIds = (a: string, b: string): number => idCollator.compare(a, b);
+
+export const byIdOrder = (a: { id: string }, b: { id: string }) => idCollator.compare(a.id, b.id);
+
+/** The answer's records, each as its summary: the answer names its columns once and gives each record's values in their order. */
+function summariesOf(answer: RecordSummaries): RecordSummary[] {
+  return answer.records.map((values) => {
+    const summary: Record<string, unknown> = {};
+    answer.columns.forEach((column, at) => { summary[column] = values[at]; });
+    return summary as unknown as RecordSummary;
+  });
+}
 
 /** The space's index from its reads; problems and coverage are empty until they are read. */
 export function buildRecordIndex(meta: MetaIndex, summaries: RecordSummaries, folders: FolderTree, problems: ProductProblems | null, coverage: ProductCoverage | null): RecordIndex {
-  const byId = new Map(summaries.records.map((r) => [r.id, r]));
+  const records = summariesOf(summaries);
+  const byId = new Map(records.map((r) => [r.id, r]));
   const children = new Map<string, RecordSummary[]>();
-  for (const r of summaries.records) if (r.parent) push(children, r.parent, r);
+  for (const r of records) if (r.parent) push(children, r.parent, r);
   const outgoing = new Map<string, SummaryLink[]>();
   const incoming = new Map<string, SummaryLink[]>();
   for (const l of summaries.links) { push(outgoing, l.source, l); push(incoming, l.target, l); }
@@ -69,7 +86,7 @@ export function buildRecordIndex(meta: MetaIndex, summaries: RecordSummaries, fo
     problemsFor,
     gapsFor,
     coverage: scopes,
-    domains: summaries.records.filter((r) => r.kind === 'domain' && r.product === summaries.product),
+    domains: records.filter((r) => r.kind === 'domain' && r.product === summaries.product),
     folders,
   };
 }
@@ -84,7 +101,7 @@ export const gapsOf = (index: RecordIndex, id: string): string[] => index.gapsFo
 export const problemOrder = (a: ListedProblem, b: ListedProblem) =>
   (a.severity === b.severity ? 0 : a.severity === 'error' ? -1 : 1) ||
   a.check.localeCompare(b.check) ||
-  (a.record ?? '').localeCompare(b.record ?? '', 'en', { numeric: true });
+  compareIds(a.record ?? '', b.record ?? '');
 
 /** The product an ID belongs to: the longest product ID it is or starts with (followed by a hyphen), or null. */
 export function productOfId(products: readonly string[], id: string): string | null {

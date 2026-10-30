@@ -1,7 +1,7 @@
 // The Lathe engine: loads a product's data/ folder through the store into the typed tables, runs the checks (rows of
 // the check table, Lathe's and the product's) against them, and computes coverage from views over them.
-import { existsSync, readdirSync, statSync, type Dirent } from 'node:fs';
-import { glob, readFile, stat } from 'node:fs/promises';
+import { existsSync, readdirSync, statSync } from 'node:fs';
+import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
 import { servesOf } from './trace/serves.ts';
@@ -9,7 +9,7 @@ import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL, COVERAGE_PROOFS_SQL, COVERAGE_T
 import { CONFIG_FILE, loadConfig, productClash, workspaceProducts, type LatheConfig } from './config.ts';
 import { readPackageFacts } from './trace/packages.ts';
 import { readTestCases } from './trace/test-cases.ts';
-import { isTraced, normalizePath, sourceFiles } from './trace/source-files.ts';
+import { isTraced, matching, normalizePath, sourceFiles, walkFiles } from './trace/source-files.ts';
 import { orderChecks, referenceOf, type Reference } from './reference.ts';
 import { formatProblem, StoreError } from './platform/data/problems.ts';
 import { openStore, Store, LATHE_DATA_DIR, type StoreOptions } from './platform/data/store.ts';
@@ -18,6 +18,7 @@ import { gatherTableFacts, TABLE_FACTS_SQL } from './trace/tables.ts';
 import type { Row } from './platform/data/rows.ts';
 import { gatherRouteFacts, writeRouteFacts } from './trace/routes.ts';
 import type { Coverage, CoverageGap, Kind, ObligationCoverage, Problem, RelationRule, SpecLink, SpecRecord, StageRule, TestCounts, TraceChain, Workspace } from './types.ts';
+import { compareIds } from './platform/data/ids.ts';
 
 export type * from './types.ts';
 export type * from './reference.ts';
@@ -138,12 +139,8 @@ interface TestCaseFact {
 // dist, a dot-folder or another product's folder, one with its own lathe.config.json) and the files test records
 // name, read as text (test-cases.ts says what is recognized).
 async function gatherTestCases(root: string, globs: readonly string[], facts: FileFact[]): Promise<TestCaseFact[]> {
-  const skip = (entry: Dirent) =>
-    entry.isDirectory() && (entry.name === 'node_modules' || entry.name === 'dist' || entry.name.startsWith('.') || existsSync(path.join(entry.parentPath, entry.name, CONFIG_FILE)));
-  const files = new Set<string>();
-  for await (const entry of glob([...globs], { cwd: root, exclude: skip, withFileTypes: true })) {
-    if (entry.isFile()) files.add(normalizePath(path.relative(root, path.join(entry.parentPath, entry.name))));
-  }
+  const skip = (folder: string, name: string) => name === 'node_modules' || name === 'dist' || name.startsWith('.') || existsSync(path.join(root, folder, CONFIG_FILE));
+  const files = new Set(matching(await walkFiles(root, skip), globs));
   const tests = new Set(TEST_KINDS);
   for (const f of facts) if (f.path !== null && f.file_exists && tests.has(f.kind)) files.add(f.path);
   const read = await Promise.all([...files].sort().map(async (file) => {
@@ -259,7 +256,7 @@ async function computeCoverage(store: Store): Promise<Coverage[]> {
   const provedBy = (scope: { product: string; domain: string | null }) => {
     const by: Record<string, string[]> = {};
     for (const p of proofsBy.get(key(scope)) ?? []) (by[p.id] ??= []).push(p.test_id);
-    for (const ids of Object.values(by)) ids.sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
+    for (const ids of Object.values(by)) ids.sort(compareIds);
     return by;
   };
   return tests.map((t) => ({
@@ -285,7 +282,7 @@ async function computeChains(store: Store, records: SpecRecord[], order: string[
   const kindOf = new Map(records.map((r) => [r.id, r.kind]));
   const rank = new Map(order.map((k, i) => [k, i]));
   const of = (id: string) => rank.get(kindOf.get(id) ?? '') ?? rank.size;
-  const sorted = (ids: Iterable<string>) => [...new Set(ids)].sort((a, b) => of(a) - of(b) || a.localeCompare(b, 'en', { numeric: true }));
+  const sorted = (ids: Iterable<string>) => [...new Set(ids)].sort((a, b) => of(a) - of(b) || compareIds(a, b));
   const fileOf = new Map(files.map((f) => [f.record, f.file]));
   const by = new Map<string, typeof links>();
   for (const l of links) by.set(l.obligation_id, [...(by.get(l.obligation_id) ?? []), l]);

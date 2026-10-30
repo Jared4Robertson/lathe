@@ -9,6 +9,7 @@ import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { CommandHandlerRow, CommandRow, EventHandlerRow, PolicyRow, PolicyTestRow } from '../../platform/data/tables.ts';
 import type { CommandKind } from './model.ts';
+import { compareIds } from '../../platform/data/ids.ts';
 
 /** A handler as the page shows it: its row, the standard rules it meets and the packages it uses. */
 export interface HandlerOnPage<T> {
@@ -70,8 +71,6 @@ export interface CommandTable {
   kinds: Map<string, string>;
 }
 
-const byId = (a: string, b: string) => a.localeCompare(b, 'en', { numeric: true });
-
 /** Rows by a column's value, each list in the table's order. */
 function grouped<T>(rows: Row[], column: string): Map<string, T[]> {
   const found = new Map<string, T[]>();
@@ -82,7 +81,7 @@ function grouped<T>(rows: Row[], column: string): Map<string, T[]> {
 /** A link table's targets by source, each list sorted. */
 function linked(view: ReadView, table: string, by = 'source_id', to = 'target_id'): (id: string) => string[] {
   const found = grouped<Row>(view.rows(table), by);
-  return (id) => (found.get(id) ?? []).map((l) => String(l[to])).sort(byId);
+  return (id) => (found.get(id) ?? []).map((l) => String(l[to])).sort(compareIds);
 }
 
 /** The projection: the read model's table, built from the rows on each read (in memory; nothing keeps it). */
@@ -112,11 +111,11 @@ export function commandTableFrom(view: ReadView): CommandTable {
       checks: checks(root),
       calls: calls(root),
       handler: built((handlers.get(root) ?? [])[0]),
-      policies: [...(policies.get(root) ?? [])].sort((a, b) => byId(a.id, b.id)).map((policy) => {
+      policies: [...(policies.get(root) ?? [])].sort((a, b) => compareIds(a.id, b.id)).map((policy) => {
         const test = (tests.get(policy.id) ?? [])[0];
         return { policy, hears: hears(policy.id)[0] ?? null, eventHandler: built((eventHandlers.get(policy.id) ?? [])[0]), test: test ? { test, startsFrom: startsFrom(test.id) } : null };
       }),
-      endpoints: (endpoints.get(root) ?? []).map((e) => e.id).sort(byId),
+      endpoints: (endpoints.get(root) ?? []).map((e) => e.id).sort(compareIds),
     };
     if (tree.handler) hold(tree.handler.handler.id, 'command_handler');
     for (const p of tree.policies) {
@@ -127,7 +126,7 @@ export function commandTableFrom(view: ReadView): CommandTable {
     commands.set(root, tree);
     entities.get(command.entity_id)?.commands.push({ id: command.id, title: command.title });
   }
-  for (const e of entities.values()) e.commands.sort((a, b) => byId(a.id, b.id));
+  for (const e of entities.values()) e.commands.sort((a, b) => compareIds(a.id, b.id));
   const kinds = new Map<string, string>();
   for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
   return { commands, holding, entities, kinds };

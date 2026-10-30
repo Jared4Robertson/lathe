@@ -4,7 +4,8 @@ import { SETTINGS_KEY } from '../src/exploring/session-settings/repository';
 import { focusAnswer, focusContext, openAnswer } from '../src/chat/appRequests';
 import { reloadChanges } from '../src/changes/changes';
 import { sessionDate } from '../src/chat/ChatPanel';
-import type { ChatBridge, ChatItem, ChatMode, ChatPatch, ChatSessions, ChatStatus, LatheTools, OpenChoice, PromptAnswer } from '../src/chat/types';
+import type { ChatBridge, ChatItem, ChatMode, ChatPatch, ChatSessions, ChatStatus, LatheTools, OpenChoice, PromptAnswer, VoiceBridge, VoiceEvent, VoiceSupport } from '../src/chat/types';
+import { chatDraft } from '../src/chat/draft';
 import { setRow } from './fixtures/load';
 import { recordIndexOf } from './read-view';
 import { workspace } from './fixtures/workspace';
@@ -394,5 +395,107 @@ describe('LA-PLT-UC19-R12-T04 The chat knows where the Owner is: a chip above th
   it('builds the chip and the context from what app_focus answers', () => {
     const index = recordIndexOf(workspace());
     expect(focusContext(index, '/', 'DM')).toEqual({ label: 'Viewing the products', context: 'Product: DM\nPage: /' });
+  });
+});
+
+// ---------- Voice (LA-V99-R04) ----------
+
+/** A stand-in for the shell's voice: the test says what it hears. */
+function fakeVoice(support: Partial<VoiceSupport> = {}) {
+  let listener: ((event: VoiceEvent) => void) | null = null;
+  const listens: boolean[] = [];
+  const voice: VoiceBridge = {
+    support: async () => ({ available: true, reason: null, microphone: 'granted', endOfTurn: true, ...support }),
+    listen: async (on) => { listens.push(on); return on ? 'listening' : 'stopped'; },
+    onEvent: (l) => { listener = l; return () => { listener = null; }; } };
+  const hear = (event: VoiceEvent) => act(() => listener?.(event));
+  return { voice, listens, hear };
+}
+
+describe('LA-V99-R04-T01 The mic button dictates into the message box; the Voice menu turns on voice activation and Quick mode', () => {
+  beforeEach(() => chatDraft.write(''));
+
+  it('dictates the heard words into the message box, to edit and send', async () => {
+    const chatFake = fakeChat();
+    const { voice, listens, hear } = fakeVoice();
+    host.latheDesktop = { ...host.latheDesktop!, voice };
+    await openApp('/DM-SHOP-UC01');
+    chatFake.push([]);
+    const mic = await within(chat()).findByRole('button', { name: 'Dictate' });
+    fireEvent.click(mic);
+    await waitFor(() => expect(listens).toEqual([true]));
+    expect(within(chat()).getByRole('button', { name: 'Stop dictating' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(chat()).getByText(/Listening. Say “Lathe, send” to send/)).toBeInTheDocument();
+    hear({ type: 'listening', on: true, why: 'started', message: null });
+    hear({ type: 'speech', at: 0.1 });
+    hear({ type: 'volatile', text: 'What does' });
+    const box = screen.getByRole('textbox', { name: 'Message Claude' });
+    expect(box).toHaveValue('What does');
+    hear({ type: 'final', words: [{ text: 'What', start: 0.1, end: 0.3 }, { text: 'does', start: 0.3, end: 0.5 }, { text: 'this', start: 0.5, end: 0.7 }, { text: 'need?', start: 0.7, end: 1 }] });
+    expect(box).toHaveValue('What does this need?');
+    fireEvent.click(within(chat()).getByRole('button', { name: 'Stop dictating' }));
+    await waitFor(() => expect(listens).toEqual([true, false]));
+    fireEvent.keyDown(box, { key: 'Enter' });
+    await waitFor(() => expect(chatFake.sent).toEqual(['What does this need?']));
+  });
+
+  it('turns on voice activation and Quick mode from the Voice menu, kept from one launch to the next, and refuses clashing phrases', async () => {
+    fakeChat();
+    const { voice, listens } = fakeVoice();
+    host.latheDesktop = { ...host.latheDesktop!, voice };
+    await openApp('/DM-SHOP-UC01');
+    fireEvent.click(await within(chat()).findByRole('button', { name: 'Voice' }));
+    const menu = within(chat()).getByRole('group', { name: 'Voice' });
+    fireEvent.click(within(menu).getByRole('switch', { name: /Voice activation/ }));
+    await waitFor(() => expect(listens).toEqual([true]));
+    expect(within(chat()).getByText('Listening for “Lathe”')).toBeInTheDocument();
+    fireEvent.click(within(menu).getByRole('switch', { name: /Quick mode/ }));
+    expect(JSON.parse(window.localStorage.getItem('lathe:voice')!)).toMatchObject({ activation: true, quick: true, wake: 'Lathe' });
+    fireEvent.click(within(menu).getByRole('button', { name: 'Use “Hey Lathe”' }));
+    fireEvent.change(within(menu).getByRole('textbox', { name: 'Send' }), { target: { value: 'hey lathe' } });
+    fireEvent.click(within(menu).getByRole('button', { name: 'Save phrases' }));
+    expect(within(menu).getByRole('alert')).toHaveTextContent('The command "Send" is the wake phrase.');
+    fireEvent.change(within(menu).getByRole('textbox', { name: 'Send' }), { target: { value: 'ship it' } });
+    fireEvent.click(within(menu).getByRole('button', { name: 'Save phrases' }));
+    expect(JSON.parse(window.localStorage.getItem('lathe:voice')!)).toMatchObject({ wake: 'Hey Lathe', commands: { send: 'ship it' } });
+    expect(within(chat()).getByText('Listening for “Hey Lathe”')).toBeInTheDocument();
+  });
+
+  it('says what listening means before macOS first asks for the microphone', async () => {
+    fakeChat();
+    const { voice, listens } = fakeVoice({ microphone: 'not-determined' });
+    host.latheDesktop = { ...host.latheDesktop!, voice };
+    await openApp('/DM-SHOP-UC01');
+    fireEvent.click(await within(chat()).findByRole('button', { name: 'Dictate' }));
+    const intro = within(chat()).getByRole('alertdialog', { name: 'Talk to Claude?' });
+    expect(intro).toHaveTextContent('the audio never leaves this Mac, and nothing is recorded or saved');
+    expect(listens).toEqual([]);
+    fireEvent.click(within(intro).getByRole('button', { name: 'Continue' }));
+    await waitFor(() => expect(listens).toEqual([true]));
+  });
+
+  it('shows Quick mode\'s countdown on Send, and hides the mic where the Mac cannot recognize speech on-device', async () => {
+    fakeChat();
+    const { voice, hear } = fakeVoice();
+    host.latheDesktop = { ...host.latheDesktop!, voice };
+    window.localStorage.setItem('lathe:voice', JSON.stringify({ activation: false, quick: true, wake: 'Lathe', commands: { send: 'send', cancel: 'cancel', scratch: 'scratch that', newLine: 'new line' } }));
+    await openApp('/DM-SHOP-UC01');
+    fireEvent.click(await within(chat()).findByRole('button', { name: 'Dictate' }));
+    hear({ type: 'listening', on: true, why: 'started', message: null });
+    hear({ type: 'speech', at: 0.1 });
+    hear({ type: 'final', words: [{ text: 'Zoom', start: 0.1, end: 0.3 }, { text: 'into', start: 0.3, end: 0.5 }, { text: 'the', start: 0.5, end: 0.7 }] });
+    hear({ type: 'silence', at: 0.8, pitch: 'level' });
+    expect(within(chat()).getByRole('button', { name: /Send now/ })).toHaveClass('is-counting');
+    expect(within(chat()).getByText(/Sending in 3\.\d s. Any key or sound cancels./)).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Message Claude' }), { key: 'Shift' });
+    expect(within(chat()).getByRole('button', { name: 'Send' })).not.toHaveClass('is-counting');
+  });
+
+  it('has no mic where on-device dictation is not available', async () => {
+    fakeChat();
+    await openApp('/DM-SHOP-UC01');
+    await within(chat()).findByRole('textbox', { name: 'Message Claude' });
+    expect(within(chat()).queryByRole('button', { name: 'Dictate' })).toBeNull();
+    expect(within(chat()).queryByRole('button', { name: 'Voice' })).toBeNull();
   });
 });

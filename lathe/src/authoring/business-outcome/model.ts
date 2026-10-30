@@ -1,6 +1,7 @@
 // The Business outcome aggregate (LA-AUT-A16): a measurable change a product exists to bring about, with the tests and
 // records that measure it. One instance is one outcome, whole: its row and the measured_by links it starts.
 import type { Slice } from '../../platform/commands/definition.ts';
+import { bySource, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { BusinessOutcomeRow } from '../../platform/data/tables.ts';
 
@@ -41,11 +42,11 @@ export function businessOutcomesFrom(rows: (table: string) => Row[], only?: stri
   const outcomes = rows('business_outcome').filter((r) => only === undefined || r.id === only) as unknown as BusinessOutcomeRow[];
   if (!outcomes.length) return [];
   const ids = new Set(outcomes.map((o) => o.id));
-  const measures = rows('measured_by').filter((m) => ids.has(String(m.source_id)));
+  const measures = bySource(rows('measured_by').filter((m) => ids.has(String(m.source_id))));
   return outcomes.map((outcome) => ({
     root: outcome.id,
     outcome,
-    measuredBy: measures.filter((m) => m.source_id === outcome.id).map((m) => String(m.target_id)).sort(),
+    measuredBy: groupOf(measures, outcome.id),
   }));
 }
 

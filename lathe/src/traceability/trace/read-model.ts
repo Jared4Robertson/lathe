@@ -10,6 +10,7 @@
 // the queries and the only code that writes the read model's table; the query handler reads it only through the reader.
 import type { ReadView } from '../../platform/data/rules.ts';
 import { useCaseReaches } from '../../trace/serves.ts';
+import { compareIds } from '../../platform/data/ids.ts';
 
 /** What an obligation misses, as coverage names it. */
 export type TraceGap = 'designed' | 'built' | 'proved';
@@ -64,7 +65,6 @@ export interface TraceTable {
 
 const GAPS: readonly TraceGap[] = ['designed', 'built', 'proved'];
 
-const byId = (a: string, b: string) => a.localeCompare(b, 'en', { numeric: true });
 
 /** The longest of the IDs the ID starts with (and a hyphen), or undefined. */
 const longestPrefix = (ids: readonly string[], id: string) => ids.filter((p) => id.startsWith(`${p}-`)).sort((a, b) => b.length - a.length)[0];
@@ -145,11 +145,11 @@ export function traceTableFrom(view: ReadView): TraceTable {
         proofOnly: proofOnly.has(view.record(obligation)?.kind ?? ''),
       };
     });
-    const outcomes = view.rows('business_outcome').map((o) => String(o.id)).filter((o) => placeOf(o) === product).sort(byId);
-    const useCases = [...reaches].filter(([u]) => inSpace(u, product)).sort(([a], [b]) => byId(a, b)).map(([useCase, r]): UseCaseLinks => ({
+    const outcomes = view.rows('business_outcome').map((o) => String(o.id)).filter((o) => placeOf(o) === product).sort(compareIds);
+    const useCases = [...reaches].filter(([u]) => inSpace(u, product)).sort(([a], [b]) => compareIds(a, b)).map(([useCase, r]): UseCaseLinks => ({
       useCase,
       outcomes: r.outcomes.filter((o) => outcomes.includes(o)),
-      reaches: [...r.reached].filter((id) => isObligation(id) && inSpace(id, product)).sort(byId),
+      reaches: [...r.reached].filter((id) => isObligation(id) && inSpace(id, product)).sort(compareIds),
     }));
     products.set(product, { product, traces, untraced: [...untraced], outcomes, useCases });
   }

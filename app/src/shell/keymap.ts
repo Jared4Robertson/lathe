@@ -91,6 +91,8 @@ export const COMMANDS: readonly Command[] = [
   { id: 'toggleNav', title: 'Show or hide the navigation', group: 'View', keys: ['Mod+B'], when: 'global' },
   // The desktop app's chat (LA-PLT-UC19), as VS Code's: Ctrl+Cmd+I on a Mac; Ctrl+Alt+C elsewhere. It shows the chat and focuses its message box.
   { id: 'toggleChat', title: 'Show the chat with Claude, or hide it', group: 'View', keys: ['Ctrl+Meta+I'], otherKeys: ['Ctrl+Alt+C'], when: 'global' },
+  // Dictation in the chat (LA-PLT-UC20-R01), as VS Code's Start Dictation: listed only where the Mac recognizes speech on-device.
+  { id: 'dictate', title: 'Dictate a message to Claude, or stop dictating', group: 'View', keys: ['Mod+Alt+V'], when: 'global', dynamic: true },
   // Ctrl is the Control key on a Mac too, where Cmd+W stays the browser's; elsewhere Ctrl+W closes the tab and Ctrl+G finds the next match, so Alt.
   { id: 'stageGraph', title: 'Graph stage', group: 'View', keys: ['Ctrl+G', 'Ctrl+1'], otherKeys: ['Alt+G', 'Ctrl+1'], when: 'page' },
   { id: 'stageErd', title: 'ERD stage', group: 'View', keys: ['Ctrl+E', 'Ctrl+2'], otherKeys: ['Alt+E', 'Ctrl+2'], when: 'page' },
