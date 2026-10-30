@@ -7,6 +7,7 @@
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import { inSpace, placeRecords } from '../placement.ts';
+import { byRecordId } from '../../platform/data/ids.ts';
 
 /** One record as a link to it, a list row and the page's frame read it. */
 export interface RecordSummary {
@@ -38,13 +39,30 @@ export interface SummaryLink {
   target: string;
 }
 
-/** A product's space as its pages name its records. */
+/** The columns of a record's summary, in the order an answer gives each record's values. */
+const SUMMARY_COLUMNS = ['id', 'kind', 'title', 'parent', 'product', 'domain', 'group', 'testState', 'names', 'level', 'file', 'line', 'digest'] as const satisfies readonly (keyof RecordSummary)[];
+
+/** One record's summary as an answer gives it: its values, in the order of the answer's columns. */
+type SummaryRow = RecordSummary[keyof RecordSummary][];
+
+/**
+ * A product's space as its pages name its records. Each record is its values in the order of `columns`, which the
+ * answer names once rather than once per record: a large product's space holds tens of thousands of records, and the
+ * names would be four in ten of the answer's bytes (LA-PLT-UC03-R05).
+ */
 export interface RecordSummaries {
   product: string;
-  /** Its records in ID order. */
-  records: RecordSummary[];
+  /** The columns of each record's values. */
+  columns: readonly (keyof RecordSummary)[];
+  /** Its records in ID order, each as its values. */
+  records: SummaryRow[];
   /** The links among them, by source, relation and target. */
   links: SummaryLink[];
+}
+
+/** An answer's records, each as its summary, in ID order. */
+export function summariesIn(answer: RecordSummaries): RecordSummary[] {
+  return answer.records.map((values) => Object.fromEntries(answer.columns.map((column, at) => [column, values[at]])) as unknown as RecordSummary);
 }
 
 /** The read model's table, kept in memory: each product's summaries, by product. */
@@ -53,8 +71,6 @@ export interface RecordSummariesTable {
 }
 
 const textColumn = (value: unknown): string | null => (typeof value === 'string' && value.trim() !== '' ? value : null);
-
-const byId = (a: string, b: string) => a.localeCompare(b, 'en', { numeric: true });
 
 /** A short, stable digest of a text (FNV-1a, 32 bits, in hex). */
 function digestOf(text: string): string {
@@ -72,7 +88,11 @@ export function recordSummariesTableFrom(view: ReadView): RecordSummariesTable {
   const placed = placeRecords(view);
   // Each record's part rows and the links it starts, read once per table, for its digest; and every link.
   const owned = new Map<string, unknown[]>();
-  const own = (id: string, value: unknown) => owned.set(id, [...(owned.get(id) ?? []), value]);
+  const own = (id: string, value: unknown) => {
+    const list = owned.get(id);
+    if (list) list.push(value);
+    else owned.set(id, [value]);
+  };
   const links: SummaryLink[] = [];
   for (const table of Object.values(schema.tables)) {
     if (table.role === 'part' && table.ownerColumn) {
@@ -104,14 +124,14 @@ export function recordSummariesTableFrom(view: ReadView): RecordSummariesTable {
     line: r.line,
     digest: digestOf(JSON.stringify([r.row, owned.get(r.id) ?? []])),
   }));
-  summaries.sort((a, b) => byId(a.id, b.id));
+  summaries.sort(byRecordId);
   const products = new Map<string, RecordSummaries>();
   for (const p of summaries.filter((r) => r.kind === 'product')) {
     const records = summaries.filter((r) => inSpace(placed.get(r.id)!, p.id));
     const ids = new Set(records.map((r) => r.id));
     // A link to an ID that is no record stays with the record that names it.
     const within = links.filter((l) => ids.has(l.source) && (ids.has(l.target) || !placed.has(l.target)));
-    products.set(p.id, { product: p.id, records, links: within });
+    products.set(p.id, { product: p.id, columns: SUMMARY_COLUMNS, records: records.map((r) => SUMMARY_COLUMNS.map((column) => r[column])), links: within });
   }
   return { products };
 }

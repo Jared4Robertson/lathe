@@ -5,6 +5,7 @@
 // owner by the longest product, or domain, its ID starts with). It is the only code that reads them for the queries and
 // the only code that writes the read model's table; the query handler reads that table only through the reader.
 import type { ReadView } from '../../platform/data/rules.ts';
+import { compareIds } from '../../platform/data/ids.ts';
 
 /** One problem as the panel lists it. */
 export interface ListedProblem {
@@ -43,7 +44,7 @@ export interface ProblemsTable {
 const problemOrder = (a: ListedProblem, b: ListedProblem) =>
   (a.severity === b.severity ? 0 : a.severity === 'error' ? -1 : 1) ||
   a.check.localeCompare(b.check) ||
-  (a.record ?? '').localeCompare(b.record ?? '', 'en', { numeric: true });
+  compareIds(a.record ?? '', b.record ?? '');
 
 /** Problems by check, in the order of their first problem (errors first). */
 function byCheck(problems: readonly ListedProblem[]): CheckProblems[] {

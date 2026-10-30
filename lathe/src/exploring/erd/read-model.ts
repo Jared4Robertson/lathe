@@ -7,6 +7,7 @@
 // projection is the only code that reads the source rows for the query and the only code that writes the table.
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
+import { byRecordId } from '../../platform/data/ids.ts';
 
 /** A line end: exactly one (two bars), many (a crow's foot), none (a plain end) or an arrowhead (the aggregate a reference points at). */
 export type ErdEnd = 'one' | 'many' | 'none' | 'arrow';
@@ -62,7 +63,6 @@ export interface ErdTable {
   products: Map<string, ErdMap>;
 }
 
-const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id, 'en', { numeric: true });
 const str = (row: Row, column: string) => (typeof row[column] === 'string' ? (row[column] as string) : '');
 
 /** The projection: the read model's table, built from the rows on each read (in memory; nothing keeps it). */
@@ -86,7 +86,7 @@ export function erdTableFrom(view: ReadView): ErdTable {
     if (aggregate) return `→ ${titles.get(aggregate) ?? aggregate}`;
     return str(f, 'type');
   };
-  const sortedRows = (rows: Row[]) => [...rows].sort((a, b) => byId({ id: String(a.id) }, { id: String(b.id) }));
+  const sortedRows = (rows: Row[]) => [...rows].sort((a, b) => byRecordId({ id: String(a.id) }, { id: String(b.id) }));
 
   const products = new Map<string, ErdMap>();
   for (const p of view.rows('product')) {
@@ -120,7 +120,7 @@ export function erdTableFrom(view: ReadView): ErdTable {
     for (const b of boxes.values()) if (b.kind === 'entity' && b.root && b.parent) rootOf.set(b.parent, b.id);
     const entities = [...boxes.values()].filter((b) => b.kind === 'entity');
     for (const e of entities) {
-      const links = [...(linksOf.get(e.id) ?? [])].sort((a, b) => a.relation.localeCompare(b.relation) || byId({ id: a.target }, { id: b.target }));
+      const links = [...(linksOf.get(e.id) ?? [])].sort((a, b) => a.relation.localeCompare(b.relation) || byRecordId({ id: a.target }, { id: b.target }));
       for (const relation of ['has_one', 'has_many'] as const) for (const l of links.filter((x) => x.relation === relation)) line(e.id, relation, l.target);
     }
     for (const e of entities) {

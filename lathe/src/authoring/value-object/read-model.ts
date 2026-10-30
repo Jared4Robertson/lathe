@@ -8,6 +8,7 @@ import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { ConstraintRow, ConstraintTestRow, ValueObjectFieldRow, ValueObjectRow, ValueTypeRow } from '../../platform/data/tables.ts';
 import type { ValueObjectKind } from './model.ts';
+import { byRecordId } from '../../platform/data/ids.ts';
 
 /** A constraint test as the page shows it: its row and the test data sets it starts from. */
 export interface ConstraintTestOnPage {
@@ -64,8 +65,6 @@ export interface ValueObjectTable {
   kinds: Map<string, string>;
 }
 
-const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id, 'en', { numeric: true });
-
 /** Rows by a column's value, each list in the table's order. */
 function grouped<T>(rows: Row[], column: string): Map<string, T[]> {
   const found = new Map<string, T[]>();
@@ -101,7 +100,7 @@ export function valueObjectTableFrom(view: ReadView): ValueObjectTable {
       valueObject,
       product: productOf(root),
       fields: [...(fields.get(root) ?? [])].sort((a, b) => a.position - b.position),
-      constraints: [...(constraints.get(root) ?? [])].sort(byId).map((constraint) => {
+      constraints: [...(constraints.get(root) ?? [])].sort(byRecordId).map((constraint) => {
         const test = tests.get(constraint.id);
         return { constraint, test: test ? { test, startsFrom: startsFrom(test.id) } : null };
       }),
@@ -116,7 +115,7 @@ export function valueObjectTableFrom(view: ReadView): ValueObjectTable {
     if (valueType) holding.set(valueType.id, { root, kind: 'value_type' });
     products.get(tree.product)?.push({ id: root, title: valueObject.title });
   }
-  for (const list of products.values()) list.sort(byId);
+  for (const list of products.values()) list.sort(byRecordId);
   const kinds = new Map<string, string>();
   for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
   return { valueObjects, holding, products, kinds };

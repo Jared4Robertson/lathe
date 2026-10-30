@@ -15,6 +15,13 @@ async function fresh(): Promise<{ store: Store; root: string }> {
   return { store: await openStore(root), root };
 }
 
+/** SQL over the store's data built whole: a write holds its state without building it, so its SQL waits for whole(). */
+async function sql<T = Record<string, unknown>>(store: Store, text: string): Promise<T[]> {
+  const built = await store.whole((data) => data.query<T>(text));
+  if (!built) throw new Error('The data changed while it was built.');
+  return built.value;
+}
+
 const files = (root: string) =>
   Object.fromEntries(readdirSync(path.join(root, 'data')).map((f) => [f, readFileSync(path.join(root, 'data', f), 'utf8')]));
 const mtimes = (root: string) => Object.fromEntries(readdirSync(path.join(root, 'data')).map((f) => [f, statSync(path.join(root, 'data', f)).mtimeMs]));
@@ -26,8 +33,8 @@ describe('adding', () => {
     const result = await run(store, 'use-case add-uc-requirement', { id: 'TL-LEND-UC01-R02', title: 'Member is known', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse an unknown member.' });
     expect({ tables: result.tables, files: result.files }).toEqual({ tables: ['uc_requirement'], files: ['uc_requirement.jsonl'] });
     expect(store.record('TL-LEND-UC01-R02')?.kind).toBe('uc_requirement');
-    expect(await store.query("SELECT kind FROM record_id WHERE id = 'TL-LEND-UC01-R02'")).toEqual([{ kind: 'uc_requirement' }]);
-    expect(await store.query("SELECT kind FROM obligation WHERE id = 'TL-LEND-UC01-R02'")).toEqual([{ kind: 'uc_requirement' }]);
+    expect(await sql(store, "SELECT kind FROM record_id WHERE id = 'TL-LEND-UC01-R02'")).toEqual([{ kind: 'uc_requirement' }]);
+    expect(await sql(store, "SELECT kind FROM obligation WHERE id = 'TL-LEND-UC01-R02'")).toEqual([{ kind: 'uc_requirement' }]);
     const after = mtimes(root);
     expect(Object.keys(after).filter((f) => after[f] !== before[f])).toEqual(['uc_requirement.jsonl']);
     expect(readFileSync(path.join(root, 'data', 'uc_requirement.jsonl'), 'utf8').split('\n')[1]).toBe(
@@ -41,12 +48,12 @@ describe('adding', () => {
     await run(store, 'specification add-specification', { id: 'TL-LEND-SP02', title: 'Member in good standing', statement: 'A member owes nothing.', reads: ['TL-LEND-A1'] });
     await run(store, 'endpoint add-endpoint', { id: 'TL-LEND-EP02', title: 'GET /tools/free', query_id: 'TL-LEND-QRY01', method: 'GET', route: '/tools/free', description: 'Answers 200 with the free tools.' });
     await run(store, 'specification add-specification-test', { id: 'TL-LEND-SP02-T', title: 'Good standing', specification_id: 'TL-LEND-SP02', level: 'unit', state: 'manual', manual_reason: 'Not yet coded.', when: 'Checks a member who owes nothing', then: 'They are in good standing' });
-    expect(await store.query("SELECT * FROM record_scope WHERE id IN ('TL-LEND-SP02', 'TL-LEND-EP02', 'TL-LEND-SP02-T') ORDER BY id")).toEqual([
+    expect(await sql(store, "SELECT * FROM record_scope WHERE id IN ('TL-LEND-SP02', 'TL-LEND-EP02', 'TL-LEND-SP02-T') ORDER BY id")).toEqual([
       { id: 'TL-LEND-EP02', product_id: 'TL', domain_id: 'TL-LEND', aggregate_id: null },
       { id: 'TL-LEND-SP02', product_id: 'TL', domain_id: 'TL-LEND', aggregate_id: null },
       { id: 'TL-LEND-SP02-T', product_id: 'TL', domain_id: 'TL-LEND', aggregate_id: null },
     ]);
-    expect(await store.query("SELECT parent_id FROM record_parent WHERE id = 'TL-LEND-EP02'")).toEqual([{ parent_id: 'TL-LEND-QRY01' }]);
+    expect(await sql(store, "SELECT parent_id FROM record_parent WHERE id = 'TL-LEND-EP02'")).toEqual([{ parent_id: 'TL-LEND-QRY01' }]);
     await store.close();
   });
 
@@ -63,7 +70,7 @@ describe('record_scope', () => {
     const { store } = await fresh();
     const domains = async (ids: string[]) =>
       Object.fromEntries(
-        (await store.query<{ id: string; domain_id: string | null }>(`SELECT id, domain_id FROM record_scope WHERE id IN (${ids.map((id) => `'${id}'`).join(', ')})`)).map((r) => [r.id, r.domain_id]),
+        (await sql<{ id: string; domain_id: string | null }>(store, `SELECT id, domain_id FROM record_scope WHERE id IN (${ids.map((id) => `'${id}'`).join(', ')})`)).map((r) => [r.id, r.domain_id]),
       );
     // Lending's one flow step happens in the view and exchanges with the integration, the view's UI component renders
     // it, and a Lending entity's field is typed by the value object: all four, and what sits under them, are Lending's.
@@ -101,7 +108,7 @@ describe('record_scope', () => {
       'TL-VO03': null,
     });
     // IDs stay product-scoped, so moving to shared needed no rename; the product stays.
-    expect(await store.query("SELECT product_id FROM record_scope WHERE id = 'TL-V01'")).toEqual([{ product_id: 'TL' }]);
+    expect(await sql(store, "SELECT product_id FROM record_scope WHERE id = 'TL-V01'")).toEqual([{ product_id: 'TL' }]);
     await store.close();
   });
 });
@@ -200,7 +207,7 @@ describe('a command', () => {
       const problems = await refusedBy(store, 'domain add-domain-service-test', { id: 'TL-LEND-DS01-T02', title: 'Broken', domain_service_id: 'TL-LEND-DS01', level: 'unit', state: 'automated', when: 'Works out a due date', then: 'It is 14 days on' });
       expect(problems).toEqual([expect.objectContaining({ rule: 'check' })]);
       expect(store.record('TL-LEND-DS01-T02')).toBeUndefined();
-      expect(await store.query("SELECT id FROM domain_service_test WHERE id = 'TL-LEND-DS01-T02'")).toEqual([]);
+      expect(await sql(store, "SELECT id FROM domain_service_test WHERE id = 'TL-LEND-DS01-T02'")).toEqual([]);
       expect(files(root)).toEqual(before);
       await store.close();
     });
@@ -249,7 +256,7 @@ describe('a command', () => {
     });
     await run(store, 'extension-record add-extension-record', { kind: 'house_rule', id: 'TL-LEND-HR01', parent_id: 'TL-LEND', values: { title: 'Quiet', group_name: ' Noise' } });
     await run(store, 'extension-record add-extension-record', { kind: 'house_rule', id: 'TL-LEND-HR02', parent_id: 'TL-LEND', values: { title: 'Tidy' } });
-    expect(await store.query("SELECT id, label FROM record_group WHERE id IN ('TL-LEND-HR01', 'TL-LEND-HR02', 'TL-LEND-UC01-FL01-S01') ORDER BY id")).toEqual([
+    expect(await sql(store, "SELECT id, label FROM record_group WHERE id IN ('TL-LEND-HR01', 'TL-LEND-HR02', 'TL-LEND-UC01-FL01-S01') ORDER BY id")).toEqual([
       { id: 'TL-LEND-HR01', label: ' Noise' },
       { id: 'TL-LEND-UC01-FL01-S01', label: 'main' },
     ]);
@@ -268,9 +275,7 @@ describe('a command', () => {
     const { store } = await fresh();
     await Promise.all([2, 3, 4].map((n) => run(store, 'view add-view', { id: `TL-V0${n}`, title: `View ${n}`, description: 'A page of the desk app.' })));
     expect(store.rows('view').map((v) => v.id)).toEqual(['TL-V01', 'TL-V02', 'TL-V03', 'TL-V04']);
-    const reader = await store.connect();
-    expect((await reader.runAndReadAll('SELECT count(*)::INTEGER AS n FROM view')).getRowObjectsJson()).toEqual([{ n: 4 }]);
-    reader.closeSync();
+    expect(await sql(store, 'SELECT count(*)::INTEGER AS n FROM view')).toEqual([{ n: 4 }]);
     await store.close();
   });
 });

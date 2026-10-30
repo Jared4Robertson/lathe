@@ -5,6 +5,7 @@ import type { Row } from '../../platform/data/rows.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
 import { DOMAIN_AGGREGATE, domainsFrom, type Domain } from './model.ts';
+import { compareIds } from '../../platform/data/ids.ts';
 
 /**
  * Every rule the domain breaks (LA-AUT-INV112 a domain service has at most one service; LA-AUT-INV41 an aggregate has
@@ -109,8 +110,8 @@ function buildsOnLoops(domain: Domain, view: ReadView): RuleProblem[] {
   }
   const problems: RuleProblem[] = [];
   const named = new Set<string>();
-  for (const loop of loopsThrough([...own].sort(byId), next)) {
-    const start = loop.reduce((low, id) => (byId(id, low) < 0 ? id : low));
+  for (const loop of loopsThrough([...own].sort(compareIds), next)) {
+    const start = loop.reduce((low, id) => (compareIds(id, low) < 0 ? id : low));
     const at = loop.indexOf(start);
     const from = [...loop.slice(at), ...loop.slice(0, at)];
     const shortest = wayBack(from[0], next) ?? from;
@@ -127,8 +128,6 @@ function buildsOnLoops(domain: Domain, view: ReadView): RuleProblem[] {
   }
   return problems;
 }
-
-const byId = (a: string, b: string) => a.localeCompare(b, 'en', { numeric: true });
 
 // Each loop the links make through one of the starting terms, as the terms along it.
 function loopsThrough(starts: string[], next: Map<string, string[]>): string[][] {
@@ -158,7 +157,7 @@ function loopsThrough(starts: string[], next: Map<string, string[]>): string[][]
 // The shortest chain of links from the term back to itself, as the terms along it, or undefined.
 function wayBack(start: string, next: Map<string, string[]>): string[] | undefined {
   const cameFrom = new Map<string, string>();
-  const queue = [...(next.get(start) ?? [])].sort(byId);
+  const queue = [...(next.get(start) ?? [])].sort(compareIds);
   for (const id of queue) if (!cameFrom.has(id)) cameFrom.set(id, start);
   for (let i = 0; i < queue.length; i++) {
     const id = queue[i];
@@ -167,7 +166,7 @@ function wayBack(start: string, next: Map<string, string[]>): string[] | undefin
       for (let at = cameFrom.get(start)!; at !== start; at = cameFrom.get(at)!) chain.unshift(at);
       return [start, ...chain];
     }
-    for (const target of [...(next.get(id) ?? [])].sort(byId)) {
+    for (const target of [...(next.get(id) ?? [])].sort(compareIds)) {
       if (cameFrom.has(target)) continue;
       cameFrom.set(target, id);
       queue.push(target);

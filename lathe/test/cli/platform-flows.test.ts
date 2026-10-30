@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { loadWorkspace, openStore, PACKAGE_DIR, SCHEMA_VERSION, type LoadTimings } from '../../src/index.ts';
 import type { WriteAnswer } from '../../src/server/contract.ts';
-import type { RecordSummaries } from '../../src/exploring/record-summaries/read-model.ts';
+import { summariesIn, type RecordSummaries } from '../../src/exploring/record-summaries/read-model.ts';
 import { WRITE_BODY_LIMIT } from '../../src/server/api.ts';
 import { APP_DIR } from '../../src/server/serve.ts';
 import { build, complete, removeData, run } from '../helpers.ts';
@@ -204,7 +204,7 @@ describe('Platform flows', () => {
     expect(page.status).toBe(200);
     expect(await page.text()).toContain('<div id="root">');
     const summaries = (await (await fetch(`${base}/api/record-summaries/list-record-summaries?product_id=TL`)).json()) as RecordSummaries;
-    expect(summaries.records.filter((r) => r.kind === 'aggregate').map((r) => r.id)).toEqual(['TL-LEND-A1']);
+    expect(summariesIn(summaries).filter((r) => r.kind === 'aggregate').map((r) => r.id)).toEqual(['TL-LEND-A1']);
 
     // Stopped from the terminal, it closes the database and ends by the same signal, cleanly.
     child.kill('SIGINT');

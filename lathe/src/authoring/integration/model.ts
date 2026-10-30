@@ -3,6 +3,7 @@
 // owner: its product follows from its ID. One instance is one integration, whole; it holds only the links its own
 // records start.
 import type { Slice } from '../../platform/commands/definition.ts';
+import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { AdapterRow, IntegrationRow, IntegrationTestRow } from '../../platform/data/tables.ts';
 
@@ -60,31 +61,23 @@ export function newIntegration(integration: IntegrationRow): Integration {
   return { root: integration.id, integration, adapter: null, tests: [] };
 }
 
-// A link table's targets by source, each list sorted.
-function bySource(links: Row[], source: string, target: string): Map<string, string[]> {
-  const found = new Map<string, string[]>();
-  for (const l of links) found.set(String(l[source]), [...(found.get(String(l[source])) ?? []), String(l[target])]);
-  for (const list of found.values()) list.sort();
-  return found;
-}
-
 /** The integrations in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function integrationsFrom(rows: (table: string) => Row[], only?: string): Integration[] {
   const integrations = rows('integration').filter((r) => only === undefined || r.id === only) as unknown as IntegrationRow[];
   if (!integrations.length) return [];
   const ids = new Set(integrations.map((i) => i.id));
-  const adapters = (rows('adapter') as unknown as AdapterRow[]).filter((a) => ids.has(a.integration_id));
-  const tests = (rows('integration_test') as unknown as IntegrationTestRow[]).filter((t) => ids.has(t.integration_id));
+  const adaptersOf = groupBy((rows('adapter') as unknown as AdapterRow[]).filter((a) => ids.has(a.integration_id)), (a) => a.integration_id);
+  const testsOf = groupBy((rows('integration_test') as unknown as IntegrationTestRow[]).filter((t) => ids.has(t.integration_id)), (t) => t.integration_id);
   const meets = bySource(rows('meets'), 'source_id', 'target_id');
   const packages = bySource(rows('package_use'), 'record_id', 'package');
   const startsFrom = bySource(rows('starts_from'), 'source_id', 'target_id');
   return integrations.map((integration) => {
-    const adapter = adapters.find((a) => a.integration_id === integration.id);
+    const adapter = groupOf(adaptersOf, integration.id)[0];
     return {
       root: integration.id,
       integration,
       adapter: adapter ? { row: adapter, meets: meets.get(adapter.id) ?? [], packages: packages.get(adapter.id) ?? [] } : null,
-      tests: tests.filter((t) => t.integration_id === integration.id).map((row) => ({ row, startsFrom: startsFrom.get(row.id) ?? [] })),
+      tests: groupOf(testsOf, integration.id).map((row) => ({ row, startsFrom: startsFrom.get(row.id) ?? [] })),
     };
   });
 }
