@@ -73,18 +73,20 @@ function FollowingDomainSection({ index, page, d, setMode }: { index: SpecIndex;
         </table>
       </div>
       {page.rules.length > 0 && (
-        <table className="data-table pattern-rule-status">
-          <caption className="sr-only">How {domain} proves each rule of {patternId}</caption>
-          <thead><tr><th scope="col">Rule</th><th scope="col">In {domain}</th></tr></thead>
-          <tbody>
-            {page.rules.map(({ rule: { id } }) => (
-              <tr key={id}>
-                <th scope="row"><RecordLink index={index} id={id} /></th>
-                <td>{index.byId.has(id) && <RuleMarks index={index} status={ruleStatus(index, index.byId.get(id)!, domain, followed)} />}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="table-scroll table-stack">
+          <table className="data-table pattern-rule-status">
+            <caption className="sr-only">How {domain} proves each rule of {patternId}</caption>
+            <thead><tr><th scope="col">Rule</th><th scope="col">In {domain}</th></tr></thead>
+            <tbody>
+              {page.rules.map(({ rule: { id } }) => (
+                <tr key={id}>
+                  <th scope="row"><RecordLink index={index} id={id} /></th>
+                  <td data-label={`In ${domain}`}>{index.byId.has(id) && <RuleMarks index={index} status={ruleStatus(index, index.byId.get(id)!, domain, followed)} />}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </section>
   );
@@ -128,17 +130,19 @@ export function OwedBy({ index, page, id }: { index: SpecIndex; page: PatternPag
   return (
     <Section title="Owed by" count={shown ? undefined : domains.length}>
       {shown ?? (domains.length === 0 || !rule ? <p className="hint">No domain follows this rule's pattern.</p> : (
-        <table className="data-table pattern-rule-status">
-          <thead><tr><th scope="col">Domain</th><th scope="col">Status</th></tr></thead>
-          <tbody>
-            {domains.map((d) => (
-              <tr key={d.domain}>
-                <th scope="row"><RecordLink index={index} id={d.domain} /></th>
-                <td><RuleMarks index={index} status={ruleStatus(index, rule, d.domain, followedOf(index, d))} /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="table-scroll table-stack">
+          <table className="data-table pattern-rule-status">
+            <thead><tr><th scope="col">Domain</th><th scope="col">Status</th></tr></thead>
+            <tbody>
+              {domains.map((d) => (
+                <tr key={d.domain}>
+                  <th scope="row"><RecordLink index={index} id={d.domain} /></th>
+                  <td data-label="Status"><RuleMarks index={index} status={ruleStatus(index, rule, d.domain, followedOf(index, d))} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ))}
     </Section>
   );
