@@ -45,6 +45,10 @@ function declarationProblems(product: Product, view: ReadView): RuleProblem[] {
     }
   }
   const relation = (row: object, message: string) => problems.push({ rule: 'product-relation-own', table: 'product_relation', row: row as unknown as Row, message });
+  // The supertypes an own kind joins as its tables are built (platform/data/product-kinds.ts): an obligation kind the
+  // obligation supertype, a kind of the technical specification the technical records.
+  const ownMember = (table: string, end: string) =>
+    (table === 'obligation' && own.get(end)?.obligation === true) || (table === 'technical_record' && own.get(end)?.stage === 'technical-specification');
   const firstOf = new Map<string, ProductRelationRow>();
   for (const pair of product.relations) {
     if (blank(pair.forward_label) || blank(pair.reverse_label)) relation(pair, `The relation ${pair.name} needs both its labels, forward and reverse.`);
@@ -55,7 +59,7 @@ function declarationProblems(product: Product, view: ReadView): RuleProblem[] {
     const existing = schema.relations[pair.name];
     if (existing && existing.productId === null) {
       const fits = (table: string, end: string) =>
-        table === 'record_id' || table === end || (schema.supertypes[table]?.includes(end) ?? false) || (table === 'obligation' && own.get(end)?.obligation === true);
+        table === 'record_id' || table === end || (schema.supertypes[table]?.includes(end) ?? false) || ownMember(table, end);
       if (!fits(existing.sourceTable, pair.source_kind) || !fits(existing.targetTable, pair.target_kind)) {
         relation(pair, `Lathe's relation ${pair.name} links ${existing.sourceTable} to ${existing.targetTable}, so it cannot link ${pair.source_kind} to ${pair.target_kind}; give the relation a name of its own.`);
       }
