@@ -363,7 +363,8 @@ function KeyRecorder({ title, replacing, mac, onKey, onCancel }: { title: string
   };
   return (
     <Button ref={ref} className="key-recorder" aria-label={label} data-recording="" onKeyDown={onKeyDown} onBlur={onCancel}>
-      Press a key… <span className="key-recorder-hint">Esc cancels</span>
+      {/* The hint is drawn by the stylesheet, so the button's text is the start of its name (LA-V61-R44), which says it in full. */}
+      Press a key… <span className="key-recorder-hint" data-hint="Esc cancels" aria-hidden="true" />
     </Button>
   );
 }

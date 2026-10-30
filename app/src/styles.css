@@ -611,12 +611,13 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .shortcut-key-list { display: flex; flex-wrap: nowrap; justify-content: flex-end; align-items: center; gap: 4px; }
 .shortcut-key { display: inline-flex; align-items: center; }
 .shortcut-key .button.shortcut-key-change { padding: 2px 3px; min-height: 26px; }
-.shortcut-key .icon-button.shortcut-key-remove { min-width: 22px; min-height: 22px; }
+.shortcut-key .icon-button.shortcut-key-remove { min-width: 24px; min-height: 24px; }
 .shortcut-table .button.shortcut-add, .shortcut-table .button.shortcut-reset { min-height: 26px; padding: 2px 8px; font-size: 0.78rem; }
 .shortcut-table td.shortcut-reset-cell { width: 1%; padding-left: 4px; }
 .shortcut-none, .shortcut-fixed { color: var(--muted); font-size: 0.75rem; }
 .button.key-recorder { min-height: 26px; padding: 2px 8px; border: 1px dashed var(--steel); background: var(--steel-bg); color: var(--steel); font: 500 0.75rem var(--mono); }
 .key-recorder-hint { color: var(--muted); font-weight: 400; }
+.key-recorder-hint::after { content: attr(data-hint); }
 .shortcut-table tr.shortcut-offer-row { border-top: 0; }
 .shortcut-table tr.shortcut-offer-row > td { padding: 0 0 6px; text-align: left; white-space: normal; }
 .shortcut-offer { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 6px; background: var(--paper); border: 1px solid var(--rule); text-align: left; white-space: normal; font-size: 0.82rem; }
@@ -1117,6 +1118,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .theme-row-text { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
 .theme-row-name { overflow-wrap: break-word; }
 .theme-row-state { color: var(--muted); font-size: 0.72rem; }
+.theme-row-state::after { content: attr(data-state); }
 .theme-row .theme-actions { flex: none; flex-wrap: nowrap; gap: 4px; }
 .theme-row .theme-actions > * { padding-block: 2px; font-size: 0.76rem; }
 

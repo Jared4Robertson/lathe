@@ -163,7 +163,8 @@ function ThemeList() {
               <ThemeChip theme={t} mode={shows} />
               <span className="theme-row-text">
                 <span className="theme-row-name">{t.name}</span>
-                <small className="theme-row-state">{t.id === active.id ? 'In use' : t.builtIn ? 'Built in' : 'Yours'}</small>
+                {/* A note beside the name, drawn by the stylesheet, so the button's text is its name (LA-V61-R44); In use is its pressed state. */}
+                <small className="theme-row-state" data-state={t.id === active.id ? 'In use' : t.builtIn ? 'Built in' : 'Yours'} aria-hidden="true" />
               </span>
             </Button>
             <span className="theme-actions">
