@@ -1,11 +1,12 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
-import { AGGREGATE, EDITED, keepData, RECORD } from './scenarios';
+import { EDITED, keepData, RECORD } from './scenarios';
 
 // Changing records in place, with nothing jumping (LA-PAT-APP-UX-R08): on the Use case page (its own editor, sending
 // the Use case aggregate's commands) and on the Domain, Test data set, Pattern, Standard, Product, Business outcome,
-// Entry point, Tooling, Table, Specification, Read model, Value object, View, UI component, Endpoint, Integration, Check and
-// Pattern pages and the Product page's Limits, opening a record's form, saving an edit, adding a child from its parent's page,
+// Entry point, Tooling, Table, Specification, Read model, Value object, Aggregate, Domain event, Command, View, UI component,
+// Endpoint, Integration, Check and Pattern pages and the Product page's Limits, opening a record's form, saving an edit,
+// adding a child from its parent's page,
 // and asking to remove a record that is still referenced, which the command refuses inline; and on the page of a kind
 // whose aggregate has no editor yet, the record form generated from the schema. The form takes the place of the page's content,
 // so shifts inside the wiki card's scroll box are the change itself; the nav, the card's head and
@@ -16,19 +17,22 @@ const WIKI_BAR = '.wiki-panel-head';
 const STRIP = '.header-strip';
 const TITLE = '.wiki-panel-title';
 const CONTENT = ['.wiki-panel-scroll'];
+/** A record of a kind whose aggregate has no editor of its own yet. */
+const GENERIC = '/LA-V92';
 
 test.describe('editing', () => {
   test('LA-EXP-UC14-FL01-T open the record form, save an edit', async ({ page }) => {
     const restore = keepData();
     try {
-      await openPage(page, AGGREGATE);
-      const form = page.getByRole('form', { name: `Edit ${AGGREGATE.slice(1)}` });
+      // A view: its aggregate has no editor of its own yet, so its page shows the record form.
+      await openPage(page, GENERIC);
+      const form = page.getByRole('form', { name: `Edit ${GENERIC.slice(1)}` });
       const open = await step(page, 'edit', 'open the form', { keys: [NAV, WIKI_BAR, STRIP, TITLE], allow: CONTENT }, async () => {
-        await page.getByRole('toolbar', { name: `Change ${AGGREGATE.slice(1)}` }).getByRole('button', { name: 'Edit' }).click();
+        await page.getByRole('toolbar', { name: `Change ${GENERIC.slice(1)}` }).getByRole('button', { name: 'Edit' }).click();
         await form.waitFor();
       });
       expectStable(open);
-      await form.getByRole('textbox', { name: /^identity/ }).fill('Stability');
+      await form.getByRole('textbox', { name: /^description/ }).fill('Stability');
       const save = await test.step('LA-EXP-UC14-R07-T01 the Owner saves the change where the record is read, in one write', () =>
         step(page, 'edit', 'save the edit', { keys: [NAV, WIKI_BAR, STRIP, TITLE], allow: CONTENT, settle: 1500 }, async () => {
           await form.getByRole('button', { name: 'Save' }).click();
@@ -141,6 +145,10 @@ test.describe('editing', () => {
   test('LA-AUT-UC20-FL01-T on the Specification page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-SP03', /^title/, 'Data files clash in a merge'));
   test('LA-AUT-UC21-FL01-T on the Read model page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-RM25', /^description/, 'A specification as the stability suite reads it.'));
   test('LA-AUT-UC24-FL01-T on the Value object page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-VO01', /^description/, 'Names one record across the store, as the stability suite describes it.'));
+  // The Aggregate, Domain event and Command pages, likewise.
+  test('LA-AUT-UC10-FL01-T on the Aggregate page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-A6', /^identity/, 'Stability'));
+  test('LA-AUT-UC25-FL01-T on the Domain event page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-EV01', /^description/, 'Stability'));
+  test('LA-AUT-UC12-FL01-T on the Command page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-CMD210', /^description/, 'Stability'));
 });
 
 /** Opens the page, opens a form from one of its toolbars, fills it and sends it, with nothing outside the card moving. */
