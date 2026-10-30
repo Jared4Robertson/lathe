@@ -9,7 +9,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { configuredRoot } from './store/fixture.ts';
 import { run } from './helpers.ts';
 import { PACKAGE_DIR } from '../src/index.ts';
-import type { SpecData, WriteAnswer } from '../src/server/contract.ts';
+import type { WriteAnswer } from '../src/server/contract.ts';
+import type { RecordSummaries } from '../src/exploring/record-summaries/read-model.ts';
+import type { MetaModel } from '../src/platform/meta-model/read-model.ts';
 import { openStore, SCHEMA_DIR } from '../src/platform/data/index.ts';
 import { APP_DIR, serve, type LatheServer } from '../src/server/serve.ts';
 
@@ -102,13 +104,13 @@ describe.skipIf(!prebuilt && !canBuild)('lathe serve', () => {
     const font = html.match(/href="([^"]+\.woff2)"/)?.[1];
     if (font) expect((await fetch(`${BASE}${font}`)).headers.get('content-type')).toBe('font/woff2');
 
-    const spec = await fetch(`${BASE}/api/spec`);
-    expect(spec.status).toBe(200);
-    const data = (await spec.json()) as SpecData;
-    expect(data.sources.map((s) => s.dataDir)).toEqual(['data']);
-    expect(data.sources[0].tables.use_case.map((r) => r.id)).toEqual(['EX-NOTE-UC01']);
-    expect(data.schema.tables.use_case.role).toBe('kind');
-    expect(Array.isArray(data.problems)).toBe(true);
+    // The stages' own reads: the meta model, a product's record summaries, its problems.
+    const meta = await fetch(`${BASE}/api/meta-model/get-meta-model`);
+    expect(meta.status).toBe(200);
+    expect(((await meta.json()) as MetaModel).kinds.some((k) => k.kind === 'use_case')).toBe(true);
+    const summaries = async () => (await (await fetch(`${BASE}/api/record-summaries/list-record-summaries?product_id=EX`)).json()) as RecordSummaries;
+    expect((await summaries()).records.filter((r) => r.kind === 'use_case').map((r) => r.id)).toEqual(['EX-NOTE-UC01']);
+    expect((await fetch(`${BASE}/api/problems/list-problems?product_id=EX`)).status).toBe(200);
 
     const events = await fetch(`${BASE}/api/events`);
     expect(events.status).toBe(200);
@@ -120,8 +122,7 @@ describe.skipIf(!prebuilt && !canBuild)('lathe serve', () => {
     expect(text).toContain('data: spec:changed');
 
     // The next request sees the change: the store reads the files again when they change under it.
-    const reloaded = (await (await fetch(`${BASE}/api/spec`)).json()) as SpecData;
-    expect(reloaded.sources[0].tables.use_case[0].title).toBe('Write a long note');
+    expect((await summaries()).records.find((r) => r.id === 'EX-NOTE-UC01')?.title).toBe('Write a long note');
 
     // A command goes through the store and comes back as the rows it changed.
     const written = await fetch(`${BASE}/api/use-case/change-use-case`, {
@@ -148,8 +149,8 @@ describe.skipIf(!prebuilt && !canBuild)('lathe serve', () => {
     const before = schemaFiles.map((file) => readFileSync(file, 'utf8'));
     const send = async (method: string, url: string, body = '{"kind":"memo"}') =>
       (await fetch(`${BASE}${url}`, { method, headers: { 'content-type': 'application/json' }, body })).status;
-    expect(await send('POST', '/api/spec')).toBe(405);
-    expect(await send('PUT', '/api/spec')).toBe(405);
+    expect(await send('POST', '/api/meta-model/get-meta-model')).toBe(405);
+    expect(await send('PUT', '/api/meta-model/get-meta-model')).toBe(405);
     expect(await send('POST', '/api/meta')).toBe(404);
     expect(await send('PUT', '/api/kinds')).toBe(404);
     // No command names the meta-model, and no route writes any table it is given.

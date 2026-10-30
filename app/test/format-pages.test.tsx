@@ -1,3 +1,4 @@
+import { ALL_QUERIES } from '../../lathe/src/commands';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
@@ -198,9 +199,9 @@ describe('format reference pages', () => {
   it('LA-V02-R02-T01 The pages are built from the loaded data: a check with no row in the check table is the engine\'s own, listed without an explanation', async () => {
     const { requests } = await openApp('/DM?page=format');
     await within(await screen.findByRole('region', { name: 'Wiki card' })).findByRole('heading', { level: 2, name: 'Record format' });
-    // The specific reads: the Reference, the meta model and the space's own reads; never one dump of every table.
+    // The specific reads: the Reference, the meta model and the space's own reads, each a query of its own.
     expect(requests).toEqual(expect.arrayContaining(['GET /api/reference?', 'GET /api/meta-model/get-meta-model?', 'GET /api/problems/list-problems?product_id=DM', 'GET /api/product/list-products?']));
-    expect(requests.some((r) => r.startsWith('GET /api/spec'))).toBe(false);
+    expect(requests.filter((r) => r !== 'GET /api/reference?').every((r) => ALL_QUERIES.some((q) => r.split('?')[0] === `${q.method} ${q.route}`))).toBe(true);
     expect(within(section(/^Checks\d/)).getByRole('link', { name: /^engine/ })).toHaveAttribute('href', over('format/checks/engine'));
     await openApp('/DM?page=format/checks/engine');
     expect(await screen.findByText(/The engine reports this itself/)).toBeInTheDocument();

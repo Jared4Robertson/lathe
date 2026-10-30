@@ -25,11 +25,11 @@ try {
   const running = serve({ root: workerData.root, port: 0, appDir: workerData.appDir });
   await new Promise((resolve, reject) => { running.server.once('listening', resolve); running.server.once('error', reject); });
   const url = 'http://127.0.0.1:' + running.server.address().port;
-  await (await fetch(url + '/api/spec')).arrayBuffer();
+  await (await fetch(url + '/api/product/list-products')).arrayBuffer();
   const later = new Date(Date.now() + 1000 * (workerData.round + 1));
   utimesSync(workerData.dataFile, later, later);
   let answered = false;
-  const reloaded = fetch(url + '/api/spec').then((res) => res.arrayBuffer()).then(() => { answered = true; }, () => {});
+  const reloaded = fetch(url + '/api/product/list-products').then((res) => res.arrayBuffer()).then(() => { answered = true; }, () => {});
   await (workerData.delay === null ? reloaded : new Promise((resolve) => setTimeout(resolve, workerData.delay)));
   const inProgress = !answered;
   await running.stop();

@@ -8,7 +8,9 @@ import { Readable } from 'node:stream';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { loadConfig, loadProducts, openStore, SCHEMA_VERSION, workspaceProducts } from '../src/index.ts';
 import { closeStores, handleApi, watchTargets } from '../src/server/api.ts';
-import type { SpecData } from '../src/server/contract.ts';
+import type { RecordSummaries } from '../src/exploring/record-summaries/read-model.ts';
+import type { MetaModel } from '../src/platform/meta-model/read-model.ts';
+import type { ProductCoverage } from '../src/traceability/coverage/read-model.ts';
 import { gatherRouteFacts } from '../src/trace/routes.ts';
 import { readPackageFacts } from '../src/trace/packages.ts';
 import { sourceFiles } from '../src/trace/source-files.ts';
@@ -138,9 +140,10 @@ describe('a workspace of several products', () => {
   it('LA-PLT-UC02-R11-T01 The API serves every product of the workspace, writes to each product\'s folder and watches each', async () => {
     const root = workspace();
     opened.push(root);
-    const spec = (await request(root, '/api/spec')).json() as SpecData;
-    expect(spec.sources.map((s) => s.dataDir)).toEqual(['data', `${SHOP}/data`]);
-    expect(spec.sources.map((s) => s.tables.product.map((p) => p.id))).toEqual([['WS'], ['SH']]);
+    // A product's reads come from its own folder.
+    const summaries = async (product: string) => (await request(root, `/api/record-summaries/list-record-summaries?product_id=${product}`)).json() as RecordSummaries;
+    expect((await summaries('WS')).records.map((r) => r.id)).toContain('WS');
+    expect((await summaries('SH')).records.map((r) => r.id)).toContain('SH-SELL');
     // A read that names no record reads every product's folder: the nav lists every product.
     const listed = await request(root, '/api/product/list-products');
     expect(listed.status).toBe(200);
@@ -157,25 +160,27 @@ describe('a workspace of several products', () => {
     expect(watchTargets(root).map((t) => t.dir)).toEqual(expect.arrayContaining([path.join(root, 'data'), path.join(root, SHOP, 'data')]));
   });
 
-  it('LA-PLT-EP01-R02-T01 GET /api/spec serves each product folder\'s rows apart under one schema', async () => {
+  it('LA-PLT-UC02-R11-T02 A read of the whole workspace joins every product\'s schema and refuses one product in two folders', async () => {
     const shopKind: Data = {
       ...shop,
       product_kind: [{ name: 'shelf', product_id: 'SH', label: 'Shelf', description: 'A shelf in the shop.', parent_kind: 'domain', obligation: false }],
     };
     const root = workspace(shopKind);
     opened.push(root);
-    const answer = await request(root, '/api/spec');
+    const answer = await request(root, '/api/meta-model/get-meta-model');
     expect(answer.status).toBe(200);
-    const spec = answer.json() as SpecData;
-    expect(spec.sources[0].dataDir).toBe('data');
-    expect(spec.schema.kinds.shelf?.productId).toBe('SH');
-    expect(spec.schema.loadOrder).toContain('shelf');
-    expect([...new Set(spec.coverage.map((c) => c.product))].sort()).toEqual(['SH', 'WS']);
+    const meta = answer.json() as MetaModel;
+    expect(meta.kinds.find((k) => k.kind === 'shelf')?.declared_by).toBe('SH');
+    expect(meta.columns.shelf).toBeDefined();
+    const coverage = async (product: string) => (await request(root, `/api/coverage/get-coverage?product_id=${product}`)).json() as ProductCoverage;
+    expect((await coverage('SH')).product).toBe('SH');
+    expect((await coverage('WS')).product).toBe('WS');
 
     const twice = workspace({ product: [{ id: 'WS', title: 'Workspace again', description: 'The same product in a second folder.' }] });
     opened.push(twice);
-    const clash = await request(twice, '/api/spec');
+    const clash = await request(twice, '/api/product/list-products');
     expect(clash.status).toBe(500);
     expect(JSON.stringify(clash.json())).toContain('The product WS is in two folders, . and examples/shop');
   });
+
 });

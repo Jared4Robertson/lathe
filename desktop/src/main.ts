@@ -52,7 +52,7 @@ import { badgeFor, dockMenuTemplate } from './dock.ts';
 import { editorLaunch, editorName } from './editor.ts';
 import { checkFolder, productNames, windowTitle } from './folders.ts';
 import { routeOpenFile, routeSecondInstance, folderArgument } from './instance.ts';
-import { aboutLink, aboutModel, errorModel, launchModel, launchStep, modelQuery, parseLocalAction, specErrorMessage, type AboutModel, type LaunchModel, type LocalAction } from './launch.ts';
+import { aboutLink, aboutModel, errorModel, launchModel, launchStep, modelQuery, parseLocalAction, serverErrorMessage, type AboutModel, type LaunchModel, type LocalAction } from './launch.ts';
 import { menuTemplate } from './menu.ts';
 import { optOutOfWindowRestoration } from './persistence.ts';
 import { DataFiles, recordMenuTemplate } from './records.ts';
@@ -283,8 +283,8 @@ async function specError(entry: OpenWindow): Promise<string> {
   const running = appServers.load().running.get(entry.folder);
   if (!running) return 'Lathe is not running for this folder.';
   try {
-    const res = await fetch(`${running.server.url}/api/spec`);
-    return specErrorMessage(res.status, await res.json().catch(() => null));
+    const res = await fetch(`${running.server.url}/api/product/list-products`);
+    return serverErrorMessage(res.status, await res.json().catch(() => null));
   } catch (error) {
     return error instanceof Error ? error.message : String(error);
   }

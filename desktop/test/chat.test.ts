@@ -41,18 +41,18 @@ describe('LA-PLT-UC19-R03-T02 The CLI\'s stream becomes the chat\'s text, tool r
 
   it('shows a tool call as a row with a one-line summary, closed by its result', () => {
     const state = run([
-      { type: 'assistant', message: { id: 'm2', content: [{ type: 'tool_use', id: 't1', name: 'mcp__plugin_lathe_lathe__add', input: { use_case: { id: 'TL-UC01', title: 'Borrow' } } }] } },
+      { type: 'assistant', message: { id: 'm2', content: [{ type: 'tool_use', id: 't1', name: 'mcp__plugin_lathe_lathe__use_case_add_use_case', input: { id: 'TL-UC01', title: 'Borrow', capability_id: 'TL-CAP01' } }] } },
       { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 't1', content: [{ type: 'text', text: 'Added use_case TL-UC01' }] }] } },
       { type: 'assistant', message: { id: 'm3', content: [{ type: 'tool_use', id: 't2', name: 'Bash', input: { command: 'false' } }] } },
       { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 't2', content: 'exit 1', is_error: true }] } },
     ]);
     expect(state.items).toMatchObject([
-      { kind: 'tool', id: 't1', name: 'mcp__plugin_lathe_lathe__add', summary: 'use_case TL-UC01', result: 'Added use_case TL-UC01', status: 'done' },
+      { kind: 'tool', id: 't1', name: 'mcp__plugin_lathe_lathe__use_case_add_use_case', summary: 'TL-UC01', result: 'Added use_case TL-UC01', status: 'done' },
       { kind: 'tool', id: 't2', summary: 'false', result: 'exit 1', status: 'error' },
     ]);
     expect(toolLabel('mcp__plugin_lathe_lathe__add')).toBe('lathe add');
     expect(toolLabel('Bash')).toBe('Bash');
-    expect(toolSummary('Read', { file_path: '/a/b.ts' })).toBe('/a/b.ts');
+    expect(toolSummary({ file_path: '/a/b.ts' })).toBe('/a/b.ts');
   });
 
   it('keeps a subagent\'s text inside its tool call', () => {

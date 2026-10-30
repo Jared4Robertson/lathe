@@ -11,7 +11,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { loadWorkspace, openStore, PACKAGE_DIR, SCHEMA_VERSION, type LoadTimings } from '../../src/index.ts';
-import type { SpecData, WriteAnswer } from '../../src/server/contract.ts';
+import type { WriteAnswer } from '../../src/server/contract.ts';
+import type { RecordSummaries } from '../../src/exploring/record-summaries/read-model.ts';
 import { WRITE_BODY_LIMIT } from '../../src/server/api.ts';
 import { APP_DIR } from '../../src/server/serve.ts';
 import { build, complete, removeData, run } from '../helpers.ts';
@@ -196,14 +197,14 @@ describe('Platform flows', () => {
     expect(Object.keys(files(root))).toEqual(['aggregate.jsonl', 'domain.jsonl', 'product.jsonl']);
     expect(lathe(root, 'check').status).toBe(0);
 
-    // lathe serve: the app and the spec, with no build tools in the product repo.
+    // lathe serve: the app and its reads, with no build tools in the product repo.
     expect(existsSync(path.join(root, 'package.json'))).toBe(false);
     const { child, base } = await serveCli(root);
     const page = await fetch(`${base}/`);
     expect(page.status).toBe(200);
     expect(await page.text()).toContain('<div id="root">');
-    const spec = (await (await fetch(`${base}/api/spec`)).json()) as SpecData;
-    expect(spec.sources[0].tables.aggregate.map((r) => r.id)).toEqual(['TL-LEND-A1']);
+    const summaries = (await (await fetch(`${base}/api/record-summaries/list-record-summaries?product_id=TL`)).json()) as RecordSummaries;
+    expect(summaries.records.filter((r) => r.kind === 'aggregate').map((r) => r.id)).toEqual(['TL-LEND-A1']);
 
     // Stopped from the terminal, it closes the database and ends by the same signal, cleanly.
     child.kill('SIGINT');
@@ -262,8 +263,8 @@ describe('Platform flows', () => {
     expect(saved.status).toBe(200);
     expect((await saved.json()) as WriteAnswer).toMatchObject({ ok: true, tables: ['aggregate'] });
     expect(await eventsUntil(events, 'data: spec:changed', 10_000)).toContain('data: spec:changed');
-    const reloaded = (await (await fetch(`${base}/api/spec`)).json()) as SpecData;
-    expect(reloaded.sources[0].tables.aggregate[0].description).toBe('One tool lent to one member.');
+    const reloaded = (await (await fetch(`${base}/api/aggregate/get-aggregate?id=TL-LEND-A1`)).json()) as { aggregate: { description: string } };
+    expect(reloaded.aggregate.description).toBe('One tool lent to one member.');
 
     // Refused before the store sees it: another site's write, a body not sent as JSON, a body over the limit.
     const before = files(root);
