@@ -268,7 +268,7 @@ describe('folders by stage', () => {
     await screen.findByRole('region', { name: 'Checks' });
   };
 
-  it('LA-EXP-INV05-T What is folded is remembered for the session only', async () => {
+  it('LA-V90-R74-T01 What is folded is remembered for the session only', async () => {
     await testPlanOpened();
     expect(list('Test plan of Shopping')).toBeInTheDocument();
     expect(window.localStorage.getItem('lathe:nav-folders')).toBeNull();

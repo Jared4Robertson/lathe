@@ -57,7 +57,7 @@ async function step(key: string) {
 }
 
 describe('moving through the graph keeps how it is drawn', () => {
-  it('LA-EXP-INV09-T Opening, activating, cycling and closing tabs never touch the window\'s settings; only the person\'s change does', () => {
+  it('LA-V96-R35-T01 Opening, activating, cycling and closing tabs never touch the window\'s settings; only the person\'s change does', () => {
     const mine: GraphLook = { layout: 'nested', minimap: true };
     chooseGraphLayout({ layout: mine.layout });
     showOrHideMinimap({ shown: mine.minimap });
