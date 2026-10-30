@@ -1,6 +1,33 @@
 import { useEffect, useState, type AnchorHTMLAttributes } from 'react';
 
-// Hand-rolled History API routing for every page.
+// Hand-rolled History API routing for every page. The window's history is the browser's (an outside system, not one of
+// the app's aggregates): `browserHistory` is the app's one adapter to it, and nothing else calls window.history's
+// pushState, replaceState, go or state. Opening a page (navigate, LA-EXP-CMD01) raises Page opened (LA-EXP-EV01), as
+// the browser's Back and Forward do: every page hears it through useLocation.
+
+type EntryState = Record<string, unknown>;
+
+/** The adapter to the browser's history (the Browser history integration). */
+export const browserHistory = {
+  /** What the current entry carries, or an empty state. */
+  state(): EntryState {
+    const state = window.history.state as EntryState | null;
+    return state && typeof state === 'object' ? state : {};
+  },
+  /** A new entry at the address, carrying `state`. */
+  push(address: string, state: EntryState | null = null) { window.history.pushState(state, '', address); },
+  /** The current entry at the address (the current address when none), carrying `state`. */
+  replace(state: EntryState | null, address?: string) {
+    if (address === undefined) window.history.replaceState(state, '');
+    else window.history.replaceState(state, '', address);
+  },
+  /** Goes `delta` entries back (negative) or forward. */
+  go(delta: number) { window.history.go(delta); },
+  /** Back one entry, as the browser's Back button. */
+  back() { window.history.back(); },
+  /** Forward one entry, as the browser's Forward button. */
+  forward() { window.history.forward(); },
+};
 
 const NAVIGATE = 'lathe:navigate';
 
@@ -32,15 +59,13 @@ export function onLeaveEntry(fn: () => void): () => void {
 
 /** What a page noted in the current history entry (see onLeaveEntry), or undefined. */
 export function entryState<T>(key: string): T | undefined {
-  const state = window.history.state as Record<string, unknown> | null;
-  return state && typeof state === 'object' ? (state[key] as T | undefined) : undefined;
+  return browserHistory.state()[key] as T | undefined;
 }
 
 /** Notes a value in the current history entry, kept through Back and Forward. */
 export function noteInEntry(key: string, value: unknown) {
-  const state = window.history.state as Record<string, unknown> | null;
   try {
-    window.history.replaceState({ ...(state && typeof state === 'object' ? state : {}), [key]: value }, '');
+    browserHistory.replace({ ...browserHistory.state(), [key]: value });
   } catch { /* too many history calls: the note is skipped */ }
 }
 
@@ -74,6 +99,7 @@ export function resolveAddress(to: string, search = window.location.search): str
   return `${patchBase()}${query ? `?${query}` : ''}${hash}`;
 }
 
+/** Opens a page (LA-EXP-CMD01): a new entry at the address, or the current entry replaced; every page hears it. */
 export function navigate(to: string, replace = false) {
   if (rewriting) { waiting.push(() => navigate(to, replace)); return; }
   to = to.startsWith('?') ? resolveAddress(to) : carry(to, new URLSearchParams(window.location.search));
@@ -81,8 +107,8 @@ export function navigate(to: string, replace = false) {
   if (!replace) for (const fn of leaving) fn();
   lastMove = replace ? 'replace' : 'push';
   // Replacing the entry (a view switched on the same page) keeps what was noted in it.
-  if (replace) window.history.replaceState(window.history.state, '', to);
-  else window.history.pushState(null, '', to);
+  if (replace) browserHistory.replace(browserHistory.state(), to);
+  else browserHistory.push(to);
   window.dispatchEvent(new Event(NAVIGATE));
 }
 
@@ -96,7 +122,7 @@ function goAndWait(delta: number): Promise<void> {
     const timer = setTimeout(done, 400);
     function done() { clearTimeout(timer); onPopped = null; resolve(); }
     onPopped = done;
-    window.history.go(delta);
+    browserHistory.go(delta);
   });
 }
 
@@ -118,8 +144,8 @@ export function rewriteHistory(plan: () => { back: number; entries: readonly His
     try {
       await goAndWait(-back);
       entries.forEach((e, i) => {
-        if (i === 0) window.history.replaceState(e.state, '', e.address);
-        else window.history.pushState(e.state, '', e.address);
+        if (i === 0) browserHistory.replace(e.state, e.address);
+        else browserHistory.push(e.address, e.state);
       });
       await goAndWait(at - (entries.length - 1));
     } finally {

@@ -174,7 +174,7 @@
 {"read_model_id":"LA-PLT-RM02","position":1,"name":"Command ID","meaning":"The command.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM02","position":2,"name":"Title","meaning":"What the palette and the sheet call it, or the title its handler gives (\"Switch to Lathe\").","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM02","position":3,"name":"Group","meaning":"Where the sheet lists it.","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM02","position":4,"name":"Shown keys","meaning":"Its bindings with the person's overrides, as the platform shows them (DS01).","type":"text","required":false}
+{"read_model_id":"LA-PLT-RM02","position":4,"name":"Shown keys","meaning":"Its bindings with the person's overrides, as the platform shows them (DS01).","type_value_object_id":"LA-VO61","required":false}
 {"read_model_id":"LA-PLT-RM02","position":5,"name":"ARIA keys","meaning":"What `aria-keyshortcuts` says; none for a sequence.","type":"text","required":false}
 {"read_model_id":"LA-PLT-RM03","position":1,"name":"Theme ID","meaning":"The theme.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM03","position":2,"name":"Name","meaning":"What it is called.","type":"text","required":true}

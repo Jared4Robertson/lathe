@@ -84,8 +84,6 @@
 {"id":"LA-EXP-EN11","title":"Session settings","aggregate_id":"LA-EXP-A6","role":"root","description":"How the graph is laid out and how wide the wiki card is, for this browser session."}
 {"id":"LA-EXP-EN12","title":"History entry","aggregate_id":"LA-EXP-A5","role":"child","in_root_table":true,"description":"One place a tab went to, in its own Back and Forward history."}
 {"id":"LA-PLT-EN02","title":"Panel","aggregate_id":"LA-PLT-A2","role":"root","description":"One part of the page's layout, which always shows the page's focus and can be hidden without losing it."}
-{"id":"LA-PLT-EN03","title":"Keyboard command","aggregate_id":"LA-PLT-A3","role":"root","description":"Something a person can do from anywhere in the app, listed once in the keymap."}
-{"id":"LA-PLT-EN04","title":"Key binding","aggregate_id":"LA-PLT-A3","role":"child","in_root_table":true,"description":"One chord or sequence that runs the command, never shared with another command active at the same time."}
 {"id":"LA-PLT-EN06","title":"Theme","aggregate_id":"LA-PLT-A4","role":"child","description":"One theme: a named set of token values with a light set and a dark set."}
 {"id":"LA-PLT-EN08","title":"Product window","aggregate_id":"LA-PLT-A6","role":"root","description":"One window showing one product folder."}
 {"id":"LA-PLT-EN09","title":"Recent folder","aggregate_id":"LA-PLT-A9","role":"child","in_root_table":true,"description":"One folder the person opened lately, for File › Open Recent and the next launch."}
@@ -93,5 +91,6 @@
 {"id":"LA-PLT-EN14","title":"Appearance","aggregate_id":"LA-PLT-A4","role":"root","description":"The person's appearance: the theme in use and the color mode."}
 {"id":"LA-PLT-EN15","title":"Recent folders","aggregate_id":"LA-PLT-A9","role":"root","description":"The list of recent folders, one per shell."}
 {"id":"LA-PLT-EN16","title":"Product repo","aggregate_id":"LA-PLT-A10","role":"root","description":"A product repo: its root folder, the schema version its data is for, where its data files are, and the other products it shows as a workspace."}
+{"id":"LA-PLT-EN20","title":"Shell settings","aggregate_id":"LA-PLT-A11","role":"root","description":"The editor the shell opens data files in, its custom command, and where `claude` is."}
 {"id":"LA-TRC-EN05","title":"Pattern following","aggregate_id":"LA-TRC-A3","role":"root","description":"A domain or use case that follows one pattern."}
 {"id":"LA-TRC-EN06","title":"Setting value","aggregate_id":"LA-TRC-A3","role":"child","description":"A `setting_value` row: the value a following use case, or a domain that follows the pattern itself, gives one of the pattern's settings."}

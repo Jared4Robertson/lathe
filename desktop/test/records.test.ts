@@ -1,8 +1,10 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it, vi } from 'vitest';
-import { DataFiles, findDataFile, parseRecordRequest, recordMenuTemplate, revealLabel } from '../src/records.ts';
+import { LOCAL_ACTION_CHANNELS } from '../src/launch.ts';
+import { DataFiles, findDataFile, parseRecordId, recordMenuTemplate, revealLabel } from '../src/records.ts';
 
 const temp = mkdtempSync(path.join(os.tmpdir(), 'lathe-records-'));
 afterAll(() => rmSync(temp, { recursive: true, force: true }));
@@ -12,31 +14,30 @@ function write(file: string, text: string) {
   writeFileSync(file, text);
 }
 
-describe('LA-PAT-RECORD-DATA-FILE-R01-T01 LA-PAT-SHELL-ACTIONS-R01-T02 The record actions take only a known action and a record ID, and find the data file themselves', () => {
-  it('accepts exactly { action, id } with a known action and a record ID', () => {
-    expect(parseRecordRequest({ action: 'reveal', id: 'SMK-ORD' })).toEqual({ action: 'reveal', id: 'SMK-ORD' });
-    for (const action of ['open-in-editor', 'copy-id', 'menu']) expect(parseRecordRequest({ action, id: 'LA-V71-R01' })).toEqual({ action, id: 'LA-V71-R01' });
+describe('LA-PAT-RECORD-DATA-FILE-R01-T01 LA-PAT-SHELL-ACTIONS-R01-T02 The record actions take only a record ID, each on its own channel, and find the data file themselves', () => {
+  it('accepts exactly { id } with a record ID, each action on its own channel', () => {
+    expect(parseRecordId({ id: 'SMK-ORD' })).toBe('SMK-ORD');
+    expect(parseRecordId({ id: 'LA-V71-R01' })).toBe('LA-V71-R01');
   });
 
-  it('refuses paths, unknown actions, odd IDs and extra keys', () => {
+  it('refuses paths, odd IDs and extra keys', () => {
     const refused: unknown[] = [
       null,
-      'reveal',
-      ['reveal', 'SMK'],
-      { action: 'reveal' },
-      { id: 'SMK' },
-      { action: 'delete', id: 'SMK' },
-      { action: 'reveal', id: '../../etc/passwd' },
-      { action: 'reveal', id: '/Users/person/.ssh/id_rsa' },
-      { action: 'reveal', id: 'smk-ord' },
-      { action: 'reveal', id: 'SMK--ORD' },
-      { action: 'reveal', id: 'SMK-ORD/requirement' },
-      { action: 'reveal', id: 'SMK ORD' },
-      { action: 'reveal', id: 42 },
-      { action: 'reveal', id: 'A'.repeat(200) },
-      { action: 'reveal', id: 'SMK', path: '/etc/hosts' },
+      'SMK',
+      ['SMK'],
+      {},
+      { action: 'reveal', id: 'SMK' },
+      { id: '../../etc/passwd' },
+      { id: '/Users/person/.ssh/id_rsa' },
+      { id: 'smk-ord' },
+      { id: 'SMK--ORD' },
+      { id: 'SMK-ORD/requirement' },
+      { id: 'SMK ORD' },
+      { id: 42 },
+      { id: 'A'.repeat(200) },
+      { id: 'SMK', path: '/etc/hosts' },
     ];
-    for (const input of refused) expect(parseRecordRequest(input), JSON.stringify(input)).toBeNull();
+    for (const input of refused) expect(parseRecordId(input), JSON.stringify(input)).toBeNull();
   });
 
   it('finds the data file whose row starts with the record\'s id, never a row that only names it, and finds it again when it changes', () => {
@@ -86,5 +87,20 @@ describe('LA-PAT-RECORD-DATA-FILE-R01-T01 LA-PAT-SHELL-ACTIONS-R01-T02 The recor
     expect(menu[0].enabled).not.toBe(false);
     (menu[0].click as () => void)();
     expect(actions.openInNewTab).toHaveBeenCalled();
+  });
+});
+
+const SRC = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'src');
+
+describe('LA-PAT-SHELL-ACTIONS-R01-T02 Each shell action has its own channel', () => {
+  it('sends each error page button on its command\'s channel', () => {
+    const preload = readFileSync(path.join(SRC, 'local-preload.cts'), 'utf8');
+    for (const [action, channel] of Object.entries(LOCAL_ACTION_CHANNELS)) expect(preload).toMatch(new RegExp(`'?${action}'?: '${channel}'`));
+  });
+
+  it('sends each record action on its own channel with { id } only', () => {
+    const preload = readFileSync(path.join(SRC, 'preload.cts'), 'utf8');
+    for (const channel of ['lathe:reveal-record', 'lathe:open-record-in-editor', 'lathe:copy-record-id', 'lathe:show-record-menu']) expect(preload).toContain(`recordAction('${channel}')`);
+    expect(preload).toContain('ipcRenderer.send(channel, { id })');
   });
 });
