@@ -13,11 +13,10 @@ const said = (phrase: string) => phraseWords(phrase).join(' ');
  */
 export function voiceSettingsProblems(settings: VoiceSettings): RuleProblem[] {
   const problems: RuleProblem[] = [];
-  const rule = 'voice-phrases-distinct';
   const check = (phrase: string, name: string) => {
     const n = phraseWords(phrase).length;
-    if (n === 0) problems.push({ rule, message: `${name} needs a word.` });
-    else if (n > MOST_PHRASE_WORDS) problems.push({ rule, message: `${name} has more than ${MOST_PHRASE_WORDS} words.` });
+    if (n === 0) problems.push({ rule: 'voice-phrases-distinct', message: `${name} needs a word.` });
+    else if (n > MOST_PHRASE_WORDS) problems.push({ rule: 'voice-phrases-distinct', message: `${name} has more than ${MOST_PHRASE_WORDS} words.` });
   };
   check(settings.wake, 'The wake phrase');
   const seen = new Map<string, string>();
@@ -26,9 +25,9 @@ export function voiceSettingsProblems(settings: VoiceSettings): RuleProblem[] {
     check(settings.commands[c], name);
     const words = said(settings.commands[c]);
     if (!words) continue;
-    if (words === said(settings.wake)) problems.push({ rule, message: `${name} is the wake phrase.` });
+    if (words === said(settings.wake)) problems.push({ rule: 'voice-phrases-distinct', message: `${name} is the wake phrase.` });
     const other = seen.get(words);
-    if (other) problems.push({ rule, message: `${name} has the same words as "${other}".` });
+    if (other) problems.push({ rule: 'voice-phrases-distinct', message: `${name} has the same words as "${other}".` });
     seen.set(words, COMMAND_LABEL[c]);
   }
   return problems;

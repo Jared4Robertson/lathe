@@ -135,7 +135,7 @@ describe.skipIf(process.platform !== 'darwin')('The desktop app opens a product 
   });
 
   it('LA-PLT-UC11-R05-T01 bridges only window.latheDesktop, with no Node in the page', () => {
-    expect(result.bridge?.keys).toEqual(['chat', 'copyRecordId', 'isDesktop', 'onAppRequest', 'onCommand', 'onFullScreen', 'openRecordInEditor', 'platform', 'revealRecord', 'setChrome', 'setErrorCount', 'setMenuKeys', 'showRecordMenu']);
+    expect(result.bridge?.keys).toEqual(['chat', 'copyRecordId', 'isDesktop', 'onAppRequest', 'onCommand', 'onFullScreen', 'openRecordInEditor', 'platform', 'revealRecord', 'setChrome', 'setErrorCount', 'setMenuKeys', 'showRecordMenu', 'voice']);
     expect(result.bridge?.hasOnCommand).toBe(true);
     expect(result.bridge?.nodeInPage).toBe(false);
   });
