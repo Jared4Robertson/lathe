@@ -112,7 +112,7 @@ describe('form generation from the schema', () => {
     expect(addableKinds(schema, 'use_case')).toEqual(['uc_requirement', 'flow']);
     expect(addableKinds(schema, 'uc_requirement')).toEqual(['use_case_test']);
     expect(addableKinds(schema, 'command')).toEqual(['policy', 'endpoint', 'command_handler']);
-    expect(addableKinds(schema, 'product')).toEqual(['business_outcome', 'domain', 'value_object', 'pattern', 'interface', 'view', 'integration', 'ui_component', 'standard', 'question']);
+    expect(addableKinds(schema, 'product')).toEqual(['business_outcome', 'domain', 'value_object', 'pattern', 'interface', 'view', 'integration', 'data_store', 'ui_component', 'standard', 'question']);
     expect(addableKinds(schema, 'domain')).toEqual(expect.arrayContaining(['aggregate', 'specification', 'read_model', 'capability', 'question']));
     expect(addableKinds(schema, 'domain')).not.toContain('value_object');
   });

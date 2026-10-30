@@ -1,5 +1,5 @@
-import { rewriteHistory } from '../router';
-import type { Tab } from './tabs';
+import { browserHistory, rewriteHistory } from '../router';
+import type { Tab } from '../exploring/tab-set/model';
 
 // The window's history in the desktop app follows the active tab (LA-V96-R31). Each tab keeps its own history
 // (place.ts); the window's entries are the active tab's, from its first entry (the base) up, each entry tagged with
@@ -29,8 +29,7 @@ const isTag = (v: unknown): v is EntryTag => {
 
 /** The tag of the window's current entry, if it is a tab's. */
 export function currentTag(): EntryTag | null {
-  const state = window.history.state as Record<string, unknown> | null;
-  const tag = state && typeof state === 'object' ? state[TAG] : null;
+  const tag = browserHistory.state()[TAG];
   return isTag(tag) ? tag : null;
 }
 
@@ -39,9 +38,8 @@ const sameTag = (a: EntryTag | null, b: EntryTag) => !!a && a.space === b.space 
 /** Tags the window's current entry as a tab's, keeping what is noted in it. */
 export function tagEntry(tag: EntryTag) {
   if (sameTag(currentTag(), tag)) return;
-  const state = window.history.state as Record<string, unknown> | null;
   try {
-    window.history.replaceState({ ...(state && typeof state === 'object' ? state : {}), [TAG]: tag }, '');
+    browserHistory.replace({ ...browserHistory.state(), [TAG]: tag });
   } catch { /* too many history calls: the tag is skipped */ }
 }
 

@@ -185,6 +185,7 @@ export function complete(): Data {
     query: [{ id: 'EX-LEND-QRY01', title: 'List free tools', read_model_id: 'EX-LEND-RM01', description: 'The free tools, by name.' }],
     policy: [{ id: 'EX-LEND-PO01', title: 'Remind on loan', command_id: 'EX-LEND-CMD03', statement: 'Whenever a loan is opened, the library MUST remind the borrower.' }],
     domain_service: [{ id: 'EX-LEND-DS01', title: 'Due date', domain_id: 'EX-LEND', statement: 'The due date MUST be 14 days after the loan starts.' }],
+    storage_requirement: [{ id: 'EX-LEND-A1-SR01', title: 'A loan survives a restart', aggregate_id: 'EX-LEND-A1', statement: 'A saved loan MUST survive a restart, and a failed save MUST leave nothing behind.' }],
     term: [{ id: 'EX-LEND-TM01', title: 'Loan', domain_id: 'EX-LEND', meaning: 'One tool lent to one member until it is returned.' }],
 
     capability: [{ id: 'EX-LEND-CAP01', title: 'Lending', domain_id: 'EX-LEND', position: 1, description: 'Lending tools and taking them back.' }],
@@ -230,6 +231,15 @@ export function complete(): Data {
       { source_id: 'EX-LEND-REPO01', target_id: 'EX-LEND-A1' },
       { source_id: 'EX-LEND-REPO02', target_id: 'EX-LEND-A2' },
     ],
+    data_store: [{ id: 'EX-STORE01', title: 'DATABASE_URL', product_id: 'EX', kind: 'database', description: "The library's database." }],
+    stored_in: [
+      { source_id: 'EX-LEND-REPO01', target_id: 'EX-STORE01' },
+      { source_id: 'EX-LEND-REPO02', target_id: 'EX-STORE01' },
+      { source_id: 'EX-LEND-RM01-RD', target_id: 'EX-STORE01' },
+      { source_id: 'EX-LEND-EN01-TB', target_id: 'EX-STORE01' },
+      { source_id: 'EX-LEND-EN03-TB', target_id: 'EX-STORE01' },
+      { source_id: 'EX-LEND-RM01-TB', target_id: 'EX-STORE01' },
+    ],
     data_model: [
       { id: 'EX-LEND-EN01-DM', title: 'Loan', entity_id: 'EX-LEND-EN01', file: 'src/model.ts' },
       { id: 'EX-LEND-EN02-DM', title: 'Return', entity_id: 'EX-LEND-EN02', file: 'src/model.ts' },
@@ -271,6 +281,7 @@ export function complete(): Data {
     invariant_test: [{ id: 'EX-LEND-INV01-T', title: 'A second loan is refused', invariant_id: 'EX-LEND-INV01', ...automated('integration', 'test/loans.test.ts'), when: 'Lends a tool on loan again', then: 'Expects a refusal' }],
     specification_test: [{ id: 'EX-LEND-SP01-T', title: 'Free tools', specification_id: 'EX-LEND-SP01', ...automated('unit', 'test/loans.test.ts'), when: 'Asks which tools are free', then: 'Expects only the tool on no loan' }],
     policy_test: [{ id: 'EX-LEND-PO01-T', title: 'A reminder follows a loan', policy_id: 'EX-LEND-PO01', ...automated('integration', 'test/loans.test.ts'), when: 'Opens a loan', then: 'Expects a reminder' }],
+    storage_requirement_test: [{ id: 'EX-LEND-A1-SR01-T01', title: 'A loan survives a restart', storage_requirement_id: 'EX-LEND-A1-SR01', ...automated('integration', 'test/storage.test.ts'), when: 'Opens a loan, then restarts the database', then: 'Expects the loan read back' }],
     domain_service_test: [{ id: 'EX-LEND-DS01-T01', title: 'Fourteen days', domain_service_id: 'EX-LEND-DS01', ...automated('unit', 'test/dates.test.ts'), when: 'Works out the due date of a loan', then: 'Expects 14 days after it starts' }],
     use_case_test: [
       { id: 'EX-LEND-UC01-R01-T01', title: 'A lent tool is refused', uc_requirement_id: 'EX-LEND-UC01-R01', ...automated('service', 'test/api.test.ts'), when: 'Borrows a tool on loan', then: 'Expects a refusal' },
@@ -350,6 +361,7 @@ export function sparse(): Data {
       { id: 'SP-D-RM02', title: 'Loans', domain_id: 'SP-D', description: 'Every loan.' },
     ],
     table: [{ id: 'SP-D-TB01', title: 'Outbox', domain_id: 'SP-D', name: 'outbox', storage: 'table' }],
+    data_store: [{ id: 'SP-STORE01', title: 'DATABASE_URL', product_id: 'SP', kind: 'database', description: 'A database nothing is stored in.' }],
     query: [{ id: 'SP-D-QRY01', title: 'List loans', read_model_id: 'SP-D-RM02', description: 'The loans, newest first.' }],
     specification: [{ id: 'SP-D-SP01', title: 'Tool is free', statement: 'A tool is free when no loan names it.' }],
     policy: [{ id: 'SP-D-PO01', title: 'React', command_id: 'SP-D-CMD01', statement: 'Whenever something happens, the library MUST add a tool.' }],

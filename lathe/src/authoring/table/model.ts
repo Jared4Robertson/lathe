@@ -1,5 +1,6 @@
 // The Table aggregate (LA-AUT-A18): where an entity's or read model's rows, or a domain's own infrastructure such as a
-// link table or an outbox, are stored, with its keys in order, the standard rules it meets and the packages it uses.
+// link table or an outbox, are stored, with its keys in order, the data store it is kept in, the standard rules it
+// meets and the packages it uses.
 // One instance is one table, whole; it holds only the links its own record starts.
 import type { Slice } from '../../platform/commands/definition.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
@@ -41,15 +42,17 @@ export interface Table {
   table: TableRow;
   /** Its keys, in order. */
   keys: TableKey[];
+  /** The data store it is kept in, once named: one at most. */
+  storedIn: string | null;
   meets: string[];
   packages: string[];
 }
 
 /** The tables the Table aggregate keeps its rows in: its kind, its part, and the relation and part its record starts. */
-export const TABLE_TABLES = ['table', 'table_key', 'meets', 'package_use'] as const;
+export const TABLE_TABLES = ['table', 'table_key', 'stored_in', 'meets', 'package_use'] as const;
 
 /** A new table with its keys and links. */
-export function newTable(table: TableRow, parts: Pick<Table, 'keys' | 'meets' | 'packages'>): Table {
+export function newTable(table: TableRow, parts: Pick<Table, 'keys' | 'storedIn' | 'meets' | 'packages'>): Table {
   return { root: table.id, table, ...parts };
 }
 
@@ -67,6 +70,7 @@ export function tablesFrom(rows: (table: string) => Row[], only?: string): Table
   if (!tables.length) return [];
   const ids = new Set(tables.map((t) => t.id));
   const keys = (rows('table_key') as unknown as TableKeyRow[]).filter((k) => ids.has(k.table_id));
+  const storedIn = bySource(rows('stored_in'));
   const meets = bySource(rows('meets'));
   const packages = bySource(rows('package_use'), 'record_id', 'package');
   return tables.map((table) => ({
@@ -76,6 +80,7 @@ export function tablesFrom(rows: (table: string) => Row[], only?: string): Table
       .filter((k) => k.table_id === table.id)
       .sort((a, b) => a.position - b.position)
       .map(({ table_id: _owner, position: _at, ...key }) => key),
+    storedIn: storedIn.get(table.id)?.[0] ?? null,
     meets: meets.get(table.id) ?? [],
     packages: packages.get(table.id) ?? [],
   }));
@@ -87,6 +92,7 @@ export function tableRows(table: Table): Map<string, Row[]> {
   return new Map<string, Row[]>([
     ['table', [asRow(table.table)]],
     ['table_key', table.keys.map((k, at) => asRow({ table_id: table.root, position: at + 1, ...k }))],
+    ['stored_in', table.storedIn ? [{ source_id: table.root, target_id: table.storedIn }] : []],
     ['meets', table.meets.map((target) => ({ source_id: table.root, target_id: target }))],
     ['package_use', table.packages.map((name) => ({ record_id: table.root, package: name }))],
   ]);

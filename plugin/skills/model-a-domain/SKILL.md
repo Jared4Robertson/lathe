@@ -1,6 +1,6 @@
 ---
 name: model-a-domain
-description: Split a product into domains by business capability, then write or change a Lathe domain model in event storming order - aggregates, their entities and fields, the commands that change them and the events they raise, then invariants, value objects and their constraints, specifications, policies, read models and queries, domain services and the domain's terms. Also the order of the whole spec, from the business outcomes to the tests. Use when deciding a product's domains, or adding or changing any domain model record, in a repo with lathe.config.json.
+description: Split a product into domains by business capability, then write or change a Lathe domain model in event storming order - aggregates, their entities and fields, the commands that change them and the events they raise, then invariants, value objects and their constraints, specifications, policies, read models and queries, domain services, storage requirements and the domain's terms. Also the order of the whole spec, from the business outcomes to the tests. Use when deciding a product's domains, or adding or changing any domain model record, in a repo with lathe.config.json.
 ---
 
 # Model a domain
@@ -36,7 +36,7 @@ Lathe follows four principles (`LA-STD-PRINCIPLES`), and so does a model written
 Write a product stage by stage, in this order, so that each record's links point at records written before it. Each stage has its skill.
 
 1. **Discovery** (`discover-outcomes`): the product's business outcomes, each measurable, which its capabilities will serve.
-2. **Domain model** (this skill), in event storming order: aggregates with their entities and fields; commands and the events they raise; then invariants, value objects and their constraints, specifications, policies, read models and queries, domain services and terms.
+2. **Domain model** (this skill), in event storming order: aggregates with their entities and fields; commands and the events they raise; then invariants, value objects and their constraints, specifications, policies, read models and queries, domain services, storage requirements and terms.
 3. **Use cases** (`write-use-cases`): capabilities, each linked to the outcomes it serves, use cases with their actors, and their UC requirements; patterns they share.
 4. **Interaction design** (`design-interactions`): the product's interfaces, each use case's flows (one per interface it happens through) and their steps, which invoke the commands and queries and fulfill the UC requirements; the views, endpoints and integrations the steps reach, with their view and API requirements.
 5. **Technical specification** (`write-the-technical-spec`): one technical record for each design record it implements, tables and their keys, standards.
@@ -87,6 +87,7 @@ The tools of this stage, by aggregate:
 | `policy` | the command it invokes | `<P>-<D>-PO<nn>` | `statement`: whenever an event, then this command. Link: `hears` its one event. |
 | `read_model` | the domain | `<P>-<D>-RM<nn>` | A view of the domain's data shaped for reading; `description`: what it shows and from what, in a sentence or two. `fields`: its fields, in order. Link: `reads` the aggregates it reads. |
 | `query` | a read model | `<P>-<D>-QRY<nn>` | A question asked of that read model; it changes nothing. `description`: what it returns, in what order, in a sentence or two. Links: `selects_by` specifications, `calls` domain services. |
+| `storage_requirement` | an aggregate or a read model | `<aggregate or read model>-SR<nn>` | `statement`: what the business needs kept of it and how well: whichever apply of durability (it survives a restart or a crash), atomicity (saved whole or not at all, such as a loan with its outbox event), retention and deletion (how long; deleted on request), recovery (backups, acceptable loss) and capacity (how much, how fast). Written with `storage_requirement_add_storage_requirement`, and proved by its storage requirement tests (`plan-tests`). |
 | `domain_service` | the domain | `<P>-<D>-DS<nn>` | `statement`: domain logic that belongs to no single entity and is not a yes-or-no check, such as a due date or a late fee. |
 | `term` | the domain | `<P>-<D>-TM<nn>` | The word as `title`, `meaning`: what it means in this domain, and `builds_on`: the terms its meaning uses. |
 
@@ -233,4 +234,4 @@ In a shell the same commands are `lathe command add-command --id TL-LEND-CMD06 -
 - Something undecided is a question (`product_add_question`) under the product or the domain, with an `owner` (a role, such as Owner, never a person), and the records it is `about`. Never write "TBD" into a rule. When it is decided, remove the question (`product_remove_question`) and write the answer into the records it affects.
 - Specs name roles, never people: write "a librarian" or "the owner", not someone's name.
 - Each command refuses what breaks its aggregate's rules outright: a second root, a policy hearing another domain's unpublished event, a specification reading another domain's aggregate, a field with no type or two, an ID that does not start with its domain's. The checks report the rest. Each check's explanation, with how to fix what it reports, is in `REFERENCE.md` in the Lathe package.
-- Finish with the `check-and-fix` skill. New obligations (constraints, invariants, specifications, policies, domain services) show as gaps until a technical record implements each and a test proves it; that is expected.
+- Finish with the `check-and-fix` skill. New obligations (constraints, invariants, specifications, policies, domain services, storage requirements) show as gaps until a technical record implements each and a test proves it; that is expected.

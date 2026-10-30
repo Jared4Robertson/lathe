@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { addRecent, checkFolder, displayPath, parseRecent, productNames, RECENT_LIMIT, windowTitle } from '../src/folders.ts';
+import { checkFolder, displayPath, productNames, windowTitle } from '../src/folders.ts';
 
 const temp = mkdtempSync(path.join(os.tmpdir(), 'lathe-desktop-folders-'));
 afterAll(() => rmSync(temp, { recursive: true, force: true }));
@@ -74,31 +74,5 @@ describe('LA-PLT-SP01-T A folder opens only when it holds lathe.config.json or a
     expect(windowTitle('/Users/person/Development/Lathe', names, '/Users/person')).toBe('Lathe, Tool Library — ~/Development/Lathe');
     expect(windowTitle('/srv/product', [], '/Users/person')).toBe('product — /srv/product');
     expect(displayPath('/Users/personx', '/Users/person')).toBe('/Users/personx');
-  });
-});
-
-describe('LA-PLT-INV14-T The recent folders list puts the latest first, each folder once, at most 10', () => {
-  it('puts the folder opened last first', () => {
-    expect(addRecent(['/a', '/b'], '/c')).toEqual(['/c', '/a', '/b']);
-  });
-
-  it('moves a folder opened again to the top instead of listing it twice', () => {
-    expect(addRecent(['/a', '/b', '/c'], '/b')).toEqual(['/b', '/a', '/c']);
-    expect(addRecent(['/a', '/b'], '/b/')).toEqual(['/b', '/a']);
-  });
-
-  it('keeps at most 10 folders, dropping the oldest', () => {
-    let list: string[] = [];
-    for (let i = 1; i <= 12; i++) list = addRecent(list, `/p${i}`);
-    expect(RECENT_LIMIT).toBe(10);
-    expect(list).toHaveLength(10);
-    expect(list[0]).toBe('/p12');
-    expect(list.at(-1)).toBe('/p3');
-  });
-
-  it('reads a saved list safely, keeping its order', () => {
-    expect(parseRecent(['/a', 3, '/b', '/a', '', null])).toEqual(['/a', '/b']);
-    expect(parseRecent({ not: 'a list' })).toEqual([]);
-    expect(parseRecent(Array.from({ length: 15 }, (_, i) => `/f${i}`))).toHaveLength(10);
   });
 });

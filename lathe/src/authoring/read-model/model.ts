@@ -64,13 +64,13 @@ export interface ReadModel {
   queries: Query[];
   /** Its projection, if written: one at most. */
   projection: Technical<ProjectionRow> | null;
-  /** Its reader, if written: one at most. */
-  reader: Technical<ReaderRow> | null;
+  /** Its reader, if written: one at most, with the data store it reads the table in. */
+  reader: (Technical<ReaderRow> & { storedIn: string | null }) | null;
   queryHandlers: Technical<QueryHandlerRow>[];
 }
 
 /** The tables the Read model aggregate keeps its rows in: its kinds, its part, and the relations and parts its records start. */
-export const READ_MODEL_TABLES = ['read_model', 'read_model_field', 'query', 'projection', 'reader', 'query_handler', 'reads', 'calls', 'fed_by', 'selects_by', 'meets', 'package_use'] as const;
+export const READ_MODEL_TABLES = ['read_model', 'read_model_field', 'query', 'projection', 'reader', 'query_handler', 'reads', 'calls', 'fed_by', 'selects_by', 'meets', 'package_use', 'stored_in'] as const;
 
 /** The kinds of the aggregate's records, each with the column that names its parent inside the aggregate. */
 export const READ_MODEL_KINDS = {
@@ -107,7 +107,7 @@ export function readModelsFrom(rows: (table: string) => Row[], only?: string): R
   const projections = (rows('projection') as unknown as ProjectionRow[]).filter((p) => ids.has(p.read_model_id));
   const readers = (rows('reader') as unknown as ReaderRow[]).filter((r) => ids.has(r.read_model_id));
   const handlers = (rows('query_handler') as unknown as QueryHandlerRow[]).filter((h) => readModelOf.has(h.query_id));
-  const [reads, calls, fedBy, selectsBy, meets] = ['reads', 'calls', 'fed_by', 'selects_by', 'meets'].map((table) => bySource(rows(table)));
+  const [reads, calls, fedBy, selectsBy, meets, storedIn] = ['reads', 'calls', 'fed_by', 'selects_by', 'meets', 'stored_in'].map((table) => bySource(rows(table)));
   const packages = bySource(rows('package_use'), 'record_id', 'package');
   const targets = (links: Map<string, string[]>, source: string) => links.get(source) ?? [];
   const technical = <T extends { id: string }>(row: T): Technical<T> => ({ row, meets: targets(meets, row.id), packages: targets(packages, row.id) });
@@ -126,7 +126,7 @@ export function readModelsFrom(rows: (table: string) => Row[], only?: string): R
       fedBy: targets(fedBy, readModel.id),
       queries: queries.filter((q) => q.read_model_id === readModel.id).map((row) => ({ row, selectsBy: targets(selectsBy, row.id), calls: targets(calls, row.id) })),
       projection: projection ? technical(projection) : null,
-      reader: reader ? technical(reader) : null,
+      reader: reader ? { ...technical(reader), storedIn: targets(storedIn, reader.id)[0] ?? null } : null,
       queryHandlers: handlers.filter((h) => readModelOf.get(h.query_id) === readModel.id).map(technical),
     };
   });
@@ -144,6 +144,7 @@ export function readModelRows(readModel: ReadModel): Map<string, Row[]> {
     ['query', readModel.queries.map((q) => asRow(q.row))],
     ['projection', readModel.projection ? [asRow(readModel.projection.row)] : []],
     ['reader', readModel.reader ? [asRow(readModel.reader.row)] : []],
+    ['stored_in', readModel.reader?.storedIn ? links(readModel.reader.row.id, [readModel.reader.storedIn]) : []],
     ['query_handler', readModel.queryHandlers.map((h) => asRow(h.row))],
     ['reads', links(readModel.root, readModel.reads)],
     ['calls', [...links(readModel.root, readModel.calls), ...readModel.queries.flatMap((q) => links(q.row.id, q.calls))]],

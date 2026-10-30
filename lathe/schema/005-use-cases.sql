@@ -112,11 +112,11 @@ COMMENT ON COLUMN pattern_rule.applies_when_value IS 'The value the condition co
 COMMENT ON COLUMN pattern_rule.notes IS 'Longer notes on how the rule applies.';
 
 INSERT INTO meta_kind VALUES
-  ('capability', 'Capability', 'use-cases', 17, false, '<P>-<D>-CAP<nn>', 'TL-LEND-CAP01', 'domain', NULL),
-  ('use_case', 'Use case', 'use-cases', 18, false, '<P>-<D>-UC<nn>', 'TL-LEND-UC01', 'domain', NULL),
-  ('uc_requirement', 'UC requirement', 'use-cases', 19, true, '<use case>-R<nn>', 'TL-LEND-UC01-R01', 'parent', NULL),
-  ('pattern', 'Pattern', 'use-cases', 20, false, '<P>-PAT-<name>', 'TL-PAT-LIBRARIAN-ACTION', 'parent', NULL),
-  ('pattern_rule', 'Pattern rule', 'use-cases', 21, true, '<pattern>-R<nn>', 'TL-PAT-LIBRARIAN-ACTION-R01', 'parent', NULL);
+  ('capability', 'Capability', 'use-cases', 18, false, '<P>-<D>-CAP<nn>', 'TL-LEND-CAP01', 'domain', NULL),
+  ('use_case', 'Use case', 'use-cases', 19, false, '<P>-<D>-UC<nn>', 'TL-LEND-UC01', 'domain', NULL),
+  ('uc_requirement', 'UC requirement', 'use-cases', 20, true, '<use case>-R<nn>', 'TL-LEND-UC01-R01', 'parent', NULL),
+  ('pattern', 'Pattern', 'use-cases', 21, false, '<P>-PAT-<name>', 'TL-PAT-LIBRARIAN-ACTION', 'parent', NULL),
+  ('pattern_rule', 'Pattern rule', 'use-cases', 22, true, '<pattern>-R<nn>', 'TL-PAT-LIBRARIAN-ACTION-R01', 'parent', NULL);
 INSERT INTO meta_kind_parent VALUES
   ('capability', 'domain', 1, 'domain_id'),
   ('use_case', 'capability', 1, 'capability_id'),
