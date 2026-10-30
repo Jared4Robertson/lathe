@@ -1,6 +1,6 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SETTINGS_KEY } from '../src/graph/settings';
+import { SETTINGS_KEY } from '../src/exploring/session-settings/repository';
 import { focusAnswer, openAnswer } from '../src/chat/appRequests';
 import { reloadChanges } from '../src/changes/changes';
 import { sessionDate } from '../src/chat/ChatPanel';

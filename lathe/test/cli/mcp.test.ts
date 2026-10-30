@@ -150,6 +150,7 @@ describe('LA-AUT-UC01-R05-T10 each tool', () => {
     expect(referenced.isError).toBe(true);
     expect(referenced.content[0].text).toContain('integration TL-INT01 is referenced, so it stays');
     await callTool(root, 'unlink', { source: 'TL-LEND-UC01-FL01-S01', relation: 'exchanges_with', target: 'TL-INT01' });
+    await callTool(root, 'unlink', { source: 'TL-STORE01', relation: 'provided_by', target: 'TL-INT01' });
     await callTool(root, 'remove', { id: 'TL-INT01-AD' });
     await callTool(root, 'remove', { id: 'TL-INT01-T01' });
     expect((await callTool(root, 'remove', { id: 'TL-INT01' })).structuredContent?.changes).toEqual([expect.objectContaining({ change: 'removed', table: 'integration', key: 'TL-INT01' })]);

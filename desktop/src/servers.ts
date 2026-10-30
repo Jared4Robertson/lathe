@@ -1,7 +1,7 @@
 // What a window loads: Lathe's own server (`serve()` from the built package) for the opened folder, from the
 // product's own installed Lathe when it has one and the app's bundled copy otherwise, or in development the app's
-// Vite dev server (devSource.ts). Each window owns its server and
-// stops it when it closes.
+// Vite dev server (devSource.ts). The App server aggregate (app-server/) keeps each window's server, and stops it
+// when the window closes.
 import { existsSync, readFileSync } from 'node:fs';
 import type { Server } from 'node:http';
 import path from 'node:path';

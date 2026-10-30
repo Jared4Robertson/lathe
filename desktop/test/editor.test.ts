@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { editorLaunch, editorName, parseSettings } from '../src/editor.ts';
+import { editorLaunch, editorName } from '../src/editor.ts';
+import { parseSettings } from '../src/shell-settings/model.ts';
 
 describe('LA-PAT-RECORD-DATA-FILE-R02-T01 Open in editor uses VS Code by default, another known editor, the default app or a command of one\'s own', () => {
   it('reads settings, with VS Code when nothing valid is saved', () => {

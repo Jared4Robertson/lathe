@@ -87,7 +87,7 @@ describe("Lathe's own spec", () => {
       const unchecked = leads.flatMap((t) => t.leads.filter((c) => ![`("trim"(${c.name}) != '')`, `("trim"("${c.name}") != '')`].some((x) => store.schema.tables[t.table].checks.includes(x))).map((c) => `${t.table}.${c.name}`));
       expect(unchecked).toEqual([]);
       const scenarios = tables.filter((t) => t.columns.some((c) => c.name === 'when'));
-      expect(scenarios.length).toBe(10);
+      expect(scenarios.length).toBe(11);
       for (const t of scenarios) {
         expect(t.columns.find((c) => c.name === 'given'), t.name).toBeUndefined();
         expect(t.columns.filter((c) => c.name === 'when' || c.name === 'then').map((c) => c.required), t.name).toEqual([true, true]);

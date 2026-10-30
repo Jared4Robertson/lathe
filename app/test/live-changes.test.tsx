@@ -2,7 +2,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest';
 import type { BaselineAnswer } from '../../lathe/src/server/contract';
 import type { SpecData } from '../../lathe/src/server/contract';
-import { SETTINGS_KEY } from '../src/graph/settings';
+import { SETTINGS_KEY } from '../src/exploring/session-settings/repository';
 import { setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { openApp, serve, startAtDepth, type Served } from './helpers';

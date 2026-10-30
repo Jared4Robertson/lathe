@@ -253,25 +253,7 @@ export function usesEnter(target: EventTarget | null): boolean {
   return el.closest(ENTER_CONTROLS) !== null;
 }
 
-// ---------- Overrides ----------
-
-export const OVERRIDES_KEY = 'lathe:keybindings';
-
-/** Reads `{ "commandId": "Mod+J" | ["Mod+J", "g j"] }` from local storage. Unknown commands and bad values are ignored. */
-export function readOverrides(): Record<string, string[]> {
-  try {
-    const raw: unknown = JSON.parse(window.localStorage.getItem(OVERRIDES_KEY) ?? '{}');
-    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
-    const out: Record<string, string[]> = {};
-    for (const [id, value] of Object.entries(raw)) {
-      const keys = typeof value === 'string' ? [value] : Array.isArray(value) ? value.filter((v) => typeof v === 'string') : null;
-      if (keys && COMMANDS.some((c) => c.id === id && !c.local && !c.browser)) out[id] = keys;
-    }
-    return out;
-  } catch {
-    return {};
-  }
-}
+// ---------- A person's bindings ----------
 
 /** The table with a person's overrides applied; a binding that takes a browser essential is dropped. */
 export function resolveCommands(overrides: Record<string, string[]>, mac: boolean, commands: readonly Command[] = COMMANDS): Command[] {

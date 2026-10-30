@@ -11,7 +11,14 @@ import { branchOf, domainFolders, productFolders, sharedKey, type Folder, type S
 import { recordText, StageMark } from '../specs/parts';
 import { useRunCommand, useShortcutHint } from './commands';
 import { SPACE_KEYS, spaceCommandId } from './keymap';
-import { isBool, usePref } from './prefs';
+import { useAggregate } from './prefs';
+import { foldOrUnfoldNavRow } from '../exploring/nav-row/commands/fold-or-unfold-nav-row';
+import { foldOrUnfoldNavSection } from '../exploring/nav-row/commands/fold-or-unfold-nav-section';
+import { openNavBranch } from '../exploring/nav-row/commands/open-nav-branch';
+import { isFolderOpen, isSectionOpen } from '../exploring/nav-row/model';
+import { navRowRepository } from '../exploring/nav-row/repository';
+import { noteSpacesListed } from '../exploring/space/commands/note-spaces-listed';
+import { spaceRepository } from '../exploring/space/repository';
 import { SpaceMark, useSpaces, type Space } from './spaces';
 import { Tooltip } from './Tooltip';
 import { trapTab } from './useNarrow';
@@ -51,10 +58,6 @@ export interface NavProps {
 }
 
 type SectionId = 'tools';
-const SECTIONS_KEY = 'lathe:nav-sections';
-/** Whether the last workspace loaded had two or more products, so the rail is drawn where it will stay before the specs load. */
-const RAIL_KEY = 'lathe:space-rail';
-const isOpenMap = (v: unknown): v is Record<string, boolean> => !!v && typeof v === 'object' && !Array.isArray(v) && Object.values(v).every(isBool);
 
 const here = (path: string, to: string) => (path === to ? 'page' : undefined);
 
@@ -68,9 +71,9 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
   const { index } = spec;
   const spaces = useSpaces();
   const space = spaces?.current ?? null;
-  const [sections, setSections] = usePref<Record<string, boolean>>(SECTIONS_KEY, {}, isOpenMap);
-  const isOpen = (id: SectionId) => sections[id] !== false;
-  const toggle = (id: SectionId) => setSections((s) => ({ ...s, [id]: !(s[id] !== false) }));
+  const rows = useAggregate(navRowRepository);
+  const isOpen = (id: SectionId) => isSectionOpen(rows, id);
+  const toggle = (id: SectionId) => foldOrUnfoldNavSection({ section: id, open: !isOpen(id) });
   const scroller = useRef<HTMLDivElement>(null);
   const checksKeys = useShortcutHint('openChecks');
   // Whether the nav is used from the keyboard: then the selected row also shows a focus outline, as in VS Code.
@@ -84,18 +87,18 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
   const appearanceOpen = panel === 'appearance' || panel === 'theme';
   const current = sectionOf(panel);
   useEffect(() => {
-    if (current) setSections((s) => (s[current] === false ? { ...s, [current]: true } : s));
-  }, [current, setSections]);
+    if (current) foldOrUnfoldNavSection({ section: current, open: true });
+  }, [current]);
 
   // The nav's lists wait for the specs, so nothing is drawn and then pushed down.
   const loaded = index !== null || !!spec.error;
   // The space rail shows only with two or more products. Until the specs and the products are read, it shows as it did
   // last time, so the panel beside it does not move sideways once they are.
   const several = (spaces?.spaces.length ?? 0) > 1;
-  const [railBefore, setRailBefore] = usePref<boolean>(RAIL_KEY, true, isBool);
+  const railBefore = useAggregate(spaceRepository).several;
   const listed = !!index && !!spaces?.read;
   const showRail = listed ? several : railBefore;
-  useEffect(() => { if (listed) setRailBefore(several); }, [listed, several, setRailBefore]);
+  useEffect(() => { if (listed) noteSpacesListed({ several }); }, [listed, several]);
 
   // The address last followed from a link in the nav (its rows or its rail). Only that move may
   // reshape the nav; once the address moves on another way, it is forgotten.
@@ -286,7 +289,6 @@ function SpaceRail({ spaces, current, lastPage, loaded, top, bottom }: SpaceRail
   );
 }
 
-const FOLDERS_KEY = 'lathe:nav-folders';
 
 /** The nav rows open on the current page: the page's record's domain, stage and folder (or the product's folder). */
 function currentBranch(index: SpecIndex, path: string): string[] {
@@ -320,17 +322,13 @@ function currentBranch(index: SpecIndex, path: string): string[] {
 function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: Space; path: string; reveal: boolean }) {
   const domains = index.domainsOf.get(space.id) ?? [];
   const own = productFolders(index, space.id);
-  const [opened, setOpened] = usePref<Record<string, boolean>>(FOLDERS_KEY, {}, isOpenMap, 'session');
-  const isOpen = (key: string) => opened[key] === true;
+  const rows = useAggregate(navRowRepository);
+  const isOpen = (key: string) => isFolderOpen(rows, key);
   const branch = currentBranch(index, path).join('\n');
   const branchKeys = branch ? branch.split('\n') : [];
   /** A closed row that holds the current page is marked, and opening it opens the branch down to the page. */
   const holds = (key: string) => !isOpen(key) && branchKeys.includes(key);
-  const toggle = (key: string) => setOpened((o) => {
-    if (o[key] === true) return { ...o, [key]: false };
-    const at = branchKeys.indexOf(key);
-    return { ...o, ...Object.fromEntries((at >= 0 ? branchKeys.slice(at) : [key]).map((k) => [k, true])) };
-  });
+  const toggle = (key: string) => foldOrUnfoldNavRow({ key, branch: branchKeys });
 
   // The current page's branch opens itself on the nav's first draw and after a move made in the nav,
   // before paint; a move made elsewhere leaves the rows where they are (LA-V61-R28).
@@ -339,9 +337,8 @@ function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: S
     const first = firstDraw.current;
     firstDraw.current = false;
     if (!branch || (!first && !reveal)) return;
-    const keys = branch.split('\n');
-    setOpened((o) => (keys.every((k) => o[k] === true) ? o : { ...o, ...Object.fromEntries(keys.map((k) => [k, true])) }));
-  }, [branch, reveal, setOpened]);
+    openNavBranch({ branch: branch.split('\n') });
+  }, [branch, reveal]);
 
   const recordRows = (records: SpecRecord[], label: string, depth: number) => (
     <LongList
