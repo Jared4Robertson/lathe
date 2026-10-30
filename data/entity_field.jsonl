@@ -467,7 +467,7 @@
 {"entity_id":"LA-EXP-EN10","position":6,"name":"Card scroll","meaning":"How far down the wiki card was, in pixels.","type":"whole number","required":true,"example":"120"}
 {"entity_id":"LA-EXP-EN10","position":7,"name":"View","meaning":"Its depth, kind filters and wiki card.","type_value_object_id":"LA-VO94","required":true,"example":"depth 2, card open"}
 {"entity_id":"LA-EXP-EN10","position":8,"name":"Current entry","meaning":"Which entry of its history it shows; Back and Forward move it, and a move drops the entries after it.","type":"whole number","required":true,"example":"3"}
-{"entity_id":"LA-EXP-EN11","position":1,"name":"Settings","meaning":"The graph's layout and minimap, and the wiki card's width.","type_value_object_id":"LA-VO92","required":true,"example":"nested, minimap on, 480 px"}
+{"entity_id":"LA-EXP-EN11","position":1,"name":"Settings","meaning":"The graph's layout, minimap and the Map's All links, and the wiki card's width.","type_value_object_id":"LA-VO92","required":true,"example":"map, minimap on, all links off, 480 px"}
 {"entity_id":"LA-EXP-EN12","position":1,"name":"Address","meaning":"The page and stage the entry goes back to.","type_value_object_id":"LA-VO90","required":true,"example":"/LA-EXP-UC10?stage=erd"}
 {"entity_id":"LA-EXP-EN12","position":2,"name":"Position","meaning":"Its place in the tab's history, oldest first.","type":"whole number","required":true,"example":"1"}
 {"entity_id":"LA-PLT-EN02","position":1,"name":"Panel","meaning":"Which part of the app it is: the navigation or the wiki card.","type":"text","required":true,"example":"Wiki card"}

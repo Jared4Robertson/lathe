@@ -81,7 +81,8 @@ describe('graph page', () => {
     expect(window.location.pathname).toBe('/P-D-UC01-R01');
     await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
     // At street level: a leaf's title at its own size.
-    await waitFor(() => expect(scene().camera.zoom).toBe(1));
+    // The glide from the Tree's framing lands there.
+    await waitFor(() => expect(scene().camera.zoom).toBe(1), { timeout: 4000 });
     const leaves = scene().boxes.filter((b) => b.view === 'map' && !b.group && b.rect.width > 0);
     expect(leaves.length).toBeGreaterThan(0);
     // Its links are lines named by their relation; nothing nests it but its use case.

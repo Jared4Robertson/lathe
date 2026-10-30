@@ -33,8 +33,27 @@ export abstract class AggregateRepository<M extends { readonly root: string }> {
   /** Loads the instance whole, by its root's ID. */
   load(rootId: string): M | undefined {
     const instance = this.read(rootId);
-    if (instance) this.loaded.set(instance, this.keyed(this.rowsOf(instance)));
+    if (instance) this.loaded.set(instance, this.keyed(this.storedRows(this.rowsOf(instance))));
     return instance;
+  }
+
+  /**
+   * The instance's rows as they are stored. A part table's rows are taken from its file, every row its instance's
+   * records own, not as the instance writes them back: an instance numbers its parts from 1 in order, so parts stored
+   * with gaps in their positions (1, 3, 6) would otherwise be saved over by key and the ones past the end kept, beside
+   * their renumbered copies.
+   */
+  private storedRows(rows: InstanceRows): InstanceRows {
+    const owners = new Set<string>();
+    for (const list of rows.values()) for (const row of list) if (typeof row.id === 'string') owners.add(row.id);
+    const stored: InstanceRows = new Map();
+    for (const [table, list] of rows) {
+      const owner = this.tx.schema.tables[table]?.ownerColumn;
+      if (!owner || this.tx.schema.tables[table].role !== 'part') { stored.set(table, list); continue; }
+      for (const row of list) if (typeof row[owner] === 'string') owners.add(row[owner] as string);
+      stored.set(table, this.files.rows(table).filter((row) => owners.has(row[owner] as string)));
+    }
+    return stored;
   }
 
   /** A new instance, not saved yet: its save adds every row it has. */

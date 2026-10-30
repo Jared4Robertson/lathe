@@ -187,12 +187,12 @@ export function paint(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, f
     ctx.fill();
   }
   frame.wires?.(ctx, X, Y);
-  const drawLine = (line: Line) => {
+  const drawLine = (line: Line, fade = 1) => {
     const [a0, b0] = line.points;
     if (!onCanvas({ x: Math.min(a0.x, b0.x), y: Math.min(a0.y, b0.y), w: Math.abs(b0.x - a0.x), h: Math.abs(b0.y - a0.y) }, cam)) return;
     const s = lineStroke(look, line);
     const lit = !state.lit || state.litLines?.has(line.id);
-    ctx.globalAlpha = (state.lit ? lerp(s.alpha, lit ? 1 : look.contextOpacity * look.spotlightDim, state.spot) : s.alpha) * lineStrength(line);
+    ctx.globalAlpha = (state.lit ? lerp(s.alpha, lit ? 1 : look.contextOpacity * look.spotlightDim, state.spot) : s.alpha) * lineStrength(line) * fade;
     ctx.strokeStyle = s.color;
     ctx.lineWidth = s.width * line.scale * zoom;
     ctx.setLineDash(s.dash.map((d) => d * zoom));
@@ -238,10 +238,12 @@ export function paint(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, f
     if (p.area) { paintArea(ctx, p, cam, look, state, X, Y); areas.push(p); } else paintBox(ctx, p, cam, look, fonts, state, X, Y);
     if (state.marks) paintMark(ctx, p, cam, look, fonts, state.marks, state.open, X, Y);
   }
-  for (const line of frame.lines) if (line.label) drawLine(line);
+  const named = frame.lines.filter((line) => line.label);
+  const words = named.length > 0 ? textBoxes(frame.plates, cam, X, Y) : [];
+  paintLinkLines(ctx, named, words, cam, drawLine);
   ctx.globalAlpha = 1;
-  if (areas.length > 0) paintAreaLabels(ctx, areas, cam, look, fonts, state, X, Y, (p) => { const lit = !!state.lit?.has(p.place); return dim(lit) * strength(p.place, lit); });
-  paintLineLabels(ctx, frame.lines, cam, look, fonts, X, Y, (line) => lineStrength(line));
+  const areaWords = areas.length > 0 ? paintAreaLabels(ctx, areas, cam, look, fonts, state, X, Y, (p) => { const lit = !!state.lit?.has(p.place); return dim(lit) * strength(p.place, lit); }) : [];
+  paintLineLabels(ctx, named, look, fonts, state, X, Y, [...words, ...areaWords], (line) => lineStrength(line));
   if (state.marks) paintGhosts(ctx, cam, look, fonts, state.marks, frame.plates, X, Y);
   if (state.marks?.highlight) paintEdgeHints(ctx, cam, look, fonts, state.marks.highlight.boxes, frame.plates, state.open);
 
@@ -502,13 +504,45 @@ const AREA_LABEL_PAD = 10;
 /** The least a district is across on screen, in CSS pixels, to carry its name over it when it is too small to hold it. */
 const DISTRICT_BLOCK_PX = 12;
 
+/** The smallest an area's name is drawn, in CSS pixels: past it, it is cut with an ellipsis, then left out. */
+const AREA_LABEL_FLOOR_PX = 10;
+
+/** The words of a label that fit `room` pixels: the whole, or cut with an ellipsis; null when not even a letter and the ellipsis fit. */
+function fitWords(ctx: CanvasRenderingContext2D, text: string, room: number): string | null {
+  if (ctx.measureText(text).width <= room) return text;
+  for (let n = text.length - 1; n >= 1; n--) {
+    const cut = `${text.slice(0, n).trimEnd()}…`;
+    if (ctx.measureText(cut).width <= room) return cut;
+  }
+  return null;
+}
+
+/** An area's label fitted to `room` pixels wide: name and count at its size; else the name alone; else (a district's, `shrink`) the name smaller, down to the floor, else cut with an ellipsis at the floor. Another area's is left out where its name does not fit. */
+function fitAreaLabel(ctx: CanvasRenderingContext2D, fonts: GraphFonts, name: string, count: string, px: number, room: number, shrink: boolean): { name: string; count: string; px: number; nameW: number; w: number } | null {
+  const measure = (text: string, face: 'title' | 'meta', size: number) => { ctx.font = fontFor(fonts, face, size); return ctx.measureText(text).width; };
+  const nameW = measure(name, 'title', px);
+  const full = nameW + px * 0.6 + measure(count, 'meta', px * 0.8);
+  if (full <= room) return { name, count, px, nameW, w: full };
+  if (nameW <= room) return { name, count: '', px, nameW, w: nameW };
+  if (!shrink) return null;
+  const smaller = Math.max(AREA_LABEL_FLOOR_PX, (px * room) / nameW);
+  if (smaller < px && measure(name, 'title', smaller) <= room) return { name, count: '', px: smaller, nameW: measure(name, 'title', smaller), w: measure(name, 'title', smaller) };
+  ctx.font = fontFor(fonts, 'title', AREA_LABEL_FLOOR_PX);
+  const cut = fitWords(ctx, name, room);
+  if (!cut) return null;
+  const w = ctx.measureText(cut).width;
+  return { name: cut, count: '', px: AREA_LABEL_FLOOR_PX, nameW: w, w };
+}
+
 /**
  * The Map's area labels (LA-EXP-DS12): each area's name, then its count of records, one line at one size on screen,
  * over a halo of the paper, at its header's top left; an area whose top is out of view keeps its label at the top of
- * what shows of it. A label is drawn only where its area is wide and tall enough on screen to hold it, and never over
- * another: parents' first, then those kept in view.
+ * what shows of it. A label always fits inside its area: where it does not, the count goes first, then a district's
+ * name shrinks to a floor, then it is cut with an ellipsis (another area's is left out); a district too small for its header names itself centered on
+ * its block, fitted the same way. No label is drawn over another (parents' first, then those kept in view), nor
+ * outside the open space. Returns where they were drawn, which the link lines' words keep clear of.
  */
-function paintAreaLabels(ctx: CanvasRenderingContext2D, areas: readonly Plate[], cam: Camera, look: Look, fonts: GraphFonts, state: PaintState, X: (x: number) => number, Y: (y: number) => number, alphaOf: (p: Plate) => number) {
+function paintAreaLabels(ctx: CanvasRenderingContext2D, areas: readonly Plate[], cam: Camera, look: Look, fonts: GraphFonts, state: PaintState, X: (x: number) => number, Y: (y: number) => number, alphaOf: (p: Plate) => number): ScreenBox[] {
   const taken: ScreenBox[] = [];
   const placed: { p: Plate; box: ScreenBox; name: string; count: string; px: number; pinned: boolean; nameW: number }[] = [];
   for (const p of areas) {
@@ -516,37 +550,34 @@ function paintAreaLabels(ctx: CanvasRenderingContext2D, areas: readonly Plate[],
     // The ground is the product itself, named in the header strip: it keeps the room for its districts' names.
     if (a.role === 'ground') continue;
     const px = AREA_LABEL_PX[a.role];
-    const left = X(p.x);
-    const top = Y(p.y);
-    const right = left + p.w * cam.zoom;
-    const bottom = top + p.h * cam.zoom;
-    ctx.font = fontFor(fonts, 'title', px);
-    const nameW = ctx.measureText(a.name).width;
-    ctx.font = fontFor(fonts, 'meta', px * 0.8);
-    const countW = ctx.measureText(a.count).width;
-    const h = px * 1.4;
-    const w = nameW + px * 0.6 + countW;
-    // Where it is drawn: its header's top left, or the top of what shows of it.
-    const at = { x: Math.max(left, state.open.left) + AREA_LABEL_PAD, y: Math.max(top, state.open.top) + AREA_LABEL_PAD * 0.6 };
-    const pinned = at.x > left + AREA_LABEL_PAD || at.y > top + AREA_LABEL_PAD * 0.6;
-    if (right - at.x < Math.min(w, nameW + AREA_LABEL_PAD) + AREA_LABEL_PAD || bottom - at.y < h + AREA_LABEL_PAD) {
-      // Zoomed out past its room, a district is a labeled block: its name centered on it, as a map names a town.
-      if (a.role !== 'district' || right - left < DISTRICT_BLOCK_PX || bottom - top < DISTRICT_BLOCK_PX) continue;
-      const cx = (left + right) / 2;
-      const cy = (top + bottom) / 2;
-      placed.push({ p, box: { left: cx - nameW / 2 - 2, top: cy - h / 2, right: cx + nameW / 2 + 2, bottom: cy + h / 2 }, name: a.name, count: '', px, pinned: true, nameW });
+    const left = Math.max(X(p.x), state.open.left);
+    const top = Math.max(Y(p.y), state.open.top);
+    const right = Math.min(X(p.x) + p.w * cam.zoom, state.open.right);
+    const bottom = Math.min(Y(p.y) + p.h * cam.zoom, state.open.bottom);
+    if (right <= left || bottom <= top) continue;
+    const pinned = left > X(p.x) || top > Y(p.y);
+    // Its header's top left, inside its padding.
+    const room = right - left - 2 * AREA_LABEL_PAD;
+    const fit = room > 0 ? fitAreaLabel(ctx, fonts, a.name, a.count, px, room, a.role === 'district') : null;
+    if (fit && bottom - top >= fit.px * 1.4 + 1.6 * AREA_LABEL_PAD) {
+      const at = { x: left + AREA_LABEL_PAD, y: top + AREA_LABEL_PAD * 0.6 };
+      placed.push({ p, box: { left: at.x - 2, top: at.y, right: at.x + fit.w + 2, bottom: at.y + fit.px * 1.4 }, name: fit.name, count: fit.count, px: fit.px, pinned, nameW: fit.nameW });
       continue;
     }
-    const box = { left: at.x - 2, top: at.y, right: Math.min(right - AREA_LABEL_PAD, at.x + w) + 2, bottom: at.y + h };
-    placed.push({ p, box, name: a.name, count: right - at.x >= w + AREA_LABEL_PAD ? a.count : '', px, pinned, nameW });
+    // Zoomed out past its header, a district is a labeled block: its name centered on it, inside it.
+    if (a.role !== 'district' || right - left < DISTRICT_BLOCK_PX || bottom - top < DISTRICT_BLOCK_PX) continue;
+    const small = fitAreaLabel(ctx, fonts, a.name, '', px, right - left - 4, true);
+    if (!small || small.px * 1.4 > bottom - top) continue;
+    const cx = (left + right) / 2;
+    const cy = (top + bottom) / 2;
+    const h = small.px * 1.4;
+    placed.push({ p, box: { left: cx - small.w / 2 - 2, top: cy - h / 2, right: cx + small.w / 2 + 2, bottom: cy + h / 2 }, name: small.name, count: '', px: small.px, pinned: true, nameW: small.nameW });
   }
   const order = [...placed.filter((l) => !l.pinned), ...placed.filter((l) => l.pinned)];
   ctx.lineJoin = 'round';
   for (const l of order) {
     const { box } = l;
     if (taken.some((t) => box.left < t.right && box.right > t.left && box.top < t.bottom && box.bottom > t.top)) continue;
-    // Never cut by a floating panel or the canvas's edge: a label is drawn whole in the open space, or not at all.
-    if (box.left < state.open.left || box.right > state.open.right || box.top < state.open.top || box.bottom > state.open.bottom) continue;
     taken.push(box);
     ctx.globalAlpha = alphaOf(l.p);
     const baseline = box.top + l.px * 1.05;
@@ -564,40 +595,98 @@ function paintAreaLabels(ctx: CanvasRenderingContext2D, areas: readonly Plate[],
   }
   ctx.lineJoin = 'miter';
   ctx.globalAlpha = 1;
+  return taken;
 }
 
-/** A link line's words size on screen, in CSS pixels, and how far along it from the end they sit by. */
+/** A link line's words size on screen, in CSS pixels, and their padding on the paper. */
 const LINE_LABEL_PX = 10.5;
-const LINE_LABEL_NEAR_PX = 34;
-/** A Map's link lines' words (LA-EXP-DS12): the relation, at one size on screen over a halo, at the line's middle, where the line is long enough on screen to carry it and no other line's words are. */
-function paintLineLabels(ctx: CanvasRenderingContext2D, lines: readonly Line[], cam: Camera, look: Look, fonts: GraphFonts, X: (x: number) => number, Y: (y: number) => number, alphaOf: (line: Line) => number) {
-  ctx.font = fontFor(fonts, 'meta', LINE_LABEL_PX);
-  ctx.textAlign = 'center';
-  ctx.lineJoin = 'round';
-  const taken: ScreenBox[] = [];
+const LINE_LABEL_PAD = 3;
+/** How faint a link line is where it crosses a box's words: a title is never struck through. */
+const LINE_OVER_TEXT = 0.12;
+
+/** The words of every box drawn, on screen: what link lines fade across and their names keep clear of. */
+const textBoxes = (plates: readonly Plate[], cam: Camera, X: (x: number) => number, Y: (y: number) => number): ScreenBox[] =>
+  plates.filter((p) => !p.area && !isBlock(p, cam.zoom) && onCanvas(p, cam)).map((p) => ({ left: X(p.label.x), top: Y(p.label.y), right: X(p.label.x) + p.label.w * cam.zoom, bottom: Y(p.label.y) + p.label.h * cam.zoom }));
+
+/** Clips to everything but some boxes (`outside`), or to the boxes alone. */
+function clipTo(ctx: CanvasRenderingContext2D, boxes: readonly ScreenBox[], cam: Camera, outside: boolean) {
+  ctx.beginPath();
+  if (outside) ctx.rect(-CULL_PX, -CULL_PX, cam.w + 2 * CULL_PX, cam.h + 2 * CULL_PX);
+  for (const b of boxes) ctx.rect(b.left, b.top, b.right - b.left, b.bottom - b.top);
+  ctx.clip(outside ? 'evenodd' : 'nonzero');
+}
+
+/**
+ * A Map's link lines, over the boxes (LA-EXP-DS12): at full strength between boxes, faded where they cross a box's
+ * words, so a title is never struck through.
+ */
+function paintLinkLines(ctx: CanvasRenderingContext2D, lines: readonly Line[], words: readonly ScreenBox[], cam: Camera, draw: (line: Line, fade?: number) => void) {
+  if (lines.length === 0) return;
+  ctx.save();
+  clipTo(ctx, words, cam, true);
+  for (const line of lines) draw(line);
+  ctx.restore();
+  if (words.length === 0) return;
+  ctx.save();
+  clipTo(ctx, words, cam, false);
+  for (const line of lines) draw(line, LINE_OVER_TEXT);
+  ctx.restore();
+}
+
+/**
+ * A Map's link lines' words (LA-EXP-DS12): each relation's name on the paper, at one size on screen, in free space along
+ * its line (between boxes, in a gutter), never over a box's words, an area's name or another line's; searched from the
+ * end its line names (the focus) outward. Lines of one relation meeting at one end share one name: "Fulfills ×2".
+ */
+function paintLineLabels(ctx: CanvasRenderingContext2D, lines: readonly Line[], look: Look, fonts: GraphFonts, state: PaintState, X: (x: number) => number, Y: (y: number) => number, keepClear: readonly ScreenBox[], alphaOf: (line: Line) => number) {
+  const groups = new Map<string, Line[]>();
   for (const line of lines) {
     if (!line.label) continue;
-    const [a, b] = line.points;
-    const length = Math.hypot(X(b.x) - X(a.x), Y(b.y) - Y(a.y));
-    const off = Math.min(0.5, LINE_LABEL_NEAR_PX / Math.max(1, length));
-    const at = pointOn(curveOf(line), line.labelNear === 'target' ? 1 - off : line.labelNear === 'source' ? off : 0.5);
-    const x = X(at.x);
-    const y = Y(at.y);
-    const width = ctx.measureText(line.label).width;
-    if (Math.hypot(X(b.x) - X(a.x), Y(b.y) - Y(a.y)) < width + 24 || !meets(cam, x - width / 2, y - LINE_LABEL_PX, x + width / 2, y + LINE_LABEL_PX)) continue;
-    // Never over another line's words: the first line keeps its place.
-    const box = { left: x - width / 2 - 3, top: y - LINE_LABEL_PX * 0.7, right: x + width / 2 + 3, bottom: y + LINE_LABEL_PX * 0.7 };
-    if (taken.some((t) => box.left < t.right && box.right > t.left && box.top < t.bottom && box.bottom > t.top)) continue;
-    taken.push(box);
-    ctx.globalAlpha = alphaOf(line);
-    ctx.strokeStyle = look.paper;
-    ctx.lineWidth = 4;
-    ctx.strokeText(line.label, x, y + LINE_LABEL_PX * 0.35);
+    const key = line.labelNear ? `${line.labelNear === 'target' ? line.target : line.source}|${line.labelNear}|${line.label}` : line.id;
+    const group = groups.get(key);
+    if (group) group.push(line); else groups.set(key, [line]);
+  }
+  if (groups.size === 0) return;
+  ctx.font = fontFor(fonts, 'meta', LINE_LABEL_PX);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const taken: ScreenBox[] = [...keepClear];
+  const free = (b: ScreenBox) => b.left >= state.open.left && b.right <= state.open.right && b.top >= state.open.top && b.bottom <= state.open.bottom
+    && !taken.some((t) => b.left < t.right && b.right > t.left && b.top < t.bottom && b.bottom > t.top);
+  for (const group of groups.values()) {
+    const text = group.length > 1 ? `${group[0].label} ×${group.length}` : group[0].label!;
+    const width = ctx.measureText(text).width + 2 * LINE_LABEL_PAD;
+    const height = LINE_LABEL_PX + 2 * LINE_LABEL_PAD;
+    let spot: ScreenBox | null = null;
+    let owner: Line | null = null;
+    // Each line of the group, from its named end outward, until a place is free.
+    for (const line of group) {
+      const curve = curveOf(line);
+      const fromEnd = line.labelNear === 'target';
+      for (let k = 1; k < 40 && !spot; k++) {
+        const t = line.labelNear ? (fromEnd ? 1 - k / 40 : k / 40) : 0.5 + (k % 2 ? 1 : -1) * Math.floor(k / 2) / 40;
+        if (t <= 0 || t >= 1) continue;
+        const at = pointOn(curve, t);
+        const b = { left: X(at.x) - width / 2, top: Y(at.y) - height / 2, right: X(at.x) + width / 2, bottom: Y(at.y) + height / 2 };
+        if (free(b)) { spot = b; owner = line; }
+      }
+      if (spot) break;
+    }
+    if (!spot || !owner) continue;
+    taken.push(spot);
+    ctx.globalAlpha = alphaOf(owner);
+    ctx.fillStyle = look.paper;
+    ctx.beginPath();
+    ctx.roundRect(spot.left, spot.top, spot.right - spot.left, spot.bottom - spot.top, height / 2);
+    ctx.fill();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = look.linkEdge;
+    ctx.stroke();
     ctx.fillStyle = look.linkEdge;
-    ctx.fillText(line.label, x, y + LINE_LABEL_PX * 0.35);
+    ctx.fillText(text, (spot.left + spot.right) / 2, (spot.top + spot.bottom) / 2 + 0.5);
   }
   ctx.textAlign = 'left';
-  ctx.lineJoin = 'miter';
+  ctx.textBaseline = 'alphabetic';
   ctx.globalAlpha = 1;
 }
 
