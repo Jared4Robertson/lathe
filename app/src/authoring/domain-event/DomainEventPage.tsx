@@ -1,7 +1,8 @@
 import type { DomainEventPage as DomainEvent } from '../../../../lathe/src/authoring/domain-event/read-model';
+import { plural } from '../../plural';
 import type { AggregatePageProps } from '../../record/pages';
 import { RowsSection, Summary, Text, readState, type Fact } from '../../record/page-parts';
-import type { Row, SpecIndex } from '../../specs/data';
+import { kindLabel, type Row, type SpecIndex } from '../../specs/data';
 import { RecordLink } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
 import { FieldsTable } from '../../specs/RecordText';
@@ -15,6 +16,9 @@ import { useDomainEvent } from './reads';
 // packages: all in its facts. What every record's page holds around that (traceability, problems, facts and links) is
 // the Record page's (RecordFrame).
 
+/** A list of one kind is titled by that kind's plural label (LA-V92-R09). */
+const titleOf = (index: SpecIndex, kind: string) => plural(kindLabel(index, kind));
+
 /** What one record of the event shows on its page, by the kind it is in the event. */
 function Content({ index, page }: { index: SpecIndex; page: DomainEvent }) {
   const { id, kind } = page.record;
@@ -23,7 +27,7 @@ function Content({ index, page }: { index: SpecIndex; page: DomainEvent }) {
     <>
       <Text index={index} id={id} source={page.event.description} field="description" />
       {page.fields.length > 0 && <FieldsTable index={index} rows={page.fields as unknown as Row[]} owner={id} />}
-      <RowsSection index={index} title="Event type" ids={page.eventType ? [page.eventType.eventType.id] : []} label={`Event type of ${id}`} empty="No event type yet: add one when a policy or a projection hears it in code." />
+      <RowsSection index={index} title={titleOf(index, 'event_type')} ids={page.eventType ? [page.eventType.eventType.id] : []} label={`${titleOf(index, 'event_type')} of ${id}`} empty="No event type yet: add one when a policy or a projection hears it in code." />
     </>
   );
 }

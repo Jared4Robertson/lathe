@@ -74,7 +74,7 @@ describe('LA-V132-R02-T01 the Command editor writes only through the aggregate\'
     const user = userEvent.setup();
     const { commands } = await openApp('/DM-SHOP-EN01', { data: withPolicy(), command: () => ({ answer: ok }) });
     const actions = await toolbar('DM-SHOP-EN01');
-    expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add data model', 'Add command', 'Remove']);
+    expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add data model', 'Add command', 'Add table', 'Remove']);
     await user.click(within(actions).getByRole('button', { name: 'Add command' }));
     const form = screen.getByRole('form', { name: 'Add a command' });
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-SHOP-CMD02'));
