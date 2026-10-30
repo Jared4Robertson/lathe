@@ -71,12 +71,10 @@ describe('entities and value objects', () => {
 
   it('LA-AUT-UC10-R01-T02 A well-formed domain model gives no entity problem, and each entity rule fails on its own data', async () => {
     expect(good.problems).toEqual([]);
-    // A child its root does not reach, and a has_one into another aggregate.
-    const broken = await loadData(adding(without(complete(), 'has_one', () => true), {
-      has_many: [{ source_id: 'EX-LEND-EN01', target_id: 'EX-LEND-EN03' }],
-    }));
+    // A child its root does not reach is a warning; a has_many into another aggregate is refused.
+    const broken = await loadData(without(complete(), 'has_one', () => true));
     expect(records(ofCheck(broken, 'entity-unreferenced'))).toEqual(['EX-LEND-EN02']);
-    expect(ofCheck(broken, 'has-crosses-aggregate')).toEqual([expect.objectContaining({ severity: 'error', record: 'EX-LEND-EN01' })]);
+    expect((await refusals(adding(complete(), { has_many: [{ source_id: 'EX-LEND-EN01', target_id: 'EX-LEND-EN03' }] }))).map((p) => p.rule)).toEqual(['has-crosses-aggregate']);
     // A second root, an entity with no role, and a has_one from an entity to itself are refused.
     const data = everyKind();
     expect((await refusals(changing(data, 'entity', (e) => e.id === 'TL-LEND-EN02', { role: 'root', in_root_table: undefined }))).map((p) => p.rule)).toEqual(['aggregate-root']);
@@ -145,9 +143,10 @@ describe('entities and value objects', () => {
     expect(await refusals(crossing)).toEqual([
       expect.objectContaining({ rule: 'foreign-key-crosses-domain', message: expect.stringContaining('table TL-SHOP-EN01-TB is in domain TL-SHOP, so its foreign key cannot point at table TL-LEND-EN01-TB') }),
     ]);
-    // A part link (has_one or has_many) into another aggregate is an error, never a way to refer to it.
-    const ws = await loadData(adding(complete(), { has_many: [{ source_id: 'EX-LEND-EN01', target_id: 'EX-LEND-EN03' }] }));
-    expect(ofCheck(ws, 'has-crosses-aggregate')[0].message).toContain('refer to EX-LEND-A2 by a field typed by it');
+    // A part link (has_one or has_many) into another aggregate is refused, never a way to refer to it.
+    expect(await refusals(adding(complete(), { has_many: [{ source_id: 'EX-LEND-EN01', target_id: 'EX-LEND-EN03' }] }))).toEqual([
+      expect.objectContaining({ rule: 'has-crosses-aggregate', message: expect.stringContaining('an entity of aggregate EX-LEND-A2: parts stay inside their aggregate; type a field by the other aggregate instead') }),
+    ]);
   });
 });
 

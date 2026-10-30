@@ -40,7 +40,7 @@ import { useOverlayFocus } from '../views/overlays';
 // commands (QuickOpen.tsx) are drawn from the same table. A command only runs (and only shows as
 // available in quick find) while something has registered a handler for it, so "when it applies"
 // follows what is on screen: the graph's commands exist while a graph is shown. The same listener sends the plain arrow keys,
-// W, A, S and D as Up, Left, Down and Right, and Shift+Up and Shift+Down (Shift+W and Shift+S) as Out and In, to the
+// W, A, S and D (and vim's H, J, K and L) as the arrows, and Shift+Up and Shift+Down (Shift+W and Shift+S) as Out and In, to the
 // stage's walk (useStageWalk, keymap walkMove) from anywhere on the page, except a control that uses arrows itself
 // (keymap usesArrows); the stage toolbar's buttons run the same walk (useRunWalk). A plain Enter runs its command (the wiki card) only outside a control
 // that handles Enter (keymap usesEnter); Escape runs its command only when nothing took it first: an overlay that closes on
