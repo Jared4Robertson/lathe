@@ -54,10 +54,10 @@ describe('LA-PLT-A14-SR01 the person\'s key bindings are kept in this browser', 
 describe('LA-EXP-A6-SR01 the session\'s settings are kept for the browser session alone', () => {
   it('LA-EXP-A6-SR01-T01 the settings saved read back from session storage, and none is written to local storage', () => {
     const settings = new SessionSettingsRepository().load();
-    new SessionSettingsRepository().save({ ...settings, graph: { ...settings.graph, layout: 'nested', minimap: true } });
+    new SessionSettingsRepository().save({ ...settings, graph: { ...settings.graph, layout: 'nested', minimap: true, allLinks: false } });
     expect(window.localStorage.getItem(SETTINGS_KEY)).toBeNull();
     expect(JSON.parse(window.sessionStorage.getItem(SETTINGS_KEY)!)).toMatchObject({ layout: 'nested', minimap: true });
-    expect(new SessionSettingsRepository().load().graph).toEqual({ layout: 'nested', minimap: true });
+    expect(new SessionSettingsRepository().load().graph).toEqual({ layout: 'nested', minimap: true, allLinks: false });
   });
 });
 

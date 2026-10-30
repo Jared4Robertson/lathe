@@ -27,8 +27,11 @@ import { mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
 import { lastLayout, useLaidOut } from './layout';
 import { productInput } from './layout-input';
 import { type NestedMap, type NestedNode } from './nested';
+import { type GroundMap, type GroundNode } from './ground';
+import { treeParent } from './tree';
+import { linkLine, linksOf, MOST_LINKS } from './map-links';
 import { setTextMeasure, type TextMeasure } from './text';
-import { BLOCK_BELOW_PX, CHILD_READ_PX, drawnFor, drawnKey, drawnNested, frameNested, frameOnMap, frameRect, maxZoomFor, mergeDrawn, MIN_ZOOM, type Drawn, type Viewport } from './camera';
+import { BLOCK_BELOW_PX, CHILD_READ_PX, drawnFor, drawnKey, drawnNested, frameGround, frameNested, frameOnMap, frameRect, maxZoomFor, mergeDrawn, MIN_ZOOM, type Drawn, type Viewport } from './camera';
 import { useCameraGestures } from './gestures';
 import { readMotion } from './motion';
 import { followBox, useMorph } from './morph';
@@ -63,21 +66,27 @@ import { GHOST_MS, highlightFade, marksMoving, useLiveVersion, useStageMarks } f
 // the address, so it can sit in any pane. The focus page (app/src/views/FocusPage.tsx) hosts it in
 // the Graph stage and keeps its settings across pages.
 
-/** How the graph draws the tree (LA-V93-R21): Tree, parents beside their children; Nested, parents made of them as boxes. */
-export type GraphLayout = 'tree' | 'nested';
+/**
+ * How the graph draws the product (LA-V93-R21): Tree, parents beside their children; Nested, parents made of them as
+ * boxes; Map, domains as districts on the ground, records one size, links as lines (LA-V93-R74).
+ */
+export type GraphLayout = 'tree' | 'nested' | 'map';
 export const GRAPH_LAYOUTS: readonly { layout: GraphLayout; label: string; tip: string }[] = [
   { layout: 'tree', label: 'Tree', tip: 'Tree: each parent beside its children' },
   { layout: 'nested', label: 'Nested', tip: 'Nested: each parent a box made of its children' },
+  { layout: 'map', label: 'Map', tip: 'Map: domains as districts, every record one size, links as lines' },
 ];
 
-/** What the person set on the graph: the view, depth, kind filters and the minimap. */
+/** What the person set on the graph: the view, depth, kind filters, the minimap and the Map's links. */
 export interface GraphSettings {
-  /** Tree or Nested (LA-V93-R21). Tree by default. */
+  /** Tree, Nested or Map (LA-V93-R21). Tree by default. */
   layout: GraphLayout;
   depth: number;
   filters: Filters;
   /** The minimap in a corner of the canvas. Off by default. */
   minimap: boolean;
+  /** In the Map, every link between the records drawn as a line, not only the focus's and the selection's (LA-V93-R74). Off by default. */
+  allLinks: boolean;
 }
 /** "1 record", "2 records". */
 const count = (n: number, noun: string) => `${n} ${n === 1 ? noun : `${noun}s`}`;
@@ -122,7 +131,7 @@ export interface GraphViewProps {
 export function GraphView({ index, focus, onNavigate, settings: hosted, onSettingsChange, onPeek, onCounts, space, cameraKey, onOpenNew }: GraphViewProps) {
   const [own, setOwn] = useState<GraphSettings>(DEFAULT_GRAPH_SETTINGS);
   const settings = hosted ?? own;
-  const { layout, depth, filters, minimap } = settings;
+  const { layout, depth, filters, minimap, allLinks } = settings;
   const latest = useRef(settings);
   latest.current = settings;
   const update = useCallback((patch: Partial<GraphSettings>) => {
@@ -169,7 +178,7 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
             </Tooltip>
           ))}
         </div>
-        <FilterControls index={index} filters={filters} setFilters={setFilters} minimap={minimap} setMinimap={(on) => update({ minimap: on })} />
+        <FilterControls index={index} filters={filters} setFilters={setFilters} minimap={minimap} setMinimap={(on) => update({ minimap: on })} allLinks={layout === 'map' ? allLinks : null} setAllLinks={(on) => update({ allLinks: on })} />
       </>
     ),
     // Depth is the Tree camera's alone: elsewhere the group keeps its slot, so nothing beside it moves, but is not shown or reachable (LA-PAT-APP-CODE-R21).
@@ -197,7 +206,7 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
       <StageKey entries={keyEntries} beside={minimap ? 'minimap' : undefined} />
       <div className="graph-workspace">
         <div className="graph-canvas">
-          <GraphCanvas index={index} graph={graph} layout={layout} depth={depth} filters={filters} onNavigate={onNavigate} minimap={minimap} onPeek={onPeek} space={space} cameraKey={cameraKey} onOpenNew={onOpenNew} />
+          <GraphCanvas index={index} graph={graph} layout={layout} depth={depth} filters={filters} onNavigate={onNavigate} minimap={minimap} allLinks={allLinks} onPeek={onPeek} space={space} cameraKey={cameraKey} onOpenNew={onOpenNew} />
         </div>
       </div>
     </section>
@@ -210,9 +219,12 @@ interface FilterProps {
   setFilters: (f: Filters) => void;
   minimap: boolean;
   setMinimap: (on: boolean) => void;
+  /** All links, in the Map; null in the other layouts, which draw no links. */
+  allLinks: boolean | null;
+  setAllLinks: (on: boolean) => void;
 }
 
-function FilterControls({ index, filters, setFilters, minimap, setMinimap }: FilterProps) {
+function FilterControls({ index, filters, setFilters, minimap, setMinimap, allLinks, setAllLinks }: FilterProps) {
   const hidden = filters.hiddenKinds.size;
   const toggle = (set: ReadonlySet<string>, value: string) => {
     const next = new Set(set);
@@ -232,6 +244,12 @@ function FilterControls({ index, filters, setFilters, minimap, setMinimap }: Fil
             <input type="checkbox" role="switch" checked={minimap} onChange={(e) => setMinimap(e.target.checked)} />
             Minimap
           </label>
+          {allLinks !== null && (
+            <label>
+              <input type="checkbox" role="switch" checked={allLinks} onChange={(e) => setAllLinks(e.target.checked)} />
+              All links
+            </label>
+          )}
         </fieldset>
         {kindGroups(index).map((g) => g.kinds.length > 0 && (
           <fieldset key={g.stage || 'structural'}>
@@ -255,6 +273,13 @@ function FilterControls({ index, filters, setFilters, minimap, setMinimap }: Fil
       </div>
     </details>
   );
+}
+
+/** The node the Map frames for a focus: the focus, or for a group of the Tree's the Map does not draw (a kind group), the nearest node above it the Map has. A record not on the Map yet stays itself, so the camera waits for its layout. */
+function onGround(index: RecordIndex, map: PlacedMap, focus: string): string {
+  if (map.nodes.has(focus) || index.byId.has(focus)) return focus;
+  for (let at = treeParent(index, focus); at !== null; at = treeParent(index, at)) if (map.nodes.has(at)) return at;
+  return focus;
 }
 
 /** A box on the canvas with its place and size, in world coordinates. */
@@ -447,6 +472,7 @@ interface CanvasProps {
   filters: Filters;
   onNavigate: (id: string) => void;
   minimap: boolean;
+  allLinks: boolean;
   onPeek?: GraphViewProps['onPeek'];
   space?: OpenSpaceStore;
   cameraKey?: string;
@@ -460,14 +486,15 @@ interface CanvasProps {
  */
 function GraphStage(props: CanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number }) {
   const { index, graph, layout, measure, fonts } = props;
-  const root = useMemo(() => mapRootOf(index, graph.focus), [index, graph.focus]);
+  // The Map is always the product's ground; the Tree and Nested maps the focus's product's tree.
+  const root = useMemo(() => (layout === 'map' ? index.product : mapRootOf(index, graph.focus)), [index, graph.focus, layout]);
   const input = useMemo(() => productInput(index, root, layout, measure.key), [index, root, layout, measure]);
-  const laid = useLaidOut<GraphMap | NestedMap, RecordIndex>(input, index, fonts);
+  const laid = useLaidOut<GraphMap | NestedMap | GroundMap, RecordIndex>(input, index, fonts);
   if (!laid) return <div className="graph-flow" data-layout={layout} aria-busy="true" />;
   return <GraphScene {...props} map={laid.map} mapIndex={laid.of} />;
 }
 
-function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, depth, filters, onNavigate, minimap, onPeek, space, cameraKey, onOpenNew, measure, fonts, theme }: CanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number; map: GraphMap | NestedMap; mapIndex: RecordIndex }) {
+function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, depth, filters, onNavigate, minimap, allLinks, onPeek, space, cameraKey, onOpenNew, measure, fonts, theme }: CanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number; map: GraphMap | NestedMap | GroundMap; mapIndex: RecordIndex }) {
   const focus = graph.focus;
   const wrapper = useRef<SceneHost>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -486,6 +513,8 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
   const always = useMemo(() => [focus], [focus]);
   /** What a new layout moved glides from where it was (morph.ts, LA-PAT-APP-UX-R22). */
   const morph = useMorph(map);
+  /** The box a first tap selected: the Map draws its links too. */
+  const armedRef = useRef<string | null>(null);
 
   // ---- The camera ----
   const view = useRef<Viewport>({ x: 0, y: 0, zoom: 1 });
@@ -558,7 +587,7 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
     if (known) return known;
     const n = map.nodes.get(id);
     if (!n) return null;
-    const source: PlateSource = map.view === 'tree' ? { view: 'tree', node: n } : { view: 'nested', node: n as NestedNode };
+    const source: PlateSource = map.view === 'tree' ? { view: 'tree', node: n } : map.view === 'map' ? { view: 'map', node: n as GroundNode } : { view: 'nested', node: n as NestedNode };
     const plate = plateOf(index, id, source);
     plates.set(id, plate);
     return plate;
@@ -568,15 +597,17 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
   const framing = useCallback((): Viewport | null => {
     // With a host that floats panels, never before their first measure: the first picture is framed once, in place.
     // A focus the map shown does not hold yet (its new layout is still being made) leaves the camera where it is.
-    if (!size || (space && !open) || !map.nodes.has(focus)) return null;
+    // The Map draws no kind group of the Tree's: a focus on one frames the nearest box above it that the Map has.
+    const framed = map.view === 'map' ? onGround(index, map, focus) : focus;
+    if (!size || (space && !open) || !map.nodes.has(framed)) return null;
     const box = frameBox(size);
     // The focus is never left without its label: framed as a strip beside its children, the strip is as wide as its label
     // needs to read; where its visible part cannot hold it, the camera moves to where it can.
-    const plate = plateFor(focus);
-    const v = map.view !== 'tree' ? frameNested(map, focus, box.w, box.h, maxZoom) : frameOnMap(map, focus, depth, box.w, box.h, maxZoom, plate ? labelStrip(plate, box.h, CHILD_READ_PX) : undefined);
-    const framed = { x: v.x + box.x, y: v.y + box.y, zoom: v.zoom };
-    return plate ? keepLabel(plate, framed, { left: box.x, top: box.y, right: box.x + box.w, bottom: box.y + box.h }) : framed;
-  }, [size, map, focus, depth, frameBox, space, open, plateFor]);
+    const plate = plateFor(framed);
+    const v = map.view === 'map' ? frameGround(map, framed, box.w, box.h, maxZoom) : map.view === 'nested' ? frameNested(map, focus, box.w, box.h, maxZoom) : frameOnMap(map, focus, depth, box.w, box.h, maxZoom, plate ? labelStrip(plate, box.h, CHILD_READ_PX) : undefined);
+    const at = { x: v.x + box.x, y: v.y + box.y, zoom: v.zoom };
+    return plate ? keepLabel(plate, at, { left: box.x, top: box.y, right: box.x + box.w, bottom: box.y + box.h }) : at;
+  }, [size, map, focus, depth, frameBox, space, open, plateFor, index]);
 
   // Frame the focus whenever it, the depth, the stage's size or the open space changes: a glide,
   // except the first picture, a resize of the stage and a map that has just been laid out, which
@@ -711,7 +742,7 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
     const drawn = drawnAt(v);
     const now = performance.now();
     const shown = drawn.boxes.map((b) => plateFor(b.id)).filter((p): p is Plate => p !== null).map((p) => morph.plate(p, now));
-    if (map.view !== 'tree') shown.sort((a, b) => (map.nodes.get(a.id) as NestedNode).order - (map.nodes.get(b.id) as NestedNode).order);
+    if (map.view !== 'tree') shown.sort((a, b) => (map.nodes.get(a.id) as NestedNode | GroundNode).order - (map.nodes.get(b.id) as NestedNode | GroundNode).order);
     const bars: Bar[] = [];
     if (map.view === 'tree') {
       for (const bar of drawn.bars) bars.push({ parent: bar.parent, x: bar.x, y: bar.y, w: bar.w, h: bar.h });
@@ -728,8 +759,28 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
         lines.push({ id: `${p.id}|${PARENT}|${b.id}`, source: p.id, target: b.id, style: 'structure', link: false, points: parentLine(p, b, shape(p.id), shape(b.id)), scale: b.text });
       }
     }
+    // The Map's links, as lines (LA-V93-R74): the focus's and the selection's; with All links, every link between the records drawn.
+    if (map.view === 'map') {
+      const has = (id: string) => map.nodes.has(id) && !hidden.has(id);
+      const parentOnMap = (id: string) => map.nodes.get(id)?.parent ?? null;
+      const ends = [focus, ...(armedRef.current ? [armedRef.current] : [])];
+      const records = allLinks ? shown.filter((p) => !p.area).map((p) => p.id) : [];
+      const drawnIds = new Set(records);
+      const links = [
+        ...linksOf(index, has, parentOnMap, ends),
+        ...linksOf(index, (id) => drawnIds.has(id), parentOnMap, records, MOST_LINKS),
+      ];
+      const boxOf = (id: string) => byId.get(id) ?? morph.box(id, now);
+      const seen = new Set<string>();
+      for (const link of links) {
+        const a = boxOf(link.source);
+        const b = boxOf(link.target);
+        const line = a && b ? linkLine(link, a, b, v.zoom, link.target === focus ? 'target' : link.source === focus ? 'source' : undefined) : null;
+        if (line && !seen.has(line.id)) { seen.add(line.id); lines.push(line); }
+      }
+    }
     return { plates: shown, bars, lines };
-  }, [drawnAt, plateFor, map, index]);
+  }, [drawnAt, plateFor, map, index, focus, allLinks, hidden]);
   const lastFrame = useRef<{ plates: Plate[]; bars: Bar[]; lines: Line[] } | null>(null);
   // What the last frame drew is stale once anything it was drawn from changes: the pointer then hit-tests a fresh frame.
   lastFrame.current = null;
@@ -851,6 +902,7 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
   const tapToOpen = useTapToOpen(onNavigate, canOpen, wrapper, focus, onOpenNew);
   tap.current = tapToOpen;
   const armedPlate = tapToOpen.armed ? plateFor(tapToOpen.armed) : null;
+  armedRef.current = tapToOpen.armed;
   useEffect(() => { onPeek?.('selected', tapToOpen.armed); requestPaint(); }, [tapToOpen.armed, onPeek]);
 
   // ---- The keyboard's layer ----
@@ -991,11 +1043,10 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
     };
   });
 
-  const nested = layout !== 'tree';
   return (
     <div
       ref={wrapper}
-      className={`graph-flow${nested ? ' is-nested' : ''}`}
+      className={`graph-flow${layout === 'nested' ? ' is-nested' : layout === 'map' ? ' is-map' : ''}`}
       data-layout={layout}
       data-ready={size ? 'true' : undefined}
       tabIndex={-1}

@@ -92,7 +92,7 @@ export interface MapNode {
 /** What every layout's map shares (the Tree map here, the Nested map in nested.ts): what the camera, the minimap and the filters read. */
 export interface PlacedMap {
   /** Which view it lays out (LA-V93-R21). */
-  view: 'tree' | 'nested';
+  view: 'tree' | 'nested' | 'map';
   nodes: ReadonlyMap<string, MapNode>;
   /** The roots, top to bottom: the product (or the top of a tree no product reaches). */
   roots: readonly string[];

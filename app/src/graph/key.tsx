@@ -21,7 +21,7 @@ export interface GraphDrawn {
   shapes: ReadonlySet<Shape>;
   marks: ReadonlySet<Mark>;
   badges: ReadonlySet<Badge>;
-  layout: 'tree' | 'nested';
+  layout: 'tree' | 'nested' | 'map';
 }
 
 /** What each stage's color holds, in its tooltip. */
@@ -82,7 +82,12 @@ export function graphKeyEntries(drawn: GraphDrawn, stages: readonly MetaStage[] 
   }
   if (drawn.layout === 'tree') out.push({ id: 'line', group: 'lines', sample: <span className="graph-line" />, words: 'Parent line', meaning: 'Parent to child: the tree, through stages, folders and groups' });
   if (drawn.layout === 'nested') out.push({ id: 'nested', group: 'lines', sample: <span className="graph-swatch stage-nested" />, words: 'Box in box', meaning: 'Nested view: a box holding its children below its name, as big as the records under it' });
-  out.push({ id: 'bar', group: 'lines', sample: <span className="graph-swatch stage-bar" />, words: 'Too small', meaning: 'A bar: children too small to draw at this zoom' });
+  if (drawn.layout === 'map') {
+    out.push({ id: 'district', group: 'lines', sample: <span className="graph-swatch stage-district" />, words: 'District', meaning: 'Map: a domain (or what the product shares) as an area, its stages left to right in it, their folders one under another, each named with its count of records' });
+    out.push({ id: 'composed', group: 'lines', sample: <span className="graph-swatch stage-nested" />, words: 'Part of', meaning: 'Map: a record inside another is part of it (an aggregate\'s entities, a use case\'s requirements and flows, every record\'s tests); every leaf record is one size' });
+    out.push({ id: 'link', group: 'lines', sample: <span className="graph-line is-link" />, words: 'Link', meaning: 'Map: the focus\'s and the selection\'s links as lines, named by their relation (All links, under Filters, draws every link in view)' });
+  }
+  if (drawn.layout !== 'map') out.push({ id: 'bar', group: 'lines', sample: <span className="graph-swatch stage-bar" />, words: 'Too small', meaning: 'A bar: children too small to draw at this zoom' });
   for (const badge of BADGE_TONES) {
     if (!drawn.badges.has(badge)) continue;
     const b = BADGES[badge];

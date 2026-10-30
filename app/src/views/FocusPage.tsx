@@ -7,6 +7,7 @@ import { CARD_MAX, CARD_MIN, DEFAULT_GRAPH_SETTINGS } from '../exploring/session
 import { useSessionSettings } from '../exploring/session-settings/use-session-settings';
 import { chooseGraphLayout } from '../exploring/session-settings/commands/choose-graph-layout';
 import { showOrHideMinimap } from '../exploring/session-settings/commands/show-or-hide-minimap';
+import { showOrHideAllLinks } from '../exploring/session-settings/commands/show-or-hide-all-links';
 import { resizeWikiCard } from '../exploring/session-settings/commands/resize-wiki-card';
 import type { GraphSettings } from '../graph/GraphPage';
 import { isGroup } from '../graph/model';
@@ -190,6 +191,7 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
   const onSettings = useCallback((next: GraphSettings) => {
     chooseGraphLayout({ layout: next.layout });
     showOrHideMinimap({ shown: next.minimap });
+    showOrHideAllLinks({ shown: next.allLinks });
     setView((v) => {
       const kinds = [...next.filters.hiddenKinds];
       const same = next.depth === v.depth && kinds.length === v.hiddenKinds.length && kinds.every((k) => v.hiddenKinds.includes(k));

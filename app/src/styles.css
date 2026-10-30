@@ -347,6 +347,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-swatch.is-shape :is(.graph-shape-icon, .graph-mark-icon) { margin: 0; height: 12px; width: 17px; vertical-align: middle; }
 .graph-mark { display: inline-grid; place-items: center; min-width: 15px; height: 15px; padding: 0 3px; box-sizing: border-box; border-radius: 8px; font: 700 9.5px var(--mono); color: var(--on-mark); background: var(--warn); }
 .graph-mark.error { background: var(--error); }
+.graph-swatch.stage-district { border-color: transparent; border-radius: 4px; background: linear-gradient(var(--g-domain-model-bg), var(--g-domain-model-bg)) 3px 3px / 10px 6px no-repeat, var(--sheet); }
 .graph-swatch.stage-nested { border-color: var(--muted); background: linear-gradient(var(--g-domain-model-bg), var(--g-domain-model-bg)) 3px 5px / 10px 3px no-repeat, var(--sheet); }
 
 /* Edges: parent/child is the solid spine of the tree; every other relation is a lighter, dashed cross-link. A parent line
@@ -361,6 +362,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-swatch.stage-bar { background: var(--rule); border-color: var(--rule); opacity: 0.6; }
 /* The key's parent line: the tree's solid ink line. */
 .graph-line { display: inline-block; width: 22px; height: 0; border-top: 2.5px solid var(--ink); vertical-align: middle; }
+.graph-line.is-link { border-top: 1.5px solid var(--link-edge); }
 .graph-swatch.kind-question { border-style: dashed; border-color: var(--warn); }
 .graph-swatch.is-gap { border-style: dashed; border-color: var(--muted); background: none; }
 .graph-swatch.is-focus { box-shadow: 0 0 0 2px var(--ink); }

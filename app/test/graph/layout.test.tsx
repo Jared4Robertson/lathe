@@ -7,6 +7,7 @@ import { testIndex, testWorkspace } from './workspace';
 import { fitCache, placeTree, type PlacedMap } from '../../src/graph/map';
 import { mapInput, probeOf, productInput, unpackInput, type LayoutReply, type LayoutRequest } from '../../src/graph/layout-input';
 import { treeChildren } from '../../src/graph/tree';
+import { placeGround } from '../../src/graph/ground';
 import { textMeasure, treeLabel } from '../../src/graph/text';
 import type { RecordIndex } from '../../src/exploring/record-summaries/record-index';
 import { layoutTree } from './maps';
@@ -28,6 +29,16 @@ describe('a map\'s layout input', () => {
     // The same as the in-thread Tree layout.
     const map = layoutTree(['P'], (id) => treeChildren(index, id), (id) => treeLabel(index, id));
     input.shape.ids.forEach((id, i) => expect([map.nodes.get(id)!.x, map.nodes.get(id)!.w, map.nodes.get(id)!.text]).toEqual([here.boxes[i * 5], here.boxes[i * 5 + 2], here.boxes[i * 5 + 4]]));
+  });
+
+  it('LA-EXP-DS12-T03 The worker lays the Map out as the page does: its unpacked input keeps each node\'s role', () => {
+    const input = productInput(testIndex(), 'P', 'map', MEASURE());
+    const { shape, labels, roles } = unpackInput(input.packed, input.shape.roots.map((r) => input.shape.ids.indexOf(r)));
+    expect(roles).toEqual(input.roles);
+    expect(roles[0]).toBe('ground');
+    expect([...placeGround(shape, (i) => labels[i], (i) => roles[i]).boxes]).toEqual([...placeGround(input.shape, (i) => input.labels[i], (i) => input.roles[i]).boxes]);
+    // The Tree's input has none.
+    expect(productInput(testIndex(), 'P', 'tree', MEASURE()).roles).toEqual([]);
   });
 
   it('LA-EXP-DS05-T15 A map is laid out again only when what it reads changes: new data that leaves it alone gives the same input', () => {

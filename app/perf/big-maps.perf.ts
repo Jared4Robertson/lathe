@@ -102,6 +102,31 @@ test.describe('big maps', () => {
     await slow('big map: panning the Graph through a reload and its layout', r);
   });
 
+  test('LA-PLT-UC09-R13-T01 the Graph\'s Map pans and zooms at 60 Hz on the large product, frames a walked focus within 200 ms, and lays its map out off the main thread', async ({ page }) => {
+    await open(page, `/${USE_CASE}?stage=graph`, `${GRAPH} .graph-box`);
+    await page.locator('.graph-layout button', { hasText: 'Map' }).click();
+    await page.locator(`${GRAPH}[data-layout="map"] .graph-box`).first().waitFor({ state: 'attached', timeout: 120_000 });
+    await quiet(page, 1500);
+    const laid = (await sceneOf(page)).laidOut!;
+    expect(laid.thread, 'the Map is laid out in the worker').toBe('worker');
+    await record({ name: 'big map: the Graph\'s Map laid out off the main thread', value: laid.ms, unit: 'ms', budget: BUDGETS.bigMapLayoutMs, detail: `${laid.nodes} boxes, in the layout's worker` });
+    const { pan, zoom } = await panAndZoom(page, `${GRAPH} canvas`);
+    await slow('big map: panning the Map', pan);
+    await slow('big map: zooming the Map', zoom);
+    const times: number[] = [];
+    for (const key of ['ArrowDown', 'ArrowRight', 'ArrowRight', 'ArrowUp']) {
+      const before = page.url();
+      const start = await page.evaluate(() => performance.now());
+      await page.keyboard.press(key);
+      await page.waitForURL((u) => u.href !== before);
+      const id = decodeURIComponent(new URL(page.url()).pathname.slice(1));
+      await page.waitForFunction(({ sel, id }) => !!(document.querySelector(sel) as HTMLElement & { graphScene?: () => { boxes: { id: string; focus: boolean }[] } }).graphScene?.().boxes.some((b) => b.id === id && b.focus), { sel: GRAPH, id });
+      times.push((await page.evaluate(() => performance.now())) - start);
+      await quiet(page, 700);
+    }
+    await record({ name: 'big map: a walked focus framed on the Map', value: Math.max(...times), unit: 'ms', budget: BUDGETS.bigMapFocusMs, detail: `worst of ${times.length}: ${times.map(Math.round).join(', ')} ms` });
+  });
+
   test('LA-PLT-UC09-R13-T01 the ERD pans and zooms at 60 Hz on the large product', async ({ page }) => {
     await open(page, `${DOMAIN}?stage=erd`, '.focus-stage .erd-flow[data-framed] .react-flow__node');
     const { pan, zoom } = await panAndZoom(page, '.focus-stage .erd-flow');
