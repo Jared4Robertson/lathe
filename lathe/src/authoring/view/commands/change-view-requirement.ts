@@ -1,4 +1,3 @@
-// Change a view requirement (LA-AUT-CMD314): Changes a view requirement's title, statement or group. Its view does not change.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ViewRequirementRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { ViewRepository } from '../repository.ts';
 /** The view requirement's changes: a column given is set, null clears an optional one. */
 export type ChangeViewRequirement = Pick<ViewRequirementRow, 'id'> & { title?: ViewRequirementRow['title']; statement?: ViewRequirementRow['statement']; group_name?: ViewRequirementRow['group_name'] | null };
 
-/** Change a view requirement (LA-AUT-CMD314). */
 export const CHANGE_VIEW_REQUIREMENT: CommandDefinition<ChangeViewRequirement> = {
   id: 'LA-AUT-CMD314',
   slice: VIEW_SLICE,

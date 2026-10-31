@@ -1,4 +1,3 @@
-// Add a read model (LA-AUT-CMD285): Adds a read model to its domain, with its fields in order, the aggregates it reads, the domain services its projection calls and the events that feed it.
 import { column, ids, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ReadModelRow } from '../../../platform/data/tables.ts';
@@ -6,10 +5,8 @@ import { FIELD_COLUMNS, READ_MODEL_SLICE, newReadModel, type ReadModelField } fr
 import { ReadModelRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 
-/** A new read model, with its fields and the links it starts. */
 export type AddReadModel = Pick<ReadModelRow, 'id' | 'title' | 'domain_id' | 'description'> & { fields?: ReadModelField[]; reads?: string[]; calls?: string[]; fed_by?: string[] };
 
-/** Add a read model (LA-AUT-CMD285). */
 export const ADD_READ_MODEL: CommandDefinition<AddReadModel> = {
   id: 'LA-AUT-CMD285',
   slice: READ_MODEL_SLICE,
@@ -30,7 +27,6 @@ export const ADD_READ_MODEL: CommandDefinition<AddReadModel> = {
   handler: addReadModel,
 };
 
-/** Adds the read model, whole and new, with its fields and links. */
 export function addReadModel(tx: Transaction, input: AddReadModel): void {
   const readModels = new ReadModelRepository(tx);
   if (tx.record(input.domain_id)?.kind !== 'domain') tx.refuse('missing', `there is no domain ${input.domain_id}`);

@@ -1,4 +1,3 @@
-// Change a policy (LA-AUT-CMD247): Changes a policy's title or statement, or the event it hears; null clears the event. The command it sends does not change.
 import { column, id, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PolicyRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The policy's changes: a column given is set; null clears the event it hears. */
 export type ChangePolicy = Pick<PolicyRow, 'id'> & { title?: string; statement?: string; hears?: string | null };
 
-/** Change a policy (LA-AUT-CMD247). */
 export const CHANGE_POLICY: CommandDefinition<ChangePolicy> = {
   id: 'LA-AUT-CMD247',
   slice: COMMAND_SLICE,

@@ -1,4 +1,3 @@
-// Change a storage requirement test (LA-AUT-CMD364): Changes a storage requirement test's columns or the test data sets it starts from (the whole list).
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { StorageRequirementTestRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { StorageRequirementRepository } from '../repository.ts';
 /** The test's changes: a column given is set, null clears an optional one; starts_from, when given, replaces the list. */
 export type ChangeStorageRequirementTest = Pick<StorageRequirementTestRow, 'id'> & { title?: StorageRequirementTestRow['title']; level?: StorageRequirementTestRow['level']; state?: StorageRequirementTestRow['state']; file?: StorageRequirementTestRow['file'] | null; manual_reason?: StorageRequirementTestRow['manual_reason'] | null; size?: StorageRequirementTestRow['size'] | null; smoke?: StorageRequirementTestRow['smoke'] | null; external?: StorageRequirementTestRow['external'] | null; when?: StorageRequirementTestRow['when']; then?: StorageRequirementTestRow['then']; notes?: StorageRequirementTestRow['notes'] | null; starts_from?: string[] };
 
-/** Change a storage requirement test (LA-AUT-CMD364). */
 export const CHANGE_STORAGE_REQUIREMENT_TEST: CommandDefinition<ChangeStorageRequirementTest> = {
   id: 'LA-AUT-CMD364',
   slice: STORAGE_REQUIREMENT_SLICE,

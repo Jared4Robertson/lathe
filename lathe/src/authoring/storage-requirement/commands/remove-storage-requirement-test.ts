@@ -1,4 +1,3 @@
-// Remove a storage requirement test (LA-AUT-CMD365): Removes a storage requirement test with the links it starts. Refused while anything references it, such as a business outcome it measures.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { STORAGE_REQUIREMENT_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { StorageRequirementRepository } from '../repository.ts';
 /** The storage requirement test to remove. */
 export type RemoveStorageRequirementTest = { id: string };
 
-/** Remove a storage requirement test (LA-AUT-CMD365). */
 export const REMOVE_STORAGE_REQUIREMENT_TEST: CommandDefinition<RemoveStorageRequirementTest> = {
   id: 'LA-AUT-CMD365',
   slice: STORAGE_REQUIREMENT_SLICE,

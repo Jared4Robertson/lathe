@@ -1,4 +1,3 @@
-// Remove a standard rule test (LA-AUT-CMD208): Removes a standard rule test and the links it starts. Refused while anything references it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { STANDARD_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { StandardRepository } from '../repository.ts';
 /** The test to remove. */
 export type RemoveStandardRuleTest = { id: string };
 
-/** Remove a standard rule test (LA-AUT-CMD208). */
 export const REMOVE_STANDARD_RULE_TEST: CommandDefinition<RemoveStandardRuleTest> = {
   id: 'LA-AUT-CMD208',
   slice: STANDARD_SLICE,

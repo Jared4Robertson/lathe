@@ -1,4 +1,3 @@
-// Add a rule (LA-AUT-CMD225): Adds the rule that enforces an invariant of the aggregate: its name in code, the name its refusal carries, and its file, with the standard rules it meets and the packages it uses.
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { RuleRow } from '../../../platform/data/tables.ts';
@@ -6,10 +5,8 @@ import { AGGREGATE_SLICE } from '../model.ts';
 import { AggregateRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 
-/** A new rule, with the standard rules it meets and the packages it uses. */
 export type AddRule = Pick<RuleRow, 'id' | 'title' | 'invariant_id' | 'file'> & { meets?: string[]; packages?: string[] };
 
-/** Add a rule (LA-AUT-CMD225). */
 export const ADD_RULE: CommandDefinition<AddRule> = {
   id: 'LA-AUT-CMD225',
   slice: AGGREGATE_SLICE,
@@ -28,7 +25,6 @@ export const ADD_RULE: CommandDefinition<AddRule> = {
   handler: addRule,
 };
 
-/** Adds the rule under its invariant, with its links. */
 export function addRule(tx: Transaction, input: AddRule): void {
   const aggregates = new AggregateRepository(tx);
   const aggregate = aggregates.loadHolding('invariant', input.invariant_id) ?? tx.refuse('missing', `there is no invariant ${input.invariant_id}`);

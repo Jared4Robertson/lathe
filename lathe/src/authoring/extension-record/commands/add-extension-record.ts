@@ -1,4 +1,3 @@
-// Add an extension record (LA-AUT-CMD145): Adds a record of a product's own kind under its parent, with its title and declared fields, the links it starts and the packages it uses.
 import { id, links, texts, values, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { parentColumn, productKinds } from '../declaration.ts';
@@ -16,7 +15,6 @@ export type AddExtensionRecord = {
   packages?: string[];
 };
 
-/** Add an extension record (LA-AUT-CMD145). */
 export const ADD_EXTENSION_RECORD: CommandDefinition<AddExtensionRecord> = {
   id: 'LA-AUT-CMD145',
   slice: EXTENSION_RECORD_SLICE,

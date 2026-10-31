@@ -1,14 +1,11 @@
-// Add a view test (LA-AUT-CMD316): Adds a view test under its view requirement, with the test data sets it starts from.
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ViewTestRow } from '../../../platform/data/tables.ts';
 import { VIEW_SLICE } from '../model.ts';
 import { ViewRepository } from '../repository.ts';
 
-/** A new view test, with the links it starts. */
 export type AddViewTest = Pick<ViewTestRow, 'id' | 'title' | 'view_requirement_id' | 'level' | 'state' | 'when' | 'then' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'notes'> & { starts_from?: string[] };
 
-/** Add a view test (LA-AUT-CMD316). */
 export const ADD_VIEW_TEST: CommandDefinition<AddViewTest> = {
   id: 'LA-AUT-CMD316',
   slice: VIEW_SLICE,
@@ -35,7 +32,6 @@ export const ADD_VIEW_TEST: CommandDefinition<AddViewTest> = {
   handler: addViewTest,
 };
 
-/** Adds the view test under its view requirement, with its links. */
 export function addViewTest(tx: Transaction, input: AddViewTest): void {
   const views = new ViewRepository(tx);
   const view = views.loadHolding('view_requirement', input.view_requirement_id) ?? tx.refuse('missing', `there is no view requirement ${input.view_requirement_id}`);

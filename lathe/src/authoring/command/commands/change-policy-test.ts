@@ -1,4 +1,3 @@
-// Change a policy test (LA-AUT-CMD253): Changes a policy test's columns or the test data sets it starts from (the whole list).
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PolicyTestRow } from '../../../platform/data/tables.ts';
@@ -22,7 +21,6 @@ export type ChangePolicyTest = Pick<PolicyTestRow, 'id'> & {
   starts_from?: string[];
 };
 
-/** Change a policy test (LA-AUT-CMD253). */
 export const CHANGE_POLICY_TEST: CommandDefinition<ChangePolicyTest> = {
   id: 'LA-AUT-CMD253',
   slice: COMMAND_SLICE,

@@ -1,4 +1,3 @@
-// Add an invariant test (LA-AUT-CMD222): Adds the test of an invariant, with the test data sets it starts from.
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { InvariantTestRow } from '../../../platform/data/tables.ts';
@@ -6,10 +5,8 @@ import { AGGREGATE_SLICE } from '../model.ts';
 import { AggregateRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 
-/** A new invariant test, with the test data sets it starts from. */
 export type AddInvariantTest = Pick<InvariantTestRow, 'id' | 'title' | 'invariant_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'when' | 'then' | 'notes'> & { starts_from?: string[] };
 
-/** Add an invariant test (LA-AUT-CMD222). */
 export const ADD_INVARIANT_TEST: CommandDefinition<AddInvariantTest> = {
   id: 'LA-AUT-CMD222',
   slice: AGGREGATE_SLICE,
@@ -36,7 +33,6 @@ export const ADD_INVARIANT_TEST: CommandDefinition<AddInvariantTest> = {
   handler: addInvariantTest,
 };
 
-/** Adds the test under its invariant. */
 export function addInvariantTest(tx: Transaction, input: AddInvariantTest): void {
   const aggregates = new AggregateRepository(tx);
   const aggregate = aggregates.loadHolding('invariant', input.invariant_id) ?? tx.refuse('missing', `there is no invariant ${input.invariant_id}`);

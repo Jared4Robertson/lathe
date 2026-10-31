@@ -1,4 +1,3 @@
-// Add an endpoint handler (LA-AUT-CMD327): Adds an endpoint's handler, its one piece of code that serves it: its name in code and its file, with the standard rules it meets and the packages it uses.
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EndpointHandlerRow } from '../../../platform/data/tables.ts';
@@ -7,10 +6,8 @@ import { EndpointRepository } from '../repository.ts';
 import { refuseBroken } from '../../../platform/data/rules.ts';
 import { oneEndpointHandler } from '../rules.ts';
 
-/** A new endpoint handler, with the links it starts. */
 export type AddEndpointHandler = Pick<EndpointHandlerRow, 'id' | 'title' | 'endpoint_id' | 'description' | 'file'> & { meets?: string[]; packages?: string[] };
 
-/** Add an endpoint handler (LA-AUT-CMD327). */
 export const ADD_ENDPOINT_HANDLER: CommandDefinition<AddEndpointHandler> = {
   id: 'LA-AUT-CMD327',
   slice: ENDPOINT_SLICE,
@@ -30,7 +27,6 @@ export const ADD_ENDPOINT_HANDLER: CommandDefinition<AddEndpointHandler> = {
   handler: addEndpointHandler,
 };
 
-/** Adds the endpoint handler under its endpoint, with its links. */
 export function addEndpointHandler(tx: Transaction, input: AddEndpointHandler): void {
   const endpoints = new EndpointRepository(tx);
   const endpoint = endpoints.loadHolding('endpoint', input.endpoint_id) ?? tx.refuse('missing', `there is no endpoint ${input.endpoint_id}`);

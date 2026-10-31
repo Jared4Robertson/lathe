@@ -1,4 +1,3 @@
-// Remove an entry point (LA-AUT-CMD152): Removes an entry point whole, with the packages it names and the links it starts. Refused while anything references it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { ENTRY_POINT_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { EntryPointRepository } from '../repository.ts';
 /** The entry point to remove. */
 export type RemoveEntryPoint = { id: string };
 
-/** Remove an entry point (LA-AUT-CMD152). */
 export const REMOVE_ENTRY_POINT: CommandDefinition<RemoveEntryPoint> = {
   id: 'LA-AUT-CMD152',
   slice: ENTRY_POINT_SLICE,

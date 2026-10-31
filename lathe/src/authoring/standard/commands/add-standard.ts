@@ -1,4 +1,3 @@
-// Add a standard (LA-AUT-CMD200): Adds a standard to its product, with no rules yet.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { StandardRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { StandardRepository } from '../repository.ts';
 /** A new standard: its row. */
 export type AddStandard = Pick<StandardRow, 'id' | 'title' | 'product_id' | 'description'>;
 
-/** Add a standard (LA-AUT-CMD200). */
 export const ADD_STANDARD: CommandDefinition<AddStandard> = {
   id: 'LA-AUT-CMD200',
   slice: STANDARD_SLICE,

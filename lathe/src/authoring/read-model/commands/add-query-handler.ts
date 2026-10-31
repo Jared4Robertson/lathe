@@ -1,4 +1,3 @@
-// Add a query handler (LA-AUT-CMD294): Adds the handler that answers a query, its one piece of code, with the standard rules it meets and the packages it uses.
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { QueryHandlerRow } from '../../../platform/data/tables.ts';
@@ -6,10 +5,8 @@ import { READ_MODEL_SLICE } from '../model.ts';
 import { ReadModelRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 
-/** A new query handler, with the standard rules it meets and the packages it uses. */
 export type AddQueryHandler = Pick<QueryHandlerRow, 'id' | 'title' | 'query_id' | 'file' | 'description'> & { meets?: string[]; packages?: string[] };
 
-/** Add a query handler (LA-AUT-CMD294). */
 export const ADD_QUERY_HANDLER: CommandDefinition<AddQueryHandler> = {
   id: 'LA-AUT-CMD294',
   slice: READ_MODEL_SLICE,

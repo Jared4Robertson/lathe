@@ -1,4 +1,3 @@
-// Add a domain (LA-AUT-CMD160): Adds a domain to its product, with nothing in it yet.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { DomainRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** A new domain: its row. */
 export type AddDomain = Pick<DomainRow, 'id' | 'title' | 'product_id' | 'subdomain_type' | 'description' | 'notes'>;
 
-/** Add a domain (LA-AUT-CMD160). */
 export const ADD_DOMAIN: CommandDefinition<AddDomain> = {
   id: 'LA-AUT-CMD160',
   slice: DOMAIN_SLICE,

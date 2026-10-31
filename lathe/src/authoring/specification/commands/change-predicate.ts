@@ -1,4 +1,3 @@
-// Change a predicate (LA-AUT-CMD264): Changes a predicate's title or file, or the standard rules it meets or packages it uses (each the whole list).
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PredicateRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { SpecificationRepository } from '../repository.ts';
 /** The predicate's changes: a column given is set, null clears an optional one; a list given replaces the list. */
 export type ChangePredicate = Pick<PredicateRow, 'id'> & { title?: PredicateRow['title']; file?: PredicateRow['file'] | null; meets?: string[]; packages?: string[] };
 
-/** Change a predicate (LA-AUT-CMD264). */
 export const CHANGE_PREDICATE: CommandDefinition<ChangePredicate> = {
   id: 'LA-AUT-CMD264',
   slice: SPECIFICATION_SLICE,

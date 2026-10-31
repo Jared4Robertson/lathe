@@ -1,0 +1,61 @@
+// A command file carries no comment that restates its definition: its title, ID or description. The definition is the
+// one place they are written (the CLI, the MCP server and the HTTP API show them), so a comment that copies them drifts.
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import path from 'node:path';
+import { describe, expect, it } from 'vitest';
+import { PACKAGE_DIR } from '../src/index.ts';
+
+const REPO = path.join(PACKAGE_DIR, '..');
+
+/** Every command file: a file under a commands folder that defines a command, other than its folder's index. */
+function commandFiles(dir: string): string[] {
+  const found: string[] = [];
+  const walk = (at: string) => {
+    for (const name of readdirSync(at)) {
+      const full = path.join(at, name);
+      if (statSync(full).isDirectory()) walk(full);
+      else if (/\/commands\/[^/]+\.ts$/.test(full) && !full.endsWith('/index.ts') && readFileSync(full, 'utf8').includes(': CommandDefinition<')) found.push(full);
+    }
+  };
+  walk(dir);
+  return found.sort();
+}
+
+/** The comments in a source file: its line comments and its block comments. */
+function comments(text: string): string[] {
+  return [...text.matchAll(/\/\*[\s\S]*?\*\/|^\s*\/\/.*$/gm)].map((m) => m[0]);
+}
+
+/** Text as a reader sees it: case, quotes and layout ignored, so a comment's wrapping does not hide a copy. */
+const plain = (text: string) => text.replace(/[`'"*/]+/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+
+/** Runs of words a comment and a description share: a copy of eight words or more, or the whole ID. */
+const RUN = 8;
+function runsOf(text: string): Set<string> {
+  const words = plain(text).split(' ');
+  const runs = new Set<string>();
+  for (let i = 0; i + RUN <= words.length; i++) runs.add(words.slice(i, i + RUN).join(' '));
+  return runs;
+}
+
+describe('command files restate nothing of their definitions', () => {
+  const files = commandFiles(path.join(REPO, 'lathe/src'));
+
+  it('finds every command file', () => {
+    expect(files.length).toBeGreaterThan(200);
+  });
+
+  it('gives no comment the ID or description of the command it defines', () => {
+    const restating = files.flatMap((file) => {
+      const text = readFileSync(file, 'utf8');
+      const id = /id: '(LA-[A-Z0-9-]+)'/.exec(text)?.[1];
+      const description = /description: (?:'((?:[^'\\\n]|\\.)*)'|"((?:[^"\\\n]|\\.)*)")/.exec(text);
+      expect(id, `${file} names its ID`).toBeDefined();
+      const copied = runsOf(description?.[1] ?? description?.[2] ?? '');
+      return comments(text)
+        .filter((comment) => plain(comment).includes(id!.toLowerCase()) || [...runsOf(comment)].some((run) => copied.has(run)))
+        .map((comment) => `${path.relative(REPO, file)}: ${comment.trim().slice(0, 120)}`);
+    });
+    expect(restating).toEqual([]);
+  });
+});

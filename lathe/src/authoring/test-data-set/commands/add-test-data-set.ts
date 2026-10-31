@@ -1,4 +1,3 @@
-// Add a test data set (LA-AUT-CMD185): Adds a test data set to the domain whose tests it serves: where it runs, what it starts with, how to prepare and reset it, and the file that builds it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { TestDataSetRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { TestDataSetRepository } from '../repository.ts';
 /** A new test data set: its row. */
 export type AddTestDataSet = Pick<TestDataSetRow, 'id' | 'title' | 'domain_id' | 'environment' | 'accounts' | 'records' | 'prepare' | 'reset' | 'file' | 'description'>;
 
-/** Add a test data set (LA-AUT-CMD185). */
 export const ADD_TEST_DATA_SET: CommandDefinition<AddTestDataSet> = {
   id: 'LA-AUT-CMD185',
   slice: TEST_DATA_SET_SLICE,

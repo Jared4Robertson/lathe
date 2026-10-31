@@ -1,4 +1,3 @@
-// Follow a pattern (LA-TRC-CMD01): Makes a domain or use case follow a pattern, with the value it gives each of the pattern's settings.
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { followingOf, PATTERN_FOLLOWING_SLICE, valueRows, type SettingValueInput } from '../model.ts';
@@ -8,7 +7,6 @@ import { holdToRules } from '../rules.ts';
 /** The follower, the pattern and the setting values it gives. */
 export type FollowPattern = { follower_id: string; pattern_id: string; setting_values?: SettingValueInput[] };
 
-/** Follow a pattern (LA-TRC-CMD01). */
 export const FOLLOW_PATTERN: CommandDefinition<FollowPattern> = {
   id: 'LA-TRC-CMD01',
   slice: PATTERN_FOLLOWING_SLICE,

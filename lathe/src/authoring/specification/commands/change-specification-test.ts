@@ -1,4 +1,3 @@
-// Change a specification test (LA-AUT-CMD267): Changes a specification test's columns or the test data sets it starts from (the whole list).
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { SpecificationTestRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { SpecificationRepository } from '../repository.ts';
 /** The test's changes: a column given is set, null clears an optional one; starts_from, when given, replaces the list. */
 export type ChangeSpecificationTest = Pick<SpecificationTestRow, 'id'> & { title?: SpecificationTestRow['title']; level?: SpecificationTestRow['level']; state?: SpecificationTestRow['state']; file?: SpecificationTestRow['file'] | null; manual_reason?: SpecificationTestRow['manual_reason'] | null; size?: SpecificationTestRow['size'] | null; smoke?: SpecificationTestRow['smoke'] | null; external?: SpecificationTestRow['external'] | null; when?: SpecificationTestRow['when']; then?: SpecificationTestRow['then']; notes?: SpecificationTestRow['notes'] | null; starts_from?: string[] };
 
-/** Change a specification test (LA-AUT-CMD267). */
 export const CHANGE_SPECIFICATION_TEST: CommandDefinition<ChangeSpecificationTest> = {
   id: 'LA-AUT-CMD267',
   slice: SPECIFICATION_SLICE,

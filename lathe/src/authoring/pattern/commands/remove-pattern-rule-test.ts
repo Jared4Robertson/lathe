@@ -1,4 +1,3 @@
-// Remove a pattern rule test (LA-AUT-CMD198): Removes a pattern rule test and the links it starts. Refused while anything references it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { PATTERN_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { PatternRepository } from '../repository.ts';
 /** The test to remove. */
 export type RemovePatternRuleTest = { id: string };
 
-/** Remove a pattern rule test (LA-AUT-CMD198). */
 export const REMOVE_PATTERN_RULE_TEST: CommandDefinition<RemovePatternRuleTest> = {
   id: 'LA-AUT-CMD198',
   slice: PATTERN_SLICE,

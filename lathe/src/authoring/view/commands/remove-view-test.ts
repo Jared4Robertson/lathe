@@ -1,4 +1,3 @@
-// Remove a view test (LA-AUT-CMD318): Removes a view test with the links it starts. Refused while anything else references them.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { VIEW_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { ViewRepository } from '../repository.ts';
 /** The view test to remove. */
 export type RemoveViewTest = { id: string };
 
-/** Remove a view test (LA-AUT-CMD318). */
 export const REMOVE_VIEW_TEST: CommandDefinition<RemoveViewTest> = {
   id: 'LA-AUT-CMD318',
   slice: VIEW_SLICE,

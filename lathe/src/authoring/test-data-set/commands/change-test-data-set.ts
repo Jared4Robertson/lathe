@@ -1,4 +1,3 @@
-// Change a test data set (LA-AUT-CMD186): Changes a test data set's columns. Its domain never changes.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { TestDataSetRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { TestDataSetRepository } from '../repository.ts';
 /** The test data set's changes: a column given is set, null clears an optional one. */
 export type ChangeTestDataSet = Pick<TestDataSetRow, 'id'> & { title?: TestDataSetRow['title']; environment?: TestDataSetRow['environment']; accounts?: TestDataSetRow['accounts'] | null; records?: TestDataSetRow['records']; prepare?: TestDataSetRow['prepare']; reset?: TestDataSetRow['reset']; file?: TestDataSetRow['file'] | null; description?: TestDataSetRow['description'] };
 
-/** Change a test data set (LA-AUT-CMD186). */
 export const CHANGE_TEST_DATA_SET: CommandDefinition<ChangeTestDataSet> = {
   id: 'LA-AUT-CMD186',
   slice: TEST_DATA_SET_SLICE,
