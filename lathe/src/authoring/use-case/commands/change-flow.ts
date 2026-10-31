@@ -1,4 +1,3 @@
-// Change a flow (LA-AUT-CMD108): Changes a flow's title. Its interface is in its ID, so a flow through another interface is another flow.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { FlowRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The flow's new title. */
 export type ChangeFlow = Pick<FlowRow, 'id' | 'title'>;
 
-/** Change a flow (LA-AUT-CMD108). */
 export const CHANGE_FLOW: CommandDefinition<ChangeFlow> = {
   id: 'LA-AUT-CMD108',
   slice: USE_CASE_SLICE,

@@ -1,4 +1,3 @@
-// Remove a value type (LA-AUT-CMD278): Removes a value object's value type with the links it starts and the packages it uses. Refused while anything references it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { VALUE_OBJECT_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { ValueObjectRepository } from '../repository.ts';
 /** The value type to remove. */
 export type RemoveValueType = { id: string };
 
-/** Remove a value type (LA-AUT-CMD278). */
 export const REMOVE_VALUE_TYPE: CommandDefinition<RemoveValueType> = {
   id: 'LA-AUT-CMD278',
   slice: VALUE_OBJECT_SLICE,

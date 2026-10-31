@@ -1,4 +1,3 @@
-// Change an integration (LA-AUT-CMD336): Changes an integration's title, system or description.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { IntegrationRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { IntegrationRepository } from '../repository.ts';
 /** The integration's changes: a column given is set, null clears an optional one. */
 export type ChangeIntegration = Pick<IntegrationRow, 'id'> & { title?: IntegrationRow['title']; description?: IntegrationRow['description']; system?: IntegrationRow['system'] | null };
 
-/** Change an integration (LA-AUT-CMD336). */
 export const CHANGE_INTEGRATION: CommandDefinition<ChangeIntegration> = {
   id: 'LA-AUT-CMD336',
   slice: INTEGRATION_SLICE,

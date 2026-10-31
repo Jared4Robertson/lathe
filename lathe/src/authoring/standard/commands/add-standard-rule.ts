@@ -1,4 +1,3 @@
-// Add a standard rule (LA-AUT-CMD203): Adds a rule to its standard.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { StandardRuleRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { StandardRepository } from '../repository.ts';
 /** A new standard rule. */
 export type AddStandardRule = Pick<StandardRuleRow, 'id' | 'title' | 'standard_id' | 'statement' | 'group_name'>;
 
-/** Add a standard rule (LA-AUT-CMD203). */
 export const ADD_STANDARD_RULE: CommandDefinition<AddStandardRule> = {
   id: 'LA-AUT-CMD203',
   slice: STANDARD_SLICE,

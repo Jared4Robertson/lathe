@@ -1,4 +1,3 @@
-// Add an interface (LA-AUT-CMD132): Adds an interface of a product: a way it is used, such as its web app, HTTP API or command line.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { InterfaceRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** A new interface. */
 export type AddInterface = Pick<InterfaceRow, 'id' | 'title' | 'product_id' | 'kind' | 'description'>;
 
-/** Add an interface (LA-AUT-CMD132). */
 export const ADD_INTERFACE: CommandDefinition<AddInterface> = {
   id: 'LA-AUT-CMD132',
   slice: PRODUCT_SLICE,

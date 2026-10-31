@@ -1,4 +1,3 @@
-// Move an endpoint (LA-AUT-CMD322): Moves an endpoint, with everything in it, to the command or query of its domain it now exposes: give exactly one of command_id and query_id.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EndpointRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { EndpointRepository } from '../repository.ts';
 /** The endpoint and the one command or query it moves to. */
 export type MoveEndpoint = Pick<EndpointRow, 'id' | 'command_id' | 'query_id'>;
 
-/** Move an endpoint (LA-AUT-CMD322). */
 export const MOVE_ENDPOINT: CommandDefinition<MoveEndpoint> = {
   id: 'LA-AUT-CMD322',
   slice: ENDPOINT_SLICE,

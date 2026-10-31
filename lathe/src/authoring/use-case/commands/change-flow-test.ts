@@ -1,4 +1,3 @@
-// Change a flow test (LA-AUT-CMD117): Changes a flow test's columns or the test data sets it starts from (the whole list).
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { FlowTestRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The test's changes: a column given is set, null clears an optional one; starts_from, when given, replaces the list. */
 export type ChangeFlowTest = Pick<FlowTestRow, 'id'> & { title?: FlowTestRow['title']; level?: FlowTestRow['level']; state?: FlowTestRow['state']; steps?: FlowTestRow['steps']; expected_result?: FlowTestRow['expected_result']; file?: FlowTestRow['file'] | null; manual_reason?: FlowTestRow['manual_reason'] | null; size?: FlowTestRow['size'] | null; smoke?: FlowTestRow['smoke'] | null; external?: FlowTestRow['external'] | null; notes?: FlowTestRow['notes'] | null; starts_from?: string[] };
 
-/** Change a flow test (LA-AUT-CMD117). */
 export const CHANGE_FLOW_TEST: CommandDefinition<ChangeFlowTest> = {
   id: 'LA-AUT-CMD117',
   slice: USE_CASE_SLICE,

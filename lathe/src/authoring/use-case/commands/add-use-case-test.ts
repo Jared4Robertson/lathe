@@ -1,4 +1,3 @@
-// Add a use case test (LA-AUT-CMD113): Adds a use case test under its UC requirement, with the test data sets it starts from.
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { UseCaseTestRow } from '../../../platform/data/tables.ts';
@@ -6,10 +5,8 @@ import { USE_CASE_SLICE } from '../model.ts';
 import { UseCaseRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 
-/** A new use case test, with the test data sets it starts from. */
 export type AddUseCaseTest = Pick<UseCaseTestRow, 'id' | 'title' | 'uc_requirement_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'when' | 'then' | 'notes'> & { starts_from?: string[] };
 
-/** Add a use case test (LA-AUT-CMD113). */
 export const ADD_USE_CASE_TEST: CommandDefinition<AddUseCaseTest> = {
   id: 'LA-AUT-CMD113',
   slice: USE_CASE_SLICE,
@@ -36,7 +33,6 @@ export const ADD_USE_CASE_TEST: CommandDefinition<AddUseCaseTest> = {
   handler: addUseCaseTest,
 };
 
-/** Adds the test under its UC requirement. */
 export function addUseCaseTest(tx: Transaction, input: AddUseCaseTest): void {
   const useCases = new UseCaseRepository(tx);
   const useCase = useCases.loadHolding('uc_requirement', input.uc_requirement_id) ?? tx.refuse('missing', `there is no UC requirement ${input.uc_requirement_id}`);

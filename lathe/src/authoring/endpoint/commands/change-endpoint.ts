@@ -1,4 +1,3 @@
-// Change an endpoint (LA-AUT-CMD321): Changes an endpoint's title, method, route, description or notes. The command or query it exposes changes only by Move an endpoint.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EndpointRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { EndpointRepository } from '../repository.ts';
 /** The endpoint's changes: a column given is set, null clears an optional one. */
 export type ChangeEndpoint = Pick<EndpointRow, 'id'> & { title?: EndpointRow['title']; method?: EndpointRow['method']; route?: EndpointRow['route']; description?: EndpointRow['description']; notes?: EndpointRow['notes'] | null };
 
-/** Change an endpoint (LA-AUT-CMD321). */
 export const CHANGE_ENDPOINT: CommandDefinition<ChangeEndpoint> = {
   id: 'LA-AUT-CMD321',
   slice: ENDPOINT_SLICE,

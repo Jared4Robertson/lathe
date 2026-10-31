@@ -1,4 +1,3 @@
-// Change a constraint test (LA-AUT-CMD280): Changes a constraint test's columns or the test data sets it starts from (the whole list).
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ConstraintTestRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { ValueObjectRepository } from '../repository.ts';
 /** The test's changes: a column given is set, null clears an optional one; starts_from, when given, replaces the list. */
 export type ChangeConstraintTest = Pick<ConstraintTestRow, 'id'> & { title?: ConstraintTestRow['title']; level?: ConstraintTestRow['level']; state?: ConstraintTestRow['state']; file?: ConstraintTestRow['file'] | null; manual_reason?: ConstraintTestRow['manual_reason'] | null; size?: ConstraintTestRow['size'] | null; smoke?: ConstraintTestRow['smoke'] | null; external?: ConstraintTestRow['external'] | null; accepts?: ConstraintTestRow['accepts']; refuses?: ConstraintTestRow['refuses']; notes?: ConstraintTestRow['notes'] | null; starts_from?: string[] };
 
-/** Change a constraint test (LA-AUT-CMD280). */
 export const CHANGE_CONSTRAINT_TEST: CommandDefinition<ChangeConstraintTest> = {
   id: 'LA-AUT-CMD280',
   slice: VALUE_OBJECT_SLICE,

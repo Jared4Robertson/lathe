@@ -1,4 +1,3 @@
-// Change a standard (LA-AUT-CMD201): Changes a standard's title or description. Its product never changes.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { StandardRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { StandardRepository } from '../repository.ts';
 /** The standard's changes: a column given is set. */
 export type ChangeStandard = Pick<StandardRow, 'id'> & { title?: StandardRow['title']; description?: StandardRow['description'] };
 
-/** Change a standard (LA-AUT-CMD201). */
 export const CHANGE_STANDARD: CommandDefinition<ChangeStandard> = {
   id: 'LA-AUT-CMD201',
   slice: STANDARD_SLICE,

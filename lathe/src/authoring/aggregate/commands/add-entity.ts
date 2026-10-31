@@ -1,4 +1,3 @@
-// Add an entity (LA-AUT-CMD213): Adds an entity to its aggregate, as its root or a child, with its fields in order and the entities of its aggregate it holds.
 import { column, ids, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EntityRow } from '../../../platform/data/tables.ts';
@@ -6,14 +5,12 @@ import { AGGREGATE_SLICE, fieldRows, type EntityFieldInput } from '../model.ts';
 import { AggregateRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 
-/** A new entity, with its fields in order and the entities it holds. */
 export type AddEntity = Pick<EntityRow, 'id' | 'title' | 'aggregate_id' | 'role' | 'in_root_table' | 'description'> & {
   fields?: EntityFieldInput[];
   has_one?: string[];
   has_many?: string[];
 };
 
-/** Add an entity (LA-AUT-CMD213). */
 export const ADD_ENTITY: CommandDefinition<AddEntity> = {
   id: 'LA-AUT-CMD213',
   slice: AGGREGATE_SLICE,
@@ -35,7 +32,6 @@ export const ADD_ENTITY: CommandDefinition<AddEntity> = {
   handler: addEntity,
 };
 
-/** Adds the entity to its aggregate, with its fields and links. */
 export function addEntity(tx: Transaction, input: AddEntity): void {
   const aggregates = new AggregateRepository(tx);
   const aggregate = aggregates.loadHolding('aggregate', input.aggregate_id) ?? tx.refuse('missing', `there is no aggregate ${input.aggregate_id}`);

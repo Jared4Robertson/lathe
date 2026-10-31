@@ -1,4 +1,3 @@
-// Remove a specification (LA-AUT-CMD262): Removes a specification whole: its predicate and test, and the links they start. Refused while anything outside it references what is in it, such as a command that checks it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { SPECIFICATION_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { SpecificationRepository } from '../repository.ts';
 /** The specification to remove. */
 export type RemoveSpecification = { id: string };
 
-/** Remove a specification (LA-AUT-CMD262). */
 export const REMOVE_SPECIFICATION: CommandDefinition<RemoveSpecification> = {
   id: 'LA-AUT-CMD262',
   slice: SPECIFICATION_SLICE,

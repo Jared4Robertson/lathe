@@ -1,4 +1,3 @@
-// Remove a command handler (LA-AUT-CMD245): Removes a command handler with the links it starts and the packages it uses. Refused while anything else references it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { COMMAND_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { CommandRepository } from '../repository.ts';
 /** The handler to remove. */
 export type RemoveCommandHandler = { id: string };
 
-/** Remove a command handler (LA-AUT-CMD245). */
 export const REMOVE_COMMAND_HANDLER: CommandDefinition<RemoveCommandHandler> = {
   id: 'LA-AUT-CMD245',
   slice: COMMAND_SLICE,

@@ -1,4 +1,3 @@
-// Remove a reader (LA-AUT-CMD299): Removes a read model's reader with the links it starts and the packages it uses. Refused while anything references it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { READ_MODEL_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { ReadModelRepository } from '../repository.ts';
 /** The reader to remove. */
 export type RemoveReader = { id: string };
 
-/** Remove a reader (LA-AUT-CMD299). */
 export const REMOVE_READER: CommandDefinition<RemoveReader> = {
   id: 'LA-AUT-CMD299',
   slice: READ_MODEL_SLICE,

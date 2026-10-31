@@ -1,4 +1,3 @@
-// Add a flow (LA-AUT-CMD107): Adds a flow to its use case, through one interface of its product: its ID ends in the interface's number.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { FlowRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** A new flow. */
 export type AddFlow = Pick<FlowRow, 'id' | 'title' | 'use_case_id' | 'interface_id'>;
 
-/** Add a flow (LA-AUT-CMD107). */
 export const ADD_FLOW: CommandDefinition<AddFlow> = {
   id: 'LA-AUT-CMD107',
   slice: USE_CASE_SLICE,

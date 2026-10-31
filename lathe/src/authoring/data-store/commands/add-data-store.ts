@@ -1,14 +1,11 @@
-// Add a data store (LA-AUT-CMD370): Adds a data store under its product or one of its domains (exactly one of product_id and domain_id), with the integration that reaches it when it is a service someone else runs.
 import { column, id, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { DataStoreRow } from '../../../platform/data/tables.ts';
 import { DATA_STORE_SLICE, newDataStore } from '../model.ts';
 import { DataStoreRepository } from '../repository.ts';
 
-/** A new data store, under one parent, with the link it starts. */
 export type AddDataStore = Pick<DataStoreRow, 'id' | 'title' | 'product_id' | 'domain_id' | 'kind' | 'description'> & { provided_by?: string };
 
-/** Add a data store (LA-AUT-CMD370). */
 export const ADD_DATA_STORE: CommandDefinition<AddDataStore> = {
   id: 'LA-AUT-CMD370',
   slice: DATA_STORE_SLICE,
@@ -28,7 +25,6 @@ export const ADD_DATA_STORE: CommandDefinition<AddDataStore> = {
   handler: addDataStore,
 };
 
-/** Adds the data store, new and whole, under its one parent. */
 export function addDataStore(tx: Transaction, input: AddDataStore): void {
   const stores = new DataStoreRepository(tx);
   if ((input.product_id === undefined) === (input.domain_id === undefined)) {

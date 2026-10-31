@@ -1,4 +1,3 @@
-// Change a UC requirement (LA-AUT-CMD105): Changes a UC requirement's title, statement or group.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { UcRequirementRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The requirement's changes: a column given is set, null clears an optional one. */
 export type ChangeUcRequirement = Pick<UcRequirementRow, 'id'> & { title?: string; statement?: string; group_name?: string | null };
 
-/** Change a UC requirement (LA-AUT-CMD105). */
 export const CHANGE_UC_REQUIREMENT: CommandDefinition<ChangeUcRequirement> = {
   id: 'LA-AUT-CMD105',
   slice: USE_CASE_SLICE,

@@ -1,4 +1,3 @@
-// Remove an invariant (LA-AUT-CMD218): Removes an invariant with its rule and its test, and the links they start. Refused while anything else references them, such as a table key it names.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { AGGREGATE_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { AggregateRepository } from '../repository.ts';
 /** The invariant to remove. */
 export type RemoveInvariant = { id: string };
 
-/** Remove an invariant (LA-AUT-CMD218). */
 export const REMOVE_INVARIANT: CommandDefinition<RemoveInvariant> = {
   id: 'LA-AUT-CMD218',
   slice: AGGREGATE_SLICE,

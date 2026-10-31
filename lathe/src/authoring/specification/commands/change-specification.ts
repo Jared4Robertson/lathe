@@ -1,4 +1,3 @@
-// Change a specification (LA-AUT-CMD261): Changes a specification's title or statement, or the aggregates it reads (the whole list).
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { SpecificationRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { SpecificationRepository } from '../repository.ts';
 /** The specification's changes: a column given is set; reads, when given, replaces the list. */
 export type ChangeSpecification = Pick<SpecificationRow, 'id'> & { title?: SpecificationRow['title']; statement?: SpecificationRow['statement']; reads?: string[] };
 
-/** Change a specification (LA-AUT-CMD261). */
 export const CHANGE_SPECIFICATION: CommandDefinition<ChangeSpecification> = {
   id: 'LA-AUT-CMD261',
   slice: SPECIFICATION_SLICE,

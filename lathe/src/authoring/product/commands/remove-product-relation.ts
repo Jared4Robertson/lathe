@@ -1,4 +1,3 @@
-// Remove a product relation (LA-AUT-CMD127): Removes a product relation pair. Refused while a link of the pair is left.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ProductRelationRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { ProductRepository } from '../repository.ts';
 /** The product relation pair to remove. */
 export type RemoveProductRelation = Pick<ProductRelationRow, 'name' | 'source_kind' | 'target_kind'>;
 
-/** Remove a product relation (LA-AUT-CMD127). */
 export const REMOVE_PRODUCT_RELATION: CommandDefinition<RemoveProductRelation> = {
   id: 'LA-AUT-CMD127',
   slice: PRODUCT_SLICE,

@@ -1,4 +1,3 @@
-// Change a storage requirement (LA-AUT-CMD361): Changes a storage requirement's title or statement. The aggregate or read model it is about never changes: remove it and add it again under another.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { StorageRequirementRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { StorageRequirementRepository } from '../repository.ts';
 /** The storage requirement's changes: a column given is set. */
 export type ChangeStorageRequirement = Pick<StorageRequirementRow, 'id'> & { title?: StorageRequirementRow['title']; statement?: StorageRequirementRow['statement'] };
 
-/** Change a storage requirement (LA-AUT-CMD361). */
 export const CHANGE_STORAGE_REQUIREMENT: CommandDefinition<ChangeStorageRequirement> = {
   id: 'LA-AUT-CMD361',
   slice: STORAGE_REQUIREMENT_SLICE,

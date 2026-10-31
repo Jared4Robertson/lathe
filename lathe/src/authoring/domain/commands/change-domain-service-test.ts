@@ -1,4 +1,3 @@
-// Change a domain service test (LA-AUT-CMD179): Changes a domain service test's columns or the test data sets it starts from (the whole list).
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { DomainServiceTestRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The test's changes: a column given is set, null clears an optional one; starts_from, when given, replaces the list. */
 export type ChangeDomainServiceTest = Pick<DomainServiceTestRow, 'id'> & { title?: DomainServiceTestRow['title']; level?: DomainServiceTestRow['level']; state?: DomainServiceTestRow['state']; file?: DomainServiceTestRow['file'] | null; manual_reason?: DomainServiceTestRow['manual_reason'] | null; size?: DomainServiceTestRow['size'] | null; smoke?: DomainServiceTestRow['smoke'] | null; external?: DomainServiceTestRow['external'] | null; when?: DomainServiceTestRow['when']; then?: DomainServiceTestRow['then']; notes?: DomainServiceTestRow['notes'] | null; starts_from?: string[] };
 
-/** Change a domain service test (LA-AUT-CMD179). */
 export const CHANGE_DOMAIN_SERVICE_TEST: CommandDefinition<ChangeDomainServiceTest> = {
   id: 'LA-AUT-CMD179',
   slice: DOMAIN_SLICE,

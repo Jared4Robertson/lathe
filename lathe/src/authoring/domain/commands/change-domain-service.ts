@@ -1,4 +1,3 @@
-// Change a domain service (LA-AUT-CMD170): Changes a domain service's title or statement.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { DomainServiceRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The domain service's changes: a column given is set. */
 export type ChangeDomainService = Pick<DomainServiceRow, 'id'> & { title?: DomainServiceRow['title']; statement?: DomainServiceRow['statement'] };
 
-/** Change a domain service (LA-AUT-CMD170). */
 export const CHANGE_DOMAIN_SERVICE: CommandDefinition<ChangeDomainService> = {
   id: 'LA-AUT-CMD170',
   slice: DOMAIN_SLICE,

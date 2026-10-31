@@ -1,4 +1,3 @@
-// Add a projection (LA-AUT-CMD291): Adds the projection that fills a read model, its one piece of code, with the standard rules it meets and the packages it uses.
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ProjectionRow } from '../../../platform/data/tables.ts';
@@ -7,10 +6,8 @@ import { ReadModelRepository } from '../repository.ts';
 import { readModelOneEach, holdToRules } from '../rules.ts';
 import { refuseBroken } from '../../../platform/data/rules.ts';
 
-/** A new projection, with the standard rules it meets and the packages it uses. */
 export type AddProjection = Pick<ProjectionRow, 'id' | 'title' | 'read_model_id' | 'file' | 'description'> & { meets?: string[]; packages?: string[] };
 
-/** Add a projection (LA-AUT-CMD291). */
 export const ADD_PROJECTION: CommandDefinition<AddProjection> = {
   id: 'LA-AUT-CMD291',
   slice: READ_MODEL_SLICE,

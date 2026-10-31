@@ -1,4 +1,3 @@
-// Add a flow test (LA-AUT-CMD116): Adds a flow test under its flow, with the test data sets it starts from.
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { FlowTestRow } from '../../../platform/data/tables.ts';
@@ -6,10 +5,8 @@ import { USE_CASE_SLICE } from '../model.ts';
 import { UseCaseRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 
-/** A new flow test, with the test data sets it starts from. */
 export type AddFlowTest = Pick<FlowTestRow, 'id' | 'title' | 'flow_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'steps' | 'expected_result' | 'notes'> & { starts_from?: string[] };
 
-/** Add a flow test (LA-AUT-CMD116). */
 export const ADD_FLOW_TEST: CommandDefinition<AddFlowTest> = {
   id: 'LA-AUT-CMD116',
   slice: USE_CASE_SLICE,
@@ -36,7 +33,6 @@ export const ADD_FLOW_TEST: CommandDefinition<AddFlowTest> = {
   handler: addFlowTest,
 };
 
-/** Adds the test under its flow. */
 export function addFlowTest(tx: Transaction, input: AddFlowTest): void {
   const useCases = new UseCaseRepository(tx);
   const useCase = useCases.loadHolding('flow', input.flow_id) ?? tx.refuse('missing', `there is no flow ${input.flow_id}`);

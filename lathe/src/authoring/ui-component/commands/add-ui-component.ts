@@ -1,14 +1,11 @@
-// Add a UI component (LA-AUT-CMD345): Adds a UI component: its name in code and its file, with the views it renders, the view requirements it builds, the standard rules it meets and the packages it uses. It has no owner; its product follows from its ID.
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { UiComponentRow } from '../../../platform/data/tables.ts';
 import { UI_COMPONENT_SLICE } from '../model.ts';
 import { UiComponentRepository } from '../repository.ts';
 
-/** A new UI component, with the links it starts. */
 export type AddUiComponent = Pick<UiComponentRow, 'id' | 'title' | 'description' | 'file'> & { renders?: string[]; builds?: string[]; meets?: string[]; packages?: string[] };
 
-/** Add a UI component (LA-AUT-CMD345). */
 export const ADD_UI_COMPONENT: CommandDefinition<AddUiComponent> = {
   id: 'LA-AUT-CMD345',
   slice: UI_COMPONENT_SLICE,

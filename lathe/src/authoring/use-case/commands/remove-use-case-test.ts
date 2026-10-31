@@ -1,4 +1,3 @@
-// Remove a use case test (LA-AUT-CMD115): Removes a use case test with the links it starts. Refused while anything else references it, such as a business outcome it measures.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { USE_CASE_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { UseCaseRepository } from '../repository.ts';
 /** The test to remove. */
 export type RemoveUseCaseTest = { id: string };
 
-/** Remove a use case test (LA-AUT-CMD115). */
 export const REMOVE_USE_CASE_TEST: CommandDefinition<RemoveUseCaseTest> = {
   id: 'LA-AUT-CMD115',
   slice: USE_CASE_SLICE,

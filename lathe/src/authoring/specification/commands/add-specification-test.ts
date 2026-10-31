@@ -1,4 +1,3 @@
-// Add a specification test (LA-AUT-CMD266): Adds the test of a specification, its one test, with the test data sets it starts from.
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { SpecificationTestRow } from '../../../platform/data/tables.ts';
@@ -7,10 +6,8 @@ import { SpecificationRepository } from '../repository.ts';
 import { refuseBroken } from '../../../platform/data/rules.ts';
 import { specificationOneEach } from '../rules.ts';
 
-/** A new specification test, with the test data sets it starts from. */
 export type AddSpecificationTest = Pick<SpecificationTestRow, 'id' | 'title' | 'specification_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'when' | 'then' | 'notes'> & { starts_from?: string[] };
 
-/** Add a specification test (LA-AUT-CMD266). */
 export const ADD_SPECIFICATION_TEST: CommandDefinition<AddSpecificationTest> = {
   id: 'LA-AUT-CMD266',
   slice: SPECIFICATION_SLICE,

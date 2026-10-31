@@ -1,4 +1,3 @@
-// Remove an integration (LA-AUT-CMD337): Removes an integration whole: its adapter, its integration tests and the links they start. Refused while anything outside it references what is in it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { INTEGRATION_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { IntegrationRepository } from '../repository.ts';
 /** The integration to remove. */
 export type RemoveIntegration = { id: string };
 
-/** Remove an integration (LA-AUT-CMD337). */
 export const REMOVE_INTEGRATION: CommandDefinition<RemoveIntegration> = {
   id: 'LA-AUT-CMD337',
   slice: INTEGRATION_SLICE,
