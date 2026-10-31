@@ -2,7 +2,6 @@ import { forwardRef, useEffect, useLayoutEffect, useMemo, useRef, useState, type
 import { Button } from '../components/Button';
 import { PaletteIcon } from '../theme/ThemeCommands';
 import { Icon } from '../components/icons';
-import { LongList } from '../components/LongList';
 import { treeParent } from '../graph/tree';
 import { LatheLogo } from '../LatheLogo';
 import { Link, useLocation } from '../router';
@@ -11,7 +10,7 @@ import { type RecordIndex, type RecordSummary } from '../exploring/record-summar
 import { type DataState } from '../exploring/record-summaries/reads';
 import type { Stage } from '../../../lathe/src/platform/data/schema';
 import { branchOf, ownerFolders, sharedKey, type Folder, type StageFolders } from '../exploring/folder-tree/folders';
-import { recordText, StageMark } from '../specs/parts';
+import { StageMark } from '../specs/parts';
 import { useProblems } from '../checking/problems/reads';
 import { useChanges } from '../changes/changes';
 import { navChanges, rollupText, type ChangeCounts } from '../changes/rollup';
@@ -352,21 +351,20 @@ function SpaceItems({ index, space, path, reveal }: { index: RecordIndex; space:
     openNavBranch({ branch: branch.split('\n') });
   }, [branch, reveal]);
 
+  // A folder lists all its records plainly, in the nav's one scroll: no filter box and no scroll box of its own
+  // (quick find and the nav's Go to… find a record among many).
   const recordRows = (records: RecordSummary[], label: string, depth: number) => (
-    <LongList
-      label={label}
-      className="nav-records"
-      items={records}
-      itemKey={(r) => r.id}
-      searchText={recordText}
-      render={(r) => (
-        <NavRow depth={depth} selected={path === addressOf(r.id)}>
-          <Link to={addressOf(r.id)} aria-current={here(path, addressOf(r.id))} title={`${r.id} ${r.title}`}>
-            <span className="nav-label">{r.title}</span>
-          </Link>
-        </NavRow>
-      )}
-    />
+    <ul className="nav-records" aria-label={label}>
+      {records.map((r) => (
+        <li key={r.id}>
+          <NavRow depth={depth} selected={path === addressOf(r.id)}>
+            <Link to={addressOf(r.id)} aria-current={here(path, addressOf(r.id))} title={`${r.id} ${r.title}`}>
+              <span className="nav-label">{r.title}</span>
+            </Link>
+          </NavRow>
+        </li>
+      ))}
+    </ul>
   );
   const folderRow = (folder: Folder, owner: string, depth: number) => (
     <NavFolder key={folder.key} id={folder.key} depth={depth} label={folder.label} count={folder.count} changes={rolled?.ofRecords(folder.records.map((r) => r.id))} open={isOpen(folder.key)} holds={holds(folder.key)} onToggle={() => toggle(folder.key)}>
@@ -407,19 +405,14 @@ function SpaceItems({ index, space, path, reveal }: { index: RecordIndex; space:
         </ul>
       )}
       {domains.length > 0 && (
-        <LongList
-          label={`Domains of ${space.title}`}
-          className="nav-tree nav-domains"
-          items={domains}
-          itemKey={(d) => d.id}
-          searchText={recordText}
-          render={(domain) => {
+        <ul className="nav-tree nav-domains" aria-label={`Domains of ${space.title}`}>
+          {domains.map((domain) => {
             const key = `domain:${domain.id}`;
             const open = isOpen(key);
             const bodyId = `nav-domain-${domain.id.replace(/[^A-Za-z0-9_-]/g, '-')}`;
             const { stages, loose } = open ? ownerFolders(index, domain.id) : { stages: [], loose: [] };
             return (
-              <>
+              <li key={domain.id}>
                 <NavRow
                   depth={0}
                   selected={path === addressOf(domain.id)}
@@ -441,10 +434,10 @@ function SpaceItems({ index, space, path, reveal }: { index: RecordIndex; space:
                     {loose.map((f) => folderRow(f, domain.title, 1))}
                   </ul>
                 )}
-              </>
+              </li>
             );
-          }}
-        />
+          })}
+        </ul>
       )}
       {own.loose.length > 0 && (
         <ul className="nav-groups" aria-label={`Groups of ${space.title}`}>

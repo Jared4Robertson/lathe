@@ -72,6 +72,20 @@ describe('folders by stage', () => {
     expect(within(panel()).queryByRole('list', { name: 'Interaction design of Shopping' })).toBeNull();
   });
 
+  it('LA-V90-R17-T03 A folder lists all its records plainly in the nav, with no filter box, count line or scroll box of its own', async () => {
+    const many = addRows(workspace(), 'question', ...Array.from({ length: 14 }, (_, i) => ({
+      id: `DM-SHOP-Q${String(i + 2).padStart(2, '0')}`, title: `Question number ${i + 2}`, domain_id: 'DM-SHOP', owner: 'Clerk', description: 'A question.' })));
+    await openApp('/DM', { data: many });
+    await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
+    const user = userEvent.setup();
+    await user.click(within(panel()).getByRole('button', { name: 'Unfold Shopping' }));
+    await user.click(head(list('Folders of Shopping'), /^Open questions/));
+    expect(within(list('Open questions of Shopping')).getAllByRole('link')).toHaveLength(15);
+    expect(within(nav()).queryByRole('searchbox')).toBeNull();
+    expect(within(nav()).queryByText(/\d+ of \d+/)).toBeNull();
+    expect(nav().querySelector('.long-list, .long-list-scroll, [role="region"]')).toBeNull();
+  });
+
   it('LA-V90-R17-T02 A stage or folder with no records is left out of the nav', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
