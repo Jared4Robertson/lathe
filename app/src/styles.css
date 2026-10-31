@@ -481,7 +481,6 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .long-list-scroll { max-height: 26rem; overflow-y: auto; scrollbar-gutter: stable; overscroll-behavior: contain; border-radius: 6px; }
 .long-list-scroll:focus-visible, .long-list-tools input:focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
 .long-list-empty { margin: 6px 0; }
-.menu .long-list-tools input { font-size: 0.8rem; }
 /* ---------- End of obligation kinds, test states and record content ---------- */
 /* ---- Graph groups: a folder of one kind of child, with a tab and a count. ---- */
 .graph-swatch.stage-group { border-color: var(--g-domain-model); border-style: solid; background: var(--sheet); border-top-width: 3px; }
@@ -743,7 +742,6 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 /* A domain's and a product's stages and folders in the nav: each stage's row carries its color mark. */
 /* A space's own lists (its own stages and its domains) sit side by side at the top level; only what is inside them is indented. */
 .menu .nav-tree { margin: 0; padding: 0; }
-.menu .long-list-tools { padding: 0 10px; }
 .nav-folder-head { gap: 6px; color: var(--muted); cursor: pointer; font-size: 0.84rem; }
 :is(.nav-folder-head, .nav-section-head) > .icon:first-child { width: var(--nav-twistie); }
 .nav-folder.is-stage > .nav-folder-head { color: var(--ink); }
