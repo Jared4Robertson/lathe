@@ -1,4 +1,3 @@
-// Add a reader (LA-AUT-CMD297): Adds a read model's reader, the one way its query handlers read its table, with the data store it reads the table in, the standard rules it meets and the packages it uses.
 import { column, id, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ReaderRow } from '../../../platform/data/tables.ts';
@@ -7,10 +6,8 @@ import { ReadModelRepository } from '../repository.ts';
 import { refuseBroken } from '../../../platform/data/rules.ts';
 import { holdToRules, readModelOneEach } from '../rules.ts';
 
-/** A new reader, with the data store it reads in, the standard rules it meets and the packages it uses. */
 export type AddReader = Pick<ReaderRow, 'id' | 'title' | 'read_model_id' | 'file' | 'description'> & { stored_in?: string; meets?: string[]; packages?: string[] };
 
-/** Add a reader (LA-AUT-CMD297). */
 export const ADD_READER: CommandDefinition<AddReader> = {
   id: 'LA-AUT-CMD297',
   slice: READ_MODEL_SLICE,

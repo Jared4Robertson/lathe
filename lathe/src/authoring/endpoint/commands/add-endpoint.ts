@@ -1,4 +1,3 @@
-// Add an endpoint (LA-AUT-CMD320): Adds an endpoint under the one command or query it exposes (exactly one of command_id and query_id), titled by its method and route.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EndpointRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { EndpointRepository } from '../repository.ts';
 /** A new endpoint. */
 export type AddEndpoint = Pick<EndpointRow, 'id' | 'title' | 'method' | 'route' | 'description' | 'command_id' | 'query_id' | 'notes'>;
 
-/** Add an endpoint (LA-AUT-CMD320). */
 export const ADD_ENDPOINT: CommandDefinition<AddEndpoint> = {
   id: 'LA-AUT-CMD320',
   slice: ENDPOINT_SLICE,

@@ -1,4 +1,3 @@
-// Change an extension record (LA-AUT-CMD146): Changes a record of a product's own kind: its title or declared fields, the links it starts by relation, or the packages it uses. Its kind and parent never change.
 import { id, links, texts, values, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { EXTENSION_RECORD_SLICE, undeclared, withLinks, withValues } from '../model.ts';
@@ -13,7 +12,6 @@ export type ChangeExtensionRecord = {
   packages?: string[];
 };
 
-/** Change an extension record (LA-AUT-CMD146). */
 export const CHANGE_EXTENSION_RECORD: CommandDefinition<ChangeExtensionRecord> = {
   id: 'LA-AUT-CMD146',
   slice: EXTENSION_RECORD_SLICE,

@@ -1,4 +1,3 @@
-// Remove a business outcome (LA-AUT-CMD142): Removes a business outcome with the measured_by links it starts. Refused while a capability serves it, or anything else references it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { BUSINESS_OUTCOME_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { BusinessOutcomeRepository } from '../repository.ts';
 /** The outcome to remove. */
 export type RemoveBusinessOutcome = { id: string };
 
-/** Remove a business outcome (LA-AUT-CMD142). */
 export const REMOVE_BUSINESS_OUTCOME: CommandDefinition<RemoveBusinessOutcome> = {
   id: 'LA-AUT-CMD142',
   slice: BUSINESS_OUTCOME_SLICE,

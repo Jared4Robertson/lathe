@@ -1,4 +1,3 @@
-// Change a value type (LA-AUT-CMD277): Changes a value type's title or file, or the standard rules it meets or packages it uses (each the whole list).
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ValueTypeRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { ValueObjectRepository } from '../repository.ts';
 /** The value type's changes: a column given is set, null clears an optional one; a list given replaces the list. */
 export type ChangeValueType = Pick<ValueTypeRow, 'id'> & { title?: ValueTypeRow['title']; file?: ValueTypeRow['file'] | null; meets?: string[]; packages?: string[] };
 
-/** Change a value type (LA-AUT-CMD277). */
 export const CHANGE_VALUE_TYPE: CommandDefinition<ChangeValueType> = {
   id: 'LA-AUT-CMD277',
   slice: VALUE_OBJECT_SLICE,

@@ -1,4 +1,3 @@
-// Remove a view requirement (LA-AUT-CMD315): Removes a view requirement with its view tests and the links they start. Refused while anything else references them.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { VIEW_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { ViewRepository } from '../repository.ts';
 /** The view requirement to remove. */
 export type RemoveViewRequirement = { id: string };
 
-/** Remove a view requirement (LA-AUT-CMD315). */
 export const REMOVE_VIEW_REQUIREMENT: CommandDefinition<RemoveViewRequirement> = {
   id: 'LA-AUT-CMD315',
   slice: VIEW_SLICE,

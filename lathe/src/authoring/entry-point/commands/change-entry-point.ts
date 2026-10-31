@@ -1,4 +1,3 @@
-// Change an entry point (LA-AUT-CMD151): Changes an entry point's title, file, description, packages or standard rules met. Its domain stays.
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EntryPointRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { EntryPointRepository } from '../repository.ts';
 /** The entry point's changes: a column given is set; packages and meets, when given, replace the list. */
 export type ChangeEntryPoint = Pick<EntryPointRow, 'id'> & { title?: string; file?: string | null; description?: string; packages?: string[]; meets?: string[] };
 
-/** Change an entry point (LA-AUT-CMD151). */
 export const CHANGE_ENTRY_POINT: CommandDefinition<ChangeEntryPoint> = {
   id: 'LA-AUT-CMD151',
   slice: ENTRY_POINT_SLICE,

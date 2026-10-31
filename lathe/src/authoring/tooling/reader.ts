@@ -3,6 +3,8 @@
 // definition makes (`reader`), so keeping the read model elsewhere is a new implementation of this interface and
 // nothing more. Today's implementation reads the projection's table, kept in memory and built on each read.
 import type { ReadView } from '../../platform/data/rules.ts';
+import { idShapeOf, type IdShape } from '../../platform/data/id-shape.ts';
+import type { SchemaDescription } from '../../platform/data/schema.ts';
 import { toolingTableFrom, type ToolingPage, type ToolingSummary, type ToolingTable } from './read-model.ts';
 
 /** What the Tooling queries read, and all they read. */
@@ -15,14 +17,18 @@ export interface ToolingReader {
   list(domain: string): ToolingSummary[];
   /** The highest number in use after the prefix, as in <prefix>07, or 0 when none is. */
   highestAfter(prefix: string): number;
+  /** How the IDs of a kind are written, read from the schema: its parents, and the letters and digits its ID ends in. */
+  idShape(kind: string): IdShape;
 }
 
 /** The reader over the read model's table in memory. */
 export class InMemoryToolingReader implements ToolingReader {
   private readonly table: ToolingTable;
+  private readonly schema: SchemaDescription;
 
-  constructor(table: ToolingTable) {
+  constructor(table: ToolingTable, schema: SchemaDescription) {
     this.table = table;
+    this.schema = schema;
   }
 
   kindOf(id: string): string | undefined {
@@ -37,6 +43,10 @@ export class InMemoryToolingReader implements ToolingReader {
     return this.table.lists.get(domain) ?? [];
   }
 
+  idShape(kind: string): IdShape {
+    return idShapeOf(this.schema, kind);
+  }
+
   highestAfter(prefix: string): number {
     const shape = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\d+)$`);
     let highest = 0;
@@ -49,4 +59,4 @@ export class InMemoryToolingReader implements ToolingReader {
 }
 
 /** The reader the query runner gives each Tooling query: today's, over the projection's table built from the data. */
-export const toolingReader = (view: ReadView): ToolingReader => new InMemoryToolingReader(toolingTableFrom(view));
+export const toolingReader = (view: ReadView): ToolingReader => new InMemoryToolingReader(toolingTableFrom(view), view.schema);

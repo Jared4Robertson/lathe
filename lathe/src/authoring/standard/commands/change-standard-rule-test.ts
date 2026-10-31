@@ -1,4 +1,3 @@
-// Change a standard rule test (LA-AUT-CMD207): Changes a standard rule test's columns or the test data sets it starts from (the whole list).
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { StandardRuleTestRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { StandardRepository } from '../repository.ts';
 /** The test's changes: a column given is set, null clears an optional one; starts_from, when given, replaces the list. */
 export type ChangeStandardRuleTest = Pick<StandardRuleTestRow, 'id'> & { title?: StandardRuleTestRow['title']; level?: StandardRuleTestRow['level']; state?: StandardRuleTestRow['state']; file?: StandardRuleTestRow['file'] | null; manual_reason?: StandardRuleTestRow['manual_reason'] | null; size?: StandardRuleTestRow['size'] | null; smoke?: StandardRuleTestRow['smoke'] | null; external?: StandardRuleTestRow['external'] | null; when?: StandardRuleTestRow['when']; then?: StandardRuleTestRow['then']; notes?: StandardRuleTestRow['notes'] | null; starts_from?: string[] };
 
-/** Change a standard rule test (LA-AUT-CMD207). */
 export const CHANGE_STANDARD_RULE_TEST: CommandDefinition<ChangeStandardRuleTest> = {
   id: 'LA-AUT-CMD207',
   slice: STANDARD_SLICE,

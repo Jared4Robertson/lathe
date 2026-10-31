@@ -1,4 +1,3 @@
-// Change a capability (LA-AUT-CMD164): Changes a capability's title, position or description, or the business outcomes it serves (the whole list).
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { CapabilityRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The capability's changes: a column given is set; serves, when given, replaces the list. */
 export type ChangeCapability = Pick<CapabilityRow, 'id'> & { title?: CapabilityRow['title']; position?: CapabilityRow['position']; description?: CapabilityRow['description']; serves?: string[] };
 
-/** Change a capability (LA-AUT-CMD164). */
 export const CHANGE_CAPABILITY: CommandDefinition<ChangeCapability> = {
   id: 'LA-AUT-CMD164',
   slice: DOMAIN_SLICE,

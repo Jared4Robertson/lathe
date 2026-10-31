@@ -15,6 +15,7 @@ import { sendSpecification, type SpecificationCommands, type SpecificationRoute 
 import { useNextSpecificationId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
+import { kindWord } from '../../platform/meta-model/reads';
 
 // The Specification editor (LA-AUT-A5): the actions on a record of a specification, each sending one of the
 // aggregate's own commands, POST /api/specification/<command>, and nothing else. Edit sends its kind's Change with only
@@ -24,9 +25,6 @@ import { backToActions } from '../../edit/back-to-actions';
 // every reason the command gave, in its own words, keeps what was entered, and changes nothing.
 
 type Inside = Exclude<SpecificationKind, 'specification'>;
-
-/** A kind's label in a sentence. */
-const LABEL: Record<SpecificationKind, string> = { specification: 'specification', predicate: 'predicate', specification_test: 'specification test' };
 
 /** The records of the product of a kind, as choices. */
 const choices = (index: RecordIndex, product: string, kind: string): Choice[] =>
@@ -135,7 +133,7 @@ export function SpecificationEditor({ index, page, children }: { index: RecordIn
       if (answer.ok) { announce(`Saved ${id}`); back(); }
       return answer;
     };
-    return <div className="spec-body"><ChangeForm index={index} specs={specs} current={current} eyebrow={LABEL[kind]} id={id} submit={submit} onDone={back} /></div>;
+    return <div className="spec-body"><ChangeForm index={index} specs={specs} current={current} eyebrow={kindWord(index.meta, kind)} id={id} submit={submit} onDone={back} /></div>;
   }
   if (mode.mode === 'add') return <div className="spec-body"><AddForm index={index} product={product} kind={mode.kind} parent={id} onDone={back} /></div>;
   // A specification has one predicate and one test: Add offers each it has not got yet.
@@ -150,7 +148,7 @@ export function SpecificationEditor({ index, page, children }: { index: RecordIn
         <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>
       </div>
       {mode.mode === 'remove' && (
-        <RemoveQuestion index={index} id={id} label={LABEL[kind]} goes={goes} then={addressOf(then)} onCancel={back}
+        <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={goes} then={addressOf(then)} onCancel={back}
           remove={() => sendSpecification(writer, REMOVE[kind], { id })} />
       )}
       {children}
@@ -193,7 +191,7 @@ function AddForm({ index, product, kind, parent, onDone }: { index: RecordIndex;
     return answer;
   };
   return (
-    <CommandForm eyebrow={`New ${LABEL[kind]} under ${parent}`} title={`Add a ${LABEL[kind]}`} submit={submit} saveLabel={`Add ${LABEL[kind]}`} onCancel={onDone}>
+    <CommandForm eyebrow={`New ${kindWord(index.meta, kind)} under ${parent}`} title={`Add a ${kindWord(index.meta, kind)}`} submit={submit} saveLabel={`Add ${kindWord(index.meta, kind)}`} onCancel={onDone}>
       {(first) => <Fields index={index} specs={specs} draft={draft} setDraft={setDraft} first={first} />}
     </CommandForm>
   );

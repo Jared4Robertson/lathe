@@ -1,4 +1,3 @@
-// Change a read model (LA-AUT-CMD286): Changes a read model's title or description, its fields (the whole list, in order), or the aggregates it reads, the domain services it calls or the events that feed it (each the whole list). Its domain never changes.
 import { column, ids, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ReadModelRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The read model's changes: a column given is set; a list given replaces the list. */
 export type ChangeReadModel = Pick<ReadModelRow, 'id'> & { title?: ReadModelRow['title']; description?: ReadModelRow['description']; fields?: ReadModelField[]; reads?: string[]; calls?: string[]; fed_by?: string[] };
 
-/** Change a read model (LA-AUT-CMD286). */
 export const CHANGE_READ_MODEL: CommandDefinition<ChangeReadModel> = {
   id: 'LA-AUT-CMD286',
   slice: READ_MODEL_SLICE,

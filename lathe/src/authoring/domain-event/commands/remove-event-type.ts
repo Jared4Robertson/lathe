@@ -1,4 +1,3 @@
-// Remove an event type (LA-AUT-CMD235): Removes an event type with the links it starts and the packages it uses. Refused while anything else references it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { DOMAIN_EVENT_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { DomainEventRepository } from '../repository.ts';
 /** The event type to remove. */
 export type RemoveEventType = { id: string };
 
-/** Remove an event type (LA-AUT-CMD235). */
 export const REMOVE_EVENT_TYPE: CommandDefinition<RemoveEventType> = {
   id: 'LA-AUT-CMD235',
   slice: DOMAIN_EVENT_SLICE,

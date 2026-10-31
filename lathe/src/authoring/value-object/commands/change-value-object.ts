@@ -1,4 +1,3 @@
-// Change a value object (LA-AUT-CMD271): Changes a value object's title or description, or its fields (the whole list, in order).
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ValueObjectRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The value object's changes: a column given is set; fields, when given, replace the list. */
 export type ChangeValueObject = Pick<ValueObjectRow, 'id'> & { title?: ValueObjectRow['title']; description?: ValueObjectRow['description']; fields?: ValueObjectField[] };
 
-/** Change a value object (LA-AUT-CMD271). */
 export const CHANGE_VALUE_OBJECT: CommandDefinition<ChangeValueObject> = {
   id: 'LA-AUT-CMD271',
   slice: VALUE_OBJECT_SLICE,

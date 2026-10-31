@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { desktopStandIn } from '../test/desktop-bridge';
+import type { LatheDesktop } from '../src/shell/desktop-bridge';
 
 // The desktop app in a browser: the shell's bridge (window.latheDesktop) stood in for before the page loads, so the
 // app shows what it shows in the desktop app (its tab strip, LA-V96-R10..R17, R31). Every suite uses this one

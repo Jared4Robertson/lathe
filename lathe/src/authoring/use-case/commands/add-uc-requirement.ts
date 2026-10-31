@@ -1,4 +1,3 @@
-// Add a UC requirement (LA-AUT-CMD104): Adds a UC requirement to its use case.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { UcRequirementRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** A new UC requirement. */
 export type AddUcRequirement = Pick<UcRequirementRow, 'id' | 'title' | 'use_case_id' | 'statement' | 'group_name'>;
 
-/** Add a UC requirement (LA-AUT-CMD104). */
 export const ADD_UC_REQUIREMENT: CommandDefinition<AddUcRequirement> = {
   id: 'LA-AUT-CMD104',
   slice: USE_CASE_SLICE,

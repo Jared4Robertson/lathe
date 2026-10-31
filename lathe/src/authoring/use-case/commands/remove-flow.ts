@@ -1,4 +1,3 @@
-// Remove a flow (LA-AUT-CMD109): Removes a flow with its steps, its flow test and the links they start. Refused while anything else references them.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { USE_CASE_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { UseCaseRepository } from '../repository.ts';
 /** The flow to remove. */
 export type RemoveFlow = { id: string };
 
-/** Remove a flow (LA-AUT-CMD109). */
 export const REMOVE_FLOW: CommandDefinition<RemoveFlow> = {
   id: 'LA-AUT-CMD109',
   slice: USE_CASE_SLICE,

@@ -1,4 +1,3 @@
-// Change a pattern (LA-AUT-CMD191): Changes a pattern's title, description or notes, or its settings (the whole list, in order). Its product never changes.
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PatternRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The pattern's changes: a column given is set, null clears an optional one; settings, when given, replace the list. */
 export type ChangePattern = Pick<PatternRow, 'id'> & { title?: PatternRow['title']; description?: PatternRow['description']; notes?: PatternRow['notes'] | null; settings?: PatternSetting[] };
 
-/** Change a pattern (LA-AUT-CMD191). */
 export const CHANGE_PATTERN: CommandDefinition<ChangePattern> = {
   id: 'LA-AUT-CMD191',
   slice: PATTERN_SLICE,

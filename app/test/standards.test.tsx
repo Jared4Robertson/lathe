@@ -15,6 +15,7 @@ import { workspace } from './fixtures/workspace';
 import './graph/setup';
 import { recordIndexOf } from './read-view';
 import { Card } from '../src/shell/Card';
+import type { LatheDesktop } from '../src/shell/desktop-bridge';
 
 // The app's standards (LA-PAT-APP-CODE and LA-PAT-APP-UX): each test proves one of the patterns' rules,
 // by reading the source or by rendering pages. A failure names the file and line to fix.

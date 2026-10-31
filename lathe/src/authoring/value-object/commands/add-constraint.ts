@@ -1,4 +1,3 @@
-// Add a constraint (LA-AUT-CMD273): Adds a constraint to its value object: a rule each value is held to when it is created.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ConstraintRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { ValueObjectRepository } from '../repository.ts';
 /** A new constraint. */
 export type AddConstraint = Pick<ConstraintRow, 'id' | 'title' | 'value_object_id' | 'statement'>;
 
-/** Add a constraint (LA-AUT-CMD273). */
 export const ADD_CONSTRAINT: CommandDefinition<AddConstraint> = {
   id: 'LA-AUT-CMD273',
   slice: VALUE_OBJECT_SLICE,

@@ -6,6 +6,7 @@ import { KeyBindingsRepository } from '../src/platform/key-bindings/repository';
 import { AppearanceRepository, APPEARANCE_KEYS } from '../src/platform/appearance/repository';
 import { PanelRepository } from '../src/platform/panel/repository';
 import { desktopBridgeStub, openApp } from './helpers';
+import type { LatheDesktop } from '../src/shell/desktop-bridge';
 
 // Storage tests for the app's browser storage: what local storage (LA-STORE01) keeps in this browser from one launch
 // to the next, where losing it costs only the choice, and what session storage (LA-STORE02) keeps for the session

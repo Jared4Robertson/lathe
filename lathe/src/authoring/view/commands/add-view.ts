@@ -1,4 +1,3 @@
-// Add a view (LA-AUT-CMD310): Adds a view: a screen or page a person uses, with its route. It has no owner; its product follows from its ID.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ViewRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { ViewRepository } from '../repository.ts';
 /** A new view. */
 export type AddView = Pick<ViewRow, 'id' | 'title' | 'description' | 'route' | 'notes'>;
 
-/** Add a view (LA-AUT-CMD310). */
 export const ADD_VIEW: CommandDefinition<AddView> = {
   id: 'LA-AUT-CMD310',
   slice: VIEW_SLICE,

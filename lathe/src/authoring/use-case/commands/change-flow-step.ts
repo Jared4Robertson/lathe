@@ -1,4 +1,3 @@
-// Change a flow step (LA-AUT-CMD111): Changes a step's title, path or position, or its links: a list given replaces the list, null clears what it invokes or the view it happens in.
 import { column, id, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { FlowStepRow } from '../../../platform/data/tables.ts';
@@ -17,7 +16,6 @@ export type ChangeFlowStep = Pick<FlowStepRow, 'id'> & {
   exchanges_with?: string[];
 };
 
-/** Change a flow step (LA-AUT-CMD111). */
 export const CHANGE_FLOW_STEP: CommandDefinition<ChangeFlowStep> = {
   id: 'LA-AUT-CMD111',
   slice: USE_CASE_SLICE,

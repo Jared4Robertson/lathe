@@ -1,4 +1,3 @@
-// Remove a data model (LA-AUT-CMD221): Removes a data model with the links it starts and the packages it uses. Refused while anything else references it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { AGGREGATE_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { AggregateRepository } from '../repository.ts';
 /** The data model to remove. */
 export type RemoveDataModel = { id: string };
 
-/** Remove a data model (LA-AUT-CMD221). */
 export const REMOVE_DATA_MODEL: CommandDefinition<RemoveDataModel> = {
   id: 'LA-AUT-CMD221',
   slice: AGGREGATE_SLICE,

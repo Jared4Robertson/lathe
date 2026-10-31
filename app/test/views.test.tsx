@@ -19,6 +19,7 @@ import { addRows } from './fixtures/load';
 import { modelWorkspace } from './fixtures/model';
 import { testWorkspace } from './graph/workspace';
 import { boxElement, boxElements, graphHost, isCenter } from './graph/scene';
+import type { LatheDesktop } from '../src/shell/desktop-bridge';
 
 // The focus page: one address per record or group, one stage behind the page (Graph, ERD or Trace),
 // switched in the page bar and named in the address, and the panels floating over it: the tab

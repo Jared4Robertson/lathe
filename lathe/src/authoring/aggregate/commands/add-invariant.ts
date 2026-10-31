@@ -1,4 +1,3 @@
-// Add an invariant (LA-AUT-CMD216): Adds an invariant to its aggregate: a rule that holds on every change.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { InvariantRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** A new invariant. */
 export type AddInvariant = Pick<InvariantRow, 'id' | 'title' | 'aggregate_id' | 'statement'>;
 
-/** Add an invariant (LA-AUT-CMD216). */
 export const ADD_INVARIANT: CommandDefinition<AddInvariant> = {
   id: 'LA-AUT-CMD216',
   slice: AGGREGATE_SLICE,

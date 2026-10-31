@@ -4,7 +4,8 @@
     "noEmit": false,
     "rootDir": "src",
     "outDir": "out",
-    "rewriteRelativeImportExtensions": true
+    "rewriteRelativeImportExtensions": true,
+    "paths": { "lathe-desktop-bridge": ["./src/bridge-unchecked.d.ts"] }
   },
   "include": ["src"]
 }

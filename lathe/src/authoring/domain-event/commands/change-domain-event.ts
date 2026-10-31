@@ -1,4 +1,3 @@
-// Change a domain event (LA-AUT-CMD231): Changes a domain event's title, description or whether it is published, or its fields (the whole list, in order). The aggregate it happens to does not change.
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { DomainEventRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The event's changes: a column given is set; fields, when given, replace the list. */
 export type ChangeDomainEvent = Pick<DomainEventRow, 'id'> & { title?: string; published?: boolean; description?: string; fields?: EventFieldInput[] };
 
-/** Change a domain event (LA-AUT-CMD231). */
 export const CHANGE_DOMAIN_EVENT: CommandDefinition<ChangeDomainEvent> = {
   id: 'LA-AUT-CMD231',
   slice: DOMAIN_EVENT_SLICE,

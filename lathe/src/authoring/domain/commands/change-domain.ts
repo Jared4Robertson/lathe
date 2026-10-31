@@ -1,4 +1,3 @@
-// Change a domain (LA-AUT-CMD161): Changes a domain's title, subdomain type, description or notes. Its product never changes.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { DomainRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The domain's changes: a column given is set, null clears an optional one. */
 export type ChangeDomain = Pick<DomainRow, 'id'> & { title?: DomainRow['title']; subdomain_type?: DomainRow['subdomain_type']; description?: DomainRow['description']; notes?: DomainRow['notes'] | null };
 
-/** Change a domain (LA-AUT-CMD161). */
 export const CHANGE_DOMAIN: CommandDefinition<ChangeDomain> = {
   id: 'LA-AUT-CMD161',
   slice: DOMAIN_SLICE,

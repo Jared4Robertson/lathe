@@ -1,4 +1,3 @@
-// Change an API requirement (LA-AUT-CMD325): Changes an API requirement's title, statement or group. Its endpoint does not change.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ApiRequirementRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { EndpointRepository } from '../repository.ts';
 /** The API requirement's changes: a column given is set, null clears an optional one. */
 export type ChangeApiRequirement = Pick<ApiRequirementRow, 'id'> & { title?: ApiRequirementRow['title']; statement?: ApiRequirementRow['statement']; group_name?: ApiRequirementRow['group_name'] | null };
 
-/** Change an API requirement (LA-AUT-CMD325). */
 export const CHANGE_API_REQUIREMENT: CommandDefinition<ChangeApiRequirement> = {
   id: 'LA-AUT-CMD325',
   slice: ENDPOINT_SLICE,

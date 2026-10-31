@@ -2,6 +2,7 @@
 // and the next free ID for one. Each reads only the read model, through its reader (reader.ts), and changes
 // nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import { BUSINESS_OUTCOME_SLICE } from './model.ts';
 import type { BusinessOutcomePage, BusinessOutcomeSummary } from './read-model.ts';
@@ -54,9 +55,9 @@ export const LIST_BUSINESS_OUTCOMES: QueryDefinition<{ product_id: string }, Bus
 
 /** The next free ID for a business outcome of the product: its ID and BO, one past the highest number in use. */
 export function nextBusinessOutcomeId(reader: BusinessOutcomeReader, input: { product_id: string }): string {
-  if (reader.kindOf(input.product_id) !== 'product') refuse('parent', `a business outcome sits under a product, and ${input.product_id} is not one`);
-  const prefix = `${input.product_id}-BO`;
-  return `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
+  const shape = reader.idShape('business_outcome');
+  if (reader.kindOf(input.product_id) !== shape.parents[0]) refuse('parent', `a business outcome sits under a product, and ${input.product_id} is not one`);
+  return onePast(reader, `${input.product_id}-${shape.letters}`, shape);
 }
 
 /** Get the next ID for a business outcome (LA-AUT-QRY117). */

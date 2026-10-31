@@ -1,4 +1,3 @@
-// Change a standard rule (LA-AUT-CMD204): Changes a standard rule's title, statement or group.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { StandardRuleRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { StandardRepository } from '../repository.ts';
 /** The rule's changes: a column given is set, null clears an optional one. */
 export type ChangeStandardRule = Pick<StandardRuleRow, 'id'> & { title?: StandardRuleRow['title']; statement?: StandardRuleRow['statement']; group_name?: StandardRuleRow['group_name'] | null };
 
-/** Change a standard rule (LA-AUT-CMD204). */
 export const CHANGE_STANDARD_RULE: CommandDefinition<ChangeStandardRule> = {
   id: 'LA-AUT-CMD204',
   slice: STANDARD_SLICE,
