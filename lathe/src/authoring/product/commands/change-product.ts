@@ -1,4 +1,3 @@
-// Change a product (LA-AUT-CMD121): Changes a product's title, description, icon, color or notes, or its roles (the whole list).
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ProductRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The product's changes: a column given is set, null clears an optional one; roles, when given, replace the list. */
 export type ChangeProduct = Pick<ProductRow, 'id'> & { title?: string; description?: string; icon?: string | null; color?: string | null; notes?: string | null; roles?: RoleInput[] };
 
-/** Change a product (LA-AUT-CMD121). */
 export const CHANGE_PRODUCT: CommandDefinition<ChangeProduct> = {
   id: 'LA-AUT-CMD121',
   slice: PRODUCT_SLICE,

@@ -1,4 +1,3 @@
-// Remove an entity (LA-AUT-CMD215): Removes an entity with its fields, its data model and the links they start. Refused while anything else references them: a command under it, its table, or another entity that holds it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { AGGREGATE_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { AggregateRepository } from '../repository.ts';
 /** The entity to remove. */
 export type RemoveEntity = { id: string };
 
-/** Remove an entity (LA-AUT-CMD215). */
 export const REMOVE_ENTITY: CommandDefinition<RemoveEntity> = {
   id: 'LA-AUT-CMD215',
   slice: AGGREGATE_SLICE,

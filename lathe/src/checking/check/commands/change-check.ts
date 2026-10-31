@@ -1,4 +1,3 @@
-// Change a check (LA-CHK-CMD02): Changes a check row's place in the run order, severity, summary, explanation, query or kinds. Its name and product do not change, and Lathe's own checks are read-only.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { CheckRow } from '../../../platform/data/tables.ts';
@@ -16,7 +15,6 @@ export type ChangeCheck = Pick<CheckRow, 'name'> & {
   kinds?: CheckRow['kinds'] | null;
 };
 
-/** Change a check (LA-CHK-CMD02). */
 export const CHANGE_CHECK: CommandDefinition<ChangeCheck> = {
   id: 'LA-CHK-CMD02',
   slice: CHECK_SLICE,

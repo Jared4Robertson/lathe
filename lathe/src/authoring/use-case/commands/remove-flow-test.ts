@@ -1,4 +1,3 @@
-// Remove a flow test (LA-AUT-CMD118): Removes a flow test with the links it starts. Refused while anything else references it, such as a business outcome it measures.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { USE_CASE_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { UseCaseRepository } from '../repository.ts';
 /** The test to remove. */
 export type RemoveFlowTest = { id: string };
 
-/** Remove a flow test (LA-AUT-CMD118). */
 export const REMOVE_FLOW_TEST: CommandDefinition<RemoveFlowTest> = {
   id: 'LA-AUT-CMD118',
   slice: USE_CASE_SLICE,

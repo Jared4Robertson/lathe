@@ -1,4 +1,3 @@
-// Remove a storage requirement (LA-AUT-CMD362): Removes a storage requirement whole: its storage requirement tests and the links they start. Refused while anything outside it references what is in it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { STORAGE_REQUIREMENT_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { StorageRequirementRepository } from '../repository.ts';
 /** The storage requirement to remove. */
 export type RemoveStorageRequirement = { id: string };
 
-/** Remove a storage requirement (LA-AUT-CMD362). */
 export const REMOVE_STORAGE_REQUIREMENT: CommandDefinition<RemoveStorageRequirement> = {
   id: 'LA-AUT-CMD362',
   slice: STORAGE_REQUIREMENT_SLICE,

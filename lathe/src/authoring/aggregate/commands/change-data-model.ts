@@ -1,4 +1,3 @@
-// Change a data model (LA-AUT-CMD220): Changes a data model's title or file, or the standard rules it meets or the packages it uses (each list whole). Its entity does not change.
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { DataModelRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The data model's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeDataModel = Pick<DataModelRow, 'id'> & { title?: string; file?: string | null; meets?: string[]; packages?: string[] };
 
-/** Change a data model (LA-AUT-CMD220). */
 export const CHANGE_DATA_MODEL: CommandDefinition<ChangeDataModel> = {
   id: 'LA-AUT-CMD220',
   slice: AGGREGATE_SLICE,

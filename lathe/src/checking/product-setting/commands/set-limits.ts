@@ -1,4 +1,3 @@
-// Set the product's limits (LA-CHK-CMD04): Sets a product's settings row: the most children of one kind a record should hold, and the most entities an aggregate should hold. A product without the row takes the defaults, 15 and 7.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ProductSettingRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The product and both its limits. */
 export type SetLimits = ProductSettingRow;
 
-/** Set the product's limits (LA-CHK-CMD04). */
 export const SET_LIMITS: CommandDefinition<SetLimits> = {
   id: 'LA-CHK-CMD04',
   slice: PRODUCT_SETTING_SLICE,

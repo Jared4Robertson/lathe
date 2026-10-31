@@ -1,14 +1,11 @@
-// Add a business outcome (LA-AUT-CMD140): Adds a business outcome under its product, with the tests and records that measure it.
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { BusinessOutcomeRow } from '../../../platform/data/tables.ts';
 import { BUSINESS_OUTCOME_SLICE } from '../model.ts';
 import { BusinessOutcomeRepository } from '../repository.ts';
 
-/** A new business outcome, with the tests and records that measure it. */
 export type AddBusinessOutcome = Pick<BusinessOutcomeRow, 'id' | 'title' | 'product_id' | 'statement' | 'measure' | 'target' | 'measured_outside' | 'notes'> & { measured_by?: string[] };
 
-/** Add a business outcome (LA-AUT-CMD140). */
 export const ADD_BUSINESS_OUTCOME: CommandDefinition<AddBusinessOutcome> = {
   id: 'LA-AUT-CMD140',
   slice: BUSINESS_OUTCOME_SLICE,

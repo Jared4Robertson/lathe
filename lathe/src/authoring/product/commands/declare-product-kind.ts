@@ -1,4 +1,3 @@
-// Declare a product kind (LA-AUT-CMD122): Declares a kind of the product's own, with its fields in order: the next load gives it a table of its own.
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ProductKindRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** A new product kind: its declaration, and its fields in order. */
 export type DeclareProductKind = Pick<ProductKindRow, 'name' | 'product_id' | 'label' | 'description' | 'parent_kind' | 'stage' | 'obligation' | 'id_pattern' | 'id_example' | 'title_form'> & { fields?: FieldInput[] };
 
-/** Declare a product kind (LA-AUT-CMD122). */
 export const DECLARE_PRODUCT_KIND: CommandDefinition<DeclareProductKind> = {
   id: 'LA-AUT-CMD122',
   slice: PRODUCT_SLICE,

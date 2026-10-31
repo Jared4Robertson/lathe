@@ -1,4 +1,3 @@
-// Add a domain event (LA-AUT-CMD230): Adds a domain event to the aggregate it happens to, with the fields it carries, in order.
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { DomainEventRow } from '../../../platform/data/tables.ts';
@@ -6,10 +5,8 @@ import { DOMAIN_EVENT_SLICE, newDomainEvent, type EventFieldInput } from '../mod
 import { DomainEventRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 
-/** A new domain event, with its fields in order. */
 export type AddDomainEvent = Pick<DomainEventRow, 'id' | 'title' | 'aggregate_id' | 'published' | 'description'> & { fields?: EventFieldInput[] };
 
-/** Add a domain event (LA-AUT-CMD230). */
 export const ADD_DOMAIN_EVENT: CommandDefinition<AddDomainEvent> = {
   id: 'LA-AUT-CMD230',
   slice: DOMAIN_EVENT_SLICE,
@@ -28,7 +25,6 @@ export const ADD_DOMAIN_EVENT: CommandDefinition<AddDomainEvent> = {
   handler: addDomainEvent,
 };
 
-/** Adds the event, whole and new, with its fields. */
 export function addDomainEvent(tx: Transaction, input: AddDomainEvent): void {
   const events = new DomainEventRepository(tx);
   const { fields = [], ...row } = input;

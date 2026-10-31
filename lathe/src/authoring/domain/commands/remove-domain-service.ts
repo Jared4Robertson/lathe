@@ -1,4 +1,3 @@
-// Remove a domain service (LA-AUT-CMD171): Removes a domain service with its service and tests and the links they start. Refused while a command or query calls it, or anything else references it or them.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { DOMAIN_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { DomainRepository } from '../repository.ts';
 /** The domain service to remove. */
 export type RemoveDomainService = { id: string };
 
-/** Remove a domain service (LA-AUT-CMD171). */
 export const REMOVE_DOMAIN_SERVICE: CommandDefinition<RemoveDomainService> = {
   id: 'LA-AUT-CMD171',
   slice: DOMAIN_SLICE,

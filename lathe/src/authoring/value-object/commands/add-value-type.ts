@@ -1,4 +1,3 @@
-// Add a value type (LA-AUT-CMD276): Adds the value type of a value object, its one piece of code, with the standard rules it meets and the packages it uses.
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ValueTypeRow } from '../../../platform/data/tables.ts';
@@ -7,10 +6,8 @@ import { ValueObjectRepository } from '../repository.ts';
 import { refuseBroken } from '../../../platform/data/rules.ts';
 import { valueObjectOneEach } from '../rules.ts';
 
-/** A new value type, with the standard rules it meets and the packages it uses. */
 export type AddValueType = Pick<ValueTypeRow, 'id' | 'title' | 'value_object_id' | 'file'> & { meets?: string[]; packages?: string[] };
 
-/** Add a value type (LA-AUT-CMD276). */
 export const ADD_VALUE_TYPE: CommandDefinition<AddValueType> = {
   id: 'LA-AUT-CMD276',
   slice: VALUE_OBJECT_SLICE,

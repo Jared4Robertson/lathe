@@ -1,4 +1,3 @@
-// Remove an aggregate (LA-AUT-CMD212): Removes an aggregate whole: its entities and their fields, data models, invariants with their rules, tests and the links they start. Refused while anything outside it references what is in it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { AGGREGATE_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { AggregateRepository } from '../repository.ts';
 /** The aggregate to remove. */
 export type RemoveAggregate = { id: string };
 
-/** Remove an aggregate (LA-AUT-CMD212). */
 export const REMOVE_AGGREGATE: CommandDefinition<RemoveAggregate> = {
   id: 'LA-AUT-CMD212',
   slice: AGGREGATE_SLICE,

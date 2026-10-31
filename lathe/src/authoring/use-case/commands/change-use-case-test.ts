@@ -1,4 +1,3 @@
-// Change a use case test (LA-AUT-CMD114): Changes a use case test's columns or the test data sets it starts from (the whole list).
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { UseCaseTestRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The test's changes: a column given is set, null clears an optional one; starts_from, when given, replaces the list. */
 export type ChangeUseCaseTest = Pick<UseCaseTestRow, 'id'> & { title?: UseCaseTestRow['title']; level?: UseCaseTestRow['level']; state?: UseCaseTestRow['state']; when?: UseCaseTestRow['when']; then?: UseCaseTestRow['then']; file?: UseCaseTestRow['file'] | null; manual_reason?: UseCaseTestRow['manual_reason'] | null; size?: UseCaseTestRow['size'] | null; smoke?: UseCaseTestRow['smoke'] | null; external?: UseCaseTestRow['external'] | null; notes?: UseCaseTestRow['notes'] | null; starts_from?: string[] };
 
-/** Change a use case test (LA-AUT-CMD114). */
 export const CHANGE_USE_CASE_TEST: CommandDefinition<ChangeUseCaseTest> = {
   id: 'LA-AUT-CMD114',
   slice: USE_CASE_SLICE,

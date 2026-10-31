@@ -1,4 +1,3 @@
-// Change an integration test (LA-AUT-CMD342): Changes an integration test's columns or the test data sets it starts from (the whole list). Its integration does not change.
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { IntegrationTestRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { IntegrationRepository } from '../repository.ts';
 /** The integration test's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeIntegrationTest = Pick<IntegrationTestRow, 'id'> & { title?: IntegrationTestRow['title']; level?: IntegrationTestRow['level']; state?: IntegrationTestRow['state']; when?: IntegrationTestRow['when']; then?: IntegrationTestRow['then']; file?: IntegrationTestRow['file'] | null; manual_reason?: IntegrationTestRow['manual_reason'] | null; size?: IntegrationTestRow['size'] | null; smoke?: IntegrationTestRow['smoke'] | null; external?: IntegrationTestRow['external'] | null; notes?: IntegrationTestRow['notes'] | null; starts_from?: string[] };
 
-/** Change an integration test (LA-AUT-CMD342). */
 export const CHANGE_INTEGRATION_TEST: CommandDefinition<ChangeIntegrationTest> = {
   id: 'LA-AUT-CMD342',
   slice: INTEGRATION_SLICE,

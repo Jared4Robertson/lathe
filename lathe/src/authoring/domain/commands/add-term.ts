@@ -1,4 +1,3 @@
-// Add a term (LA-AUT-CMD166): Adds a term to its domain's glossary, with what it means there and the terms it builds on.
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { TermRow } from '../../../platform/data/tables.ts';
@@ -6,10 +5,8 @@ import { DOMAIN_SLICE } from '../model.ts';
 import { DomainRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 
-/** A new term, with the terms its meaning builds on. */
 export type AddTerm = Pick<TermRow, 'id' | 'title' | 'domain_id' | 'meaning' | 'group_name'> & { builds_on?: string[] };
 
-/** Add a term (LA-AUT-CMD166). */
 export const ADD_TERM: CommandDefinition<AddTerm> = {
   id: 'LA-AUT-CMD166',
   slice: DOMAIN_SLICE,
@@ -28,7 +25,6 @@ export const ADD_TERM: CommandDefinition<AddTerm> = {
   handler: addTerm,
 };
 
-/** Adds the term to its domain's glossary, with its links; refused when they lead back to it. */
 export function addTerm(tx: Transaction, input: AddTerm): void {
   const domains = new DomainRepository(tx);
   const domain = domains.load(input.domain_id) ?? tx.refuse('missing', `there is no domain ${input.domain_id}`);

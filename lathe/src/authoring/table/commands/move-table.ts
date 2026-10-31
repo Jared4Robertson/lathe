@@ -1,4 +1,3 @@
-// Move a table (LA-AUT-CMD302): Moves a table, with its keys, under another entity, read model or domain: exactly one is given, and it replaces the parent it had.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { TableRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The table and the one parent it moves to. */
 export type MoveTable = Pick<TableRow, 'id' | 'entity_id' | 'read_model_id' | 'domain_id'>;
 
-/** Move a table (LA-AUT-CMD302). */
 export const MOVE_TABLE: CommandDefinition<MoveTable> = {
   id: 'LA-AUT-CMD302',
   slice: TABLE_SLICE,

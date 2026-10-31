@@ -1,4 +1,3 @@
-// Add a pattern rule test (LA-AUT-CMD196): Adds a test of a pattern rule in one domain that follows its pattern, with the test data sets it starts from.
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PatternRuleTestRow } from '../../../platform/data/tables.ts';
@@ -7,10 +6,8 @@ import { PatternRepository } from '../repository.ts';
 import { refuseBroken } from '../../../platform/data/rules.ts';
 import { patternRuleTestPerDomain } from '../rules.ts';
 
-/** A new pattern rule test, with the test data sets it starts from. */
 export type AddPatternRuleTest = Pick<PatternRuleTestRow, 'id' | 'title' | 'pattern_rule_id' | 'domain_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'when' | 'then' | 'notes'> & { starts_from?: string[] };
 
-/** Add a pattern rule test (LA-AUT-CMD196). */
 export const ADD_PATTERN_RULE_TEST: CommandDefinition<AddPatternRuleTest> = {
   id: 'LA-AUT-CMD196',
   slice: PATTERN_SLICE,
@@ -38,7 +35,6 @@ export const ADD_PATTERN_RULE_TEST: CommandDefinition<AddPatternRuleTest> = {
   handler: addPatternRuleTest,
 };
 
-/** Adds the test under its pattern rule. */
 export function addPatternRuleTest(tx: Transaction, input: AddPatternRuleTest): void {
   const patterns = new PatternRepository(tx);
   const pattern = patterns.loadHolding('pattern_rule', input.pattern_rule_id) ?? tx.refuse('missing', `there is no pattern rule ${input.pattern_rule_id}`);

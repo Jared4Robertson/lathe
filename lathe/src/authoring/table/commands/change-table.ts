@@ -1,4 +1,3 @@
-// Change a table (LA-AUT-CMD301): Changes a table's title, name, storage or file, its keys (the whole list, in order), the data store it is kept in (null clears it), or the standard rules it meets or packages it uses (each the whole list). Its parent changes only by a move.
 import { column, id, ids, parts, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { TableRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The table's changes: a column given is set, null clears an optional one; a list given replaces the list. */
 export type ChangeTable = Pick<TableRow, 'id'> & { title?: TableRow['title']; name?: TableRow['name']; storage?: TableRow['storage']; file?: TableRow['file'] | null; keys?: TableKey[]; stored_in?: string | null; meets?: string[]; packages?: string[] };
 
-/** Change a table (LA-AUT-CMD301). */
 export const CHANGE_TABLE: CommandDefinition<ChangeTable> = {
   id: 'LA-AUT-CMD301',
   slice: TABLE_SLICE,

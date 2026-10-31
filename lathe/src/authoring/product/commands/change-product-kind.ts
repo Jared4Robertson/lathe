@@ -1,4 +1,3 @@
-// Change a product kind (LA-AUT-CMD123): Changes a product kind's label, description, parent kind, stage, obligation, ID pattern, example or title form, or its fields (the whole list, in order). Refused when a record of the kind no longer fits it.
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ProductKindRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The kind's changes: a column given is set, null clears an optional one; fields, when given, replace the list. */
 export type ChangeProductKind = Pick<ProductKindRow, 'name'> & { label?: string; description?: string; parent_kind?: string; stage?: ProductKindRow['stage'] | null; obligation?: boolean; id_pattern?: string | null; id_example?: string | null; title_form?: ProductKindRow['title_form'] | null; fields?: FieldInput[] };
 
-/** Change a product kind (LA-AUT-CMD123). */
 export const CHANGE_PRODUCT_KIND: CommandDefinition<ChangeProductKind> = {
   id: 'LA-AUT-CMD123',
   slice: PRODUCT_SLICE,
