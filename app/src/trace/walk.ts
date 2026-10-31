@@ -18,7 +18,7 @@ export const TRACE_WALK_LABELS: Record<Move, string> = {
   up: 'Step to the box above in its column',
   down: 'Step to the box below in its column',
   out: 'Out to the box this one is in, or close it',
-  in: 'Open the box and step to its first child',
+  in: 'In to the first child, opening the box',
 };
 
 /** Where a move goes: the box, and the key to open or close on the way (In and Out). */

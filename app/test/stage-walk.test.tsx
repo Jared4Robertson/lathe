@@ -187,7 +187,7 @@ describe('out and in', () => {
     shift('ArrowUp');
     await waitFor(() => expect(at()).toBe('/P-D-UC01'));
     await waitFor(() => expect(announcer()).toHaveTextContent(/^Use case /));
-    fireEvent.click(toolbarButton('Open the box and step to its first child'));
+    fireEvent.click(toolbarButton('In to the first child, opening the box'));
     await waitFor(() => expect(at()).toBe('/P-D-UC01-R01'));
   });
 });
