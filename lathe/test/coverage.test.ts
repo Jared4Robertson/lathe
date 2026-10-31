@@ -367,6 +367,46 @@ describe("a product's own obligation kinds", () => {
   });
 });
 
+describe("a product's relations with a role, on Lathe's own obligation kinds", () => {
+  // The standard rule loses what meets it and its own test, so only the product's links can cover it.
+  const bareRule = () => without(without(complete(), 'meets', () => true), 'standard_rule_test', () => true);
+  const script = {
+    product_kind: [{ name: 'script', product_id: 'EX', label: 'Script', description: 'A script.', parent_kind: 'domain', stage: 'technical-specification', obligation: false }],
+    product_kind_field: [{ kind: 'script', position: 1, name: 'file', type: 'text', required: true, description: 'The file.' }],
+    script: [{ id: 'EX-LEND-SC01', title: 'quiet.sh', domain_id: 'EX-LEND', file: 'bin/quiet.sh' }],
+  };
+
+  it('LA-TRC-UC02-R14-T01 a design link designs the rule and builds nothing', async () => {
+    expect(obligation(await loadData(bareRule()), null, 'standard_rule')).toMatchObject({ total: 1, designed: 0, built: 0, proved: 0 });
+    const data = adding(bareRule(), {
+      ...script,
+      product_relation: [{ name: 'enforces', source_kind: 'script', target_kind: 'standard_rule', product_id: 'EX', role: 'design', forward_label: 'Enforces', reverse_label: 'Enforced by', description: 'The script enforces the rule.' }],
+      enforces: [{ source_id: 'EX-LEND-SC01', target_id: 'EX-STD-CODE-R01' }],
+    });
+    const ws = await loadData(data);
+    expect(obligation(ws, null, 'standard_rule')).toMatchObject({ total: 1, designed: 1, built: 0, proved: 0 });
+    expect(ofCheck(ws, 'not-designed').map((p) => p.record)).not.toContain('EX-STD-CODE-R01');
+  });
+
+  it('LA-TRC-UC02-R14-T02 a build link builds the rule once its source names a file that exists', async () => {
+    const data = adding(bareRule(), {
+      ...script,
+      product_relation: [{ name: 'runs_as', source_kind: 'script', target_kind: 'standard_rule', product_id: 'EX', role: 'build', forward_label: 'Runs as', reverse_label: 'Run by', description: 'The script is the code that follows the rule.' }],
+      runs_as: [{ source_id: 'EX-LEND-SC01', target_id: 'EX-STD-CODE-R01' }],
+    });
+    expect(obligation(await loadData(data), null, 'standard_rule')).toMatchObject({ total: 1, designed: 1, built: 1, proved: 0 });
+    expect(obligation(await loadData(data, { missing: ['bin/quiet.sh'] }), null, 'standard_rule')).toMatchObject({ total: 1, designed: 1, built: 0 });
+  });
+
+  it('LA-TRC-UC02-R14-T03 a proof link proves the rule', async () => {
+    const data = adding(bareRule(), {
+      product_relation: [{ name: 'checks_rule', source_kind: 'use_case_test', target_kind: 'standard_rule', product_id: 'EX', role: 'proof', forward_label: 'Checks', reverse_label: 'Checked by', description: 'The test checks the rule.' }],
+      checks_rule: [{ source_id: 'EX-LEND-UC01-R01-T01', target_id: 'EX-STD-CODE-R01' }],
+    });
+    expect(obligation(await loadData(data), null, 'standard_rule')).toMatchObject({ total: 1, designed: 0, proved: 1 });
+  });
+});
+
 describe('pattern rules, domain by domain', () => {
   const shop = (data = complete()) =>
     adding(data, {
