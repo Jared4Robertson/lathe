@@ -15,6 +15,7 @@ import { sendEndpoint, type EndpointCommands, type EndpointRoute } from './comma
 import { useNextEndpointId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
+import { kindWord } from '../../platform/meta-model/reads';
 
 // The Endpoint editor (LA-AUT-A13): the actions on a record of an endpoint, each sending one of the aggregate's own
 // commands, POST /api/endpoint/<command>, and nothing else. Edit sends its kind's Change with only what changed; Add
@@ -24,9 +25,6 @@ import { backToActions } from '../../edit/back-to-actions';
 // domain; Remove says what goes with the record and sends its Remove. An endpoint is added from its command's or
 // query's page (AddEndpointForm). A refusal shows every reason the command gave, in its own words, keeps what was
 // entered, and changes nothing.
-
-/** A kind's label in a sentence. */
-const LABEL: Record<EndpointKind, string> = { endpoint: 'endpoint', api_requirement: 'API requirement', endpoint_handler: 'endpoint handler', endpoint_test: 'endpoint test' };
 
 /** The kinds that sit under a record of the endpoint and are added from its page; an endpoint has one handler. */
 function addsUnder(page: EndpointPage): Exclude<EndpointKind, 'endpoint'>[] {
@@ -180,7 +178,7 @@ export function EndpointEditor({ index, page, children }: { index: RecordIndex; 
       if (answer.ok) { announce(`Saved ${id}`); back(); }
       return answer;
     };
-    return <div className="spec-body"><ChangeForm index={index} specs={specs} current={current} eyebrow={LABEL[kind]} id={id} submit={submit} onDone={back} /></div>;
+    return <div className="spec-body"><ChangeForm index={index} specs={specs} current={current} eyebrow={kindWord(index.meta, kind)} id={id} submit={submit} onDone={back} /></div>;
   }
   if (mode.mode === 'add') return <div className="spec-body"><AddForm index={index} product={product} kind={mode.kind} parent={id} onDone={back} /></div>;
   if (mode.mode === 'move') return <div className="spec-body"><MoveForm index={index} page={page} writer={writer} onDone={back} /></div>;
@@ -193,7 +191,7 @@ export function EndpointEditor({ index, page, children }: { index: RecordIndex; 
         <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>
       </div>
       {mode.mode === 'remove' && (
-        <RemoveQuestion index={index} id={id} label={LABEL[kind]} goes={goesWith(page, kind, id)} then={addressOf(parentOf(page, kind, id))} onCancel={back}
+        <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={goesWith(page, kind, id)} then={addressOf(parentOf(page, kind, id))} onCancel={back}
           remove={() => sendEndpoint(writer, REMOVE[kind], { id })} />
       )}
       {children}
@@ -236,7 +234,7 @@ function AddForm({ index, product, kind, parent, onDone }: { index: RecordIndex;
     return answer;
   };
   return (
-    <CommandForm eyebrow={`New ${LABEL[kind]} under ${parent}`} title={`Add an ${LABEL[kind]}`} submit={submit} saveLabel={`Add ${LABEL[kind]}`} onCancel={onDone}>
+    <CommandForm eyebrow={`New ${kindWord(index.meta, kind)} under ${parent}`} title={`Add an ${kindWord(index.meta, kind)}`} submit={submit} saveLabel={`Add ${kindWord(index.meta, kind)}`} onCancel={onDone}>
       {(first) => <Fields index={index} specs={specs} draft={draft} setDraft={setDraft} first={first} />}
     </CommandForm>
   );

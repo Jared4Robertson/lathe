@@ -1,6 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { desktopBridgeStub, facts, openApp } from './helpers';
+import type { LatheDesktop } from '../src/shell/desktop-bridge';
 
 // Addresses are bare IDs (LA-PAT-APP-CODE-R19): tabs and space pages saved at anything else are
 // dropped (LA-PAT-APP-CODE-R20), and a product's and a domain's one page loses nothing the

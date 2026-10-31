@@ -16,6 +16,7 @@ import { sendDomain, type DomainCommands, type DomainRoute } from './commands';
 import { useNextDomainId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
+import { kindWord, addedUnder } from '../../platform/meta-model/reads';
 
 // The Domain editor (LA-AUT-A4): the actions on a record of a domain, each sending one of the aggregate's own commands,
 // POST /api/domain/<command>, and nothing else. Edit sends its kind's Change with only what changed; Add opens an empty
@@ -28,27 +29,8 @@ import { backToActions } from '../../edit/back-to-actions';
 
 type Inside = Exclude<DomainKind, 'domain'>;
 
-/** A kind's label in a sentence. */
-const LABEL: Record<DomainKind, string> = {
-  domain: 'domain',
-  capability: 'capability',
-  term: 'term',
-  domain_service: 'domain service',
-  service: 'service',
-  domain_service_test: 'domain service test',
-  repository: 'repository',
-};
-
-/** The kinds added under a record of each kind, inside the domain. */
-const ADDED_UNDER: Record<DomainKind, Inside[]> = {
-  domain: ['capability', 'term', 'domain_service', 'repository'],
-  capability: [],
-  term: [],
-  domain_service: ['service', 'domain_service_test'],
-  service: [],
-  domain_service_test: [],
-  repository: [],
-};
+/** The kinds a record of another kind has under it inside the domain; the meta model says which sit under which. */
+const INSIDE: readonly Inside[] = ['capability', 'term', 'domain_service', 'repository', 'service', 'domain_service_test'];
 
 /** The product's records of these kinds, as choices; `domain` narrows them to its own. */
 function choices(index: RecordIndex, product: string, kinds: readonly string[], domain?: string): Choice[] {
@@ -245,7 +227,7 @@ export function DomainEditor({ index, page, children }: { index: RecordIndex; pa
       if (answer.ok) { announce(`Saved ${id}`); back(); }
       return answer;
     };
-    return <div className="spec-body"><ChangeForm index={index} specs={specs} current={current} eyebrow={LABEL[kind]} id={id} submit={submit} onDone={back} /></div>;
+    return <div className="spec-body"><ChangeForm index={index} specs={specs} current={current} eyebrow={kindWord(index.meta, kind)} id={id} submit={submit} onDone={back} /></div>;
   }
   if (mode.mode === 'add') return <div className="spec-body"><AddForm index={index} page={page} kind={mode.kind} parent={id} onDone={back} /></div>;
   if (mode.mode === 'adopt') {
@@ -253,7 +235,7 @@ export function DomainEditor({ index, page, children }: { index: RecordIndex; pa
     return <div className="spec-body"><Adder index={index} parent={id} onDone={back} /></div>;
   }
   // A domain service has one service: once it has it, there is nothing more to add of that kind.
-  const adds = ADDED_UNDER[kind].filter((k) => k !== 'service' || !page.domainServices.find((s) => s.domainService.id === id)?.service);
+  const adds = addedUnder(index.meta, kind, INSIDE).filter((k) => k !== 'service' || !page.domainServices.find((s) => s.domainService.id === id)?.service);
   const others = othersAddedUnder(index.meta, kind);
   return (
     <>
@@ -264,7 +246,7 @@ export function DomainEditor({ index, page, children }: { index: RecordIndex; pa
         <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>
       </div>
       {mode.mode === 'remove' && (
-        <RemoveQuestion index={index} id={id} label={LABEL[kind]} goes={goesWith(page, kind, id)} then={addressOf(parentOf(page, kind, id))} onCancel={back}
+        <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={goesWith(page, kind, id)} then={addressOf(parentOf(page, kind, id))} onCancel={back}
           remove={() => sendDomain(writer, REMOVE[kind], { id })} />
       )}
       {children}
@@ -308,9 +290,9 @@ function AddForm({ index, page, kind, parent, onDone }: { index: RecordIndex; pa
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;
   };
-  const article = /^[aeiou]/.test(LABEL[kind]) ? 'an' : 'a';
+  const article = /^[aeiou]/.test(kindWord(index.meta, kind)) ? 'an' : 'a';
   return (
-    <CommandForm eyebrow={`New ${LABEL[kind]} under ${parent}`} title={`Add ${article} ${LABEL[kind]}`} submit={submit} saveLabel={`Add ${LABEL[kind]}`} onCancel={onDone}>
+    <CommandForm eyebrow={`New ${kindWord(index.meta, kind)} under ${parent}`} title={`Add ${article} ${kindWord(index.meta, kind)}`} submit={submit} saveLabel={`Add ${kindWord(index.meta, kind)}`} onCancel={onDone}>
       {(first) => <Fields index={index} specs={specs} draft={draft} setDraft={setDraft} first={first} />}
     </CommandForm>
   );

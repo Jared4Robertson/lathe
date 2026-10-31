@@ -11,6 +11,7 @@ import { setRow } from './fixtures/load';
 import { recordIndexOf } from './read-view';
 import { workspace } from './fixtures/workspace';
 import { desktopBridgeStub, openApp, serve } from './helpers';
+import type { LatheDesktop } from '../src/shell/desktop-bridge';
 
 // The desktop app's chat panel (LA-PLT-UC19, LA-V99) with a stand-in for the shell's chat
 // (window.latheDesktop.chat): the test pushes the patches the shell would send.

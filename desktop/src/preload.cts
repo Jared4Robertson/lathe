@@ -1,29 +1,12 @@
 // The preload: the only bridge between the shell and the page. It runs sandboxed, so it imports
-// nothing but Electron, and it exposes only window.latheDesktop (typed in app/src/shell/commands.tsx):
-//   isDesktop           true, so the app can tell it runs in the desktop shell;
-//   platform            the operating system ("darwin", "win32", "linux");
-//   onCommand           subscribes to native menu choices, each sent as a command ID such as "stageGraph";
-//   setChrome           sends the theme's { background, foreground } for the window's chrome (the main
-//                       process checks them, desktop/src/chrome.ts);
-//   onFullScreen        subscribes to the window entering and leaving full screen, called at once with
-//                       the current state (macOS hides the traffic lights there);
-//   setMenuKeys         sends each command's keys as the person bound them, by command ID, for the menu's key
-//                       labels (menu.ts);
-//   setErrorCount       sends the product's number of check errors, for the Dock badge (dock.ts);
-//   revealRecord, openRecordInEditor, copyRecordId, showRecordMenu
-//                       the record actions, each on its own channel, by record ID only (the main process
-//                       checks the request and finds the data file itself, product-window/commands/);
-//   chat                the chat panel's Claude Code (LA-PLT-UC19): the folder's saved sessions, open one
-//                       (new, resumed or forked), send a message, answer a permission prompt, stop the
-//                       turn, choose the permission mode, model and effort, list the skills, capture the stage, and subscribe to the chat's patches (chat.ts);
-//   voice               the chat's dictation (LA-PLT-UC20): whether this Mac can dictate on-device, ask to
-//                       listen or stop (the shell listens only while the window is in front), and subscribe to what
-//                       it hears (voice.ts);
-//   onAppRequest        answers the app bridge's questions (bridge.ts), each on its own channel: what the
-//                       Reader is looking at (lathe:ask-focus), and opening a record (lathe:ask-open), for
-//                       Lathe's MCP tools run by the chat's Claude Code.
-// Until the app subscribes, a menu choice presses the command's default keys in the page, so the
-// app's keymap runs it as if typed.
+// nothing but Electron (and the bridge's type, which is erased), and it exposes only window.latheDesktop,
+// whose members are described in app/src/shell/desktop-bridge.ts; the object below ends in
+// `satisfies LatheDesktop`, so the two cannot drift. Each record action, app question and chat call has
+// its own channel (the main process checks every request: chat.ts, voice.ts, bridge.ts, chrome.ts,
+// menu.ts, dock.ts, product-window/commands/). Until the app subscribes to onCommand, a menu choice
+// presses the command's default keys in the page, so the app's keymap runs it as if typed.
+import type { AppRequest, ChatPatch, LatheDesktop, VoiceEvent } from 'lathe-desktop-bridge';
+
 const { contextBridge, ipcRenderer } = require('electron') as typeof import('electron');
 
 type KeyPress = { key: string; code: string; ctrlKey: boolean; altKey: boolean; shiftKey: boolean; metaKey: boolean };
@@ -49,30 +32,30 @@ ipcRenderer.on('lathe:full-screen', (_event, value: unknown) => {
   for (const listener of fullScreenListeners) listener(fullScreen);
 });
 
-type PatchListener = (patch: unknown) => void;
-type AppRequestHandler = (request: unknown) => unknown;
+type PatchListener = (patch: ChatPatch) => void;
+type AppRequestHandler = (request: AppRequest) => unknown;
 const patchListeners = new Set<PatchListener>();
 let appRequestHandler: AppRequestHandler | null = null;
 
-ipcRenderer.on('lathe:chat', (_event, patch: unknown) => {
+ipcRenderer.on('lathe:chat', (_event, patch: ChatPatch) => {
   for (const listener of patchListeners) listener(patch);
 });
 
-type VoiceListener = (event: unknown) => void;
+type VoiceListener = (event: VoiceEvent) => void;
 const voiceListeners = new Set<VoiceListener>();
-ipcRenderer.on('lathe:voice', (_event, voiceEvent: unknown) => {
+ipcRenderer.on('lathe:voice', (_event, voiceEvent: VoiceEvent) => {
   for (const listener of voiceListeners) listener(voiceEvent);
 });
 
 // The app bridge's questions, each on its own channel, answered on the same channel with the question's id.
-// The page's handler gets them as it always has: { id, kind: 'focus' } or { id, kind: 'open', open }.
-const answerOn = (channel: string, kind: string) => (_event: unknown, request: { id?: unknown; open?: unknown }) => {
+// The page's handler gets the question as the app types it: { kind: 'focus' } or { kind: 'open', open }.
+const answerOn = (channel: string, kind: AppRequest['kind']) => (_event: unknown, request: { id?: unknown; open: Extract<AppRequest, { kind: 'open' }>['open'] }) => {
   const id = request?.id;
   if (typeof id !== 'string') return;
   const reply = (answer: unknown) => ipcRenderer.send(channel, { id, answer });
   if (!appRequestHandler) return reply(null);
   Promise.resolve()
-    .then(() => appRequestHandler?.(kind === 'open' ? { id, kind, open: request.open } : { id, kind }))
+    .then(() => appRequestHandler?.(kind === 'open' ? { kind, open: request.open } : { kind }))
     .then(reply, () => reply(null));
 };
 ipcRenderer.on('lathe:ask-focus', answerOn('lathe:ask-focus', 'focus'));
@@ -130,7 +113,7 @@ contextBridge.exposeInMainWorld('latheDesktop', {
     onPatch(listener: PatchListener) {
       if (typeof listener !== 'function') return () => {};
       patchListeners.add(listener);
-      void ipcRenderer.invoke('lathe:chat-state').then((whole: unknown) => {
+      void ipcRenderer.invoke('lathe:chat-state').then((whole: ChatPatch | null) => {
         if (whole && patchListeners.has(listener)) listener(whole);
       });
       return () => {
@@ -156,4 +139,4 @@ contextBridge.exposeInMainWorld('latheDesktop', {
       if (appRequestHandler === handler) appRequestHandler = null;
     };
   },
-});
+} satisfies LatheDesktop);

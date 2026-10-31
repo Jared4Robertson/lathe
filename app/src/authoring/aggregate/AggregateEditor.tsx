@@ -16,6 +16,7 @@ import { sendAggregate, type AggregateCommands, type AggregateRoute } from './co
 import { useNextAggregateId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
+import { kindWord, addedUnder } from '../../platform/meta-model/reads';
 
 // The Aggregate editor (LA-AUT-A6): the actions on a record of an aggregate, each sending one of the aggregate's own
 // commands, POST /api/aggregate/<command>, and nothing else. Edit sends its kind's Change with only what changed (an
@@ -29,25 +30,8 @@ import { backToActions } from '../../edit/back-to-actions';
 
 type Inside = Exclude<AggregateKind, 'aggregate'>;
 
-/** A kind's label in a sentence. */
-const LABEL: Record<AggregateKind, string> = {
-  aggregate: 'aggregate',
-  entity: 'entity',
-  invariant: 'invariant',
-  data_model: 'data model',
-  rule: 'rule',
-  invariant_test: 'invariant test',
-};
-
-/** The kinds added under a record of each kind, inside the aggregate. */
-const ADDED_UNDER: Record<AggregateKind, Inside[]> = {
-  aggregate: ['entity', 'invariant'],
-  entity: ['data_model'],
-  invariant: ['rule', 'invariant_test'],
-  data_model: [],
-  rule: [],
-  invariant_test: [],
-};
+/** The kinds a record of another kind has under it inside the aggregate; the meta model says which sit under which. */
+const INSIDE: readonly Inside[] = ['entity', 'invariant', 'data_model', 'rule', 'invariant_test'];
 
 /** The product's records of these kinds, as choices. */
 function choices(index: RecordIndex, product: string, kinds: readonly string[]): Choice[] {
@@ -226,7 +210,7 @@ export function AggregateEditor({ index, page, children }: { index: RecordIndex;
       if (answer.ok) { announce(`Saved ${id}`); back(); }
       return answer;
     };
-    return <div className="spec-body"><ChangeForm index={index} specs={specs} current={current} eyebrow={LABEL[kind]} id={id} submit={submit} onDone={back} /></div>;
+    return <div className="spec-body"><ChangeForm index={index} specs={specs} current={current} eyebrow={kindWord(index.meta, kind)} id={id} submit={submit} onDone={back} /></div>;
   }
   if (mode.mode === 'add') return <div className="spec-body"><AddForm index={index} page={page} product={product} kind={mode.kind} parent={id} onDone={back} /></div>;
   if (mode.mode === 'adopt') {
@@ -234,7 +218,7 @@ export function AggregateEditor({ index, page, children }: { index: RecordIndex;
     return <div className="spec-body"><Adder index={index} parent={id} onDone={back} /></div>;
   }
   // An entity has one data model and an invariant one rule and one test: once it has it, there is nothing more to add of that kind.
-  const adds = ADDED_UNDER[kind].filter((k) =>
+  const adds = addedUnder(index.meta, kind, INSIDE).filter((k) =>
     (k !== 'data_model' || !page.entities.find((e) => e.entity.id === id)?.dataModel)
     && (k !== 'rule' || !page.invariants.find((i) => i.invariant.id === id)?.rule)
     && (k !== 'invariant_test' || !page.invariants.find((i) => i.invariant.id === id)?.test));
@@ -248,7 +232,7 @@ export function AggregateEditor({ index, page, children }: { index: RecordIndex;
         <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>
       </div>
       {mode.mode === 'remove' && (
-        <RemoveQuestion index={index} id={id} label={LABEL[kind]} goes={goesWith(page, kind, id)} then={addressOf(parentOf(page, kind, id))} onCancel={back}
+        <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={goesWith(page, kind, id)} then={addressOf(parentOf(page, kind, id))} onCancel={back}
           remove={() => sendAggregate(writer, REMOVE[kind], { id })} />
       )}
       {children}
@@ -292,9 +276,9 @@ function AddForm({ index, page, product, kind, parent, onDone }: { index: Record
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;
   };
-  const article = /^[aeiou]/.test(LABEL[kind]) ? 'an' : 'a';
+  const article = /^[aeiou]/.test(kindWord(index.meta, kind)) ? 'an' : 'a';
   return (
-    <CommandForm eyebrow={`New ${LABEL[kind]} under ${parent}`} title={`Add ${article} ${LABEL[kind]}`} submit={submit} saveLabel={`Add ${LABEL[kind]}`} onCancel={onDone}>
+    <CommandForm eyebrow={`New ${kindWord(index.meta, kind)} under ${parent}`} title={`Add ${article} ${kindWord(index.meta, kind)}`} submit={submit} saveLabel={`Add ${kindWord(index.meta, kind)}`} onCancel={onDone}>
       {(first) => <Fields index={index} specs={specs} draft={draft} setDraft={setDraft} first={first} />}
     </CommandForm>
   );
