@@ -1,4 +1,3 @@
-// Change an aggregate (LA-AUT-CMD211): Changes an aggregate's title, description, identity or notes. Its domain does not change.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { AggregateRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The aggregate's changes: a column given is set, null clears an optional one. */
 export type ChangeAggregate = Pick<AggregateRow, 'id'> & { title?: string; description?: string; identity?: string; notes?: string | null };
 
-/** Change an aggregate (LA-AUT-CMD211). */
 export const CHANGE_AGGREGATE: CommandDefinition<ChangeAggregate> = {
   id: 'LA-AUT-CMD211',
   slice: AGGREGATE_SLICE,

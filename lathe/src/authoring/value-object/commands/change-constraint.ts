@@ -1,4 +1,3 @@
-// Change a constraint (LA-AUT-CMD274): Changes a constraint's title or statement. Its value object never changes.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ConstraintRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { ValueObjectRepository } from '../repository.ts';
 /** The constraint's changes: a column given is set. */
 export type ChangeConstraint = Pick<ConstraintRow, 'id'> & { title?: ConstraintRow['title']; statement?: ConstraintRow['statement'] };
 
-/** Change a constraint (LA-AUT-CMD274). */
 export const CHANGE_CONSTRAINT: CommandDefinition<ChangeConstraint> = {
   id: 'LA-AUT-CMD274',
   slice: VALUE_OBJECT_SLICE,

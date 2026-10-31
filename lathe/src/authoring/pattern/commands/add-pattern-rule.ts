@@ -1,4 +1,3 @@
-// Add a pattern rule (LA-AUT-CMD193): Adds a rule to its pattern, owed by every follower.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PatternRuleRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** A new pattern rule. */
 export type AddPatternRule = Pick<PatternRuleRow, 'id' | 'title' | 'pattern_id' | 'statement' | 'group_name' | 'notes'>;
 
-/** Add a pattern rule (LA-AUT-CMD193). */
 export const ADD_PATTERN_RULE: CommandDefinition<AddPatternRule> = {
   id: 'LA-AUT-CMD193',
   slice: PATTERN_SLICE,

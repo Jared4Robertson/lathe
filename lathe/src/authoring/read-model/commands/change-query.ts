@@ -1,4 +1,3 @@
-// Change a query (LA-AUT-CMD289): Changes a query's title or description, or the specifications it selects by or domain services it calls (each the whole list). Its read model never changes.
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { QueryRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The query's changes: a column given is set; a list given replaces the list. */
 export type ChangeQuery = Pick<QueryRow, 'id'> & { title?: QueryRow['title']; description?: QueryRow['description']; selects_by?: string[]; calls?: string[] };
 
-/** Change a query (LA-AUT-CMD289). */
 export const CHANGE_QUERY: CommandDefinition<ChangeQuery> = {
   id: 'LA-AUT-CMD289',
   slice: READ_MODEL_SLICE,

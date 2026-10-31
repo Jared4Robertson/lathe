@@ -1,4 +1,3 @@
-// Remove a flow step (LA-AUT-CMD112): Removes a flow step with the links it starts. Refused while anything else references it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { USE_CASE_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { UseCaseRepository } from '../repository.ts';
 /** The step to remove. */
 export type RemoveFlowStep = { id: string };
 
-/** Remove a flow step (LA-AUT-CMD112). */
 export const REMOVE_FLOW_STEP: CommandDefinition<RemoveFlowStep> = {
   id: 'LA-AUT-CMD112',
   slice: USE_CASE_SLICE,

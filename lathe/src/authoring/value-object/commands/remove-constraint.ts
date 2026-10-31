@@ -1,4 +1,3 @@
-// Remove a constraint (LA-AUT-CMD275): Removes a constraint with its test and the links it starts. Refused while anything else references them.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { VALUE_OBJECT_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { ValueObjectRepository } from '../repository.ts';
 /** The constraint to remove. */
 export type RemoveConstraint = { id: string };
 
-/** Remove a constraint (LA-AUT-CMD275). */
 export const REMOVE_CONSTRAINT: CommandDefinition<RemoveConstraint> = {
   id: 'LA-AUT-CMD275',
   slice: VALUE_OBJECT_SLICE,

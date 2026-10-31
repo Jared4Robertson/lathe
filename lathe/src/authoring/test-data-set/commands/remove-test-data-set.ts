@@ -1,4 +1,3 @@
-// Remove a test data set (LA-AUT-CMD187): Removes a test data set. Refused while a test starts from it or anything else references it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { TEST_DATA_SET_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { TestDataSetRepository } from '../repository.ts';
 /** The test data set to remove. */
 export type RemoveTestDataSet = { id: string };
 
-/** Remove a test data set (LA-AUT-CMD187). */
 export const REMOVE_TEST_DATA_SET: CommandDefinition<RemoveTestDataSet> = {
   id: 'LA-AUT-CMD187',
   slice: TEST_DATA_SET_SLICE,

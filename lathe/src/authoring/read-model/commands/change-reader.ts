@@ -1,4 +1,3 @@
-// Change a reader (LA-AUT-CMD298): Changes a reader's title, file or description, the data store it reads in (null clears it), or the standard rules it meets or packages it uses (each the whole list).
 import { column, id, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ReaderRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The reader's changes: a column given is set, null clears an optional one; a list given replaces the list. */
 export type ChangeReader = Pick<ReaderRow, 'id'> & { title?: ReaderRow['title']; file?: ReaderRow['file'] | null; description?: ReaderRow['description']; stored_in?: string | null; meets?: string[]; packages?: string[] };
 
-/** Change a reader (LA-AUT-CMD298). */
 export const CHANGE_READER: CommandDefinition<ChangeReader> = {
   id: 'LA-AUT-CMD298',
   slice: READ_MODEL_SLICE,

@@ -1,4 +1,3 @@
-// Add an aggregate (LA-AUT-CMD210): Adds an aggregate under a domain, with nothing in it yet.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { AggregateRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** A new aggregate: its row. */
 export type AddAggregate = Pick<AggregateRow, 'id' | 'title' | 'domain_id' | 'description' | 'identity' | 'notes'>;
 
-/** Add an aggregate (LA-AUT-CMD210). */
 export const ADD_AGGREGATE: CommandDefinition<AddAggregate> = {
   id: 'LA-AUT-CMD210',
   slice: AGGREGATE_SLICE,

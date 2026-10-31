@@ -1,4 +1,3 @@
-// Add a constraint test (LA-AUT-CMD279): Adds the test of a constraint, its one test, with the test data sets it starts from.
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ConstraintTestRow } from '../../../platform/data/tables.ts';
@@ -7,10 +6,8 @@ import { ValueObjectRepository } from '../repository.ts';
 import { refuseBroken } from '../../../platform/data/rules.ts';
 import { valueObjectOneEach } from '../rules.ts';
 
-/** A new constraint test, with the test data sets it starts from. */
 export type AddConstraintTest = Pick<ConstraintTestRow, 'id' | 'title' | 'constraint_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'accepts' | 'refuses' | 'notes'> & { starts_from?: string[] };
 
-/** Add a constraint test (LA-AUT-CMD279). */
 export const ADD_CONSTRAINT_TEST: CommandDefinition<AddConstraintTest> = {
   id: 'LA-AUT-CMD279',
   slice: VALUE_OBJECT_SLICE,

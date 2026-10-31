@@ -1,4 +1,3 @@
-// Change a query handler (LA-AUT-CMD295): Changes a query handler's title, file or description, or the standard rules it meets or packages it uses (each the whole list).
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { QueryHandlerRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The query handler's changes: a column given is set, null clears an optional one; a list given replaces the list. */
 export type ChangeQueryHandler = Pick<QueryHandlerRow, 'id'> & { title?: QueryHandlerRow['title']; file?: QueryHandlerRow['file'] | null; description?: QueryHandlerRow['description']; meets?: string[]; packages?: string[] };
 
-/** Change a query handler (LA-AUT-CMD295). */
 export const CHANGE_QUERY_HANDLER: CommandDefinition<ChangeQueryHandler> = {
   id: 'LA-AUT-CMD295',
   slice: READ_MODEL_SLICE,

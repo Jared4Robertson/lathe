@@ -1,4 +1,3 @@
-// Change a command handler (LA-AUT-CMD244): Changes a command handler's title, file or description, or the standard rules it meets or the packages it uses (each list whole). Its command does not change.
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { CommandHandlerRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The handler's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeCommandHandler = Pick<CommandHandlerRow, 'id'> & { title?: string; file?: string | null; description?: string; meets?: string[]; packages?: string[] };
 
-/** Change a command handler (LA-AUT-CMD244). */
 export const CHANGE_COMMAND_HANDLER: CommandDefinition<ChangeCommandHandler> = {
   id: 'LA-AUT-CMD244',
   slice: COMMAND_SLICE,

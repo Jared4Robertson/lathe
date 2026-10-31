@@ -1,4 +1,3 @@
-// Change a rule (LA-AUT-CMD226): Changes a rule's title or file, or the standard rules it meets or the packages it uses (each list whole). Its invariant does not change.
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { RuleRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The rule's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeRule = Pick<RuleRow, 'id'> & { title?: string; file?: string | null; meets?: string[]; packages?: string[] };
 
-/** Change a rule (LA-AUT-CMD226). */
 export const CHANGE_RULE: CommandDefinition<ChangeRule> = {
   id: 'LA-AUT-CMD226',
   slice: AGGREGATE_SLICE,

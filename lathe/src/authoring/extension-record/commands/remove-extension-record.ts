@@ -1,4 +1,3 @@
-// Remove an extension record (LA-AUT-CMD147): Removes a record of a product's own kind with the links it starts and the packages it uses. Refused while anything else references it.
 import { id, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { EXTENSION_RECORD_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { ExtensionRecordRepository } from '../repository.ts';
 /** The record to remove. */
 export type RemoveExtensionRecord = { id: string };
 
-/** Remove an extension record (LA-AUT-CMD147). */
 export const REMOVE_EXTENSION_RECORD: CommandDefinition<RemoveExtensionRecord> = {
   id: 'LA-AUT-CMD147',
   slice: EXTENSION_RECORD_SLICE,

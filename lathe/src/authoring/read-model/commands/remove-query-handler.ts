@@ -1,4 +1,3 @@
-// Remove a query handler (LA-AUT-CMD296): Removes a query's handler with the links it starts and the packages it uses. Refused while anything references it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { READ_MODEL_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { ReadModelRepository } from '../repository.ts';
 /** The query handler to remove. */
 export type RemoveQueryHandler = { id: string };
 
-/** Remove a query handler (LA-AUT-CMD296). */
 export const REMOVE_QUERY_HANDLER: CommandDefinition<RemoveQueryHandler> = {
   id: 'LA-AUT-CMD296',
   slice: READ_MODEL_SLICE,

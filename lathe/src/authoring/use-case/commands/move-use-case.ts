@@ -1,4 +1,3 @@
-// Move a use case (LA-AUT-CMD102): Moves a use case, with everything in it, under another capability of its domain.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { UseCaseRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The use case and the capability it moves to. */
 export type MoveUseCase = Pick<UseCaseRow, 'id' | 'capability_id'>;
 
-/** Move a use case (LA-AUT-CMD102). */
 export const MOVE_USE_CASE: CommandDefinition<MoveUseCase> = {
   id: 'LA-AUT-CMD102',
   slice: USE_CASE_SLICE,

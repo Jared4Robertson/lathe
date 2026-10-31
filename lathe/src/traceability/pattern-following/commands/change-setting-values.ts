@@ -1,4 +1,3 @@
-// Change the setting values (LA-TRC-CMD02): Gives a followed pattern's settings their values: the list replaces the follower's values for that pattern.
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { PATTERN_FOLLOWING_SLICE, valueRows, type SettingValueInput } from '../model.ts';
@@ -8,7 +7,6 @@ import { holdToRules } from '../rules.ts';
 /** The following and its setting values, the whole list. */
 export type ChangeSettingValues = { follower_id: string; pattern_id: string; setting_values: SettingValueInput[] };
 
-/** Change the setting values (LA-TRC-CMD02). */
 export const CHANGE_SETTING_VALUES: CommandDefinition<ChangeSettingValues> = {
   id: 'LA-TRC-CMD02',
   slice: PATTERN_FOLLOWING_SLICE,

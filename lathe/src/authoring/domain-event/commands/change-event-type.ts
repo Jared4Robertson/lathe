@@ -1,4 +1,3 @@
-// Change an event type (LA-AUT-CMD234): Changes an event type's title, delivery or file, or the standard rules it meets or the packages it uses (each list whole). Its event does not change.
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EventTypeRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { DomainEventRepository } from '../repository.ts';
 /** The event type's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeEventType = Pick<EventTypeRow, 'id'> & { title?: string; delivery?: EventTypeRow['delivery'] | null; file?: string | null; meets?: string[]; packages?: string[] };
 
-/** Change an event type (LA-AUT-CMD234). */
 export const CHANGE_EVENT_TYPE: CommandDefinition<ChangeEventType> = {
   id: 'LA-AUT-CMD234',
   slice: DOMAIN_EVENT_SLICE,

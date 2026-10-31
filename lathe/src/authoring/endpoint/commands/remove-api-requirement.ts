@@ -1,4 +1,3 @@
-// Remove an API requirement (LA-AUT-CMD326): Removes an API requirement with its endpoint tests and the links they start. Refused while anything else references them.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { ENDPOINT_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { EndpointRepository } from '../repository.ts';
 /** The API requirement to remove. */
 export type RemoveApiRequirement = { id: string };
 
-/** Remove an API requirement (LA-AUT-CMD326). */
 export const REMOVE_API_REQUIREMENT: CommandDefinition<RemoveApiRequirement> = {
   id: 'LA-AUT-CMD326',
   slice: ENDPOINT_SLICE,

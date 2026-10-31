@@ -1,4 +1,3 @@
-// Remove a domain service test (LA-AUT-CMD180): Removes a domain service test and the links it starts. Refused while anything references it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { DOMAIN_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { DomainRepository } from '../repository.ts';
 /** The test to remove. */
 export type RemoveDomainServiceTest = { id: string };
 
-/** Remove a domain service test (LA-AUT-CMD180). */
 export const REMOVE_DOMAIN_SERVICE_TEST: CommandDefinition<RemoveDomainServiceTest> = {
   id: 'LA-AUT-CMD180',
   slice: DOMAIN_SLICE,

@@ -1,4 +1,3 @@
-// Remove a pattern (LA-AUT-CMD192): Removes a pattern whole: its settings, rules and rule tests, and the links they start. Refused while anything outside it references what is in it, such as a follower.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { PATTERN_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { PatternRepository } from '../repository.ts';
 /** The pattern to remove. */
 export type RemovePattern = { id: string };
 
-/** Remove a pattern (LA-AUT-CMD192). */
 export const REMOVE_PATTERN: CommandDefinition<RemovePattern> = {
   id: 'LA-AUT-CMD192',
   slice: PATTERN_SLICE,

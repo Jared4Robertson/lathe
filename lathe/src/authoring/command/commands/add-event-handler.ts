@@ -1,4 +1,3 @@
-// Add an event handler (LA-AUT-CMD249): Adds the handler that carries out a policy: its name in code, its file and what it does, with the standard rules it meets and the packages it uses. A policy has one event handler.
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EventHandlerRow } from '../../../platform/data/tables.ts';
@@ -6,10 +5,8 @@ import { COMMAND_SLICE } from '../model.ts';
 import { CommandRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 
-/** A new event handler, with the standard rules it meets and the packages it uses. */
 export type AddEventHandler = Pick<EventHandlerRow, 'id' | 'title' | 'policy_id' | 'file' | 'description'> & { meets?: string[]; packages?: string[] };
 
-/** Add an event handler (LA-AUT-CMD249). */
 export const ADD_EVENT_HANDLER: CommandDefinition<AddEventHandler> = {
   id: 'LA-AUT-CMD249',
   slice: COMMAND_SLICE,

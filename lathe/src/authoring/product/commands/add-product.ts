@@ -1,4 +1,3 @@
-// Add a product (LA-AUT-CMD120): Adds a product, the root of a set of specifications, with its roles.
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ProductRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** A new product: its row, and its roles. */
 export type AddProduct = Pick<ProductRow, 'id' | 'title' | 'description' | 'icon' | 'color' | 'notes'> & { roles?: RoleInput[] };
 
-/** Add a product (LA-AUT-CMD120). */
 export const ADD_PRODUCT: CommandDefinition<AddProduct> = {
   id: 'LA-AUT-CMD120',
   slice: PRODUCT_SLICE,
@@ -29,7 +27,6 @@ export const ADD_PRODUCT: CommandDefinition<AddProduct> = {
   handler: addProduct,
 };
 
-/** Adds the product, whole and new, with its roles. */
 export function addProduct(tx: Transaction, input: AddProduct): void {
   const products = new ProductRepository(tx);
   const { roles = [], ...row } = input;

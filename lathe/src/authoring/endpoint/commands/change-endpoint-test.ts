@@ -1,4 +1,3 @@
-// Change an endpoint test (LA-AUT-CMD331): Changes an endpoint test's columns or the test data sets it starts from (the whole list). Its requirement does not change.
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EndpointTestRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { EndpointRepository } from '../repository.ts';
 /** The endpoint test's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeEndpointTest = Pick<EndpointTestRow, 'id'> & { title?: EndpointTestRow['title']; level?: EndpointTestRow['level']; state?: EndpointTestRow['state']; when?: EndpointTestRow['when']; then?: EndpointTestRow['then']; file?: EndpointTestRow['file'] | null; manual_reason?: EndpointTestRow['manual_reason'] | null; size?: EndpointTestRow['size'] | null; smoke?: EndpointTestRow['smoke'] | null; external?: EndpointTestRow['external'] | null; notes?: EndpointTestRow['notes'] | null; starts_from?: string[] };
 
-/** Change an endpoint test (LA-AUT-CMD331). */
 export const CHANGE_ENDPOINT_TEST: CommandDefinition<ChangeEndpointTest> = {
   id: 'LA-AUT-CMD331',
   slice: ENDPOINT_SLICE,
