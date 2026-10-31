@@ -34,7 +34,7 @@ export function focusStrength(map: FadeMap, focus: string, look: FadeLook): (id:
 
 // ---------- The one way a stage's map shows less (LA-PAT-APP-UX-R19) ----------
 //
-// Every canvas stage is one map, laid out once (one-map.ts): a filter, the depth or a focus that
+// Every canvas stage is one map, laid out once (LA-PAT-APP-UX-R19): a filter, the depth or a focus that
 // shows only part of it never takes boxes out or moves them; it fades the rest back to the focus
 // fade's strength. A fade is by place (a placed box's key; on the graph a record's ID, each record
 // having one place there), so a record a map draws twice can be faded in one place and not the other.

@@ -38,10 +38,10 @@ export const BUDGETS = {
   /** The longest frame while dragging a product's whole Trace stage (LA-V98-R06): each frame draws only what is in view, at most 260 boxes and the lines touching them. */
   traceDragFrameMs: 50,
   /**
-   * Main-thread work for the first frame of a product's Trace view (LA-V98-R06, LA-PAT-APP-UX-R19): the first switch to
+   * Main-thread work for the first frame of a product's Trace stage (LA-V98-R06, LA-PAT-APP-UX-R19): the first switch to
    * the Trace stage, from the key press until its canvas is drawn and the page is quiet, which loads the stage's code,
-   * builds the product's All-at-once graph and lays it out in its worker (once per product and data change) and draws
-   * what the camera shows of it. Every switch after it reuses the layout and is held to the stage switch budget.
+   * builds the product's rows and orders them in its worker (once per product and data change) and draws what the
+   * camera shows of them. Every switch after it reuses the order and is held to the stage switch budget.
    */
   traceMapFirstFrameMs: 400,
   /**

@@ -1,18 +1,18 @@
-import { stepName } from '../../graph/steps';
-import type { RecordIndex } from '../../exploring/record-summaries/record-index';
-import type { Move } from '../../views/levels';
-import { DELIVERY_COLUMN_LABELS, DELIVERY_COLUMNS, isOpen, shownChildren, type DeliveryGraph, type Openness } from './delivery';
-import type { DeliveryLaid } from './delivery-layout';
+import { stepName } from '../graph/steps';
+import type { RecordIndex } from '../exploring/record-summaries/record-index';
+import type { Move } from '../views/levels';
+import { TRACE_COLUMN_LABELS, TRACE_COLUMNS, isOpen, shownChildren, type TraceGraph, type Openness } from './trace';
+import type { TraceLaid } from './layout';
 
-// The Delivery view's walk (LA-V61-R49, LA-V98), pure and tested directly: Up and Down within a column, top to bottom as
+// The Trace stage's walk (LA-V61-R49, LA-V98), pure and tested directly: Up and Down within a column, top to bottom as
 // shown (through a box's children and on to the next row); Left and Right along the row's links to the nearest box
 // linked to it in the next column that way (an outcome and the use cases it serves; a requirement and the steps
 // fulfilling it; a step and its chain), else to the row's own box in that column; In opens a box and steps to its first
 // child; Out steps to its parent, and on a cell's own box closes it. From no box (the product, or a record the view does
-// not draw) any move goes to the first row's use case. DeliveryTrace.tsx moves the focus or the ring.
+// not draw) any move goes to the first row's use case. TraceView.tsx moves the focus or the ring.
 
 /** What each step button does, for its name and tooltip. */
-export const DELIVERY_WALK_LABELS: Record<Move, string> = {
+export const TRACE_WALK_LABELS: Record<Move, string> = {
   left: 'Step along the row to the nearest linked box on the left',
   right: 'Step along the row to the nearest linked box on the right',
   up: 'Step to the box above in its column',
@@ -25,7 +25,7 @@ export const DELIVERY_WALK_LABELS: Record<Move, string> = {
 export interface WalkTo { to: string; toggle?: string }
 
 /** Where a move goes from a box (null for none), or null. */
-export function deliveryTarget(graph: DeliveryGraph, laid: DeliveryLaid, o: Openness, at: string | null, move: Move): WalkTo | null {
+export function traceTarget(graph: TraceGraph, laid: TraceLaid, o: Openness, at: string | null, move: Move): WalkTo | null {
   const item = at && laid.places.has(at) ? graph.items.get(at) : undefined;
   if (!item || !at) {
     const first = laid.columns[1][0] ?? laid.columns[0][0];
@@ -66,9 +66,9 @@ export function deliveryTarget(graph: DeliveryGraph, laid: DeliveryLaid, o: Open
 }
 
 /** What the walk says on a box: a record as the graph names it, another box by its words and column. */
-export function deliveryWords(index: RecordIndex, graph: DeliveryGraph, key: string): string {
+export function traceWords(index: RecordIndex, graph: TraceGraph, key: string): string {
   const item = graph.items.get(key);
   if (!item) return key;
   if (item.role === 'record' && item.id) return stepName(index, item.id);
-  return `${item.words?.title ?? key}, ${DELIVERY_COLUMN_LABELS[DELIVERY_COLUMNS[item.column]]}`;
+  return `${item.words?.title ?? key}, ${TRACE_COLUMN_LABELS[TRACE_COLUMNS[item.column]]}`;
 }
