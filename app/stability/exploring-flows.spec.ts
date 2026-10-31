@@ -230,6 +230,8 @@ test.describe('Exploring flows', () => {
     if ((await expandRow.getAttribute('aria-pressed')) !== 'true') await expandRow.click();
     const own = 'LA-EXP-UC03|use-case/LA-EXP-UC03-R18';
     await expect.poll(async () => (await traceSceneOf(page, true)).boxes.find((b) => b.key === own)?.focus, { timeout: 5000 }).toBe(true);
+    // Once the fade has glided to its end: the path at full strength.
+    await expect.poll(async () => (await traceSceneOf(page, true)).boxes.find((b) => b.key === own)?.strength, { timeout: 5000 }).toBe(1);
     const lit = await traceSceneOf(page, true);
     expect(lit.boxes.find((b) => b.key === own)).toMatchObject({ column: 1, lit: true, strength: 1 });
     expect(lit.boxes.find((b) => b.key === 'LA-EXP-UC03|design/LA-EXP-UC03-FL01')!.lit).toBe(true);
