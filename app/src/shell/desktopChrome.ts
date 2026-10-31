@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { parseColor, toHex } from '../theme/contrast';
 import { resolvedValue, type Mode, type ModeChoice, type ThemeFile } from '../theme/theme';
+import type { LatheDesktop } from './desktop-bridge';
 
-// The desktop app's bridge (desktop/src/preload.cts; its type is Window['latheDesktop'] in
-// commands.tsx), and the window chrome the theme sends it: the shell color behind the app's title bar
+// The desktop app's bridge (desktop/src/preload.cts; its type is LatheDesktop in
+// desktop-bridge.ts), and the window chrome the theme sends it: the shell color behind the app's title bar
 // and the ink its symbols take, so the native window controls match the theme (LA-V67-R06).
 
 export interface Chrome {

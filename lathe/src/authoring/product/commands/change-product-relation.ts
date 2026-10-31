@@ -1,4 +1,3 @@
-// Change a product relation (LA-AUT-CMD126): Changes a product relation pair's role, labels or description; its name and kinds are its key.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ProductRelationRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The pair's changes: a column given is set, null clears its role. */
 export type ChangeProductRelation = Pick<ProductRelationRow, 'name' | 'source_kind' | 'target_kind'> & { role?: ProductRelationRow['role'] | null; forward_label?: string; reverse_label?: string; description?: string };
 
-/** Change a product relation (LA-AUT-CMD126). */
 export const CHANGE_PRODUCT_RELATION: CommandDefinition<ChangeProductRelation> = {
   id: 'LA-AUT-CMD126',
   slice: PRODUCT_SLICE,

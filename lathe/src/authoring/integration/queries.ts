@@ -3,6 +3,7 @@
 // of a product, and the next free ID for a record of one of its kinds. A handler never sees the data, a repository or
 // the aggregate's model; each changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import { INTEGRATION_SLICE, type IntegrationKind } from './model.ts';
 import type { IntegrationPage, IntegrationSummary } from './read-model.ts';
@@ -53,25 +54,24 @@ export const LIST_INTEGRATIONS: QueryDefinition<{ product_id: string }, Integrat
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No integrations.'),
 };
 
-// One past the highest number in use after the prefix, padded to two digits.
-const onePast = (reader: IntegrationReader, prefix: string): string => `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
 
-/** The kinds of the aggregate, each with the kind of record it sits under. */
-const UNDER: Record<IntegrationKind, string> = { integration: 'product', adapter: 'integration', integration_test: 'integration' };
+/** The kinds of the aggregate with an ID under a parent; how each is written the schema says (`idShape`). */
+const KINDS: readonly string[] = ['integration', 'adapter', 'integration_test'];
 
 /** The next free ID for a record of one of the aggregate's kinds under its parent; an integration has one adapter, whose ID is its own and AD. */
 export function nextIntegrationId(reader: IntegrationReader, input: { kind: string; parent: string }): string {
-  if (!(input.kind in UNDER)) refuse('kind', `${input.kind} is not a kind of the Integration aggregate; its kinds are ${Object.keys(UNDER).join(', ')}`);
+  if (!KINDS.includes(input.kind)) refuse('kind', `${input.kind} is not a kind of the Integration aggregate; its kinds are ${KINDS.join(', ')}`);
   const kind = input.kind as IntegrationKind;
+  const shape = reader.idShape(kind);
   const parent = reader.kindOf(input.parent);
-  if (parent !== UNDER[kind]) refuse('parent', `${article(kind)} ${kind} sits under ${article(UNDER[kind])} ${UNDER[kind]}, and ${input.parent} is ${parent ? `${article(parent)} ${parent}` : 'no record'}`);
+  if (parent !== shape.parents[0]) refuse('parent', `${article(kind)} ${kind} sits under ${article(shape.parents[0])} ${shape.parents[0]}, and ${input.parent} is ${parent ? `${article(parent)} ${parent}` : 'no record'}`);
   switch (kind) {
     case 'integration':
-      return onePast(reader, `${input.parent}-INT`);
+      return onePast(reader, `${input.parent}-${shape.letters}`, shape);
     case 'integration_test':
-      return onePast(reader, `${input.parent}-T`);
+      return onePast(reader, `${input.parent}-${shape.letters}`, shape);
     case 'adapter': {
-      const adapterId = `${input.parent}-AD`;
+      const adapterId = `${input.parent}-${shape.letters}`;
       if (reader.kindOf(adapterId)) refuse('exists', `${input.parent} already has its adapter, ${adapterId}`);
       return adapterId;
     }

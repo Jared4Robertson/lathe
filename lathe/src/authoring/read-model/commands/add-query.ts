@@ -1,4 +1,3 @@
-// Add a query (LA-AUT-CMD288): Adds a query to the read model it reads, with the specifications it selects by and the domain services it calls.
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { QueryRow } from '../../../platform/data/tables.ts';
@@ -6,10 +5,8 @@ import { READ_MODEL_SLICE } from '../model.ts';
 import { ReadModelRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 
-/** A new query, with the links it starts. */
 export type AddQuery = Pick<QueryRow, 'id' | 'title' | 'read_model_id' | 'description'> & { selects_by?: string[]; calls?: string[] };
 
-/** Add a query (LA-AUT-CMD288). */
 export const ADD_QUERY: CommandDefinition<AddQuery> = {
   id: 'LA-AUT-CMD288',
   slice: READ_MODEL_SLICE,

@@ -1,4 +1,3 @@
-// Change an entity (LA-AUT-CMD214): Changes an entity's title, role, description or whether it is stored in its root's table, or its fields (the whole list, in order) or the entities it holds (each list whole). Its aggregate does not change.
 import { column, ids, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EntityRow } from '../../../platform/data/tables.ts';
@@ -17,7 +16,6 @@ export type ChangeEntity = Pick<EntityRow, 'id'> & {
   has_many?: string[];
 };
 
-/** Change an entity (LA-AUT-CMD214). */
 export const CHANGE_ENTITY: CommandDefinition<ChangeEntity> = {
   id: 'LA-AUT-CMD214',
   slice: AGGREGATE_SLICE,

@@ -1,4 +1,3 @@
-// Change a service (LA-AUT-CMD176): Changes a service's title or file, or the standard rules it meets or packages it uses (each the whole list).
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ServiceRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The service's changes: a column given is set, null clears an optional one; a list given replaces the list. */
 export type ChangeService = Pick<ServiceRow, 'id'> & { title?: ServiceRow['title']; file?: ServiceRow['file'] | null; meets?: string[]; packages?: string[] };
 
-/** Change a service (LA-AUT-CMD176). */
 export const CHANGE_SERVICE: CommandDefinition<ChangeService> = {
   id: 'LA-AUT-CMD176',
   slice: DOMAIN_SLICE,

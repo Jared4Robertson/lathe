@@ -1,14 +1,11 @@
-// Add an entry point (LA-AUT-CMD150): Adds an entry point under its domain, with the packages it uses and the standard rules it meets.
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EntryPointRow } from '../../../platform/data/tables.ts';
 import { ENTRY_POINT_SLICE } from '../model.ts';
 import { EntryPointRepository } from '../repository.ts';
 
-/** A new entry point, with the packages it uses and the standard rules it meets. */
 export type AddEntryPoint = Pick<EntryPointRow, 'id' | 'title' | 'domain_id' | 'file' | 'description'> & { packages?: string[]; meets?: string[] };
 
-/** Add an entry point (LA-AUT-CMD150). */
 export const ADD_ENTRY_POINT: CommandDefinition<AddEntryPoint> = {
   id: 'LA-AUT-CMD150',
   slice: ENTRY_POINT_SLICE,

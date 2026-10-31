@@ -1,4 +1,3 @@
-// Remove an interface (LA-AUT-CMD134): Removes an interface. Refused while a flow goes through it, or anything else references it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { PRODUCT_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { ProductRepository } from '../repository.ts';
 /** The interface to remove. */
 export type RemoveInterface = { id: string };
 
-/** Remove an interface (LA-AUT-CMD134). */
 export const REMOVE_INTERFACE: CommandDefinition<RemoveInterface> = {
   id: 'LA-AUT-CMD134',
   slice: PRODUCT_SLICE,

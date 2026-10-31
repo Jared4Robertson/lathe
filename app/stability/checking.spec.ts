@@ -5,6 +5,7 @@ import { asDesktop } from './desktop';
 import { servedWorkspace } from './flows';
 import { openPage } from './measure';
 import { keepData, PRODUCT } from './scenarios';
+import type { LatheDesktop } from '../src/shell/desktop-bridge';
 
 // Checking's flows that the Owner walks in the app and in the desktop app: reviewing every problem of a product in
 // the Checks panel over the stage (LA-PAT-APP-UX-R20) while an Agent writes, over the suite's copy of this repo's data. The flows run from

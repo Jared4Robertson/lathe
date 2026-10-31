@@ -1,4 +1,3 @@
-// Remove a domain (LA-AUT-CMD162): Removes a domain whole: its capabilities, terms, domain services with their services and tests, repositories, and the links they start. Refused while anything outside it references what is in it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { DOMAIN_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { DomainRepository } from '../repository.ts';
 /** The domain to remove. */
 export type RemoveDomain = { id: string };
 
-/** Remove a domain (LA-AUT-CMD162). */
 export const REMOVE_DOMAIN: CommandDefinition<RemoveDomain> = {
   id: 'LA-AUT-CMD162',
   slice: DOMAIN_SLICE,

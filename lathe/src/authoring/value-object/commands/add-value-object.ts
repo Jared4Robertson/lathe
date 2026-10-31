@@ -1,4 +1,3 @@
-// Add a value object (LA-AUT-CMD270): Adds a value object, in the product its ID names, with its fields in order.
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ValueObjectRow } from '../../../platform/data/tables.ts';
@@ -6,10 +5,8 @@ import { FIELD_COLUMNS, VALUE_OBJECT_SLICE, newValueObject, type ValueObjectFiel
 import { ValueObjectRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 
-/** A new value object, with its fields in order. */
 export type AddValueObject = Pick<ValueObjectRow, 'id' | 'title' | 'description'> & { fields?: ValueObjectField[] };
 
-/** Add a value object (LA-AUT-CMD270). */
 export const ADD_VALUE_OBJECT: CommandDefinition<AddValueObject> = {
   id: 'LA-AUT-CMD270',
   slice: VALUE_OBJECT_SLICE,
@@ -26,7 +23,6 @@ export const ADD_VALUE_OBJECT: CommandDefinition<AddValueObject> = {
   handler: addValueObject,
 };
 
-/** Adds the value object, whole and new, with its fields. */
 export function addValueObject(tx: Transaction, input: AddValueObject): void {
   const valueObjects = new ValueObjectRepository(tx);
   const { fields = [], ...row } = input;

@@ -1,4 +1,3 @@
-// Add a command (LA-AUT-CMD240): Adds a command under the entity it changes, with the events of its aggregate it raises, the specifications it checks and the domain services it calls.
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { CommandRow } from '../../../platform/data/tables.ts';
@@ -6,10 +5,8 @@ import { COMMAND_SLICE, newCommand } from '../model.ts';
 import { CommandRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 
-/** A new command, with the links it starts. */
 export type AddCommand = Pick<CommandRow, 'id' | 'title' | 'entity_id' | 'description'> & { raises?: string[]; checks?: string[]; calls?: string[] };
 
-/** Add a command (LA-AUT-CMD240). */
 export const ADD_COMMAND: CommandDefinition<AddCommand> = {
   id: 'LA-AUT-CMD240',
   slice: COMMAND_SLICE,
@@ -29,7 +26,6 @@ export const ADD_COMMAND: CommandDefinition<AddCommand> = {
   handler: addCommand,
 };
 
-/** Adds the command, whole and new, with its links. */
 export function addCommand(tx: Transaction, input: AddCommand): void {
   const commands = new CommandRepository(tx);
   const { raises = [], checks = [], calls = [], ...row } = input;

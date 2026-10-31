@@ -1,4 +1,3 @@
-// Remove a product kind (LA-AUT-CMD124): Removes a product kind's declaration with its fields. Refused while the product has records of the kind, or a relation or kind names it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { PRODUCT_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { ProductRepository } from '../repository.ts';
 /** The product kind to remove. */
 export type RemoveProductKind = { name: string };
 
-/** Remove a product kind (LA-AUT-CMD124). */
 export const REMOVE_PRODUCT_KIND: CommandDefinition<RemoveProductKind> = {
   id: 'LA-AUT-CMD124',
   slice: PRODUCT_SLICE,

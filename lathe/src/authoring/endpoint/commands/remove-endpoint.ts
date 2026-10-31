@@ -1,4 +1,3 @@
-// Remove an endpoint (LA-AUT-CMD323): Removes an endpoint whole: its API requirements, its handler, its endpoint tests and the links they start. Refused while anything outside it references what is in it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { ENDPOINT_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { EndpointRepository } from '../repository.ts';
 /** The endpoint to remove. */
 export type RemoveEndpoint = { id: string };
 
-/** Remove an endpoint (LA-AUT-CMD323). */
 export const REMOVE_ENDPOINT: CommandDefinition<RemoveEndpoint> = {
   id: 'LA-AUT-CMD323',
   slice: ENDPOINT_SLICE,

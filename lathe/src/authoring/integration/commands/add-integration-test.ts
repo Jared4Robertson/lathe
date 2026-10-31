@@ -1,14 +1,11 @@
-// Add an integration test (LA-AUT-CMD341): Adds an integration test under its integration, with the test data sets it starts from.
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { IntegrationTestRow } from '../../../platform/data/tables.ts';
 import { INTEGRATION_SLICE } from '../model.ts';
 import { IntegrationRepository } from '../repository.ts';
 
-/** A new integration test, with the links it starts. */
 export type AddIntegrationTest = Pick<IntegrationTestRow, 'id' | 'title' | 'integration_id' | 'level' | 'state' | 'when' | 'then' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'notes'> & { starts_from?: string[] };
 
-/** Add an integration test (LA-AUT-CMD341). */
 export const ADD_INTEGRATION_TEST: CommandDefinition<AddIntegrationTest> = {
   id: 'LA-AUT-CMD341',
   slice: INTEGRATION_SLICE,
@@ -35,7 +32,6 @@ export const ADD_INTEGRATION_TEST: CommandDefinition<AddIntegrationTest> = {
   handler: addIntegrationTest,
 };
 
-/** Adds the integration test under its integration, with its links. */
 export function addIntegrationTest(tx: Transaction, input: AddIntegrationTest): void {
   const integrations = new IntegrationRepository(tx);
   const integration = integrations.loadHolding('integration', input.integration_id) ?? tx.refuse('missing', `there is no integration ${input.integration_id}`);

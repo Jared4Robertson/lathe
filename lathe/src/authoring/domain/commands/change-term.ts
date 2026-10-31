@@ -1,4 +1,3 @@
-// Change a term (LA-AUT-CMD167): Changes a term's title, meaning or group, or the terms it builds on (the whole list).
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { TermRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The term's changes: a column given is set, null clears an optional one; builds_on, when given, replaces the list. */
 export type ChangeTerm = Pick<TermRow, 'id'> & { title?: TermRow['title']; meaning?: TermRow['meaning']; group_name?: TermRow['group_name'] | null; builds_on?: string[] };
 
-/** Change a term (LA-AUT-CMD167). */
 export const CHANGE_TERM: CommandDefinition<ChangeTerm> = {
   id: 'LA-AUT-CMD167',
   slice: DOMAIN_SLICE,

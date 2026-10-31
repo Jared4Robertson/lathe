@@ -3,6 +3,7 @@
 // the next free ID for a record of one of its kinds. A handler never sees the data, a repository or the aggregate's
 // model; each changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import { AGGREGATE_SLICE, type AggregateKind } from './model.ts';
 import type { AggregatePage, AggregateSummary } from './read-model.ts';
@@ -53,18 +54,8 @@ export const LIST_AGGREGATES: QueryDefinition<{ domain_id: string }, AggregateSu
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No aggregates.'),
 };
 
-// One past the highest number in use after the prefix, padded to the width given.
-const onePast = (reader: AggregateReader, prefix: string, width: number): string => `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(width, '0')}`;
-
-/** The kinds of the aggregate, each with the kind of record it sits under. */
-const UNDER: Record<AggregateKind, string> = {
-  aggregate: 'domain',
-  entity: 'aggregate',
-  invariant: 'aggregate',
-  data_model: 'entity',
-  rule: 'invariant',
-  invariant_test: 'invariant',
-};
+/** The kinds of the aggregate with an ID under a parent; how each is written the schema says (`idShape`). */
+const KINDS: readonly string[] = ['aggregate', 'entity', 'invariant', 'data_model', 'rule', 'invariant_test'];
 
 /**
  * The next free ID for a record of one of the aggregate's kinds under its parent: one past the highest in use. An
@@ -72,27 +63,28 @@ const UNDER: Record<AggregateKind, string> = {
  * invariant one rule and one test, whose IDs are their parent's with DM, RL and T.
  */
 export function nextAggregateId(reader: AggregateReader, input: { kind: string; parent: string }): string {
-  if (!(input.kind in UNDER)) refuse('kind', `${input.kind} is not a kind of the Aggregate aggregate; its kinds are ${Object.keys(UNDER).join(', ')}`);
+  if (!KINDS.includes(input.kind)) refuse('kind', `${input.kind} is not a kind of the Aggregate aggregate; its kinds are ${KINDS.join(', ')}`);
   const kind = input.kind as AggregateKind;
+  const shape = reader.idShape(kind);
   const parentKind = reader.kindOf(input.parent);
-  if (parentKind !== UNDER[kind]) refuse('parent', `${article(kind)} ${kind} sits under ${article(UNDER[kind])} ${UNDER[kind]}, and ${input.parent} is ${parentKind ? `${article(parentKind)} ${parentKind}` : 'no record'}`);
+  if (parentKind !== shape.parents[0]) refuse('parent', `${article(kind)} ${kind} sits under ${article(shape.parents[0])} ${shape.parents[0]}, and ${input.parent} is ${parentKind ? `${article(parentKind)} ${parentKind}` : 'no record'}`);
   const only = (id: string) => {
     if (reader.kindOf(id)) refuse('exists', `${input.parent} already has its ${kind.replace('_', ' ')}, ${id}`);
     return id;
   };
   switch (kind) {
     case 'aggregate':
-      return onePast(reader, `${input.parent}-A`, 1);
+      return onePast(reader, `${input.parent}-${shape.letters}`, shape);
     case 'entity':
-      return onePast(reader, `${reader.domainOf(input.parent)}-EN`, 2);
+      return onePast(reader, `${reader.domainOf(input.parent)}-${shape.letters}`, shape);
     case 'invariant':
-      return onePast(reader, `${reader.domainOf(input.parent)}-INV`, 2);
+      return onePast(reader, `${reader.domainOf(input.parent)}-${shape.letters}`, shape);
     case 'data_model':
-      return only(`${input.parent}-DM`);
+      return only(`${input.parent}-${shape.letters}`);
     case 'rule':
-      return only(`${input.parent}-RL`);
+      return only(`${input.parent}-${shape.letters}`);
     case 'invariant_test':
-      return only(`${input.parent}-T`);
+      return only(`${input.parent}-${shape.letters}`);
   }
 }
 

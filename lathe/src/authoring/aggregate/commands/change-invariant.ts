@@ -1,4 +1,3 @@
-// Change an invariant (LA-AUT-CMD217): Changes an invariant's title or statement. Its aggregate does not change.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { InvariantRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The invariant's changes: a column given is set. */
 export type ChangeInvariant = Pick<InvariantRow, 'id'> & { title?: string; statement?: string };
 
-/** Change an invariant (LA-AUT-CMD217). */
 export const CHANGE_INVARIANT: CommandDefinition<ChangeInvariant> = {
   id: 'LA-AUT-CMD217',
   slice: AGGREGATE_SLICE,

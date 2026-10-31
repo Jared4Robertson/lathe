@@ -1,4 +1,3 @@
-// Remove a rule (LA-AUT-CMD227): Removes a rule with the links it starts and the packages it uses, so its invariant is no longer built. Refused while anything else references it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { AGGREGATE_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { AggregateRepository } from '../repository.ts';
 /** The rule to remove. */
 export type RemoveRule = { id: string };
 
-/** Remove a rule (LA-AUT-CMD227). */
 export const REMOVE_RULE: CommandDefinition<RemoveRule> = {
   id: 'LA-AUT-CMD227',
   slice: AGGREGATE_SLICE,

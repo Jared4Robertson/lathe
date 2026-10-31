@@ -1,4 +1,3 @@
-// Remove an endpoint test (LA-AUT-CMD332): Removes an endpoint test with the links it starts. Refused while anything else references them.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { ENDPOINT_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { EndpointRepository } from '../repository.ts';
 /** The endpoint test to remove. */
 export type RemoveEndpointTest = { id: string };
 
-/** Remove an endpoint test (LA-AUT-CMD332). */
 export const REMOVE_ENDPOINT_TEST: CommandDefinition<RemoveEndpointTest> = {
   id: 'LA-AUT-CMD332',
   slice: ENDPOINT_SLICE,

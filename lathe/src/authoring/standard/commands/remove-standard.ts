@@ -1,4 +1,3 @@
-// Remove a standard (LA-AUT-CMD202): Removes a standard whole: its rules and rule tests, and the links they start. Refused while anything outside it references what is in it, such as a technical record that meets a rule.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { STANDARD_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { StandardRepository } from '../repository.ts';
 /** The standard to remove. */
 export type RemoveStandard = { id: string };
 
-/** Remove a standard (LA-AUT-CMD202). */
 export const REMOVE_STANDARD: CommandDefinition<RemoveStandard> = {
   id: 'LA-AUT-CMD202',
   slice: STANDARD_SLICE,

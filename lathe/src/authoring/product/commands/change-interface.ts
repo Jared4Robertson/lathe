@@ -1,4 +1,3 @@
-// Change an interface (LA-AUT-CMD133): Changes an interface's title, kind or description.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { InterfaceRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The interface's changes: a column given is set. */
 export type ChangeInterface = Pick<InterfaceRow, 'id'> & { title?: string; kind?: InterfaceRow['kind']; description?: string };
 
-/** Change an interface (LA-AUT-CMD133). */
 export const CHANGE_INTERFACE: CommandDefinition<ChangeInterface> = {
   id: 'LA-AUT-CMD133',
   slice: PRODUCT_SLICE,

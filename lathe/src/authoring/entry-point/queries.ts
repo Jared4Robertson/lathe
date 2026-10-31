@@ -2,6 +2,7 @@
 // and the next free ID for one. Each reads only the read model, through its reader (reader.ts), and changes
 // nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import { ENTRY_POINT_SLICE } from './model.ts';
 import type { EntryPointPage, EntryPointSummary } from './read-model.ts';
@@ -54,9 +55,9 @@ export const LIST_ENTRY_POINTS: QueryDefinition<{ domain_id: string }, EntryPoin
 
 /** The next free ID for an entry point of the domain: its domain's ID and ENTRY, one past the highest number in use. */
 export function nextEntryPointId(reader: EntryPointReader, input: { domain_id: string }): string {
-  if (reader.kindOf(input.domain_id) !== 'domain') refuse('parent', `an entry point sits under a domain, and ${input.domain_id} is not one`);
-  const prefix = `${input.domain_id}-ENTRY`;
-  return `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
+  const shape = reader.idShape('entry_point');
+  if (reader.kindOf(input.domain_id) !== shape.parents[0]) refuse('parent', `an entry point sits under a domain, and ${input.domain_id} is not one`);
+  return onePast(reader, `${input.domain_id}-${shape.letters}`, shape);
 }
 
 /** Get the next ID for an entry point (LA-AUT-QRY122). */

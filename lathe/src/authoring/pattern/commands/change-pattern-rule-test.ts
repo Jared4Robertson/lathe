@@ -1,4 +1,3 @@
-// Change a pattern rule test (LA-AUT-CMD197): Changes a pattern rule test's columns, the domain it proves the rule in, or the test data sets it starts from (the whole list).
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PatternRuleTestRow } from '../../../platform/data/tables.ts';
@@ -10,7 +9,6 @@ import { patternRuleTestPerDomain } from '../rules.ts';
 /** The test's changes: a column given is set, null clears an optional one; starts_from, when given, replaces the list. */
 export type ChangePatternRuleTest = Pick<PatternRuleTestRow, 'id'> & { title?: PatternRuleTestRow['title']; domain_id?: PatternRuleTestRow['domain_id']; level?: PatternRuleTestRow['level']; state?: PatternRuleTestRow['state']; file?: PatternRuleTestRow['file'] | null; manual_reason?: PatternRuleTestRow['manual_reason'] | null; size?: PatternRuleTestRow['size'] | null; smoke?: PatternRuleTestRow['smoke'] | null; external?: PatternRuleTestRow['external'] | null; when?: PatternRuleTestRow['when']; then?: PatternRuleTestRow['then']; notes?: PatternRuleTestRow['notes'] | null; starts_from?: string[] };
 
-/** Change a pattern rule test (LA-AUT-CMD197). */
 export const CHANGE_PATTERN_RULE_TEST: CommandDefinition<ChangePatternRuleTest> = {
   id: 'LA-AUT-CMD197',
   slice: PATTERN_SLICE,

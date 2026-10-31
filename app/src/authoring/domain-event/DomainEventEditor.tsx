@@ -14,6 +14,7 @@ import { sendDomainEvent, type DomainEventCommands, type DomainEventRoute } from
 import { useNextDomainEventId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
+import { kindWord } from '../../platform/meta-model/reads';
 
 // The Domain event editor (LA-AUT-A7): the actions on a domain event or its event type, each sending one of the
 // aggregate's own commands, POST /api/domain-event/<command>, and nothing else. Edit sends its kind's Change with only
@@ -21,9 +22,6 @@ import { backToActions } from '../../edit/back-to-actions';
 // ID read from the aggregate (next-id), and sends its Add; Remove says what goes with the record and sends its Remove.
 // The aggregate has no Move. A domain event is added from its aggregate's page (AddDomainEventForm). A refusal shows
 // every reason the command gave, in its own words, keeps what was entered, and changes nothing.
-
-/** A kind's label in a sentence. */
-const LABEL: Record<DomainEventKind, string> = { domain_event: 'domain event', event_type: 'event type' };
 
 /** The product's records of these kinds, as choices. */
 function choices(index: RecordIndex, product: string, kinds: readonly string[]): Choice[] {
@@ -106,7 +104,7 @@ export function DomainEventEditor({ index, page, children }: { index: RecordInde
       if (answer.ok) { announce(`Saved ${id}`); back(); }
       return answer;
     };
-    return <div className="spec-body"><ChangeForm index={index} specs={specs} current={current} eyebrow={LABEL[kind]} id={id} submit={submit} onDone={back} /></div>;
+    return <div className="spec-body"><ChangeForm index={index} specs={specs} current={current} eyebrow={kindWord(index.meta, kind)} id={id} submit={submit} onDone={back} /></div>;
   }
   if (mode.mode === 'add') return <div className="spec-body"><AddForm index={index} product={product} kind="event_type" parent={id} onDone={back} /></div>;
   // An event has one event type: once it has it, there is nothing to add under it.
@@ -115,11 +113,11 @@ export function DomainEventEditor({ index, page, children }: { index: RecordInde
     <>
       <div className="record-actions" role="toolbar" aria-label={`Change ${id}`} ref={toolbar}>
         <Button icon="edit" onClick={() => setMode({ mode: 'change' })}>Edit</Button>
-        {canAdd && <Button icon="plus" onClick={() => setMode({ mode: 'add' })}>Add {LABEL.event_type}</Button>}
+        {canAdd && <Button icon="plus" onClick={() => setMode({ mode: 'add' })}>Add {kindWord(index.meta, 'event_type')}</Button>}
         <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>
       </div>
       {mode.mode === 'remove' && (
-        <RemoveQuestion index={index} id={id} label={LABEL[kind]} goes={kind === 'domain_event' && page.eventType ? [page.eventType.eventType.id] : []}
+        <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={kind === 'domain_event' && page.eventType ? [page.eventType.eventType.id] : []}
           then={addressOf(kind === 'domain_event' ? page.event.aggregate_id : page.event.id)} onCancel={back}
           remove={() => sendDomainEvent(writer, REMOVE[kind], { id })} />
       )}
@@ -164,9 +162,9 @@ function AddForm({ index, product, kind, parent, onDone }: { index: RecordIndex;
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;
   };
-  const article = /^[aeiou]/.test(LABEL[kind]) ? 'an' : 'a';
+  const article = /^[aeiou]/.test(kindWord(index.meta, kind)) ? 'an' : 'a';
   return (
-    <CommandForm eyebrow={`New ${LABEL[kind]} under ${parent}`} title={`Add ${article} ${LABEL[kind]}`} submit={submit} saveLabel={`Add ${LABEL[kind]}`} onCancel={onDone}>
+    <CommandForm eyebrow={`New ${kindWord(index.meta, kind)} under ${parent}`} title={`Add ${article} ${kindWord(index.meta, kind)}`} submit={submit} saveLabel={`Add ${kindWord(index.meta, kind)}`} onCancel={onDone}>
       {(first) => <Fields index={index} specs={specs} draft={draft} setDraft={setDraft} first={first} />}
     </CommandForm>
   );

@@ -1,4 +1,3 @@
-// Remove a check (LA-CHK-CMD03): Removes a product's check row, so it no longer runs; Lathe's own checks are read-only.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { CHECK_SLICE } from '../model.ts';
@@ -8,7 +7,6 @@ import { holdToRules } from '../rules.ts';
 /** The check to remove. */
 export type RemoveCheck = { name: string };
 
-/** Remove a check (LA-CHK-CMD03). */
 export const REMOVE_CHECK: CommandDefinition<RemoveCheck> = {
   id: 'LA-CHK-CMD03',
   slice: CHECK_SLICE,

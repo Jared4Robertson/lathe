@@ -1,4 +1,3 @@
-// Add an API requirement (LA-AUT-CMD324): Adds an API requirement under its endpoint: one rule the endpoint must follow.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ApiRequirementRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { EndpointRepository } from '../repository.ts';
 /** A new API requirement. */
 export type AddApiRequirement = Pick<ApiRequirementRow, 'id' | 'title' | 'endpoint_id' | 'statement' | 'group_name'>;
 
-/** Add an API requirement (LA-AUT-CMD324). */
 export const ADD_API_REQUIREMENT: CommandDefinition<AddApiRequirement> = {
   id: 'LA-AUT-CMD324',
   slice: ENDPOINT_SLICE,
@@ -26,7 +24,6 @@ export const ADD_API_REQUIREMENT: CommandDefinition<AddApiRequirement> = {
   handler: addApiRequirement,
 };
 
-/** Adds the API requirement under its endpoint. */
 export function addApiRequirement(tx: Transaction, input: AddApiRequirement): void {
   const endpoints = new EndpointRepository(tx);
   const endpoint = endpoints.loadHolding('endpoint', input.endpoint_id) ?? tx.refuse('missing', `there is no endpoint ${input.endpoint_id}`);

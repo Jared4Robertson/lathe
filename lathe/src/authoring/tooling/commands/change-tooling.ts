@@ -1,4 +1,3 @@
-// Change a tooling record (LA-AUT-CMD156): Changes a tooling record's title, file, packages or standard rules met. Its domain stays.
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ToolingRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { ToolingRepository } from '../repository.ts';
 /** The tooling record's changes: a column given is set; packages and meets, when given, replace the list. */
 export type ChangeTooling = Pick<ToolingRow, 'id'> & { title?: string; file?: string | null; packages?: string[]; meets?: string[] };
 
-/** Change a tooling record (LA-AUT-CMD156). */
 export const CHANGE_TOOLING: CommandDefinition<ChangeTooling> = {
   id: 'LA-AUT-CMD156',
   slice: TOOLING_SLICE,

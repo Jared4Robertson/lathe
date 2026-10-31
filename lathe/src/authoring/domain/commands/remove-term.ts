@@ -1,4 +1,3 @@
-// Remove a term (LA-AUT-CMD168): Removes a term from its domain. Refused while anything references it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { DOMAIN_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { DomainRepository } from '../repository.ts';
 /** The term to remove. */
 export type RemoveTerm = { id: string };
 
-/** Remove a term (LA-AUT-CMD168). */
 export const REMOVE_TERM: CommandDefinition<RemoveTerm> = {
   id: 'LA-AUT-CMD168',
   slice: DOMAIN_SLICE,

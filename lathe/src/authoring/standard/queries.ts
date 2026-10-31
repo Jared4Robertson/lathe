@@ -3,6 +3,7 @@
 // the next free ID for a rule or rule test. A handler never sees the data, a repository or the aggregate's model; each
 // changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import { STANDARD_SLICE } from './model.ts';
 import type { StandardPage, StandardSummary } from './read-model.ts';
@@ -53,8 +54,9 @@ export const LIST_STANDARDS: QueryDefinition<{ product_id: string }, StandardSum
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No standards.'),
 };
 
-/** The numbered kinds of the aggregate, each with the kind of record it sits under. */
-const UNDER = { standard_rule: 'standard', standard_rule_test: 'standard_rule' } as const;
+
+/** The kinds of the aggregate with an ID under a parent; how each is written the schema says (`idShape`). */
+const KINDS: readonly string[] = ['standard_rule', 'standard_rule_test'];
 
 /**
  * The next free ID for a standard rule (under its standard) or a standard rule test (under its rule): one past the
@@ -62,12 +64,12 @@ const UNDER = { standard_rule: 'standard', standard_rule_test: 'standard_rule' }
  */
 export function nextStandardId(reader: StandardReader, input: { kind: string; parent: string }): string {
   if (input.kind === 'standard') refuse('kind', "a standard's ID is its product's ID, STD and a name chosen for it, such as TL-STD-CODE, so it has no next ID");
-  if (!(input.kind in UNDER)) refuse('kind', `${input.kind} is not a kind of the Standard aggregate; its numbered kinds are ${Object.keys(UNDER).join(', ')}`);
-  const kind = input.kind as keyof typeof UNDER;
+  if (!KINDS.includes(input.kind)) refuse('kind', `${input.kind} is not a kind of the Standard aggregate; its numbered kinds are ${KINDS.join(', ')}`);
+  const kind = input.kind;
+  const shape = reader.idShape(kind);
   const parentKind = reader.kindOf(input.parent);
-  if (parentKind !== UNDER[kind]) refuse('parent', `a ${kind} sits under a ${UNDER[kind]}, and ${input.parent} is ${parentKind ? `${article(parentKind)} ${parentKind}` : 'no record'}`);
-  const prefix = `${input.parent}-${kind === 'standard_rule' ? 'R' : 'T'}`;
-  return `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
+  if (parentKind !== shape.parents[0]) refuse('parent', `a ${kind} sits under a ${shape.parents[0]}, and ${input.parent} is ${parentKind ? `${article(parentKind)} ${parentKind}` : 'no record'}`);
+  return onePast(reader, `${input.parent}-${shape.letters}`, shape);
 }
 
 /** Get the next ID for a record of the Standard aggregate (LA-AUT-QRY144). */

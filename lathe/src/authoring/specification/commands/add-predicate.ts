@@ -1,4 +1,3 @@
-// Add a predicate (LA-AUT-CMD263): Adds the predicate of a specification, its one piece of code, with the standard rules it meets and the packages it uses.
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PredicateRow } from '../../../platform/data/tables.ts';
@@ -7,10 +6,8 @@ import { SpecificationRepository } from '../repository.ts';
 import { refuseBroken } from '../../../platform/data/rules.ts';
 import { specificationOneEach } from '../rules.ts';
 
-/** A new predicate, with the standard rules it meets and the packages it uses. */
 export type AddPredicate = Pick<PredicateRow, 'id' | 'title' | 'specification_id' | 'file'> & { meets?: string[]; packages?: string[] };
 
-/** Add a predicate (LA-AUT-CMD263). */
 export const ADD_PREDICATE: CommandDefinition<AddPredicate> = {
   id: 'LA-AUT-CMD263',
   slice: SPECIFICATION_SLICE,

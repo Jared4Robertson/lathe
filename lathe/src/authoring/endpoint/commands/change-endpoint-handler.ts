@@ -1,4 +1,3 @@
-// Change an endpoint handler (LA-AUT-CMD328): Changes an endpoint handler's title, file or description, or the standard rules it meets or the packages it uses (each list whole). Its endpoint does not change.
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EndpointHandlerRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { EndpointRepository } from '../repository.ts';
 /** The endpoint handler's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeEndpointHandler = Pick<EndpointHandlerRow, 'id'> & { title?: EndpointHandlerRow['title']; description?: EndpointHandlerRow['description']; file?: EndpointHandlerRow['file'] | null; meets?: string[]; packages?: string[] };
 
-/** Change an endpoint handler (LA-AUT-CMD328). */
 export const CHANGE_ENDPOINT_HANDLER: CommandDefinition<ChangeEndpointHandler> = {
   id: 'LA-AUT-CMD328',
   slice: ENDPOINT_SLICE,

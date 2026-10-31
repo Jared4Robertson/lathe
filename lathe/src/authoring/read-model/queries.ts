@@ -3,6 +3,7 @@
 // domain, and the next free ID for a record of one of its kinds. A handler never sees the data, a repository or the
 // aggregate's model; each changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import { READ_MODEL_SLICE, type ReadModelKind } from './model.ts';
 import type { ReadModelPage, ReadModelSummary } from './read-model.ts';
@@ -53,17 +54,6 @@ export const LIST_READ_MODELS: QueryDefinition<{ domain_id: string }, ReadModelS
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No read models.'),
 };
 
-/** The kind of record each of the aggregate's kinds sits under, for its next ID. */
-const UNDER: Record<ReadModelKind, string> = {
-  read_model: 'domain',
-  query: 'read_model',
-  projection: 'read_model',
-  reader: 'read_model',
-  query_handler: 'query',
-};
-
-// One past the highest number in use after the prefix, padded to two digits.
-const onePast = (reader: ReadModelReader, prefix: string): string => `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
 
 /** The one ID of each kind a read model or a query has one of, and its name in a refusal. */
 const ONE: Record<'projection' | 'reader' | 'query_handler', { suffix: string; name: string }> = {
@@ -72,6 +62,9 @@ const ONE: Record<'projection' | 'reader' | 'query_handler', { suffix: string; n
   query_handler: { suffix: 'H', name: 'query handler' },
 };
 
+/** The kinds of the aggregate with an ID under a parent; how each is written the schema says (`idShape`). */
+const KINDS: readonly string[] = ['read_model', 'query', 'projection', 'reader', 'query_handler'];
+
 /**
  * The next free ID for a record of one of the aggregate's kinds under its parent: a read model's is its domain's ID, RM
  * and one past the highest number in use; a query's its read model's domain's ID, QRY and the next number. A read
@@ -79,15 +72,16 @@ const ONE: Record<'projection' | 'reader' | 'query_handler', { suffix: string; n
  * taken.
  */
 export function nextReadModelId(reader: ReadModelReader, input: { kind: string; parent: string }): string {
-  if (!(input.kind in UNDER)) refuse('kind', `${input.kind} is not a kind of the Read model aggregate; its kinds are ${Object.keys(UNDER).join(', ')}`);
+  if (!KINDS.includes(input.kind)) refuse('kind', `${input.kind} is not a kind of the Read model aggregate; its kinds are ${KINDS.join(', ')}`);
   const kind = input.kind as ReadModelKind;
+  const shape = reader.idShape(kind);
   const parentKind = reader.kindOf(input.parent);
-  if (parentKind !== UNDER[kind]) refuse('parent', `a ${kind} sits under a ${UNDER[kind]}, and ${input.parent} is ${parentKind ? `${article(parentKind)} ${parentKind}` : 'no record'}`);
+  if (parentKind !== shape.parents[0]) refuse('parent', `a ${kind} sits under a ${shape.parents[0]}, and ${input.parent} is ${parentKind ? `${article(parentKind)} ${parentKind}` : 'no record'}`);
   switch (kind) {
     case 'read_model':
-      return onePast(reader, `${input.parent}-RM`);
+      return onePast(reader, `${input.parent}-${shape.letters}`, shape);
     case 'query':
-      return onePast(reader, `${reader.page(input.parent)!.readModel.domain_id}-QRY`);
+      return onePast(reader, `${reader.page(input.parent)!.readModel.domain_id}-${shape.letters}`, shape);
     case 'projection':
     case 'reader':
     case 'query_handler': {

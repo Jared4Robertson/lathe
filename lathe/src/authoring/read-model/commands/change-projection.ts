@@ -1,4 +1,3 @@
-// Change a projection (LA-AUT-CMD292): Changes a projection's title, file or description, or the standard rules it meets or packages it uses (each the whole list).
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ProjectionRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The projection's changes: a column given is set, null clears an optional one; a list given replaces the list. */
 export type ChangeProjection = Pick<ProjectionRow, 'id'> & { title?: ProjectionRow['title']; file?: ProjectionRow['file'] | null; description?: ProjectionRow['description']; meets?: string[]; packages?: string[] };
 
-/** Change a projection (LA-AUT-CMD292). */
 export const CHANGE_PROJECTION: CommandDefinition<ChangeProjection> = {
   id: 'LA-AUT-CMD292',
   slice: READ_MODEL_SLICE,

@@ -1,4 +1,3 @@
-// Add an integration (LA-AUT-CMD335): Adds an integration: an outside system the product exchanges with. It has no owner; its product follows from its ID.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { IntegrationRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { IntegrationRepository } from '../repository.ts';
 /** A new integration. */
 export type AddIntegration = Pick<IntegrationRow, 'id' | 'title' | 'description' | 'system'>;
 
-/** Add an integration (LA-AUT-CMD335). */
 export const ADD_INTEGRATION: CommandDefinition<AddIntegration> = {
   id: 'LA-AUT-CMD335',
   slice: INTEGRATION_SLICE,

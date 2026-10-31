@@ -28,6 +28,7 @@ const cycleTab = (set: TabSet, by: number) => on(set, cycle, { step: by });
 const activateTab = (set: TabSet, key: string) => on(set, activate, { key });
 const closeTab = (set: TabSet, key: string, home: string) => on(set, close, { key, home });
 import { testWorkspace } from './workspace';
+import type { LatheDesktop } from '../../src/shell/desktop-bridge';
 
 /** The arrow that takes each step in a layout (LA-V93-R19): Tree Left out and Right in, Nested Up out and Down in. */
 const stepKey = (layout: string, step: 'out' | 'in' | 'previous' | 'next') => (layout === 'tree' ? { out: 'ArrowLeft', in: 'ArrowRight', previous: 'ArrowUp', next: 'ArrowDown' } : { out: 'ArrowUp', in: 'ArrowDown', previous: 'ArrowLeft', next: 'ArrowRight' })[step];

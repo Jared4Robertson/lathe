@@ -1,4 +1,3 @@
-// Change a UI component (LA-AUT-CMD346): Changes a UI component's title, file or description, or the views it renders, the view requirements it builds, the standard rules it meets or the packages it uses (each list whole).
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { UiComponentRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { UiComponentRepository } from '../repository.ts';
 /** The UI component's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeUiComponent = Pick<UiComponentRow, 'id'> & { title?: UiComponentRow['title']; description?: UiComponentRow['description']; file?: UiComponentRow['file'] | null; renders?: string[]; builds?: string[]; meets?: string[]; packages?: string[] };
 
-/** Change a UI component (LA-AUT-CMD346). */
 export const CHANGE_UI_COMPONENT: CommandDefinition<ChangeUiComponent> = {
   id: 'LA-AUT-CMD346',
   slice: UI_COMPONENT_SLICE,

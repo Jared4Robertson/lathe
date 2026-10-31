@@ -1,4 +1,3 @@
-// Stop following a pattern (LA-TRC-CMD10): Ends a domain's or use case's following of a pattern, with the setting values it gave it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { PATTERN_FOLLOWING_SLICE } from '../model.ts';
@@ -7,7 +6,6 @@ import { PatternFollowingRepository } from '../repository.ts';
 /** The follower and the pattern it stops following. */
 export type StopFollowingPattern = { follower_id: string; pattern_id: string };
 
-/** Stop following a pattern (LA-TRC-CMD10). */
 export const STOP_FOLLOWING_PATTERN: CommandDefinition<StopFollowingPattern> = {
   id: 'LA-TRC-CMD10',
   slice: PATTERN_FOLLOWING_SLICE,

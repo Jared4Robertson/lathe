@@ -1,4 +1,3 @@
-// Change a pattern rule (LA-AUT-CMD194): Changes a pattern rule's title, statement, group or notes.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PatternRuleRow } from '../../../platform/data/tables.ts';
@@ -9,7 +8,6 @@ import { holdToRules } from '../rules.ts';
 /** The rule's changes: a column given is set, null clears an optional one. */
 export type ChangePatternRule = Pick<PatternRuleRow, 'id'> & { title?: PatternRuleRow['title']; statement?: PatternRuleRow['statement']; group_name?: PatternRuleRow['group_name'] | null; notes?: PatternRuleRow['notes'] | null };
 
-/** Change a pattern rule (LA-AUT-CMD194). */
 export const CHANGE_PATTERN_RULE: CommandDefinition<ChangePatternRule> = {
   id: 'LA-AUT-CMD194',
   slice: PATTERN_SLICE,

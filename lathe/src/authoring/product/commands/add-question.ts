@@ -1,4 +1,3 @@
-// Add an open question (LA-AUT-CMD128): Adds an open question under its product or one of its domains, with the role that decides it and the records it is about.
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { QuestionRow } from '../../../platform/data/tables.ts';
@@ -6,10 +5,8 @@ import { PRODUCT_SLICE, productUnder } from '../model.ts';
 import { ProductRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 
-/** A new open question, under its product or a domain, with the records it is about. */
 export type AddQuestion = Pick<QuestionRow, 'id' | 'title' | 'product_id' | 'domain_id' | 'owner' | 'description'> & { about?: string[] };
 
-/** Add an open question (LA-AUT-CMD128). */
 export const ADD_QUESTION: CommandDefinition<AddQuestion> = {
   id: 'LA-AUT-CMD128',
   slice: PRODUCT_SLICE,

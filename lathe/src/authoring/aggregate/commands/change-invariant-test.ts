@@ -1,4 +1,3 @@
-// Change an invariant test (LA-AUT-CMD223): Changes an invariant test's columns or the test data sets it starts from (the whole list).
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { InvariantTestRow } from '../../../platform/data/tables.ts';
@@ -22,7 +21,6 @@ export type ChangeInvariantTest = Pick<InvariantTestRow, 'id'> & {
   starts_from?: string[];
 };
 
-/** Change an invariant test (LA-AUT-CMD223). */
 export const CHANGE_INVARIANT_TEST: CommandDefinition<ChangeInvariantTest> = {
   id: 'LA-AUT-CMD223',
   slice: AGGREGATE_SLICE,

@@ -1,4 +1,3 @@
-// Change a business outcome (LA-AUT-CMD141): Changes a business outcome's title, statement, measure, target, how it is measured outside the code or notes, or what measures it (the whole list). Its product stays.
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { BusinessOutcomeRow } from '../../../platform/data/tables.ts';
@@ -16,7 +15,6 @@ export type ChangeBusinessOutcome = Pick<BusinessOutcomeRow, 'id'> & {
   measured_by?: string[];
 };
 
-/** Change a business outcome (LA-AUT-CMD141). */
 export const CHANGE_BUSINESS_OUTCOME: CommandDefinition<ChangeBusinessOutcome> = {
   id: 'LA-AUT-CMD141',
   slice: BUSINESS_OUTCOME_SLICE,

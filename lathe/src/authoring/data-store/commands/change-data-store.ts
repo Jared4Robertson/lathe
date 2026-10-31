@@ -1,4 +1,3 @@
-// Change a data store (LA-AUT-CMD371): Changes a data store's title, kind or description, or the integration that reaches it (null clears it). Its product or domain never changes: remove it and add it again under another.
 import { column, id, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { DataStoreRow } from '../../../platform/data/tables.ts';
@@ -8,7 +7,6 @@ import { DataStoreRepository } from '../repository.ts';
 /** The data store's changes: a column given is set; provided_by given sets the integration, null clears it. */
 export type ChangeDataStore = Pick<DataStoreRow, 'id'> & { title?: DataStoreRow['title']; kind?: DataStoreRow['kind']; description?: DataStoreRow['description']; provided_by?: string | null };
 
-/** Change a data store (LA-AUT-CMD371). */
 export const CHANGE_DATA_STORE: CommandDefinition<ChangeDataStore> = {
   id: 'LA-AUT-CMD371',
   slice: DATA_STORE_SLICE,

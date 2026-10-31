@@ -1,14 +1,11 @@
-// Add a tooling record (LA-AUT-CMD155): Adds a tooling record under its domain, with the packages it uses and the standard rules it meets.
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ToolingRow } from '../../../platform/data/tables.ts';
 import { TOOLING_SLICE } from '../model.ts';
 import { ToolingRepository } from '../repository.ts';
 
-/** A new tooling record, with the packages it uses and the standard rules it meets. */
 export type AddTooling = Pick<ToolingRow, 'id' | 'title' | 'domain_id' | 'file'> & { packages?: string[]; meets?: string[] };
 
-/** Add a tooling record (LA-AUT-CMD155). */
 export const ADD_TOOLING: CommandDefinition<AddTooling> = {
   id: 'LA-AUT-CMD155',
   slice: TOOLING_SLICE,
