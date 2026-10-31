@@ -57,3 +57,29 @@ describe('LA-TRC-DS06-T01 a record serves the outcomes of the capabilities of th
     expect((await reach(without(complete(), 'serves', () => true))).size).toBe(0);
   });
 });
+
+describe("LA-TRC-DS06-T02 a product's own relations carry the reach both ways", () => {
+  it("reaches a product's record that links to a reached one, and what a reached record links to, through the product's relations", async () => {
+    const data = adding(complete(), {
+      product_kind: [{ name: 'script', product_id: 'EX', label: 'Script', description: 'A script.', parent_kind: 'domain', stage: 'technical-specification', obligation: false }],
+      product_kind_field: [{ kind: 'script', position: 1, name: 'file', type: 'text', required: true, description: 'The file.' }],
+      product_relation: [
+        { name: 'listed_in', source_kind: 'script', target_kind: 'aggregate', product_id: 'EX', forward_label: 'Listed in', reverse_label: 'Lists', description: 'The aggregate lists the script.' },
+        { name: 'honors', source_kind: 'script', target_kind: 'standard_rule', product_id: 'EX', forward_label: 'Honors', reverse_label: 'Honored by', description: 'The script follows the rule.' },
+      ],
+      standard_rule: [{ id: 'EX-STD-CODE-R02', title: 'Typed errors', standard_id: 'EX-STD-CODE', statement: 'Code MUST throw typed errors.' }],
+      script: [
+        { id: 'EX-LEND-SC01', title: 'lend.sh', domain_id: 'EX-LEND', file: 'bin/lend.sh' },
+        { id: 'EX-LEND-SC02', title: 'idle.sh', domain_id: 'EX-LEND', file: 'bin/idle.sh' },
+      ],
+      listed_in: [{ source_id: 'EX-LEND-SC01', target_id: 'EX-LEND-A1' }],
+      honors: [{ source_id: 'EX-LEND-SC01', target_id: 'EX-STD-CODE-R02' }],
+    });
+    const served = await reach(data);
+    // The aggregate is reached, so the script listed in it is, and so is the rule the script honors.
+    expect(served.get('EX-LEND-SC01')?.useCases).toEqual(['EX-LEND-UC01']);
+    expect(served.get('EX-STD-CODE-R02')?.useCases).toEqual(['EX-LEND-UC01']);
+    // A product's record linked to nothing is reached by nothing.
+    expect(served.has('EX-LEND-SC02')).toBe(false);
+  });
+});
