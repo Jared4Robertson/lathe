@@ -15,6 +15,7 @@ import { sendIntegration, type IntegrationCommands, type IntegrationRoute } from
 import { useNextIntegrationId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
+import { kindWord } from '../../platform/meta-model/reads';
 
 // The Integration editor (LA-AUT-A14): the actions on a record of an integration, each sending one of the aggregate's
 // own commands, POST /api/integration/<command>, and nothing else. Edit sends its kind's Change with only what changed;
@@ -23,9 +24,6 @@ import { backToActions } from '../../edit/back-to-actions';
 // record and sends its Remove. The aggregate has no Move. An integration is added from its product's page
 // (AddIntegrationForm). A refusal shows every reason the command gave, in its own words, keeps what was entered, and
 // changes nothing.
-
-/** A kind's label in a sentence. */
-const LABEL: Record<IntegrationKind, string> = { integration: 'integration', adapter: 'adapter', integration_test: 'integration test' };
 
 /** The kinds that sit under a record of the integration and are added from its page; an integration has one adapter. */
 function addsUnder(page: IntegrationPage): Exclude<IntegrationKind, 'integration'>[] {
@@ -148,7 +146,7 @@ export function IntegrationEditor({ index, page, children }: { index: RecordInde
       if (answer.ok) { announce(`Saved ${id}`); back(); }
       return answer;
     };
-    return <div className="spec-body"><ChangeForm index={index} specs={specs} current={current} eyebrow={LABEL[kind]} id={id} submit={submit} onDone={back} /></div>;
+    return <div className="spec-body"><ChangeForm index={index} specs={specs} current={current} eyebrow={kindWord(index.meta, kind)} id={id} submit={submit} onDone={back} /></div>;
   }
   if (mode.mode === 'add') return <div className="spec-body"><AddForm index={index} product={product} kind={mode.kind} parent={id} onDone={back} /></div>;
   // A removed integration's page gives way to its product's; anything else's to its integration's.
@@ -161,7 +159,7 @@ export function IntegrationEditor({ index, page, children }: { index: RecordInde
         <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>
       </div>
       {mode.mode === 'remove' && (
-        <RemoveQuestion index={index} id={id} label={LABEL[kind]} goes={goesWith(page, kind)} then={then} onCancel={back}
+        <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={goesWith(page, kind)} then={then} onCancel={back}
           remove={() => sendIntegration(writer, REMOVE[kind], { id })} />
       )}
       {children}
@@ -204,7 +202,7 @@ function AddForm({ index, product, kind, parent, onDone }: { index: RecordIndex;
     return answer;
   };
   return (
-    <CommandForm eyebrow={`New ${LABEL[kind]} under ${parent}`} title={`Add an ${LABEL[kind]}`} submit={submit} saveLabel={`Add ${LABEL[kind]}`} onCancel={onDone}>
+    <CommandForm eyebrow={`New ${kindWord(index.meta, kind)} under ${parent}`} title={`Add an ${kindWord(index.meta, kind)}`} submit={submit} saveLabel={`Add ${kindWord(index.meta, kind)}`} onCancel={onDone}>
       {(first) => <Fields index={index} specs={specs} draft={draft} setDraft={setDraft} first={first} />}
     </CommandForm>
   );

@@ -15,6 +15,7 @@ import { sendValueObject, type ValueObjectCommands, type ValueObjectRoute } from
 import { useNextValueObjectId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
+import { kindWord } from '../../platform/meta-model/reads';
 
 // The Value object editor (LA-AUT-A9): the actions on a record of a value object, each sending one of the aggregate's
 // own commands, POST /api/value-object/<command>, and nothing else. Edit sends its kind's Change with only what changed
@@ -25,9 +26,6 @@ import { backToActions } from '../../edit/back-to-actions';
 // reason the command gave, in its own words, keeps what was entered, and changes nothing.
 
 type Inside = Exclude<ValueObjectKind, 'value_object'>;
-
-/** A kind's label in a sentence. */
-const LABEL: Record<ValueObjectKind, string> = { value_object: 'value object', constraint: 'constraint', value_type: 'value type', constraint_test: 'constraint test' };
 
 /** The columns of a field the form takes, in the command's order. */
 const FIELD_COLUMNS = ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'];
@@ -172,7 +170,7 @@ export function ValueObjectEditor({ index, page, children }: { index: RecordInde
       if (answer.ok) { announce(`Saved ${id}`); back(); }
       return answer;
     };
-    return <div className="spec-body"><ChangeForm index={index} specs={specs} current={current} eyebrow={LABEL[kind]} id={id} submit={submit} onDone={back} /></div>;
+    return <div className="spec-body"><ChangeForm index={index} specs={specs} current={current} eyebrow={kindWord(index.meta, kind)} id={id} submit={submit} onDone={back} /></div>;
   }
   if (mode.mode === 'add') return <div className="spec-body"><AddForm index={index} product={product} kind={mode.kind} parent={id} onDone={back} /></div>;
   return (
@@ -183,7 +181,7 @@ export function ValueObjectEditor({ index, page, children }: { index: RecordInde
         <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>
       </div>
       {mode.mode === 'remove' && (
-        <RemoveQuestion index={index} id={id} label={LABEL[kind]} goes={goesWith(page, kind, id)} then={addressOf(parentOf(index, page, kind, id))} onCancel={back}
+        <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={goesWith(page, kind, id)} then={addressOf(parentOf(index, page, kind, id))} onCancel={back}
           remove={() => sendValueObject(writer, REMOVE[kind], { id })} />
       )}
       {children}
@@ -226,7 +224,7 @@ function AddForm({ index, product, kind, parent, onDone }: { index: RecordIndex;
     return answer;
   };
   return (
-    <CommandForm eyebrow={`New ${LABEL[kind]} under ${parent}`} title={`Add a ${LABEL[kind]}`} submit={submit} saveLabel={`Add ${LABEL[kind]}`} onCancel={onDone}>
+    <CommandForm eyebrow={`New ${kindWord(index.meta, kind)} under ${parent}`} title={`Add a ${kindWord(index.meta, kind)}`} submit={submit} saveLabel={`Add ${kindWord(index.meta, kind)}`} onCancel={onDone}>
       {(first) => <Fields index={index} specs={specs} draft={draft} setDraft={setDraft} first={first} />}
     </CommandForm>
   );

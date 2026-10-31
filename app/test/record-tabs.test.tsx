@@ -9,6 +9,7 @@ import { desktopBridgeStub, openApp, serve } from './helpers';
 import { testWorkspace } from './graph/workspace';
 import { boxElement, boxElements, cameraOf } from './graph/scene';
 import type { AllHost } from '../src/trace/TraceAll';
+import type { LatheDesktop } from '../src/shell/desktop-bridge';
 
 // The desktop app's tabs, as a browser's (LA-EXP-UC10): each tab is its own place, a move never leaves it, a new tab
 // opens only when asked for, closing and cycling, and each tab's own history, which the window's follows, so a

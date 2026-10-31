@@ -14,6 +14,7 @@ import { sendUseCase, type UseCaseCommands, type UseCaseRoute } from './commands
 import { stepsOf, useNextId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
+import { kindWord, addedUnder } from '../../platform/meta-model/reads';
 
 // The Use case editor (LA-AUT-A11): the actions on a record of a use case, each sending one of the aggregate's own
 // commands, POST /api/use-case/<command>, and nothing else. Edit sends its kind's Change with only what changed; Add
@@ -24,26 +25,10 @@ import { backToActions } from '../../edit/back-to-actions';
 // its fields those of its command's input. A refusal shows every reason the command gave, in its own words, keeps what was
 // entered, and changes nothing.
 
-/** A kind's label in a sentence. */
-const LABEL: Record<UseCaseKind, string> = {
-  use_case: 'use case',
-  uc_requirement: 'UC requirement',
-  use_case_test: 'use case test',
-  flow: 'flow',
-  flow_step: 'flow step',
-  flow_test: 'flow test',
-};
-const withArticle = (kind: UseCaseKind) => `${kind === 'uc_requirement' ? 'a' : /^[aeiou]/.test(LABEL[kind]) ? 'an' : 'a'} ${LABEL[kind]}`;
+const withArticle = (index: RecordIndex, kind: UseCaseKind) => `${kind === 'uc_requirement' ? 'a' : /^[aeiou]/.test(kindWord(index.meta, kind)) ? 'an' : 'a'} ${kindWord(index.meta, kind)}`;
 
-/** The kinds added under a record of each kind, inside the use case. */
-const ADDED_UNDER: Record<UseCaseKind, UseCaseKind[]> = {
-  use_case: ['uc_requirement', 'flow'],
-  uc_requirement: ['use_case_test'],
-  flow: ['flow_step', 'flow_test'],
-  flow_step: [],
-  use_case_test: [],
-  flow_test: [],
-};
+/** The kinds a record of another kind has under it inside the use case; the meta model says which sit under which. */
+const INSIDE: readonly UseCaseKind[] = ['uc_requirement', 'flow', 'use_case_test', 'flow_step', 'flow_test'];
 
 /** The kinds the aggregate has a Move command for, each with it: a record of another kind is never moved. */
 const MOVE: Partial<Record<UseCaseKind, '/api/use-case/move-use-case'>> = { use_case: '/api/use-case/move-use-case' };
@@ -69,7 +54,7 @@ export function UseCaseEditor({ index, useCase, id, kind, children }: { index: R
   if (mode.mode === 'add') return <div className="spec-body"><AddForm context={context} parent={id} kind={mode.kind} /></div>;
   if (mode.mode === 'move') return <div className="spec-body"><MoveForm context={context} /></div>;
   // A flow has one flow test: once it has it, there is nothing more to add of that kind.
-  const addable = ADDED_UNDER[kind].filter((k) => k !== 'flow_test' || !useCase.flows.some((f) => f.flow.id === id && f.test));
+  const addable = addedUnder(index.meta, kind, INSIDE).filter((k) => k !== 'flow_test' || !useCase.flows.some((f) => f.flow.id === id && f.test));
   return (
     <>
       <div className="record-actions" role="toolbar" aria-label={`Change ${id}`} ref={toolbar}>
@@ -79,7 +64,7 @@ export function UseCaseEditor({ index, useCase, id, kind, children }: { index: R
         <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>
       </div>
       {mode.mode === 'remove' && (
-        <RemoveQuestion index={index} id={id} label={LABEL[kind]} goes={goesWith(useCase, kind, id)} then={addressOf(parentOf(useCase, kind, id))} onCancel={back}
+        <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={goesWith(useCase, kind, id)} then={addressOf(parentOf(useCase, kind, id))} onCancel={back}
           remove={() => sendUseCase(writer, REMOVE[kind], { id })} />
       )}
       {children}
@@ -237,7 +222,7 @@ function ChangeForm({ context, id, kind }: { context: FormContext; id: string; k
     return answer;
   };
   return (
-    <CommandForm eyebrow={LABEL[kind].charAt(0).toUpperCase() + LABEL[kind].slice(1)} title={`Edit ${id}`} submit={submit} saveLabel="Save" onCancel={onDone}>
+    <CommandForm eyebrow={kindWord(index.meta, kind).charAt(0).toUpperCase() + kindWord(index.meta, kind).slice(1)} title={`Edit ${id}`} submit={submit} saveLabel="Save" onCancel={onDone}>
       {(first) => <Fields index={index} specs={specs} draft={draft} setDraft={setDraft} first={first} />}
     </CommandForm>
   );
@@ -276,7 +261,7 @@ function AddForm({ context, parent, kind }: { context: FormContext; parent: stri
     return answer;
   };
   return (
-    <CommandForm eyebrow={`New ${LABEL[kind]} under ${parent}`} title={`Add ${withArticle(kind)}`} submit={submit} saveLabel={`Add ${LABEL[kind]}`} onCancel={onDone}>
+    <CommandForm eyebrow={`New ${kindWord(index.meta, kind)} under ${parent}`} title={`Add ${withArticle(index, kind)}`} submit={submit} saveLabel={`Add ${kindWord(index.meta, kind)}`} onCancel={onDone}>
       {(first) => <Fields index={index} specs={specs} draft={draft} setDraft={update} first={first} />}
     </CommandForm>
   );

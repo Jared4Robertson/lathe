@@ -14,6 +14,7 @@ import { sendStandard, type StandardCommands, type StandardRoute } from './comma
 import { useNextStandardId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
+import { kindWord, addedUnder } from '../../platform/meta-model/reads';
 
 // The Standard editor (LA-AUT-A3): the actions on a record of a standard, each sending one of the aggregate's own
 // commands, POST /api/standard/<command>, and nothing else. Edit sends its kind's Change with only what changed; Add
@@ -22,11 +23,6 @@ import { backToActions } from '../../edit/back-to-actions';
 // sends its Remove. The aggregate has no Move. A standard is added from its product's page (AddStandardForm). A
 // refusal shows every reason the command gave, in its own words, keeps what was entered, and changes nothing.
 
-/** A kind's label in a sentence. */
-const LABEL: Record<StandardKind, string> = { standard: 'standard', standard_rule: 'standard rule', standard_rule_test: 'standard rule test' };
-
-/** The kind added under a record of each kind, inside the standard. */
-const ADDED_UNDER: Record<StandardKind, Exclude<StandardKind, 'standard'> | null> = { standard: 'standard_rule', standard_rule: 'standard_rule_test', standard_rule_test: null };
 
 /** The test data sets of the product, as what a test may start from. */
 const dataSets = (index: RecordIndex, product: string): Choice[] =>
@@ -144,19 +140,19 @@ export function StandardEditor({ index, page, children }: { index: RecordIndex; 
       if (answer.ok) { announce(`Saved ${id}`); back(); }
       return answer;
     };
-    return <div className="spec-body"><ChangeForm index={index} specs={specs} current={current} eyebrow={LABEL[kind]} id={id} submit={submit} onDone={back} /></div>;
+    return <div className="spec-body"><ChangeForm index={index} specs={specs} current={current} eyebrow={kindWord(index.meta, kind)} id={id} submit={submit} onDone={back} /></div>;
   }
   if (mode.mode === 'add') return <div className="spec-body"><AddForm index={index} product={product} kind={mode.kind} parent={id} onDone={back} /></div>;
-  const adds = ADDED_UNDER[kind];
+  const adds = addedUnder(index.meta, kind, ['standard_rule', 'standard_rule_test'] as const)[0] ?? null;
   return (
     <>
       <div className="record-actions" role="toolbar" aria-label={`Change ${id}`} ref={toolbar}>
         <Button icon="edit" onClick={() => setMode({ mode: 'change' })}>Edit</Button>
-        {adds && <Button icon="plus" onClick={() => setMode({ mode: 'add', kind: adds })}>Add {LABEL[adds]}</Button>}
+        {adds && <Button icon="plus" onClick={() => setMode({ mode: 'add', kind: adds })}>Add {kindWord(index.meta, adds)}</Button>}
         <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>
       </div>
       {mode.mode === 'remove' && (
-        <RemoveQuestion index={index} id={id} label={LABEL[kind]} goes={goesWith(page, kind, id)} then={addressOf(parentOf(page, kind, id))} onCancel={back}
+        <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={goesWith(page, kind, id)} then={addressOf(parentOf(page, kind, id))} onCancel={back}
           remove={() => sendStandard(writer, REMOVE[kind], { id })} />
       )}
       {children}
@@ -199,7 +195,7 @@ function AddForm({ index, product, kind, parent, onDone }: { index: RecordIndex;
     return answer;
   };
   return (
-    <CommandForm eyebrow={`New ${LABEL[kind]} under ${parent}`} title={`Add a ${LABEL[kind]}`} submit={submit} saveLabel={`Add ${LABEL[kind]}`} onCancel={onDone}>
+    <CommandForm eyebrow={`New ${kindWord(index.meta, kind)} under ${parent}`} title={`Add a ${kindWord(index.meta, kind)}`} submit={submit} saveLabel={`Add ${kindWord(index.meta, kind)}`} onCancel={onDone}>
       {(first) => <Fields index={index} specs={specs} draft={draft} setDraft={setDraft} first={first} />}
     </CommandForm>
   );

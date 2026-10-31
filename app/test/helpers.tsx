@@ -14,6 +14,7 @@ import { forgetReads } from '../src/record/read';
 import { readViewOf, type ServedData } from './read-view';
 import { referenceOf } from '../../lathe/src/reference';
 import { LIST_RECORD_CHANGES } from '../../lathe/src/exploring/record-changes/queries';
+import type { LatheDesktop } from '../src/shell/desktop-bridge';
 
 /** One aggregate command the page sent: its route and its input. */
 export interface SentCommand {
