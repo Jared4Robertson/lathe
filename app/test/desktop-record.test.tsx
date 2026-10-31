@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { recordIdAt } from '../src/shell/desktopRecord';
 import { desktopBridgeStub, facts, openApp } from './helpers';
 import { workspace } from './fixtures/workspace';
+import type { LatheDesktop } from '../src/shell/desktop-bridge';
 
 // The desktop app's page hooks (LA-PLT-UC15; the record actions, LA-V92-R74): the record actions in a record's facts and on a
 // right-click, the Dock badge's error count, and the title bar's room for the traffic lights, which

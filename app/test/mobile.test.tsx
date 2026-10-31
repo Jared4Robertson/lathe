@@ -9,6 +9,7 @@ import { desktopBridgeStub, openApp } from './helpers';
 import { navigate } from '../src/router';
 import { testWorkspace } from './graph/workspace';
 import { boxElement, drawnBox, pointOn, tapAt, tapEmpty } from './graph/scene';
+import type { LatheDesktop } from '../src/shell/desktop-bridge';
 
 // Lathe on a phone (notes/mobile-design.md): a compact top bar, the page bar compact under it, the
 // stage full screen, sheets for the nav, the wiki card, the open pages and quick find, and taps that

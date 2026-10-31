@@ -520,38 +520,3 @@ function ShortcutSheet({ commands, mac, available, titleOf, announce, onClose }:
     </Dialog>
   );
 }
-
-declare global {
-  interface Window {
-    /** Set by the desktop app's preload (desktop/src/preload.cts); absent in a browser. */
-    latheDesktop?: LatheDesktop;
-  }
-
-  /** The desktop app's bridge (desktop/src/preload.cts), built with the app: every member is there. */
-  interface LatheDesktop {
-    isDesktop: boolean;
-    /** The operating system: "darwin", "win32" or "linux". */
-    platform: string;
-    /** Subscribes to native menu choices, each a command ID; returns the unsubscribe. */
-    onCommand: (listener: (id: string) => void) => () => void;
-    /** Sends the theme's shell and ink for the window's chrome. */
-    setChrome: (chrome: { background: string; foreground: string }) => void;
-    /** Subscribes to the window entering and leaving full screen; called at once with the current state. */
-    onFullScreen: (listener: (fullScreen: boolean) => void) => () => void;
-    /** Sends each command's keys as the person bound them, by command ID, for the native menu's key labels (LA-V66-R03). */
-    setMenuKeys: (keys: Record<string, string[]>) => void;
-    /** Sets the Dock badge to the product's number of check errors (LA-V71-R03). */
-    setErrorCount: (count: number) => void;
-    /** The record actions (LA-AUT-UC15-R01): reveal its data file, open it in the editor, copy its ID, or a native menu of the three. */
-    revealRecord: (id: string) => void;
-    openRecordInEditor: (id: string) => void;
-    copyRecordId: (id: string) => void;
-    showRecordMenu: (id: string) => void;
-    /** The chat panel's Claude Code (LA-PLT-UC19). */
-    chat: import('../chat/types').ChatBridge;
-    /** The chat's dictation (LA-PLT-UC20-R01): on-device speech recognition, where the Mac has it. */
-    voice: import('../chat/types').VoiceBridge;
-    /** Answers the app bridge's questions for Lathe's MCP tools: what the Reader is looking at, and opening a record. */
-    onAppRequest: (handler: (request: import('../chat/types').AppRequest) => unknown) => () => void;
-  }
-}

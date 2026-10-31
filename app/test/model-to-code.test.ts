@@ -24,25 +24,13 @@ const declares = (text: string, title: string) => {
   return new RegExp(`\\b(function|class|interface|type|const|let)\\s+${escape(name)}\\b`).test(text);
 };
 
-/** The storage keys of the aggregates, each with the one repository that may name it. */
-const KEYS: Record<string, string> = {
-  'lathe:space': 'app/src/exploring/space/repository.ts',
-  'lathe:space-pages': 'app/src/exploring/space/repository.ts',
-  'lathe:space-rail': 'app/src/exploring/space/repository.ts',
-  'lathe:nav-folders': 'app/src/exploring/nav-row/repository.ts',
-  'lathe:nav-sections': 'app/src/exploring/nav-row/repository.ts',
-  'lathe:tabs': 'app/src/exploring/tab-set/repository.ts',
-  'lathe:place': 'app/src/exploring/tab-set/repository.ts',
-  'lathe:stage': 'app/src/exploring/tab-set/repository.ts',
-  'lathe:session-settings': 'app/src/exploring/session-settings/repository.ts',
-  'lathe:nav-width': 'app/src/platform/panel/repository.ts',
-  'lathe:nav-collapsed': 'app/src/platform/panel/repository.ts',
-  'lathe:themes': 'app/src/platform/appearance/repository.ts',
-  'lathe:theme': 'app/src/platform/appearance/repository.ts',
-  'lathe:color-mode': 'app/src/platform/appearance/repository.ts',
-  'lathe:scroll-to-zoom': 'app/src/platform/appearance/repository.ts',
-  'lathe:theme-css': 'app/src/platform/appearance/repository.ts',
-  'lathe:keybindings': 'app/src/platform/key-bindings/repository.ts',
+/** The storage keys each repository names ('lathe:…' in its file), by key: the repositories that may name it. */
+const keysOf = (repositories: string[]): Map<string, string[]> => {
+  const keys = new Map<string, string[]>();
+  for (const file of repositories) {
+    for (const [, key] of readFileSync(file, 'utf8').matchAll(/'(lathe:[^']+)'/g)) keys.set(key, [...new Set([...(keys.get(key) ?? []), relative(file)])]);
+  }
+  return keys;
 };
 const CODE_KINDS = ['repository', 'command_handler', 'event_handler', 'query_handler', 'projection', 'reader', 'data_model', 'rule', 'adapter', 'value_type'];
 
@@ -51,10 +39,13 @@ describe('LA-STD-PRINCIPLES-R02-T03 Each app aggregate of Exploring and Platform
   const slices = SLICE_ROOTS.flatMap((root) => readdirSync(root, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => path.join(root, e.name)));
   const sliceOf = (file: string) => slices.find((s) => file.startsWith(s + path.sep));
 
-  it('lets only an aggregate\'s repository name its storage keys', () => {
+  it('lets only an aggregate\'s repository name its storage keys, each key in one repository', () => {
+    const keys = keysOf(all.filter((f) => path.basename(f) === 'repository.ts'));
+    expect(keys.size).toBeGreaterThan(0);
+    expect([...keys].filter(([, owners]) => owners.length > 1).map(([key, owners]) => `${key} is named by ${owners.join(', ')}`)).toEqual([]);
     const wrong = all.flatMap((file) => {
       const text = readFileSync(file, 'utf8');
-      return Object.entries(KEYS).filter(([key, owner]) => text.includes(`'${key}'`) && relative(file) !== owner).map(([key]) => `${relative(file)} names ${key}`);
+      return [...keys].filter(([key, [owner]]) => text.includes(`'${key}'`) && relative(file) !== owner).map(([key]) => `${relative(file)} names ${key}`);
     });
     expect(wrong).toEqual([]);
   });

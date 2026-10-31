@@ -1,6 +1,6 @@
 // The desktop's records match its code one to one: each aggregate is reached only through its repository, each
 // code-bound record names an identifier declared in its file, and each channel a page sends on has one record.
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -38,7 +38,9 @@ describe('LA-STD-PRINCIPLES-R02-T04 Each desktop aggregate is reached only throu
   });
 
   it('gives each aggregate slice one repository class with a load and a save', () => {
-    for (const slice of ['product-window', 'window-chat', 'app-server', 'recent-folders', 'shell-settings']) {
+    const slices = readdirSync(SRC, { withFileTypes: true }).filter((e) => e.isDirectory() && existsSync(path.join(SRC, e.name, 'repository.ts'))).map((e) => e.name);
+    expect(slices.length).toBeGreaterThan(0);
+    for (const slice of slices) {
       const text = readFileSync(path.join(SRC, slice, 'repository.ts'), 'utf8');
       expect(text.match(/export class \w+Repository\b/g), slice).toHaveLength(1);
       expect(text, slice).toMatch(/^\s+load\(\)/m);

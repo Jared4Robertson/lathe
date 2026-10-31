@@ -12,7 +12,8 @@
     "noUnusedParameters": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["node"]
+    "types": ["node"],
+    "paths": { "lathe-desktop-bridge": ["../app/src/shell/desktop-bridge.ts"] }
   },
   "include": ["src", "test", "scripts", "vitest.config.ts"]
 }

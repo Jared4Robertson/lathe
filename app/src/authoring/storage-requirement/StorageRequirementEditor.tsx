@@ -15,6 +15,7 @@ import { sendStorageRequirement, type StorageRequirementCommands, type StorageRe
 import { useNextStorageRequirementId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
+import { kindWord } from '../../platform/meta-model/reads';
 
 // The Storage requirement editor (LA-AUT-A22): the actions on a record of a storage requirement, each sending one of
 // the aggregate's own commands, POST /api/storage-requirement/<command>, and nothing else. Edit sends its kind's Change
@@ -22,9 +23,6 @@ import { backToActions } from '../../edit/back-to-actions';
 // (next-id); Remove says what goes with the record and sends its Remove. The aggregate has no Move: what a requirement
 // is about never changes. A storage requirement is added from its aggregate's or read model's page
 // (AddStorageRequirementForm). A refusal shows every reason the command gave, keeps what was entered, and changes nothing.
-
-/** A kind's label in a sentence. */
-const LABEL: Record<StorageRequirementKind, string> = { storage_requirement: 'storage requirement', storage_requirement_test: 'storage requirement test' };
 
 /** The test data sets of the product, as what a test may start from. */
 const dataSets = (index: RecordIndex, product: string): Choice[] =>
@@ -103,7 +101,7 @@ export function StorageRequirementEditor({ index, page, children }: { index: Rec
       if (answer.ok) { announce(`Saved ${id}`); back(); }
       return answer;
     };
-    return <div className="spec-body"><ChangeForm index={index} specs={specs} current={current} eyebrow={LABEL[kind]} id={id} submit={submit} onDone={back} /></div>;
+    return <div className="spec-body"><ChangeForm index={index} specs={specs} current={current} eyebrow={kindWord(index.meta, kind)} id={id} submit={submit} onDone={back} /></div>;
   }
   if (mode.mode === 'add') return <div className="spec-body"><AddTestForm index={index} product={product} parent={id} onDone={back} /></div>;
   const isRequirement = kind === 'storage_requirement';
@@ -115,7 +113,7 @@ export function StorageRequirementEditor({ index, page, children }: { index: Rec
         <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>
       </div>
       {mode.mode === 'remove' && (
-        <RemoveQuestion index={index} id={id} label={LABEL[kind]} goes={isRequirement ? page.tests.map((t) => t.test.id) : []}
+        <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={isRequirement ? page.tests.map((t) => t.test.id) : []}
           then={addressOf(isRequirement ? page.parent.id : page.requirement.id)} onCancel={back}
           remove={() => sendStorageRequirement(writer, REMOVE[kind], { id })} />
       )}
