@@ -1,7 +1,7 @@
-import { rowPath, standIn, type DeliveryGraph, type Row } from './delivery';
-import type { DeliveryLaid } from './delivery-layout';
+import { rowPath, standIn, type TraceGraph, type Row } from './trace';
+import type { TraceLaid } from './layout';
 
-// What a selection lights in the Delivery view (LA-V98), pure: the record's path in each row it shows in (delivery.ts
+// What a selection lights on the Trace stage (LA-V98), pure: the record's path in each row it shows in (trace.ts
 // rowPath), as the boxes that show it now (a record in a closed box lit by the box standing in for it), the lines
 // between them across the columns, and the serves links to its outcomes. A box that is no record (a status, a gap)
 // lights nothing and fades nothing.
@@ -24,7 +24,7 @@ const NOTHING: Lit = { box: null, rows: [], keys: null, lines: [], serves: new S
 
 /** Each row's boxes by record (and a gap by its key), in the row's order, whatever shows. */
 const boxesCache = new WeakMap<Row, Map<string, string[]>>();
-function rowBoxes(graph: DeliveryGraph, row: Row): Map<string, string[]> {
+function rowBoxes(graph: TraceGraph, row: Row): Map<string, string[]> {
   let known = boxesCache.get(row);
   if (known) return known;
   known = new Map();
@@ -43,7 +43,7 @@ function rowBoxes(graph: DeliveryGraph, row: Row): Map<string, string[]> {
 }
 
 /** What a record (or the box `at`) lights, on a layout. */
-export function litBy(graph: DeliveryGraph, laid: DeliveryLaid, focus: string, at: string | null): Lit {
+export function litBy(graph: TraceGraph, laid: TraceLaid, focus: string, at: string | null): Lit {
   const shown = laid.places;
   const atItem = at && shown.has(at) ? graph.items.get(at) : undefined;
   // A box that is no record (a status, a gap, a heading of no record) stands on its own.

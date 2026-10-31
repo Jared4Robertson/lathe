@@ -445,13 +445,10 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .stage-key-sheet-list .stage-key-sample { grid-row: 1 / span 2; padding-top: 3px; }
 .stage-key-sheet-list .stage-key-words { grid-column: 2; font-weight: 600; }
 .stage-key-sheet-list .stage-key-meaning { grid-column: 2; color: var(--muted); }
-/* The Trace's samples: its columns, each kind of link in its color, the mark over what no outcome reaches, a faded box. */
+/* The Trace's samples: its rows, the serves line in its color, the mark over the use cases serving no outcome. */
 .trace-key-columns { overflow: visible; fill: var(--sheet); stroke: var(--muted); stroke-width: 1; }
 .trace-key-link { overflow: visible; fill: none; stroke-width: 1.8; stroke-linecap: round; }
 .trace-key-link.is-serves { stroke: var(--g-discovery); }
-.trace-key-link.is-reaches { stroke: var(--g-use-cases); }
-.trace-key-link.is-built { stroke: var(--g-technical-specification); }
-.trace-key-link.is-proved { stroke: var(--g-test-plan); }
 .trace-key-outside { display: inline-block; width: 22px; border-top: 1.5px dashed var(--muted); vertical-align: middle; }
 .graph-swatch.is-faded { opacity: var(--focus-fade); }
 /* ---------- End of the stage chrome ---------- */
@@ -852,59 +849,15 @@ a.row-link.row-link:focus-visible { outline: none; }
 .erd-key-faded { flex: none; display: inline-block; width: 14px; height: 10px; border: 1.5px solid var(--g-domain-model); background: var(--sheet); border-radius: 2px; opacity: var(--focus-fade); }
 .erd-flow::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; box-shadow: inset 0 0 var(--vignette) calc(var(--vignette) / 3) var(--paper); }
 
-/* ---------- The Trace stage: an obligation's chain, or the matrix of those under the focus (app/src/trace) ---------- */
+/* ---------- The Trace stage: one row per use case, from its outcomes to its acceptance tests (app/src/trace) ---------- */
 .trace-page { min-height: 0; }
-.trace-filter { flex: none; display: inline-flex; gap: 6px; align-items: center; font-size: 0.86rem; cursor: pointer; }
-.trace-filter:hover { color: var(--steel); }
-/* The trace scrolls under the floating panels: its content padded to the frame, so the chain or the matrix sits in the open space, and a focused row scrolls into it. */
+/* On a phone the list scrolls under the floating panels: its content padded to the frame, so it sits in the open space. */
 .trace-scroll { box-sizing: border-box; overflow: auto; scrollbar-gutter: stable; padding: calc(var(--frame-top, 0px) + 12px) calc(var(--frame-right, 0px) + 20px) calc(var(--frame-bottom, 0px) + 20px) calc(var(--frame-left, 0px) + 20px); scroll-padding: var(--frame-top, 0px) var(--frame-right, 0px) var(--frame-bottom, 0px) var(--frame-left, 0px); }
-.trace-page > .trace-scroll { position: absolute; inset: 0; container: trace-page / inline-size; }
+.trace-page > .trace-scroll { position: absolute; inset: 0; }
 .trace-scroll:focus-visible { outline: 2px solid var(--steel); outline-offset: -2px; }
-.trace-none { margin: 0; padding: 24px; }
-.trace-scroll > .trace-none { padding: 0 0 4px; }
-/* The chain: five columns left to right, each a stack of cards; one column under another in a narrow pane. */
-.trace-chain { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); gap: 16px; }
-@container trace-page (max-width: 640px) { .trace-chain { grid-template-columns: minmax(0, 1fr); } }
-.trace-column { min-width: 0; }
-.trace-column-name { margin: 0 0 8px; font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-.trace-ref-title { font-size: 0.88rem; }
-.trace-cell-empty { margin: 0; }
-/* An owed column left empty is a gap, in the warning color; a column the kind does not owe is a quiet note. */
-.trace-missing { display: inline-block; padding: 2px 8px; border: 1px solid var(--warn); border-radius: 6px; color: var(--ink); font-size: 0.82rem; }
-.trace-not-owed { color: var(--muted); font-size: 0.82rem; font-style: italic; }
-/* The matrix: one row per obligation, grouped by its parent. */
-/* Columns size to their content: an ID never wraps inside itself, a title is cut with an ellipsis (whole in its tooltip). */
-.data-table.trace-matrix { width: max-content; min-width: 100%; }
-.trace-refs { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
-.trace-ref { display: inline-flex; min-block-size: 24px; align-items: center; gap: 6px; min-width: 0; max-width: 24rem; }
-.trace-id { flex: none; white-space: nowrap; }
-.trace-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
-.trace-untraced-kinds .trace-refs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); gap: 2px 16px; }
-.trace-matrix td.is-gap { background: color-mix(in srgb, var(--warn) 8%, transparent); }
-.trace-more { margin: 12px 0 0; display: flex; gap: 8px; align-items: center; }
-/* What no obligation's chain reaches, under the matrix. */
-.trace-untraced { margin: 20px 0 0; }
-.trace-untraced > h3 { margin: 0 0 8px; font-size: 0.95rem; }
-.trace-untraced-kinds { margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
-.trace-untraced-kinds dt { font-size: 0.82rem; color: var(--muted); }
-.trace-untraced-kinds dd { margin: 2px 0 0; }
-/* The focus, marked wherever it sits in a matrix: its rows, or the matrix around it. A note above says why the matrix shows. */
-.trace-ref.is-focus { padding: 0 4px; border-radius: 4px; background: var(--steel-bg); box-shadow: inset 0 0 0 1px var(--steel); }
-.trace-note { margin: 0 0 12px; max-width: 48rem; font-size: 0.9rem; }
-.trace-note.is-untraced { padding: 8px 12px; border: 1px solid var(--warn); border-radius: 6px; }
-/* On a wide screen the trace is drawn on the canvas (TraceAll.tsx) and the table is its accessible layer, visually hidden
-   (its links carry focus and the arrow keys; the canvas rings the box a focused link stands for), its paging with it. */
+/* On a wide screen the trace is drawn on the canvas (TraceCanvas.tsx) and the list is its accessible layer, visually hidden. */
 .trace-access { position: absolute; top: 0; left: 0; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-/* On a phone the All-at-once view is one column at a time (AllList.tsx): the columns' names to pick one, the focus's own
-   links by kind, then the column's rows. */
-.trace-col-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 12px; }
-.trace-col-tabs > button { min-height: var(--touch-target); padding: 0 10px; border: 1px solid var(--rule); border-radius: 999px; background: var(--sheet); color: var(--ink); font: inherit; font-size: 0.85rem; cursor: pointer; }
-.trace-col-tabs > button:hover { border-color: var(--steel); }
-.trace-col-tabs > button[aria-pressed="true"] { border-color: var(--steel); background: var(--steel-bg); font-weight: 600; }
-.trace-col-focus { margin: 0 0 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
-.trace-col-links { margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
-.trace-col-links dt { font-size: 0.82rem; color: var(--muted); }
-.trace-col-links dd { margin: 4px 0 0 12px; }
+/* The list (TraceList.tsx): one use case at a time, its outcomes and its stages stacked down, each box a row. */
 .trace-col-head { margin: 4px 0 8px; font-size: 1rem; }
 .trace-col-rows { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 .trace-col-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; min-block-size: 44px; padding: 8px 12px; border: 1.5px solid var(--g-structural); border-radius: 6px; background: var(--g-structural-bg); color: var(--ink); text-decoration: none; }
@@ -1253,7 +1206,7 @@ a.row-link.row-link:focus-visible { outline: none; }
   /* A gap between panels keeps its look, and its target reaches over the panels' edges. */
   .resize-handle { z-index: 5; margin-inline: calc((var(--panel-gap) - var(--touch-target)) / 2); }
   :is(.icon-button, .button, .rail-item, .menu a, .nav-row, .nav-chevron, .nav-folder-head, .nav-section-head,
-    .graph-depth button, .graph-filters > summary, .trace-filter, .quick-find-button,
+    .graph-depth button, .graph-filters > summary, .quick-find-button,
     .palette-list li, .tab, .long-list-tools input, .quick-open-box input, .dialog-search, .segment, .setting-switch, .file-button, .crumb-more-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
   .menu .rail-item { width: var(--touch-target); height: var(--touch-target); }
   .record-list.tree .tree-row, .record-list > li, .problems > li { min-height: var(--touch-target); box-sizing: border-box; }

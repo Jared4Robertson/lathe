@@ -1,9 +1,9 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './test';
 import { openPage } from './measure';
-import type { DeliveryHost, DeliveryScene } from '../src/trace/delivery/TraceDelivery';
+import { TRACE, traceSceneOf } from './scene';
 
-// The Trace stage's Delivery view stays where the Reader left it (LA-V98-R20, LA-PAT-APP-UX-R22): opening a row moves
+// The Trace stage stays where the Reader left it (LA-V98-R20, LA-PAT-APP-UX-R22): opening a row moves
 // only that row's boxes and the rows below it, which glide there, never the rows above or the camera; selecting a step
 // lights its path across its row, the line from each requirement it fulfills to it and on to its chain, the rest faded,
 // and the wiki card follows. The outcomes a focused row serves slide beside it and follow the focus to another row
@@ -11,21 +11,20 @@ import type { DeliveryHost, DeliveryScene } from '../src/trace/delivery/TraceDel
 
 const USE_CASE = 'LA-AUT-UC06';
 const STEP = 'LA-AUT-UC06-FL01-S03';
-const DELIVERY = '.focus-stage .trace-flow[data-view="delivery"]';
 
-const sceneOf = (page: Page, whole = true): Promise<DeliveryScene> => page.evaluate(({ sel, whole }) => (document.querySelector(sel) as DeliveryHost).deliveryScene!(whole), { sel: DELIVERY, whole });
+const sceneOf = (page: Page, whole = true) => traceSceneOf(page, whole);
 /** Each box's place on the page, by its key, and the camera. */
 const placesOf = async (page: Page) => {
   const s = await sceneOf(page);
   return { camera: JSON.stringify(s.camera), rows: s.rows, boxes: new Map(s.boxes.map((b) => [b.key, { row: b.row, rect: JSON.stringify(b.rect) }])) };
 };
 
-/** Whether a point of the page is the Delivery's own canvas, not a panel floating over it (the wiki card, the key, the tools). */
-const onCanvas = (page: Page, x: number, y: number) => page.evaluate(({ sel, x, y }) => !!document.elementFromPoint(x, y)?.closest(sel), { sel: DELIVERY, x, y });
+/** Whether a point of the page is the Trace's own canvas, not a panel floating over it (the wiki card, the key, the tools). */
+const onCanvas = (page: Page, x: number, y: number) => page.evaluate(({ sel, x, y }) => !!document.elementFromPoint(x, y)?.closest(sel), { sel: TRACE, x, y });
 
 /**
  * A point of what `at` finds, in the open space: where a panel floats over it, the Reader pans it out from under the
- * panel first (the wheel pans the Delivery), as they would to click it.
+ * panel first (the wheel pans the Trace), as they would to click it.
  */
 async function reach(page: Page, at: () => Promise<{ x: number; y: number }>) {
   for (let tries = 0; tries < 4; tries++) {
@@ -38,11 +37,10 @@ async function reach(page: Page, at: () => Promise<{ x: number; y: number }>) {
   throw new Error('the box stays under the panels');
 }
 
-test.describe('the Delivery view stays where the Reader left it', () => {
+test.describe('the Trace stage stays where the Reader left it', () => {
   test('LA-V98-R20-T03 Opening a row moves only it and the rows below, keeps the camera, and a step\'s path lights across its row', async ({ page }) => {
     await openPage(page, `/${USE_CASE}?stage=trace`);
-    await page.getByRole('group', { name: 'Trace view' }).getByRole('button', { name: 'Delivery' }).click();
-    await page.locator(`${DELIVERY}[data-ready] canvas`).waitFor();
+    await page.locator(`${TRACE}[data-ready] canvas`).waitFor();
     await page.waitForTimeout(900);
     const before = await placesOf(page);
     const at = before.rows.indexOf(USE_CASE);
@@ -75,8 +73,7 @@ test.describe('the Delivery view stays where the Reader left it', () => {
 
   test('LA-V98-R22-T03 The outcomes a focused row serves sit beside it, framed with it, and follow the focus to another row', async ({ page }) => {
     await openPage(page, `/${USE_CASE}?stage=trace`);
-    await page.getByRole('group', { name: 'Trace view' }).getByRole('button', { name: 'Delivery' }).click();
-    await page.locator(`${DELIVERY}[data-ready] canvas`).waitFor();
+    await page.locator(`${TRACE}[data-ready] canvas`).waitFor();
     /** The outcomes a row serves, as drawn now, and its use case's box. */
     const beside = async (u: string) => {
       const s = await sceneOf(page);
