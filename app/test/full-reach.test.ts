@@ -7,17 +7,18 @@ import { GRAPH_LAYOUTS } from '../src/graph/GraphPage';
 import { graphTarget } from '../src/graph/steps';
 import { erdLayout } from '../src/erd/layout';
 import { erdLevels } from '../src/erd/walk';
-import { allGraph } from '../src/trace/all';
-import { traced, tracesOf } from './trace/traces';
+import { traced } from './trace/rows';
+import { orderGraph } from '../src/trace/order';
+import { layOutTrace } from '../src/trace/layout';
 import { erdOf } from './erd-of';
-import { allTarget } from '../src/trace/all-walk';
+import { traceTarget } from '../src/trace/walk';
 import { MOVES, reachable } from '../src/views/levels';
 import { graphMap, groundMap } from './graph/maps';
 
 // Every node is reachable by keyboard (LA-PAT-APP-UX-R21): on Lathe's own spec, a breadth-first search over every move
 // of the stage walk (the arrows, which W, A, S and D take too, and Out and In) from the product reaches every node each
 // stage draws: every box of the Graph's map in each layout, every region, area and entity of the ERD, and every box of
-// the Trace's All-at-once view. A node it misses is named.
+// the Trace stage's rows. A node it misses is named.
 
 const PRODUCT = 'LA';
 let data: ServedData;
@@ -56,18 +57,20 @@ describe('every node is reachable by keyboard', () => {
     expect(missed(map.boxes.map((b) => b.id), seen), 'unreachable').toEqual([]);
   }, 60_000);
 
-  it('LA-PAT-APP-UX-R21-T02 On the Trace, every box of the All-at-once view is reached from the product', () => {
-    const graph = allGraph(index, tracesOf(data, PRODUCT), PRODUCT);
-    expect(graph.nodes.size).toBeGreaterThan(1000);
-    // The product has no box: the walk starts from none.
+  it('LA-PAT-APP-UX-R21-T02 On the Trace, every outcome and every row\'s use case and stage boxes are reached from the product', () => {
+    const { graph } = traced(data, PRODUCT);
+    const open = { open: new Set<string>(), step: null };
+    const laid = layOutTrace(graph, orderGraph(graph, null), open);
+    expect(graph.rows.length).toBeGreaterThan(50);
+    // The product has no box: the walk starts from none. Every row closed, so In and Out only open and close.
     const seen = new Set<string>();
     const queue: (string | null)[] = [null];
     for (let i = 0; i < queue.length; i++) {
       for (const move of MOVES) {
-        const to = allTarget(graph, null, queue[i], move);
-        if (to !== null && !seen.has(to)) { seen.add(to); queue.push(to); }
+        const to = traceTarget(graph, laid, open, queue[i], move);
+        if (to && !to.toggle && !seen.has(to.to)) { seen.add(to.to); queue.push(to.to); }
       }
     }
-    expect(missed(graph.nodes.keys(), seen), 'unreachable').toEqual([]);
+    expect(missed(laid.places.keys(), seen), 'unreachable').toEqual([]);
   }, 120_000);
 });

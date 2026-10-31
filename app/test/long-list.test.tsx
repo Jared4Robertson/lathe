@@ -86,11 +86,12 @@ describe('long lists', () => {
     const served = { data: bigWorkspace() };
     const user = userEvent.setup();
 
-    // The menu's domain list.
+    // The menu's domain list is plain: the nav lists everything in its one scroll (LA-V90-R17).
     await openApp('/BG', served);
     await screen.findByRole('heading', { level: 1, name: 'Big product' });
     const menu = screen.getByRole('navigation', { name: 'Main' });
-    expect(within(menu).getByRole('searchbox', { name: 'Filter domains of Big product' })).toBeInTheDocument();
+    expect(within(menu).getByRole('list', { name: 'Domains of Big product' })).toBeInTheDocument();
+    expect(within(menu).queryByRole('searchbox')).toBeNull();
 
     // The domain page: groups, a long nested list, gaps and problems.
     await openApp('/BG-D01', served);

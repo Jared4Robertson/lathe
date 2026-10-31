@@ -1,11 +1,11 @@
-import { visible, type DeliveryGraph, type Openness } from './delivery';
-import type { DeliveryOrder } from './delivery-order';
+import { visible, type TraceGraph, type Openness } from './trace';
+import type { TraceOrder } from './order';
 
-// Where each box of the Delivery view goes (LA-V98), pure: rows top to bottom in their order (delivery-order.ts), each
+// Where each box of the Trace stage goes (LA-V98), pure: rows top to bottom in their order (order.ts), each
 // as tall as its tallest cell, every box one height, a cell's boxes stacked from its row's top, each child indented
 // under its parent. Top-down from fixed boxes: a row's place depends only on the rows above it and its own cells, so
 // opening a cell moves only its row's boxes and the rows below it, which glide (graph/morph.ts), and nothing beside it
-// changes width. A removed row's room stays empty until Tidy up (delivery-order.ts), and an outcome keeps its top once placed. The rows serving no outcome sit after the rest, under the mark "No outcome". Each outcome sits at the
+// changes width. A removed row's room stays empty until Tidy up (order.ts), and an outcome keeps its top once placed. The rows serving no outcome sit after the rest, under the mark "No outcome". Each outcome sits at the
 // median height of the rows it serves, never closer than a box to the one above it, in its order. Arithmetic only, on
 // the page: every box is one size and no text is measured, so it is worked out again at once when a cell opens.
 
@@ -28,10 +28,10 @@ export const columnLeft = (column: number) => column * (ITEM_WIDTH + COLUMN_GAP)
 /** One box's place, in map units. */
 export interface BoxPlace { x: number; y: number; w: number; h: number }
 
-/** A laid-out Delivery view. */
-export interface DeliveryLaid {
+/** A laid-out Trace stage. */
+export interface TraceLaid {
   /** The order it was laid out in. */
-  order: DeliveryOrder;
+  order: TraceOrder;
   /** Each row's band: its top and height, in order. */
   rows: ReadonlyMap<string, { y: number; h: number }>;
   /** Each column's boxes top to bottom, as shown. */
@@ -44,7 +44,7 @@ export interface DeliveryLaid {
 }
 
 /** The view's places for an order and what is open. */
-export function layOutDelivery(graph: DeliveryGraph, order: DeliveryOrder, open: Openness): DeliveryLaid {
+export function layOutTrace(graph: TraceGraph, order: TraceOrder, open: Openness): TraceLaid {
   const places = new Map<string, BoxPlace>();
   const rows = new Map<string, { y: number; h: number }>();
   const columns: string[][] = [[], [], [], [], []];
@@ -53,7 +53,7 @@ export function layOutDelivery(graph: DeliveryGraph, order: DeliveryOrder, open:
   for (const u of order.rows) {
     const row = graph.rowOf.get(u);
     if (!row) continue;
-    // A removed row's room, kept until Tidy up (delivery-order.ts): a closed row's height each.
+    // A removed row's room, kept until Tidy up (order.ts): a closed row's height each.
     y += (order.roomBefore.get(u) ?? 0) * (ITEM_HEIGHT + ROW_GAP);
     if (outsideTop === null && row.data.outcomes.every((o) => !graph.items.has(`outcome/${o}`))) {
       y += y > 0 ? OUTSIDE_GAP : OUTSIDE_GAP - ROW_GAP;
@@ -118,7 +118,7 @@ export function layOutDelivery(graph: DeliveryGraph, order: DeliveryOrder, open:
  * whichever is nearer, pushing on the ones beyond it. No other box moves. With no row, or one serving no outcome shown,
  * the laid view itself: each outcome at its own place.
  */
-export function outcomesBeside(laid: DeliveryLaid, serves: readonly (readonly [string, string])[], row: string | null): DeliveryLaid {
+export function outcomesBeside(laid: TraceLaid, serves: readonly (readonly [string, string])[], row: string | null): TraceLaid {
   const band = row ? laid.rows.get(row) : undefined;
   if (!band) return laid;
   const home = (key: string) => laid.places.get(key)!.y;

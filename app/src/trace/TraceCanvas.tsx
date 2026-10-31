@@ -1,38 +1,38 @@
-// The Trace stage's Delivery view on the canvas (LA-V98): one row per use case (delivery.ts), ordered off the main
-// thread (delivery-order.ts), placed on the page (delivery-layout.ts) and drawn by the graph's renderer (paint.ts,
+// The Trace stage on the canvas (LA-V98): one row per use case (trace.ts), ordered off the main
+// thread (order.ts), placed on the page (layout.ts) and drawn by the graph's renderer (paint.ts,
 // plate.ts) under the graph's camera gestures (gestures.ts).
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { type RecordIndex } from '../../exploring/record-summaries/record-index';
-import { frameRect, MIN_ZOOM, wholeIn, type Viewport } from '../../graph/camera';
-import { faintest, fadeTween, keptFade, type FadeLook } from '../../graph/fade';
-import { fontFor, pageMeasure, readGraphFonts, readyMeasure, type GraphFonts } from '../../graph/fonts';
-import { useCameraGestures } from '../../graph/gestures';
-import { hitPlate } from '../../graph/hit';
-import { PLAIN_LOOK, readLook, useThemeVersion, type Look } from '../../graph/look';
-import type { MapNode } from '../../graph/map';
-import type { BoxStage } from '../../graph/model';
-import { readMotion } from '../../graph/motion';
-import { followBox, useMorph } from '../../graph/morph';
-import { boxColors, GAP_KIND, isBlock, paint, stageColors, type Bar, type Camera, type PaintState } from '../../graph/paint';
-import { plateName, plateOf, plateTip, type Plate, type PlainBox } from '../../graph/plate';
-import { BORDER, LABEL_PAD, labelHeight, largestFit, linesIn, setTextMeasure, titleWidth, treeLabel, type MapLabel, type TextMeasure, type WrappedLabel } from '../../graph/text';
-import { SHAPES } from '../../graph/shapes';
-import { TapCard, useTapToOpen } from '../../graph/touch';
-import { stageFor } from '../../graph/model';
-import { useCommand } from '../../shell/commands';
-import { keepCamera } from '../../exploring/tab-set/commands/keep-camera';
-import { keptCamera } from '../../exploring/tab-set/reads';
-import { runTabSetCommand } from '../../exploring/tab-set/run';
-import { useOpenSpace, type Insets, type OpenSpaceStore } from '../../views/openSpace';
-import { drawLeaderLine, openIn, useLeaderFollow } from '../../views/leaderLine';
-import { StageCamera, ZOOM_STEP } from '../../views/StageChrome';
-import { useChanges } from '../../changes/changes';
-import { highlightFade, marksMoving, useStageMarks, type MarkTree } from '../../changes/marks';
-import { anchorOf, rollupText, totalChanges, type ChangeCounts } from '../../changes/rollup';
-import { DELIVERY_COLUMN_LABELS, DELIVERY_COLUMNS, DELIVERY_STAGES, isOpen, type DeliveryGraph, type DeliveryStage, type Item, type Openness } from './delivery';
-import { lastDeliveryOrder, useDeliveryOrder } from './delivery-order';
-import { columnLeft, ITEM_HEIGHT, ITEM_WIDTH, layOutDelivery, outcomesBeside, OUTSIDE_GAP, type BoxPlace, type DeliveryLaid } from './delivery-layout';
-import { litBy, type Lit } from './delivery-path';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
+import { frameRect, MIN_ZOOM, wholeIn, type Viewport } from '../graph/camera';
+import { faintest, fadeTween, keptFade, type FadeLook } from '../graph/fade';
+import { fontFor, pageMeasure, readGraphFonts, readyMeasure, type GraphFonts } from '../graph/fonts';
+import { useCameraGestures } from '../graph/gestures';
+import { hitPlate } from '../graph/hit';
+import { PLAIN_LOOK, readLook, useThemeVersion, type Look } from '../graph/look';
+import type { MapNode } from '../graph/map';
+import type { BoxStage } from '../graph/model';
+import { readMotion } from '../graph/motion';
+import { followBox, useMorph } from '../graph/morph';
+import { boxColors, GAP_KIND, isBlock, paint, stageColors, type Bar, type Camera, type PaintState } from '../graph/paint';
+import { plateName, plateOf, plateTip, type Plate, type PlainBox } from '../graph/plate';
+import { BORDER, LABEL_PAD, labelHeight, largestFit, linesIn, setTextMeasure, titleWidth, treeLabel, type MapLabel, type TextMeasure, type WrappedLabel } from '../graph/text';
+import { SHAPES } from '../graph/shapes';
+import { TapCard, useTapToOpen } from '../graph/touch';
+import { stageFor } from '../graph/model';
+import { useCommand } from '../shell/commands';
+import { keepCamera } from '../exploring/tab-set/commands/keep-camera';
+import { keptCamera } from '../exploring/tab-set/reads';
+import { runTabSetCommand } from '../exploring/tab-set/run';
+import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
+import { drawLeaderLine, openIn, useLeaderFollow } from '../views/leaderLine';
+import { StageCamera, ZOOM_STEP } from '../views/StageChrome';
+import { useChanges } from '../changes/changes';
+import { highlightFade, marksMoving, useStageMarks, type MarkTree } from '../changes/marks';
+import { anchorOf, rollupText, totalChanges, type ChangeCounts } from '../changes/rollup';
+import { TRACE_COLUMN_LABELS, TRACE_COLUMNS, TRACE_STAGES, isOpen, type TraceGraph, type TraceStage, type Item, type Openness } from './trace';
+import { lastTraceOrder, useTraceOrder } from './order';
+import { columnLeft, ITEM_HEIGHT, ITEM_WIDTH, layOutTrace, outcomesBeside, OUTSIDE_GAP, type BoxPlace, type TraceLaid } from './layout';
+import { litBy, type Lit } from './path';
 
 // Every box is one height, its kind and ID line and its title at a readable size; a box with children carries a ▸ at
 // its right (▾ when open), which opens it. A column is drawn only where the camera shows it: each box in view (a tenth
@@ -42,9 +42,9 @@ import { litBy, type Lit } from './delivery-path';
 // boxes; the selection's path in its row is drawn the same way, from each record on it to the next across the columns,
 // and lit, the rest of the view faded. The columns' names stay at the top of the frame, a ▸ beside each stage's name
 // opening it in every row (Expand all). While a row is focused, the outcomes it serves slide beside it and glide home
-// when none is (delivery-layout.ts outcomesBeside, LA-V98-R22). The camera frames the focus's row; opening a box, a new order (Tidy up) or a
+// when none is (layout.ts outcomesBeside, LA-V98-R22). The camera frames the focus's row; opening a box, a new order (Tidy up) or a
 // data change moves no camera, and what moved glides from its old place to its new one. The canvas is hidden from
-// assistive technology: the stage's list (DeliveryList.tsx) is its accessible layer.
+// assistive technology: the stage's list (TraceList.tsx) is its accessible layer.
 
 const NO_INSETS: Insets = { left: 0, top: 0, right: 0, bottom: 0 };
 const MIN_FRAME = 120;
@@ -71,7 +71,7 @@ const TOGGLE_ROOM = TOGGLE + 10;
 const COLUMN_STAGE: readonly BoxStage[] = ['discovery', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan'];
 
 /** One drawn box as the test hook reports it, in the page's pixels. */
-export interface DeliverySceneBox {
+export interface TraceSceneBox {
   key: string; id: string | null; row: string | null; role: Item['role']; column: number; depth: number; opens: boolean; open: boolean;
   focus: boolean; ring: boolean; lit: boolean | null; strength: number; change: 'added' | 'changed' | null; pill: 'added' | 'changed' | null; rollup: string | null; dashed: boolean; block: boolean;
   kind: string; title: string; meta: string; name: string;
@@ -80,37 +80,37 @@ export interface DeliverySceneBox {
   toggle: { x: number; y: number } | null;
 }
 /** What the view draws now: its camera, boxes, bars and lines; or, `whole`, every box shown. */
-export interface DeliveryScene {
+export interface TraceScene {
   camera: Viewport;
   canvas: { left: number; top: number; width: number; height: number };
-  boxes: DeliverySceneBox[];
+  boxes: TraceSceneBox[];
   bars: number;
   lines: { from: string; to: string; kind: 'serves' | 'path'; lit: boolean }[];
   columns: { name: string; count: number; open: boolean; rollup: string | null }[];
   rows: string[];
   outsideTop: number | null;
-  ordered: ReturnType<typeof lastDeliveryOrder>;
+  ordered: ReturnType<typeof lastTraceOrder>;
 }
 /** The canvas's element, with the hooks the tests read the drawn scene and hit-test through. */
-export type DeliveryHost = HTMLDivElement & { deliveryScene?: (whole?: boolean) => DeliveryScene; deliveryHit?: (clientX: number, clientY: number) => string | null };
+export type TraceHost = HTMLDivElement & { traceScene?: (whole?: boolean) => TraceScene; traceHit?: (clientX: number, clientY: number) => string | null };
 
-export interface TraceDeliveryProps {
+export interface TraceCanvasProps {
   index: RecordIndex;
   focus: string;
-  graph: DeliveryGraph;
+  graph: TraceGraph;
   open: Openness;
   /** The box the walk or a click stands on (a record may show in several boxes), for its focus; null for the focus's first. */
   at: string | null;
   /** Whether every row has a stage open (Expand all), by stage. */
-  every: Readonly<Record<DeliveryStage, boolean>>;
+  every: Readonly<Record<TraceStage, boolean>>;
   /** A count Tidy up raises: the rows are ordered afresh, their rooms closed, once for each. */
   tidy: number;
-  /** The row whose outcomes sit beside it (LA-V98-R22, delivery-layout.ts outcomesBeside); null keeps each at its own place. */
+  /** The row whose outcomes sit beside it (LA-V98-R22, layout.ts outcomesBeside); null keeps each at its own place. */
   beside: string | null;
   /** Opens or closes a box's children. */
   onToggle: (opens: string) => void;
   /** Opens or closes a stage in every row (a column's name). */
-  onEvery: (stage: DeliveryStage) => void;
+  onEvery: (stage: TraceStage) => void;
   /** A box was clicked: the box the walk stands on from now (a record's is navigated to). */
   onBox: (key: string) => void;
   onNavigate: (id: string) => void;
@@ -123,7 +123,7 @@ export interface TraceDeliveryProps {
 }
 
 /** The view, once the label's faces have loaded and the text measure is ready, and the rows are ordered. */
-export function TraceDelivery(props: TraceDeliveryProps) {
+export function TraceCanvas(props: TraceCanvasProps) {
   const theme = useThemeVersion();
   const fonts = useMemo<GraphFonts>(() => readGraphFonts(), [theme]);
   const [measure, setMeasure] = useState<TextMeasure | null>(() => { void pageMeasure(fonts); return readyMeasure(fonts); });
@@ -132,12 +132,12 @@ export function TraceDelivery(props: TraceDeliveryProps) {
     void pageMeasure(fonts).then((m) => { if (live) setMeasure(m); });
     return () => { live = false; };
   }, [fonts.body, fonts.mono]);
-  const ordered = useDeliveryOrder(props.graph, props.tidy);
-  const home = useMemo(() => (ordered ? layOutDelivery(ordered.graph, ordered.order, props.open) : null), [ordered, props.open]);
+  const ordered = useTraceOrder(props.graph, props.tidy);
+  const home = useMemo(() => (ordered ? layOutTrace(ordered.graph, ordered.order, props.open) : null), [ordered, props.open]);
   const laid = useMemo(() => (ordered && home ? outcomesBeside(home, ordered.graph.serves, props.beside) : null), [ordered, home, props.beside]);
-  if (!measure || !ordered || !laid) return <div className="graph-flow trace-flow" data-view="delivery" aria-busy="true" />;
+  if (!measure || !ordered || !laid) return <div className="graph-flow trace-flow" aria-busy="true" />;
   setTextMeasure(measure);
-  return <DeliveryScene {...props} graph={ordered.graph} laid={laid} fonts={fonts} theme={theme} />;
+  return <TraceScene {...props} graph={ordered.graph} laid={laid} fonts={fonts} theme={theme} />;
 }
 
 /** A label's lines cut to a box `height` tall (at text scale 1): its title's last lines dropped, the last kept ending with an ellipsis. */
@@ -182,20 +182,20 @@ function firstFrom(order: readonly string[], places: ReadonlyMap<string, BoxPlac
 const toggleAt = (p: Plate) => ({ x: p.label.x + p.label.w - TOGGLE, y: p.y + (p.h - TOGGLE) / 2, w: TOGGLE, h: TOGGLE });
 
 /** The record a box shows, or the box's own key for a box that is no record (a status, a gap, a heading). */
-const recordAt = (graph: DeliveryGraph, key: string) => { const item = graph.items.get(key); return item?.role === 'record' && item.id ? item.id : key; };
+const recordAt = (graph: TraceGraph, key: string) => { const item = graph.items.get(key); return item?.role === 'record' && item.id ? item.id : key; };
 
 /** What a non-record box looks like. */
 function plainOf(item: Item): PlainBox {
   const words = item.words!;
   const gap = item.role === 'gap';
-  return { kind: gap ? GAP_KIND : `delivery-${item.role}`, kindLabel: words.kind, title: words.title, meta: words.meta, dashed: gap || item.role === 'hint', stage: item.role === 'hint' ? 'structural' : COLUMN_STAGE[item.column] };
+  return { kind: gap ? GAP_KIND : `trace-${item.role}`, kindLabel: words.kind, title: words.title, meta: words.meta, dashed: gap || item.role === 'hint', stage: item.role === 'hint' ? 'structural' : COLUMN_STAGE[item.column] };
 }
 
 /** What one frame draws. */
-interface DeliveryFrame { plates: Plate[]; bars: Bar[]; barred: boolean; serves: number[]; marks: { key: string; x: number; y: number }[] }
+interface TraceFrame { plates: Plate[]; bars: Bar[]; barred: boolean; serves: number[]; marks: { key: string; x: number; y: number }[] }
 
-function DeliveryScene({ index, focus, graph, laid, open, at, beside, every, onToggle, onEvery, onBox, onNavigate, onPeek, space, ring: ringAt, cameraKey, onOpenNew, fonts, theme }: Omit<TraceDeliveryProps, 'tidy'> & { laid: DeliveryLaid; fonts: GraphFonts; theme: number }) {
-  const wrapper = useRef<DeliveryHost>(null);
+function TraceScene({ index, focus, graph, laid, open, at, beside, every, onToggle, onEvery, onBox, onNavigate, onPeek, space, ring: ringAt, cameraKey, onOpenNew, fonts, theme }: Omit<TraceCanvasProps, 'tidy'> & { laid: TraceLaid; fonts: GraphFonts; theme: number }) {
+  const wrapper = useRef<TraceHost>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
   const sizeRef = useRef(size);
@@ -281,17 +281,17 @@ function DeliveryScene({ index, focus, graph, laid, open, at, beside, every, onT
   // same focus in the same order.
   const framedNow = `${focus} ${laid.order.key}`;
   const cameraPlace = useRef<{ key: string | undefined; framed: string }>({ key: cameraKey, framed: framedNow });
-  const keptView = useRef<Viewport | null>(cameraKey ? keptCamera<Viewport>(cameraKey, 'trace-delivery', framedNow) : null);
+  const keptView = useRef<Viewport | null>(cameraKey ? keptCamera<Viewport>(cameraKey, 'trace', framedNow) : null);
   useLayoutEffect(() => {
     const was = cameraPlace.current;
     if (was.key === cameraKey) { cameraPlace.current = { key: cameraKey, framed: framedNow }; return; }
-    if (was.key && sizeRef.current) runTabSetCommand(keepCamera, { place: was.key, stage: 'trace-delivery', camera: { framed: was.framed, view: view.current } });
+    if (was.key && sizeRef.current) runTabSetCommand(keepCamera, { place: was.key, stage: 'trace', camera: { framed: was.framed, view: view.current } });
     cameraPlace.current = { key: cameraKey, framed: framedNow };
-    keptView.current = cameraKey ? keptCamera<Viewport>(cameraKey, 'trace-delivery', framedNow) : null;
+    keptView.current = cameraKey ? keptCamera<Viewport>(cameraKey, 'trace', framedNow) : null;
   });
   useEffect(() => () => {
     const { key, framed: what } = cameraPlace.current;
-    if (key && sizeRef.current) runTabSetCommand(keepCamera, { place: key, stage: 'trace-delivery', camera: { framed: what, view: view.current } });
+    if (key && sizeRef.current) runTabSetCommand(keepCamera, { place: key, stage: 'trace', camera: { framed: what, view: view.current } });
   }, []);
 
   // Frame the focus whenever it, the stage's size or the open space changes: a glide, except the first picture and a
@@ -337,7 +337,7 @@ function DeliveryScene({ index, focus, graph, laid, open, at, beside, every, onT
   }, [size, dpr]);
 
   // ---- What moved glides from its old place (layout stability, LA-PAT-APP-UX-R22, graph/morph.ts) ----
-  const morphMap = useMemo(() => ({ view: 'delivery', roots: [graph.product], nodes: laid.places }), [laid, graph.product]);
+  const morphMap = useMemo(() => ({ view: 'trace', roots: [graph.product], nodes: laid.places }), [laid, graph.product]);
   const morph = useMorph(morphMap);
   const placeAt = (key: string, now: number): BoxPlace | undefined => morph.box(key, now) ?? undefined;
   // A new layout leaves the camera where it is, unless the focus's own box moved: then it glides with it.
@@ -359,7 +359,7 @@ function DeliveryScene({ index, focus, graph, laid, open, at, beside, every, onT
   useLayoutEffect(() => { if (wrapper.current) look.current = readLook(wrapper.current); requestPaint(); }, [theme]);
   const fadeLook = useMemo<Pick<FadeLook, 'focusFade'>>(() => ({ get focusFade() { return look.current.focusFade; } }), []);
   const changes = useChanges();
-  const counts = useMemo(() => [graph.outcomes.length, graph.rows.length, ...DELIVERY_STAGES.slice(1).map((s) => graph.rows.filter((r) => graph.items.get(r.cells[DELIVERY_STAGES.indexOf(s) + 1])!.role === 'gap').length)], [graph]);
+  const counts = useMemo(() => [graph.outcomes.length, graph.rows.length, ...TRACE_STAGES.slice(1).map((s) => graph.rows.filter((r) => graph.items.get(r.cells[TRACE_STAGES.indexOf(s) + 1])!.role === 'gap').length)], [graph]);
   const fade = useMemo(() => {
     const own = lit.keys ? keptFade((key) => lit.keys!.has(key), fadeLook) : () => 1;
     return changes.highlight ? faintest(own, highlightFade(changes.byId, (key) => recordAt(graph, key))) : own;
@@ -405,11 +405,11 @@ function DeliveryScene({ index, focus, graph, laid, open, at, beside, every, onT
   };
   const ctx = useRef<CanvasRenderingContext2D | null | undefined>(undefined);
   const tap = useRef<ReturnType<typeof useTapToOpen> | null>(null);
-  const lastFrame = useRef<DeliveryFrame | null>(null);
+  const lastFrame = useRef<TraceFrame | null>(null);
   lastFrame.current = null;
 
   /** What a camera shows: the boxes in view as plates (or bars past the budget), the serves links to draw, and the path's marks on bars; `whole`, every box. */
-  const frameAt = useCallback((v: Viewport, s: { w: number; h: number }, now: number, whole = false): DeliveryFrame => {
+  const frameAt = useCallback((v: Viewport, s: { w: number; h: number }, now: number, whole = false): TraceFrame => {
     const spare = { x: s.w / 10, y: s.h / 10 };
     const top = (-v.y - spare.y) / v.zoom;
     const bottom = (s.h - v.y + spare.y) / v.zoom;
@@ -426,7 +426,7 @@ function DeliveryScene({ index, focus, graph, laid, open, at, beside, every, onT
       }
     });
     const barred = !whole && (ITEM_HEIGHT * v.zoom < BAR_BELOW_PX || shown.length > BOX_BUDGET);
-    const out: DeliveryFrame = { plates: [], bars: [], barred, serves: [], marks: [] };
+    const out: TraceFrame = { plates: [], bars: [], barred, serves: [], marks: [] };
     if (!barred) {
       for (const { key } of shown) {
         const home = plateFor(key);
@@ -552,7 +552,7 @@ function DeliveryScene({ index, focus, graph, laid, open, at, beside, every, onT
   const rolls = useMemo<(ChangeCounts | undefined)[]>(() => {
     const hl = marks.highlight;
     if (!hl) return [];
-    const out: ChangeCounts[] = DELIVERY_COLUMNS.map(() => ({ added: 0, changed: 0, removed: 0 }));
+    const out: ChangeCounts[] = TRACE_COLUMNS.map(() => ({ added: 0, changed: 0, removed: 0 }));
     const counted = new Set<string>();
     for (const [id, keys] of graph.boxesOf) {
       const c = hl.change(id);
@@ -619,8 +619,8 @@ function DeliveryScene({ index, focus, graph, laid, open, at, beside, every, onT
     const box = s ? frameBox(s) : null;
     const v = view.current;
     if (box && y >= box.y && y <= box.y + HEAD_PX) {
-      const column = DELIVERY_COLUMNS.findIndex((_, i) => { const l = columnLeft(i) * v.zoom + v.x; return x >= l && x <= l + ITEM_WIDTH * v.zoom; });
-      if (column >= 1) onEvery(DELIVERY_STAGES[column - 1]);
+      const column = TRACE_COLUMNS.findIndex((_, i) => { const l = columnLeft(i) * v.zoom + v.x; return x >= l && x <= l + ITEM_WIDTH * v.zoom; });
+      if (column >= 1) onEvery(TRACE_STAGES[column - 1]);
       return;
     }
     const hit = hitAt(x, y);
@@ -664,11 +664,11 @@ function DeliveryScene({ index, focus, graph, laid, open, at, beside, every, onT
   useEffect(() => {
     const host = wrapper.current;
     if (!host) return;
-    host.deliveryHit = (clientX, clientY) => {
+    host.traceHit = (clientX, clientY) => {
       const r = canvas.current!.getBoundingClientRect();
       return hitAt(clientX - r.left, clientY - r.top)?.place ?? null;
     };
-    host.deliveryScene = (whole = false) => {
+    host.traceScene = (whole = false) => {
       const s = sizeRef.current ?? { w: 0, h: 0 };
       const v = view.current;
       const r = canvas.current!.getBoundingClientRect();
@@ -681,9 +681,9 @@ function DeliveryScene({ index, focus, graph, laid, open, at, beside, every, onT
         canvas: { left: r.left, top: r.top, width: s.w, height: s.h },
         bars: frame.bars.length,
         outsideTop: laid.outsideTop,
-        ordered: lastDeliveryOrder(),
+        ordered: lastTraceOrder(),
         rows: [...laid.rows.keys()],
-        columns: DELIVERY_COLUMNS.map((c, i) => ({ name: DELIVERY_COLUMN_LABELS[c], count: counts[i] ?? 0, open: i > 0 && every[DELIVERY_STAGES[i - 1]], rollup: rolls[i] ? rollupText(rolls[i]!) : null })),
+        columns: TRACE_COLUMNS.map((c, i) => ({ name: TRACE_COLUMN_LABELS[c], count: counts[i] ?? 0, open: i > 0 && every[TRACE_STAGES[i - 1]], rollup: rolls[i] ? rollupText(rolls[i]!) : null })),
         lines: [
           ...frame.serves.map((i) => ({ from: `outcome/${graph.serves[i][0]}`, to: `${graph.serves[i][1]}|use-case`, kind: 'serves' as const, lit: path.serves.has(`${graph.serves[i][0]}>${graph.serves[i][1]}`) })),
           ...path.lines.map(([from, to]) => ({ from, to, kind: 'path' as const, lit: true })),
@@ -707,7 +707,7 @@ function DeliveryScene({ index, focus, graph, laid, open, at, beside, every, onT
 
   const armedPlate = tapToOpen.armed ? plateFor(graph.boxesOf.get(tapToOpen.armed)?.find((k) => laid.places.has(k)) ?? '') : null;
   return (
-    <div ref={wrapper} className="graph-flow trace-flow" data-view="delivery" data-ready={size ? 'true' : undefined}>
+    <div ref={wrapper} className="graph-flow trace-flow" data-ready={size ? 'true' : undefined}>
       <canvas
         ref={canvas}
         className="graph-canvas-draw"
@@ -731,8 +731,8 @@ function DeliveryScene({ index, focus, graph, laid, open, at, beside, every, onT
  * The view's boxes as the change marks roll them up (changes/marks.ts): each box under its parent, and each stage's cell
  * under its row's use case, so a closed cell's status counts what changed in it and the use case what changed in its row.
  */
-const treeCache = new WeakMap<DeliveryGraph, MarkTree>();
-function markTree(graph: DeliveryGraph): MarkTree {
+const treeCache = new WeakMap<TraceGraph, MarkTree>();
+function markTree(graph: TraceGraph): MarkTree {
   const known = treeCache.get(graph);
   if (known) return known;
   const nodes = new Map<string, { parent: string | null }>();
@@ -743,7 +743,7 @@ function markTree(graph: DeliveryGraph): MarkTree {
 }
 
 /** The rows' bands: a rule between each two, and the mark over the rows serving no outcome. */
-function paintRows(g: CanvasRenderingContext2D, laid: DeliveryLaid, graph: DeliveryGraph, look: Look, fonts: GraphFonts, X: (x: number) => number, Y: (y: number) => number, zoom: number) {
+function paintRows(g: CanvasRenderingContext2D, laid: TraceLaid, graph: TraceGraph, look: Look, fonts: GraphFonts, X: (x: number) => number, Y: (y: number) => number, zoom: number) {
   g.save();
   g.globalAlpha = 0.6;
   g.strokeStyle = look.rule;
@@ -782,7 +782,7 @@ function paintRows(g: CanvasRenderingContext2D, laid: DeliveryLaid, graph: Deliv
 }
 
 /** Each drawn box's toggle at its right: ▸ while closed, ▾ while open, in its box's edge color. */
-function paintToggles(g: CanvasRenderingContext2D, plates: readonly Plate[], graph: DeliveryGraph, open: Openness, look: Look, fonts: GraphFonts, v: Viewport, dpr: number, strength: (place: string) => number) {
+function paintToggles(g: CanvasRenderingContext2D, plates: readonly Plate[], graph: TraceGraph, open: Openness, look: Look, fonts: GraphFonts, v: Viewport, dpr: number, strength: (place: string) => number) {
   g.save();
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
   for (const p of plates) {
@@ -818,7 +818,7 @@ function paintToggles(g: CanvasRenderingContext2D, plates: readonly Plate[], gra
 }
 
 /** The columns' names and counts, kept at the top of the frame over each column; a stage's with its Expand all toggle. */
-function paintHeads(g: CanvasRenderingContext2D, counts: readonly number[], rolls: readonly (ChangeCounts | undefined)[], every: Readonly<Record<DeliveryStage, boolean>>, look: Look, fonts: GraphFonts, v: Viewport, box: { x: number; y: number; w: number; h: number }, dpr: number) {
+function paintHeads(g: CanvasRenderingContext2D, counts: readonly number[], rolls: readonly (ChangeCounts | undefined)[], every: Readonly<Record<TraceStage, boolean>>, look: Look, fonts: GraphFonts, v: Viewport, box: { x: number; y: number; w: number; h: number }, dpr: number) {
   g.save();
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
   g.globalAlpha = 1;
@@ -834,9 +834,9 @@ function paintHeads(g: CanvasRenderingContext2D, counts: readonly number[], roll
   g.rect(box.x, box.y, box.w, HEAD_PX);
   g.clip();
   g.textBaseline = 'middle';
-  DELIVERY_COLUMNS.forEach((c, i) => {
+  TRACE_COLUMNS.forEach((c, i) => {
     const mid = (columnLeft(i) + ITEM_WIDTH / 2) * v.zoom + v.x;
-    const name = DELIVERY_COLUMN_LABELS[c];
+    const name = TRACE_COLUMN_LABELS[c];
     // A stage's count is its rows with a gap; the outcomes' and use cases' their own.
     const countText = i >= 2 ? (counts[i] ? `${counts[i]} with gaps` : 'no gaps') : String(counts[i] ?? 0);
     g.font = fontFor(fonts, 'title', HEAD_FONT);
@@ -849,7 +849,7 @@ function paintHeads(g: CanvasRenderingContext2D, counts: readonly number[], roll
     const line = box.y + (roll ? 9 : HEAD_PX / 2);
     g.textAlign = 'left';
     if (glyph) {
-      const open = every[DELIVERY_STAGES[i - 1]];
+      const open = every[TRACE_STAGES[i - 1]];
       const cx = start + 5;
       const cy = line;
       g.fillStyle = look.muted;

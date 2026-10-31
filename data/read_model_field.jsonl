@@ -241,12 +241,6 @@
 {"read_model_id":"LA-TRC-RM10","position":2,"name":"Pattern","meaning":"The pattern it follows.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-TRC-RM10","position":3,"name":"Settings","meaning":"Each setting with its value, by setting name.","type":"text","required":true}
 {"read_model_id":"LA-TRC-RM10","position":4,"name":"Domain","meaning":"The domain the follower sits in: a domain is its own, a use case its capability's. A pattern's followers are grouped by it, with whether the domain itself follows the pattern.","type_value_object_id":"LA-VO01","required":true}
-{"read_model_id":"LA-TRC-RM11","position":1,"name":"Product","meaning":"The product whose space it is: its own records and those of no product.","type_value_object_id":"LA-VO01","required":true}
-{"read_model_id":"LA-TRC-RM11","position":2,"name":"Obligation","meaning":"An obligation of the space with a chain or a gap.","type":"text","required":true,"example":"TL-LEND-UC03-R02"}
-{"read_model_id":"LA-TRC-RM11","position":3,"name":"Chain","meaning":"What designs it, what builds it and its tests, each in the engine's order, the files the build records and tests name with the records naming each, and the chain's links from the record nearer the obligation to the one it leads to.","type":"text","required":true}
-{"read_model_id":"LA-TRC-RM11","position":4,"name":"Gaps","meaning":"What coverage reports it misses wherever it is owed, in the order designed, built, proved.","type":"text","required":false,"example":"proved"}
-{"read_model_id":"LA-TRC-RM11","position":5,"name":"Proof only","meaning":"Whether only proof is asked of its kind (a pattern rule), so its design and build are not owed.","type":"yes/no","required":true,"example":"false"}
-{"read_model_id":"LA-TRC-RM11","position":6,"name":"Untraced","meaning":"The records coverage reports untraced: of a kind a chain reaches, and reached by none.","type":"text","required":false,"example":"TL-LEND-CMD04"}
 {"read_model_id":"LA-TRC-RM12","position":1,"name":"Record","meaning":"The record.","type":"text","required":true,"example":"LA-AUT-A11"}
 {"read_model_id":"LA-TRC-RM12","position":2,"name":"Outcomes","meaning":"The business outcomes it serves, in ID order; none when no use case whose capability serves one reaches it.","type":"text","required":true}
 {"read_model_id":"LA-TRC-RM12","position":3,"name":"Use cases","meaning":"The use cases that reach it, through which it serves them.","type":"text","required":true}

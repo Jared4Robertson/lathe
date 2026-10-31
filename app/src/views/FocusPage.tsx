@@ -27,7 +27,6 @@ import { createPeekStore } from './peek';
 import { TAB_PANEL_ID, tabId, tabLabel } from './TabStrip';
 import { rememberedStage, useNewPlaceOpener, usePlace, withStageIn, type TabsApi } from './usePlace';
 import { hereOf, type PlaceView } from './place';
-import { DEFAULT_TRACE_VIEW } from '../trace/views';
 import { runTabSetCommand } from '../exploring/tab-set/run';
 import { rememberStage } from '../exploring/tab-set/commands/remember-stage';
 import { takeMenuRecord } from '../shell/desktopRecord';
@@ -43,8 +42,8 @@ import { useJumpChanges } from '../changes/jump';
 
 // One page for one thing (a record, a group, a product or a domain), at one address. One stage
 // fills the window behind everything: the Graph, the ERD (of a domain, an aggregate or an entity's
-// aggregate, or of the domain or product around any other record) or the Trace (an obligation's chain, the
-// matrix of the obligations under the focus, or the rows that hold it), switched in the page bar and named
+// aggregate, or of the domain or product around any other record) or the Trace (one row per use case, from
+// its outcomes to its acceptance tests), switched in the page bar and named
 // in the address (`?stage=erd`). Everything else floats over it as frosted panels: the nav (the
 // shell's), the tab panel (the page bar, then the header strip naming the focus), the wiki card (the
 // focus's wiki page, its History at the end of the whole page). The stage frames
@@ -198,8 +197,6 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
       return same ? v : { ...v, depth: next.depth, hiddenKinds: kinds };
     });
   }, [setView]);
-  // The Trace's view is the place's: each tab its own (LA-V98).
-  const setTraceView = useCallback((trace: PlaceView['trace']) => setView((v) => (v.trace === trace ? v : { ...v, trace })), [setView]);
   const setCardView = useCallback((patch: Partial<PlaceView['card']>) => setView((v) => (
     Object.entries(patch).every(([k, x]) => v.card[k as keyof PlaceView['card']] === x) ? v : { ...v, card: { ...v.card, ...patch } }
   )), [setView]);
@@ -345,7 +342,7 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
     ),
     trace: (
       <Suspense fallback={<p className="hint graph-loading">Loading the trace…</p>}>
-        <TraceView index={index} focus={shownFocus} onNavigate={onNavigate} hrefFor={hrefFor} onPeek={peek.set} onCounts={setCounts} space={space} cameraKey={place.key} onOpenNew={onOpenNew} view={view.trace} onView={setTraceView} />
+        <TraceView index={index} focus={shownFocus} onNavigate={onNavigate} hrefFor={hrefFor} onPeek={peek.set} onCounts={setCounts} space={space} cameraKey={place.key} onOpenNew={onOpenNew} />
       </Suspense>
     ),
   };
@@ -464,7 +461,7 @@ export function StageBackdrop({ index, focus }: { index: RecordIndex | null; foc
       <Suspense fallback={fallback}>
         {stage === 'graph' && <GraphView index={index} focus={shown} onNavigate={ignore} settings={settings} onSettingsChange={ignore} onPeek={peek.set} onCounts={ignore} space={space} />}
         {stage === 'erd' && <ErdView index={index} focus={shown} onNavigate={ignore} onPeek={peek.set} onCounts={ignore} space={space} />}
-        {stage === 'trace' && <TraceView index={index} focus={shown} onNavigate={ignore} hrefFor={addressOf} onPeek={peek.set} onCounts={ignore} space={space} view={DEFAULT_TRACE_VIEW} onView={ignore} />}
+        {stage === 'trace' && <TraceView index={index} focus={shown} onNavigate={ignore} hrefFor={addressOf} onPeek={peek.set} onCounts={ignore} space={space} />}
       </Suspense>
     );
   }
