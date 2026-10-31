@@ -2,6 +2,7 @@
 // shows it, the records of a kind under one parent, and the next free ID for a record of a kind. Each reads only the
 // read model and its kind's declaration, through its reader (reader.ts), and changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { idEnd, onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import type { KindDescription } from '../../platform/data/schema.ts';
 import { EXTENSION_RECORD_SLICE } from './model.ts';
@@ -61,12 +62,6 @@ export const LIST_EXTENSION_RECORDS: QueryDefinition<{ kind: string; parent: str
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No records.'),
 };
 
-// The end of a kind's ID after its base: letters and a number (RP<nn>), letters alone (CLI), or null for none.
-function idEnd(pattern: string): { letters: string; width: number } | null {
-  const m = /-([A-Z]+)(?:<(n+)>)?$/.exec(pattern.trim());
-  return m ? { letters: m[1], width: m[2]?.length ?? 0 } : null;
-}
-
 /**
  * The next free ID for a record of a product kind under its parent, by the kind's declared ID pattern: one past the
  * highest in use. A pattern that starts <P>-<D>- numbers it in its parent's domain, <P>- in its product, and any other
@@ -87,7 +82,7 @@ export function nextExtensionRecordId(reader: ExtensionRecordReader, input: { ki
     if (reader.kindOf(next)) refuse('exists', `${input.parent} already has its ${kind.name}, ${next}`);
     return next;
   }
-  return `${start}-${end.letters}${String(reader.highestAfter(`${start}-${end.letters}`) + 1).padStart(end.width, '0')}`;
+  return onePast(reader, `${start}-${end.letters}`, end);
 }
 
 /** Get the next ID for a record of a product kind (LA-AUT-QRY126). */

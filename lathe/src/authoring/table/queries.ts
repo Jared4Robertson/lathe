@@ -2,6 +2,7 @@
 // which the query runner gives each handler: a table whole as its page reads it, the tables under a parent, and the
 // next free ID for a table. A handler never sees the data, a repository or the aggregate's model; each changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import { TABLE_SLICE } from './model.ts';
 import type { TablePage, TableSummary } from './read-model.ts';
@@ -68,13 +69,13 @@ export const LIST_TABLES: QueryDefinition<{ parent: string }, TableSummary[], Ta
  * taken; a domain's own tables are its ID, TB and one past the highest number in use.
  */
 export function nextTableId(reader: TableReader, input: { parent: string }): string {
+  const shape = reader.idShape('table');
   if (parentKindOf(reader, input.parent) !== 'domain') {
-    const own = `${input.parent}-TB`;
+    const own = `${input.parent}-${shape.letters}`;
     if (reader.kindOf(own)) refuse('exists', `${input.parent} already has its table, ${own}`);
     return own;
   }
-  const prefix = `${input.parent}-TB`;
-  return `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
+  return onePast(reader, `${input.parent}-${shape.letters}`, shape);
 }
 
 /** Get the next ID for a table (LA-AUT-QRY187). */

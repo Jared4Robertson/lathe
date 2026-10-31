@@ -3,6 +3,7 @@
 // query, and the next free ID for a record of one of its kinds. A handler never sees the data, a repository or the
 // aggregate's model; each changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import { ENDPOINT_SLICE, type EndpointKind } from './model.ts';
 import type { EndpointPage, EndpointSummary } from './read-model.ts';
@@ -53,16 +54,8 @@ export const LIST_ENDPOINTS: QueryDefinition<{ parent: string }, EndpointSummary
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No endpoints.'),
 };
 
-// One past the highest number in use after the prefix, padded to two digits.
-const onePast = (reader: EndpointReader, prefix: string): string => `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
-
-/** The kinds of the aggregate, each with the kinds of record it sits under. */
-const UNDER: Record<EndpointKind, string[]> = {
-  endpoint: ['command', 'query'],
-  api_requirement: ['endpoint'],
-  endpoint_handler: ['endpoint'],
-  endpoint_test: ['api_requirement'],
-};
+/** The kinds of the aggregate with an ID under a parent; how each is written the schema says (`idShape`). */
+const KINDS: readonly string[] = ['endpoint', 'api_requirement', 'endpoint_handler', 'endpoint_test'];
 
 /**
  * The next free ID for a record of one of the aggregate's kinds under its parent: one past the highest in use. An
@@ -70,19 +63,19 @@ const UNDER: Record<EndpointKind, string[]> = {
  * endpoint's and H.
  */
 export function nextEndpointId(reader: EndpointReader, input: { kind: string; parent: string }): string {
-  if (!(input.kind in UNDER)) refuse('kind', `${input.kind} is not a kind of the Endpoint aggregate; its kinds are ${Object.keys(UNDER).join(', ')}`);
+  if (!KINDS.includes(input.kind)) refuse('kind', `${input.kind} is not a kind of the Endpoint aggregate; its kinds are ${KINDS.join(', ')}`);
   const kind = input.kind as EndpointKind;
+  const shape = reader.idShape(kind);
   const parent = reader.kindOf(input.parent);
-  if (!parent || !UNDER[kind].includes(parent)) refuse('parent', `${article(kind)} ${kind} sits under ${UNDER[kind].map((k) => `${article(k)} ${k}`).join(' or ')}, and ${input.parent} is ${parent ? `${article(parent)} ${parent}` : 'no record'}`);
+  if (!parent || !shape.parents.includes(parent)) refuse('parent', `${article(kind)} ${kind} sits under ${shape.parents.map((k) => `${article(k)} ${k}`).join(' or ')}, and ${input.parent} is ${parent ? `${article(parent)} ${parent}` : 'no record'}`);
   switch (kind) {
     case 'endpoint':
-      return onePast(reader, `${reader.domainOf(input.parent)}-EP`);
+      return onePast(reader, `${reader.domainOf(input.parent)}-${shape.letters}`, shape);
     case 'api_requirement':
-      return onePast(reader, `${input.parent}-R`);
     case 'endpoint_test':
-      return onePast(reader, `${input.parent}-T`);
+      return onePast(reader, `${input.parent}-${shape.letters}`, shape);
     case 'endpoint_handler': {
-      const handlerId = `${input.parent}-H`;
+      const handlerId = `${input.parent}-${shape.letters}`;
       if (reader.kindOf(handlerId)) refuse('exists', `${input.parent} already has its endpoint handler, ${handlerId}`);
       return handlerId;
     }

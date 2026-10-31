@@ -3,6 +3,7 @@
 // storage requirements of an aggregate or read model, and the next free ID for a record of one of its kinds. A handler
 // never sees the data, a repository or the aggregate's model; each changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import { STORAGE_REQUIREMENT_SLICE, type StorageRequirementKind } from './model.ts';
 import type { StorageRequirementPage, StorageRequirementSummary } from './read-model.ts';
@@ -53,11 +54,9 @@ export const LIST_STORAGE_REQUIREMENTS: QueryDefinition<{ parent: string }, Stor
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No storage requirements.'),
 };
 
-/** The kinds of record each of the aggregate's kinds may sit under, for its next ID. */
-const UNDER: Record<StorageRequirementKind, readonly string[]> = {
-  storage_requirement: ['aggregate', 'read_model'],
-  storage_requirement_test: ['storage_requirement'],
-};
+
+/** The kinds of the aggregate with an ID under a parent; how each is written the schema says (`idShape`). */
+const KINDS: readonly string[] = ['storage_requirement', 'storage_requirement_test'];
 
 /**
  * The next free ID for a record of one of the aggregate's kinds under its parent: a storage requirement's is its
@@ -65,14 +64,14 @@ const UNDER: Record<StorageRequirementKind, readonly string[]> = {
  * T and one past the highest in use.
  */
 export function nextStorageRequirementId(reader: StorageRequirementReader, input: { kind: string; parent: string }): string {
-  if (!(input.kind in UNDER)) refuse('kind', `${input.kind} is not a kind of the Storage requirement aggregate; its kinds are ${Object.keys(UNDER).join(', ')}`);
+  if (!KINDS.includes(input.kind)) refuse('kind', `${input.kind} is not a kind of the Storage requirement aggregate; its kinds are ${KINDS.join(', ')}`);
   const kind = input.kind as StorageRequirementKind;
+  const shape = reader.idShape(kind);
   const parentKind = reader.kindOf(input.parent);
-  if (!parentKind || !UNDER[kind].includes(parentKind)) {
-    refuse('parent', `a ${kind} sits under ${UNDER[kind].map((k) => `${article(k)} ${k}`).join(' or ')}, and ${input.parent} is ${parentKind ? `${article(parentKind)} ${parentKind}` : 'no record'}`);
+  if (!parentKind || !shape.parents.includes(parentKind)) {
+    refuse('parent', `a ${kind} sits under ${shape.parents.map((k) => `${article(k)} ${k}`).join(' or ')}, and ${input.parent} is ${parentKind ? `${article(parentKind)} ${parentKind}` : 'no record'}`);
   }
-  const prefix = `${input.parent}-${kind === 'storage_requirement' ? 'SR' : 'T'}`;
-  return `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
+  return onePast(reader, `${input.parent}-${shape.letters}`, shape);
 }
 
 /** Get the next ID for a record of the Storage requirement aggregate (LA-AUT-QRY222). */

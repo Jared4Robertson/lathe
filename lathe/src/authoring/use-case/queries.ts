@@ -3,6 +3,7 @@
 // the next free ID for a record of one of its kinds. A handler never sees the data, a repository or the aggregate's
 // model; each changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import { USE_CASE_SLICE, type UseCaseKind } from './model.ts';
 import type { UseCasePage, UseCaseSummary } from './read-model.ts';
@@ -51,18 +52,9 @@ export const LIST_USE_CASES: QueryDefinition<{ capability_id: string }, UseCaseS
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No use cases.'),
 };
 
-// One past the highest number in use after the prefix, padded to two digits.
-const onePast = (reader: UseCaseReader, prefix: string): string => `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
 
-/** The kinds of the aggregate, each with the kind of record it sits under. */
-const UNDER: Record<UseCaseKind, string> = {
-  use_case: 'capability',
-  uc_requirement: 'use_case',
-  use_case_test: 'uc_requirement',
-  flow: 'use_case',
-  flow_step: 'flow',
-  flow_test: 'flow',
-};
+/** The kinds of the aggregate with an ID under a parent; how each is written the schema says (`idShape`). */
+const KINDS: readonly string[] = ['use_case', 'uc_requirement', 'use_case_test', 'flow', 'flow_step', 'flow_test'];
 
 /**
  * The next free ID for a record of one of the aggregate's kinds under its parent: one past the highest in use. A use
@@ -70,21 +62,22 @@ const UNDER: Record<UseCaseKind, string> = {
  * no flow through yet; a flow has one flow test, whose ID is the flow's and T.
  */
 export function nextUseCaseId(reader: UseCaseReader, input: { kind: string; parent: string }): string {
-  if (!(input.kind in UNDER)) refuse('kind', `${input.kind} is not a kind of the Use case aggregate; its kinds are ${Object.keys(UNDER).join(', ')}`);
+  if (!KINDS.includes(input.kind)) refuse('kind', `${input.kind} is not a kind of the Use case aggregate; its kinds are ${KINDS.join(', ')}`);
   const kind = input.kind as UseCaseKind;
+  const shape = reader.idShape(kind);
   const parentKind = reader.kindOf(input.parent);
-  if (parentKind !== UNDER[kind]) refuse('parent', `a ${kind} sits under a ${UNDER[kind]}, and ${input.parent} is ${parentKind ? `a ${parentKind}` : 'no record'}`);
+  if (parentKind !== shape.parents[0]) refuse('parent', `a ${kind} sits under a ${shape.parents[0]}, and ${input.parent} is ${parentKind ? `a ${parentKind}` : 'no record'}`);
   switch (kind) {
     case 'use_case':
-      return onePast(reader, `${reader.capability(input.parent)!.domain}-UC`);
+      return onePast(reader, `${reader.capability(input.parent)!.domain}-${shape.letters}`, shape);
     case 'uc_requirement':
-      return onePast(reader, `${input.parent}-R`);
+      return onePast(reader, `${input.parent}-${shape.letters}`, shape);
     case 'use_case_test':
-      return onePast(reader, `${input.parent}-T`);
+      return onePast(reader, `${input.parent}-${shape.letters}`, shape);
     case 'flow_step':
-      return onePast(reader, `${input.parent}-S`);
+      return onePast(reader, `${input.parent}-${shape.letters}`, shape);
     case 'flow_test': {
-      const testId = `${input.parent}-T`;
+      const testId = `${input.parent}-${shape.letters}`;
       if (reader.kindOf(testId)) refuse('exists', `${input.parent} already has its flow test, ${testId}`);
       return testId;
     }
@@ -94,7 +87,7 @@ export function nextUseCaseId(reader: UseCaseReader, input: { kind: string; pare
       const through = new Set(useCase.flows.map((f) => f.flow.interface_id));
       const free = reader.interfacesOf(product).filter((i) => !through.has(i))[0];
       if (!free) refuse('exists', `${input.parent} has a flow through every interface of ${product}; a flow's ID ends in its interface's number, so declare the interface first`);
-      return `${input.parent}-FL${/-IF(\d+)$/.exec(free!)![1]}`;
+      return `${input.parent}-${shape.letters}${/-IF(\d+)$/.exec(free!)![1]}`;
     }
   }
 }

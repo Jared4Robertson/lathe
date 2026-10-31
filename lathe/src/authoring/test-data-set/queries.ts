@@ -3,6 +3,7 @@
 // sets of a domain, and the next free ID for one. A handler never sees the data, a repository or the aggregate's
 // model; each changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import { TEST_DATA_SET_SLICE } from './model.ts';
 import type { TestDataSetPage, TestDataSetSummary } from './read-model.ts';
@@ -53,9 +54,9 @@ export const LIST_TEST_DATA_SETS: QueryDefinition<{ domain_id: string }, TestDat
 
 /** The next free ID for a test data set of the domain: its domain's ID, TD and one past the highest number in use. */
 export function nextTestDataSetId(reader: TestDataSetReader, input: { domain_id: string }): string {
-  if (reader.kindOf(input.domain_id) !== 'domain') refuse('parent', `a test data set sits under a domain, and ${input.domain_id} is not one`);
-  const prefix = `${input.domain_id}-TD`;
-  return `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
+  const shape = reader.idShape('test_data_set');
+  if (reader.kindOf(input.domain_id) !== shape.parents[0]) refuse('parent', `a test data set sits under a domain, and ${input.domain_id} is not one`);
+  return onePast(reader, `${input.domain_id}-${shape.letters}`, shape);
 }
 
 /** Get the next ID for a test data set (LA-AUT-QRY137). */
