@@ -3,8 +3,9 @@
 // next free ID for a record of one of its numbered kinds. A handler never sees the data, a repository or the
 // aggregate's model; each changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { DOMAIN_SLICE, type DomainKind } from './model.ts';
+import { DOMAIN_SLICE } from './model.ts';
 import type { DomainPage, DomainSummary } from './read-model.ts';
 import { domainReader, type DomainReader } from './reader.ts';
 
@@ -53,18 +54,8 @@ export const LIST_DOMAINS: QueryDefinition<{ product_id: string }, DomainSummary
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No domains.'),
 };
 
-// One past the highest number in use after the prefix, padded to two digits.
-const onePast = (reader: DomainReader, prefix: string): string => `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
-
-/** The numbered kinds of the aggregate, each with the kind of record it sits under. */
-const UNDER: Record<Exclude<DomainKind, 'domain'>, string> = {
-  capability: 'domain',
-  term: 'domain',
-  domain_service: 'domain',
-  repository: 'domain',
-  service: 'domain_service',
-  domain_service_test: 'domain_service',
-};
+/** The kinds of the aggregate with an ID under a parent; how each is written the schema says (`idShape`). */
+const KINDS: readonly string[] = ['capability', 'term', 'domain_service', 'repository', 'service', 'domain_service_test'];
 
 /**
  * The next free ID for a record of one of the aggregate's numbered kinds under its parent: one past the highest in
@@ -73,27 +64,17 @@ const UNDER: Record<Exclude<DomainKind, 'domain'>, string> = {
  */
 export function nextDomainId(reader: DomainReader, input: { kind: string; parent: string }): string {
   if (input.kind === 'domain') refuse('kind', "a domain's ID is its product's ID and a code chosen for it, such as TL-LEND, so it has no next ID");
-  if (!(input.kind in UNDER)) refuse('kind', `${input.kind} is not a kind of the Domain aggregate; its numbered kinds are ${Object.keys(UNDER).join(', ')}`);
-  const kind = input.kind as keyof typeof UNDER;
+  if (!KINDS.includes(input.kind)) refuse('kind', `${input.kind} is not a kind of the Domain aggregate; its numbered kinds are ${KINDS.join(', ')}`);
+  const kind = input.kind;
+  const shape = reader.idShape(kind);
   const parentKind = reader.kindOf(input.parent);
-  if (parentKind !== UNDER[kind]) refuse('parent', `a ${kind} sits under a ${UNDER[kind]}, and ${input.parent} is ${parentKind ? `${article(parentKind)} ${parentKind}` : 'no record'}`);
-  switch (kind) {
-    case 'capability':
-      return onePast(reader, `${input.parent}-CAP`);
-    case 'term':
-      return onePast(reader, `${input.parent}-TM`);
-    case 'domain_service':
-      return onePast(reader, `${input.parent}-DS`);
-    case 'repository':
-      return onePast(reader, `${input.parent}-REPO`);
-    case 'domain_service_test':
-      return onePast(reader, `${input.parent}-T`);
-    case 'service': {
-      const serviceId = `${input.parent}-SV`;
-      if (reader.kindOf(serviceId)) refuse('exists', `${input.parent} already has its service, ${serviceId}`);
-      return serviceId;
-    }
+  if (parentKind !== shape.parents[0]) refuse('parent', `a ${kind} sits under a ${shape.parents[0]}, and ${input.parent} is ${parentKind ? `${article(parentKind)} ${parentKind}` : 'no record'}`);
+  if (kind === 'service') {
+    const serviceId = `${input.parent}-${shape.letters}`;
+    if (reader.kindOf(serviceId)) refuse('exists', `${input.parent} already has its service, ${serviceId}`);
+    return serviceId;
   }
+  return onePast(reader, `${input.parent}-${shape.letters}`, shape);
 }
 
 /** Get the next ID for a record of the Domain aggregate (LA-AUT-QRY132). */

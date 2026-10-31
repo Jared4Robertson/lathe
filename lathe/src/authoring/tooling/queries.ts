@@ -2,6 +2,7 @@
 // and the next free ID for one. Each reads only the read model, through its reader (reader.ts), and changes
 // nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import { TOOLING_SLICE } from './model.ts';
 import type { ToolingPage, ToolingSummary } from './read-model.ts';
@@ -54,9 +55,9 @@ export const LIST_TOOLING: QueryDefinition<{ domain_id: string }, ToolingSummary
 
 /** The next free ID for a tooling record of the domain: its domain's ID and TOOL, one past the highest number in use. */
 export function nextToolingId(reader: ToolingReader, input: { domain_id: string }): string {
-  if (reader.kindOf(input.domain_id) !== 'domain') refuse('parent', `a tooling record sits under a domain, and ${input.domain_id} is not one`);
-  const prefix = `${input.domain_id}-TOOL`;
-  return `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
+  const shape = reader.idShape('tooling');
+  if (reader.kindOf(input.domain_id) !== shape.parents[0]) refuse('parent', `a tooling record sits under a domain, and ${input.domain_id} is not one`);
+  return onePast(reader, `${input.domain_id}-${shape.letters}`, shape);
 }
 
 /** Get the next ID for a tooling record (LA-AUT-QRY125). */

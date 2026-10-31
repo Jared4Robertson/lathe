@@ -2,6 +2,7 @@
 // the query runner gives each handler: a view whole, the views of a product, and the next free ID for a record of one
 // of its kinds. A handler never sees the data, a repository or the aggregate's model; each changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import { VIEW_SLICE, type ViewKind } from './model.ts';
 import type { ViewPage, ViewSummary } from './read-model.ts';
@@ -51,20 +52,17 @@ export const LIST_VIEWS: QueryDefinition<{ product_id: string }, ViewSummary[], 
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No views.'),
 };
 
-// One past the highest number in use after the prefix, padded to two digits.
-const onePast = (reader: ViewReader, prefix: string): string => `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
-
-/** The kinds of the aggregate, each with the kind of record it sits under. */
-const UNDER: Record<ViewKind, string> = { view: 'product', view_requirement: 'view', view_test: 'view_requirement' };
+/** The kinds of the aggregate with an ID under a parent; how each is written the schema says (`idShape`). */
+const KINDS: readonly ViewKind[] = ['view', 'view_requirement', 'view_test'];
 
 /** The next free ID for a record of one of the aggregate's kinds under its parent: one past the highest in use. */
 export function nextViewId(reader: ViewReader, input: { kind: string; parent: string }): string {
-  if (!(input.kind in UNDER)) refuse('kind', `${input.kind} is not a kind of the View aggregate; its kinds are ${Object.keys(UNDER).join(', ')}`);
+  if (!KINDS.includes(input.kind as ViewKind)) refuse('kind', `${input.kind} is not a kind of the View aggregate; its kinds are ${KINDS.join(', ')}`);
   const kind = input.kind as ViewKind;
+  const shape = reader.idShape(kind);
   const parent = reader.kindOf(input.parent);
-  if (parent !== UNDER[kind]) refuse('parent', `a ${kind} sits under a ${UNDER[kind]}, and ${input.parent} is ${parent ? `${a(parent)} ${parent}` : 'no record'}`);
-  const suffix = { view: 'V', view_requirement: 'R', view_test: 'T' }[kind];
-  return onePast(reader, `${input.parent}-${suffix}`);
+  if (parent !== shape.parents[0]) refuse('parent', `a ${kind} sits under a ${shape.parents[0]}, and ${input.parent} is ${parent ? `${a(parent)} ${parent}` : 'no record'}`);
+  return onePast(reader, `${input.parent}-${shape.letters}`, shape);
 }
 
 /** Get the next ID in a view (LA-AUT-QRY192). */

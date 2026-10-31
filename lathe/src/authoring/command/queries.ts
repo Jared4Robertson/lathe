@@ -3,6 +3,7 @@
 // next free ID for a record of one of its kinds. A handler never sees the data, a repository or the aggregate's model;
 // each changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import { COMMAND_SLICE, type CommandKind } from './model.ts';
 import type { CommandPage, CommandSummary } from './read-model.ts';
@@ -53,17 +54,8 @@ export const LIST_COMMANDS: QueryDefinition<{ entity_id: string }, CommandSummar
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No commands.'),
 };
 
-// One past the highest number in use after the prefix, padded to two digits.
-const onePast = (reader: CommandReader, prefix: string): string => `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
-
-/** The kinds of the aggregate, each with the kind of record it sits under. */
-const UNDER: Record<CommandKind, string> = {
-  command: 'entity',
-  command_handler: 'command',
-  policy: 'command',
-  event_handler: 'policy',
-  policy_test: 'policy',
-};
+/** The kinds of the aggregate with an ID under a parent; how each is written the schema says (`idShape`). */
+const KINDS: readonly string[] = ['command', 'command_handler', 'policy', 'event_handler', 'policy_test'];
 
 /**
  * The next free ID for a record of one of the aggregate's kinds under its parent: a command's and a policy's are their
@@ -71,24 +63,25 @@ const UNDER: Record<CommandKind, string> = {
  * handler and one test, whose IDs are their parent's with H and T.
  */
 export function nextCommandId(reader: CommandReader, input: { kind: string; parent: string }): string {
-  if (!(input.kind in UNDER)) refuse('kind', `${input.kind} is not a kind of the Command aggregate; its kinds are ${Object.keys(UNDER).join(', ')}`);
+  if (!KINDS.includes(input.kind)) refuse('kind', `${input.kind} is not a kind of the Command aggregate; its kinds are ${KINDS.join(', ')}`);
   const kind = input.kind as CommandKind;
+  const shape = reader.idShape(kind);
   const parentKind = reader.kindOf(input.parent);
-  if (parentKind !== UNDER[kind]) refuse('parent', `${article(kind)} ${kind} sits under ${article(UNDER[kind])} ${UNDER[kind]}, and ${input.parent} is ${parentKind ? `${article(parentKind)} ${parentKind}` : 'no record'}`);
+  if (parentKind !== shape.parents[0]) refuse('parent', `${article(kind)} ${kind} sits under ${article(shape.parents[0])} ${shape.parents[0]}, and ${input.parent} is ${parentKind ? `${article(parentKind)} ${parentKind}` : 'no record'}`);
   const only = (id: string) => {
     if (reader.kindOf(id)) refuse('exists', `${input.parent} already has its ${kind.replace('_', ' ')}, ${id}`);
     return id;
   };
   switch (kind) {
     case 'command':
-      return onePast(reader, `${reader.domainOf(input.parent)}-CMD`);
+      return onePast(reader, `${reader.domainOf(input.parent)}-${shape.letters}`, shape);
     case 'policy':
-      return onePast(reader, `${reader.domainOf(input.parent)}-PO`);
+      return onePast(reader, `${reader.domainOf(input.parent)}-${shape.letters}`, shape);
     case 'command_handler':
     case 'event_handler':
-      return only(`${input.parent}-H`);
+      return only(`${input.parent}-${shape.letters}`);
     case 'policy_test':
-      return only(`${input.parent}-T`);
+      return only(`${input.parent}-${shape.letters}`);
   }
 }
 

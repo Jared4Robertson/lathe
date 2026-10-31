@@ -2,6 +2,7 @@
 // interfaces of a product, and the next free ID for an open question or an interface. Each reads only the read model,
 // through its reader (reader.ts), and changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import { PRODUCT_SLICE } from './model.ts';
 import type { ProductPage, ProductSummary } from './read-model.ts';
@@ -75,24 +76,16 @@ export const LIST_INTERFACES: QueryDefinition<{ product_id: string }, { id: stri
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title} (${r.kind})`).join('\n') : 'No interfaces.'),
 };
 
-// One past the highest number in use after the prefix, padded to two digits.
-const onePast = (reader: ProductReader, prefix: string): string => `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
-
 /**
  * The next free ID for an open question (under a product or a domain: its ID and Q) or an interface (under a product:
  * its ID and IF): one past the highest in use.
  */
 export function nextProductId(reader: ProductReader, input: { kind: string; parent: string }): string {
+  if (input.kind !== 'question' && input.kind !== 'interface') refuse('kind', `${input.kind} is not a kind of the Product aggregate with an ID under a parent; its kinds are question and interface`);
+  const shape = reader.idShape(input.kind);
   const parent = reader.kindOf(input.parent);
-  if (input.kind === 'question') {
-    if (parent !== 'product' && parent !== 'domain') refuse('parent', `an open question sits under a product or a domain, and ${input.parent} is ${parent ? `a ${parent}` : 'no record'}`);
-    return onePast(reader, `${input.parent}-Q`);
-  }
-  if (input.kind === 'interface') {
-    if (parent !== 'product') refuse('parent', `an interface sits under a product, and ${input.parent} is ${parent ? `a ${parent}` : 'no record'}`);
-    return onePast(reader, `${input.parent}-IF`);
-  }
-  return refuse('kind', `${input.kind} is not a kind of the Product aggregate with an ID under a parent; its kinds are question and interface`);
+  if (!parent || !shape.parents.includes(parent)) refuse('parent', `${input.kind === 'question' ? 'an open question' : 'an interface'} sits under ${shape.parents.map((k) => `a ${k}`).join(' or ')}, and ${input.parent} is ${parent ? `a ${parent}` : 'no record'}`);
+  return onePast(reader, `${input.parent}-${shape.letters}`, shape);
 }
 
 /** Get the next ID for a record of the Product aggregate (LA-AUT-QRY112). */

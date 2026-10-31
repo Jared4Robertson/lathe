@@ -3,6 +3,7 @@
 // of a product, and the next free ID for a record of one of its kinds. A handler never sees the data, a repository or
 // the aggregate's model; each changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import { VALUE_OBJECT_SLICE, type ValueObjectKind } from './model.ts';
 import type { ValueObjectPage, ValueObjectSummary } from './read-model.ts';
@@ -53,16 +54,9 @@ export const LIST_VALUE_OBJECTS: QueryDefinition<{ product_id: string }, ValueOb
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No value objects.'),
 };
 
-/** The kind of record each of the aggregate's kinds sits under, for its next ID. */
-const UNDER: Record<ValueObjectKind, string> = {
-  value_object: 'product',
-  constraint: 'value_object',
-  value_type: 'value_object',
-  constraint_test: 'constraint',
-};
 
-// One past the highest number in use after the prefix, padded to two digits.
-const onePast = (reader: ValueObjectReader, prefix: string): string => `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
+/** The kinds of the aggregate with an ID under a parent; how each is written the schema says (`idShape`). */
+const KINDS: readonly string[] = ['value_object', 'constraint', 'value_type', 'constraint_test'];
 
 /**
  * The next free ID for a record of one of the aggregate's kinds under its parent: a value object's is its product's ID,
@@ -70,15 +64,16 @@ const onePast = (reader: ValueObjectReader, prefix: string): string => `${prefix
  * has one value type (VT) and a constraint one test (T), so theirs is fixed, and refused once taken.
  */
 export function nextValueObjectId(reader: ValueObjectReader, input: { kind: string; parent: string }): string {
-  if (!(input.kind in UNDER)) refuse('kind', `${input.kind} is not a kind of the Value object aggregate; its kinds are ${Object.keys(UNDER).join(', ')}`);
+  if (!KINDS.includes(input.kind)) refuse('kind', `${input.kind} is not a kind of the Value object aggregate; its kinds are ${KINDS.join(', ')}`);
   const kind = input.kind as ValueObjectKind;
+  const shape = reader.idShape(kind);
   const parentKind = reader.kindOf(input.parent);
-  if (parentKind !== UNDER[kind]) refuse('parent', `a ${kind} sits under a ${UNDER[kind]}, and ${input.parent} is ${parentKind ? `${article(parentKind)} ${parentKind}` : 'no record'}`);
+  if (parentKind !== shape.parents[0]) refuse('parent', `a ${kind} sits under a ${shape.parents[0]}, and ${input.parent} is ${parentKind ? `${article(parentKind)} ${parentKind}` : 'no record'}`);
   switch (kind) {
     case 'value_object':
-      return onePast(reader, `${input.parent}-VO`);
+      return onePast(reader, `${input.parent}-${shape.letters}`, shape);
     case 'constraint':
-      return onePast(reader, `${input.parent}-C`);
+      return onePast(reader, `${input.parent}-${shape.letters}`, shape);
     case 'value_type':
     case 'constraint_test': {
       const own = `${input.parent}-${kind === 'value_type' ? 'VT' : 'T'}`;

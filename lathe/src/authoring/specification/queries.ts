@@ -3,6 +3,7 @@
 // specifications of a domain, and the next free ID for a record of one of its kinds. A handler never sees the data, a
 // repository or the aggregate's model; each changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import { SPECIFICATION_SLICE, type SpecificationKind } from './model.ts';
 import type { SpecificationPage, SpecificationSummary } from './read-model.ts';
@@ -53,12 +54,9 @@ export const LIST_SPECIFICATIONS: QueryDefinition<{ domain_id: string }, Specifi
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No specifications.'),
 };
 
-/** The kind of record each of the aggregate's kinds sits under, for its next ID. */
-const UNDER: Record<SpecificationKind, string> = {
-  specification: 'domain',
-  predicate: 'specification',
-  specification_test: 'specification',
-};
+
+/** The kinds of the aggregate with an ID under a parent; how each is written the schema says (`idShape`). */
+const KINDS: readonly string[] = ['specification', 'predicate', 'specification_test'];
 
 /**
  * The next free ID for a record of one of the aggregate's kinds under its parent: a specification's is its domain's ID,
@@ -66,15 +64,15 @@ const UNDER: Record<SpecificationKind, string> = {
  * fixed, and refused once taken.
  */
 export function nextSpecificationId(reader: SpecificationReader, input: { kind: string; parent: string }): string {
-  if (!(input.kind in UNDER)) refuse('kind', `${input.kind} is not a kind of the Specification aggregate; its kinds are ${Object.keys(UNDER).join(', ')}`);
+  if (!KINDS.includes(input.kind)) refuse('kind', `${input.kind} is not a kind of the Specification aggregate; its kinds are ${KINDS.join(', ')}`);
   const kind = input.kind as SpecificationKind;
+  const shape = reader.idShape(kind);
   const parentKind = reader.kindOf(input.parent);
-  if (parentKind !== UNDER[kind]) refuse('parent', `a ${kind} sits under a ${UNDER[kind]}, and ${input.parent} is ${parentKind ? `${article(parentKind)} ${parentKind}` : 'no record'}`);
+  if (parentKind !== shape.parents[0]) refuse('parent', `a ${kind} sits under a ${shape.parents[0]}, and ${input.parent} is ${parentKind ? `${article(parentKind)} ${parentKind}` : 'no record'}`);
   if (kind === 'specification') {
-    const prefix = `${input.parent}-SP`;
-    return `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
+    return onePast(reader, `${input.parent}-${shape.letters}`, shape);
   }
-  const own = `${input.parent}-${kind === 'predicate' ? 'PR' : 'T'}`;
+  const own = `${input.parent}-${shape.letters}`;
   if (reader.kindOf(own)) refuse('exists', `${input.parent} already has its ${kind === 'predicate' ? 'predicate' : 'test'}, ${own}`);
   return own;
 }
