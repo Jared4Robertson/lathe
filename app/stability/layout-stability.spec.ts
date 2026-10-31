@@ -5,15 +5,14 @@ import type { Page } from '@playwright/test';
 import { expect, test } from './test';
 import { openPage } from './measure';
 import { keepData } from './scenarios';
-import { erdSceneOf, GRAPH, graphDrawn, sceneOf } from './scene';
+import { erdSceneOf, GRAPH, graphDrawn, sceneOf, traceSceneOf } from './scene';
 import type { SceneHost } from '../src/graph/GraphPage';
-import type { AllHost } from '../src/trace/TraceAll';
 
-// A change moves only what it changed (LA-PAT-APP-UX-R22): with a use case framed on the Graph and on the Trace's
-// All-at-once view, an Agent adds a requirement to it through the real CLI. The page reloads on its own; on the Graph
-// the new box lands among its siblings, every box outside the use case's region keeps its place and size; on the Trace
-// and the Map every box shown before keeps its place, the new one put in free room; and the camera does not move. Tidy
-// up then lays the stage out afresh. The suite's copy of Lathe's data is put back after.
+// A change moves only what it changed (LA-PAT-APP-UX-R22): with a use case framed on the Graph, an Agent adds a
+// requirement to it through the real CLI, and on the Trace stage a use case beside it. The page reloads on its own; on
+// the Graph the new box lands among its siblings, every box outside the use case's region keeps its place and size; on
+// the Trace every row keeps its order and the rows above the new one their places; on the Map every box shown before
+// keeps its place, the new one put in free room; and the camera does not move. Tidy up then lays the stage out afresh. The suite's copy of Lathe's data is put back after.
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const lathe = (...args: string[]) => execFileSync('node', [path.join(repo, 'lathe/bin/lathe.ts'), ...args, '--root', process.env.STABILITY_ROOT!], { stdio: 'pipe' }).toString();
@@ -27,19 +26,18 @@ const graphBoxes = async (page: Page): Promise<{ boxes: Placed[]; camera: string
   const s = await sceneOf(page);
   return { camera: JSON.stringify(s.camera), boxes: s.boxes.map((b) => ({ key: b.id, parent: null, rect: JSON.stringify(b.map) })) };
 };
-/** Every box of the Trace's All-at-once view, each column's keys top to bottom, each box's place on the page, the top of the boxes under no outcome, and the camera. */
-const traceColumns = (page: Page): Promise<{ columns: string[][]; places: Record<string, string>; under: Record<string, boolean>; camera: string }> => page.evaluate(() => {
-  const s = (document.querySelector('.trace-flow') as AllHost).traceScene!(true);
+/** The Trace stage's rows top to bottom, each closed row's boxes' places on the page by key, and the camera. */
+const traceRows = async (page: Page): Promise<{ rows: string[]; places: Record<string, string>; camera: string }> => {
+  const s = await traceSceneOf(page, true);
   return {
     camera: JSON.stringify(s.camera),
-    columns: [0, 1, 2, 3, 4].map((c) => s.boxes.filter((b) => b.column === c).sort((a, b) => a.rect.top - b.rect.top).map((b) => b.key)),
-    places: Object.fromEntries(s.boxes.map((b) => [b.key, `${b.rect.left.toFixed(2)},${b.rect.top.toFixed(2)}`])),
-    under: Object.fromEntries(s.boxes.map((b) => [b.key, b.under])),
+    rows: s.rows,
+    places: Object.fromEntries(s.boxes.filter((b) => b.row !== null).map((b) => [b.key, `${b.rect.left.toFixed(2)},${b.rect.top.toFixed(2)}`])),
   };
-});
+};
 
 test.describe('the map stays where the Reader left it', () => {
-  test('LA-PAT-APP-UX-R22-T01 Adding a record moves only its parent\'s region on the Graph, keeps every box where it was on the Trace, and keeps the camera', async ({ page }) => {
+  test('LA-PAT-APP-UX-R22-T01 Adding a record moves only its parent\'s region on the Graph, keeps every row where it was on the Trace, and keeps the camera', async ({ page }) => {
     const restore = keepData();
     try {
       // The Graph: the use case framed with its requirements; what is drawn around it stays put.
@@ -57,31 +55,31 @@ test.describe('the map stays where the Reader left it', () => {
       const moved = before.boxes.filter((b) => !b.key.startsWith(`${USE_CASE}-R`) && now.get(b.key) !== b.rect).map((b) => b.key);
       expect(moved).toEqual([]);
 
-      // The Trace's All-at-once view: every box keeps its place (the boxes under no outcome together, pushed down only
-      // as far as a new box reaches into them), the new requirement in free room in its column; the camera stays.
+      // The Trace stage: a use case an Agent adds takes a free room near where its links put it, else the end of its
+      // section; every row shown before keeps its order, the rows above it every box at its place, and the camera stays.
       await openPage(page, `/${USE_CASE}?stage=trace`);
       await page.locator('.trace-flow[data-ready] canvas').waitFor();
       await page.waitForTimeout(900);
-      const traceBefore = await traceColumns(page);
-      const added = 'LA-EXP-UC15-R98';
-      lathe('use-case', 'add-uc-requirement', '--id', added, '--title', 'Added while the Trace was open', '--use_case_id', USE_CASE, '--statement', 'The Trace MUST keep its boxes in their places.');
-      await expect.poll(async () => (await traceColumns(page)).columns[2].includes(added), { timeout: 20_000 }).toBe(true);
+      const traceBefore = await traceRows(page);
+      const added = 'LA-EXP-UC98';
+      lathe('use-case', 'add-use-case', '--id', added, '--title', 'Watch a use case appear', '--capability_id', 'LA-EXP-CAP02', '--goal', 'The Reader sees a new use case take its row while the Trace is open.', '--actors', 'Reader');
+      await expect.poll(async () => (await traceRows(page)).rows.includes(added), { timeout: 20_000 }).toBe(true);
       await page.waitForTimeout(900);
-      const traceAfter = await traceColumns(page);
+      const traceAfter = await traceRows(page);
       expect(traceAfter.camera).toBe(traceBefore.camera);
-      const top = (place: string) => Number(place.split(',')[1]);
-      const shifts = new Set(Object.keys(traceBefore.places).filter((k) => k in traceAfter.places && !traceBefore.under[k]).map((k) => (top(traceAfter.places[k]) - top(traceBefore.places[k])).toFixed(1)));
-      expect(shifts.size).toBeLessThanOrEqual(1);
-      const traceMoved = Object.keys(traceBefore.places).filter((k) => k in traceAfter.places && traceBefore.under[k] && traceAfter.places[k] !== traceBefore.places[k]);
+      expect(traceAfter.rows.filter((r) => r !== added)).toEqual(traceBefore.rows);
+      // The rows above the new one, every box at its place (the rows after it in its section step down by its row).
+      const above = new Set(traceAfter.rows.slice(0, traceAfter.rows.indexOf(added)));
+      const traceMoved = Object.keys(traceBefore.places).filter((k) => above.has(k.split('|')[0]) && traceAfter.places[k] !== traceBefore.places[k]);
       expect(traceMoved).toEqual([]);
-      traceAfter.columns.forEach((c, i) => expect(c.filter((k) => k in traceBefore.places), `column ${i}`).toEqual(traceBefore.columns[i].filter((k) => traceAfter.columns[i].includes(k))));
 
-      // Tidy up lays the columns out afresh: every box drawn, and the camera follows the focus's box, keeping it where it was on screen.
+      // Tidy up orders the rows afresh: every row drawn, and the camera follows the focus's box, keeping it where it was on screen.
       await page.keyboard.press('t');
       await page.waitForTimeout(900);
-      const tidied = await traceColumns(page);
-      expect(Object.keys(tidied.places).sort()).toEqual(Object.keys(traceAfter.places).sort());
-      const [focusWas, focusNow] = [traceAfter.places[USE_CASE].split(',').map(Number), tidied.places[USE_CASE].split(',').map(Number)];
+      const tidied = await traceRows(page);
+      expect([...tidied.rows].sort()).toEqual([...traceAfter.rows].sort());
+      const own = `${USE_CASE}|use-case`;
+      const [focusWas, focusNow] = [traceAfter.places[own].split(',').map(Number), tidied.places[own].split(',').map(Number)];
       expect(Math.abs(focusNow[0] - focusWas[0]) + Math.abs(focusNow[1] - focusWas[1])).toBeLessThan(2);
     } finally {
       restore();

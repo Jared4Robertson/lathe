@@ -1,4 +1,4 @@
 {"id":"LA-EXP-EP01-CL","title":"fetchHistory","endpoint_id":"LA-EXP-EP01","file":"app/src/views/history.ts"}
 {"id":"LA-PLT-EP02-CL","title":"onLatheEvent","endpoint_id":"LA-PLT-EP02","file":"app/src/events.ts"}
 {"id":"LA-TRC-EP416-CL","title":"useServes","endpoint_id":"LA-TRC-EP416","file":"app/src/traceability/serves/reads.ts"}
-{"id":"LA-TRC-EP418-CL","title":"useDelivery","endpoint_id":"LA-TRC-EP418","file":"app/src/traceability/delivery/reads.ts"}
+{"id":"LA-TRC-EP418-CL","title":"useTraceRows","endpoint_id":"LA-TRC-EP418","file":"app/src/traceability/trace/reads.ts"}
