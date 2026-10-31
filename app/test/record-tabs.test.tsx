@@ -8,7 +8,7 @@ import { workspace } from './fixtures/workspace';
 import { desktopBridgeStub, openApp, serve } from './helpers';
 import { testWorkspace } from './graph/workspace';
 import { boxElement, boxElements, cameraOf } from './graph/scene';
-import type { AllHost } from '../src/trace/TraceAll';
+import type { TraceHost } from '../src/trace/TraceCanvas';
 
 // The desktop app's tabs, as a browser's (LA-EXP-UC10): each tab is its own place, a move never leaves it, a new tab
 // opens only when asked for, closing and cycling, and each tab's own history, which the window's follows, so a
@@ -281,7 +281,7 @@ describe('the desktop app\'s tabs', () => {
   });
 
   it('LA-V96-R14-T02 Each tab keeps its own camera on the Graph and the Trace, taken back at once when it is active again', async () => {
-    const traceCamera = () => JSON.stringify((document.querySelector('.trace-flow') as AllHost).traceScene!().camera);
+    const traceCamera = () => JSON.stringify((document.querySelector('.trace-flow') as TraceHost).traceScene!().camera);
     /** The camera, once it has stopped moving. */
     const still = async (read: () => string) => {
       let before = read();

@@ -186,41 +186,34 @@ test.describe('performance', () => {
     await record({ name: 'ERD map: focus a domain (camera only)', value: toDomain.workMs, unit: 'ms', budget: BUDGETS.cameraMoveMs, detail: `longest frame ${Math.round(toDomain.worstFrameMs)} ms` });
   });
 
-  test("LA-V98-R06-T02 the Trace stage's first frame lays the product's map out within its budget; every switch and focus after it within the stage switch budget", async ({ page }) => {
-    // The All-at-once view, laid out in its worker and drawn, with the table under it.
+  test("LA-V98-R06-T02 the Trace stage's first frame orders the product's rows within its budget; every switch after it within the stage switch budget, and a drag within the frame budget", async ({ page }) => {
+    // The Trace stage's rows, ordered in their worker and drawn, with the list under them.
     const drawnTrace = '.focus-stage .trace-flow[data-ready]';
-    const rows = '.focus-stage .trace-matrix tbody tr';
-    // A use case's page, as the other stage switches are measured: the Trace stage switched to once, which loads its code and lays the
-    // product's one view out (the first frame of the product's view), then again, which reuses the layout.
+    const list = '.focus-stage .trace-access .trace-list';
+    // A use case's page, as the other stage switches are measured: the Trace stage switched to once, which loads its code and orders the
+    // product's rows (the first frame of the product's trace), then again, which reuses the order.
     await open(page, RECORD);
     const first = await work(page, async () => {
       await page.keyboard.press('Control+3');
       await page.locator(drawnTrace).first().waitFor();
-      await page.locator(rows).first().waitFor({ state: 'attached' });
+      await page.locator(list).first().waitFor({ state: 'attached' });
     });
     await page.keyboard.press('Control+1');
     await boxesDrawn(page);
     const again = await work(page, async () => {
       await page.keyboard.press('Control+3');
       await page.locator(drawnTrace).first().waitFor();
-      await page.locator(rows).first().waitFor({ state: 'attached' });
+      await page.locator(list).first().waitFor({ state: 'attached' });
     });
-    await record({ name: 'Trace stage: first frame of the product map (loads its code, lays the map out)', value: first.workMs, unit: 'ms', budget: BUDGETS.traceMapFirstFrameMs, detail: `longest frame ${Math.round(first.worstFrameMs)} ms` });
+    await record({ name: "Trace stage: first frame of the product's rows (loads its code, orders the rows)", value: first.workMs, unit: 'ms', budget: BUDGETS.traceMapFirstFrameMs, detail: `longest frame ${Math.round(first.worstFrameMs)} ms` });
     await record({ name: 'stage switch: to the Trace', value: again.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `longest frame ${Math.round(again.worstFrameMs)} ms` });
-    // Focusing the product from a domain's Trace stage: the view is the same, so only the camera moves (to the first
-    // outcome, every column across), and the table's first page and its Untraced section are drawn.
-    await open(page, `${DOMAIN}?stage=trace`, drawnTrace);
-    const product = await work(page, async () => {
-      await page.evaluate(() => { window.history.pushState(null, '', '/LA?stage=trace'); window.dispatchEvent(new PopStateEvent('popstate')); });
-      await page.waitForFunction(() => window.location.pathname === '/LA' && document.querySelector('.focus-stage .trace-untraced') !== null && document.querySelector('.focus-stage .trace-flow[data-ready]') !== null);
-    });
+    // The product's rows: a frame draws only what is in view, at most 260 boxes.
     const scene = await page.evaluate(() => {
       const host = document.querySelector('.focus-stage .trace-flow') as HTMLElement & { traceScene?: (whole?: boolean) => { boxes: unknown[]; bars: number } };
       const now = host.traceScene!();
       return { drawn: now.boxes.length, bars: now.bars, whole: host.traceScene!(true).boxes.length };
     });
     expect(scene.drawn).toBeLessThanOrEqual(260);
-    await record({ name: 'Trace stage: the product focused, its All-at-once view framed', value: product.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `${scene.drawn} of ${scene.whole} boxes drawn, ${scene.bars} bars; longest frame ${Math.round(product.worstFrameMs)} ms` });
     // Panning the product's trace: a frame draws only what is in view, so a drag stays within the frame budget.
     const canvas = page.locator('.focus-stage .trace-flow canvas');
     const box = (await canvas.boundingBox())!;
@@ -230,7 +223,7 @@ test.describe('performance', () => {
       for (let i = 1; i <= 20; i++) await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.8 - i * 30);
       await page.mouse.up();
     });
-    await record({ name: "Trace stage: panning the product's trace", value: pan.worstFrameMs, unit: 'ms', budget: BUDGETS.traceDragFrameMs, detail: `${pan.slowFrames} of ${pan.frames} frames over 20 ms while dragging 600 px` });
+    await record({ name: "Trace stage: panning the product's trace", value: pan.worstFrameMs, unit: 'ms', budget: BUDGETS.traceDragFrameMs, detail: `${scene.drawn} of ${scene.whole} boxes drawn, ${scene.bars} bars; ${pan.slowFrames} of ${pan.frames} frames over 20 ms while dragging 600 px` });
   });
 
   test('LA-V96-R24-T03 the leader line to the wiki card adds no measurable cost: a pan with it drawn every frame stays within the camera-move budget', async ({ page }) => {

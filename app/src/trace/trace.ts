@@ -1,7 +1,7 @@
-import type { DeliveryObligation, DeliveryRow, DeliveryStep, ProductDelivery } from '../../../../lathe/src/traceability/delivery/read-model';
-import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
+import type { TraceObligation, TraceRow, TraceStep, ProductTrace } from '../../../lathe/src/traceability/trace/read-model';
+import { kindLabel, type RecordIndex } from '../exploring/record-summaries/record-index';
 
-// The Trace stage's Delivery view (LA-V98), pure and tested directly: one row per use case of a product's space, each
+// The Trace stage (LA-V98), pure and tested directly: one row per use case of a product's space, each
 // use case once, across five columns, left to right:
 //
 //   Outcome | Use case | Design flow | Technical flow | Acceptance test suite
@@ -21,16 +21,16 @@ import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/re
 //
 // Each cell is a tree of boxes (`Item`), whatever is open: what shows is each open box's children (`visible`), and a box
 // that does not show stands in by its nearest shown parent (`standIn`), so a path through a collapsed cell lights the
-// box that holds it. Everything comes from the Delivery read model (list-delivery, LA-TRC-RM13); the index gives only
-// titles, kinds and stages to draw. Where each box goes is delivery-layout.ts's.
+// box that holds it. Everything comes from the Trace read model (list-trace-rows, LA-TRC-RM13); the index gives only
+// titles, kinds and stages to draw. Where each box goes is layout.ts's.
 
 /** The five columns, left to right. */
-export const DELIVERY_COLUMNS = ['outcome', 'use-case', 'design', 'technical', 'suite'] as const;
-export type DeliveryColumn = (typeof DELIVERY_COLUMNS)[number];
-export const DELIVERY_COLUMN_LABELS: Record<DeliveryColumn, string> = { outcome: 'Outcome', 'use-case': 'Use case', design: 'Design flow', technical: 'Technical flow', suite: 'Acceptance test suite' };
+export const TRACE_COLUMNS = ['outcome', 'use-case', 'design', 'technical', 'suite'] as const;
+export type TraceColumn = (typeof TRACE_COLUMNS)[number];
+export const TRACE_COLUMN_LABELS: Record<TraceColumn, string> = { outcome: 'Outcome', 'use-case': 'Use case', design: 'Design flow', technical: 'Technical flow', suite: 'Acceptance test suite' };
 /** The columns that expand down, each a stage of every row. */
-export const DELIVERY_STAGES = ['use-case', 'design', 'technical', 'suite'] as const;
-export type DeliveryStage = (typeof DELIVERY_STAGES)[number];
+export const TRACE_STAGES = ['use-case', 'design', 'technical', 'suite'] as const;
+export type TraceStage = (typeof TRACE_STAGES)[number];
 
 /** What a box is: a record, a stage's status, a gap (dashed), a heading over a group, or a hint. */
 export type ItemRole = 'record' | 'status' | 'gap' | 'heading' | 'hint';
@@ -65,7 +65,7 @@ export interface RowLink { from: string; to: string }
 /** One row: its use case, its cells' boxes (each cell's own box first) and the links its path walks. */
 export interface Row {
   useCase: string;
-  data: DeliveryRow;
+  data: TraceRow;
   /** Each column's own box, from the Use case column on (index 1 to 4; index 0 unused). */
   cells: string[];
   /** Its records' links, from left to right, for its paths. */
@@ -74,12 +74,12 @@ export interface Row {
   steps: string[];
 }
 
-/** A product's Delivery view. */
-export interface DeliveryGraph {
+/** A product's Trace stage. */
+export interface TraceGraph {
   product: string;
   /** The outcomes, in ID order. */
   outcomes: readonly string[];
-  /** The rows, in ID order (delivery-order.ts orders them). */
+  /** The rows, in ID order (order.ts orders them). */
   rows: readonly Row[];
   rowOf: ReadonlyMap<string, Row>;
   items: ReadonlyMap<string, Item>;
@@ -92,16 +92,16 @@ export interface DeliveryGraph {
 }
 
 /** The key that opens a cell: `<use case>|<stage>`. */
-export const cellKey = (row: string, stage: DeliveryStage) => `${row}|${stage}`;
+export const cellKey = (row: string, stage: TraceStage) => `${row}|${stage}`;
 /** The key that opens a box within a cell: `<use case>|<stage>|<record or name>`. */
-export const innerKey = (row: string, stage: DeliveryStage, what: string) => `${row}|${stage}|${what}`;
+export const innerKey = (row: string, stage: TraceStage, what: string) => `${row}|${stage}|${what}`;
 /** The key under which a Technical flow cell shows every step's chain (Expand all), not only the selected step's. */
 export const everyStepKey = (row: string) => innerKey(row, 'technical', '*');
 
 const n = (k: number, one: string, many = `${one}s`) => `${k} ${k === 1 ? one : many}`;
 
 /** A row's stage status in words, and whether it has a gap: "2 flows · all designed", "No flows". */
-export function statusOf(row: DeliveryRow, stage: Exclude<DeliveryStage, 'use-case'>): { title: string; gap: boolean } {
+export function statusOf(row: TraceRow, stage: Exclude<TraceStage, 'use-case'>): { title: string; gap: boolean } {
   const { design, technical, suite } = row.status;
   switch (stage) {
     case 'design':
@@ -117,12 +117,12 @@ export function statusOf(row: DeliveryRow, stage: Exclude<DeliveryStage, 'use-ca
 }
 
 /** The Suite's header: "3 of 4 proved". */
-export const provedWords = (row: DeliveryRow) => `${row.status.suite.owed - row.status.suite.notProved} of ${row.status.suite.owed} proved`;
+export const provedWords = (row: TraceRow) => `${row.status.suite.owed - row.status.suite.notProved} of ${row.status.suite.owed} proved`;
 
 /** The words of a chain's layers, as their headings say them when a layer is missing. */
 const MISSING_HANDLER = 'No handler';
 
-function build(index: RecordIndex, delivery: ProductDelivery): DeliveryGraph {
+function build(index: RecordIndex, trace: ProductTrace): TraceGraph {
   const items = new Map<string, Item>();
   const boxesOf = new Map<string, string[]>();
   const known = (id: string) => index.byId.has(id);
@@ -142,17 +142,17 @@ function build(index: RecordIndex, delivery: ProductDelivery): DeliveryGraph {
   };
   const kindOf = (id: string) => { const r = index.byId.get(id); return r ? kindLabel(index, r.kind) : 'Record'; };
   /** An obligation's tests under a parent box, or a gap where it is not proved. */
-  const testsOf = (parent: string, o: DeliveryObligation) => {
+  const testsOf = (parent: string, o: TraceObligation) => {
     for (const t of o.tests) if (known(t)) record(parent, t);
     if (o.gaps.includes('proved')) plain(parent, `gap:${o.id}`, 'gap', { kind: 'Gap', title: 'Not proved', meta: `Gap · ${o.id}` }, { id: o.id });
   };
 
-  for (const o of delivery.outcomes) if (known(o)) add({ key: `outcome/${o}`, id: o, row: null, column: 0, depth: 0, parent: null, role: 'record' });
+  for (const o of trace.outcomes) if (known(o)) add({ key: `outcome/${o}`, id: o, row: null, column: 0, depth: 0, parent: null, role: 'record' });
   const serves: [string, string][] = [];
   const rows: Row[] = [];
   let gapped = 0;
   let outside = 0;
-  for (const data of delivery.rows) {
+  for (const data of trace.rows) {
     const u = data.useCase;
     if (!known(u)) continue;
     const links: RowLink[] = [];
@@ -169,7 +169,7 @@ function build(index: RecordIndex, delivery: ProductDelivery): DeliveryGraph {
     // Design flow: its status, then its flows, their steps, and each step's view, endpoints and integrations.
     const design = statusOf(data, 'design');
     const designBox = add({ key: `${u}|design`, id: null, row: u, column: 2, depth: 0, parent: null, role: design.gap ? 'gap' : 'status', words: { kind: 'Design flow', title: design.title, meta: `Design flow · ${u}` }, opens: cellKey(u, 'design') });
-    const steps: DeliveryStep[] = [];
+    const steps: TraceStep[] = [];
     for (const f of data.flows) {
       if (!known(f.id)) continue;
       const flow = record(designBox, f.id, { opens: innerKey(u, 'design', f.id) });
@@ -245,16 +245,16 @@ function build(index: RecordIndex, delivery: ProductDelivery): DeliveryGraph {
     if (design.gap || technical.gap || suite.gap) gapped++;
     rows.push({ useCase: u, data, cells: ['', useCase, designBox, techBox, suiteBox], links, steps: steps.map((s) => s.id) });
   }
-  return { product: delivery.product, outcomes: delivery.outcomes.filter(known), rows, rowOf: new Map(rows.map((r) => [r.useCase, r])), items, serves, boxesOf, counts: { gapped, outside } };
+  return { product: trace.product, outcomes: trace.outcomes.filter(known), rows, rowOf: new Map(rows.map((r) => [r.useCase, r])), items, serves, boxesOf, counts: { gapped, outside } };
 }
 
-const graphs = new WeakMap<ProductDelivery, WeakMap<RecordIndex, DeliveryGraph>>();
-/** A product's Delivery view, worked out once per Delivery read answer and index. */
-export function deliveryGraph(index: RecordIndex, delivery: ProductDelivery): DeliveryGraph {
-  let byIndex = graphs.get(delivery);
-  if (!byIndex) { byIndex = new WeakMap(); graphs.set(delivery, byIndex); }
+const graphs = new WeakMap<ProductTrace, WeakMap<RecordIndex, TraceGraph>>();
+/** A product's Trace stage, worked out once per Trace read answer and index. */
+export function traceGraph(index: RecordIndex, trace: ProductTrace): TraceGraph {
+  let byIndex = graphs.get(trace);
+  if (!byIndex) { byIndex = new WeakMap(); graphs.set(trace, byIndex); }
   let graph = byIndex.get(index);
-  if (!graph) { graph = build(index, delivery); byIndex.set(index, graph); }
+  if (!graph) { graph = build(index, trace); byIndex.set(index, graph); }
   return graph;
 }
 
@@ -269,7 +269,7 @@ export function isOpen(item: Item, o: Openness): boolean {
 }
 
 /** The children of a box that show: a Technical flow cell shows the selected step's chain (or a hint), or every step's under Expand all. */
-export function shownChildren(graph: DeliveryGraph, item: Item, o: Openness): string[] {
+export function shownChildren(graph: TraceGraph, item: Item, o: Openness): string[] {
   if (!isOpen(item, o)) return [];
   if (item.column === 3 && item.depth === 0 && item.row) {
     const heads = item.children.filter((k) => graph.items.get(k)!.role === 'heading');
@@ -284,7 +284,7 @@ export function shownChildren(graph: DeliveryGraph, item: Item, o: Openness): st
  * Each cell's boxes that show, top to bottom (the cell's own box first): an open box's children, and always the children
  * of a box that does not open (a view's requirements under it, a step's chain under its heading).
  */
-export function visible(graph: DeliveryGraph, cell: string, o: Openness): string[] {
+export function visible(graph: TraceGraph, cell: string, o: Openness): string[] {
   const out: string[] = [];
   const walk = (key: string) => {
     out.push(key);
@@ -296,7 +296,7 @@ export function visible(graph: DeliveryGraph, cell: string, o: Openness): string
 }
 
 /** The box that stands in for a box that does not show: its nearest parent that does. */
-export function standIn(graph: DeliveryGraph, key: string, shown: ReadonlySet<string>): string | null {
+export function standIn(graph: TraceGraph, key: string, shown: ReadonlySet<string>): string | null {
   for (let at: string | null = key; at; at = graph.items.get(at)?.parent ?? null) if (shown.has(at)) return at;
   return null;
 }
@@ -351,7 +351,7 @@ function isTestLink(row: Row, l: number): boolean {
   let known = testLinkCache.get(row);
   if (!known) {
     const tests = new Set<string>();
-    const proof = (o: DeliveryObligation) => o.tests.forEach((t) => tests.add(t));
+    const proof = (o: TraceObligation) => o.tests.forEach((t) => tests.add(t));
     row.data.requirements.forEach(proof);
     row.data.lower.forEach(proof);
     row.data.flows.forEach((f) => { if (f.test) tests.add(f.test); });
@@ -362,6 +362,6 @@ function isTestLink(row: Row, l: number): boolean {
 }
 
 /** The rows a record shows in (each row whose links name it), in the graph's order. */
-export function rowsOf(graph: DeliveryGraph, id: string): Row[] {
+export function rowsOf(graph: TraceGraph, id: string): Row[] {
   return graph.rows.filter((r) => r.useCase === id || r.links.some((l) => l.from === id || l.to === id));
 }

@@ -2,12 +2,11 @@ import type { Page } from '@playwright/test';
 import { expect, test } from './test';
 import { openPage } from './measure';
 import { erdDrawn, erdSceneOf, GRAPH, graphDrawn, sceneOf, traceDrawn, traceSceneOf } from './scene';
-import type { DeliveryHost } from '../src/trace/delivery/TraceDelivery';
 
 // The focused box is always whole on screen (LA-PAT-APP-UX-R23): on every stage, framing a focus puts its whole box in
 // the frame, never cut at the canvas's edge and never under a floating panel (the nav, the wiki card, the key, the
 // minimap) or the stage's tools. A pattern with many rules on the Graph's Tree (the frame once cut it to read its
-// children), its box in the Nested view and the Map, a use case with its flows on the Map and the Trace's two views, and
+// children), its box in the Nested view and the Map, a use case with its flows on the Map and on the Trace stage, and
 // a domain on the ERD.
 
 const MANY = 'LA-PAT-APP-UX';
@@ -38,7 +37,7 @@ async function graphFocus(page: Page): Promise<Rect> {
 }
 
 test.describe('the focused box is always whole on screen', () => {
-  test('LA-PAT-APP-UX-R23-T02 On the Graph (Tree with the minimap, Nested, Map), the Trace (All at once, Delivery) and the ERD, the framed focus is whole and clear of every panel', async ({ page }) => {
+  test('LA-PAT-APP-UX-R23-T02 On the Graph (Tree with the minimap, Nested, Map), the Trace and the ERD, the framed focus is whole and clear of every panel', async ({ page }) => {
     // The Graph's Tree: a focus with many children, at depths 1 to 3, with the minimap on.
     await openPage(page, `/${MANY}?stage=graph`, `${GRAPH} .graph-box`);
     await graphDrawn(page, 'tree', 900);
@@ -60,19 +59,12 @@ test.describe('the focused box is always whole on screen', () => {
     await graphDrawn(page, 'map', 900);
     expect(await coveredBy(page, await graphFocus(page), GRAPH), 'Map, a use case').toEqual([]);
 
-    // The Trace: All at once, then Delivery.
+    // The Trace: the use case's box in its row.
     await openPage(page, `/${USE_CASE}?stage=trace`);
     await traceDrawn(page, 900);
-    const all = (await traceSceneOf(page)).boxes.find((b) => b.focus);
-    expect(all, 'the focus is drawn').toBeTruthy();
-    expect(await coveredBy(page, all!.rect, '.focus-stage .trace-flow'), 'All at once').toEqual([]);
-    await page.getByRole('group', { name: 'Trace view' }).getByRole('button', { name: 'Delivery' }).click();
-    const delivery = '.focus-stage .trace-flow[data-view="delivery"]';
-    await page.locator(`${delivery}[data-ready] canvas`).waitFor();
-    await page.waitForTimeout(900);
-    const row = await page.evaluate((sel) => (document.querySelector(sel) as DeliveryHost).deliveryScene!(false).boxes.find((b) => b.focus)?.rect, delivery);
+    const row = (await traceSceneOf(page)).boxes.find((b) => b.focus);
     expect(row, 'the focus is drawn').toBeTruthy();
-    expect(await coveredBy(page, row!, delivery), 'Delivery').toEqual([]);
+    expect(await coveredBy(page, row!.rect, '.focus-stage .trace-flow'), 'Trace').toEqual([]);
 
     // The ERD: a domain.
     await openPage(page, `/${DOMAIN}?stage=erd`);
