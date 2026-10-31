@@ -9,6 +9,7 @@ import { useDesktopErrorCount, useDesktopRecordMenu } from './desktopRecord';
 import { Tooltip } from './Tooltip';
 import { crowdedLabel } from '../views/openSpace';
 import './DesktopTitleBar.css';
+import type { LatheDesktop } from './desktop-bridge';
 
 // The desktop app's own title bar (LA-PLT-UC14), as in VS Code: the window has no system title bar,
 // so this 38 px bar on the shell color carries the window's controls (the traffic lights at the left

@@ -16,6 +16,7 @@ import { sendCommand, type CommandCommands, type CommandRoute } from './commands
 import { useNextCommandId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
+import { kindWord, addedUnder } from '../../platform/meta-model/reads';
 
 // The Command editor (LA-AUT-A8): the actions on a record of a command, each sending one of the aggregate's own
 // commands, POST /api/command/<command>, and nothing else. Edit sends its kind's Change with only what changed (a
@@ -29,23 +30,8 @@ import { backToActions } from '../../edit/back-to-actions';
 
 type Inside = Exclude<CommandKind, 'command'>;
 
-/** A kind's label in a sentence. */
-const LABEL: Record<CommandKind, string> = {
-  command: 'command',
-  command_handler: 'command handler',
-  policy: 'policy',
-  event_handler: 'event handler',
-  policy_test: 'policy test',
-};
-
-/** The kinds added under a record of each kind, inside the command. */
-const ADDED_UNDER: Record<CommandKind, Inside[]> = {
-  command: ['command_handler', 'policy'],
-  command_handler: [],
-  policy: ['event_handler', 'policy_test'],
-  event_handler: [],
-  policy_test: [],
-};
+/** The kinds a record of another kind has under it inside the command; the meta model says which sit under which. */
+const INSIDE: readonly Inside[] = ['command_handler', 'policy', 'event_handler', 'policy_test'];
 
 /** Where the command sits: the entity it changes, that entity's aggregate, the domain and the product. */
 interface Place {
@@ -215,7 +201,7 @@ export function CommandEditor({ index, page, children }: { index: RecordIndex; p
       if (answer.ok) { announce(`Saved ${id}`); back(); }
       return answer;
     };
-    return <div className="spec-body"><ChangeForm index={index} specs={specs} current={current} eyebrow={LABEL[kind]} id={id} submit={submit} onDone={back} /></div>;
+    return <div className="spec-body"><ChangeForm index={index} specs={specs} current={current} eyebrow={kindWord(index.meta, kind)} id={id} submit={submit} onDone={back} /></div>;
   }
   if (mode.mode === 'add') return <div className="spec-body"><AddForm index={index} place={place} kind={mode.kind} parent={id} onDone={back} /></div>;
   if (mode.mode === 'adopt') {
@@ -223,7 +209,7 @@ export function CommandEditor({ index, page, children }: { index: RecordIndex; p
     return <div className="spec-body"><Adder index={index} parent={id} onDone={back} /></div>;
   }
   // A command has one handler, and a policy one event handler and one test: once it has it, there is nothing more to add of that kind.
-  const adds = ADDED_UNDER[kind].filter((k) =>
+  const adds = addedUnder(index.meta, kind, INSIDE).filter((k) =>
     (k !== 'command_handler' || !page.handler)
     && (k !== 'event_handler' || !policyOf(page, id).eventHandler)
     && (k !== 'policy_test' || !policyOf(page, id).test));
@@ -237,7 +223,7 @@ export function CommandEditor({ index, page, children }: { index: RecordIndex; p
         <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>
       </div>
       {mode.mode === 'remove' && (
-        <RemoveQuestion index={index} id={id} label={LABEL[kind]} goes={goesWith(page, kind, id)} then={addressOf(parentOf(page, kind, id))} onCancel={back}
+        <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={goesWith(page, kind, id)} then={addressOf(parentOf(page, kind, id))} onCancel={back}
           remove={() => sendCommand(writer, REMOVE[kind], { id })} />
       )}
       {children}
@@ -279,9 +265,9 @@ function AddForm({ index, place, kind, parent, onDone }: { index: RecordIndex; p
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;
   };
-  const article = /^[aeiou]/.test(LABEL[kind]) ? 'an' : 'a';
+  const article = /^[aeiou]/.test(kindWord(index.meta, kind)) ? 'an' : 'a';
   return (
-    <CommandForm eyebrow={`New ${LABEL[kind]} under ${parent}`} title={`Add ${article} ${LABEL[kind]}`} submit={submit} saveLabel={`Add ${LABEL[kind]}`} onCancel={onDone}>
+    <CommandForm eyebrow={`New ${kindWord(index.meta, kind)} under ${parent}`} title={`Add ${article} ${kindWord(index.meta, kind)}`} submit={submit} saveLabel={`Add ${kindWord(index.meta, kind)}`} onCancel={onDone}>
       {(first) => <Fields index={index} specs={specs} draft={draft} setDraft={setDraft} first={first} />}
     </CommandForm>
   );
