@@ -222,27 +222,33 @@ test.describe('Exploring flows', () => {
     await graphReady(page);
     await focusDrawn(page, 'LA-EXP-UC03-FL01');
     await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => /^LA-EXP-UC03-FL01-S\d+$/.test(b.id)).length).toBe(10);
-    // A requirement's Trace stage frames its box in the All-at-once view: its use case to its left, what builds it to its
-    // right, its path lit; the step that fulfills it is in the table's chain under the canvas.
+    // A requirement's Trace stage: Expand row opens its use case's row, its box focused in the Use case column, its path
+    // lit across the row to the flow whose step fulfills it, the rest faded.
     await page.goto('/LA-EXP-UC03-R18?stage=trace');
     await traceDrawn(page);
-    const chain = await traceSceneOf(page, true);
-    expect(chain.boxes.find((b) => b.key === 'LA-EXP-UC03-R18')).toMatchObject({ focus: true, column: 2, strength: 1 });
-    expect(chain.lines.filter((l) => l.lit).map((l) => `${l.kind}:${l.from}>${l.to}`)).toContain('reaches:LA-EXP-UC03>LA-EXP-UC03-R18');
-    expect(chain.boxes.find((b) => b.key === 'LA-EXP-UC03')!.strength).toBe(1);
-    expect((await traceSceneOf(page)).boxes.some((b) => b.key === 'LA-EXP-UC03-R18' && b.focus), 'the requirement is in view').toBe(true);
-    // From the keyboard, through the table under the canvas: the step's link, then Enter.
-    const design = page.locator('.focus-stage .trace-access .trace-column').nth(1);
-    await design.getByRole('link', { name: /LA-EXP-UC03-FL01-S01/ }).focus();
+    const expandRow = page.locator('.focus-stage .stage-toolbar').getByRole('button', { name: 'Expand row' });
+    if ((await expandRow.getAttribute('aria-pressed')) !== 'true') await expandRow.click();
+    const own = 'LA-EXP-UC03|use-case/LA-EXP-UC03-R18';
+    await expect.poll(async () => (await traceSceneOf(page, true)).boxes.find((b) => b.key === own)?.focus, { timeout: 5000 }).toBe(true);
+    const lit = await traceSceneOf(page, true);
+    expect(lit.boxes.find((b) => b.key === own)).toMatchObject({ column: 1, lit: true, strength: 1 });
+    expect(lit.boxes.find((b) => b.key === 'LA-EXP-UC03|design/LA-EXP-UC03-FL01')!.lit).toBe(true);
+    expect(lit.lines.some((l) => l.kind === 'path' && l.lit && l.from === own)).toBe(true);
+    // From the keyboard, through the list under the canvas: the flow opened, then the step's link and Enter.
+    const design = page.locator('.focus-stage .trace-access').getByRole('region', { name: 'Design flow' });
+    const flow = design.getByRole('listitem').filter({ has: page.getByRole('link', { name: /LA-EXP-UC03-FL01(?!-)/ }) });
+    if ((await flow.getByRole('button').getAttribute('aria-expanded')) !== 'true') {
+      await flow.getByRole('button').focus();
+      await page.keyboard.press('Enter');
+    }
+    await design.getByRole('link', { name: /LA-EXP-UC03-FL01-S01(?!\d)/ }).focus();
     await page.keyboard.press('Enter');
     await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03-FL01-S01');
-    // The step's own page in the wiki card, shown again (Enter, from the page); the step has no box in the view, so the table marks it in the rows that hold it.
+    // The step's own page in the wiki card, shown again (Enter, from the page), and its box focused in its row.
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     await page.keyboard.press('Enter');
     await expect(page.locator(WIKI).getByRole('link', { name: /LA-EXP-CMD01/ }).first()).toBeVisible();
-    await traceDrawn(page);
-    expect((await traceSceneOf(page, true)).boxes.some((b) => b.focus)).toBe(false);
-    await expect(page.locator('.focus-stage .trace-matrix [aria-current="page"]').first()).toContainText('LA-EXP-UC03-FL01-S01');
+    await expect.poll(async () => (await traceSceneOf(page, true)).boxes.find((b) => b.focus)?.id).toBe('LA-EXP-UC03-FL01-S01');
   });
 
   test('LA-EXP-UC07-FL01-T work in one product at a time: the rail, its last page, Alt+1 and Switch to, find, Checks, the phone, the products page', async ({ page }) => {

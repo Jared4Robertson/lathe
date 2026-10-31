@@ -57,7 +57,6 @@
 {"id":"LA-CHK-MOD04","title":"product-setting/commands/index.ts","domain_id":"LA-CHK","file":"lathe/src/checking/product-setting/commands/index.ts"}
 {"id":"LA-EXP-MOD01","title":"elk.ts","domain_id":"LA-EXP","file":"app/src/elk.ts"}
 {"id":"LA-EXP-MOD03","title":"plural.ts","domain_id":"LA-EXP","file":"app/src/plural.ts"}
-{"id":"LA-EXP-MOD05","title":"one-map.ts","domain_id":"LA-EXP","file":"app/src/graph/one-map.ts"}
 {"id":"LA-EXP-MOD06","title":"steps.ts","domain_id":"LA-EXP","file":"app/src/graph/steps.ts"}
 {"id":"LA-EXP-MOD07","title":"leaderLine.ts","domain_id":"LA-EXP","file":"app/src/views/leaderLine.ts"}
 {"id":"LA-EXP-MOD08","title":"preview.ts","domain_id":"LA-EXP","file":"app/src/views/preview.ts"}
@@ -90,6 +89,5 @@
 {"id":"LA-PLT-MOD35","title":"use-voice-settings.ts","domain_id":"LA-PLT","file":"app/src/platform/voice-settings/use-voice-settings.ts"}
 {"id":"LA-PLT-MOD36","title":"chatSession.ts","domain_id":"LA-PLT","file":"desktop/src/chatSession.ts"}
 {"id":"LA-TRC-MOD01","title":"measures.ts","domain_id":"LA-TRC","file":"lathe/src/trace/measures.ts"}
-{"id":"LA-TRC-MOD02","title":"offer.ts","domain_id":"LA-TRC","file":"app/src/trace/offer.ts"}
 {"id":"LA-TRC-MOD03","title":"pattern-following/model.ts","domain_id":"LA-TRC","file":"lathe/src/traceability/pattern-following/model.ts"}
 {"id":"LA-TRC-MOD04","title":"pattern-following/commands/index.ts","domain_id":"LA-TRC","file":"lathe/src/traceability/pattern-following/commands/index.ts"}
