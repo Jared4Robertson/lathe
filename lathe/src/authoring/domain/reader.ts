@@ -3,6 +3,8 @@
 // definition makes (`reader`), so keeping the read model elsewhere is a new implementation of this interface and
 // nothing more. Today's implementation reads the projection's table, kept in memory and built on each read.
 import type { ReadView } from '../../platform/data/rules.ts';
+import { idShapeOf, type IdShape } from '../../platform/data/id-shape.ts';
+import type { SchemaDescription } from '../../platform/data/schema.ts';
 import { domainTableFrom, type DomainPage, type DomainSummary, type DomainTable } from './read-model.ts';
 
 /** What the Domain queries read, and all they read. */
@@ -15,14 +17,18 @@ export interface DomainReader {
   domainsOf(productId: string): DomainSummary[] | undefined;
   /** The highest number in use after the prefix, as in <prefix>07, or 0 when none is. */
   highestAfter(prefix: string): number;
+  /** How the IDs of a kind are written, read from the schema: its parents, and the letters and digits its ID ends in. */
+  idShape(kind: string): IdShape;
 }
 
 /** The reader over the read model's table in memory. */
 export class InMemoryDomainReader implements DomainReader {
   private readonly table: DomainTable;
+  private readonly schema: SchemaDescription;
 
-  constructor(table: DomainTable) {
+  constructor(table: DomainTable, schema: SchemaDescription) {
     this.table = table;
+    this.schema = schema;
   }
 
   kindOf(id: string): string | undefined {
@@ -38,6 +44,10 @@ export class InMemoryDomainReader implements DomainReader {
     return this.table.products.get(productId);
   }
 
+  idShape(kind: string): IdShape {
+    return idShapeOf(this.schema, kind);
+  }
+
   highestAfter(prefix: string): number {
     const shape = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\d+)$`);
     let highest = 0;
@@ -50,4 +60,4 @@ export class InMemoryDomainReader implements DomainReader {
 }
 
 /** The reader the query runner gives each Domain query: today's, over the projection's table built from the data. */
-export const domainReader = (view: ReadView): DomainReader => new InMemoryDomainReader(domainTableFrom(view));
+export const domainReader = (view: ReadView): DomainReader => new InMemoryDomainReader(domainTableFrom(view), view.schema);

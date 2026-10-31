@@ -3,6 +3,7 @@
 // domain, and the next free ID for a data store. A handler never sees the data, a repository or the aggregate's model;
 // each changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import { DATA_STORE_SLICE } from './model.ts';
 import type { DataStorePage, DataStoreSummary } from './read-model.ts';
@@ -56,10 +57,10 @@ export const LIST_DATA_STORES: QueryDefinition<{ parent: string }, DataStoreSumm
 /** The next free ID for a data store under its product or domain: the parent's ID, STORE and one past the highest in use. */
 export function nextDataStoreId(reader: DataStoreReader, input: { kind: string; parent: string }): string {
   if (input.kind !== 'data_store') refuse('kind', `${input.kind} is not a kind of the Data store aggregate; its kind is data_store`);
+  const shape = reader.idShape('data_store');
   const parentKind = reader.kindOf(input.parent);
-  if (parentKind !== 'product' && parentKind !== 'domain') refuse('parent', `a data_store sits under a product or a domain, and ${input.parent} is ${parentKind ? `${article(parentKind)} ${parentKind}` : 'no record'}`);
-  const prefix = `${input.parent}-STORE`;
-  return `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
+  if (!parentKind || !shape.parents.includes(parentKind)) refuse('parent', `a data_store sits under ${shape.parents.map((k) => `${article(k)} ${k}`).join(' or ')}, and ${input.parent} is ${parentKind ? `${article(parentKind)} ${parentKind}` : 'no record'}`);
+  return onePast(reader, `${input.parent}-${shape.letters}`, shape);
 }
 
 /** Get the next ID for a data store (LA-AUT-QRY227). */

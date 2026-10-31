@@ -2,6 +2,7 @@
 // (reader.ts), which the query runner gives each handler: a UI component whole, the UI components of a product, and
 // the next free ID for one. A handler never sees the data, a repository or the model; each changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import { UI_COMPONENT_SLICE } from './model.ts';
 import type { UiComponentPage, UiComponentSummary } from './read-model.ts';
@@ -60,9 +61,9 @@ export const LIST_UI_COMPONENTS: QueryDefinition<{ product_id: string }, UiCompo
 
 /** The next free ID for a UI component of the product: one past the highest in use. */
 export function nextUiComponentId(reader: UiComponentReader, input: { product_id: string }): string {
-  if (reader.kindOf(input.product_id) !== 'product') refuse('missing', `there is no product ${input.product_id}`);
-  const prefix = `${input.product_id}-UI`;
-  return `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
+  const shape = reader.idShape('ui_component');
+  if (reader.kindOf(input.product_id) !== shape.parents[0]) refuse('missing', `there is no product ${input.product_id}`);
+  return onePast(reader, `${input.product_id}-${shape.letters}`, shape);
 }
 
 /** Get the next ID for a UI component (LA-AUT-QRY206). */

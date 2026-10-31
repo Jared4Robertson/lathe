@@ -3,6 +3,7 @@
 // aggregate, and the next free ID for a record of one of its kinds. A handler never sees the data, a repository or the
 // aggregate's model; each changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import { DOMAIN_EVENT_SLICE, type DomainEventKind } from './model.ts';
 import type { DomainEventPage, DomainEventSummary } from './read-model.ts';
@@ -53,28 +54,25 @@ export const LIST_DOMAIN_EVENTS: QueryDefinition<{ aggregate_id: string }, Domai
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No domain events.'),
 };
 
-/** The kinds of the aggregate, each with the kind of record it sits under. */
-const UNDER: Record<DomainEventKind, string> = {
-  domain_event: 'aggregate',
-  event_type: 'domain_event',
-};
+/** The kinds of the aggregate with an ID under a parent; how each is written the schema says (`idShape`). */
+const KINDS: readonly string[] = ['domain_event', 'event_type'];
 
 /**
  * The next free ID for a record of one of the aggregate's kinds under its parent: a domain event's is its aggregate's
  * domain's ID, EV and one past the highest number in use; an event has one event type, whose ID is the event's and ET.
  */
 export function nextDomainEventId(reader: DomainEventReader, input: { kind: string; parent: string }): string {
-  if (!(input.kind in UNDER)) refuse('kind', `${input.kind} is not a kind of the Domain event aggregate; its kinds are ${Object.keys(UNDER).join(', ')}`);
+  if (!KINDS.includes(input.kind)) refuse('kind', `${input.kind} is not a kind of the Domain event aggregate; its kinds are ${KINDS.join(', ')}`);
   const kind = input.kind as DomainEventKind;
+  const shape = reader.idShape(kind);
   const parentKind = reader.kindOf(input.parent);
-  if (parentKind !== UNDER[kind]) refuse('parent', `a ${kind} sits under ${article(UNDER[kind])} ${UNDER[kind]}, and ${input.parent} is ${parentKind ? `${article(parentKind)} ${parentKind}` : 'no record'}`);
+  if (parentKind !== shape.parents[0]) refuse('parent', `a ${kind} sits under ${article(shape.parents[0])} ${shape.parents[0]}, and ${input.parent} is ${parentKind ? `${article(parentKind)} ${parentKind}` : 'no record'}`);
   if (kind === 'event_type') {
-    const typeId = `${input.parent}-ET`;
+    const typeId = `${input.parent}-${shape.letters}`;
     if (reader.kindOf(typeId)) refuse('exists', `${input.parent} already has its event type, ${typeId}`);
     return typeId;
   }
-  const prefix = `${reader.domainOf(input.parent)}-EV`;
-  return `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
+  return onePast(reader, `${reader.domainOf(input.parent)}-${shape.letters}`, shape);
 }
 
 /** Get the next ID for a record of the Domain event aggregate (LA-AUT-QRY157). */
