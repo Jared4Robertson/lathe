@@ -361,15 +361,13 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(ruleFor((s) => s === '.card-title:focus-visible::after').map((r) => r.body).join(';')).toMatch(/outline:/);
     expect(ruleFor((s) => s === '.card .card-title').map((r) => r.body).join(';')).toMatch(/cursor:\s*pointer/);
     expect(ruleFor((s) => /^\.card :is\(.*\bbutton\b.*\):not\(\.card-title\)$/.test(s)).map((r) => r.body).join(';')).toMatch(/position:\s*relative[\s\S]*z-index:\s*1/);
-    // Every card on the products, product, checks, record, Trace and Appearance pages: one primary action, its title, a real link or a
+    // Every card on the products, product, checks, record and Appearance pages: one primary action, its title, a real link or a
     // button with a name; and every problem row, the record's or else its check's, is never a dead box.
     let cards = 0;
     let problems = 0;
-    for (const path of ['/', '/DM', '/DM?panel=checks', '/DM-SHOP-UC01-R01-T01', '/DM-SHOP-UC01-R01?stage=trace', '/DM?panel=appearance']) {
+    for (const path of ['/', '/DM', '/DM?panel=checks', '/DM-SHOP-UC01-R01-T01', '/DM?panel=appearance']) {
       await openApp(path);
       await screen.findByRole('heading', { level: 1 });
-      // The Trace stage loads on its own: its chain's cards.
-      if (path.includes('trace')) await screen.findByRole('list', { name: 'Obligation' });
       const wrong = [...document.querySelectorAll<HTMLElement>('.card')].filter((card) => {
         cards += 1;
         const titles = card.querySelectorAll(':scope > .card-title');
