@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
-import { orderColumns, type LayoutInput } from '../all-layout';
-import type { DeliveryGraph } from './delivery';
+import { orderColumns, type OrderInput } from './columns';
+import type { TraceGraph } from './trace';
 
-// The order of the Delivery view's outcomes and rows (LA-V98), worked out off the page's main thread in its worker
-// (delivery-order.worker.ts) by the All-at-once view's barycenter ordering (all-layout.ts orderColumns) over two
+// The order of the Trace stage's outcomes and rows (LA-V98), worked out off the page's main thread in its worker
+// (order.worker.ts) by the barycenter ordering (columns.ts orderColumns) over two
 // columns, the outcomes and the use cases, linked by serves: an outcome sits by the rows it serves and a row by its
 // outcomes, so the lines between them stay short. The rows serving an outcome come first, those serving none after
 // them. A change moves only what it changed (LA-PAT-APP-UX-R22): given the order shown before, every outcome and row
-// kept keeps its order and an outcome its top (delivery-layout.ts), a removed row or outcome leaves its room (a closed
+// kept keeps its order and an outcome its top (layout.ts), a removed row or outcome leaves its room (a closed
 // row's, a box's), and a new one takes the nearest such room within a few rows of where its links would put it, else
 // goes at the end of its section or column; none is ordered afresh, nor any room closed, unless asked (Tidy up). It is worked out
 // again only when what it reads changes (the outcomes, the rows and their serves links: the input's key), never on a
@@ -18,17 +18,17 @@ import type { DeliveryGraph } from './delivery';
  * An order: the outcomes top to bottom, the rows, how many removed rows' rooms lie before each row (none for most), and
  * the place in `rows` of the first row serving no outcome (`rows.length` when none does), and each outcome's top.
  */
-export interface DeliveryOrder {
+export interface TraceOrder {
   key: string; outcomes: readonly string[]; rows: readonly string[]; roomBefore: ReadonlyMap<string, number>; firstOutside: number;
   /**
-   * Each outcome's top once laid out (delivery-layout.ts fills it the first time it places an outcome, and keeps it
+   * Each outcome's top once laid out (layout.ts fills it the first time it places an outcome, and keeps it
    * after): an outcome never moves again until Tidy up. A new order keeps the tops of the outcomes it keeps.
    */
   outcomeTops: Map<string, number>;
 }
 
 /** The ordering's input for a graph, numbered (outcomes first, then rows), with its key. */
-function inputOf(graph: DeliveryGraph, previous: DeliveryOrder | null): { input: LayoutInput; keys: string[]; key: string } {
+function inputOf(graph: TraceGraph, previous: TraceOrder | null): { input: OrderInput; keys: string[]; key: string } {
   const keys = [...graph.outcomes, ...graph.rows.map((r) => r.useCase)];
   const number = new Map(keys.map((k, i) => [k, i]));
   const outcomes = graph.outcomes.map((_, i) => i);
@@ -52,7 +52,7 @@ function inputOf(graph: DeliveryGraph, previous: DeliveryOrder | null): { input:
 export const NEAR_ROWS = 3;
 
 /** An order from the ordering's numbers: afresh, or keeping the rows shown before at their slots (`keptRows`). */
-function orderOf(key: string, keys: readonly string[], order: number[][], input: LayoutInput, previous: DeliveryOrder | null): DeliveryOrder {
+function orderOf(key: string, keys: readonly string[], order: number[][], input: OrderInput, previous: TraceOrder | null): TraceOrder {
   const outcomes = order[0].map((b) => keys[b]);
   const merged = order[1].map((b) => keys[b]);
   const number = new Map(keys.map((k, i) => [k, i]));
@@ -70,7 +70,7 @@ const firstOutsideOf = (rows: readonly string[], under: (u: string) => boolean) 
  * empty slot of its section nearest the slot the merged order puts it at, within NEAR_ROWS, else a new slot at the end
  * of its section. Empty slots at the very end are dropped.
  */
-export function keptRows(previous: DeliveryOrder, merged: readonly string[], under: (u: string) => boolean): Pick<DeliveryOrder, 'rows' | 'roomBefore' | 'firstOutside'> {
+export function keptRows(previous: TraceOrder, merged: readonly string[], under: (u: string) => boolean): Pick<TraceOrder, 'rows' | 'roomBefore' | 'firstOutside'> {
   const present = new Set(merged);
   // The slots before: each row in turn, its room's empty slots before it; and whether each slot was under an outcome.
   const slots: (string | null)[] = [];
@@ -116,19 +116,19 @@ export function keptRows(previous: DeliveryOrder, merged: readonly string[], und
 }
 
 /** A graph ordered on the page's thread, keeping the order before it (none orders afresh): the worker's rule, for tests. */
-export function orderGraph(graph: DeliveryGraph, previous: DeliveryOrder | null): DeliveryOrder {
+export function orderGraph(graph: TraceGraph, previous: TraceOrder | null): TraceOrder {
   const { input, keys, key } = inputOf(graph, previous);
   return orderOf(key, keys, orderColumns(input), input, previous);
 }
 
 /** Each product's last order, kept for the page's life: what a new one keeps. */
-const lastOf = new Map<string, DeliveryOrder>();
+const lastOf = new Map<string, TraceOrder>();
 /** A product's order shown last, if any: the walk's. */
-export const shownOrder = (product: string): DeliveryOrder | null => lastOf.get(product) ?? null;
+export const shownOrder = (product: string): TraceOrder | null => lastOf.get(product) ?? null;
 
 /** The last order made: where, how long it took and how many outcomes and rows it ordered (the perf suite reads it). */
 let last: { thread: 'worker' | 'page'; ms: number; boxes: number; count: number } | null = null;
-export const lastDeliveryOrder = () => last;
+export const lastTraceOrder = () => last;
 
 let worker: Worker | null | undefined;
 let next = 0;
@@ -137,7 +137,7 @@ function workerOf(): Worker | null {
   if (worker !== undefined) return worker;
   if (typeof Worker === 'undefined') return (worker = null);
   try {
-    worker = new Worker(new URL('./delivery-order.worker.ts', import.meta.url), { type: 'module' });
+    worker = new Worker(new URL('./order.worker.ts', import.meta.url), { type: 'module' });
   } catch {
     return (worker = null);
   }
@@ -157,7 +157,7 @@ function workerOf(): Worker | null {
   return worker;
 }
 
-function here(input: LayoutInput): number[][] {
+function here(input: OrderInput): number[][] {
   const start = performance.now();
   const order = orderColumns(input);
   last = { thread: 'page', ms: performance.now() - start, boxes: input.columnOf.length, count: (last?.count ?? 0) + 1 };
@@ -165,7 +165,7 @@ function here(input: LayoutInput): number[][] {
 }
 
 /** The order of a graph: at once when it is the one shown (or on the page with no worker), else from the worker. */
-function ordered(graph: DeliveryGraph, tidy: boolean): DeliveryOrder | Promise<DeliveryOrder> {
+function ordered(graph: TraceGraph, tidy: boolean): TraceOrder | Promise<TraceOrder> {
   const shown = lastOf.get(graph.product) ?? null;
   const previous = tidy ? null : shown;
   const { input, keys, key } = inputOf(graph, previous);
@@ -181,20 +181,20 @@ function ordered(graph: DeliveryGraph, tidy: boolean): DeliveryOrder | Promise<D
 }
 
 /** What the scene draws: an order and the graph it was made for. */
-export interface Ordered { order: DeliveryOrder; graph: DeliveryGraph }
+export interface Ordered { order: TraceOrder; graph: TraceGraph }
 
 /**
  * The order for a graph: the graph's own once ordered; until then the one shown before, which stays on screen; null
  * before the first. `tidy` (a count Tidy up raises) orders afresh once, closing every removed row's room.
  */
-export function useDeliveryOrder(graph: DeliveryGraph, tidy: number): Ordered | null {
-  const [shown, setShown] = useState<{ graph: DeliveryGraph; tidy: number; order: DeliveryOrder } | null>(null);
+export function useTraceOrder(graph: TraceGraph, tidy: number): Ordered | null {
+  const [shown, setShown] = useState<{ graph: TraceGraph; tidy: number; order: TraceOrder } | null>(null);
   const current = shown?.graph === graph && shown.tidy === tidy ? shown : null;
   useEffect(() => {
     if (current) return;
     let live = true;
     const made = ordered(graph, shown !== null && shown.tidy !== tidy);
-    const show = (order: DeliveryOrder) => { if (live) setShown({ graph, tidy, order }); };
+    const show = (order: TraceOrder) => { if (live) setShown({ graph, tidy, order }); };
     if (made instanceof Promise) void made.then(show); else show(made);
     return () => { live = false; };
   }, [graph, tidy, current]);

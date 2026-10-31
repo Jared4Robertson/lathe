@@ -6,8 +6,8 @@
 //   first node at that level in reading order (Right and Down), or the previous container's last (Left and Up), so
 //   repeated presses visit every node at a level;
 // - from the root, an arrow goes in: Right and Down to its first node, Left and Up to its last.
-// Pure and tested directly; each stage builds its levels (graph/steps.ts, erd/walk.ts; the Trace walks its columns and
-// links instead, trace/all-walk.ts) and the commands layer's one handler sends each move to the stage shown (shell/commands.tsx useStageWalk).
+// Pure and tested directly; each stage builds its levels (graph/steps.ts, erd/walk.ts; the Trace walks its rows and
+// their links instead, trace/walk.ts) and the commands layer's one handler sends each move to the stage shown (shell/commands.tsx useStageWalk).
 
 export type Direction = 'left' | 'right' | 'up' | 'down';
 /** A move of the walk: an arrow, or out to the container and in to the first node inside it. */

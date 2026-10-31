@@ -12,7 +12,7 @@ import type { Viewport } from './camera';
 
 type Box = { x: number; y: number; w: number; h: number };
 
-/** What a morph reads of a laid-out map: which view laid it out, its roots, and each box by its place (a Graph map, the Trace's All-at-once layout). */
+/** What a morph reads of a laid-out map: which view laid it out, its roots, and each box by its place (a Graph map, the Trace stage's rows). */
 export interface MorphMap { view: string; roots: readonly string[]; nodes: ReadonlyMap<string, Box> }
 
 const same = (a: Box, b: Box) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;

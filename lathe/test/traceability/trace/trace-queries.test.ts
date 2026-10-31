@@ -1,132 +1,84 @@
-// The Trace read (LA-TRC-RM11, LA-TRC-QRY15): each obligation of a product's space with its chain, its gaps and whether
-// only proof is asked of it, and the records coverage reports untraced, read from the checks' run through the read
-// model's reader, as the CLI, the MCP tools and the HTTP API read it.
-import { createServer } from 'node:http';
-import type { AddressInfo } from 'node:net';
-import path from 'node:path';
+// The Trace read (LA-TRC-RM13, LA-TRC-QRY18): each use case of a product's space once, from the outcomes its
+// capability serves to its acceptance tests, with its requirements, flows, steps, technical chains, flow tests and
+// status per stage, read from the rows and the checks' run through the read model's reader, as the CLI, the MCP tools
+// and the HTTP API read it.
 import { afterEach, describe, expect, it } from 'vitest';
-import { LIST_TRACES } from '../../../src/traceability/trace/queries.ts';
-import type { ProductTraces } from '../../../src/traceability/trace/read-model.ts';
-import { runAggregateCommand } from '../../../src/cli/aggregates.ts';
-import { callTool } from '../../../src/cli/mcp.ts';
+import { LIST_TRACE_ROWS } from '../../../src/traceability/trace/queries.ts';
+import type { ProductTrace } from '../../../src/traceability/trace/read-model.ts';
 import { answerQuery, runQuery } from '../../../src/platform/commands/run.ts';
 import type { CheckRun, ReadView } from '../../../src/platform/data/rules.ts';
-import type { Store } from '../../../src/platform/data/store.ts';
-import { closeStores, handleApi } from '../../../src/server/api.ts';
+import { openStore, type Store } from '../../../src/platform/data/store.ts';
+import { StoreError } from '../../../src/platform/data/problems.ts';
 import type { Coverage, CoverageGap, TraceChain } from '../../../src/types.ts';
-import { closeTwoProducts, twoProducts } from '../../checking/problems/data-set.ts';
-import { openStore } from '../../../src/platform/data/store.ts';
-import { compareIds } from '../../../src/platform/data/ids.ts';
-import { adding, complete, writeData } from '../../helpers.ts';
+import { runAggregateCommand } from '../../../src/cli/aggregates.ts';
+import { complete, writeData } from '../../helpers.ts';
 
-afterEach(closeTwoProducts);
+const open: Store[] = [];
+afterEach(async () => { for (const s of open.splice(0)) await s.close(); });
 
 const gap = (id: string, kind: string, missing: string): CoverageGap => ({ id, kind, missing, message: `${id} misses ${missing}.` });
-const chain = (obligation: string, design: string[], build: string[], tests: string[]): TraceChain => ({
-  obligation, design, build, tests,
-  files: build.map((b) => ({ path: `src/${b}.ts`, named_by: [b] })),
-  links: [...design, ...build, ...tests].map((r) => [obligation, r] as [string, string]),
-});
-const coverage = (product: string, domain: string | null, gaps: CoverageGap[], proofOnly: string[] = []): Coverage => ({
-  product, domain, gaps,
-  obligations: proofOnly.map((kind) => ({ kind, label: kind, total: 1, designed: 1, built: 1, proved: 0, not_automated: 0, proof_only: true })),
-  tests: { automated: 0, manual: 0, not_automated: 0 },
-  proved_by: {},
-  pattern_rules: [],
-});
+const chain = (obligation: string, tests: string[]): TraceChain => ({ obligation, design: [], build: [], tests, files: [], links: [] });
+const coverage = (gaps: CoverageGap[]): Coverage => ({ product: 'EX', domain: 'EX-LEND', gaps, obligations: [], tests: { automated: 0, manual: 0, not_automated: 0 }, proved_by: {}, pattern_rules: [] });
 
-/** The store's data with a run of the checks that worked out these chains and this coverage. */
-const withRun = (store: Store, run: Omit<CheckRun, 'problems'>): ReadView => ({ schema: store.schema, rows: (t) => store.rows(t), record: (id) => store.record(id), checked: { problems: [], ...run } });
+/** The complete data set with a run of the checks that found these gaps and these tests. */
+async function view(run: Omit<CheckRun, 'problems'>): Promise<ReadView> {
+  const store = await openStore(writeData(complete()));
+  open.push(store);
+  return { schema: store.schema, rows: (t) => store.rows(t), record: (id) => store.record(id), checked: { problems: [], ...run } };
+}
 
-describe('LA-TRC-UC10-R05-T03 A product\'s traces read gives each obligation of its space the engine\'s chain, the gaps coverage reports and whether only proof is asked of it, and the records coverage reports untraced', () => {
-  it('reads every chain of the product\'s obligations, placed through their parents or their IDs, and nothing of another product', async () => {
-    const store = await twoProducts();
-    const view = withRun(store, {
-      chains: [
-        chain('EX-LEND-INV01', ['EX-LEND-A1'], ['EX-LEND-EN01'], []),
-        chain('EX-VO01-C01', ['EX-VO01'], [], []),
-        chain('EX-PAT-ACT-R01', [], [], []),
-        chain('NF-NOTE-INV01', [], [], []),
-      ],
-      coverage: [
-        coverage('EX', 'EX-LEND', [gap('EX-LEND-INV01', 'invariant', 'proved'), gap('EX-LEND-SP01', 'specification', 'designed'), gap('EX-LEND-SP01', 'specification', 'built'), gap('EX-LEND-CMD09', 'command', 'record-untraced')], ['pattern_rule']),
-        coverage('EX', null, [gap('EX-VO01-C01', 'constraint', 'proved'), gap('EX-VO01-C01', 'constraint', 'designed')]),
-        coverage('NF', 'NF-NOTE', [gap('NF-NOTE-CMD01', 'command', 'record-untraced')]),
-      ],
+describe('LA-TRC-UC10-R06-T01 A product\'s trace rows read gives each use case of its space once, from its outcomes to its acceptance tests, with its status per stage', () => {
+  it('reads each use case\'s outcomes, requirements, what it changes and reads, its flows\' steps with their design and technical chain, and its tests', async () => {
+    const data = await view({
+      chains: [chain('EX-LEND-UC01-R01', ['EX-LEND-UC01-R01-T01']), chain('EX-LEND-INV01', ['EX-LEND-INV01-T01'])],
+      coverage: [coverage([gap('EX-V01-R01', 'view_requirement', 'built'), gap('EX-V01-R01', 'view_requirement', 'proved')])],
     });
-    const ex = runQuery(view, LIST_TRACES, { product_id: 'EX' }) as ProductTraces;
+    const ex = runQuery(data, LIST_TRACE_ROWS, { product_id: 'EX' }) as ProductTrace;
     expect(ex.product).toBe('EX');
-    expect(ex.traces.map((t) => t.obligation)).toEqual(['EX-LEND-INV01', 'EX-VO01-C01', 'EX-PAT-ACT-R01', 'EX-LEND-SP01']);
-    expect(ex.traces[0]).toEqual({
-      obligation: 'EX-LEND-INV01', design: ['EX-LEND-A1'], build: ['EX-LEND-EN01'], tests: [],
-      files: [{ path: 'src/EX-LEND-EN01.ts', namedBy: ['EX-LEND-EN01'] }],
-      links: [['EX-LEND-INV01', 'EX-LEND-A1'], ['EX-LEND-INV01', 'EX-LEND-EN01']],
-      gaps: ['proved'], proofOnly: false,
+    expect(ex.outcomes).toEqual(['EX-BO01']);
+    expect(ex.rows.map((r) => r.useCase)).toEqual(['EX-LEND-UC01', 'EX-LEND-UC02']);
+    const uc1 = ex.rows[0];
+    expect(uc1).toMatchObject({
+      outcomes: ['EX-BO01'],
+      requirements: [{ id: 'EX-LEND-UC01-R01', gaps: [], tests: ['EX-LEND-UC01-R01-T01'] }],
+      changes: ['EX-LEND-A1', 'EX-LEND-A2'],
+      reads: ['EX-LEND-RM01'],
     });
-    // Gaps in the order designed, built, proved, wherever coverage reports them; a pattern rule owes proof only.
-    expect(ex.traces[1].gaps).toEqual(['designed', 'proved']);
-    expect(ex.traces[2].proofOnly).toBe(true);
-    // An obligation with a gap and no chain still has its gaps.
-    expect(ex.traces[3]).toMatchObject({ obligation: 'EX-LEND-SP01', design: [], gaps: ['designed', 'built'] });
-    expect(ex.untraced).toEqual(['EX-LEND-CMD09']);
-    const nf = runQuery(view, LIST_TRACES, { product_id: 'NF' }) as ProductTraces;
-    expect(nf.traces).toEqual([]);
-    expect(nf.untraced).toEqual(['NF-NOTE-CMD01']);
-    expect(() => runQuery(view, LIST_TRACES, { product_id: 'XX' })).toThrow(/there is no product XX/);
-  });
-
-  it('gives the product\'s outcomes and each use case of its space with the outcomes its capability serves and the obligations it reaches', async () => {
-    const data = adding(complete(), {
-      capability: [{ id: 'EX-LEND-CAP02', title: 'Cataloging', domain_id: 'EX-LEND', position: 2, description: 'Keeping the catalog.' }],
-      use_case: [{ id: 'EX-LEND-UC09', title: 'Count the shelf', capability_id: 'EX-LEND-CAP02', goal: 'Know what is on the shelf.' }],
-      uc_requirement: [{ id: 'EX-LEND-UC09-R01', title: 'Every tool is counted', use_case_id: 'EX-LEND-UC09', statement: 'Every tool on the shelf MUST be counted.' }],
+    // Its flow's steps in path order, each with its design and its technical chain, and the flow's test.
+    const [flow] = uc1.flows;
+    expect(flow).toMatchObject({ id: 'EX-LEND-UC01-FL01', interface: 'EX-IF01', test: 'EX-LEND-UC01-FL01-T', proved: true });
+    expect(flow.steps.map((s) => s.id)).toEqual(['EX-LEND-UC01-FL01-S01', 'EX-LEND-UC01-FL01-S02']);
+    expect(flow.steps[0]).toEqual({
+      id: 'EX-LEND-UC01-FL01-S01', path: 'main', position: 1, fulfills: ['EX-LEND-UC01-R01'], operation: 'EX-LEND-CMD01', view: 'EX-V01',
+      viewRequirements: [{ id: 'EX-V01-R01', gaps: ['built', 'proved'], tests: [] }],
+      endpoints: [{ id: 'EX-LEND-EP01', apiRequirements: [{ id: 'EX-LEND-EP01-R01', gaps: [], tests: [] }] }],
+      integrations: [],
+      chain: { components: ['EX-UI01'], entries: ['EX-LEND-EP01'], handlers: ['EX-LEND-CMD01-H'], stores: ['EX-LEND-REPO01'], dataStores: ['EX-STORE01'], adapters: [] },
     });
-    const store = await openStore(writeData(data));
-    try {
-      const ex = runQuery(withRun(store, { chains: [], coverage: [] }), LIST_TRACES, { product_id: 'EX' }) as ProductTraces;
-      expect(ex.outcomes).toEqual(['EX-BO01']);
-      const uc01 = ex.useCases.find((u) => u.useCase === 'EX-LEND-UC01')!;
-      expect(uc01.outcomes).toEqual(['EX-BO01']);
-      // Its own requirements, and the invariants, specifications and view requirements it reaches through its steps.
-      expect(uc01.reaches).toEqual(expect.arrayContaining(['EX-LEND-UC01-R01', 'EX-LEND-INV01', 'EX-LEND-SP01', 'EX-V01-R01']));
-      // Only obligations: no aggregate, command or test.
-      expect(uc01.reaches).not.toContain('EX-LEND-A1');
-      expect(uc01.reaches).not.toContain('EX-LEND-INV01-T');
-      // A use case whose capability serves nothing still reaches its own requirements, serving no outcome.
-      expect(ex.useCases.find((u) => u.useCase === 'EX-LEND-UC09')).toEqual({ useCase: 'EX-LEND-UC09', outcomes: [], reaches: ['EX-LEND-UC09-R01'] });
-      expect(ex.useCases.map((u) => u.useCase)).toEqual([...ex.useCases.map((u) => u.useCase)].sort(compareIds));
-    } finally {
-      await store.close();
-    }
+    // A query's reader stands where a command's repository would, and an integration's adapter beside it.
+    expect(flow.steps[1].chain).toEqual({ components: [], entries: [], handlers: ['EX-LEND-QRY01-H'], stores: ['EX-LEND-RM01-RD'], dataStores: ['EX-STORE01'], adapters: ['EX-INT01-AD'] });
+    // What its tests rest on: its steps' view and API requirements, its aggregates' invariants and storage requirements.
+    expect(uc1.lower.map((o) => o.id)).toEqual(['EX-LEND-A1-SR01', 'EX-LEND-EP01-R01', 'EX-LEND-INV01', 'EX-V01-R01']);
+    expect(uc1.lower.find((o) => o.id === 'EX-LEND-INV01')!.tests).toEqual(['EX-LEND-INV01-T01']);
+    expect(uc1.status).toEqual({ design: { flows: 1, notDesigned: 0 }, technical: { handlers: 2, notBuilt: 1 }, suite: { tests: 2, owed: 2, notProved: 0 } });
+    expect(LIST_TRACE_ROWS.text(ex).split('\n')[1]).toBe('  EX-LEND-UC01 (EX-BO01): 1 flow, all designed · 2 handlers, 1 not built · 2 tests, all proved');
   });
 
-  it('is refused over data that comes without the checks\' run', async () => {
-    const store = await twoProducts();
-    expect(() => answerQuery(store, LIST_TRACES, { product_id: 'EX' })).toThrow(/LA-TRC-QRY15 reads the checks' run/);
+  it('counts a requirement no step designs and one not proved, and refuses an unknown product and data without the checks\' run', async () => {
+    const data = await view({ chains: [], coverage: [coverage([gap('EX-LEND-UC01-R01', 'uc_requirement', 'designed'), gap('EX-LEND-UC01-R01', 'uc_requirement', 'proved')])] });
+    const uc1 = (runQuery(data, LIST_TRACE_ROWS, { product_id: 'EX' }) as ProductTrace).rows[0];
+    expect(uc1.requirements).toEqual([{ id: 'EX-LEND-UC01-R01', gaps: ['designed', 'proved'], tests: [] }]);
+    expect(uc1.status.design.notDesigned).toBe(1);
+    expect(uc1.status.suite.notProved).toBe(1);
+    expect(() => runQuery(data, LIST_TRACE_ROWS, { product_id: 'NOPE' })).toThrow(StoreError);
+    const store = open[0];
+    expect(() => answerQuery(store, LIST_TRACE_ROWS, { product_id: 'EX' })).toThrow(/LA-TRC-QRY18 reads the checks' run/);
   });
 
-  it('runs the checks first for `lathe trace list-traces` and the trace_list_traces tool, and GET /api/trace/list-traces reads the server\'s run', async () => {
-    const store = await twoProducts();
-    const root = path.dirname(store.dataDir);
-    await closeTwoProducts();
+  it('runs the checks first for `lathe trace list-trace-rows`', async () => {
+    const root = writeData(complete());
     const out: string[] = [];
-    expect(await runAggregateCommand(['trace', 'list-traces', '--product_id', 'EX', '--json', '--root', root], { out: (t) => out.push(t), err: (t) => out.push(t) })).toBe(0);
-    const cli = JSON.parse(out[0]) as ProductTraces;
-    expect(cli.product).toBe('EX');
-    expect(cli.traces.map((t) => t.obligation)).toEqual(expect.arrayContaining(['EX-LEND-INV01', 'EX-VO01-C01', 'EX-LEND-SP01', 'EX-PAT-ACT-R01']));
-    expect(cli.traces.map((t) => t.obligation)).not.toContain('NF-NOTE');
-    expect((await callTool(root, 'trace_list_traces', { product_id: 'EX' })).content[0].text).toMatch(/^EX: \d+ obligations traced/);
-    const server = createServer((req, res) => void handleApi(root, req, res, new URL(req.url ?? '/', 'http://localhost').pathname));
-    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-    const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
-    try {
-      const read = await fetch(`${base}/api/trace/list-traces?product_id=EX`);
-      expect(read.status).toBe(200);
-      expect(await read.json()).toEqual(cli);
-      expect((await fetch(`${base}/api/trace/list-traces?product_id=XX`)).status).toBe(422);
-    } finally {
-      await closeStores(root);
-      await new Promise<void>((resolve) => server.close(() => resolve()));
-    }
+    expect(await runAggregateCommand(['trace', 'list-trace-rows', '--product_id', 'EX', '--root', root.replace(/\/data$/, '')], { out: (t) => out.push(t), err: (t) => out.push(t) })).toBe(0);
+    expect(out[0]).toMatch(/^EX: 2 use cases, 1 outcome\n {2}EX-LEND-UC01 \(EX-BO01\): 1 flow/);
   });
 });

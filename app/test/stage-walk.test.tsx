@@ -25,7 +25,7 @@ async function walksOutAndIn(target: () => Element) {
 }
 
 describe('the stage walk', () => {
-  it('LA-V61-R49-T02 From the page the plain arrows walk the Graph, ERD and Trace stages and are announced, and stay with quick find and the Trace table, but not with a nav link clicked last', async () => {
+  it('LA-V61-R49-T02 From the page the plain arrows walk the Graph, ERD and Trace stages and are announced, and stay with quick find and the Trace list, but not with a nav link clicked last', async () => {
     await openApp('/P-D-UC01?stage=graph', { data: modelWorkspace() });
     await waitFor(() => expect(document.querySelector('.focus-stage .graph-box')).not.toBeNull());
     await walksOutAndIn(() => document.body);
@@ -63,21 +63,23 @@ describe('the stage walk', () => {
     window.history.go(-2);
     await waitFor(() => expect(at()).toBe('/P-D-UC01'));
 
-    // The Trace stage walks its All-at-once view: Right along a link to the nearest obligation the use case reaches,
-    // Down to the next box in that column, Left back along a link to the use case; a link of its table, the accessible
-    // layer under the canvas, keeps its own arrows.
-    const reached = ['/P-D-DS01', '/P-D-EP01-R01', '/P-D-INV01', '/P-D-INV02', '/P-D-PO02', '/P-D-SP01', '/P-D-UC01-R01', '/P-D-UC01-R02', '/P-V01-R01', '/P-VO01-C01'];
+    // The Trace stage walks its rows: Right to the row's Design flow box (no record: the ring moves, the focus stays),
+    // Left back to the use case; Shift+Down in to its first requirement, Down to the next, Up back. A link of its list,
+    // the accessible layer under the canvas, keeps its own arrows.
     fireEvent.click(stageButton('Trace'));
     await waitFor(() => expect(document.querySelector('.focus-stage[data-stage="trace"] .trace-flow[data-ready]')).not.toBeNull());
     press(document.body, 'ArrowRight');
-    await waitFor(() => expect(reached).toContain(at()));
-    const first = at();
-    await waitFor(() => expect(announcer()).not.toHaveTextContent('Use case Lend a thing'));
-    press(document.body, 'ArrowDown');
-    await waitFor(() => expect(at()).not.toBe(first));
-    press(document.body, 'ArrowUp');
-    await waitFor(() => expect(at()).toBe(first));
+    await waitFor(() => expect(announcer()).toHaveTextContent(/, Design flow$/));
+    expect(at()).toBe('/P-D-UC01');
     press(document.body, 'ArrowLeft');
+    await waitFor(() => expect(announcer()).toHaveTextContent('Use case Lend a thing'));
+    fireEvent.keyDown(document.body, { key: 'ArrowDown', code: 'ArrowDown', shiftKey: true });
+    await waitFor(() => expect(at()).toBe('/P-D-UC01-R01'));
+    press(document.body, 'ArrowDown');
+    await waitFor(() => expect(at()).toBe('/P-D-UC01-R02'));
+    press(document.body, 'ArrowUp');
+    await waitFor(() => expect(at()).toBe('/P-D-UC01-R01'));
+    fireEvent.keyDown(document.body, { key: 'ArrowUp', code: 'ArrowUp', shiftKey: true });
     await waitFor(() => expect(at()).toBe('/P-D-UC01'));
     await waitFor(() => expect(announcer()).toHaveTextContent('Use case Lend a thing'));
     const link = await waitFor(() => {
@@ -129,13 +131,14 @@ describe('the walking letters', () => {
     window.history.back();
     await waitFor(() => expect(at()).toBe('/P-D-UC01'));
 
-    // The Trace stage, along its links.
+    // The Trace stage, along its row: D to the Design flow box, A back to the use case.
     fireEvent.click(stageButton('Trace'));
     await waitFor(() => expect(document.querySelector('.focus-stage[data-stage="trace"] .trace-flow[data-ready]')).not.toBeNull());
     letter(document.body, 'd');
-    await waitFor(() => expect(['/P-D-DS01', '/P-D-EP01-R01', '/P-D-INV01', '/P-D-INV02', '/P-D-PO02', '/P-D-SP01', '/P-D-UC01-R01', '/P-D-UC01-R02', '/P-V01-R01', '/P-VO01-C01']).toContain(at()));
+    await waitFor(() => expect(announcer()).toHaveTextContent(/, Design flow$/));
     letter(document.body, 'a');
-    await waitFor(() => expect(at()).toBe('/P-D-UC01'));
+    await waitFor(() => expect(announcer()).toHaveTextContent('Use case Lend a thing'));
+    expect(at()).toBe('/P-D-UC01');
   });
 });
 
@@ -176,16 +179,16 @@ describe('out and in', () => {
     window.history.go(-3);
     await waitFor(() => expect(at()).toBe('/P-D-UC01'));
 
-    // The Trace: In along a link to an obligation the use case reaches, Out back to the use case, and the toolbar's In again.
+    // The Trace: In opens the use case to its first requirement, Out back to the use case, and the toolbar's In again.
     fireEvent.click(stageButton('Trace'));
     await waitFor(() => expect(document.querySelector('.focus-stage[data-stage="trace"] .trace-flow[data-ready]')).not.toBeNull());
     shift('ArrowDown');
-    await waitFor(() => expect(['/P-D-DS01', '/P-D-EP01-R01', '/P-D-INV01', '/P-D-INV02', '/P-D-PO02', '/P-D-SP01', '/P-D-UC01-R01', '/P-D-UC01-R02', '/P-V01-R01', '/P-VO01-C01']).toContain(at()));
+    await waitFor(() => expect(at()).toBe('/P-D-UC01-R01'));
     shift('ArrowUp');
     await waitFor(() => expect(at()).toBe('/P-D-UC01'));
     await waitFor(() => expect(announcer()).toHaveTextContent(/^Use case /));
-    fireEvent.click(toolbarButton('In along a link to the nearest box on the right'));
-    await waitFor(() => expect(['/P-D-DS01', '/P-D-EP01-R01', '/P-D-INV01', '/P-D-INV02', '/P-D-PO02', '/P-D-SP01', '/P-D-UC01-R01', '/P-D-UC01-R02', '/P-V01-R01', '/P-VO01-C01']).toContain(at()));
+    fireEvent.click(toolbarButton('Open the box and step to its first child'));
+    await waitFor(() => expect(at()).toBe('/P-D-UC01-R01'));
   });
 });
 

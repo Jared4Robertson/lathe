@@ -229,8 +229,8 @@ export function isTyping(target: EventTarget | null): boolean {
  * that takes text or picks by arrows (every input but a checkbox and the buttons, a textarea, a select, editable text
  * such as the chat box), the composite widgets the ARIA practices give arrows to (a tree, grid, menu, menu bar, listbox,
  * combobox, tab list, radio group, slider, spin button and a focusable window splitter), a menu button, a modal dialog
- * (it holds the keyboard), and anything marked `data-arrows="own"` (a tree list, the chat log, the trace
- * table, the breadcrumb's menu).
+ * (it holds the keyboard), and anything marked `data-arrows="own"` (a tree list, the chat log, the Trace
+ * stage's list, the breadcrumb's menu).
  */
 const ARROW_CONTROLS = [
   'input:not([type="checkbox"], [type="button"], [type="submit"], [type="reset"], [type="image"], [type="file"], [type="color"], [type="hidden"])',
