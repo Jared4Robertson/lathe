@@ -81,7 +81,7 @@ export const OBLIGATION_COVERAGE: Readonly<Record<string, { designed: string; bu
     built: 'Not asked: proof only.',
     proved: 'Its pattern rule test naming the owing domain.',
   },
-  standard_rule: { designed: 'A technical record meets it.', built: 'Every technical record that meets it names a file that exists, and there is at least one.', proved: 'One of its standard rule tests.' },
+  standard_rule: { designed: 'A technical record meets it, or a record links to it through a relation the product declared with the design role.', built: 'Every technical record that meets it, and every source of a product relation with the build role, names a file that exists, and there is at least one.', proved: 'One of its standard rule tests, or a source of a product relation with the proof role.' },
 };
 
 /** The obligation kinds Lathe defines what designs, builds and proves; a product's own obligation kinds go by its design, build and proof links. */
@@ -356,7 +356,19 @@ UNION ALL SELECT q.id, h.id, NULL FROM api_requirement q JOIN endpoint_handler h
 UNION ALL SELECT target_id, source_id, NULL FROM meets
 -- A product's own obligation kind: the sources of its design and build links.
 UNION ALL SELECT l.target_id, l.source_id, NULL FROM link l JOIN meta_relation r ON r.name = l.relation AND r.role IN ('design', 'build')
-  JOIN obligation o ON o.id = l.target_id WHERE o.kind NOT IN (${lathe});
+  JOIN obligation o ON o.id = l.target_id WHERE o.kind NOT IN (${lathe})
+-- One of Lathe's obligation kinds, through a relation the product declared with the build role: its sources build the
+-- obligation beside what builds it by its kind. A product's design links on one of Lathe's kinds design it
+-- (product_design_link) and build nothing, since the kind says what builds it.
+UNION ALL SELECT l.target_id, l.source_id, NULL FROM link l JOIN meta_relation r ON r.name = l.relation AND r.role = 'build' AND r.product_id IS NOT NULL
+  JOIN obligation o ON o.id = l.target_id WHERE o.kind IN (${lathe});
+
+-- Each of Lathe's obligations that a relation the product declared with the design role links to, with the source
+-- that designs it; a product's own obligation kind takes the same links through obligation_impl.
+CREATE OR REPLACE TABLE product_design_link AS
+SELECT l.target_id AS obligation_id, l.source_id
+FROM link l JOIN meta_relation r ON r.name = l.relation AND r.role = 'design' AND r.product_id IS NOT NULL
+JOIN obligation o ON o.id = l.target_id WHERE o.kind IN (${lathe});
 
 -- A UC requirement rests on the specifications the commands and queries its steps invoke check or select by, and
 -- on the domain services they call: it is built only while each of them is.
@@ -377,14 +389,15 @@ CREATE OR REPLACE TABLE obligation_proof AS
 WITH proofs AS (
   SELECT t.parent_id AS obligation_id, t.id AS test_id, t.domain_id, t.state, t.level_allowed AND t.backed AS valid
   FROM test_run t JOIN obligation o ON o.id = t.parent_id
-  -- A product's own obligation kind: the sources of its proof links. A test is backed as test_run says; a record of a
-  -- product kind that names a file is backed only when that file exists and names it, as a test is; one that names
-  -- no file counts as it stands.
+  -- A product's own obligation kind: the sources of its proof links; one of Lathe's kinds: the sources of the proof
+  -- links of relations the product declared. A test is backed as test_run says; a record of a product kind that
+  -- names a file is backed only when that file exists and names it, as a test is; one that names no file counts as
+  -- it stands.
   UNION ALL SELECT l.target_id, l.source_id, NULL, coalesce(t.state, 'automated'),
     coalesce(t.level_allowed AND t.backed, f.file_exists AND f.contains_id, true)
   FROM link l JOIN meta_relation r ON r.name = l.relation AND r.role = 'proof' JOIN obligation o ON o.id = l.target_id
   LEFT JOIN test_run t ON t.id = l.source_id LEFT JOIN file_facts f ON f.record = l.source_id
-  WHERE o.kind NOT IN (${lathe})
+  WHERE o.kind NOT IN (${lathe}) OR r.product_id IS NOT NULL
 )
 SELECT *, state IN ('automated', 'manual') AND valid AS counts FROM proofs;
 
@@ -409,6 +422,7 @@ SELECT DISTINCT * FROM (
   UNION ALL SELECT target_id, target_id, source_id, 'design' FROM calls
   UNION ALL SELECT target_id, target_id, source_id, 'design' FROM checks
   UNION ALL SELECT target_id, target_id, source_id, 'design' FROM selects_by
+  UNION ALL SELECT obligation_id, obligation_id, source_id, 'design' FROM product_design_link
   UNION ALL SELECT obligation_id, coalesce(via_id, obligation_id), impl_id, 'build' FROM obligation_impl
   UNION ALL SELECT i.obligation_id, i.impl_id, d.target_id, 'build' FROM obligation_impl i JOIN storage_requirement s ON s.id = i.obligation_id JOIN stored_in d ON d.source_id = i.impl_id
   UNION ALL SELECT obligation_id, obligation_id, test_id, 'tests' FROM obligation_proof
@@ -434,7 +448,8 @@ SELECT o.product, o.domain, o.id, o.kind,
   o.kind IN (${list(PROOF_ONLY)}) AS proof_only,
   o.kind IN (${list(DESIGNED_BY_CONSTRUCTION)})
     OR (o.kind = 'uc_requirement' AND EXISTS (SELECT 1 FROM uc_requirement_flow m WHERE m.id = o.id) AND NOT EXISTS (SELECT 1 FROM uc_requirement_flow m WHERE m.id = o.id AND NOT m.fulfilled))
-    OR (o.kind NOT IN (${list([...DESIGNED_BY_CONSTRUCTION, 'uc_requirement'])}) AND EXISTS (SELECT 1 FROM obligation_impl i WHERE i.obligation_id = o.id)) AS designed,
+    OR (o.kind NOT IN (${list([...DESIGNED_BY_CONSTRUCTION, 'uc_requirement'])}) AND EXISTS (SELECT 1 FROM obligation_impl i WHERE i.obligation_id = o.id))
+    OR EXISTS (SELECT 1 FROM product_design_link d WHERE d.obligation_id = o.id) AS designed,
   o.kind IN (${list(PROOF_ONLY)})
     OR (coalesce(b.built, false)
       AND NOT EXISTS (SELECT 1 FROM obligation_rests_on r JOIN obligation_own_built n ON n.id = r.needs_id WHERE r.obligation_id = o.id AND NOT n.built)) AS built,
