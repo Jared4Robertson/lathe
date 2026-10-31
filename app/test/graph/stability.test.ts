@@ -1,18 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { PlacedMap } from '../../src/graph/map';
 import { type MapLabel } from '../../src/graph/text';
-import { allGraph } from '../../src/trace/all';
-import { layOutGraph } from '../../src/trace/all-laid';
-import { BOX_HEIGHT, OUTSIDE_GAP, ROW_GAP } from '../../src/trace/all-layout';
 import { addRows, removeRows, setRow } from '../fixtures/load';
 import { modelWorkspace } from '../fixtures/model';
 import { recordIndexOf, type ServedData } from '../read-view';
-import { traced } from '../trace/traces';
-import { delivered } from '../trace/deliveries';
-import { orderGraph } from '../../src/trace/delivery/delivery-order';
-import { layOutDelivery } from '../../src/trace/delivery/delivery-layout';
-import { cellKey, DELIVERY_STAGES } from '../../src/trace/delivery/delivery';
-import { ITEM_HEIGHT } from '../../src/trace/delivery/delivery-layout';
+import { traced } from '../trace/rows';
+import { orderGraph } from '../../src/trace/order';
+import { layOutTrace } from '../../src/trace/layout';
+import { cellKey, TRACE_STAGES } from '../../src/trace/trace';
+import { ITEM_HEIGHT } from '../../src/trace/layout';
 import { graphMap, groundMap, groundMapAfter, layoutNested, layoutTree, nestedMap } from './maps';
 
 // A change moves only what it changed (LA-PAT-APP-UX-R22, LA-EXP-DS05, LA-EXP-DS07): adding, removing, renaming or
@@ -131,7 +127,7 @@ describe.each([
   });
 });
 
-// ---------- On a product's own data: the Graph's Tree and Nested maps and the Trace's All-at-once view ----------
+// ---------- On a product's own data: the Graph's Tree and Nested maps and the Trace stage ----------
 
 /** The model product with a second use case of two requirements, and two outcomes its capability serves. */
 function product(): ServedData {
@@ -223,16 +219,10 @@ describe('LA-PAT-APP-UX-R22 a problem badge appearing moves nothing', () => {
     expect(headerChangedOutside(before, after, [])).toEqual([]);
   });
   it('LA-EXP-DS12-T04 on the Graph\'s Map', () => same(groundMap(recordIndexOf(product())), groundMap(recordIndexOf(withProblem()))));
-  it('LA-V98-R20-T02 on the Trace\'s Delivery view', () => {
-    const layOut = (d: ServedData) => { const { graph } = delivered(d); return layOutDelivery(graph, orderGraph(graph, null), { open: new Set(graph.rows.map((r) => cellKey(r.useCase, 'use-case'))), step: null }); };
+  it('LA-V98-R20-T02 on the Trace stage', () => {
+    const layOut = (d: ServedData) => { const { graph } = traced(d); return layOutTrace(graph, orderGraph(graph, null), { open: new Set(graph.rows.map((r) => cellKey(r.useCase, 'use-case'))), step: null }); };
     const [before, after] = [layOut(product()), layOut(withProblem())];
     expect([...after.places]).toEqual([...before.places]);
-  });
-  it('LA-V98-R12-T03 on the Trace\'s All-at-once view', () => {
-    const layOut = (d: ServedData) => { const { index, traces } = traced(d); return layOutGraph(allGraph(index, traces, 'P'), null); };
-    const [before, after] = [layOut(product()), layOut(withProblem())];
-    expect([...after.places]).toEqual([...before.places]);
-    expect(after.order).toEqual(before.order);
   });
 });
 
@@ -262,47 +252,20 @@ describe.each(CHANGES)('$name keeps every box outside its parent where it was', 
     expect(movedOutside(groundMap(changedIndex), groundMapAfter(changedIndex, null), [])).toEqual([]);
   });
 
-  it('LA-V98-R12-T03 on the Trace\'s All-at-once view: every box kept keeps its exact place, a new one in a free gap of its column, and Tidy up lays out afresh', () => {
-    const layOut = (d: ServedData, previous: ReturnType<typeof layOutGraph> | null) => { const { index, traces } = traced(d); return layOutGraph(allGraph(index, traces, 'P'), previous); };
-    const before = layOut(product(), null);
-    const after = layOut(changedData(), before);
-    // Every box shown before and after keeps its place; the boxes under no outcome move only together, and only as far
-    // as a new box under one now reaches into them.
-    const shift = (after.outsideTop ?? 0) - (before.outsideTop ?? 0);
-    const outside = (k: string) => before.outsideTop !== null && before.places.get(k)!.y >= before.outsideTop;
-    expect([...before.places].filter(([k, p]) => after.places.has(k) && after.places.get(k)!.y !== p.y + (outside(k) ? shift : 0)).map(([k]) => k)).toEqual([]);
-    if (shift !== 0) {
-      const added = [...after.places].filter(([k]) => !before.places.has(k) && (after.outsideTop === null || after.places.get(k)!.y < after.outsideTop));
-      expect(shift).toBe(Math.max(...added.map(([, p]) => p.y + BOX_HEIGHT)) + OUTSIDE_GAP - before.outsideTop!);
-    }
-    after.order.forEach((column, i) => {
-      const kept = new Set(column);
-      expect(column.filter((k) => before.places.has(k)), `column ${i}`).toEqual(before.order[i].filter((k) => kept.has(k)));
-      // No two boxes of a column closer than a row.
-      const tops = column.map((k) => after.places.get(k)!.y).sort((a, b) => a - b);
-      tops.slice(1).forEach((t, j) => expect(t - tops[j], `column ${i}`).toBeGreaterThanOrEqual(BOX_HEIGHT + ROW_GAP - 1e-9));
-    });
-    if (records.includes('P-D-UC01-R03')) expect(after.places.has('P-D-UC01-R03')).toBe(true);
-    if (records.includes('P-D-UC01-R02-T01')) expect(after.places.has('P-D-UC01-R02')).toBe(false);
-    // Tidy up: no layout before, the columns laid out afresh.
-    const { index, traces } = traced(changedData());
-    expect([...layOutGraph(allGraph(index, traces, 'P'), null).places]).toEqual([...layOut(changedData(), null).places]);
-  });
-
-  it('LA-V98-R20-T02 on the Trace\'s Delivery view: the rows keep their order, a closed row its place, and an open one moves only the rows below it', () => {
-    const { graph: was } = delivered(product());
-    const { graph: now } = delivered(changedData());
+  it('LA-V98-R20-T02 on the Trace stage: the rows keep their order, a closed row its place, and an open one moves only the rows below it', () => {
+    const { graph: was } = traced(product());
+    const { graph: now } = traced(changedData());
     const shown = orderGraph(was, null);
     const order = orderGraph(now, shown);
     expect(order.rows).toEqual(shown.rows);
     // Every row closed: every box of every row keeps its place.
     const closed = { open: new Set<string>(), step: null };
-    const [a, b] = [layOutDelivery(was, shown, closed), layOutDelivery(now, order, closed)];
+    const [a, b] = [layOutTrace(was, shown, closed), layOutTrace(now, order, closed)];
     expect([...b.rows]).toEqual([...a.rows]);
     expect([...b.places]).toEqual([...a.places]);
     // Every row open: the rows above the first changed row keep every box where it was.
-    const open = { open: new Set(now.rows.flatMap((r) => DELIVERY_STAGES.map((s) => cellKey(r.useCase, s)))), step: null };
-    const [c, d] = [layOutDelivery(was, shown, open), layOutDelivery(now, order, open)];
+    const open = { open: new Set(now.rows.flatMap((r) => TRACE_STAGES.map((s) => cellKey(r.useCase, s)))), step: null };
+    const [c, d] = [layOutTrace(was, shown, open), layOutTrace(now, order, open)];
     const changedRows = order.rows.filter((u) => JSON.stringify(was.rowOf.get(u)?.data) !== JSON.stringify(now.rowOf.get(u)?.data));
     const first = Math.min(...changedRows.map((u) => order.rows.indexOf(u)));
     for (const u of order.rows.slice(0, first)) {
@@ -332,9 +295,9 @@ describe('LA-EXP-DS12-T04 on the Graph\'s Map a removed record leaves its room a
   });
 });
 
-describe('LA-V98-R20-T02 on the Trace\'s Delivery view a use case added or removed moves no other row', () => {
+describe('LA-V98-R20-T02 on the Trace stage a use case added or removed moves no other row', () => {
   const closed = { open: new Set<string>(), step: null };
-  const rowsOf = (d: ServedData, previous: ReturnType<typeof orderGraph> | null) => { const { graph } = delivered(d); const order = orderGraph(graph, previous); return { order, laid: layOutDelivery(graph, order, closed) }; };
+  const rowsOf = (d: ServedData, previous: ReturnType<typeof orderGraph> | null) => { const { graph } = traced(d); const order = orderGraph(graph, previous); return { order, laid: layOutTrace(graph, order, closed) }; };
   it('a removed use case leaves its row\'s room; a new one takes it when near, else goes at the end of its section; Tidy up closes the room', () => {
     const first = rowsOf(product(), null);
     const less = product();
@@ -353,16 +316,16 @@ describe('LA-V98-R20-T02 on the Trace\'s Delivery view a use case added or remov
     const ends = [...added.laid.rows.values()].map((b) => b.y + b.h);
     expect(more.laid.rows.get('P-D-UC10')!.y).toBeGreaterThan(Math.max(...ends));
     // Tidy up: ordered afresh, no room kept.
-    expect(orderGraph(delivered(less).graph, null).roomBefore.size).toBe(0);
+    expect(orderGraph(traced(less).graph, null).roomBefore.size).toBe(0);
   });
 
   it('an outcome keeps its top through opening rows and new data; a new one takes a free place near its rows, else the bottom; a removed one leaves its place', () => {
-    const outcomeTop = (laid: ReturnType<typeof layOutDelivery>, o: string) => laid.places.get(`outcome/${o}`)?.y;
+    const outcomeTop = (laid: ReturnType<typeof layOutTrace>, o: string) => laid.places.get(`outcome/${o}`)?.y;
     const first = rowsOf(product(), null);
     const tops = { P_BO01: outcomeTop(first.laid, 'P-BO01'), P_BO02: outcomeTop(first.laid, 'P-BO02') };
     // Opening every row moves rows, never an outcome.
-    const { graph } = delivered(product());
-    const open = layOutDelivery(graph, first.order, { open: new Set(graph.rows.flatMap((r) => DELIVERY_STAGES.map((st) => cellKey(r.useCase, st)))), step: null });
+    const { graph } = traced(product());
+    const open = layOutTrace(graph, first.order, { open: new Set(graph.rows.flatMap((r) => TRACE_STAGES.map((st) => cellKey(r.useCase, st)))), step: null });
     expect([outcomeTop(open, 'P-BO01'), outcomeTop(open, 'P-BO02')]).toEqual([tops.P_BO01, tops.P_BO02]);
     // A new outcome: the others stay, and it sits a box clear of them.
     const more = product();
@@ -378,7 +341,7 @@ describe('LA-V98-R20-T02 on the Trace\'s Delivery view a use case added or remov
     const removed = rowsOf(more, added.order);
     expect([outcomeTop(removed.laid, 'P-BO02'), outcomeTop(removed.laid, 'P-BO03')]).toEqual([tops.P_BO02, y3]);
     // Tidy up: a fresh order keeps no tops.
-    expect(orderGraph(delivered(more).graph, null).outcomeTops.size).toBe(0);
+    expect(orderGraph(traced(more).graph, null).outcomeTops.size).toBe(0);
   });
 });
 

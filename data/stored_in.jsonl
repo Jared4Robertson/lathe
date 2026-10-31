@@ -248,8 +248,6 @@
 {"source_id":"LA-TRC-RM07-TB","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-TRC-RM10-RD","target_id":"LA-STORE04"}
 {"source_id":"LA-TRC-RM10-TB","target_id":"LA-STORE04"}
-{"source_id":"LA-TRC-RM11-RD","target_id":"LA-STORE04"}
-{"source_id":"LA-TRC-RM11-TB","target_id":"LA-STORE04"}
 {"source_id":"LA-TRC-RM12-RD","target_id":"LA-STORE04"}
 {"source_id":"LA-TRC-RM12-TB","target_id":"LA-STORE04"}
 {"source_id":"LA-TRC-RM13-RD","target_id":"LA-STORE04"}
