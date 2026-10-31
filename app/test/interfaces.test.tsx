@@ -29,8 +29,9 @@ describe('flows by interface', () => {
 
     await openApp(`${addressOf('DM-SHOP-UC01-FL02')}?stage=graph`, served());
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket through the terminal' });
+    // The interface's kind arrives with the meta model's read, which may answer after the flow's own.
+    await waitFor(() => expect(screen.getByText(/^Through/).closest('p')!.textContent).toBe('Through DM-IF02Terminal CLI'));
     const through = screen.getByText(/^Through/).closest('p')!;
-    expect(through.textContent).toBe('Through DM-IF02Terminal CLI');
     expect(within(through).getByRole('link')).toHaveAttribute('href', addressOf('DM-IF02'));
   });
 
