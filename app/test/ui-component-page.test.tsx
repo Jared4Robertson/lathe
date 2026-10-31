@@ -7,7 +7,7 @@ import type { UiComponentCommands } from '../src/authoring/ui-component/commands
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows } from './fixtures/load';
 import { modelWorkspace } from './fixtures/model';
-import { main, openApp, section } from './helpers';
+import { findSection, main, openApp, section } from './helpers';
 
 // The UI component page and its editor (LA-AUT-A15, LA-V151): a UI component is read through the aggregate's own
 // query, and changed only through the aggregate's own commands, one per change, each refusal shown with its reasons.
@@ -23,7 +23,7 @@ describe('LA-V151-R01-T01 a UI component is read through the UI component aggreg
     const { requests } = await openApp('/P-UI01', { data: withPackage() });
     expect(await within(main()).findByText('The fixture\'s ui component Loan table.')).toBeInTheDocument();
     expect(requests).toContain('GET /api/ui-component/get-ui-component?id=P-UI01');
-    expect(within(section('Traceability')).getByRole('link', { name: /^P-V01Loan desk/ })).toBeInTheDocument();
+    expect(within(await findSection('Traceability')).getByRole('link', { name: /^P-V01Loan desk/ })).toBeInTheDocument();
     expect(within(section(/^Packages/)).getByText('react')).toBeInTheDocument();
   });
 
