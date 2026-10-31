@@ -13,7 +13,9 @@
 // objects its fields hold; the aggregate a reached specification reads; the technical records that implement each
 // reached record (its handler, repository, data model, table, projection, reader, rule, predicate, event handler,
 // service, value type, event type, adapter); the standard rules those meet; the tests under each reached record; a
-// product's own records under a reached one, and a product's own obligation a reached record designs or builds.
+// product's own records under a reached one, a product's own obligation a reached record designs or builds, what a
+// reached record links to through one of the product's own relations, and the product's own records that link to a
+// reached one through one (a component listed in an aggregate, a CLI command exposing a command).
 // The capability serves its outcomes directly. The engine fills record_serves with it before the checks run (the
 // serves-no-outcome check reads it), and the Serves read model's projection (LA-TRC-RM12-PJ) answers from it.
 import type { ReadView } from '../platform/data/rules.ts';
@@ -135,6 +137,20 @@ export function useCaseReaches(view: Pick<ReadView, 'schema' | 'rows'>): Map<str
     if (!test && (kind.productId === null || kind.obligation)) continue;
     for (const parent of kind.parents) for (const [k, v] of under(name, parent.column)) carried.set(k, [...(carried.get(k) ?? []), ...v]);
   }
+  // A product's own relations: from a reached record, what it links to through one; and the product's own records that
+  // link to a reached record through one, as a repository is reached through persists (a product's record links to
+  // what is defined before it: the aggregate it is listed in, the command it exposes).
+  const ownRecords = new Set(Object.values(schema.kinds).filter((k) => k.productId !== null).flatMap((k) => rows(k.name).map((r) => String(r.id))));
+  const ownLinksOut = new Map<string, string[]>();
+  const ownLinksInto = new Map<string, string[]>();
+  for (const relation of Object.values(schema.relations)) {
+    if (relation.productId === null) continue;
+    for (const [k, v] of out(relation.name)) ownLinksOut.set(k, [...(ownLinksOut.get(k) ?? []), ...v]);
+    for (const [k, v] of into(relation.name)) {
+      const own = v.filter((id) => ownRecords.has(id));
+      if (own.length > 0) ownLinksInto.set(k, [...(ownLinksInto.get(k) ?? []), ...own]);
+    }
+  }
   // A product's own obligation: the records that design or build it.
   const ownObligations = new Set(Object.values(schema.kinds).filter((k) => k.productId !== null && k.obligation).flatMap((k) => rows(k.name).map((r) => String(r.id))));
   const designsOwn = new Map<string, string[]>();
@@ -205,6 +221,8 @@ export function useCaseReaches(view: Pick<ReadView, 'schema' | 'rows'>): Map<str
       reach(meets.get(id));
       reach(carried.get(id));
       reach(designsOwn.get(id));
+      reach(ownLinksOut.get(id));
+      reach(ownLinksInto.get(id));
     }
     reaches.set(useCase, { outcomes, reached });
   }
