@@ -111,6 +111,12 @@ export function section(name: string | RegExp) {
   return element as HTMLElement;
 }
 
+/** A section of the page once its heading has drawn: for a section filled by a read that answers after the page's own. */
+export async function findSection(name: string | RegExp) {
+  await within(main()).findByRole('heading', { name });
+  return section(name);
+}
+
 /** Starts the place at a depth and the window at a layout, as if the person had chosen them (the default is 1, Tree). */
 export function startAtDepth(depth: number, layout: 'tree' | 'nested' | 'map' = 'tree') {
   window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout, minimap: false, allLinks: false, cardWidth: null, chat: false, chatWidth: null, highlight: false, since: 'commit', follow: false, looked: {} }));
