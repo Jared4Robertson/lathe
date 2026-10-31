@@ -38,7 +38,7 @@ function runsOf(text: string): Set<string> {
   return runs;
 }
 
-describe('command files restate nothing of their definitions', () => {
+describe('LA-STD-CODE-R10-T01 command files restate nothing of their definitions', () => {
   const files = commandFiles(path.join(REPO, 'lathe/src'));
 
   it('finds every command file', () => {
