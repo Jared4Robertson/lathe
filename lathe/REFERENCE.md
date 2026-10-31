@@ -1993,9 +1993,9 @@ One rule of a standard. Technical records that follow it link to it with meets; 
 - **Parents:** [`standard`](#kind-standard) (`standard_id`)
 - **Children:** [`standard_rule_test`](#kind-standard_rule_test)
 - **Obligation:** yes: designed, built and proved
-  - **Designed:** A technical record meets it.
-  - **Built:** Every technical record that meets it names a file that exists, and there is at least one.
-  - **Proved:** One of its standard rule tests.
+  - **Designed:** A technical record meets it, or a record links to it through a relation the product declared with the design role.
+  - **Built:** Every technical record that meets it, and every source of a product relation with the build role, names a file that exists, and there is at least one.
+  - **Proved:** One of its standard rule tests, or a source of a product relation with the proof role.
 - **ID:** `<standard>-R<nn>`, such as `TL-STD-CODE-R01`; it starts with its parent's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about)), Met by ([`meets`](#relation-meets))
