@@ -1,0 +1,11 @@
+{"id":"TL-JR01-S01","title":"The librarian takes the tool back needing repair","journey_id":"TL-JR01","path":"main","position":1}
+{"id":"TL-JR01-S02","title":"The library takes the tool out of lending","journey_id":"TL-JR01","path":"main","position":2}
+{"id":"TL-JR01-S03","title":"The librarian sees the tools waiting for repair","journey_id":"TL-JR01","path":"main","position":3}
+{"id":"TL-JR01-S04","title":"Once fixed, the librarian puts it back in lending","journey_id":"TL-JR01","path":"main","position":4}
+{"id":"TL-JR01-S05","title":"A librarian finds the tool damaged outside a return and reports it","journey_id":"TL-JR01","path":"found outside a return","position":1}
+{"id":"TL-JR02-S01","title":"The member borrows an available tool for the job","journey_id":"TL-JR02","path":"main","position":1}
+{"id":"TL-JR02-S02","title":"The library reminds the member the loan is due","journey_id":"TL-JR02","path":"main","position":2}
+{"id":"TL-JR02-S03","title":"The member brings the tool back and the librarian records the return","journey_id":"TL-JR02","path":"main","position":3}
+{"id":"TL-JR02-S04","title":"The member renews the loan before it is due","journey_id":"TL-JR02","path":"needs it longer","position":1}
+{"id":"TL-JR03-S01","title":"The librarian registers the neighbor as a member","journey_id":"TL-JR03","path":"main","position":1}
+{"id":"TL-JR03-S02","title":"The new member borrows their first tool","journey_id":"TL-JR03","path":"main","position":2}

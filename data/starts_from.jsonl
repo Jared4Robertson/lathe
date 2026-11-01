@@ -354,6 +354,10 @@
 {"source_id":"LA-INT01-T03","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-INT04-T01","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-INT64-T01","target_id":"LA-AUT-TD01"}
+{"source_id":"LA-JR01-T","target_id":"LA-AUT-TD03"}
+{"source_id":"LA-JR02-T","target_id":"LA-AUT-TD03"}
+{"source_id":"LA-JR03-T","target_id":"LA-AUT-TD03"}
+{"source_id":"LA-JR04-T","target_id":"LA-PLT-TD03"}
 {"source_id":"LA-PAT-AGGREGATE-COMMANDS-R01-T02","target_id":"LA-CHK-TD01"}
 {"source_id":"LA-PAT-AGGREGATE-COMMANDS-R01-T03","target_id":"LA-TRC-TD02"}
 {"source_id":"LA-PAT-AGGREGATE-COMMANDS-R02-T01","target_id":"LA-AUT-TD01"}
