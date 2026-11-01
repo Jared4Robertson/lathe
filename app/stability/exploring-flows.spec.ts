@@ -233,7 +233,7 @@ test.describe('Exploring flows', () => {
     // Once the fade has glided to its end: the path at full strength.
     await expect.poll(async () => (await traceSceneOf(page, true)).boxes.find((b) => b.key === own)?.strength, { timeout: 5000 }).toBe(1);
     const lit = await traceSceneOf(page, true);
-    expect(lit.boxes.find((b) => b.key === own)).toMatchObject({ column: 1, lit: true, strength: 1 });
+    expect(lit.boxes.find((b) => b.key === own)).toMatchObject({ column: 2, lit: true, strength: 1 });
     expect(lit.boxes.find((b) => b.key === 'LA-EXP-UC03|design/LA-EXP-UC03-FL')!.lit).toBe(true);
     expect(lit.lines.some((l) => l.kind === 'path' && l.lit && l.from === own)).toBe(true);
     // From the keyboard, through the list under the canvas: the flow opened, then the step's link and Enter.

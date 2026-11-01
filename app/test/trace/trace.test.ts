@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { addRows, removeRows } from '../fixtures/load';
 import { modelWorkspace } from '../fixtures/model';
-import { cellKey, everyStepKey, innerKey, rowPath, statusOf, visible, type Openness } from '../../src/trace/trace';
+import { cellKey, everyStepKey, innerKey, journeyBox, journeyKey, rowPath, statusOf, visible, type Openness } from '../../src/trace/trace';
 import { orderGraph } from '../../src/trace/order';
 import { ITEM_GAP, ITEM_HEIGHT, layOutTrace, outcomesBeside, ROW_GAP, type BoxPlace, type TraceLaid } from '../../src/trace/layout';
 import { litBy } from '../../src/trace/path';
@@ -25,6 +25,25 @@ function product() {
     { id: 'P-BO01', title: 'More things lent', product_id: 'P', statement: 'Members borrow more.', measure: 'Loans a month', target: 'Up a tenth' },
     { id: 'P-BO02', title: 'Fewer lost things', product_id: 'P', statement: 'Fewer things go missing.', measure: 'Things lost a year', target: 'Down a half' });
   return addRows(data, 'serves', { source_id: 'P-D-CAP01', target_id: 'P-BO01' }, { source_id: 'P-D-CAP01', target_id: 'P-BO02' });
+}
+
+/**
+ * The product with a journey serving its first outcome, of three steps on its main path: lending (P-D-UC01), the
+ * handoff marking the thing lent (P-D-PO02) and the return (P-D-UC02); and its journey test.
+ */
+export function withJourney() {
+  const data = product();
+  addRows(data, 'journey', { id: 'P-JR01', title: 'Lend a thing and get it back', product_id: 'P', trigger: 'A member wants a thing.', result: 'The thing is back on the shelf.' });
+  addRows(data, 'journey_step',
+    { id: 'P-JR01-S01', title: 'The librarian lends the thing', journey_id: 'P-JR01', path: 'main', position: 1 },
+    { id: 'P-JR01-S02', title: 'The library marks it lent', journey_id: 'P-JR01', path: 'main', position: 2 },
+    { id: 'P-JR01-S03', title: 'The member brings it back', journey_id: 'P-JR01', path: 'main', position: 3 });
+  addRows(data, 'carries_out',
+    { source_id: 'P-JR01-S01', target_id: 'P-D-UC01' },
+    { source_id: 'P-JR01-S02', target_id: 'P-D-PO02' },
+    { source_id: 'P-JR01-S03', target_id: 'P-D-UC02' });
+  addRows(data, 'journey_test', { id: 'P-JR01-T', title: 'A thing is lent and brought back', journey_id: 'P-JR01', level: 'service', state: 'not automated yet', steps: ['Lend a thing', 'Bring it back'], expected_result: 'The thing is back on the shelf.' });
+  return addRows(data, 'serves', { source_id: 'P-JR01', target_id: 'P-BO01' });
 }
 
 const NOTHING: Openness = { open: new Set(), step: null };
@@ -70,24 +89,24 @@ describe('LA-V98-R17-T01 Each box opens down to its children, many at once', () 
   const keys = (cell: number, o: Openness) => visible(graph, row.cells[cell], o).map((k) => graph.items.get(k)!.id ?? k.split('/').at(-1));
 
   it('opens a use case to its requirements and the aggregates its steps change, and the design to its flow, then a box per interface', () => {
-    expect(keys(1, NOTHING)).toEqual(['P-D-UC01']);
-    expect(keys(1, opened([cellKey('P-D-UC01', 'use-case')]))).toEqual(['P-D-UC01', 'P-D-UC01-R01', 'P-D-UC01-R02', 'P-D-A1', 'P-D-A2', 'P-D-A3']);
-    expect(keys(2, opened([cellKey('P-D-UC01', 'design')]))).toEqual(['P-D-UC01|design', 'P-D-UC01-FL']);
-    expect(keys(2, opened([cellKey('P-D-UC01', 'design'), innerKey('P-D-UC01', 'design', 'P-D-UC01-FL')]))).toEqual(['P-D-UC01|design', 'P-D-UC01-FL', 'P-IF01', 'P-IF02']);
+    expect(keys(2, NOTHING)).toEqual(['P-D-UC01']);
+    expect(keys(2, opened([cellKey('P-D-UC01', 'use-case')]))).toEqual(['P-D-UC01', 'P-D-UC01-R01', 'P-D-UC01-R02', 'P-D-A1', 'P-D-A2', 'P-D-A3']);
+    expect(keys(3, opened([cellKey('P-D-UC01', 'design')]))).toEqual(['P-D-UC01|design', 'P-D-UC01-FL']);
+    expect(keys(3, opened([cellKey('P-D-UC01', 'design'), innerKey('P-D-UC01', 'design', 'P-D-UC01-FL')]))).toEqual(['P-D-UC01|design', 'P-D-UC01-FL', 'P-IF01', 'P-IF02']);
   });
 
   it('opens Technical flow to the selected step\'s chain (a hint with none), and under Expand all to every step\'s, grouped by step', () => {
     const tech = cellKey('P-D-UC01', 'technical');
-    expect(keys(3, opened([tech]))).toEqual(['P-D-UC01|technical', 'hint']);
-    expect(keys(3, opened([tech], 'P-D-UC01-FL-S01'))).toEqual(['P-D-UC01|technical', 'P-D-UC01-FL-S01', 'P-UI01', 'P-D-EP01', 'P-D-CMD01-H', 'P-D-REPO01']);
-    expect(keys(3, opened([tech, everyStepKey('P-D-UC01')]))).toEqual(['P-D-UC01|technical', 'P-D-UC01-FL-S01', 'P-UI01', 'P-D-EP01', 'P-D-CMD01-H', 'P-D-REPO01', 'P-D-UC01-FL-S02', 'P-INT01-AD', 'P-D-UC01-FL-S03']);
+    expect(keys(4, opened([tech]))).toEqual(['P-D-UC01|technical', 'hint']);
+    expect(keys(4, opened([tech], 'P-D-UC01-FL-S01'))).toEqual(['P-D-UC01|technical', 'P-D-UC01-FL-S01', 'P-UI01', 'P-D-EP01', 'P-D-CMD01-H', 'P-D-REPO01']);
+    expect(keys(4, opened([tech, everyStepKey('P-D-UC01')]))).toEqual(['P-D-UC01|technical', 'P-D-UC01-FL-S01', 'P-UI01', 'P-D-EP01', 'P-D-CMD01-H', 'P-D-REPO01', 'P-D-UC01-FL-S02', 'P-INT01-AD', 'P-D-UC01-FL-S03']);
   });
 
   it('opens the suite to how much is proved, each requirement\'s and flow\'s tests with a gap where proof is missing, and Lower tests to what they rest on', () => {
     const suite = cellKey('P-D-UC01', 'suite');
-    expect(keys(4, opened([suite]))).toEqual(['P-D-UC01|suite', 'proved', 'P-D-UC01-R01-T01', 'P-D-UC01-R02-T01', 'P-D-UC01-R02', 'P-D-UC01-FL-T', 'lower']);
+    expect(keys(5, opened([suite]))).toEqual(['P-D-UC01|suite', 'proved', 'P-D-UC01-R01-T01', 'P-D-UC01-R02-T01', 'P-D-UC01-R02', 'P-D-UC01-FL-T', 'lower']);
     expect(graph.items.get('P-D-UC01|suite/proved')!.words!.title).toBe('2 of 3 proved');
-    expect(keys(4, opened([suite, innerKey('P-D-UC01', 'suite', 'lower')])).slice(-2)).toEqual(['P-D-INV01-T', 'P-D-INV02']);
+    expect(keys(5, opened([suite, innerKey('P-D-UC01', 'suite', 'lower')])).slice(-2)).toEqual(['P-D-INV01-T', 'P-D-INV02']);
   });
 });
 
@@ -96,7 +115,7 @@ describe('LA-V98-R23-T01 The Design flow opens to a box per interface that offer
     // The last step asks for the things: the API exposes that query, but no view of the web app presents it.
     const { graph } = traced(addRows(product(), 'invokes', { source_id: 'P-D-UC01-FL-S03', target_id: 'P-D-QRY01' }));
     const row = graph.rowOf.get('P-D-UC01')!;
-    const shown = (o: Openness) => visible(graph, row.cells[2], o).map((k) => {
+    const shown = (o: Openness) => visible(graph, row.cells[3], o).map((k) => {
       const item = graph.items.get(k)!;
       return item.role === 'gap' ? `gap:${item.id}` : item.id ?? k;
     });
@@ -122,7 +141,7 @@ describe('LA-V98-R23-T01 The Design flow opens to a box per interface that offer
     const { graph } = traced(data);
     const row = graph.rowOf.get('P-D-UC01')!;
     expect(statusOf(row.data, 'design')).toEqual({ title: '0 interfaces · all designed', gap: true });
-    const shown = visible(graph, row.cells[2], opened([cellKey('P-D-UC01', 'design'), innerKey('P-D-UC01', 'design', 'P-D-UC01-FL')])).map((k) => graph.items.get(k)!.id ?? k);
+    const shown = visible(graph, row.cells[3], opened([cellKey('P-D-UC01', 'design'), innerKey('P-D-UC01', 'design', 'P-D-UC01-FL')])).map((k) => graph.items.get(k)!.id ?? k);
     expect(shown).toEqual(['P-D-UC01|design', 'P-D-UC01-FL', 'P-D-UC01-FL-S01', 'P-D-UC01-FL-S02', 'P-D-UC01-FL-S03']);
   });
 });
@@ -146,7 +165,7 @@ describe('LA-V98-R18-T01 Selecting a box lights its path across its row: require
     // Everything stands in by its row's closed cells.
     expect(closed.box).toBe('P-D-UC01|design');
     expect([...closed.keys!].sort()).toEqual(['P-D-UC01|design', 'P-D-UC01|suite', 'P-D-UC01|technical', 'P-D-UC01|use-case', 'outcome/P-BO01', 'outcome/P-BO02']);
-    expect(closed.serves).toEqual(new Set(['P-BO01>P-D-UC01', 'P-BO02>P-D-UC01']));
+    expect(closed.links).toEqual(new Set(['P-BO01>P-D-UC01', 'P-BO02>P-D-UC01']));
     const open = opened([cellKey('P-D-UC01', 'use-case'), cellKey('P-D-UC01', 'design'), innerKey('P-D-UC01', 'design', 'P-D-UC01-FL'), innerKey('P-D-UC01', 'design', 'P-IF01'), cellKey('P-D-UC01', 'technical'), cellKey('P-D-UC01', 'suite')], 'P-D-UC01-FL-S01');
     const lit = litBy(graph, layOutTrace(graph, order, open), 'P-D-UC01-FL-S01', null);
     expect(lit.box).toBe('P-D-UC01|design/P-D-UC01-FL/P-IF01/P-D-UC01-FL-S01');
@@ -187,7 +206,7 @@ describe('LA-V98-R19-T01 The Trace walk goes down a column, along the row\'s lin
     expect(traceTarget(graph, laid, open, r01, 'out')).toEqual({ to: 'P-D-UC01|use-case' });
     expect(traceTarget(graph, laid, open, 'P-D-UC01|use-case', 'out')).toEqual({ to: 'P-D-UC01|use-case', toggle: cellKey('P-D-UC01', 'use-case') });
     // From no box: the first row's use case.
-    expect(traceTarget(graph, laid, open, null, 'down')).toEqual({ to: laid.columns[1][0] });
+    expect(traceTarget(graph, laid, open, null, 'down')).toEqual({ to: laid.columns[2][0] });
   });
 });
 
@@ -231,10 +250,10 @@ describe('LA-V98-R22-T01 The focused row\'s outcomes slide beside it, the others
   const home = (): TraceLaid => {
     const rows = new Map(Array.from({ length: 8 }, (_, i) => [`U${i + 1}`, { y: i * BAND, h: ITEM_HEIGHT }] as const));
     const places = new Map<string, BoxPlace>();
-    const columns: string[][] = [[], [], [], [], []];
-    for (const [u, band] of rows) { places.set(`${u}|use-case`, { x: 352, y: band.y, w: 264, h: ITEM_HEIGHT }); columns[1].push(`${u}|use-case`); }
+    const columns: string[][] = [[], [], [], [], [], []];
+    for (const [u, band] of rows) { places.set(`${u}|use-case`, { x: 704, y: band.y, w: 264, h: ITEM_HEIGHT }); columns[2].push(`${u}|use-case`); }
     for (const [o, y] of [['O1', 0], ['O2', PITCH], ['O3', 2 * PITCH], ['O4', 400]] as const) { places.set(`outcome/${o}`, { x: 0, y, w: 264, h: ITEM_HEIGHT }); columns[0].push(`outcome/${o}`); }
-    return { order: {} as TraceLaid['order'], rows, columns, places, outsideTop: null, width: 1672, height: 8 * BAND - ROW_GAP };
+    return { order: {} as TraceLaid['order'], rows, columns, places, carries: [], outsideTop: null, width: 2024, height: 8 * BAND - ROW_GAP };
   };
   const serves = [['O1', 'U6'], ['O2', 'U2'], ['O3', 'U2'], ['O4', 'U2'], ['O1', 'U1']] as const;
   const tops = (laid: TraceLaid) => Object.fromEntries(laid.columns[0].map((k) => [k.slice('outcome/'.length), laid.places.get(k)!.y]));
@@ -279,5 +298,97 @@ describe('LA-V98-R22-T01 The focused row\'s outcomes slide beside it, the others
     othersStay(at2, before);
     // No row focused: each outcome at its own place, as Tidy up last left it.
     expect(tops(outcomesBeside(before, serves, null))).toEqual({ O1: 0, O2: PITCH, O3: 2 * PITCH, O4: 400 });
+  });
+});
+
+describe('LA-V98-R25-T01 Selecting a journey lights its rows, and the walk follows its steps', () => {
+  const { graph } = traced(withJourney());
+  const order = orderGraph(graph, null);
+  const closed = layOutTrace(graph, order, NOTHING);
+
+  it('lights the journey, its outcome and the use case of each row it carries out with their lines, fading the rest; a step its own row', () => {
+    const lit = litBy(graph, closed, 'P-JR01', null);
+    expect(lit.box).toBe('journey/P-JR01');
+    expect(lit.rows).toEqual(['P-D-UC01', 'P-D-UC02']);
+    expect([...lit.keys!].sort()).toEqual(['P-D-UC01|use-case', 'P-D-UC02|use-case', 'journey/P-JR01', 'outcome/P-BO01']);
+    expect(lit.links).toEqual(new Set(['P-BO01>P-JR01', 'P-JR01>P-D-UC01', 'P-JR01>P-D-UC02']));
+    // Open, a step lights the journey, itself and its row, not the other steps.
+    const open = opened([journeyKey('P-JR01')]);
+    const step = litBy(graph, layOutTrace(graph, order, open), 'P-JR01-S03', null);
+    expect(step.box).toBe('journey/P-JR01/P-JR01-S03');
+    expect([...step.keys!].sort()).toEqual(['P-D-UC02|use-case', 'journey/P-JR01', 'journey/P-JR01/P-JR01-S03']);
+    expect(step.links).toEqual(new Set(['P-JR01>P-D-UC02']));
+    // A use case lights the journeys carrying it out, with their line; an outcome the journeys serving it.
+    expect(litBy(graph, closed, 'P-D-UC01', null).keys!.has('journey/P-JR01')).toBe(true);
+    expect(litBy(graph, closed, 'P-D-UC01', null).links.has('P-JR01>P-D-UC01')).toBe(true);
+    expect(litBy(graph, closed, 'P-D-UC03', null).keys!.has('journey/P-JR01')).toBe(false);
+    expect(litBy(graph, closed, 'P-BO01', null).links.has('P-BO01>P-JR01')).toBe(true);
+  });
+
+  it('walks Right from the journey to its first row, Down and Up through its rows in its order, and Left back to the step', () => {
+    const right = traceTarget(graph, closed, NOTHING, 'journey/P-JR01', 'right');
+    expect(right).toEqual({ to: 'P-D-UC01|use-case', along: { journey: 'P-JR01', step: 'P-JR01-S01' } });
+    // The handoff has no row: the next step with one.
+    const down = traceTarget(graph, closed, NOTHING, right!.to, 'down', right!.along);
+    expect(down).toEqual({ to: 'P-D-UC02|use-case', along: { journey: 'P-JR01', step: 'P-JR01-S03' } });
+    expect(traceTarget(graph, closed, NOTHING, down!.to, 'up', down!.along)).toEqual({ to: 'P-D-UC01|use-case', along: { journey: 'P-JR01', step: 'P-JR01-S01' } });
+    // Past its last step, Down is the column's again; Left goes back to the journey (closed) or the step (open).
+    expect(traceTarget(graph, closed, NOTHING, down!.to, 'down', down!.along)?.along).toBeUndefined();
+    expect(traceTarget(graph, closed, NOTHING, down!.to, 'left', down!.along)).toEqual({ to: 'journey/P-JR01' });
+    const open = opened([journeyKey('P-JR01')]);
+    expect(traceTarget(graph, layOutTrace(graph, order, open), open, down!.to, 'left', down!.along)).toEqual({ to: 'journey/P-JR01/P-JR01-S03' });
+    // From the outcome, Right to the journey serving it; from a use case, Left to the journey carrying it out.
+    expect(traceTarget(graph, closed, NOTHING, 'outcome/P-BO01', 'right')).toEqual({ to: 'journey/P-JR01' });
+    expect(traceTarget(graph, closed, NOTHING, 'P-D-UC02|use-case', 'left')).toEqual({ to: 'journey/P-JR01' });
+    expect(traceTarget(graph, closed, NOTHING, 'journey/P-JR01', 'left')).toEqual({ to: 'outcome/P-BO01' });
+  });
+});
+
+describe('LA-V98-R24-T01 The Journey column joins outcomes to use cases through numbered lines, and opens to its steps', () => {
+  it('places each journey between its outcomes and its rows, one line per row labeled with its steps, its proof closed, its steps and test open', () => {
+    const data = withJourney();
+    // A second path: the member returns the thing at another library.
+    addRows(data, 'journey_step', { id: 'P-JR01-S04', title: 'The member returns it elsewhere', journey_id: 'P-JR01', path: 'returned elsewhere', position: 1 });
+    addRows(data, 'carries_out', { source_id: 'P-JR01-S04', target_id: 'P-D-UC02' });
+    const { graph } = traced(data);
+    expect(graph.journeys.map((j) => j.id)).toEqual(['P-JR01']);
+    expect(graph.journeyServes).toEqual([['P-BO01', 'P-JR01']]);
+    expect(graph.carries.map((c) => `${c.step}>${c.useCase} ${c.label}`)).toEqual(['P-JR01-S01>P-D-UC01 1', 'P-JR01-S03>P-D-UC02 3', 'P-JR01-S04>P-D-UC02 alt 1']);
+    // Rows stay one per use case; the outcome lines through the capability stay.
+    expect(graph.rows.map((r) => r.useCase)).toEqual(['P-D-UC01', 'P-D-UC02', 'P-D-UC03']);
+    expect(graph.serves).toContainEqual(['P-BO01', 'P-D-UC01']);
+    const order = orderGraph(graph, null);
+    expect(order.journeys).toEqual(['P-JR01']);
+    const laid = layOutTrace(graph, order, NOTHING);
+    const at = (k: string) => laid.places.get(k)!;
+    expect(at('outcome/P-BO01').x).toBeLessThan(at('journey/P-JR01').x);
+    expect(at('journey/P-JR01').x).toBeLessThan(at('P-D-UC01|use-case').x);
+    // Closed: one line to each row, labeled with every step of it, and its proof.
+    expect(laid.carries.map((l) => `${l.from}>${l.to} ${l.label}`)).toEqual(['journey/P-JR01>P-D-UC01|use-case 1', 'journey/P-JR01>P-D-UC02|use-case 3, alt 1']);
+    expect(graph.items.get('journey/P-JR01')!.meta).toBe('4 steps · 1 proved · test ✗');
+    // Open: its steps in order, the handoff its own box with its policy's proof, the other path under its name, its test.
+    const open = opened([journeyKey('P-JR01')]);
+    const shown = visible(graph, journeyBox('P-JR01'), open).map((k) => { const item = graph.items.get(k)!; return `${item.depth} ${item.meta ?? item.words?.title}`; });
+    expect(shown).toEqual([
+      '0 4 steps · 1 proved · test ✗',
+      '1 Step 1 · P-D-UC01 · ✗',
+      '1 Step 2 · Handoff P-D-PO02 · ✓',
+      '1 Step 3 · P-D-UC02 · ✗',
+      '1 returned elsewhere',
+      '2 Step 1 · P-D-UC02 · ✗',
+      '1 Journey test · not proved',
+    ]);
+    const openLaid = layOutTrace(graph, order, open);
+    expect(openLaid.carries.map((l) => `${l.from}>${l.to} ${l.label}`)).toEqual([
+      'journey/P-JR01/P-JR01-S01>P-D-UC01|use-case 1',
+      'journey/P-JR01/P-JR01-S03>P-D-UC02|use-case 3',
+      'journey/P-JR01/path:returned elsewhere/P-JR01-S04>P-D-UC02|use-case alt 1',
+    ]);
+    // A journey with no test shows a gap where it would be.
+    const bare = withJourney();
+    removeRows(bare, 'journey_test', () => true);
+    const g = traced(bare).graph;
+    expect(g.items.get('journey/P-JR01/gap:test')).toMatchObject({ role: 'gap', words: { title: 'No journey test' } });
+    expect(g.items.get('journey/P-JR01')!.meta).toBe('3 steps · 1 proved · no test');
   });
 });
