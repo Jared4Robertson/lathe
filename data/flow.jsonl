@@ -108,8 +108,8 @@
 {"id":"LA-EXP-UC11-FL02","title":"Read a domain and its aggregates as an ERD in the desktop app","use_case_id":"LA-EXP-UC11","interface_id":"LA-IF02"}
 {"id":"LA-EXP-UC12-FL01","title":"Look up a record's history in the web app","use_case_id":"LA-EXP-UC12","interface_id":"LA-IF01"}
 {"id":"LA-EXP-UC12-FL02","title":"Look up a record's history in the desktop app","use_case_id":"LA-EXP-UC12","interface_id":"LA-IF02"}
-{"id":"LA-EXP-UC13-FL01","title":"Read a domain's endpoints and integrations in the web app","use_case_id":"LA-EXP-UC13","interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC13-FL02","title":"Read a domain's endpoints and integrations in the desktop app","use_case_id":"LA-EXP-UC13","interface_id":"LA-IF02"}
+{"id":"LA-EXP-UC13-FL01","title":"Read a domain's operations and integrations in the web app","use_case_id":"LA-EXP-UC13","interface_id":"LA-IF01"}
+{"id":"LA-EXP-UC13-FL02","title":"Read a domain's operations and integrations in the desktop app","use_case_id":"LA-EXP-UC13","interface_id":"LA-IF02"}
 {"id":"LA-EXP-UC15-FL01","title":"Watch the spec change in the web app","use_case_id":"LA-EXP-UC15","interface_id":"LA-IF01"}
 {"id":"LA-EXP-UC15-FL02","title":"Watch the spec change in the desktop app","use_case_id":"LA-EXP-UC15","interface_id":"LA-IF02"}
 {"id":"LA-PLT-UC01-FL06","title":"Load the workspace through the package API","use_case_id":"LA-PLT-UC01","interface_id":"LA-IF06"}
@@ -127,8 +127,8 @@
 {"id":"LA-PLT-UC08-FL01","title":"Read the spec on a phone in the web app","use_case_id":"LA-PLT-UC08","interface_id":"LA-IF01"}
 {"id":"LA-PLT-UC09-FL01","title":"Read without anything jumping in the web app","use_case_id":"LA-PLT-UC09","interface_id":"LA-IF01"}
 {"id":"LA-PLT-UC09-FL02","title":"Read without anything jumping in the desktop app","use_case_id":"LA-PLT-UC09","interface_id":"LA-IF02"}
-{"id":"LA-PLT-UC10-FL01","title":"Use Lathe with a keyboard and a screen reader in the web app","use_case_id":"LA-PLT-UC10","interface_id":"LA-IF01"}
-{"id":"LA-PLT-UC10-FL02","title":"Use Lathe with a keyboard and a screen reader in the desktop app","use_case_id":"LA-PLT-UC10","interface_id":"LA-IF02"}
+{"id":"LA-PLT-UC10-FL01","title":"Use Lathe with a keyboard and assistive technology in the web app","use_case_id":"LA-PLT-UC10","interface_id":"LA-IF01"}
+{"id":"LA-PLT-UC10-FL02","title":"Use Lathe with a keyboard and assistive technology in the desktop app","use_case_id":"LA-PLT-UC10","interface_id":"LA-IF02"}
 {"id":"LA-PLT-UC11-FL02","title":"Open a product in a window in the desktop app","use_case_id":"LA-PLT-UC11","interface_id":"LA-IF02"}
 {"id":"LA-PLT-UC12-FL02","title":"Iterate on Lathe with hot reload in the desktop app","use_case_id":"LA-PLT-UC12","interface_id":"LA-IF02"}
 {"id":"LA-PLT-UC13-FL02","title":"Use Lathe from the native menus in the desktop app","use_case_id":"LA-PLT-UC13","interface_id":"LA-IF02"}
@@ -164,8 +164,8 @@
 {"id":"LA-TRC-UC13-FL02","title":"See tests by state with each domain's coverage in the desktop app","use_case_id":"LA-TRC-UC13","interface_id":"LA-IF02"}
 {"id":"LA-TRC-UC14-FL01","title":"Trace an obligation to its proof in the web app","use_case_id":"LA-TRC-UC14","interface_id":"LA-IF01"}
 {"id":"LA-TRC-UC14-FL02","title":"Trace an obligation to its proof in the desktop app","use_case_id":"LA-TRC-UC14","interface_id":"LA-IF02"}
-{"id":"LA-TRC-UC15-FL03","title":"Check that routes match the code both ways through the CLI","use_case_id":"LA-TRC-UC15","interface_id":"LA-IF03"}
-{"id":"LA-TRC-UC16-FL03","title":"Check each table against the file that creates it through the CLI","use_case_id":"LA-TRC-UC16","interface_id":"LA-IF03"}
+{"id":"LA-TRC-UC15-FL03","title":"Check that addresses match the code both ways through the CLI","use_case_id":"LA-TRC-UC15","interface_id":"LA-IF03"}
+{"id":"LA-TRC-UC16-FL03","title":"Check each stored record kind against the file that creates it through the CLI","use_case_id":"LA-TRC-UC16","interface_id":"LA-IF03"}
 {"id":"LA-TRC-UC19-FL03","title":"Account for every package the product depends on through the CLI","use_case_id":"LA-TRC-UC19","interface_id":"LA-IF03"}
 {"id":"LA-TRC-UC20-FL01","title":"See the outcomes each record serves in the web app","use_case_id":"LA-TRC-UC20","interface_id":"LA-IF01"}
 {"id":"LA-TRC-UC20-FL03","title":"See the outcomes each record serves through the CLI","use_case_id":"LA-TRC-UC20","interface_id":"LA-IF03"}

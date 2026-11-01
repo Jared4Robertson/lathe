@@ -23,7 +23,7 @@
 {"id":"LA-VO62","title":"Token values","description":"A map from token names in the app's token table to values."}
 {"id":"LA-VO63","title":"Theme file","description":"A theme as data, as it is stored, exported and imported."}
 {"id":"LA-VO64","title":"Window bounds","description":"Where a window was and how big."}
-{"id":"LA-VO65","title":"Window chrome","description":"The two colors a page sends for its window."}
+{"id":"LA-VO65","title":"Window chrome","description":"The two colors the Workbench sends for its window."}
 {"id":"LA-VO90","title":"App address","description":"A place in the app: a path and its stage query parameter."}
 {"id":"LA-VO91","title":"Page stage","description":"What a page or a place shows on its stage."}
 {"id":"LA-VO92","title":"Session settings","description":"How the graph is laid out, whether its minimap shows and its Map draws all its links, and how wide the wiki card is, one for the browser session and shared by every place (LA-EXP-A6)."}

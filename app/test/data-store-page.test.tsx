@@ -34,7 +34,7 @@ function withStored(): ServedData {
 }
 
 describe('the Data store page reads it through its own query, and its editor sends only the aggregate\'s commands', () => {
-  it('LA-V155-R01-T01 reads GET /api/data-store/get-data-store and shows its description, kind and where it sits', async () => {
+  it('LA-V155-R04-T01 reads GET /api/data-store/get-data-store and shows its description, kind and where it sits', async () => {
     const { requests } = await openApp('/DM-STORE01', { data: withStore() });
     expect(await within(main()).findByText('A PostgreSQL database the shop runs.')).toBeInTheDocument();
     expect(requests).toContain('GET /api/data-store/get-data-store?id=DM-STORE01');
