@@ -56,7 +56,7 @@ test.describe('Exploring flows', () => {
   test('LA-EXP-UC02-FL-T follow a record\'s links: its page, a link by its relation, a row anywhere', async ({ page }) => {
     await openPage(page, '/LA-EXP-UC03-FL');
     const wiki = page.locator(WIKI);
-    await expect(wikiTitle(page)).toHaveText('Walk the model as a graph in the web app');
+    await expect(wikiTitle(page)).toHaveText('Walk the model as a graph');
     // The places above it in the card's breadcrumb (the deep middle folded into "…"), the children in their table.
     const crumb = wiki.locator('.wiki-panel-head .breadcrumb');
     await expect(crumb.getByRole('link', { name: 'Lathe' })).toBeVisible();
@@ -241,6 +241,12 @@ test.describe('Exploring flows', () => {
     const flow = design.getByRole('listitem').filter({ has: page.getByRole('link', { name: /LA-EXP-UC03-FL(?!-)/ }) });
     if ((await flow.getByRole('button').getAttribute('aria-expanded')) !== 'true') {
       await flow.getByRole('button').focus();
+      await page.keyboard.press('Enter');
+    }
+    // The flow's steps sit under the interface they happen through: open the Web app's.
+    const webApp = design.getByRole('listitem').filter({ has: page.getByRole('link', { name: /LA-IF01 Web app/ }) }).getByRole('button');
+    if ((await webApp.getAttribute('aria-expanded')) !== 'true') {
+      await webApp.focus();
       await page.keyboard.press('Enter');
     }
     await design.getByRole('link', { name: /LA-EXP-UC03-FL-S01(?!\d)/ }).focus();

@@ -76,7 +76,7 @@ for (const layout of ['tree', 'nested'] as const) {
     }
     expect(at(page)).toBe(FLOW);
     // Clicks from the flow: on the step another tab holds, and on steps no tab holds, each time back out by the arrow.
-    for (const id of [step, `${FLOW}-S04`, `${FLOW}-S05`]) {
+    for (const id of [step, `${FLOW}-S05`, `${FLOW}-S06`]) {
       await cameraStill(page);
       await move(page, () => clickBox(page, id));
       expect(await drawn(page), `a click to ${id}`).toEqual(set);
