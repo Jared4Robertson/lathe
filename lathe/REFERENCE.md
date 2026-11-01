@@ -1378,9 +1378,9 @@ A view has no owner: it exists because flow steps happen in it. One that nothing
 
 **Error** · Lathe's · Kinds: [`integration`](#kind-integration)
 
-A integration that nothing uses.
+An integration that nothing uses: no flow step exchanges with it, and it provides nothing.
 
-A integration has no owner: it exists because flow steps exchange with it. One that nothing uses is a leftover, or a link is missing. Link the steps that exchange with it with exchanges_with, or remove it.
+An integration has no owner: it exists because flow steps exchange with it, or because it provides records of the product from outside it (provided_by), such as a platform or a dependency. One that nothing uses is a leftover, or a link is missing. Link the steps that exchange with it with exchanges_with, name it the provider of what it provides, or remove it.
 
 <a id="check-step-order"></a>
 

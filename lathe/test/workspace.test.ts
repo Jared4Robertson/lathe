@@ -163,7 +163,7 @@ describe('a workspace of several products', () => {
   it('LA-PLT-UC02-R11-T02 A read of the whole workspace joins every product\'s schema and refuses one product in two folders', async () => {
     const shopKind: Data = {
       ...shop,
-      product_kind: [{ name: 'shelf', product_id: 'SH', label: 'Shelf', description: 'A shelf in the shop.', parent_kind: 'domain', obligation: false }],
+      product_kind: [{ name: 'shelf', product_id: 'SH', label: 'Shelf', description: 'A shelf in the shop.', parent_kind: 'domain', obligation: false, complexity: 'essential' }],
     };
     const root = workspace(shopKind);
     opened.push(root);

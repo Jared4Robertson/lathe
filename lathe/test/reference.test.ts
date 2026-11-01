@@ -28,7 +28,7 @@ const latheChecks = async () => {
 /** The complete product with a kind, a relation and two checks of its own. */
 const extended = () =>
   adding(complete(), {
-    product_kind: [{ name: 'cli_command', product_id: 'EX', label: 'CLI command', description: "A command of the library's CLI.", parent_kind: 'command', stage: 'technical-specification', obligation: false, id_pattern: '<command>-CLI', id_example: 'EX-LEND-CMD01-CLI' }],
+    product_kind: [{ name: 'cli_command', product_id: 'EX', label: 'CLI command', description: "A command of the library's CLI.", parent_kind: 'command', stage: 'technical-specification', obligation: false, complexity: 'accidental', id_pattern: '<command>-CLI', id_example: 'EX-LEND-CMD01-CLI' }],
     product_kind_field: [{ kind: 'cli_command', position: 1, name: 'usage', type: 'text', required: true, description: 'How it is typed.' }],
     product_relation: [{ name: 'documents', source_kind: 'cli_command', target_kind: 'view', product_id: 'EX', forward_label: 'Documents', reverse_label: 'Documented by', description: 'The CLI command is documented in the view.' }],
     check: [

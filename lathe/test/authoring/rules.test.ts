@@ -227,7 +227,7 @@ describe('LA-AUT-INV18-T a second step at a position of a path, compared trimmed
 describe("LA-AUT-INV22-T a product kind declared twice, named like a Lathe table, or under no kind is refused by product-kind-declared", () => {
   it('refuses each', async () => {
     const on = await store();
-    const kind = { product_id: 'TL', name: 'domain_note', label: 'Domain note', description: 'A note on a domain.', parent_kind: 'domain', obligation: false };
+    const kind = { product_id: 'TL', name: 'domain_note', label: 'Domain note', description: 'A note on a domain.', parent_kind: 'domain', obligation: false, complexity: 'essential' };
     expect(await refused(on, DECLARE_PRODUCT_KIND, { ...kind, name: 'aggregate' }, 'product_kind')).toEqual([
       { rule: 'product-kind-declared', message: 'The product kind aggregate has the name of a table Lathe already has; give it another name.' },
     ]);
@@ -240,7 +240,7 @@ describe("LA-AUT-INV22-T a product kind declared twice, named like a Lathe table
   });
 
   it("is refused on load by the same rule, before the schema is built; a kind of its own loads and leaves Lathe's kinds as they are", async () => {
-    const rule = { name: 'domain_note', product_id: 'TL', label: 'Domain note', description: 'A note on a domain.', parent_kind: 'domain', obligation: false };
+    const rule = { name: 'domain_note', product_id: 'TL', label: 'Domain note', description: 'A note on a domain.', parent_kind: 'domain', obligation: false, complexity: 'essential' };
     const own = await openStore(writeData(adding(everyKind(), { product_kind: [rule], domain_note: [{ id: 'TL-LEND-NOTE01', title: 'Lending hours', domain_id: 'TL-LEND' }] })), { latheDataDir: null });
     open.push(own);
     const [scope] = await own.query<{ domain_id: string }>("SELECT domain_id FROM record_scope WHERE id = 'TL-LEND-NOTE01'");

@@ -61,7 +61,7 @@ describe('LA-TRC-DS06-T01 a record serves the outcomes of the capabilities of th
 describe("LA-TRC-DS06-T02 a product's own relations carry the reach both ways", () => {
   it("reaches a product's record that links to a reached one, and what a reached record links to, through the product's relations", async () => {
     const data = adding(complete(), {
-      product_kind: [{ name: 'script', product_id: 'EX', label: 'Script', description: 'A script.', parent_kind: 'domain', stage: 'technical-specification', obligation: false }],
+      product_kind: [{ name: 'script', product_id: 'EX', label: 'Script', description: 'A script.', parent_kind: 'domain', stage: 'technical-specification', obligation: false, complexity: 'accidental' }],
       product_kind_field: [{ kind: 'script', position: 1, name: 'file', type: 'text', required: true, description: 'The file.' }],
       product_relation: [
         { name: 'listed_in', source_kind: 'script', target_kind: 'aggregate', product_id: 'EX', forward_label: 'Listed in', reverse_label: 'Lists', description: 'The aggregate lists the script.' },

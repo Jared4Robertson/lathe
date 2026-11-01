@@ -67,6 +67,7 @@ export function everyKind(): Data {
         statement: 'A saved tool MUST read the same in the catalog.',
       },
     ],
+    slot: [{ id: 'TL-PAT-ACT-SL01', title: 'Saving rule', pattern_id: 'TL-PAT-ACT', statement: 'A fill MUST refuse what its record does not allow before anything is saved.' }],
 
     // Interaction design.
     interface: [{ id: 'TL-IF01', title: 'Web app', product_id: 'TL', kind: 'web app', description: 'The desk app the librarian uses.' }],
@@ -83,6 +84,8 @@ export function everyKind(): Data {
     persists: [{ source_id: 'TL-LEND-REPO01', target_id: 'TL-LEND-A1' }],
     data_store: [{ id: 'TL-STORE01', title: 'DATABASE_URL', product_id: 'TL', kind: 'database', description: "The library's database, run by the service that also sends its mail." }],
     provided_by: [{ source_id: 'TL-STORE01', target_id: 'TL-INT01' }],
+    generates: [{ source_id: 'TL-LEND-TOOL01', target_id: 'TL-LEND-EN01-DM' }],
+    fills: [{ source_id: 'TL-LEND-CMD01-H', target_id: 'TL-PAT-ACT-SL01' }],
     stored_in: [{ source_id: 'TL-LEND-REPO01', target_id: 'TL-STORE01' }],
     data_model: [{ id: 'TL-LEND-EN01-DM', title: 'Loan', entity_id: 'TL-LEND-EN01', file: 'src/lending/loan.ts' }],
     table: [

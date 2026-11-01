@@ -35,7 +35,7 @@ const section = (markdown: string, heading: string) => {
 };
 
 /** A product's own technical kind several flows declare. */
-const HOUSE_KIND = { name: 'launcher', product_id: 'TL', label: 'Launcher', description: 'A file the product starts from.', parent_kind: 'domain', stage: 'technical-specification', obligation: false };
+const HOUSE_KIND = { name: 'launcher', product_id: 'TL', label: 'Launcher', description: 'A file the product starts from.', parent_kind: 'domain', stage: 'technical-specification', obligation: false, complexity: 'accidental' };
 /** The lending domain, as the flows that start from nothing add it. */
 const LENDING_DOMAIN = { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' };
 /** A record of the workspace, by ID. */
@@ -182,7 +182,7 @@ describe('Authoring flows', () => {
     const stages = [...before.matchAll(/^## (.+)$/gm)].map((m) => m[1]);
     expect(stages.slice(0, 6)).toEqual(['Discovery', 'Domain model', 'Use cases', 'Interaction design', 'Technical specification', 'Test plan']);
     const kinds = [...section(before, '## Use cases').matchAll(/^### (.+) \(`(\w+)`\)$/gm)].map((m) => m[2]);
-    expect(kinds).toEqual(['capability', 'use_case', 'uc_requirement', 'pattern', 'pattern_rule']);
+    expect(kinds).toEqual(['capability', 'use_case', 'uc_requirement', 'pattern', 'pattern_rule', 'slot']);
     const ws = tl.workspace();
     expect(ws.kinds.filter((k) => k.stage === 'use-cases').map((k) => k.kind)).toEqual(kinds);
     // S02: a product kind declared in one of the stages joins it, after Lathe's kinds.
@@ -356,7 +356,7 @@ describe('Authoring flows', () => {
     tl.write('src/loans.ts', '// TL-LEND-CMD01-H\n');
     tl.write('test/standards.test.ts', "it('TL-STD-LOG-R01-T01 no console.log in src');\n");
     // S01: a standard and its rules.
-    tl.command('standard add-standard', { id: 'TL-STD-LOG', title: 'Logging', product_id: 'TL', description: 'How the code logs what it does.' });
+    tl.command('standard add-standard', { id: 'TL-STD-LOG', title: 'Logging', product_id: 'TL', type: 'engineering', description: 'How the code logs what it does.' });
     tl.command('standard add-standard-rule', { id: 'TL-STD-LOG-R01', title: 'No console.log', standard_id: 'TL-STD-LOG', statement: 'Code MUST log through the logger, never console.log.' });
     // S02: each technical record that follows it, and the test that proves it.
     tl.command('command change-command-handler', { id: 'TL-LEND-CMD01-H', meets: ['TL-STD-LOG-R01'] });

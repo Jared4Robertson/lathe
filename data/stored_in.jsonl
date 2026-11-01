@@ -171,7 +171,7 @@
 {"source_id":"LA-AUT-TB88","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-AUT-TB89","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-AUT-TB90","target_id":"LA-PLT-STORE01"}
-{"source_id":"LA-AUT-TB91","target_id":"LA-PLT-STORE01"}
+{"source_id":"LA-AUT-TB92","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-CHK-EN01-TB","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-CHK-EN03-TB","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-CHK-REPO01","target_id":"LA-PLT-STORE01"}
@@ -239,6 +239,7 @@
 {"source_id":"LA-TRC-EN05-TB","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-TRC-EN06-TB","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-TRC-EN07-TB","target_id":"LA-PLT-STORE01"}
+{"source_id":"LA-TRC-EN08-TB","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-TRC-REPO01","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-TRC-REPO02","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-TRC-REPO03","target_id":"LA-PLT-STORE01"}

@@ -235,7 +235,9 @@ WHERE NOT EXISTS (SELECT 1 FROM persists p WHERE p.target_id = a.id)`),
   missingImpl('command-without-handler', 'command', 'Command', 'command_handler', 'command_id', 'command handler'),
   missingImpl('query-without-handler', 'query', 'Query', 'query_handler', 'query_id', 'query handler'),
   missingImpl('endpoint-without-handler', 'endpoint', 'Endpoint', 'endpoint_handler', 'endpoint_id', 'endpoint handler'),
-  missingImpl('integration-without-adapter', 'integration', 'Integration', 'adapter', 'integration_id', 'adapter'),
+  // An integration that only provides records (a platform, a dependency) is reached by nothing, so it needs no adapter.
+  missingImpl('integration-without-adapter', 'integration', 'Integration', 'adapter', 'integration_id', 'adapter',
+    `\n  AND (EXISTS (SELECT 1 FROM exchanges_with x WHERE x.target_id = r.id) OR NOT EXISTS (SELECT 1 FROM provided_by p WHERE p.target_id = r.id))`),
   // Every repository, reader and table names the data store it is kept in, and every data store keeps something.
   gap('stored-nowhere', 'technical-specification', ['repository', 'reader', 'table', 'data_store'], 'A repository, reader or table that names no data store.',
     `SELECT s.id, k.label || ' ' || s.id || ' names no data store: nothing says where its data lives.' AS message FROM stored_in_source s JOIN meta_kind k ON k.name = s.kind

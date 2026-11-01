@@ -213,7 +213,7 @@ describe("Authoring's value objects", () => {
     for (const stage of ['build', 'Test plan']) {
       expect(await refusals(firstRow('product_kind', { stage })), stage).toEqual(notOneOf('product_kind', 'stage', stage, stages));
     }
-    const kinds = stages.slice(0, 4).map((stage, i) => ({ name: `note_${i + 1}`, product_id: 'TL', label: `Note ${i + 1}`, description: `A note in ${stage}.`, parent_kind: 'domain', stage, obligation: false }));
+    const kinds = stages.slice(0, 4).map((stage, i) => ({ name: `note_${i + 1}`, product_id: 'TL', label: `Note ${i + 1}`, description: `A note in ${stage}.`, parent_kind: 'domain', stage, obligation: false, complexity: 'essential' }));
     expect(await refusals(adding({ product_kind: kinds }))).toEqual([]);
     // A kind may sit outside the stages too.
     expect(await refusals(firstRow('product_kind', { stage: undefined }))).toEqual([]);

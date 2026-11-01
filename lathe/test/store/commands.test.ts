@@ -222,7 +222,7 @@ describe('a command', () => {
       description: 'A report the library prints.',
       parent_kind: 'read_model',
       stage: 'interaction-design',
-      obligation: true,
+      obligation: true, complexity: 'essential',
       id_pattern: '<read model>-REP<nn>',
       fields: [{ name: 'printed_on', type: 'date', required: false, description: 'When it was printed.' }],
     });
@@ -233,7 +233,7 @@ describe('a command', () => {
     expect(await refusedBy(store, 'extension-record add-extension-record', { kind: 'report', id: 'TL-LEND-RM01-REP02', parent_id: 'TL-LEND-RM01', values: { title: 'x', printed_on: '2026-02-30' } })).toEqual([
       expect.objectContaining({ rule: 'column' }),
     ]);
-    expect(await refusedBy(store, 'product declare-product-kind', { name: 'view', product_id: 'TL', label: 'View', description: 'Again.', parent_kind: 'domain', stage: 'use-cases', obligation: false })).toEqual([
+    expect(await refusedBy(store, 'product declare-product-kind', { name: 'view', product_id: 'TL', label: 'View', description: 'Again.', parent_kind: 'domain', stage: 'use-cases', obligation: false, complexity: 'essential' })).toEqual([
       expect.objectContaining({ rule: 'product-kind-declared', message: expect.stringContaining('a table Lathe already has') }),
     ]);
     await store.close();
@@ -251,7 +251,7 @@ describe('a command', () => {
       description: 'A rule of the house.',
       parent_kind: 'domain',
       stage: 'use-cases',
-      obligation: false,
+      obligation: false, complexity: 'essential',
       fields: [{ name: 'group_name', type: 'text', required: false, description: 'Its heading.' }],
     });
     await run(store, 'extension-record add-extension-record', { kind: 'house_rule', id: 'TL-LEND-HR01', parent_id: 'TL-LEND', values: { title: 'Quiet', group_name: ' Noise' } });
