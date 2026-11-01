@@ -3,7 +3,6 @@ import type { DataStorePage } from '../../../../lathe/src/authoring/data-store/r
 import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, formFields, LONG, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
-import type { Choice } from '../../edit/fields';
 import { useWriter, type CommandInputs } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
@@ -15,18 +14,13 @@ import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
 
 // The Data store editor (LA-AUT-A23): the actions on a data store, each sending one of the aggregate's own commands,
-// POST /api/data-store/<command>, and nothing else. Edit sends Change a data store with only what changed (the
-// integration that reaches it cleared with null); Remove sends Remove a data store, refused while anything is stored in
+// POST /api/data-store/<command>, and nothing else. Edit sends Change a data store with only what changed; Remove sends Remove a data store, refused while anything is stored in
 // it. A data store is added from its product's or domain's page (AddDataStoreForm). The aggregate has no Move. A
 // refusal shows every reason the command gave, keeps what was entered, and changes nothing.
 
-/** The integrations of the product, as what may reach the data store. */
-const integrations = (index: RecordIndex, product: string): Choice[] =>
-  [...index.byId.values()].filter((r) => r.kind === 'integration' && r.product === product).map((r) => ({ id: r.id, title: r.title }));
-
 /** The fields Add and Change take, from their inputs (Add's parent and Change's ID are sent by the form itself). */
-function fieldsOf(index: RecordIndex, product: string, adding: boolean): FieldSpec[] {
-  const hints = { description: LONG, provided_by: { choices: integrations(index, product) } };
+function fieldsOf(adding: boolean): FieldSpec[] {
+  const hints = { description: LONG };
   return adding
     ? formFields(DATA_STORE_FIELDS['/api/data-store/add-data-store'], ['product_id', 'domain_id'], hints)
     : formFields(DATA_STORE_FIELDS['/api/data-store/change-data-store'], ['id'], hints);
@@ -47,10 +41,9 @@ export function DataStoreEditor({ index, page, children }: { index: RecordIndex;
     setMode('view');
     backToActions(`Change ${store.id}`, toolbar);
   };
-  const product = index.byId.get(store.id)?.product ?? '';
   if (mode === 'change') {
-    const specs = fieldsOf(index, product, false);
-    const current = { ...store, provided_by: page.providedBy?.id } as Record<string, unknown>;
+    const specs = fieldsOf(false);
+    const current = { ...store } as Record<string, unknown>;
     const submit = async (draft: Draft) => {
       const input = changeInput(index, specs, draft, current, { id: store.id });
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
@@ -102,8 +95,7 @@ export function AddDataStoreForm({ index, parent, onDone }: { index: RecordIndex
     if (next.state === 'read') setDraft((d) => (d.text.id ? d : { ...d, text: { ...d.text, id: next.answer } }));
   }, [next]);
   const under = index.byId.get(parent);
-  const product = under?.kind === 'product' ? parent : under?.product ?? '';
-  const specs = fieldsOf(index, product, true);
+  const specs = fieldsOf(true);
   const submit = async () => {
     const input = addInput(index, specs, draft, { [under?.kind === 'domain' ? 'domain_id' : 'product_id']: parent });
     const answer = await writer.command('/api/data-store/add-data-store', input as unknown as CommandInputs['/api/data-store/add-data-store']);

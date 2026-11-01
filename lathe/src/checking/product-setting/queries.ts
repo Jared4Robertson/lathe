@@ -20,5 +20,5 @@ export const GET_LIMITS: QueryDefinition<{ product_id: string }, Limits, LimitsR
   input: { product_id: id('The product.', 'required') },
   reader: limitsReader,
   run: getLimits,
-  text: (s) => `Limits of ${s.product}${s.own ? '' : ' (the defaults)'}\n  max_children: ${s.maxChildren}\n  max_entities_per_aggregate: ${s.maxEntitiesPerAggregate}`,
+  text: (s) => `Limits of ${s.product}${s.own ? '' : ' (the defaults)'}\n  max_children: ${s.maxChildren}\n  max_entities_per_aggregate: ${s.maxEntitiesPerAggregate}\n  technology_words: ${s.technologyWords.join(', ') || 'none'}`,
 };

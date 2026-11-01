@@ -8,4 +8,8 @@ export const PRODUCT_SETTING_FIELDS = {
     max_children: { kind: 'column', table: 'product_setting', column: 'max_children', required: true, clearable: false },
     max_entities_per_aggregate: { kind: 'column', table: 'product_setting', column: 'max_entities_per_aggregate', required: true, clearable: false },
   },
+  '/api/product-setting/set-technology-words': {
+    product_id: { kind: 'column', table: 'product_setting', column: 'product_id', required: true, clearable: false },
+    technology_words: { kind: 'texts', description: 'The words, besides Lathe\'s own, that name technology in the product\'s essential records.', required: true, clearable: false },
+  },
 } as const satisfies Record<string, InputFields>;

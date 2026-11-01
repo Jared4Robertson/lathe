@@ -10,6 +10,7 @@ export const TOOLING_FIELDS = {
     file: { kind: 'column', table: 'tooling', column: 'file', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses, as the product\'s package.json files list them.', required: false, clearable: false },
     meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
+    generates: { kind: 'ids', description: 'The technical records it generates: derived, never written by hand.', required: false, clearable: false },
   },
   '/api/tooling/change-tooling': {
     id: { kind: 'column', table: 'tooling', column: 'id', required: true, clearable: false },
@@ -17,6 +18,7 @@ export const TOOLING_FIELDS = {
     file: { kind: 'column', table: 'tooling', column: 'file', required: false, clearable: true },
     packages: { kind: 'texts', description: 'The packages it uses.', required: false, clearable: false },
     meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
+    generates: { kind: 'ids', description: 'The technical records it generates.', required: false, clearable: false },
   },
   '/api/tooling/remove-tooling': {
     id: { kind: 'column', table: 'tooling', column: 'id', required: true, clearable: false },

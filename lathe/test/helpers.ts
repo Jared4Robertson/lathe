@@ -296,7 +296,7 @@ export function complete(): Data {
     ui_component: [{ id: 'EX-UI01', title: 'CatalogPage', file: 'web/catalog.tsx', description: 'The catalog page.' }],
     endpoint_handler: [{ id: 'EX-LEND-EP01-H', title: 'postLoan', endpoint_id: 'EX-LEND-EP01', file: 'src/router.ts', description: 'Reads the body and calls openLoan.' }],
     adapter: [{ id: 'EX-INT01-AD', title: 'mailer', integration_id: 'EX-INT01', file: 'src/mail.ts', description: 'Sends mail over SMTP.' }],
-    standard: [{ id: 'EX-STD-CODE', title: 'Code', product_id: 'EX', description: 'How the code is written.' }],
+    standard: [{ id: 'EX-STD-CODE', title: 'Code', product_id: 'EX', type: 'engineering', description: 'How the code is written.' }],
     standard_rule: [{ id: 'EX-STD-CODE-R01', title: 'Node prefix', standard_id: 'EX-STD-CODE', statement: 'Code MUST import node: modules.' }],
 
     constraint_test: [{ id: 'EX-VO01-C01-T', title: 'One at sign', constraint_id: 'EX-VO01-C01', ...automated('unit', 'test/email.test.ts'), accepts: 'a@b.org', refuses: 'a@@b.org' }],

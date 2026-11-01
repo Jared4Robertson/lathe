@@ -14,6 +14,7 @@ import { GET_DATA_STORE, LIST_DATA_STORES, NEXT_DATA_STORE_ID } from '../../../s
 import { CHANGE_REPOSITORY } from '../../../src/authoring/domain/commands/change-repository.ts';
 import { ADD_READER } from '../../../src/authoring/read-model/commands/add-reader.ts';
 import { CHANGE_TABLE } from '../../../src/authoring/table/commands/change-table.ts';
+import { REMOVE_PROVIDER } from '../../../src/traceability/provision/commands/remove-provider.ts';
 import { runAggregateCommand } from '../../../src/cli/aggregates.ts';
 import { callTool } from '../../../src/cli/mcp.ts';
 import { closeStores, handleApi } from '../../../src/server/api.ts';
@@ -61,7 +62,7 @@ describe('LA-AUT-UC32-R50-T01 each Data store command (LA-AUT-A23) changes one d
 
   it('changes a data store and the store a repository, reader or table names, each writing only its own tables', async () => {
     const store = await dataStoreDataSet();
-    expect((await runCommand(store, CHANGE_DATA_STORE, { id: 'TL-STORE01', provided_by: null })).tables).toEqual(['provided_by']);
+    expect((await runCommand(store, REMOVE_PROVIDER, { record_id: 'TL-STORE01' })).tables).toEqual(['provided_by']);
     expect((await runCommand(store, CHANGE_DATA_STORE, { id: 'TL-LEND-STORE01', kind: 'memory', description: 'Kept while the page is open.' })).tables).toEqual(['data_store']);
     expect((await runCommand(store, CHANGE_REPOSITORY, { id: 'TL-LEND-REPO01', stored_in: 'TL-LEND-STORE01' })).tables).toEqual(['stored_in']);
     expect((await runCommand(store, CHANGE_TABLE, { id: 'TL-LEND-EN01-TB', stored_in: null })).tables).toEqual(['stored_in']);
@@ -77,8 +78,9 @@ describe('LA-AUT-UC32-R50-T01 each Data store command (LA-AUT-A23) changes one d
     });
     expect((await refusal(store, ADD_DATA_STORE, { id: 'TL-STORE01', title: 'again', product_id: 'TL', kind: 'database', description: 'Again.' })).problems[0].rule).toBe('primary-key');
     await expect(runCommand(store, CHANGE_DATA_STORE, { id: 'TL-STORE01', product_id: 'TL' })).rejects.toThrow(/change-data-store takes no product_id/);
+    await expect(runCommand(store, CHANGE_DATA_STORE, { id: 'TL-STORE01', provided_by: null })).rejects.toThrow(/change-data-store takes no provided_by/);
     await expect(runCommand(store, CHANGE_REPOSITORY, { id: 'TL-LEND-REPO01', stored_in: ['TL-STORE01'] })).rejects.toThrow(/stored_in/);
-    expect((await refusal(store, REMOVE_DATA_STORE, { id: 'TL-STORE01' })).problems[0].message).toBe('Data store TL-STORE01 is referenced, so it stays: TL-LEND-REPO01 stored in TL-STORE01; TL-LEND-EN01-TB stored in TL-STORE01');
+    expect((await refusal(store, REMOVE_DATA_STORE, { id: 'TL-STORE01' })).problems[0].message).toBe('Data store TL-STORE01 is referenced, so it stays: TL-LEND-REPO01 stored in TL-STORE01; TL-LEND-EN01-TB stored in TL-STORE01; TL-STORE01 provided by TL-INT01');
     expect((await refusal(store, CHANGE_DATA_STORE, { id: 'TL-STORE09', title: 'x' })).problems[0]).toMatchObject({ rule: 'missing', message: 'there is no data store TL-STORE09' });
     expect(fileOf(store, 'data_store')).toBe(before);
   });
@@ -87,8 +89,8 @@ describe('LA-AUT-UC32-R50-T01 each Data store command (LA-AUT-A23) changes one d
     const root = writeData(domainModelBase(AROUND));
     const out: string[] = [];
     const io = { out: (t: string) => out.push(t), err: (t: string) => out.push(t) };
-    expect(await runAggregateCommand(['data-store', 'add-data-store', '--id', 'TL-STORE01', '--title', 'DATABASE_URL', '--product_id', 'TL', '--kind', 'database', '--description', 'The database.', '--provided_by', 'TL-INT01', '--root', root], io)).toBe(0);
-    expect(out.pop()).toContain('Added provided_by source_id TL-STORE01, target_id TL-INT01');
+    expect(await runAggregateCommand(['data-store', 'add-data-store', '--id', 'TL-STORE01', '--title', 'DATABASE_URL', '--product_id', 'TL', '--kind', 'database', '--description', 'The database.', '--root', root], io)).toBe(0);
+    expect(out.pop()).toContain('Added data_store TL-STORE01');
     expect((await callTool(root, 'data_store_add_data_store', { id: 'TL-STORE02', title: 'sessionStorage', product_id: 'TL', kind: 'browser storage', description: 'The tab.' })).isError).toBeUndefined();
     const server = createServer((req, res) => void handleApi(root, req, res, new URL(req.url ?? '/', 'http://localhost').pathname));
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -104,11 +106,13 @@ describe('LA-AUT-UC32-R50-T01 each Data store command (LA-AUT-A23) changes one d
   });
 });
 
-describe('LA-STD-CODE-R07-T71 a data store nothing is stored in is removed with the link it starts', () => {
-  it('removes a data store nothing is stored in, with its provider link', async () => {
+describe('LA-STD-CODE-R07-T71 a data store nothing is stored in or provides is removed whole', () => {
+  it('removes a data store once nothing is stored in it and its provider is removed', async () => {
     const store = await dataStoreDataSet();
     await runCommand(store, CHANGE_REPOSITORY, { id: 'TL-LEND-REPO01', stored_in: null });
     await runCommand(store, CHANGE_TABLE, { id: 'TL-LEND-EN01-TB', stored_in: null });
-    expect((await runCommand(store, REMOVE_DATA_STORE, { id: 'TL-STORE01' })).changes.map((c) => c.table).sort()).toEqual(['data_store', 'provided_by']);
+    expect((await refusal(store, REMOVE_DATA_STORE, { id: 'TL-STORE01' })).problems[0].message).toBe('Data store TL-STORE01 is referenced, so it stays: TL-STORE01 provided by TL-INT01');
+    await runCommand(store, REMOVE_PROVIDER, { record_id: 'TL-STORE01' });
+    expect((await runCommand(store, REMOVE_DATA_STORE, { id: 'TL-STORE01' })).changes.map((c) => c.table)).toEqual(['data_store']);
   });
 });

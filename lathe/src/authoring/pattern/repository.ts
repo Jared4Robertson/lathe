@@ -18,8 +18,8 @@ export class PatternRepository extends AggregateRepository<Pattern> {
   }
 
   /**
-   * Loads the pattern that holds the record of the kind with this ID: the pattern itself, or the pattern of the rule
-   * or rule test, found up its parents inside the aggregate. Undefined when there is no such record.
+   * Loads the pattern that holds the record of the kind with this ID: the pattern itself, or the pattern of the rule,
+   * rule test or slot, found up its parents inside the aggregate. Undefined when there is no such record.
    */
   loadHolding(kind: PatternKind, id: string): Pattern | undefined {
     let at: { kind: PatternKind; id: string } = { kind, id };
