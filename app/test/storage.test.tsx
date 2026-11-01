@@ -1,11 +1,13 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
+import { createElement } from 'react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SessionSettingsRepository, SETTINGS_KEY } from '../src/exploring/session-settings/repository';
 import { KeyBindingsRepository } from '../src/platform/key-bindings/repository';
 import { AppearanceRepository, APPEARANCE_KEYS } from '../src/platform/appearance/repository';
 import { PanelRepository } from '../src/platform/panel/repository';
-import { VoiceSettingsRepository } from '../src/platform/voice-settings/repository';
+import { VoiceSettingsRepository, voiceSettingsRepository } from '../src/platform/voice-settings/repository';
+import { useVoiceSettings } from '../src/platform/voice-settings/use-voice-settings';
 import { DEFAULT_VOICE_SETTINGS } from '../src/platform/voice-settings/model';
 import { SpaceRepository } from '../src/exploring/space/repository';
 import { desktopBridgeStub, openApp } from './helpers';
@@ -115,5 +117,21 @@ describe('LA-EXP-A2-SR01 the space chosen last is kept in this browser, and each
     expect(new SpaceRepository().load()).toMatchObject({ chosen: 'TL', pages: { TL: '/TL-LEND' } });
     window.sessionStorage.clear();
     expect(new SpaceRepository().load()).toMatchObject({ chosen: 'TL', pages: {} });
+  });
+});
+
+describe('LA-PAT-APP-CODE-R25-T02 the Voice settings as a stable snapshot', () => {
+  it('reads a malformed stored value as the same defaults on each load, so React never warns', () => {
+    window.localStorage.setItem('lathe:voice', '{"activation":"yes"}');
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const first = voiceSettingsRepository.load();
+      expect(voiceSettingsRepository.load()).toBe(first);
+      function Reader() { return createElement('span', null, useVoiceSettings().wake); }
+      render(createElement(Reader));
+      expect(errors.mock.calls.flat().join('\n')).not.toMatch(/getSnapshot/);
+    } finally {
+      errors.mockRestore();
+    }
   });
 });
