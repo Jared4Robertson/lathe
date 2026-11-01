@@ -152,7 +152,26 @@ export function productClash(workspace: string, products: { root: string; ids: r
   return null;
 }
 
-/** The product's config whatever its schema version: only `lathe upgrade` reads it this way. */
+/**
+ * The titles of the products a data folder holds (the rows of its product.jsonl, in the file's order, which is by ID),
+ * read before any store opens: the desktop app names a window and its launch view by them while the engine starts. A
+ * line that is not JSON names no product; the store reports it when it loads the folder.
+ */
+export function productTitles(dataDir: string): string[] {
+  const file = path.join(dataDir, 'product.jsonl');
+  if (!existsSync(file)) return [];
+  return readFileSync(file, 'utf8').split('\n').flatMap((line) => {
+    if (!line.trim()) return [];
+    try {
+      const title = (JSON.parse(line) as { title?: unknown }).title;
+      return typeof title === 'string' && title.trim() ? [title.trim()] : [];
+    } catch {
+      return [];
+    }
+  });
+}
+
+/** The product's config whatever its schema version: `lathe upgrade` and the desktop app's folder check read it this way. */
 export function readConfig(root: string): LatheConfig {
   root = path.resolve(root);
   const repository = new ProductRepoConfigRepository(root);

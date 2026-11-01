@@ -60,6 +60,7 @@ import { RECORD_TRACE_QUERIES } from './traceability/record-trace/queries.ts';
 import { SERVES_QUERIES } from './traceability/serves/queries.ts';
 import { META_MODEL_QUERIES } from './platform/meta-model/queries.ts';
 import { RECORD_SUMMARIES_QUERIES } from './exploring/record-summaries/queries.ts';
+import { RECORD_DATA_FILE_QUERIES } from './authoring/record-data-file/queries.ts';
 import { FOLDER_TREE_QUERIES } from './exploring/folder-tree/queries.ts';
 import { ERD_QUERIES } from './exploring/erd/queries.ts';
 import { RECORD_CHANGES_QUERIES } from './exploring/record-changes/queries.ts';
@@ -128,6 +129,7 @@ export const ALL_QUERIES: readonly AnyQuery[] = [
   ...SERVES_QUERIES,
   ...META_MODEL_QUERIES,
   ...RECORD_SUMMARIES_QUERIES,
+  ...RECORD_DATA_FILE_QUERIES,
   ...FOLDER_TREE_QUERIES,
   ...ERD_QUERIES,
   ...RECORD_CHANGES_QUERIES,

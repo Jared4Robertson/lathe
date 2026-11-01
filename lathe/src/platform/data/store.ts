@@ -336,6 +336,7 @@ export class Store {
     // A projection may read a reader the store keeps for several (the records' placement): it reads what that read.
     const view: ReadView = {
       ...trackedView(this.currentSchema, this.tables, reads, (table) => this.rows(table)),
+      dataDir: this.dataDir,
       readerOf: (inner) => {
         const shared = this.readerOf(inner);
         for (const table of this.readerReads.of(inner) ?? []) reads.add(table);

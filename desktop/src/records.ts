@@ -1,9 +1,8 @@
-// The desktop-only record actions (LA-AUT-UC15-R01): reveal a record's data file in Finder, open it in
-// the editor, copy its ID, or a native menu of the three, each on its own channel (product-window/commands/). The
-// page names only a record ID; the main process checks the request (LA-PAT-SHELL-ACTIONS-R01) and finds the file
-// itself, among the folder's data files, so a page can never name a file of its own.
+// The desktop-only record actions (LA-AUT-UC15-R01): reveal a record's data file in Finder, open it in the editor,
+// copy its ID, or a native menu of the three, each on its own channel (product-window/commands/). The page names only a
+// record ID; the main process checks the request (LA-PAT-SHELL-ACTIONS-R01) and asks the window's engine which data file
+// holds the record (its Record's data file read, LA-AUT-QRY05), so a page can never name a file of its own.
 import type { MenuItemConstructorOptions } from 'electron';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 /** A record ID, as the schema shapes them: capitals and digits in parts joined by hyphens. */
@@ -20,47 +19,21 @@ export function parseRecordId(input: unknown): string | null {
   return id;
 }
 
-// A data file's line that holds the record starts with its id column: {"id":"<ID>", then a comma or the end.
-function holds(text: string, id: string): boolean {
-  const start = `{"id":${JSON.stringify(id)}`;
-  return text.split('\n').some((line) => line.startsWith(start) && /^[,}]/.test(line.slice(start.length)));
-}
+/** The engine's route of the Record's data file read (lathe/src/authoring/record-data-file/queries.ts). */
+export const RECORD_DATA_FILE_ROUTE = '/api/record-data-file/find-record-data-file';
 
-/** The data file (<table>.jsonl in the data folder) that holds the record, or null. Only a kind's table starts its rows with id. */
-export function findDataFile(dataDir: string, id: string): string | null {
-  let files: string[];
+/**
+ * The data file that holds the record, as the engine at `serverUrl` answers it: a full path to a .jsonl file, or null
+ * when no record has the ID, the engine has no such read (an older Lathe) or does not answer.
+ */
+export async function recordDataFile(serverUrl: string, id: string, get: typeof fetch = fetch): Promise<string | null> {
   try {
-    files = readdirSync(dataDir).filter((f) => f.endsWith('.jsonl')).sort();
+    const res = await get(`${serverUrl}${RECORD_DATA_FILE_ROUTE}?id=${encodeURIComponent(id)}`);
+    if (!res.ok) return null;
+    const file = ((await res.json()) as { file?: unknown } | null)?.file;
+    return typeof file === 'string' && path.isAbsolute(file) && file.endsWith('.jsonl') ? file : null;
   } catch {
     return null;
-  }
-  for (const name of files) {
-    const file = path.join(dataDir, name);
-    try {
-      if (holds(readFileSync(file, 'utf8'), id)) return file;
-    } catch {
-      // A file that cannot be read holds no record to open.
-    }
-  }
-  return null;
-}
-
-/** Finds records' data files in the workspace's data folders (one per product folder), reading them again when a record is not where it was last seen. */
-export class DataFiles {
-  private readonly known = new Map<string, string>();
-  private readonly dataDirs: readonly string[];
-  constructor(dataDirs: readonly string[]) {
-    this.dataDirs = dataDirs;
-  }
-
-  find(id: string): string | null {
-    const known = this.known.get(id);
-    if (known && existsSync(known) && holds(readFileSync(known, 'utf8'), id)) return known;
-    let found: string | null = null;
-    for (const dir of this.dataDirs) if ((found = findDataFile(dir, id))) break;
-    if (found) this.known.set(id, found);
-    else this.known.delete(id);
-    return found;
   }
 }
 

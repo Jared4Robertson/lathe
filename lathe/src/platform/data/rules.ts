@@ -35,6 +35,8 @@ export interface ReadView {
    * such a query without it.
    */
   readonly baseline?: BaselineAnswer;
+  /** The data folder the rows were read from, when one product's store holds them; none for every product's read as one or a baseline. */
+  readonly dataDir?: string;
   /**
    * The read model's reader over this data, kept by the data's holder (the store) until a table its projection read
    * changes; data with no holder (a baseline, every product's read as one) has none, and the runner makes the reader

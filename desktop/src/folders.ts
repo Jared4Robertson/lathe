@@ -1,76 +1,61 @@
 // Product folders: whether a folder can be opened, the names of the products in it, and how a folder
-// reads to people. Nothing here touches Electron, so it is unit-tested. The recent folders are their own
-// aggregate (recent-folders/).
-import { existsSync, readFileSync, statSync } from 'node:fs';
+// reads to people. A folder's config and its products' titles are read with Lathe's own config module (config.ts), the
+// app's own Lathe's, before the folder's engine starts. Nothing here touches Electron, so it is unit-tested. The recent
+// folders are their own aggregate (recent-folders/).
+import { existsSync, statSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+import type * as LatheConfigModule from 'lathe-config';
 
-export const CONFIG_FILE = 'lathe.config.json';
+/** What the shell reads with Lathe's config module: a folder's config and the titles of the products in a data folder. */
+export type LatheConfigReads = Pick<typeof LatheConfigModule, 'CONFIG_FILE' | 'readConfig' | 'productTitles'>;
+
+/**
+ * Where the app's own Lathe keeps its config module: built, inside the packed app; else this repo's source, which
+ * Electron's Node runs as it is (it strips the types).
+ */
+export function latheConfigModulePath(repoRoot: string, packaged: { resourcesPath: string } | null): string {
+  return packaged
+    ? path.join(packaged.resourcesPath, 'node_modules', '@jaredrob', 'lathe', 'dist', 'src', 'config.js')
+    : path.join(repoRoot, 'lathe', 'src', 'config.ts');
+}
+
+/** Lathe's config module, from its file. */
+export async function loadLatheConfig(modulePath: string): Promise<LatheConfigReads> {
+  return (await import(pathToFileURL(modulePath).href)) as LatheConfigReads;
+}
 
 /** A folder that opens: its data folder, then the data folder of each other product its config lists under products. */
 export type FolderCheck = { ok: true; dataDirs: string[] } | { ok: false; message: string };
 
 const isDir = (p: string) => existsSync(p) && statSync(p).isDirectory();
 
-type Config = { data?: unknown; products?: unknown };
-
-// A folder's config, or why it cannot be read.
-function readConfig(folder: string): { config: Config } | { message: string } {
-  try {
-    const parsed: unknown = JSON.parse(readFileSync(path.join(folder, CONFIG_FILE), 'utf8'));
-    return { config: parsed && typeof parsed === 'object' ? (parsed as Config) : {} };
-  } catch (error) {
-    return { message: `${CONFIG_FILE} in ${folder} is not valid JSON: ${error instanceof Error ? error.message : String(error)}` };
-  }
-}
-
-const dataOf = (folder: string, config: Config) => path.resolve(folder, typeof config.data === 'string' ? config.data : 'data');
-
 /**
- * A folder opens when it holds a lathe.config.json (valid JSON, whose "data" names the data folder, data by
- * default, and whose "products" lists the folders of the other products the workspace shows), or else a data/
- * folder. Otherwise the message says what is missing. A listed folder's own config gives its data folder; one that
- * cannot be read is left for the server to report when it loads the workspace.
+ * A folder opens when it holds a lathe.config.json, or else a data/ folder. Lathe reads the config as every load does
+ * (its data folder, data by default, and the products it lists, each with a config of its own), and a config it refuses
+ * is refused here with its reason, so the window never opens on a folder its engine cannot read. Otherwise the message
+ * says what is missing.
  */
-export function checkFolder(folder: string): FolderCheck {
+export function checkFolder(folder: string, lathe: LatheConfigReads): FolderCheck {
   if (!isDir(folder)) return { ok: false, message: `${folder} is not a folder.` };
-  if (existsSync(path.join(folder, CONFIG_FILE))) {
-    const own = readConfig(folder);
-    if ('message' in own) return { ok: false, message: own.message };
-    const listed = Array.isArray(own.config.products) ? own.config.products.filter((p): p is string => typeof p === 'string') : [];
-    const others = listed.flatMap((p) => {
-      const product = path.resolve(folder, p);
-      const read = existsSync(path.join(product, CONFIG_FILE)) ? readConfig(product) : null;
-      return read && 'config' in read ? [dataOf(product, read.config)] : [];
-    });
-    return { ok: true, dataDirs: [dataOf(folder, own.config), ...others] };
+  if (!existsSync(path.join(folder, lathe.CONFIG_FILE)) && !isDir(path.join(folder, 'data'))) {
+    return {
+      ok: false,
+      message: `${folder} has no ${lathe.CONFIG_FILE} and no data folder. Choose the root of a product repo: the folder that holds ${lathe.CONFIG_FILE}, or its data folder's parent.`,
+    };
   }
-  if (isDir(path.join(folder, 'data'))) return { ok: true, dataDirs: [path.join(folder, 'data')] };
-  return {
-    ok: false,
-    message: `${folder} has no ${CONFIG_FILE} and no data folder. Choose the root of a product repo: the folder that holds ${CONFIG_FILE}, or its data folder's parent.`,
-  };
+  try {
+    const own = lathe.readConfig(folder);
+    return { ok: true, dataDirs: [own.dataDir, ...own.products.map((product) => lathe.readConfig(product).dataDir)] };
+  } catch (error) {
+    return { ok: false, message: `${folder}: ${error instanceof Error ? error.message : String(error)}` };
+  }
 }
 
-/** The title of each product (the rows of each data folder's product.jsonl), folder by folder, each file in its order, which is by ID. */
-export function productNames(dataDirs: readonly string[]): string[] {
-  return dataDirs.flatMap(productNamesIn);
-}
-
-function productNamesIn(dataDir: string): string[] {
-  const file = path.join(dataDir, 'product.jsonl');
-  if (!existsSync(file)) return [];
-  const names: string[] = [];
-  for (const line of readFileSync(file, 'utf8').split('\n')) {
-    if (!line.trim()) continue;
-    try {
-      const title = (JSON.parse(line) as { title?: unknown }).title;
-      if (typeof title === 'string' && title.trim()) names.push(title.trim());
-    } catch {
-      // A line that is not JSON names no product; the server reports it when it loads the folder.
-    }
-  }
-  return names;
+/** The title of each product in the data folders, folder by folder, each in its product.jsonl's order, which is by ID. */
+export function productNames(dataDirs: readonly string[], lathe: LatheConfigReads): string[] {
+  return dataDirs.flatMap((dataDir) => lathe.productTitles(dataDir));
 }
 
 /** A folder as people read it: under the home folder it starts with "~". */
