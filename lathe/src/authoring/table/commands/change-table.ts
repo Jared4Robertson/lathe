@@ -1,20 +1,16 @@
 import { column, id, ids, parts, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { TableRow } from '../../../platform/data/tables.ts';
-import { KEY_COLUMNS, TABLE_SLICE, changed, type TableKey } from '../model.ts';
+import { KEY_COLUMNS, changed, type TableKey } from '../model.ts';
 import { TableRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_TABLE_IDENTITY } from './identities.generated.ts';
 
 /** The table's changes: a column given is set, null clears an optional one; a list given replaces the list. */
 export type ChangeTable = Pick<TableRow, 'id'> & { title?: TableRow['title']; name?: TableRow['name']; storage?: TableRow['storage']; file?: TableRow['file'] | null; keys?: TableKey[]; stored_in?: string | null; meets?: string[]; packages?: string[] };
 
-export const CHANGE_TABLE: CommandDefinition<ChangeTable> = {
-  id: 'LA-AUT-CMD301',
-  slice: TABLE_SLICE,
-  name: 'change-table',
-  description: "Changes a table's title, name, storage or file, its keys (the whole list, in order), the data store it is kept in (null clears it), or the standard rules it meets or packages it uses (each the whole list). Its parent changes only by a move.",
-  method: 'POST',
-  route: '/api/table/change-table',
+export const CHANGE_TABLE = {
+  ...CHANGE_TABLE_IDENTITY,
   input: {
     id: column('table', 'id', 'required'),
     title: column('table', 'title', 'optional'),
@@ -27,7 +23,7 @@ export const CHANGE_TABLE: CommandDefinition<ChangeTable> = {
     packages: texts("The packages it uses, by their names in the product's package.json files. Replaces the list.", 'optional'),
   },
   handler: changeTable,
-};
+} satisfies CommandDefinition<ChangeTable>;
 
 /** Changes the table's columns, keys and links. */
 export function changeTable(tx: Transaction, input: ChangeTable): void {

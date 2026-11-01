@@ -1,20 +1,15 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PredicateRow } from '../../../platform/data/tables.ts';
-import { SPECIFICATION_SLICE } from '../model.ts';
 import { SpecificationRepository } from '../repository.ts';
 import { refuseBroken } from '../../../platform/data/rules.ts';
 import { specificationOneEach } from '../rules.ts';
+import { ADD_PREDICATE_IDENTITY } from './identities.generated.ts';
 
 export type AddPredicate = Pick<PredicateRow, 'id' | 'title' | 'specification_id' | 'file'> & { meets?: string[]; packages?: string[] };
 
-export const ADD_PREDICATE: CommandDefinition<AddPredicate> = {
-  id: 'LA-AUT-CMD263',
-  slice: SPECIFICATION_SLICE,
-  name: 'add-predicate',
-  description: 'Adds the predicate of a specification, its one piece of code, with the standard rules it meets and the packages it uses.',
-  method: 'POST',
-  route: '/api/specification/add-predicate',
+export const ADD_PREDICATE = {
+  ...ADD_PREDICATE_IDENTITY,
   input: {
     id: column('predicate', 'id', 'required'),
     title: column('predicate', 'title', 'required'),
@@ -24,7 +19,7 @@ export const ADD_PREDICATE: CommandDefinition<AddPredicate> = {
     packages: texts("The packages it uses, by their names in the product's package.json files.", 'optional'),
   },
   handler: addPredicate,
-};
+} satisfies CommandDefinition<AddPredicate>;
 
 /** Adds the predicate to its specification, which has none yet. */
 export function addPredicate(tx: Transaction, input: AddPredicate): void {

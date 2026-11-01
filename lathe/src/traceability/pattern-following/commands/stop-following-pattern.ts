@@ -1,24 +1,19 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { PATTERN_FOLLOWING_SLICE } from '../model.ts';
 import { PatternFollowingRepository } from '../repository.ts';
+import { STOP_FOLLOWING_PATTERN_IDENTITY } from './identities.generated.ts';
 
 /** The follower and the pattern it stops following. */
 export type StopFollowingPattern = { follower_id: string; pattern_id: string };
 
-export const STOP_FOLLOWING_PATTERN: CommandDefinition<StopFollowingPattern> = {
-  id: 'LA-TRC-CMD10',
-  slice: PATTERN_FOLLOWING_SLICE,
-  name: 'stop-following-pattern',
-  description: "Ends a domain's or use case's following of a pattern, with the setting values it gave it.",
-  method: 'POST',
-  route: '/api/pattern-following/stop-following-pattern',
+export const STOP_FOLLOWING_PATTERN = {
+  ...STOP_FOLLOWING_PATTERN_IDENTITY,
   input: {
     follower_id: column('setting_value', 'follower_id', 'required'),
     pattern_id: column('setting_value', 'pattern_id', 'required'),
   },
   handler: stopFollowingPattern,
-};
+} satisfies CommandDefinition<StopFollowingPattern>;
 
 /** Removes the following whole. */
 export function stopFollowingPattern(tx: Transaction, input: StopFollowingPattern): void {

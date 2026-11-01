@@ -1,19 +1,15 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EndpointHandlerRow } from '../../../platform/data/tables.ts';
-import { changed, ENDPOINT_SLICE } from '../model.ts';
+import { changed } from '../model.ts';
 import { EndpointRepository } from '../repository.ts';
+import { CHANGE_ENDPOINT_HANDLER_IDENTITY } from './identities.generated.ts';
 
 /** The endpoint handler's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeEndpointHandler = Pick<EndpointHandlerRow, 'id'> & { title?: EndpointHandlerRow['title']; description?: EndpointHandlerRow['description']; file?: EndpointHandlerRow['file'] | null; meets?: string[]; packages?: string[] };
 
-export const CHANGE_ENDPOINT_HANDLER: CommandDefinition<ChangeEndpointHandler> = {
-  id: 'LA-AUT-CMD328',
-  slice: ENDPOINT_SLICE,
-  name: 'change-endpoint-handler',
-  description: "Changes an endpoint handler's title, file or description, or the standard rules it meets or the packages it uses (each list whole). Its endpoint does not change.",
-  method: 'POST',
-  route: '/api/endpoint/change-endpoint-handler',
+export const CHANGE_ENDPOINT_HANDLER = {
+  ...CHANGE_ENDPOINT_HANDLER_IDENTITY,
   input: {
     id: column('endpoint_handler', 'id', 'required'),
     title: column('endpoint_handler', 'title', 'optional'),
@@ -23,7 +19,7 @@ export const CHANGE_ENDPOINT_HANDLER: CommandDefinition<ChangeEndpointHandler> =
     packages: texts('The packages it uses. Replaces the list.', 'optional'),
   },
   handler: changeEndpointHandler,
-};
+} satisfies CommandDefinition<ChangeEndpointHandler>;
 
 /** Changes the endpoint handler's columns and links. */
 export function changeEndpointHandler(tx: Transaction, input: ChangeEndpointHandler): void {

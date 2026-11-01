@@ -1,4 +1,4 @@
-// The Domain aggregate's commands, as the CLI, the MCP server and the HTTP API register them.
+// Generated from data/ by `npm run generate`. Do not edit.
 import type { AnyCommand } from '../../../platform/commands/definition.ts';
 import { ADD_DOMAIN } from './add-domain.ts';
 import { CHANGE_DOMAIN } from './change-domain.ts';
@@ -22,7 +22,7 @@ import { ADD_DOMAIN_SERVICE_TEST } from './add-domain-service-test.ts';
 import { CHANGE_DOMAIN_SERVICE_TEST } from './change-domain-service-test.ts';
 import { REMOVE_DOMAIN_SERVICE_TEST } from './remove-domain-service-test.ts';
 
-export const DOMAIN_COMMANDS: readonly AnyCommand[] = [
+export const DOMAIN_COMMANDS = [
   ADD_DOMAIN,
   CHANGE_DOMAIN,
   REMOVE_DOMAIN,
@@ -44,4 +44,4 @@ export const DOMAIN_COMMANDS: readonly AnyCommand[] = [
   ADD_DOMAIN_SERVICE_TEST,
   CHANGE_DOMAIN_SERVICE_TEST,
   REMOVE_DOMAIN_SERVICE_TEST,
-];
+] as const satisfies readonly AnyCommand[];

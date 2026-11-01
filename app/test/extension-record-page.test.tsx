@@ -1,8 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { EXTENSION_RECORD_COMMANDS } from '../../lathe/src/authoring/extension-record/commands/index';
-import type { ExtensionRecordCommands } from '../src/authoring/extension-record/commands';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { setRow } from './fixtures/load';
 import { productKindWorkspace } from './fixtures/product-kinds';
@@ -22,11 +20,6 @@ describe('LA-V111-R01-T01 a record of a product\'s own kind reads it through its
     const lead = await within(main()).findByText('Only the shopper owning the basket MAY add to it.');
     expect(lead.closest('[data-field]')).toHaveAttribute('data-field', 'statement');
     expect(requests).toContain(`GET /api/extension-record/get-extension-record?id=${ID}`);
-  });
-
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof ExtensionRecordCommands)[] = ['/api/extension-record/add-extension-record', '/api/extension-record/change-extension-record', '/api/extension-record/remove-extension-record'];
-    expect([...routes].sort()).toEqual(EXTENSION_RECORD_COMMANDS.map((c) => c.route).sort());
   });
 });
 

@@ -1,4 +1,4 @@
-// The Read model aggregate's commands, as the CLI, the MCP server and the HTTP API register them.
+// Generated from data/ by `npm run generate`. Do not edit.
 import type { AnyCommand } from '../../../platform/commands/definition.ts';
 import { ADD_READ_MODEL } from './add-read-model.ts';
 import { CHANGE_READ_MODEL } from './change-read-model.ts';
@@ -9,14 +9,14 @@ import { REMOVE_QUERY } from './remove-query.ts';
 import { ADD_PROJECTION } from './add-projection.ts';
 import { CHANGE_PROJECTION } from './change-projection.ts';
 import { REMOVE_PROJECTION } from './remove-projection.ts';
-import { ADD_READER } from './add-reader.ts';
-import { CHANGE_READER } from './change-reader.ts';
-import { REMOVE_READER } from './remove-reader.ts';
 import { ADD_QUERY_HANDLER } from './add-query-handler.ts';
 import { CHANGE_QUERY_HANDLER } from './change-query-handler.ts';
 import { REMOVE_QUERY_HANDLER } from './remove-query-handler.ts';
+import { ADD_READER } from './add-reader.ts';
+import { CHANGE_READER } from './change-reader.ts';
+import { REMOVE_READER } from './remove-reader.ts';
 
-export const READ_MODEL_COMMANDS: readonly AnyCommand[] = [
+export const READ_MODEL_COMMANDS = [
   ADD_READ_MODEL,
   CHANGE_READ_MODEL,
   REMOVE_READ_MODEL,
@@ -32,4 +32,4 @@ export const READ_MODEL_COMMANDS: readonly AnyCommand[] = [
   ADD_READER,
   CHANGE_READER,
   REMOVE_READER,
-];
+] as const satisfies readonly AnyCommand[];

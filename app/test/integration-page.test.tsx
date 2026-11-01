@@ -2,8 +2,6 @@ import { chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { INTEGRATION_COMMANDS } from '../../lathe/src/authoring/integration/commands/index';
-import type { IntegrationCommands } from '../src/authoring/integration/commands';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { modelWorkspace } from './fixtures/model';
 import { main, openApp, section } from './helpers';
@@ -27,15 +25,6 @@ describe('LA-V153-R01-T01 an integration\'s records are read through the Integra
     const adapter = await screen.findByRole('list', { name: 'The adapter of P-INT01' });
     expect(within(adapter).getByRole('link', { name: /P-INT01-AD/ })).toHaveAttribute('href', '/P-INT01-AD');
     expect(section(/^Integration tests/)).toHaveTextContent('No integration tests yet.');
-  });
-
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof IntegrationCommands)[] = [
-      '/api/integration/add-integration', '/api/integration/change-integration', '/api/integration/remove-integration',
-      '/api/integration/add-adapter', '/api/integration/change-adapter', '/api/integration/remove-adapter',
-      '/api/integration/add-integration-test', '/api/integration/change-integration-test', '/api/integration/remove-integration-test',
-    ];
-    expect([...routes].sort()).toEqual(INTEGRATION_COMMANDS.map((c) => c.route).sort());
   });
 });
 

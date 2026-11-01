@@ -236,7 +236,7 @@ describe('Authoring flows', () => {
     expect(lathe).toContain('### `view-unused`');
     // S02: a product's reference shows its own kinds and checks after Lathe's.
     tl.command('product declare-product-kind', HOUSE_KIND);
-    tl.command('check add-check', { name: 'launcher-unnamed', product_id: 'TL', position: 1, severity: 'warning', summary: 'A launcher with no description.', explanation: 'Each launcher says what it starts.', query: "SELECT id AS record, 'Launcher ' || id || ' says nothing.' AS message FROM launcher WHERE false" });
+    tl.command('check add-check', { name: 'launcher-unnamed', product_id: 'TL', domain_id: 'LA-CHK', position: 1, severity: 'warning', summary: 'A launcher with no description.', explanation: 'Each launcher says what it starts.', query: "SELECT id AS record, 'Launcher ' || id || ' says nothing.' AS message FROM launcher WHERE false" });
     const own = reference(tl);
     const technical = section(own, '## Technical specification');
     expect([...technical.matchAll(/^### (.+) \(`(\w+)`\)$/gm)].map((m) => m[2]).at(-1)).toBe('launcher');
@@ -245,7 +245,7 @@ describe('Authoring flows', () => {
     // S03: a product kind, relation or check that would leave the reference blank is refused.
     tl.refuse('product declare-product-kind', { ...HOUSE_KIND, name: 'boot_script', description: ' ' });
     tl.refuse('product declare-product-relation', { name: 'starts', source_kind: 'launcher', target_kind: 'command', product_id: 'TL', forward_label: 'Starts', reverse_label: 'Started by', description: ' ' });
-    tl.refuse('check add-check', { name: 'blank', product_id: 'TL', position: 2, severity: 'warning', summary: 'Blank.', explanation: ' ', query: 'SELECT 1' });
+    tl.refuse('check add-check', { name: 'blank', product_id: 'TL', domain_id: 'LA-CHK', position: 2, severity: 'warning', summary: 'Blank.', explanation: ' ', query: 'SELECT 1' });
   });
 
   it('LA-AUT-UC12-FL03-T model commands and their events', async () => {

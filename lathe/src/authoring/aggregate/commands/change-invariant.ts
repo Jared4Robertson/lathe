@@ -1,27 +1,23 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { InvariantRow } from '../../../platform/data/tables.ts';
-import { AGGREGATE_SLICE, changed } from '../model.ts';
+import { changed } from '../model.ts';
 import { AggregateRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_INVARIANT_IDENTITY } from './identities.generated.ts';
 
 /** The invariant's changes: a column given is set. */
 export type ChangeInvariant = Pick<InvariantRow, 'id'> & { title?: string; statement?: string };
 
-export const CHANGE_INVARIANT: CommandDefinition<ChangeInvariant> = {
-  id: 'LA-AUT-CMD217',
-  slice: AGGREGATE_SLICE,
-  name: 'change-invariant',
-  description: "Changes an invariant's title or statement. Its aggregate does not change.",
-  method: 'POST',
-  route: '/api/aggregate/change-invariant',
+export const CHANGE_INVARIANT = {
+  ...CHANGE_INVARIANT_IDENTITY,
   input: {
     id: column('invariant', 'id', 'required'),
     title: column('invariant', 'title', 'optional'),
     statement: column('invariant', 'statement', 'optional'),
   },
   handler: changeInvariant,
-};
+} satisfies CommandDefinition<ChangeInvariant>;
 
 /** Changes the invariant's columns. */
 export function changeInvariant(tx: Transaction, input: ChangeInvariant): void {

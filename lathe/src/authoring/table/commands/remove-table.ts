@@ -1,23 +1,18 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { TABLE_SLICE } from '../model.ts';
 import { TableRepository } from '../repository.ts';
+import { REMOVE_TABLE_IDENTITY } from './identities.generated.ts';
 
 /** The table to remove. */
 export type RemoveTable = { id: string };
 
-export const REMOVE_TABLE: CommandDefinition<RemoveTable> = {
-  id: 'LA-AUT-CMD303',
-  slice: TABLE_SLICE,
-  name: 'remove-table',
-  description: "Removes a table whole: its keys, and the links and packages it names. Refused while anything else references it, such as another table's foreign key.",
-  method: 'POST',
-  route: '/api/table/remove-table',
+export const REMOVE_TABLE = {
+  ...REMOVE_TABLE_IDENTITY,
   input: {
     id: column('table', 'id', 'required'),
   },
   handler: removeTable,
-};
+} satisfies CommandDefinition<RemoveTable>;
 
 /** Removes the table whole. */
 export function removeTable(tx: Transaction, input: RemoveTable): void {

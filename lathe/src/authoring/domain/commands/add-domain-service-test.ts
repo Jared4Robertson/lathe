@@ -1,19 +1,14 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { DomainServiceTestRow } from '../../../platform/data/tables.ts';
-import { DOMAIN_SLICE } from '../model.ts';
 import { DomainRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_DOMAIN_SERVICE_TEST_IDENTITY } from './identities.generated.ts';
 
 export type AddDomainServiceTest = Pick<DomainServiceTestRow, 'id' | 'title' | 'domain_service_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'when' | 'then' | 'notes'> & { starts_from?: string[] };
 
-export const ADD_DOMAIN_SERVICE_TEST: CommandDefinition<AddDomainServiceTest> = {
-  id: 'LA-AUT-CMD178',
-  slice: DOMAIN_SLICE,
-  name: 'add-domain-service-test',
-  description: 'Adds a domain service test under its domain service, with the test data sets it starts from.',
-  method: 'POST',
-  route: '/api/domain/add-domain-service-test',
+export const ADD_DOMAIN_SERVICE_TEST = {
+  ...ADD_DOMAIN_SERVICE_TEST_IDENTITY,
   input: {
     id: column('domain_service_test', 'id', 'required'),
     title: column('domain_service_test', 'title', 'required'),
@@ -31,7 +26,7 @@ export const ADD_DOMAIN_SERVICE_TEST: CommandDefinition<AddDomainServiceTest> = 
     starts_from: ids('The test data sets it starts from.', 'optional'),
   },
   handler: addDomainServiceTest,
-};
+} satisfies CommandDefinition<AddDomainServiceTest>;
 
 export function addDomainServiceTest(tx: Transaction, input: AddDomainServiceTest): void {
   const domains = new DomainRepository(tx);

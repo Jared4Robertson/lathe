@@ -1,8 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { PRODUCT_SETTING_COMMANDS } from '../../lathe/src/checking/product-setting/commands/index';
-import type { ProductSettingCommands } from '../src/checking/product-setting/commands';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
@@ -38,11 +36,6 @@ describe('LA-V51-R10-T01 a product\'s limits are read through the Product settin
     expect(shown).toHaveTextContent('Set for this product.');
     expect(fact(shown, 'Children of one kind')).toBe('20');
     expect(fact(shown, 'Entities per aggregate')).toBe('5');
-  });
-
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof ProductSettingCommands)[] = ['/api/product-setting/set-limits'];
-    expect([...routes].sort()).toEqual(PRODUCT_SETTING_COMMANDS.map((c) => c.route).sort());
   });
 });
 

@@ -1,15 +1,8 @@
 // The Entry point aggregate (LA-AUT-A20): a start-up file of a domain, with the packages it uses and the standard rules it meets. One instance is one
 // entry point, whole: its row, the package_use rows naming it and the meets links it starts, and nothing of another aggregate.
-import type { Slice } from '../../platform/commands/definition.ts';
 import { bySource, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { EntryPointRow } from '../../platform/data/tables.ts';
-
-/** The aggregate's record ID in Lathe's own spec. */
-export const ENTRY_POINT_AGGREGATE = 'LA-AUT-A20';
-
-/** How the interfaces reach the aggregate's commands: `lathe entry-point`, the entry_point_ tools, /api/entry-point/. */
-export const ENTRY_POINT_SLICE: Slice = { aggregate: ENTRY_POINT_AGGREGATE, name: 'entry-point' };
 
 /**
  * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.

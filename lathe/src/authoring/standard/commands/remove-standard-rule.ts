@@ -1,23 +1,18 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { STANDARD_SLICE } from '../model.ts';
 import { StandardRepository } from '../repository.ts';
+import { REMOVE_STANDARD_RULE_IDENTITY } from './identities.generated.ts';
 
 /** The rule to remove. */
 export type RemoveStandardRule = { id: string };
 
-export const REMOVE_STANDARD_RULE: CommandDefinition<RemoveStandardRule> = {
-  id: 'LA-AUT-CMD205',
-  slice: STANDARD_SLICE,
-  name: 'remove-standard-rule',
-  description: 'Removes a standard rule with its tests and the links they start. Refused while a technical record meets it or anything else references it or its tests.',
-  method: 'POST',
-  route: '/api/standard/remove-standard-rule',
+export const REMOVE_STANDARD_RULE = {
+  ...REMOVE_STANDARD_RULE_IDENTITY,
   input: {
     id: column('standard_rule', 'id', 'required'),
   },
   handler: removeStandardRule,
-};
+} satisfies CommandDefinition<RemoveStandardRule>;
 
 /** Removes the rule and its tests from its standard. */
 export function removeStandardRule(tx: Transaction, input: RemoveStandardRule): void {

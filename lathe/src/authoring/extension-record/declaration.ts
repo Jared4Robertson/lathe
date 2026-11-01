@@ -30,6 +30,12 @@ export function valueColumns(schema: SchemaDescription, kind: KindDescription): 
   return schema.tables[kind.name].columns.map((c) => c.name).filter((c) => c !== 'id' && c !== parentColumn(kind));
 }
 
+/** The field whose value is also the kind's records' title (product_kind_field.titles), or undefined when they are titled by hand. */
+export function titlingField(view: ReadView, kind: string): string | undefined {
+  const field = view.rows('product_kind_field').find((f) => f.kind === kind && f.titles === true);
+  return field ? String(field.name) : undefined;
+}
+
 /** Where a record sits: its kind and the record it sits under, if any. */
 export interface Place {
   kind: string;

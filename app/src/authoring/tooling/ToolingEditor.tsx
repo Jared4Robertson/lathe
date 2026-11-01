@@ -2,14 +2,14 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { ToolingPage } from '../../../../lathe/src/authoring/tooling/read-model';
 import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
-import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
+import { addInput, addOrChangeFields, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
-import { useWriter } from '../../edit/write';
+import { useWriter, type CommandInputs } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendTooling, type ToolingCommands } from './commands';
+import { TOOLING_FIELDS } from './fields.generated';
 import { useNextToolingId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -26,16 +26,9 @@ function standardRules(index: RecordIndex, domain: string): Choice[] {
   return [...index.byId.values()].filter((r) => r.kind === 'standard_rule' && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 }
 
-/** The fields Add and Change take (Change leaves out the ID), in their input's order. */
-function fieldsOf(index: RecordIndex, domain: string, adding: boolean): FieldSpec[] {
-  return [
-    ...(adding ? [{ field: 'id', column: 'id', table: 'tooling' }] : []),
-    { field: 'title', column: 'title', table: 'tooling' },
-    { field: 'file', column: 'file', table: 'tooling' },
-    { field: 'packages', label: 'Packages', description: 'The packages it uses.', texts: true },
-    { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: standardRules(index, domain) },
-  ];
-}
+/** The fields Add and Change take, from their inputs (Change leaves out the ID, Add the domain). */
+const fieldsOf = (index: RecordIndex, domain: string, adding: boolean): FieldSpec[] =>
+  addOrChangeFields(adding, TOOLING_FIELDS['/api/tooling/add-tooling'], 'domain_id', TOOLING_FIELDS['/api/tooling/change-tooling'], { meets: { choices: standardRules(index, domain) } });
 
 type Mode = 'view' | 'change' | 'remove';
 
@@ -56,9 +49,9 @@ export function ToolingEditor({ index, page, children }: { index: RecordIndex; p
     const specs = fieldsOf(index, tooling.domain_id, false);
     const current = { ...tooling, packages: page.packages, meets: page.meets } as Record<string, unknown>;
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, specs, draft, current, { id: tooling.id }, ['file']);
+      const input = changeInput(index, specs, draft, current, { id: tooling.id });
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
-      const answer = await sendTooling(writer, '/api/tooling/change-tooling', input as unknown as ToolingCommands['/api/tooling/change-tooling']);
+      const answer = await writer.command('/api/tooling/change-tooling', input as unknown as CommandInputs['/api/tooling/change-tooling']);
       if (answer.ok) { announce(`Saved ${tooling.id}`); back(); }
       return answer;
     };
@@ -72,7 +65,7 @@ export function ToolingEditor({ index, page, children }: { index: RecordIndex; p
       </div>
       {mode === 'remove' && (
         <RemoveQuestion index={index} id={tooling.id} label="tooling record" goes={[]} then={addressOf(tooling.domain_id)} onCancel={back}
-          remove={() => sendTooling(writer, '/api/tooling/remove-tooling', { id: tooling.id })} />
+          remove={() => writer.command('/api/tooling/remove-tooling', { id: tooling.id })} />
       )}
       {children}
     </>
@@ -108,7 +101,7 @@ export function AddToolingForm({ index, parent, onDone }: { index: RecordIndex; 
   const specs = fieldsOf(index, parent, true);
   const submit = async () => {
     const input = addInput(index, specs, draft, { domain_id: parent });
-    const answer = await sendTooling(writer, '/api/tooling/add-tooling', input as unknown as ToolingCommands['/api/tooling/add-tooling']);
+    const answer = await writer.command('/api/tooling/add-tooling', input as unknown as CommandInputs['/api/tooling/add-tooling']);
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;
   };

@@ -23,7 +23,7 @@ async function checksFolder(checks: { name: string; query: string; severity?: st
   const store = await openStore(dir, { dataDir: path.join(dir, 'empty'), latheDataDir: null });
   const table = store.schema.tables.check;
   await store.close();
-  const rows: Row[] = checks.map((c, i) => ({ name: c.name, position: i + 1, severity: c.severity ?? 'warning', summary: `The ${c.name} check.`, explanation: 'A check made for this test. Fix what it reports.', query: c.query }));
+  const rows: Row[] = checks.map((c, i) => ({ name: c.name, domain_id: 'LA-CHK', position: i + 1, severity: c.severity ?? 'warning', summary: `The ${c.name} check.`, explanation: 'A check made for this test. Fix what it reports.', query: c.query }));
   mkdirSync(path.join(dir, 'data'));
   writeFileSync(path.join(dir, 'data', 'check.jsonl'), tableText(table, rows));
   return path.join(dir, 'data');
@@ -44,7 +44,7 @@ describe('checks', () => {
   it('LA-CHK-UC02-R01-T01 A new check needs only a new check row', async () => {
     const own = await build(adding(complete(), {
       check: [{
-        name: 'every-loan-command', product_id: 'EX', position: 1, severity: 'warning',
+        name: 'every-loan-command', product_id: 'EX', domain_id: 'LA-CHK', position: 1, severity: 'warning',
         summary: 'A made-up check, added with no change to the engine.', explanation: 'It reports each command of the Loan aggregate. Remove it.',
         query: "SELECT c.id AS record, 'Command ' || c.id || ' changes a loan.' AS message FROM command c JOIN entity e ON e.id = c.entity_id WHERE e.aggregate_id = 'EX-LEND-A1' ORDER BY c.id",
       }],
@@ -109,7 +109,7 @@ describe('checks', () => {
       const read = () => (existsSync(file) ? readFileSync(file, 'utf8') : null);
       const before = read();
       const add = async (query: string, severity = 'warning') => {
-        const error = await runCommand(store, ADD_CHECK, { name: 'house-rule', product_id: 'EX', position: 1, severity, summary: 'A house rule.', explanation: 'Made for this test. Fix what it reports.', query }).then(() => null, (e: unknown) => e);
+        const error = await runCommand(store, ADD_CHECK, { name: 'house-rule', product_id: 'EX', domain_id: 'LA-CHK', position: 1, severity, summary: 'A house rule.', explanation: 'Made for this test. Fix what it reports.', query }).then(() => null, (e: unknown) => e);
         expect(error, query).toBeInstanceOf(StoreError);
         return (error as StoreError).problems.map((p) => [p.rule, p.message]);
       };

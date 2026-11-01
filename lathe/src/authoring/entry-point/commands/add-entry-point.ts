@@ -1,18 +1,13 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EntryPointRow } from '../../../platform/data/tables.ts';
-import { ENTRY_POINT_SLICE } from '../model.ts';
 import { EntryPointRepository } from '../repository.ts';
+import { ADD_ENTRY_POINT_IDENTITY } from './identities.generated.ts';
 
 export type AddEntryPoint = Pick<EntryPointRow, 'id' | 'title' | 'domain_id' | 'file' | 'description'> & { packages?: string[]; meets?: string[] };
 
-export const ADD_ENTRY_POINT: CommandDefinition<AddEntryPoint> = {
-  id: 'LA-AUT-CMD150',
-  slice: ENTRY_POINT_SLICE,
-  name: 'add-entry-point',
-  description: 'Adds an entry point under its domain, with the packages it uses and the standard rules it meets.',
-  method: 'POST',
-  route: '/api/entry-point/add-entry-point',
+export const ADD_ENTRY_POINT = {
+  ...ADD_ENTRY_POINT_IDENTITY,
   input: {
     id: column('entry_point', 'id', 'required'),
     title: column('entry_point', 'title', 'required'),
@@ -23,7 +18,7 @@ export const ADD_ENTRY_POINT: CommandDefinition<AddEntryPoint> = {
     meets: ids('The standard rules it meets.', 'optional'),
   },
   handler: addEntryPoint,
-};
+} satisfies CommandDefinition<AddEntryPoint>;
 
 /** Adds the entry point, whole and new. */
 export function addEntryPoint(tx: Transaction, input: AddEntryPoint): void {

@@ -1,23 +1,18 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { COMMAND_SLICE } from '../model.ts';
 import { CommandRepository } from '../repository.ts';
+import { REMOVE_POLICY_TEST_IDENTITY } from './identities.generated.ts';
 
 /** The test to remove. */
 export type RemovePolicyTest = { id: string };
 
-export const REMOVE_POLICY_TEST: CommandDefinition<RemovePolicyTest> = {
-  id: 'LA-AUT-CMD254',
-  slice: COMMAND_SLICE,
-  name: 'remove-policy-test',
-  description: 'Removes a policy test with the links it starts. Refused while anything else references it, such as a business outcome it measures.',
-  method: 'POST',
-  route: '/api/command/remove-policy-test',
+export const REMOVE_POLICY_TEST = {
+  ...REMOVE_POLICY_TEST_IDENTITY,
   input: {
     id: column('policy_test', 'id', 'required'),
   },
   handler: removePolicyTest,
-};
+} satisfies CommandDefinition<RemovePolicyTest>;
 
 /** Removes the test from its policy. */
 export function removePolicyTest(tx: Transaction, input: RemovePolicyTest): void {

@@ -1,19 +1,15 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EventTypeRow } from '../../../platform/data/tables.ts';
-import { changed, DOMAIN_EVENT_SLICE } from '../model.ts';
+import { changed } from '../model.ts';
 import { DomainEventRepository } from '../repository.ts';
+import { CHANGE_EVENT_TYPE_IDENTITY } from './identities.generated.ts';
 
 /** The event type's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeEventType = Pick<EventTypeRow, 'id'> & { title?: string; delivery?: EventTypeRow['delivery'] | null; file?: string | null; meets?: string[]; packages?: string[] };
 
-export const CHANGE_EVENT_TYPE: CommandDefinition<ChangeEventType> = {
-  id: 'LA-AUT-CMD234',
-  slice: DOMAIN_EVENT_SLICE,
-  name: 'change-event-type',
-  description: "Changes an event type's title, delivery or file, or the standard rules it meets or the packages it uses (each list whole). Its event does not change.",
-  method: 'POST',
-  route: '/api/domain-event/change-event-type',
+export const CHANGE_EVENT_TYPE = {
+  ...CHANGE_EVENT_TYPE_IDENTITY,
   input: {
     id: column('event_type', 'id', 'required'),
     title: column('event_type', 'title', 'optional'),
@@ -23,7 +19,7 @@ export const CHANGE_EVENT_TYPE: CommandDefinition<ChangeEventType> = {
     packages: texts('The packages it uses. Replaces the list.', 'optional'),
   },
   handler: changeEventType,
-};
+} satisfies CommandDefinition<ChangeEventType>;
 
 /** Changes the event type's columns and links. */
 export function changeEventType(tx: Transaction, input: ChangeEventType): void {

@@ -1,16 +1,9 @@
 // The UI component aggregate (LA-AUT-A15): a UI component with the views it renders, the view requirements it builds,
 // the standard rules it meets and the packages it uses. A UI component has no owner: its product follows from its ID. One instance is one UI
 // component, whole; it holds only the links it starts.
-import type { Slice } from '../../platform/commands/definition.ts';
 import { bySource, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { UiComponentRow } from '../../platform/data/tables.ts';
-
-/** The aggregate's record ID in Lathe's own spec. */
-export const UI_COMPONENT_AGGREGATE = 'LA-AUT-A15';
-
-/** How the interfaces reach the aggregate's commands: `lathe ui-component`, the ui_component_ tools, /api/ui-component/. */
-export const UI_COMPONENT_SLICE: Slice = { aggregate: UI_COMPONENT_AGGREGATE, name: 'ui-component' };
 
 /**
  * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.

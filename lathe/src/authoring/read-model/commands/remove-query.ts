@@ -1,23 +1,18 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { READ_MODEL_SLICE } from '../model.ts';
 import { ReadModelRepository } from '../repository.ts';
+import { REMOVE_QUERY_IDENTITY } from './identities.generated.ts';
 
 /** The query to remove. */
 export type RemoveQuery = { id: string };
 
-export const REMOVE_QUERY: CommandDefinition<RemoveQuery> = {
-  id: 'LA-AUT-CMD290',
-  slice: READ_MODEL_SLICE,
-  name: 'remove-query',
-  description: 'Removes a query with its handler and the links they start. Refused while anything else references them, such as a flow step that invokes it or its endpoint.',
-  method: 'POST',
-  route: '/api/read-model/remove-query',
+export const REMOVE_QUERY = {
+  ...REMOVE_QUERY_IDENTITY,
   input: {
     id: column('query', 'id', 'required'),
   },
   handler: removeQuery,
-};
+} satisfies CommandDefinition<RemoveQuery>;
 
 /** Removes the query and its handler from their read model. */
 export function removeQuery(tx: Transaction, input: RemoveQuery): void {

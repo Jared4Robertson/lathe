@@ -13,7 +13,8 @@
     "reference": "node scripts/reference.ts",
     "schema": "node scripts/schema-types.ts",
     "build": "rm -rf dist && tsc -p tsconfig.build.json && npm run reference && npm --prefix ../app run build && cp -R ../plugin dist/plugin",
-    "prepack": "npm run build"
+    "prepack": "npm run build",
+    "generate": "node scripts/generate.ts"
   },
   "dependencies": {
     "@duckdb/node-api": "^2.0.0-r.1"
@@ -24,7 +25,7 @@
     "typescript": "^7.0.2",
     "vitest": "^4.0.0"
   },
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Organize a product's lifecycle as checked, traceable records.",
   "types": "dist/src/index.d.ts",
   "bin": {

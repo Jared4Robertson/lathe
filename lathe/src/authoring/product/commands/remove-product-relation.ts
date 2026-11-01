@@ -1,26 +1,22 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ProductRelationRow } from '../../../platform/data/tables.ts';
-import { PRODUCT_SLICE, relationKey } from '../model.ts';
+import { relationKey } from '../model.ts';
 import { ProductRepository } from '../repository.ts';
+import { REMOVE_PRODUCT_RELATION_IDENTITY } from './identities.generated.ts';
 
 /** The product relation pair to remove. */
 export type RemoveProductRelation = Pick<ProductRelationRow, 'name' | 'source_kind' | 'target_kind'>;
 
-export const REMOVE_PRODUCT_RELATION: CommandDefinition<RemoveProductRelation> = {
-  id: 'LA-AUT-CMD127',
-  slice: PRODUCT_SLICE,
-  name: 'remove-product-relation',
-  description: 'Removes a product relation pair. Refused while a link of the pair is left.',
-  method: 'POST',
-  route: '/api/product/remove-product-relation',
+export const REMOVE_PRODUCT_RELATION = {
+  ...REMOVE_PRODUCT_RELATION_IDENTITY,
   input: {
     name: column('product_relation', 'name', 'required'),
     source_kind: column('product_relation', 'source_kind', 'required'),
     target_kind: column('product_relation', 'target_kind', 'required'),
   },
   handler: removeProductRelation,
-};
+} satisfies CommandDefinition<RemoveProductRelation>;
 
 /** Removes the pair from the product that declares it. */
 export function removeProductRelation(tx: Transaction, input: RemoveProductRelation): void {

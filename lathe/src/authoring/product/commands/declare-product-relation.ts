@@ -1,20 +1,16 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ProductRelationRow } from '../../../platform/data/tables.ts';
-import { PRODUCT_SLICE, relationKey } from '../model.ts';
+import { relationKey } from '../model.ts';
 import { ProductRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { DECLARE_PRODUCT_RELATION_IDENTITY } from './identities.generated.ts';
 
 /** A new product relation pair. */
 export type DeclareProductRelation = Pick<ProductRelationRow, 'name' | 'source_kind' | 'target_kind' | 'product_id' | 'role' | 'forward_label' | 'reverse_label' | 'description'>;
 
-export const DECLARE_PRODUCT_RELATION: CommandDefinition<DeclareProductRelation> = {
-  id: 'LA-AUT-CMD125',
-  slice: PRODUCT_SLICE,
-  name: 'declare-product-relation',
-  description: "Declares a pair of kinds a relation of the product's own may link: a new name gets its own link table, a name Lathe has gains the pair.",
-  method: 'POST',
-  route: '/api/product/declare-product-relation',
+export const DECLARE_PRODUCT_RELATION = {
+  ...DECLARE_PRODUCT_RELATION_IDENTITY,
   input: {
     name: column('product_relation', 'name', 'required'),
     source_kind: column('product_relation', 'source_kind', 'required'),
@@ -26,7 +22,7 @@ export const DECLARE_PRODUCT_RELATION: CommandDefinition<DeclareProductRelation>
     description: column('product_relation', 'description', 'required'),
   },
   handler: declareProductRelation,
-};
+} satisfies CommandDefinition<DeclareProductRelation>;
 
 /** Adds the relation pair to the product that declares it. */
 export function declareProductRelation(tx: Transaction, input: DeclareProductRelation): void {

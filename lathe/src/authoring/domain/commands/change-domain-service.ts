@@ -1,27 +1,23 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { DomainServiceRow } from '../../../platform/data/tables.ts';
-import { DOMAIN_SLICE, changed } from '../model.ts';
+import { changed } from '../model.ts';
 import { DomainRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_DOMAIN_SERVICE_IDENTITY } from './identities.generated.ts';
 
 /** The domain service's changes: a column given is set. */
 export type ChangeDomainService = Pick<DomainServiceRow, 'id'> & { title?: DomainServiceRow['title']; statement?: DomainServiceRow['statement'] };
 
-export const CHANGE_DOMAIN_SERVICE: CommandDefinition<ChangeDomainService> = {
-  id: 'LA-AUT-CMD170',
-  slice: DOMAIN_SLICE,
-  name: 'change-domain-service',
-  description: "Changes a domain service's title or statement.",
-  method: 'POST',
-  route: '/api/domain/change-domain-service',
+export const CHANGE_DOMAIN_SERVICE = {
+  ...CHANGE_DOMAIN_SERVICE_IDENTITY,
   input: {
     id: column('domain_service', 'id', 'required'),
     title: column('domain_service', 'title', 'optional'),
     statement: column('domain_service', 'statement', 'optional'),
   },
   handler: changeDomainService,
-};
+} satisfies CommandDefinition<ChangeDomainService>;
 
 /** Changes the domain service's columns. */
 export function changeDomainService(tx: Transaction, input: ChangeDomainService): void {

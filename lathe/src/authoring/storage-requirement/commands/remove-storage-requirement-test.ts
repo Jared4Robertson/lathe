@@ -1,23 +1,18 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { STORAGE_REQUIREMENT_SLICE } from '../model.ts';
 import { StorageRequirementRepository } from '../repository.ts';
+import { REMOVE_STORAGE_REQUIREMENT_TEST_IDENTITY } from './identities.generated.ts';
 
 /** The storage requirement test to remove. */
 export type RemoveStorageRequirementTest = { id: string };
 
-export const REMOVE_STORAGE_REQUIREMENT_TEST: CommandDefinition<RemoveStorageRequirementTest> = {
-  id: 'LA-AUT-CMD365',
-  slice: STORAGE_REQUIREMENT_SLICE,
-  name: 'remove-storage-requirement-test',
-  description: 'Removes a storage requirement test with the links it starts. Refused while anything references it, such as a business outcome it measures.',
-  method: 'POST',
-  route: '/api/storage-requirement/remove-storage-requirement-test',
+export const REMOVE_STORAGE_REQUIREMENT_TEST = {
+  ...REMOVE_STORAGE_REQUIREMENT_TEST_IDENTITY,
   input: {
     id: column('storage_requirement_test', 'id', 'required'),
   },
   handler: removeStorageRequirementTest,
-};
+} satisfies CommandDefinition<RemoveStorageRequirementTest>;
 
 /** Removes the test from its storage requirement. */
 export function removeStorageRequirementTest(tx: Transaction, input: RemoveStorageRequirementTest): void {

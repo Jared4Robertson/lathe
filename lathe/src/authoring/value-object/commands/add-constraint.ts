@@ -1,19 +1,14 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ConstraintRow } from '../../../platform/data/tables.ts';
-import { VALUE_OBJECT_SLICE } from '../model.ts';
 import { ValueObjectRepository } from '../repository.ts';
+import { ADD_CONSTRAINT_IDENTITY } from './identities.generated.ts';
 
 /** A new constraint. */
 export type AddConstraint = Pick<ConstraintRow, 'id' | 'title' | 'value_object_id' | 'statement'>;
 
-export const ADD_CONSTRAINT: CommandDefinition<AddConstraint> = {
-  id: 'LA-AUT-CMD273',
-  slice: VALUE_OBJECT_SLICE,
-  name: 'add-constraint',
-  description: 'Adds a constraint to its value object: a rule each value is held to when it is created.',
-  method: 'POST',
-  route: '/api/value-object/add-constraint',
+export const ADD_CONSTRAINT = {
+  ...ADD_CONSTRAINT_IDENTITY,
   input: {
     id: column('constraint', 'id', 'required'),
     title: column('constraint', 'title', 'required'),
@@ -21,7 +16,7 @@ export const ADD_CONSTRAINT: CommandDefinition<AddConstraint> = {
     statement: column('constraint', 'statement', 'required'),
   },
   handler: addConstraint,
-};
+} satisfies CommandDefinition<AddConstraint>;
 
 /** Adds the constraint to its value object. */
 export function addConstraint(tx: Transaction, input: AddConstraint): void {

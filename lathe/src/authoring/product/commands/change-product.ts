@@ -1,20 +1,16 @@
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ProductRow } from '../../../platform/data/tables.ts';
-import { PRODUCT_SLICE, changed, rolesOf, type RoleInput } from '../model.ts';
+import { changed, rolesOf, type RoleInput } from '../model.ts';
 import { ProductRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_PRODUCT_IDENTITY } from './identities.generated.ts';
 
 /** The product's changes: a column given is set, null clears an optional one; roles, when given, replace the list. */
 export type ChangeProduct = Pick<ProductRow, 'id'> & { title?: string; description?: string; icon?: string | null; color?: string | null; notes?: string | null; roles?: RoleInput[] };
 
-export const CHANGE_PRODUCT: CommandDefinition<ChangeProduct> = {
-  id: 'LA-AUT-CMD121',
-  slice: PRODUCT_SLICE,
-  name: 'change-product',
-  description: "Changes a product's title, description, icon, color or notes, or its roles (the whole list).",
-  method: 'POST',
-  route: '/api/product/change-product',
+export const CHANGE_PRODUCT = {
+  ...CHANGE_PRODUCT_IDENTITY,
   input: {
     id: column('product', 'id', 'required'),
     title: column('product', 'title', 'optional'),
@@ -25,7 +21,7 @@ export const CHANGE_PRODUCT: CommandDefinition<ChangeProduct> = {
     roles: parts('role', ['name', 'description'], 'The roles its records name, such as Owner or Librarian, each with its name and description. Replaces the list.', 'optional'),
   },
   handler: changeProduct,
-};
+} satisfies CommandDefinition<ChangeProduct>;
 
 /** Changes the product's own columns and roles. */
 export function changeProduct(tx: Transaction, input: ChangeProduct): void {

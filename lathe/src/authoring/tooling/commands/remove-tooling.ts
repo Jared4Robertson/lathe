@@ -1,23 +1,18 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { TOOLING_SLICE } from '../model.ts';
 import { ToolingRepository } from '../repository.ts';
+import { REMOVE_TOOLING_IDENTITY } from './identities.generated.ts';
 
 /** The tooling record to remove. */
 export type RemoveTooling = { id: string };
 
-export const REMOVE_TOOLING: CommandDefinition<RemoveTooling> = {
-  id: 'LA-AUT-CMD157',
-  slice: TOOLING_SLICE,
-  name: 'remove-tooling',
-  description: 'Removes a tooling record whole, with the packages it names and the links it starts. Refused while anything references it.',
-  method: 'POST',
-  route: '/api/tooling/remove-tooling',
+export const REMOVE_TOOLING = {
+  ...REMOVE_TOOLING_IDENTITY,
   input: {
     id: column('tooling', 'id', 'required'),
   },
   handler: removeTooling,
-};
+} satisfies CommandDefinition<RemoveTooling>;
 
 /** Removes the tooling record whole. */
 export function removeTooling(tx: Transaction, input: RemoveTooling): void {

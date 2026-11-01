@@ -1,19 +1,14 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { DataModelRow } from '../../../platform/data/tables.ts';
-import { AGGREGATE_SLICE } from '../model.ts';
 import { AggregateRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_DATA_MODEL_IDENTITY } from './identities.generated.ts';
 
 export type AddDataModel = Pick<DataModelRow, 'id' | 'title' | 'entity_id' | 'file'> & { meets?: string[]; packages?: string[] };
 
-export const ADD_DATA_MODEL: CommandDefinition<AddDataModel> = {
-  id: 'LA-AUT-CMD219',
-  slice: AGGREGATE_SLICE,
-  name: 'add-data-model',
-  description: 'Adds the data model of an entity of the aggregate: its name in code and its file, with the standard rules it meets and the packages it uses.',
-  method: 'POST',
-  route: '/api/aggregate/add-data-model',
+export const ADD_DATA_MODEL = {
+  ...ADD_DATA_MODEL_IDENTITY,
   input: {
     id: column('data_model', 'id', 'required'),
     title: column('data_model', 'title', 'required'),
@@ -23,7 +18,7 @@ export const ADD_DATA_MODEL: CommandDefinition<AddDataModel> = {
     packages: texts('The packages it uses, each listed in one of the product\'s package.json files.', 'optional'),
   },
   handler: addDataModel,
-};
+} satisfies CommandDefinition<AddDataModel>;
 
 export function addDataModel(tx: Transaction, input: AddDataModel): void {
   const aggregates = new AggregateRepository(tx);

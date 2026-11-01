@@ -2,15 +2,8 @@
 // storage, memory), under its product or one of its domains, with the integration that reaches it when it is a service
 // someone else runs. The repositories, readers and tables stored in it name it themselves (stored_in, which their own
 // aggregates start). One instance is one data store, whole; it holds only the link its own record starts.
-import type { Slice } from '../../platform/commands/definition.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { DataStoreRow } from '../../platform/data/tables.ts';
-
-/** The aggregate's record ID in Lathe's own spec. */
-export const DATA_STORE_AGGREGATE = 'LA-AUT-A23';
-
-/** How the interfaces reach the aggregate's commands: `lathe data-store`, the data_store_ tools, /api/data-store/. */
-export const DATA_STORE_SLICE: Slice = { aggregate: DATA_STORE_AGGREGATE, name: 'data-store' };
 
 /**
  * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.

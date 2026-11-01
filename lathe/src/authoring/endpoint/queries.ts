@@ -2,12 +2,13 @@
 // which the query runner gives each handler: an endpoint whole as its page reads it, the endpoints of a command or
 // query, and the next free ID for a record of one of its kinds. A handler never sees the data, a repository or the
 // aggregate's model; each changes nothing.
-import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { ENDPOINT_SLICE, type EndpointKind } from './model.ts';
+import { type EndpointKind } from './model.ts';
 import type { EndpointPage, EndpointSummary } from './read-model.ts';
 import { endpointReader, type EndpointReader } from './reader.ts';
+import { GET_ENDPOINT_IDENTITY, LIST_ENDPOINTS_IDENTITY, NEXT_ENDPOINT_ID_IDENTITY } from './queries.generated.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
@@ -23,12 +24,7 @@ export function getEndpoint(reader: EndpointReader, input: { id: string }): Endp
 
 /** GET an endpoint whole (LA-AUT-QRY194). */
 export const GET_ENDPOINT: QueryDefinition<{ id: string }, EndpointPage, EndpointReader> = {
-  id: 'LA-AUT-QRY194',
-  slice: ENDPOINT_SLICE,
-  name: 'get-endpoint',
-  method: 'GET',
-  route: '/api/endpoint/get-endpoint',
-  description: "Reads an endpoint whole as its page shows it, by its ID or the ID of any record in it: the record asked for and its kind, the endpoint's row, its handler (with the standard rules it meets and the packages it uses), and its API requirements by ID, each with its tests (with the test data sets they start from).",
+  ...GET_ENDPOINT_IDENTITY,
   input: { id: id('The endpoint, or an API requirement, endpoint handler or endpoint test in it.', 'required') },
   reader: endpointReader,
   run: getEndpoint,
@@ -42,12 +38,7 @@ export function listEndpoints(reader: EndpointReader, input: { parent: string })
 
 /** List the endpoints of a command or query (LA-AUT-QRY195). */
 export const LIST_ENDPOINTS: QueryDefinition<{ parent: string }, EndpointSummary[], EndpointReader> = {
-  id: 'LA-AUT-QRY195',
-  slice: ENDPOINT_SLICE,
-  name: 'list-endpoints',
-  method: 'GET',
-  route: '/api/endpoint/list-endpoints',
-  description: 'Lists the endpoints that expose a command or query, by ID, with their titles.',
+  ...LIST_ENDPOINTS_IDENTITY,
   input: { parent: id('The command or query.', 'required') },
   reader: endpointReader,
   run: listEndpoints,
@@ -84,12 +75,7 @@ export function nextEndpointId(reader: EndpointReader, input: { kind: string; pa
 
 /** Get the next ID in an endpoint (LA-AUT-QRY196). */
 export const NEXT_ENDPOINT_ID: QueryDefinition<{ kind: string; parent: string }, string, EndpointReader> = {
-  id: 'LA-AUT-QRY196',
-  slice: ENDPOINT_SLICE,
-  name: 'next-id',
-  method: 'GET',
-  route: '/api/endpoint/next-id',
-  description: 'The next free ID for an endpoint (under a command or query), an API requirement or endpoint handler (under an endpoint) or an endpoint test (under an API requirement): one past the highest in use.',
+  ...NEXT_ENDPOINT_ID_IDENTITY,
   input: {
     kind: id('The kind: endpoint, api_requirement, endpoint_handler or endpoint_test.', 'required'),
     parent: id('The record it will sit under.', 'required'),
@@ -115,6 +101,3 @@ function endpointText(page: EndpointPage): string {
   }
   return lines.join('\n');
 }
-
-/** The Endpoint aggregate's queries, as the CLI and the MCP server register them. */
-export const ENDPOINT_QUERIES: readonly AnyQuery[] = [GET_ENDPOINT, LIST_ENDPOINTS, NEXT_ENDPOINT_ID];

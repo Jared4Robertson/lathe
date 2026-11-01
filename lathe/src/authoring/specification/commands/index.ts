@@ -1,4 +1,4 @@
-// The Specification aggregate's commands, as the CLI, the MCP server and the HTTP API register them.
+// Generated from data/ by `npm run generate`. Do not edit.
 import type { AnyCommand } from '../../../platform/commands/definition.ts';
 import { ADD_SPECIFICATION } from './add-specification.ts';
 import { CHANGE_SPECIFICATION } from './change-specification.ts';
@@ -10,7 +10,7 @@ import { ADD_SPECIFICATION_TEST } from './add-specification-test.ts';
 import { CHANGE_SPECIFICATION_TEST } from './change-specification-test.ts';
 import { REMOVE_SPECIFICATION_TEST } from './remove-specification-test.ts';
 
-export const SPECIFICATION_COMMANDS: readonly AnyCommand[] = [
+export const SPECIFICATION_COMMANDS = [
   ADD_SPECIFICATION,
   CHANGE_SPECIFICATION,
   REMOVE_SPECIFICATION,
@@ -20,4 +20,4 @@ export const SPECIFICATION_COMMANDS: readonly AnyCommand[] = [
   ADD_SPECIFICATION_TEST,
   CHANGE_SPECIFICATION_TEST,
   REMOVE_SPECIFICATION_TEST,
-];
+] as const satisfies readonly AnyCommand[];

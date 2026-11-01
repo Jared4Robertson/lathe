@@ -1,23 +1,18 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { DOMAIN_SLICE } from '../model.ts';
 import { DomainRepository } from '../repository.ts';
+import { REMOVE_DOMAIN_SERVICE_IDENTITY } from './identities.generated.ts';
 
 /** The domain service to remove. */
 export type RemoveDomainService = { id: string };
 
-export const REMOVE_DOMAIN_SERVICE: CommandDefinition<RemoveDomainService> = {
-  id: 'LA-AUT-CMD171',
-  slice: DOMAIN_SLICE,
-  name: 'remove-domain-service',
-  description: 'Removes a domain service with its service and tests and the links they start. Refused while a command or query calls it, or anything else references it or them.',
-  method: 'POST',
-  route: '/api/domain/remove-domain-service',
+export const REMOVE_DOMAIN_SERVICE = {
+  ...REMOVE_DOMAIN_SERVICE_IDENTITY,
   input: {
     id: column('domain_service', 'id', 'required'),
   },
   handler: removeDomainService,
-};
+} satisfies CommandDefinition<RemoveDomainService>;
 
 /** Removes the domain service, its service and its tests from its domain. */
 export function removeDomainService(tx: Transaction, input: RemoveDomainService): void {

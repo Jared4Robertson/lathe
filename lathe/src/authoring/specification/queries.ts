@@ -2,12 +2,13 @@
 // (reader.ts), which the query runner gives each handler: a specification whole as its page reads it, the
 // specifications of a domain, and the next free ID for a record of one of its kinds. A handler never sees the data, a
 // repository or the aggregate's model; each changes nothing.
-import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { SPECIFICATION_SLICE, type SpecificationKind } from './model.ts';
+import { type SpecificationKind } from './model.ts';
 import type { SpecificationPage, SpecificationSummary } from './read-model.ts';
 import { specificationReader, type SpecificationReader } from './reader.ts';
+import { GET_SPECIFICATION_IDENTITY, LIST_SPECIFICATIONS_IDENTITY, NEXT_SPECIFICATION_ID_IDENTITY } from './queries.generated.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
@@ -23,12 +24,7 @@ export function getSpecification(reader: SpecificationReader, input: { id: strin
 
 /** GET a specification whole (LA-AUT-QRY170). */
 export const GET_SPECIFICATION: QueryDefinition<{ id: string }, SpecificationPage, SpecificationReader> = {
-  id: 'LA-AUT-QRY170',
-  slice: SPECIFICATION_SLICE,
-  name: 'get-specification',
-  description: 'Reads a specification whole as its page shows it, by its ID or the ID of its predicate or test: the record asked for and its kind, the specification\'s row and the domain its ID names, the aggregates it reads, its predicate with the standard rules it meets and the packages it uses, and its test with the test data sets it starts from.',
-  method: 'GET',
-  route: '/api/specification/get-specification',
+  ...GET_SPECIFICATION_IDENTITY,
   input: { id: id('The specification, or its predicate or test.', 'required') },
   reader: specificationReader,
   run: getSpecification,
@@ -42,18 +38,12 @@ export function listSpecifications(reader: SpecificationReader, input: { domain_
 
 /** List the specifications of a domain (LA-AUT-QRY171). */
 export const LIST_SPECIFICATIONS: QueryDefinition<{ domain_id: string }, SpecificationSummary[], SpecificationReader> = {
-  id: 'LA-AUT-QRY171',
-  slice: SPECIFICATION_SLICE,
-  name: 'list-specifications',
-  description: 'Lists the specifications of a domain (those whose ID names it), by ID, with their titles.',
-  method: 'GET',
-  route: '/api/specification/list-specifications',
+  ...LIST_SPECIFICATIONS_IDENTITY,
   input: { domain_id: id('The domain.', 'required') },
   reader: specificationReader,
   run: listSpecifications,
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No specifications.'),
 };
-
 
 /** The kinds of the aggregate with an ID under a parent; how each is written the schema says (`idShape`). */
 const KINDS: readonly string[] = ['specification', 'predicate', 'specification_test'];
@@ -79,12 +69,7 @@ export function nextSpecificationId(reader: SpecificationReader, input: { kind: 
 
 /** Get the next ID for a record of the Specification aggregate (LA-AUT-QRY172). */
 export const NEXT_SPECIFICATION_ID: QueryDefinition<{ kind: string; parent: string }, string, SpecificationReader> = {
-  id: 'LA-AUT-QRY172',
-  slice: SPECIFICATION_SLICE,
-  name: 'next-id',
-  description: 'The next free ID for a specification (under its domain: one past the highest in use), or the one ID of a predicate or specification test (under its specification).',
-  method: 'GET',
-  route: '/api/specification/next-id',
+  ...NEXT_SPECIFICATION_ID_IDENTITY,
   input: {
     kind: id('The kind: specification, predicate or specification_test.', 'required'),
     parent: id('The record it will sit under: a domain for a specification, else the specification.', 'required'),
@@ -106,6 +91,3 @@ function specificationText(page: SpecificationPage): string {
   if (test) lines.push(`Specification test ${test.id}: ${test.title} (${test.level}, ${test.state})${listed(test.startsFrom.map((x) => `starts from ${x}`))}`);
   return lines.join('\n');
 }
-
-/** The Specification aggregate's queries, as the CLI and the MCP server register them. */
-export const SPECIFICATION_QUERIES: readonly AnyQuery[] = [GET_SPECIFICATION, LIST_SPECIFICATIONS, NEXT_SPECIFICATION_ID];

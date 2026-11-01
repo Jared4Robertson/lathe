@@ -3,14 +3,14 @@ import type { DomainEventKind } from '../../../../lathe/src/authoring/domain-eve
 import type { DomainEventPage } from '../../../../lathe/src/authoring/domain-event/read-model';
 import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
-import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
+import { addInput, addOrChangeFields, changeInput, CommandForm, draftOf, emptyDraft, Fields, LONG, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
-import { useWriter, type Writer } from '../../edit/write';
+import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendDomainEvent, type DomainEventCommands, type DomainEventRoute } from './commands';
+import { DOMAIN_EVENT_FIELDS } from './fields.generated';
 import { useNextDomainEventId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -28,26 +28,13 @@ function choices(index: RecordIndex, product: string, kinds: readonly string[]):
   return [...index.byId.values()].filter((r) => kinds.includes(r.kind) && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 }
 
-/** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order. */
+/** The fields each kind's Add and Change take, from their inputs; the hints add long text and the choices. */
 function fieldsOf(index: RecordIndex, product: string, kind: DomainEventKind, adding: boolean): FieldSpec[] {
-  const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
+  const F = DOMAIN_EVENT_FIELDS;
   if (kind === 'domain_event') {
-    return [
-      ...id('domain_event'),
-      { field: 'title', column: 'title', table: 'domain_event' },
-      { field: 'published', column: 'published', table: 'domain_event' },
-      { field: 'description', column: 'description', table: 'domain_event', long: true },
-      { field: 'fields', label: 'Fields', description: 'The fields it carries in order, each a name, what it means, exactly one type (a basic type, a value object or an aggregate), whether it is required, and its column and an example when they help. The list replaces its fields.', table: 'event_field', columns: ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'] },
-    ];
+    return addOrChangeFields(adding, F['/api/domain-event/add-domain-event'], 'aggregate_id', F['/api/domain-event/change-domain-event'], { description: LONG });
   }
-  return [
-    ...id('event_type'),
-    { field: 'title', column: 'title', table: 'event_type' },
-    { field: 'delivery', column: 'delivery', table: 'event_type' },
-    { field: 'file', column: 'file', table: 'event_type' },
-    { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: choices(index, product, ['standard_rule']) },
-    { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files, one per line.', texts: true },
-  ];
+  return addOrChangeFields(adding, F['/api/domain-event/add-event-type'], 'domain_event_id', F['/api/domain-event/change-event-type'], { meets: { choices: choices(index, product, ['standard_rule']) } });
 }
 
 /** The record's current values, by its input's field names: its row's columns, its parts and the links it starts. */
@@ -57,26 +44,26 @@ function currentOf(page: DomainEventPage, kind: DomainEventKind): Record<string,
   return { ...t.eventType, meets: t.meets, packages: t.packages };
 }
 
-/** Each kind's Change command, and the fields it may clear with null. */
-const CHANGE: Record<DomainEventKind, { route: DomainEventRoute; clearable: readonly string[] }> = {
-  domain_event: { route: '/api/domain-event/change-domain-event', clearable: [] },
-  event_type: { route: '/api/domain-event/change-event-type', clearable: ['delivery', 'file'] },
+/** Each kind's Change command. */
+const CHANGE: Record<DomainEventKind, CommandRoute> = {
+  domain_event: '/api/domain-event/change-domain-event',
+  event_type: '/api/domain-event/change-event-type',
 };
 
 /** Each kind's Add command, and the field that names its parent. */
-const ADD: Record<DomainEventKind, { route: DomainEventRoute; parent: string }> = {
+const ADD: Record<DomainEventKind, { route: CommandRoute; parent: string }> = {
   domain_event: { route: '/api/domain-event/add-domain-event', parent: 'aggregate_id' },
   event_type: { route: '/api/domain-event/add-event-type', parent: 'domain_event_id' },
 };
 
 /** Each kind's Remove command. */
-const REMOVE: Record<DomainEventKind, DomainEventRoute> = {
+const REMOVE: Record<DomainEventKind, CommandRoute> = {
   domain_event: '/api/domain-event/remove-domain-event',
   event_type: '/api/domain-event/remove-event-type',
 };
 
 /** Sends a command whose input this form has built to its kind's shape: the route names the type it takes. */
-const send = (writer: Writer, route: DomainEventRoute, input: Record<string, unknown>): Promise<WriteAnswer> => sendDomainEvent(writer, route, input as unknown as DomainEventCommands[typeof route]);
+const send = (writer: Writer, route: CommandRoute, input: Record<string, unknown>): Promise<WriteAnswer> => writer.command(route, input as unknown as CommandInputs[typeof route]);
 
 type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add' } | { mode: 'remove' };
 
@@ -98,9 +85,9 @@ export function DomainEventEditor({ index, page, children }: { index: RecordInde
     const specs = fieldsOf(index, product, kind, false);
     const current = currentOf(page, kind);
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, specs, draft, current, { id }, CHANGE[kind].clearable);
+      const input = changeInput(index, specs, draft, current, { id });
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
-      const answer = await send(writer, CHANGE[kind].route, input);
+      const answer = await send(writer, CHANGE[kind], input);
       if (answer.ok) { announce(`Saved ${id}`); back(); }
       return answer;
     };
@@ -119,7 +106,7 @@ export function DomainEventEditor({ index, page, children }: { index: RecordInde
       {mode.mode === 'remove' && (
         <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={kind === 'domain_event' && page.eventType ? [page.eventType.eventType.id] : []}
           then={addressOf(kind === 'domain_event' ? page.event.aggregate_id : page.event.id)} onCancel={back}
-          remove={() => sendDomainEvent(writer, REMOVE[kind], { id })} />
+          remove={() => writer.command(REMOVE[kind], { id })} />
       )}
       {children}
     </>

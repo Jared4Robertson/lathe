@@ -2,16 +2,12 @@
 // packages it uses) and its integration tests (with the test data sets each starts from). An integration has no
 // owner: its product follows from its ID. One instance is one integration, whole; it holds only the links its own
 // records start.
-import type { Slice } from '../../platform/commands/definition.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { AdapterRow, IntegrationRow, IntegrationTestRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const INTEGRATION_AGGREGATE = 'LA-AUT-A14';
-
-/** How the interfaces reach the aggregate's commands: `lathe integration`, the integration_ tools, /api/integration/. */
-export const INTEGRATION_SLICE: Slice = { aggregate: INTEGRATION_AGGREGATE, name: 'integration' };
 
 /**
  * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.

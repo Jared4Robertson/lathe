@@ -1,18 +1,13 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { StorageRequirementTestRow } from '../../../platform/data/tables.ts';
-import { STORAGE_REQUIREMENT_SLICE } from '../model.ts';
 import { StorageRequirementRepository } from '../repository.ts';
+import { ADD_STORAGE_REQUIREMENT_TEST_IDENTITY } from './identities.generated.ts';
 
 export type AddStorageRequirementTest = Pick<StorageRequirementTestRow, 'id' | 'title' | 'storage_requirement_id' | 'level' | 'state' | 'when' | 'then' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'notes'> & { starts_from?: string[] };
 
-export const ADD_STORAGE_REQUIREMENT_TEST: CommandDefinition<AddStorageRequirementTest> = {
-  id: 'LA-AUT-CMD363',
-  slice: STORAGE_REQUIREMENT_SLICE,
-  name: 'add-storage-requirement-test',
-  description: 'Adds a storage requirement test under its storage requirement, with the test data sets it starts from.',
-  method: 'POST',
-  route: '/api/storage-requirement/add-storage-requirement-test',
+export const ADD_STORAGE_REQUIREMENT_TEST = {
+  ...ADD_STORAGE_REQUIREMENT_TEST_IDENTITY,
   input: {
     id: column('storage_requirement_test', 'id', 'required'),
     title: column('storage_requirement_test', 'title', 'required'),
@@ -30,7 +25,7 @@ export const ADD_STORAGE_REQUIREMENT_TEST: CommandDefinition<AddStorageRequireme
     starts_from: ids('The test data sets it starts from.', 'optional'),
   },
   handler: addStorageRequirementTest,
-};
+} satisfies CommandDefinition<AddStorageRequirementTest>;
 
 export function addStorageRequirementTest(tx: Transaction, input: AddStorageRequirementTest): void {
   const requirements = new StorageRequirementRepository(tx);

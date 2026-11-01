@@ -3,16 +3,16 @@ import type { ReadModelKind } from '../../../../lathe/src/authoring/read-model/m
 import type { ReadModelPage } from '../../../../lathe/src/authoring/read-model/read-model';
 import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
-import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
+import { addInput, addOrChangeFields, changeInput, CommandForm, draftOf, emptyDraft, Fields, formFields, LONG, RemoveQuestion, type Draft, type FieldSpec, type InputFields } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
 import { AddMenu } from '../../edit/AddMenu';
-import { useWriter, type Writer } from '../../edit/write';
+import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { adderOf, othersAddedUnder } from '../../record/pages';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendReadModel, type ReadModelCommands, type ReadModelRoute } from './commands';
+import { READ_MODEL_FIELDS } from './fields.generated';
 import { useNextReadModelId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -30,45 +30,36 @@ import { kindWord } from '../../platform/meta-model/reads';
 type Inside = Exclude<ReadModelKind, 'read_model'>;
 type Code = 'projection' | 'reader' | 'query_handler';
 
-/** The columns of a field the form takes, in the command's order. */
-const FIELD_COLUMNS = ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'];
-
 /** The records of the domain of a kind, as choices. */
 const choices = (index: RecordIndex, domain: string, kind: string): Choice[] =>
   [...index.byId.values()].filter((r) => r.kind === kind && r.domain === domain).map((r) => ({ id: r.id, title: r.title }));
 
-/** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order; packages are one per line. */
+/** The fields each kind's Add and Change take, from their inputs; the hints add long text and the choices. */
 function fieldsOf(index: RecordIndex, domain: string, kind: ReadModelKind, adding: boolean): FieldSpec[] {
-  const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
-  const code = (table: Code): FieldSpec[] => [
-    ...id(table),
-    { field: 'title', column: 'title', table },
-    { field: 'file', column: 'file', table },
-    { field: 'description', column: 'description', table, long: true },
-    { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: [...index.byId.values()].filter((r) => r.kind === 'standard_rule' && r.product === index.byId.get(domain)?.product).map((r) => ({ id: r.id, title: r.title })) },
-    { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files, one per line.', texts: true },
-  ];
+  const F = READ_MODEL_FIELDS;
+  const product = index.byId.get(domain)?.product;
+  const ofProduct = (k: string): Choice[] => [...index.byId.values()].filter((r) => r.kind === k && r.product === product).map((r) => ({ id: r.id, title: r.title }));
+  // A piece of code: the field that names its parent and the fields its form leaves out go in `without`.
+  const code = (add: InputFields, parent: string, change: InputFields, leftOut: readonly string[] = []): FieldSpec[] => {
+    const hints = { description: LONG, meets: { choices: ofProduct('standard_rule') } };
+    return adding ? formFields(add, [parent, ...leftOut], hints) : formFields(change, ['id', ...leftOut], hints);
+  };
   switch (kind) {
     case 'read_model':
-      return [
-        ...id('read_model'),
-        { field: 'title', column: 'title', table: 'read_model' },
-        { field: 'description', column: 'description', table: 'read_model', long: true },
-        { field: 'fields', label: 'Fields', description: 'Its fields, in order. The list replaces its fields.', table: 'read_model_field', columns: FIELD_COLUMNS },
-        { field: 'reads', label: 'Reads', description: 'The aggregates of its domain it reads.', many: choices(index, domain, 'aggregate') },
-        { field: 'calls', label: 'Calls', description: 'The domain services its projection calls.', many: choices(index, domain, 'domain_service') },
-        { field: 'fed_by', label: 'Fed by', description: 'The events that keep it current.', many: [...index.byId.values()].filter((r) => r.kind === 'domain_event' && r.product === index.byId.get(domain)?.product).map((r) => ({ id: r.id, title: r.title })) },
-      ];
+      return addOrChangeFields(adding, F['/api/read-model/add-read-model'], 'domain_id', F['/api/read-model/change-read-model'], {
+        description: LONG, reads: { choices: choices(index, domain, 'aggregate') }, calls: { choices: choices(index, domain, 'domain_service') }, fed_by: { choices: ofProduct('domain_event') },
+      });
     case 'query':
-      return [
-        ...id('query'),
-        { field: 'title', column: 'title', table: 'query' },
-        { field: 'description', column: 'description', table: 'query', long: true },
-        { field: 'selects_by', label: 'Selects by', description: 'The specifications of its domain it selects by.', many: choices(index, domain, 'specification') },
-        { field: 'calls', label: 'Calls', description: 'The domain services of its domain it calls.', many: choices(index, domain, 'domain_service') },
-      ];
-    default:
-      return code(kind);
+      return addOrChangeFields(adding, F['/api/read-model/add-query'], 'read_model_id', F['/api/read-model/change-query'], {
+        description: LONG, selects_by: { choices: choices(index, domain, 'specification') }, calls: { choices: choices(index, domain, 'domain_service') },
+      });
+    case 'projection':
+      return code(F['/api/read-model/add-projection'], 'read_model_id', F['/api/read-model/change-projection']);
+    case 'reader':
+      // The data store a reader reads in is not set from this form.
+      return code(F['/api/read-model/add-reader'], 'read_model_id', F['/api/read-model/change-reader'], ['stored_in']);
+    case 'query_handler':
+      return code(F['/api/read-model/add-query-handler'], 'query_id', F['/api/read-model/change-query-handler']);
   }
 }
 
@@ -99,17 +90,17 @@ function currentOf(page: ReadModelPage, kind: ReadModelKind, id: string): Record
   }
 }
 
-/** Each kind's Change command, and the fields it may clear with null. */
-const CHANGE: Record<ReadModelKind, { route: ReadModelRoute; clearable: readonly string[] }> = {
-  read_model: { route: '/api/read-model/change-read-model', clearable: [] },
-  query: { route: '/api/read-model/change-query', clearable: [] },
-  projection: { route: '/api/read-model/change-projection', clearable: ['file'] },
-  reader: { route: '/api/read-model/change-reader', clearable: ['file'] },
-  query_handler: { route: '/api/read-model/change-query-handler', clearable: ['file'] },
+/** Each kind's Change command. */
+const CHANGE: Record<ReadModelKind, CommandRoute> = {
+  read_model: '/api/read-model/change-read-model',
+  query: '/api/read-model/change-query',
+  projection: '/api/read-model/change-projection',
+  reader: '/api/read-model/change-reader',
+  query_handler: '/api/read-model/change-query-handler',
 };
 
 /** Each kind's Add command, and the field that names its parent. */
-const ADD: Record<Inside, { route: ReadModelRoute; parent: string }> = {
+const ADD: Record<Inside, { route: CommandRoute; parent: string }> = {
   query: { route: '/api/read-model/add-query', parent: 'read_model_id' },
   projection: { route: '/api/read-model/add-projection', parent: 'read_model_id' },
   reader: { route: '/api/read-model/add-reader', parent: 'read_model_id' },
@@ -117,7 +108,7 @@ const ADD: Record<Inside, { route: ReadModelRoute; parent: string }> = {
 };
 
 /** Each kind's Remove command. */
-const REMOVE: Record<ReadModelKind, ReadModelRoute> = {
+const REMOVE: Record<ReadModelKind, CommandRoute> = {
   read_model: '/api/read-model/remove-read-model',
   query: '/api/read-model/remove-query',
   projection: '/api/read-model/remove-projection',
@@ -126,7 +117,7 @@ const REMOVE: Record<ReadModelKind, ReadModelRoute> = {
 };
 
 /** Sends a command whose input this form has built to its kind's shape: the route names the type it takes. */
-const send = (writer: Writer, route: ReadModelRoute, input: Record<string, unknown>): Promise<WriteAnswer> => sendReadModel(writer, route, input as unknown as ReadModelCommands[typeof route]);
+const send = (writer: Writer, route: CommandRoute, input: Record<string, unknown>): Promise<WriteAnswer> => writer.command(route, input as unknown as CommandInputs[typeof route]);
 
 /** The kinds added under a record of each kind, inside the read model: one of a kind it holds one of only while it has none. */
 function addedUnder(page: ReadModelPage, kind: ReadModelKind, id: string): Inside[] {
@@ -170,9 +161,9 @@ export function ReadModelEditor({ index, page, children }: { index: RecordIndex;
     const specs = fieldsOf(index, domain, kind, false);
     const current = currentOf(page, kind, id);
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, specs, draft, current, { id }, CHANGE[kind].clearable);
+      const input = changeInput(index, specs, draft, current, { id });
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
-      const answer = await send(writer, CHANGE[kind].route, input);
+      const answer = await send(writer, CHANGE[kind], input);
       if (answer.ok) { announce(`Saved ${id}`); back(); }
       return answer;
     };
@@ -196,7 +187,7 @@ export function ReadModelEditor({ index, page, children }: { index: RecordIndex;
       </div>
       {mode.mode === 'remove' && (
         <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={goesWith(page, kind, id)} then={addressOf(parentOf(page, kind, id))} onCancel={back}
-          remove={() => sendReadModel(writer, REMOVE[kind], { id })} />
+          remove={() => writer.command(REMOVE[kind], { id })} />
       )}
       {children}
     </>

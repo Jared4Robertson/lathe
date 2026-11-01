@@ -1,5 +1,5 @@
 // The Check read model (LA-CHK-RM10), shaped for its readers: the Check page reads a check whole by its name (its
-// product, place in the run order, severity, summary, explanation, query and kinds), and a product's list reads the
+// product, domain, place in the run order, severity, summary, explanation, query and kinds), and a product's list reads the
 // checks that run on it, Lathe's first and then its own, in run order. The projection (checkTableFrom) is the only code
 // that reads the source rows and the only code that writes the read model's table; the query handlers read that table
 // only through the reader (reader.ts). Nothing here is the aggregate's own instance type.
@@ -11,6 +11,8 @@ export interface CheckPage {
   name: string;
   /** The product it belongs to, or null for one of Lathe's own. */
   product: string | null;
+  /** The domain whose rules it reports. */
+  domain: string;
   position: number;
   severity: CheckRow['severity'];
   summary: string;
@@ -38,6 +40,7 @@ export interface CheckTable {
 const pageOf = (c: CheckRow): CheckPage => ({
   name: c.name,
   product: c.product_id ?? null,
+  domain: c.domain_id,
   position: c.position,
   severity: c.severity,
   summary: c.summary,

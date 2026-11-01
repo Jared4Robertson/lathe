@@ -1,4 +1,4 @@
-// The Aggregate aggregate's commands (LA-AUT-A6), as the CLI, the MCP server and the HTTP API register them.
+// Generated from data/ by `npm run generate`. Do not edit.
 import type { AnyCommand } from '../../../platform/commands/definition.ts';
 import { ADD_AGGREGATE } from './add-aggregate.ts';
 import { CHANGE_AGGREGATE } from './change-aggregate.ts';
@@ -12,14 +12,14 @@ import { REMOVE_INVARIANT } from './remove-invariant.ts';
 import { ADD_DATA_MODEL } from './add-data-model.ts';
 import { CHANGE_DATA_MODEL } from './change-data-model.ts';
 import { REMOVE_DATA_MODEL } from './remove-data-model.ts';
-import { ADD_RULE } from './add-rule.ts';
-import { CHANGE_RULE } from './change-rule.ts';
-import { REMOVE_RULE } from './remove-rule.ts';
 import { ADD_INVARIANT_TEST } from './add-invariant-test.ts';
 import { CHANGE_INVARIANT_TEST } from './change-invariant-test.ts';
 import { REMOVE_INVARIANT_TEST } from './remove-invariant-test.ts';
+import { ADD_RULE } from './add-rule.ts';
+import { CHANGE_RULE } from './change-rule.ts';
+import { REMOVE_RULE } from './remove-rule.ts';
 
-export const AGGREGATE_COMMANDS: readonly AnyCommand[] = [
+export const AGGREGATE_COMMANDS = [
   ADD_AGGREGATE,
   CHANGE_AGGREGATE,
   REMOVE_AGGREGATE,
@@ -32,10 +32,10 @@ export const AGGREGATE_COMMANDS: readonly AnyCommand[] = [
   ADD_DATA_MODEL,
   CHANGE_DATA_MODEL,
   REMOVE_DATA_MODEL,
-  ADD_RULE,
-  CHANGE_RULE,
-  REMOVE_RULE,
   ADD_INVARIANT_TEST,
   CHANGE_INVARIANT_TEST,
   REMOVE_INVARIANT_TEST,
-];
+  ADD_RULE,
+  CHANGE_RULE,
+  REMOVE_RULE,
+] as const satisfies readonly AnyCommand[];

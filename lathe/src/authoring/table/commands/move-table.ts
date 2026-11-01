@@ -1,20 +1,16 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { TableRow } from '../../../platform/data/tables.ts';
-import { PARENT_COLUMNS, TABLE_SLICE } from '../model.ts';
+import { PARENT_COLUMNS } from '../model.ts';
 import { TableRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { MOVE_TABLE_IDENTITY } from './identities.generated.ts';
 
 /** The table and the one parent it moves to. */
 export type MoveTable = Pick<TableRow, 'id' | 'entity_id' | 'read_model_id' | 'domain_id'>;
 
-export const MOVE_TABLE: CommandDefinition<MoveTable> = {
-  id: 'LA-AUT-CMD302',
-  slice: TABLE_SLICE,
-  name: 'move-table',
-  description: 'Moves a table, with its keys, under another entity, read model or domain: exactly one is given, and it replaces the parent it had.',
-  method: 'POST',
-  route: '/api/table/move-table',
+export const MOVE_TABLE = {
+  ...MOVE_TABLE_IDENTITY,
   input: {
     id: column('table', 'id', 'required'),
     entity_id: column('table', 'entity_id', 'optional'),
@@ -22,7 +18,7 @@ export const MOVE_TABLE: CommandDefinition<MoveTable> = {
     domain_id: column('table', 'domain_id', 'optional'),
   },
   handler: moveTable,
-};
+} satisfies CommandDefinition<MoveTable>;
 
 /** Puts the table under its new parent, clearing the one it had; its keys keep their places. */
 export function moveTable(tx: Transaction, input: MoveTable): void {

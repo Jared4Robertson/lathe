@@ -3,8 +3,6 @@ import { chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { SPECIFICATION_COMMANDS } from '../../lathe/src/authoring/specification/commands/index';
-import type { SpecificationCommands } from '../src/authoring/specification/commands';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows } from './fixtures/load';
 import { modelWorkspace } from './fixtures/model';
@@ -30,15 +28,6 @@ describe('LA-V141-R01-T01 a specification\'s records are read through the Specif
     await waitFor(() => expect(requests).toContain('GET /api/specification/get-specification?id=P-D-SP01-PR'));
     await openApp('/P-D-SP01', { data: withPredicate() });
     expect(await within(main()).findByText('A member is at the limit with 3 open loans.')).toBeInTheDocument();
-  });
-
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof SpecificationCommands)[] = [
-      '/api/specification/add-specification', '/api/specification/change-specification', '/api/specification/remove-specification',
-      '/api/specification/add-predicate', '/api/specification/change-predicate', '/api/specification/remove-predicate',
-      '/api/specification/add-specification-test', '/api/specification/change-specification-test', '/api/specification/remove-specification-test',
-    ];
-    expect([...routes].sort()).toEqual(SPECIFICATION_COMMANDS.map((c) => c.route).sort());
   });
 });
 

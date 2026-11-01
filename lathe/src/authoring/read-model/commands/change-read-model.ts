@@ -1,20 +1,16 @@
 import { column, ids, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ReadModelRow } from '../../../platform/data/tables.ts';
-import { FIELD_COLUMNS, READ_MODEL_SLICE, changed, type ReadModelField } from '../model.ts';
+import { FIELD_COLUMNS, changed, type ReadModelField } from '../model.ts';
 import { ReadModelRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_READ_MODEL_IDENTITY } from './identities.generated.ts';
 
 /** The read model's changes: a column given is set; a list given replaces the list. */
 export type ChangeReadModel = Pick<ReadModelRow, 'id'> & { title?: ReadModelRow['title']; description?: ReadModelRow['description']; fields?: ReadModelField[]; reads?: string[]; calls?: string[]; fed_by?: string[] };
 
-export const CHANGE_READ_MODEL: CommandDefinition<ChangeReadModel> = {
-  id: 'LA-AUT-CMD286',
-  slice: READ_MODEL_SLICE,
-  name: 'change-read-model',
-  description: "Changes a read model's title or description, its fields (the whole list, in order), or the aggregates it reads, the domain services it calls or the events that feed it (each the whole list). Its domain never changes.",
-  method: 'POST',
-  route: '/api/read-model/change-read-model',
+export const CHANGE_READ_MODEL = {
+  ...CHANGE_READ_MODEL_IDENTITY,
   input: {
     id: column('read_model', 'id', 'required'),
     title: column('read_model', 'title', 'optional'),
@@ -25,7 +21,7 @@ export const CHANGE_READ_MODEL: CommandDefinition<ChangeReadModel> = {
     fed_by: ids("The events that keep it current: its own domain's, or another domain's published ones. Replaces the list.", 'optional'),
   },
   handler: changeReadModel,
-};
+} satisfies CommandDefinition<ChangeReadModel>;
 
 /** Changes the read model's columns, fields and links. */
 export function changeReadModel(tx: Transaction, input: ChangeReadModel): void {

@@ -1,19 +1,14 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ApiRequirementRow } from '../../../platform/data/tables.ts';
-import { ENDPOINT_SLICE } from '../model.ts';
 import { EndpointRepository } from '../repository.ts';
+import { ADD_API_REQUIREMENT_IDENTITY } from './identities.generated.ts';
 
 /** A new API requirement. */
 export type AddApiRequirement = Pick<ApiRequirementRow, 'id' | 'title' | 'endpoint_id' | 'statement' | 'group_name'>;
 
-export const ADD_API_REQUIREMENT: CommandDefinition<AddApiRequirement> = {
-  id: 'LA-AUT-CMD324',
-  slice: ENDPOINT_SLICE,
-  name: 'add-api-requirement',
-  description: 'Adds an API requirement under its endpoint: one rule the endpoint must follow.',
-  method: 'POST',
-  route: '/api/endpoint/add-api-requirement',
+export const ADD_API_REQUIREMENT = {
+  ...ADD_API_REQUIREMENT_IDENTITY,
   input: {
     id: column('api_requirement', 'id', 'required'),
     title: column('api_requirement', 'title', 'required'),
@@ -22,7 +17,7 @@ export const ADD_API_REQUIREMENT: CommandDefinition<AddApiRequirement> = {
     group_name: column('api_requirement', 'group_name', 'optional'),
   },
   handler: addApiRequirement,
-};
+} satisfies CommandDefinition<AddApiRequirement>;
 
 export function addApiRequirement(tx: Transaction, input: AddApiRequirement): void {
   const endpoints = new EndpointRepository(tx);

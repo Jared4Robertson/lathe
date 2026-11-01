@@ -1,20 +1,16 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { QuestionRow } from '../../../platform/data/tables.ts';
-import { PRODUCT_SLICE, changed } from '../model.ts';
+import { changed } from '../model.ts';
 import { ProductRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_QUESTION_IDENTITY } from './identities.generated.ts';
 
 /** The question's changes: a column given is set; about, when given, replaces the list. */
 export type ChangeQuestion = Pick<QuestionRow, 'id'> & { title?: string; owner?: string; description?: string; about?: string[] };
 
-export const CHANGE_QUESTION: CommandDefinition<ChangeQuestion> = {
-  id: 'LA-AUT-CMD129',
-  slice: PRODUCT_SLICE,
-  name: 'change-question',
-  description: "Changes an open question's title, owner or description, or the records it is about (the whole list). Its product or domain changes only by Move an open question.",
-  method: 'POST',
-  route: '/api/product/change-question',
+export const CHANGE_QUESTION = {
+  ...CHANGE_QUESTION_IDENTITY,
   input: {
     id: column('question', 'id', 'required'),
     title: column('question', 'title', 'optional'),
@@ -23,7 +19,7 @@ export const CHANGE_QUESTION: CommandDefinition<ChangeQuestion> = {
     about: ids('The records it is about, of its own product. Replaces the list.', 'optional'),
   },
   handler: changeQuestion,
-};
+} satisfies CommandDefinition<ChangeQuestion>;
 
 /** Changes the question's columns and what it is about. */
 export function changeQuestion(tx: Transaction, input: ChangeQuestion): void {

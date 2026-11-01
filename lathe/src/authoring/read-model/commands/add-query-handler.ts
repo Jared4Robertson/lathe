@@ -1,19 +1,14 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { QueryHandlerRow } from '../../../platform/data/tables.ts';
-import { READ_MODEL_SLICE } from '../model.ts';
 import { ReadModelRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_QUERY_HANDLER_IDENTITY } from './identities.generated.ts';
 
 export type AddQueryHandler = Pick<QueryHandlerRow, 'id' | 'title' | 'query_id' | 'file' | 'description'> & { meets?: string[]; packages?: string[] };
 
-export const ADD_QUERY_HANDLER: CommandDefinition<AddQueryHandler> = {
-  id: 'LA-AUT-CMD294',
-  slice: READ_MODEL_SLICE,
-  name: 'add-query-handler',
-  description: 'Adds the handler that answers a query, its one piece of code, with the standard rules it meets and the packages it uses.',
-  method: 'POST',
-  route: '/api/read-model/add-query-handler',
+export const ADD_QUERY_HANDLER = {
+  ...ADD_QUERY_HANDLER_IDENTITY,
   input: {
     id: column('query_handler', 'id', 'required'),
     title: column('query_handler', 'title', 'required'),
@@ -24,7 +19,7 @@ export const ADD_QUERY_HANDLER: CommandDefinition<AddQueryHandler> = {
     packages: texts("The packages it uses, by their names in the product's package.json files.", 'optional'),
   },
   handler: addQueryHandler,
-};
+} satisfies CommandDefinition<AddQueryHandler>;
 
 /** Adds the handler to its query, which has none yet. */
 export function addQueryHandler(tx: Transaction, input: AddQueryHandler): void {

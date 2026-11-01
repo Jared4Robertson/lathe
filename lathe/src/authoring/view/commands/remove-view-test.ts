@@ -1,23 +1,18 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { VIEW_SLICE } from '../model.ts';
 import { ViewRepository } from '../repository.ts';
+import { REMOVE_VIEW_TEST_IDENTITY } from './identities.generated.ts';
 
 /** The view test to remove. */
 export type RemoveViewTest = { id: string };
 
-export const REMOVE_VIEW_TEST: CommandDefinition<RemoveViewTest> = {
-  id: 'LA-AUT-CMD318',
-  slice: VIEW_SLICE,
-  name: 'remove-view-test',
-  description: 'Removes a view test with the links it starts. Refused while anything else references them.',
-  method: 'POST',
-  route: '/api/view/remove-view-test',
+export const REMOVE_VIEW_TEST = {
+  ...REMOVE_VIEW_TEST_IDENTITY,
   input: {
     id: column('view_test', 'id', 'required'),
   },
   handler: removeViewTest,
-};
+} satisfies CommandDefinition<RemoveViewTest>;
 
 /** Removes the view test from its view. */
 export function removeViewTest(tx: Transaction, input: RemoveViewTest): void {

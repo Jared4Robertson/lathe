@@ -1,20 +1,15 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PatternRuleRow } from '../../../platform/data/tables.ts';
-import { PATTERN_SLICE } from '../model.ts';
 import { PatternRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_PATTERN_RULE_IDENTITY } from './identities.generated.ts';
 
 /** A new pattern rule. */
 export type AddPatternRule = Pick<PatternRuleRow, 'id' | 'title' | 'pattern_id' | 'statement' | 'group_name' | 'notes'>;
 
-export const ADD_PATTERN_RULE: CommandDefinition<AddPatternRule> = {
-  id: 'LA-AUT-CMD193',
-  slice: PATTERN_SLICE,
-  name: 'add-pattern-rule',
-  description: 'Adds a rule to its pattern, owed by every follower.',
-  method: 'POST',
-  route: '/api/pattern/add-pattern-rule',
+export const ADD_PATTERN_RULE = {
+  ...ADD_PATTERN_RULE_IDENTITY,
   input: {
     id: column('pattern_rule', 'id', 'required'),
     title: column('pattern_rule', 'title', 'required'),
@@ -24,7 +19,7 @@ export const ADD_PATTERN_RULE: CommandDefinition<AddPatternRule> = {
     notes: column('pattern_rule', 'notes', 'optional'),
   },
   handler: addPatternRule,
-};
+} satisfies CommandDefinition<AddPatternRule>;
 
 /** Adds the rule to its pattern. */
 export function addPatternRule(tx: Transaction, input: AddPatternRule): void {

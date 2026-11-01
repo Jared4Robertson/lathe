@@ -1,20 +1,16 @@
 import { column, id, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ReaderRow } from '../../../platform/data/tables.ts';
-import { READ_MODEL_SLICE, changed } from '../model.ts';
+import { changed } from '../model.ts';
 import { ReadModelRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_READER_IDENTITY } from './identities.generated.ts';
 
 /** The reader's changes: a column given is set, null clears an optional one; a list given replaces the list. */
 export type ChangeReader = Pick<ReaderRow, 'id'> & { title?: ReaderRow['title']; file?: ReaderRow['file'] | null; description?: ReaderRow['description']; stored_in?: string | null; meets?: string[]; packages?: string[] };
 
-export const CHANGE_READER: CommandDefinition<ChangeReader> = {
-  id: 'LA-AUT-CMD298',
-  slice: READ_MODEL_SLICE,
-  name: 'change-reader',
-  description: "Changes a reader's title, file or description, the data store it reads in (null clears it), or the standard rules it meets or packages it uses (each the whole list).",
-  method: 'POST',
-  route: '/api/read-model/change-reader',
+export const CHANGE_READER = {
+  ...CHANGE_READER_IDENTITY,
   input: {
     id: column('reader', 'id', 'required'),
     title: column('reader', 'title', 'optional'),
@@ -25,7 +21,7 @@ export const CHANGE_READER: CommandDefinition<ChangeReader> = {
     packages: texts("The packages it uses, by their names in the product's package.json files. Replaces the list.", 'optional'),
   },
   handler: changeReader,
-};
+} satisfies CommandDefinition<ChangeReader>;
 
 /** Changes the reader's columns, links and packages. */
 export function changeReader(tx: Transaction, input: ChangeReader): void {

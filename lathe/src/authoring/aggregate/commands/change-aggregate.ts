@@ -1,20 +1,16 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { AggregateRow } from '../../../platform/data/tables.ts';
-import { AGGREGATE_SLICE, changed } from '../model.ts';
+import { changed } from '../model.ts';
 import { AggregateRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_AGGREGATE_IDENTITY } from './identities.generated.ts';
 
 /** The aggregate's changes: a column given is set, null clears an optional one. */
 export type ChangeAggregate = Pick<AggregateRow, 'id'> & { title?: string; description?: string; identity?: string; notes?: string | null };
 
-export const CHANGE_AGGREGATE: CommandDefinition<ChangeAggregate> = {
-  id: 'LA-AUT-CMD211',
-  slice: AGGREGATE_SLICE,
-  name: 'change-aggregate',
-  description: "Changes an aggregate's title, description, identity or notes. Its domain does not change.",
-  method: 'POST',
-  route: '/api/aggregate/change-aggregate',
+export const CHANGE_AGGREGATE = {
+  ...CHANGE_AGGREGATE_IDENTITY,
   input: {
     id: column('aggregate', 'id', 'required'),
     title: column('aggregate', 'title', 'optional'),
@@ -23,7 +19,7 @@ export const CHANGE_AGGREGATE: CommandDefinition<ChangeAggregate> = {
     notes: column('aggregate', 'notes', 'clearable'),
   },
   handler: changeAggregate,
-};
+} satisfies CommandDefinition<ChangeAggregate>;
 
 /** Changes the aggregate's own columns. */
 export function changeAggregate(tx: Transaction, input: ChangeAggregate): void {

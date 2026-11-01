@@ -1,12 +1,12 @@
 // The Tooling aggregate's own reads (read model LA-AUT-RM41): a tooling record's page, the tooling records of a domain,
 // and the next free ID for one. Each reads only the read model, through its reader (reader.ts), and changes
 // nothing.
-import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { TOOLING_SLICE } from './model.ts';
 import type { ToolingPage, ToolingSummary } from './read-model.ts';
 import { toolingReader, type ToolingReader } from './reader.ts';
+import { GET_TOOLING_IDENTITY, LIST_TOOLING_IDENTITY, NEXT_TOOLING_ID_IDENTITY } from './queries.generated.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
@@ -21,12 +21,7 @@ export function getTooling(reader: ToolingReader, input: { id: string }): Toolin
 
 /** Get a tooling record whole (LA-AUT-QRY123). */
 export const GET_TOOLING: QueryDefinition<{ id: string }, ToolingPage, ToolingReader> = {
-  id: 'LA-AUT-QRY123',
-  slice: TOOLING_SLICE,
-  name: 'get-tooling',
-  description: 'Reads a tooling record whole, by its ID: its row, the packages it uses and the standard rules it meets.',
-  method: 'GET',
-  route: '/api/tooling/get-tooling',
+  ...GET_TOOLING_IDENTITY,
   input: { id: id('The tooling record.', 'required') },
   reader: toolingReader,
   run: getTooling,
@@ -41,12 +36,7 @@ export function listTooling(reader: ToolingReader, input: { domain_id: string })
 
 /** List the tooling records of a domain (LA-AUT-QRY124). */
 export const LIST_TOOLING: QueryDefinition<{ domain_id: string }, ToolingSummary[], ToolingReader> = {
-  id: 'LA-AUT-QRY124',
-  slice: TOOLING_SLICE,
-  name: 'list-tooling',
-  description: 'Lists the tooling records of a domain, by ID, with their titles.',
-  method: 'GET',
-  route: '/api/tooling/list-tooling',
+  ...LIST_TOOLING_IDENTITY,
   input: { domain_id: id('The domain.', 'required') },
   reader: toolingReader,
   run: listTooling,
@@ -62,12 +52,7 @@ export function nextToolingId(reader: ToolingReader, input: { domain_id: string 
 
 /** Get the next ID for a tooling record (LA-AUT-QRY125). */
 export const NEXT_TOOLING_ID: QueryDefinition<{ domain_id: string }, string, ToolingReader> = {
-  id: 'LA-AUT-QRY125',
-  slice: TOOLING_SLICE,
-  name: 'next-id',
-  description: 'The next free ID for a tooling record of a domain: one past the highest in use.',
-  method: 'GET',
-  route: '/api/tooling/next-id',
+  ...NEXT_TOOLING_ID_IDENTITY,
   input: { domain_id: id('The domain it will sit under.', 'required') },
   reader: toolingReader,
   run: nextToolingId,
@@ -83,6 +68,3 @@ function toolingText(record: ToolingPage): string {
   if (record.meets.length) lines.push(`  meets: ${record.meets.join(', ')}`);
   return lines.join('\n');
 }
-
-/** The Tooling aggregate's queries, as the CLI and the MCP server register them. */
-export const TOOLING_QUERIES: readonly AnyQuery[] = [GET_TOOLING, LIST_TOOLING, NEXT_TOOLING_ID];

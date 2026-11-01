@@ -1,18 +1,14 @@
 import { column, id, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { DataStoreRow } from '../../../platform/data/tables.ts';
-import { DATA_STORE_SLICE, newDataStore } from '../model.ts';
+import { newDataStore } from '../model.ts';
 import { DataStoreRepository } from '../repository.ts';
+import { ADD_DATA_STORE_IDENTITY } from './identities.generated.ts';
 
 export type AddDataStore = Pick<DataStoreRow, 'id' | 'title' | 'product_id' | 'domain_id' | 'kind' | 'description'> & { provided_by?: string };
 
-export const ADD_DATA_STORE: CommandDefinition<AddDataStore> = {
-  id: 'LA-AUT-CMD370',
-  slice: DATA_STORE_SLICE,
-  name: 'add-data-store',
-  description: 'Adds a data store under its product or one of its domains (exactly one of product_id and domain_id), with the integration that reaches it when it is a service someone else runs.',
-  method: 'POST',
-  route: '/api/data-store/add-data-store',
+export const ADD_DATA_STORE = {
+  ...ADD_DATA_STORE_IDENTITY,
   input: {
     id: column('data_store', 'id', 'required'),
     title: column('data_store', 'title', 'required'),
@@ -23,7 +19,7 @@ export const ADD_DATA_STORE: CommandDefinition<AddDataStore> = {
     provided_by: id('The integration that reaches it, when it is a service someone else runs that the user must provide.', 'optional'),
   },
   handler: addDataStore,
-};
+} satisfies CommandDefinition<AddDataStore>;
 
 export function addDataStore(tx: Transaction, input: AddDataStore): void {
   const stores = new DataStoreRepository(tx);

@@ -1,20 +1,15 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { InterfaceRow } from '../../../platform/data/tables.ts';
-import { PRODUCT_SLICE } from '../model.ts';
 import { ProductRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_INTERFACE_IDENTITY } from './identities.generated.ts';
 
 /** A new interface. */
 export type AddInterface = Pick<InterfaceRow, 'id' | 'title' | 'product_id' | 'kind' | 'description'>;
 
-export const ADD_INTERFACE: CommandDefinition<AddInterface> = {
-  id: 'LA-AUT-CMD132',
-  slice: PRODUCT_SLICE,
-  name: 'add-interface',
-  description: 'Adds an interface of a product: a way it is used, such as its web app, HTTP API or command line.',
-  method: 'POST',
-  route: '/api/product/add-interface',
+export const ADD_INTERFACE = {
+  ...ADD_INTERFACE_IDENTITY,
   input: {
     id: column('interface', 'id', 'required'),
     title: column('interface', 'title', 'required'),
@@ -23,7 +18,7 @@ export const ADD_INTERFACE: CommandDefinition<AddInterface> = {
     description: column('interface', 'description', 'required'),
   },
   handler: addInterface,
-};
+} satisfies CommandDefinition<AddInterface>;
 
 /** Adds the interface to its product. */
 export function addInterface(tx: Transaction, input: AddInterface): void {

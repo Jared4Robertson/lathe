@@ -1,20 +1,16 @@
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { DomainEventRow } from '../../../platform/data/tables.ts';
-import { changed, DOMAIN_EVENT_SLICE, fieldRows, type EventFieldInput } from '../model.ts';
+import { changed, fieldRows, type EventFieldInput } from '../model.ts';
 import { DomainEventRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_DOMAIN_EVENT_IDENTITY } from './identities.generated.ts';
 
 /** The event's changes: a column given is set; fields, when given, replace the list. */
 export type ChangeDomainEvent = Pick<DomainEventRow, 'id'> & { title?: string; published?: boolean; description?: string; fields?: EventFieldInput[] };
 
-export const CHANGE_DOMAIN_EVENT: CommandDefinition<ChangeDomainEvent> = {
-  id: 'LA-AUT-CMD231',
-  slice: DOMAIN_EVENT_SLICE,
-  name: 'change-domain-event',
-  description: "Changes a domain event's title, description or whether it is published, or its fields (the whole list, in order). The aggregate it happens to does not change.",
-  method: 'POST',
-  route: '/api/domain-event/change-domain-event',
+export const CHANGE_DOMAIN_EVENT = {
+  ...CHANGE_DOMAIN_EVENT_IDENTITY,
   input: {
     id: column('domain_event', 'id', 'required'),
     title: column('domain_event', 'title', 'optional'),
@@ -23,7 +19,7 @@ export const CHANGE_DOMAIN_EVENT: CommandDefinition<ChangeDomainEvent> = {
     fields: parts('event_field', ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'], 'The fields it carries, in order. Replaces the list.', 'optional'),
   },
   handler: changeDomainEvent,
-};
+} satisfies CommandDefinition<ChangeDomainEvent>;
 
 /** Changes the event's columns and fields. */
 export function changeDomainEvent(tx: Transaction, input: ChangeDomainEvent): void {
