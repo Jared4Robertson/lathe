@@ -24,11 +24,11 @@ export const NODE_HEIGHT = 56;
 export type Shape =
   | 'box' | 'product' | 'hexagon' | 'folder' | 'slice'
   | 'double' | 'octagon' | 'flag' | 'parallelogram' | 'stadium' | 'page' | 'stack'
-  | 'chevron-bar' | 'chevron' | 'window' | 'port' | 'stripes' | 'component' | 'shield'
+  | 'chevron-bar' | 'chevron' | 'tab' | 'window' | 'port' | 'stripes' | 'component' | 'shield'
   | 'diamond';
 
 /** A small glyph a kind adds before its kind and ID line: a shape shared with another kind, told apart. */
-export type Mark = 'value' | 'gear' | 'lens' | 'marker' | 'ruler' | 'port' | 'target' | 'data' | 'plug';
+export type Mark = 'value' | 'gear' | 'lens' | 'marker' | 'ruler' | 'port' | 'target' | 'data' | 'plug' | 'route';
 
 export interface KindShape { shape: Shape; mark?: Mark }
 
@@ -52,7 +52,7 @@ export const SHAPES: Readonly<Record<Shape, ShapeSpec>> = {
   hexagon: { name: 'a hexagon', kinds: 'Domain', room: { l: 12, r: 12, t: 0, b: 0 }, draw: 'clipped' },
   folder: { name: 'a folder with a tab', kinds: 'Stage, folder or group, with its count', room: { l: 0, r: 0, t: 8, b: 0 }, draw: 'clipped' },
   double: { name: 'a double border', kinds: 'Aggregate', room: { l: 2, r: 2, t: 2, b: 2 }, draw: 'box' },
-  box: { name: 'a plain box', kinds: 'Entity (a business outcome, value object, read model, domain service, term, integration or test data set with its mark), and any kind a product adds', room: NO_ROOM, draw: 'box' },
+  box: { name: 'a plain box', kinds: 'Entity (a business outcome, journey, value object, read model, domain service, term, integration or test data set with its mark), and any kind a product adds', room: NO_ROOM, draw: 'box' },
   octagon: { name: 'an octagon', kinds: 'Constraint, invariant, specification, pattern rule (a policy with a gear, a standard rule with a ruler)', room: NO_ROOM, draw: 'clipped' },
   flag: { name: 'a flag, notched on the right', kinds: 'Domain event', room: { l: 0, r: 10, t: 0, b: 0 }, draw: 'clipped' },
   parallelogram: { name: 'a slanted box', kinds: 'Command (a query with a lens)', room: { l: 8, r: 8, t: 0, b: 0 }, draw: 'clipped' },
@@ -62,6 +62,7 @@ export const SHAPES: Readonly<Record<Shape, ShapeSpec>> = {
   stack: { name: 'stacked boxes', kinds: 'Pattern (a standard with a ruler)', room: { l: 0, r: 5, t: 5, b: 0 }, draw: 'clipped' },
   'chevron-bar': { name: 'a chevron bar', kinds: 'Flow', room: { l: 6, r: 16, t: 0, b: 0 }, draw: 'clipped' },
   chevron: { name: 'a chevron', kinds: 'Flow step', room: { l: 6, r: 6, t: 0, b: 0 }, draw: 'clipped' },
+  tab: { name: 'a tab rounded on its left', kinds: 'Journey step', room: NO_ROOM, draw: 'clipped' },
   window: { name: 'a window with a top bar', kinds: 'View (an interface with a plug)', room: { l: 0, r: 0, t: 6, b: 0 }, draw: 'box' },
   port: { name: 'a box with a port notch on its left', kinds: 'Endpoint', room: { l: 2, r: 0, t: 0, b: 0 }, draw: 'clipped' },
   component: { name: 'a box with component tabs', kinds: 'Technical records: repository, data model, value type, predicate, event type, projection, reader, handlers, service, UI component, adapter, entry point, tooling', room: { l: 4, r: 0, t: 0, b: 0 }, draw: 'clipped' },
@@ -81,6 +82,7 @@ export const MARKS: Readonly<Record<Mark, string>> = {
   target: 'a target: a business outcome, drawn as a plain box',
   data: 'a cylinder: a test data set, drawn as a plain box',
   plug: 'a plug: an interface, drawn as a view',
+  route: 'a route: a journey, its steps in order, drawn as a plain box',
 };
 
 const TECHNICAL: KindShape = { shape: 'component' };
@@ -89,6 +91,8 @@ const TEST: KindShape = { shape: 'shield' };
 const KIND_SHAPES: Readonly<Record<string, KindShape>> = {
   product: { shape: 'product' },
   business_outcome: { shape: 'box', mark: 'target' },
+  journey: { shape: 'box', mark: 'route' },
+  journey_step: { shape: 'tab' },
   domain: { shape: 'hexagon' },
   aggregate: { shape: 'double' },
   entity: { shape: 'box' },
@@ -150,6 +154,7 @@ const KIND_SHAPES: Readonly<Record<string, KindShape>> = {
   view_test: TEST,
   endpoint_test: TEST,
   flow_test: TEST,
+  journey_test: TEST,
   integration_test: TEST,
   pattern_rule_test: TEST,
   standard_rule_test: TEST,
@@ -214,6 +219,17 @@ function polygonOf(shape: Shape, w: number, h: number, scale: number): Pt[] | nu
     case 'chevron': {
       const c = notch(12, scale, w, 0.25);
       return [[0, 0, 0, 0], [1, -c, 0, 0], [1, 0, 0.5, 0], [1, -c, 1, 0], [0, 0, 1, 0], [0, c, 0.5, 0]];
+    }
+    case 'tab': {
+      // Its left corners rounded, a quarter circle each, in four straight pieces.
+      const c = Math.min(notch(14, scale, h, 0.5), notch(14, scale, w, 0.25));
+      const arc = [0, 1, 2, 3, 4].map((k) => (k * Math.PI) / 8);
+      // From the left side up round the top corner, the right side, then from the bottom round to the left side.
+      return [
+        ...arc.map((t): Pt => [0, c - c * Math.cos(t), 0, c - c * Math.sin(t)]),
+        [1, 0, 0, 0], [1, 0, 1, 0],
+        ...[...arc].reverse().map((t): Pt => [0, c - c * Math.cos(t), 1, -(c - c * Math.sin(t))]),
+      ];
     }
     case 'port': {
       const d = notch(6, scale, w, 0.12);
