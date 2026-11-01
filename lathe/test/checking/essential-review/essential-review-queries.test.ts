@@ -49,8 +49,7 @@ describe('LA-CHK-UC09-R02-T01 The check-and-fix skill has the Agent hold each es
   it('runs the list, asks the question of each record, lists what fails for the Owner and changes nothing on that alone', () => {
     const skill = readFileSync(path.join(import.meta.dirname, '../../../../plugin/skills/check-and-fix/SKILL.md'), 'utf8');
     const section = skill.slice(skill.indexOf('## Review the essential records with fresh eyes'), skill.indexOf('## Gaps and coverage'));
-    expect(section).toContain('essential_review_list_essential_records');
-    expect(section).toContain('lathe essential-review list-essential-records');
+    expect(section).toContain("the Essential review's list-essential-records query");
     expect(section).toContain('would they recognize this record and care about it?');
     expect(section).toContain('List every record that fails, with why');
     expect(section).toContain('Do not change an essential record on that finding alone');

@@ -61,7 +61,7 @@ function random(seed: number): () => number {
   };
 }
 
-const NOUNS = ['tool', 'loan', 'member', 'invoice', 'shelf', 'order', 'parcel', 'route', 'ticket', 'visit', 'batch', 'report', 'account', 'booking', 'claim', 'lesson'];
+const NOUNS = ['tool', 'loan', 'member', 'invoice', 'shelf', 'order', 'parcel', 'voyage', 'ticket', 'visit', 'batch', 'report', 'account', 'booking', 'claim', 'lesson'];
 const VERBS = ['Lend', 'Return', 'Register', 'Approve', 'Ship', 'Plan', 'Book', 'Settle', 'Review', 'Schedule', 'Close', 'Renew', 'Assign', 'Track', 'Price', 'Count'];
 const pad = (n: number) => String(n).padStart(2, '0');
 // A domain's code: two letters, then a number, unique for every domain.
@@ -107,7 +107,7 @@ function domainSteps(d: number, interfaces: string[]): Step[] {
   let query = 0;
   for (let r = 1; r <= 2; r++) {
     const readModel = `${domain}-RM${pad(r)}`;
-    steps.push([ADD_READ_MODEL, { id: readModel, title: `${noun} list ${d + 1}.${r}`.replace(/^./, (c) => c.toUpperCase()), domain_id: domain, description: `The ${noun}s as a page lists them.`, fields: [{ name: 'Name', meaning: 'What it is called.', type: 'text', required: true }], reads: [`${domain}-A${r}`] }]);
+    steps.push([ADD_READ_MODEL, { id: readModel, title: `${noun} list ${d + 1}.${r}`.replace(/^./, (c) => c.toUpperCase()), domain_id: domain, description: `The ${noun}s as the area lists them.`, fields: [{ name: 'Name', meaning: 'What it is called.', type: 'text', required: true }], reads: [`${domain}-A${r}`] }]);
     for (let q = 0; q < 3; q++) {
       const id = `${domain}-QRY${pad(++query)}`;
       steps.push([ADD_QUERY, { id, title: `List ${noun}s by ${pick(NOUNS)} ${d + 1}.${query}`, read_model_id: readModel, description: `Lists ${noun}s.` }]);
