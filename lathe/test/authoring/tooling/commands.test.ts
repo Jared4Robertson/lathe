@@ -30,7 +30,7 @@ const base = (): Data => ({
   product: [{ id: 'TL', title: 'Tool Library', description: 'A neighborhood tool library.' }],
   role: [{ product_id: 'TL', name: 'Librarian', description: 'Lends and repairs tools.' }],
   domain: [{ id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools.' }],
-  standard: [{ id: 'TL-STD-CODE', title: 'Code', product_id: 'TL', description: 'How the code is written.' }],
+  standard: [{ id: 'TL-STD-CODE', title: 'Code', product_id: 'TL', type: 'engineering', description: 'How the code is written.' }],
   standard_rule: [{ id: 'TL-STD-CODE-R01', title: 'Node prefix', standard_id: 'TL-STD-CODE', statement: 'Code MUST import node: modules.' }],
 });
 
@@ -66,6 +66,16 @@ describe('LA-AUT-UC30-R01-T51 each Tooling command changes one tooling record th
     expect(runQuery(store, GET_TOOLING, { id: 'TL-LEND-TOOL02' })).toMatchObject({ packages: ['typescript'], meets: ['TL-STD-CODE-R01'] });
     expect((runQuery(store, LIST_TOOLING, { domain_id: 'TL-LEND' }) as { id: string }[]).map((r) => r.id)).toEqual(['TL-LEND-TOOL01', 'TL-LEND-TOOL02']);
     expect(runQuery(store, NEXT_TOOLING_ID, { domain_id: 'TL-LEND' })).toBe('TL-LEND-TOOL03');
+  });
+
+  it('records the technical records a tooling record generates, and replaces the list', async () => {
+    const store = await toolingDataSet();
+    expect((await runCommand(store, CHANGE_TOOLING, { id: 'TL-LEND-TOOL01', generates: ['TL-LEND-TOOL02'] })).tables).toEqual(['generates']);
+    expect(runQuery(store, GET_TOOLING, { id: 'TL-LEND-TOOL01' })).toMatchObject({ generates: ['TL-LEND-TOOL02'] });
+    expect(GET_TOOLING.text(runQuery(store, GET_TOOLING, { id: 'TL-LEND-TOOL01' }) as ReturnType<typeof GET_TOOLING.run>)).toContain('generates: TL-LEND-TOOL02');
+    expect(store.rows('generates')).toEqual([{ source_id: 'TL-LEND-TOOL01', target_id: 'TL-LEND-TOOL02' }]);
+    expect((await runCommand(store, CHANGE_TOOLING, { id: 'TL-LEND-TOOL01', generates: [] })).tables).toEqual(['generates']);
+    expect(store.rows('generates')).toEqual([]);
   });
 
   it('refuses a record under no domain, a taken ID, and a change of its domain, changing no file', async () => {

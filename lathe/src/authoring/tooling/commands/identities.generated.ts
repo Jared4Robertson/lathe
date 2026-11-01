@@ -4,7 +4,7 @@ export const ADD_TOOLING_IDENTITY = {
   id: 'LA-AUT-CMD155',
   slice: { aggregate: 'LA-AUT-A21', name: 'tooling' },
   name: 'add-tooling',
-  description: 'Adds a tooling record under its domain, with the packages it uses and the standard rules it meets.',
+  description: 'Adds a tooling record under its domain, with the packages it uses, the standard rules it meets and the technical records it generates.',
   method: 'POST',
   route: '/api/tooling/add-tooling',
 } as const;
@@ -13,7 +13,7 @@ export const CHANGE_TOOLING_IDENTITY = {
   id: 'LA-AUT-CMD156',
   slice: { aggregate: 'LA-AUT-A21', name: 'tooling' },
   name: 'change-tooling',
-  description: 'Changes a tooling record\'s title, file, packages or standard rules met. Its domain stays.',
+  description: 'Changes a tooling record\'s title, file, packages, standard rules met or technical records generated. Its domain stays.',
   method: 'POST',
   route: '/api/tooling/change-tooling',
 } as const;

@@ -59,12 +59,13 @@ export const NEXT_TOOLING_ID: QueryDefinition<{ domain_id: string }, string, Too
   text: (next) => next,
 };
 
-/** A tooling record as text: its row, then what it uses and meets. */
+/** A tooling record as text: its row, then what it uses, meets and generates. */
 function toolingText(record: ToolingPage): string {
   const row = record.tooling;
   const lines = [`Tooling ${row.id}: ${row.title}`, `  domain: ${row.domain_id}`, ...(row.file ? [`  file: ${row.file}`] : [])];
 
   if (record.packages.length) lines.push(`  packages: ${record.packages.join(', ')}`);
   if (record.meets.length) lines.push(`  meets: ${record.meets.join(', ')}`);
+  if (record.generates.length) lines.push(`  generates: ${record.generates.join(', ')}`);
   return lines.join('\n');
 }

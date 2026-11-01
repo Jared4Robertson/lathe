@@ -81,6 +81,10 @@
 {"entity_id":"LA-AUT-EN112","position":4,"name":"Domain","meaning":"The domain it sits under, when one domain alone uses it; exactly one of product and domain is given.","type_value_object_id":"LA-VO01","required":false,"column_name":"domain_id"}
 {"entity_id":"LA-AUT-EN112","position":5,"name":"Kind","meaning":"database, object store, file folder, file, browser storage or memory.","type":"text","required":true}
 {"entity_id":"LA-AUT-EN112","position":6,"name":"Description","meaning":"Where it is and what keeps it there.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN113","position":1,"name":"ID","meaning":"The slot's ID: its pattern's ID and SL<nn>, such as TL-PAT-LIBRARIAN-ACTION-SL01.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-AUT-EN113","position":2,"name":"Title","meaning":"What fills it, in a few words.","type_value_object_id":"LA-VO02","required":true}
+{"entity_id":"LA-AUT-EN113","position":3,"name":"Pattern","meaning":"The pattern it belongs to.","type_value_object_id":"LA-VO01","required":true,"column_name":"pattern_id"}
+{"entity_id":"LA-AUT-EN113","position":4,"name":"Statement","meaning":"Its contract: what every fill must do, in one sentence.","type":"text","required":true}
 {"entity_id":"LA-AUT-EN12","position":1,"name":"ID","meaning":"The requirement's ID: its use case's ID and R<nn>, such as TL-LEND-UC01-R01.","type_value_object_id":"LA-VO01","required":true}
 {"entity_id":"LA-AUT-EN12","position":2,"name":"Title","meaning":"The requirement in a few words.","type_value_object_id":"LA-VO02","required":true}
 {"entity_id":"LA-AUT-EN12","position":3,"name":"Use case","meaning":"The use case it belongs to.","type_value_object_id":"LA-VO01","required":true,"column_name":"use_case_id"}
@@ -449,6 +453,7 @@
 {"entity_id":"LA-CHK-EN03","position":1,"name":"Product","meaning":"The product the settings are for.","type_aggregate_id":"LA-AUT-A1","required":true,"column_name":"product_id","example":"TL"}
 {"entity_id":"LA-CHK-EN03","position":2,"name":"Max children","meaning":"The most children of one kind a record of the product should hold; 15 when the product has no row.","type_value_object_id":"LA-VO43","required":true,"example":"15"}
 {"entity_id":"LA-CHK-EN03","position":3,"name":"Max entities per aggregate","meaning":"The most entities an aggregate of the product should hold; 7 when the product has no row.","type_value_object_id":"LA-VO93","required":true,"example":"7"}
+{"entity_id":"LA-CHK-EN03","position":4,"name":"Technology words","meaning":"The words, besides Lathe's own, that name technology in the product's essential records, which accidental-in-essential warns of; none when the product has no row.","type":"text","required":true,"example":"React"}
 {"entity_id":"LA-EXP-EN01","position":1,"name":"Address","meaning":"Where the page is, to bookmark, share or reload.","type_value_object_id":"LA-VO90","required":true,"example":"/LA-AUT-A1?stage=graph"}
 {"entity_id":"LA-EXP-EN01","position":2,"name":"Page kind","meaning":"What sort of place it is: products, product, domain, record, group, checks, format or settings.","type":"text","required":true,"example":"record"}
 {"entity_id":"LA-EXP-EN01","position":3,"name":"Focus","meaning":"The record or group the page is about: a record ID, or a group's address.","type":"text","required":false,"example":"LA-AUT-A1"}
@@ -520,3 +525,7 @@
 {"entity_id":"LA-TRC-EN05","position":2,"name":"Pattern","meaning":"The pattern followed.","type_aggregate_id":"LA-AUT-A1","required":true,"column_name":"target_id","example":"TL-PAT-LIBRARIAN-ACTION"}
 {"entity_id":"LA-TRC-EN06","position":1,"name":"Setting","meaning":"One of the pattern's settings (a `pattern_setting` name).","type":"text","required":true,"example":"required_input"}
 {"entity_id":"LA-TRC-EN06","position":2,"name":"Value","meaning":"What the setting is for this follower: a value like any other, such as No input.","type":"text","required":true,"example":"The member's name and a valid email address."}
+{"entity_id":"LA-TRC-EN07","position":1,"name":"Record","meaning":"The ID of the technical record that fills the slot.","type":"text","required":true,"column_name":"source_id","example":"TL-LEND-CMD01-H"}
+{"entity_id":"LA-TRC-EN07","position":2,"name":"Slot","meaning":"The slot it fills.","type_aggregate_id":"LA-AUT-A2","required":true,"column_name":"target_id","example":"TL-PAT-LIBRARIAN-ACTION-SL01"}
+{"entity_id":"LA-TRC-EN08","position":1,"name":"Record","meaning":"The ID of the record provided from outside the product.","type":"text","required":true,"column_name":"source_id","example":"TL-STORE01"}
+{"entity_id":"LA-TRC-EN08","position":2,"name":"Provider","meaning":"What provides it: an integration, or a record of a product kind the product lets provide it.","type":"text","required":true,"column_name":"target_id","example":"TL-INT01"}

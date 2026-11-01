@@ -13,7 +13,8 @@ import { usePattern } from './reads';
 // read whole (GET /api/pattern/get-pattern) and changed only through its own commands (PatternEditor). A pattern shows
 // its description and notes, its settings (each with what it means and the rules that depend on it), its rules under
 // their groups, and the domains that follow it with each one's settings and status per rule; a pattern rule its
-// statement, its setting and condition, and the domains that owe it; a pattern rule test its domain and scenario. Who
+// statement, its setting and condition, and the domains that owe it; a pattern rule test its domain and scenario; a
+// slot its contract, and a pattern its slots. Who
 // follows the pattern and the values they give are Pattern following's, its Followed by and Owed by
 // (traceability/pattern-following/Followers.tsx), read through its own query, with the following's editor; each rule's
 // standing is the coverage's, from the workspace's index. What every record's page holds around that is the Record
@@ -72,6 +73,19 @@ function Rules({ index, page }: { index: RecordIndex; page: Pattern }) {
   );
 }
 
+/** The slots: the open-ended parts code fills against their contracts. */
+function Slots({ index, page }: { index: RecordIndex; page: Pattern }) {
+  return (
+    <Section title="Slots" count={page.slots.length}>
+      {page.slots.length === 0 ? <p className="hint">No slots: the pattern's fixed part and settings express all of it.</p> : (
+        <ul className="record-list plain pattern-rules">
+          {page.slots.map((s) => <li key={s.id}><RecordLink index={index} id={s.id} row /></li>)}
+        </ul>
+      )}
+    </Section>
+  );
+}
+
 const ruleOf = (page: Pattern, id: string) => page.rules.find((r) => r.rule.id === id)!;
 const testOf = (page: Pattern, id: string) => page.rules.flatMap((r) => r.tests).find((t) => t.test.id === id)!;
 
@@ -91,6 +105,7 @@ function Content({ index, page }: { index: RecordIndex; page: Pattern }) {
           <Text index={index} id={id} source={page.pattern.notes} title="Notes" field="notes" />
           <Settings page={page} />
           <Rules index={index} page={page} />
+          <Slots index={index} page={page} />
           <FollowedBy index={index} page={page} />
         </>
       );
@@ -110,6 +125,10 @@ function Content({ index, page }: { index: RecordIndex; page: Pattern }) {
 <TestScenario index={index} id={id} when={test.when} then={test.then} notes={test.notes} startsFrom={startsFrom} />
       );
     }
+    case 'slot': {
+      const slot = page.slots.find((s) => s.id === id)!;
+      return <Text index={index} id={id} source={slot.statement} field="statement" />;
+    }
   }
 }
 
@@ -123,7 +142,7 @@ function summaryOf(index: RecordIndex, page: Pattern): { lead?: string; facts: F
         lead: page.pattern.description,
         facts: [
           { label: 'Product', value: <RecordLink index={index} id={page.pattern.product_id} /> },
-          { label: 'Holds', value: `${count(page.settings.length, 'setting', 'settings')}, ${count(page.rules.length, 'rule', 'rules')}` },
+          { label: 'Holds', value: `${count(page.settings.length, 'setting', 'settings')}, ${count(page.rules.length, 'rule', 'rules')}, ${count(page.slots.length, 'slot', 'slots')}` },
           { label: 'Followed in', value: <FollowedInCount index={index} pattern={page.pattern.id} /> },
         ],
       };
@@ -134,6 +153,10 @@ function summaryOf(index: RecordIndex, page: Pattern): { lead?: string; facts: F
     case 'pattern_rule_test': {
       const { test } = testOf(page, id);
       return { lead: test.when, facts: [{ label: 'Proves', value: <RecordLink index={index} id={test.pattern_rule_id} /> }, { label: 'Domain', value: <RecordLink index={index} id={test.domain_id} /> }, { label: 'State', value: test.state }] };
+    }
+    case 'slot': {
+      const slot = page.slots.find((s) => s.id === id)!;
+      return { lead: slot.statement, facts: [{ label: 'Pattern', value: <RecordLink index={index} id={page.pattern.id} /> }] };
     }
   }
 }

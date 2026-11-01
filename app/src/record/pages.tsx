@@ -102,6 +102,7 @@ const PAGES: { readonly [K in PagedKind]: ComponentType<AggregatePageProps> } = 
   pattern: PatternPage,
   pattern_rule: PatternPage,
   pattern_rule_test: PatternPage,
+  slot: PatternPage,
   standard: StandardPage,
   standard_rule: StandardPage,
   standard_rule_test: StandardPage,
