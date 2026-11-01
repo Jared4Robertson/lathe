@@ -257,7 +257,7 @@ const DESKTOP: State[] = [
     await page.locator('.chat-session-open', { hasText: 'Plan the graph stage' }).click();
     await page.locator('.chat-warning').waitFor();
   } },
-  // The desktop app's tab strip (LA-V96-R16), with a stand-in for the shell: two tabs, the second opened by Cmd+click.
+  // The desktop app's tab strip (LA-V103-R07), with a stand-in for the shell: two tabs, the second opened by Cmd+click.
   { name: 'the desktop app\'s tab strip with two tabs', run: async (page) => {
     await asDesktop(page);
     await open(page, `${RECORD}?stage=graph`, '.tab-strip [role="tab"]');
@@ -266,7 +266,7 @@ const DESKTOP: State[] = [
     await box.dispatchEvent('click', { metaKey: true, button: 0 });
     await page.locator('.tab-strip [role="tab"]').nth(1).waitFor();
   } },
-  // The wiki card shows its whole page on every page above (useLook reads whole cards); Less shows its summary (LA-V96-R22).
+  // The wiki card shows its whole page on every page above (useLook reads whole cards); Less shows its summary (LA-V102-R03).
   { name: 'the wiki card as its summary', run: async (page) => {
     await open(page, RECORD, '.header-strip h1');
     await showCard(page, 'summary');

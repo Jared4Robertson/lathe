@@ -215,7 +215,7 @@ describe('one address, one stage', () => {
     expect(screen.getByRole('button', { name: '2' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('LA-V96-R07-T01 A group page shows its parent, its kind, and its members with their coverage marks', async () => {
+  it('LA-V102-R01-T01 A group page shows its parent, its kind, and its members with their coverage marks', async () => {
     // The aggregate holds entities, events and commands too, so its invariants are a group of their own in the tree.
     await openApp('/P-D-A3/invariant', served());
     await screen.findByRole('heading', { level: 1, name: 'Invariants (2)' });
@@ -307,7 +307,7 @@ describe('one address, one stage', () => {
     expect(css).toMatch(/\.header-strip-title \{[^}]*text-overflow: ellipsis/);
   });
 
-  it('LA-V96-R19-T01 The wiki card shows the focus\'s page, follows it once it settles, collapses by Enter and its button, and keeps its width for the session', async () => {
+  it('LA-V102-R02-T01 The wiki card shows the focus\'s page, follows it once it settles, collapses by Enter and its button, and keeps its width for the session', async () => {
     await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     expect(card()).toHaveAttribute('data-page', 'P-D-UC01');
@@ -351,7 +351,7 @@ describe('one address, one stage', () => {
     expect(settings()).toMatchObject({ cardWidth: null });
   });
 
-  it('LA-V96-R22-T01 The wiki card opens as a summary, More shows the whole page in place and Less goes back, the place\'s setting', async () => {
+  it('LA-V102-R03-T01 The wiki card opens as a summary, More shows the whole page in place and Less goes back, the place\'s setting', async () => {
     // The card's default, as a new session has it (the other tests start it expanded).
     window.sessionStorage.clear();
     await openApp('/P-D-UC01?stage=graph', served());
@@ -381,7 +381,7 @@ describe('one address, one stage', () => {
     expect(place()).toMatchObject({ card: { expanded: false } });
   });
 
-  it('LA-V96-R19-T03 The wiki card sits in one spot under the tools, inset, its height a steady share of the stage, round, its whole border in the box\'s color, a lifting shadow and a quiet cross-fade', () => {
+  it('LA-V102-R02-T03 The wiki card sits in one spot under the tools, inset, its height a steady share of the stage, round, its whole border in the box\'s color, a lifting shadow and a quiet cross-fade', () => {
     const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
     // Every rule of exactly this selector, joined.
     const rule = (selector: string) => [...css.matchAll(new RegExp(`(?:^|\\n)${selector.replace(/[.[\]()]/g, '\\$&')} \\{([^}]*)\\}`, 'g'))].map((m) => m[1]).join(';');
@@ -410,7 +410,7 @@ describe('one address, one stage', () => {
     expect(CARD_GAP_Y).toBe(CARD_GAP);
   });
 
-  it('LA-V96-R19-T08 A card page drawn or left mid-fade while the window is hidden ends its fade at once and shows whole', () => {
+  it('LA-V102-R02-T08 A card page drawn or left mid-fade while the window is hidden ends its fade at once and shows whole', () => {
     let hidden = true;
     const visibility = vi.spyOn(document, 'hidden', 'get').mockImplementation(() => hidden);
     const page = (finish: () => void) => Object.assign(document.createElement('div'), { getAnimations: () => [{ finish }] as unknown as Animation[] });

@@ -6,7 +6,7 @@ import { openApp, serve } from './helpers';
 import { testWorkspace } from './graph/workspace';
 import { boxElements } from './graph/scene';
 
-// On the web a browser tab is one place (LA-V96-R32): no tab strip of the app's, the browser's own history, its own
+// On the web a browser tab is one place (LA-V103-R10): no tab strip of the app's, the browser's own history, its own
 // tabs for a new place, and the place's depth, filters and wiki card kept in the browser tab's sessionStorage.
 
 const served = () => ({ data: testWorkspace() });
@@ -15,7 +15,7 @@ const address = () => window.location.pathname + window.location.search;
 const stageButton = (name: 'Graph' | 'ERD' | 'Trace') => within(screen.getByRole('group', { name: 'Stage' })).getByRole('button', { name });
 
 describe('the web\'s place', () => {
-  it('LA-V96-R32-T01 On the web there is no tab strip, and a move pushes the browser\'s own history', async () => {
+  it('LA-V103-R10-T01 On the web there is no tab strip, and a move pushes the browser\'s own history', async () => {
     await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     expect(screen.queryByRole('tablist')).toBeNull();
@@ -46,7 +46,7 @@ describe('the web\'s place', () => {
     expect(address()).toBe('/P-D-UC01?stage=graph');
   });
 
-  it('LA-V96-R32-T02 On the web, Cmd or Ctrl+click and middle-click on a box open its address in a new browser tab', async () => {
+  it('LA-V103-R10-T02 On the web, Cmd or Ctrl+click and middle-click on a box open its address in a new browser tab', async () => {
     const open = vi.fn(() => null);
     vi.stubGlobal('open', open);
     await openApp('/P-D-UC01?stage=erd', served());
@@ -70,7 +70,7 @@ describe('the web\'s place', () => {
     expect(link.getAttribute('href')).toMatch(/^\/P-D-UC01-R01/);
   });
 
-  it('LA-V96-R32-T03 On the web, the stage, depth, filters and wiki card are the browser tab\'s own, kept through a reload', async () => {
+  it('LA-V103-R10-T03 On the web, the stage, depth, filters and wiki card are the browser tab\'s own, kept through a reload', async () => {
     await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
