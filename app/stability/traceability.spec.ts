@@ -71,7 +71,7 @@ test.describe('Traceability flows', () => {
     await openPage(page, `/${useCase}?stage=trace`);
     await traceDrawn(page, 900);
     const row = await traceSceneOf(page, true);
-    expect(row.columns.map((c) => c.name)).toEqual(['Outcome', 'Use case', 'Design flow', 'Technical flow', 'Acceptance test suite']);
+    expect(row.columns.map((c) => c.name)).toEqual(['Outcome', 'Journey', 'Use case', 'Design flow', 'Technical flow', 'Acceptance test suite']);
     expect(row.rows.filter((r) => r === useCase)).toHaveLength(1);
     expect(box(row, `${useCase}|use-case`)).toMatchObject({ focus: true });
     expect(row.lines.filter((l) => l.kind === 'serves' && l.to === `${useCase}|use-case`).map((l) => l.from).sort()).toEqual(outcomes.map((o) => `outcome/${o}`).sort());

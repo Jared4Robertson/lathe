@@ -1,13 +1,17 @@
-import { visible, type TraceGraph, type Openness } from './trace';
+import { journeyBox, JOURNEY_COLUMN, OUTCOME_COLUMN, STAGE_COLUMN, TRACE_COLUMNS, TRACE_STAGES, visible, type TraceGraph, type Openness } from './trace';
 import type { TraceOrder } from './order';
 
 // Where each box of the Trace stage goes (LA-V98), pure: rows top to bottom in their order (order.ts), each
 // as tall as its tallest cell, every box one height, a cell's boxes stacked from its row's top, each child indented
 // under its parent. Top-down from fixed boxes: a row's place depends only on the rows above it and its own cells, so
 // opening a cell moves only its row's boxes and the rows below it, which glide (graph/morph.ts), and nothing beside it
-// changes width. A removed row's room stays empty until Tidy up (order.ts), and an outcome keeps its top once placed. The rows serving no outcome sit after the rest, under the mark "No outcome". Each outcome sits at the
-// median height of the rows it serves, never closer than a box to the one above it, in its order. Arithmetic only, on
-// the page: every box is one size and no text is measured, so it is worked out again at once when a cell opens.
+// changes width. A removed row's room stays empty until Tidy up (order.ts), and an outcome keeps its top once placed. The rows serving no outcome sit after the rest, under the mark "No outcome". Each journey sits at the
+// median height of the rows it carries out, its boxes stacked down from its top (its steps and test while open), never
+// over the journey above it in its order: a journey opened pushes the ones below it down while it is open, and each keeps
+// its top once placed. Each outcome sits at the median height of the rows and journeys it serves, never closer than a box
+// to the one above it, in its order. The lines from each journey to its rows start at its step's box while the journey is
+// open, else at the journey's, labeled with the steps' numbers. Arithmetic only, on the page: every box is one size and no
+// text is measured, so it is worked out again at once when a cell opens.
 
 /** A box's width and height, the indent of a child, the gap between two boxes of a cell and between two rows, and the room between columns, where the lines run. */
 export const ITEM_WIDTH = 264;
@@ -28,6 +32,9 @@ export const columnLeft = (column: number) => column * (ITEM_WIDTH + COLUMN_GAP)
 /** One box's place, in map units. */
 export interface BoxPlace { x: number; y: number; w: number; h: number }
 
+/** A line from a journey to a use case row it carries out: from the step's box while it shows, else the journey's, with every step's number it stands for. */
+export interface CarryLine { from: string; to: string; journey: string; useCase: string; label: string }
+
 /** A laid-out Trace stage. */
 export interface TraceLaid {
   /** The order it was laid out in. */
@@ -37,6 +44,8 @@ export interface TraceLaid {
   /** Each column's boxes top to bottom, as shown. */
   columns: readonly (readonly string[])[];
   places: ReadonlyMap<string, BoxPlace>;
+  /** The journeys' lines to their rows. */
+  carries: readonly CarryLine[];
   /** The top of the rows serving no outcome (null when there are none). */
   outsideTop: number | null;
   width: number;
@@ -47,7 +56,7 @@ export interface TraceLaid {
 export function layOutTrace(graph: TraceGraph, order: TraceOrder, open: Openness): TraceLaid {
   const places = new Map<string, BoxPlace>();
   const rows = new Map<string, { y: number; h: number }>();
-  const columns: string[][] = [[], [], [], [], []];
+  const columns: string[][] = TRACE_COLUMNS.map(() => []);
   let y = 0;
   let outsideTop: number | null = null;
   for (const u of order.rows) {
@@ -60,7 +69,8 @@ export function layOutTrace(graph: TraceGraph, order: TraceOrder, open: Openness
       outsideTop = y;
     }
     let tallest = 1;
-    for (let c = 1; c <= 4; c++) {
+    for (const stage of TRACE_STAGES) {
+      const c = STAGE_COLUMN[stage];
       const shown = visible(graph, row.cells[c], open);
       tallest = Math.max(tallest, shown.length);
       shown.forEach((key, i) => {
@@ -76,12 +86,49 @@ export function layOutTrace(graph: TraceGraph, order: TraceOrder, open: Openness
   }
   const height = Math.max(0, y - ROW_GAP);
 
+  // The journeys, in their order: each at the median middle of the rows it carries out (kept once placed, as an
+  // outcome's top), never over the one above it.
+  const carriedRows = new Map<string, number[]>();
+  for (const c of graph.carries) { const r = rows.get(c.useCase); if (r) (carriedRows.get(c.journey) ?? carriedRows.set(c.journey, []).get(c.journey)!).push(r.y + ITEM_HEIGHT / 2); }
+  let floor = 0;
+  for (const j of order.journeys) {
+    const key = journeyBox(j);
+    if (!graph.items.has(key)) continue;
+    let top = order.journeyTops.get(j);
+    if (top === undefined) {
+      const mids = (carriedRows.get(j) ?? []).sort((a, b) => a - b);
+      const median = mids.length > 0 ? mids[Math.floor((mids.length - 1) / 2)] - ITEM_HEIGHT / 2 : floor;
+      top = Math.max(median, floor);
+      order.journeyTops.set(j, top);
+    }
+    const at = Math.max(top, floor);
+    const shown = visible(graph, key, open);
+    shown.forEach((k, i) => {
+      const inset = graph.items.get(k)!.depth * INDENT;
+      places.set(k, { x: columnLeft(JOURNEY_COLUMN) + inset, y: at + i * PITCH, w: ITEM_WIDTH - inset, h: ITEM_HEIGHT });
+      columns[JOURNEY_COLUMN].push(k);
+    });
+    floor = at + shown.length * PITCH;
+  }
+  // Each journey's lines to its rows: one per box and row, labeled with every step's number it stands for.
+  const lines = new Map<string, CarryLine>();
+  for (const c of graph.carries) {
+    const to = `${c.useCase}|use-case`;
+    if (!places.has(to)) continue;
+    const from = graph.boxesOf.get(c.step)?.find((k) => places.has(k)) ?? journeyBox(c.journey);
+    const line = lines.get(`${from}>${to}`);
+    if (line) line.label = `${line.label}, ${c.label}`;
+    else lines.set(`${from}>${to}`, { from, to, journey: c.journey, useCase: c.useCase, label: c.label });
+  }
+
   // The outcomes. Each one laid out before keeps its top (the order's outcomeTops). In a fresh order (none kept) each
   // goes by the median middle of the rows it serves, in its order, a box apart. A new one beside kept ones takes the
   // nearest free place to that median within NEAR_OUTCOME_ROWS boxes, else the bottom of the column. Each top is kept
   // in the order, so opening a row or new data moves no outcome until Tidy up.
   const servedRows = new Map<string, number[]>();
-  for (const [o, u] of graph.serves) { const r = rows.get(u); if (r) (servedRows.get(o) ?? servedRows.set(o, []).get(o)!).push(r.y + ITEM_HEIGHT / 2); }
+  const served = (o: string, y: number) => (servedRows.get(o) ?? servedRows.set(o, []).get(o)!).push(y + ITEM_HEIGHT / 2);
+  for (const [o, u] of graph.serves) { const r = rows.get(u); if (r) served(o, r.y); }
+  for (const [o, j] of graph.journeyServes) { const p = places.get(journeyBox(j)); if (p) served(o, p.y); }
   const shown = order.outcomes.filter((o) => graph.items.has(`outcome/${o}`));
   const fresh = shown.every((o) => !order.outcomeTops.has(o));
   const tops = shown.filter((o) => order.outcomeTops.has(o)).map((o) => order.outcomeTops.get(o)!);
@@ -104,11 +151,11 @@ export function layOutTrace(graph: TraceGraph, order: TraceOrder, open: Openness
   }
   const outcomes = [...shown].sort((a, b) => order.outcomeTops.get(a)! - order.outcomeTops.get(b)!);
   for (const o of outcomes) {
-    places.set(`outcome/${o}`, { x: columnLeft(0), y: order.outcomeTops.get(o)!, w: ITEM_WIDTH, h: ITEM_HEIGHT });
-    columns[0].push(`outcome/${o}`);
+    places.set(`outcome/${o}`, { x: columnLeft(OUTCOME_COLUMN), y: order.outcomeTops.get(o)!, w: ITEM_WIDTH, h: ITEM_HEIGHT });
+    columns[OUTCOME_COLUMN].push(`outcome/${o}`);
   }
-  const bottom = Math.max(0, ...outcomes.map((o) => order.outcomeTops.get(o)! + ITEM_HEIGHT));
-  return { order, rows, columns, places, outsideTop, width: columnLeft(4) + ITEM_WIDTH, height: Math.max(height, bottom) };
+  const bottom = Math.max(0, floor - ITEM_GAP, ...outcomes.map((o) => order.outcomeTops.get(o)! + ITEM_HEIGHT));
+  return { order, rows, columns, places, carries: [...lines.values()], outsideTop, width: columnLeft(TRACE_COLUMNS.length - 1) + ITEM_WIDTH, height: Math.max(height, bottom) };
 }
 
 /**

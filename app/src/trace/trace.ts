@@ -1,12 +1,17 @@
-import type { TraceObligation, TraceRow, ProductTrace } from '../../../lathe/src/traceability/trace/read-model';
+import type { TraceObligation, TraceRow, ProductTrace, TraceJourney, TraceJourneyStep } from '../../../lathe/src/traceability/trace/read-model';
 import { kindLabel, type RecordIndex } from '../exploring/record-summaries/record-index';
 
 // The Trace stage (LA-V98), pure and tested directly: one row per use case of a product's space, each
-// use case once, across five columns, left to right:
+// use case once, across six columns, left to right:
 //
-//   Outcome | Use case | Design flow | Technical flow | Acceptance test suite
+//   Outcome | Journey | Use case | Design flow | Technical flow | Acceptance test suite
 //
-// - Outcome: each business outcome once, with a line to every use case its capability serves (serves.ts's reach).
+// - Outcome: each business outcome once, with a line to every use case its capability serves (serves.ts's reach) and
+//   to every journey serving it.
+// - Journey: each journey of the product once, beside the rows, not in them (rows stay one per use case), with a line
+//   to each use case row its steps carry out, labeled with the steps' numbers ("1", "3, alt 2"). Closed, its proof
+//   ("3 steps · 2 proved · test ✓"); open, its steps in order (main path first, each alternate path under a
+//   heading naming it), a handoff a step of its own with its policy's proof, and its journey test (a dashed gap with none).
 // - Use case: the use case; expanded, its UC requirements, the aggregates its steps change and the read models they read.
 // - Design flow: a status ("2 interfaces · all designed"); expanded, its flow (one per use case, the same through
 //   every interface), expanding to a box per interface that offers the use case, each opening that interface's version
@@ -27,13 +32,20 @@ import { kindLabel, type RecordIndex } from '../exploring/record-summaries/recor
 // box that holds it. Everything comes from the Trace read model (list-traced-use-cases, LA-TRC-RM13); the index gives only
 // titles, kinds and stages to draw. Where each box goes is layout.ts's.
 
-/** The five columns, left to right. */
-export const TRACE_COLUMNS = ['outcome', 'use-case', 'design', 'technical', 'suite'] as const;
+/** The six columns, left to right. */
+export const TRACE_COLUMNS = ['outcome', 'journey', 'use-case', 'design', 'technical', 'suite'] as const;
 export type TraceColumn = (typeof TRACE_COLUMNS)[number];
-export const TRACE_COLUMN_LABELS: Record<TraceColumn, string> = { outcome: 'Outcome', 'use-case': 'Use case', design: 'Design flow', technical: 'Technical flow', suite: 'Acceptance test suite' };
+export const TRACE_COLUMN_LABELS: Record<TraceColumn, string> = { outcome: 'Outcome', journey: 'Journey', 'use-case': 'Use case', design: 'Design flow', technical: 'Technical flow', suite: 'Acceptance test suite' };
 /** The columns that expand down, each a stage of every row. */
 export const TRACE_STAGES = ['use-case', 'design', 'technical', 'suite'] as const;
 export type TraceStage = (typeof TRACE_STAGES)[number];
+/** The columns beside the rows: the outcomes and the journeys. */
+export const OUTCOME_COLUMN = 0;
+export const JOURNEY_COLUMN = 1;
+/** Each stage's column: a row's cells, from the Use case column on. */
+export const STAGE_COLUMN: Readonly<Record<TraceStage, number>> = { 'use-case': 2, design: 3, technical: 4, suite: 5 };
+/** The stage of a row's column, or null for the outcomes' and journeys'. */
+export const stageOfColumn = (column: number): TraceStage | null => TRACE_STAGES.find((s) => STAGE_COLUMN[s] === column) ?? null;
 
 /** What a box is: a record, a stage's status, a gap (dashed), a heading over a group, or a hint. */
 export type ItemRole = 'record' | 'status' | 'gap' | 'heading' | 'hint';
@@ -54,6 +66,8 @@ export interface Item {
   role: ItemRole;
   /** What a box that is no record says. */
   words?: { kind: string; title: string; meta: string };
+  /** A record box's second line in place of its kind and ID: a journey's proof, a step's number and what it carries out. */
+  meta?: string;
   /** The key that opens it, for a box with children. */
   opens?: string;
   /** Its children, in order. */
@@ -69,7 +83,7 @@ export interface RowLink { from: string; to: string }
 export interface Row {
   useCase: string;
   data: TraceRow;
-  /** Each column's own box, from the Use case column on (index 1 to 4; index 0 unused). */
+  /** Each column's own box, from the Use case column on (STAGE_COLUMN: index 2 to 5; 0 and 1 unused). */
   cells: string[];
   /** Its records' links, from left to right, for its paths. */
   links: RowLink[];
@@ -77,11 +91,22 @@ export interface Row {
   steps: string[];
 }
 
+/** A journey step carrying out a use case with a row: the line from the journey to that row, labeled with its number. */
+export interface Carry { journey: string; step: string; useCase: string; label: string }
+
 /** A product's Trace stage. */
 export interface TraceGraph {
   product: string;
   /** The outcomes, in ID order. */
   outcomes: readonly string[];
+  /** The journeys, in ID order (order.ts orders them), each with its proof. */
+  journeys: readonly TraceJourney[];
+  /** The journey of each journey, journey step and journey test the view draws, by ID. */
+  journeyOf: ReadonlyMap<string, TraceJourney>;
+  /** The outcome → journey links, each [outcome, journey]. */
+  journeyServes: readonly (readonly [string, string])[];
+  /** The journey → use case links, one per step carrying out a use case with a row, in each journey's order. */
+  carries: readonly Carry[];
   /** The rows, in ID order (order.ts orders them). */
   rows: readonly Row[];
   rowOf: ReadonlyMap<string, Row>;
@@ -100,6 +125,9 @@ export const cellKey = (row: string, stage: TraceStage) => `${row}|${stage}`;
 export const innerKey = (row: string, stage: TraceStage, what: string) => `${row}|${stage}|${what}`;
 /** The key under which a Technical flow cell shows every step's chain (Expand all), not only the selected step's. */
 export const everyStepKey = (row: string) => innerKey(row, 'technical', '*');
+/** A journey's box, and the key that opens it. */
+export const journeyBox = (journey: string) => `journey/${journey}`;
+export const journeyKey = (journey: string) => `journey|${journey}`;
 
 const n = (k: number, one: string, many = `${one}s`) => `${k} ${k === 1 ? one : many}`;
 
@@ -121,6 +149,24 @@ export function statusOf(row: TraceRow, stage: Exclude<TraceStage, 'use-case'>):
 
 /** The Suite's header: "3 of 4 proved". */
 export const provedWords = (row: TraceRow) => `${row.status.suite.owed - row.status.suite.notProved} of ${row.status.suite.owed} proved`;
+
+const isMain = (path: string) => path.trim().toLowerCase() === 'main';
+
+/** A journey step's number, as the line to its row says it: "3" on the main path, "alt 2" on another. */
+export const stepNumber = (s: Pick<TraceJourneyStep, 'path' | 'position'>) => (isMain(s.path) ? String(s.position) : `alt ${s.position}`);
+
+/** A journey's proof in words, as its closed box says it in place of its kind and ID: "3 steps · 2 proved · test ✓". */
+export function journeyWords(j: TraceJourney): string {
+  const { steps, unlinked, stepsProved } = j.status;
+  const test = !j.test ? 'no test' : j.testProved ? 'test ✓' : 'test ✗';
+  return [n(steps, 'step'), ...(unlinked > 0 ? [`${unlinked} unlinked`] : []), `${stepsProved} proved`, test].join(' · ');
+}
+
+/** A journey step in words: its number, what it carries out (a handoff its policy) and whether that is proved (✓ or ✗). */
+export function stepWords(s: TraceJourneyStep): string {
+  if (s.carriesOut === null) return `Step ${s.position} · No use case yet`;
+  return [`Step ${s.position}`, s.kind === 'policy' ? `Handoff ${s.carriesOut}` : s.carriesOut, s.proved ? '✓' : '✗'].join(' · ');
+}
 
 /** The words of a chain's layers, as their headings say them when a layer is missing. */
 const MISSING_HANDLER = 'No handler';
@@ -150,7 +196,7 @@ function build(index: RecordIndex, trace: ProductTrace): TraceGraph {
     if (o.gaps.includes('proved')) plain(parent, `gap:${o.id}`, 'gap', { kind: 'Gap', title: 'Not proved', meta: `Gap · ${o.id}` }, { id: o.id });
   };
 
-  for (const o of trace.outcomes) if (known(o)) add({ key: `outcome/${o}`, id: o, row: null, column: 0, depth: 0, parent: null, role: 'record' });
+  for (const o of trace.outcomes) if (known(o)) add({ key: `outcome/${o}`, id: o, row: null, column: OUTCOME_COLUMN, depth: 0, parent: null, role: 'record' });
   const serves: [string, string][] = [];
   const rows: Row[] = [];
   let gapped = 0;
@@ -165,14 +211,14 @@ function build(index: RecordIndex, trace: ProductTrace): TraceGraph {
     if (outcomes.length === 0) outside++;
 
     // Use case: the use case, then its requirements, what it changes and what it reads.
-    const useCase = add({ key: `${u}|use-case`, id: u, row: u, column: 1, depth: 0, parent: null, role: 'record', opens: cellKey(u, 'use-case') });
+    const useCase = add({ key: `${u}|use-case`, id: u, row: u, column: STAGE_COLUMN['use-case'], depth: 0, parent: null, role: 'record', opens: cellKey(u, 'use-case') });
     for (const r of data.requirements) if (known(r.id)) { record(useCase, r.id); link(u, r.id); }
     for (const a of [...data.changes, ...data.reads]) if (known(a)) { record(useCase, a); link(u, a); }
 
     // Design flow: its status, then its flow, a box per interface that offers it, and each interface's version: its
     // steps, each with where it is carried out there and its integrations, a gap under a step it cannot reach.
     const design = statusOf(data, 'design');
-    const designBox = add({ key: `${u}|design`, id: null, row: u, column: 2, depth: 0, parent: null, role: design.gap ? 'gap' : 'status', words: { kind: 'Design flow', title: design.title, meta: `Design flow · ${u}` }, opens: cellKey(u, 'design') });
+    const designBox = add({ key: `${u}|design`, id: null, row: u, column: STAGE_COLUMN.design, depth: 0, parent: null, role: design.gap ? 'gap' : 'status', words: { kind: 'Design flow', title: design.title, meta: `Design flow · ${u}` }, opens: cellKey(u, 'design') });
     const f = data.flow && known(data.flow.id) ? data.flow : null;
     const steps = f ? f.steps.filter((s) => known(s.id)) : [];
     if (f) {
@@ -220,7 +266,7 @@ function build(index: RecordIndex, trace: ProductTrace): TraceGraph {
 
     // Technical flow: its status, then each step's chain under a heading naming the step.
     const technical = statusOf(data, 'technical');
-    const techBox = add({ key: `${u}|technical`, id: null, row: u, column: 3, depth: 0, parent: null, role: technical.gap ? 'gap' : 'status', words: { kind: 'Technical flow', title: technical.title, meta: `Technical flow · ${u}` }, opens: cellKey(u, 'technical') });
+    const techBox = add({ key: `${u}|technical`, id: null, row: u, column: STAGE_COLUMN.technical, depth: 0, parent: null, role: technical.gap ? 'gap' : 'status', words: { kind: 'Technical flow', title: technical.title, meta: `Technical flow · ${u}` }, opens: cellKey(u, 'technical') });
     plain(techBox, 'hint', 'hint', { kind: 'Hint', title: 'Select a step to show its chain', meta: 'Technical flow' });
     for (const s of steps) {
       const head = plain(techBox, `step:${s.id}`, 'heading', { kind: 'Step', title: index.byId.get(s.id)!.title, meta: `${kindOf(s.id)} · ${s.id}` }, { id: s.id, step: s.id });
@@ -242,7 +288,7 @@ function build(index: RecordIndex, trace: ProductTrace): TraceGraph {
 
     // Acceptance test suite: its status, "k of N proved", each requirement's tests, each flow's test, and Lower tests.
     const suite = statusOf(data, 'suite');
-    const suiteBox = add({ key: `${u}|suite`, id: null, row: u, column: 4, depth: 0, parent: null, role: suite.gap ? 'gap' : 'status', words: { kind: 'Acceptance test suite', title: suite.title, meta: `Acceptance test suite · ${u}` }, opens: cellKey(u, 'suite') });
+    const suiteBox = add({ key: `${u}|suite`, id: null, row: u, column: STAGE_COLUMN.suite, depth: 0, parent: null, role: suite.gap ? 'gap' : 'status', words: { kind: 'Acceptance test suite', title: suite.title, meta: `Acceptance test suite · ${u}` }, opens: cellKey(u, 'suite') });
     plain(suiteBox, 'proved', 'heading', { kind: 'Proved', title: provedWords(data), meta: 'Use case and flow tests' });
     for (const r of data.requirements) {
       if (!known(r.id)) continue;
@@ -264,9 +310,37 @@ function build(index: RecordIndex, trace: ProductTrace): TraceGraph {
       }
     }
     if (design.gap || technical.gap || suite.gap) gapped++;
-    rows.push({ useCase: u, data, cells: ['', useCase, designBox, techBox, suiteBox], links, steps: steps.map((s) => s.id) });
+    rows.push({ useCase: u, data, cells: ['', '', useCase, designBox, techBox, suiteBox], links, steps: steps.map((s) => s.id) });
   }
-  return { product: trace.product, outcomes: trace.outcomes.filter(known), rows, rowOf: new Map(rows.map((r) => [r.useCase, r])), items, serves, boxesOf, counts: { gapped, outside } };
+  const rowOf = new Map(rows.map((r) => [r.useCase, r]));
+
+  // Journey: each journey's box, opening to its steps (each alternate path under a heading), its journey test or a gap;
+  // a line from each outcome it serves, and to each use case row a step carries out.
+  const journeys = trace.journeys.filter((j) => known(j.id));
+  const journeyOf = new Map<string, TraceJourney>();
+  const journeyServes: [string, string][] = [];
+  const carries: Carry[] = [];
+  for (const j of journeys) {
+    journeyOf.set(j.id, j);
+    const box = add({ key: journeyBox(j.id), id: j.id, row: null, column: JOURNEY_COLUMN, depth: 0, parent: null, role: 'record', opens: journeyKey(j.id), meta: journeyWords(j) });
+    const paths = new Map<string, string>();
+    for (const s of j.steps) {
+      if (!known(s.id)) continue;
+      journeyOf.set(s.id, j);
+      let parent = box;
+      if (!isMain(s.path)) {
+        const name = s.path.trim();
+        parent = paths.get(name.toLowerCase()) ?? plain(box, `path:${name}`, 'heading', { kind: 'Path', title: name, meta: `Alternate path · ${j.id}` });
+        paths.set(name.toLowerCase(), parent);
+      }
+      record(parent, s.id, { meta: stepWords(s) });
+      if (s.kind === 'use_case' && s.carriesOut && rowOf.has(s.carriesOut)) carries.push({ journey: j.id, step: s.id, useCase: s.carriesOut, label: stepNumber(s) });
+    }
+    if (j.test && known(j.test)) { journeyOf.set(j.test, j); record(box, j.test, { meta: `Journey test · ${j.testProved ? 'proved' : 'not proved'}` }); }
+    else plain(box, 'gap:test', 'gap', { kind: 'Gap', title: 'No journey test', meta: `Gap · ${j.id}` }, { id: j.id });
+    for (const o of j.outcomes) if (items.has(`outcome/${o}`)) journeyServes.push([o, j.id]);
+  }
+  return { product: trace.product, outcomes: trace.outcomes.filter(known), journeys, journeyOf, journeyServes, carries, rows, rowOf, items, serves, boxesOf, counts: { gapped, outside } };
 }
 
 const graphs = new WeakMap<ProductTrace, WeakMap<RecordIndex, TraceGraph>>();
@@ -281,18 +355,21 @@ export function traceGraph(index: RecordIndex, trace: ProductTrace): TraceGraph 
 
 // ---------- What shows: the open boxes' children ----------
 
-/** What the view opens, and the step whose chain the Technical flow column shows. */
-export interface Openness { open: ReadonlySet<string>; step: string | null }
+/**
+ * What the view opens, the step whose chain the Technical flow column shows, and the journey shown open while one of its
+ * steps is the focus (as a focused flow step shows its chain).
+ */
+export interface Openness { open: ReadonlySet<string>; step: string | null; journey?: string | null }
 
 /** Whether a box's children show. */
 export function isOpen(item: Item, o: Openness): boolean {
-  return !!item.opens && o.open.has(item.opens);
+  return !!item.opens && (o.open.has(item.opens) || (!!o.journey && item.opens === journeyKey(o.journey)));
 }
 
 /** The children of a box that show: a Technical flow cell shows the selected step's chain (or a hint), or every step's under Expand all. */
 export function shownChildren(graph: TraceGraph, item: Item, o: Openness): string[] {
   if (!isOpen(item, o)) return [];
-  if (item.column === 3 && item.depth === 0 && item.row) {
+  if (item.column === STAGE_COLUMN.technical && item.depth === 0 && item.row) {
     const heads = item.children.filter((k) => graph.items.get(k)!.role === 'heading');
     if (o.open.has(everyStepKey(item.row))) return heads;
     const own = heads.find((k) => graph.items.get(k)!.step === o.step);
