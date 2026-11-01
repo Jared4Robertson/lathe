@@ -70,7 +70,7 @@ export function addStandardRuleTest(tx: Transaction, input: AddStandardRuleTest)
   standards.save(standard);
 }
 
-/** Changes a standard rule test's columns or the test data sets it starts from (the whole list). */
+/** Changes a standard rule test's way of running or the test data sets it starts from (the whole list). */
 export function changeStandardRuleTest(tx: Transaction, input: ChangeStandardRuleTest): void {
   const standards = new StandardRepository(tx);
   const standard = standards.loadHolding('standard_rule_test', input.id) ?? tx.refuse('missing', `there is no standard rule test ${input.id}`);

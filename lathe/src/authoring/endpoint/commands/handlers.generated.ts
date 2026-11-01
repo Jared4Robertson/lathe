@@ -16,14 +16,14 @@ import type { AddEndpointTest } from './add-endpoint-test.ts';
 import type { ChangeEndpointTest } from './change-endpoint-test.ts';
 import type { RemoveEndpointTest } from './remove-endpoint-test.ts';
 
-/** Adds an endpoint under the one command or query it exposes (exactly one of command_id and query_id), titled by its method and route. */
+/** Adds an endpoint under the one command or query it exposes (exactly one of command_id and query_id), titled by its method and address. */
 export function addEndpoint(tx: Transaction, input: AddEndpoint): void {
   const endpoints = new EndpointRepository(tx);
   const endpoint = endpoints.create({ root: input.id, endpoint: input, requirements: [], handler: null, tests: [] });
   endpoints.save(endpoint);
 }
 
-/** Changes an endpoint's title, method, route, description or notes. The command or query it exposes changes only by Move an endpoint. */
+/** Changes an endpoint's title, method, address, description or notes. The command or query it exposes changes only by Move an endpoint. */
 export function changeEndpoint(tx: Transaction, input: ChangeEndpoint): void {
   const endpoints = new EndpointRepository(tx);
   const endpoint = endpoints.load(input.id) ?? tx.refuse('missing', `there is no endpoint ${input.id}`);
@@ -89,7 +89,7 @@ export function addEndpointTest(tx: Transaction, input: AddEndpointTest): void {
   endpoints.save(endpoint);
 }
 
-/** Changes an endpoint test's columns or the test data sets it starts from (the whole list). Its requirement does not change. */
+/** Changes an endpoint test's way of running or the test data sets it starts from (the whole list). Its requirement does not change. */
 export function changeEndpointTest(tx: Transaction, input: ChangeEndpointTest): void {
   const endpoints = new EndpointRepository(tx);
   const endpoint = endpoints.loadHolding('endpoint_test', input.id) ?? tx.refuse('missing', `there is no endpoint test ${input.id}`);

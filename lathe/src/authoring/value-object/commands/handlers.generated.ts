@@ -87,7 +87,7 @@ export function removeValueType(tx: Transaction, input: RemoveValueType): void {
   valueObjects.save(valueObject);
 }
 
-/** Changes a constraint test's columns or the test data sets it starts from (the whole list). */
+/** Changes a constraint test's way of running or the test data sets it starts from (the whole list). */
 export function changeConstraintTest(tx: Transaction, input: ChangeConstraintTest): void {
   const valueObjects = new ValueObjectRepository(tx);
   const valueObject = valueObjects.loadHolding('constraint_test', input.id) ?? tx.refuse('missing', `there is no constraint test ${input.id}`);

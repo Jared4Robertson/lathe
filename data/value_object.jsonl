@@ -9,7 +9,7 @@
 {"id":"LA-VO09","title":"Basic type","description":"A field's type when it is no value object and no reference."}
 {"id":"LA-VO10","title":"Table storage","description":"How a table is stored."}
 {"id":"LA-VO11","title":"Key type","description":"What a table key is."}
-{"id":"LA-VO12","title":"Request method","description":"How a request names what it asks for."}
+{"id":"LA-VO12","title":"Endpoint method","description":"How an endpoint is called."}
 {"id":"LA-VO13","title":"Event delivery","description":"How an event type reaches what hears it."}
 {"id":"LA-VO14","title":"Run by","description":"How a test runs: its level, its state, and the file that runs it or why it is manual. Fields: Level, State, File (optional), Manual reason (optional)."}
 {"id":"LA-VO15","title":"Kind field type","description":"The type of a product kind's field."}

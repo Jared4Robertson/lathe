@@ -4,7 +4,7 @@ export const GET_COMMAND_IDENTITY = {
   id: 'LA-AUT-QRY159',
   slice: { aggregate: 'LA-AUT-A8', name: 'command' },
   name: 'get-command',
-  description: 'Reads a command whole as its page shows it, by its ID or the ID of any record in it: the record asked for and its kind, the command\'s row, the events it raises, the specifications it checks and the domain services it calls, its handler, its policies with the event each hears, their event handlers and tests, and the endpoints that expose it.',
+  description: 'Reads a command whole as its readers read it, by its ID or the ID of any record in it: the record asked for and its kind, the command\'s own details, the events it raises, the specifications it checks and the domain services it calls, its handler, its policies with the event each hears, their event handlers and tests, and the endpoints that expose it.',
   method: 'GET',
   route: '/api/command/get-command',
 } as const;

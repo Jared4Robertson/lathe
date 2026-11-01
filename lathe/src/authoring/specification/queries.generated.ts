@@ -4,7 +4,7 @@ export const GET_SPECIFICATION_IDENTITY = {
   id: 'LA-AUT-QRY170',
   slice: { aggregate: 'LA-AUT-A5', name: 'specification' },
   name: 'get-specification',
-  description: 'Reads a specification whole as its page shows it, by its ID or the ID of its predicate or test: the record asked for and its kind, the specification\'s row and the domain its ID names, the aggregates it reads, its predicate with the standard rules it meets and the packages it uses, and its test with the test data sets it starts from.',
+  description: 'Reads a specification whole as its readers read it, by its ID or the ID of its predicate or test: the record asked for and its kind, the specification\'s own details and the domain its ID names, the aggregates it reads, its predicate with the standard rules it meets and the packages it uses, and its test with the test data sets it starts from.',
   method: 'GET',
   route: '/api/specification/get-specification',
 } as const;

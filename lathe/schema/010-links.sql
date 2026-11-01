@@ -44,9 +44,9 @@ COMMENT ON TABLE stored_in IS 'The repository, reader or table is kept in the da
 CREATE TABLE provided_by (source_id VARCHAR NOT NULL UNIQUE REFERENCES provided_by_source (id), target_id VARCHAR NOT NULL REFERENCES record_id (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE provided_by IS 'The record is provided by something outside the product, which decides it once for everyone who uses it: a dependency, a platform or a generic subdomain, reached through an integration or named by a record of a product''s own kind (a component of a design system), once the product adds that pair with a product_relation named provided_by. A data store someone else runs, such as a managed database or a bucket, is provided by the integration that reaches it; a store the product owns outright, such as a local file, has none. A provided record counts as accounted for, and a provided obligation as built and proved, through its provider. One provider per record.';
 CREATE TABLE fills (source_id VARCHAR NOT NULL REFERENCES accidental_record (id), target_id VARCHAR NOT NULL REFERENCES slot (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE fills IS 'The accidental record (a technical record or an endpoint), written by hand, fills the pattern''s slot against its contract: it is a fill, accidental complexity recorded where it is owed and counted as debt until the pattern can derive it.';
+COMMENT ON TABLE fills IS 'The accidental record (a technical record or an endpoint), written by hand, fills the pattern''s slot against its contract: it is a fill, accidental complexity recorded where it is owed and counted as debt until the pattern can derive it. A record of a product''s own accidental kind, such as a shared module, fills a slot the same way, with no declaration.';
 CREATE TABLE generates (source_id VARCHAR NOT NULL REFERENCES tooling (id), target_id VARCHAR NOT NULL REFERENCES accidental_record (id), PRIMARY KEY (source_id, target_id), CHECK (source_id <> target_id));
-COMMENT ON TABLE generates IS 'The tooling record (a generator) writes the accidental record (a technical record''s code, or an endpoint''s route) from the spec: the record is derived, never written by hand.';
+COMMENT ON TABLE generates IS 'The tooling record (a generator) writes the accidental record (a technical record''s code, or an endpoint''s route) from the spec: the record is derived, never written by hand. A record of a product''s own accidental kind, such as a shared module, is generated the same way, with no declaration.';
 CREATE TABLE serves (source_id VARCHAR NOT NULL REFERENCES capability (id), target_id VARCHAR NOT NULL REFERENCES business_outcome (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE serves IS 'The capability serves the business outcome: what it is for. A capability may serve several outcomes, and an outcome be served by several capabilities.';
 CREATE TABLE measured_by (source_id VARCHAR NOT NULL REFERENCES business_outcome (id), target_id VARCHAR NOT NULL REFERENCES record_id (id), PRIMARY KEY (source_id, target_id));
@@ -162,6 +162,7 @@ INSERT INTO meta_relation_pair VALUES
   ('builds_on', 'term', 'term', 'The term''s meaning uses the other term, which is defined before it.');
 
 -- The pairs of provided_by, fills and generates, one per member of the supertype their end accepts, worded by its label.
+-- A product's own kind that joins the supertype gains the same pairs as its table is built (product-kinds.ts), never declared.
 INSERT INTO meta_relation_pair
   WITH named AS (
     SELECT m.supertype, m.kind, CASE WHEN regexp_matches(k.label, '^[A-Z]{2}') THEN k.label ELSE lower(k.label) END AS label

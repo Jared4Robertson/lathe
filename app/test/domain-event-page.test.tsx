@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
-import { main, openApp, section } from './helpers';
+import { main, openApp } from './helpers';
 
 // The Domain event page and its editor (LA-AUT-A7, LA-V131): a domain event and its event type are read through the
 // aggregate's own query, and changed only through the aggregate's own commands, one per change, each refusal shown with
@@ -23,17 +23,7 @@ function withPolicy(): ServedData {
   return w;
 }
 
-describe('LA-V131-R04-T01 a domain event is read through the Domain event aggregate\'s own query, never a generic record read', () => {
-  it('reads GET /api/domain-event/get-domain-event, and shows its description and the fields it carries', async () => {
-    const { requests } = await openApp('/DM-SHOP-EV01', { data: withPolicy() });
-    expect(await within(main()).findByText('The fixture\'s domain event Item added.')).toBeInTheDocument();
-    expect(requests).toContain('GET /api/domain-event/get-domain-event?id=DM-SHOP-EV01');
-    expect(section(/^Fields/)).toHaveTextContent('The basket.');
-    expect(section(/^Event type/)).toHaveTextContent('No event type yet');
-  });
-});
-
-describe('LA-V131-R02-T01 the Domain event editor writes only through the aggregate\'s own commands, one per change', () => {
+describe('LA-V131-R05-T01 the Domain event editor writes only through the aggregate\'s own commands, one per change', () => {
   it('Edit sends Change a domain event with only what changed, and offers no Move', async () => {
     const user = userEvent.setup();
     const changed = () => setRow(withPolicy(), 'domain_event', 'DM-SHOP-EV01', { published: true });

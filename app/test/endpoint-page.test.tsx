@@ -13,7 +13,7 @@ import { main, openApp, section } from './helpers';
 const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.findByRole('toolbar', { name: `Change ${id}` });
 
-describe('LA-V152-R04-T01 an endpoint\'s records are read through the Endpoint aggregate\'s own query, never a generic record read', () => {
+describe('LA-V152-R05-T01 an endpoint\'s records are read through the Endpoint aggregate\'s own query, never a generic record read', () => {
   it('reads GET /api/endpoint/get-endpoint for an API requirement, and shows its statement', async () => {
     const { requests } = await openApp('/P-D-EP01-R01', { data: modelWorkspace() });
     expect(await within(main()).findByText('It MUST answer 201 with the loan.')).toBeInTheDocument();
@@ -29,7 +29,7 @@ describe('LA-V152-R04-T01 an endpoint\'s records are read through the Endpoint a
   });
 });
 
-describe('LA-V152-R02-T01 the Endpoint editor writes only through the aggregate\'s own commands, one per change, Move for the endpoint alone', () => {
+describe('LA-V152-R06-T01 the Endpoint editor writes only through the aggregate\'s own commands, one per change, Move for the endpoint alone', () => {
   it('Edit sends Change an API requirement with only what changed; an API requirement has no Move', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/P-D-EP01-R01', { data: modelWorkspace(), command: () => ({ answer: ok }) });

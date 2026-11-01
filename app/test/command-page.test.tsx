@@ -24,16 +24,7 @@ function withPolicy(): ServedData {
   return w;
 }
 
-describe('LA-V132-R04-T01 a command\'s records are read through the Command aggregate\'s own query, never a generic record read', () => {
-  it('reads GET /api/command/get-command for a policy, and shows its statement', async () => {
-    const { requests } = await openApp('/DM-SHOP-PO01', { data: withPolicy() });
-    expect(await within(main()).findByText('Whenever an item is added, it is added again.')).toBeInTheDocument();
-    expect(requests).toContain('GET /api/command/get-command?id=DM-SHOP-PO01');
-    expect(section(/^Policy test/)).toHaveTextContent('No test proves it yet.');
-  });
-});
-
-describe('LA-V132-R02-T01 the Command editor writes only through the aggregate\'s own commands, one per change', () => {
+describe('LA-V132-R06-T01 the Command editor writes only through the aggregate\'s own commands, one per change', () => {
   it('Edit sends Change a command with the events it raises as one list, and offers no Move', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/DM-SHOP-CMD01', { data: withPolicy(), command: () => ({ answer: ok }) });

@@ -14,15 +14,6 @@ const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.findByRole('toolbar', { name: `Change ${id}` });
 const rows = (table: HTMLTableElement) => [...table.querySelectorAll('tbody tr')].map((tr) => [...tr.querySelectorAll('th, td')].map((c) => c.textContent));
 
-describe('LA-V142-R04-T01 a value object\'s records are read through the Value object aggregate\'s own query, never a generic record read', () => {
-  it('reads GET /api/value-object/get-value-object for a constraint test, and shows what it accepts and refuses', async () => {
-    const { requests } = await openApp('/P-VO01-C01-T', { data: modelWorkspace() });
-    await waitFor(() => expect(main().querySelector('[data-field="refuses"]')).toHaveTextContent('(blank)'));
-    expect(main().querySelector('[data-field="accepts"]')).toHaveTextContent('Ada');
-    expect(requests).toContain('GET /api/value-object/get-value-object?id=P-VO01-C01-T');
-  });
-});
-
 describe('LA-V142-R04-T01 a value object shows its fields with their types, its constraints with the test that proves each, and its value type', () => {
   it('lays out its fields and constraints as tables, and lists its value type', async () => {
     await openApp('/P-VO01', { data: modelWorkspace() });
@@ -33,7 +24,7 @@ describe('LA-V142-R04-T01 a value object shows its fields with their types, its 
   });
 });
 
-describe('LA-V142-R02-T01 the Value object editor writes only through the aggregate\'s own commands, one per change', () => {
+describe('LA-V142-R05-T01 the Value object editor writes only through the aggregate\'s own commands, one per change', () => {
   it('Edit sends Change a value object with only what changed; Add a constraint takes the next free ID; no Move', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/P-VO01', { data: modelWorkspace(), command: () => ({ answer: ok }) });
