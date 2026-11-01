@@ -1,10 +1,12 @@
-// EntryPointRepository (LA-AUT-REPO20): loads and saves the Entry point aggregate whole, in its own tables only: the
-// entry point, the packages it uses and the standard rules it meets.
-import { AggregateRepository, type InstanceRows } from '../../platform/data/repository.ts';
+// Generated from data/ by `npm run generate`. Do not edit.
+// EntryPointRepository (LA-AUT-REPO20): Loads an entry point whole (its row, the package_use rows naming it and the
+// meets links it starts) and saves exactly the rows that changed, in its own tables only, and only its own record's
+// rows of the shared package_use and meets tables.
+import { AggregateRepository as Repository, type InstanceRows } from '../../platform/data/repository.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
-import { entryPointRows, entryPointsFrom, ENTRY_POINT_TABLES, type EntryPoint } from './model.ts';
+import { ENTRY_POINT_TABLES, entryPointRows, entryPointsFrom, type EntryPoint } from './model.ts';
 
-export class EntryPointRepository extends AggregateRepository<EntryPoint> {
+export class EntryPointRepository extends Repository<EntryPoint> {
   constructor(tx: Transaction) {
     super(tx, 'EntryPointRepository', ENTRY_POINT_TABLES);
   }
@@ -13,7 +15,7 @@ export class EntryPointRepository extends AggregateRepository<EntryPoint> {
     return entryPointsFrom((table) => this.files.rows(table), rootId)[0];
   }
 
-  protected rowsOf(record: EntryPoint): InstanceRows {
-    return entryPointRows(record);
+  protected rowsOf(entryPoint: EntryPoint): InstanceRows {
+    return entryPointRows(entryPoint);
   }
 }

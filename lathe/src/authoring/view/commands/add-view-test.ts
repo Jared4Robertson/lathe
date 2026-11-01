@@ -1,8 +1,7 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ViewTestRow } from '../../../platform/data/tables.ts';
-import { ViewRepository } from '../repository.ts';
 import { ADD_VIEW_TEST_IDENTITY } from './identities.generated.ts';
+import { addViewTest } from './handlers.generated.ts';
 
 export type AddViewTest = Pick<ViewTestRow, 'id' | 'title' | 'view_requirement_id' | 'level' | 'state' | 'when' | 'then' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'notes'> & { starts_from?: string[] };
 
@@ -26,11 +25,3 @@ export const ADD_VIEW_TEST = {
   },
   handler: addViewTest,
 } satisfies CommandDefinition<AddViewTest>;
-
-export function addViewTest(tx: Transaction, input: AddViewTest): void {
-  const views = new ViewRepository(tx);
-  const view = views.loadHolding('view_requirement', input.view_requirement_id) ?? tx.refuse('missing', `there is no view requirement ${input.view_requirement_id}`);
-  const { starts_from = [], ...row } = input;
-  view.tests.push({ row, startsFrom: starts_from });
-  views.save(view);
-}

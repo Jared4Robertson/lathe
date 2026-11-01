@@ -1,10 +1,7 @@
 import { column, id, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { RepositoryRow } from '../../../platform/data/tables.ts';
-import { changed } from '../model.ts';
-import { DomainRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
 import { CHANGE_REPOSITORY_IDENTITY } from './identities.generated.ts';
+import { changeRepository } from './handlers.generated.ts';
 
 /** The repository's changes: a column given is set, null clears an optional one or the aggregate it persists; a list given replaces the list. */
 export type ChangeRepository = Pick<RepositoryRow, 'id'> & { title?: RepositoryRow['title']; file?: RepositoryRow['file'] | null; description?: RepositoryRow['description']; persists?: string | null; stored_in?: string | null; meets?: string[]; packages?: string[] };
@@ -23,22 +20,3 @@ export const CHANGE_REPOSITORY = {
   },
   handler: changeRepository,
 } satisfies CommandDefinition<ChangeRepository>;
-
-/** Changes the repository's columns, links and packages. */
-export function changeRepository(tx: Transaction, input: ChangeRepository): void {
-  const domains = new DomainRepository(tx);
-  const domain = domains.loadHolding('repository', input.id) ?? tx.refuse('missing', `there is no repository ${input.id}`);
-  domain.repositories = domain.repositories.map((r) =>
-    r.row.id === input.id
-      ? {
-          row: changed(r.row, input, ['title', 'file', 'description']),
-          persists: input.persists === undefined ? r.persists : input.persists,
-          storedIn: input.stored_in === undefined ? r.storedIn : input.stored_in,
-          meets: input.meets ?? r.meets,
-          packages: input.packages ?? r.packages,
-        }
-      : r,
-  );
-  holdToRules(tx, domain);
-  domains.save(domain);
-}

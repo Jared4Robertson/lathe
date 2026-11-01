@@ -2,24 +2,11 @@
 // well, with its storage requirement tests (each with the test data sets it starts from). A storage requirement sits under the one
 // aggregate or read model whose data it is about, outside the aggregate. One instance is one storage requirement,
 // whole; it holds only the links its own records start.
+import type { AggregateShape } from '../../platform/data/repository.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
-import type { Row, Value } from '../../platform/data/rows.ts';
+import type { Row } from '../../platform/data/rows.ts';
 import type { StorageRequirementRow, StorageRequirementTestRow } from '../../platform/data/tables.ts';
 import { compareIds } from '../../platform/data/ids.ts';
-
-/**
- * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.
- * Only the columns named in `columns` are taken from the changes.
- */
-export function changed<R extends object>(row: R, changes: object, columns: readonly string[]): R {
-  const next = { ...row } as Record<string, unknown>;
-  for (const [column, value] of Object.entries(changes)) {
-    if (!columns.includes(column) || value === undefined) continue;
-    if (value === null) delete next[column];
-    else next[column] = value as Value;
-  }
-  return next as R;
-}
 
 /** A storage requirement test with the test data sets it starts from. */
 export interface StorageRequirementTest {
@@ -39,13 +26,13 @@ export interface StorageRequirement {
 /** The tables the Storage requirement aggregate keeps its rows in: its kinds and the relation its tests start. */
 export const STORAGE_REQUIREMENT_TABLES = ['storage_requirement', 'storage_requirement_test', 'starts_from'] as const;
 
-/** The kinds of the aggregate's records, each with the column that names its parent inside the aggregate. */
-export const STORAGE_REQUIREMENT_KINDS = {
-  storage_requirement: null,
-  storage_requirement_test: 'storage_requirement_id',
-} as const;
+/** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
+export const STORAGE_REQUIREMENT_SHAPE = {
+  storage_requirement: { at: 'requirement' },
+  storage_requirement_test: { at: 'tests', lists: { starts_from: 'startsFrom' } },
+} as const satisfies AggregateShape;
 
-export type StorageRequirementKind = keyof typeof STORAGE_REQUIREMENT_KINDS;
+export type StorageRequirementKind = keyof typeof STORAGE_REQUIREMENT_SHAPE;
 
 /** A new storage requirement, with no tests yet. */
 export function newStorageRequirement(requirement: StorageRequirementRow): StorageRequirement {
@@ -80,9 +67,3 @@ export function storageRequirementRows(requirement: StorageRequirement): Map<str
   ]);
 }
 
-/** The kind of the record with this ID inside the storage requirement, or undefined. */
-export function kindInside(requirement: StorageRequirement, id: string): StorageRequirementKind | undefined {
-  if (requirement.root === id) return 'storage_requirement';
-  if (requirement.tests.some((t) => t.row.id === id)) return 'storage_requirement_test';
-  return undefined;
-}

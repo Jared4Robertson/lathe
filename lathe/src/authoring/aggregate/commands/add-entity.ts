@@ -1,10 +1,8 @@
 import { column, ids, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EntityRow } from '../../../platform/data/tables.ts';
-import { fieldRows, type EntityFieldInput } from '../model.ts';
-import { AggregateRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
+import type { EntityFieldInput } from '../model.ts';
 import { ADD_ENTITY_IDENTITY } from './identities.generated.ts';
+import { addEntity } from './handlers.generated.ts';
 
 export type AddEntity = Pick<EntityRow, 'id' | 'title' | 'aggregate_id' | 'role' | 'in_root_table' | 'description'> & {
   fields?: EntityFieldInput[];
@@ -27,12 +25,3 @@ export const ADD_ENTITY = {
   },
   handler: addEntity,
 } satisfies CommandDefinition<AddEntity>;
-
-export function addEntity(tx: Transaction, input: AddEntity): void {
-  const aggregates = new AggregateRepository(tx);
-  const aggregate = aggregates.loadHolding('aggregate', input.aggregate_id) ?? tx.refuse('missing', `there is no aggregate ${input.aggregate_id}`);
-  const { fields = [], has_one = [], has_many = [], ...row } = input;
-  aggregate.entities.push({ row, fields: fieldRows(row.id, fields), hasOne: has_one, hasMany: has_many });
-  holdToRules(tx, aggregate);
-  aggregates.save(aggregate);
-}
