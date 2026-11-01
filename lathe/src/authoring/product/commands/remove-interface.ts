@@ -14,7 +14,7 @@ export const REMOVE_INTERFACE = {
   handler: removeInterface,
 } satisfies CommandDefinition<RemoveInterface>;
 
-/** Removes the interface from its product, with its roles and the use cases it offers. */
+/** Removes the interface from its product. */
 export function removeInterface(tx: Transaction, input: RemoveInterface): void {
   const products = new ProductRepository(tx);
   const product = products.loadHolding('interface', input.id) ?? tx.refuse('missing', `there is no interface ${input.id}`);
