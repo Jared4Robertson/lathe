@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { ExtensionRecordPage } from '../../../../lathe/src/authoring/extension-record/read-model';
 import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
-import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
+import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, formFields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
 import { useWriter, type CommandInputs } from '../../edit/write';
 import { lowerLabel } from '../../plural';
@@ -10,6 +10,7 @@ import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
+import { EXTENSION_RECORD_FIELDS } from './fields.generated';
 import { useNextExtensionRecordId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -39,6 +40,7 @@ const LINK = 'link:';
 
 /** The fields Add and Change take (Change leaves out the ID): values, then each relation's links, then packages. */
 function fieldsOf(index: RecordIndex, kind: string, product: string | null, adding: boolean): FieldSpec[] {
+  const F = EXTENSION_RECORD_FIELDS;
   const { columns, relations } = declarationOf(index, kind);
   const records = [...index.byId.values()].filter((r) => r.product === product);
   const choices = (relation: string): Choice[] => {
@@ -47,9 +49,12 @@ function fieldsOf(index: RecordIndex, kind: string, product: string | null, addi
   };
   return [
     ...(adding ? [{ field: 'id', column: 'id', table: kind }] : []),
-    ...columns.map((c): FieldSpec => ({ field: c.name, column: c.name, table: kind, long: c.kind === 'text' && c.name !== 'title' })),
+    ...columns.map((c): FieldSpec => ({ field: c.name, column: c.name, table: kind, long: c.kind === 'text' && c.name !== 'title', clearable: !c.required })),
     ...relations.map((r): FieldSpec => ({ field: `${LINK}${r.name}`, label: r.forwardLabel.charAt(0).toUpperCase() + r.forwardLabel.slice(1), description: r.description || `The records it ${r.forwardLabel}.`, many: choices(r.name) })),
-    { field: 'packages', label: 'Packages', description: 'The packages it uses.', texts: true },
+    // The declared values and links are the product's own; only the packages come from the command's input.
+    ...(adding
+      ? formFields(F['/api/extension-record/add-extension-record'], ['kind', 'id', 'parent_id', 'values', 'links'])
+      : formFields(F['/api/extension-record/change-extension-record'], ['id', 'values', 'links'])),
   ];
 }
 
@@ -74,17 +79,16 @@ export function ExtensionRecordEditor({ index, page, children }: { index: Record
   };
   if (mode === 'change') {
     const specs = fieldsOf(index, page.kind, index.byId.get(page.id)?.product ?? null, false);
-    const { columns } = declarationOf(index, page.kind);
     const current: Record<string, unknown> = { ...page.values, packages: page.packages };
     for (const s of specs.filter(isLink)) current[s.field] = page.links[s.field.slice(LINK.length)] ?? [];
     const submit = async (draft: Draft) => {
-      const values = changeInput(index, specs.filter(isValue), draft, current, {}, columns.filter((c) => !c.required).map((c) => c.name));
+      const values = changeInput(index, specs.filter(isValue), draft, current, {});
       const links: Record<string, string[]> = {};
       for (const s of specs.filter(isLink)) {
         const now = draft.ids[s.field] ?? [];
         if (!sortedSame(now, current[s.field] as string[])) links[s.field.slice(LINK.length)] = now;
       }
-      const input: Record<string, unknown> = { id: page.id, ...changeInput(index, specs.filter(isPackages), draft, current, {}, []) };
+      const input: Record<string, unknown> = { id: page.id, ...changeInput(index, specs.filter(isPackages), draft, current, {}) };
       if (Object.keys(values).length > 0) input.values = values;
       if (Object.keys(links).length > 0) input.links = links;
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }

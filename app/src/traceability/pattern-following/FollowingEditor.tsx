@@ -2,11 +2,12 @@ import { useState } from 'react';
 import type { PatternPage } from '../../../../lathe/src/authoring/pattern/read-model';
 import type { FollowingPage } from '../../../../lathe/src/traceability/pattern-following/read-model';
 import { Button } from '../../components/Button';
-import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, type Draft, type FieldSpec } from '../../edit/command-form';
+import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, formFields, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
 import { useWriter, type CommandInputs } from '../../edit/write';
 import { useAnnounce } from '../../shell/commands';
 import { byIdOrder, type RecordIndex } from '../../exploring/record-summaries/record-index';
+import { PATTERN_FOLLOWING_FIELDS } from './fields.generated';
 import '../../edit/edit.css';
 
 // The following's editor (LA-TRC-A3): the actions on a pattern's followers, each sending one of the Pattern following
@@ -19,14 +20,8 @@ import '../../edit/edit.css';
 /** What the editor shows: nothing, a follower's Change values or Stop following, or Follow. */
 export type FollowingMode = { mode: 'view' } | { mode: 'change'; following: FollowingPage } | { mode: 'stop'; following: FollowingPage } | { mode: 'follow' };
 
-/** The setting values, a list of the setting_value table's rows, as the forms give them. */
-const VALUES: FieldSpec = {
-  field: 'setting_values',
-  label: 'Setting values',
-  description: "Each of the pattern's settings with the value this follower gives it.",
-  table: 'setting_value',
-  columns: ['setting', 'value'],
-};
+/** The setting values, a list of the setting_value table's rows, as the Change form gives them. */
+const CHANGE_VALUES: FieldSpec[] = formFields(PATTERN_FOLLOWING_FIELDS['/api/pattern-following/change-setting-values'], ['follower_id', 'pattern_id']);
 
 /** A following's values as the setting_value rows its form holds. */
 const valuesOf = (following: FollowingPage) => ({
@@ -67,9 +62,9 @@ function ChangeValuesForm({ index, following, onDone }: { index: RecordIndex; fo
   const writer = useWriter()!;
   const announce = useAnnounce();
   const current = valuesOf(following);
-  const [draft, setDraft] = useState<Draft>(() => draftOf([VALUES], current));
+  const [draft, setDraft] = useState<Draft>(() => draftOf(CHANGE_VALUES, current));
   const submit = async () => {
-    const input = changeInput(index, [VALUES], draft, current, { follower_id: following.follower, pattern_id: following.pattern }, []);
+    const input = changeInput(index, CHANGE_VALUES, draft, current, { follower_id: following.follower, pattern_id: following.pattern });
     if (Object.keys(input).length === 2) { announce('Nothing changed'); onDone(); return null; }
     const route = '/api/pattern-following/change-setting-values';
     const answer = await writer.command(route, input as unknown as CommandInputs[typeof route]);
@@ -78,7 +73,7 @@ function ChangeValuesForm({ index, following, onDone }: { index: RecordIndex; fo
   };
   return (
     <CommandForm eyebrow={`${following.follower} follows ${following.pattern}`} title={`Change the values ${following.follower} gives`} submit={submit} saveLabel="Save" onCancel={onDone}>
-      {(first) => <Fields index={index} specs={[VALUES]} draft={draft} setDraft={setDraft} first={first} />}
+      {(first) => <Fields index={index} specs={CHANGE_VALUES} draft={draft} setDraft={setDraft} first={first} />}
     </CommandForm>
   );
 }
@@ -111,8 +106,9 @@ function FollowForm({ index, page, followers, onDone }: { index: RecordIndex; pa
     .sort(byIdOrder)
     .map((r) => ({ id: r.id, title: r.title }));
   const specs: FieldSpec[] = [
+    // The input names the follower as a column; the form picks it from the domains and use cases that do not follow yet.
     { field: 'follower_id', label: 'Follower', description: 'The domain or use case that follows the pattern.', one: choices, required: true },
-    VALUES,
+    ...formFields(PATTERN_FOLLOWING_FIELDS['/api/pattern-following/follow-pattern'], ['follower_id', 'pattern_id']),
   ];
   const [draft, setDraft] = useState<Draft>(() => ({ ...emptyDraft(), parts: { setting_values: page.settings.map((s) => ({ setting: s.name, value: '' })) } }));
   const submit = async () => {

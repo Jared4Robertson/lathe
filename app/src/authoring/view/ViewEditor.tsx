@@ -3,13 +3,14 @@ import type { ViewKind } from '../../../../lathe/src/authoring/view/model';
 import type { ViewPage } from '../../../../lathe/src/authoring/view/read-model';
 import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
-import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
+import { addInput, addOrChangeFields, changeInput, CommandForm, draftOf, emptyDraft, Fields, formFields, LONG, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
 import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
+import { VIEW_FIELDS } from './fields.generated';
 import { useNextViewId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -27,43 +28,21 @@ import { kindWord, addedUnder } from '../../platform/meta-model/reads';
 const dataSets = (index: RecordIndex, product: string): Choice[] =>
   [...index.byId.values()].filter((r) => r.kind === 'test_data_set' && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
-/** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order. */
+/** The fields each kind's Add and Change take, from their inputs; the hints add long text and the choices. */
 function fieldsOf(index: RecordIndex, product: string, kind: ViewKind, adding: boolean): FieldSpec[] {
-  const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
+  const F = VIEW_FIELDS;
   switch (kind) {
-    case 'view':
-      return [
-        ...id('view'),
-        { field: 'title', column: 'title', table: 'view' },
-        { field: 'route', column: 'route', table: 'view' },
-        { field: 'description', column: 'description', table: 'view', long: true },
-        { field: 'notes', column: 'notes', table: 'view', long: true },
-      ];
-    case 'view_requirement':
-      return [
-        ...id('view_requirement'),
-        { field: 'title', column: 'title', table: 'view_requirement' },
-        { field: 'statement', column: 'statement', table: 'view_requirement', long: true },
-        { field: 'group_name', column: 'group_name', table: 'view_requirement' },
-      ];
-    case 'view_test': {
-      const table = 'view_test';
-      return [
-        ...id(table),
-        { field: 'title', column: 'title', table },
-        { field: 'when', column: 'when', table, long: true },
-        { field: 'then', column: 'then', table, long: true },
-        { field: 'level', column: 'level', table },
-        { field: 'state', column: 'state', table },
-        { field: 'file', column: 'file', table },
-        { field: 'manual_reason', column: 'manual_reason', table, long: true },
-        { field: 'size', column: 'size', table },
-        { field: 'smoke', column: 'smoke', table },
-        { field: 'external', column: 'external', table },
-        { field: 'notes', column: 'notes', table, long: true },
-        { field: 'starts_from', label: 'Starts from', description: 'The test data sets it starts from.', many: dataSets(index, product) },
-      ];
+    case 'view': {
+      // A view has no parent column: its product follows from its ID.
+      const hints = { description: LONG, notes: LONG };
+      return adding ? formFields(F['/api/view/add-view'], [], hints) : formFields(F['/api/view/change-view'], ['id'], hints);
     }
+    case 'view_requirement':
+      return addOrChangeFields(adding, F['/api/view/add-view-requirement'], 'view_id', F['/api/view/change-view-requirement'], { statement: LONG });
+    case 'view_test':
+      return addOrChangeFields(adding, F['/api/view/add-view-test'], 'view_requirement_id', F['/api/view/change-view-test'], {
+        when: LONG, then: LONG, manual_reason: LONG, notes: LONG, starts_from: { choices: dataSets(index, product) },
+      });
   }
 }
 
@@ -81,11 +60,11 @@ function currentOf(page: ViewPage, kind: ViewKind, id: string): Record<string, u
   }
 }
 
-/** Each kind's Change command, and the fields it may clear with null. */
-const CHANGE: Record<ViewKind, { route: CommandRoute; clearable: readonly string[] }> = {
-  view: { route: '/api/view/change-view', clearable: ['route', 'notes'] },
-  view_requirement: { route: '/api/view/change-view-requirement', clearable: ['group_name'] },
-  view_test: { route: '/api/view/change-view-test', clearable: ['file', 'manual_reason', 'size', 'smoke', 'external', 'notes'] },
+/** Each kind's Change command. */
+const CHANGE: Record<ViewKind, CommandRoute> = {
+  view: '/api/view/change-view',
+  view_requirement: '/api/view/change-view-requirement',
+  view_test: '/api/view/change-view-test',
 };
 
 /** Each kind's Add command, and the field that names its parent (a view has none: its product follows from its ID). */
@@ -139,9 +118,9 @@ export function ViewEditor({ index, page, children }: { index: RecordIndex; page
     const specs = fieldsOf(index, product, kind, false);
     const current = currentOf(page, kind, id);
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, specs, draft, current, { id }, CHANGE[kind].clearable);
+      const input = changeInput(index, specs, draft, current, { id });
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
-      const answer = await send(writer, CHANGE[kind].route, input);
+      const answer = await send(writer, CHANGE[kind], input);
       if (answer.ok) { announce(`Saved ${id}`); back(); }
       return answer;
     };

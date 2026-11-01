@@ -3,7 +3,7 @@ import type { SpecificationKind } from '../../../../lathe/src/authoring/specific
 import type { SpecificationPage } from '../../../../lathe/src/authoring/specification/read-model';
 import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
-import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
+import { addInput, addOrChangeFields, changeInput, CommandForm, draftOf, emptyDraft, Fields, formFields, LONG, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
 import { AddMenu } from '../../edit/AddMenu';
 import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
@@ -11,6 +11,7 @@ import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
+import { SPECIFICATION_FIELDS } from './fields.generated';
 import { useNextSpecificationId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -29,46 +30,23 @@ type Inside = Exclude<SpecificationKind, 'specification'>;
 const choices = (index: RecordIndex, product: string, kind: string): Choice[] =>
   [...index.byId.values()].filter((r) => r.kind === kind && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
-/** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order; packages are one per line. */
+/** The fields each kind's Add and Change take, from their inputs; the hints add long text and the choices. */
 function fieldsOf(index: RecordIndex, product: string, kind: SpecificationKind, adding: boolean): FieldSpec[] {
-  const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
+  const F = SPECIFICATION_FIELDS;
   switch (kind) {
-    case 'specification':
-      return [
-        ...id('specification'),
-        { field: 'title', column: 'title', table: 'specification' },
-        { field: 'statement', column: 'statement', table: 'specification', long: true },
-        { field: 'reads', label: 'Reads', description: 'The aggregates of its domain it judges.', many: choices(index, product, 'aggregate') },
-      ];
-    case 'predicate':
-      return [
-        ...id('predicate'),
-        { field: 'title', column: 'title', table: 'predicate' },
-        { field: 'file', column: 'file', table: 'predicate' },
-        { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: choices(index, product, 'standard_rule') },
-        { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files, one per line.', texts: true },
-      ];
-    case 'specification_test': {
-      const table = 'specification_test';
-      return [
-        ...id(table),
-        { field: 'title', column: 'title', table },
-        { field: 'when', column: 'when', table, long: true },
-        { field: 'then', column: 'then', table, long: true },
-        { field: 'level', column: 'level', table },
-        { field: 'state', column: 'state', table },
-        { field: 'file', column: 'file', table },
-        { field: 'manual_reason', column: 'manual_reason', table, long: true },
-        { field: 'size', column: 'size', table },
-        { field: 'smoke', column: 'smoke', table },
-        { field: 'external', column: 'external', table },
-        { field: 'notes', column: 'notes', table, long: true },
-        { field: 'starts_from', label: 'Starts from', description: 'The test data sets it starts from.', many: choices(index, product, 'test_data_set') },
-      ];
+    case 'specification': {
+      // A specification has no parent column: its ID names its domain.
+      const hints = { statement: LONG, reads: { choices: choices(index, product, 'aggregate') } };
+      return adding ? formFields(F['/api/specification/add-specification'], [], hints) : formFields(F['/api/specification/change-specification'], ['id'], hints);
     }
+    case 'predicate':
+      return addOrChangeFields(adding, F['/api/specification/add-predicate'], 'specification_id', F['/api/specification/change-predicate'], { meets: { choices: choices(index, product, 'standard_rule') } });
+    case 'specification_test':
+      return addOrChangeFields(adding, F['/api/specification/add-specification-test'], 'specification_id', F['/api/specification/change-specification-test'], {
+        when: LONG, then: LONG, manual_reason: LONG, notes: LONG, starts_from: { choices: choices(index, product, 'test_data_set') },
+      });
   }
 }
-
 
 /** The record's current values, by its input's field names: its row's columns and the links it starts. */
 function currentOf(page: SpecificationPage, kind: SpecificationKind): Record<string, unknown> {
@@ -82,11 +60,11 @@ function currentOf(page: SpecificationPage, kind: SpecificationKind): Record<str
   }
 }
 
-/** Each kind's Change command, and the fields it may clear with null. */
-const CHANGE: Record<SpecificationKind, { route: CommandRoute; clearable: readonly string[] }> = {
-  specification: { route: '/api/specification/change-specification', clearable: [] },
-  predicate: { route: '/api/specification/change-predicate', clearable: ['file'] },
-  specification_test: { route: '/api/specification/change-specification-test', clearable: ['file', 'manual_reason', 'size', 'smoke', 'external', 'notes'] },
+/** Each kind's Change command. */
+const CHANGE: Record<SpecificationKind, CommandRoute> = {
+  specification: '/api/specification/change-specification',
+  predicate: '/api/specification/change-predicate',
+  specification_test: '/api/specification/change-specification-test',
 };
 
 /** Each kind's Add command. */
@@ -126,9 +104,9 @@ export function SpecificationEditor({ index, page, children }: { index: RecordIn
     const specs = fieldsOf(index, product, kind, false);
     const current = currentOf(page, kind);
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, specs, draft, current, { id }, CHANGE[kind].clearable);
+      const input = changeInput(index, specs, draft, current, { id });
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
-      const answer = await send(writer, CHANGE[kind].route, input);
+      const answer = await send(writer, CHANGE[kind], input);
       if (answer.ok) { announce(`Saved ${id}`); back(); }
       return answer;
     };

@@ -3,13 +3,14 @@ import type { StandardKind } from '../../../../lathe/src/authoring/standard/mode
 import type { StandardPage } from '../../../../lathe/src/authoring/standard/read-model';
 import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
-import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
+import { addInput, addOrChangeFields, changeInput, CommandForm, draftOf, emptyDraft, Fields, LONG, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
 import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
+import { STANDARD_FIELDS } from './fields.generated';
 import { useNextStandardId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -27,37 +28,18 @@ import { kindWord, addedUnder } from '../../platform/meta-model/reads';
 const dataSets = (index: RecordIndex, product: string): Choice[] =>
   [...index.byId.values()].filter((r) => r.kind === 'test_data_set' && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
-/** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order. */
+/** The fields each kind's Add and Change take, from their inputs; the hints add long text and the choices. */
 function fieldsOf(index: RecordIndex, product: string, kind: StandardKind, adding: boolean): FieldSpec[] {
-  const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
+  const F = STANDARD_FIELDS;
   switch (kind) {
     case 'standard':
-      return [...id('standard'), { field: 'title', column: 'title', table: 'standard' }, { field: 'description', column: 'description', table: 'standard', long: true }];
+      return addOrChangeFields(adding, F['/api/standard/add-standard'], 'product_id', F['/api/standard/change-standard'], { description: LONG });
     case 'standard_rule':
-      return [
-        ...id('standard_rule'),
-        { field: 'title', column: 'title', table: 'standard_rule' },
-        { field: 'statement', column: 'statement', table: 'standard_rule', long: true },
-        { field: 'group_name', column: 'group_name', table: 'standard_rule' },
-      ];
-    case 'standard_rule_test': {
-      const table = 'standard_rule_test';
-      return [
-        ...id(table),
-        { field: 'title', column: 'title', table },
-        { field: 'when', column: 'when', table, long: true },
-        { field: 'then', column: 'then', table, long: true },
-        { field: 'level', column: 'level', table },
-        { field: 'state', column: 'state', table },
-        { field: 'file', column: 'file', table },
-        { field: 'manual_reason', column: 'manual_reason', table, long: true },
-        { field: 'size', column: 'size', table },
-        { field: 'smoke', column: 'smoke', table },
-        { field: 'external', column: 'external', table },
-        { field: 'notes', column: 'notes', table, long: true },
-        { field: 'starts_from', label: 'Starts from', description: 'The test data sets it starts from.', many: dataSets(index, product) },
-      ];
-    }
+      return addOrChangeFields(adding, F['/api/standard/add-standard-rule'], 'standard_id', F['/api/standard/change-standard-rule'], { statement: LONG });
+    case 'standard_rule_test':
+      return addOrChangeFields(adding, F['/api/standard/add-standard-rule-test'], 'standard_rule_id', F['/api/standard/change-standard-rule-test'], {
+        when: LONG, then: LONG, manual_reason: LONG, notes: LONG, starts_from: { choices: dataSets(index, product) },
+      });
   }
 }
 
@@ -75,11 +57,11 @@ function currentOf(page: StandardPage, kind: StandardKind, id: string): Record<s
   }
 }
 
-/** Each kind's Change command, and the fields it may clear with null. */
-const CHANGE: Record<StandardKind, { route: CommandRoute; clearable: readonly string[] }> = {
-  standard: { route: '/api/standard/change-standard', clearable: [] },
-  standard_rule: { route: '/api/standard/change-standard-rule', clearable: ['group_name'] },
-  standard_rule_test: { route: '/api/standard/change-standard-rule-test', clearable: ['file', 'manual_reason', 'size', 'smoke', 'external', 'notes'] },
+/** Each kind's Change command. */
+const CHANGE: Record<StandardKind, CommandRoute> = {
+  standard: '/api/standard/change-standard',
+  standard_rule: '/api/standard/change-standard-rule',
+  standard_rule_test: '/api/standard/change-standard-rule-test',
 };
 
 /** Each kind's Add command, and the field that names its parent. */
@@ -133,9 +115,9 @@ export function StandardEditor({ index, page, children }: { index: RecordIndex; 
     const specs = fieldsOf(index, product, kind, false);
     const current = currentOf(page, kind, id);
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, specs, draft, current, { id }, CHANGE[kind].clearable);
+      const input = changeInput(index, specs, draft, current, { id });
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
-      const answer = await send(writer, CHANGE[kind].route, input);
+      const answer = await send(writer, CHANGE[kind], input);
       if (answer.ok) { announce(`Saved ${id}`); back(); }
       return answer;
     };
