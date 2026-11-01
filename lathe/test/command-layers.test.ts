@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { ALL_COMMANDS, ALL_QUERIES } from '../src/commands.ts';
 import { toolName } from '../src/platform/commands/definition.ts';
 import { PACKAGE_DIR } from '../src/index.ts';
+import { useCaseLayerCases } from './use-case-layers.cases.ts';
 
 const SRC = path.join(PACKAGE_DIR, 'src');
 const REPO = path.join(PACKAGE_DIR, '..');
@@ -182,4 +183,8 @@ describe('LA-STD-MODELING-R11-T01 a query reads only its read model: no query ha
       }
     }
   });
+});
+
+describe('LA-PAT-AGGREGATE-COMMANDS-R01-T01 the Use case aggregate\'s commands are reached by name from the CLI, the MCP tools and HTTP, and its queries are read by name over HTTP', () => {
+  useCaseLayerCases();
 });

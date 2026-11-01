@@ -4,7 +4,7 @@ export const GET_TABLE_IDENTITY = {
   id: 'LA-AUT-QRY185',
   slice: { aggregate: 'LA-AUT-A18', name: 'table' },
   name: 'get-table',
-  description: 'Reads a table whole as its page shows it, by its ID: its row, the entity, read model or domain it sits under, its keys in order, the standard rules it meets and the packages it uses.',
+  description: 'Reads a table whole as its readers read it, by its ID: its own details, the entity, read model or domain it sits under, its keys in order, the standard rules it meets and the packages it uses.',
   method: 'GET',
   route: '/api/table/get-table',
 } as const;

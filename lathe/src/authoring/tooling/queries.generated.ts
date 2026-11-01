@@ -4,7 +4,7 @@ export const GET_TOOLING_IDENTITY = {
   id: 'LA-AUT-QRY123',
   slice: { aggregate: 'LA-AUT-A21', name: 'tooling' },
   name: 'get-tooling',
-  description: 'Reads a tooling record whole, by its ID: its row, the packages it uses and the standard rules it meets.',
+  description: 'Reads a tooling record whole, by its ID: its own details, the packages it uses and the standard rules it meets.',
   method: 'GET',
   route: '/api/tooling/get-tooling',
 } as const;

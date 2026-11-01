@@ -53,7 +53,7 @@ export function removePredicate(tx: Transaction, input: RemovePredicate): void {
   specifications.save(specification);
 }
 
-/** Changes a specification test's columns or the test data sets it starts from (the whole list). */
+/** Changes a specification test's way of running or the test data sets it starts from (the whole list). */
 export function changeSpecificationTest(tx: Transaction, input: ChangeSpecificationTest): void {
   const specifications = new SpecificationRepository(tx);
   const specification = specifications.loadHolding('specification_test', input.id) ?? tx.refuse('missing', `there is no specification test ${input.id}`);

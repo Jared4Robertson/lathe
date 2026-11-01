@@ -40,7 +40,7 @@ export const CHANGE_STORAGE_REQUIREMENT_TEST_IDENTITY = {
   id: 'LA-AUT-CMD364',
   slice: { aggregate: 'LA-AUT-A22', name: 'storage-requirement' },
   name: 'change-storage-requirement-test',
-  description: 'Changes a storage requirement test\'s columns or the test data sets it starts from (the whole list).',
+  description: 'Changes a storage requirement test\'s way of running or the test data sets it starts from (the whole list).',
   method: 'POST',
   route: '/api/storage-requirement/change-storage-requirement-test',
 } as const;

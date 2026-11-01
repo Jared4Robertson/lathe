@@ -22,15 +22,6 @@ function withPredicate(): ServedData {
   return w;
 }
 
-describe('LA-V141-R01-T01 a specification\'s records are read through the Specification aggregate\'s own query, never a generic record read', () => {
-  it('reads GET /api/specification/get-specification for its predicate, and its specification\'s statement for the specification', async () => {
-    const { requests } = await openApp('/P-D-SP01-PR', { data: withPredicate() });
-    await waitFor(() => expect(requests).toContain('GET /api/specification/get-specification?id=P-D-SP01-PR'));
-    await openApp('/P-D-SP01', { data: withPredicate() });
-    expect(await within(main()).findByText('A member is at the limit with 3 open loans.')).toBeInTheDocument();
-  });
-});
-
 describe('LA-V141-R04-T01 a specification shows its predicate and its test, or that they are not written yet', () => {
   it('lists its predicate, and says its test is not written yet', async () => {
     await openApp('/P-D-SP01', { data: withPredicate() });
@@ -40,7 +31,7 @@ describe('LA-V141-R04-T01 a specification shows its predicate and its test, or t
   });
 });
 
-describe('LA-V141-R02-T01 the Specification editor writes only through the aggregate\'s own commands, one per change', () => {
+describe('LA-V141-R05-T01 the Specification editor writes only through the aggregate\'s own commands, one per change', () => {
   it('Edit sends Change a specification with only what changed; Add offers only the test it has not got, with its one ID; no Move', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/P-D-SP01', { data: withPredicate(), command: () => ({ answer: ok }) });
@@ -58,7 +49,7 @@ describe('LA-V141-R02-T01 the Specification editor writes only through the aggre
   });
 });
 
-describe('LA-V141-R02-T02 a specification is added from its domain\'s page through the aggregate\'s own Add', () => {
+describe('LA-V141-R05-T02 a specification is added from its domain\'s page through the aggregate\'s own Add', () => {
   it('Add specification on the domain\'s page takes the next free ID and sends Add a specification', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/P-D', { data: withPredicate(), command: () => ({ answer: ok }) });

@@ -4,7 +4,7 @@ export const GET_EXTENSION_RECORD_IDENTITY = {
   id: 'LA-AUT-QRY118',
   slice: { aggregate: 'LA-AUT-A19', name: 'extension-record' },
   name: 'get-extension-record',
-  description: 'Reads a record of a product\'s own kind whole: its kind, its row, the links it starts by relation, and the packages it uses.',
+  description: 'Reads a record of a product\'s own kind whole: its kind, its own details, the links it starts by relation, and the packages it uses.',
   method: 'GET',
   route: '/api/extension-record/get-extension-record',
 } as const;

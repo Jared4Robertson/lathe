@@ -4,7 +4,7 @@ export const GET_DATA_STORE_IDENTITY = {
   id: 'LA-AUT-QRY225',
   slice: { aggregate: 'LA-AUT-A23', name: 'data-store' },
   name: 'get-data-store',
-  description: 'Reads a data store whole as its page shows it: its row, the product or domain it sits under, the integration that reaches it, and the repositories, readers and tables stored in it.',
+  description: 'Reads a data store whole as its readers read it: its own details, the product or domain it sits under, the integration that reaches it, and the repositories, readers and tables stored in it.',
   method: 'GET',
   route: '/api/data-store/get-data-store',
 } as const;

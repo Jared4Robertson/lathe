@@ -112,7 +112,7 @@ export const ADD_INTERFACE_IDENTITY = {
   id: 'LA-AUT-CMD132',
   slice: { aggregate: 'LA-AUT-A1', name: 'product' },
   name: 'add-interface',
-  description: 'Adds an interface of a product: a way it is used, such as its web app, HTTP API or command line.',
+  description: 'Adds an interface of a product: a way it is used, such as an app a person works in, calls other programs make, or a command line.',
   method: 'POST',
   route: '/api/product/add-interface',
 } as const;
