@@ -145,8 +145,12 @@ test.describe('Traceability flows', () => {
     await expect(wiki.getByRole('region', { name: `Followed in ${EXP}` })).toBeVisible();
     // S03: in the graph, the rules sit under the pattern; the wiki card beside it still lists its followers.
     await openPage(page, `/${pattern}?stage=graph`, '.focus-stage .graph-flow .graph-box');
-    const ids = await page.locator('.focus-stage .graph-flow .graph-box').evaluateAll((els) => els.map((e) => e.getAttribute('data-id')));
-    for (const r of rules) expect(ids).toContain(r.id);
+    // A pattern with many rules keeps them in one "pattern_rule" group under it; with few, each rule is drawn on its own.
+    const drawnIds = () => page.locator('.focus-stage .graph-flow .graph-box').evaluateAll((els) => els.map((e) => e.getAttribute('data-id')));
+    await expect.poll(async () => {
+      const ids = await drawnIds();
+      return ids.includes(`${pattern}/pattern_rule`) ? [] : rules.filter((r) => !ids.includes(String(r.id))).map((r) => r.id);
+    }).toEqual([]);
     await expect(page.locator(WIKI).getByRole('region', { name: `Followed in ${EXP}` })).toBeVisible();
   });
 
