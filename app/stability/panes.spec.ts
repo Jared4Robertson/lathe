@@ -82,8 +82,8 @@ test.describe('the stage and its panels', () => {
       // A card collapsed for space is not drawn at all.
       const card = (await page.locator(CARD).count()) ? await page.locator(CARD).boundingBox() : null;
       if (card) expect(card.width, `the card at ${width} px`).toBeGreaterThanOrEqual(359);
-      const open = await openSpace(page);
-      expect(open.right - open.left, `the open space at ${width} px`).toBeGreaterThanOrEqual(299);
+      // The stage's frame follows the panels a frame after the resize, so wait for it to settle before measuring.
+      await expect.poll(async () => { const open = await openSpace(page); return open.right - open.left; }, { message: `the open space at ${width} px` }).toBeGreaterThanOrEqual(299);
     }
     // The card's title wraps on whole words: no line of it ends inside a word.
     const title = page.locator(`${CARD} .wiki-panel-title h2`);
