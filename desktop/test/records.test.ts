@@ -59,7 +59,7 @@ describe('LA-PAT-RECORD-DATA-FILE-R01-T01 LA-PAT-SHELL-ACTIONS-R01-T02 The recor
     expect(revealLabel('linux')).toBe('Show Data File in Folder');
   });
 
-  it('LA-V96-R11-T04 The record\'s right-click menu offers Open in New Tab', () => {
+  it('LA-V103-R02-T04 The record\'s right-click menu offers Open in New Tab', () => {
     const actions = { openInNewTab: vi.fn(), askClaude: vi.fn(), reveal: vi.fn(), openInEditor: vi.fn(), copyId: vi.fn() };
     const menu = recordMenuTemplate('SMK-ORD', false, 'VS Code', actions, 'darwin');
     expect(menu[0]).toMatchObject({ label: 'Open in New Tab' });

@@ -5,7 +5,7 @@ import { changeSummary } from '../src/views/history';
 import { openApp } from './helpers';
 import { testWorkspace } from './graph/workspace';
 
-// A record's History, at the end of its whole page in the wiki card (LA-V96-R26).
+// A record's History, at the end of its whole page in the wiki card (LA-V102-R05).
 
 const card = () => within(screen.getByRole('region', { name: 'Wiki card' }));
 const history = () => within(document.querySelector<HTMLElement>('.wiki-panel .record-history')!);
@@ -28,7 +28,7 @@ function serveHistory(answer: (query: URLSearchParams) => unknown) {
 const expanded = () => window.sessionStorage.setItem('lathe:place', JSON.stringify({ depth: 1, hiddenKinds: [], card: { open: true, expanded: true } }));
 
 describe('a record\'s History in the wiki card', () => {
-  it('LA-V96-R26-T01 History in the wiki card lists the commits that touched the record\'s rows, the uncommitted change first, shows a commit\'s diff inline, loads more, and says calmly when there is no git', async () => {
+  it('LA-V102-R05-T01 History in the wiki card lists the commits that touched the record\'s rows, the uncommitted change first, shows a commit\'s diff inline, loads more, and says calmly when there is no git', async () => {
     const statement = { table: 'use_case', key: 'P-D-UC01', change: 'changed' as const, fields: [{ name: 'goal', before: 'Lend it.', after: 'Lend a thing to a member.' }] };
     const actor = { table: 'use_case_actor', key: 'use_case_id P-D-UC01, position 1', change: 'added' as const, fields: [{ name: 'role_name', after: 'Member' }] };
     const commit = (n: number) => ({ hash: `${String(n).padStart(4, '0')}${'a'.repeat(36)}`, short: `${String(n).padStart(4, '0')}aaa`, date: '2026-10-24T10:00:00Z', author: 'Owner', subject: `Change ${n}`, changes: n === 1 ? [statement, actor] : [statement], truncated: false });
