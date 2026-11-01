@@ -62,7 +62,7 @@ A business outcome: a measurable change the product exists to bring about, which
 - **ID:** `<P>-BO<nn>`, such as `TL-BO01`; it starts with its parent's ID
 - **Links out:** Measured by ([`measured_by`](#relation-measured_by))
 - **Links in:** Questions about this ([`about`](#relation-about)), Served by ([`serves`](#relation-serves))
-- **Checks:** [`outcome-target-undated`](#check-outcome-target-undated)
+- **Checks:** [`outcome-target-undated`](#check-outcome-target-undated), [`outcome-duration-without-journey`](#check-outcome-duration-without-journey)
 - **Gaps:** [`outcome-not-served`](#gap-outcome-not-served), [`outcome-not-measured`](#gap-outcome-not-measured)
 
 <a id="table-business_outcome"></a>
@@ -98,6 +98,8 @@ A journey: the use cases and handoffs, in order, that take the product's people 
 - **ID:** `<P>-JR<nn>`, such as `TL-JR01`; it starts with its parent's ID
 - **Links out:** Serves ([`serves`](#relation-serves))
 - **Links in:** Questions about this ([`about`](#relation-about))
+- **Checks:** [`step-order`](#check-step-order), [`title-breaks-convention`](#check-title-breaks-convention), [`journey-of-one-use-case`](#check-journey-of-one-use-case), [`outcome-duration-without-journey`](#check-outcome-duration-without-journey)
+- **Gaps:** [`journey-serves-no-outcome`](#gap-journey-serves-no-outcome), [`journey-without-main-path`](#gap-journey-without-main-path), [`journey-without-test`](#gap-journey-without-test)
 
 <a id="table-journey"></a>
 
@@ -128,6 +130,8 @@ One step of a journey, in order on its path, in the journey's words. It carries 
 - **ID:** `<journey>-S<nn>`, such as `TL-JR01-S01`; it starts with its parent's ID
 - **Links out:** Carries out ([`carries_out`](#relation-carries_out))
 - **Links in:** Questions about this ([`about`](#relation-about))
+- **Checks:** [`step-order`](#check-step-order), [`journey-of-one-use-case`](#check-journey-of-one-use-case), [`handoff-not-connected`](#check-handoff-not-connected)
+- **Gaps:** [`journey-step-unlinked`](#gap-journey-step-unlinked)
 
 <a id="table-journey_step"></a>
 
@@ -157,6 +161,36 @@ A business outcome whose target says no date by which it is reached.
 
 An outcome is a change someone would miss, with a measure and a target by a date (LA-STD-MODELING-R13): without a date the target can never be missed, so it measures nothing. The target says by when, as a year (by 2027) or a span from a known event (within six months of the first release, by the end of the first year). Give the target its date with the Business outcome's change command.
 
+<a id="check-journey-of-one-use-case"></a>
+
+### `journey-of-one-use-case`
+
+**Warning** · Lathe's · Kinds: [`journey`](#kind-journey), [`journey_step`](#kind-journey_step), [`use_case`](#kind-use_case)
+
+A journey whose steps carry out fewer than two use cases.
+
+A use case is one actor's goal reached in one sitting; a journey strings several of them, with the handoffs between, from a trigger to a result (LA-AUT-UC33-R07). A journey whose steps carry out fewer than two use cases, counting each use case once and each step that carries out nothing yet as a use case still to write, is a use case: its handoffs are that use case's policies. A journey with no step is left to the journey-without-main-path gap. Remove the journey and let its use case serve the outcome through its capability, or add the steps it is missing.
+
+<a id="check-handoff-not-connected"></a>
+
+### `handoff-not-connected`
+
+**Warning** · Lathe's · Kinds: [`journey_step`](#kind-journey_step), [`policy`](#kind-policy), [`use_case`](#kind-use_case), [`flow`](#kind-flow)
+
+A handoff step whose policy hears no event the step before it leads to.
+
+A handoff step carries out a policy: whenever an event, then a command, with the product itself acting (LA-AUT-UC33-R08). It follows the step before it on its path only when its policy hears an event that step leads to: an event raised by a command the flow of the use case before it invokes, or by the command of the policy before it. Steps are compared by path (trimmed, in any letter case) and position. A handoff first on its path, or after a step that carries out nothing yet, is not read; nor is one after a use case with no flow yet, since records are written stage by stage. Link the step to the policy that follows, or have its policy hear the event the step before leads to.
+
+<a id="check-outcome-duration-without-journey"></a>
+
+### `outcome-duration-without-journey`
+
+**Warning** · Lathe's · Kinds: [`business_outcome`](#kind-business_outcome), [`journey`](#kind-journey)
+
+A business outcome whose measure reads as a duration that no journey serves.
+
+A duration measure, the time from one moment to another, times a journey: the use cases and handoffs, in order, from the trigger its clock starts at to the result it stops at (LA-AUT-UC33-R09). The check reads the measure's words, in any letter case: time, days, hours, minutes or weeks followed by from; how long; median and later from; or from and later to (the words the schema 5 upgrade reads). An outcome so measured that no journey serves is reported. Write the journey it times, its trigger and result first, and link it to the outcome; a duration inside one sitting of one actor is a use case's instead, and a measure that is not a duration is restated.
+
 ### Coverage gaps: discovery
 
 Each is reported in coverage, under the record that falls short, never as a problem.
@@ -164,6 +198,8 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | Gap | Kinds | What it reports |
 | --- | --- | --- |
 | <a id="gap-outcome-not-served"></a>`outcome-not-served` | [`business_outcome`](#kind-business_outcome), [`capability`](#kind-capability) | A business outcome no capability serves. |
+| <a id="gap-journey-serves-no-outcome"></a>`journey-serves-no-outcome` | [`journey`](#kind-journey), [`business_outcome`](#kind-business_outcome) | A journey that serves no business outcome. |
+| <a id="gap-journey-without-main-path"></a>`journey-without-main-path` | [`journey`](#kind-journey), [`journey_step`](#kind-journey_step) | A journey with no step on its main path. |
 | <a id="gap-outcome-not-measured"></a>`outcome-not-measured` | [`business_outcome`](#kind-business_outcome) | A business outcome no running test or record measures, and that names no measure outside the code. |
 
 <a id="stage-domain-model"></a>
@@ -630,7 +666,7 @@ Whenever an event, then a command (event storming). It belongs to the command it
 - **ID:** `<P>-<D>-PO<nn>`, such as `TL-LEND-PO01`; it starts with its domain's ID
 - **Links out:** Hears ([`hears`](#relation-hears)), Provided by ([`provided_by`](#relation-provided_by))
 - **Links in:** Questions about this ([`about`](#relation-about)), Carried out in ([`carries_out`](#relation-carries_out))
-- **Checks:** [`event-not-by-outbox`](#check-event-not-by-outbox), [`serves-no-outcome`](#check-serves-no-outcome)
+- **Checks:** [`event-not-by-outbox`](#check-event-not-by-outbox), [`serves-no-outcome`](#check-serves-no-outcome), [`handoff-not-connected`](#check-handoff-not-connected)
 - **Gaps:** [`policy-hears-nothing`](#gap-policy-hears-nothing)
 
 <a id="table-policy"></a>
@@ -924,7 +960,7 @@ An actor's goal: its actors (use_case_actor rows), its UC requirements and its f
 - **Links out:** Follows ([`follows`](#relation-follows))
 - **Links in:** Questions about this ([`about`](#relation-about)), Carried out in ([`carries_out`](#relation-carries_out)), Offered through ([`offers`](#relation-offers))
 - **Parts:** [`use_case_actor`](#table-use_case_actor)
-- **Checks:** [`pattern-setting-missing`](#check-pattern-setting-missing), [`pattern-not-followed`](#check-pattern-not-followed), [`title-breaks-convention`](#check-title-breaks-convention), [`flow-title-off-pattern`](#check-flow-title-off-pattern)
+- **Checks:** [`pattern-setting-missing`](#check-pattern-setting-missing), [`pattern-not-followed`](#check-pattern-not-followed), [`title-breaks-convention`](#check-title-breaks-convention), [`flow-title-off-pattern`](#check-flow-title-off-pattern), [`journey-of-one-use-case`](#check-journey-of-one-use-case), [`handoff-not-connected`](#check-handoff-not-connected)
 - **Gaps:** [`use-case-without-actor`](#gap-use-case-without-actor), [`use-case-without-requirement`](#gap-use-case-without-requirement), [`use-case-without-flow`](#gap-use-case-without-flow)
 
 <a id="table-use_case"></a>
@@ -1136,11 +1172,11 @@ A level that holds one record groups nothing. A capability with exactly one chil
 
 ### `title-breaks-convention`
 
-**Warning** · Lathe's · Kinds: [`capability`](#kind-capability), [`use_case`](#kind-use_case), [`interface`](#kind-interface)
+**Warning** · Lathe's · Kinds: [`capability`](#kind-capability), [`use_case`](#kind-use_case), [`journey`](#kind-journey), [`interface`](#kind-interface)
 
-A capability or use case title that breaks its naming convention: an interface named in it, a capability starting with The or an -ing word, or a list.
+A capability, use case or journey title that breaks its naming convention: an interface named in it, a capability starting with The or an -ing word, or a list.
 
-A capability is named as a noun phrase for a lasting ability of the business, two to four words: subject and activity noun, such as Invoice management or Member registration, or a single noun when the area is clear on its own, such as Catalog or Lending. A use case is named for one goal of its actor, verb first: verb and object, such as Borrow a tool or Approve an invoice, two to six words. Neither names a screen, a tool or a technology: a use case happens through interfaces, with one flow each, so the interface belongs to its flows, not its title. The check reads only the mechanical parts, in any letter case and as whole words: a use case or capability title that holds one of its product's interface titles or the words command line, CLI, desktop app, web app, MCP, API, agent tools, command layer or page (or their plurals); a capability title of two or more words that starts with "The" or with an -ing word (a word of five or more letters ending in -ing, other than the few that are not verbs, such as thing, string and evening), so a single noun such as Lending passes; either title that holds a list, a comma followed later by "and" or "or"; and a use case title that starts with a CRUD verb (create, read, update, delete, change or edit) and holds the word record, records or data, since a use case names the domain's own verb for its goal (Borrow a tool, Model an aggregate), never a verb over a record or data. Two goals joined by "and" with no comma are not read, nor is a use case title that does not start with a verb. Rename the capability or use case by the convention.
+A capability is named as a noun phrase for a lasting ability of the business, two to four words: subject and activity noun, such as Invoice management or Member registration, or a single noun when the area is clear on its own, such as Catalog or Lending. A use case is named for one goal of its actor, verb first: verb and object, such as Borrow a tool or Approve an invoice, two to six words. A journey is named the same way for the summary goal its steps reach together, verb first, such as Get a damaged tool back in lending. None names a screen, a tool or a technology: a use case happens through interfaces, with one flow each, so the interface belongs to its flows, not its title, and a journey's steps are use cases. The check reads only the mechanical parts, in any letter case and as whole words: a use case, journey or capability title that holds one of its product's interface titles or the words command line, CLI, desktop app, web app, MCP, API, agent tools, command layer or page (or their plurals); a capability title of two or more words that starts with "The" or with an -ing word (a word of five or more letters ending in -ing, other than the few that are not verbs, such as thing, string and evening), so a single noun such as Lending passes; either title that holds a list, a comma followed later by "and" or "or"; and a use case or journey title that starts with a CRUD verb (create, read, update, delete, change or edit) and holds the word record, records or data, since a use case names the domain's own verb for its goal (Borrow a tool, Model an aggregate), never a verb over a record or data. Two goals joined by "and" with no comma are not read, nor is a use case or journey title that does not start with a verb. Rename the capability, use case or journey by the convention.
 
 <a id="check-pattern-candidate"></a>
 
@@ -1162,6 +1198,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | <a id="gap-capability-without-use-case"></a>`capability-without-use-case` | [`capability`](#kind-capability), [`use_case`](#kind-use_case) | A capability with no use case. |
 | <a id="gap-use-case-without-actor"></a>`use-case-without-actor` | [`use_case`](#kind-use_case), `use_case_actor` | A use case with no actor. |
 | <a id="gap-use-case-without-requirement"></a>`use-case-without-requirement` | [`use_case`](#kind-use_case), [`uc_requirement`](#kind-uc_requirement) | A use case with no UC requirement that follows no pattern. |
+| <a id="gap-journey-step-unlinked"></a>`journey-step-unlinked` | [`journey_step`](#kind-journey_step), [`use_case`](#kind-use_case), [`policy`](#kind-policy) | A journey step that carries out no use case or policy yet. |
 | <a id="gap-pattern-without-rule"></a>`pattern-without-rule` | [`pattern`](#kind-pattern), [`pattern_rule`](#kind-pattern_rule) | A pattern with no rule. |
 
 <a id="stage-interaction-design"></a>
@@ -1231,7 +1268,7 @@ How its use case is carried out, whatever the interface: the steps on its main p
 - **ID:** `<use case>-FL`, such as `TL-LEND-UC01-FL`; it starts with its parent's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`step-order`](#check-step-order), [`flow-title-off-pattern`](#check-flow-title-off-pattern)
+- **Checks:** [`step-order`](#check-step-order), [`flow-title-off-pattern`](#check-flow-title-off-pattern), [`handoff-not-connected`](#check-handoff-not-connected)
 - **Gaps:** [`flow-without-main-path`](#gap-flow-without-main-path), [`flow-without-test`](#gap-flow-without-test)
 
 <a id="table-flow"></a>
@@ -1465,11 +1502,11 @@ An integration has no owner: it exists because flow steps exchange with it, or b
 
 ### `step-order`
 
-**Error** · Lathe's · Kinds: [`flow_step`](#kind-flow_step), [`flow`](#kind-flow)
+**Error** · Lathe's · Kinds: [`flow_step`](#kind-flow_step), [`flow`](#kind-flow), [`journey_step`](#kind-journey_step), [`journey`](#kind-journey)
 
-The steps on each path of a flow are numbered 1, 2, 3 and so on, without gaps.
+The steps on each path of a flow or a journey are numbered 1, 2, 3 and so on, without gaps.
 
-A flow's steps are read in `position` within their `path`, a short name such as main or refused, compared trimmed and in any letter case. The schema gives each step a whole number that no other step on its path has; a path whose positions skip a number is reported once, on the first step after the gap. Renumber the steps of the path to close the gap.
+A flow's steps, and a journey's, are read in `position` within their `path`, a short name such as main or refused, compared trimmed and in any letter case. The schema gives each step a whole number that no other step on its path has; a path whose positions skip a number is reported once, on the first step after the gap. Renumber the steps of the path to close the gap, or move a step with its move command.
 
 <a id="check-endpoint-route-not-in-file"></a>
 
@@ -2756,6 +2793,7 @@ The journey's test: its main path, end to end, from its trigger to its result, a
 - **Children:** none
 - **Complexity:** as the record it sits under
 - **Obligation:** no
+- **Run by levels:** `service`, `system`, `browser`
 - **ID:** `<journey>-T`, such as `TL-JR01-T`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
@@ -3018,6 +3056,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | Gap | Kinds | What it reports |
 | --- | --- | --- |
 | <a id="gap-flow-without-test"></a>`flow-without-test` | [`flow`](#kind-flow), [`flow_test`](#kind-flow_test) | A flow with no flow test of its main path. |
+| <a id="gap-journey-without-test"></a>`journey-without-test` | [`journey`](#kind-journey), [`journey_test`](#kind-journey_test) | A journey with no journey test. |
 
 ## Outside the stages
 

@@ -762,6 +762,7 @@
 {"source_id":"LA-TRC-QRY16-H","target_id":"LA-PAT-AGGREGATE-QUERIES-SL01"}
 {"source_id":"LA-TRC-QRY17-H","target_id":"LA-PAT-AGGREGATE-QUERIES-SL01"}
 {"source_id":"LA-TRC-QRY18-H","target_id":"LA-PAT-AGGREGATE-QUERIES-SL01"}
+{"source_id":"LA-TRC-QRY19-H","target_id":"LA-PAT-AGGREGATE-QUERIES-SL01"}
 {"source_id":"LA-TRC-RM01-PJ","target_id":"LA-PAT-AGGREGATE-QUERIES-SL02"}
 {"source_id":"LA-TRC-RM01-RD","target_id":"LA-PAT-AGGREGATE-QUERIES-SL03"}
 {"source_id":"LA-TRC-RM01-TB","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL08"}
