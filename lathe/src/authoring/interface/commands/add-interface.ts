@@ -2,6 +2,7 @@ import { column, ids, texts, type CommandDefinition } from '../../../platform/co
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { InterfaceRow } from '../../../platform/data/tables.ts';
 import { InterfaceRepository } from '../repository.ts';
+import { holdToRules } from '../rules.ts';
 import { ADD_INTERFACE_IDENTITY } from './identities.generated.ts';
 
 /** A new interface. */
@@ -28,5 +29,7 @@ export function addInterface(tx: Transaction, input: AddInterface): void {
   if (tx.record(input.id)) tx.refuse('primary-key', `interface ${input.id} already exists`);
   if (tx.record(input.product_id)?.kind !== 'product') tx.refuse('missing', `there is no product ${input.product_id}`);
   const { actors = [], offers = [], ...row } = input;
-  interfaces.save(interfaces.create({ root: row.id, row, actors, offers: [...offers].sort() }));
+  const iface = interfaces.create({ root: row.id, row, actors, offers: [...offers].sort() });
+  holdToRules(tx, iface);
+  interfaces.save(iface);
 }

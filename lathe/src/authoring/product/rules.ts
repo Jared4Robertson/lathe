@@ -128,6 +128,34 @@ export function productProblems(product: Product, view: ReadView): RuleProblem[]
   return problems;
 }
 
+// A product's roles as other aggregates' rules read them: a use case's actors (LA-AUT-INV193) and the roles that use
+// an interface (LA-AUT-INV194) are each one of their product's roles.
+
+/** The names of the product's roles, sorted. */
+function roleNamesOf(view: ReadView, product: string): string[] {
+  return view
+    .rows('role')
+    .filter((r) => r.product_id === product)
+    .map((r) => String(r.name))
+    .sort((a, b) => a.localeCompare(b));
+}
+
+/**
+ * A problem for each role a record names that is not one of its product's roles: `rows` are the record's role rows,
+ * each naming its role in `role_name`, and `what` says what the record calls them, such as "as its actor".
+ */
+export function rolesNotOfProduct(view: ReadView, rule: string, table: string, record: string, product: string, rows: readonly Row[], what: string): RuleProblem[] {
+  const roles = roleNamesOf(view, product);
+  return rows
+    .filter((row) => !roles.includes(String(row.role_name)))
+    .map((row) => ({
+      rule,
+      table,
+      row,
+      message: `${record} names ${String(row.role_name)} ${what}, which is not a role of ${product}; its roles are ${roles.join(', ') || 'none'}: name one of them, or add the role to ${product}`,
+    }));
+}
+
 /** The rules over all data: every product, whole. */
 export const productRules: AggregateRules = {
   aggregate: PRODUCT_AGGREGATE,

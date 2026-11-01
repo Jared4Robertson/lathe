@@ -7,6 +7,9 @@ import type { AggregateShape } from '../../platform/data/repository.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { InterfaceRow } from '../../platform/data/tables.ts';
 
+/** The aggregate's record ID in Lathe's own spec. */
+export const INTERFACE_AGGREGATE = 'LA-AUT-A24';
+
 /** One interface, whole. */
 export interface Interface {
   /** The interface's ID: the aggregate's root. */
