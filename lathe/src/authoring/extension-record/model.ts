@@ -4,8 +4,9 @@
 // one record, whole; a record of another product kind under it is an instance of its own.
 import { bySource, groupOf } from '../../platform/data/grouped.ts';
 import type { Row } from '../../platform/data/rows.ts';
+import type { ReadView } from '../../platform/data/rules.ts';
 import type { KindDescription, SchemaDescription } from '../../platform/data/schema.ts';
-import { productKinds, startedRelations, valueColumns } from './declaration.ts';
+import { productKinds, startedRelations, titlingField, valueColumns } from './declaration.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const EXTENSION_RECORD_AGGREGATE = 'LA-AUT-A19';
@@ -86,13 +87,18 @@ export function undeclared(schema: SchemaDescription, kind: KindDescription, giv
   return null;
 }
 
-/** The record's row with the values applied: a value sets its column, null clears it. */
-export function withValues(row: Row, values: Record<string, unknown> = {}): Row {
+/**
+ * The record's row with the values applied: a value sets its column, null clears it. When a field of its kind titles
+ * it and no title is given, the title is that field's value; a title given that differs is its rules' to refuse.
+ */
+export function withValues(view: ReadView, kind: string, row: Row, values: Record<string, unknown> = {}): Row {
   const next: Row = { ...row };
   for (const [column, value] of Object.entries(values)) {
     if (value === null) delete next[column];
     else next[column] = value as Row[string];
   }
+  const field = titlingField(view, kind);
+  if (field && values.title === undefined && next[field] !== undefined) next.title = next[field];
   return next;
 }
 
