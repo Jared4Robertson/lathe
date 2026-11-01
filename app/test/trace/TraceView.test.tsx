@@ -60,9 +60,9 @@ describe('the Trace stage', () => {
   it('LA-V98-R16-T02 A closed row shows a status per stage, a stage with a gap a dashed box', async () => {
     await openTrace('/P-D-UC01?stage=trace');
     const scene = await drawn();
-    expect(box(scene, 'P-D-UC01|design')).toMatchObject({ role: 'status', title: '1 flow · all designed', dashed: false, opens: true, open: false });
+    expect(box(scene, 'P-D-UC01|design')).toMatchObject({ role: 'status', title: '1 interface · all designed', dashed: false, opens: true, open: false });
     expect(box(scene, 'P-D-UC01|suite')).toMatchObject({ role: 'gap', title: '3 tests · 1 not proved', dashed: true });
-    expect(box(scene, 'P-D-UC02|design')).toMatchObject({ role: 'gap', title: 'No flows', dashed: true });
+    expect(box(scene, 'P-D-UC02|design')).toMatchObject({ role: 'gap', title: 'No flow', dashed: true });
   });
 
   it('LA-V98-R17-T02 Boxes open by their toggle, Expand row opens the focus\'s row and Expand all a stage in every row; the place keeps what is open', async () => {
@@ -70,7 +70,7 @@ describe('the Trace stage', () => {
     await canvasHost();
     // A box's toggle opens it: its children show under it.
     await click('P-D-UC01|design', true);
-    await waitFor(async () => expect(box(await drawn(), 'P-D-UC01|design/P-D-UC01-FL01')).toBeDefined());
+    await waitFor(async () => expect(box(await drawn(), 'P-D-UC01|design/P-D-UC01-FL')).toBeDefined());
     expect(box(await drawn(), 'P-D-UC01|design')!.open).toBe(true);
     // Expand row: every stage of the focus's row.
     fireEvent.click(toolbarButton('Expand row'));
@@ -85,8 +85,8 @@ describe('the Trace stage', () => {
     expect(within(every).getByRole('button', { name: 'Suite' })).toHaveAttribute('aria-pressed', 'true');
     // Expand all, Technical: every step's chain, grouped by step.
     fireEvent.click(within(every).getByRole('button', { name: 'Technical' }));
-    await waitFor(async () => expect(box(await drawn(), 'P-D-UC01|technical/step:P-D-UC01-FL01-S01/P-D-CMD01-H')).toBeDefined());
-    expect(box(await drawn(), 'P-D-UC01|technical/step:P-D-UC01-FL01-S02/P-INT01-AD')).toBeDefined();
+    await waitFor(async () => expect(box(await drawn(), 'P-D-UC01|technical/step:P-D-UC01-FL-S01/P-D-CMD01-H')).toBeDefined());
+    expect(box(await drawn(), 'P-D-UC01|technical/step:P-D-UC01-FL-S02/P-INT01-AD')).toBeDefined();
     // The place keeps what is open: to the Graph stage and back to the Trace, it is as it was.
     fireEvent.click(stageButton('Graph'));
     await waitFor(() => expect(window.location.search).toBe('?stage=graph'));
@@ -114,22 +114,24 @@ describe('the Trace stage', () => {
     await openTrace('/P-D-UC01?stage=trace');
     await canvasHost();
     if (toolbarButton('Expand row').getAttribute('aria-pressed') !== 'true') fireEvent.click(toolbarButton('Expand row'));
-    await click('P-D-UC01|design/P-D-UC01-FL01', true);
-    await click('P-D-UC01|design/P-D-UC01-FL01/P-D-UC01-FL01-S01');
-    await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC01-FL01-S01'));
+    await click('P-D-UC01|design/P-D-UC01-FL', true);
+    // The flow opens to a box per interface that offers its use case; the web app's opens to its version's steps.
+    await click('P-D-UC01|design/P-D-UC01-FL/P-IF01', true);
+    await click('P-D-UC01|design/P-D-UC01-FL/P-IF01/P-D-UC01-FL-S01');
+    await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC01-FL-S01'));
     // The step's chain in Technical flow, its requirement and its test lit, the line across each column, the rest faded.
-    await waitFor(async () => expect(box(await drawn(), 'P-D-UC01|technical/step:P-D-UC01-FL01-S01/P-D-CMD01-H')).toBeDefined());
+    await waitFor(async () => expect(box(await drawn(), 'P-D-UC01|technical/step:P-D-UC01-FL-S01/P-D-CMD01-H')).toBeDefined());
     await waitFor(async () => {
       const scene = await drawn();
-      expect(box(scene, 'P-D-UC01|design/P-D-UC01-FL01/P-D-UC01-FL01-S01')).toMatchObject({ focus: true, lit: true });
+      expect(box(scene, 'P-D-UC01|design/P-D-UC01-FL/P-IF01/P-D-UC01-FL-S01')).toMatchObject({ focus: true, lit: true });
       expect(box(scene, 'P-D-UC01|use-case/P-D-UC01-R01')!.lit).toBe(true);
       expect(box(scene, 'P-D-UC01|use-case/P-D-UC01-R02')!.lit).toBe(false);
       expect(box(scene, 'P-D-UC01|suite/P-D-UC01-R01-T01')!.lit).toBe(true);
       expect(box(scene, 'P-D-UC01|suite/P-D-UC01-R01-T01')!.strength).toBe(1);
       expect(box(scene, 'P-D-UC02|use-case')!.strength).toBeLessThan(1);
       expect(scene.lines.filter((l) => l.kind === 'path').map((l) => `${l.from}>${l.to}`)).toEqual(expect.arrayContaining([
-        'P-D-UC01|use-case/P-D-UC01-R01>P-D-UC01|design/P-D-UC01-FL01/P-D-UC01-FL01-S01',
-        'P-D-UC01|design/P-D-UC01-FL01/P-D-UC01-FL01-S01>P-D-UC01|technical/step:P-D-UC01-FL01-S01/P-UI01',
+        'P-D-UC01|use-case/P-D-UC01-R01>P-D-UC01|design/P-D-UC01-FL/P-IF01/P-D-UC01-FL-S01',
+        'P-D-UC01|design/P-D-UC01-FL/P-IF01/P-D-UC01-FL-S01>P-D-UC01|technical/step:P-D-UC01-FL-S01/P-UI01',
       ]));
     });
     // The wiki card follows the selection.
@@ -150,12 +152,12 @@ describe('the Trace stage', () => {
       expect(within(list).getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual(['Outcome', 'Use case', 'Design flow', 'Technical flow', 'Acceptance test suite']);
       const design = within(list).getByRole('region', { name: 'Design flow' });
       // Open (the place may keep it open from before).
-      const toggle = within(design).getByRole('button', { name: /1 flow · all designed/ });
+      const toggle = within(design).getByRole('button', { name: /1 interface · all designed/ });
       if (toggle.getAttribute('aria-expanded') !== 'true') fireEvent.click(toggle);
-      expect(within(design).getByRole('link', { name: /^Flow · P-D-UC01-FL01(?!-)/ })).toBeInTheDocument();
+      expect(within(design).getByRole('link', { name: /^Flow · P-D-UC01-FL(?!-)/ })).toBeInTheDocument();
       // Another use case.
       fireEvent.change(within(list).getByRole('combobox', { name: 'Use case' }), { target: { value: 'P-D-UC02' } });
-      expect(within(within(list).getByRole('region', { name: 'Design flow' })).getByText('No flows', { selector: '.trace-col-title' })).toBeInTheDocument();
+      expect(within(within(list).getByRole('region', { name: 'Design flow' })).getByText('No flow', { selector: '.trace-col-title' })).toBeInTheDocument();
     } finally {
       vi.unstubAllGlobals();
     }
@@ -198,13 +200,15 @@ describe('the Trace stage', () => {
 
   it('LA-PAT-APP-UX-R17-T03 On the Trace stage a record a row shows stands on its box, and any other record shows the product\'s rows', async () => {
     // A requirement and a flow step: their boxes focused in their row (the row opened to them), their paths lit.
-    for (const [path, key] of [['/P-D-UC01-R01', 'P-D-UC01|use-case/P-D-UC01-R01'], ['/P-D-UC01-FL01-S01', 'P-D-UC01|design/P-D-UC01-FL01/P-D-UC01-FL01-S01']] as const) {
+    for (const [path, key] of [['/P-D-UC01-R01', 'P-D-UC01|use-case/P-D-UC01-R01'], ['/P-D-UC01-FL-S01', 'P-D-UC01|design/P-D-UC01-FL/P-IF01/P-D-UC01-FL-S01']] as const) {
       await openTrace(`${path}?stage=trace`);
       await canvasHost();
       if (toolbarButton('Expand row').getAttribute('aria-pressed') !== 'true') fireEvent.click(toolbarButton('Expand row'));
-      if (path.includes('FL01')) {
-        await waitFor(async () => expect(box(await drawn(), 'P-D-UC01|design/P-D-UC01-FL01')).toBeDefined());
-        if (!box(await drawn(), 'P-D-UC01|design/P-D-UC01-FL01')!.open) await click('P-D-UC01|design/P-D-UC01-FL01', true);
+      if (path.includes('-FL-')) {
+        for (const opens of ['P-D-UC01|design/P-D-UC01-FL', 'P-D-UC01|design/P-D-UC01-FL/P-IF01']) {
+          await waitFor(async () => expect(box(await drawn(), opens)).toBeDefined());
+          if (!box(await drawn(), opens)!.open) await click(opens, true);
+        }
       }
       await waitFor(async () => expect(box(await drawn(), key)).toMatchObject({ focus: true, lit: true }));
       expect(box(await drawn(), 'P-D-UC02|use-case')!.strength).toBeLessThan(1);

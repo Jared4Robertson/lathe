@@ -367,14 +367,14 @@ describe('one address, one stage', () => {
     expect(facts[0]).toBe('Capability');
     // Edit stays in reach; the whole page's sections do not show yet.
     expect(within(card()).getByRole('button', { name: 'Edit' })).toBeInTheDocument();
-    expect(within(card()).queryByRole('heading', { name: /^Flows by interface/ })).toBeNull();
+    expect(within(card()).queryByRole('heading', { name: /^Flow\s*1/ })).toBeNull();
     // More: the whole page in place, the place's; Less: the summary again.
     const more = within(card()).getByRole('button', { name: 'More' });
     expect(more).toHaveAttribute('aria-expanded', 'false');
     fireEvent.click(more);
     expect(card()).toHaveClass('is-expanded');
     expect(place()).toMatchObject({ card: { expanded: true } });
-    expect(within(card()).getByRole('heading', { name: /^Flows by interface/ })).toBeInTheDocument();
+    expect(within(card()).getByRole('heading', { name: /^Flow\s*1/ })).toBeInTheDocument();
     expect(within(card()).getByRole('button', { name: 'Edit' })).toBeInTheDocument();
     fireEvent.click(within(card()).getByRole('button', { name: 'Less' }));
     expect(card()).not.toHaveClass('is-expanded');

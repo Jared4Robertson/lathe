@@ -79,8 +79,22 @@ const questionFields = (index: RecordIndex, product: string, adding: boolean): F
   return adding ? formFields(PRODUCT_FIELDS['/api/product/add-question'], ['product_id', 'domain_id'], hints) : formFields(PRODUCT_FIELDS['/api/product/change-question'], ['id'], hints);
 };
 
-const interfaceFields = (adding: boolean): FieldSpec[] =>
-  addOrChangeFields(adding, PRODUCT_FIELDS['/api/product/add-interface'], 'product_id', PRODUCT_FIELDS['/api/product/change-interface'], { description: LONG });
+// An interface offers use cases of its own product, and lists the product's roles that use it.
+const interfaceFields = (index: RecordIndex, page: ProductPage, adding: boolean): FieldSpec[] => {
+  const useCases: Choice[] = [...index.byId.values()].filter((r) => r.kind === 'use_case' && r.product === page.product.id).map((r) => ({ id: r.id, title: r.title }));
+  const roles = page.roles.map((r) => r.name).join(', ');
+  return addOrChangeFields(adding, PRODUCT_FIELDS['/api/product/add-interface'], 'product_id', PRODUCT_FIELDS['/api/product/change-interface'], {
+    description: LONG,
+    actors: { label: 'Roles', description: `The roles of the product that use it, one per line, in order${roles ? ` (${roles})` : ''}; none means each use case's main actor.` },
+    offers: { label: 'Offers', choices: useCases },
+  });
+};
+
+/** An interface's current values, by its Change's field names: its row, its roles and the IDs of the use cases it offers. */
+const interfaceNow = (page: ProductPage, id: string): Record<string, unknown> => {
+  const iface = page.interfaces.find((i) => i.id === id)!;
+  return { ...iface, offers: iface.offers.flatMap((g) => g.items.map((u) => u.id)) };
+};
 
 const kindFields = (adding: boolean): FieldSpec[] =>
   addOrChangeFields(adding, PRODUCT_FIELDS['/api/product/declare-product-kind'], 'product_id', PRODUCT_FIELDS['/api/product/change-product-kind'], { description: LONG }, 'name');
@@ -213,7 +227,7 @@ function ChangeForm({ context, id, kind }: { context: FormContext; id: string; k
       case 'question':
         return { specs: questionFields(index, page.product.id, false), current: page.questions.find((q) => q.id === id)! as unknown as Record<string, unknown>, route: '/api/product/change-question' as const, label: 'Open question' };
       case 'interface':
-        return { specs: interfaceFields(false), current: page.interfaces.find((i) => i.id === id)! as unknown as Record<string, unknown>, route: '/api/product/change-interface' as const, label: 'Interface' };
+        return { specs: interfaceFields(index, page, false), current: interfaceNow(page, id), route: '/api/product/change-interface' as const, label: 'Interface' };
     }
   })();
   const submit = async (draft: Draft) => {
@@ -232,7 +246,7 @@ function AddForm({ context, kind }: { context: FormContext; kind: 'question' | '
   const announce = useAnnounce();
   const product = page.product.id;
   const next = useNextProductId(kind, product, index);
-  const specs = kind === 'question' ? questionFields(index, product, true) : interfaceFields(true);
+  const specs = kind === 'question' ? questionFields(index, product, true) : interfaceFields(index, page, true);
   const label = kind === 'question' ? 'open question' : 'interface';
   const suggested = next.state === 'read' ? next.answer : null;
   const [update, setUpdate] = useState<((d: Draft) => Draft) | undefined>(undefined);

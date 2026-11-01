@@ -1,2 +1,2 @@
-{"id":"DM-PAY-UC01-FL01","title":"Pay by card in the web app","use_case_id":"DM-PAY-UC01","interface_id":"DM-IF01"}
-{"id":"DM-SHOP-UC01-FL01","title":"Add an item to the basket in the web app","use_case_id":"DM-SHOP-UC01","interface_id":"DM-IF01"}
+{"id":"DM-PAY-UC01-FL","title":"Pay by card","use_case_id":"DM-PAY-UC01"}
+{"id":"DM-SHOP-UC01-FL","title":"Add an item to the basket","use_case_id":"DM-SHOP-UC01"}

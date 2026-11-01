@@ -8,7 +8,7 @@ import { expectStable, openPage, step } from './measure';
 import { FOCUS, GRAPH_CANVAS, keepData, RECORD, SHELL } from './scenarios';
 import { cameraOf, focusDrawn, graphDrawn, sceneOf } from './scene';
 
-// Platform's flow tests that happen in the app (LA-PLT-UC03-FL to UC10-FL01): one per flow, each
+// Platform's flow tests that happen in the app (LA-PLT-UC03-FL to UC10-FL): one per flow, each
 // walking its main path in Chromium over the suite's copy of Lathe's data. The flows run through
 // the CLI or the server alone are proved in lathe/test/cli/platform-flows.test.ts, and the native
 // menus in the desktop smoke test.

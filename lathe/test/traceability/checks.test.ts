@@ -215,7 +215,7 @@ check('test-data-set-file-missing', () => {
 describe('coverage gaps as warnings', () => {
   let ws: Workspace;
   beforeAll(async () => {
-    let data = without(complete(), 'fulfills', (r) => r.source_id === 'EX-LEND-UC02-FL01-S01');
+    let data = without(complete(), 'fulfills', (r) => r.source_id === 'EX-LEND-UC02-FL-S01');
     data = changing(data, 'specification_test', () => true, { state: 'not automated yet' });
     ws = await loadData(data, { missing: ['src/dates.ts'] });
   });
@@ -232,7 +232,7 @@ describe('coverage gaps as warnings', () => {
   mirrors('not-proved', 'proved');
 
   it('LA-TRC-UC01-R02-T01 they say which obligation lacks what', () => {
-    expect(ofCheck(ws, 'not-designed').map((p) => p.message)).toEqual(['UC requirement EX-LEND-UC02-R01 is not designed yet: no step of EX-LEND-UC02-FL01 fulfills it.']);
+    expect(ofCheck(ws, 'not-designed').map((p) => p.message)).toEqual(['UC requirement EX-LEND-UC02-R01 is not designed yet: no step of EX-LEND-UC02-FL fulfills it.']);
     // The service's file is missing; the UC requirement whose command calls it rests on it.
     expect(ofCheck(ws, 'not-built').map((p) => p.record)).toEqual(['EX-LEND-DS01', 'EX-LEND-UC01-R01']);
     expect(ofCheck(ws, 'not-proved').map((p) => p.message)).toEqual(['Specification EX-LEND-SP01 is not proved yet: its test is not automated yet.']);

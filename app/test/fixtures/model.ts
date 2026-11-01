@@ -44,7 +44,7 @@ const coverage = (): Coverage[] => [{
     gap('P-D-CMD02', 'command', 'record-untraced'),
     gap('P-D-CMD03', 'command', 'record-untraced'),
     gap('P-D-QRY01', 'query', 'record-untraced'),
-    gap('P-D-UC01-FL01-S02', 'flow_step', 'record-untraced'),
+    gap('P-D-UC01-FL-S02', 'flow_step', 'record-untraced'),
   ] }, {
   product: 'P',
   domain: 'P-E',

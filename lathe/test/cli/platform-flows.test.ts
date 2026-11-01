@@ -145,7 +145,7 @@ describe('Platform flows', () => {
 
     // The script loads it and reads the records, links, problems and coverage.
     const ws = await loadWorkspace(root);
-    expect(ws.records.map((r) => r.id)).toEqual(expect.arrayContaining(['EX', 'EX-LEND', 'EX-LEND-A1', 'EX-LEND-UC01', 'EX-LEND-UC01-FL01']));
+    expect(ws.records.map((r) => r.id)).toEqual(expect.arrayContaining(['EX', 'EX-LEND', 'EX-LEND-A1', 'EX-LEND-UC01', 'EX-LEND-UC01-FL']));
     expect(ws.links.length).toBeGreaterThan(0);
     expect(ws.problems.filter((p) => p.severity === 'error')).toEqual([]);
     expect(ws.coverage.map((c) => c.domain)).toContain('EX-LEND');

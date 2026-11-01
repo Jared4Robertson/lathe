@@ -162,7 +162,6 @@ code { font: 0.86em var(--mono); }
 .spec-body a { color: var(--steel); text-decoration-thickness: 1px; text-underline-offset: 2px; }
 .spec-page a:focus-visible, .spec-page input:focus-visible, .spec-page button:focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; border-radius: 4px; }
 .hint { margin: 0; color: var(--muted); font-size: 0.86rem; }
-.flow-interface { margin: 0 0 12px; color: var(--muted); }
 .spec-page > .error { margin: 12px 24px 0; }
 .spec-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 .spec-section h2 { font-size: 1.05rem; display: flex; align-items: baseline; gap: 8px; }
@@ -710,10 +709,19 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .flow-steps .step-ids > li { white-space: nowrap; }
 .flow-steps .step-head { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .flow-steps .step-order { font: 600 0.8rem var(--mono); min-width: 1.6em; text-align: right; color: var(--muted); }
-.flow-steps .step-ids { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 2px 8px; }
+:is(.flow-steps, .flow-tab-panel) .step-ids { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 2px 8px; }
 .flow-steps tr.flow-step-detail > td { background: var(--paper); padding: 6px 10px 8px 32px; }
 .flow-step-more { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
 .flow-step-more h4 { margin: 4px 0 2px; font-size: 0.8rem; color: var(--muted); font-weight: 600; }
+/* A flow's tabs: the flow as written, then each offering interface's derived version (FlowInterfaces). */
+.flow-tabs { display: flex; flex-wrap: wrap; gap: 2px; border-bottom: 1px solid var(--rule); margin: 0 0 12px; }
+.button.flow-tab { border-radius: 6px 6px 0 0; margin-bottom: -1px; border-bottom: 2px solid transparent; }
+.button.flow-tab[aria-selected="true"] { border-bottom-color: var(--steel); color: var(--ink); font-weight: 600; }
+.flow-tab-panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.flow-tab-panel:focus-visible { outline: 2px solid var(--steel); outline-offset: 4px; border-radius: 4px; }
+.flow-refusal { margin: 0 0 6px; font-size: 0.86rem; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
+.flow-steps .step-variant { white-space: nowrap; }
+.flow-steps .step-gap { display: inline-block; padding: 0 6px; border: 1px dashed var(--muted); border-radius: 4px; color: var(--muted); }
 /* ---------- End of flow steps ---------- */
 
 /* ---------- Product spaces and shortcut hints ---------- */
