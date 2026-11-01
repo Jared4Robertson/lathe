@@ -14,7 +14,7 @@ const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.findByRole('toolbar', { name: `Change ${id}` });
 const rows = (table: HTMLTableElement) => [...table.querySelectorAll('tbody tr')].map((tr) => [...tr.querySelectorAll('th, td')].map((c) => c.textContent));
 
-describe('LA-V142-R01-T01 a value object\'s records are read through the Value object aggregate\'s own query, never a generic record read', () => {
+describe('LA-V142-R04-T01 a value object\'s records are read through the Value object aggregate\'s own query, never a generic record read', () => {
   it('reads GET /api/value-object/get-value-object for a constraint test, and shows what it accepts and refuses', async () => {
     const { requests } = await openApp('/P-VO01-C01-T', { data: modelWorkspace() });
     await waitFor(() => expect(main().querySelector('[data-field="refuses"]')).toHaveTextContent('(blank)'));

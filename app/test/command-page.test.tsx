@@ -24,7 +24,7 @@ function withPolicy(): ServedData {
   return w;
 }
 
-describe('LA-V132-R01-T01 a command\'s records are read through the Command aggregate\'s own query, never a generic record read', () => {
+describe('LA-V132-R04-T01 a command\'s records are read through the Command aggregate\'s own query, never a generic record read', () => {
   it('reads GET /api/command/get-command for a policy, and shows its statement', async () => {
     const { requests } = await openApp('/DM-SHOP-PO01', { data: withPolicy() });
     expect(await within(main()).findByText('Whenever an item is added, it is added again.')).toBeInTheDocument();

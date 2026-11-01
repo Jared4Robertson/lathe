@@ -21,7 +21,7 @@ function withRequirements(): ServedData {
   return addRows(data, 'view_requirement', { id: 'DM-V01-R02', title: 'Shows the shipping', view_id: 'DM-V01', statement: 'The basket page MUST show the shipping cost.', group_name: 'Costs' });
 }
 
-describe('LA-V150-R01-T01 a view\'s records are read through the View aggregate\'s own query, never a generic record read', () => {
+describe('LA-V150-R04-T01 a view\'s records are read through the View aggregate\'s own query, never a generic record read', () => {
   it('reads GET /api/view/get-view for a requirement, and shows its statement', async () => {
     const { requests } = await openApp('/DM-V01-R01', { data: withRequirements() });
     expect(await within(main()).findByText('The basket page MUST show the total.')).toBeInTheDocument();

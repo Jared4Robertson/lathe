@@ -22,7 +22,7 @@ function withPredicate(): ServedData {
   return w;
 }
 
-describe('LA-V141-R01-T01 a specification\'s records are read through the Specification aggregate\'s own query, never a generic record read', () => {
+describe('LA-V141-R04-T01 a specification\'s records are read through the Specification aggregate\'s own query, never a generic record read', () => {
   it('reads GET /api/specification/get-specification for its predicate, and its specification\'s statement for the specification', async () => {
     const { requests } = await openApp('/P-D-SP01-PR', { data: withPredicate() });
     await waitFor(() => expect(requests).toContain('GET /api/specification/get-specification?id=P-D-SP01-PR'));
