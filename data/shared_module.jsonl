@@ -50,6 +50,16 @@
 {"id":"LA-AUT-MOD83","title":"lathe/src/authoring/data-store/commands/index.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/data-store/commands/index.ts","group_name":"Data store"}
 {"id":"LA-AUT-MOD84","title":"lathe/src/authoring/interface/model.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/interface/model.ts","group_name":"Discovery"}
 {"id":"LA-AUT-MOD85","title":"lathe/src/lead.ts","domain_id":"LA-AUT","file":"lathe/src/lead.ts","group_name":"Product"}
+{"id":"LA-AUT-MOD86","title":"lathe/src/authoring/journey/commands/add-journey.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/journey/commands/add-journey.ts","group_name":"Journey"}
+{"id":"LA-AUT-MOD87","title":"lathe/src/authoring/journey/commands/change-journey.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/journey/commands/change-journey.ts","group_name":"Journey"}
+{"id":"LA-AUT-MOD88","title":"lathe/src/authoring/journey/commands/remove-journey.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/journey/commands/remove-journey.ts","group_name":"Journey"}
+{"id":"LA-AUT-MOD89","title":"lathe/src/authoring/journey/commands/add-journey-step.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/journey/commands/add-journey-step.ts","group_name":"Journey"}
+{"id":"LA-AUT-MOD90","title":"lathe/src/authoring/journey/commands/change-journey-step.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/journey/commands/change-journey-step.ts","group_name":"Journey"}
+{"id":"LA-AUT-MOD91","title":"lathe/src/authoring/journey/commands/remove-journey-step.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/journey/commands/remove-journey-step.ts","group_name":"Journey"}
+{"id":"LA-AUT-MOD92","title":"lathe/src/authoring/journey/commands/add-journey-test.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/journey/commands/add-journey-test.ts","group_name":"Journey"}
+{"id":"LA-AUT-MOD93","title":"lathe/src/authoring/journey/commands/change-journey-test.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/journey/commands/change-journey-test.ts","group_name":"Journey"}
+{"id":"LA-AUT-MOD94","title":"lathe/src/authoring/journey/commands/remove-journey-test.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/journey/commands/remove-journey-test.ts","group_name":"Journey"}
+{"id":"LA-AUT-MOD95","title":"lathe/src/authoring/journey/appearances.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/journey/appearances.ts","group_name":"Journey"}
 {"id":"LA-CHK-MOD01","title":"lathe/src/checking/check/model.ts","domain_id":"LA-CHK","file":"lathe/src/checking/check/model.ts"}
 {"id":"LA-CHK-MOD02","title":"lathe/src/checking/check/commands/index.ts","domain_id":"LA-CHK","file":"lathe/src/checking/check/commands/index.ts"}
 {"id":"LA-CHK-MOD03","title":"lathe/src/checking/product-setting/model.ts","domain_id":"LA-CHK","file":"lathe/src/checking/product-setting/model.ts"}
