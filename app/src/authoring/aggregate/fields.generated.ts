@@ -38,7 +38,7 @@ export const AGGREGATE_FIELDS = {
     role: { kind: 'column', table: 'entity', column: 'role', required: false, clearable: false },
     in_root_table: { kind: 'column', table: 'entity', column: 'in_root_table', required: false, clearable: true },
     description: { kind: 'column', table: 'entity', column: 'description', required: false, clearable: false },
-    fields: { kind: 'parts', table: 'entity_field', columns: ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'], description: 'Its fields, in order. Replaces the list.', required: false, clearable: false },
+    fields: { kind: 'parts', table: 'entity_field', columns: ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'], description: 'Its fields, in order: each its name, meaning, one type (a basic type, a value object or an aggregate), whether it is required, and its column name and an example when it has them. Replaces the list.', required: false, clearable: false },
     has_one: { kind: 'ids', description: 'The entities of its aggregate it holds exactly one of. Replaces the list.', required: false, clearable: false },
     has_many: { kind: 'ids', description: 'The entities of its aggregate it holds any number of. Replaces the list.', required: false, clearable: false },
   },
