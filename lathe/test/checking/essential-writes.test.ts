@@ -42,9 +42,13 @@ describe('a write of an essential record keeps accidental complexity out', () =>
     expect(await reasons(store, 'domain change-term', { id: 'EX-LEND-TM01', title: 'Loan row' })).toEqual([
       ['essential-names-technology', 'EX-LEND-TM01', 'Term EX-LEND-TM01 is essential, and its title says "row"'],
     ]);
-    // A step may not click.
-    expect(await reasons(store, 'use-case change-flow-step', { id: 'EX-LEND-UC01-FL01-S01', title: 'Click Borrow on the tool' })).toEqual([
-      ['essential-names-technology', 'EX-LEND-UC01-FL01-S01', 'Flow step EX-LEND-UC01-FL01-S01 is essential, and its title says "click"'],
+    // A step names an interface only as the variant that interface alone does; no step may click.
+    expect(await reasons(store, 'use-case change-flow-step', { id: 'EX-LEND-UC01-FL-S02', title: 'See the loan in the Web app' })).toEqual([
+      ['essential-names-technology', 'EX-LEND-UC01-FL-S02', 'Flow step EX-LEND-UC01-FL-S02 is essential, and its title says "web app"'],
+    ]);
+    await run(store, 'use-case change-flow-step', { id: 'EX-LEND-UC01-FL-S02', title: 'See the loan in the Web app', interface_id: 'EX-IF01' });
+    expect(await reasons(store, 'use-case change-flow-step', { id: 'EX-LEND-UC01-FL-S01', title: 'Click Borrow on the tool' })).toEqual([
+      ['essential-names-technology', 'EX-LEND-UC01-FL-S01', 'Flow step EX-LEND-UC01-FL-S01 is essential, and its title says "click"'],
     ]);
     // A view is a page with its buttons and rows, but not the storage behind them.
     await run(store, 'view change-view', { id: 'EX-V01', title: 'Catalog page', description: 'Every tool in a row with a Borrow button.' });

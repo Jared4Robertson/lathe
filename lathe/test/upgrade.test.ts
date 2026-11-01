@@ -159,7 +159,8 @@ describe('the schema version', () => {
     for (const [table, rows] of Object.entries(files)) writeFileSync(path.join(root, 'data', `${table}.jsonl`), rows.map(line).join(''));
     git(root, 'add', '.');
     git(root, 'commit', '-q', '-m', 'A flow before interfaces');
-    // The data must load under this Lathe's schema, so every later converter runs too: 3-to-4 makes the interface internal.
+    // The data must load under this Lathe's schema, so every later converter runs too: 3-to-4 makes the interface internal
+    // and merges the use case's flows back into its one flow, offered through the interface.
     const result = await upgradeProduct(root, { converters: await readConverters(UPGRADES_DIR) });
     expect(result.done).toBe(true);
     expect(result.todos).toEqual([
@@ -167,16 +168,18 @@ describe('the schema version', () => {
       expect.stringMatching(/^1-to-2: Rename the flow, step and flow test IDs your code names/),
       expect.stringMatching(/^1-to-2: Write each text that starts "To write:" from the code/),
       expect.stringMatching(/^3-to-4: An interface that people or programs outside the product build on is public/),
+      expect.stringMatching(/^3-to-4: List the roles that use each interface/),
     ]);
     const read = (table: string) => readFileSync(path.join(root, 'data', `${table}.jsonl`), 'utf8');
     expect(read('interface')).toBe(line({ id: 'TL-IF01', title: 'Interface', product_id: 'TL', kind: 'other', description: 'Every flow written before interfaces were declared goes through this one.', public: false }));
-    expect(read('flow')).toBe(line({ id: 'TL-LEND-UC01-FL01', title: 'Borrow', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }));
-    expect(read('flow_step')).toContain('"id":"TL-LEND-UC01-FL01-S01"');
-    expect(read('flow_test')).toContain('"id":"TL-LEND-UC01-FL01-T","title":"Borrow end to end","flow_id":"TL-LEND-UC01-FL01"');
-    expect(read('flow_test')).toContain('"steps":["Run TL-LEND-UC01-FL01-S01"]');
+    expect(read('flow')).toBe(line({ id: 'TL-LEND-UC01-FL', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01' }));
+    expect(read('offers')).toBe(line({ source_id: 'TL-IF01', target_id: 'TL-LEND-UC01' }));
+    expect(read('flow_step')).toContain('"id":"TL-LEND-UC01-FL-S01"');
+    expect(read('flow_test')).toContain('"id":"TL-LEND-UC01-FL-T","title":"Borrow end to end","flow_id":"TL-LEND-UC01-FL"');
+    expect(read('flow_test')).toContain('"steps":["Run TL-LEND-UC01-FL-S01"]');
     expect(read('flow_test')).toContain('"level":"system"');
-    expect(read('fulfills')).toBe(line({ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-LEND-UC01-R01' }));
-    expect(read('uc_requirement')).toContain('as TL-LEND-UC01-FL01-S01 shows.');
+    expect(read('fulfills')).toBe(line({ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-UC01-R01' }));
+    expect(read('uc_requirement')).toContain('as TL-LEND-UC01-FL-S01 shows.');
     expect(readConfig(root).schema).toBe(SCHEMA_VERSION);
   });
   it('LA-AUT-UC03-R08-T03 1-to-2 gives every test one of the five levels, and a manual test the level that fits its kind', async () => {
@@ -445,6 +448,68 @@ describe('the schema version', () => {
     const { changes } = await run3to4(tables);
     expect(tables.product_relation!.map((r) => `${String(r.name)} ${String(r.source_kind)} ${String(r.target_kind)}`)).toEqual(['provided_by view report', 'measured_by business_outcome report']);
     expect(changes).toEqual([expect.stringContaining('fills from report to slot, generates from tooling to report, provided_by from promise to integration were dropped')]);
+  });
+
+  it("LA-AUT-UC03-R08-T14 3-to-4 merges a use case's flows into one, keeping the union of their steps, marking variants, and reports what it cannot merge", async () => {
+    const tables: Record<string, Record<string, unknown>[]> = {
+      interface: [
+        { id: 'TL-IF01', title: 'Web app', product_id: 'TL', kind: 'web app', description: 'The desk.', public: false },
+        { id: 'TL-IF02', title: 'CLI', product_id: 'TL', kind: 'CLI', description: 'The terminal.', public: false },
+      ],
+      use_case: [{ id: 'TL-LEND-UC01', title: 'Borrow a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member borrows a tool.' }],
+      flow: [
+        { id: 'TL-LEND-UC01-FL01', title: 'Borrow a tool in the web app', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' },
+        { id: 'TL-LEND-UC01-FL02', title: 'Borrow a tool through the CLI', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF02' },
+      ],
+      flow_step: [
+        { id: 'TL-LEND-UC01-FL01-S01', title: 'On its page, the librarian opens the desk', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 },
+        { id: 'TL-LEND-UC01-FL01-S02', title: 'On its page, the librarian lends the tool', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 2 },
+        { id: 'TL-LEND-UC01-FL02-S01', title: 'The librarian lends the tool', flow_id: 'TL-LEND-UC01-FL02', path: 'main', position: 1 },
+        { id: 'TL-LEND-UC01-FL02-S02', title: 'A tool on loan is refused', flow_id: 'TL-LEND-UC01-FL02', path: 'refused', position: 1 },
+      ],
+      invokes: [
+        { source_id: 'TL-LEND-UC01-FL01-S02', target_id: 'TL-LEND-CMD01' },
+        { source_id: 'TL-LEND-UC01-FL02-S01', target_id: 'TL-LEND-CMD01' },
+      ],
+      happens_in: [
+        { source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-V01' },
+        { source_id: 'TL-LEND-UC01-FL01-S02', target_id: 'TL-V01' },
+      ],
+      fulfills: [
+        { source_id: 'TL-LEND-UC01-FL01-S02', target_id: 'TL-LEND-UC01-R01' },
+        { source_id: 'TL-LEND-UC01-FL02-S01', target_id: 'TL-LEND-UC01-R02' },
+      ],
+      flow_test: [
+        { id: 'TL-LEND-UC01-FL01-T', title: 'Borrow in a browser', flow_id: 'TL-LEND-UC01-FL01', level: 'browser', state: 'automated', file: 'e2e/borrow.spec.ts' },
+        { id: 'TL-LEND-UC01-FL02-T', title: 'Borrow from the terminal', flow_id: 'TL-LEND-UC01-FL02', level: 'system', state: 'automated', file: 'test/borrow.test.ts' },
+      ],
+      starts_from: [{ source_id: 'TL-LEND-UC01-FL01-T', target_id: 'TL-LEND-TD01' }],
+      measured_by: [{ source_id: 'TL-BO01', target_id: 'TL-LEND-UC01-FL01-T' }],
+    };
+    const { changes, todos } = await run3to4(tables);
+    expect(tables.flow).toEqual([{ id: 'TL-LEND-UC01-FL', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01' }]);
+    // The step both flows invoke the command in is one, with both requirements; the desk is the web app's alone.
+    expect(tables.flow_step).toEqual([
+      { id: 'TL-LEND-UC01-FL-S01', title: 'On its page, the librarian opens the desk', flow_id: 'TL-LEND-UC01-FL', path: 'main', position: 1, interface_id: 'TL-IF01' },
+      { id: 'TL-LEND-UC01-FL-S02', title: 'On its page, the librarian lends the tool', flow_id: 'TL-LEND-UC01-FL', path: 'main', position: 2 },
+      { id: 'TL-LEND-UC01-FL-S03', title: 'A tool on loan is refused', flow_id: 'TL-LEND-UC01-FL', path: 'refused', position: 1, interface_id: 'TL-IF02' },
+    ]);
+    expect(tables.invokes).toEqual([{ source_id: 'TL-LEND-UC01-FL-S02', target_id: 'TL-LEND-CMD01' }]);
+    expect(tables.fulfills).toEqual([{ source_id: 'TL-LEND-UC01-FL-S02', target_id: 'TL-LEND-UC01-R01' }, { source_id: 'TL-LEND-UC01-FL-S02', target_id: 'TL-LEND-UC01-R02' }]);
+    expect(tables.happens_in).toEqual([]);
+    expect(tables.presents).toEqual([{ source_id: 'TL-V01', target_id: 'TL-LEND-CMD01' }]);
+    expect(tables.offers).toEqual([{ source_id: 'TL-IF01', target_id: 'TL-LEND-UC01' }, { source_id: 'TL-IF02', target_id: 'TL-LEND-UC01' }]);
+    // The automated test at the cheapest level stays, as the flow's; the other goes, and what named it names the one kept.
+    expect(tables.flow_test).toEqual([{ id: 'TL-LEND-UC01-FL-T', title: 'Borrow from the terminal', flow_id: 'TL-LEND-UC01-FL', level: 'system', state: 'automated', file: 'test/borrow.test.ts' }]);
+    expect(tables.starts_from).toEqual([]);
+    expect(tables.measured_by).toEqual([{ source_id: 'TL-BO01', target_id: 'TL-LEND-UC01-FL-T' }]);
+    expect(changes.at(-1)).toMatch(/^Each use case has one flow, the same whatever the interface: 2 flows merged into 1, with 3 steps \(2 variants of one interface\)/);
+    expect(todos).toEqual([
+      expect.stringContaining('now gone: TL-LEND-UC01-FL01-T (TL-IF01, e2e/borrow.spec.ts)'),
+      expect.stringContaining('TL-LEND-UC01-FL-S01 (TL-IF01), TL-LEND-UC01-FL-S03 (TL-IF02)'),
+      expect.stringContaining('TL-LEND-UC01-FL-S01 happened in TL-V01'),
+      expect.stringContaining('List the roles that use each interface'),
+    ]);
   });
 
   it('LA-AUT-UC03-R08-T12 3-to-4 does nothing to data that is already upgraded', async () => {

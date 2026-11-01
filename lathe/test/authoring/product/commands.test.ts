@@ -7,6 +7,7 @@ import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
+import { ADD_USE_CASE } from '../../../src/authoring/use-case/commands/add-use-case.ts';
 import { ADD_INTERFACE } from '../../../src/authoring/product/commands/add-interface.ts';
 import { ADD_PRODUCT } from '../../../src/authoring/product/commands/add-product.ts';
 import { ADD_QUESTION } from '../../../src/authoring/product/commands/add-question.ts';
@@ -121,6 +122,26 @@ describe('LA-AUT-UC23-R01-T51 each Product command changes one product through P
     expect(runQuery(store, NEXT_PRODUCT_ID, { kind: 'question', parent: 'TL' })).toBe('TL-Q02');
   });
 
+  it('reads an interface with the roles that use it, the patterns it follows and the use cases it offers and does not, by capability', async () => {
+    const store = await storeAt(writeData(everyKind()));
+    await runCommand(store, ADD_USE_CASE, { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'Bring a borrowed tool back.', actors: ['Member'] });
+    await runCommand(store, CHANGE_INTERFACE, { id: 'TL-IF01', actors: ['Member', 'Librarian'] });
+    const page = runQuery(store, GET_PRODUCT, { id: 'TL' }) as ReturnType<typeof GET_PRODUCT.run>;
+    expect(page.interfaces).toEqual([
+      expect.objectContaining({
+        id: 'TL-IF01',
+        actors: ['Member', 'Librarian'],
+        patterns: [],
+        offers: [{ capability: expect.objectContaining({ id: 'TL-LEND-CAP01' }), items: [{ id: 'TL-LEND-UC01', title: 'Borrow a tool' }] }],
+        missing: [{ capability: expect.objectContaining({ id: 'TL-LEND-CAP01' }), items: [{ id: 'TL-LEND-UC02', title: 'Return a tool' }] }],
+      }),
+    ]);
+    await runCommand(store, CHANGE_INTERFACE, { id: 'TL-IF01', offers: ['TL-LEND-UC01', 'TL-LEND-UC02'] });
+    const offering = (runQuery(store, GET_PRODUCT, { id: 'TL' }) as ReturnType<typeof GET_PRODUCT.run>).interfaces[0];
+    expect(offering.offers[0].items.map((u) => u.id)).toEqual(['TL-LEND-UC01', 'TL-LEND-UC02']);
+    expect(offering.missing).toEqual([]);
+  });
+
   it('refuses an input that is not the command\'s: an unknown field, a missing one, a wrong type, a part of another shape', async () => {
     const store = await ownStore();
     await expect(runCommand(store, ADD_INTERFACE, { id: 'TL-IF02', title: 'CLI', product_id: 'TL', kind: 'CLI' })).rejects.toThrow(new InputError('add-interface needs description'));
@@ -194,14 +215,15 @@ describe('LA-AUT-INV50-T an open question is owned by one of its product\'s role
 });
 
 describe('LA-AUT-UC23-R01-T52 a record of a product goes with what it holds, refused while referenced', () => {
-  it('refuses removing an interface a flow goes through, naming the flow, and removes one nothing uses', async () => {
+  it('refuses removing an interface a flow step is a variant of, naming the step, and removes one with the roles it lists and the use cases it offers', async () => {
     const data: Data = everyKind();
     const store = await storeAt(writeData(data));
     const refused = await refusal(store, REMOVE_INTERFACE, { id: 'TL-IF01' });
     expect(refused.problems[0]).toMatchObject({ rule: 'referenced' });
-    expect(refused.problems[0].message).toMatch(/^Interface TL-IF01 is referenced, so it stays: flow TL-LEND-UC01-FL01 \(interface_id\)/);
-    await runCommand(store, ADD_INTERFACE, { id: 'TL-IF02', title: 'CLI', product_id: 'TL', kind: 'CLI', description: 'The librarian\'s scripts.', public: false });
-    expect((await runCommand(store, REMOVE_INTERFACE, { id: 'TL-IF02' })).tables).toEqual(['interface']);
+    expect(refused.problems[0].message).toMatch(/^Interface TL-IF01 is referenced, so it stays: flow_step TL-LEND-UC01-FL-S01 \(interface_id\)/);
+    await runCommand(store, ADD_INTERFACE, { id: 'TL-IF02', title: 'CLI', product_id: 'TL', kind: 'CLI', description: 'The librarian\'s scripts.', public: false, actors: ['Librarian'], offers: ['TL-LEND-UC01'] });
+    expect(store.rows('offers')).toContainEqual({ source_id: 'TL-IF02', target_id: 'TL-LEND-UC01' });
+    expect((await runCommand(store, REMOVE_INTERFACE, { id: 'TL-IF02' })).tables).toEqual(['interface', 'interface_actor', 'offers']);
   });
 
   it('refuses removing a question or a product kind that is not there', async () => {

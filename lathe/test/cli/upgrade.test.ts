@@ -1,4 +1,4 @@
-// The upgrade from end to end (LA-PLT-UC17-FL03): a product set up with this Lathe meets a next Lathe whose schema
+// The upgrade from end to end (LA-PLT-UC17-FL): a product set up with this Lathe meets a next Lathe whose schema
 // renamed a column, made here as a copy of this package with one more schema version and its converter. The next
 // Lathe refuses to load the product until `lathe upgrade` moves it forward, then loads it; this Lathe then says the
 // product needs a newer Lathe.
@@ -61,7 +61,7 @@ function nextLathe(): string {
 }
 
 describe('moving a product to a new Lathe', () => {
-  it('LA-PLT-UC17-FL03-T the Owner inits a product, updates Lathe, upgrades the data and loads it', () => {
+  it('LA-PLT-UC17-FL-T the Owner inits a product, updates Lathe, upgrades the data and loads it', () => {
     const now = path.join(PACKAGE_DIR, 'bin', 'lathe.ts');
     const next = path.join(nextLathe(), 'bin', 'lathe.ts');
     const target = SCHEMA_VERSION + 1;

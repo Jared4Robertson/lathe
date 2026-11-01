@@ -14,18 +14,20 @@ import type { AddViewTest } from './add-view-test.ts';
 import type { ChangeViewTest } from './change-view-test.ts';
 import type { RemoveViewTest } from './remove-view-test.ts';
 
-/** Adds a view: a place in an interface a person uses, with its address. It has no owner; its product follows from its ID. */
+/** Adds a view: a place in an interface a person uses, with its address, the one interface that shows it if only one does, and the commands and queries it presents. It has no owner; its product follows from its ID. */
 export function addView(tx: Transaction, input: AddView): void {
   const views = new ViewRepository(tx);
-  const view = views.create({ root: input.id, view: input, requirements: [], tests: [] });
+  const { presents = [], ...row } = input;
+  const view = views.create({ root: row.id, view: row, presents: presents, requirements: [], tests: [] });
   views.save(view);
 }
 
-/** Changes a view's title, address, description or notes. */
+/** Changes a view's title, address, interface, description or notes, or what it presents (the whole list). */
 export function changeView(tx: Transaction, input: ChangeView): void {
   const views = new ViewRepository(tx);
   const view = views.load(input.id) ?? tx.refuse('missing', `there is no view ${input.id}`);
-  view.view = changed(view.view, input, ['title', 'description', 'route', 'notes']);
+  view.view = changed(view.view, input, ['title', 'description', 'route', 'interface_id', 'notes']);
+  view.presents = input.presents ?? view.presents;
   views.save(view);
 }
 

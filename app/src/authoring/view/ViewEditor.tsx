@@ -24,24 +24,31 @@ import { kindWord, addedUnder } from '../../platform/meta-model/reads';
 // reason the command gave, in its own words, keeps what was entered, and changes nothing.
 
 
-/** The test data sets of the product, as what a test may start from. */
-const dataSets = (index: RecordIndex, product: string): Choice[] =>
-  [...index.byId.values()].filter((r) => r.kind === 'test_data_set' && r.product === product).map((r) => ({ id: r.id, title: r.title }));
+
+/** The product's records of some kinds, as choices. */
+const productRecords = (index: RecordIndex, product: string, kinds: readonly string[]): Choice[] =>
+  [...index.byId.values()].filter((r) => kinds.includes(r.kind) && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
 /** The fields each kind's Add and Change take, from their inputs; the hints add long text and the choices. */
 function fieldsOf(index: RecordIndex, product: string, kind: ViewKind, adding: boolean): FieldSpec[] {
   const F = VIEW_FIELDS;
   switch (kind) {
     case 'view': {
-      // A view has no parent column: its product follows from its ID.
-      const hints = { description: LONG, notes: LONG };
+      // A view has no parent column: its product follows from its ID. It presents the product's commands and queries,
+      // and may belong to one of its interfaces.
+      const hints = {
+        description: LONG,
+        notes: LONG,
+        interface_id: { label: 'Interface', choices: productRecords(index, product, ['interface']), description: 'Empty when every web app and desktop interface of the product shows it; else the one interface it belongs to.' },
+        presents: { choices: productRecords(index, product, ['command', 'query']) },
+      };
       return adding ? formFields(F['/api/view/add-view'], [], hints) : formFields(F['/api/view/change-view'], ['id'], hints);
     }
     case 'view_requirement':
       return addOrChangeFields(adding, F['/api/view/add-view-requirement'], 'view_id', F['/api/view/change-view-requirement'], { statement: LONG });
     case 'view_test':
       return addOrChangeFields(adding, F['/api/view/add-view-test'], 'view_requirement_id', F['/api/view/change-view-test'], {
-        when: LONG, then: LONG, manual_reason: LONG, notes: LONG, starts_from: { choices: dataSets(index, product) },
+        when: LONG, then: LONG, manual_reason: LONG, notes: LONG, starts_from: { choices: productRecords(index, product, ['test_data_set']) },
       });
   }
 }
@@ -50,7 +57,7 @@ function fieldsOf(index: RecordIndex, product: string, kind: ViewKind, adding: b
 function currentOf(page: ViewPage, kind: ViewKind, id: string): Record<string, unknown> {
   switch (kind) {
     case 'view':
-      return { ...page.view };
+      return { ...page.view, presents: page.presents };
     case 'view_requirement':
       return { ...page.requirements.find((r) => r.requirement.id === id)!.requirement };
     case 'view_test': {

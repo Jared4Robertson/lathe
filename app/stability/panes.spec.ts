@@ -263,7 +263,7 @@ test.describe('the stage toolbar', () => {
 test.describe('a flow\'s steps in the wiki card', () => {
   test('LA-V101-R06-T02 in the 360 px wiki card, each step reads whole, stacked, and nothing scrolls sideways or is cut', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await openPage(page, '/LA-EXP-UC03-FL01?stage=graph', STRIP);
+    await openPage(page, '/LA-EXP-UC03-FL?stage=graph', STRIP);
     await showCard(page, 'whole');
     const table = page.locator(`${CARD} table.flow-steps`).first();
     await table.waitFor();

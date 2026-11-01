@@ -80,7 +80,7 @@ describe('LA-V150-R05-T01 the View editor writes only through the aggregate\'s o
 describe('LA-V150-R03-T01 a refused View command shows every reason, keeps what was entered, and changes nothing', () => {
   it('Remove sends Remove a view and shows the refusal naming what still happens in it', async () => {
     const user = userEvent.setup();
-    const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'referenced', table: 'view', key: 'DM-V01', message: 'View DM-V01 is referenced, so it stays: flow step DM-SHOP-UC01-FL01-S01 happens in it' }] };
+    const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'referenced', table: 'view', key: 'DM-V01', message: 'View DM-V01 is referenced, so it stays: flow step DM-SHOP-UC01-FL-S01 happens in it' }] };
     const { commands } = await openApp('/DM-V01', { data: withRequirements(), command: () => ({ answer: refusal }) });
     await user.click(within(await toolbar('DM-V01')).getByRole('button', { name: 'Remove' }));
     const panel = screen.getByRole('region', { name: 'Remove DM-V01?' });
@@ -88,7 +88,7 @@ describe('LA-V150-R03-T01 a refused View command shows every reason, keeps what 
     await user.click(within(panel).getByRole('button', { name: 'Remove DM-V01' }));
     const alert = await within(panel).findByRole('alert');
     expect(alert).toHaveTextContent('The removal was refused. Nothing was changed.');
-    expect(alert).toHaveTextContent('flow step DM-SHOP-UC01-FL01-S01 happens in it');
+    expect(alert).toHaveTextContent('flow step DM-SHOP-UC01-FL-S01 happens in it');
     expect(alert).toHaveFocus();
     expect(commands).toEqual([{ route: '/api/view/remove-view', input: { id: 'DM-V01' } }]);
     expect(window.location.pathname).toBe('/DM-V01');

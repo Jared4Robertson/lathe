@@ -155,7 +155,7 @@ describe('groups by stage and kind', () => {
     const folders = ownerFolders(index, 'P-D').stages;
     const design = folders.find((s) => s.label === 'Interaction design')!;
     expect(design.folders.filter((f) => f.count > 0).map((f) => [f.kind, f.records.map((r) => r.id)])).toEqual([
-      ['flow', ['P-D-UC01-FL01']], ['view', ['P-V01']], ['endpoint', ['P-D-EP01', 'P-D-EP02']], ['integration', ['P-INT01']],
+      ['flow', ['P-D-UC01-FL']], ['view', ['P-V01']], ['endpoint', ['P-D-EP01', 'P-D-EP02']], ['integration', ['P-INT01']],
     ]);
     // The graph places them the same: in the stage's kind folders.
     expect(treeParent(index, 'P-D-EP01')).toBe('P-D/interaction-design/endpoint');

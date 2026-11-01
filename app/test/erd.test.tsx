@@ -56,7 +56,7 @@ describe('the ERD stage', () => {
     // Every focus frames something on the one map.
     const map = modelMap();
     const rects = await layoutErd(map);
-    for (const id of ['P', 'P-D-UC01', 'P-VO01', 'P-D-UC01-FL01', 'P-D-CMD01', 'P-D-EV01', 'P-D-PO01', 'P-D-RM01', 'P-D-QRY01', 'P-D-SP01']) {
+    for (const id of ['P', 'P-D-UC01', 'P-VO01', 'P-D-UC01-FL', 'P-D-CMD01', 'P-D-EV01', 'P-D-PO01', 'P-D-RM01', 'P-D-QRY01', 'P-D-SP01']) {
       expect(framedRects(rects, map, erdFocus(i, id)!).length, id).toBeGreaterThan(0);
     }
     // The product frames the whole map; a use case its domain's region; a command the entity it changes.

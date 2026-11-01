@@ -29,8 +29,8 @@ describe('LA-CHK-UC09-R01-T01 A product\'s essential records are listed alone, b
     expect(review.domains[0].records.map((r) => r.id)).toEqual([
       'EX-LEND', 'EX-LEND-A1', 'EX-LEND-A1-SR01', 'EX-LEND-A2', 'EX-LEND-CAP01', 'EX-LEND-CMD01', 'EX-LEND-CMD02', 'EX-LEND-CMD03', 'EX-LEND-DS01',
       'EX-LEND-EN01', 'EX-LEND-EN02', 'EX-LEND-EN03', 'EX-LEND-EV01', 'EX-LEND-EV02', 'EX-LEND-INV01', 'EX-LEND-PO01', 'EX-LEND-QRY01', 'EX-LEND-RM01',
-      'EX-LEND-SP01', 'EX-LEND-TD01', 'EX-LEND-TM01', 'EX-LEND-UC01', 'EX-LEND-UC01-FL01', 'EX-LEND-UC01-FL01-S01', 'EX-LEND-UC01-FL01-S02', 'EX-LEND-UC01-R01',
-      'EX-LEND-UC02', 'EX-LEND-UC02-FL01', 'EX-LEND-UC02-FL01-S01', 'EX-LEND-UC02-R01',
+      'EX-LEND-SP01', 'EX-LEND-TD01', 'EX-LEND-TM01', 'EX-LEND-UC01', 'EX-LEND-UC01-FL', 'EX-LEND-UC01-FL-S01', 'EX-LEND-UC01-FL-S02', 'EX-LEND-UC01-R01',
+      'EX-LEND-UC02', 'EX-LEND-UC02-FL', 'EX-LEND-UC02-FL-S01', 'EX-LEND-UC02-R01',
     ]);
     // No technical record, endpoint, pattern, slot or test; an API requirement of an internal API is accidental.
     expect(review.domains[1].records.map((r) => r.id)).toEqual(['EX', 'EX-BO01', 'EX-IF01', 'EX-INT01', 'EX-INT02', 'EX-V01', 'EX-V01-R01', 'EX-VO01', 'EX-VO01-C01']);

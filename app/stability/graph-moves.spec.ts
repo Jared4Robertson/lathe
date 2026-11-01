@@ -9,7 +9,7 @@ import { cameraOf, clickBox, GRAPH, graphDrawn } from './scene';
 // differently before the person changed the settings) and pages that are not; the layout, depth and minimap stay as
 // the person set them, in the tab they were set in.
 
-const FLOW = 'LA-EXP-UC03-FL01';
+const FLOW = 'LA-EXP-UC03-FL';
 const LAYOUTS = { tree: 'Tree', nested: 'Nested' } as const;
 /** The arrow for each step in each layout (LA-V93-R19): Tree steps Left out and Right in; Nested, Up out and Down in. */
 const NESTED = { out: 'ArrowUp', in: 'ArrowDown', previous: 'ArrowLeft', next: 'ArrowRight' } as const;
@@ -54,9 +54,9 @@ for (const layout of ['tree', 'nested'] as const) {
     await move(page, () => page.keyboard.press('ArrowRight'));
     const step = at(page);
     await page.locator(`${GRAPH} .graph-box.is-focus`).dispatchEvent('click', { metaKey: true, button: 0 });
-    await expect(page.locator('[role="tablist"] [role="tab"]')).toHaveCount(2);
-    await page.locator('[role="tablist"] [role="tab"]').first().click();
-    await expect(page.locator('[role="tablist"] [role="tab"]').first()).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('[role="tablist"][aria-label="Open pages"] [role="tab"]')).toHaveCount(2);
+    await page.locator('[role="tablist"][aria-label="Open pages"] [role="tab"]').first().click();
+    await expect(page.locator('[role="tablist"][aria-label="Open pages"] [role="tab"]').first()).toHaveAttribute('aria-selected', 'true');
     await graphDrawn(page);
     await page.locator('.focus-stage .graph-depth:not(.graph-layout) button', { hasText: '2' }).click();
     await page.locator('.focus-stage .graph-filters > summary').click();

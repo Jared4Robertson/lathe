@@ -136,6 +136,12 @@
 {"source_id":"LA-CHK-UC06","target_id":"LA-PAT-AGGREGATE-TESTS"}
 {"source_id":"LA-EXP","target_id":"LA-PAT-APP-CODE"}
 {"source_id":"LA-EXP","target_id":"LA-PAT-APP-UX"}
+{"source_id":"LA-IF01","target_id":"LA-PAT-PAGE-STEPS"}
+{"source_id":"LA-IF02","target_id":"LA-PAT-PAGE-STEPS"}
+{"source_id":"LA-IF03","target_id":"LA-PAT-CLI-STEPS"}
+{"source_id":"LA-IF04","target_id":"LA-PAT-MCP-STEPS"}
+{"source_id":"LA-IF05","target_id":"LA-PAT-HTTP-STEPS"}
+{"source_id":"LA-IF06","target_id":"LA-PAT-PACKAGE-STEPS"}
 {"source_id":"LA-PLT","target_id":"LA-PAT-APP-CODE"}
 {"source_id":"LA-PLT","target_id":"LA-PAT-APP-UX"}
 {"source_id":"LA-PLT-UC15","target_id":"LA-PAT-SHELL-ACTIONS"}

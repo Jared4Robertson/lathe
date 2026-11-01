@@ -4,7 +4,7 @@ import { ADD_FLOW_IDENTITY } from './identities.generated.ts';
 import { addFlow } from './handlers.generated.ts';
 
 /** A new flow. */
-export type AddFlow = Pick<FlowRow, 'id' | 'title' | 'use_case_id' | 'interface_id'>;
+export type AddFlow = Pick<FlowRow, 'id' | 'title' | 'use_case_id'>;
 
 export const ADD_FLOW = {
   ...ADD_FLOW_IDENTITY,
@@ -12,7 +12,6 @@ export const ADD_FLOW = {
     id: column('flow', 'id', 'required'),
     title: column('flow', 'title', 'required'),
     use_case_id: column('flow', 'use_case_id', 'required'),
-    interface_id: column('flow', 'interface_id', 'required'),
   },
   handler: addFlow,
 } satisfies CommandDefinition<AddFlow>;

@@ -61,13 +61,13 @@ describe('record page', () => {
     expect(fact('Data file')).toHaveTextContent('use_case.jsonl:2');
     expect([...card().querySelector('.breadcrumb')!.querySelectorAll('a')].at(-1)).toHaveAttribute('href', '/DM-SHOP-CAP01');
 
-    // The children are the wiki's: its UC requirements, and its flow listed by interface.
+    // The children are the wiki's: its UC requirements, and its flow.
     const children = within(card()).getByRole('heading', { name: /^UC requirements/ });
     expect(children).toHaveTextContent(/^UC requirements\s*2$/);
     const items = [...children.closest('section')!.querySelectorAll('a.row-link')];
     expect(items.map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-UC01-R01', '/DM-SHOP-UC01-R02']);
-    const flows = within(card()).getByRole('heading', { name: /^Flows by interface/ }).closest('section')!;
-    expect([...flows.querySelectorAll('a.row-link')].map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-UC01-FL01']);
+    const flows = within(card()).getByRole('heading', { name: /^Flow\s*1/ }).closest('section')!;
+    expect([...flows.querySelectorAll('a.row-link')].map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-UC01-FL', '/DM-IF01']);
     // The facts do not repeat the parent or the children.
     expect(within(facts()).queryByText('Parent', { selector: 'dt' })).toBeNull();
     expect(within(facts()).queryByRole('heading', { name: /^UC requirements|^Children/ })).toBeNull();
@@ -84,25 +84,24 @@ describe('record page', () => {
     // A UC requirement is designed, built and proved by what its chain holds (its trace, read on its own).
     await within(main()).findByRole('heading', { name: /^Traceability/ });
     expect(traceGroups()).toEqual({
-      'Designed by': ['/DM-SHOP-CMD01', '/DM-SHOP-UC01-FL01', '/DM-SHOP-UC01-FL01-S01', '/DM-V01'],
+      'Designed by': ['/DM-SHOP-CMD01', '/DM-SHOP-UC01-FL', '/DM-SHOP-UC01-FL-S01'],
       'Built by': ['/DM-SHOP-CMD01-H'],
       'Proved by': ['/DM-SHOP-UC01-R01-T01'] });
     // In the facts, each a link: the kind to its page in the format reference, the check that reports it serves no
     // outcome (the demo shop has none), and the step that links in.
     await within(facts()).findByText('Serves', { selector: 'dt' });
-    expect(factLinks()).toEqual(['/DM-SHOP-UC01-R01?page=format/kinds/uc_requirement', '/DM-SHOP-UC01-R01?page=format/checks/serves-no-outcome', '/DM-SHOP-UC01-FL01-S01']);
+    expect(factLinks()).toEqual(['/DM-SHOP-UC01-R01?page=format/kinds/uc_requirement', '/DM-SHOP-UC01-R01?page=format/checks/serves-no-outcome', '/DM-SHOP-UC01-FL-S01']);
     expect(within(facts()).getByRole('heading', { name: 'Links in' })).toBeInTheDocument();
 
     // Follow it to the step, then see its links out by their labels.
     const user = userEvent.setup();
-    await user.click(within(section(/^Traceability/)).getByRole('link', { name: /DM-SHOP-UC01-FL01-S01/ }));
-    expect(window.location.pathname).toBe('/DM-SHOP-UC01-FL01-S01');
+    await user.click(within(section(/^Traceability/)).getByRole('link', { name: /DM-SHOP-UC01-FL-S01/ }));
+    expect(window.location.pathname).toBe('/DM-SHOP-UC01-FL-S01');
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Shopper adds the item');
     await waitFor(() => expect(traceGroups()).toMatchObject({
       Fulfills: ['/DM-SHOP-UC01-R01'],
-      Invokes: ['/DM-SHOP-CMD01'],
-      'Happens in': ['/DM-V01'] }));
-    expect(factLinks()).toEqual(expect.arrayContaining(['/DM-SHOP-UC01-R01', '/DM-SHOP-CMD01', '/DM-V01']));
+      Invokes: ['/DM-SHOP-CMD01'] }));
+    expect(factLinks()).toEqual(expect.arrayContaining(['/DM-SHOP-UC01-R01', '/DM-SHOP-CMD01']));
   });
 
   it('LA-PAT-RECORD-PAGE-R09-T01 A use case\'s frame lists every link its record summary holds both ways, and its Problems count matches its list', async () => {
