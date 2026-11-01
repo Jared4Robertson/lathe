@@ -1,8 +1,8 @@
 // The Loan aggregate: one member holding one tool, from borrowing to return.
 // Spec: the aggregate TL-LEND-A3, its data models TL-LEND-EN04-DM and EN05-DM, its invariants TL-LEND-INV03 to
-// INV06 and the predicates TL-LEND-SP01-PR to SP03-PR (examples/tool-library/data/).
+// INV08 and the predicates TL-LEND-SP01-PR to SP03-PR (examples/tool-library/data/).
 // Opening a loan checks the member and the tool as they are passed in; it changes neither.
-import { LendingError, dueDate, localDate, type Condition } from './model.ts';
+import { LendingError, dueDate, localDate, renewedDueDate, type Condition } from './model.ts';
 import type { Member } from './member.ts';
 import { needsRepair, type Tool } from './tool.ts';
 
@@ -23,6 +23,10 @@ export interface NewLoan {
   readonly borrowedAt: string;
   /** The last day of the loan, as YYYY-MM-DD in the library's time zone. */
   readonly dueDate: string;
+  /** When the member renewed the loan, once (TL-LEND-INV07); null until then. */
+  readonly renewedAt: string | null;
+  /** When the member was reminded the loan is due, once (TL-LEND-INV08); null until then. */
+  readonly remindedAt: string | null;
   readonly return: LoanReturn | null;
 }
 
@@ -63,7 +67,9 @@ export class Loan {
   readonly memberId: number;
   readonly toolId: number;
   readonly borrowedAt: string;
-  readonly dueDate: string;
+  #dueDate: string;
+  #renewedAt: string | null;
+  #remindedAt: string | null;
   #return: LoanReturn | null;
 
   constructor(id: number, fields: NewLoan) {
@@ -71,8 +77,23 @@ export class Loan {
     this.memberId = fields.memberId;
     this.toolId = fields.toolId;
     this.borrowedAt = fields.borrowedAt;
-    this.dueDate = fields.dueDate;
+    this.#dueDate = fields.dueDate;
+    this.#renewedAt = fields.renewedAt;
+    this.#remindedAt = fields.remindedAt;
     this.#return = fields.return;
+  }
+
+  /** The last day of the loan, as YYYY-MM-DD in the library's time zone; a renewal moves it on. */
+  get dueDate(): string {
+    return this.#dueDate;
+  }
+
+  get renewedAt(): string | null {
+    return this.#renewedAt;
+  }
+
+  get remindedAt(): string | null {
+    return this.#remindedAt;
   }
 
   /** TL-LEND-EN05-DM: the loan's return, once it is returned. */
@@ -99,7 +120,15 @@ export class Loan {
     if (toolOnLoan) {
       throw new LendingError(409, 'tool_on_loan', `Tool ${tool.id} is already on loan.`);
     }
-    return { memberId: member.id, toolId: tool.id, borrowedAt: now.toISOString(), dueDate: dueDate(now, timeZone), return: null };
+    return {
+      memberId: member.id,
+      toolId: tool.id,
+      borrowedAt: now.toISOString(),
+      dueDate: dueDate(now, timeZone),
+      renewedAt: null,
+      remindedAt: null,
+      return: null,
+    };
   }
 
   /**
@@ -112,5 +141,40 @@ export class Loan {
     }
     this.#return = { returnedAt: returnedAt.toISOString(), condition, note };
     return { return: this.#return, late: isLate(this, returnedAt, timeZone) };
+  }
+
+  /**
+   * TL-LEND-CMD07: renews the loan, moving its due date on 14 calendar days from the current one (TL-LEND-INV04).
+   * Checks run in this order, and the first that fails is the reason given: the loan is returned (TL-LEND-INV05),
+   * the loan is overdue (TL-LEND-SP01), the loan was already renewed (TL-LEND-INV07).
+   */
+  renew(now: Date, timeZone: string): void {
+    if (this.#return !== null) {
+      throw new LendingError(409, 'already_returned', `Loan ${this.id} was already returned.`);
+    }
+    if (isOverdue(this, now, timeZone)) {
+      throw new LendingError(409, 'loan_overdue', `Loan ${this.id} is overdue; return the tool instead.`);
+    }
+    // TL-LEND-INV07: a loan is renewed at most once.
+    if (this.#renewedAt !== null) {
+      throw new LendingError(409, 'already_renewed', `Loan ${this.id} was already renewed once.`);
+    }
+    this.#dueDate = renewedDueDate(this.#dueDate);
+    this.#renewedAt = now.toISOString();
+  }
+
+  /**
+   * TL-LEND-CMD08: records that the member was reminded the loan is due. A returned loan is not reminded
+   * (TL-LEND-INV05), and a loan is reminded at most once (TL-LEND-INV08).
+   */
+  recordReminder(now: Date): void {
+    if (this.#return !== null) {
+      throw new LendingError(409, 'already_returned', `Loan ${this.id} was already returned.`);
+    }
+    // TL-LEND-INV08: a loan's member is reminded at most once.
+    if (this.#remindedAt !== null) {
+      throw new LendingError(409, 'already_reminded', `The member of loan ${this.id} was already reminded.`);
+    }
+    this.#remindedAt = now.toISOString();
   }
 }

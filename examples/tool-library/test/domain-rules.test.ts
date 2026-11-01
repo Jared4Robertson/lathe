@@ -1,11 +1,11 @@
 // Domain model tests: each proves one constraint, invariant, specification, policy or domain service
 // against the aggregates, the command handlers, the outbox and an in-memory database.
 // Each test name starts with its test record ID (examples/tool-library/data/).
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { Database } from '../src/database.ts';
-import { RETURNED_NEEDING_REPAIR } from '../src/event-handlers.ts';
+import { RETURNED_NEEDING_REPAIR, remindLoansDueTomorrow, type Reminder } from '../src/event-handlers.ts';
 import { isOverdue } from '../src/loan.ts';
-import { borrowTool, returnTool } from '../src/loan-commands.ts';
+import { borrowTool, remindMember, renewLoan, returnTool } from '../src/loan-commands.ts';
 import { registerMember } from '../src/member-commands.ts';
 import {
   DEFAULT_TIME_ZONE,
@@ -14,6 +14,7 @@ import {
   assertTimeZone,
   dueDate,
   isCondition,
+  renewedDueDate,
   parseEmail,
   parseName,
   parseNote,
@@ -156,7 +157,7 @@ describe('Tool', () => {
     rejectsWith(() => borrowTool(l, { memberId: b.id, toolId: t.id }), 'tool_on_loan');
     // The schema backs the invariant up even without the aggregate.
     expect(() =>
-      l.loans.add({ memberId: b.id, toolId: t.id, borrowedAt: new Date().toISOString(), dueDate: START_DUE_DATE, return: null }),
+      l.loans.add({ memberId: b.id, toolId: t.id, borrowedAt: new Date().toISOString(), dueDate: START_DUE_DATE, renewedAt: null, remindedAt: null, return: null }),
     ).toThrow();
 
     returnTool(l, loan.id, { condition: 'good' });
@@ -183,7 +184,7 @@ describe('Loan', () => {
     // The database accepts only a date as the due date.
     const rake = addTool(l, { name: 'Rake' });
     expect(() =>
-      l.loans.add({ memberId: m.id, toolId: rake.id, borrowedAt: l.clock.now().toISOString(), dueDate: '2026-03-16T10:00:00Z', return: null }),
+      l.loans.add({ memberId: m.id, toolId: rake.id, borrowedAt: l.clock.now().toISOString(), dueDate: '2026-03-16T10:00:00Z', renewedAt: null, remindedAt: null, return: null }),
     ).toThrow();
   });
 
@@ -196,6 +197,9 @@ describe('Loan', () => {
     expect(dueDate(new Date('2026-03-03T04:30:00Z'), ny)).toBe('2026-03-16');
     // The time zone is a setting: the same instant is 3 March in Auckland.
     expect(dueDate(new Date('2026-03-03T04:30:00Z'), 'Pacific/Auckland')).toBe('2026-03-17');
+    // A renewal counts 14 calendar days on from the due date, across a month end.
+    expect(renewedDueDate('2026-03-16')).toBe('2026-03-30');
+    expect(renewedDueDate('2026-03-25')).toBe('2026-04-08');
     // An unknown time zone is refused, by the calendar and so when the Lending domain is opened.
     expect(() => assertTimeZone('Mars/Olympus_Mons')).toThrow(RangeError);
     expect(() => lending({ timeZone: 'Mars/Olympus_Mons' })).toThrow(RangeError);
@@ -203,7 +207,7 @@ describe('Loan', () => {
 
   it("TL-LEND-SP01-T A loan is overdue only while it is active after its due date, in the library's time zone", () => {
     const ny = DEFAULT_TIME_ZONE;
-    const active = { dueDate: START_DUE_DATE, return: null };
+    const active = { dueDate: START_DUE_DATE, renewedAt: null, remindedAt: null, return: null };
     // Still not overdue at 23:59 on the due date in New York, though UTC is on the next day.
     expect(isOverdue(active, new Date(LAST_MINUTE_OF_DUE_DATE), ny)).toBe(false);
     expect(isOverdue(active, new Date('2026-03-17T03:59:59.999Z'), ny)).toBe(false);
@@ -228,6 +232,53 @@ describe('Loan', () => {
     const { loan: returned } = returnTool(l, loan.id, { condition: 'good' });
     rejectsWith(() => returnTool(l, loan.id, { condition: 'needs_repair' }), 'already_returned');
     expect(l.loans.get(loan.id).return).toEqual(returned.return);
+  });
+
+  it('TL-LEND-INV07-T A loan renewed once cannot be renewed again', () => {
+    const l = lending();
+    const m = registerMember(l, { name: 'Kai', email: 'kai@example.org' });
+    const t = addTool(l, { name: 'Wheelbarrow' });
+    const loan = borrowTool(l, { memberId: m.id, toolId: t.id });
+    l.clock.advanceDays(10);
+    const renewed = renewLoan(l, loan.id);
+    expect(renewed.dueDate).toBe('2026-03-30');
+    expect(renewed.renewedAt).toBe(l.clock.now().toISOString());
+    expect(l.delivered.at(-1)).toEqual({
+      type: 'LoanRenewed',
+      loanId: loan.id,
+      memberId: m.id,
+      toolId: t.id,
+      renewedAt: renewed.renewedAt,
+      dueDate: '2026-03-30',
+    });
+    // A second renewal is refused, and the loan keeps its first.
+    rejectsWith(() => renewLoan(l, loan.id), 'already_renewed');
+    expect(l.loans.get(loan.id)).toMatchObject({ dueDate: '2026-03-30', renewedAt: renewed.renewedAt });
+  });
+
+  it("TL-LEND-INV08-T A loan's member is reminded once, and never after the return", () => {
+    const l = lending();
+    const m = registerMember(l, { name: 'Lev', email: 'lev@example.org' });
+    const [saw, sander] = ['Saw', 'Sander'].map((name) => addTool(l, { name }).id);
+    const loan = borrowTool(l, { memberId: m.id, toolId: saw });
+    const reminded = remindMember(l, loan.id);
+    expect(reminded.remindedAt).toBe(l.clock.now().toISOString());
+    expect(l.delivered.at(-1)).toEqual({
+      type: 'MemberReminded',
+      loanId: loan.id,
+      memberId: m.id,
+      dueDate: START_DUE_DATE,
+      remindedAt: reminded.remindedAt,
+    });
+    // A second reminder is refused, even after a renewal moves the due date.
+    renewLoan(l, loan.id);
+    rejectsWith(() => remindMember(l, loan.id), 'already_reminded');
+    expect(l.loans.get(loan.id).remindedAt).toBe(reminded.remindedAt);
+    // A returned loan is not reminded.
+    const returned = borrowTool(l, { memberId: m.id, toolId: sander });
+    returnTool(l, returned.id, { condition: 'good' });
+    rejectsWith(() => remindMember(l, returned.id), 'already_returned');
+    expect(l.loans.get(returned.id).remindedAt).toBeNull();
   });
 
   it("TL-LEND-INV06-T A return records the tool's condition on the loan", () => {
@@ -345,5 +396,81 @@ describe('Policies', () => {
     expect(l.tools.get(t.id).damage).toEqual(damage);
     expect(event.loanId).toBe(loan.id);
     expect(failures).toEqual(['ToolReturned']);
+  });
+
+  /** A reminder sender that records what it is handed. */
+  function recorder() {
+    const sent: Reminder[] = [];
+    return { sent, send: (reminder: Reminder) => void sent.push(reminder) };
+  }
+
+  it('TL-LEND-PO02-T Each loan opened is reminded once, on the day before it is due', () => {
+    const l = lending();
+    const m = registerMember(l, { name: 'Ola', email: 'ola@example.org' });
+    const [drill, ladder, rake] = ['Drill', 'Ladder', 'Rake'].map((name) => addTool(l, { name }).id);
+    const first = borrowTool(l, { memberId: m.id, toolId: drill }); // due 16 March
+    l.clock.advanceDays(2);
+    const second = borrowTool(l, { memberId: m.id, toolId: ladder }); // due 18 March
+    const returned = borrowTool(l, { memberId: m.id, toolId: rake }); // due 18 March, returned at once
+    returnTool(l, returned.id, { condition: 'good' });
+    const { sent, send } = recorder();
+
+    // 14 March: nothing is due tomorrow.
+    l.clock.set('2026-03-14T13:00:00.000Z');
+    expect(remindLoansDueTomorrow(l, send)).toEqual([]);
+    // 15 March, 09:00 in New York: the first loan is due tomorrow, and its member is reminded through the sender.
+    l.clock.set('2026-03-15T13:00:00.000Z');
+    expect(remindLoansDueTomorrow(l, send).map((loan) => loan.id)).toEqual([first.id]);
+    expect(sent).toEqual([
+      {
+        to: 'ola@example.org',
+        subject: 'Drill is due back on 2026-03-16',
+        text: `Hello Ola, the Drill you borrowed (loan ${first.id}) is due back at the library on 2026-03-16. You can renew it once before then.`,
+      },
+    ]);
+    expect(l.delivered.at(-1)).toMatchObject({ type: 'MemberReminded', loanId: first.id, dueDate: '2026-03-16' });
+    // The clock running again that day reminds no one twice (TL-LEND-INV08).
+    expect(remindLoansDueTomorrow(l, send)).toEqual([]);
+    // A renewal moves the due date on, and brings no second reminder.
+    renewLoan(l, first.id);
+    // 17 March: the second loan is due tomorrow; the returned one is not reminded.
+    l.clock.set('2026-03-17T13:00:00.000Z');
+    expect(remindLoansDueTomorrow(l, send).map((loan) => loan.id)).toEqual([second.id]);
+    l.clock.set('2026-03-29T13:00:00.000Z');
+    expect(remindLoansDueTomorrow(l, send)).toEqual([]);
+    expect(sent.map((r) => r.subject)).toEqual(['Drill is due back on 2026-03-16', 'Ladder is due back on 2026-03-18']);
+  });
+
+  it('TL-LEND-PO02-T A day the clock missed is made up, and a reminder that cannot be sent is not sent again', () => {
+    const l = lending();
+    const m = registerMember(l, { name: 'Pia', email: 'pia@example.org' });
+    const [drill, saw] = ['Drill', 'Saw'].map((name) => addTool(l, { name }).id);
+    const renewed = borrowTool(l, { memberId: m.id, toolId: drill });
+    renewLoan(l, renewed.id); // due 30 March
+    const failing = borrowTool(l, { memberId: m.id, toolId: saw }); // due 16 March
+
+    // The clock did not run on 15 March; on the due date it reminds the member still, in the library's time zone:
+    // 23:30 on 16 March in New York is already 17 March in UTC.
+    const { sent, send } = recorder();
+    l.clock.set('2026-03-17T03:30:00.000Z');
+    expect(remindLoansDueTomorrow(l, send).map((loan) => loan.id)).toEqual([failing.id]);
+    expect(sent).toHaveLength(1);
+
+    // A sender that fails: the reminder is recorded, the failure logged, and it is not tried again.
+    l.clock.set('2026-03-29T13:00:00.000Z');
+    const attempts: Reminder[] = [];
+    const broken = (reminder: Reminder) => {
+      attempts.push(reminder);
+      throw new Error('mail server down');
+    };
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(remindLoansDueTomorrow(l, broken).map((loan) => loan.id)).toEqual([renewed.id]);
+    expect(logged).toHaveBeenCalledOnce();
+    logged.mockRestore();
+    // A renewed loan's reminder does not offer another renewal.
+    expect(attempts[0].text).not.toMatch(/renew/);
+    expect(l.loans.get(renewed.id).remindedAt).toBe(l.clock.now().toISOString());
+    expect(remindLoansDueTomorrow(l, broken)).toEqual([]);
+    expect(attempts).toHaveLength(1);
   });
 });

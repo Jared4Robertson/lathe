@@ -1,5 +1,5 @@
 // The Loan aggregate's command handlers, one per command.
-// Spec: the command handlers TL-LEND-CMD05-H and CMD06-H (examples/tool-library/data/).
+// Spec: the command handlers TL-LEND-CMD05-H to CMD08-H (examples/tool-library/data/).
 // Each changes only the Loan, through its repository, saves its event to the outbox in the same transaction, and
 // runs the relay once it commits. Borrowing reads the member and the tool through their own repositories, and
 // the Loan aggregate checks them.
@@ -112,4 +112,54 @@ export function returnTool(ctx: LoanCommandContext, loanId: number, input: Retur
   // The return stands whatever its handlers do; one that fails leaves the event for the next relay run.
   ctx.outbox.relay();
   return returned;
+}
+
+/**
+ * TL-LEND-CMD07-H: renew a loan. In one transaction that touches only the loan, the Loan aggregate refuses a returned,
+ * overdue or already renewed loan and moves the due date on 14 days (Loan.renew); Loan renewed is saved with it.
+ */
+export function renewLoan(ctx: LoanCommandContext, loanId: number): Loan {
+  const now = ctx.now();
+  const renewed = ctx.db.transaction(() => {
+    const loaded = ctx.loans.get(loanId);
+    loaded.renew(now, ctx.timeZone);
+    const saved = ctx.loans.save(loaded);
+    // TL-LEND-EV07
+    ctx.outbox.save({
+      type: 'LoanRenewed',
+      loanId: saved.id,
+      memberId: saved.memberId,
+      toolId: saved.toolId,
+      renewedAt: saved.renewedAt!,
+      dueDate: saved.dueDate,
+    });
+    return saved;
+  });
+  ctx.outbox.relay();
+  return renewed;
+}
+
+/**
+ * TL-LEND-CMD08-H: remind a member of a due loan. In one transaction that touches only the loan, the Loan aggregate
+ * refuses a returned loan or one whose member was already reminded (Loan.recordReminder); Member reminded is saved
+ * with it. The policy TL-LEND-PO02 invokes it, then sends the reminder.
+ */
+export function remindMember(ctx: LoanCommandContext, loanId: number): Loan {
+  const now = ctx.now();
+  const reminded = ctx.db.transaction(() => {
+    const loaded = ctx.loans.get(loanId);
+    loaded.recordReminder(now);
+    const saved = ctx.loans.save(loaded);
+    // TL-LEND-EV08
+    ctx.outbox.save({
+      type: 'MemberReminded',
+      loanId: saved.id,
+      memberId: saved.memberId,
+      dueDate: saved.dueDate,
+      remindedAt: saved.remindedAt!,
+    });
+    return saved;
+  });
+  ctx.outbox.relay();
+  return reminded;
 }

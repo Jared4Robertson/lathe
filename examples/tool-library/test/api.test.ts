@@ -494,6 +494,118 @@ describe('TL-LEND-UC05 Report damage', () => {
   });
 });
 
+describe('TL-LEND-UC07 See the tools waiting for repair', () => {
+  /** Three tools damaged on three days, the second while on loan, and a tool in good condition. */
+  async function waitingTools() {
+    const [good, late, lent, early] = await Promise.all(['Clamp', 'Mower', 'Saw', 'Drill'].map((name) => tool(name)));
+    await api.call('POST', `/tools/${early}/damage`, { note: 'Chuck wobbles' });
+    api.clock.advanceDays(1);
+    await borrow(await member(), lent);
+    await api.call('POST', `/tools/${lent}/damage`, { note: 'Blade nicked, reported by phone' });
+    api.clock.advanceDays(1);
+    await api.call('POST', `/tools/${late}/damage`, { note: 'Will not start' });
+    const listed = await api.call('GET', '/tools/waiting-for-repair');
+    return { good, late, lent, early, listed };
+  }
+
+  it('TL-LEND-UC07-R01-T01 The tools waiting for repair are listed, the longest waiting first, with what is wrong', async () => {
+    const { good, late, lent, early, listed } = await waitingTools();
+    expect(listed.body.map((t: { id: number }) => t.id)).toEqual([early, lent, late]);
+    expect(listed.body.map((t: { id: number }) => t.id)).not.toContain(good);
+    expect(listed.body[0]).toMatchObject({ name: 'Drill', damageNote: 'Chuck wobbles' });
+  });
+
+  it('TL-LEND-UC07-R02-T01 A waiting tool still out on loan is shown as on loan', async () => {
+    const { lent, listed } = await waitingTools();
+    for (const entry of listed.body) expect(entry.onLoan).toBe(entry.id === lent);
+  });
+
+  it('TL-LEND-EP09-R01-T01 Listing the tools waiting for repair returns 200 with each entry, the oldest damage first', async () => {
+    const { early, listed } = await waitingTools();
+    expect(listed.status).toBe(200);
+    expect(listed.body[0]).toEqual({
+      id: early,
+      name: 'Drill',
+      damageNote: 'Chuck wobbles',
+      damageReportedAt: '2026-03-02T10:00:00.000Z',
+      onLoan: false,
+    });
+    const times = listed.body.map((t: { damageReportedAt: string }) => t.damageReportedAt);
+    expect(times).toEqual([...times].sort());
+    // Once repaired, a tool leaves the list.
+    await api.call('POST', `/tools/${early}/repair`);
+    expect((await api.call('GET', '/tools/waiting-for-repair')).body).toHaveLength(2);
+  });
+});
+
+describe('TL-LEND-UC08 Renew a loan', () => {
+  /** A loan renewed 10 days in, then renewed again. */
+  async function renewTwice() {
+    const loan = (await borrow(await member('Rin'), await tool('Ladder'))).body;
+    api.clock.advanceDays(10);
+    const first = await api.call('POST', `/loans/${loan.id}/renew`);
+    const second = await api.call('POST', `/loans/${loan.id}/renew`);
+    return { loan, first, second };
+  }
+
+  /** Renewing an unknown loan, an overdue one and a returned one. */
+  async function refusedRenewals() {
+    const m = await member();
+    const overdue = (await borrow(m, await tool('Saw'))).body;
+    const returned = (await borrow(m, await tool('Drill'))).body;
+    await api.call('POST', `/loans/${returned.id}/return`, { condition: 'good' });
+    api.clock.advanceDays(15);
+    return {
+      overdue,
+      unknown: await api.call('POST', '/loans/999/renew'),
+      late: await api.call('POST', `/loans/${overdue.id}/renew`),
+      afterReturn: await api.call('POST', `/loans/${returned.id}/renew`),
+    };
+  }
+
+  it('TL-LEND-UC08-R01-T01 A renewal moves the due date 14 days on and tells the member the new one', async () => {
+    const { first } = await renewTwice();
+    expect(first.body.dueDate).toBe('2026-03-30');
+    expect((await api.call('GET', `/tools/${first.body.toolId}/loan`)).body.dueDate).toBe('2026-03-30');
+  });
+
+  it('TL-LEND-UC08-R02-T01 An overdue, returned or unknown loan is refused a renewal with the reason', async () => {
+    const { overdue, unknown, late, afterReturn } = await refusedRenewals();
+    expect(unknown.body.message).toMatch(/no loan 999/);
+    expect(late.body.message).toMatch(/overdue/);
+    expect(afterReturn.body.message).toMatch(/already returned/);
+    expect((await api.call('GET', `/tools/${overdue.toolId}/loan`)).body.dueDate).toBe(START_DUE_DATE);
+  });
+
+  it('TL-LEND-UC08-R03-T01 A second renewal is refused, saying the loan was already renewed', async () => {
+    const { second } = await renewTwice();
+    expect(second.status).not.toBe(200);
+    expect(second.body.message).toMatch(/already renewed/);
+  });
+
+  it('TL-LEND-EP10-R01-T01 Renewing an unknown loan gives 404 loan_not_found, and a returned one 409 already_returned', async () => {
+    const { unknown, afterReturn } = await refusedRenewals();
+    expect(unknown).toMatchObject({ status: 404, body: { error: 'loan_not_found' } });
+    expect(afterReturn).toMatchObject({ status: 409, body: { error: 'already_returned' } });
+  });
+
+  it('TL-LEND-EP10-R02-T01 Renewing an overdue loan gives 409 loan_overdue, and a renewed one 409 already_renewed', async () => {
+    const { late } = await refusedRenewals();
+    expect(late).toMatchObject({ status: 409, body: { error: 'loan_overdue' } });
+    const { loan, second } = await renewTwice();
+    expect(second).toMatchObject({ status: 409, body: { error: 'already_renewed' } });
+    // Renewed and then overdue, a loan gives loan_overdue.
+    api.clock.advanceDays(30);
+    expect(await api.call('POST', `/loans/${loan.id}/renew`)).toMatchObject({ status: 409, body: { error: 'loan_overdue' } });
+  });
+
+  it('TL-LEND-EP10-R03-T01 A renewal returns 200 with the loan and its new due date', async () => {
+    const { loan, first } = await renewTwice();
+    expect(first.status).toBe(200);
+    expect(first.body).toEqual({ ...loan, dueDate: '2026-03-30' });
+  });
+});
+
 // The Librarian action pattern's rules, proved in TL-LEND for every use case that follows it:
 // UC01 register a member, UC02 add a tool, UC04 return a tool, UC05 report damage, UC06 mark a tool repaired.
 describe('TL-PAT-LIBRARIAN-ACTION Librarian action', () => {

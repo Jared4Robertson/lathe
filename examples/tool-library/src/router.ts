@@ -1,6 +1,6 @@
 // The HTTP API: one endpoint handler per endpoint, each calling its command or query handler, and the
 // errors they raise turned into HTTP responses.
-// Spec: the endpoint handlers TL-LEND-EP01-H to EP08-H (examples/tool-library/data/).
+// Spec: the endpoint handlers TL-LEND-EP01-H to EP10-H (examples/tool-library/data/).
 // Every error response is JSON: { "error": "<code>", "message": "<sentence>" }.
 // Each route's statuses and bodies are its endpoint's API requirements (TL-LEND-EP0n-R0n).
 // TL-PAT-LIBRARIAN-ACTION-R02: each librarian action answers with the record as its repository saved it
@@ -12,13 +12,14 @@ import type { Database } from './database.ts';
 import { subscribePolicies } from './event-handlers.ts';
 import { Outbox, type HandlerFailure } from './events.ts';
 import type { Loan } from './loan.ts';
-import { borrowTool, returnTool, type LoanCommandContext } from './loan-commands.ts';
+import { borrowTool, renewLoan, returnTool, type LoanCommandContext } from './loan-commands.ts';
 import { LoanRepository } from './loan-repository.ts';
 import { registerMember } from './member-commands.ts';
 import { MemberRepository } from './member-repository.ts';
 import { DEFAULT_TIME_ZONE, LendingError, assertTimeZone, type Clock, type LibrarySettings } from './model.ts';
 import { addTool, markToolRepaired, reportDamage } from './tool-commands.ts';
 import { ToolRepository } from './tool-repository.ts';
+import { ToolsWaitingForRepairReader, listToolsWaitingForRepair } from './waiting-for-repair.ts';
 
 /** The Lending domain over one database: each aggregate's repository, the outbox, the clock and the time zone. */
 export type Lending = LoanCommandContext;
@@ -192,6 +193,16 @@ function getToolLoan(lending: Lending, [toolId]: number[]): Reply {
   return { status: 200, body: findLoan(new ActiveLoansReader(lending), toolId) };
 }
 
+/** TL-LEND-EP09-H: GET /tools/waiting-for-repair answers 200 with the tools waiting for repair, oldest damage first (R01). */
+function getToolsWaitingForRepair(lending: Lending): Reply {
+  return { status: 200, body: listToolsWaitingForRepair(new ToolsWaitingForRepairReader(lending)) };
+}
+
+/** TL-LEND-EP10-H: POST /loans/{loanId}/renew renews a loan and answers 200 with it and its new due date (R01-R03). */
+function postLoanRenew(lending: Lending, [loanId]: number[]): Reply {
+  return { status: 200, body: loanBody(renewLoan(lending, loanId)) };
+}
+
 /** Each endpoint's method and route, and its handler. */
 const ROUTES: Route[] = [
   { method: 'POST', route: /^\/members$/, handler: postMembers },
@@ -202,24 +213,32 @@ const ROUTES: Route[] = [
   { method: 'POST', route: /^\/tools\/(\d+)\/damage$/, handler: postToolDamage },
   { method: 'POST', route: /^\/tools\/(\d+)\/repair$/, handler: postToolRepair },
   { method: 'GET', route: /^\/tools\/(\d+)\/loan$/, handler: getToolLoan },
+  { method: 'GET', route: /^\/tools\/waiting-for-repair$/, handler: getToolsWaitingForRepair },
+  { method: 'POST', route: /^\/loans\/(\d+)\/renew$/, handler: postLoanRenew },
 ];
 
 /**
- * Builds the request handler over a database. `now` is the clock, so tests can move time;
- * `settings.timeZone` is the library's time zone (default America/New_York).
- * The command handlers share one outbox, with every policy's event handler subscribed. The relay runs once
- * here, so events a crash or a failed handler left undelivered are delivered when the API starts.
- * Every endpoint's body is read through `readJson`, so the 64 KB limit holds on each (TL-LEND-EP06-R03).
+ * Opens the library over a database, as the API runs it: the Lending domain, with every policy's event handler
+ * subscribed to its one outbox. `now` is the clock, so tests can move time; `settings.timeZone` is the library's time
+ * zone (default America/New_York). The relay runs once here, so events a crash or a failed handler left undelivered
+ * are delivered when the library opens.
  */
-export function createRouter(
+export function openLibrary(
   db: Database,
   now: Clock = () => new Date(),
   settings: LibrarySettings = { timeZone: DEFAULT_TIME_ZONE },
-) {
+): Lending {
   const lending = openLending(db, now, settings.timeZone);
   subscribePolicies(lending.outbox, lending);
   lending.outbox.relay();
+  return lending;
+}
 
+/**
+ * Builds the request handler over the library `openLibrary` opened.
+ * Every endpoint's body is read through `readJson`, so the 64 KB limit holds on each (TL-LEND-EP06-R03).
+ */
+export function createRouter(lending: Lending) {
   return async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     try {
       const path = new URL(req.url ?? '/', 'http://localhost').pathname;
