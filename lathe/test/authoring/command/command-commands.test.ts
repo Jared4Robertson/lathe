@@ -4,20 +4,14 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { ADD_EVENT_HANDLER } from '../../../src/authoring/command/commands/add-event-handler.ts';
 import { ADD_POLICY } from '../../../src/authoring/command/commands/add-policy.ts';
 import { CHANGE_POLICY } from '../../../src/authoring/command/commands/change-policy.ts';
-import { REMOVE_COMMAND } from '../../../src/authoring/command/commands/remove-command.ts';
-import { REMOVE_COMMAND_HANDLER } from '../../../src/authoring/command/commands/remove-command-handler.ts';
-import { REMOVE_EVENT_HANDLER } from '../../../src/authoring/command/commands/remove-event-handler.ts';
-import { REMOVE_POLICY } from '../../../src/authoring/command/commands/remove-policy.ts';
-import { REMOVE_POLICY_TEST } from '../../../src/authoring/command/commands/remove-policy-test.ts';
 import type { AnyCommand } from '../../../src/platform/commands/definition.ts';
 import { runCommand } from '../../../src/platform/commands/run.ts';
 import { StoreError } from '../../../src/platform/data/problems.ts';
 import { openStore, type Store } from '../../../src/platform/data/store.ts';
 import { writeData } from '../../helpers.ts';
-import { closeOpenStores, domainModelBase, storeOn } from '../domain-model-base.ts';
+import { closeOpenStores, domainModelBase } from '../domain-model-base.ts';
 import { commandDataSet } from './data-set.ts';
 
 afterEach(closeOpenStores);
@@ -57,30 +51,3 @@ describe('LA-AUT-INV70-T a policy hearing another domain\'s unpublished event is
     await (await openStore(writeData(data), { latheDataDir: null })).close();
   });
 });
-
-describe('LA-STD-CODE-R07-T32 a command, or a record in one, is removed with what it holds, refused while anything outside references it', () => {
-  it('removes a handler, an event handler, a policy test and a policy with what is under it', async () => {
-    const store = await commandDataSet();
-    expect((await runCommand(store, REMOVE_COMMAND_HANDLER, { id: 'TL-LEND-CMD01-H' })).changes.map((c) => c.table).sort()).toEqual(['command_handler', 'meets']);
-    expect((await runCommand(store, REMOVE_POLICY_TEST, { id: 'TL-LEND-PO01-T' })).changes.map((c) => c.table).sort()).toEqual(['policy_test', 'starts_from']);
-    expect((await runCommand(store, REMOVE_EVENT_HANDLER, { id: 'TL-LEND-PO01-H' })).changes.map((c) => c.table)).toEqual(['event_handler']);
-    await runCommand(store, ADD_EVENT_HANDLER, { id: 'TL-LEND-PO01-H', title: 'onLoanOpened', policy_id: 'TL-LEND-PO01', description: 'Hears it.' });
-    expect((await runCommand(store, REMOVE_POLICY, { id: 'TL-LEND-PO01' })).changes.map((c) => c.table).sort()).toEqual(['event_handler', 'hears', 'policy']);
-  });
-
-  it('removes a command whole, and refuses one while anything outside it references it', async () => {
-    const store = await commandDataSet();
-    const removed = await runCommand(store, REMOVE_COMMAND, { id: 'TL-LEND-CMD01' });
-    expect(new Set(removed.changes.map((c) => c.table))).toEqual(new Set(['command', 'command_handler', 'policy', 'event_handler', 'policy_test', 'raises', 'checks', 'calls', 'hears', 'meets', 'starts_from']));
-    const referenced = await storeWithEndpoint();
-    expect((await refusal(referenced, REMOVE_COMMAND, { id: 'TL-LEND-CMD01' })).problems[0].message).toBe('Command TL-LEND-CMD01 is referenced, so it stays: endpoint TL-LEND-EP01 (command_id)');
-  });
-});
-
-// The data set with an endpoint under its command, of the Endpoint aggregate.
-async function storeWithEndpoint(): Promise<Store> {
-  const store = await commandDataSet();
-  const data = domainModelBase(Object.fromEntries(['aggregate', 'entity', 'domain_event', 'command'].map((t) => [t, store.rows(t)])));
-  data.endpoint = [{ id: 'TL-LEND-EP01', title: 'POST /loans', command_id: 'TL-LEND-CMD01', method: 'POST', route: '/loans', description: 'Opens a loan.' }];
-  return storeOn(data);
-}

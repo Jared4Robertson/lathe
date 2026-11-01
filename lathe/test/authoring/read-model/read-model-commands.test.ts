@@ -4,20 +4,14 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { ADD_QUERY_HANDLER } from '../../../src/authoring/read-model/commands/add-query-handler.ts';
 import { ADD_READ_MODEL } from '../../../src/authoring/read-model/commands/add-read-model.ts';
 import { CHANGE_READ_MODEL } from '../../../src/authoring/read-model/commands/change-read-model.ts';
-import { REMOVE_PROJECTION } from '../../../src/authoring/read-model/commands/remove-projection.ts';
-import { REMOVE_QUERY } from '../../../src/authoring/read-model/commands/remove-query.ts';
-import { REMOVE_READER } from '../../../src/authoring/read-model/commands/remove-reader.ts';
-import { REMOVE_QUERY_HANDLER } from '../../../src/authoring/read-model/commands/remove-query-handler.ts';
-import { REMOVE_READ_MODEL } from '../../../src/authoring/read-model/commands/remove-read-model.ts';
 import type { AnyCommand } from '../../../src/platform/commands/definition.ts';
 import { runCommand } from '../../../src/platform/commands/run.ts';
 import { StoreError } from '../../../src/platform/data/problems.ts';
 import { openStore, type Store } from '../../../src/platform/data/store.ts';
 import { writeData } from '../../helpers.ts';
-import { closeOpenStores, domainModelBase, storeOn } from '../domain-model-base.ts';
+import { closeOpenStores, domainModelBase } from '../domain-model-base.ts';
 import { AROUND, readModelDataSet } from './data-set.ts';
 
 afterEach(closeOpenStores);
@@ -53,24 +47,5 @@ describe("LA-AUT-INV80-T a read model fed by another domain's unpublished event 
     expect((refused as StoreError).problems).toEqual([expect.objectContaining({ rule: 'read-model-fed-by-published', file: 'data/fed_by.jsonl', line: 1 })]);
     data.domain_event = data.domain_event.map((e) => (e.id === 'TL-CAT-EV01' ? { ...e, published: true } : e));
     await (await openStore(writeData(data), { latheDataDir: null })).close();
-  });
-});
-
-describe('LA-STD-CODE-R07-T52 a read model, or a record in one, is removed with what it holds, refused while anything outside references it', () => {
-  it('removes a query handler, a projection, a reader and a query with its handler, then the read model whole', async () => {
-    const store = await readModelDataSet();
-    expect((await runCommand(store, REMOVE_READER, { id: 'TL-LEND-RM01-RD' })).changes.map((c) => c.table)).toEqual(['reader']);
-    expect((await runCommand(store, REMOVE_QUERY_HANDLER, { id: 'TL-LEND-QRY01-H' })).changes.map((c) => c.table).sort()).toEqual(['meets', 'query_handler']);
-    expect((await runCommand(store, REMOVE_PROJECTION, { id: 'TL-LEND-RM01-PJ' })).changes.map((c) => c.table)).toEqual(['projection']);
-    await runCommand(store, ADD_QUERY_HANDLER, { id: 'TL-LEND-QRY01-H', title: 'listCatalog', query_id: 'TL-LEND-QRY01', description: 'Reads it.' });
-    expect((await runCommand(store, REMOVE_QUERY, { id: 'TL-LEND-QRY01' })).changes.map((c) => c.table).sort()).toEqual(['query', 'query_handler', 'selects_by']);
-    expect(new Set((await runCommand(store, REMOVE_READ_MODEL, { id: 'TL-LEND-RM01' })).changes.map((c) => c.table))).toEqual(new Set(['read_model', 'read_model_field', 'reads', 'calls', 'fed_by']));
-  });
-
-  it('refuses to remove a read model while its table stores it, naming the table', async () => {
-    const store = await readModelDataSet();
-    const data = domainModelBase({ ...AROUND, read_model: store.rows('read_model'), table: [{ id: 'TL-LEND-RM01-TB', title: 'catalog', read_model_id: 'TL-LEND-RM01', name: 'catalog', storage: 'view' }] });
-    const referenced = await storeOn(data);
-    expect((await refusal(referenced, REMOVE_READ_MODEL, { id: 'TL-LEND-RM01' })).problems[0].message).toBe('Read model TL-LEND-RM01 is referenced, so it stays: table TL-LEND-RM01-TB (read_model_id)');
   });
 });

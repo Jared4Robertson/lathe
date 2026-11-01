@@ -109,7 +109,7 @@ test.describe('editing', () => {
   test('LA-PAT-PAGE-STEPS-R01-T01 on the Domain records page, open a term\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-TM01', /^group name/, 'Stability'));
   test('LA-PAT-PAGE-STEPS-R01-T01 on the Test data set page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-TD30', /^reset/, 'Throw the folder away.'));
   test('LA-PAT-PAGE-STEPS-R01-T01 on the Pattern page, open a rule\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-PAT-RECORD-PAGE-R01', /^group name/, 'Stability'));
-  test('LA-PAT-PAGE-STEPS-R01-T01 on the Standard page, open a rule\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-STD-CODE-R01', /^group name/, 'Stability'));
+  test('LA-PAT-PAGE-STEPS-R01-T01 on the Standard page, open a rule\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-STD-CODE-R04', /^group name/, 'Stability'));
   // The Product, Business outcome, Entry point and Tooling pages: each saves one field as its kind's Change command, with
   // nothing jumping. Each is its aggregate's web-app flow test.
   test('LA-AUT-UC23-FL-T on the Product page, open an interface\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-IF03', /^description/, 'The command line, as the stability suite describes it.'));
