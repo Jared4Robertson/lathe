@@ -41,9 +41,9 @@ Every accidental record must be derived, provided or a fill (`accidental-not-acc
 ## Journey checks
 
 - `step-order` (error) covers the steps of each path of a flow and of a journey: number them 1, 2, 3 without gaps, or move a step with the move command.
-- `journey-of-one-use-case` (warning): a journey whose steps carry out fewer than two use cases is a use case; remove the journey, or add the steps it is missing.
-- `handoff-not-connected` (warning): a handoff step whose policy hears no event raised by a command the previous step's flow invokes. Relink the step to the right policy, or fix the policy's event.
-- `outcome-duration-without-journey` (warning): a duration measure no journey serves. Write the journey (`discover-outcomes`).
+- `journey-of-one-use-case` (warning): a journey whose steps carry out fewer than two use cases is a use case (a step carrying out nothing yet counts as a use case to write); remove the journey, or add the steps it is missing.
+- `handoff-not-connected` (warning): a handoff step whose policy hears no event the step before it on its path leads to: one raised by a command the previous use case's flow invokes, or by the previous handoff's command. Not read until that use case has a flow. Relink the step to the right policy, or fix the policy's event.
+- `outcome-duration-without-journey` (warning): a measure that reads as a duration ("time/days/hours/minutes/weeks from", "how long", "median ... from", "from ... to") that no journey serves. Write the journey it times (`discover-outcomes`), or restate the measure if it is not a duration.
 - `title-breaks-convention` covers a journey's title: verb first, a summary goal, no interface.
 - Gaps: `journey-serves-no-outcome` (link the outcome), `journey-without-main-path` (add the main path's steps), `journey-step-unlinked` (write the use case or policy, then link the step), `journey-without-test` (add the journey test, `plan-tests`).
 - A removal refused because a journey step carries the use case or policy out: relink or remove the step first.
