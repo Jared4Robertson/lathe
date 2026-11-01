@@ -248,7 +248,6 @@
 {"source_id":"LA-CHK-UC02-R02-T03","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-CHK-UC02-R03-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-CHK-UC02-R03-T01","target_id":"LA-EXP-TD03"}
-{"source_id":"LA-CHK-UC02-R50-T01","target_id":"LA-CHK-TD01"}
 {"source_id":"LA-CHK-UC05-FL03-T","target_id":"LA-AUT-TD03"}
 {"source_id":"LA-CHK-UC05-FL04-T","target_id":"LA-AUT-TD03"}
 {"source_id":"LA-CHK-UC05-R01-T01","target_id":"LA-AUT-TD02"}
@@ -272,7 +271,6 @@
 {"source_id":"LA-CHK-UC06-R07-T02","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-CHK-UC06-R08-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-CHK-UC06-R09-T01","target_id":"LA-AUT-TD02"}
-{"source_id":"LA-CHK-UC06-R50-T01","target_id":"LA-CHK-TD02"}
 {"source_id":"LA-CHK-UC07-FL01-T","target_id":"LA-EXP-TD02"}
 {"source_id":"LA-CHK-UC07-FL02-T","target_id":"LA-EXP-TD02"}
 {"source_id":"LA-CHK-UC07-R01-T01","target_id":"LA-EXP-TD02"}
@@ -385,6 +383,9 @@
 {"source_id":"LA-PAT-AGGREGATE-COMMANDS-R09-T01","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-PAT-AGGREGATE-COMMANDS-R09-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-PAT-AGGREGATE-COMMANDS-R10-T01","target_id":"LA-AUT-TD40"}
+{"source_id":"LA-PAT-AGGREGATE-COMMANDS-R10-T02","target_id":"LA-CHK-TD01"}
+{"source_id":"LA-PAT-AGGREGATE-COMMANDS-R10-T02","target_id":"LA-CHK-TD02"}
+{"source_id":"LA-PAT-AGGREGATE-COMMANDS-R10-T03","target_id":"LA-TRC-TD02"}
 {"source_id":"LA-PAT-AGGREGATE-TESTS-R03-T01","target_id":"LA-AUT-TD40"}
 {"source_id":"LA-PAT-AGGREGATE-TESTS-R03-T02","target_id":"LA-CHK-TD01"}
 {"source_id":"LA-PAT-AGGREGATE-TESTS-R03-T03","target_id":"LA-TRC-TD02"}
@@ -616,7 +617,6 @@
 {"source_id":"LA-TRC-UC07-R06-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-TRC-UC07-R07-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-TRC-UC07-R07-T01","target_id":"LA-TRC-TD01"}
-{"source_id":"LA-TRC-UC07-R50-T01","target_id":"LA-TRC-TD02"}
 {"source_id":"LA-TRC-UC08-FL03-T","target_id":"LA-AUT-TD03"}
 {"source_id":"LA-TRC-UC08-R02-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-TRC-UC08-R03-T01","target_id":"LA-AUT-TD02"}

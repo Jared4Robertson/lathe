@@ -48,45 +48,45 @@
 {"id":"LA-AUT-TM65","title":"Fill","domain_id":"LA-AUT","meaning":"Code written by hand at a slot, against its contract: accidental complexity recorded where it is needed, and debt until what the fills of one slot repeat is stated once and derived.","group_name":"Complexity"}
 {"id":"LA-AUT-TM66","title":"Provided","domain_id":"LA-AUT","meaning":"Decided once outside the product, for everyone who uses it, by a dependency, a platform or a generic subdomain whose essential complexity it is, so the product neither builds nor proves it itself.","group_name":"Complexity"}
 {"id":"LA-AUT-TM67","title":"Data model","domain_id":"LA-AUT","meaning":"An entity in code: its data, its behavior and how its table stores it, one per entity.","group_name":"Build and test"}
-{"id":"LA-CHK-TM01","title":"Check","domain_id":"LA-CHK","meaning":"One rule the engine applies on every load: a row of `check.jsonl` whose SELECT returns a row for each thing it finds wrong or still to do."}
+{"id":"LA-CHK-TM01","title":"Check","domain_id":"LA-CHK","meaning":"One rule the engine applies on every load: a record whose query reports each thing it finds wrong or still to do."}
 {"id":"LA-CHK-TM02","title":"Problem","domain_id":"LA-CHK","meaning":"One thing a check found wrong or still to do in the loaded data. Problems are the result of a run, never stored."}
 {"id":"LA-CHK-TM03","title":"Error","domain_id":"LA-CHK","meaning":"A problem that means the data is broken. `lathe check` exits 1 on any error."}
 {"id":"LA-CHK-TM04","title":"Warning","domain_id":"LA-CHK","meaning":"A problem that means work is still to do. Warnings never fail `lathe check`."}
-{"id":"LA-CHK-TM05","title":"Lathe's checks","domain_id":"LA-CHK","meaning":"The check rows that ship with Lathe, in `lathe/data/check.jsonl`, read-only to every product."}
-{"id":"LA-CHK-TM06","title":"Product check","domain_id":"LA-CHK","meaning":"A check row a product adds for its own house rule, in its own `data/check.jsonl`."}
-{"id":"LA-CHK-TM07","title":"Refused row","domain_id":"LA-CHK","meaning":"A row the store will not load or save, reported once as a `data-refused` error naming the file, the line and the rule."}
+{"id":"LA-CHK-TM05","title":"Lathe's checks","domain_id":"LA-CHK","meaning":"The checks that ship with Lathe, read-only to every product."}
+{"id":"LA-CHK-TM06","title":"Product check","domain_id":"LA-CHK","meaning":"A check a product adds for its own house rule, kept in its own data."}
+{"id":"LA-CHK-TM07","title":"Refused record","domain_id":"LA-CHK","meaning":"A record Lathe will not load or save, reported once as a data-refused error naming the file, the line and the rule."}
 {"id":"LA-CHK-TM08","title":"Children limit","domain_id":"LA-CHK","meaning":"The most children of one kind a record of a product should hold: its `max_children` setting, 15 by default."}
 {"id":"LA-CHK-TM09","title":"Lone child","domain_id":"LA-CHK","meaning":"The one record a capability or a group holds, which makes the level group nothing."}
 {"id":"LA-CHK-TM10","title":"Entities limit","domain_id":"LA-CHK","meaning":"The most entities an aggregate of a product should hold: its `max_entities_per_aggregate` setting, 7 by default."}
-{"id":"LA-EXP-TM01","title":"Page","domain_id":"LA-EXP","meaning":"One screen of the app at its own address, showing one focus."}
+{"id":"LA-EXP-TM01","title":"Page","domain_id":"LA-EXP","meaning":"One view of the app at its own address, showing one focus."}
 {"id":"LA-EXP-TM02","title":"Address","domain_id":"LA-EXP","meaning":"A path in the app and its `view` parameter, such as `/TL-LEND?view=graph`."}
 {"id":"LA-EXP-TM03","title":"Focus","domain_id":"LA-EXP","meaning":"The product, domain, record or group an address shows."}
 {"id":"LA-EXP-TM04","title":"Page stage","domain_id":"LA-EXP","meaning":"The one way a focus page draws its focus, full window behind the floating panels: Graph, ERD or Trace."}
-{"id":"LA-EXP-TM05","title":"Space","domain_id":"LA-EXP","meaning":"One product as somewhere to work, chosen from the column of icons at the far left of the nav."}
-{"id":"LA-EXP-TM06","title":"Rail","domain_id":"LA-EXP","meaning":"The column of space icons at the far left of the nav."}
+{"id":"LA-EXP-TM05","title":"Space","domain_id":"LA-EXP","meaning":"One product as somewhere to work, chosen from the strip of icons at the far left of the nav."}
+{"id":"LA-EXP-TM06","title":"Rail","domain_id":"LA-EXP","meaning":"The strip of space icons at the far left of the nav."}
 {"id":"LA-EXP-TM07","title":"Stage folder","domain_id":"LA-EXP","meaning":"One of a domain's five stages in the nav, listing its records by kind."}
 {"id":"LA-EXP-TM08","title":"Kind group","domain_id":"LA-EXP","meaning":"The records of one kind in a stage or under a parent, shown together when there are several kinds to tell apart."}
 {"id":"LA-EXP-TM09","title":"Map","domain_id":"LA-EXP","meaning":"A product's tree laid out once as boxes, which focusing never moves."}
 {"id":"LA-EXP-TM10","title":"Depth","domain_id":"LA-EXP","meaning":"How many levels below the focus the camera frames."}
-{"id":"LA-EXP-TM12","title":"Tab","domain_id":"LA-EXP","meaning":"One of the desktop app's row of tabs, like a browser tab: its own focus, its own way of drawing it, and its own Back and Forward history. On the web the browser's own tabs are the tabs."}
+{"id":"LA-EXP-TM12","title":"Tab","domain_id":"LA-EXP","meaning":"One of the open tabs, like a browser tab: its own focus, its own way of drawing it, and its own Back and Forward history. On the web the browser's own tabs are the tabs."}
 {"id":"LA-EXP-TM15","title":"ERD","domain_id":"LA-EXP","meaning":"A domain's or an aggregate's model drawn as boxes and lines, one of the ways a page draws its focus."}
-{"id":"LA-EXP-TM16","title":"Place","domain_id":"LA-EXP","meaning":"Where a person exploring is: the focus, page stage, camera, depth, kind filters, the wiki card's open and expanded state and scroll, and its own Back and Forward history. One per browser tab on the web, one per tab in the desktop app."}
-{"id":"LA-PLT-TM01","title":"Workbench","domain_id":"LA-PLT","meaning":"The wide-screen layout: panels set apart on the shell, the room between them a resize handle."}
-{"id":"LA-PLT-TM02","title":"Panel","domain_id":"LA-PLT","meaning":"A box that floats over a page's drawing, which a person shows, hides and resizes: the navigation, the tab panel or the wiki card."}
+{"id":"LA-EXP-TM16","title":"Place","domain_id":"LA-EXP","meaning":"Where a person exploring is: the focus, page stage, camera, depth, kind filters, the wiki card's open and expanded state and scroll, and its own Back and Forward history. One per tab, whether the browser's own or the app's."}
+{"id":"LA-PLT-TM01","title":"Workbench","domain_id":"LA-PLT","meaning":"The wide-display layout: panels set apart on the shell, the room between them a resize handle."}
+{"id":"LA-PLT-TM02","title":"Panel","domain_id":"LA-PLT","meaning":"A box that floats over a view's drawing, which a person shows, hides and resizes: the navigation, the tab panel or the wiki card."}
 {"id":"LA-PLT-TM04","title":"Keymap","domain_id":"LA-PLT","meaning":"The one list of keyboard shortcuts and what each does, which every key, the palette, the sheet and every hint read."}
 {"id":"LA-PLT-TM05","title":"Theme","domain_id":"LA-PLT","meaning":"A named set of token values with a light set and a dark set."}
 {"id":"LA-PLT-TM06","title":"Color mode","domain_id":"LA-PLT","meaning":"System, Light or Dark: which of every theme's two sets shows."}
-{"id":"LA-PLT-TM07","title":"Product folder","domain_id":"LA-PLT","meaning":"A folder with a `lathe.config.json` or a `data/` folder, which Lathe opens."}
+{"id":"LA-PLT-TM07","title":"Product folder","domain_id":"LA-PLT","meaning":"A folder with a Lathe configuration or a data folder, which Lathe opens."}
 {"id":"LA-PLT-TM08","title":"Product window","domain_id":"LA-PLT","meaning":"One desktop window showing one product folder."}
 {"id":"LA-PLT-TM09","title":"App server","domain_id":"LA-PLT","meaning":"What a window or `lathe serve` runs Lathe from."}
 {"id":"LA-PLT-TM12","title":"Refusal reason","domain_id":"LA-PLT","meaning":"One reason the store refused a command or a load: the rule broken and where."}
-{"id":"LA-PLT-TM13","title":"Record","domain_id":"LA-PLT","meaning":"One thing of a kind in a product's specs, kept as one row: an ID unique across every kind, a title, typed columns, and at most one other record it sits under.","group_name":"Data files"}
-{"id":"LA-PLT-TM14","title":"Kind","domain_id":"LA-PLT","meaning":"A sort of thing a product's specs describe, with its own columns and the shape of its IDs. Lathe has fifty; a product may declare more.","group_name":"Data files"}
-{"id":"LA-PLT-TM15","title":"Parent","domain_id":"LA-PLT","meaning":"The one record a record sits under, named by one of its kind's parent columns.","group_name":"Data files"}
-{"id":"LA-PLT-TM16","title":"Part","domain_id":"LA-PLT","meaning":"A row a record owns that is no record itself, such as an entity's fields or a table's keys, removed with it.","group_name":"Data files"}
+{"id":"LA-PLT-TM13","title":"Record","domain_id":"LA-PLT","meaning":"One thing of a kind in a product's specs: an ID unique across every kind, a title, typed fields, and at most one other record it sits under.","group_name":"Data files"}
+{"id":"LA-PLT-TM14","title":"Kind","domain_id":"LA-PLT","meaning":"A sort of thing a product's specs describe, with its own fields and the shape of its IDs. Lathe has fifty; a product may declare more.","group_name":"Data files"}
+{"id":"LA-PLT-TM15","title":"Parent","domain_id":"LA-PLT","meaning":"The one record a record sits under, named by one of its kind's parent fields.","group_name":"Data files"}
+{"id":"LA-PLT-TM16","title":"Part","domain_id":"LA-PLT","meaning":"Something a record owns that is no record itself, such as an entity's fields, removed with it.","group_name":"Data files"}
 {"id":"LA-PLT-TM17","title":"Link","domain_id":"LA-PLT","meaning":"One connection of a relation, joining two records of one product.","group_name":"Data files"}
 {"id":"LA-PLT-TM18","title":"Relation","domain_id":"LA-PLT","meaning":"A sort of connection between two records, with the pairs of kinds it may join and its words read both ways.","group_name":"Data files"}
-{"id":"LA-PLT-TM19","title":"Data file","domain_id":"LA-PLT","meaning":"`data/<table>.jsonl`: the rows of one kind, one of its parts or one relation's links, one JSON object per line, sorted by key. The source of truth, reviewed in git.","group_name":"Data files"}
+{"id":"LA-PLT-TM19","title":"Data file","domain_id":"LA-PLT","meaning":"The files in the data folder, named for what they hold: the records of one kind, one of its parts or one relation's links, one per line, sorted by key. The source of truth, reviewed in git.","group_name":"Data files"}
 {"id":"LA-TRC-TM01","title":"Obligation","domain_id":"LA-TRC","meaning":"A rule a product must design, build and prove: a constraint, invariant, specification, policy, domain service, UC requirement, view requirement, API requirement, pattern rule or standard rule, or a product's own obligation kind."}
 {"id":"LA-TRC-TM02","title":"Designed","domain_id":"LA-TRC","meaning":"An obligation whose design is specified: a flow step fulfills the UC requirement, or a technical record implements the design record."}
 {"id":"LA-TRC-TM03","title":"Built","domain_id":"LA-TRC","meaning":"A designed obligation every technical record implementing which names a file that exists."}
