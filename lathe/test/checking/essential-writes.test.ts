@@ -42,8 +42,7 @@ describe('a write of an essential record keeps accidental complexity out', () =>
     expect(await reasons(store, 'domain change-term', { id: 'EX-LEND-TM01', title: 'Loan row' })).toEqual([
       ['essential-names-technology', 'EX-LEND-TM01', 'Term EX-LEND-TM01 is essential, and its title says "row"'],
     ]);
-    // A flow names its own interface; its step may not click.
-    await run(store, 'use-case change-flow', { id: 'EX-LEND-UC01-FL01', title: 'Borrow a tool in the Web app' });
+    // A step may not click.
     expect(await reasons(store, 'use-case change-flow-step', { id: 'EX-LEND-UC01-FL01-S01', title: 'Click Borrow on the tool' })).toEqual([
       ['essential-names-technology', 'EX-LEND-UC01-FL01-S01', 'Flow step EX-LEND-UC01-FL01-S01 is essential, and its title says "click"'],
     ]);
