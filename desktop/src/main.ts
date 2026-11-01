@@ -63,7 +63,7 @@ import { appPluginDir, chatLatheFor, countLatheTools, sourceLathe, withLatheCli,
 import { ChatSession } from './chatSession.ts';
 import { claudeSignedIn, findClaude, listSessions, processAlive, runningSessions, transcriptFile } from './claudeSessions.ts';
 import { chromeWindowOptions, startChrome, type Chrome } from './chrome.ts';
-import { commandKeys, keyPresses, MENU_COMMANDS, type KeyPress } from './commands.ts';
+import { keyPresses, type KeyPress } from './commands.ts';
 import { badgeFor, dockMenuTemplate } from './dock.ts';
 import { editorLaunch, editorName } from './editor.ts';
 import { checkFolder, productNames, windowTitle } from './folders.ts';
@@ -180,10 +180,10 @@ function focusedProductWindow(): BrowserWindow | null {
   return isProduct(last) ? last : null;
 }
 
-/** Sends a menu choice to a window's page as a command ID, with the keys that run it by default. */
+/** Sends a menu choice to a window's page as a command ID, with the key the page last sent for it (the keymap's menu key), which runs it before the app listens. */
 function sendCommand(win: BrowserWindow | null, id: string) {
-  const command = MENU_COMMANDS.find((c) => c.id === id);
-  if (command) sendCommandId(win, id, keyPresses(commandKeys(command, MAC), MAC));
+  const key = menuKeysWindow()?.menuKeys?.[id]?.[0];
+  sendCommandId(win, id, key ? keyPresses(key, MAC) : []);
 }
 
 function sendCommandId(win: BrowserWindow | null, id: string, presses: KeyPress[]) {
