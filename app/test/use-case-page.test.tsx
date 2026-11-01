@@ -3,8 +3,6 @@ import { chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { USE_CASE_COMMANDS } from '../../lathe/src/authoring/use-case/commands/index';
-import type { UseCaseCommands } from '../src/authoring/use-case/commands';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
@@ -30,18 +28,6 @@ describe('LA-V101-R01-T01 a use case\'s page reads the use case whole through it
     const fulfilled = (await within(main()).findByRole('heading', { name: /Fulfilled by/ })).closest('section')!;
     expect(within(fulfilled).getByRole('link', { name: /DM-SHOP-UC01-FL01-S01/ })).toBeInTheDocument();
     expect(requests).toContain('GET /api/use-case/get-use-case?id=DM-SHOP-UC01-R01');
-  });
-
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof UseCaseCommands)[] = [
-      '/api/use-case/add-use-case', '/api/use-case/change-use-case', '/api/use-case/move-use-case', '/api/use-case/remove-use-case',
-      '/api/use-case/add-uc-requirement', '/api/use-case/change-uc-requirement', '/api/use-case/remove-uc-requirement',
-      '/api/use-case/add-use-case-test', '/api/use-case/change-use-case-test', '/api/use-case/remove-use-case-test',
-      '/api/use-case/add-flow', '/api/use-case/change-flow', '/api/use-case/remove-flow',
-      '/api/use-case/add-flow-step', '/api/use-case/change-flow-step', '/api/use-case/remove-flow-step',
-      '/api/use-case/add-flow-test', '/api/use-case/change-flow-test', '/api/use-case/remove-flow-test',
-    ];
-    expect([...routes].sort()).toEqual(USE_CASE_COMMANDS.map((c) => c.route).sort());
   });
 });
 

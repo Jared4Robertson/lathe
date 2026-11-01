@@ -2,8 +2,6 @@ import { chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { ENDPOINT_COMMANDS } from '../../lathe/src/authoring/endpoint/commands/index';
-import type { EndpointCommands } from '../src/authoring/endpoint/commands';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { modelWorkspace } from './fixtures/model';
 import { main, openApp, section } from './helpers';
@@ -28,16 +26,6 @@ describe('LA-V152-R01-T01 an endpoint\'s records are read through the Endpoint a
     expect(within(handler).getByRole('link', { name: /P-D-EP01-H/ })).toHaveAttribute('href', '/P-D-EP01-H');
     await openApp('/P-D-EP01-H', { data: modelWorkspace() });
     expect(await within(main()).findByText("The fixture's endpoint handler postLoan.")).toBeInTheDocument();
-  });
-
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof EndpointCommands)[] = [
-      '/api/endpoint/add-endpoint', '/api/endpoint/change-endpoint', '/api/endpoint/move-endpoint', '/api/endpoint/remove-endpoint',
-      '/api/endpoint/add-api-requirement', '/api/endpoint/change-api-requirement', '/api/endpoint/remove-api-requirement',
-      '/api/endpoint/add-endpoint-handler', '/api/endpoint/change-endpoint-handler', '/api/endpoint/remove-endpoint-handler',
-      '/api/endpoint/add-endpoint-test', '/api/endpoint/change-endpoint-test', '/api/endpoint/remove-endpoint-test',
-    ];
-    expect([...routes].sort()).toEqual(ENDPOINT_COMMANDS.map((c) => c.route).sort());
   });
 });
 

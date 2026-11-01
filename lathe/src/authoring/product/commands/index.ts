@@ -16,7 +16,7 @@ import { ADD_INTERFACE } from './add-interface.ts';
 import { CHANGE_INTERFACE } from './change-interface.ts';
 import { REMOVE_INTERFACE } from './remove-interface.ts';
 
-export const PRODUCT_COMMANDS: readonly AnyCommand[] = [
+export const PRODUCT_COMMANDS = [
   ADD_PRODUCT,
   CHANGE_PRODUCT,
   DECLARE_PRODUCT_KIND,
@@ -32,4 +32,4 @@ export const PRODUCT_COMMANDS: readonly AnyCommand[] = [
   ADD_INTERFACE,
   CHANGE_INTERFACE,
   REMOVE_INTERFACE,
-];
+] as const satisfies readonly AnyCommand[];

@@ -9,7 +9,7 @@ import { ADD_USE_CASE_IDENTITY } from './identities.generated.ts';
 /** A new use case: its row, and its actors' role names in order. */
 export type AddUseCase = Pick<UseCaseRow, 'id' | 'title' | 'capability_id' | 'goal' | 'notes'> & { actors?: string[] };
 
-export const ADD_USE_CASE: CommandDefinition<AddUseCase> = {
+export const ADD_USE_CASE = {
   ...ADD_USE_CASE_IDENTITY,
   input: {
     id: column('use_case', 'id', 'required'),
@@ -20,7 +20,7 @@ export const ADD_USE_CASE: CommandDefinition<AddUseCase> = {
     actors: texts('The roles of the product that are its actors, in order: the first is the main actor.', 'optional'),
   },
   handler: addUseCase,
-};
+} satisfies CommandDefinition<AddUseCase>;
 
 export function addUseCase(tx: Transaction, input: AddUseCase): void {
   const useCases = new UseCaseRepository(tx);

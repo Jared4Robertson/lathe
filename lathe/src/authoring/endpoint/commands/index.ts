@@ -14,7 +14,7 @@ import { ADD_ENDPOINT_TEST } from './add-endpoint-test.ts';
 import { CHANGE_ENDPOINT_TEST } from './change-endpoint-test.ts';
 import { REMOVE_ENDPOINT_TEST } from './remove-endpoint-test.ts';
 
-export const ENDPOINT_COMMANDS: readonly AnyCommand[] = [
+export const ENDPOINT_COMMANDS = [
   ADD_ENDPOINT,
   CHANGE_ENDPOINT,
   MOVE_ENDPOINT,
@@ -28,4 +28,4 @@ export const ENDPOINT_COMMANDS: readonly AnyCommand[] = [
   ADD_ENDPOINT_TEST,
   CHANGE_ENDPOINT_TEST,
   REMOVE_ENDPOINT_TEST,
-];
+] as const satisfies readonly AnyCommand[];

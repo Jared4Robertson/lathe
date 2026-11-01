@@ -9,7 +9,7 @@ import { CHANGE_CAPABILITY_IDENTITY } from './identities.generated.ts';
 /** The capability's changes: a column given is set; serves, when given, replaces the list. */
 export type ChangeCapability = Pick<CapabilityRow, 'id'> & { title?: CapabilityRow['title']; position?: CapabilityRow['position']; description?: CapabilityRow['description']; serves?: string[] };
 
-export const CHANGE_CAPABILITY: CommandDefinition<ChangeCapability> = {
+export const CHANGE_CAPABILITY = {
   ...CHANGE_CAPABILITY_IDENTITY,
   input: {
     id: column('capability', 'id', 'required'),
@@ -19,7 +19,7 @@ export const CHANGE_CAPABILITY: CommandDefinition<ChangeCapability> = {
     serves: ids('The business outcomes it serves. Replaces the list.', 'optional'),
   },
   handler: changeCapability,
-};
+} satisfies CommandDefinition<ChangeCapability>;
 
 /** Changes the capability's columns and links. */
 export function changeCapability(tx: Transaction, input: ChangeCapability): void {

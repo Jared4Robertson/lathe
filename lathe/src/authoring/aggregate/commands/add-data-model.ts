@@ -7,7 +7,7 @@ import { ADD_DATA_MODEL_IDENTITY } from './identities.generated.ts';
 
 export type AddDataModel = Pick<DataModelRow, 'id' | 'title' | 'entity_id' | 'file'> & { meets?: string[]; packages?: string[] };
 
-export const ADD_DATA_MODEL: CommandDefinition<AddDataModel> = {
+export const ADD_DATA_MODEL = {
   ...ADD_DATA_MODEL_IDENTITY,
   input: {
     id: column('data_model', 'id', 'required'),
@@ -18,7 +18,7 @@ export const ADD_DATA_MODEL: CommandDefinition<AddDataModel> = {
     packages: texts('The packages it uses, each listed in one of the product\'s package.json files.', 'optional'),
   },
   handler: addDataModel,
-};
+} satisfies CommandDefinition<AddDataModel>;
 
 export function addDataModel(tx: Transaction, input: AddDataModel): void {
   const aggregates = new AggregateRepository(tx);

@@ -9,7 +9,7 @@ import { CHANGE_FLOW_TEST_IDENTITY } from './identities.generated.ts';
 /** The test's changes: a column given is set, null clears an optional one; starts_from, when given, replaces the list. */
 export type ChangeFlowTest = Pick<FlowTestRow, 'id'> & { title?: FlowTestRow['title']; level?: FlowTestRow['level']; state?: FlowTestRow['state']; steps?: FlowTestRow['steps']; expected_result?: FlowTestRow['expected_result']; file?: FlowTestRow['file'] | null; manual_reason?: FlowTestRow['manual_reason'] | null; size?: FlowTestRow['size'] | null; smoke?: FlowTestRow['smoke'] | null; external?: FlowTestRow['external'] | null; notes?: FlowTestRow['notes'] | null; starts_from?: string[] };
 
-export const CHANGE_FLOW_TEST: CommandDefinition<ChangeFlowTest> = {
+export const CHANGE_FLOW_TEST = {
   ...CHANGE_FLOW_TEST_IDENTITY,
   input: {
     id: column('flow_test', 'id', 'required'),
@@ -27,7 +27,7 @@ export const CHANGE_FLOW_TEST: CommandDefinition<ChangeFlowTest> = {
     starts_from: ids('The test data sets it starts from. Replaces the list.', 'optional'),
   },
   handler: changeFlowTest,
-};
+} satisfies CommandDefinition<ChangeFlowTest>;
 
 /** Changes the test's columns and the data sets it starts from. */
 export function changeFlowTest(tx: Transaction, input: ChangeFlowTest): void {

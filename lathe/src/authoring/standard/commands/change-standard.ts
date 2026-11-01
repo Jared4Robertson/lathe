@@ -8,7 +8,7 @@ import { CHANGE_STANDARD_IDENTITY } from './identities.generated.ts';
 /** The standard's changes: a column given is set. */
 export type ChangeStandard = Pick<StandardRow, 'id'> & { title?: StandardRow['title']; description?: StandardRow['description'] };
 
-export const CHANGE_STANDARD: CommandDefinition<ChangeStandard> = {
+export const CHANGE_STANDARD = {
   ...CHANGE_STANDARD_IDENTITY,
   input: {
     id: column('standard', 'id', 'required'),
@@ -16,7 +16,7 @@ export const CHANGE_STANDARD: CommandDefinition<ChangeStandard> = {
     description: column('standard', 'description', 'optional'),
   },
   handler: changeStandard,
-};
+} satisfies CommandDefinition<ChangeStandard>;
 
 /** Changes the standard's columns. */
 export function changeStandard(tx: Transaction, input: ChangeStandard): void {

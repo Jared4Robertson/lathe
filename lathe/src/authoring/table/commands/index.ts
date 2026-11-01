@@ -5,9 +5,9 @@ import { CHANGE_TABLE } from './change-table.ts';
 import { MOVE_TABLE } from './move-table.ts';
 import { REMOVE_TABLE } from './remove-table.ts';
 
-export const TABLE_COMMANDS: readonly AnyCommand[] = [
+export const TABLE_COMMANDS = [
   ADD_TABLE,
   CHANGE_TABLE,
   MOVE_TABLE,
   REMOVE_TABLE,
-];
+] as const satisfies readonly AnyCommand[];

@@ -6,13 +6,13 @@ import { REMOVE_EXTENSION_RECORD_IDENTITY } from './identities.generated.ts';
 /** The record to remove. */
 export type RemoveExtensionRecord = { id: string };
 
-export const REMOVE_EXTENSION_RECORD: CommandDefinition<RemoveExtensionRecord> = {
+export const REMOVE_EXTENSION_RECORD = {
   ...REMOVE_EXTENSION_RECORD_IDENTITY,
   input: {
     id: id('The record.', 'required'),
   },
   handler: removeExtensionRecord,
-};
+} satisfies CommandDefinition<RemoveExtensionRecord>;
 
 /** Removes the record whole. */
 export function removeExtensionRecord(tx: Transaction, input: RemoveExtensionRecord): void {

@@ -8,7 +8,7 @@ import { ADD_ENDPOINT_HANDLER_IDENTITY } from './identities.generated.ts';
 
 export type AddEndpointHandler = Pick<EndpointHandlerRow, 'id' | 'title' | 'endpoint_id' | 'description' | 'file'> & { meets?: string[]; packages?: string[] };
 
-export const ADD_ENDPOINT_HANDLER: CommandDefinition<AddEndpointHandler> = {
+export const ADD_ENDPOINT_HANDLER = {
   ...ADD_ENDPOINT_HANDLER_IDENTITY,
   input: {
     id: column('endpoint_handler', 'id', 'required'),
@@ -20,7 +20,7 @@ export const ADD_ENDPOINT_HANDLER: CommandDefinition<AddEndpointHandler> = {
     packages: texts("The packages it uses, each listed in one of the product's package.json files.", 'optional'),
   },
   handler: addEndpointHandler,
-};
+} satisfies CommandDefinition<AddEndpointHandler>;
 
 export function addEndpointHandler(tx: Transaction, input: AddEndpointHandler): void {
   const endpoints = new EndpointRepository(tx);

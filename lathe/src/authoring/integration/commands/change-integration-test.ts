@@ -8,7 +8,7 @@ import { CHANGE_INTEGRATION_TEST_IDENTITY } from './identities.generated.ts';
 /** The integration test's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeIntegrationTest = Pick<IntegrationTestRow, 'id'> & { title?: IntegrationTestRow['title']; level?: IntegrationTestRow['level']; state?: IntegrationTestRow['state']; when?: IntegrationTestRow['when']; then?: IntegrationTestRow['then']; file?: IntegrationTestRow['file'] | null; manual_reason?: IntegrationTestRow['manual_reason'] | null; size?: IntegrationTestRow['size'] | null; smoke?: IntegrationTestRow['smoke'] | null; external?: IntegrationTestRow['external'] | null; notes?: IntegrationTestRow['notes'] | null; starts_from?: string[] };
 
-export const CHANGE_INTEGRATION_TEST: CommandDefinition<ChangeIntegrationTest> = {
+export const CHANGE_INTEGRATION_TEST = {
   ...CHANGE_INTEGRATION_TEST_IDENTITY,
   input: {
     id: column('integration_test', 'id', 'required'),
@@ -26,7 +26,7 @@ export const CHANGE_INTEGRATION_TEST: CommandDefinition<ChangeIntegrationTest> =
     starts_from: ids('The test data sets it starts from. Replaces the list.', 'optional'),
   },
   handler: changeIntegrationTest,
-};
+} satisfies CommandDefinition<ChangeIntegrationTest>;
 
 /** Changes the integration test's columns and links. */
 export function changeIntegrationTest(tx: Transaction, input: ChangeIntegrationTest): void {

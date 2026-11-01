@@ -8,7 +8,7 @@ import { ADD_COMMAND_IDENTITY } from './identities.generated.ts';
 
 export type AddCommand = Pick<CommandRow, 'id' | 'title' | 'entity_id' | 'description'> & { raises?: string[]; checks?: string[]; calls?: string[] };
 
-export const ADD_COMMAND: CommandDefinition<AddCommand> = {
+export const ADD_COMMAND = {
   ...ADD_COMMAND_IDENTITY,
   input: {
     id: column('command', 'id', 'required'),
@@ -20,7 +20,7 @@ export const ADD_COMMAND: CommandDefinition<AddCommand> = {
     calls: ids('The domain services of its domain it calls.', 'optional'),
   },
   handler: addCommand,
-};
+} satisfies CommandDefinition<AddCommand>;
 
 export function addCommand(tx: Transaction, input: AddCommand): void {
   const commands = new CommandRepository(tx);

@@ -1,0 +1,102 @@
+// Generated from data/ by `npm run generate`. Do not edit.
+// The endpoint commands' inputs, by route, from their definitions: what the editors' forms are drawn from.
+import type { InputFields } from '../../edit/command-form';
+
+export const ENDPOINT_FIELDS = {
+  '/api/endpoint/add-endpoint': {
+    id: { kind: 'column', table: 'endpoint', column: 'id', required: true, clearable: false },
+    title: { kind: 'column', table: 'endpoint', column: 'title', required: true, clearable: false },
+    method: { kind: 'column', table: 'endpoint', column: 'method', required: true, clearable: false },
+    route: { kind: 'column', table: 'endpoint', column: 'route', required: true, clearable: false },
+    description: { kind: 'column', table: 'endpoint', column: 'description', required: true, clearable: false },
+    command_id: { kind: 'column', table: 'endpoint', column: 'command_id', required: false, clearable: false },
+    query_id: { kind: 'column', table: 'endpoint', column: 'query_id', required: false, clearable: false },
+    notes: { kind: 'column', table: 'endpoint', column: 'notes', required: false, clearable: false },
+  },
+  '/api/endpoint/change-endpoint': {
+    id: { kind: 'column', table: 'endpoint', column: 'id', required: true, clearable: false },
+    title: { kind: 'column', table: 'endpoint', column: 'title', required: false, clearable: false },
+    method: { kind: 'column', table: 'endpoint', column: 'method', required: false, clearable: false },
+    route: { kind: 'column', table: 'endpoint', column: 'route', required: false, clearable: false },
+    description: { kind: 'column', table: 'endpoint', column: 'description', required: false, clearable: false },
+    notes: { kind: 'column', table: 'endpoint', column: 'notes', required: false, clearable: true },
+  },
+  '/api/endpoint/move-endpoint': {
+    id: { kind: 'column', table: 'endpoint', column: 'id', required: true, clearable: false },
+    command_id: { kind: 'column', table: 'endpoint', column: 'command_id', required: false, clearable: false },
+    query_id: { kind: 'column', table: 'endpoint', column: 'query_id', required: false, clearable: false },
+  },
+  '/api/endpoint/remove-endpoint': {
+    id: { kind: 'column', table: 'endpoint', column: 'id', required: true, clearable: false },
+  },
+  '/api/endpoint/add-api-requirement': {
+    id: { kind: 'column', table: 'api_requirement', column: 'id', required: true, clearable: false },
+    title: { kind: 'column', table: 'api_requirement', column: 'title', required: true, clearable: false },
+    endpoint_id: { kind: 'column', table: 'api_requirement', column: 'endpoint_id', required: true, clearable: false },
+    statement: { kind: 'column', table: 'api_requirement', column: 'statement', required: true, clearable: false },
+    group_name: { kind: 'column', table: 'api_requirement', column: 'group_name', required: false, clearable: false },
+  },
+  '/api/endpoint/change-api-requirement': {
+    id: { kind: 'column', table: 'api_requirement', column: 'id', required: true, clearable: false },
+    title: { kind: 'column', table: 'api_requirement', column: 'title', required: false, clearable: false },
+    statement: { kind: 'column', table: 'api_requirement', column: 'statement', required: false, clearable: false },
+    group_name: { kind: 'column', table: 'api_requirement', column: 'group_name', required: false, clearable: true },
+  },
+  '/api/endpoint/remove-api-requirement': {
+    id: { kind: 'column', table: 'api_requirement', column: 'id', required: true, clearable: false },
+  },
+  '/api/endpoint/add-endpoint-handler': {
+    id: { kind: 'column', table: 'endpoint_handler', column: 'id', required: true, clearable: false },
+    title: { kind: 'column', table: 'endpoint_handler', column: 'title', required: true, clearable: false },
+    endpoint_id: { kind: 'column', table: 'endpoint_handler', column: 'endpoint_id', required: true, clearable: false },
+    description: { kind: 'column', table: 'endpoint_handler', column: 'description', required: true, clearable: false },
+    file: { kind: 'column', table: 'endpoint_handler', column: 'file', required: false, clearable: false },
+    meets: { kind: 'ids', description: 'The standard rules it follows.', required: false, clearable: false },
+    packages: { kind: 'texts', description: 'The packages it uses, each listed in one of the product\'s package.json files.', required: false, clearable: false },
+  },
+  '/api/endpoint/change-endpoint-handler': {
+    id: { kind: 'column', table: 'endpoint_handler', column: 'id', required: true, clearable: false },
+    title: { kind: 'column', table: 'endpoint_handler', column: 'title', required: false, clearable: false },
+    description: { kind: 'column', table: 'endpoint_handler', column: 'description', required: false, clearable: false },
+    file: { kind: 'column', table: 'endpoint_handler', column: 'file', required: false, clearable: true },
+    meets: { kind: 'ids', description: 'The standard rules it follows.', required: false, clearable: false },
+    packages: { kind: 'texts', description: 'The packages it uses.', required: false, clearable: false },
+  },
+  '/api/endpoint/remove-endpoint-handler': {
+    id: { kind: 'column', table: 'endpoint_handler', column: 'id', required: true, clearable: false },
+  },
+  '/api/endpoint/add-endpoint-test': {
+    id: { kind: 'column', table: 'endpoint_test', column: 'id', required: true, clearable: false },
+    title: { kind: 'column', table: 'endpoint_test', column: 'title', required: true, clearable: false },
+    api_requirement_id: { kind: 'column', table: 'endpoint_test', column: 'api_requirement_id', required: true, clearable: false },
+    level: { kind: 'column', table: 'endpoint_test', column: 'level', required: true, clearable: false },
+    state: { kind: 'column', table: 'endpoint_test', column: 'state', required: true, clearable: false },
+    when: { kind: 'column', table: 'endpoint_test', column: 'when', required: true, clearable: false },
+    then: { kind: 'column', table: 'endpoint_test', column: 'then', required: true, clearable: false },
+    file: { kind: 'column', table: 'endpoint_test', column: 'file', required: false, clearable: false },
+    manual_reason: { kind: 'column', table: 'endpoint_test', column: 'manual_reason', required: false, clearable: false },
+    size: { kind: 'column', table: 'endpoint_test', column: 'size', required: false, clearable: false },
+    smoke: { kind: 'column', table: 'endpoint_test', column: 'smoke', required: false, clearable: false },
+    external: { kind: 'column', table: 'endpoint_test', column: 'external', required: false, clearable: false },
+    notes: { kind: 'column', table: 'endpoint_test', column: 'notes', required: false, clearable: false },
+    starts_from: { kind: 'ids', description: 'The test data sets it starts from.', required: false, clearable: false },
+  },
+  '/api/endpoint/change-endpoint-test': {
+    id: { kind: 'column', table: 'endpoint_test', column: 'id', required: true, clearable: false },
+    title: { kind: 'column', table: 'endpoint_test', column: 'title', required: false, clearable: false },
+    level: { kind: 'column', table: 'endpoint_test', column: 'level', required: false, clearable: false },
+    state: { kind: 'column', table: 'endpoint_test', column: 'state', required: false, clearable: false },
+    when: { kind: 'column', table: 'endpoint_test', column: 'when', required: false, clearable: false },
+    then: { kind: 'column', table: 'endpoint_test', column: 'then', required: false, clearable: false },
+    file: { kind: 'column', table: 'endpoint_test', column: 'file', required: false, clearable: true },
+    manual_reason: { kind: 'column', table: 'endpoint_test', column: 'manual_reason', required: false, clearable: true },
+    size: { kind: 'column', table: 'endpoint_test', column: 'size', required: false, clearable: true },
+    smoke: { kind: 'column', table: 'endpoint_test', column: 'smoke', required: false, clearable: true },
+    external: { kind: 'column', table: 'endpoint_test', column: 'external', required: false, clearable: true },
+    notes: { kind: 'column', table: 'endpoint_test', column: 'notes', required: false, clearable: true },
+    starts_from: { kind: 'ids', description: 'The test data sets it starts from.', required: false, clearable: false },
+  },
+  '/api/endpoint/remove-endpoint-test': {
+    id: { kind: 'column', table: 'endpoint_test', column: 'id', required: true, clearable: false },
+  },
+} as const satisfies Record<string, InputFields>;

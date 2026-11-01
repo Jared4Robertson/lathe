@@ -6,13 +6,13 @@ import { REMOVE_TERM_IDENTITY } from './identities.generated.ts';
 /** The term to remove. */
 export type RemoveTerm = { id: string };
 
-export const REMOVE_TERM: CommandDefinition<RemoveTerm> = {
+export const REMOVE_TERM = {
   ...REMOVE_TERM_IDENTITY,
   input: {
     id: column('term', 'id', 'required'),
   },
   handler: removeTerm,
-};
+} satisfies CommandDefinition<RemoveTerm>;
 
 /** Removes the term from its domain. */
 export function removeTerm(tx: Transaction, input: RemoveTerm): void {

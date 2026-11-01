@@ -3,15 +3,15 @@ import type { ValueObjectKind } from '../../../../lathe/src/authoring/value-obje
 import type { ValueObjectPage } from '../../../../lathe/src/authoring/value-object/read-model';
 import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
-import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
+import { addInput, addOrChangeFields, changeInput, CommandForm, draftOf, emptyDraft, Fields, formFields, LONG, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
 import { AddMenu } from '../../edit/AddMenu';
-import { useWriter, type Writer } from '../../edit/write';
+import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendValueObject, type ValueObjectCommands, type ValueObjectRoute } from './commands';
+import { VALUE_OBJECT_FIELDS } from './fields.generated';
 import { useNextValueObjectId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -27,52 +27,25 @@ import { kindWord } from '../../platform/meta-model/reads';
 
 type Inside = Exclude<ValueObjectKind, 'value_object'>;
 
-/** The columns of a field the form takes, in the command's order. */
-const FIELD_COLUMNS = ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'];
-
 /** The records of the product of a kind, as choices. */
 const choices = (index: RecordIndex, product: string, kind: string): Choice[] =>
   [...index.byId.values()].filter((r) => r.kind === kind && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
-/** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order; packages are one per line. */
+/** The fields each kind's Add and Change take, from their inputs; the hints add long text and the choices. */
 function fieldsOf(index: RecordIndex, product: string, kind: ValueObjectKind, adding: boolean): FieldSpec[] {
-  const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
+  const F = VALUE_OBJECT_FIELDS;
   switch (kind) {
     case 'value_object':
-      return [
-        ...id('value_object'),
-        { field: 'title', column: 'title', table: 'value_object' },
-        { field: 'description', column: 'description', table: 'value_object', long: true },
-        { field: 'fields', label: 'Fields', description: 'Its fields, in order. The list replaces its fields.', table: 'value_object_field', columns: FIELD_COLUMNS },
-      ];
+      // A value object has no parent column to leave out: its ID names its product.
+      return adding ? formFields(F['/api/value-object/add-value-object'], [], { description: LONG }) : formFields(F['/api/value-object/change-value-object'], ['id'], { description: LONG });
     case 'constraint':
-      return [...id('constraint'), { field: 'title', column: 'title', table: 'constraint' }, { field: 'statement', column: 'statement', table: 'constraint', long: true }];
+      return addOrChangeFields(adding, F['/api/value-object/add-constraint'], 'value_object_id', F['/api/value-object/change-constraint'], { statement: LONG });
     case 'value_type':
-      return [
-        ...id('value_type'),
-        { field: 'title', column: 'title', table: 'value_type' },
-        { field: 'file', column: 'file', table: 'value_type' },
-        { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: choices(index, product, 'standard_rule') },
-        { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files, one per line.', texts: true },
-      ];
-    case 'constraint_test': {
-      const table = 'constraint_test';
-      return [
-        ...id(table),
-        { field: 'title', column: 'title', table },
-        { field: 'accepts', column: 'accepts', table, long: true },
-        { field: 'refuses', column: 'refuses', table, long: true },
-        { field: 'level', column: 'level', table },
-        { field: 'state', column: 'state', table },
-        { field: 'file', column: 'file', table },
-        { field: 'manual_reason', column: 'manual_reason', table, long: true },
-        { field: 'size', column: 'size', table },
-        { field: 'smoke', column: 'smoke', table },
-        { field: 'external', column: 'external', table },
-        { field: 'notes', column: 'notes', table, long: true },
-        { field: 'starts_from', label: 'Starts from', description: 'The test data sets it starts from.', many: choices(index, product, 'test_data_set') },
-      ];
-    }
+      return addOrChangeFields(adding, F['/api/value-object/add-value-type'], 'value_object_id', F['/api/value-object/change-value-type'], { meets: { choices: choices(index, product, 'standard_rule') } });
+    case 'constraint_test':
+      return addOrChangeFields(adding, F['/api/value-object/add-constraint-test'], 'constraint_id', F['/api/value-object/change-constraint-test'], {
+        accepts: LONG, refuses: LONG, manual_reason: LONG, notes: LONG, starts_from: { choices: choices(index, product, 'test_data_set') },
+      });
   }
 }
 
@@ -96,23 +69,23 @@ function currentOf(page: ValueObjectPage, kind: ValueObjectKind, id: string): Re
   }
 }
 
-/** Each kind's Change command, and the fields it may clear with null. */
-const CHANGE: Record<ValueObjectKind, { route: ValueObjectRoute; clearable: readonly string[] }> = {
-  value_object: { route: '/api/value-object/change-value-object', clearable: [] },
-  constraint: { route: '/api/value-object/change-constraint', clearable: [] },
-  value_type: { route: '/api/value-object/change-value-type', clearable: ['file'] },
-  constraint_test: { route: '/api/value-object/change-constraint-test', clearable: ['file', 'manual_reason', 'size', 'smoke', 'external', 'notes'] },
+/** Each kind's Change command. */
+const CHANGE: Record<ValueObjectKind, CommandRoute> = {
+  value_object: '/api/value-object/change-value-object',
+  constraint: '/api/value-object/change-constraint',
+  value_type: '/api/value-object/change-value-type',
+  constraint_test: '/api/value-object/change-constraint-test',
 };
 
 /** Each kind's Add command, and the field that names its parent. */
-const ADD: Record<Inside, { route: ValueObjectRoute; parent: string }> = {
+const ADD: Record<Inside, { route: CommandRoute; parent: string }> = {
   constraint: { route: '/api/value-object/add-constraint', parent: 'value_object_id' },
   value_type: { route: '/api/value-object/add-value-type', parent: 'value_object_id' },
   constraint_test: { route: '/api/value-object/add-constraint-test', parent: 'constraint_id' },
 };
 
 /** Each kind's Remove command. */
-const REMOVE: Record<ValueObjectKind, ValueObjectRoute> = {
+const REMOVE: Record<ValueObjectKind, CommandRoute> = {
   value_object: '/api/value-object/remove-value-object',
   constraint: '/api/value-object/remove-constraint',
   value_type: '/api/value-object/remove-value-type',
@@ -120,7 +93,7 @@ const REMOVE: Record<ValueObjectKind, ValueObjectRoute> = {
 };
 
 /** Sends a command whose input this form has built to its kind's shape: the route names the type it takes. */
-const send = (writer: Writer, route: ValueObjectRoute, input: Record<string, unknown>): Promise<WriteAnswer> => sendValueObject(writer, route, input as unknown as ValueObjectCommands[typeof route]);
+const send = (writer: Writer, route: CommandRoute, input: Record<string, unknown>): Promise<WriteAnswer> => writer.command(route, input as unknown as CommandInputs[typeof route]);
 
 /** The kinds added under a record of each kind, inside the value object: one of a kind it holds one of only while it has none. */
 function addedUnder(page: ValueObjectPage, kind: ValueObjectKind, id: string): Inside[] {
@@ -164,9 +137,9 @@ export function ValueObjectEditor({ index, page, children }: { index: RecordInde
     const specs = fieldsOf(index, product, kind, false);
     const current = currentOf(page, kind, id);
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, specs, draft, current, { id }, CHANGE[kind].clearable);
+      const input = changeInput(index, specs, draft, current, { id });
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
-      const answer = await send(writer, CHANGE[kind].route, input);
+      const answer = await send(writer, CHANGE[kind], input);
       if (answer.ok) { announce(`Saved ${id}`); back(); }
       return answer;
     };
@@ -182,7 +155,7 @@ export function ValueObjectEditor({ index, page, children }: { index: RecordInde
       </div>
       {mode.mode === 'remove' && (
         <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={goesWith(page, kind, id)} then={addressOf(parentOf(index, page, kind, id))} onCancel={back}
-          remove={() => sendValueObject(writer, REMOVE[kind], { id })} />
+          remove={() => writer.command(REMOVE[kind], { id })} />
       )}
       {children}
     </>

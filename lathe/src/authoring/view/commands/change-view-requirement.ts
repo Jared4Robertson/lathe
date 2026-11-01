@@ -8,7 +8,7 @@ import { CHANGE_VIEW_REQUIREMENT_IDENTITY } from './identities.generated.ts';
 /** The view requirement's changes: a column given is set, null clears an optional one. */
 export type ChangeViewRequirement = Pick<ViewRequirementRow, 'id'> & { title?: ViewRequirementRow['title']; statement?: ViewRequirementRow['statement']; group_name?: ViewRequirementRow['group_name'] | null };
 
-export const CHANGE_VIEW_REQUIREMENT: CommandDefinition<ChangeViewRequirement> = {
+export const CHANGE_VIEW_REQUIREMENT = {
   ...CHANGE_VIEW_REQUIREMENT_IDENTITY,
   input: {
     id: column('view_requirement', 'id', 'required'),
@@ -17,7 +17,7 @@ export const CHANGE_VIEW_REQUIREMENT: CommandDefinition<ChangeViewRequirement> =
     group_name: column('view_requirement', 'group_name', 'clearable'),
   },
   handler: changeViewRequirement,
-};
+} satisfies CommandDefinition<ChangeViewRequirement>;
 
 /** Changes the view requirement's columns. */
 export function changeViewRequirement(tx: Transaction, input: ChangeViewRequirement): void {

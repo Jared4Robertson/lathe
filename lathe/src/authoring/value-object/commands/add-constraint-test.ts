@@ -8,7 +8,7 @@ import { ADD_CONSTRAINT_TEST_IDENTITY } from './identities.generated.ts';
 
 export type AddConstraintTest = Pick<ConstraintTestRow, 'id' | 'title' | 'constraint_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'accepts' | 'refuses' | 'notes'> & { starts_from?: string[] };
 
-export const ADD_CONSTRAINT_TEST: CommandDefinition<AddConstraintTest> = {
+export const ADD_CONSTRAINT_TEST = {
   ...ADD_CONSTRAINT_TEST_IDENTITY,
   input: {
     id: column('constraint_test', 'id', 'required'),
@@ -27,7 +27,7 @@ export const ADD_CONSTRAINT_TEST: CommandDefinition<AddConstraintTest> = {
     starts_from: ids('The test data sets it starts from.', 'optional'),
   },
   handler: addConstraintTest,
-};
+} satisfies CommandDefinition<AddConstraintTest>;
 
 /** Adds the test to its constraint, which has none yet. */
 export function addConstraintTest(tx: Transaction, input: AddConstraintTest): void {

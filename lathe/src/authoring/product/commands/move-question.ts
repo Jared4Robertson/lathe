@@ -9,7 +9,7 @@ import { MOVE_QUESTION_IDENTITY } from './identities.generated.ts';
 /** The question and where it moves to: its product, or one of its domains. */
 export type MoveQuestion = Pick<QuestionRow, 'id' | 'product_id' | 'domain_id'>;
 
-export const MOVE_QUESTION: CommandDefinition<MoveQuestion> = {
+export const MOVE_QUESTION = {
   ...MOVE_QUESTION_IDENTITY,
   input: {
     id: column('question', 'id', 'required'),
@@ -17,7 +17,7 @@ export const MOVE_QUESTION: CommandDefinition<MoveQuestion> = {
     domain_id: column('question', 'domain_id', 'optional'),
   },
   handler: moveQuestion,
-};
+} satisfies CommandDefinition<MoveQuestion>;
 
 /** Puts the question under the product or the other domain; what it is about stays. */
 export function moveQuestion(tx: Transaction, input: MoveQuestion): void {

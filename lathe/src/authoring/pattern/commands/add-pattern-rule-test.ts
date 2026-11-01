@@ -8,7 +8,7 @@ import { ADD_PATTERN_RULE_TEST_IDENTITY } from './identities.generated.ts';
 
 export type AddPatternRuleTest = Pick<PatternRuleTestRow, 'id' | 'title' | 'pattern_rule_id' | 'domain_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'when' | 'then' | 'notes'> & { starts_from?: string[] };
 
-export const ADD_PATTERN_RULE_TEST: CommandDefinition<AddPatternRuleTest> = {
+export const ADD_PATTERN_RULE_TEST = {
   ...ADD_PATTERN_RULE_TEST_IDENTITY,
   input: {
     id: column('pattern_rule_test', 'id', 'required'),
@@ -28,7 +28,7 @@ export const ADD_PATTERN_RULE_TEST: CommandDefinition<AddPatternRuleTest> = {
     starts_from: ids('The test data sets it starts from.', 'optional'),
   },
   handler: addPatternRuleTest,
-};
+} satisfies CommandDefinition<AddPatternRuleTest>;
 
 export function addPatternRuleTest(tx: Transaction, input: AddPatternRuleTest): void {
   const patterns = new PatternRepository(tx);

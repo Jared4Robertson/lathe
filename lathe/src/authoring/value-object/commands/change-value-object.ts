@@ -9,7 +9,7 @@ import { CHANGE_VALUE_OBJECT_IDENTITY } from './identities.generated.ts';
 /** The value object's changes: a column given is set; fields, when given, replace the list. */
 export type ChangeValueObject = Pick<ValueObjectRow, 'id'> & { title?: ValueObjectRow['title']; description?: ValueObjectRow['description']; fields?: ValueObjectField[] };
 
-export const CHANGE_VALUE_OBJECT: CommandDefinition<ChangeValueObject> = {
+export const CHANGE_VALUE_OBJECT = {
   ...CHANGE_VALUE_OBJECT_IDENTITY,
   input: {
     id: column('value_object', 'id', 'required'),
@@ -18,7 +18,7 @@ export const CHANGE_VALUE_OBJECT: CommandDefinition<ChangeValueObject> = {
     fields: parts('value_object_field', FIELD_COLUMNS, "Its fields in order, each a name, what it means, exactly one type (a basic type, another value object or an aggregate), whether it is required, and its column's name and an example when they help. Replaces the list.", 'optional'),
   },
   handler: changeValueObject,
-};
+} satisfies CommandDefinition<ChangeValueObject>;
 
 /** Changes the value object's columns and fields. */
 export function changeValueObject(tx: Transaction, input: ChangeValueObject): void {

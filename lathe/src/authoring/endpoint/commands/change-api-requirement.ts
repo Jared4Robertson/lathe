@@ -8,7 +8,7 @@ import { CHANGE_API_REQUIREMENT_IDENTITY } from './identities.generated.ts';
 /** The API requirement's changes: a column given is set, null clears an optional one. */
 export type ChangeApiRequirement = Pick<ApiRequirementRow, 'id'> & { title?: ApiRequirementRow['title']; statement?: ApiRequirementRow['statement']; group_name?: ApiRequirementRow['group_name'] | null };
 
-export const CHANGE_API_REQUIREMENT: CommandDefinition<ChangeApiRequirement> = {
+export const CHANGE_API_REQUIREMENT = {
   ...CHANGE_API_REQUIREMENT_IDENTITY,
   input: {
     id: column('api_requirement', 'id', 'required'),
@@ -17,7 +17,7 @@ export const CHANGE_API_REQUIREMENT: CommandDefinition<ChangeApiRequirement> = {
     group_name: column('api_requirement', 'group_name', 'clearable'),
   },
   handler: changeApiRequirement,
-};
+} satisfies CommandDefinition<ChangeApiRequirement>;
 
 /** Changes the API requirement's columns. */
 export function changeApiRequirement(tx: Transaction, input: ChangeApiRequirement): void {

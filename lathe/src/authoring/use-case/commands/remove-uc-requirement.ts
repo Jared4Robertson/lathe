@@ -6,13 +6,13 @@ import { REMOVE_UC_REQUIREMENT_IDENTITY } from './identities.generated.ts';
 /** The requirement to remove. */
 export type RemoveUcRequirement = { id: string };
 
-export const REMOVE_UC_REQUIREMENT: CommandDefinition<RemoveUcRequirement> = {
+export const REMOVE_UC_REQUIREMENT = {
   ...REMOVE_UC_REQUIREMENT_IDENTITY,
   input: {
     id: column('uc_requirement', 'id', 'required'),
   },
   handler: removeUcRequirement,
-};
+} satisfies CommandDefinition<RemoveUcRequirement>;
 
 /** Removes the requirement and its tests from its use case. */
 export function removeUcRequirement(tx: Transaction, input: RemoveUcRequirement): void {

@@ -7,7 +7,7 @@ import { ADD_POLICY_IDENTITY } from './identities.generated.ts';
 
 export type AddPolicy = Pick<PolicyRow, 'id' | 'title' | 'command_id' | 'statement'> & { hears?: string };
 
-export const ADD_POLICY: CommandDefinition<AddPolicy> = {
+export const ADD_POLICY = {
   ...ADD_POLICY_IDENTITY,
   input: {
     id: column('policy', 'id', 'required'),
@@ -17,7 +17,7 @@ export const ADD_POLICY: CommandDefinition<AddPolicy> = {
     hears: id('The event it hears: of its own domain, or another domain\'s published one.', 'optional'),
   },
   handler: addPolicy,
-};
+} satisfies CommandDefinition<AddPolicy>;
 
 export function addPolicy(tx: Transaction, input: AddPolicy): void {
   const commands = new CommandRepository(tx);

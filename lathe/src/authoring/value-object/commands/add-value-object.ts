@@ -8,7 +8,7 @@ import { ADD_VALUE_OBJECT_IDENTITY } from './identities.generated.ts';
 
 export type AddValueObject = Pick<ValueObjectRow, 'id' | 'title' | 'description'> & { fields?: ValueObjectField[] };
 
-export const ADD_VALUE_OBJECT: CommandDefinition<AddValueObject> = {
+export const ADD_VALUE_OBJECT = {
   ...ADD_VALUE_OBJECT_IDENTITY,
   input: {
     id: column('value_object', 'id', 'required'),
@@ -17,7 +17,7 @@ export const ADD_VALUE_OBJECT: CommandDefinition<AddValueObject> = {
     fields: parts('value_object_field', FIELD_COLUMNS, "Its fields in order, each a name, what it means, exactly one type (a basic type, another value object or an aggregate), whether it is required, and its column's name and an example when they help.", 'optional'),
   },
   handler: addValueObject,
-};
+} satisfies CommandDefinition<AddValueObject>;
 
 export function addValueObject(tx: Transaction, input: AddValueObject): void {
   const valueObjects = new ValueObjectRepository(tx);

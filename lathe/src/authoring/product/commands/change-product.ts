@@ -9,7 +9,7 @@ import { CHANGE_PRODUCT_IDENTITY } from './identities.generated.ts';
 /** The product's changes: a column given is set, null clears an optional one; roles, when given, replace the list. */
 export type ChangeProduct = Pick<ProductRow, 'id'> & { title?: string; description?: string; icon?: string | null; color?: string | null; notes?: string | null; roles?: RoleInput[] };
 
-export const CHANGE_PRODUCT: CommandDefinition<ChangeProduct> = {
+export const CHANGE_PRODUCT = {
   ...CHANGE_PRODUCT_IDENTITY,
   input: {
     id: column('product', 'id', 'required'),
@@ -21,7 +21,7 @@ export const CHANGE_PRODUCT: CommandDefinition<ChangeProduct> = {
     roles: parts('role', ['name', 'description'], 'The roles its records name, such as Owner or Librarian, each with its name and description. Replaces the list.', 'optional'),
   },
   handler: changeProduct,
-};
+} satisfies CommandDefinition<ChangeProduct>;
 
 /** Changes the product's own columns and roles. */
 export function changeProduct(tx: Transaction, input: ChangeProduct): void {

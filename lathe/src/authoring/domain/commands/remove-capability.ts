@@ -6,13 +6,13 @@ import { REMOVE_CAPABILITY_IDENTITY } from './identities.generated.ts';
 /** The capability to remove. */
 export type RemoveCapability = { id: string };
 
-export const REMOVE_CAPABILITY: CommandDefinition<RemoveCapability> = {
+export const REMOVE_CAPABILITY = {
   ...REMOVE_CAPABILITY_IDENTITY,
   input: {
     id: column('capability', 'id', 'required'),
   },
   handler: removeCapability,
-};
+} satisfies CommandDefinition<RemoveCapability>;
 
 /** Removes the capability from its domain. */
 export function removeCapability(tx: Transaction, input: RemoveCapability): void {

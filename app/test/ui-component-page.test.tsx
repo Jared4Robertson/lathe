@@ -2,8 +2,6 @@ import type { ServedData } from './read-view';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { UI_COMPONENT_COMMANDS } from '../../lathe/src/authoring/ui-component/commands/index';
-import type { UiComponentCommands } from '../src/authoring/ui-component/commands';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows } from './fixtures/load';
 import { modelWorkspace } from './fixtures/model';
@@ -25,11 +23,6 @@ describe('LA-V151-R01-T01 a UI component is read through the UI component aggreg
     expect(requests).toContain('GET /api/ui-component/get-ui-component?id=P-UI01');
     expect(within(await findSection('Traceability')).getByRole('link', { name: /^P-V01Loan desk/ })).toBeInTheDocument();
     expect(within(section(/^Packages/)).getByText('react')).toBeInTheDocument();
-  });
-
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof UiComponentCommands)[] = ['/api/ui-component/add-ui-component', '/api/ui-component/change-ui-component', '/api/ui-component/remove-ui-component'];
-    expect([...routes].sort()).toEqual(UI_COMPONENT_COMMANDS.map((c) => c.route).sort());
   });
 });
 

@@ -8,7 +8,7 @@ import { SET_LIMITS_IDENTITY } from './identities.generated.ts';
 /** The product and both its limits. */
 export type SetLimits = ProductSettingRow;
 
-export const SET_LIMITS: CommandDefinition<SetLimits> = {
+export const SET_LIMITS = {
   ...SET_LIMITS_IDENTITY,
   input: {
     product_id: column('product_setting', 'product_id', 'required'),
@@ -16,7 +16,7 @@ export const SET_LIMITS: CommandDefinition<SetLimits> = {
     max_entities_per_aggregate: column('product_setting', 'max_entities_per_aggregate', 'required'),
   },
   handler: setLimits,
-};
+} satisfies CommandDefinition<SetLimits>;
 
 /** Sets the product's settings, adding its one row (LA-CHK-INV05) the first time. */
 export function setLimits(tx: Transaction, input: SetLimits): void {

@@ -7,7 +7,7 @@ import { ADD_CONSTRAINT_IDENTITY } from './identities.generated.ts';
 /** A new constraint. */
 export type AddConstraint = Pick<ConstraintRow, 'id' | 'title' | 'value_object_id' | 'statement'>;
 
-export const ADD_CONSTRAINT: CommandDefinition<AddConstraint> = {
+export const ADD_CONSTRAINT = {
   ...ADD_CONSTRAINT_IDENTITY,
   input: {
     id: column('constraint', 'id', 'required'),
@@ -16,7 +16,7 @@ export const ADD_CONSTRAINT: CommandDefinition<AddConstraint> = {
     statement: column('constraint', 'statement', 'required'),
   },
   handler: addConstraint,
-};
+} satisfies CommandDefinition<AddConstraint>;
 
 /** Adds the constraint to its value object. */
 export function addConstraint(tx: Transaction, input: AddConstraint): void {

@@ -7,7 +7,7 @@ import { ADD_CAPABILITY_IDENTITY } from './identities.generated.ts';
 
 export type AddCapability = Pick<CapabilityRow, 'id' | 'title' | 'domain_id' | 'position' | 'description'> & { serves?: string[] };
 
-export const ADD_CAPABILITY: CommandDefinition<AddCapability> = {
+export const ADD_CAPABILITY = {
   ...ADD_CAPABILITY_IDENTITY,
   input: {
     id: column('capability', 'id', 'required'),
@@ -18,7 +18,7 @@ export const ADD_CAPABILITY: CommandDefinition<AddCapability> = {
     serves: ids('The business outcomes it serves.', 'optional'),
   },
   handler: addCapability,
-};
+} satisfies CommandDefinition<AddCapability>;
 
 export function addCapability(tx: Transaction, input: AddCapability): void {
   const domains = new DomainRepository(tx);

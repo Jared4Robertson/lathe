@@ -6,13 +6,13 @@ import { REMOVE_INTEGRATION_TEST_IDENTITY } from './identities.generated.ts';
 /** The integration test to remove. */
 export type RemoveIntegrationTest = { id: string };
 
-export const REMOVE_INTEGRATION_TEST: CommandDefinition<RemoveIntegrationTest> = {
+export const REMOVE_INTEGRATION_TEST = {
   ...REMOVE_INTEGRATION_TEST_IDENTITY,
   input: {
     id: column('integration_test', 'id', 'required'),
   },
   handler: removeIntegrationTest,
-};
+} satisfies CommandDefinition<RemoveIntegrationTest>;
 
 /** Removes the integration test from its integration. */
 export function removeIntegrationTest(tx: Transaction, input: RemoveIntegrationTest): void {

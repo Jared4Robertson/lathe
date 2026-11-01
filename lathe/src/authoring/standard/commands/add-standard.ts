@@ -8,7 +8,7 @@ import { ADD_STANDARD_IDENTITY } from './identities.generated.ts';
 /** A new standard: its row. */
 export type AddStandard = Pick<StandardRow, 'id' | 'title' | 'product_id' | 'description'>;
 
-export const ADD_STANDARD: CommandDefinition<AddStandard> = {
+export const ADD_STANDARD = {
   ...ADD_STANDARD_IDENTITY,
   input: {
     id: column('standard', 'id', 'required'),
@@ -17,7 +17,7 @@ export const ADD_STANDARD: CommandDefinition<AddStandard> = {
     description: column('standard', 'description', 'required'),
   },
   handler: addStandard,
-};
+} satisfies CommandDefinition<AddStandard>;
 
 /** Adds the standard, whole and new. */
 export function addStandard(tx: Transaction, input: AddStandard): void {

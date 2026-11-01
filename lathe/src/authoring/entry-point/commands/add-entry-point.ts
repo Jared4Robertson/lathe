@@ -6,7 +6,7 @@ import { ADD_ENTRY_POINT_IDENTITY } from './identities.generated.ts';
 
 export type AddEntryPoint = Pick<EntryPointRow, 'id' | 'title' | 'domain_id' | 'file' | 'description'> & { packages?: string[]; meets?: string[] };
 
-export const ADD_ENTRY_POINT: CommandDefinition<AddEntryPoint> = {
+export const ADD_ENTRY_POINT = {
   ...ADD_ENTRY_POINT_IDENTITY,
   input: {
     id: column('entry_point', 'id', 'required'),
@@ -18,7 +18,7 @@ export const ADD_ENTRY_POINT: CommandDefinition<AddEntryPoint> = {
     meets: ids('The standard rules it meets.', 'optional'),
   },
   handler: addEntryPoint,
-};
+} satisfies CommandDefinition<AddEntryPoint>;
 
 /** Adds the entry point, whole and new. */
 export function addEntryPoint(tx: Transaction, input: AddEntryPoint): void {

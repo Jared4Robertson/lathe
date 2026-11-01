@@ -7,7 +7,7 @@ import { ADD_TERM_IDENTITY } from './identities.generated.ts';
 
 export type AddTerm = Pick<TermRow, 'id' | 'title' | 'domain_id' | 'meaning' | 'group_name'> & { builds_on?: string[] };
 
-export const ADD_TERM: CommandDefinition<AddTerm> = {
+export const ADD_TERM = {
   ...ADD_TERM_IDENTITY,
   input: {
     id: column('term', 'id', 'required'),
@@ -18,7 +18,7 @@ export const ADD_TERM: CommandDefinition<AddTerm> = {
     builds_on: ids('The terms its meaning uses, of any domain of the product, each defined without it.', 'optional'),
   },
   handler: addTerm,
-};
+} satisfies CommandDefinition<AddTerm>;
 
 export function addTerm(tx: Transaction, input: AddTerm): void {
   const domains = new DomainRepository(tx);

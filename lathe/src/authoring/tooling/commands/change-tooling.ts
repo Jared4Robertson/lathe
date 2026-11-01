@@ -8,7 +8,7 @@ import { CHANGE_TOOLING_IDENTITY } from './identities.generated.ts';
 /** The tooling record's changes: a column given is set; packages and meets, when given, replace the list. */
 export type ChangeTooling = Pick<ToolingRow, 'id'> & { title?: string; file?: string | null; packages?: string[]; meets?: string[] };
 
-export const CHANGE_TOOLING: CommandDefinition<ChangeTooling> = {
+export const CHANGE_TOOLING = {
   ...CHANGE_TOOLING_IDENTITY,
   input: {
     id: column('tooling', 'id', 'required'),
@@ -18,7 +18,7 @@ export const CHANGE_TOOLING: CommandDefinition<ChangeTooling> = {
     meets: ids('The standard rules it meets. Replaces the list.', 'optional'),
   },
   handler: changeTooling,
-};
+} satisfies CommandDefinition<ChangeTooling>;
 
 /** Changes the tooling record's own columns and lists. */
 export function changeTooling(tx: Transaction, input: ChangeTooling): void {

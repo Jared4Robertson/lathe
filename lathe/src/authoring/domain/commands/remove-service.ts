@@ -6,13 +6,13 @@ import { REMOVE_SERVICE_IDENTITY } from './identities.generated.ts';
 /** The service to remove. */
 export type RemoveService = { id: string };
 
-export const REMOVE_SERVICE: CommandDefinition<RemoveService> = {
+export const REMOVE_SERVICE = {
   ...REMOVE_SERVICE_IDENTITY,
   input: {
     id: column('service', 'id', 'required'),
   },
   handler: removeService,
-};
+} satisfies CommandDefinition<RemoveService>;
 
 /** Removes the service from its domain service. */
 export function removeService(tx: Transaction, input: RemoveService): void {

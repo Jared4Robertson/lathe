@@ -2,8 +2,6 @@ import type { ServedData } from './read-view';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { CHECK_COMMANDS } from '../../lathe/src/checking/check/commands/index';
-import type { CheckCommands } from '../src/checking/check/commands';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
@@ -30,11 +28,6 @@ describe('LA-V03-R02-T01 a check is read through the Check aggregate\'s own quer
     expect(requests).toContain('GET /api/check/get-check?name=domain-without-owner');
     expect(within(card()).getByText("This product's own checks")).toBeInTheDocument();
     expect(within(card()).getByText("1st of the product's own, after Lathe's")).toBeInTheDocument();
-  });
-
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof CheckCommands)[] = ['/api/check/add-check', '/api/check/change-check', '/api/check/remove-check'];
-    expect([...routes].sort()).toEqual(CHECK_COMMANDS.map((c) => c.route).sort());
   });
 });
 

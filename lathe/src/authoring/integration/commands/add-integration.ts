@@ -8,7 +8,7 @@ import { ADD_INTEGRATION_IDENTITY } from './identities.generated.ts';
 /** A new integration. */
 export type AddIntegration = Pick<IntegrationRow, 'id' | 'title' | 'description' | 'system'>;
 
-export const ADD_INTEGRATION: CommandDefinition<AddIntegration> = {
+export const ADD_INTEGRATION = {
   ...ADD_INTEGRATION_IDENTITY,
   input: {
     id: column('integration', 'id', 'required'),
@@ -17,7 +17,7 @@ export const ADD_INTEGRATION: CommandDefinition<AddIntegration> = {
     system: column('integration', 'system', 'optional'),
   },
   handler: addIntegration,
-};
+} satisfies CommandDefinition<AddIntegration>;
 
 /** Adds the integration, new and whole. */
 export function addIntegration(tx: Transaction, input: AddIntegration): void {

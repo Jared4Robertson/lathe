@@ -6,13 +6,13 @@ import { REMOVE_QUERY_IDENTITY } from './identities.generated.ts';
 /** The query to remove. */
 export type RemoveQuery = { id: string };
 
-export const REMOVE_QUERY: CommandDefinition<RemoveQuery> = {
+export const REMOVE_QUERY = {
   ...REMOVE_QUERY_IDENTITY,
   input: {
     id: column('query', 'id', 'required'),
   },
   handler: removeQuery,
-};
+} satisfies CommandDefinition<RemoveQuery>;
 
 /** Removes the query and its handler from their read model. */
 export function removeQuery(tx: Transaction, input: RemoveQuery): void {

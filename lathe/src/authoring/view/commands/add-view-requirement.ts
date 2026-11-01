@@ -7,7 +7,7 @@ import { ADD_VIEW_REQUIREMENT_IDENTITY } from './identities.generated.ts';
 /** A new view requirement. */
 export type AddViewRequirement = Pick<ViewRequirementRow, 'id' | 'title' | 'view_id' | 'statement' | 'group_name'>;
 
-export const ADD_VIEW_REQUIREMENT: CommandDefinition<AddViewRequirement> = {
+export const ADD_VIEW_REQUIREMENT = {
   ...ADD_VIEW_REQUIREMENT_IDENTITY,
   input: {
     id: column('view_requirement', 'id', 'required'),
@@ -17,7 +17,7 @@ export const ADD_VIEW_REQUIREMENT: CommandDefinition<AddViewRequirement> = {
     group_name: column('view_requirement', 'group_name', 'optional'),
   },
   handler: addViewRequirement,
-};
+} satisfies CommandDefinition<AddViewRequirement>;
 
 export function addViewRequirement(tx: Transaction, input: AddViewRequirement): void {
   const views = new ViewRepository(tx);

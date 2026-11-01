@@ -8,7 +8,7 @@ import { CHANGE_ADAPTER_IDENTITY } from './identities.generated.ts';
 /** The adapter's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeAdapter = Pick<AdapterRow, 'id'> & { title?: AdapterRow['title']; description?: AdapterRow['description']; file?: AdapterRow['file'] | null; meets?: string[]; packages?: string[] };
 
-export const CHANGE_ADAPTER: CommandDefinition<ChangeAdapter> = {
+export const CHANGE_ADAPTER = {
   ...CHANGE_ADAPTER_IDENTITY,
   input: {
     id: column('adapter', 'id', 'required'),
@@ -19,7 +19,7 @@ export const CHANGE_ADAPTER: CommandDefinition<ChangeAdapter> = {
     packages: texts('The packages it uses. Replaces the list.', 'optional'),
   },
   handler: changeAdapter,
-};
+} satisfies CommandDefinition<ChangeAdapter>;
 
 /** Changes the adapter's columns and links. */
 export function changeAdapter(tx: Transaction, input: ChangeAdapter): void {

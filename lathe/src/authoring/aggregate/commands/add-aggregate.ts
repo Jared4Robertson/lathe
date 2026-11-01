@@ -9,7 +9,7 @@ import { ADD_AGGREGATE_IDENTITY } from './identities.generated.ts';
 /** A new aggregate: its row. */
 export type AddAggregate = Pick<AggregateRow, 'id' | 'title' | 'domain_id' | 'description' | 'identity' | 'notes'>;
 
-export const ADD_AGGREGATE: CommandDefinition<AddAggregate> = {
+export const ADD_AGGREGATE = {
   ...ADD_AGGREGATE_IDENTITY,
   input: {
     id: column('aggregate', 'id', 'required'),
@@ -20,7 +20,7 @@ export const ADD_AGGREGATE: CommandDefinition<AddAggregate> = {
     notes: column('aggregate', 'notes', 'optional'),
   },
   handler: addAggregate,
-};
+} satisfies CommandDefinition<AddAggregate>;
 
 /** Adds the aggregate, whole and new. */
 export function addAggregate(tx: Transaction, input: AddAggregate): void {

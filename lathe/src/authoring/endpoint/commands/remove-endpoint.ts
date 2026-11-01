@@ -6,13 +6,13 @@ import { REMOVE_ENDPOINT_IDENTITY } from './identities.generated.ts';
 /** The endpoint to remove. */
 export type RemoveEndpoint = { id: string };
 
-export const REMOVE_ENDPOINT: CommandDefinition<RemoveEndpoint> = {
+export const REMOVE_ENDPOINT = {
   ...REMOVE_ENDPOINT_IDENTITY,
   input: {
     id: column('endpoint', 'id', 'required'),
   },
   handler: removeEndpoint,
-};
+} satisfies CommandDefinition<RemoveEndpoint>;
 
 /** Removes the endpoint whole. */
 export function removeEndpoint(tx: Transaction, input: RemoveEndpoint): void {

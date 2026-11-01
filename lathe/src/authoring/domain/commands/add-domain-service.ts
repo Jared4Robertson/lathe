@@ -8,7 +8,7 @@ import { ADD_DOMAIN_SERVICE_IDENTITY } from './identities.generated.ts';
 /** A new domain service. */
 export type AddDomainService = Pick<DomainServiceRow, 'id' | 'title' | 'domain_id' | 'statement'>;
 
-export const ADD_DOMAIN_SERVICE: CommandDefinition<AddDomainService> = {
+export const ADD_DOMAIN_SERVICE = {
   ...ADD_DOMAIN_SERVICE_IDENTITY,
   input: {
     id: column('domain_service', 'id', 'required'),
@@ -17,7 +17,7 @@ export const ADD_DOMAIN_SERVICE: CommandDefinition<AddDomainService> = {
     statement: column('domain_service', 'statement', 'required'),
   },
   handler: addDomainService,
-};
+} satisfies CommandDefinition<AddDomainService>;
 
 /** Adds the domain service to its domain. */
 export function addDomainService(tx: Transaction, input: AddDomainService): void {

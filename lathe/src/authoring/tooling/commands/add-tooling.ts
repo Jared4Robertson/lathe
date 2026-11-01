@@ -6,7 +6,7 @@ import { ADD_TOOLING_IDENTITY } from './identities.generated.ts';
 
 export type AddTooling = Pick<ToolingRow, 'id' | 'title' | 'domain_id' | 'file'> & { packages?: string[]; meets?: string[] };
 
-export const ADD_TOOLING: CommandDefinition<AddTooling> = {
+export const ADD_TOOLING = {
   ...ADD_TOOLING_IDENTITY,
   input: {
     id: column('tooling', 'id', 'required'),
@@ -17,7 +17,7 @@ export const ADD_TOOLING: CommandDefinition<AddTooling> = {
     meets: ids('The standard rules it meets.', 'optional'),
   },
   handler: addTooling,
-};
+} satisfies CommandDefinition<AddTooling>;
 
 /** Adds the tooling record, whole and new. */
 export function addTooling(tx: Transaction, input: AddTooling): void {

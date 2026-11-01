@@ -9,7 +9,7 @@ import { CHANGE_DOMAIN_IDENTITY } from './identities.generated.ts';
 /** The domain's changes: a column given is set, null clears an optional one. */
 export type ChangeDomain = Pick<DomainRow, 'id'> & { title?: DomainRow['title']; subdomain_type?: DomainRow['subdomain_type']; description?: DomainRow['description']; notes?: DomainRow['notes'] | null };
 
-export const CHANGE_DOMAIN: CommandDefinition<ChangeDomain> = {
+export const CHANGE_DOMAIN = {
   ...CHANGE_DOMAIN_IDENTITY,
   input: {
     id: column('domain', 'id', 'required'),
@@ -19,7 +19,7 @@ export const CHANGE_DOMAIN: CommandDefinition<ChangeDomain> = {
     notes: column('domain', 'notes', 'clearable'),
   },
   handler: changeDomain,
-};
+} satisfies CommandDefinition<ChangeDomain>;
 
 /** Changes the domain's own columns. */
 export function changeDomain(tx: Transaction, input: ChangeDomain): void {

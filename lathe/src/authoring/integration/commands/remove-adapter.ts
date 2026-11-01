@@ -6,13 +6,13 @@ import { REMOVE_ADAPTER_IDENTITY } from './identities.generated.ts';
 /** The adapter to remove. */
 export type RemoveAdapter = { id: string };
 
-export const REMOVE_ADAPTER: CommandDefinition<RemoveAdapter> = {
+export const REMOVE_ADAPTER = {
   ...REMOVE_ADAPTER_IDENTITY,
   input: {
     id: column('adapter', 'id', 'required'),
   },
   handler: removeAdapter,
-};
+} satisfies CommandDefinition<RemoveAdapter>;
 
 /** Removes the adapter from its integration. */
 export function removeAdapter(tx: Transaction, input: RemoveAdapter): void {

@@ -1,0 +1,108 @@
+// Generated from data/ by `npm run generate`. Do not edit.
+// The read-model commands' inputs, by route, from their definitions: what the editors' forms are drawn from.
+import type { InputFields } from '../../edit/command-form';
+
+export const READ_MODEL_FIELDS = {
+  '/api/read-model/add-read-model': {
+    id: { kind: 'column', table: 'read_model', column: 'id', required: true, clearable: false },
+    title: { kind: 'column', table: 'read_model', column: 'title', required: true, clearable: false },
+    domain_id: { kind: 'column', table: 'read_model', column: 'domain_id', required: true, clearable: false },
+    description: { kind: 'column', table: 'read_model', column: 'description', required: true, clearable: false },
+    fields: { kind: 'parts', table: 'read_model_field', columns: ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'], description: 'Its fields in order, each a name, what it means, exactly one type (a basic type, a value object or an aggregate), whether it is required, and its column\'s name and an example when they help.', required: false, clearable: false },
+    reads: { kind: 'ids', description: 'The aggregates it reads, of its own domain.', required: false, clearable: false },
+    calls: { kind: 'ids', description: 'The domain services its projection calls, of its own domain.', required: false, clearable: false },
+    fed_by: { kind: 'ids', description: 'The events that keep it current: its own domain\'s, or another domain\'s published ones.', required: false, clearable: false },
+  },
+  '/api/read-model/change-read-model': {
+    id: { kind: 'column', table: 'read_model', column: 'id', required: true, clearable: false },
+    title: { kind: 'column', table: 'read_model', column: 'title', required: false, clearable: false },
+    description: { kind: 'column', table: 'read_model', column: 'description', required: false, clearable: false },
+    fields: { kind: 'parts', table: 'read_model_field', columns: ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'], description: 'Its fields in order, each a name, what it means, exactly one type (a basic type, a value object or an aggregate), whether it is required, and its column\'s name and an example when they help.', required: false, clearable: false },
+    reads: { kind: 'ids', description: 'The aggregates it reads, of its own domain.', required: false, clearable: false },
+    calls: { kind: 'ids', description: 'The domain services its projection calls, of its own domain.', required: false, clearable: false },
+    fed_by: { kind: 'ids', description: 'The events that keep it current: its own domain\'s, or another domain\'s published ones.', required: false, clearable: false },
+  },
+  '/api/read-model/remove-read-model': {
+    id: { kind: 'column', table: 'read_model', column: 'id', required: true, clearable: false },
+  },
+  '/api/read-model/add-query': {
+    id: { kind: 'column', table: 'query', column: 'id', required: true, clearable: false },
+    title: { kind: 'column', table: 'query', column: 'title', required: true, clearable: false },
+    read_model_id: { kind: 'column', table: 'query', column: 'read_model_id', required: true, clearable: false },
+    description: { kind: 'column', table: 'query', column: 'description', required: true, clearable: false },
+    selects_by: { kind: 'ids', description: 'The specifications it selects by, of its own domain.', required: false, clearable: false },
+    calls: { kind: 'ids', description: 'The domain services it calls, of its own domain.', required: false, clearable: false },
+  },
+  '/api/read-model/change-query': {
+    id: { kind: 'column', table: 'query', column: 'id', required: true, clearable: false },
+    title: { kind: 'column', table: 'query', column: 'title', required: false, clearable: false },
+    description: { kind: 'column', table: 'query', column: 'description', required: false, clearable: false },
+    selects_by: { kind: 'ids', description: 'The specifications it selects by, of its own domain.', required: false, clearable: false },
+    calls: { kind: 'ids', description: 'The domain services it calls, of its own domain.', required: false, clearable: false },
+  },
+  '/api/read-model/remove-query': {
+    id: { kind: 'column', table: 'query', column: 'id', required: true, clearable: false },
+  },
+  '/api/read-model/add-projection': {
+    id: { kind: 'column', table: 'projection', column: 'id', required: true, clearable: false },
+    title: { kind: 'column', table: 'projection', column: 'title', required: true, clearable: false },
+    read_model_id: { kind: 'column', table: 'projection', column: 'read_model_id', required: true, clearable: false },
+    file: { kind: 'column', table: 'projection', column: 'file', required: false, clearable: false },
+    description: { kind: 'column', table: 'projection', column: 'description', required: true, clearable: false },
+    meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
+    packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files.', required: false, clearable: false },
+  },
+  '/api/read-model/change-projection': {
+    id: { kind: 'column', table: 'projection', column: 'id', required: true, clearable: false },
+    title: { kind: 'column', table: 'projection', column: 'title', required: false, clearable: false },
+    file: { kind: 'column', table: 'projection', column: 'file', required: false, clearable: true },
+    description: { kind: 'column', table: 'projection', column: 'description', required: false, clearable: false },
+    meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
+    packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files.', required: false, clearable: false },
+  },
+  '/api/read-model/remove-projection': {
+    id: { kind: 'column', table: 'projection', column: 'id', required: true, clearable: false },
+  },
+  '/api/read-model/add-query-handler': {
+    id: { kind: 'column', table: 'query_handler', column: 'id', required: true, clearable: false },
+    title: { kind: 'column', table: 'query_handler', column: 'title', required: true, clearable: false },
+    query_id: { kind: 'column', table: 'query_handler', column: 'query_id', required: true, clearable: false },
+    file: { kind: 'column', table: 'query_handler', column: 'file', required: false, clearable: false },
+    description: { kind: 'column', table: 'query_handler', column: 'description', required: true, clearable: false },
+    meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
+    packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files.', required: false, clearable: false },
+  },
+  '/api/read-model/change-query-handler': {
+    id: { kind: 'column', table: 'query_handler', column: 'id', required: true, clearable: false },
+    title: { kind: 'column', table: 'query_handler', column: 'title', required: false, clearable: false },
+    file: { kind: 'column', table: 'query_handler', column: 'file', required: false, clearable: true },
+    description: { kind: 'column', table: 'query_handler', column: 'description', required: false, clearable: false },
+    meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
+    packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files.', required: false, clearable: false },
+  },
+  '/api/read-model/remove-query-handler': {
+    id: { kind: 'column', table: 'query_handler', column: 'id', required: true, clearable: false },
+  },
+  '/api/read-model/add-reader': {
+    id: { kind: 'column', table: 'reader', column: 'id', required: true, clearable: false },
+    title: { kind: 'column', table: 'reader', column: 'title', required: true, clearable: false },
+    read_model_id: { kind: 'column', table: 'reader', column: 'read_model_id', required: true, clearable: false },
+    file: { kind: 'column', table: 'reader', column: 'file', required: false, clearable: false },
+    description: { kind: 'column', table: 'reader', column: 'description', required: true, clearable: false },
+    stored_in: { kind: 'id', description: 'The data store it reads its read model\'s table in.', required: false, clearable: false },
+    meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
+    packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files.', required: false, clearable: false },
+  },
+  '/api/read-model/change-reader': {
+    id: { kind: 'column', table: 'reader', column: 'id', required: true, clearable: false },
+    title: { kind: 'column', table: 'reader', column: 'title', required: false, clearable: false },
+    file: { kind: 'column', table: 'reader', column: 'file', required: false, clearable: true },
+    description: { kind: 'column', table: 'reader', column: 'description', required: false, clearable: false },
+    stored_in: { kind: 'id', description: 'The data store it reads its read model\'s table in.', required: false, clearable: true },
+    meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
+    packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files.', required: false, clearable: false },
+  },
+  '/api/read-model/remove-reader': {
+    id: { kind: 'column', table: 'reader', column: 'id', required: true, clearable: false },
+  },
+} as const satisfies Record<string, InputFields>;

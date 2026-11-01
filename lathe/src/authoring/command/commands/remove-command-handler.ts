@@ -6,13 +6,13 @@ import { REMOVE_COMMAND_HANDLER_IDENTITY } from './identities.generated.ts';
 /** The handler to remove. */
 export type RemoveCommandHandler = { id: string };
 
-export const REMOVE_COMMAND_HANDLER: CommandDefinition<RemoveCommandHandler> = {
+export const REMOVE_COMMAND_HANDLER = {
   ...REMOVE_COMMAND_HANDLER_IDENTITY,
   input: {
     id: column('command_handler', 'id', 'required'),
   },
   handler: removeCommandHandler,
-};
+} satisfies CommandDefinition<RemoveCommandHandler>;
 
 /** Removes the handler from its command. */
 export function removeCommandHandler(tx: Transaction, input: RemoveCommandHandler): void {

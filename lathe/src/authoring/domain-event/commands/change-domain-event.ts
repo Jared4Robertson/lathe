@@ -9,7 +9,7 @@ import { CHANGE_DOMAIN_EVENT_IDENTITY } from './identities.generated.ts';
 /** The event's changes: a column given is set; fields, when given, replace the list. */
 export type ChangeDomainEvent = Pick<DomainEventRow, 'id'> & { title?: string; published?: boolean; description?: string; fields?: EventFieldInput[] };
 
-export const CHANGE_DOMAIN_EVENT: CommandDefinition<ChangeDomainEvent> = {
+export const CHANGE_DOMAIN_EVENT = {
   ...CHANGE_DOMAIN_EVENT_IDENTITY,
   input: {
     id: column('domain_event', 'id', 'required'),
@@ -19,7 +19,7 @@ export const CHANGE_DOMAIN_EVENT: CommandDefinition<ChangeDomainEvent> = {
     fields: parts('event_field', ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'], 'The fields it carries, in order. Replaces the list.', 'optional'),
   },
   handler: changeDomainEvent,
-};
+} satisfies CommandDefinition<ChangeDomainEvent>;
 
 /** Changes the event's columns and fields. */
 export function changeDomainEvent(tx: Transaction, input: ChangeDomainEvent): void {

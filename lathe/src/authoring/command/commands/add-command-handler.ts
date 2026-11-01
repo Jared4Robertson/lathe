@@ -8,7 +8,7 @@ import { ADD_COMMAND_HANDLER_IDENTITY } from './identities.generated.ts';
 
 export type AddCommandHandler = Pick<CommandHandlerRow, 'id' | 'title' | 'command_id' | 'file' | 'description'> & { meets?: string[]; packages?: string[] };
 
-export const ADD_COMMAND_HANDLER: CommandDefinition<AddCommandHandler> = {
+export const ADD_COMMAND_HANDLER = {
   ...ADD_COMMAND_HANDLER_IDENTITY,
   input: {
     id: column('command_handler', 'id', 'required'),
@@ -20,7 +20,7 @@ export const ADD_COMMAND_HANDLER: CommandDefinition<AddCommandHandler> = {
     packages: texts('The packages it uses, each listed in one of the product\'s package.json files.', 'optional'),
   },
   handler: addCommandHandler,
-};
+} satisfies CommandDefinition<AddCommandHandler>;
 
 /** Adds the handler to its command, refused when the command has one. */
 export function addCommandHandler(tx: Transaction, input: AddCommandHandler): void {

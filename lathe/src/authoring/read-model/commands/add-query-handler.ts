@@ -7,7 +7,7 @@ import { ADD_QUERY_HANDLER_IDENTITY } from './identities.generated.ts';
 
 export type AddQueryHandler = Pick<QueryHandlerRow, 'id' | 'title' | 'query_id' | 'file' | 'description'> & { meets?: string[]; packages?: string[] };
 
-export const ADD_QUERY_HANDLER: CommandDefinition<AddQueryHandler> = {
+export const ADD_QUERY_HANDLER = {
   ...ADD_QUERY_HANDLER_IDENTITY,
   input: {
     id: column('query_handler', 'id', 'required'),
@@ -19,7 +19,7 @@ export const ADD_QUERY_HANDLER: CommandDefinition<AddQueryHandler> = {
     packages: texts("The packages it uses, by their names in the product's package.json files.", 'optional'),
   },
   handler: addQueryHandler,
-};
+} satisfies CommandDefinition<AddQueryHandler>;
 
 /** Adds the handler to its query, which has none yet. */
 export function addQueryHandler(tx: Transaction, input: AddQueryHandler): void {

@@ -16,7 +16,7 @@ import { ADD_READER } from './add-reader.ts';
 import { CHANGE_READER } from './change-reader.ts';
 import { REMOVE_READER } from './remove-reader.ts';
 
-export const READ_MODEL_COMMANDS: readonly AnyCommand[] = [
+export const READ_MODEL_COMMANDS = [
   ADD_READ_MODEL,
   CHANGE_READ_MODEL,
   REMOVE_READ_MODEL,
@@ -32,4 +32,4 @@ export const READ_MODEL_COMMANDS: readonly AnyCommand[] = [
   ADD_READER,
   CHANGE_READER,
   REMOVE_READER,
-];
+] as const satisfies readonly AnyCommand[];

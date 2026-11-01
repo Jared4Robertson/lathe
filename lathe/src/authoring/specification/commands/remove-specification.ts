@@ -6,13 +6,13 @@ import { REMOVE_SPECIFICATION_IDENTITY } from './identities.generated.ts';
 /** The specification to remove. */
 export type RemoveSpecification = { id: string };
 
-export const REMOVE_SPECIFICATION: CommandDefinition<RemoveSpecification> = {
+export const REMOVE_SPECIFICATION = {
   ...REMOVE_SPECIFICATION_IDENTITY,
   input: {
     id: column('specification', 'id', 'required'),
   },
   handler: removeSpecification,
-};
+} satisfies CommandDefinition<RemoveSpecification>;
 
 /** Removes the specification whole. */
 export function removeSpecification(tx: Transaction, input: RemoveSpecification): void {
