@@ -109,6 +109,7 @@ const KIND_SHAPES: Readonly<Record<string, KindShape>> = {
   uc_requirement: { shape: 'page' },
   pattern: { shape: 'stack' },
   pattern_rule: { shape: 'octagon' },
+  slot: { shape: 'stack', mark: 'port' },
   interface: { shape: 'window', mark: 'plug' },
   flow: { shape: 'chevron-bar' },
   flow_step: { shape: 'chevron' },

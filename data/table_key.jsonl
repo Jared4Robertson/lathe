@@ -28,6 +28,8 @@
 {"table_id":"LA-AUT-EN111-TB","position":1,"type":"primary","columns":["id"]}
 {"table_id":"LA-AUT-EN111-TB","position":2,"type":"foreign","columns":["storage_requirement_id"],"target_table_id":"LA-AUT-EN110-TB"}
 {"table_id":"LA-AUT-EN112-TB","position":1,"type":"primary","columns":["id"]}
+{"table_id":"LA-AUT-EN113-TB","position":1,"type":"primary","columns":["id"]}
+{"table_id":"LA-AUT-EN113-TB","position":2,"type":"foreign","columns":["pattern_id"],"target_table_id":"LA-AUT-EN13-TB"}
 {"table_id":"LA-AUT-EN12-TB","position":1,"type":"primary","columns":["id"]}
 {"table_id":"LA-AUT-EN12-TB","position":2,"type":"foreign","columns":["use_case_id"],"target_table_id":"LA-AUT-EN11-TB"}
 {"table_id":"LA-AUT-EN13-TB","position":1,"type":"primary","columns":["id"]}
@@ -212,9 +214,11 @@
 {"table_id":"LA-AUT-TB88","position":1,"type":"primary","columns":["source_id","target_id"]}
 {"table_id":"LA-AUT-TB89","position":1,"type":"primary","columns":["source_id","target_id"]}
 {"table_id":"LA-AUT-TB90","position":1,"type":"primary","columns":["source_id","target_id"]}
-{"table_id":"LA-AUT-TB91","position":1,"type":"primary","columns":["source_id","target_id"]}
+{"table_id":"LA-AUT-TB92","position":1,"type":"primary","columns":["source_id","target_id"]}
 {"table_id":"LA-CHK-EN01-TB","position":1,"type":"primary","columns":["name"]}
 {"table_id":"LA-CHK-EN03-TB","position":1,"type":"primary","columns":["product_id"]}
 {"table_id":"LA-TRC-EN05-TB","position":1,"type":"primary","columns":["source_id","target_id"]}
 {"table_id":"LA-TRC-EN06-TB","position":1,"type":"primary","columns":["follower_id","pattern_id","setting"]}
 {"table_id":"LA-TRC-EN06-TB","position":2,"type":"foreign","columns":["follower_id","pattern_id"],"target_table_id":"LA-TRC-EN05-TB"}
+{"table_id":"LA-TRC-EN07-TB","position":1,"type":"primary","columns":["source_id","target_id"]}
+{"table_id":"LA-TRC-EN08-TB","position":1,"type":"primary","columns":["source_id","target_id"]}

@@ -17,7 +17,9 @@ import { PATTERN_COMMANDS } from './authoring/pattern/commands/index.ts';
 import { PATTERN_FOLLOWING_COMMANDS } from './traceability/pattern-following/commands/index.ts';
 import { PRODUCT_COMMANDS } from './authoring/product/commands/index.ts';
 import { PRODUCT_SETTING_COMMANDS } from './checking/product-setting/commands/index.ts';
+import { PROVISION_COMMANDS } from './traceability/provision/commands/index.ts';
 import { READ_MODEL_COMMANDS } from './authoring/read-model/commands/index.ts';
+import { SLOT_FILLING_COMMANDS } from './traceability/slot-filling/commands/index.ts';
 import { SPECIFICATION_COMMANDS } from './authoring/specification/commands/index.ts';
 import { STANDARD_COMMANDS } from './authoring/standard/commands/index.ts';
 import { STORAGE_REQUIREMENT_COMMANDS } from './authoring/storage-requirement/commands/index.ts';
@@ -82,7 +84,9 @@ const COMMANDS = [
   ...PATTERN_FOLLOWING_COMMANDS,
   ...PRODUCT_COMMANDS,
   ...PRODUCT_SETTING_COMMANDS,
+  ...PROVISION_COMMANDS,
   ...READ_MODEL_COMMANDS,
+  ...SLOT_FILLING_COMMANDS,
   ...SPECIFICATION_COMMANDS,
   ...STANDARD_COMMANDS,
   ...STORAGE_REQUIREMENT_COMMANDS,

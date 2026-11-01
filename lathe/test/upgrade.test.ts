@@ -390,4 +390,47 @@ describe('the schema version', () => {
     expect(changes).toEqual([]);
     expect(todos).toEqual([]);
   });
+
+  const run3to4 = async (tables: Record<string, Record<string, unknown>[]>) => {
+    const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 3);
+    const changes: string[] = [];
+    const todos: string[] = [];
+    await step!.converter.files!(
+      { tables: () => Object.keys(tables), read: (table) => tables[table] ?? [], write: (table, rows) => void (tables[table] = rows) },
+      { changed: (text) => changes.push(text), todo: (text) => todos.push(text) },
+    );
+    return { changes, todos };
+  };
+
+  it('LA-AUT-UC03-R08-T11 3-to-4 gives each product kind its complexity from its stage, makes each standard engineering with a to-do to review it, and gives each product setting no technology words', async () => {
+    const tables: Record<string, Record<string, unknown>[]> = {
+      product_kind: [
+        { name: 'report', product_id: 'TL', stage: 'technical-specification' },
+        { name: 'drill', product_id: 'TL', stage: 'test-plan' },
+        { name: 'skill', product_id: 'TL', stage: 'interaction-design' },
+        { name: 'note', product_id: 'TL' },
+      ],
+      standard: [{ id: 'TL-STD-CODE', title: 'Code', product_id: 'TL', description: 'How the code is written.' }],
+      product_setting: [{ product_id: 'TL', max_children: 15, max_entities_per_aggregate: 7 }],
+    };
+    const { changes, todos } = await run3to4(tables);
+    expect(tables.product_kind!.map((k) => [k.name, k.complexity])).toEqual([['report', 'accidental'], ['drill', 'as-parent'], ['skill', 'essential'], ['note', 'essential']]);
+    expect(tables.standard).toEqual([{ id: 'TL-STD-CODE', title: 'Code', product_id: 'TL', description: 'How the code is written.', type: 'engineering' }]);
+    expect(tables.product_setting).toEqual([{ product_id: 'TL', max_children: 15, max_entities_per_aggregate: 7, technology_words: [] }]);
+    expect(changes).toHaveLength(3);
+    expect(todos).toEqual([expect.stringContaining('change its type to quality where it is one, among TL-STD-CODE')]);
+  });
+
+  it('LA-AUT-UC03-R08-T12 3-to-4 does nothing to data that is already upgraded', async () => {
+    const tables: Record<string, Record<string, unknown>[]> = {
+      product_kind: [{ name: 'report', product_id: 'TL', stage: 'technical-specification', complexity: 'essential' }],
+      standard: [{ id: 'TL-STD-MONEY', title: 'Money', product_id: 'TL', type: 'quality', description: 'Amounts are exact.' }],
+      product_setting: [{ product_id: 'TL', max_children: 15, max_entities_per_aggregate: 7, technology_words: ['Postgres'] }],
+    };
+    const before = structuredClone(tables);
+    const { changes, todos } = await run3to4(tables);
+    expect(tables).toEqual(before);
+    expect(changes).toEqual([]);
+    expect(todos).toEqual([]);
+  });
 });

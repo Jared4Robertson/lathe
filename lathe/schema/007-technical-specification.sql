@@ -299,16 +299,21 @@ COMMENT ON COLUMN ui_component.title IS 'Its name in code, such as CatalogPage.'
 COMMENT ON COLUMN ui_component.file IS 'The file that holds its code, from the product root; it may not exist yet.';
 COMMENT ON COLUMN ui_component.description IS 'What it renders, in a sentence or two.';
 
+-- A standard's type: a quality is essential, an engineering standard accidental.
+CREATE TYPE standard_type AS ENUM ('quality', 'engineering');
+
 CREATE TABLE standard (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   product_id VARCHAR NOT NULL REFERENCES product (id),
+  type standard_type NOT NULL,
   description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
-COMMENT ON TABLE standard IS 'A library of engineering rules that holds for the product''s code, such as logging, error handling or naming. What follows one of its rules meets it.';
+COMMENT ON TABLE standard IS 'A library of rules that holds across the product, such as exact money, a latency budget, logging, error handling or naming. Its type says whether its rules are essential (a quality) or accidental (engineering). What follows one of its rules meets it.';
 COMMENT ON COLUMN standard.id IS 'The standard''s ID, such as TL-STD-CODE.';
 COMMENT ON COLUMN standard.title IS 'The standard''s name.';
 COMMENT ON COLUMN standard.product_id IS 'The product it belongs to.';
+COMMENT ON COLUMN standard.type IS 'quality: what the product''s people need of it whatever it is built with, such as exact money, auditability or a latency budget (essential); engineering: how it is built, such as logging, naming or how code is laid out (accidental).';
 COMMENT ON COLUMN standard.description IS 'What the standard covers, in a paragraph.';
 
 CREATE TABLE standard_rule (
@@ -326,27 +331,27 @@ COMMENT ON COLUMN standard_rule.statement IS 'The rule, stated with MUST, MUST N
 COMMENT ON COLUMN standard_rule.group_name IS 'A short heading it is shown under among its siblings.';
 
 INSERT INTO meta_kind VALUES
-  ('data_store', 'Data store', 'technical-specification', 31, false, '<P>-STORE<nn> or <P>-<D>-STORE<nn>', 'TL-STORE01', 'parent', NULL),
-  ('repository', 'Repository', 'technical-specification', 32, false, '<domain>-REPO<nn>', 'TL-LEND-REPO01', 'parent', NULL),
-  ('data_model', 'Data model', 'technical-specification', 33, false, '<entity>-DM', 'TL-LEND-EN01-DM', 'parent', NULL),
-  ('value_type', 'Value type', 'technical-specification', 35, false, '<value object>-VT', 'TL-VO01-VT', 'parent', NULL),
-  ('rule', 'Rule', 'technical-specification', 36, false, '<invariant>-RL', 'TL-LEND-INV01-RL', 'parent', NULL),
-  ('predicate', 'Predicate', 'technical-specification', 37, false, '<specification>-PR', 'TL-LEND-SP01-PR', 'parent', NULL),
-  ('event_type', 'Event type', 'technical-specification', 38, false, '<domain event>-ET', 'TL-LEND-EV01-ET', 'parent', NULL),
-  ('projection', 'Projection', 'technical-specification', 39, false, '<read model>-PJ', 'TL-LEND-RM01-PJ', 'parent', NULL),
-  ('reader', 'Reader', 'technical-specification', 40, false, '<read model>-RD', 'TL-LEND-RM01-RD', 'parent', NULL),
-  ('command_handler', 'Command handler', 'technical-specification', 41, false, '<command>-H', 'TL-LEND-CMD01-H', 'parent', NULL),
-  ('query_handler', 'Query handler', 'technical-specification', 42, false, '<query>-H', 'TL-LEND-QRY01-H', 'parent', NULL),
-  ('event_handler', 'Event handler', 'technical-specification', 43, false, '<policy>-H', 'TL-LEND-PO01-H', 'parent', NULL),
-  ('service', 'Service', 'technical-specification', 44, false, '<domain service>-SV', 'TL-LEND-DS01-SV', 'parent', NULL),
-  ('endpoint_handler', 'Endpoint handler', 'technical-specification', 46, false, '<endpoint>-H', 'TL-LEND-EP01-H', 'parent', NULL),
-  ('adapter', 'Adapter', 'technical-specification', 47, false, '<integration>-AD', 'TL-INT01-AD', 'parent', NULL),
-  ('entry_point', 'Entry point', 'technical-specification', 48, false, '<domain>-ENTRY<nn>', 'TL-LEND-ENTRY01', 'parent', NULL),
-  ('tooling', 'Tooling', 'technical-specification', 49, false, '<domain>-TOOL<nn>', 'TL-LEND-TOOL01', 'parent', NULL),
-  ('table', 'Table', 'technical-specification', 34, false, '<entity or read model>-TB, or <domain>-TB<nn>', 'TL-LEND-EN01-TB', 'parent', NULL),
-  ('ui_component', 'UI component', 'technical-specification', 45, false, '<P>-UI<nn>', 'TL-UI01', 'product', NULL),
-  ('standard', 'Standard', 'technical-specification', 50, false, '<P>-STD-<name>', 'TL-STD-CODE', 'parent', NULL),
-  ('standard_rule', 'Standard rule', 'technical-specification', 51, true, '<standard>-R<nn>', 'TL-STD-CODE-R01', 'parent', NULL);
+  ('data_store', 'Data store', 'technical-specification', 32, false, '<P>-STORE<nn> or <P>-<D>-STORE<nn>', 'TL-STORE01', 'parent', NULL, 'accidental'),
+  ('repository', 'Repository', 'technical-specification', 33, false, '<domain>-REPO<nn>', 'TL-LEND-REPO01', 'parent', NULL, 'accidental'),
+  ('data_model', 'Data model', 'technical-specification', 34, false, '<entity>-DM', 'TL-LEND-EN01-DM', 'parent', NULL, 'accidental'),
+  ('value_type', 'Value type', 'technical-specification', 36, false, '<value object>-VT', 'TL-VO01-VT', 'parent', NULL, 'accidental'),
+  ('rule', 'Rule', 'technical-specification', 37, false, '<invariant>-RL', 'TL-LEND-INV01-RL', 'parent', NULL, 'accidental'),
+  ('predicate', 'Predicate', 'technical-specification', 38, false, '<specification>-PR', 'TL-LEND-SP01-PR', 'parent', NULL, 'accidental'),
+  ('event_type', 'Event type', 'technical-specification', 39, false, '<domain event>-ET', 'TL-LEND-EV01-ET', 'parent', NULL, 'accidental'),
+  ('projection', 'Projection', 'technical-specification', 40, false, '<read model>-PJ', 'TL-LEND-RM01-PJ', 'parent', NULL, 'accidental'),
+  ('reader', 'Reader', 'technical-specification', 41, false, '<read model>-RD', 'TL-LEND-RM01-RD', 'parent', NULL, 'accidental'),
+  ('command_handler', 'Command handler', 'technical-specification', 42, false, '<command>-H', 'TL-LEND-CMD01-H', 'parent', NULL, 'accidental'),
+  ('query_handler', 'Query handler', 'technical-specification', 43, false, '<query>-H', 'TL-LEND-QRY01-H', 'parent', NULL, 'accidental'),
+  ('event_handler', 'Event handler', 'technical-specification', 44, false, '<policy>-H', 'TL-LEND-PO01-H', 'parent', NULL, 'accidental'),
+  ('service', 'Service', 'technical-specification', 45, false, '<domain service>-SV', 'TL-LEND-DS01-SV', 'parent', NULL, 'accidental'),
+  ('endpoint_handler', 'Endpoint handler', 'technical-specification', 47, false, '<endpoint>-H', 'TL-LEND-EP01-H', 'parent', NULL, 'accidental'),
+  ('adapter', 'Adapter', 'technical-specification', 48, false, '<integration>-AD', 'TL-INT01-AD', 'parent', NULL, 'accidental'),
+  ('entry_point', 'Entry point', 'technical-specification', 49, false, '<domain>-ENTRY<nn>', 'TL-LEND-ENTRY01', 'parent', NULL, 'accidental'),
+  ('tooling', 'Tooling', 'technical-specification', 50, false, '<domain>-TOOL<nn>', 'TL-LEND-TOOL01', 'parent', NULL, 'accidental'),
+  ('table', 'Table', 'technical-specification', 35, false, '<entity or read model>-TB, or <domain>-TB<nn>', 'TL-LEND-EN01-TB', 'parent', NULL, 'accidental'),
+  ('ui_component', 'UI component', 'technical-specification', 46, false, '<P>-UI<nn>', 'TL-UI01', 'product', NULL, 'accidental'),
+  ('standard', 'Standard', 'technical-specification', 51, false, '<P>-STD-<name>', 'TL-STD-CODE', 'parent', NULL, 'by-type'),
+  ('standard_rule', 'Standard rule', 'technical-specification', 52, true, '<standard>-R<nn>', 'TL-STD-CODE-R01', 'parent', NULL, 'as-parent');
 INSERT INTO meta_kind_parent VALUES
   ('data_store', 'product', 1, 'product_id'),
   ('data_store', 'domain', 2, 'domain_id'),

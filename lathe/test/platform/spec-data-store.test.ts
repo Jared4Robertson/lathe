@@ -64,7 +64,7 @@ describe('the spec data store keeps every change through a restart, and a refuse
   it.each<[string, Kept]>([
   ['LA-AUT-A1-SR01-T01', change('product', 'product', 'TL')],
   ['LA-AUT-A2-SR01-T01', change('pattern', 'pattern', 'TL-PAT-LIBRARIAN-ACTION')],
-  ['LA-AUT-A3-SR01-T01', add('standard', 'standard', { id: 'TL-STD-KEPT', title: 'Kept', product_id: 'TL', description: 'A standard kept through a restart.' })],
+  ['LA-AUT-A3-SR01-T01', add('standard', 'standard', { id: 'TL-STD-KEPT', title: 'Kept', product_id: 'TL', type: 'engineering', description: 'A standard kept through a restart.' })],
   ['LA-AUT-A4-SR01-T01', change('domain', 'domain', 'TL-LEND')],
   ['LA-AUT-A5-SR01-T01', change('specification', 'specification', 'TL-LEND-SP01')],
   ['LA-AUT-A6-SR01-T01', change('aggregate', 'aggregate', 'TL-LEND-A1')],

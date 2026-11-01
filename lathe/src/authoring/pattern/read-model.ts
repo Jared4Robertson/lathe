@@ -1,12 +1,12 @@
 // The Pattern aggregate's read model (LA-AUT-RM22), shaped for its readers: the Pattern page reads a pattern whole (its
-// settings in order, its rules by ID, each with its tests per following domain) with the record the page is about, a
+// settings in order, its rules by ID, each with its tests per following domain, and its slots by ID) with the record the page is about, a
 // product's list reads each pattern's ID and title, and the editor's next ID reads the IDs in use. Who follows the
 // pattern, and the values they give its settings, are Pattern following's. The projection (patternTableFrom) is the
 // only code that reads the source rows and the only code that writes the read model's table; the query handlers read
 // that table only through the reader (reader.ts). Nothing here is the aggregate's own instance type.
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
-import type { PatternRow, PatternRuleRow, PatternRuleTestRow, PatternSettingRow } from '../../platform/data/tables.ts';
+import type { PatternRow, PatternRuleRow, PatternRuleTestRow, PatternSettingRow, SlotRow } from '../../platform/data/tables.ts';
 import type { PatternKind } from './model.ts';
 import { byRecordId } from '../../platform/data/ids.ts';
 
@@ -28,11 +28,12 @@ export interface PatternRuleOnPage {
   tests: PatternRuleTestOnPage[];
 }
 
-/** A pattern whole, as its page shows it: its row, its settings in order and its rules by ID. */
+/** A pattern whole, as its page shows it: its row, its settings in order, its rules by ID and its slots by ID. */
 export interface PatternTree {
   pattern: PatternRow;
   settings: SettingOnPage[];
   rules: PatternRuleOnPage[];
+  slots: SlotRow[];
 }
 
 /** A pattern as its page reads it, with the record of it the page is about. */
@@ -71,6 +72,7 @@ export function patternTableFrom(view: ReadView): PatternTable {
   const settings = grouped<PatternSettingRow>(view.rows('pattern_setting'), 'pattern_id');
   const rules = grouped<PatternRuleRow>(view.rows('pattern_rule'), 'pattern_id');
   const tests = grouped<PatternRuleTestRow>(view.rows('pattern_rule_test'), 'pattern_rule_id');
+  const slots = grouped<SlotRow>(view.rows('slot'), 'pattern_id');
   const patterns = new Map<string, PatternTree>();
   const holding = new Map<string, { root: string; kind: PatternKind }>();
   const products = new Map<string, PatternSummary[]>(view.rows('product').map((p) => [String(p.id), []]));
@@ -84,11 +86,13 @@ export function patternTableFrom(view: ReadView): PatternTable {
         rule,
         tests: [...(tests.get(rule.id) ?? [])].sort(byRecordId).map((test) => ({ test, startsFrom: (startsFrom.get(test.id) ?? []).map((l) => l.target_id).sort() })),
       })),
+      slots: [...(slots.get(root) ?? [])].sort(byRecordId),
     };
     for (const r of tree.rules) {
       holding.set(r.rule.id, { root, kind: 'pattern_rule' });
       for (const t of r.tests) holding.set(t.test.id, { root, kind: 'pattern_rule_test' });
     }
+    for (const s of tree.slots) holding.set(s.id, { root, kind: 'slot' });
     patterns.set(root, tree);
     products.get(pattern.product_id)?.push({ id: pattern.id, title: pattern.title });
   }

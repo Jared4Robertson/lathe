@@ -80,3 +80,30 @@ export const REMOVE_PATTERN_RULE_TEST_IDENTITY = {
   method: 'POST',
   route: '/api/pattern/remove-pattern-rule-test',
 } as const;
+
+export const ADD_SLOT_IDENTITY = {
+  id: 'LA-AUT-CMD373',
+  slice: { aggregate: 'LA-AUT-A2', name: 'pattern' },
+  name: 'add-slot',
+  description: 'Adds a slot to its pattern: an open-ended part code fills against its contract.',
+  method: 'POST',
+  route: '/api/pattern/add-slot',
+} as const;
+
+export const CHANGE_SLOT_IDENTITY = {
+  id: 'LA-AUT-CMD374',
+  slice: { aggregate: 'LA-AUT-A2', name: 'pattern' },
+  name: 'change-slot',
+  description: 'Changes a slot\'s title or contract. Its pattern does not change.',
+  method: 'POST',
+  route: '/api/pattern/change-slot',
+} as const;
+
+export const REMOVE_SLOT_IDENTITY = {
+  id: 'LA-AUT-CMD375',
+  slice: { aggregate: 'LA-AUT-A2', name: 'pattern' },
+  name: 'remove-slot',
+  description: 'Removes a slot from its pattern. Refused while a record fills it.',
+  method: 'POST',
+  route: '/api/pattern/remove-slot',
+} as const;

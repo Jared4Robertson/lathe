@@ -285,3 +285,22 @@ check('outcome-target-undated', () => {
     }
   });
 });
+
+check('accidental-in-essential', () => {
+  it("LA-STD-PRINCIPLES-R05-T02 An essential record that names technology in its title or lead text is a warning, by Lathe's words and the product's own", async () => {
+    expect(ofCheck(clean, 'accidental-in-essential')).toEqual([]);
+    let data = changing(complete(), 'use_case', (r) => r.id === 'EX-LEND-UC01', { goal: 'A member clicks the borrow button.' });
+    data = changing(data, 'view', () => true, { title: 'Catalog page' });
+    data = changing(data, 'term', () => true, { meaning: 'One tool lent to one member, kept in Postgres until it is returned.' });
+    // An accidental record may name technology: the UI component's description says page.
+    const ws = await loadData(data);
+    expect(ofCheck(ws, 'accidental-in-essential').map((p) => [p.severity, p.record, p.message])).toEqual([
+      ['warning', 'EX-LEND-UC01', expect.stringContaining('Use case EX-LEND-UC01 is essential but names technology: its goal says "click"')],
+      ['warning', 'EX-V01', expect.stringContaining('its title says "page"')],
+    ]);
+    // The product's own technology words count too.
+    const own = await loadData(adding(data, { product_setting: [{ product_id: 'EX', max_children: 15, max_entities_per_aggregate: 7, technology_words: ['Postgres'] }] }));
+    expect(records(ofCheck(own, 'accidental-in-essential'))).toEqual(['EX-LEND-TM01', 'EX-LEND-UC01', 'EX-V01']);
+    expect(ofCheck(own, 'accidental-in-essential').find((p) => p.record === 'EX-LEND-TM01')?.message).toContain('its meaning says "postgres"');
+  });
+});

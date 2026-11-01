@@ -149,7 +149,7 @@ describe('designed and built', () => {
     expect(gaps(await loadData(exchanging, { missing: ['src/mail.ts'] }))).toContain('built EX-LEND-UC01-R01');
     // With no adapter, a hook of the product's own kind under the integration does not build it.
     const hooked = adding(without(exchanging, 'adapter', () => true), {
-      product_kind: [{ name: 'hook', product_id: 'EX', label: 'Hook', description: 'Code the mail service calls.', parent_kind: 'integration', stage: 'technical-specification', obligation: false }],
+      product_kind: [{ name: 'hook', product_id: 'EX', label: 'Hook', description: 'Code the mail service calls.', parent_kind: 'integration', stage: 'technical-specification', obligation: false, complexity: 'accidental' }],
       product_kind_field: [{ kind: 'hook', position: 1, name: 'file', type: 'text', required: true, description: 'The file.' }],
       hook: [{ id: 'EX-INT01-HK01', title: 'On bounce', integration_id: 'EX-INT01', file: 'src/bounce.ts' }],
     });
@@ -293,8 +293,9 @@ describe('LA-TRC-UC01-R05-T01 minimums', () => {
     expect(ws.coverage.find((c) => c.domain === 'SP-D')?.gaps).toContainEqual({ id: 'SP-V01', kind: 'view', missing: 'view-without-ui-component', message: 'View SP-V01 is rendered by no UI component.' });
     expect(ws.coverage.find((c) => c.domain === 'SP-D')?.gaps).toContainEqual({ id: 'SP-D-UC01', kind: 'use_case', missing: 'use-case-without-flow', message: 'Use case SP-D-UC01 has no flow.' });
     expect(ws.coverage.find((c) => c.domain === 'SP-E')?.gaps).toEqual([{ id: 'SP-E', kind: 'domain', missing: 'domain-without-aggregate', message: 'Domain SP-E has no aggregate.' }]);
-    // Gaps are coverage, never problems; the sparse product serves no outcome, so what it holds is warned of apart (serves-no-outcome).
-    expect(ws.problems.filter((p) => p.check !== 'serves-no-outcome').map((p) => p.check).sort()).toEqual(['not-built', 'not-built', 'not-built', 'not-proved', 'not-proved', 'not-proved', 'outcome-target-undated', 'pattern-not-followed', 'value-object-unused']);
+    // Gaps are coverage, never problems; the sparse product serves no outcome, so what it holds is warned of apart
+    // (serves-no-outcome), and accounts for none of its accidental records (accidental-not-accounted-for).
+    expect(ws.problems.filter((p) => !['serves-no-outcome', 'accidental-not-accounted-for'].includes(p.check)).map((p) => p.check).sort()).toEqual(['not-built', 'not-built', 'not-built', 'not-proved', 'not-proved', 'not-proved', 'outcome-target-undated', 'pattern-not-followed', 'value-object-unused']);
   });
 
   it('every gap rule has a unique name, a stage and a summary, and the complete product meets every minimum', () => {
@@ -313,8 +314,8 @@ describe("a product's own obligation kinds", () => {
   const houseRules = () =>
     adding(complete(), {
       product_kind: [
-        { name: 'house_rule', product_id: 'EX', label: 'House rule', description: 'A rule of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: true },
-        { name: 'script', product_id: 'EX', label: 'Script', description: 'A script.', parent_kind: 'domain', stage: 'technical-specification', obligation: false },
+        { name: 'house_rule', product_id: 'EX', label: 'House rule', description: 'A rule of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: true, complexity: 'essential' },
+        { name: 'script', product_id: 'EX', label: 'Script', description: 'A script.', parent_kind: 'domain', stage: 'technical-specification', obligation: false, complexity: 'accidental' },
       ],
       product_kind_field: [{ kind: 'script', position: 1, name: 'file', type: 'text', required: true, description: 'The file.' }],
       product_relation: [
@@ -346,8 +347,8 @@ describe("a product's own obligation kinds", () => {
   it('LA-TRC-UC02-R09-T01 are proved by a product kind that names a file only when the file names it', async () => {
     const data = adding(houseRules(), {
       product_kind: [
-        { name: 'rule_check', product_id: 'EX', label: 'Rule check', description: 'A script that checks a rule.', parent_kind: 'domain', stage: 'test-plan', obligation: false },
-        { name: 'sign_off', product_id: 'EX', label: 'Sign-off', description: 'A person signing a rule off.', parent_kind: 'domain', stage: 'test-plan', obligation: false },
+        { name: 'rule_check', product_id: 'EX', label: 'Rule check', description: 'A script that checks a rule.', parent_kind: 'domain', stage: 'test-plan', obligation: false, complexity: 'as-parent' },
+        { name: 'sign_off', product_id: 'EX', label: 'Sign-off', description: 'A person signing a rule off.', parent_kind: 'domain', stage: 'test-plan', obligation: false, complexity: 'as-parent' },
       ],
       product_kind_field: [{ kind: 'rule_check', position: 1, name: 'file', type: 'text', required: true, description: 'The file that runs it.' }],
       product_relation: [
@@ -371,7 +372,7 @@ describe("a product's relations with a role, on Lathe's own obligation kinds", (
   // The standard rule loses what meets it and its own test, so only the product's links can cover it.
   const bareRule = () => without(without(complete(), 'meets', () => true), 'standard_rule_test', () => true);
   const script = {
-    product_kind: [{ name: 'script', product_id: 'EX', label: 'Script', description: 'A script.', parent_kind: 'domain', stage: 'technical-specification', obligation: false }],
+    product_kind: [{ name: 'script', product_id: 'EX', label: 'Script', description: 'A script.', parent_kind: 'domain', stage: 'technical-specification', obligation: false, complexity: 'accidental' }],
     product_kind_field: [{ kind: 'script', position: 1, name: 'file', type: 'text', required: true, description: 'The file.' }],
     script: [{ id: 'EX-LEND-SC01', title: 'quiet.sh', domain_id: 'EX-LEND', file: 'bin/quiet.sh' }],
   };
@@ -463,7 +464,7 @@ describe('pattern rules, domain by domain', () => {
 
   it("LA-TRC-UC04-R08-T01 an obligation outside every domain counts in the product's Shared coverage, and a pattern rule never does", async () => {
     const data = adding(complete(), {
-      product_kind: [{ name: 'house_rule', product_id: 'EX', label: 'House rule', description: 'A rule of the house.', parent_kind: 'product', stage: 'use-cases', obligation: true }],
+      product_kind: [{ name: 'house_rule', product_id: 'EX', label: 'House rule', description: 'A rule of the house.', parent_kind: 'product', stage: 'use-cases', obligation: true, complexity: 'essential' }],
       house_rule: [{ id: 'EX-HR01', title: 'Quiet', product_id: 'EX' }],
     });
     const ws = await loadData(data);
@@ -550,8 +551,8 @@ describe('the other obligation kinds and their gaps', () => {
   it("LA-TRC-UC07-R04-T01 a product kind declared an obligation is counted as Lathe's are, and one that is not is not counted", async () => {
     const data = adding(complete(), {
       product_kind: [
-        { name: 'house_rule', product_id: 'EX', label: 'House rule', description: 'A rule of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: true },
-        { name: 'house_note', product_id: 'EX', label: 'House note', description: 'A note of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: false },
+        { name: 'house_rule', product_id: 'EX', label: 'House rule', description: 'A rule of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: true, complexity: 'essential' },
+        { name: 'house_note', product_id: 'EX', label: 'House note', description: 'A note of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: false, complexity: 'essential' },
       ],
       house_rule: [{ id: 'EX-LEND-HR01', title: 'Quiet', domain_id: 'EX-LEND' }],
       house_note: [{ id: 'EX-LEND-HN01', title: 'Tea at four', domain_id: 'EX-LEND' }],

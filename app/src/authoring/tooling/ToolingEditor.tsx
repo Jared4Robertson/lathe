@@ -16,7 +16,7 @@ import { backToActions } from '../../edit/back-to-actions';
 
 // The Tooling editor (LA-AUT-A21): the actions on a tooling record, each sending one of the aggregate's own commands,
 // POST /api/tooling/<command>, and nothing else. Edit sends Change a tooling record with only what changed; Remove
-// says it goes with its packages and the meets links it starts and sends Remove a tooling record. A tooling record is added
+// says it goes with its packages and the meets and generates links it starts and sends Remove a tooling record. A tooling record is added
 // from its domain's page (AddToolingForm). The aggregate has no Move. A refusal shows every reason the command gave,
 // keeps what was entered, and changes nothing.
 
@@ -47,7 +47,7 @@ export function ToolingEditor({ index, page, children }: { index: RecordIndex; p
   };
   if (mode === 'change') {
     const specs = fieldsOf(index, tooling.domain_id, false);
-    const current = { ...tooling, packages: page.packages, meets: page.meets } as Record<string, unknown>;
+    const current = { ...tooling, packages: page.packages, meets: page.meets, generates: page.generates } as Record<string, unknown>;
     const submit = async (draft: Draft) => {
       const input = changeInput(index, specs, draft, current, { id: tooling.id });
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }

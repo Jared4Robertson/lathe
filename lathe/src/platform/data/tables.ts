@@ -689,6 +689,38 @@ export interface FedByRow {
   target_id: string;
 }
 
+/** Behavior several use cases share, stated once: a fixed part, the settings each use case that follows it fills in (its configuration, the known ways it varies) and its slots (the open-ended variation, filled with code against a contract). Its settings are pattern_setting rows, its rules pattern_rule records and its slots slot records. */
+export interface PatternRow {
+  /** The pattern's ID, such as TL-PAT-LIBRARIAN-ACTION. */
+  id: string;
+  /** The pattern's name, such as Librarian action. */
+  title: string;
+  /** The product it belongs to. */
+  product_id: string;
+  /** The shared behavior, in a paragraph. */
+  description: string;
+  /** Longer notes, such as how a domain or use case uses the pattern. */
+  notes?: string;
+}
+
+/** An open-ended part of a pattern, which neither its fixed part nor its settings can express: code fills it against its contract. A technical record that fills it, written by hand, is a fill (fills): accidental complexity recorded where it is owed, and debt until the pattern can derive it. */
+export interface SlotRow {
+  /** The slot's ID: its pattern's ID and SL<nn>, such as TL-PAT-LIBRARIAN-ACTION-SL01. */
+  id: string;
+  /** What fills it, in a few words, such as Refusal message. */
+  title: string;
+  /** The pattern it belongs to. */
+  pattern_id: string;
+  /** Its contract: what every fill MUST do, in one sentence. */
+  statement: string;
+}
+
+/** The technical record, written by hand, fills the pattern's slot against its contract: it is a fill, accidental complexity recorded where it is owed and counted as debt until the pattern can derive it. */
+export interface FillsRow {
+  source_id: string;
+  target_id: string;
+}
+
 /** A smoke test of its flow's main path, end to end, at the level that fits its interface: browser for a web app or desktop, system for an API, a CLI or agent tools. */
 export interface FlowTestRow {
   /** The test's ID: its flow's ID and T, such as TL-LEND-UC01-FL01-T. */
@@ -719,20 +751,6 @@ export interface FlowTestRow {
   notes?: string;
 }
 
-/** Behavior several use cases share, stated once with the settings each use case that follows it fills in. Its settings are pattern_setting rows and its rules pattern_rule records. */
-export interface PatternRow {
-  /** The pattern's ID, such as TL-PAT-LIBRARIAN-ACTION. */
-  id: string;
-  /** The pattern's name, such as Librarian action. */
-  title: string;
-  /** The product it belongs to. */
-  product_id: string;
-  /** The shared behavior, in a paragraph. */
-  description: string;
-  /** Longer notes, such as how a domain or use case uses the pattern. */
-  notes?: string;
-}
-
 /** The domain or use case follows the pattern, and gives a value for each of its settings in setting_value rows. */
 export interface FollowsRow {
   source_id: string;
@@ -755,6 +773,24 @@ export interface UcRequirementRow {
 
 /** The flow step fulfills the UC requirement, of its own use case; this designs the requirement. */
 export interface FulfillsRow {
+  source_id: string;
+  target_id: string;
+}
+
+/** A dev script or config file outside the running product: a build, a generator, a watcher, or a config of the tools it is checked and tested with, such as a type checker's or a test runner's. Its title and file say what it is. */
+export interface ToolingRow {
+  /** The tooling record's ID: its domain's ID and TOOL<nn>, such as TL-LEND-TOOL01. */
+  id: string;
+  /** Its file's name, such as vitest.config.ts. */
+  title: string;
+  /** The domain whose code it builds, checks or tests. */
+  domain_id: string;
+  /** The script or config file, or the folder of them, from the product root; it may not exist yet. */
+  file?: string;
+}
+
+/** The tooling record (a generator) writes the technical record's code from the spec: the record is derived, never written by hand. */
+export interface GeneratesRow {
   source_id: string;
   target_id: string;
 }
@@ -867,7 +903,7 @@ export interface MeasuredByRow {
   target_id: string;
 }
 
-/** A library of engineering rules that holds for the product's code, such as logging, error handling or naming. What follows one of its rules meets it. */
+/** A library of rules that holds across the product, such as exact money, a latency budget, logging, error handling or naming. Its type says whether its rules are essential (a quality) or accidental (engineering). What follows one of its rules meets it. */
 export interface StandardRow {
   /** The standard's ID, such as TL-STD-CODE. */
   id: string;
@@ -875,6 +911,8 @@ export interface StandardRow {
   title: string;
   /** The product it belongs to. */
   product_id: string;
+  /** quality: what the product's people need of it whatever it is built with, such as exact money, auditability or a latency budget (essential); engineering: how it is built, such as logging, naming or how code is laid out (accidental). */
+  type: "quality" | "engineering";
   /** What the standard covers, in a paragraph. */
   description: string;
 }
@@ -1043,7 +1081,7 @@ export interface ProductKindRow {
   parent_kind: string;
   /** The stage its records belong to, any of the six, if one; such as technical-specification for a kind of code Lathe has no kind for. */
   stage?: "discovery" | "domain-model" | "use-cases" | "interaction-design" | "technical-specification" | "test-plan";
-  /** Whether a record of the kind is an obligation, to be designed, built and proved. An obligation kind joins the obligation supertype. */
+  /** Whether a record of the kind is an obligation, to be designed, built and proved. An obligation kind joins the obligation supertype, and the records something outside the product may provide (provided_by_source). */
   obligation: boolean;
   /** How its IDs are written, its own pattern, such as <command>-CLI. */
   id_pattern?: string;
@@ -1051,6 +1089,8 @@ export interface ProductKindRow {
   id_example?: string;
   /** For a code-bound kind, how its titles are written (meta_kind_title): identifier, invocation or kebab-case; none for a kind titled in words. */
   title_form?: "identifier" | "invocation" | "kebab-case";
+  /** Whether its records are essential complexity (what the problem itself demands, such as a report the product's people read), accidental (what comes from the means of building it, such as a kind of code), or as-parent: as the record they sit under. Never mixed: a kind that would hold both is two kinds. */
+  complexity: "essential" | "accidental" | "as-parent" | "by-type";
 }
 
 /** One typed field of a product kind, in order: a column of its table. */
@@ -1099,6 +1139,8 @@ export interface ProductSettingRow {
   max_children: number;
   /** The most entities an aggregate should have before aggregate-too-large warns; the default is 7. */
   max_entities_per_aggregate: number;
+  /** The words, besides Lathe's own, that name technology in this product's essential records, which accidental-in-essential warns of, such as the name of a framework the product is built with; none by default. */
+  technology_words: string[];
 }
 
 /** Fills its read model's table and keeps it current, from events or as a view's query. It writes only its own read model's table. */
@@ -1115,7 +1157,7 @@ export interface ProjectionRow {
   description: string;
 }
 
-/** The data store is a service someone else runs, which the user must provide, reached through the integration: a managed database or a bucket. A store the product owns outright, such as a local file or browser storage, has none. */
+/** The record is provided by something outside the product, which decides it once for everyone who uses it: a dependency, a platform or a generic subdomain, reached through an integration or named by a record of a product's own kind (a component of a design system), once the product adds that pair with a product_relation named provided_by. A data store someone else runs, such as a managed database or a bucket, is provided by the integration that reaches it; a store the product owns outright, such as a local file, has none. A provided record counts as accounted for, and a provided obligation as built and proved, through its provider. One provider per record. */
 export interface ProvidedByRow {
   source_id: string;
   target_id: string;
@@ -1429,18 +1471,6 @@ export interface TableKeyRow {
   condition?: string;
 }
 
-/** A dev script or config file outside the running product: a build, a generator, a watcher, or a config of the tools it is checked and tested with, such as a type checker's or a test runner's. Its title and file say what it is. */
-export interface ToolingRow {
-  /** The tooling record's ID: its domain's ID and TOOL<nn>, such as TL-LEND-TOOL01. */
-  id: string;
-  /** Its file's name, such as vitest.config.ts. */
-  title: string;
-  /** The domain whose code it builds, checks or tests. */
-  domain_id: string;
-  /** The script or config file, or the folder of them, from the product root; it may not exist yet. */
-  file?: string;
-}
-
 /** One actor of a use case, in order: a role of the use case's product. */
 export interface UseCaseActorRow {
   /** The use case. */
@@ -1597,11 +1627,15 @@ export interface TableRows {
   flow_step: FlowStepRow;
   exchanges_with: ExchangesWithRow;
   fed_by: FedByRow;
-  flow_test: FlowTestRow;
   pattern: PatternRow;
+  slot: SlotRow;
+  fills: FillsRow;
+  flow_test: FlowTestRow;
   follows: FollowsRow;
   uc_requirement: UcRequirementRow;
   fulfills: FulfillsRow;
+  tooling: ToolingRow;
+  generates: GeneratesRow;
   happens_in: HappensInRow;
   has_many: HasManyRow;
   has_one: HasOneRow;
@@ -1649,7 +1683,6 @@ export interface TableRows {
   stored_in: StoredInRow;
   table: TableRow;
   table_key: TableKeyRow;
-  tooling: ToolingRow;
   use_case_actor: UseCaseActorRow;
   use_case_test: UseCaseTestRow;
   value_object_field: ValueObjectFieldRow;

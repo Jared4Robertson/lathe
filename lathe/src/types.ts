@@ -1,9 +1,9 @@
 // The shape the Lathe engine returns from loadWorkspace(root), which `lathe check` and the server's checks' run read: the typed
 // records of the product's data/ folder, read through the store, with the problems the checks found and coverage.
 import type { Row } from './platform/data/rows.ts';
-import type { IdScope, Stage } from './platform/data/schema.ts';
+import type { Complexity, IdScope, Stage } from './platform/data/schema.ts';
 
-export type { IdScope, Stage };
+export type { Complexity, IdScope, Stage };
 
 export interface Kind {
   kind: string;
@@ -18,6 +18,12 @@ export interface Kind {
   required_fields: string[];
   /** An obligation must be designed, built and proved; coverage counts every obligation kind. */
   obligation: boolean;
+  /**
+   * Whether its records are essential complexity (decided once per product), accidental (from the means used to build
+   * it: derived, provided or a fill), as the record they sit under (as-parent: a test, a standard rule) or as their own
+   * type says (by-type: a standard); null for an open question.
+   */
+  complexity: Complexity | null;
   /** What its IDs start with: its product's, its domain's or its parent's ID; null when its IDs are free. */
   id_scope: IdScope | null;
   description: string;
@@ -135,6 +141,8 @@ export interface Coverage {
   pattern_rules: string[];
   /** The obligations not yet designed, built or proved, then the records short of a minimum (gap rules), by record. */
   gaps: CoverageGap[];
+  /** The accidental debt: each fill, a hand-written technical record and the slot of a pattern it fills, by record then slot. */
+  debt: { id: string; slot: string }[];
 }
 
 /** A file a record of a chain names, as the record gives it, with the records that name it. */

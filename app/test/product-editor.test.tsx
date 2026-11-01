@@ -94,6 +94,7 @@ describe('LA-V51-R07-T01 the Product editor writes only through the aggregate\'s
     await user.type(within(form).getByRole('textbox', { name: /^label/ }), 'Report');
     await user.type(within(form).getByRole('textbox', { name: /^description/ }), 'A script that counts.');
     await user.type(within(form).getByRole('textbox', { name: /^parent kind/ }), 'domain');
+    await user.selectOptions(within(form).getByRole('combobox', { name: /^complexity/ }), 'essential');
     await user.click(within(form).getByRole('button', { name: 'Add to Fields' }));
     const field = within(form).getByRole('group', { name: 'Fields: row 1' });
     await user.type(within(field).getByRole('textbox', { name: /^name 1/ }), 'file');
@@ -104,7 +105,7 @@ describe('LA-V51-R07-T01 the Product editor writes only through the aggregate\'s
     await waitFor(() => expect(commands).toHaveLength(1));
     expect(commands[0]).toEqual({
       route: '/api/product/declare-product-kind',
-      input: { product_id: 'DM', name: 'report', label: 'Report', description: 'A script that counts.', parent_kind: 'domain', obligation: false, fields: [{ name: 'file', type: 'text', required: true, description: 'The script.' }] } });
+      input: { product_id: 'DM', name: 'report', label: 'Report', description: 'A script that counts.', parent_kind: 'domain', obligation: false, complexity: 'essential', fields: [{ name: 'file', type: 'text', required: true, description: 'The script.' }] } });
   });
 });
 

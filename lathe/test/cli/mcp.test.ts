@@ -72,7 +72,7 @@ describe('the server', () => {
     send({
       id: 4,
       method: 'tools/call',
-      params: { name: 'product_declare_product_kind', arguments: { name: 'report', product_id: 'TL', label: 'Report', description: 'A report.', parent_kind: 'domain', stage: 'use-cases', obligation: false, id_pattern: '<domain>-RPT<nn>' } },
+      params: { name: 'product_declare_product_kind', arguments: { name: 'report', product_id: 'TL', label: 'Report', description: 'A report.', parent_kind: 'domain', stage: 'use-cases', obligation: false, complexity: 'essential', id_pattern: '<domain>-RPT<nn>' } },
     });
     send({ id: 5, method: 'tools/list' });
     send({ id: 6, method: 'nope' });

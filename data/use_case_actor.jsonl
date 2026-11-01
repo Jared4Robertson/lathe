@@ -129,3 +129,5 @@
 {"use_case_id":"LA-TRC-UC19","position":2,"role_name":"Agent"}
 {"use_case_id":"LA-TRC-UC20","position":1,"role_name":"Reader"}
 {"use_case_id":"LA-TRC-UC20","position":2,"role_name":"Agent"}
+{"use_case_id":"LA-TRC-UC21","position":1,"role_name":"Owner"}
+{"use_case_id":"LA-TRC-UC21","position":2,"role_name":"Agent"}

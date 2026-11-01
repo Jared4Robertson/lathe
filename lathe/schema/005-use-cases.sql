@@ -1,5 +1,5 @@
 -- Use cases: capabilities, use cases with their actors, UC requirements, and the patterns use cases and domains follow,
--- with their settings and rules.
+-- with their settings, rules and slots.
 
 CREATE TABLE capability (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
@@ -63,7 +63,7 @@ CREATE TABLE pattern (
   description VARCHAR NOT NULL CHECK (trim(description) <> ''),
   notes VARCHAR
 );
-COMMENT ON TABLE pattern IS 'Behavior several use cases share, stated once with the settings each use case that follows it fills in. Its settings are pattern_setting rows and its rules pattern_rule records.';
+COMMENT ON TABLE pattern IS 'Behavior several use cases share, stated once: a fixed part, the settings each use case that follows it fills in (its configuration, the known ways it varies) and its slots (the open-ended variation, filled with code against a contract). Its settings are pattern_setting rows, its rules pattern_rule records and its slots slot records.';
 COMMENT ON COLUMN pattern.id IS 'The pattern''s ID, such as TL-PAT-LIBRARIAN-ACTION.';
 COMMENT ON COLUMN pattern.title IS 'The pattern''s name, such as Librarian action.';
 COMMENT ON COLUMN pattern.product_id IS 'The product it belongs to.';
@@ -100,18 +100,32 @@ COMMENT ON COLUMN pattern_rule.statement IS 'The rule, stated with MUST, MUST NO
 COMMENT ON COLUMN pattern_rule.group_name IS 'A short heading it is shown under among its siblings, such as Validation or Paging.';
 COMMENT ON COLUMN pattern_rule.notes IS 'Longer notes on how the rule applies.';
 
+CREATE TABLE slot (
+  id VARCHAR PRIMARY KEY REFERENCES record_id (id),
+  title VARCHAR NOT NULL CHECK (trim(title) <> ''),
+  pattern_id VARCHAR NOT NULL REFERENCES pattern (id),
+  statement VARCHAR NOT NULL CHECK (trim(statement) <> '')
+);
+COMMENT ON TABLE slot IS 'An open-ended part of a pattern, which neither its fixed part nor its settings can express: code fills it against its contract. A technical record that fills it, written by hand, is a fill (fills): accidental complexity recorded where it is owed, and debt until the pattern can derive it.';
+COMMENT ON COLUMN slot.id IS 'The slot''s ID: its pattern''s ID and SL<nn>, such as TL-PAT-LIBRARIAN-ACTION-SL01.';
+COMMENT ON COLUMN slot.title IS 'What fills it, in a few words, such as Refusal message.';
+COMMENT ON COLUMN slot.pattern_id IS 'The pattern it belongs to.';
+COMMENT ON COLUMN slot.statement IS 'Its contract: what every fill MUST do, in one sentence.';
+
 INSERT INTO meta_kind VALUES
-  ('capability', 'Capability', 'use-cases', 18, false, '<P>-<D>-CAP<nn>', 'TL-LEND-CAP01', 'domain', NULL),
-  ('use_case', 'Use case', 'use-cases', 19, false, '<P>-<D>-UC<nn>', 'TL-LEND-UC01', 'domain', NULL),
-  ('uc_requirement', 'UC requirement', 'use-cases', 20, true, '<use case>-R<nn>', 'TL-LEND-UC01-R01', 'parent', NULL),
-  ('pattern', 'Pattern', 'use-cases', 21, false, '<P>-PAT-<name>', 'TL-PAT-LIBRARIAN-ACTION', 'parent', NULL),
-  ('pattern_rule', 'Pattern rule', 'use-cases', 22, true, '<pattern>-R<nn>', 'TL-PAT-LIBRARIAN-ACTION-R01', 'parent', NULL);
+  ('capability', 'Capability', 'use-cases', 18, false, '<P>-<D>-CAP<nn>', 'TL-LEND-CAP01', 'domain', NULL, 'essential'),
+  ('use_case', 'Use case', 'use-cases', 19, false, '<P>-<D>-UC<nn>', 'TL-LEND-UC01', 'domain', NULL, 'essential'),
+  ('uc_requirement', 'UC requirement', 'use-cases', 20, true, '<use case>-R<nn>', 'TL-LEND-UC01-R01', 'parent', NULL, 'essential'),
+  ('pattern', 'Pattern', 'use-cases', 21, false, '<P>-PAT-<name>', 'TL-PAT-LIBRARIAN-ACTION', 'parent', NULL, 'essential'),
+  ('pattern_rule', 'Pattern rule', 'use-cases', 22, true, '<pattern>-R<nn>', 'TL-PAT-LIBRARIAN-ACTION-R01', 'parent', NULL, 'essential'),
+  ('slot', 'Slot', 'use-cases', 23, false, '<pattern>-SL<nn>', 'TL-PAT-LIBRARIAN-ACTION-SL01', 'parent', NULL, 'essential');
 INSERT INTO meta_kind_parent VALUES
   ('capability', 'domain', 1, 'domain_id'),
   ('use_case', 'capability', 1, 'capability_id'),
   ('uc_requirement', 'use_case', 1, 'use_case_id'),
   ('pattern', 'product', 1, 'product_id'),
-  ('pattern_rule', 'pattern', 1, 'pattern_id');
+  ('pattern_rule', 'pattern', 1, 'pattern_id'),
+  ('slot', 'pattern', 1, 'pattern_id');
 INSERT INTO meta_table VALUES
   ('capability', 'kind', NULL), ('use_case', 'kind', NULL), ('use_case_actor', 'part', 'use_case_id'), ('uc_requirement', 'kind', NULL),
-  ('pattern', 'kind', NULL), ('pattern_setting', 'part', 'pattern_id'), ('pattern_rule', 'kind', NULL);
+  ('pattern', 'kind', NULL), ('pattern_setting', 'part', 'pattern_id'), ('pattern_rule', 'kind', NULL), ('slot', 'kind', NULL);

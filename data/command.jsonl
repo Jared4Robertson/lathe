@@ -41,8 +41,8 @@
 {"id":"LA-AUT-CMD150","title":"Add an entry point","entity_id":"LA-AUT-EN82","description":"Adds an entry point under its domain, with the packages it uses and the standard rules it meets."}
 {"id":"LA-AUT-CMD151","title":"Change an entry point","entity_id":"LA-AUT-EN82","description":"Changes an entry point's title, file, description, packages or standard rules met. Its domain stays."}
 {"id":"LA-AUT-CMD152","title":"Remove an entry point","entity_id":"LA-AUT-EN82","description":"Removes an entry point whole, with the packages it names and the links it starts. Refused while anything references it."}
-{"id":"LA-AUT-CMD155","title":"Add a tooling record","entity_id":"LA-AUT-EN83","description":"Adds a tooling record under its domain, with the packages it uses and the standard rules it meets."}
-{"id":"LA-AUT-CMD156","title":"Change a tooling record","entity_id":"LA-AUT-EN83","description":"Changes a tooling record's title, file, packages or standard rules met. Its domain stays."}
+{"id":"LA-AUT-CMD155","title":"Add a tooling record","entity_id":"LA-AUT-EN83","description":"Adds a tooling record under its domain, with the packages it uses, the standard rules it meets and the technical records it generates."}
+{"id":"LA-AUT-CMD156","title":"Change a tooling record","entity_id":"LA-AUT-EN83","description":"Changes a tooling record's title, file, packages, standard rules met or technical records generated. Its domain stays."}
 {"id":"LA-AUT-CMD157","title":"Remove a tooling record","entity_id":"LA-AUT-EN83","description":"Removes a tooling record whole, with the packages it names and the links it starts. Refused while anything references it."}
 {"id":"LA-AUT-CMD160","title":"Add a domain","entity_id":"LA-AUT-EN04","description":"Adds a domain to its product, with nothing in it yet."}
 {"id":"LA-AUT-CMD161","title":"Change a domain","entity_id":"LA-AUT-EN04","description":"Changes a domain's title, subdomain type, description or notes. Its product never changes."}
@@ -205,13 +205,17 @@
 {"id":"LA-AUT-CMD363","title":"Add a storage requirement test","entity_id":"LA-AUT-EN111","description":"Adds a storage requirement test under its storage requirement, with the test data sets it starts from."}
 {"id":"LA-AUT-CMD364","title":"Change a storage requirement test","entity_id":"LA-AUT-EN111","description":"Changes a storage requirement test's columns or the test data sets it starts from (the whole list)."}
 {"id":"LA-AUT-CMD365","title":"Remove a storage requirement test","entity_id":"LA-AUT-EN111","description":"Removes a storage requirement test with the links it starts. Refused while anything references it, such as a business outcome it measures."}
-{"id":"LA-AUT-CMD370","title":"Add a data store","entity_id":"LA-AUT-EN112","description":"Adds a data store under its product or one of its domains (exactly one of product_id and domain_id), with the integration that reaches it when it is a service someone else runs."}
-{"id":"LA-AUT-CMD371","title":"Change a data store","entity_id":"LA-AUT-EN112","description":"Changes a data store's title, kind or description, or the integration that reaches it (null clears it). Its product or domain never changes: remove it and add it again under another."}
-{"id":"LA-AUT-CMD372","title":"Remove a data store","entity_id":"LA-AUT-EN112","description":"Removes a data store with the link it starts. Refused while a repository, reader or table is stored in it, naming each."}
+{"id":"LA-AUT-CMD370","title":"Add a data store","entity_id":"LA-AUT-EN112","description":"Adds a data store under its product or one of its domains (exactly one of product_id and domain_id). What provides it, when it is a service someone else runs, is named with Name a provider."}
+{"id":"LA-AUT-CMD371","title":"Change a data store","entity_id":"LA-AUT-EN112","description":"Changes a data store's title, kind or description. Its product or domain never changes: remove it and add it again under another."}
+{"id":"LA-AUT-CMD372","title":"Remove a data store","entity_id":"LA-AUT-EN112","description":"Removes a data store whole. Refused while a repository, reader or table is stored in it, or something provides it, naming each."}
+{"id":"LA-AUT-CMD373","title":"Add a slot","entity_id":"LA-AUT-EN113","description":"Adds a slot to its pattern: an open-ended part code fills against its contract."}
+{"id":"LA-AUT-CMD374","title":"Change a slot","entity_id":"LA-AUT-EN113","description":"Changes a slot's title or contract. Its pattern does not change."}
+{"id":"LA-AUT-CMD375","title":"Remove a slot","entity_id":"LA-AUT-EN113","description":"Removes a slot from its pattern. Refused while a record fills it."}
 {"id":"LA-CHK-CMD01","title":"Add a check","entity_id":"LA-CHK-EN01","description":"Adds a check row: its name, the product it belongs to (none for Lathe's own), the domain whose rules it reports, its place in the run order, its severity, summary, explanation and one SELECT, and the kinds it concerns. A name one of Lathe's checks has is refused."}
 {"id":"LA-CHK-CMD02","title":"Change a check","entity_id":"LA-CHK-EN01","description":"Changes a check row's domain, place in the run order, severity, summary, explanation, query or kinds. Its name and product do not change, and Lathe's own checks are read-only."}
 {"id":"LA-CHK-CMD03","title":"Remove a check","entity_id":"LA-CHK-EN01","description":"Removes a product's check row, so it no longer runs; Lathe's own checks are read-only."}
 {"id":"LA-CHK-CMD04","title":"Set the product's limits","entity_id":"LA-CHK-EN03","description":"Sets a product's settings row: the most children of one kind a record should hold, and the most entities an aggregate should hold. A product without the row takes the defaults, 15 and 7."}
+{"id":"LA-CHK-CMD05","title":"Set the product's technology words","entity_id":"LA-CHK-EN03","description":"Sets the words, besides Lathe's own, that name technology in the product's essential records, keeping its limits; the first time, adds its settings row with the default limits."}
 {"id":"LA-EXP-CMD01","title":"Open a page","entity_id":"LA-EXP-EN01","description":"a stage switched on the same page replaces the history entry; any other move pushes one (INV01)."}
 {"id":"LA-EXP-CMD02","title":"Remember the page in its space","entity_id":"LA-EXP-EN02","description":"sets the space's Last page and makes it the one last chosen."}
 {"id":"LA-EXP-CMD03","title":"Fold or unfold a nav row","entity_id":"LA-EXP-EN03","description":"the fold buttons of app/src/shell/Nav.tsx"}
@@ -294,3 +298,7 @@
 {"id":"LA-TRC-CMD01","title":"Follow a pattern","entity_id":"LA-TRC-EN05","description":"Makes a domain or use case follow a pattern, with the value it gives each of the pattern's settings."}
 {"id":"LA-TRC-CMD02","title":"Change the setting values","entity_id":"LA-TRC-EN06","description":"Gives a followed pattern's settings their values: the list replaces the follower's values for that pattern."}
 {"id":"LA-TRC-CMD10","title":"Stop following a pattern","entity_id":"LA-TRC-EN05","description":"Ends a domain's or use case's following of a pattern, with the setting values it gave it."}
+{"id":"LA-TRC-CMD11","title":"Fill a slot","entity_id":"LA-TRC-EN07","description":"Records that a technical record, written by hand, fills a slot of a pattern: a fill. Refused for a record a tooling record generates."}
+{"id":"LA-TRC-CMD12","title":"Stop filling a slot","entity_id":"LA-TRC-EN07","description":"Ends a technical record's fill of a slot."}
+{"id":"LA-TRC-CMD13","title":"Name a provider","entity_id":"LA-TRC-EN08","description":"Names what provides a data store, technical record or obligation from outside the product, in place of any provider it had."}
+{"id":"LA-TRC-CMD14","title":"Remove a provider","entity_id":"LA-TRC-EN08","description":"Removes a record's provider: it is no longer provided from outside the product."}

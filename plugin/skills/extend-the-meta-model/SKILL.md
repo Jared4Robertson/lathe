@@ -21,6 +21,8 @@ Lathe's own kinds cannot be given another parent or more required fields by a pr
 
 **Parent and ID.** Its one parent is a Lathe kind or another product kind; start its ID pattern with the parent's name in angle brackets so IDs number under the parent.
 
+**Essential or accidental.** Every kind declares its complexity: essential (what the problem itself demands, decided once by the product, such as a report its people read), accidental (what comes from the means of building it, such as a kind of code), or as-parent (as the record it sits under, such as a test kind). Never mixed: a kind whose records would be both is two kinds. An accidental kind's records must be generated, provided or fills (`write-the-technical-spec`); an essential kind's must name no technology. Words the product's essential records must not use, such as the name of its framework, go in the product's technology words (`set-technology-words`).
+
 **Obligation or not.** Mark a kind an obligation only when each record is something that must be built and proved; Lathe then counts it in coverage and reports the gaps. A new relation's role says whether its links count as design (the source designs the target), build (the source builds it once its file exists), proof (it proves), or none of these.
 
 **Text.** A kind's text is required or absent: give it a lead field (statement, goal, meaning or description) only when its records need words the title, parent, links and other fields cannot say, and then it is required and the only one. A code-bound kind whose title and file say what it is has none. Give every kind, field and relation a plain description; the app shows it.
