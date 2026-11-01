@@ -99,26 +99,4 @@ export const PRODUCT_FIELDS = {
   '/api/product/remove-question': {
     id: { kind: 'column', table: 'question', column: 'id', required: true, clearable: false },
   },
-  '/api/product/add-interface': {
-    id: { kind: 'column', table: 'interface', column: 'id', required: true, clearable: false },
-    title: { kind: 'column', table: 'interface', column: 'title', required: true, clearable: false },
-    product_id: { kind: 'column', table: 'interface', column: 'product_id', required: true, clearable: false },
-    kind: { kind: 'column', table: 'interface', column: 'kind', required: true, clearable: false },
-    description: { kind: 'column', table: 'interface', column: 'description', required: true, clearable: false },
-    public: { kind: 'column', table: 'interface', column: 'public', required: true, clearable: false },
-    actors: { kind: 'texts', description: 'The roles of the product that use it, in order.', required: false, clearable: false },
-    offers: { kind: 'ids', description: 'The use cases of the product it offers.', required: false, clearable: false },
-  },
-  '/api/product/change-interface': {
-    id: { kind: 'column', table: 'interface', column: 'id', required: true, clearable: false },
-    title: { kind: 'column', table: 'interface', column: 'title', required: false, clearable: false },
-    kind: { kind: 'column', table: 'interface', column: 'kind', required: false, clearable: false },
-    description: { kind: 'column', table: 'interface', column: 'description', required: false, clearable: false },
-    public: { kind: 'column', table: 'interface', column: 'public', required: false, clearable: false },
-    actors: { kind: 'texts', description: 'The roles of the product that use it, in order.', required: false, clearable: false },
-    offers: { kind: 'ids', description: 'The use cases of the product it offers.', required: false, clearable: false },
-  },
-  '/api/product/remove-interface': {
-    id: { kind: 'column', table: 'interface', column: 'id', required: true, clearable: false },
-  },
 } as const satisfies Record<string, InputFields>;
