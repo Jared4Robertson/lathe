@@ -70,7 +70,7 @@ export function everyKind(): Data {
     slot: [{ id: 'TL-PAT-ACT-SL01', title: 'Saving rule', pattern_id: 'TL-PAT-ACT', statement: 'A fill MUST refuse what its record does not allow before anything is saved.' }],
 
     // Interaction design.
-    interface: [{ id: 'TL-IF01', title: 'Web app', product_id: 'TL', kind: 'web app', description: 'The desk app the librarian uses.' }],
+    interface: [{ id: 'TL-IF01', title: 'Web app', product_id: 'TL', kind: 'web app', description: 'The desk app the librarian uses.', public: false }],
     flow: [{ id: 'TL-LEND-UC01-FL01', title: 'Borrow a tool in the web app', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }],
     flow_step: [{ id: 'TL-LEND-UC01-FL01-S01', title: 'Pick a tool', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 }],
     view: [{ id: 'TL-V01', title: 'Catalog', route: '/catalog', description: 'Every tool, with whether it is free.' }],

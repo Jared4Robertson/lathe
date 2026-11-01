@@ -7,7 +7,7 @@ import { holdToRules } from '../rules.ts';
 import { CHANGE_INTERFACE_IDENTITY } from './identities.generated.ts';
 
 /** The interface's changes: a column given is set. */
-export type ChangeInterface = Pick<InterfaceRow, 'id'> & { title?: string; kind?: InterfaceRow['kind']; description?: string };
+export type ChangeInterface = Pick<InterfaceRow, 'id'> & { title?: string; kind?: InterfaceRow['kind']; description?: string; public?: boolean };
 
 export const CHANGE_INTERFACE = {
   ...CHANGE_INTERFACE_IDENTITY,
@@ -16,6 +16,7 @@ export const CHANGE_INTERFACE = {
     title: column('interface', 'title', 'optional'),
     kind: column('interface', 'kind', 'optional'),
     description: column('interface', 'description', 'optional'),
+    public: column('interface', 'public', 'optional'),
   },
   handler: changeInterface,
 } satisfies CommandDefinition<ChangeInterface>;
@@ -24,7 +25,7 @@ export const CHANGE_INTERFACE = {
 export function changeInterface(tx: Transaction, input: ChangeInterface): void {
   const products = new ProductRepository(tx);
   const product = products.loadHolding('interface', input.id) ?? tx.refuse('missing', `there is no interface ${input.id}`);
-  product.interfaces = product.interfaces.map((i) => (i.id === input.id ? changed(i, input, ['title', 'kind', 'description']) : i));
+  product.interfaces = product.interfaces.map((i) => (i.id === input.id ? changed(i, input, ['title', 'kind', 'description', 'public']) : i));
   holdToRules(tx, product);
   products.save(product);
 }

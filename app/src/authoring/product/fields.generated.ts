@@ -105,12 +105,14 @@ export const PRODUCT_FIELDS = {
     product_id: { kind: 'column', table: 'interface', column: 'product_id', required: true, clearable: false },
     kind: { kind: 'column', table: 'interface', column: 'kind', required: true, clearable: false },
     description: { kind: 'column', table: 'interface', column: 'description', required: true, clearable: false },
+    public: { kind: 'column', table: 'interface', column: 'public', required: true, clearable: false },
   },
   '/api/product/change-interface': {
     id: { kind: 'column', table: 'interface', column: 'id', required: true, clearable: false },
     title: { kind: 'column', table: 'interface', column: 'title', required: false, clearable: false },
     kind: { kind: 'column', table: 'interface', column: 'kind', required: false, clearable: false },
     description: { kind: 'column', table: 'interface', column: 'description', required: false, clearable: false },
+    public: { kind: 'column', table: 'interface', column: 'public', required: false, clearable: false },
   },
   '/api/product/remove-interface': {
     id: { kind: 'column', table: 'interface', column: 'id', required: true, clearable: false },

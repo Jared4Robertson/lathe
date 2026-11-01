@@ -65,6 +65,7 @@ describe('designed and built', () => {
     data = without(data, 'event_handler', () => true);
     data = without(data, 'builds', () => true);
     data = without(data, 'endpoint_handler', () => true);
+    data = without(data, 'provided_by', (r) => r.source_id === 'EX-LEND-EP01-R01');
     data = without(data, 'meets', (r) => r.source_id === 'EX-LEND-CMD01-H');
     data = without(data, 'fulfills', (r) => r.source_id === 'EX-LEND-UC02-FL01-S01');
     ws = await loadData(data, { missing: ['src/dates.ts'] });

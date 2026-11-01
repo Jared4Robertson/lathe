@@ -99,7 +99,7 @@
 {"id":"LA-AUT-CMD220","title":"Change a data model","entity_id":"LA-AUT-EN48","description":"Changes a data model's title or file, or the standard rules it meets or the packages it uses (each list whole). Its entity does not change."}
 {"id":"LA-AUT-CMD221","title":"Remove a data model","entity_id":"LA-AUT-EN48","description":"Removes a data model with the links it starts and the packages it uses. Refused while anything else references it."}
 {"id":"LA-AUT-CMD222","title":"Add an invariant test","entity_id":"LA-AUT-EN65","description":"Adds the test of an invariant, with the test data sets it starts from."}
-{"id":"LA-AUT-CMD223","title":"Change an invariant test","entity_id":"LA-AUT-EN65","description":"Changes an invariant test's columns or the test data sets it starts from (the whole list)."}
+{"id":"LA-AUT-CMD223","title":"Change an invariant test","entity_id":"LA-AUT-EN65","description":"Changes what an invariant test says, or the test data sets it starts from (the whole list)."}
 {"id":"LA-AUT-CMD224","title":"Remove an invariant test","entity_id":"LA-AUT-EN65","description":"Removes an invariant test with the links it starts. Refused while anything else references it, such as a business outcome it measures."}
 {"id":"LA-AUT-CMD225","title":"Add a rule","entity_id":"LA-AUT-EN96","description":"Adds the rule that enforces an invariant of the aggregate: its name in code, the name its refusal carries, and its file, with the standard rules it meets and the packages it uses."}
 {"id":"LA-AUT-CMD226","title":"Change a rule","entity_id":"LA-AUT-EN96","description":"Changes a rule's title or file, or the standard rules it meets or the packages it uses (each list whole). Its invariant does not change."}

@@ -60,7 +60,7 @@ async function productDataSet(store: Store): Promise<Store> {
       { name: 'Librarian', description: 'Someone who lends tools at the desk.' },
     ],
   });
-  await runCommand(store, ADD_INTERFACE, { id: 'TL-IF01', title: 'Web app', product_id: 'TL', kind: 'web app', description: 'The desk app the librarian uses.' });
+  await runCommand(store, ADD_INTERFACE, { id: 'TL-IF01', title: 'Web app', product_id: 'TL', kind: 'web app', description: 'The desk app the librarian uses.', public: false });
   await runCommand(store, ADD_QUESTION, { id: 'TL-Q01', title: 'How long is a loan?', product_id: 'TL', owner: 'Librarian', description: 'Two weeks or one.' });
   await runCommand(store, DECLARE_PRODUCT_KIND, {
     name: 'report',
@@ -129,7 +129,7 @@ describe('LA-AUT-UC23-R01-T51 each Product command changes one product through P
     await expect(runCommand(store, CHANGE_PRODUCT, { id: 'TL', roles: [{ name: 'Member' }] })).rejects.toThrow(/roles .* has an item with no description/);
     await expect(runCommand(store, CHANGE_PRODUCT, { id: 'TL', title: null })).rejects.toThrow(/title cannot be cleared/);
     expect((await refusal(store, CHANGE_PRODUCT, { id: 'XX', title: 'Nothing' })).problems[0]).toMatchObject({ rule: 'missing', message: 'there is no product XX' });
-    expect((await refusal(store, ADD_INTERFACE, { id: 'TL-IF01', title: 'Again', product_id: 'TL', kind: 'CLI', description: 'Twice.' })).problems[0].rule).toBe('primary-key');
+    expect((await refusal(store, ADD_INTERFACE, { id: 'TL-IF01', title: 'Again', product_id: 'TL', kind: 'CLI', description: 'Twice.', public: false })).problems[0].rule).toBe('primary-key');
   });
 });
 
@@ -200,7 +200,7 @@ describe('LA-AUT-UC23-R01-T52 a record of a product goes with what it holds, ref
     const refused = await refusal(store, REMOVE_INTERFACE, { id: 'TL-IF01' });
     expect(refused.problems[0]).toMatchObject({ rule: 'referenced' });
     expect(refused.problems[0].message).toMatch(/^Interface TL-IF01 is referenced, so it stays: flow TL-LEND-UC01-FL01 \(interface_id\)/);
-    await runCommand(store, ADD_INTERFACE, { id: 'TL-IF02', title: 'CLI', product_id: 'TL', kind: 'CLI', description: 'The librarian\'s scripts.' });
+    await runCommand(store, ADD_INTERFACE, { id: 'TL-IF02', title: 'CLI', product_id: 'TL', kind: 'CLI', description: 'The librarian\'s scripts.', public: false });
     expect((await runCommand(store, REMOVE_INTERFACE, { id: 'TL-IF02' })).tables).toEqual(['interface']);
   });
 
@@ -216,7 +216,7 @@ describe('LA-AUT-UC23-R01-T53 each Product command and query is reached by name 
     const root = writeData(everyKind());
     const out: string[] = [];
     const err: string[] = [];
-    const io = { out: (t: string) => out.push(t), err: (t: string) => err.push(t), stdin: async () => JSON.stringify({ id: 'TL-IF02', title: 'CLI', product_id: 'TL', kind: 'CLI', description: 'Scripts.' }) };
+    const io = { out: (t: string) => out.push(t), err: (t: string) => err.push(t), stdin: async () => JSON.stringify({ id: 'TL-IF02', title: 'CLI', product_id: 'TL', kind: 'CLI', description: 'Scripts.', public: false }) };
     expect(await runAggregateCommand(['product', 'add-interface', '--json', '-', '--root', root], io)).toBe(0);
     expect(JSON.parse(out.pop()!)).toMatchObject({ tables: ['interface'] });
     expect(await runAggregateCommand(['product', 'change-product', '--id', 'TL', '--roles', '{"name":"Member","description":"Borrows."}', '--roles', '{"name":"Librarian","description":"Lends."}', '--root', root], io)).toBe(0);
@@ -248,7 +248,7 @@ describe('LA-AUT-UC23-R01-T53 each Product command and query is reached by name 
     const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
     const post = (route: string, body: unknown) => fetch(`${base}${route}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     try {
-      const added = await post('/api/product/add-interface', { id: 'TL-IF02', title: 'CLI', product_id: 'TL', kind: 'CLI', description: 'Scripts.' });
+      const added = await post('/api/product/add-interface', { id: 'TL-IF02', title: 'CLI', product_id: 'TL', kind: 'CLI', description: 'Scripts.', public: false });
       expect(added.status).toBe(200);
       expect(await added.json()).toMatchObject({ ok: true, tables: ['interface'], changes: [{ table: 'interface', key: 'TL-IF02', before: null }] });
       const refused = await post('/api/product/remove-interface', { id: 'TL-IF01' });

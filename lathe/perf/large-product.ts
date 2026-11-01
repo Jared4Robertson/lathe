@@ -153,8 +153,8 @@ export async function writeLargeProduct(root: string, domains = DOMAINS): Promis
     const interfaces = [`${LARGE_PRODUCT}-IF01`, `${LARGE_PRODUCT}-IF02`];
     await runCommands(store, [
       [ADD_PRODUCT, { id: LARGE_PRODUCT, title: 'Large product', description: 'A synthetic product about ten times Lathe\'s own spec, for the performance budgets.', roles: [{ name: 'Owner', description: 'Decides what the product is for.' }] }],
-      [ADD_INTERFACE, { id: interfaces[0], title: 'Web app', product_id: LARGE_PRODUCT, kind: 'web app', description: 'The pages.' }],
-      [ADD_INTERFACE, { id: interfaces[1], title: 'CLI', product_id: LARGE_PRODUCT, kind: 'CLI', description: 'The command line.' }],
+      [ADD_INTERFACE, { id: interfaces[0], title: 'Web app', product_id: LARGE_PRODUCT, kind: 'web app', description: 'The pages.', public: false }],
+      [ADD_INTERFACE, { id: interfaces[1], title: 'CLI', product_id: LARGE_PRODUCT, kind: 'CLI', description: 'The command line.', public: false }],
     ]);
     for (let d = 0; d < domains; d += DOMAINS_PER_WRITE) {
       const steps = Array.from({ length: Math.min(DOMAINS_PER_WRITE, domains - d) }, (_, i) => domainSteps(d + i, interfaces)).flat();

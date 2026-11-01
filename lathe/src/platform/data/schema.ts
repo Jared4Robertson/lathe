@@ -94,9 +94,10 @@ export type Stage = 'discovery' | 'domain-model' | 'use-cases' | 'interaction-de
 
 /**
  * Whether a kind's records are essential complexity (decided once per product), accidental (from the means used to
- * build it), as the record they sit under (as-parent), or as their own type says (by-type: a standard).
+ * build it), as the record they sit under (as-parent), as their own type says (by-type: a standard), or as their
+ * product's interfaces say (by-interface: an API requirement, essential only on a public API).
  */
-export type Complexity = 'essential' | 'accidental' | 'as-parent' | 'by-type';
+export type Complexity = 'essential' | 'accidental' | 'as-parent' | 'by-type' | 'by-interface';
 
 /** What a kind's IDs start with, followed by a hyphen: its product's ID, its domain's ID or its parent's ID. */
 export type IdScope = 'product' | 'domain' | 'parent';

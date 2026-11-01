@@ -62,11 +62,11 @@
 {"id":"LA-AUT-UC06-FL04-S06","title":"Through its tool, the Agent adds a step fulfilling another use case's requirement or happening in a view of a CLI flow, and is refused with every reason","flow_id":"LA-AUT-UC06-FL04","path":"refused","position":1}
 {"id":"LA-AUT-UC08-FL03-S01","title":"They read each kind's stage and place in the reference","flow_id":"LA-AUT-UC08-FL03","path":"main","position":1}
 {"id":"LA-AUT-UC08-FL03-S02","title":"They declare a product kind in one of the stages","flow_id":"LA-AUT-UC08-FL03","path":"main","position":2}
-{"id":"LA-AUT-UC10-FL01-S01","title":"On its page, the Owner adds an aggregate with its root entity and the root's fields","flow_id":"LA-AUT-UC10-FL01","path":"main","position":2}
-{"id":"LA-AUT-UC10-FL01-S02","title":"On its page, the Owner adds a child entity with its fields, linked from the root by has_one or has_many, another aggregate referenced by a typed field","flow_id":"LA-AUT-UC10-FL01","path":"main","position":3}
-{"id":"LA-AUT-UC10-FL01-S03","title":"On its page, the Owner adds the aggregate's invariants, a uniqueness rule named on its unique key","flow_id":"LA-AUT-UC10-FL01","path":"main","position":4}
-{"id":"LA-AUT-UC10-FL01-S04","title":"On its page, the Owner adds a second root entity, and is refused with every reason","flow_id":"LA-AUT-UC10-FL01","path":"refused","position":1}
-{"id":"LA-AUT-UC10-FL01-S05","title":"On its page, the Owner reads the aggregate whole, with what it holds, before changing it","flow_id":"LA-AUT-UC10-FL01","path":"main","position":1}
+{"id":"LA-AUT-UC10-FL01-S01","title":"The Owner adds an aggregate with its root entity and the root's fields","flow_id":"LA-AUT-UC10-FL01","path":"main","position":2}
+{"id":"LA-AUT-UC10-FL01-S02","title":"The Owner adds a child entity with its fields, linked from the root by has_one or has_many, another aggregate referenced by a typed field","flow_id":"LA-AUT-UC10-FL01","path":"main","position":3}
+{"id":"LA-AUT-UC10-FL01-S03","title":"The Owner adds the aggregate's invariants, a uniqueness rule named on its unique key","flow_id":"LA-AUT-UC10-FL01","path":"main","position":4}
+{"id":"LA-AUT-UC10-FL01-S04","title":"The Owner adds a second root entity, and is refused with every reason","flow_id":"LA-AUT-UC10-FL01","path":"refused","position":1}
+{"id":"LA-AUT-UC10-FL01-S05","title":"The Owner reads the aggregate whole, with what it holds, before changing it","flow_id":"LA-AUT-UC10-FL01","path":"main","position":1}
 {"id":"LA-AUT-UC10-FL03-S01","title":"They add an aggregate with its root entity and the root's fields","flow_id":"LA-AUT-UC10-FL03","path":"main","position":1}
 {"id":"LA-AUT-UC10-FL03-S02","title":"They add a child entity with its fields, linked from the root by has_one or has_many, another aggregate referenced by a typed field","flow_id":"LA-AUT-UC10-FL03","path":"main","position":2}
 {"id":"LA-AUT-UC10-FL03-S03","title":"They add the aggregate's invariants, a uniqueness rule named on its unique key","flow_id":"LA-AUT-UC10-FL03","path":"main","position":3}
