@@ -30,7 +30,7 @@ import { useChanges } from '../changes/changes';
 import { highlightFade, marksMoving, useStageMarks, type MarkTree } from '../changes/marks';
 import { anchorOf, rollupText, totalChanges, type ChangeCounts } from '../changes/rollup';
 import { JOURNEY_COLUMN, STAGE_COLUMN, TRACE_COLUMN_LABELS, TRACE_COLUMNS, TRACE_STAGES, isOpen, stageOfColumn, type TraceGraph, type TraceStage, type Item, type Openness } from './trace';
-import { lastTraceOrder, useTraceOrder } from './order';
+import { lastTraceOrder, type Ordered } from './order';
 import { columnLeft, ITEM_HEIGHT, ITEM_WIDTH, layOutTrace, outcomesBeside, OUTSIDE_GAP, type BoxPlace, type TraceLaid } from './layout';
 import { litBy, type Lit } from './path';
 
@@ -107,8 +107,8 @@ export interface TraceCanvasProps {
   at: string | null;
   /** Whether every row has a stage open (Expand all), by stage. */
   every: Readonly<Record<TraceStage, boolean>>;
-  /** A count Tidy up raises: the rows are ordered afresh, their rooms closed, once for each. */
-  tidy: number;
+  /** The rows' order and the graph it was made for (useTraceOrder, called by the view); null before the first. */
+  ordered: Ordered | null;
   /** The row whose outcomes sit beside it (LA-V98-R22, layout.ts outcomesBeside); null keeps each at its own place. */
   beside: string | null;
   /** Opens or closes a box's children. */
@@ -136,7 +136,7 @@ export function TraceCanvas(props: TraceCanvasProps) {
     void pageMeasure(fonts).then((m) => { if (live) setMeasure(m); });
     return () => { live = false; };
   }, [fonts.body, fonts.mono]);
-  const ordered = useTraceOrder(props.graph, props.tidy);
+  const { ordered } = props;
   const home = useMemo(() => (ordered ? layOutTrace(ordered.graph, ordered.order, props.open) : null), [ordered, props.open]);
   const laid = useMemo(() => (ordered && home ? outcomesBeside(home, ordered.graph.serves, props.beside) : null), [ordered, home, props.beside]);
   if (!measure || !ordered || !laid) return <div className="graph-flow trace-flow" aria-busy="true" />;
@@ -198,7 +198,7 @@ function plainOf(item: Item): PlainBox {
 /** What one frame draws. */
 interface TraceFrame { plates: Plate[]; bars: Bar[]; barred: boolean; serves: number[]; journeyServes: number[]; carries: number[]; marks: { key: string; x: number; y: number }[] }
 
-function TraceScene({ index, focus, graph, laid, open, at, beside, every, onToggle, onEvery, onBox, onNavigate, onPeek, space, ring: ringAt, cameraKey, onOpenNew, fonts, theme }: Omit<TraceCanvasProps, 'tidy'> & { laid: TraceLaid; fonts: GraphFonts; theme: number }) {
+function TraceScene({ index, focus, graph, laid, open, at, beside, every, onToggle, onEvery, onBox, onNavigate, onPeek, space, ring: ringAt, cameraKey, onOpenNew, fonts, theme }: Omit<TraceCanvasProps, 'ordered'> & { laid: TraceLaid; fonts: GraphFonts; theme: number }) {
   const wrapper = useRef<TraceHost>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);

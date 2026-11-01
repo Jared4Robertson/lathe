@@ -21,7 +21,7 @@ import type { Move } from '../views/levels';
 import type { OpenSpaceStore } from '../views/openSpace';
 import { StageKey, StageToolbar, TidyUp } from '../views/StageChrome';
 import { cellKey, TRACE_COLUMN_LABELS, TRACE_STAGES, traceGraph, everyStepKey, rowsOf, type TraceGraph, type TraceStage, type Openness } from './trace';
-import { shownOrder } from './order';
+import { useTraceOrder } from './order';
 import { layOutTrace, outcomesBeside } from './layout';
 import { useOpenness } from './open';
 import { TRACE_WALK_LABELS, traceTarget, traceWords, type Along } from './walk';
@@ -67,7 +67,7 @@ const everyOpen = (graph: TraceGraph, open: ReadonlySet<string>, stage: TraceSta
   graph.rows.length > 0 && graph.rows.every((r) => open.has(cellKey(r.useCase, stage)) && (stage !== 'technical' || open.has(everyStepKey(r.useCase))));
 
 function ProductTraceStage(props: TraceViewProps & { product: string; trace: ProductTrace }) {
-  const { index, focus, product, trace, onCounts } = props;
+  const { index, focus, trace, onCounts } = props;
   const narrow = useNarrow();
   const graph = useMemo(() => traceGraph(index, trace), [index, trace]);
   const [open, setOpen] = useOpenness(props.cameraKey);
@@ -82,6 +82,8 @@ function ProductTraceStage(props: TraceViewProps & { product: string; trace: Pro
   // Tidy up (LA-PAT-APP-UX-R22): the rows ordered afresh, gaps closed, by the stage's shared command and button.
   const [tidy, setTidy] = useState(0);
   useCommand('stageTidy', () => setTidy((t) => t + 1), !narrow);
+  // The rows' order, here and not in the canvas: the walk, the toolbar's buttons and the list read the same order the canvas draws, and all re-render when it arrives.
+  const ordered = useTraceOrder(graph, tidy);
   // The box the walk or a click stands on, for the focus it left there (a record may show in several boxes), and the
   // journey the walk is along (walk.ts), if any.
   const [walked, setWalked] = useState<{ focus: string; key: string; along: Along | null } | null>(null);
@@ -129,7 +131,7 @@ function ProductTraceStage(props: TraceViewProps & { product: string; trace: Pro
 
   // The stage walk (walk.ts, LA-V61-R49): on a record the focus moves there, as a click does, and the camera
   // follows; on another box the ring does. In and Out open and close on the way. Each step is announced.
-  const laidNow = useCallback(() => { const order = shownOrder(product); return order ? outcomesBeside(layOutTrace(graph, order, openness), graph.serves, besideNow) : null; }, [product, graph, openness, besideNow]);
+  const laidNow = useCallback(() => (ordered ? outcomesBeside(layOutTrace(ordered.graph, ordered.order, openness), ordered.graph.serves, besideNow) : null), [ordered, openness, besideNow]);
   const fromBox = at ?? graph.boxesOf.get(focus)?.[0] ?? (graph.items.has(`outcome/${focus}`) ? `outcome/${focus}` : null);
   const targetOf = useCallback((move: Move) => { const laid = laidNow(); return laid ? traceTarget(graph, laid, openness, fromBox, move, along) : null; }, [laidNow, graph, openness, fromBox, along]);
   const walkMap = useCallback((move: Move) => {
@@ -178,7 +180,7 @@ function ProductTraceStage(props: TraceViewProps & { product: string; trace: Pro
       own={() => ({ primary: narrow ? null : <TidyUp />, secondary })}
     />
   );
-  const order = shownOrder(product)?.rows ?? graph.rows.map((r) => r.useCase);
+  const order = ordered?.order.rows ?? graph.rows.map((r) => r.useCase);
   const list = (access: boolean) => <TraceList index={index} graph={graph} order={order} open={openness} focus={focus} hrefFor={props.hrefFor} onNavigate={props.onNavigate} onToggle={toggle} access={access} />;
   if (narrow) {
     return (
@@ -193,7 +195,7 @@ function ProductTraceStage(props: TraceViewProps & { product: string; trace: Pro
       {toolbar}
       <StageKey entries={keyEntries} />
       <TraceCanvas
-        index={index} focus={focus} graph={graph} open={openness} at={at} beside={besideNow} every={every} tidy={tidy}
+        index={index} focus={focus} graph={graph} open={openness} at={at} beside={besideNow} every={every} ordered={ordered}
         onToggle={toggle} onEvery={setEvery} onBox={onBox} onNavigate={props.onNavigate} onPeek={props.onPeek}
         space={props.space} ring={ring} cameraKey={props.cameraKey} onOpenNew={props.onOpenNew}
       />

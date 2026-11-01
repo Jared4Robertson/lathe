@@ -236,8 +236,13 @@ test.describe('Traceability flows', () => {
       await whole();
       const outcomes = served.get(id)!.outcomes;
       expect(outcomes.length).toBeGreaterThan(0);
-      await expect(wiki.getByRole('list', { name: `Outcomes ${id} serves` }).getByRole('link')).toHaveCount(outcomes.length);
-      for (const o of outcomes) await expect(wiki.getByRole('list', { name: `Outcomes ${id} serves` }).getByRole('link', { name: new RegExp(`^${o} `) })).toBeVisible();
+      const list = wiki.getByRole('list', { name: `Outcomes ${id} serves` });
+      // One item per outcome; an outcome a journey carries also names that journey after "via" (a link of its own).
+      await expect(list.getByRole('listitem')).toHaveCount(outcomes.length);
+      for (const o of outcomes) await expect(list.getByRole('link', { name: new RegExp(`^${o} `) })).toBeVisible();
+      const journeys = served.get(id)!.journeys;
+      const via = await list.locator('a[href^="/LA-JR"]').evaluateAll((links) => links.map((a) => a.getAttribute('href')!.slice(1)));
+      expect([...new Set(via)].sort()).toEqual(journeys);
     }
     // S03: an outcome leads to its own page.
     const first = served.get(viewRequirement)!.outcomes[0];
