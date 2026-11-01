@@ -41,6 +41,7 @@ import { GET_DOMAIN_EVENT, LIST_DOMAIN_EVENTS, NEXT_DOMAIN_EVENT_ID } from './au
 import { GET_ENDPOINT, LIST_ENDPOINTS, NEXT_ENDPOINT_ID } from './authoring/endpoint/queries.ts';
 import { GET_ENTRY_POINT, LIST_ENTRY_POINTS, NEXT_ENTRY_POINT_ID } from './authoring/entry-point/queries.ts';
 import { GET_ERD } from './exploring/erd/queries.ts';
+import { LIST_ESSENTIAL_RECORDS } from './checking/essential-review/queries.ts';
 import { GET_EXTENSION_RECORD, LIST_EXTENSION_RECORDS, NEXT_EXTENSION_RECORD_ID } from './authoring/extension-record/queries.ts';
 import { GET_FOLDER_TREE } from './exploring/folder-tree/queries.ts';
 import { GET_INTEGRATION, LIST_INTEGRATIONS, NEXT_INTEGRATION_ID } from './authoring/integration/queries.ts';
@@ -133,6 +134,7 @@ export const ALL_QUERIES: readonly AnyQuery[] = [
   LIST_ENTRY_POINTS,
   NEXT_ENTRY_POINT_ID,
   GET_ERD,
+  LIST_ESSENTIAL_RECORDS,
   GET_EXTENSION_RECORD,
   LIST_EXTENSION_RECORDS,
   NEXT_EXTENSION_RECORD_ID,

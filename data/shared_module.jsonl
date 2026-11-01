@@ -55,6 +55,8 @@
 {"id":"LA-CHK-MOD02","title":"lathe/src/checking/check/commands/index.ts","domain_id":"LA-CHK","file":"lathe/src/checking/check/commands/index.ts"}
 {"id":"LA-CHK-MOD03","title":"lathe/src/checking/product-setting/model.ts","domain_id":"LA-CHK","file":"lathe/src/checking/product-setting/model.ts"}
 {"id":"LA-CHK-MOD04","title":"lathe/src/checking/product-setting/commands/index.ts","domain_id":"LA-CHK","file":"lathe/src/checking/product-setting/commands/index.ts"}
+{"id":"LA-CHK-MOD05","title":"lathe/src/essential.ts","domain_id":"LA-CHK","file":"lathe/src/essential.ts"}
+{"id":"LA-CHK-MOD06","title":"lathe/src/write-rules.ts","domain_id":"LA-CHK","file":"lathe/src/write-rules.ts"}
 {"id":"LA-EXP-MOD01","title":"app/src/elk.ts","domain_id":"LA-EXP","file":"app/src/elk.ts"}
 {"id":"LA-EXP-MOD03","title":"app/src/plural.ts","domain_id":"LA-EXP","file":"app/src/plural.ts"}
 {"id":"LA-EXP-MOD06","title":"app/src/graph/steps.ts","domain_id":"LA-EXP","file":"app/src/graph/steps.ts"}
