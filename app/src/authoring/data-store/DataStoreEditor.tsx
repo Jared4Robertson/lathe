@@ -2,13 +2,14 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { DataStorePage } from '../../../../lathe/src/authoring/data-store/read-model';
 import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
-import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
+import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, formFields, LONG, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
 import { useWriter, type CommandInputs } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
+import { DATA_STORE_FIELDS } from './fields.generated';
 import { useNextDataStoreId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -23,15 +24,12 @@ import { backToActions } from '../../edit/back-to-actions';
 const integrations = (index: RecordIndex, product: string): Choice[] =>
   [...index.byId.values()].filter((r) => r.kind === 'integration' && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
-/** The fields Add and Change take (Change leaves out the ID), in their input's order. */
+/** The fields Add and Change take, from their inputs (Add's parent and Change's ID are sent by the form itself). */
 function fieldsOf(index: RecordIndex, product: string, adding: boolean): FieldSpec[] {
-  return [
-    ...(adding ? [{ field: 'id', column: 'id', table: 'data_store' }] : []),
-    { field: 'title', column: 'title', table: 'data_store' },
-    { field: 'kind', column: 'kind', table: 'data_store' },
-    { field: 'description', column: 'description', table: 'data_store', long: true },
-    { field: 'provided_by', label: 'Provided by', description: 'The integration that reaches it, when it is a service someone else runs that the user must provide.', one: integrations(index, product) },
-  ];
+  const hints = { description: LONG, provided_by: { choices: integrations(index, product) } };
+  return adding
+    ? formFields(DATA_STORE_FIELDS['/api/data-store/add-data-store'], ['product_id', 'domain_id'], hints)
+    : formFields(DATA_STORE_FIELDS['/api/data-store/change-data-store'], ['id'], hints);
 }
 
 type Mode = 'view' | 'change' | 'remove';
@@ -54,7 +52,7 @@ export function DataStoreEditor({ index, page, children }: { index: RecordIndex;
     const specs = fieldsOf(index, product, false);
     const current = { ...store, provided_by: page.providedBy?.id } as Record<string, unknown>;
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, specs, draft, current, { id: store.id }, ['provided_by']);
+      const input = changeInput(index, specs, draft, current, { id: store.id });
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
       const answer = await writer.command('/api/data-store/change-data-store', input as unknown as CommandInputs['/api/data-store/change-data-store']);
       if (answer.ok) { announce(`Saved ${store.id}`); back(); }
