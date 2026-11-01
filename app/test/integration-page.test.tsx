@@ -13,7 +13,7 @@ import { main, openApp, section } from './helpers';
 const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.findByRole('toolbar', { name: `Change ${id}` });
 
-describe('LA-V153-R01-T01 an integration\'s records are read through the Integration aggregate\'s own query, never a generic record read', () => {
+describe('LA-V153-R04-T01 an integration\'s records are read through the Integration aggregate\'s own query, never a generic record read', () => {
   it('reads GET /api/integration/get-integration for the adapter, and shows its description', async () => {
     const { requests } = await openApp('/P-INT01-AD', { data: modelWorkspace() });
     expect(await within(main()).findByText("The fixture's adapter mailer.")).toBeInTheDocument();

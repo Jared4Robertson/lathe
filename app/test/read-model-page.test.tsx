@@ -21,7 +21,7 @@ function withReader(): ServedData {
   return addRows(modelWorkspace(), 'reader', { id: 'P-D-RM01-RD', title: 'CatalogReader', read_model_id: 'P-D-RM01', file: 'src/catalog.ts', description: 'Reads the catalog view for the query handlers.' });
 }
 
-describe('LA-V143-R01-T01 a read model\'s records are read through the Read model aggregate\'s own query, never a generic record read', () => {
+describe('LA-V143-R04-T01 a read model\'s records are read through the Read model aggregate\'s own query, never a generic record read', () => {
   it('reads GET /api/read-model/get-read-model for its reader, and shows its description', async () => {
     const { requests } = await openApp('/P-D-RM01-RD', { data: withReader() });
     expect(await within(main()).findByText('Reads the catalog view for the query handlers.')).toBeInTheDocument();

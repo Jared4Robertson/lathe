@@ -23,7 +23,7 @@ function withPolicy(): ServedData {
   return w;
 }
 
-describe('LA-V131-R01-T01 a domain event is read through the Domain event aggregate\'s own query, never a generic record read', () => {
+describe('LA-V131-R04-T01 a domain event is read through the Domain event aggregate\'s own query, never a generic record read', () => {
   it('reads GET /api/domain-event/get-domain-event, and shows its description and the fields it carries', async () => {
     const { requests } = await openApp('/DM-SHOP-EV01', { data: withPolicy() });
     expect(await within(main()).findByText('The fixture\'s domain event Item added.')).toBeInTheDocument();

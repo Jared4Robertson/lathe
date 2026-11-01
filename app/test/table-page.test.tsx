@@ -13,7 +13,7 @@ const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.findByRole('toolbar', { name: `Change ${id}` });
 const rows = (table: HTMLTableElement) => [...table.querySelectorAll('tbody tr')].map((tr) => [...tr.querySelectorAll('th, td')].map((c) => c.textContent));
 
-describe('LA-V140-R01-T01 a table\'s page reads it through the Table aggregate\'s own query, never a generic record read', () => {
+describe('LA-V140-R04-T01 a table\'s page reads it through the Table aggregate\'s own query, never a generic record read', () => {
   it('reads GET /api/table/get-table and shows its keys', async () => {
     const { requests } = await openApp('/P-D-EN03-TB', { data: modelWorkspace() });
     await within(main()).findByRole('heading', { name: /^Keys/ });
