@@ -3,7 +3,7 @@
 // status per stage, read from the rows and the checks' run through the read model's reader, as the CLI, the MCP tools
 // and the HTTP API read it.
 import { afterEach, describe, expect, it } from 'vitest';
-import { LIST_TRACE_ROWS } from '../../../src/traceability/trace/queries.ts';
+import { LIST_TRACED_USE_CASES } from '../../../src/traceability/trace/queries.ts';
 import type { ProductTrace } from '../../../src/traceability/trace/read-model.ts';
 import { answerQuery, runQuery } from '../../../src/platform/commands/run.ts';
 import type { CheckRun, ReadView } from '../../../src/platform/data/rules.ts';
@@ -33,7 +33,7 @@ describe('LA-TRC-UC10-R06-T01 A product\'s trace rows read gives each use case o
       chains: [chain('EX-LEND-UC01-R01', ['EX-LEND-UC01-R01-T01']), chain('EX-LEND-INV01', ['EX-LEND-INV01-T01'])],
       coverage: [coverage([gap('EX-V01-R01', 'view_requirement', 'built'), gap('EX-V01-R01', 'view_requirement', 'proved')])],
     });
-    const ex = runQuery(data, LIST_TRACE_ROWS, { product_id: 'EX' }) as ProductTrace;
+    const ex = runQuery(data, LIST_TRACED_USE_CASES, { product_id: 'EX' }) as ProductTrace;
     expect(ex.product).toBe('EX');
     expect(ex.outcomes).toEqual(['EX-BO01']);
     expect(ex.rows.map((r) => r.useCase)).toEqual(['EX-LEND-UC01', 'EX-LEND-UC02']);
@@ -67,24 +67,24 @@ describe('LA-TRC-UC10-R06-T01 A product\'s trace rows read gives each use case o
     expect(uc1.lower.map((o) => o.id)).toEqual(['EX-LEND-A1-SR01', 'EX-LEND-INV01', 'EX-V01-R01']);
     expect(uc1.lower.find((o) => o.id === 'EX-LEND-INV01')!.tests).toEqual(['EX-LEND-INV01-T01']);
     expect(uc1.status).toEqual({ design: { interfaces: 1, notDesigned: 0 }, technical: { handlers: 2, notBuilt: 1 }, suite: { tests: 2, owed: 2, notProved: 0 } });
-    expect(LIST_TRACE_ROWS.text(ex).split('\n')[1]).toBe('  EX-LEND-UC01 (EX-BO01): 1 interface, all designed · 2 handlers, 1 not built · 2 tests, all proved');
+    expect(LIST_TRACED_USE_CASES.text(ex).split('\n')[1]).toBe('  EX-LEND-UC01 (EX-BO01): 1 interface, all designed · 2 handlers, 1 not built · 2 tests, all proved');
   });
 
   it('counts a requirement no step designs and one not proved, and refuses an unknown product and data without the checks\' run', async () => {
     const data = await view({ chains: [], coverage: [coverage([gap('EX-LEND-UC01-R01', 'uc_requirement', 'designed'), gap('EX-LEND-UC01-R01', 'uc_requirement', 'proved')])] });
-    const uc1 = (runQuery(data, LIST_TRACE_ROWS, { product_id: 'EX' }) as ProductTrace).rows[0];
+    const uc1 = (runQuery(data, LIST_TRACED_USE_CASES, { product_id: 'EX' }) as ProductTrace).rows[0];
     expect(uc1.requirements).toEqual([{ id: 'EX-LEND-UC01-R01', gaps: ['designed', 'proved'], tests: [] }]);
     expect(uc1.status.design.notDesigned).toBe(1);
     expect(uc1.status.suite.notProved).toBe(1);
-    expect(() => runQuery(data, LIST_TRACE_ROWS, { product_id: 'NOPE' })).toThrow(StoreError);
+    expect(() => runQuery(data, LIST_TRACED_USE_CASES, { product_id: 'NOPE' })).toThrow(StoreError);
     const store = open[0];
-    expect(() => answerQuery(store, LIST_TRACE_ROWS, { product_id: 'EX' })).toThrow(/LA-TRC-QRY18 reads the checks' run/);
+    expect(() => answerQuery(store, LIST_TRACED_USE_CASES, { product_id: 'EX' })).toThrow(/LA-TRC-QRY18 reads the checks' run/);
   });
 
-  it('runs the checks first for `lathe trace list-trace-rows`', async () => {
+  it('runs the checks first for `lathe trace list-traced-use-cases`', async () => {
     const root = writeData(complete());
     const out: string[] = [];
-    expect(await runAggregateCommand(['trace', 'list-trace-rows', '--product_id', 'EX', '--root', root.replace(/\/data$/, '')], { out: (t) => out.push(t), err: (t) => out.push(t) })).toBe(0);
+    expect(await runAggregateCommand(['trace', 'list-traced-use-cases', '--product_id', 'EX', '--root', root.replace(/\/data$/, '')], { out: (t) => out.push(t), err: (t) => out.push(t) })).toBe(0);
     expect(out[0]).toMatch(/^EX: 2 use cases, 1 outcome\n {2}EX-LEND-UC01 \(EX-BO01\): 1 interface/);
   });
 });

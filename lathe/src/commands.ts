@@ -36,6 +36,7 @@ import { GET_BUSINESS_OUTCOME, LIST_BUSINESS_OUTCOMES, NEXT_BUSINESS_OUTCOME_ID 
 import { GET_CHECK, LIST_CHECKS } from './checking/check/queries.ts';
 import { GET_COMMAND, LIST_COMMANDS, NEXT_COMMAND_ID } from './authoring/command/queries.ts';
 import { GET_COVERAGE } from './traceability/coverage/queries.ts';
+import { LIST_COVERAGE_GAPS, FIND_UNUSED_PACKAGES } from './traceability/coverage-gaps/queries.ts';
 import { GET_DATA_STORE, LIST_DATA_STORES, NEXT_DATA_STORE_ID } from './authoring/data-store/queries.ts';
 import { GET_DOMAIN, LIST_DOMAINS, NEXT_DOMAIN_ID } from './authoring/domain/queries.ts';
 import { GET_DOMAIN_EVENT, LIST_DOMAIN_EVENTS, NEXT_DOMAIN_EVENT_ID } from './authoring/domain-event/queries.ts';
@@ -44,6 +45,7 @@ import { GET_ENTRY_POINT, LIST_ENTRY_POINTS, NEXT_ENTRY_POINT_ID } from './autho
 import { GET_ERD } from './exploring/erd/queries.ts';
 import { LIST_ESSENTIAL_RECORDS } from './checking/essential-review/queries.ts';
 import { GET_EXTENSION_RECORD, LIST_EXTENSION_RECORDS, NEXT_EXTENSION_RECORD_ID } from './authoring/extension-record/queries.ts';
+import { LIST_TRACED_ADDRESSES } from './traceability/file-facts/queries.ts';
 import { GET_FOLDER_TREE } from './exploring/folder-tree/queries.ts';
 import { GET_INTEGRATION, LIST_INTEGRATIONS, NEXT_INTEGRATION_ID } from './authoring/integration/queries.ts';
 import { GET_META_MODEL } from './platform/meta-model/queries.ts';
@@ -61,10 +63,12 @@ import { GET_SERVES, LIST_SERVES } from './traceability/serves/queries.ts';
 import { GET_SPECIFICATION, LIST_SPECIFICATIONS, NEXT_SPECIFICATION_ID } from './authoring/specification/queries.ts';
 import { GET_STANDARD, LIST_STANDARDS, NEXT_STANDARD_ID } from './authoring/standard/queries.ts';
 import { GET_STORAGE_REQUIREMENT, LIST_STORAGE_REQUIREMENTS, NEXT_STORAGE_REQUIREMENT_ID } from './authoring/storage-requirement/queries.ts';
+import { FIND_UNDEFINED_STORED_KINDS } from './traceability/stored-record-facts/queries.ts';
 import { GET_TABLE, LIST_TABLES, NEXT_TABLE_ID } from './authoring/table/queries.ts';
 import { GET_TEST_DATA_SET, LIST_TEST_DATA_SETS, NEXT_TEST_DATA_SET_ID } from './authoring/test-data-set/queries.ts';
+import { GET_TEST_COUNTS } from './traceability/tests-by-state/queries.ts';
 import { GET_TOOLING, LIST_TOOLING, NEXT_TOOLING_ID } from './authoring/tooling/queries.ts';
-import { LIST_TRACE_ROWS } from './traceability/trace/queries.ts';
+import { LIST_TRACED_USE_CASES } from './traceability/trace/queries.ts';
 import { GET_UI_COMPONENT, LIST_UI_COMPONENTS, NEXT_UI_COMPONENT_ID } from './authoring/ui-component/queries.ts';
 import { GET_USE_CASE, LIST_USE_CASES, NEXT_USE_CASE_ID } from './authoring/use-case/queries.ts';
 import { GET_VALUE_OBJECT, LIST_VALUE_OBJECTS, NEXT_VALUE_OBJECT_ID } from './authoring/value-object/queries.ts';
@@ -120,6 +124,8 @@ export const ALL_QUERIES: readonly AnyQuery[] = [
   LIST_COMMANDS,
   NEXT_COMMAND_ID,
   GET_COVERAGE,
+  LIST_COVERAGE_GAPS,
+  FIND_UNUSED_PACKAGES,
   GET_DATA_STORE,
   LIST_DATA_STORES,
   NEXT_DATA_STORE_ID,
@@ -140,6 +146,7 @@ export const ALL_QUERIES: readonly AnyQuery[] = [
   GET_EXTENSION_RECORD,
   LIST_EXTENSION_RECORDS,
   NEXT_EXTENSION_RECORD_ID,
+  LIST_TRACED_ADDRESSES,
   GET_FOLDER_TREE,
   GET_INTEGRATION,
   LIST_INTEGRATIONS,
@@ -175,16 +182,18 @@ export const ALL_QUERIES: readonly AnyQuery[] = [
   GET_STORAGE_REQUIREMENT,
   LIST_STORAGE_REQUIREMENTS,
   NEXT_STORAGE_REQUIREMENT_ID,
+  FIND_UNDEFINED_STORED_KINDS,
   GET_TABLE,
   LIST_TABLES,
   NEXT_TABLE_ID,
   GET_TEST_DATA_SET,
   LIST_TEST_DATA_SETS,
   NEXT_TEST_DATA_SET_ID,
+  GET_TEST_COUNTS,
   GET_TOOLING,
   LIST_TOOLING,
   NEXT_TOOLING_ID,
-  LIST_TRACE_ROWS,
+  LIST_TRACED_USE_CASES,
   GET_UI_COMPONENT,
   LIST_UI_COMPONENTS,
   NEXT_UI_COMPONENT_ID,
