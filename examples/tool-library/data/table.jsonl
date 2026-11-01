@@ -4,4 +4,5 @@
 {"id":"TL-LEND-RM01-TB","title":"Catalog","read_model_id":"TL-LEND-RM01","name":"Catalog","storage":"in memory","file":"src/catalog.ts"}
 {"id":"TL-LEND-RM02-TB","title":"OutcomeMeasures","read_model_id":"TL-LEND-RM02","name":"OutcomeMeasures","storage":"in memory","file":"src/outcome-measures.ts"}
 {"id":"TL-LEND-RM03-TB","title":"ActiveLoans","read_model_id":"TL-LEND-RM03","name":"ActiveLoans","storage":"in memory","file":"src/active-loans.ts"}
+{"id":"TL-LEND-RM04-TB","title":"ToolsWaitingForRepair","read_model_id":"TL-LEND-RM04","name":"ToolsWaitingForRepair","storage":"in memory","file":"src/waiting-for-repair.ts"}
 {"id":"TL-LEND-TB01","title":"Outbox","domain_id":"TL-LEND","name":"outbox","storage":"table","file":"src/database.ts"}

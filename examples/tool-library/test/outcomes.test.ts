@@ -25,7 +25,7 @@ function march() {
   clock.advanceDays(1);
   reportDamage(l, ladder.id, 'Cracked rung');
   clock.advanceDays(1);
-  l.loans.add({ memberId: cy.id, toolId: ladder.id, borrowedAt: clock.now().toISOString(), dueDate: '2026-03-18', return: null });
+  l.loans.add({ memberId: cy.id, toolId: ladder.id, borrowedAt: clock.now().toISOString(), dueDate: '2026-03-18', renewedAt: null, remindedAt: null, return: null });
   // 9 March: damage reported on the saw while Ben has it; 10 March he returns it, 11 March it is repaired.
   clock.advanceDays(5);
   reportDamage(l, saw.id, 'Blade bent');
