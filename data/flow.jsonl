@@ -32,6 +32,7 @@
 {"id":"LA-CHK-UC06-FL","title":"Keep each level of the spec a useful size","use_case_id":"LA-CHK-UC06"}
 {"id":"LA-CHK-UC07-FL","title":"Review every problem of a product","use_case_id":"LA-CHK-UC07"}
 {"id":"LA-CHK-UC08-FL","title":"Keep every change to the spec checked","use_case_id":"LA-CHK-UC08"}
+{"id":"LA-CHK-UC09-FL","title":"Review the essential records with fresh eyes","use_case_id":"LA-CHK-UC09"}
 {"id":"LA-EXP-UC01-FL","title":"Find a record in a domain","use_case_id":"LA-EXP-UC01"}
 {"id":"LA-EXP-UC02-FL","title":"Follow a record's links","use_case_id":"LA-EXP-UC02"}
 {"id":"LA-EXP-UC03-FL","title":"Walk the model as a graph","use_case_id":"LA-EXP-UC03"}
