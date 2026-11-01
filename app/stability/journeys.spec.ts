@@ -8,7 +8,7 @@ import { JOURNEY, JOURNEY_USE_CASE, keepData } from './scenarios';
 const WIKI = '.wiki-panel';
 
 test.describe('Journeys', () => {
-  test('LA-V156-R04-T01 a journey lists its steps in order, and a step leads to its use case and back by In journeys', async ({ page }) => {
+  test('LA-V156-R04-T02 a journey lists its steps in order, and a step leads to its use case and back by In journeys', async ({ page }) => {
     await openPage(page, JOURNEY);
     await showCard(page, 'whole');
     const steps = page.locator(`${WIKI} [data-aggregate="journey"] ol.journey-steps`).first();
@@ -28,7 +28,7 @@ test.describe('Journeys', () => {
     await page.waitForURL((u) => u.pathname === JOURNEY);
   });
 
-  test('LA-V156-R02-T01 a step moves down and up again, the page holding still', async ({ page }) => {
+  test('LA-V156-R02-T02 a step moves down and up again, the page holding still', async ({ page }) => {
     const restore = keepData();
     try {
       await openPage(page, JOURNEY);
@@ -44,7 +44,7 @@ test.describe('Journeys', () => {
     }
   });
 
-  test('LA-V101-R13-T01 a use case in a journey shows In journeys', async ({ page }) => {
+  test('LA-V101-R13-T02 a use case in a journey shows In journeys', async ({ page }) => {
     await openPage(page, JOURNEY_USE_CASE);
     await showCard(page, 'whole');
     await expect(page.locator(`${WIKI} .in-journeys`).first()).toBeVisible();
