@@ -23,8 +23,18 @@ export interface Camera { cx: number; cy: number; zoom: number; w: number; h: nu
 
 /** The least strength a box is drawn at for its problem badges to be drawn: fainter, the badge's label cannot be read. */
 export const BADGE_LEAST_ALPHA = 0.5;
-/** Whether a box is drawn as a plain block at a zoom: its title under BLOCK_BELOW_PX on screen. */
-export const isBlock = (p: Pick<Plate, 'text'>, zoom: number) => p.text * TITLE_FONT * zoom < BLOCK_BELOW_PX;
+/**
+ * The least size on screen, in CSS pixels, a title reads at: under it a Map's leaf record draws its label from afar
+ * (its title alone, larger: ground.ts FAR_TEXT), as labelPlate gives it.
+ */
+export const READABLE_PX = 9;
+/** The plate whose label a box draws at a zoom: a Map leaf's from afar where its own title would read under READABLE_PX, else its own. */
+export const labelPlate = <P extends Pick<Plate, 'text' | 'far'>>(p: P, zoom: number): P | Plate => (p.far && p.text * TITLE_FONT * zoom < READABLE_PX ? p.far : p);
+/**
+ * Whether a box is drawn as a plain block at a zoom: its title under BLOCK_BELOW_PX on screen; a Map's leaf, which has a
+ * label from afar, once even that would read under READABLE_PX, so its text is readable or not drawn (LA-EXP-DS12).
+ */
+export const isBlock = (p: Pick<Plate, 'text' | 'far'>, zoom: number) => (p.far ? p.far.text * TITLE_FONT * zoom < READABLE_PX : p.text * TITLE_FONT * zoom < BLOCK_BELOW_PX);
 /** How far past the canvas's edges, in CSS pixels, a box, bar or line still counts as on screen: its stroke and ring reach that far. */
 const CULL_PX = 16;
 /** Whether a box, a bar or a line's bounds in the map is on the canvas through a camera, with the margin: what a frame draws. */
@@ -60,6 +70,8 @@ export interface Line {
   upright?: boolean;
   /** The end its words sit by, a little way along it (the Map puts them by the focus, where its lines meet); its middle unless given. */
   labelNear?: 'source' | 'target';
+  /** Drawn over the boxes, though it has no words: a Map's then arrow between two steps side by side inside their journey or flow, whose box would cover it. */
+  over?: boolean;
 }
 
 /** A link's curve in map units (its ends and its two control points), as it is drawn: leaving and entering level, or upright. */
@@ -228,7 +240,7 @@ export function paint(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, f
     }
   };
   // A Map's link lines (named ones) go over the boxes, so a line between two records in one area reads; the rest under them.
-  for (const line of frame.lines) if (!line.label) drawLine(line);
+  for (const line of frame.lines) if (!line.label && !line.over) drawLine(line);
 
   const areas: Plate[] = [];
   for (const p of frame.plates) {
@@ -238,6 +250,7 @@ export function paint(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, f
     if (p.area) { paintArea(ctx, p, cam, look, state, X, Y); areas.push(p); } else paintBox(ctx, p, cam, look, fonts, state, X, Y);
     if (state.marks) paintMark(ctx, p, cam, look, fonts, state.marks, state.open, X, Y);
   }
+  for (const line of frame.lines) if (line.over) drawLine(line);
   const named = frame.lines.filter((line) => line.label);
   const words = named.length > 0 ? textBoxes(frame.plates, cam, X, Y) : [];
   paintLinkLines(ctx, named, words, cam, drawLine);
@@ -421,7 +434,9 @@ function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Lo
 
   // The label: its icons, its lines, its badges; a label the open space's edge cuts drawn in the box's visible part
   // (sticky.ts), its icons and badges left out; one that cannot fit there drawn where the map placed it, cut by the edge.
-  const sticky = stickyLabel(p, zoom, X, Y, state.open);
+  // A Map's leaf seen from afar draws its title alone, larger (labelPlate).
+  const shown = labelPlate(p, zoom);
+  const sticky = stickyLabel(shown, zoom, X, Y, state.open);
   let font = '';
   if (sticky.kind === 'moved') {
     for (const line of sticky.lines) {
@@ -432,9 +447,9 @@ function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Lo
     }
     return;
   }
-  for (const icon of p.icons) paintIcon(ctx, icon.draw, icon.name, X(icon.x), Y(icon.y), icon.w * zoom, icon.h * zoom, colors.edge, colors.fill);
-  const faces = lineFonts(p, zoom, fonts);
-  p.lines.forEach((line, i) => {
+  for (const icon of shown.icons) paintIcon(ctx, icon.draw, icon.name, X(icon.x), Y(icon.y), icon.w * zoom, icon.h * zoom, colors.edge, colors.fill);
+  const faces = lineFonts(shown, zoom, fonts);
+  shown.lines.forEach((line, i) => {
     const x = X(line.x);
     const top = Y(line.top);
     if (!meets(cam, x, top, x + line.width * zoom, top + line.height * zoom)) return;

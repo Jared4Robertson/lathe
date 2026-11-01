@@ -6,6 +6,7 @@
 const COMPOSED: Readonly<Record<string, readonly string[]>> = {
   aggregate: ['entity'],
   entity: ['command'],
+  journey: ['journey_step'],
   use_case: ['uc_requirement', 'flow'],
   flow: ['flow_step'],
   pattern: ['pattern_rule'],

@@ -29,7 +29,8 @@ import { productInput } from './layout-input';
 import { type NestedMap, type NestedNode } from './nested';
 import { type GroundMap, type GroundNode } from './ground';
 import { treeParent } from './tree';
-import { linkLine, linksOf, MOST_LINKS } from './map-links';
+import { CARRIES_OUT, linkLine, linksOf, MOST_LINKS, THEN } from './map-links';
+import { thenPairs } from './sequence';
 import { setTextMeasure, type TextMeasure } from './text';
 import { BLOCK_BELOW_PX, drawnFor, drawnKey, drawnNested, frameGround, frameNested, frameOnMap, frameRect, maxZoomFor, mergeDrawn, MIN_ZOOM, wholeIn, type Drawn, type Viewport } from './camera';
 import { useCameraGestures } from './gestures';
@@ -42,7 +43,7 @@ import { PLAIN_LOOK, readLook, useThemeVersion, type Look } from './look';
 import { plateName, plateOf, plateTip, type Plate, type PlateSource } from './plate';
 import { keepLabel } from './sticky';
 import { focusStrength } from './fade';
-import { boxColors, isBlock, paint, type Bar, type Camera, type Line, type PaintState } from './paint';
+import { boxColors, isBlock, labelPlate, paint, type Bar, type Camera, type Line, type PaintState } from './paint';
 import { hitPlate } from './hit';
 import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
 import { drawLeaderLine, openIn, useLeaderFollow } from '../views/leaderLine';
@@ -744,6 +745,9 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
   useLayoutEffect(() => { if (wrapper.current) look.current = readLook(wrapper.current); requestPaint(); }, [theme]);
 
 
+  /** The Map's "then" arrows: each step to the next on its path, inside every journey and flow it holds. */
+  const thenLines = useMemo(() => (map.view === 'map' ? [...map.nodes.values()].flatMap((n) => (n.children.length > 1 ? thenPairs(index, n.children) : [])) : []), [map, index]);
+
   /** The boxes, bars and lines a camera shows, in draw order: in the Nested view a parent before its children, so each child lies over its parent (LA-EXP-DS09). */
   const frameAt = useCallback((v: Viewport): { plates: Plate[]; bars: Bar[]; lines: Line[] } => {
     const drawn = drawnAt(v);
@@ -776,6 +780,8 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
       const links = [
         ...linksOf(index, has, parentOnMap, ends),
         ...linksOf(index, (id) => drawnIds.has(id), parentOnMap, records, MOST_LINKS),
+        // A focused journey's steps' lines to what each carries out (LA-V93-R75).
+        ...linksOf(index, has, parentOnMap, map.nodes.get(focus)?.children ?? []).filter((l) => l.relation === CARRIES_OUT),
       ];
       const boxOf = (id: string) => byId.get(id) ?? morph.box(id, now);
       const seen = new Set<string>();
@@ -785,9 +791,18 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
         const line = a && b ? linkLine(link, a, b, v.zoom, link.target === focus ? 'target' : link.source === focus ? 'source' : undefined) : null;
         if (line && !seen.has(line.id)) { seen.add(line.id); lines.push(line); }
       }
+      // Inside a journey or a flow, a "then" arrow from each step to the next on its path (sequence.ts).
+      for (const [from, to] of thenLines) {
+        const a = byId.get(from);
+        const b = byId.get(to);
+        if (!a || !b || hidden.has(from) || hidden.has(to)) continue;
+        // Side by side in a row, over the boxes (its journey's or flow's box would cover it); where the steps wrap to the next row, under them.
+        const row = a.y < b.y + b.h && b.y < a.y + a.h && b.x >= a.x + a.w;
+        lines.push({ ...linkLine({ source: from, target: to, relation: THEN, label: '' }, a, b, v.zoom), ...(row ? { over: true } : {}) });
+      }
     }
     return { plates: shown, bars, lines };
-  }, [drawnAt, plateFor, map, index, focus, allLinks, hidden]);
+  }, [drawnAt, plateFor, map, index, focus, allLinks, hidden, thenLines]);
   const lastFrame = useRef<{ plates: Plate[]; bars: Bar[]; lines: Line[] } | null>(null);
   // What the last frame drew is stale once anything it was drawn from changes: the pointer then hit-tests a fresh frame.
   lastFrame.current = null;
@@ -1032,16 +1047,16 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
           map: { x: p.x, y: p.y, w: p.w, h: p.h }, textScale: p.text, boxScale: p.scale,
           rect: rect(p.x, p.y, p.w, p.h),
           polygon: p.outline.kind === 'polygon' ? p.outline.points.map(([x, y]) => [X(x), Y(y)] as [number, number]) : null,
-          label: rect(p.label.x, p.label.y, p.label.w, p.label.h),
+          label: ((l) => rect(l.x, l.y, l.w, l.h))(labelPlate(p, v.zoom).label),
           block: isBlock(p, v.zoom),
-          lines: p.lines.map((l) => {
+          lines: labelPlate(p, v.zoom).lines.map((l) => {
             const fontPx = l.size * v.zoom;
             const font = fontFor(fonts, l.face, fontPx);
             let drawnWidth = l.width * v.zoom;
             if (measureCtx && !isBlock(p, v.zoom)) { measureCtx.font = font; drawnWidth = measureCtx.measureText(l.text.trimEnd()).width; }
             return { text: l.text, face: l.face, mapPx: l.size, fontPx, font, rect: rect(l.x, l.top, l.width, l.height), drawnWidth };
           }),
-          icons: p.icons.map((i) => ({ draw: i.draw, name: i.name, rect: rect(i.x, i.y, i.w, i.h) })),
+          icons: labelPlate(p, v.zoom).icons.map((i) => ({ draw: i.draw, name: i.name, rect: rect(i.x, i.y, i.w, i.h) })),
           badges: p.badges.map((b) => ({ label: b.label, tone: b.tone, rect: rect(b.x, b.y, b.w, b.h) })),
           tip: plateTip(p),
           name: plateName(p, p.id === focus),
