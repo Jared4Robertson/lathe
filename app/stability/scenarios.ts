@@ -13,10 +13,10 @@ export const AGGREGATE = '/LA-EXP-A1';
 /** A UC requirement of RECORD: what the edit scenarios change, then put back. */
 export const EDITED = '/LA-PLT-UC05-R05';
 
-/** A journey with steps on two paths, a handoff among them and a journey test (the Tool Library's): the journeys scenario and the journey page's audit. */
-export const JOURNEY = '/TL-JR01';
+/** Lathe's own journey "Take a new use case to proof", with its steps in order and a step that carries out nothing yet: the journeys scenario and the journey page's audit. */
+export const JOURNEY = '/LA-JR01';
 /** A use case that is a step of JOURNEY: its In journeys fact leads back to the journey. */
-export const JOURNEY_USE_CASE = '/TL-LEND-UC06';
+export const JOURNEY_USE_CASE = '/LA-AUT-UC06';
 
 /** The shell's frame: the nav and the page beside it. */
 export const SHELL = ['nav#nav', '#main'];

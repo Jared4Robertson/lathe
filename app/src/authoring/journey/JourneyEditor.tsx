@@ -9,7 +9,7 @@ import { AddMenu } from '../../edit/AddMenu';
 import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
-import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
+import { compareIds, kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
 import { AddUseCaseForm } from '../use-case/UseCaseEditor';
 import { JOURNEY_FIELDS } from './fields.generated';
@@ -46,7 +46,7 @@ function productChoices(index: RecordIndex, product: string, kinds: readonly str
 /** The use cases and policies of the product that a step may carry out, each with its domain: the choices stand in domain order. */
 function carryOutChoices(index: RecordIndex, product: string): Choice[] {
   const domainOf = (r: { domain?: string | null }) => index.byId.get(r.domain ?? '')?.title ?? '';
-  return productChoices(index, product, ['use_case', 'policy'], (r) => `${r.title} (${domainOf(r)})`).sort((a, b) => (index.byId.get(a.id)?.domain ?? '').localeCompare(index.byId.get(b.id)?.domain ?? '') || a.id.localeCompare(b.id, 'en', { numeric: true }));
+  return productChoices(index, product, ['use_case', 'policy'], (r) => `${r.title} (${domainOf(r)})`).sort((a, b) => (index.byId.get(a.id)?.domain ?? '').localeCompare(index.byId.get(b.id)?.domain ?? '') || compareIds(a.id, b.id));
 }
 
 /** The fields each kind's Add and Change take, from their inputs (Change leaves out the ID, Add the parent). */

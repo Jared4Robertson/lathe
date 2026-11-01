@@ -119,7 +119,7 @@ describe('the spec data store saves each change whole or not at all, through a c
   ['LA-AUT-A5-SR01-T02', { steps: [['specification', 'remove-specification-test', { id: 'TL-LEND-SP01-T' }]] }],
   ['LA-AUT-A6-SR01-T02', { setup: [['slot-filling', 'stop-filling-slot', { record_id: 'TL-LEND-INV02-RL', slot_id: 'TL-PAT-LIBRARIAN-ACTION-SL03' }]], steps: [['aggregate', 'remove-invariant', { id: 'TL-LEND-INV02' }]] }],
   ['LA-AUT-A7-SR01-T02', { steps: [['domain-event', 'add-domain-event', { id: 'TL-LEND-EV90', title: 'Member kept', aggregate_id: 'TL-LEND-A1', published: false, description: 'A member was kept whole.', fields: [{ name: 'Member ID', meaning: 'The member kept.', type_aggregate_id: 'TL-LEND-A1', required: true, example: '12' }] }]] }],
-  ['LA-AUT-A8-SR01-T02', { setup: [['slot-filling', 'stop-filling-slot', { record_id: 'TL-LEND-PO01-H', slot_id: 'TL-PAT-LIBRARIAN-ACTION-SL01' }]], steps: [['command', 'remove-policy', { id: 'TL-LEND-PO01' }]] }],
+  ['LA-AUT-A8-SR01-T02', { setup: [['journey', 'change-journey-step', { id: 'TL-JR01-S02', carries_out: null }], ['slot-filling', 'stop-filling-slot', { record_id: 'TL-LEND-PO01-H', slot_id: 'TL-PAT-LIBRARIAN-ACTION-SL01' }]], steps: [['command', 'remove-policy', { id: 'TL-LEND-PO01' }]] }],
   ['LA-AUT-A9-SR01-T02', { steps: [['value-object', 'remove-constraint', { id: 'TL-VO01-C01' }]] }],
   ['LA-AUT-A10-SR01-T02', { setup: [['slot-filling', 'stop-filling-slot', { record_id: 'TL-LEND-QRY02-H', slot_id: 'TL-PAT-LIBRARIAN-ACTION-SL05' }]], steps: [['read-model', 'remove-query', { id: 'TL-LEND-QRY02' }]] }],
   ['LA-AUT-A11-SR01-T02', { steps: [['use-case', 'remove-flow', { id: 'TL-LEND-UC01-FL' }]] }],

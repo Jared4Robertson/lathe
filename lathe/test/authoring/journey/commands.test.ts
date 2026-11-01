@@ -184,6 +184,29 @@ describe('LA-AUT-INV192-T a step carrying out a record that does not exist is re
   });
 });
 
+describe('LA-AUT-UC33-R02-T01 a step carries out a use case of another domain, a policy, or nothing yet, and never a record of another product', () => {
+  it('adds four steps and refuses a use case of another product and a command, naming the step', async () => {
+    const data = base();
+    const store = await storeOf({
+      ...data,
+      domain: [...data.domain, { id: 'TL-OTH', title: 'Other', product_id: 'TL', subdomain_type: 'core', description: 'Another domain of the product.' }],
+      capability: [...data.capability, { id: 'TL-OTH-CAP01', title: 'Other capability', domain_id: 'TL-OTH', position: 1, description: 'A capability of the other domain.' }],
+      use_case: [...data.use_case, { id: 'TL-OTH-UC01', title: 'Do something else', capability_id: 'TL-OTH-CAP01', goal: 'Do it.' }],
+      use_case_actor: [...data.use_case_actor, { use_case_id: 'TL-OTH-UC01', position: 1, role_name: 'Member' }],
+    });
+    await runCommand(store, ADD_JOURNEY_STEP, step('TL-JR01-S02', { carries_out: 'TL-LEND-UC01' }));
+    await runCommand(store, ADD_JOURNEY_STEP, step('TL-JR01-S03', { position: 3, carries_out: 'TL-OTH-UC01' }));
+    await runCommand(store, ADD_JOURNEY_STEP, step('TL-JR01-S04', { position: 4, carries_out: 'TL-LEND-PO01' }));
+    await runCommand(store, ADD_JOURNEY_STEP, step('TL-JR01-S05', { position: 5 }));
+    const carried = (id: string) => store.rows('carries_out').filter((l) => l.source_id === id).map((l) => l.target_id);
+    expect([carried('TL-JR01-S02'), carried('TL-JR01-S03'), carried('TL-JR01-S04'), carried('TL-JR01-S05')]).toEqual([['TL-LEND-UC01'], ['TL-OTH-UC01'], ['TL-LEND-PO01'], []]);
+    const elsewhere = await refusal(store, ADD_JOURNEY_STEP, step('TL-JR01-S06', { position: 6, carries_out: 'XX-DOM-UC01' }));
+    expect(elsewhere.problems.map((p) => p.message).join(' ')).toContain('TL-JR01-S06');
+    const command = await refusal(store, ADD_JOURNEY_STEP, step('TL-JR01-S06', { position: 6, carries_out: 'TL-LEND-CMD01' }));
+    expect(command.problems.map((p) => p.message).join(' ')).toContain('TL-JR01-S06');
+  });
+});
+
 describe('LA-AUT-UC33-R06-T01 removing a use case a step carries out is refused naming the step, and removing the journey keeps it', () => {
   it('refuses the use case and the policy, removes the journey with its steps and test, then the use case', async () => {
     const store = await storeOf();
