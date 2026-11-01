@@ -28,8 +28,9 @@ export function fieldFiles(repo: string): Generated {
   const dirOf = new Map(readIdentities(repo).map((d) => [d.id, d.slice.dir]));
   const slices = new Map<string, { name: string; dir: string; commands: (typeof ALL_COMMANDS)[number][] }>();
   for (const command of ALL_COMMANDS) {
+    // A definition with no records of its identity has nothing generated for it (the identities' freshness refuses it).
     const dir = dirOf.get(command.id);
-    if (!dir) throw new Error(`${command.id} has no records of its identity: run npm run generate after adding them`);
+    if (!dir) continue;
     const slice = slices.get(dir) ?? { name: command.slice.name, dir, commands: [] };
     slice.commands.push(command);
     slices.set(dir, slice);
