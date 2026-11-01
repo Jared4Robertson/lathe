@@ -1,9 +1,9 @@
 -- The test plan: one test kind per thing tested, each under exactly what it proves. Every test has a run by: its level,
--- its state, and the file that runs it or why it is manual. A constraint, invariant, specification, policy or flow has
--- exactly one test; a domain service, storage requirement, UC requirement, view requirement or API requirement at least
--- one (a check, not a refusal); an integration or a standard rule any number; a pattern rule one per domain that adopts
--- it. A run by also gives the test's size and its markers. Then the test data sets, under a domain, that tests start
--- from.
+-- its state, and the file that runs it or why it is manual. A constraint, invariant, specification, policy, flow or
+-- journey has exactly one test; a domain service, storage requirement, UC requirement, view requirement or API
+-- requirement at least one (a check, not a refusal); an integration or a standard rule any number; a pattern rule one
+-- per domain that adopts it. A run by also gives the test's size and its markers. Then the test data sets, under a
+-- domain, that tests start from.
 
 -- A test's level says only how it runs, cheapest first: unit (in process, no storage or I/O), integration (in process,
 -- with real storage: a database, files, git), service (through the product's interface in process, with real storage:
@@ -337,6 +337,38 @@ COMMENT ON COLUMN flow_test.steps IS 'What the test does along the main path, st
 COMMENT ON COLUMN flow_test.expected_result IS 'What it expects at the end.';
 COMMENT ON COLUMN flow_test.notes IS 'Longer notes on the test, such as when to run it.';
 
+CREATE TABLE journey_test (
+  id VARCHAR PRIMARY KEY REFERENCES record_id (id),
+  title VARCHAR NOT NULL CHECK (trim(title) <> ''),
+  journey_id VARCHAR NOT NULL UNIQUE REFERENCES journey (id),
+  level test_level NOT NULL,
+  state test_state NOT NULL,
+  file VARCHAR,
+  manual_reason VARCHAR,
+  size test_size,
+  smoke BOOLEAN CHECK (smoke),
+  external BOOLEAN CHECK (external),
+  steps VARCHAR[] NOT NULL CHECK (len(steps) >= 1),
+  expected_result VARCHAR NOT NULL CHECK (trim(expected_result) <> ''),
+  notes VARCHAR,
+  CHECK (state <> 'automated' OR file IS NOT NULL),
+  CHECK ((state = 'manual') = (manual_reason IS NOT NULL))
+);
+COMMENT ON TABLE journey_test IS 'The journey''s test: its main path, end to end, from its trigger to its result, across the use cases and handoffs it carries out, at the lowest level that can observe the result (service, system or browser). It proves the journey only; each step''s use case and policy is proved by its own tests.';
+COMMENT ON COLUMN journey_test.id IS 'The test''s ID: its journey''s ID and T, such as TL-JR01-T.';
+COMMENT ON COLUMN journey_test.title IS 'What the test shows, in a sentence.';
+COMMENT ON COLUMN journey_test.journey_id IS 'The journey it proves; it has exactly one test.';
+COMMENT ON COLUMN journey_test.level IS 'How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises.';
+COMMENT ON COLUMN journey_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
+COMMENT ON COLUMN journey_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
+COMMENT ON COLUMN journey_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
+COMMENT ON COLUMN journey_test.size IS 'How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle).';
+COMMENT ON COLUMN journey_test.smoke IS 'Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise.';
+COMMENT ON COLUMN journey_test.external IS 'Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise.';
+COMMENT ON COLUMN journey_test.steps IS 'What the test does along the journey''s main path, step by step, from its trigger.';
+COMMENT ON COLUMN journey_test.expected_result IS 'What it expects at the end: the journey''s result.';
+COMMENT ON COLUMN journey_test.notes IS 'Longer notes on the test, such as when to run it.';
+
 CREATE TABLE integration_test (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
@@ -437,19 +469,20 @@ COMMENT ON COLUMN standard_rule_test."then" IS 'What the test expects.';
 COMMENT ON COLUMN standard_rule_test.notes IS 'Longer notes on the test, such as when to run it.';
 
 INSERT INTO meta_kind VALUES
-  ('constraint_test', 'Constraint test', 'test-plan', 54, false, '<constraint>-T', 'TL-VO01-C01-T', 'parent', NULL, 'as-parent'),
-  ('invariant_test', 'Invariant test', 'test-plan', 55, false, '<invariant>-T', 'TL-LEND-INV01-T', 'parent', NULL, 'as-parent'),
-  ('specification_test', 'Specification test', 'test-plan', 56, false, '<specification>-T', 'TL-LEND-SP01-T', 'parent', NULL, 'as-parent'),
-  ('policy_test', 'Policy test', 'test-plan', 57, false, '<policy>-T', 'TL-LEND-PO01-T', 'parent', NULL, 'as-parent'),
-  ('domain_service_test', 'Domain service test', 'test-plan', 58, false, '<domain service>-T<nn>', 'TL-LEND-DS01-T01', 'parent', NULL, 'as-parent'),
-  ('storage_requirement_test', 'Storage requirement test', 'test-plan', 59, false, '<storage requirement>-T<nn>', 'TL-LEND-A1-SR01-T01', 'parent', NULL, 'as-parent'),
-  ('use_case_test', 'Use case test', 'test-plan', 60, false, '<UC requirement>-T<nn>', 'TL-LEND-UC01-R01-T01', 'parent', NULL, 'as-parent'),
-  ('view_test', 'View test', 'test-plan', 61, false, '<view requirement>-T<nn>', 'TL-V01-R01-T01', 'parent', NULL, 'as-parent'),
-  ('endpoint_test', 'Endpoint test', 'test-plan', 62, false, '<API requirement>-T<nn>', 'TL-LEND-EP01-R01-T01', 'parent', NULL, 'as-parent'),
-  ('flow_test', 'Flow test', 'test-plan', 63, false, '<flow>-T', 'TL-LEND-UC01-FL-T', 'parent', NULL, 'as-parent'),
-  ('integration_test', 'Integration test', 'test-plan', 64, false, '<integration>-T<nn>', 'TL-INT01-T01', 'parent', NULL, 'as-parent'),
-  ('pattern_rule_test', 'Pattern rule test', 'test-plan', 65, false, '<pattern rule>-T<nn>', 'TL-PAT-ACT-R01-T01', 'parent', NULL, 'as-parent'),
-  ('standard_rule_test', 'Standard rule test', 'test-plan', 66, false, '<standard rule>-T<nn>', 'TL-STD-CODE-R01-T01', 'parent', NULL, 'as-parent');
+  ('constraint_test', 'Constraint test', 'test-plan', 56, false, '<constraint>-T', 'TL-VO01-C01-T', 'parent', NULL, 'as-parent'),
+  ('invariant_test', 'Invariant test', 'test-plan', 57, false, '<invariant>-T', 'TL-LEND-INV01-T', 'parent', NULL, 'as-parent'),
+  ('specification_test', 'Specification test', 'test-plan', 58, false, '<specification>-T', 'TL-LEND-SP01-T', 'parent', NULL, 'as-parent'),
+  ('policy_test', 'Policy test', 'test-plan', 59, false, '<policy>-T', 'TL-LEND-PO01-T', 'parent', NULL, 'as-parent'),
+  ('domain_service_test', 'Domain service test', 'test-plan', 60, false, '<domain service>-T<nn>', 'TL-LEND-DS01-T01', 'parent', NULL, 'as-parent'),
+  ('storage_requirement_test', 'Storage requirement test', 'test-plan', 61, false, '<storage requirement>-T<nn>', 'TL-LEND-A1-SR01-T01', 'parent', NULL, 'as-parent'),
+  ('use_case_test', 'Use case test', 'test-plan', 62, false, '<UC requirement>-T<nn>', 'TL-LEND-UC01-R01-T01', 'parent', NULL, 'as-parent'),
+  ('view_test', 'View test', 'test-plan', 63, false, '<view requirement>-T<nn>', 'TL-V01-R01-T01', 'parent', NULL, 'as-parent'),
+  ('endpoint_test', 'Endpoint test', 'test-plan', 64, false, '<API requirement>-T<nn>', 'TL-LEND-EP01-R01-T01', 'parent', NULL, 'as-parent'),
+  ('flow_test', 'Flow test', 'test-plan', 65, false, '<flow>-T', 'TL-LEND-UC01-FL-T', 'parent', NULL, 'as-parent'),
+  ('journey_test', 'Journey test', 'test-plan', 66, false, '<journey>-T', 'TL-JR01-T', 'parent', NULL, 'as-parent'),
+  ('integration_test', 'Integration test', 'test-plan', 67, false, '<integration>-T<nn>', 'TL-INT01-T01', 'parent', NULL, 'as-parent'),
+  ('pattern_rule_test', 'Pattern rule test', 'test-plan', 68, false, '<pattern rule>-T<nn>', 'TL-PAT-ACT-R01-T01', 'parent', NULL, 'as-parent'),
+  ('standard_rule_test', 'Standard rule test', 'test-plan', 69, false, '<standard rule>-T<nn>', 'TL-STD-CODE-R01-T01', 'parent', NULL, 'as-parent');
 INSERT INTO meta_kind_parent VALUES
   ('constraint_test', 'constraint', 1, 'constraint_id'),
   ('invariant_test', 'invariant', 1, 'invariant_id'),
@@ -461,6 +494,7 @@ INSERT INTO meta_kind_parent VALUES
   ('view_test', 'view_requirement', 1, 'view_requirement_id'),
   ('endpoint_test', 'api_requirement', 1, 'api_requirement_id'),
   ('flow_test', 'flow', 1, 'flow_id'),
+  ('journey_test', 'journey', 1, 'journey_id'),
   ('integration_test', 'integration', 1, 'integration_id'),
   ('pattern_rule_test', 'pattern_rule', 1, 'pattern_rule_id'),
   ('standard_rule_test', 'standard_rule', 1, 'standard_rule_id');
@@ -475,6 +509,7 @@ INSERT INTO meta_table VALUES
   ('view_test', 'kind', NULL),
   ('endpoint_test', 'kind', NULL),
   ('flow_test', 'kind', NULL),
+  ('journey_test', 'kind', NULL),
   ('integration_test', 'kind', NULL),
   ('pattern_rule_test', 'kind', NULL),
   ('standard_rule_test', 'kind', NULL);
@@ -503,6 +538,6 @@ COMMENT ON COLUMN test_data_set.reset IS 'How to reset it after a test, so the n
 COMMENT ON COLUMN test_data_set.file IS 'The seed or fixture that builds it, from the product root.';
 COMMENT ON COLUMN test_data_set.description IS 'What it is for, in a sentence or two.';
 
-INSERT INTO meta_kind VALUES ('test_data_set', 'Test data set', 'test-plan', 53, false, '<P>-<D>-TD<nn>', 'TL-LEND-TD01', 'domain', NULL, 'essential');
+INSERT INTO meta_kind VALUES ('test_data_set', 'Test data set', 'test-plan', 55, false, '<P>-<D>-TD<nn>', 'TL-LEND-TD01', 'domain', NULL, 'essential');
 INSERT INTO meta_kind_parent VALUES ('test_data_set', 'domain', 1, 'domain_id');
 INSERT INTO meta_table VALUES ('test_data_set', 'kind', NULL);

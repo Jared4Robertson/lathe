@@ -21,6 +21,12 @@ const DATA: Data = {
     { id: 'EX-LEND-TM03', title: 'Lend', domain_id: 'EX-LEND', meaning: 'Give a tool on loan.' },
   ],
   builds_on: [{ source_id: 'EX-LEND-TM01', target_id: 'EX-LEND-TM03' }],
+  journey: [{ id: 'EX-JR01', title: 'Get a damaged tool back in lending', product_id: 'EX', trigger: 'A tool is found damaged.', result: 'The tool is available to borrow again.' }],
+  journey_step: [
+    { id: 'EX-JR01-S01', title: 'Put it back in lending', journey_id: 'EX-JR01', path: 'main', position: 2 },
+    { id: 'EX-JR01-S02', title: 'Take the tool back needing repair', journey_id: 'EX-JR01', path: 'main', position: 1 },
+    { id: 'EX-JR01-S03', title: 'Report the damage', journey_id: 'EX-JR01', path: 'Found outside a return', position: 1 },
+  ],
 };
 
 async function tree(): Promise<FolderTree> {
@@ -52,6 +58,13 @@ describe('LA-EXP-UC08-R06-T02 The folder tree read gives Shared and each domain 
   it('lists terms bottom-up, each after the terms it builds on', async () => {
     const terms = stage((await tree()).domains[0], 'domain-model').folders.find((f) => f.kind === 'term')!;
     expect(terms.entries.map((e) => e.title)).toEqual(['Borrow', 'Lend', 'Overdue']);
+  });
+
+  it('folds a journey\'s steps under it path by path, the main path first, each by position, and gives each step its path', async () => {
+    const journeys = stage((await tree()).shared, 'discovery').folders.find((f) => f.kind === 'journey')!;
+    const [journey] = journeys.entries;
+    expect(journey.path).toBeUndefined();
+    expect(journey.folded.map((e) => [e.id, e.path])).toEqual([['EX-JR01-S02', 'main'], ['EX-JR01-S01', 'main'], ['EX-JR01-S03', 'found outside a return']]);
   });
 
   it('shows a stage\'s one folder directly, and puts what the product shares under Shared', async () => {

@@ -11,6 +11,8 @@ import { TRACE, traceSceneOf } from './scene';
 
 const USE_CASE = 'LA-AUT-UC06';
 const STEP = 'LA-AUT-UC06-FL-S04';
+/** Lathe's own journey "Take a new use case to proof": its first steps carry out LA-AUT-UC06, then LA-AUT-UC12. */
+const JOURNEY = 'LA-JR01';
 
 const sceneOf = (page: Page, whole = true) => traceSceneOf(page, whole);
 /** Each box's place on the page, by its key, and the camera. */
@@ -68,8 +70,8 @@ test.describe('the Trace stage stays where the Reader left it', () => {
     await expect(page).toHaveURL(new RegExp(`/${STEP}\\?stage=trace`));
     await expect.poll(async () => (await sceneOf(page)).lines.filter((l) => l.kind === 'path').length, { timeout: 5000 }).toBeGreaterThan(2);
     const lit = await sceneOf(page);
-    expect(lit.boxes.find((b) => b.id === STEP && b.column === 2)).toMatchObject({ focus: true, lit: true });
-    expect(lit.boxes.some((b) => b.column === 3 && b.lit && b.role === 'record')).toBe(true);
+    expect(lit.boxes.find((b) => b.id === STEP && b.column === 3)).toMatchObject({ focus: true, lit: true });
+    expect(lit.boxes.some((b) => b.column === 4 && b.lit && b.role === 'record')).toBe(true);
     await expect(page.locator('.wiki-panel-title h2')).toContainText('flow\'s steps');
   });
 
@@ -99,7 +101,7 @@ test.describe('the Trace stage stays where the Reader left it', () => {
 
     // Another row's use case, clicked where it is drawn: its outcomes glide to it.
     const s = await sceneOf(page, false);
-    const serving = s.boxes.filter((b) => b.column === 1 && b.depth === 0 && b.row !== USE_CASE && b.row !== null && s.lines.some((l) => l.kind === 'serves' && l.to === b.key));
+    const serving = s.boxes.filter((b) => b.column === 2 && b.depth === 0 && b.row !== USE_CASE && b.row !== null && s.lines.some((l) => l.kind === 'serves' && l.to === b.key));
     // One whose middle is in the open space, as drawn: not under a panel, not past the canvas's edge.
     const middle = (b: (typeof serving)[number]) => ({ x: b.rect.left + b.rect.width / 2, y: b.rect.top + b.rect.height / 2 });
     let other: (typeof serving)[number] | undefined;
@@ -108,5 +110,29 @@ test.describe('the Trace stage stays where the Reader left it', () => {
     await page.mouse.click(middle(other!).x, middle(other!).y);
     await expect(page).toHaveURL(new RegExp(`/${other!.row}\\?stage=trace`));
     await expect.poll(async () => { try { await level(other!.row!); return true; } catch { return false; } }, { timeout: 5000 }).toBe(true);
+  });
+
+  test('LA-V98-R25-T02 Selecting a journey lights its rows, and the walk goes along it row by row in its order', async ({ page }) => {
+    await openPage(page, `/${JOURNEY}?stage=trace`);
+    await page.locator(`${TRACE}[data-ready] canvas`).waitFor();
+    // The journey focused in the Journey column, its lines to its rows lit, each labeled with its step.
+    await expect.poll(async () => (await sceneOf(page)).boxes.find((b) => b.key === `journey/${JOURNEY}`)?.focus, { timeout: 5000 }).toBe(true);
+    const lit = await sceneOf(page);
+    const carries = lit.lines.filter((l) => l.kind === 'carries' && l.from === `journey/${JOURNEY}`);
+    expect(carries.length).toBeGreaterThan(1);
+    for (const l of carries) expect(l).toMatchObject({ lit: true, label: expect.stringMatching(/\d/) });
+    for (const l of carries) expect(lit.boxes.find((b) => b.key === l.to)?.lit, l.to).toBe(true);
+    expect(lit.boxes.some((b) => b.column === 2 && b.depth === 0 && b.lit === false), 'the other rows faded').toBe(true);
+    // The walk: Right to the first step's row, Down to the next step's row, Left back to the journey.
+    const walk = (name: string) => page.locator('.focus-stage .stage-toolbar').getByRole('button', { name }).click();
+    const first = carries.find((l) => l.label === '1')!.to.split('|')[0];
+    await walk('Step along the row to the nearest linked box on the right');
+    await expect(page).toHaveURL(new RegExp(`/${first}\\?stage=trace`));
+    await walk('Step to the box below in its column');
+    await expect(page).not.toHaveURL(new RegExp(`/${first}\\?stage=trace`));
+    const second = new URL(page.url()).pathname.slice(1);
+    expect(carries.map((l) => l.to)).toContain(`${second}|use-case`);
+    await walk('Step along the row to the nearest linked box on the left');
+    await expect(page).toHaveURL(new RegExp(`/${JOURNEY}\\?stage=trace`));
   });
 });

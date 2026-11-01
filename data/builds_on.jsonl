@@ -110,6 +110,15 @@
 {"source_id":"LA-AUT-TM71","target_id":"LA-AUT-TM24"}
 {"source_id":"LA-AUT-TM71","target_id":"LA-AUT-TM30"}
 {"source_id":"LA-AUT-TM71","target_id":"LA-AUT-TM44"}
+{"source_id":"LA-AUT-TM73","target_id":"LA-AUT-TM01"}
+{"source_id":"LA-AUT-TM73","target_id":"LA-AUT-TM21"}
+{"source_id":"LA-AUT-TM73","target_id":"LA-AUT-TM28"}
+{"source_id":"LA-AUT-TM73","target_id":"LA-AUT-TM33"}
+{"source_id":"LA-AUT-TM73","target_id":"LA-AUT-TM43"}
+{"source_id":"LA-AUT-TM74","target_id":"LA-AUT-TM01"}
+{"source_id":"LA-AUT-TM74","target_id":"LA-AUT-TM24"}
+{"source_id":"LA-AUT-TM74","target_id":"LA-AUT-TM43"}
+{"source_id":"LA-AUT-TM74","target_id":"LA-AUT-TM73"}
 {"source_id":"LA-CHK-TM02","target_id":"LA-CHK-TM01"}
 {"source_id":"LA-CHK-TM03","target_id":"LA-CHK-TM02"}
 {"source_id":"LA-CHK-TM04","target_id":"LA-CHK-TM02"}

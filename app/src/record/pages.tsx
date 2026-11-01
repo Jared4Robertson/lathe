@@ -8,6 +8,9 @@ import { StorageRequirementPage } from '../authoring/storage-requirement/Storage
 import { AddDataStoreForm } from '../authoring/data-store/DataStoreEditor';
 import { DataStorePage } from '../authoring/data-store/DataStorePage';
 import type { UseCaseKind } from '../../../lathe/src/authoring/use-case/model';
+import type { JourneyKind } from '../../../lathe/src/authoring/journey/model';
+import { AddJourneyForm } from '../authoring/journey/JourneyEditor';
+import { JourneyPage } from '../authoring/journey/JourneyPage';
 import { AddBusinessOutcomeForm } from '../authoring/business-outcome/BusinessOutcomeEditor';
 import { BusinessOutcomePage } from '../authoring/business-outcome/BusinessOutcomePage';
 import { AddEntryPointForm } from '../authoring/entry-point/EntryPointEditor';
@@ -81,7 +84,7 @@ export interface AggregatePageProps {
 }
 
 /** The kinds with an aggregate page. */
-type PagedKind = UseCaseKind | DomainKind | 'test_data_set' | PatternKind | StandardKind | 'product' | 'question' | 'interface' | 'business_outcome' | 'entry_point' | 'tooling' | SpecificationKind | ValueObjectKind | ReadModelKind | 'table' | AggregateKind | DomainEventKind | CommandKind | ViewKind | 'ui_component' | EndpointKind | IntegrationKind | StorageRequirementKind | 'data_store';
+type PagedKind = UseCaseKind | DomainKind | 'test_data_set' | PatternKind | StandardKind | 'product' | 'question' | 'interface' | 'business_outcome' | 'entry_point' | 'tooling' | SpecificationKind | ValueObjectKind | ReadModelKind | 'table' | AggregateKind | DomainEventKind | CommandKind | ViewKind | 'ui_component' | EndpointKind | IntegrationKind | JourneyKind | StorageRequirementKind | 'data_store';
 
 /** Each kind with its aggregate's page. */
 const PAGES: { readonly [K in PagedKind]: ComponentType<AggregatePageProps> } = {
@@ -123,6 +126,9 @@ const PAGES: { readonly [K in PagedKind]: ComponentType<AggregatePageProps> } = 
   question: ProductPage,
   interface: ProductPage,
   business_outcome: BusinessOutcomePage,
+  journey: JourneyPage,
+  journey_step: JourneyPage,
+  journey_test: JourneyPage,
   entry_point: EntryPointPage,
   tooling: ToolingPage,
   view: ViewPage,
@@ -171,7 +177,7 @@ export interface AggregateAdderProps {
 }
 
 /** Each aggregate root added from the page of what it sits under, with its aggregate's Add form. */
-const ADDERS: { readonly [K in 'use_case' | 'domain' | 'test_data_set' | 'pattern' | 'standard' | 'business_outcome' | 'question' | 'entry_point' | 'tooling' | 'specification' | 'value_object' | 'read_model' | 'table' | 'aggregate' | 'domain_event' | 'command' | 'view' | 'ui_component' | 'endpoint' | 'integration' | 'storage_requirement' | 'data_store']: ComponentType<AggregateAdderProps> } = {
+const ADDERS: { readonly [K in 'use_case' | 'domain' | 'test_data_set' | 'pattern' | 'standard' | 'business_outcome' | 'journey' | 'question' | 'entry_point' | 'tooling' | 'specification' | 'value_object' | 'read_model' | 'table' | 'aggregate' | 'domain_event' | 'command' | 'view' | 'ui_component' | 'endpoint' | 'integration' | 'storage_requirement' | 'data_store']: ComponentType<AggregateAdderProps> } = {
   use_case: AddUseCaseForm,
   domain: AddDomainForm,
   test_data_set: AddTestDataSetForm,
@@ -181,6 +187,7 @@ const ADDERS: { readonly [K in 'use_case' | 'domain' | 'test_data_set' | 'patter
   domain_event: AddDomainEventForm,
   command: AddCommandForm,
   business_outcome: AddBusinessOutcomeForm,
+  journey: AddJourneyForm,
   question: AddQuestionForm,
   entry_point: AddEntryPointForm,
   tooling: AddToolingForm,

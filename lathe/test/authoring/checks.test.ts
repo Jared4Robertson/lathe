@@ -2,7 +2,7 @@
 // problem, and changes one thing to break the rule. LA-PAT-AGGREGATE-TESTS-R04: each of the domain's check rows is tested here.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Workspace } from '../../src/index.ts';
-import { adding, changing, complete, gaps, loadData, ofCheck, records, removeData, without } from '../helpers.ts';
+import { adding, changing, complete, gaps, loadData, ofCheck, records, removeData, withJourney, without } from '../helpers.ts';
 
 afterAll(removeData);
 
@@ -227,6 +227,16 @@ check('title-breaks-convention', () => {
     expect(found.every((p) => p.severity === 'warning')).toBe(true);
     expect(found.map((p) => /uses the CRUD verb "(\w+)" over a record or data/.exec(p.message)?.[1])).toEqual(['change', 'edit', 'update']);
   });
+
+  it('LA-STD-MODELING-R03-T03 a journey naming an interface, holding a list or titled with a CRUD verb over a record is a warning, as a use case', async () => {
+    const titled = (titles: string[]) =>
+      adding(withJourney(), { journey: titles.map((title, i) => ({ id: `EX-JR${String(i + 2).padStart(2, '0')}`, title, product_id: 'EX', trigger: 'A member asks.', result: 'The member is answered.' })) });
+    const found = ofCheck(await loadData(titled(['Lend a tool through the web app', 'Borrow, use and return a tool', 'Update the loan data', 'Bring a new neighbor to their first loan'])), 'title-breaks-convention');
+    expect(records(found)).toEqual(['EX-JR02', 'EX-JR03', 'EX-JR04']);
+    expect(found[0].message).toBe(
+      'Journey EX-JR02 is titled "Lend a tool through the web app", which names an interface or mechanism ("web app"); name a journey for the goal its steps reach together, verb first, such as "Get a damaged tool back in lending", and leave the interface to its use cases\' flows.',
+    );
+  });
 });
 
 check('step-order', () => {
@@ -243,6 +253,68 @@ check('step-order', () => {
         message: 'Flow step EX-LEND-UC01-FL-S03 has position 2 on path refused in flow EX-LEND-UC01-FL, but no step of that path has position 1; number the steps of a path 1, 2, 3 and so on, with no gaps.',
       },
     ]);
+  });
+
+  it("LA-AUT-UC33-R03-T02 a journey path whose positions skip a number is reported once, on the first step after the gap, as a flow's is", async () => {
+    expect(ofCheck(await loadData(withJourney()), 'step-order')).toEqual([]);
+    const data = changing(withJourney(), 'journey_step', (r) => r.id === 'EX-JR01-S03', { position: 5 });
+    expect(ofCheck(await loadData(data), 'step-order')).toEqual([
+      {
+        severity: 'error', check: 'step-order', record: 'EX-JR01-S03',
+        message: 'Journey step EX-JR01-S03 has position 5 in journey EX-JR01, but no step has position 3, 4; number the steps of a journey 1, 2, 3 and so on, with no gaps.',
+      },
+    ]);
+  });
+});
+
+check('journey-of-one-use-case', () => {
+  it('LA-AUT-UC33-R07-T01 a journey whose steps carry out fewer than two use cases is a warning; a step carrying out nothing yet counts as a use case to write', async () => {
+    const data = adding(withJourney(), {
+      journey: [
+        { id: 'EX-JR02', title: 'Borrow a tool and be reminded', product_id: 'EX', trigger: 'A member wants a tool.', result: 'The member knows when it is due.' },
+        { id: 'EX-JR03', title: 'Borrow a tool and bring it back', product_id: 'EX', trigger: 'A member wants a tool.', result: 'The tool is back on the shelf.' },
+      ],
+      journey_step: [
+        { id: 'EX-JR02-S01', title: 'A member borrows a tool', journey_id: 'EX-JR02', path: 'main', position: 1 },
+        { id: 'EX-JR02-S02', title: 'The library reminds them', journey_id: 'EX-JR02', path: 'main', position: 2 },
+        { id: 'EX-JR02-S03', title: 'A member borrows another', journey_id: 'EX-JR02', path: 'twice', position: 1 },
+        { id: 'EX-JR03-S01', title: 'A member takes a tool home', journey_id: 'EX-JR03', path: 'main', position: 1 },
+        { id: 'EX-JR03-S02', title: 'The librarian takes it back', journey_id: 'EX-JR03', path: 'main', position: 2 },
+      ],
+      carries_out: [
+        { source_id: 'EX-JR02-S01', target_id: 'EX-LEND-UC01' },
+        { source_id: 'EX-JR02-S02', target_id: 'EX-LEND-PO01' },
+        { source_id: 'EX-JR02-S03', target_id: 'EX-LEND-UC01' },
+        { source_id: 'EX-JR03-S01', target_id: 'EX-LEND-UC01' },
+      ],
+    });
+    expect(ofCheck(await loadData(withJourney()), 'journey-of-one-use-case')).toEqual([]);
+    expect(ofCheck(await loadData(data), 'journey-of-one-use-case')).toEqual([
+      {
+        severity: 'warning', check: 'journey-of-one-use-case', record: 'EX-JR02',
+        message: 'Journey EX-JR02 carries out one use case, EX-LEND-UC01: a goal reached in one use case is a use case, not a journey; remove the journey, or add the steps it is missing.',
+      },
+    ]);
+  });
+});
+
+check('handoff-not-connected', () => {
+  it("LA-AUT-UC33-R08-T01 a handoff whose policy hears no event the step before it leads to is a warning, once that step's use case has a flow", async () => {
+    // The fixture's handoff follows Borrow a tool, whose flow opens a loan, which raises the event its policy hears.
+    expect(ofCheck(await loadData(withJourney()), 'handoff-not-connected')).toEqual([]);
+    const deaf = changing(withJourney(), 'hears', (r) => r.source_id === 'EX-LEND-PO01', { target_id: 'EX-LEND-EV02' });
+    expect(ofCheck(await loadData(deaf), 'handoff-not-connected')).toEqual([
+      {
+        severity: 'warning', check: 'handoff-not-connected', record: 'EX-JR01-S03',
+        message: 'Journey step EX-JR01-S03 hands off to policy EX-LEND-PO01, which hears no event that EX-LEND-UC01, carried out by the step before it (EX-JR01-S02), leads to; link the step to the policy that follows EX-LEND-UC01, or have EX-LEND-PO01 hear the event it raises.',
+      },
+    ]);
+    // A use case with no flow yet leads nowhere to read.
+    const unflowed = changing(
+      adding(deaf, { use_case: [{ id: 'EX-LEND-UC03', title: 'Renew a loan', capability_id: 'EX-LEND-CAP01', goal: 'A member keeps a tool longer.' }] }),
+      'carries_out', (r) => r.source_id === 'EX-JR01-S02', { target_id: 'EX-LEND-UC03' },
+    );
+    expect(ofCheck(await loadData(unflowed), 'handoff-not-connected')).toEqual([]);
   });
 });
 

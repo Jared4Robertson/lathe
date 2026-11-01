@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { CHANGE_SETTING_VALUES } from '../src/traceability/pattern-following/commands/change-setting-values.ts';
 import { ALLOWED_LEVELS, GAP_RULES, openStore, StoreError, type Workspace } from '../src/index.ts';
 import { runCommand } from '../src/platform/commands/run.ts';
-import { adding, build, changing, complete, gaps, loadData, obligation, ofCheck, records, removeData, sparse, SPARSE_FILES, without, type Data } from './helpers.ts';
+import { adding, build, changing, complete, gaps, loadData, obligation, ofCheck, records, removeData, sparse, SPARSE_FILES, withJourney, without, type Data } from './helpers.ts';
 
 afterAll(removeData);
 
@@ -295,7 +295,32 @@ describe('LA-TRC-UC01-R05-T01 minimums', () => {
     expect(ws.coverage.find((c) => c.domain === 'SP-E')?.gaps).toEqual([{ id: 'SP-E', kind: 'domain', missing: 'domain-without-aggregate', message: 'Domain SP-E has no aggregate.' }]);
     // Gaps are coverage, never problems; the sparse product serves no outcome, so what it holds is warned of apart
     // (serves-no-outcome), and accounts for none of its accidental records (accidental-not-accounted-for).
-    expect(ws.problems.filter((p) => !['serves-no-outcome', 'accidental-not-accounted-for'].includes(p.check)).map((p) => p.check).sort()).toEqual(['not-built', 'not-built', 'not-built', 'not-proved', 'not-proved', 'not-proved', 'outcome-target-undated', 'pattern-not-followed', 'value-object-unused']);
+    expect(ws.problems.filter((p) => !['serves-no-outcome', 'accidental-not-accounted-for'].includes(p.check)).map((p) => p.check).sort()).toEqual(['journey-of-one-use-case', 'not-built', 'not-built', 'not-built', 'not-proved', 'not-proved', 'not-proved', 'outcome-target-undated', 'pattern-not-followed', 'value-object-unused']);
+  });
+
+  it('LA-TRC-UC22-R03-T01 a journey without a test, one with no main path, one serving no outcome and a step carrying out nothing are each a gap saying what to write', async () => {
+    expect(gaps(await loadData(withJourney()))).toEqual([]);
+    const data = adding(without(withJourney(), 'journey_test', () => true), {
+      journey: [{ id: 'EX-JR02', title: 'Borrow a tool and bring it back', product_id: 'EX', trigger: 'A member wants a tool.', result: 'The tool is back on the shelf.' }],
+      journey_step: [{ id: 'EX-JR02-S01', title: 'A member brings the tool back', journey_id: 'EX-JR02', path: 'late', position: 1 }],
+      journey_test: [{ id: 'EX-JR02-T', title: 'A tool comes back', journey_id: 'EX-JR02', level: 'system', state: 'manual', manual_reason: 'Done at the desk.', steps: ['Borrow a tool', 'Bring it back'], expected_result: 'The tool is on the shelf.' }],
+    });
+    const product = (await loadData(data)).coverage.find((c) => c.domain === null)!.gaps.filter((g) => g.missing.startsWith('journey'));
+    expect(product).toEqual([
+      { id: 'EX-JR01', kind: 'journey', missing: 'journey-without-test', message: 'Journey EX-JR01 has no journey test: add the one that drives its main path from its trigger to its result.' },
+      { id: 'EX-JR02', kind: 'journey', missing: 'journey-serves-no-outcome', message: 'Journey EX-JR02 serves no business outcome: link the outcome its result moves.' },
+      { id: 'EX-JR02', kind: 'journey', missing: 'journey-without-main-path', message: 'Journey EX-JR02 has no step on its main path: write the steps from its trigger to its result.' },
+      { id: 'EX-JR02-S01', kind: 'journey_step', missing: 'journey-step-unlinked', message: 'Journey step EX-JR02-S01 carries out no use case or policy yet: write the use case (or the policy, for a handoff) and link the step.' },
+    ]);
+    // A journey serving an outcome no capability serves leaves that outcome unserved: capabilities group, journeys order.
+    const byJourneyAlone = without(withJourney(), 'serves', (r) => r.source_id === 'EX-LEND-CAP01' && r.target_id === 'EX-BO02');
+    expect(gaps(await loadData(byJourneyAlone))).toEqual(['outcome-not-served EX-BO02']);
+  });
+
+  it('LA-AUT-UC33-R05-T02 a journey test proves only at the service, system or browser level', async () => {
+    expect(ALLOWED_LEVELS.journey_test).toEqual(['service', 'system', 'browser']);
+    const unit = changing(withJourney(), 'journey_test', () => true, { level: 'unit' });
+    expect(records(ofCheck(await loadData(unit), 'test-level-not-allowed'))).toEqual(['EX-JR01-T']);
   });
 
   it('every gap rule has a unique name, a stage and a summary, and the complete product meets every minimum', () => {
@@ -591,6 +616,7 @@ describe('the run by levels', () => {
       view_test: ['unit', 'browser'],
       endpoint_test: ['service', 'system'],
       flow_test: ['system', 'browser'],
+      journey_test: ['service', 'system', 'browser'],
       integration_test: ['integration', 'service', 'system'],
       pattern_rule_test: ['unit', 'integration', 'service', 'system', 'browser'],
       standard_rule_test: ['unit', 'integration', 'service', 'system', 'browser'],

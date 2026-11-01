@@ -8,3 +8,12 @@ export const LIST_TRACED_USE_CASES_IDENTITY = {
   method: 'GET',
   route: '/api/trace/list-traced-use-cases',
 } as const;
+
+export const GET_JOURNEY_PROOF_IDENTITY = {
+  id: 'LA-TRC-QRY19',
+  slice: { aggregate: 'LA-TRC-RM13', name: 'trace' },
+  name: 'get-journey-proof',
+  description: 'Gets how far a journey is proved, by its ID, worked out from the records and the checks\' run on every read, never stored: the outcomes it serves, its steps path by path, each with what it carries out, who acts and whether it is proved (a use case when its UC requirements and flow test are, a handoff when its policy\'s test is), its journey test and whether it counts, and the counts of its steps, those carrying out nothing yet and those proved.',
+  method: 'GET',
+  route: '/api/trace/get-journey-proof',
+} as const;

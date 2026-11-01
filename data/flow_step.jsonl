@@ -119,6 +119,14 @@
 {"id":"LA-AUT-UC32-FL-S04","title":"They name it from a table","flow_id":"LA-AUT-UC32-FL","path":"main","position":4}
 {"id":"LA-AUT-UC32-FL-S05","title":"The Owner changes the data store's kind or description","flow_id":"LA-AUT-UC32-FL","path":"main","position":5}
 {"id":"LA-AUT-UC32-FL-S06","title":"They remove a data store nothing is kept in","flow_id":"LA-AUT-UC32-FL","path":"main","position":6}
+{"id":"LA-AUT-UC33-FL-S01","title":"The Owner reads the journey with its steps and what each carries out, before changing it","flow_id":"LA-AUT-UC33-FL","path":"main","position":1}
+{"id":"LA-AUT-UC33-FL-S02","title":"The Owner adds the journey under the product, with its trigger, its result and the outcomes it serves","flow_id":"LA-AUT-UC33-FL","path":"main","position":2}
+{"id":"LA-AUT-UC33-FL-S03","title":"The Owner adds its steps in order, the main path first, then each alternate path, each carrying out a use case, a policy as a handoff, or nothing yet","flow_id":"LA-AUT-UC33-FL","path":"main","position":3}
+{"id":"LA-AUT-UC33-FL-S04","title":"The Owner moves a step to another place on its path, or to another path","flow_id":"LA-AUT-UC33-FL","path":"main","position":4}
+{"id":"LA-AUT-UC33-FL-S05","title":"Once a step's use case is written, the Owner links the step to it","flow_id":"LA-AUT-UC33-FL","path":"main","position":5}
+{"id":"LA-AUT-UC33-FL-S06","title":"The Owner adds the journey test, its main path end to end","flow_id":"LA-AUT-UC33-FL","path":"main","position":6}
+{"id":"LA-AUT-UC33-FL-S07","title":"They run the check: a warning for a journey of one use case, a handoff its previous use case does not lead to, and an outcome timing a duration no journey serves","flow_id":"LA-AUT-UC33-FL","path":"main","position":7,"interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC33-FL-S08","title":"Removing a use case a step carries out is refused, naming the step","flow_id":"LA-AUT-UC33-FL","path":"refused","position":1}
 {"id":"LA-CHK-UC01-FL-S01","title":"The Agent runs lathe check on the product root","flow_id":"LA-CHK-UC01-FL","path":"main","position":1}
 {"id":"LA-CHK-UC01-FL-S02","title":"The command prints every error, then every warning, each naming its check and record, then one coverage line per domain and obligation kind","flow_id":"LA-CHK-UC01-FL","path":"main","position":2}
 {"id":"LA-CHK-UC01-FL-S03","title":"The command exits with status 1 when there is an error, 0 otherwise","flow_id":"LA-CHK-UC01-FL","path":"main","position":3}
@@ -229,6 +237,10 @@
 {"id":"LA-EXP-UC15-FL-S06","title":"The wiki card shows the record's changes: each field old → new, the links added and removed","flow_id":"LA-EXP-UC15-FL","path":"main","position":6}
 {"id":"LA-EXP-UC15-FL-S07","title":"They zoom out: each container shows how many records under it are new, changed or removed, the nav shows the same beside each folder, and the minimap and the edge hints point to changes out of view","flow_id":"LA-EXP-UC15-FL","path":"main","position":7}
 {"id":"LA-EXP-UC15-FL-S08","title":"They press ] and [ to walk the focus through the changed records, each announced","flow_id":"LA-EXP-UC15-FL","path":"main","position":8}
+{"id":"LA-EXP-UC16-FL-S01","title":"The Reader opens a journey and reads its trigger, its result and its steps in order, a list per path, each with what it carries out and who acts","flow_id":"LA-EXP-UC16-FL","path":"main","position":1}
+{"id":"LA-EXP-UC16-FL-S02","title":"They follow a step to the use case it carries out, whose page names the journeys it is a step of with the steps before and after it","flow_id":"LA-EXP-UC16-FL","path":"main","position":2}
+{"id":"LA-EXP-UC16-FL-S03","title":"From a handoff they open its policy, which names the journeys it is a handoff in","flow_id":"LA-EXP-UC16-FL","path":"main","position":3}
+{"id":"LA-EXP-UC16-FL-S04","title":"In the Graph stage the journey's steps sit under it, in order, each linked to what it carries out","flow_id":"LA-EXP-UC16-FL","path":"main","position":4}
 {"id":"LA-PLT-UC01-FL-S01","title":"The Agent's script calls loadWorkspace(root) and reads the records, links, problems and coverage","flow_id":"LA-PLT-UC01-FL","path":"main","position":1}
 {"id":"LA-PLT-UC01-FL-S02","title":"After a write, the script loads again within the budgets","flow_id":"LA-PLT-UC01-FL","path":"main","position":2}
 {"id":"LA-PLT-UC01-FL-S03","title":"Data the store refuses ends the load with one data-refused error per refusal and no records","flow_id":"LA-PLT-UC01-FL","path":"refused","position":1}
@@ -458,3 +470,7 @@
 {"id":"LA-TRC-UC21-FL-S02","title":"They name what provides a record decided outside the product, in place of any provider it had","flow_id":"LA-TRC-UC21-FL","path":"main","position":2}
 {"id":"LA-TRC-UC21-FL-S03","title":"Coverage counts the provided record as accounted for, and lists the fill as debt at its slot","flow_id":"LA-TRC-UC21-FL","path":"main","position":3}
 {"id":"LA-TRC-UC21-FL-S04","title":"A fill of a record a generator writes is refused with every reason, and nothing changes","flow_id":"LA-TRC-UC21-FL","path":"refused","position":1}
+{"id":"LA-TRC-UC22-FL-S01","title":"The Reader opens a journey and reads its proof: its steps, how many are proved, and its journey test","flow_id":"LA-TRC-UC22-FL","path":"main","position":1}
+{"id":"LA-TRC-UC22-FL-S02","title":"They open an outcome the journey serves and read each journey's proof under its measure","flow_id":"LA-TRC-UC22-FL","path":"main","position":2,"interface_id":"LA-IF01"}
+{"id":"LA-TRC-UC22-FL-S03","title":"On the Trace stage they select a journey, read its numbered lines to the use cases its steps carry out, and walk them in journey order","flow_id":"LA-TRC-UC22-FL","path":"main","position":3,"interface_id":"LA-IF01"}
+{"id":"LA-TRC-UC22-FL-S04","title":"They run the check: a gap for each journey without a test, a main path or an outcome, and for each step that carries out nothing yet","flow_id":"LA-TRC-UC22-FL","path":"main","position":4,"interface_id":"LA-IF03"}

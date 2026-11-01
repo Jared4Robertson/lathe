@@ -267,7 +267,7 @@ export interface BuildsOnRow {
   target_id: string;
 }
 
-/** A business outcome: a measurable change the product exists to bring about, which its capabilities serve and its tests or records measure (measured_by). The trace runs from it to a capability, a use case, the code and the tests. */
+/** A business outcome: a measurable change the product exists to bring about, which its capabilities and journeys serve and its tests or records measure (measured_by). The trace runs from it to a capability or a journey, a use case, the code and the tests. */
 export interface BusinessOutcomeRow {
   /** The outcome's ID: its product's ID and BO<nn>, such as TL-BO01. */
   id: string;
@@ -317,6 +317,42 @@ export interface CapabilityRow {
   position: number;
   /** What the capability covers, in a sentence or two. */
   description: string;
+}
+
+/** A journey: the use cases and handoffs, in order, that take the product's people from a trigger to a result a business outcome measures, across actors and domains. It serves business outcomes as a capability does, and its journey test drives it end to end. */
+export interface JourneyRow {
+  /** The journey's ID: its product's ID and JR<nn>, such as TL-JR01. */
+  id: string;
+  /** The summary goal, verb first, naming no interface, such as Get a damaged tool back in lending. */
+  title: string;
+  /** The product it belongs to. A journey crosses domains, never products. */
+  product_id: string;
+  /** What starts it, in the world, in a sentence, such as A tool is found damaged. */
+  trigger: string;
+  /** What it ends in, which an outcome measures, in a sentence, such as The tool is available to borrow again. */
+  result: string;
+  /** Longer notes on the journey, such as where its time is lost. */
+  notes?: string;
+}
+
+/** One step of a journey, in order on its path, in the journey's words. It carries out one use case or one policy (a handoff), of its own product (carries_out); a step that carries out nothing yet is a use case still to write. Its actors are its use case's, derived; a handoff's actor is the product itself. */
+export interface JourneyStepRow {
+  /** The step's ID: its journey's ID and S<nn>, such as TL-JR01-S01. */
+  id: string;
+  /** What happens, in the journey's words, such as The librarian takes the tool back needing repair. */
+  title: string;
+  /** The journey it belongs to. */
+  journey_id: string;
+  /** The path it is on: main, or an alternate named for when it is taken, such as found outside a return. */
+  path: string;
+  /** Its place on its path, from 1. */
+  position: number;
+}
+
+/** The journey step carries out the use case or the policy, of its own product: at most one per step. A step that carries out nothing yet is a use case still to write. */
+export interface CarriesOutRow {
+  source_id: string;
+  target_id: string;
 }
 
 /** A check: a query over the tables that returns a row (severity, check, record, message) for each problem it finds. An error means the workspace is broken; a warning is work still to do. */
@@ -905,6 +941,36 @@ export interface InvokesRow {
   target_id: string;
 }
 
+/** The journey's test: its main path, end to end, from its trigger to its result, across the use cases and handoffs it carries out, at the lowest level that can observe the result (service, system or browser). It proves the journey only; each step's use case and policy is proved by its own tests. */
+export interface JourneyTestRow {
+  /** The test's ID: its journey's ID and T, such as TL-JR01-T. */
+  id: string;
+  /** What the test shows, in a sentence. */
+  title: string;
+  /** The journey it proves; it has exactly one test. */
+  journey_id: string;
+  /** How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. */
+  level: "unit" | "integration" | "service" | "system" | "browser";
+  /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
+  state: "automated" | "manual" | "not automated yet";
+  /** The file that runs it, from the product root; an automated test must name one. */
+  file?: string;
+  /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
+  manual_reason?: string;
+  /** How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). */
+  size?: "volume" | "worst case";
+  /** Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. */
+  smoke?: boolean;
+  /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
+  external?: boolean;
+  /** What the test does along the journey's main path, step by step, from its trigger. */
+  steps: string[];
+  /** What it expects at the end: the journey's result. */
+  expected_result: string;
+  /** Longer notes on the test, such as when to run it. */
+  notes?: string;
+}
+
 /** The business outcome is measured by the test or record: a test of any kind, or a record of a product's own kind (a report, a script, a check row) once the product adds that pair with a product_relation named measured_by. An outcome may be measured by several, and one test or record measure several outcomes. */
 export interface MeasuredByRow {
   source_id: string;
@@ -1253,7 +1319,7 @@ export interface SelectsByRow {
   target_id: string;
 }
 
-/** The capability serves the business outcome: what it is for. A capability may serve several outcomes, and an outcome be served by several capabilities. */
+/** The capability or journey serves the business outcome: what it is for. A capability or journey may serve several outcomes, and an outcome be served by several capabilities and journeys. */
 export interface ServesRow {
   source_id: string;
   target_id: string;
@@ -1623,6 +1689,9 @@ export interface TableRows {
   domain_service: DomainServiceRow;
   calls: CallsRow;
   capability: CapabilityRow;
+  journey: JourneyRow;
+  journey_step: JourneyStepRow;
+  carries_out: CarriesOutRow;
   check: CheckRow;
   specification: SpecificationRow;
   checks: ChecksRow;
@@ -1664,6 +1733,7 @@ export interface TableRows {
   invariant: InvariantRow;
   invariant_test: InvariantTestRow;
   invokes: InvokesRow;
+  journey_test: JourneyTestRow;
   measured_by: MeasuredByRow;
   meets: MeetsRow;
   offers: OffersRow;

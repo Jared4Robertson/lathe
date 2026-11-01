@@ -9,4 +9,5 @@
 .trace-col-row.is-heading { border-style: solid; border-color: var(--rule); background: var(--sheet); }
 .trace-col-row.is-hint { border-style: dashed; border-color: var(--rule); background: none; color: var(--muted); }
 .trace-key-link.is-path { stroke: var(--ink); }
+.trace-key-number { fill: var(--ink); stroke: none; font-size: 8px; font-weight: 600; }
 .trace-key-toggle { display: inline-grid; place-items: center; inline-size: 14px; block-size: 14px; border: 1px solid var(--muted); border-radius: 3px; font-size: 9px; line-height: 1; color: var(--ink); }

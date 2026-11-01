@@ -4,7 +4,7 @@ export const GET_SERVES_IDENTITY = {
   id: 'LA-TRC-QRY16',
   slice: { aggregate: 'LA-TRC-RM12', name: 'serves' },
   name: 'get-serves',
-  description: 'Gets the business outcomes a record serves, and the use cases it serves them through: those of each use case whose capability serves an outcome and that reaches the record. Worked out from the data on every read; none when nothing reaches it.',
+  description: 'Gets the business outcomes a record serves, and the use cases and journeys it serves them through: those of each use case whose capability serves an outcome, or that a step of a journey serving it carries out, and that reaches the record, and of each policy a handoff of such a journey carries out. Worked out from the data on every read; none when nothing reaches it.',
   method: 'GET',
   route: '/api/serves/get-serves',
 } as const;

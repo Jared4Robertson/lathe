@@ -24,7 +24,7 @@ describe('LA-AUT-UC06-R08-T02 next-id queries and the schema', () => {
     const store = await openStore(REPO, { dataDir: path.join(REPO, 'data') });
     try {
       const queries = ALL_QUERIES.filter((q) => q.route.endsWith('/next-id') && !q.route.includes('extension-record'));
-      expect(queries.length).toBe(22);
+      expect(queries.length).toBe(23);
       const covered = new Set<string>();
       for (const [kind, described] of Object.entries(store.schema.kinds)) {
         if (!/<n+>$/.test(described.idPattern?.split(/,? or /).pop() ?? '')) continue;

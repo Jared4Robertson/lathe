@@ -1,6 +1,7 @@
-import { compareIds, type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
+import { type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
 import { foldedChildren, ownerFolders, sharedKey, type Folder } from '../exploring/folder-tree/folders';
 import { composes } from './composition';
+import { composedOrder } from './sequence';
 import type { MapNode, PlacedMap, TreeGeometry, TreeShape } from './map';
 import { keepPlaces, type Was } from './keep-places';
 import { LINE_HEIGHT, linesIn, META_FONT, TITLE_FONT, LABEL_PAD_BLOCK, BORDER, type MapLabel, type WrappedLabel } from './text';
@@ -33,6 +34,13 @@ export const LEAF_W = 240;
 export const LEAF_H = 84;
 /** The most title lines a box shows: a longer title ends in an ellipsis (its whole title is in its tooltip and card). */
 export const TITLE_LINES = 3;
+/**
+ * A leaf record's label from afar: where its title at text scale 1 would read under the readable size on screen
+ * (paint.ts READABLE_PX), the leaf shows its title alone at this text scale, at most FAR_LINES lines, a longer one ending
+ * in an ellipsis, so the records of a framed group read (LA-EXP-DS12). 1.6 is the largest at which two lines fit the leaf.
+ */
+export const FAR_TEXT = 1.6;
+export const FAR_LINES = 2;
 /** Inside a record that holds others: its padding, and the gap between two records. */
 export const RECORD_PAD = 10;
 export const RECORD_GAP = 12;
@@ -63,7 +71,8 @@ const trees = new WeakMap<RecordIndex, GroundTree>();
  * The Map's tree of a product's space, built once per index: the product's ground; its Shared district (its own stages
  * and loose folders) and each domain's; in each its stages' neighborhoods (with records, in stage order) and loose
  * folders; in each stage its folders' areas (or the records of a stage with one folder); in each area its records, by
- * the nav's folder tree, each record holding its composition (composition.ts, by ID) and followed in its area by the
+ * the nav's folder tree, each record holding its composition (composition.ts, kind by kind, a journey's or flow's steps path by path and by
+ * position, sequence.ts) and followed in its area by the
  * records folded under it that are no part of it, each a box of its own. A record composed in another (a test in what
  * it proves) is held by that record, wherever its folder lists it; a stage or folder left with nothing is not drawn.
  */
@@ -93,7 +102,7 @@ export function groundTree(index: RecordIndex): GroundTree {
   /** A record in its container, its composition inside it, and the records folded under it that are no part of it after it in its area. */
   const addRecord = (container: string, area: string, r: RecordSummary) => {
     if (!add(container, r.id, 'record')) return;
-    const own = (index.children.get(r.id) ?? []).filter((c) => composes(r.kind, c.kind)).sort((a, b) => compareIds(a.id, b.id));
+    const own = composedOrder(index, (index.children.get(r.id) ?? []).filter((c) => composes(r.kind, c.kind)));
     for (const c of own) addRecord(r.id, area, c);
     for (const c of foldedChildren(index, r)) if (!composes(r.kind, c.kind)) addRecord(area, area, c);
   };
@@ -146,13 +155,18 @@ export const groundChildren = (index: RecordIndex, id: string): readonly string[
  * line, so every leaf's label fits its box; a title cut short ends in an ellipsis (its whole title is in its tooltip
  * and its card).
  */
-export function groundLines(label: MapLabel, width: number, centered: boolean): WrappedLabel {
+export function groundLines(label: MapLabel, width: number, centered: boolean, titleLines = TITLE_LINES): WrappedLabel {
   const lines = linesIn(label, width, centered);
-  const most = Math.max(1, TITLE_LINES - Math.max(0, lines.meta.length - 1));
+  const most = Math.max(1, titleLines - Math.max(0, lines.meta.length - 1));
   if (lines.title.length <= most) return lines;
   const kept = lines.title.slice(0, most);
   kept[most - 1] = `${kept[most - 1].trimEnd().replace(/\s*\S{0,2}$/, '')}…`;
   return { ...lines, title: kept };
+}
+
+/** A leaf's title alone at FAR_TEXT in a box `width` wide, at most FAR_LINES lines, the last ending in an ellipsis when cut. */
+export function farLines(title: string, width: number): WrappedLabel {
+  return groundLines({ title, meta: '' }, width / FAR_TEXT, true, FAR_LINES);
 }
 
 /** A record container's header band: its kind and ID line and its title, wrapped to its width, at most TITLE_LINES lines of title. */
@@ -328,6 +342,8 @@ export interface GroundNode extends MapNode {
   order: number;
   /** How many records it holds, at every depth: an area's count, a district's. */
   count: number;
+  /** A leaf record's label from afar, its title alone at FAR_TEXT; null for every other node. */
+  far: WrappedLabel | null;
 }
 
 export interface GroundMap extends PlacedMap {
@@ -337,6 +353,7 @@ export interface GroundMap extends PlacedMap {
 
 class GroundBox implements GroundNode {
   private wrapped: WrappedLabel | null = null;
+  private farWrapped: WrappedLabel | null = null;
   readonly text = 1;
   constructor(
     readonly id: string, readonly parent: string | null, readonly children: readonly string[], readonly level: number, readonly order: number,
@@ -346,6 +363,10 @@ class GroundBox implements GroundNode {
   get centered() { return this.children.length === 0; }
   get lines(): WrappedLabel {
     return (this.wrapped ??= groundLines(this.label, this.w - 2 * BORDER, this.centered));
+  }
+  get far(): WrappedLabel | null {
+    if (this.role !== 'record' || this.children.length > 0) return null;
+    return (this.farWrapped ??= farLines(this.label.title, this.w - 2 * BORDER));
   }
 }
 
