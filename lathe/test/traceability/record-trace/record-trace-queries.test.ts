@@ -17,7 +17,7 @@ const open: Store[] = [];
 afterEach(async () => { for (const s of open.splice(0)) await s.close(); });
 
 const coverage = (product: string, domain: string | null, provedBy: Record<string, string[]>, gaps: Coverage['gaps'] = []): Coverage => ({
-  product, domain, gaps, obligations: [], tests: { automated: 0, manual: 0, not_automated: 0 }, proved_by: provedBy, pattern_rules: [],
+  product, domain, gaps, obligations: [], tests: { automated: 0, manual: 0, not_automated: 0 }, proved_by: provedBy, pattern_rules: [], debt: [],
 });
 
 /** The two products with a test of EX's invariant, a use case with a requirement, and a test data set; and a run of the checks. */
