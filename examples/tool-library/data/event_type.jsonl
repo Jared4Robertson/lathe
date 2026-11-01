@@ -4,3 +4,5 @@
 {"id":"TL-LEND-EV04-ET","title":"ToolRepaired","domain_event_id":"TL-LEND-EV04","delivery":"outbox","file":"src/events.ts"}
 {"id":"TL-LEND-EV05-ET","title":"LoanOpened","domain_event_id":"TL-LEND-EV05","delivery":"outbox","file":"src/events.ts"}
 {"id":"TL-LEND-EV06-ET","title":"ToolReturned","domain_event_id":"TL-LEND-EV06","delivery":"outbox","file":"src/events.ts"}
+{"id":"TL-LEND-EV07-ET","title":"LoanRenewed","domain_event_id":"TL-LEND-EV07","delivery":"outbox","file":"src/events.ts"}
+{"id":"TL-LEND-EV08-ET","title":"MemberReminded","domain_event_id":"TL-LEND-EV08","delivery":"outbox","file":"src/events.ts"}

@@ -4,7 +4,7 @@
 // step runs the one aggregate command or query it names (`lathe <aggregate> <command>`). The Reader's flow in the app is
 // in app/stability/authoring.spec.ts; the flows through the MCP tools are in agent-tools.test.ts.
 import { spawnSync } from 'node:child_process';
-import { appendFileSync, cpSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { appendFileSync, cpSync, existsSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -93,7 +93,7 @@ describe('Authoring flows', () => {
     expect(node(path.join(LATHE_DIR, 'bin', 'lathe.ts'), ['check', '--root', tl.root]).stdout).toContain('[data-refused]');
   });
 
-  it('LA-AUT-UC04-FL-T declare a product\'s own kinds and relations', async () => {
+  it('LA-AUT-UC04-FL-T declare a product\'s own kinds with their relations', async () => {
     const tl = product();
     await tl.seed(LENDING);
     const launcher = { kind: 'launcher', id: 'TL-LEND-EP1', parent_id: 'TL-LEND', values: { title: 'Start the lending service', file: 'src/main.ts' } };
@@ -102,16 +102,62 @@ describe('Authoring flows', () => {
     tl.command('product declare-product-kind', { ...HOUSE_KIND, fields: [{ name: 'file', type: 'text', required: true, description: 'The file it starts from.' }] });
     // S02: a new relation, and a pair added to one of Lathe's.
     tl.command('product declare-product-relation', { name: 'starts', source_kind: 'launcher', target_kind: 'command', product_id: 'TL', forward_label: 'Starts', reverse_label: 'Started by', description: 'The launcher starts the command.' });
-    // S04: the next load generates the tables, and the Extension record's commands take the new kind with its columns.
+    // The next load generates the tables: the Extension record's commands take the new kind with its columns (LA-AUT-UC34).
     tl.command('extension-record add-extension-record', { ...launcher, links: { starts: ['TL-LEND-CMD01'] } });
     expect(tl.read('data/launcher.jsonl')).toContain('"id":"TL-LEND-EP1"');
-    expect(linksOf(tl, 'TL-LEND-EP1')).toEqual(['starts TL-LEND-CMD01']);
-    expect(tl.command('extension-record get-extension-record', { id: 'TL-LEND-EP1' })).toContain('TL-LEND-CMD01');
     // S03: a kind declared twice is refused; in the data files, naming the file and line of each.
     tl.refuse('product declare-product-kind', { ...HOUSE_KIND, label: 'Start file' });
     appendFileSync(path.join(tl.root, 'data', 'product_kind.jsonl'), `${JSON.stringify({ ...HOUSE_KIND, label: 'Start file' })}\n`);
     const twice = tl.workspace().problems.filter((p) => p.check === 'data-refused').map((p) => p.message);
     expect(twice.join('\n')).toMatch(/data\/product_kind\.jsonl:2:.*line 1/);
+  });
+
+  it('LA-AUT-UC34-FL-T write a record of a product\'s own kind', async () => {
+    const tl = product();
+    await tl.seed(LENDING);
+    tl.command('product declare-product-kind', { ...HOUSE_KIND, fields: [{ name: 'file', type: 'text', required: true, description: 'The file it starts from.' }] });
+    tl.command('product declare-product-relation', { name: 'starts', source_kind: 'launcher', target_kind: 'command', product_id: 'TL', forward_label: 'Starts', reverse_label: 'Started by', description: 'The launcher starts the command.' });
+    const launcher = { kind: 'launcher', id: 'TL-LEND-EP1', parent_id: 'TL-LEND', values: { title: 'Start the lending service', file: 'src/main.ts' } };
+    // S02: a record of the kind under its parent, with the fields and links its kind declares; S01 reads it back whole.
+    tl.command('extension-record add-extension-record', { ...launcher, links: { starts: ['TL-LEND-CMD01'] } });
+    expect(tl.read('data/launcher.jsonl')).toContain('"id":"TL-LEND-EP1"');
+    expect(linksOf(tl, 'TL-LEND-EP1')).toEqual(['starts TL-LEND-CMD01']);
+    expect(tl.command('extension-record get-extension-record', { id: 'TL-LEND-EP1' })).toContain('TL-LEND-CMD01');
+    // S03: its fields change; refused: a field its kind does not declare, with nothing written.
+    tl.command('extension-record change-extension-record', { id: 'TL-LEND-EP1', values: { title: 'Start the lending server' } });
+    expect(tl.read('data/launcher.jsonl')).toContain('Start the lending server');
+    tl.refuse('extension-record change-extension-record', { id: 'TL-LEND-EP1', values: { port: 8080 } });
+    expect(tl.read('data/launcher.jsonl')).not.toContain('8080');
+    // S04: it goes with its links.
+    tl.command('extension-record remove-extension-record', { id: 'TL-LEND-EP1' });
+    expect(existsSync(path.join(tl.root, 'data', 'launcher.jsonl')) ? tl.read('data/launcher.jsonl') : '').not.toContain('TL-LEND-EP1');
+    expect(linksOf(tl, 'TL-LEND-EP1')).toEqual([]);
+  });
+
+  it('LA-AUT-UC35-FL-T name a product\'s roles', async () => {
+    const tl = product();
+    await tl.seed(LENDING);
+    // S02: the product's roles, each with what it does; S01 reads the product back with them.
+    tl.command('product change-product', { id: 'TL', roles: [{ name: 'Librarian', description: 'Lends tools at the desk.' }, { name: 'Member', description: 'Borrows tools.' }] });
+    expect(tl.command('product get-product', { id: 'TL' })).toMatch(/Librarian/);
+    expect(tl.command('product get-product', { id: 'TL' })).toMatch(/Borrows tools/);
+    tl.command('use-case add-use-case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.', actors: ['Member'] });
+    expect(tl.read('data/use_case_actor.jsonl')).toContain('"role_name":"Member"');
+  });
+
+  it('LA-AUT-UC36-FL-T ask an open question', async () => {
+    const tl = product();
+    await tl.seed(LENDING);
+    tl.command('product change-product', { id: 'TL', roles: [{ name: 'Librarian', description: 'Lends tools at the desk.' }] });
+    // S02: a question under a domain, with the role that decides it and what it is about.
+    tl.command('product add-question', { id: 'TL-LEND-Q01', title: 'How long is a loan?', domain_id: 'TL-LEND', owner: 'Librarian', description: 'Fourteen days, or a week for power tools.', about: ['TL-LEND-UC01'] });
+    expect(linksOf(tl, 'TL-LEND-Q01')).toEqual(['about TL-LEND-UC01']);
+    // S03: moved under the product, when it turns out to concern every domain; S04: removed once decided, with its links.
+    tl.command('product move-question', { id: 'TL-LEND-Q01', product_id: 'TL' });
+    expect(recordOf(tl, 'TL-LEND-Q01')?.parent).toBe('TL');
+    tl.command('product remove-question', { id: 'TL-LEND-Q01' });
+    expect(recordOf(tl, 'TL-LEND-Q01')).toBeUndefined();
+    expect(linksOf(tl, 'TL-LEND-Q01')).toEqual([]);
   });
 
   it('LA-AUT-UC05-FL-T organize a domain\'s use cases into capabilities and patterns', async () => {

@@ -57,7 +57,7 @@ console.log(JSON.stringify(rounds));
 `;
 
 describe('A server stops cleanly, even while a reload is in progress', () => {
-  it('LA-PLT-UC02-R06-T01 waits for the reload in progress and closes the database, so the process exits cleanly', () => {
+  it('LA-PLT-UC23-R02-T01 waits for the reload in progress and closes the database, so the process exits cleanly', () => {
     const root = path.join(temp, 'product');
     const appDir = path.join(temp, 'app');
     mkdirSync(path.join(root, 'data'), { recursive: true });

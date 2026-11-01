@@ -15,3 +15,8 @@
 {"read_model_id":"TL-LEND-RM03","position":3,"name":"Tool ID","meaning":"Which tool is out.","type_aggregate_id":"TL-LEND-A2","required":true,"column_name":"toolId","example":"7"}
 {"read_model_id":"TL-LEND-RM03","position":4,"name":"Borrowed at","meaning":"When the loan started.","type":"date and time","required":true,"column_name":"borrowedAt","example":"2026-03-02T10:00:00Z"}
 {"read_model_id":"TL-LEND-RM03","position":5,"name":"Due date","meaning":"The last day of the loan, in the library's time zone (TL-LEND-INV04).","type":"date","required":true,"column_name":"dueDate","example":"2026-03-16"}
+{"read_model_id":"TL-LEND-RM04","position":1,"name":"Tool ID","meaning":"The tool.","type_aggregate_id":"TL-LEND-A2","required":true,"column_name":"id","example":"7"}
+{"read_model_id":"TL-LEND-RM04","position":2,"name":"Name","meaning":"What the tool is.","type_value_object_id":"TL-VO01","required":true,"example":"Cordless drill"}
+{"read_model_id":"TL-LEND-RM04","position":3,"name":"Damage note","meaning":"What is wrong with the tool.","type_value_object_id":"TL-VO04","required":true,"column_name":"damageNote","example":"Chuck wobbles"}
+{"read_model_id":"TL-LEND-RM04","position":4,"name":"Damage reported at","meaning":"When the damage was reported: how long the tool has been waiting.","type":"date and time","required":true,"column_name":"damageReportedAt","example":"2026-03-09T15:00:00Z"}
+{"read_model_id":"TL-LEND-RM04","position":5,"name":"On loan","meaning":"Whether the tool is still out on a loan, so not yet back for repair.","type":"yes/no","required":true,"column_name":"onLoan","example":"No"}

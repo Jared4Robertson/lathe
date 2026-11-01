@@ -208,11 +208,16 @@ test.describe('Exploring flows', () => {
   });
 
   test('LA-EXP-UC06-FL-T read a flow step by step: its table, a step unfolded, the graph, a requirement traced to its step', async ({ page }) => {
+    // The flow's steps as the data has them, in order: the table shows each, first to last.
+    const flowSteps = readFileSync(path.join(process.env.STABILITY_ROOT!, 'data', 'flow_step.jsonl'), 'utf8')
+      .split('\n').filter(Boolean).map((line) => JSON.parse(line) as { id: string; flow_id: string; path: string; position: number })
+      .filter((s) => s.flow_id === 'LA-EXP-UC03-FL')
+      .sort((a, b) => (a.path === b.path ? a.position - b.position : a.path === 'main' ? -1 : b.path === 'main' ? 1 : a.path.localeCompare(b.path)));
     await openPage(page, '/LA-EXP-UC03-FL');
     const steps = page.locator(WIKI).getByRole('table', { name: 'Steps of LA-EXP-UC03-FL, in order' });
-    await expect(steps.getByRole('rowheader')).toHaveCount(10);
-    await expect(steps.getByRole('rowheader').first()).toContainText('LA-EXP-UC03-FL-S01');
-    await expect(steps.getByRole('rowheader').last()).toContainText('LA-EXP-UC03-FL-S11');
+    await expect(steps.getByRole('rowheader')).toHaveCount(flowSteps.length);
+    await expect(steps.getByRole('rowheader').first()).toContainText(flowSteps[0].id);
+    await expect(steps.getByRole('rowheader').last()).toContainText(flowSteps.at(-1)!.id);
     const unfold = steps.getByRole('button', { name: 'Expand LA-EXP-UC03-FL-S01' });
     await unfold.click();
     await expect(steps.getByRole('button', { name: 'Collapse LA-EXP-UC03-FL-S01' })).toHaveAttribute('aria-expanded', 'true');
@@ -224,7 +229,7 @@ test.describe('Exploring flows', () => {
     await expect(page.locator(WIKI)).toHaveCount(0);
     await graphReady(page);
     await focusDrawn(page, 'LA-EXP-UC03-FL');
-    await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => /^LA-EXP-UC03-FL-S\d+$/.test(b.id)).length).toBe(10);
+    await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => /^LA-EXP-UC03-FL-S\d+$/.test(b.id)).length).toBe(flowSteps.length);
     // A requirement's Trace stage: Expand row opens its use case's row, its box focused in the Use case column, its path
     // lit across the row to the flow whose step fulfills it, the rest faded.
     await page.goto('/LA-EXP-UC03-R18?stage=trace');
@@ -332,7 +337,7 @@ test.describe('Exploring flows', () => {
       await expect(folders.getByRole('button', { name: new RegExp(`^${stage} \\d+$`) })).toBeVisible();
     }
     // Opening a page opens the rows that hold it.
-    await page.goto('/LA-PLT-UC05');
+    await page.goto('/LA-PLT-UC07');
     await expect(n.getByRole('button', { name: 'Fold Platform' })).toHaveAttribute('aria-expanded', 'true');
     const platform = n.getByRole('list', { name: 'Folders of Platform' });
     await expect(platform.getByRole('button', { name: /^Use cases \d+$/ })).toHaveAttribute('aria-expanded', 'true');

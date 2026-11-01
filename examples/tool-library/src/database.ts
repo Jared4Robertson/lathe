@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS loans (
   tool_id INTEGER NOT NULL REFERENCES tools (id),
   borrowed_at TEXT NOT NULL,
   due_date TEXT NOT NULL CHECK (due_date GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
+  renewed_at TEXT,
+  reminded_at TEXT,
   returned_at TEXT,
   return_condition TEXT CHECK (return_condition IN ('good', 'needs_repair')),
   return_note TEXT

@@ -3,7 +3,7 @@
 /**
  * The node a canvas has under the pointer or keyboard focus (`hover`, the spotlight)
  * and the one selected (`selected`: tapped once). It is a
- * small store, so a hover never redraws the canvas. The chat's app_focus tool reads the selection (LA-PLT-UC19-R06).
+ * small store, so a hover never redraws the canvas. The chat's app_focus tool reads the selection (LA-PLT-UC29-R01).
  */
 interface Peek { hover: string | null; selected: string | null }
 export interface PeekStore {

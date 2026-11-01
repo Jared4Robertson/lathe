@@ -103,7 +103,7 @@ async function refusal(store: Store, definition: AnyCommand, input: unknown): Pr
 
 const fileOf = (store: Store, table: string) => readFileSync(path.join(store.dataDir, `${table}.jsonl`), 'utf8');
 
-describe('LA-AUT-UC04-R01-T52 each Extension record command changes one record of a product kind, held to its declaration', () => {
+describe('LA-AUT-UC34-R01-T51 each Extension record command changes one record of a product kind, held to its declaration', () => {
   it('adds a record with its fields, links and packages, writing only its own tables', async () => {
     const store = await storeOf();
     const committed = await runCommand(store, ADD_EXTENSION_RECORD, {
@@ -244,7 +244,7 @@ describe('LA-AUT-INV186-T a record of a kind a field titles is titled by that fi
   });
 });
 
-describe('LA-AUT-UC04-R01-T53 an extension record goes with its links and packages, refused while referenced', () => {
+describe('LA-AUT-UC34-R01-T52 an extension record goes with its links and packages, refused while referenced', () => {
   it('removes a record with what it starts, and refuses one a record of another kind sits under', async () => {
     const store = await storeOf();
     const refused = await refusal(store, REMOVE_EXTENSION_RECORD, { id: 'TL-LEND-RP01' });
@@ -260,7 +260,7 @@ describe('LA-AUT-UC04-R01-T53 an extension record goes with its links and packag
   });
 });
 
-describe('LA-AUT-UC04-R01-T54 each Extension record command and query is reached by name from the CLI, the MCP tools and HTTP', () => {
+describe('LA-AUT-UC34-R01-T53 each Extension record command and query is reached by name from the CLI, the MCP tools and HTTP', () => {
   it('runs `lathe extension-record <command>` with flags or JSON, and prints the refusal with its reasons', async () => {
     const root = await rootOf();
     const out: string[] = [];

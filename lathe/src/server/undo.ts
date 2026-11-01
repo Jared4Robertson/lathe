@@ -1,4 +1,4 @@
-// Undo a turn (LA-PLT-UC21-R02): the Owner's chat shows what Claude changed in a turn and rolls it back in one click,
+// Undo a turn (LA-PLT-UC27-R01): the Owner's chat shows what Claude changed in a turn and rolls it back in one click,
 // never by editing files or git, but through the aggregates' own commands, in reverse. The plan is made from the
 // product's rows before the turn (a snapshot the page asked the server to keep when the turn began), the rows now and
 // the order Claude's own commands touched the records in:
