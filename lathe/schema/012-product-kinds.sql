@@ -34,6 +34,7 @@ CREATE TABLE product_kind_field (
   type field_type NOT NULL,
   required BOOLEAN NOT NULL,
   description VARCHAR NOT NULL CHECK (trim(description) <> ''),
+  titles BOOLEAN CHECK (titles),
   PRIMARY KEY (kind, position),
   UNIQUE (kind, name)
 );
@@ -44,6 +45,7 @@ COMMENT ON COLUMN product_kind_field.name IS 'The column''s name, in lower case 
 COMMENT ON COLUMN product_kind_field.type IS 'text, integer, boolean or date (YYYY-MM-DD).';
 COMMENT ON COLUMN product_kind_field.required IS 'Whether every record of the kind must give it.';
 COMMENT ON COLUMN product_kind_field.description IS 'What the field holds.';
+COMMENT ON COLUMN product_kind_field.titles IS 'Whether the field''s value is also the record''s title, such as a module''s file: every write sets the title from it, and a title that differs is refused. Only a required text field titles its kind, and at most one does.';
 
 CREATE TABLE product_relation (
   name VARCHAR NOT NULL CHECK (regexp_full_match(name, '[a-z][a-z0-9_]*')),

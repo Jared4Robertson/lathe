@@ -105,7 +105,7 @@ const kindFields = (adding: boolean): FieldSpec[] => [
   { field: 'id_pattern', column: 'id_pattern', table: 'product_kind' },
   { field: 'id_example', column: 'id_example', table: 'product_kind' },
   { field: 'title_form', column: 'title_form', table: 'product_kind' },
-  { field: 'fields', label: 'Fields', description: 'The kind\'s own columns, in order. The list replaces its fields.', table: 'product_kind_field', columns: ['name', 'type', 'required', 'description'] },
+  { field: 'fields', label: 'Fields', description: 'The kind\'s own columns, in order. The list replaces its fields.', table: 'product_kind_field', columns: ['name', 'type', 'required', 'description', 'titles'] },
 ];
 
 const relationFields = (adding: boolean): FieldSpec[] => [

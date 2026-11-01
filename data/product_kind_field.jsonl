@@ -11,5 +11,5 @@
 {"kind":"ipc_channel","position":1,"name":"file","type":"text","required":true,"description":"The code that declares the channel, from the repo root."}
 {"kind":"ipc_query","position":1,"name":"file","type":"text","required":true,"description":"The code that declares the channel, from the repo root."}
 {"kind":"plugin_hook","position":1,"name":"file","type":"text","required":true,"description":"The hook script, from the repo root."}
-{"kind":"shared_module","position":1,"name":"file","type":"text","required":true,"description":"The module, from the repo root."}
+{"kind":"shared_module","position":1,"name":"file","type":"text","required":true,"description":"The module, from the repo root. It is also its title.","titles":true}
 {"kind":"skill","position":1,"name":"file","type":"text","required":true,"description":"The skill file, from the repo root."}
