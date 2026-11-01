@@ -29,7 +29,7 @@ const head = (el: HTMLElement, name: RegExp) => within(el).getAllByRole('button'
 
 /** A product's own kind under the domain. */
 const ownKind = (name: string, label: string, stage: 'domain-model' | null): KindDescription => ({
-  name, label, stage, obligation: false, idPattern: null, idExample: null, idScope: null, productId: 'DM', position: null, description: `A ${name}.`,
+  name, label, stage, obligation: false, complexity: 'essential', idPattern: null, idExample: null, idScope: null, productId: 'DM', position: null, description: `A ${name}.`,
   parents: [{ kind: 'domain', column: 'domain_id' }], supertypes: [], titleForm: null });
 
 describe('folders by stage', () => {

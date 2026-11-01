@@ -5,7 +5,7 @@ import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
 import { servesOf } from './trace/serves.ts';
-import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL, COVERAGE_PROOFS_SQL, COVERAGE_TESTS_SQL, OWED_PATTERN_RULES_SQL, coverageViewsSql, FACT_TABLES_SQL, TEST_KINDS, TRACE_FILES_SQL, TRACE_LINKS_SQL, TRACE_OBLIGATIONS_SQL } from './coverage.ts';
+import { COVERAGE_COUNTS_SQL, COVERAGE_DEBT_SQL, COVERAGE_GAPS_SQL, COVERAGE_PROOFS_SQL, COVERAGE_TESTS_SQL, OWED_PATTERN_RULES_SQL, coverageViewsSql, FACT_TABLES_SQL, TEST_KINDS, TRACE_FILES_SQL, TRACE_LINKS_SQL, TRACE_OBLIGATIONS_SQL } from './coverage.ts';
 import { CONFIG_FILE, loadConfig, productClash, workspaceProducts, type LatheConfig } from './config.ts';
 import { readPackageFacts } from './trace/packages.ts';
 import { readTestCases } from './trace/test-cases.ts';
@@ -236,12 +236,13 @@ async function computeCoverage(store: Store): Promise<Coverage[]> {
     const c = await store.connect();
     try { return await readRows<T>(c, sql); } finally { c.closeSync(); }
   };
-  const [counts, gaps, tests, proofs, owed] = await Promise.all([
+  const [counts, gaps, tests, proofs, owed, debt] = await Promise.all([
     on<Scoped<ObligationCoverage>>(COVERAGE_COUNTS_SQL),
     on<Scoped<CoverageGap>>(COVERAGE_GAPS_SQL),
     on<Scoped<TestCounts>>(COVERAGE_TESTS_SQL),
     on<Scoped<{ id: string; test_id: string }>>(COVERAGE_PROOFS_SQL),
     on<Scoped<{ id: string }>>(OWED_PATTERN_RULES_SQL),
+    on<Scoped<{ id: string; slot: string }>>(COVERAGE_DEBT_SQL),
   ]);
   const key = (r: { product: string; domain: string | null }) => `${r.product}\u0000${r.domain ?? ''}`;
   const group = <T extends { product: string; domain: string | null }>(rows: T[]) => {
@@ -253,6 +254,7 @@ async function computeCoverage(store: Store): Promise<Coverage[]> {
   const gapsBy = group(gaps);
   const proofsBy = group(proofs);
   const owedBy = group(owed);
+  const debtBy = group(debt);
   const provedBy = (scope: { product: string; domain: string | null }) => {
     const by: Record<string, string[]> = {};
     for (const p of proofsBy.get(key(scope)) ?? []) (by[p.id] ??= []).push(p.test_id);
@@ -267,6 +269,7 @@ async function computeCoverage(store: Store): Promise<Coverage[]> {
     proved_by: provedBy(t),
     pattern_rules: (owedBy.get(key(t)) ?? []).map((p) => p.id),
     gaps: (gapsBy.get(key(t)) ?? []).map(({ id, kind, missing, message }) => ({ id, kind, missing, message })),
+    debt: (debtBy.get(key(t)) ?? []).map(({ id, slot }) => ({ id, slot })),
   }));
 }
 
@@ -325,6 +328,7 @@ async function readRecords(store: Store, order: string[]): Promise<{ kinds: Kind
       parent_kinds: k.parents.map((p) => p.kind),
       required_fields: schema.tables[name].columns.filter((c) => c.required && c.name !== 'id' && c.name !== 'title' && !parentColumns.has(c.name)).map((c) => c.name),
       obligation: k.obligation,
+      complexity: k.complexity,
       id_scope: k.idScope,
       description: k.description ?? '',
     };

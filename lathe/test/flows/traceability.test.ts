@@ -75,7 +75,7 @@ describe('Traceability flows from the command line', () => {
       add('constraint', { id: 'TL-VO01-C01', title: 'One at sign', value_object_id: 'TL-VO01', statement: 'An email address MUST hold exactly one @.' }),
       add('value_type', { id: 'TL-VO01-VT', title: 'EmailAddress', value_object_id: 'TL-VO01', file: 'src/email.ts' }),
       add('invariant', { id: 'TL-LEND-INV01', title: 'One active loan per tool', aggregate_id: 'TL-LEND-A1', statement: 'A tool MUST NOT have two active loans.' }),
-      add('product_kind', { name: 'house_rule', product_id: 'TL', label: 'House rule', description: 'A rule of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: true }),
+      add('product_kind', { name: 'house_rule', product_id: 'TL', label: 'House rule', description: 'A rule of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: true, complexity: 'essential' }),
       add('product_relation', { name: 'checks_rule', source_kind: 'use_case_test', target_kind: 'house_rule', product_id: 'TL', role: 'proof', forward_label: 'Checks', reverse_label: 'Checked by', description: 'The test checks the rule.' }),
     ]);
     await tl.seed([add('house_rule', { id: 'TL-LEND-HR01', title: 'Quiet', domain_id: 'TL-LEND' })]);
@@ -274,11 +274,11 @@ describe('Traceability flows from the command line', () => {
     // S04: the use case that follows a pattern is not asked for requirements of its own.
     expect(gapsOf(ws, 'TL-LEND').filter((g) => g.startsWith('use-case-without-requirement'))).toEqual([]);
     // S05: a product kind declared an obligation is counted like Lathe's.
-    tl.command('product declare-product-kind', { name: 'house_rule', product_id: 'TL', label: 'House rule', description: 'A rule of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: true });
+    tl.command('product declare-product-kind', { name: 'house_rule', product_id: 'TL', label: 'House rule', description: 'A rule of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: true, complexity: 'essential' });
     tl.command('extension-record add-extension-record', { kind: 'house_rule', id: 'TL-LEND-HR01', parent_id: 'TL-LEND', values: { title: 'Quiet' } });
     expect(coverage(tl, 'TL-LEND', 'house_rule')).toMatchObject({ label: 'House rule', total: 1, proved: 0 });
     // S06: a product kind named like one of Lathe's tables is refused.
-    expect(tl.refuse('product declare-product-kind', { name: 'invariant', product_id: 'TL', label: 'Our invariant', description: 'A rule of ours.', parent_kind: 'domain', stage: 'use-cases', obligation: true })).toContain('invariant');
+    expect(tl.refuse('product declare-product-kind', { name: 'invariant', product_id: 'TL', label: 'Our invariant', description: 'A rule of ours.', parent_kind: 'domain', stage: 'use-cases', obligation: true, complexity: 'essential' })).toContain('invariant');
   });
 
   it('LA-TRC-UC08-FL03-T report tests that count for nothing', async () => {

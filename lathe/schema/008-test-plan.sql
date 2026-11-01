@@ -437,19 +437,19 @@ COMMENT ON COLUMN standard_rule_test."then" IS 'What the test expects.';
 COMMENT ON COLUMN standard_rule_test.notes IS 'Longer notes on the test, such as when to run it.';
 
 INSERT INTO meta_kind VALUES
-  ('constraint_test', 'Constraint test', 'test-plan', 53, false, '<constraint>-T', 'TL-VO01-C01-T', 'parent', NULL),
-  ('invariant_test', 'Invariant test', 'test-plan', 54, false, '<invariant>-T', 'TL-LEND-INV01-T', 'parent', NULL),
-  ('specification_test', 'Specification test', 'test-plan', 55, false, '<specification>-T', 'TL-LEND-SP01-T', 'parent', NULL),
-  ('policy_test', 'Policy test', 'test-plan', 56, false, '<policy>-T', 'TL-LEND-PO01-T', 'parent', NULL),
-  ('domain_service_test', 'Domain service test', 'test-plan', 57, false, '<domain service>-T<nn>', 'TL-LEND-DS01-T01', 'parent', NULL),
-  ('storage_requirement_test', 'Storage requirement test', 'test-plan', 58, false, '<storage requirement>-T<nn>', 'TL-LEND-A1-SR01-T01', 'parent', NULL),
-  ('use_case_test', 'Use case test', 'test-plan', 59, false, '<UC requirement>-T<nn>', 'TL-LEND-UC01-R01-T01', 'parent', NULL),
-  ('view_test', 'View test', 'test-plan', 60, false, '<view requirement>-T<nn>', 'TL-V01-R01-T01', 'parent', NULL),
-  ('endpoint_test', 'Endpoint test', 'test-plan', 61, false, '<API requirement>-T<nn>', 'TL-LEND-EP01-R01-T01', 'parent', NULL),
-  ('flow_test', 'Flow test', 'test-plan', 62, false, '<flow>-T', 'TL-LEND-UC01-FL01-T', 'parent', NULL),
-  ('integration_test', 'Integration test', 'test-plan', 63, false, '<integration>-T<nn>', 'TL-INT01-T01', 'parent', NULL),
-  ('pattern_rule_test', 'Pattern rule test', 'test-plan', 64, false, '<pattern rule>-T<nn>', 'TL-PAT-ACT-R01-T01', 'parent', NULL),
-  ('standard_rule_test', 'Standard rule test', 'test-plan', 65, false, '<standard rule>-T<nn>', 'TL-STD-CODE-R01-T01', 'parent', NULL);
+  ('constraint_test', 'Constraint test', 'test-plan', 54, false, '<constraint>-T', 'TL-VO01-C01-T', 'parent', NULL, 'as-parent'),
+  ('invariant_test', 'Invariant test', 'test-plan', 55, false, '<invariant>-T', 'TL-LEND-INV01-T', 'parent', NULL, 'as-parent'),
+  ('specification_test', 'Specification test', 'test-plan', 56, false, '<specification>-T', 'TL-LEND-SP01-T', 'parent', NULL, 'as-parent'),
+  ('policy_test', 'Policy test', 'test-plan', 57, false, '<policy>-T', 'TL-LEND-PO01-T', 'parent', NULL, 'as-parent'),
+  ('domain_service_test', 'Domain service test', 'test-plan', 58, false, '<domain service>-T<nn>', 'TL-LEND-DS01-T01', 'parent', NULL, 'as-parent'),
+  ('storage_requirement_test', 'Storage requirement test', 'test-plan', 59, false, '<storage requirement>-T<nn>', 'TL-LEND-A1-SR01-T01', 'parent', NULL, 'as-parent'),
+  ('use_case_test', 'Use case test', 'test-plan', 60, false, '<UC requirement>-T<nn>', 'TL-LEND-UC01-R01-T01', 'parent', NULL, 'as-parent'),
+  ('view_test', 'View test', 'test-plan', 61, false, '<view requirement>-T<nn>', 'TL-V01-R01-T01', 'parent', NULL, 'as-parent'),
+  ('endpoint_test', 'Endpoint test', 'test-plan', 62, false, '<API requirement>-T<nn>', 'TL-LEND-EP01-R01-T01', 'parent', NULL, 'as-parent'),
+  ('flow_test', 'Flow test', 'test-plan', 63, false, '<flow>-T', 'TL-LEND-UC01-FL01-T', 'parent', NULL, 'as-parent'),
+  ('integration_test', 'Integration test', 'test-plan', 64, false, '<integration>-T<nn>', 'TL-INT01-T01', 'parent', NULL, 'as-parent'),
+  ('pattern_rule_test', 'Pattern rule test', 'test-plan', 65, false, '<pattern rule>-T<nn>', 'TL-PAT-ACT-R01-T01', 'parent', NULL, 'as-parent'),
+  ('standard_rule_test', 'Standard rule test', 'test-plan', 66, false, '<standard rule>-T<nn>', 'TL-STD-CODE-R01-T01', 'parent', NULL, 'as-parent');
 INSERT INTO meta_kind_parent VALUES
   ('constraint_test', 'constraint', 1, 'constraint_id'),
   ('invariant_test', 'invariant', 1, 'invariant_id'),
@@ -503,6 +503,6 @@ COMMENT ON COLUMN test_data_set.reset IS 'How to reset it after a test, so the n
 COMMENT ON COLUMN test_data_set.file IS 'The seed or fixture that builds it, from the product root.';
 COMMENT ON COLUMN test_data_set.description IS 'What it is for, in a sentence or two.';
 
-INSERT INTO meta_kind VALUES ('test_data_set', 'Test data set', 'test-plan', 52, false, '<P>-<D>-TD<nn>', 'TL-LEND-TD01', 'domain', NULL);
+INSERT INTO meta_kind VALUES ('test_data_set', 'Test data set', 'test-plan', 53, false, '<P>-<D>-TD<nn>', 'TL-LEND-TD01', 'domain', NULL, 'essential');
 INSERT INTO meta_kind_parent VALUES ('test_data_set', 'domain', 1, 'domain_id');
 INSERT INTO meta_table VALUES ('test_data_set', 'kind', NULL);

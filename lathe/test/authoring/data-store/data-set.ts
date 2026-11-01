@@ -1,10 +1,12 @@
 // LA-AUT-TD131 Library database: the domain model base with the database host integration, the Loan aggregate's
 // repository and table written as data, then the data stores TL-STORE01 (the library's database, provided by the host)
-// and TL-LEND-STORE01 (the browser's local storage) written with the Data store aggregate's own Add command, and the
+// and TL-LEND-STORE01 (the browser's local storage) written with the Data store aggregate's own Add command, the
+// host named TL-STORE01's provider with the Provision aggregate's command, and the
 // repository and table naming TL-STORE01 through their own aggregates' commands.
 import { ADD_DATA_STORE } from '../../../src/authoring/data-store/commands/add-data-store.ts';
 import { CHANGE_REPOSITORY } from '../../../src/authoring/domain/commands/change-repository.ts';
 import { CHANGE_TABLE } from '../../../src/authoring/table/commands/change-table.ts';
+import { NAME_PROVIDER } from '../../../src/traceability/provision/commands/name-provider.ts';
 import { runCommand } from '../../../src/platform/commands/run.ts';
 import type { Store } from '../../../src/platform/data/store.ts';
 import type { Data } from '../../helpers.ts';
@@ -24,9 +26,10 @@ export const AROUND: Data = {
 export async function dataStoreDataSet(): Promise<Store> {
   const store = await storeOn(domainModelBase(AROUND));
   await runCommand(store, ADD_DATA_STORE, {
-    id: 'TL-STORE01', title: 'DATABASE_URL', product_id: 'TL', kind: 'database', provided_by: 'TL-INT01',
+    id: 'TL-STORE01', title: 'DATABASE_URL', product_id: 'TL', kind: 'database',
     description: "The library's PostgreSQL database, run by the database host and reached at DATABASE_URL.",
   });
+  await runCommand(store, NAME_PROVIDER, { record_id: 'TL-STORE01', provider_id: 'TL-INT01' });
   await runCommand(store, ADD_DATA_STORE, { id: 'TL-LEND-STORE01', title: 'localStorage', domain_id: 'TL-LEND', kind: 'browser storage', description: "The member's browser's local storage." });
   await runCommand(store, CHANGE_REPOSITORY, { id: 'TL-LEND-REPO01', stored_in: 'TL-STORE01' });
   await runCommand(store, CHANGE_TABLE, { id: 'TL-LEND-EN01-TB', stored_in: 'TL-STORE01' });

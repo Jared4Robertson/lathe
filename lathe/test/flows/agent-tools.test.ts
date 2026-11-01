@@ -73,7 +73,7 @@ const data = (tl: Product, table: string) => tl.read(`data/${table}.jsonl`).spli
 const schemaOf = async (a: Agent, name: string) => JSON.stringify((await a.server.request('tools/list')).result!.tools!.find((t) => t.name === name)!.inputSchema);
 
 /** A product kind several flows declare. */
-const HOUSE_KIND = { name: 'launcher', product_id: 'TL', label: 'Launcher', description: 'A file the product starts from.', parent_kind: 'domain', stage: 'technical-specification', obligation: false };
+const HOUSE_KIND = { name: 'launcher', product_id: 'TL', label: 'Launcher', description: 'A file the product starts from.', parent_kind: 'domain', stage: 'technical-specification', obligation: false, complexity: 'accidental' };
 const NO_COMMAND = {
   name: 'aggregate-without-command',
   product_id: 'TL',
@@ -303,7 +303,7 @@ describe('Authoring flows through the MCP tools', () => {
       a.tl.write('src/loans.ts', '// TL-LEND-CMD01-H\n');
       a.tl.write('test/standards.test.ts', "it('TL-STD-LOG-R01-T01 no console.log in src');\n");
       // S01: a standard and its rule.
-      await a.ok('standard_add_standard', { id: 'TL-STD-LOG', title: 'Logging', product_id: 'TL', description: 'How the code logs what it does.' });
+      await a.ok('standard_add_standard', { id: 'TL-STD-LOG', title: 'Logging', product_id: 'TL', type: 'engineering', description: 'How the code logs what it does.' });
       await a.ok('standard_add_standard_rule', { id: 'TL-STD-LOG-R01', title: 'No console.log', standard_id: 'TL-STD-LOG', statement: 'Code MUST log through the logger, never console.log.' });
       // S02: the technical record that meets it, and the test that proves it.
       await a.ok('command_change_command_handler', { id: 'TL-LEND-CMD01-H', meets: ['TL-STD-LOG-R01'] });

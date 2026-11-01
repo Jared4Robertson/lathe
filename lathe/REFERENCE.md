@@ -31,7 +31,15 @@ check: the store refuses it.
 domain, and lists as gaps each obligation still short of one, and each record short of a minimum the schema leaves to
 it (an "at least one" or "exactly one" that is missing while records are written stage by stage). An obligation is
 proved by a test of it, automated or manual, at a run by level its test kind allows, whose file (when automated)
-exists and names the test's ID.
+exists and names the test's ID. An obligation something outside the product provides (`provided_by`) is built and
+proved through its provider.
+
+**Complexity.** Every kind says whether its records are essential complexity, what the problem itself demands and
+the product decides once (discovery, the domain model, use cases and patterns, the what of interaction design), or
+accidental complexity, what comes from the means used to build it (the technical specification); a test follows what
+it proves, and a standard its type (a quality is essential, engineering accidental). An accidental record is derived
+(a tooling record `generates` it), provided (`provided_by`), or a fill: written by hand at a pattern's slot
+(`fills`), serving an essential record. Coverage lists each fill as accidental debt.
 
 <!-- Generated from the schema, the check rows and the coverage rules by `npm --prefix lathe run reference`. Do not edit it by hand. -->
 
@@ -49,6 +57,7 @@ A business outcome: a measurable change the product exists to bring about, which
 
 - **Parents:** [`product`](#kind-product) (`product_id`)
 - **Children:** none
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-BO<nn>`, such as `TL-BO01`; it starts with its parent's ID
 - **Links out:** Measured by ([`measured_by`](#relation-measured_by))
@@ -111,6 +120,7 @@ A part of the product with its own model, language and owner, for one business c
 
 - **Parents:** [`product`](#kind-product) (`product_id`)
 - **Children:** [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model), [`domain_service`](#kind-domain_service), [`term`](#kind-term), [`capability`](#kind-capability), [`data_store`](#kind-data_store), [`repository`](#kind-repository), [`table`](#kind-table), [`entry_point`](#kind-entry_point), [`tooling`](#kind-tooling), [`test_data_set`](#kind-test_data_set), [`question`](#kind-question)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-<D>`, such as `TL-LEND`; it starts with its parent's ID
 - **Links out:** Follows ([`follows`](#relation-follows))
@@ -141,6 +151,7 @@ The consistency boundary: a cluster of entities changed together as one unit, by
 
 - **Parents:** [`domain`](#kind-domain) (`domain_id`)
 - **Children:** [`entity`](#kind-entity), [`invariant`](#kind-invariant), [`domain_event`](#kind-domain_event), [`storage_requirement`](#kind-storage_requirement)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-<D>-A<n>`, such as `TL-LEND-A1`; it starts with its domain's ID
 - **Links out:** none
@@ -172,6 +183,7 @@ A record the domain keeps, with an identity: its aggregate's root or one of its 
 
 - **Parents:** [`aggregate`](#kind-aggregate) (`aggregate_id`)
 - **Children:** [`command`](#kind-command), [`data_model`](#kind-data_model), [`table`](#kind-table)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-<D>-EN<nn>`, such as `TL-LEND-EN01`; it starts with its domain's ID
 - **Links out:** Has many ([`has_many`](#relation-has_many)), Has one ([`has_one`](#relation-has_one))
@@ -231,6 +243,7 @@ A value with no identity of its own, such as an email address or a money amount,
 
 - **Parents:** none (no owner: it exists because other records use it)
 - **Children:** [`constraint`](#kind-constraint), [`value_type`](#kind-value_type)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-VO<nn>`, such as `TL-VO01`; it starts with its product's ID
 - **Links out:** none
@@ -286,12 +299,13 @@ A value object's own rule, checked when the value is created, such as an email a
 
 - **Parents:** [`value_object`](#kind-value_object) (`value_object_id`)
 - **Children:** [`constraint_test`](#kind-constraint_test)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** yes: designed, built and proved
   - **Designed:** By construction, under its value object.
   - **Built:** Its value object's value type names a file that exists.
   - **Proved:** Its constraint test.
 - **ID:** `<value object>-C<nn>`, such as `TL-VO01-C01`; it starts with its parent's ID
-- **Links out:** none
+- **Links out:** Provided by ([`provided_by`](#relation-provided_by))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`serves-no-outcome`](#check-serves-no-outcome)
 
@@ -316,12 +330,13 @@ A rule that holds for one aggregate on every change, enforced by its rule (rule)
 
 - **Parents:** [`aggregate`](#kind-aggregate) (`aggregate_id`)
 - **Children:** [`rule`](#kind-rule), [`invariant_test`](#kind-invariant_test)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** yes: designed, built and proved
   - **Designed:** By construction, under its aggregate.
   - **Built:** Its rule names a file that exists.
   - **Proved:** Its invariant test.
 - **ID:** `<P>-<D>-INV<nn>`, such as `TL-LEND-INV01`; it starts with its domain's ID
-- **Links out:** none
+- **Links out:** Provided by ([`provided_by`](#relation-provided_by))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`serves-no-outcome`](#check-serves-no-outcome)
 
@@ -346,12 +361,13 @@ A named predicate over one or more aggregates of one domain (Evans), such as Mem
 
 - **Parents:** none (no owner: it exists because other records use it)
 - **Children:** [`predicate`](#kind-predicate), [`specification_test`](#kind-specification_test)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** yes: designed, built and proved
   - **Designed:** By construction.
   - **Built:** Its predicate names a file that exists.
   - **Proved:** Its specification test.
 - **ID:** `<P>-<D>-SP<nn>`, such as `TL-LEND-SP01`; it starts with its domain's ID
-- **Links out:** Reads ([`reads`](#relation-reads))
+- **Links out:** Provided by ([`provided_by`](#relation-provided_by)), Reads ([`reads`](#relation-reads))
 - **Links in:** Questions about this ([`about`](#relation-about)), Checked by ([`checks`](#relation-checks)), Selects for ([`selects_by`](#relation-selects_by))
 - **Checks:** [`specification-unused`](#check-specification-unused), [`specification-title-article`](#check-specification-title-article), [`serves-no-outcome`](#check-serves-no-outcome)
 - **Gaps:** [`specification-reads-nothing`](#gap-specification-reads-nothing)
@@ -376,6 +392,7 @@ An unchangeable record that something happened to an aggregate, named in the pas
 
 - **Parents:** [`aggregate`](#kind-aggregate) (`aggregate_id`)
 - **Children:** [`event_type`](#kind-event_type)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-<D>-EV<nn>`, such as `TL-LEND-EV01`; it starts with its domain's ID
 - **Links out:** none
@@ -432,6 +449,7 @@ A request to change exactly one aggregate: the one its entity belongs to. It sit
 
 - **Parents:** [`entity`](#kind-entity) (`entity_id`)
 - **Children:** [`policy`](#kind-policy), [`endpoint`](#kind-endpoint), [`command_handler`](#kind-command_handler)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-<D>-CMD<nn>`, such as `TL-LEND-CMD01`; it starts with its domain's ID
 - **Links out:** Calls ([`calls`](#relation-calls)), Checks ([`checks`](#relation-checks)), Raises ([`raises`](#relation-raises))
@@ -459,6 +477,7 @@ A view of its domain's data shaped for reading, which reads one or more of the d
 
 - **Parents:** [`domain`](#kind-domain) (`domain_id`)
 - **Children:** [`query`](#kind-query), [`storage_requirement`](#kind-storage_requirement), [`table`](#kind-table), [`projection`](#kind-projection), [`reader`](#kind-reader)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-<D>-RM<nn>`, such as `TL-LEND-RM01`; it starts with its domain's ID
 - **Links out:** Calls ([`calls`](#relation-calls)), Fed by ([`fed_by`](#relation-fed_by)), Reads ([`reads`](#relation-reads))
@@ -514,6 +533,7 @@ A question asked of one read model, its parent. It changes nothing, and may sele
 
 - **Parents:** [`read_model`](#kind-read_model) (`read_model_id`)
 - **Children:** [`endpoint`](#kind-endpoint), [`query_handler`](#kind-query_handler)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-<D>-QRY<nn>`, such as `TL-LEND-QRY01`; it starts with its domain's ID
 - **Links out:** Calls ([`calls`](#relation-calls)), Selects by ([`selects_by`](#relation-selects_by))
@@ -542,12 +562,13 @@ Whenever an event, then a command (event storming). It belongs to the command it
 
 - **Parents:** [`command`](#kind-command) (`command_id`)
 - **Children:** [`event_handler`](#kind-event_handler), [`policy_test`](#kind-policy_test)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** yes: designed, built and proved
   - **Designed:** By construction, under its command.
   - **Built:** Its event handler names a file that exists.
   - **Proved:** Its policy test.
 - **ID:** `<P>-<D>-PO<nn>`, such as `TL-LEND-PO01`; it starts with its domain's ID
-- **Links out:** Hears ([`hears`](#relation-hears))
+- **Links out:** Hears ([`hears`](#relation-hears)), Provided by ([`provided_by`](#relation-provided_by))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`event-not-by-outbox`](#check-event-not-by-outbox), [`serves-no-outcome`](#check-serves-no-outcome)
 - **Gaps:** [`policy-hears-nothing`](#gap-policy-hears-nothing)
@@ -573,12 +594,13 @@ Domain logic that belongs to no single entity and is not a yes-or-no check, such
 
 - **Parents:** [`domain`](#kind-domain) (`domain_id`)
 - **Children:** [`service`](#kind-service), [`domain_service_test`](#kind-domain_service_test)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** yes: designed, built and proved
   - **Designed:** By construction, under its domain.
   - **Built:** Its service names a file that exists.
   - **Proved:** One of its domain service tests.
 - **ID:** `<P>-<D>-DS<nn>`, such as `TL-LEND-DS01`; it starts with its domain's ID
-- **Links out:** none
+- **Links out:** Provided by ([`provided_by`](#relation-provided_by))
 - **Links in:** Questions about this ([`about`](#relation-about)), Called by ([`calls`](#relation-calls))
 - **Checks:** [`serves-no-outcome`](#check-serves-no-outcome)
 - **Gaps:** [`domain-service-not-called`](#gap-domain-service-not-called)
@@ -604,12 +626,13 @@ What the business needs kept of one aggregate or read model, its parent, and how
 
 - **Parents:** [`aggregate`](#kind-aggregate) (`aggregate_id`), [`read_model`](#kind-read_model) (`read_model_id`)
 - **Children:** [`storage_requirement_test`](#kind-storage_requirement_test)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** yes: designed, built and proved
   - **Designed:** By construction, under its aggregate or read model.
   - **Built:** Its aggregate's repository, or its read model's reader, names a file that exists and the data store it is stored in.
   - **Proved:** One of its storage requirement tests.
 - **ID:** `<aggregate or read model>-SR<nn>`, such as `TL-LEND-A1-SR01`; it starts with its parent's ID
-- **Links out:** none
+- **Links out:** Provided by ([`provided_by`](#relation-provided_by))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`serves-no-outcome`](#check-serves-no-outcome)
 
@@ -636,6 +659,7 @@ A word of the domain's glossary and what it means there, so specs, code and conv
 
 - **Parents:** [`domain`](#kind-domain) (`domain_id`)
 - **Children:** none
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-<D>-TM<nn>`, such as `TL-LEND-TM01`; it starts with its domain's ID
 - **Links out:** Builds on ([`builds_on`](#relation-builds_on))
@@ -802,6 +826,7 @@ An ordered slice of a domain that groups its use cases, such as Catalog or Lendi
 
 - **Parents:** [`domain`](#kind-domain) (`domain_id`)
 - **Children:** [`use_case`](#kind-use_case)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-<D>-CAP<nn>`, such as `TL-LEND-CAP01`; it starts with its domain's ID
 - **Links out:** Serves ([`serves`](#relation-serves))
@@ -833,6 +858,7 @@ An actor's goal: its actors (use_case_actor rows), its UC requirements and its f
 
 - **Parents:** [`capability`](#kind-capability) (`capability_id`)
 - **Children:** [`uc_requirement`](#kind-uc_requirement), [`flow`](#kind-flow)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-<D>-UC<nn>`, such as `TL-LEND-UC01`; it starts with its domain's ID
 - **Links out:** Follows ([`follows`](#relation-follows))
@@ -879,12 +905,13 @@ One rule a use case must follow, whatever the interface: a step of each of the u
 
 - **Parents:** [`use_case`](#kind-use_case) (`use_case_id`)
 - **Children:** [`use_case_test`](#kind-use_case_test)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** yes: designed, built and proved
   - **Designed:** A step of each of its use case's flows fulfills it: one flow per interface the use case happens through, and at least one.
   - **Built:** Every record that carries out its fulfilling steps names a file that exists, and there is at least one: the handler of each command or query a step invokes, with the predicates and services of what that command or query checks, selects by or calls; and the adapter of each integration a step exchanges with. It also rests on those specifications and domain services, and is built only while each of them is.
   - **Proved:** One of its use case tests.
 - **ID:** `<use case>-R<nn>`, such as `TL-LEND-UC01-R01`; it starts with its parent's ID
-- **Links out:** none
+- **Links out:** Provided by ([`provided_by`](#relation-provided_by))
 - **Links in:** Questions about this ([`about`](#relation-about)), Fulfilled by ([`fulfills`](#relation-fulfills))
 - **Checks:** [`lone-child`](#check-lone-child), [`serves-no-outcome`](#check-serves-no-outcome)
 
@@ -906,16 +933,17 @@ One rule a use case must follow, whatever the interface: a step of each of the u
 
 ### Pattern (`pattern`)
 
-Behavior several use cases share, stated once with the settings each use case that follows it fills in. Its settings are pattern_setting rows and its rules pattern_rule records.
+Behavior several use cases share, stated once: a fixed part, the settings each use case that follows it fills in (its configuration, the known ways it varies) and its slots (the open-ended variation, filled with code against a contract). Its settings are pattern_setting rows, its rules pattern_rule records and its slots slot records.
 
 - **Parents:** [`product`](#kind-product) (`product_id`)
-- **Children:** [`pattern_rule`](#kind-pattern_rule)
+- **Children:** [`pattern_rule`](#kind-pattern_rule), [`slot`](#kind-slot)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-PAT-<name>`, such as `TL-PAT-LIBRARIAN-ACTION`; it starts with its parent's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about)), Followed by ([`follows`](#relation-follows))
 - **Parts:** [`pattern_setting`](#table-pattern_setting)
-- **Checks:** [`pattern-setting-missing`](#check-pattern-setting-missing), [`pattern-not-followed`](#check-pattern-not-followed)
+- **Checks:** [`pattern-setting-missing`](#check-pattern-setting-missing), [`pattern-not-followed`](#check-pattern-not-followed), [`pattern-candidate`](#check-pattern-candidate)
 - **Gaps:** [`pattern-without-rule`](#gap-pattern-without-rule)
 
 <a id="table-pattern"></a>
@@ -959,12 +987,13 @@ One rule of a pattern. Every domain that follows the pattern owes it, with no ex
 
 - **Parents:** [`pattern`](#kind-pattern) (`pattern_id`)
 - **Children:** [`pattern_rule_test`](#kind-pattern_rule_test)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** yes: designed, built and proved
   - **Designed:** Wherever it is owed: by each domain that follows its pattern, itself or through a use case.
   - **Built:** Not asked: proof only.
   - **Proved:** Its pattern rule test naming the owing domain.
 - **ID:** `<pattern>-R<nn>`, such as `TL-PAT-LIBRARIAN-ACTION-R01`; it starts with its parent's ID
-- **Links out:** none
+- **Links out:** Provided by ([`provided_by`](#relation-provided_by))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`pattern-rule-test-outside-followers`](#check-pattern-rule-test-outside-followers), [`lone-child`](#check-lone-child), [`serves-no-outcome`](#check-serves-no-outcome)
 
@@ -978,6 +1007,34 @@ One rule of a pattern. Every domain that follows the pattern owes it, with no ex
 | `statement` | VARCHAR | yes | The rule, stated with MUST, MUST NOT, SHOULD or MAY. |
 | `group_name` | VARCHAR | no | A short heading it is shown under among its siblings, such as Validation or Paging. |
 | `notes` | VARCHAR | no | Longer notes on how the rule applies. |
+
+- **Key:** `id`
+- **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"("statement") != '')`
+
+<a id="kind-slot"></a>
+
+### Slot (`slot`)
+
+An open-ended part of a pattern, which neither its fixed part nor its settings can express: code fills it against its contract. A technical record that fills it, written by hand, is a fill (fills): accidental complexity recorded where it is owed, and debt until the pattern can derive it.
+
+- **Parents:** [`pattern`](#kind-pattern) (`pattern_id`)
+- **Children:** none
+- **Complexity:** essential: what the problem itself demands, decided once per product
+- **Obligation:** no
+- **ID:** `<pattern>-SL<nn>`, such as `TL-PAT-LIBRARIAN-ACTION-SL01`; it starts with its parent's ID
+- **Links out:** none
+- **Links in:** Questions about this ([`about`](#relation-about)), Filled by ([`fills`](#relation-fills))
+- **Checks:** [`pattern-candidate`](#check-pattern-candidate)
+
+<a id="table-slot"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The slot's ID: its pattern's ID and SL<nn>, such as TL-PAT-LIBRARIAN-ACTION-SL01. |
+| `title` | VARCHAR | yes | What fills it, in a few words, such as Refusal message. |
+| `pattern_id` | VARCHAR → [`pattern`](#table-pattern) | yes | The pattern it belongs to. |
+| `statement` | VARCHAR | yes | Its contract: what every fill MUST do, in one sentence. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
@@ -1025,6 +1082,16 @@ A capability or use case title that breaks its naming convention: an interface n
 
 A capability is named as a noun phrase for a lasting ability of the business, two to four words: subject and activity noun, such as Invoice management or Member registration, or a single noun when the area is clear on its own, such as Catalog or Lending. A use case is named for one goal of its actor, verb first: verb and object, such as Borrow a tool or Approve an invoice, two to six words. Neither names a screen, a tool or a technology: a use case happens through interfaces, with one flow each, so the interface belongs to its flows, not its title. The check reads only the mechanical parts, in any letter case and as whole words: a use case or capability title that holds one of its product's interface titles or the words command line, CLI, desktop app, web app, MCP, API, agent tools, command layer or page (or their plurals); a capability title of two or more words that starts with "The" or with an -ing word (a word of five or more letters ending in -ing, other than the few that are not verbs, such as thing, string and evening), so a single noun such as Lending passes; either title that holds a list, a comma followed later by "and" or "or"; and a use case title that starts with a CRUD verb (create, read, update, delete, change or edit) and holds the word record, records or data, since a use case names the domain's own verb for its goal (Borrow a tool, Model an aggregate), never a verb over a record or data. Two goals joined by "and" with no comma are not read, nor is a use case title that does not start with a verb. Rename the capability or use case by the convention.
 
+<a id="check-pattern-candidate"></a>
+
+### `pattern-candidate`
+
+**Warning** · Lathe's · Kinds: [`slot`](#kind-slot), [`pattern`](#kind-pattern)
+
+A pattern's slot with three or more fills: what they repeat is a pattern candidate.
+
+A fill is accidental complexity written by hand at a slot, against the slot's contract, and counted as accidental debt. Three fills of one slot are the same decision made three times: what they share can be stated once, in the pattern's fixed part or as a setting, and the code derived from it. One or two fills are not reported, since a pattern drawn from too few examples overfits. Make the pattern express what the fills repeat and generate them, or split the slot where they truly differ.
+
 ### Coverage gaps: use cases
 
 Each is reported in coverage, under the record that falls short, never as a problem.
@@ -1051,6 +1118,7 @@ A way people or programs use the product, such as its web app, its HTTP API or i
 
 - **Parents:** [`product`](#kind-product) (`product_id`)
 - **Children:** none
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-IF<nn>`, such as `TL-IF01`; it starts with its parent's ID
 - **Links out:** none
@@ -1080,6 +1148,7 @@ How its use case is carried out through one interface: the steps on its main pat
 
 - **Parents:** [`use_case`](#kind-use_case) (`use_case_id`)
 - **Children:** [`flow_step`](#kind-flow_step), [`flow_test`](#kind-flow_test)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<use case>-FL<nn>`, such as `TL-LEND-UC01-FL01`; it starts with its parent's ID
 - **Links out:** none
@@ -1108,6 +1177,7 @@ One step of a flow, in order on its path. It fulfills UC requirements of its own
 
 - **Parents:** [`flow`](#kind-flow) (`flow_id`)
 - **Children:** none
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<flow>-S<nn>`, such as `TL-LEND-UC01-FL01-S01`; it starts with its parent's ID
 - **Links out:** Exchanges with ([`exchanges_with`](#relation-exchanges_with)), Fulfills ([`fulfills`](#relation-fulfills)), Happens in ([`happens_in`](#relation-happens_in)), Invokes ([`invokes`](#relation-invokes))
@@ -1139,6 +1209,7 @@ A screen or page a person uses. It has no owner: it exists because flow steps ha
 
 - **Parents:** none (no owner: it exists because other records use it)
 - **Children:** [`view_requirement`](#kind-view_requirement)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-V<nn>`, such as `TL-V01`; it starts with its product's ID
 - **Links out:** none
@@ -1168,12 +1239,13 @@ One rule a view must follow, such as what it shows while loading or a field's li
 
 - **Parents:** [`view`](#kind-view) (`view_id`)
 - **Children:** [`view_test`](#kind-view_test)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** yes: designed, built and proved
   - **Designed:** By construction, under its view.
   - **Built:** Every UI component that builds it names a file that exists, and there is at least one.
   - **Proved:** One of its view tests.
 - **ID:** `<view>-R<nn>`, such as `TL-V01-R01`; it starts with its parent's ID
-- **Links out:** none
+- **Links out:** Provided by ([`provided_by`](#relation-provided_by))
 - **Links in:** Questions about this ([`about`](#relation-about)), Built by ([`builds`](#relation-builds))
 - **Checks:** [`lone-child`](#check-lone-child), [`serves-no-outcome`](#check-serves-no-outcome)
 
@@ -1199,6 +1271,7 @@ An HTTP endpoint that exposes exactly one command or query, its parent. Flow ste
 
 - **Parents:** [`command`](#kind-command) (`command_id`), [`query`](#kind-query) (`query_id`)
 - **Children:** [`api_requirement`](#kind-api_requirement), [`endpoint_handler`](#kind-endpoint_handler)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-<D>-EP<nn>`, such as `TL-LEND-EP01`; it starts with its domain's ID
 - **Links out:** none
@@ -1234,12 +1307,13 @@ One rule an endpoint must follow, such as an error's response or a limit on its 
 
 - **Parents:** [`endpoint`](#kind-endpoint) (`endpoint_id`)
 - **Children:** [`endpoint_test`](#kind-endpoint_test)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** yes: designed, built and proved
   - **Designed:** By construction, under its endpoint.
   - **Built:** Its endpoint's handler names a file that exists.
   - **Proved:** One of its endpoint tests.
 - **ID:** `<endpoint>-R<nn>`, such as `TL-LEND-EP01-R01`; it starts with its parent's ID
-- **Links out:** none
+- **Links out:** Provided by ([`provided_by`](#relation-provided_by))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`lone-child`](#check-lone-child), [`serves-no-outcome`](#check-serves-no-outcome)
 
@@ -1265,6 +1339,7 @@ An outside system the product exchanges with, such as a payment provider or a ma
 
 - **Parents:** none (no owner: it exists because other records use it)
 - **Children:** [`adapter`](#kind-adapter), [`integration_test`](#kind-integration_test)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-INT<nn>`, such as `TL-INT01`; it starts with its product's ID
 - **Links out:** none
@@ -1303,9 +1378,9 @@ A view has no owner: it exists because flow steps happen in it. One that nothing
 
 **Error** · Lathe's · Kinds: [`integration`](#kind-integration)
 
-A integration that nothing uses.
+An integration that nothing uses: no flow step exchanges with it, and it provides nothing.
 
-A integration has no owner: it exists because flow steps exchange with it. One that nothing uses is a leftover, or a link is missing. Link the steps that exchange with it with exchanges_with, or remove it.
+An integration has no owner: it exists because flow steps exchange with it, or because it provides records of the product from outside it (provided_by), such as a platform or a dependency. One that nothing uses is a leftover, or a link is missing. Link the steps that exchange with it with exchanges_with, name it the provider of what it provides, or remove it.
 
 <a id="check-step-order"></a>
 
@@ -1384,6 +1459,7 @@ Where data actually lives: a database, a bucket, a folder of files, browser stor
 
 - **Parents:** [`product`](#kind-product) (`product_id`), [`domain`](#kind-domain) (`domain_id`)
 - **Children:** none
+- **Complexity:** accidental: what comes from the means used to build it, derived, provided or a fill at a slot
 - **Obligation:** no
 - **ID:** `<P>-STORE<nn> or <P>-<D>-STORE<nn>`, such as `TL-STORE01`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
@@ -1415,11 +1491,12 @@ Loads and saves its aggregate, whole: the way command handlers reach the aggrega
 
 - **Parents:** [`domain`](#kind-domain) (`domain_id`)
 - **Children:** none
+- **Complexity:** accidental: what comes from the means used to build it, derived, provided or a fill at a slot
 - **Obligation:** no
 - **ID:** `<domain>-REPO<nn>`, such as `TL-LEND-REPO01`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
-- **Links out:** Meets ([`meets`](#relation-meets)), Persists ([`persists`](#relation-persists)), Stored in ([`stored_in`](#relation-stored_in))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Persists ([`persists`](#relation-persists)), Provided by ([`provided_by`](#relation-provided_by)), Stored in ([`stored_in`](#relation-stored_in))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest), [`repository-persists-nothing`](#check-repository-persists-nothing)
 - **Gaps:** [`stored-nowhere`](#gap-stored-nowhere)
 
@@ -1445,11 +1522,12 @@ Its entity in code: the entity's data, behavior and mapping to its table. A comm
 
 - **Parents:** [`entity`](#kind-entity) (`entity_id`)
 - **Children:** none
+- **Complexity:** accidental: what comes from the means used to build it, derived, provided or a fill at a slot
 - **Obligation:** no
 - **ID:** `<entity>-DM`, such as `TL-LEND-EN01-DM`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
-- **Links out:** Meets ([`meets`](#relation-meets))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-data_model"></a>
@@ -1473,11 +1551,12 @@ Where an entity or a read model, its parent, is stored, in a database or not; or
 
 - **Parents:** [`entity`](#kind-entity) (`entity_id`), [`read_model`](#kind-read_model) (`read_model_id`), [`domain`](#kind-domain) (`domain_id`)
 - **Children:** none
+- **Complexity:** accidental: what comes from the means used to build it, derived, provided or a fill at a slot
 - **Obligation:** no
 - **ID:** `<entity or read model>-TB, or <domain>-TB<nn>`, such as `TL-LEND-EN01-TB`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
-- **Links out:** Meets ([`meets`](#relation-meets)), Stored in ([`stored_in`](#relation-stored_in))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by)), Stored in ([`stored_in`](#relation-stored_in))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
 - **Parts:** [`table_key`](#table-table_key)
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`table-schema-mismatch`](#check-table-schema-mismatch), [`package-not-in-manifest`](#check-package-not-in-manifest)
 - **Gaps:** [`table-without-file`](#gap-table-without-file)
@@ -1536,11 +1615,12 @@ Its value object in code, which checks the value object's constraints when a val
 
 - **Parents:** [`value_object`](#kind-value_object) (`value_object_id`)
 - **Children:** none
+- **Complexity:** accidental: what comes from the means used to build it, derived, provided or a fill at a slot
 - **Obligation:** no
 - **ID:** `<value object>-VT`, such as `TL-VO01-VT`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
-- **Links out:** Meets ([`meets`](#relation-meets))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-value_type"></a>
@@ -1564,11 +1644,12 @@ Enforces its invariant: the rule in its aggregate's code, run by the aggregate's
 
 - **Parents:** [`invariant`](#kind-invariant) (`invariant_id`)
 - **Children:** none
+- **Complexity:** accidental: what comes from the means used to build it, derived, provided or a fill at a slot
 - **Obligation:** no
 - **ID:** `<invariant>-RL`, such as `TL-LEND-INV01-RL`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
-- **Links out:** Meets ([`meets`](#relation-meets))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
 
 <a id="table-rule"></a>
 
@@ -1591,11 +1672,12 @@ Its specification in code: a yes-or-no test over the records it is given.
 
 - **Parents:** [`specification`](#kind-specification) (`specification_id`)
 - **Children:** none
+- **Complexity:** accidental: what comes from the means used to build it, derived, provided or a fill at a slot
 - **Obligation:** no
 - **ID:** `<specification>-PR`, such as `TL-LEND-SP01-PR`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
-- **Links out:** Meets ([`meets`](#relation-meets))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-predicate"></a>
@@ -1619,11 +1701,12 @@ Its domain event's shape in code; a contract with other domains when the event i
 
 - **Parents:** [`domain_event`](#kind-domain_event) (`domain_event_id`)
 - **Children:** none
+- **Complexity:** accidental: what comes from the means used to build it, derived, provided or a fill at a slot
 - **Obligation:** no
 - **ID:** `<domain event>-ET`, such as `TL-LEND-EV01-ET`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
-- **Links out:** Meets ([`meets`](#relation-meets))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`event-not-by-outbox`](#check-event-not-by-outbox), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-event_type"></a>
@@ -1648,11 +1731,12 @@ Fills its read model's table and keeps it current, from events or as a view's qu
 
 - **Parents:** [`read_model`](#kind-read_model) (`read_model_id`)
 - **Children:** none
+- **Complexity:** accidental: what comes from the means used to build it, derived, provided or a fill at a slot
 - **Obligation:** no
 - **ID:** `<read model>-PJ`, such as `TL-LEND-RM01-PJ`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
-- **Links out:** Meets ([`meets`](#relation-meets))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-projection"></a>
@@ -1678,11 +1762,12 @@ Reads its read model's table for its query handlers: the way query handlers reac
 
 - **Parents:** [`read_model`](#kind-read_model) (`read_model_id`)
 - **Children:** none
+- **Complexity:** accidental: what comes from the means used to build it, derived, provided or a fill at a slot
 - **Obligation:** no
 - **ID:** `<read model>-RD`, such as `TL-LEND-RM01-RD`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
-- **Links out:** Meets ([`meets`](#relation-meets)), Stored in ([`stored_in`](#relation-stored_in))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by)), Stored in ([`stored_in`](#relation-stored_in))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
 
 <a id="table-reader"></a>
 
@@ -1707,11 +1792,12 @@ Carries out its command: an application service that owns the transaction, loads
 
 - **Parents:** [`command`](#kind-command) (`command_id`)
 - **Children:** none
+- **Complexity:** accidental: what comes from the means used to build it, derived, provided or a fill at a slot
 - **Obligation:** no
 - **ID:** `<command>-H`, such as `TL-LEND-CMD01-H`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
-- **Links out:** Meets ([`meets`](#relation-meets))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-command_handler"></a>
@@ -1737,11 +1823,12 @@ Answers its query from its read model's table: an application service that chang
 
 - **Parents:** [`query`](#kind-query) (`query_id`)
 - **Children:** none
+- **Complexity:** accidental: what comes from the means used to build it, derived, provided or a fill at a slot
 - **Obligation:** no
 - **ID:** `<query>-H`, such as `TL-LEND-QRY01-H`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
-- **Links out:** Meets ([`meets`](#relation-meets))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-query_handler"></a>
@@ -1767,11 +1854,12 @@ Carries out its policy: hears the policy's event and sends its command.
 
 - **Parents:** [`policy`](#kind-policy) (`policy_id`)
 - **Children:** none
+- **Complexity:** accidental: what comes from the means used to build it, derived, provided or a fill at a slot
 - **Obligation:** no
 - **ID:** `<policy>-H`, such as `TL-LEND-PO01-H`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
-- **Links out:** Meets ([`meets`](#relation-meets))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-event_handler"></a>
@@ -1797,11 +1885,12 @@ Its domain service in code. It never uses a repository or an outside system: its
 
 - **Parents:** [`domain_service`](#kind-domain_service) (`domain_service_id`)
 - **Children:** none
+- **Complexity:** accidental: what comes from the means used to build it, derived, provided or a fill at a slot
 - **Obligation:** no
 - **ID:** `<domain service>-SV`, such as `TL-LEND-DS01-SV`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
-- **Links out:** Meets ([`meets`](#relation-meets))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-service"></a>
@@ -1825,10 +1914,11 @@ A piece of the user interface that renders one or more views and builds the view
 
 - **Parents:** none (no owner: it exists because other records use it)
 - **Children:** none
+- **Complexity:** accidental: what comes from the means used to build it, derived, provided or a fill at a slot
 - **Obligation:** no
 - **ID:** `<P>-UI<nn>`, such as `TL-UI01`; it starts with its product's ID
-- **Links out:** Builds ([`builds`](#relation-builds)), Meets ([`meets`](#relation-meets)), Renders ([`renders`](#relation-renders))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links out:** Builds ([`builds`](#relation-builds)), Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by)), Renders ([`renders`](#relation-renders))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`ui-component-unused`](#check-ui-component-unused), [`view-route-not-in-file`](#check-view-route-not-in-file), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-ui_component"></a>
@@ -1852,11 +1942,12 @@ Serves its endpoint: reads the request, calls the command or query handler and w
 
 - **Parents:** [`endpoint`](#kind-endpoint) (`endpoint_id`)
 - **Children:** none
+- **Complexity:** accidental: what comes from the means used to build it, derived, provided or a fill at a slot
 - **Obligation:** no
 - **ID:** `<endpoint>-H`, such as `TL-LEND-EP01-H`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
-- **Links out:** Meets ([`meets`](#relation-meets))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`endpoint-route-not-in-file`](#check-endpoint-route-not-in-file), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-endpoint_handler"></a>
@@ -1882,11 +1973,12 @@ Talks to its integration's outside system, so the rest of the code does not.
 
 - **Parents:** [`integration`](#kind-integration) (`integration_id`)
 - **Children:** none
+- **Complexity:** accidental: what comes from the means used to build it, derived, provided or a fill at a slot
 - **Obligation:** no
 - **ID:** `<integration>-AD`, such as `TL-INT01-AD`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
-- **Links out:** Meets ([`meets`](#relation-meets))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-adapter"></a>
@@ -1912,11 +2004,12 @@ A start-up file: what runs first and wires the rest together, such as a server's
 
 - **Parents:** [`domain`](#kind-domain) (`domain_id`)
 - **Children:** none
+- **Complexity:** accidental: what comes from the means used to build it, derived, provided or a fill at a slot
 - **Obligation:** no
 - **ID:** `<domain>-ENTRY<nn>`, such as `TL-LEND-ENTRY01`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
-- **Links out:** Meets ([`meets`](#relation-meets))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
 
 <a id="table-entry_point"></a>
 
@@ -1940,11 +2033,12 @@ A dev script or config file outside the running product: a build, a generator, a
 
 - **Parents:** [`domain`](#kind-domain) (`domain_id`)
 - **Children:** none
+- **Complexity:** accidental: what comes from the means used to build it, derived, provided or a fill at a slot
 - **Obligation:** no
 - **ID:** `<domain>-TOOL<nn>`, such as `TL-LEND-TOOL01`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
-- **Links out:** Meets ([`meets`](#relation-meets))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links out:** Fills ([`fills`](#relation-fills)), Generates ([`generates`](#relation-generates)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
 
 <a id="table-tooling"></a>
 
@@ -1962,13 +2056,14 @@ A dev script or config file outside the running product: a build, a generator, a
 
 ### Standard (`standard`)
 
-A library of engineering rules that holds for the product's code, such as logging, error handling or naming. What follows one of its rules meets it.
+A library of rules that holds across the product, such as exact money, a latency budget, logging, error handling or naming. Its type says whether its rules are essential (a quality) or accidental (engineering). What follows one of its rules meets it.
 
 - **Parents:** [`product`](#kind-product) (`product_id`)
 - **Children:** [`standard_rule`](#kind-standard_rule)
+- **Complexity:** by its type: a quality is essential, engineering accidental
 - **Obligation:** no
 - **ID:** `<P>-STD-<name>`, such as `TL-STD-CODE`; it starts with its parent's ID
-- **Links out:** none
+- **Links out:** Provided by ([`provided_by`](#relation-provided_by))
 - **Links in:** Questions about this ([`about`](#relation-about))
 
 <a id="table-standard"></a>
@@ -1978,6 +2073,7 @@ A library of engineering rules that holds for the product's code, such as loggin
 | `id` | VARCHAR → `record_id` | yes | The standard's ID, such as TL-STD-CODE. |
 | `title` | VARCHAR | yes | The standard's name. |
 | `product_id` | VARCHAR → [`product`](#table-product) | yes | The product it belongs to. |
+| `type` | ENUM('quality', 'engineering') | yes | quality: what the product's people need of it whatever it is built with, such as exact money, auditability or a latency budget (essential); engineering: how it is built, such as logging, naming or how code is laid out (accidental). |
 | `description` | VARCHAR | yes | What the standard covers, in a paragraph. |
 
 - **Key:** `id`
@@ -1992,12 +2088,13 @@ One rule of a standard. Technical records that follow it link to it with meets; 
 
 - **Parents:** [`standard`](#kind-standard) (`standard_id`)
 - **Children:** [`standard_rule_test`](#kind-standard_rule_test)
+- **Complexity:** as the record it sits under
 - **Obligation:** yes: designed, built and proved
   - **Designed:** A technical record meets it, or a record links to it through a relation the product declared with the design role.
   - **Built:** Every technical record that meets it, and every source of a product relation with the build role, names a file that exists, and there is at least one.
   - **Proved:** One of its standard rule tests, or a source of a product relation with the proof role.
 - **ID:** `<standard>-R<nn>`, such as `TL-STD-CODE-R01`; it starts with its parent's ID
-- **Links out:** none
+- **Links out:** Provided by ([`provided_by`](#relation-provided_by))
 - **Links in:** Questions about this ([`about`](#relation-about)), Met by ([`meets`](#relation-meets))
 - **Checks:** [`lone-child`](#check-lone-child), [`serves-no-outcome`](#check-serves-no-outcome)
 
@@ -2106,6 +2203,7 @@ What some tests start from: the environment, the accounts and the starting recor
 
 - **Parents:** [`domain`](#kind-domain) (`domain_id`)
 - **Children:** none
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-<D>-TD<nn>`, such as `TL-LEND-TD01`; it starts with its domain's ID
 - **Links out:** none
@@ -2143,6 +2241,7 @@ Proves its constraint: the values its value object accepts and refuses.
 
 - **Parents:** [`constraint`](#kind-constraint) (`constraint_id`)
 - **Children:** none
+- **Complexity:** as the record it sits under
 - **Obligation:** no
 - **Run by levels:** `unit`, `integration`
 - **ID:** `<constraint>-T`, such as `TL-VO01-C01-T`; it starts with its parent's ID
@@ -2186,6 +2285,7 @@ Proves its invariant: a change that would break it is refused, and the aggregate
 
 - **Parents:** [`invariant`](#kind-invariant) (`invariant_id`)
 - **Children:** none
+- **Complexity:** as the record it sits under
 - **Obligation:** no
 - **Run by levels:** `unit`, `integration`
 - **ID:** `<invariant>-T`, such as `TL-LEND-INV01-T`; it starts with its parent's ID
@@ -2229,6 +2329,7 @@ Proves its specification: which records satisfy the predicate and which do not.
 
 - **Parents:** [`specification`](#kind-specification) (`specification_id`)
 - **Children:** none
+- **Complexity:** as the record it sits under
 - **Obligation:** no
 - **Run by levels:** `unit`, `integration`
 - **ID:** `<specification>-T`, such as `TL-LEND-SP01-T`; it starts with its parent's ID
@@ -2272,6 +2373,7 @@ Proves its policy: when its event happens, its command is sent.
 
 - **Parents:** [`policy`](#kind-policy) (`policy_id`)
 - **Children:** none
+- **Complexity:** as the record it sits under
 - **Obligation:** no
 - **Run by levels:** `integration`, `service`, `system`, `browser`
 - **ID:** `<policy>-T`, such as `TL-LEND-PO01-T`; it starts with its parent's ID
@@ -2315,6 +2417,7 @@ Proves its domain service: from the inputs given, the value or decision it retur
 
 - **Parents:** [`domain_service`](#kind-domain_service) (`domain_service_id`)
 - **Children:** none
+- **Complexity:** as the record it sits under
 - **Obligation:** no
 - **Run by levels:** `unit`
 - **ID:** `<domain service>-T<nn>`, such as `TL-LEND-DS01-T01`; it starts with its parent's ID
@@ -2357,6 +2460,7 @@ Proves its storage requirement at the level that can observe it: a round trip, a
 
 - **Parents:** [`storage_requirement`](#kind-storage_requirement) (`storage_requirement_id`)
 - **Children:** none
+- **Complexity:** as the record it sits under
 - **Obligation:** no
 - **Run by levels:** `integration`, `service`, `system`, `browser`
 - **ID:** `<storage requirement>-T<nn>`, such as `TL-LEND-A1-SR01-T01`; it starts with its parent's ID
@@ -2398,6 +2502,7 @@ Proves its UC requirement, at the level the use case is stated: what the actor d
 
 - **Parents:** [`uc_requirement`](#kind-uc_requirement) (`uc_requirement_id`)
 - **Children:** none
+- **Complexity:** as the record it sits under
 - **Obligation:** no
 - **Run by levels:** `service`, `system`, `browser`
 - **ID:** `<UC requirement>-T<nn>`, such as `TL-LEND-UC01-R01-T01`; it starts with its parent's ID
@@ -2440,6 +2545,7 @@ Proves its view requirement in the view.
 
 - **Parents:** [`view_requirement`](#kind-view_requirement) (`view_requirement_id`)
 - **Children:** none
+- **Complexity:** as the record it sits under
 - **Obligation:** no
 - **Run by levels:** `unit`, `browser`
 - **ID:** `<view requirement>-T<nn>`, such as `TL-V01-R01-T01`; it starts with its parent's ID
@@ -2482,6 +2588,7 @@ Proves its API requirement at the endpoint: the request and the response.
 
 - **Parents:** [`api_requirement`](#kind-api_requirement) (`api_requirement_id`)
 - **Children:** none
+- **Complexity:** as the record it sits under
 - **Obligation:** no
 - **Run by levels:** `service`, `system`
 - **ID:** `<API requirement>-T<nn>`, such as `TL-LEND-EP01-R01-T01`; it starts with its parent's ID
@@ -2524,6 +2631,7 @@ A smoke test of its flow's main path, end to end, at the level that fits its int
 
 - **Parents:** [`flow`](#kind-flow) (`flow_id`)
 - **Children:** none
+- **Complexity:** as the record it sits under
 - **Obligation:** no
 - **Run by levels:** `system`, `browser`
 - **ID:** `<flow>-T`, such as `TL-LEND-UC01-FL01-T`; it starts with its parent's ID
@@ -2567,6 +2675,7 @@ Proves an exchange with its integration's outside system.
 
 - **Parents:** [`integration`](#kind-integration) (`integration_id`)
 - **Children:** none
+- **Complexity:** as the record it sits under
 - **Obligation:** no
 - **Run by levels:** `integration`, `service`, `system`
 - **ID:** `<integration>-T<nn>`, such as `TL-INT01-T01`; it starts with its parent's ID
@@ -2609,6 +2718,7 @@ Proves its pattern rule in one domain that adopts the pattern: one test per patt
 
 - **Parents:** [`pattern_rule`](#kind-pattern_rule) (`pattern_rule_id`)
 - **Children:** none
+- **Complexity:** as the record it sits under
 - **Obligation:** no
 - **Run by levels:** `unit`, `integration`, `service`, `system`, `browser`
 - **ID:** `<pattern rule>-T<nn>`, such as `TL-PAT-ACT-R01-T01`; it starts with its parent's ID
@@ -2653,6 +2763,7 @@ Proves its standard rule in the product's code, such as a scan of the code for w
 
 - **Parents:** [`standard_rule`](#kind-standard_rule) (`standard_rule_id`)
 - **Children:** none
+- **Complexity:** as the record it sits under
 - **Obligation:** no
 - **Run by levels:** `unit`, `integration`, `service`, `system`, `browser`
 - **ID:** `<standard rule>-T<nn>`, such as `TL-STD-CODE-R01-T01`; it starts with its parent's ID
@@ -2809,6 +2920,7 @@ A product: the root of a set of specifications.
 
 - **Parents:** none (a root record)
 - **Children:** [`business_outcome`](#kind-business_outcome), [`domain`](#kind-domain), [`pattern`](#kind-pattern), [`interface`](#kind-interface), [`data_store`](#kind-data_store), [`standard`](#kind-standard), [`question`](#kind-question)
+- **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>`, such as `TL`
 - **Links out:** none
@@ -2897,15 +3009,17 @@ A kind a product adds to Lathe's, such as a report or a CLI command. Its records
 | `description` | VARCHAR | yes | What a record of the kind is. |
 | `parent_kind` | VARCHAR | yes | The kind its records sit under, their one parent: one of Lathe's or another product kind. Its table gets a required <parent_kind>_id column. |
 | `stage` | ENUM('discovery', 'domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan') | no | The stage its records belong to, any of the six, if one; such as technical-specification for a kind of code Lathe has no kind for. |
-| `obligation` | BOOLEAN | yes | Whether a record of the kind is an obligation, to be designed, built and proved. An obligation kind joins the obligation supertype. |
+| `obligation` | BOOLEAN | yes | Whether a record of the kind is an obligation, to be designed, built and proved. An obligation kind joins the obligation supertype, and the records something outside the product may provide (provided_by_source). |
 | `id_pattern` | VARCHAR | no | How its IDs are written, its own pattern, such as <command>-CLI. |
 | `id_example` | VARCHAR | no | An example ID. |
 | `title_form` | ENUM('identifier', 'invocation', 'kebab-case') | no | For a code-bound kind, how its titles are written (meta_kind_title): identifier, invocation or kebab-case; none for a kind titled in words. |
+| `complexity` | ENUM('essential', 'accidental', 'as-parent', 'by-type') | yes | Whether its records are essential complexity (what the problem itself demands, such as a report the product's people read), accidental (what comes from the means of building it, such as a kind of code), or as-parent: as the record they sit under. Never mixed: a kind that would hold both is two kinds. |
 
 - **Key:** `name`
 - **Rule:** `regexp_full_match("name", '[a-z][a-z0-9_]*')`
 - **Rule:** `("trim"("label") != '')`
 - **Rule:** `("trim"(description) != '')`
+- **Rule:** `(complexity != 'by-type')`
 
 <a id="table-product_kind_field"></a>
 
@@ -2992,6 +3106,7 @@ A product's typed settings for its checks. A product without a row takes the def
 | `product_id` | VARCHAR → [`product`](#table-product) | yes | The product. |
 | `max_children` | INTEGER | yes | The most children of one kind a record should have before too-many-children warns; the default is 15. |
 | `max_entities_per_aggregate` | INTEGER | yes | The most entities an aggregate should have before aggregate-too-large warns; the default is 7. |
+| `technology_words` | VARCHAR[] | yes | The words, besides Lathe's own, that name technology in this product's essential records, which accidental-in-essential warns of, such as the name of a framework the product is built with; none by default. |
 
 - **Key:** `product_id`
 - **Rule:** `(max_children >= 1)`
@@ -3128,6 +3243,36 @@ The read model is kept current from the event: of its own domain, or another dom
 | --- | --- | --- |
 | [`read_model`](#kind-read_model) | [`domain_event`](#kind-domain_event) | The read model is kept current from the event. |
 
+<a id="relation-fills"></a>
+
+### `fills`
+
+The technical record, written by hand, fills the pattern's slot against its contract: it is a fill, accidental complexity recorded where it is owed and counted as debt until the pattern can derive it.
+
+- **Reads:** Fills / Filled by
+- **Role:** none
+
+| From | To | Meaning |
+| --- | --- | --- |
+| [`adapter`](#kind-adapter) | [`slot`](#kind-slot) | The adapter, written by hand, fills the slot. |
+| [`command_handler`](#kind-command_handler) | [`slot`](#kind-slot) | The command handler, written by hand, fills the slot. |
+| [`data_model`](#kind-data_model) | [`slot`](#kind-slot) | The data model, written by hand, fills the slot. |
+| [`endpoint_handler`](#kind-endpoint_handler) | [`slot`](#kind-slot) | The endpoint handler, written by hand, fills the slot. |
+| [`entry_point`](#kind-entry_point) | [`slot`](#kind-slot) | The entry point, written by hand, fills the slot. |
+| [`event_handler`](#kind-event_handler) | [`slot`](#kind-slot) | The event handler, written by hand, fills the slot. |
+| [`event_type`](#kind-event_type) | [`slot`](#kind-slot) | The event type, written by hand, fills the slot. |
+| [`predicate`](#kind-predicate) | [`slot`](#kind-slot) | The predicate, written by hand, fills the slot. |
+| [`projection`](#kind-projection) | [`slot`](#kind-slot) | The projection, written by hand, fills the slot. |
+| [`query_handler`](#kind-query_handler) | [`slot`](#kind-slot) | The query handler, written by hand, fills the slot. |
+| [`reader`](#kind-reader) | [`slot`](#kind-slot) | The reader, written by hand, fills the slot. |
+| [`repository`](#kind-repository) | [`slot`](#kind-slot) | The repository, written by hand, fills the slot. |
+| [`rule`](#kind-rule) | [`slot`](#kind-slot) | The rule, written by hand, fills the slot. |
+| [`service`](#kind-service) | [`slot`](#kind-slot) | The service, written by hand, fills the slot. |
+| [`table`](#kind-table) | [`slot`](#kind-slot) | The table, written by hand, fills the slot. |
+| [`tooling`](#kind-tooling) | [`slot`](#kind-slot) | The tooling, written by hand, fills the slot. |
+| [`ui_component`](#kind-ui_component) | [`slot`](#kind-slot) | The UI component, written by hand, fills the slot. |
+| [`value_type`](#kind-value_type) | [`slot`](#kind-slot) | The value type, written by hand, fills the slot. |
+
 <a id="relation-follows"></a>
 
 ### `follows`
@@ -3154,6 +3299,36 @@ The flow step fulfills the UC requirement, of its own use case; this designs the
 | From | To | Meaning |
 | --- | --- | --- |
 | [`flow_step`](#kind-flow_step) | [`uc_requirement`](#kind-uc_requirement) | The step fulfills the UC requirement of its use case. |
+
+<a id="relation-generates"></a>
+
+### `generates`
+
+The tooling record (a generator) writes the technical record's code from the spec: the record is derived, never written by hand.
+
+- **Reads:** Generates / Generated by
+- **Role:** none
+
+| From | To | Meaning |
+| --- | --- | --- |
+| [`tooling`](#kind-tooling) | [`adapter`](#kind-adapter) | The tooling record generates the adapter's code. |
+| [`tooling`](#kind-tooling) | [`command_handler`](#kind-command_handler) | The tooling record generates the command handler's code. |
+| [`tooling`](#kind-tooling) | [`data_model`](#kind-data_model) | The tooling record generates the data model's code. |
+| [`tooling`](#kind-tooling) | [`endpoint_handler`](#kind-endpoint_handler) | The tooling record generates the endpoint handler's code. |
+| [`tooling`](#kind-tooling) | [`entry_point`](#kind-entry_point) | The tooling record generates the entry point's code. |
+| [`tooling`](#kind-tooling) | [`event_handler`](#kind-event_handler) | The tooling record generates the event handler's code. |
+| [`tooling`](#kind-tooling) | [`event_type`](#kind-event_type) | The tooling record generates the event type's code. |
+| [`tooling`](#kind-tooling) | [`predicate`](#kind-predicate) | The tooling record generates the predicate's code. |
+| [`tooling`](#kind-tooling) | [`projection`](#kind-projection) | The tooling record generates the projection's code. |
+| [`tooling`](#kind-tooling) | [`query_handler`](#kind-query_handler) | The tooling record generates the query handler's code. |
+| [`tooling`](#kind-tooling) | [`reader`](#kind-reader) | The tooling record generates the reader's code. |
+| [`tooling`](#kind-tooling) | [`repository`](#kind-repository) | The tooling record generates the repository's code. |
+| [`tooling`](#kind-tooling) | [`rule`](#kind-rule) | The tooling record generates the rule's code. |
+| [`tooling`](#kind-tooling) | [`service`](#kind-service) | The tooling record generates the service's code. |
+| [`tooling`](#kind-tooling) | [`table`](#kind-table) | The tooling record generates the table's code. |
+| [`tooling`](#kind-tooling) | [`tooling`](#kind-tooling) | The tooling record generates the tooling's code. |
+| [`tooling`](#kind-tooling) | [`ui_component`](#kind-ui_component) | The tooling record generates the UI component's code. |
+| [`tooling`](#kind-tooling) | [`value_type`](#kind-value_type) | The tooling record generates the value type's code. |
 
 <a id="relation-happens_in"></a>
 
@@ -3293,14 +3468,44 @@ The repository loads and saves the aggregate, whole: one repository per aggregat
 
 ### `provided_by`
 
-The data store is a service someone else runs, which the user must provide, reached through the integration: a managed database or a bucket. A store the product owns outright, such as a local file or browser storage, has none.
+The record is provided by something outside the product, which decides it once for everyone who uses it: a dependency, a platform or a generic subdomain, reached through an integration or named by a record of a product's own kind (a component of a design system), once the product adds that pair with a product_relation named provided_by. A data store someone else runs, such as a managed database or a bucket, is provided by the integration that reaches it; a store the product owns outright, such as a local file, has none. A provided record counts as accounted for, and a provided obligation as built and proved, through its provider. One provider per record.
 
 - **Reads:** Provided by / Provides
 - **Role:** none
 
 | From | To | Meaning |
 | --- | --- | --- |
-| [`data_store`](#kind-data_store) | [`integration`](#kind-integration) | The data store is a service someone else runs, reached through the integration. |
+| [`adapter`](#kind-adapter) | [`integration`](#kind-integration) | The adapter is provided by what the integration reaches, outside the product. |
+| [`api_requirement`](#kind-api_requirement) | [`integration`](#kind-integration) | The API requirement is provided by what the integration reaches, outside the product. |
+| [`command_handler`](#kind-command_handler) | [`integration`](#kind-integration) | The command handler is provided by what the integration reaches, outside the product. |
+| [`constraint`](#kind-constraint) | [`integration`](#kind-integration) | The constraint is provided by what the integration reaches, outside the product. |
+| [`data_model`](#kind-data_model) | [`integration`](#kind-integration) | The data model is provided by what the integration reaches, outside the product. |
+| [`data_store`](#kind-data_store) | [`integration`](#kind-integration) | The data store is provided by what the integration reaches, outside the product. |
+| [`domain_service`](#kind-domain_service) | [`integration`](#kind-integration) | The domain service is provided by what the integration reaches, outside the product. |
+| [`endpoint_handler`](#kind-endpoint_handler) | [`integration`](#kind-integration) | The endpoint handler is provided by what the integration reaches, outside the product. |
+| [`entry_point`](#kind-entry_point) | [`integration`](#kind-integration) | The entry point is provided by what the integration reaches, outside the product. |
+| [`event_handler`](#kind-event_handler) | [`integration`](#kind-integration) | The event handler is provided by what the integration reaches, outside the product. |
+| [`event_type`](#kind-event_type) | [`integration`](#kind-integration) | The event type is provided by what the integration reaches, outside the product. |
+| [`invariant`](#kind-invariant) | [`integration`](#kind-integration) | The invariant is provided by what the integration reaches, outside the product. |
+| [`pattern_rule`](#kind-pattern_rule) | [`integration`](#kind-integration) | The pattern rule is provided by what the integration reaches, outside the product. |
+| [`policy`](#kind-policy) | [`integration`](#kind-integration) | The policy is provided by what the integration reaches, outside the product. |
+| [`predicate`](#kind-predicate) | [`integration`](#kind-integration) | The predicate is provided by what the integration reaches, outside the product. |
+| [`projection`](#kind-projection) | [`integration`](#kind-integration) | The projection is provided by what the integration reaches, outside the product. |
+| [`query_handler`](#kind-query_handler) | [`integration`](#kind-integration) | The query handler is provided by what the integration reaches, outside the product. |
+| [`reader`](#kind-reader) | [`integration`](#kind-integration) | The reader is provided by what the integration reaches, outside the product. |
+| [`repository`](#kind-repository) | [`integration`](#kind-integration) | The repository is provided by what the integration reaches, outside the product. |
+| [`rule`](#kind-rule) | [`integration`](#kind-integration) | The rule is provided by what the integration reaches, outside the product. |
+| [`service`](#kind-service) | [`integration`](#kind-integration) | The service is provided by what the integration reaches, outside the product. |
+| [`specification`](#kind-specification) | [`integration`](#kind-integration) | The specification is provided by what the integration reaches, outside the product. |
+| [`standard`](#kind-standard) | [`integration`](#kind-integration) | The standard is provided by what the integration reaches, outside the product. |
+| [`standard_rule`](#kind-standard_rule) | [`integration`](#kind-integration) | The standard rule is provided by what the integration reaches, outside the product. |
+| [`storage_requirement`](#kind-storage_requirement) | [`integration`](#kind-integration) | The storage requirement is provided by what the integration reaches, outside the product. |
+| [`table`](#kind-table) | [`integration`](#kind-integration) | The table is provided by what the integration reaches, outside the product. |
+| [`tooling`](#kind-tooling) | [`integration`](#kind-integration) | The tooling is provided by what the integration reaches, outside the product. |
+| [`uc_requirement`](#kind-uc_requirement) | [`integration`](#kind-integration) | The UC requirement is provided by what the integration reaches, outside the product. |
+| [`ui_component`](#kind-ui_component) | [`integration`](#kind-integration) | The UI component is provided by what the integration reaches, outside the product. |
+| [`value_type`](#kind-value_type) | [`integration`](#kind-integration) | The value type is provided by what the integration reaches, outside the product. |
+| [`view_requirement`](#kind-view_requirement) | [`integration`](#kind-integration) | The view requirement is provided by what the integration reaches, outside the product. |
 
 <a id="relation-raises"></a>
 
@@ -3451,6 +3656,26 @@ Coverage counts an obligation as proved once a test of it is automated or manual
 A record with more children of one kind than its product's max_children setting.
 
 The setting is the product's product_setting row (15 when it has none). A parent with that many children of one kind is missing a level between them, such as a capability or another aggregate. It counts a parent's children of each kind of the five design stages, discovery to the technical specification, since those are read as lists under their parent; a test is read under what it proves. Children are also counted per group, read from the record_group view, since each group reads under its own heading: a flow's steps per path, since each path reads as its own list, and the records of every kind with a `group_name` (terms, UC requirements, view requirements, API requirements, pattern rules, standard rules and a product's own kinds) per `group_name`; the ungrouped ones are one list. Paths and groups are compared trimmed and in any letter case. Add a level, or a group, and move the children into it.
+
+<a id="check-accidental-not-accounted-for"></a>
+
+### `accidental-not-accounted-for`
+
+**Warning** · Lathe's
+
+An accidental record that is neither derived (a tooling record generates it), provided (it or a record it sits under names its provider), nor a fill of a pattern's slot that serves an essential record.
+
+Essential complexity is decided once, per product; accidental complexity, what comes from the means used to build it, is derived, provided, or a recorded fill at a slot, never free-floating (LA-STD-PRINCIPLES). A record is accidental by its kind (the technical specification), or as an engineering standard and its rules; a test follows what it proves and is not reported. It is accounted for when a tooling record generates it (generates), when it or a record it sits under is provided by something outside the product (provided_by), or when it fills a pattern's slot (fills) and serves an essential record: it builds an essential obligation as coverage counts it, or it implements the essential record it sits under (other than its product or domain). Generate it, name its provider, or record the slot it fills under the essential record it serves; code that serves nothing essential is removed.
+
+<a id="check-accidental-in-essential"></a>
+
+### `accidental-in-essential`
+
+**Warning** · Lathe's
+
+An essential record whose title or lead text names technology: an interface mechanism, a technical kind, or a word the product lists as technology.
+
+Essential complexity is what any correct solution has to capture, however it is built, so an essential record says what the product's people need in their own words and leaves how it is built to the technical specification (LA-STD-PRINCIPLES). The check reads each essential record's title and lead text (its statement, goal, meaning or description), in any letter case, as whole words, singular or plural, code in backticks included: the interface words page, screen, button, click, endpoint, route, table, row, column, JSON, SQL, HTTP, URL and database; the technical kinds data store, repository, data model, value type, event type, projection, command handler, query handler, event handler, endpoint handler, adapter, entry point and UI component; and the words its product's settings list as technology (technology_words). A mixed kind, one whose records hold both, is split rather than excused. Say what is needed without the mechanism, move the mechanism to the technical record that implements it, or split the record.
 
 <a id="check-data-refused"></a>
 

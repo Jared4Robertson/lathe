@@ -6,6 +6,7 @@ import type { AddressInfo } from 'node:net';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { SET_LIMITS } from '../../../src/checking/product-setting/commands/set-limits.ts';
+import { SET_TECHNOLOGY_WORDS } from '../../../src/checking/product-setting/commands/set-technology-words.ts';
 import { GET_LIMITS } from '../../../src/checking/product-setting/queries.ts';
 import { runAggregateCommand } from '../../../src/cli/aggregates.ts';
 import { callTool } from '../../../src/cli/mcp.ts';
@@ -20,20 +21,29 @@ afterEach(closeCheckingStores);
 describe("LA-CHK-UC06-R50-T01 Set the product's limits (LA-CHK-A2) writes the product's one settings row through ProductSettingRepository, and is reached by name from the CLI, the MCP tools and HTTP", () => {
   it('reads the defaults until the limits are set, then the product\'s own, kept in one row', async () => {
     const fresh = await productBesideLathesChecks();
-    expect(runQuery(fresh, GET_LIMITS, { product_id: 'TL' })).toEqual({ product: 'TL', maxChildren: 15, maxEntitiesPerAggregate: 7, own: false });
+    expect(runQuery(fresh, GET_LIMITS, { product_id: 'TL' })).toEqual({ product: 'TL', maxChildren: 15, maxEntitiesPerAggregate: 7, technologyWords: [], own: false });
     const store = await productSettingDataSet();
-    expect(runQuery(store, GET_LIMITS, { product_id: 'TL' })).toEqual({ product: 'TL', maxChildren: 20, maxEntitiesPerAggregate: 9, own: true });
+    expect(runQuery(store, GET_LIMITS, { product_id: 'TL' })).toEqual({ product: 'TL', maxChildren: 20, maxEntitiesPerAggregate: 9, technologyWords: [], own: true });
     const again = await runCommand(store, SET_LIMITS, { product_id: 'TL', max_children: 12, max_entities_per_aggregate: 9 });
     expect(again.changes.map((c) => c.table)).toEqual(['product_setting']);
-    expect(store.rows('product_setting')).toEqual([{ product_id: 'TL', max_children: 12, max_entities_per_aggregate: 9 }]);
+    expect(store.rows('product_setting')).toEqual([{ product_id: 'TL', max_children: 12, max_entities_per_aggregate: 9, technology_words: [] }]);
     expect(() => runQuery(store, GET_LIMITS, { product_id: 'XX' })).toThrow(/there is no product XX/);
+  });
+
+  it('sets the technology words, keeping the limits, and keeps the words when the limits are set', async () => {
+    const fresh = await productBesideLathesChecks();
+    expect((await runCommand(fresh, SET_TECHNOLOGY_WORDS, { product_id: 'TL', technology_words: ['React', ' Postgres ', 'React'] })).tables).toEqual(['product_setting']);
+    expect(fresh.rows('product_setting')).toEqual([{ product_id: 'TL', max_children: 15, max_entities_per_aggregate: 7, technology_words: ['Postgres', 'React'] }]);
+    await runCommand(fresh, SET_LIMITS, { product_id: 'TL', max_children: 12, max_entities_per_aggregate: 9 });
+    expect(runQuery(fresh, GET_LIMITS, { product_id: 'TL' })).toEqual({ product: 'TL', maxChildren: 12, maxEntitiesPerAggregate: 9, technologyWords: ['Postgres', 'React'], own: true });
+    await expect(runCommand(fresh, SET_TECHNOLOGY_WORDS, { product_id: 'TL' })).rejects.toThrow(new InputError('set-technology-words needs technology_words'));
   });
 
   it('refuses a limit below 1 and a limit left out, changing nothing', async () => {
     const store = await productSettingDataSet();
     await expect(runCommand(store, SET_LIMITS, { product_id: 'TL', max_children: 0, max_entities_per_aggregate: 9 })).rejects.toThrow();
     await expect(runCommand(store, SET_LIMITS, { product_id: 'TL', max_children: 10 })).rejects.toThrow(new InputError('set-limits needs max_entities_per_aggregate'));
-    expect(store.rows('product_setting')).toEqual([{ product_id: 'TL', max_children: 20, max_entities_per_aggregate: 9 }]);
+    expect(store.rows('product_setting')).toEqual([{ product_id: 'TL', max_children: 20, max_entities_per_aggregate: 9, technology_words: [] }]);
   });
 
   it('runs `lathe product-setting set-limits`, the product_setting_ tools and POST /api/product-setting/set-limits', async () => {
@@ -42,7 +52,7 @@ describe("LA-CHK-UC06-R50-T01 Set the product's limits (LA-CHK-A2) writes the pr
     await closeCheckingStores();
     const out: string[] = [];
     expect(await runAggregateCommand(['product-setting', 'set-limits', '--product_id', 'TL', '--max_children', '30', '--max_entities_per_aggregate', '8', '--root', root], { out: (t) => out.push(t), err: (t) => out.push(t) })).toBe(0);
-    expect((await callTool(root, 'product_setting_get_limits', { product_id: 'TL' })).content[0].text).toBe('Limits of TL\n  max_children: 30\n  max_entities_per_aggregate: 8');
+    expect((await callTool(root, 'product_setting_get_limits', { product_id: 'TL' })).content[0].text).toBe('Limits of TL\n  max_children: 30\n  max_entities_per_aggregate: 8\n  technology_words: none');
     const server = createServer((req, res) => void handleApi(root, req, res, new URL(req.url ?? '/', 'http://localhost').pathname));
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;

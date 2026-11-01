@@ -31,7 +31,7 @@ describe('LA-V51-R10-T01 a product\'s limits are read through the Product settin
   });
 
   it('shows the limits a product set as its own', async () => {
-    await openApp('/DM', { data: addRows(workspace(), 'product_setting', { product_id: 'DM', max_children: 20, max_entities_per_aggregate: 5 }) });
+    await openApp('/DM', { data: addRows(workspace(), 'product_setting', { product_id: 'DM', max_children: 20, max_entities_per_aggregate: 5, technology_words: [] }) });
     const shown = await limits();
     expect(shown).toHaveTextContent('Set for this product.');
     expect(fact(shown, 'Children of one kind')).toBe('20');

@@ -4,13 +4,15 @@
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { ToolingRow } from '../../platform/data/tables.ts';
 
-/** One tooling record's page: its row, the packages it uses and the standard rules it meets. */
+/** One tooling record's page: its row, the packages it uses, the standard rules it meets and what it generates. */
 export interface ToolingPage {
   tooling: ToolingRow;
   /** The packages it uses, sorted. */
   packages: string[];
   /** The standard rules it meets, sorted. */
   meets: string[];
+  /** The technical records it generates, sorted. */
+  generates: string[];
 }
 
 /** One line of a list of tooling records. */
@@ -24,10 +26,12 @@ function toolingPagesFrom(view: ReadView): ToolingPage[] {
   const found = (view.rows('tooling') as unknown as ToolingRow[]);
   const packages = view.rows('package_use');
   const meets = view.rows('meets');
+  const generates = view.rows('generates');
   return found.map((tooling) => ({
     tooling,
     packages: packages.filter((p) => p.record_id === tooling.id).map((p) => String(p.package)).sort(),
     meets: meets.filter((m) => m.source_id === tooling.id).map((m) => String(m.target_id)).sort(),
+    generates: generates.filter((g) => g.source_id === tooling.id).map((g) => String(g.target_id)).sort(),
   }));
 }
 

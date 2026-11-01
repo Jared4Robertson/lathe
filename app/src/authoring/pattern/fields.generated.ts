@@ -75,4 +75,18 @@ export const PATTERN_FIELDS = {
   '/api/pattern/remove-pattern-rule-test': {
     id: { kind: 'column', table: 'pattern_rule_test', column: 'id', required: true, clearable: false },
   },
+  '/api/pattern/add-slot': {
+    id: { kind: 'column', table: 'slot', column: 'id', required: true, clearable: false },
+    title: { kind: 'column', table: 'slot', column: 'title', required: true, clearable: false },
+    pattern_id: { kind: 'column', table: 'slot', column: 'pattern_id', required: true, clearable: false },
+    statement: { kind: 'column', table: 'slot', column: 'statement', required: true, clearable: false },
+  },
+  '/api/pattern/change-slot': {
+    id: { kind: 'column', table: 'slot', column: 'id', required: true, clearable: false },
+    title: { kind: 'column', table: 'slot', column: 'title', required: false, clearable: false },
+    statement: { kind: 'column', table: 'slot', column: 'statement', required: false, clearable: false },
+  },
+  '/api/pattern/remove-slot': {
+    id: { kind: 'column', table: 'slot', column: 'id', required: true, clearable: false },
+  },
 } as const satisfies Record<string, InputFields>;

@@ -107,7 +107,7 @@ describe('pattern settings and product kinds', () => {
   });
 
   it("LA-TRC-UC07-R06-T01 A product kind named like one of Lathe's tables is refused", async () => {
-    const kind = { name: 'pattern_rule', product_id: 'EX', label: 'Rule', description: 'A rule of ours.', parent_kind: 'domain', obligation: true };
+    const kind = { name: 'pattern_rule', product_id: 'EX', label: 'Rule', description: 'A rule of ours.', parent_kind: 'domain', obligation: true, complexity: 'essential' };
     expect(await refusals(adding(complete(), { product_kind: [kind] }))).toEqual([
       expect.objectContaining({ rule: 'product-kind-declared', message: 'The product kind pattern_rule has the name of a table Lathe already has; give it another name.' }),
     ]);
@@ -130,7 +130,7 @@ describe('checks and product settings', () => {
   });
 
   it('LA-VO43-C01-T A children limit is a whole number of at least 1', async () => {
-    const limit = (max_children: unknown) => refusals(adding(complete(), { product_setting: [{ product_id: 'EX', max_children: max_children as number, max_entities_per_aggregate: 7 }] }));
+    const limit = (max_children: unknown) => refusals(adding(complete(), { product_setting: [{ product_id: 'EX', max_children: max_children as number, max_entities_per_aggregate: 7, technology_words: [] }] }));
     expect(await limit(1)).toEqual([]);
     expect(await limit(0)).toEqual([expect.objectContaining({ rule: 'check', table: 'product_setting', file: 'data/product_setting.jsonl' })]);
     expect(await limit('two')).toEqual([expect.objectContaining({ rule: 'column', message: 'product_setting.max_children "two" is not a whole number' })]);
@@ -138,7 +138,7 @@ describe('checks and product settings', () => {
   });
 
   it('LA-CHK-INV05-T A product has at most one settings row: the Product setting rule refuses a second, and so does the key under it', async () => {
-    const rows = [{ product_id: 'EX', max_children: 3, max_entities_per_aggregate: 7 }, { product_id: 'EX', max_children: 4, max_entities_per_aggregate: 7 }, { product_id: 'OT', max_children: 4, max_entities_per_aggregate: 7 }];
+    const rows = [{ product_id: 'EX', max_children: 3, max_entities_per_aggregate: 7, technology_words: [] }, { product_id: 'EX', max_children: 4, max_entities_per_aggregate: 7, technology_words: [] }, { product_id: 'OT', max_children: 4, max_entities_per_aggregate: 7, technology_words: [] }];
     const view = { rows: (table: string) => (table === 'product_setting' ? rows : []) } as unknown as ReadView;
     expect(productSettingRules.check(view)).toEqual([
       { rule: 'product-setting-one', table: 'product_setting', row: rows[1], message: 'product EX already has its settings row, so it cannot have a second: a product has one' },

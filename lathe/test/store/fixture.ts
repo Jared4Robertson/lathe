@@ -14,7 +14,7 @@ export function everyKind(): Data {
   return {
     product: [{ id: 'TL', title: 'Tool Library', description: 'A neighborhood tool library.' }],
     role: [{ product_id: 'TL', name: 'Member', description: 'Someone who borrows tools.' }, { product_id: 'TL', name: 'Librarian', description: 'Someone who lends and repairs tools at the desk.' }],
-    product_setting: [{ product_id: 'TL', max_children: 15, max_entities_per_aggregate: 7 }],
+    product_setting: [{ product_id: 'TL', max_children: 15, max_entities_per_aggregate: 7, technology_words: [] }],
 
     // Domain model.
     domain: [{ id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }],
@@ -67,6 +67,7 @@ export function everyKind(): Data {
         statement: 'A saved tool MUST read the same in the catalog.',
       },
     ],
+    slot: [{ id: 'TL-PAT-ACT-SL01', title: 'Saving rule', pattern_id: 'TL-PAT-ACT', statement: 'A fill MUST refuse what its record does not allow before anything is saved.' }],
 
     // Interaction design.
     interface: [{ id: 'TL-IF01', title: 'Web app', product_id: 'TL', kind: 'web app', description: 'The desk app the librarian uses.' }],
@@ -83,6 +84,8 @@ export function everyKind(): Data {
     persists: [{ source_id: 'TL-LEND-REPO01', target_id: 'TL-LEND-A1' }],
     data_store: [{ id: 'TL-STORE01', title: 'DATABASE_URL', product_id: 'TL', kind: 'database', description: "The library's database, run by the service that also sends its mail." }],
     provided_by: [{ source_id: 'TL-STORE01', target_id: 'TL-INT01' }],
+    generates: [{ source_id: 'TL-LEND-TOOL01', target_id: 'TL-LEND-EN01-DM' }],
+    fills: [{ source_id: 'TL-LEND-CMD01-H', target_id: 'TL-PAT-ACT-SL01' }],
     stored_in: [{ source_id: 'TL-LEND-REPO01', target_id: 'TL-STORE01' }],
     data_model: [{ id: 'TL-LEND-EN01-DM', title: 'Loan', entity_id: 'TL-LEND-EN01', file: 'src/lending/loan.ts' }],
     table: [
@@ -111,7 +114,7 @@ export function everyKind(): Data {
     entry_point: [{ id: 'TL-LEND-ENTRY01', title: 'server.ts', domain_id: 'TL-LEND', file: 'src/server.ts', description: 'Opens the database and serves the API.' }],
     tooling: [{ id: 'TL-LEND-TOOL01', title: 'vitest.config.ts', domain_id: 'TL-LEND', file: 'vitest.config.ts' }],
     package_use: [{ record_id: 'TL-INT01-AD', package: 'nodemailer' }],
-    standard: [{ id: 'TL-STD-CODE', title: 'Code', product_id: 'TL', description: 'How the code is written.' }],
+    standard: [{ id: 'TL-STD-CODE', title: 'Code', product_id: 'TL', type: 'engineering', description: 'How the code is written.' }],
     standard_rule: [{ id: 'TL-STD-CODE-R01', title: 'Node prefix', standard_id: 'TL-STD-CODE', statement: 'Code MUST import node: modules.' }],
 
     // Test plan.
@@ -161,7 +164,7 @@ export function everyKind(): Data {
     starts_from: [{ source_id: 'TL-INT01-T01', target_id: 'TL-LEND-TD01' }],
 
     // A product's own kind, a technical kind under the command, with a relation of its own.
-    product_kind: [{ name: 'cli_command', product_id: 'TL', label: 'CLI command', description: "A command of the library's CLI.", parent_kind: 'command', stage: 'technical-specification', obligation: false, id_pattern: '<command>-CLI' }],
+    product_kind: [{ name: 'cli_command', product_id: 'TL', label: 'CLI command', description: "A command of the library's CLI.", parent_kind: 'command', stage: 'technical-specification', obligation: false, complexity: 'accidental', id_pattern: '<command>-CLI' }],
     product_kind_field: [{ kind: 'cli_command', position: 1, name: 'usage', type: 'text', required: true, description: 'How it is typed.' }],
     product_relation: [
       { name: 'documents', source_kind: 'cli_command', target_kind: 'view', product_id: 'TL', forward_label: 'Documents', reverse_label: 'Documented by', description: 'The CLI command is documented in the view.' },

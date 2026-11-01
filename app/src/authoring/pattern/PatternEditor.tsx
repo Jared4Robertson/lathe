@@ -14,13 +14,15 @@ import { PATTERN_FIELDS } from './fields.generated';
 import { useNextPatternId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
+import { FillSlotForm } from '../../traceability/slot-filling/FillSlotForm';
 import { kindWord, addedUnder } from '../../platform/meta-model/reads';
 
 // The Pattern editor (LA-AUT-A2): the actions on a record of a pattern, each sending one of the aggregate's own
 // commands, POST /api/pattern/<command>, and nothing else. Edit sends its kind's Change with only what changed; Add
-// opens an empty form for the kind that sits under the record (a rule under the pattern, a test under a rule), with
+// opens an empty form for the kind that sits under the record (a rule or slot under the pattern, a test under a rule), with
 // the next free ID read from the aggregate (next-id), and sends its Add; Remove says what goes with the record and
-// sends its Remove. The aggregate has no Move. A pattern is added from its product's page (AddPatternForm). A
+// sends its Remove; a slot's Fill slot sends the Slot filling aggregate's Fill a slot (FillSlotForm). The aggregate has
+// no Move. A pattern is added from its product's page (AddPatternForm). A
 // refusal shows every reason the command gave, in its own words, keeps what was entered, and changes nothing.
 
 
@@ -45,6 +47,8 @@ function fieldsOf(index: RecordIndex, product: string, kind: PatternKind, adding
         domain_id: { label: 'Domain', choices: domains(index, product) }, when: LONG, then: LONG, manual_reason: LONG, notes: LONG, starts_from: { choices: dataSets(index, product) },
       });
     }
+    case 'slot':
+      return addOrChangeFields(adding, F['/api/pattern/add-slot'], 'pattern_id', F['/api/pattern/change-slot'], { statement: LONG });
   }
 }
 
@@ -59,6 +63,8 @@ function currentOf(page: PatternPage, kind: PatternKind, id: string): Record<str
       const test = page.rules.flatMap((r) => r.tests).find((t) => t.test.id === id)!;
       return { ...test.test, starts_from: test.startsFrom };
     }
+    case 'slot':
+      return { ...page.slots.find((s) => s.id === id)! };
   }
 }
 
@@ -67,6 +73,7 @@ const CHANGE: Record<PatternKind, CommandRoute> = {
   pattern: '/api/pattern/change-pattern',
   pattern_rule: '/api/pattern/change-pattern-rule',
   pattern_rule_test: '/api/pattern/change-pattern-rule-test',
+  slot: '/api/pattern/change-slot',
 };
 
 /** Each kind's Add command, and the field that names its parent. */
@@ -74,6 +81,7 @@ const ADD: Record<PatternKind, { route: CommandRoute; parent: string }> = {
   pattern: { route: '/api/pattern/add-pattern', parent: 'product_id' },
   pattern_rule: { route: '/api/pattern/add-pattern-rule', parent: 'pattern_id' },
   pattern_rule_test: { route: '/api/pattern/add-pattern-rule-test', parent: 'pattern_rule_id' },
+  slot: { route: '/api/pattern/add-slot', parent: 'pattern_id' },
 };
 
 /** Each kind's Remove command. */
@@ -81,6 +89,7 @@ const REMOVE: Record<PatternKind, CommandRoute> = {
   pattern: '/api/pattern/remove-pattern',
   pattern_rule: '/api/pattern/remove-pattern-rule',
   pattern_rule_test: '/api/pattern/remove-pattern-rule-test',
+  slot: '/api/pattern/remove-slot',
 };
 
 /** Sends a command whose input this form has built to its kind's shape: the route names the type it takes. */
@@ -88,7 +97,7 @@ const send = (writer: Writer, route: CommandRoute, input: Record<string, unknown
 
 /** What goes with a record when it is removed, inside the pattern: what sits under it. */
 function goesWith(page: PatternPage, kind: PatternKind, id: string): string[] {
-  if (kind === 'pattern') return page.rules.flatMap((r) => [r.rule.id, ...r.tests.map((t) => t.test.id)]);
+  if (kind === 'pattern') return [...page.rules.flatMap((r) => [r.rule.id, ...r.tests.map((t) => t.test.id)]), ...page.slots.map((s) => s.id)];
   if (kind === 'pattern_rule') return page.rules.find((r) => r.rule.id === id)!.tests.map((t) => t.test.id);
   return [];
 }
@@ -96,11 +105,11 @@ function goesWith(page: PatternPage, kind: PatternKind, id: string): string[] {
 /** The record a removed one's page gives way to: what it sits under. */
 function parentOf(page: PatternPage, kind: PatternKind, id: string): string {
   if (kind === 'pattern') return page.pattern.product_id;
-  if (kind === 'pattern_rule') return page.pattern.id;
+  if (kind === 'pattern_rule' || kind === 'slot') return page.pattern.id;
   return page.rules.find((r) => r.tests.some((t) => t.test.id === id))!.rule.id;
 }
 
-type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: Exclude<PatternKind, 'pattern'> } | { mode: 'remove' };
+type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'fill' } | { mode: 'add'; kind: Exclude<PatternKind, 'pattern'> } | { mode: 'remove' };
 
 /** A record of the pattern with its actions; a form or the remove question shows in place of its page. */
 export function PatternEditor({ index, page, children }: { index: RecordIndex; page: PatternPage; children: ReactNode }) {
@@ -128,13 +137,15 @@ export function PatternEditor({ index, page, children }: { index: RecordIndex; p
     };
     return <div className="spec-body"><ChangeForm index={index} specs={specs} current={current} eyebrow={kindWord(index.meta, kind)} id={id} submit={submit} onDone={back} /></div>;
   }
+  if (mode.mode === 'fill') return <div className="spec-body"><FillSlotForm index={index} slot={id} onDone={back} /></div>;
   if (mode.mode === 'add') return <div className="spec-body"><AddForm index={index} product={product} kind={mode.kind} parent={id} onDone={back} /></div>;
-  const adds = addedUnder(index.meta, kind, ['pattern_rule', 'pattern_rule_test'] as const)[0] ?? null;
+  const adds = addedUnder(index.meta, kind, ['pattern_rule', 'pattern_rule_test', 'slot'] as const);
   return (
     <>
       <div className="record-actions" role="toolbar" aria-label={`Change ${id}`} ref={toolbar}>
         <Button icon="edit" onClick={() => setMode({ mode: 'change' })}>Edit</Button>
-        {adds && <Button icon="plus" onClick={() => setMode({ mode: 'add', kind: adds })}>Add {kindWord(index.meta, adds)}</Button>}
+        {kind === 'slot' && <Button icon="plus" onClick={() => setMode({ mode: 'fill' })}>Fill slot</Button>}
+        {adds.map((add) => <Button key={add} icon="plus" onClick={() => setMode({ mode: 'add', kind: add })}>Add {kindWord(index.meta, add)}</Button>)}
         <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>
       </div>
       {mode.mode === 'remove' && (
@@ -164,7 +175,7 @@ function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
   );
 }
 
-/** Add: an empty form for a rule or rule test under the record, its ID the next free one, sent as that kind's Add. */
+/** Add: an empty form for a rule, slot or rule test under the record, its ID the next free one, sent as that kind's Add. */
 function AddForm({ index, product, kind, parent, onDone }: { index: RecordIndex; product: string; kind: Exclude<PatternKind, 'pattern'>; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
