@@ -6,18 +6,19 @@ import { CheckRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 
 /** A new check row. */
-export type AddCheck = Pick<CheckRow, 'name' | 'product_id' | 'position' | 'severity' | 'summary' | 'explanation' | 'query' | 'kinds'>;
+export type AddCheck = Pick<CheckRow, 'name' | 'product_id' | 'domain_id' | 'position' | 'severity' | 'summary' | 'explanation' | 'query' | 'kinds'>;
 
 export const ADD_CHECK: CommandDefinition<AddCheck> = {
   id: 'LA-CHK-CMD01',
   slice: CHECK_SLICE,
   name: 'add-check',
-  description: "Adds a check row: its name, the product it belongs to (none for Lathe's own), its place in the run order, its severity, summary, explanation and one SELECT, and the kinds it concerns. A name one of Lathe's checks has is refused.",
+  description: "Adds a check row: its name, the product it belongs to (none for Lathe's own), the domain whose rules it reports, its place in the run order, its severity, summary, explanation and one SELECT, and the kinds it concerns. A name one of Lathe's checks has is refused.",
   method: 'POST',
   route: '/api/check/add-check',
   input: {
     name: column('check', 'name', 'required'),
     product_id: column('check', 'product_id', 'optional'),
+    domain_id: column('check', 'domain_id', 'required'),
     position: column('check', 'position', 'required'),
     severity: column('check', 'severity', 'required'),
     summary: column('check', 'summary', 'required'),

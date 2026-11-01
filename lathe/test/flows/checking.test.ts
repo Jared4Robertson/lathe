@@ -16,6 +16,7 @@ const PLUGIN = path.join(LATHE_DIR, '..', 'plugin');
 const NO_COMMAND = {
   name: 'aggregate-without-command',
   product_id: 'TL',
+  domain_id: 'LA-CHK',
   position: 1,
   severity: 'warning',
   summary: 'An aggregate with no command.',
