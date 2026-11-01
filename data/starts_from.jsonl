@@ -533,6 +533,10 @@
 {"source_id":"LA-STD-MODELING-R05-T02","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-STD-MODELING-R07-T02","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-STD-MODELING-R12-T03","target_id":"LA-EXP-TD01"}
+{"source_id":"LA-STD-MODELING-R15-T01","target_id":"LA-AUT-TD02"}
+{"source_id":"LA-STD-MODELING-R15-T02","target_id":"LA-AUT-TD02"}
+{"source_id":"LA-STD-MODELING-R15-T03","target_id":"LA-AUT-TD02"}
+{"source_id":"LA-STD-MODELING-R15-T04","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-STD-PRINCIPLES-R01-T01","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-STD-PRINCIPLES-R01-T02","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-STD-PRINCIPLES-R04-T01","target_id":"LA-EXP-TD01"}
