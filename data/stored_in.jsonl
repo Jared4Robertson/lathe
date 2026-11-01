@@ -99,6 +99,7 @@
 {"source_id":"LA-AUT-REPO22","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-AUT-REPO23","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-AUT-RM01-TB","target_id":"LA-STORE04"}
+{"source_id":"LA-AUT-RM02-RD","target_id":"LA-STORE04"}
 {"source_id":"LA-AUT-RM02-TB","target_id":"LA-STORE04"}
 {"source_id":"LA-AUT-RM11-RD","target_id":"LA-STORE04"}
 {"source_id":"LA-AUT-RM11-TB","target_id":"LA-STORE04"}
