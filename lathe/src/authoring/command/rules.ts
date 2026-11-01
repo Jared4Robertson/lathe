@@ -5,7 +5,7 @@ import type { Row } from '../../platform/data/rows.ts';
 import type { CommandHandlerRow, EventHandlerRow, PolicyTestRow } from '../../platform/data/tables.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
-import { COMMAND_AGGREGATE, commandsFrom, type CommandInstance } from './model.ts';
+import { COMMAND_AGGREGATE, commandsFrom, type Command } from './model.ts';
 
 // The domain of the aggregate with this ID, read from the view, or undefined.
 function domainOfAggregate(view: ReadView, aggregateId: unknown): string | undefined {
@@ -44,7 +44,7 @@ export function commandOneEach(handlers: readonly CommandHandlerRow[], hears: re
  * domain's events, or another domain's published ones). The view gives what the command names outside itself: its
  * entity's aggregate and the events its policies hear.
  */
-export function commandProblems(command: CommandInstance, view: ReadView): RuleProblem[] {
+export function commandProblems(command: Command, view: ReadView): RuleProblem[] {
   const problems: RuleProblem[] = [];
   const entity = view.record(command.command.entity_id);
   const own = entity?.kind === 'entity' ? domainOfAggregate(view, entity.row.aggregate_id) : undefined;
@@ -87,7 +87,7 @@ export const commandRules: AggregateRules = {
 };
 
 /** Refuses the command, with every reason, when the command as it would be saved breaks one of its rules. */
-export function holdToRules(tx: Transaction, command: CommandInstance): void {
+export function holdToRules(tx: Transaction, command: Command): void {
   const problems = commandProblems(command, tx);
   if (problems.length) throw new StoreError(problems.map((p) => ({ rule: p.rule, table: p.table, message: p.message })));
 }

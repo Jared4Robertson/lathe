@@ -5,7 +5,7 @@
 import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { type AggregateKind } from './model.ts';
+import type { AggregateKind } from './model.ts';
 import type { AggregatePage, AggregateSummary } from './read-model.ts';
 import { aggregateReader, type AggregateReader } from './reader.ts';
 import { GET_AGGREGATE_IDENTITY, LIST_AGGREGATES_IDENTITY, NEXT_AGGREGATE_ID_IDENTITY } from './queries.generated.ts';

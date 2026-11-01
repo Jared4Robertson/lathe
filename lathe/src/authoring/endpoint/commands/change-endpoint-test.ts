@@ -1,9 +1,7 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EndpointTestRow } from '../../../platform/data/tables.ts';
-import { changed } from '../model.ts';
-import { EndpointRepository } from '../repository.ts';
 import { CHANGE_ENDPOINT_TEST_IDENTITY } from './identities.generated.ts';
+import { changeEndpointTest } from './handlers.generated.ts';
 
 /** The endpoint test's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeEndpointTest = Pick<EndpointTestRow, 'id'> & { title?: EndpointTestRow['title']; level?: EndpointTestRow['level']; state?: EndpointTestRow['state']; when?: EndpointTestRow['when']; then?: EndpointTestRow['then']; file?: EndpointTestRow['file'] | null; manual_reason?: EndpointTestRow['manual_reason'] | null; size?: EndpointTestRow['size'] | null; smoke?: EndpointTestRow['smoke'] | null; external?: EndpointTestRow['external'] | null; notes?: EndpointTestRow['notes'] | null; starts_from?: string[] };
@@ -27,11 +25,3 @@ export const CHANGE_ENDPOINT_TEST = {
   },
   handler: changeEndpointTest,
 } satisfies CommandDefinition<ChangeEndpointTest>;
-
-/** Changes the endpoint test's columns and links. */
-export function changeEndpointTest(tx: Transaction, input: ChangeEndpointTest): void {
-  const endpoints = new EndpointRepository(tx);
-  const endpoint = endpoints.loadHolding('endpoint_test', input.id) ?? tx.refuse('missing', `there is no endpoint test ${input.id}`);
-  endpoint.tests = endpoint.tests.map((x) => (x.row.id === input.id ? { row: changed(x.row, input, ['title', 'level', 'state', 'when', 'then', 'file', 'manual_reason', 'size', 'smoke', 'external', 'notes']), startsFrom: input.starts_from ?? x.startsFrom } : x));
-  endpoints.save(endpoint);
-}

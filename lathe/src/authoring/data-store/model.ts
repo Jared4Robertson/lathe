@@ -3,22 +3,9 @@
 // themselves (stored_in, which their own aggregates start), and the integration that reaches it when it is a service
 // someone else runs is its provider (provided_by, which the Provision aggregate holds). One instance is one data store,
 // whole: its row.
-import type { Row, Value } from '../../platform/data/rows.ts';
+import type { AggregateShape } from '../../platform/data/repository.ts';
+import type { Row } from '../../platform/data/rows.ts';
 import type { DataStoreRow } from '../../platform/data/tables.ts';
-
-/**
- * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.
- * Only the columns named in `columns` are taken from the changes.
- */
-export function changed<R extends object>(row: R, changes: object, columns: readonly string[]): R {
-  const next = { ...row } as Record<string, unknown>;
-  for (const [column, value] of Object.entries(changes)) {
-    if (!columns.includes(column) || value === undefined) continue;
-    if (value === null) delete next[column];
-    else next[column] = value as Value;
-  }
-  return next as R;
-}
 
 /** One data store, whole. */
 export interface DataStore {
@@ -29,6 +16,11 @@ export interface DataStore {
 
 /** The tables the Data store aggregate keeps its rows in: its kind. */
 export const DATA_STORE_TABLES = ['data_store'] as const;
+
+/** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
+export const DATA_STORE_SHAPE = {
+  data_store: { at: 'store' },
+} as const satisfies AggregateShape;
 
 /** A new data store. */
 export function newDataStore(store: DataStoreRow): DataStore {

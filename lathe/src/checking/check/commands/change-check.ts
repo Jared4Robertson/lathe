@@ -1,7 +1,7 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { CheckRow } from '../../../platform/data/tables.ts';
-import { changed } from '../model.ts';
+import { changed } from '../../../platform/data/rows.ts';
 import { CheckRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 import { CHANGE_CHECK_IDENTITY } from './identities.generated.ts';

@@ -1,10 +1,7 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { CommandRow } from '../../../platform/data/tables.ts';
-import { changed } from '../model.ts';
-import { CommandRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
 import { CHANGE_COMMAND_IDENTITY } from './identities.generated.ts';
+import { changeCommand } from './handlers.generated.ts';
 
 /** The command's changes: a column given is set; a list given replaces its list. */
 export type ChangeCommand = Pick<CommandRow, 'id'> & { title?: string; description?: string; raises?: string[]; checks?: string[]; calls?: string[] };
@@ -21,15 +18,3 @@ export const CHANGE_COMMAND = {
   },
   handler: changeCommand,
 } satisfies CommandDefinition<ChangeCommand>;
-
-/** Changes the command's columns and links. */
-export function changeCommand(tx: Transaction, input: ChangeCommand): void {
-  const commands = new CommandRepository(tx);
-  const command = commands.load(input.id) ?? tx.refuse('missing', `there is no command ${input.id}`);
-  command.command = changed(command.command, input, ['title', 'description']);
-  command.raises = input.raises ?? command.raises;
-  command.checks = input.checks ?? command.checks;
-  command.calls = input.calls ?? command.calls;
-  holdToRules(tx, command);
-  commands.save(command);
-}

@@ -1,7 +1,6 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
-import { DataStoreRepository } from '../repository.ts';
 import { REMOVE_DATA_STORE_IDENTITY } from './identities.generated.ts';
+import { removeDataStore } from './handlers.generated.ts';
 
 /** The data store to remove. */
 export type RemoveDataStore = { id: string };
@@ -13,10 +12,3 @@ export const REMOVE_DATA_STORE = {
   },
   handler: removeDataStore,
 } satisfies CommandDefinition<RemoveDataStore>;
-
-/** Removes the data store whole. */
-export function removeDataStore(tx: Transaction, input: RemoveDataStore): void {
-  const stores = new DataStoreRepository(tx);
-  const store = stores.load(input.id) ?? tx.refuse('missing', `there is no data store ${input.id}`);
-  stores.remove(store);
-}

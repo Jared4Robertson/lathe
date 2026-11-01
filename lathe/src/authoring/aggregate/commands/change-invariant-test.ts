@@ -1,10 +1,7 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { InvariantTestRow } from '../../../platform/data/tables.ts';
-import { changed } from '../model.ts';
-import { AggregateRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
 import { CHANGE_INVARIANT_TEST_IDENTITY } from './identities.generated.ts';
+import { changeInvariantTest } from './handlers.generated.ts';
 
 /** The test's changes: a column given is set, null clears an optional one; starts_from, when given, replaces the list. */
 export type ChangeInvariantTest = Pick<InvariantTestRow, 'id'> & {
@@ -41,14 +38,3 @@ export const CHANGE_INVARIANT_TEST = {
   },
   handler: changeInvariantTest,
 } satisfies CommandDefinition<ChangeInvariantTest>;
-
-/** Changes the test's columns and the data sets it starts from. */
-export function changeInvariantTest(tx: Transaction, input: ChangeInvariantTest): void {
-  const aggregates = new AggregateRepository(tx);
-  const aggregate = aggregates.loadHolding('invariant_test', input.id) ?? tx.refuse('missing', `there is no invariant test ${input.id}`);
-  aggregate.invariantTests = aggregate.invariantTests.map((test) =>
-    test.row.id === input.id ? { row: changed(test.row, input, ['title',  'level',  'state',  'file',  'manual_reason',  'size',  'smoke',  'external',  'when',  'then',  'notes']), startsFrom: input.starts_from ?? test.startsFrom } : test,
-  );
-  holdToRules(tx, aggregate);
-  aggregates.save(aggregate);
-}

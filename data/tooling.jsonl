@@ -1,6 +1,6 @@
 {"id":"LA-AUT-TOOL01","title":"schema-types.ts","domain_id":"LA-AUT","file":"lathe/scripts/schema-types.ts"}
 {"id":"LA-AUT-TOOL02","title":"reference.ts","domain_id":"LA-AUT","file":"lathe/scripts/reference.ts"}
-{"id":"LA-AUT-TOOL03","title":"generate.ts","domain_id":"LA-AUT","file":"lathe/scripts/generate.ts"}
+{"id":"LA-AUT-TOOL03","title":"generate","domain_id":"LA-AUT","file":"lathe/scripts/generate"}
 {"id":"LA-PLT-TOOL01","title":".gitattributes","domain_id":"LA-PLT","file":".gitattributes"}
 {"id":"LA-PLT-TOOL02","title":"dev.ts","domain_id":"LA-PLT","file":"desktop/scripts/dev.ts"}
 {"id":"LA-PLT-TOOL03","title":"stage-lathe.ts","domain_id":"LA-PLT","file":"desktop/scripts/stage-lathe.ts"}

@@ -2,26 +2,13 @@
 // it reads, its predicate in code (with the standard rules it meets and the packages it uses) and its test (with the
 // test data sets it starts from). One instance is one specification, whole; it holds only the links its own records
 // start.
+import type { AggregateShape } from '../../platform/data/repository.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
-import type { Row, Value } from '../../platform/data/rows.ts';
+import type { Row } from '../../platform/data/rows.ts';
 import type { PredicateRow, SpecificationRow, SpecificationTestRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const SPECIFICATION_AGGREGATE = 'LA-AUT-A5';
-
-/**
- * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.
- * Only the columns named in `columns` are taken from the changes.
- */
-export function changed<R extends object>(row: R, changes: object, columns: readonly string[]): R {
-  const next = { ...row } as Record<string, unknown>;
-  for (const [column, value] of Object.entries(changes)) {
-    if (!columns.includes(column) || value === undefined) continue;
-    if (value === null) delete next[column];
-    else next[column] = value as Value;
-  }
-  return next as R;
-}
 
 /** A technical record with the standard rules it meets and the packages it uses. */
 export interface Technical<T> {
@@ -52,19 +39,14 @@ export interface Specification {
 /** The tables the Specification aggregate keeps its rows in: its kinds, and the relations and parts its records start. */
 export const SPECIFICATION_TABLES = ['specification', 'predicate', 'specification_test', 'reads', 'meets', 'package_use', 'starts_from'] as const;
 
-/** The kinds of the aggregate's records, each with the column that names its parent inside the aggregate. */
-export const SPECIFICATION_KINDS = {
-  specification: null,
-  predicate: 'specification_id',
-  specification_test: 'specification_id',
-} as const;
+/** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
+export const SPECIFICATION_SHAPE = {
+  specification: { at: 'specification', lists: { reads: 'reads' } },
+  predicate: { at: 'predicate', one: true, lists: { meets: 'meets', packages: 'packages' } },
+  specification_test: { at: 'test', one: true, lists: { starts_from: 'startsFrom' } },
+} as const satisfies AggregateShape;
 
-export type SpecificationKind = keyof typeof SPECIFICATION_KINDS;
-
-/** A new specification, reading the aggregates given, with no predicate or test yet. */
-export function newSpecification(specification: SpecificationRow, reads: string[]): Specification {
-  return { root: specification.id, specification, reads, predicate: null, test: null };
-}
+export type SpecificationKind = keyof typeof SPECIFICATION_SHAPE;
 
 /** The specifications in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function specificationsFrom(rows: (table: string) => Row[], only?: string): Specification[] {
@@ -105,10 +87,3 @@ export function specificationRows(specification: Specification): Map<string, Row
   ]);
 }
 
-/** The kind of the record with this ID inside the specification, or undefined. */
-export function kindInside(specification: Specification, id: string): SpecificationKind | undefined {
-  if (specification.root === id) return 'specification';
-  if (specification.predicate?.row.id === id) return 'predicate';
-  if (specification.test?.row.id === id) return 'specification_test';
-  return undefined;
-}

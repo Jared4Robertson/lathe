@@ -14,7 +14,7 @@
     "schema": "node scripts/schema-types.ts",
     "build": "rm -rf dist && tsc -p tsconfig.build.json && npm run reference && npm --prefix ../app run build && cp -R ../plugin dist/plugin",
     "prepack": "npm run build",
-    "generate": "node scripts/generate.ts"
+    "generate": "node scripts/generate/main.ts"
   },
   "dependencies": {
     "@duckdb/node-api": "^2.0.0-r.1"

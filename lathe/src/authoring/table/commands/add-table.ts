@@ -1,7 +1,7 @@
 import { column, id, ids, parts, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { TableRow } from '../../../platform/data/tables.ts';
-import { KEY_COLUMNS, newTable, type TableKey } from '../model.ts';
+import type { Transaction } from '../../../platform/data/transaction.ts';
+import { KEY_COLUMNS, type TableKey } from '../model.ts';
 import { TableRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 import { ADD_TABLE_IDENTITY } from './identities.generated.ts';
@@ -27,12 +27,13 @@ export const ADD_TABLE = {
   handler: addTable,
 } satisfies CommandDefinition<AddTable>;
 
+/** Adds the table, whole and new, under exactly one entity, read model or domain: a rule the schema's CHECK backs up, refused here first with the count given. */
 export function addTable(tx: Transaction, input: AddTable): void {
   const tables = new TableRepository(tx);
   const given = [input.entity_id, input.read_model_id, input.domain_id].filter((p) => p !== undefined).length;
   if (given !== 1) tx.refuse('parent', `table ${input.id} sits under exactly one entity, read model or domain; ${given} are given`);
   const { keys = [], stored_in, meets = [], packages = [], ...row } = input;
-  const table = tables.create(newTable(row, { keys, storedIn: stored_in ?? null, meets, packages }));
+  const table = tables.create({ root: row.id, table: row, keys, storedIn: stored_in ?? null, meets, packages });
   holdToRules(tx, table);
   tables.save(table);
 }

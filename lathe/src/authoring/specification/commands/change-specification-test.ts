@@ -1,9 +1,7 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { SpecificationTestRow } from '../../../platform/data/tables.ts';
-import { changed } from '../model.ts';
-import { SpecificationRepository } from '../repository.ts';
 import { CHANGE_SPECIFICATION_TEST_IDENTITY } from './identities.generated.ts';
+import { changeSpecificationTest } from './handlers.generated.ts';
 
 /** The test's changes: a column given is set, null clears an optional one; starts_from, when given, replaces the list. */
 export type ChangeSpecificationTest = Pick<SpecificationTestRow, 'id'> & { title?: SpecificationTestRow['title']; level?: SpecificationTestRow['level']; state?: SpecificationTestRow['state']; file?: SpecificationTestRow['file'] | null; manual_reason?: SpecificationTestRow['manual_reason'] | null; size?: SpecificationTestRow['size'] | null; smoke?: SpecificationTestRow['smoke'] | null; external?: SpecificationTestRow['external'] | null; when?: SpecificationTestRow['when']; then?: SpecificationTestRow['then']; notes?: SpecificationTestRow['notes'] | null; starts_from?: string[] };
@@ -27,12 +25,3 @@ export const CHANGE_SPECIFICATION_TEST = {
   },
   handler: changeSpecificationTest,
 } satisfies CommandDefinition<ChangeSpecificationTest>;
-
-/** Changes the test's columns and the data sets it starts from. */
-export function changeSpecificationTest(tx: Transaction, input: ChangeSpecificationTest): void {
-  const specifications = new SpecificationRepository(tx);
-  const specification = specifications.loadHolding('specification_test', input.id) ?? tx.refuse('missing', `there is no specification test ${input.id}`);
-  const test = specification.test!;
-  specification.test = { row: changed(test.row, input, ['title', 'level', 'state', 'file', 'manual_reason', 'size', 'smoke', 'external', 'when', 'then', 'notes']), startsFrom: input.starts_from ?? test.startsFrom };
-  specifications.save(specification);
-}
