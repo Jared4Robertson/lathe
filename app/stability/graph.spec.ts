@@ -182,39 +182,44 @@ test.describe('graph', () => {
     await page.locator('.focus-stage .graph-layout button', { hasText: 'Tree' }).click();
   });
 
-  test('LA-V93-R10-T08 at depth 2 on a domain, the domain, its stages and their folders are framed in the canvas, each showing its full title wrapped on whole words', async ({ page }) => {
+  test('LA-V93-R10-T08 on a domain, the camera frames the domain to most of the open space\'s width, its product at the left edge and its stages starting on the right, each drawn box showing its full title wrapped on whole words', async ({ page }) => {
     await openPage(page, `${DOMAIN}?stage=graph`);
     await nodes(page);
     await page.locator('.graph-depth button', { hasText: '2' }).click();
     await page.waitForTimeout(1300);
     const domain = DOMAIN.slice(1);
     const s = await sceneOf(page);
-    const c = s.canvas;
-    // The framed picture: the domain, its product at the left edge, and two levels below it (its stages, their folders).
-    const framed = new RegExp(`^(LA|${domain}(/[^/]+){0,2})$`);
+    // The open space the panels leave over the stage, as the stage measured it.
+    const open = await page.evaluate((sel) => {
+      const el = document.querySelector<HTMLElement>(sel)!;
+      const r = el.getBoundingClientRect();
+      const px = (name: string) => parseFloat(el.style.getPropertyValue(name)) || 0;
+      return { left: r.left + px('--frame-left'), right: r.right - px('--frame-right'), top: r.top + px('--frame-top'), bottom: r.bottom - px('--frame-bottom') };
+    }, '.focus-stage');
+    const width = open.right - open.left;
+    // The domain, its product and its stages, as drawn.
+    const framed = new RegExp(`^(LA|${domain}(/[^/]+)?)$`);
     const boxes = s.boxes.filter((b) => framed.test(b.id)).map((b) => {
-      const r = b.rect;
       const title = b.lines.filter((l) => l.face === 'title');
       return {
         id: b.id,
-        inView: r.left >= c.left && r.left + r.width <= c.left + c.width && r.top >= c.top && r.top + r.height <= c.top + c.height,
-        // When the children's column is framed (camera.ts frameChildren, their titles too small otherwise), the focus keeps
-        // a strip at the frame's left edge: its right part in view, whole top to bottom.
-        strip: r.left < c.left && r.left + r.width > c.left && r.top >= c.top && r.top + r.height <= c.top + c.height,
+        rect: b.rect,
         full: b.tip,
         title: title.length > 0 ? title.map((l) => l.text).join('') : null,
         // Each line the map broke it into fits, and every line but the last ends after a space or a hyphen.
         wrapped: title.length > 0 && title.every((l) => l.drawnWidth <= l.rect.width + 0.5 * s.camera.zoom + 0.5) && title.slice(0, -1).every((l) => /[\s-]$/.test(l.text)),
       };
     });
-    // The camera frames the domain and two levels below it in the canvas (LA-EXP-DS09): the domain, every stage and at least half the folders.
-    const shown = boxes.filter((b) => b.inView).map((b) => b.id);
-    const level = (n: number) => boxes.filter((b) => b.id.split('/').length === n + 1 && b.id.startsWith(domain)).map((b) => b.id);
-    await test.step('LA-V93-R10-T08 depth 2 frames the domain, its stages and at least half their folders', () => {
-      expect([...shown, ...boxes.filter((b) => b.strip).map((b) => b.id)], 'the domain is framed, whole or as the strip at the left edge').toContain(domain);
-      for (const stage of level(1)) expect(shown, `${stage} is framed`).toContain(stage);
-      expect(level(1).length).toBeGreaterThanOrEqual(2);
-      expect(level(2).filter((id) => shown.includes(id)).length * 2, 'half the folders are framed').toBeGreaterThanOrEqual(level(2).length);
+    await test.step('LA-V93-R10-T08 the domain fills most of the open space\'s width, whole, its product at the left edge and its stages starting on the right', () => {
+      const d = boxes.find((b) => b.id === domain)!.rect;
+      expect(d.left >= open.left - 1 && d.left + d.width <= open.right + 1 && d.top >= open.top - 1 && d.top + d.height <= open.bottom + 1, 'the domain is whole in the open space').toBe(true);
+      expect(d.width / width, 'the domain fills about three quarters of the open space\'s width').toBeGreaterThan(0.7);
+      const product = boxes.find((b) => b.id === 'LA')!.rect;
+      expect(product.left + product.width, 'the product shows at the left edge').toBeGreaterThan(open.left);
+      expect(product.left + product.width).toBeLessThan(d.left);
+      const stages = boxes.filter((b) => b.id.startsWith(`${domain}/`));
+      expect(stages.length, 'its stages are drawn').toBeGreaterThanOrEqual(2);
+      expect(Math.min(...stages.map((b) => b.rect.left)), 'its stages\' column starts in the open space').toBeLessThan(open.right);
     });
     await test.step('LA-V93-R29-T03 every drawn box shows its label, its full title wrapped on whole words', () => {
       for (const b of boxes) {
@@ -502,7 +507,7 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
     },
   },
   {
-    feature: 'depth 1 to 3 frames more in the Tree layout; the Nested camera frames the focus box, so it has no depth',
+    feature: 'depth 1 to 3 draws more levels in the Tree layout; the Nested camera frames the focus box, so it has no depth',
     run: async (page, layout) => {
       if (layout !== 'tree') {
         // The Depth group keeps its slot but is neither shown nor reachable (LA-V93-R21).

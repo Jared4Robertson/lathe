@@ -193,7 +193,7 @@ describe('the level of detail', () => {
 
   it('LA-EXP-DS10-T02 LA-PAT-APP-UX-R11-T02 Only boxes in view and big enough are drawn, each with its label, with bars for children too small, within a budget', () => {
     // Framed on the domain: the domain and its stages are drawn; nothing outside the view.
-    const view = frameOnMap(map, 'P-D', 1, 1000, 800);
+    const view = frameOnMap(map, 'P-D', 1000, 800);
     const d = drawnFor(map, view, 1000, 800);
     const drawn = new Set(d.boxes.map((b) => b.id));
     expect(drawn).toContain('P-D');
@@ -226,11 +226,26 @@ describe('the level of detail', () => {
     expect(drawnFor(map, view, 1000, 800)).toEqual(d);
   });
 
+  it('LA-EXP-DS09-T17 The depth decides how many levels below the focus are drawn, never what is framed', () => {
+    const focus = map.nodes.get('P-D')!;
+    // The focus framed, then zoomed out four times about the pane's middle: several levels are in view and big enough.
+    const framed = frameOnMap(map, 'P-D', 1000, 800);
+    const far = { x: 500 - (500 - framed.x) / 4, y: 400 - (400 - framed.y) / 4, zoom: framed.zoom / 4 };
+    for (const depth of [1, 2, 3]) {
+      const d = drawnFor(map, far, 1000, 800, [], focus.level + depth);
+      const levels = d.boxes.map((b) => map.nodes.get(b.id)!.level);
+      expect(Math.max(...levels), `depth ${depth}`).toBeLessThanOrEqual(focus.level + depth);
+      // No bar stands for a level past the depth.
+      for (const bar of d.bars) expect(map.nodes.get(bar.parent)!.level, `depth ${depth}`).toBeLessThan(focus.level + depth);
+    }
+    expect(drawnFor(map, far, 1000, 800, [], focus.level + 1).boxes.length).toBeLessThan(drawnFor(map, far, 1000, 800, [], focus.level + 3).boxes.length);
+  });
+
   it('LA-EXP-DS06-T04 LA-EXP-DS10-T04 A label keeps its size in the map: the camera never changes it', () => {
     // The text scale is the map's: a column's width over TEXT_SIZE at most, whatever the camera.
     for (const n of map.nodes.values()) expect(n.text).toBeLessThanOrEqual(treeText(n.w));
     // Every zoom draws each box with the same text scale, the map's, and its label: zooming never changes a label's size.
-    const view = frameOnMap(map, 'P-D', 2, 1000, 800);
+    const view = frameOnMap(map, 'P-D', 1000, 800);
     for (const zoom of [view.zoom / 4, view.zoom, view.zoom * 4]) {
       for (const b of drawnFor(map, { ...view, zoom }, 1000, 800).boxes) {
         expect(Object.keys(b)).toEqual(['id']);
