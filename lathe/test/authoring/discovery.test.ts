@@ -33,7 +33,7 @@ describe('business outcomes', () => {
 
   it('LA-AUT-UC22-R02-T01 A capability serves any number of business outcomes, and an outcome is served by any number of capabilities, of its own product', async () => {
     expect(schema.relations.serves).toMatchObject({ scope: 'product', role: null, forwardLabel: 'Serves', reverseLabel: 'Served by' });
-    expect(schema.relations.serves.pairs.map((p) => `${p.source}>${p.target}`)).toEqual(['capability>business_outcome']);
+    expect(schema.relations.serves.pairs.map((p) => `${p.source}>${p.target}`)).toEqual(['capability>business_outcome', 'journey>business_outcome']);
     const two = adding(everyKind(), {
       business_outcome: [{ id: 'TL-BO02', title: 'Tools back on time', product_id: 'TL', statement: 'Members return tools by their due date.', measure: 'Late returns per month.', target: 'Under one in twenty.' }],
       capability: [{ id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 2, description: 'Taking tools back.' }],
@@ -87,10 +87,10 @@ describe('business outcomes', () => {
   it('LA-AUT-UC22-R03-T01 Discovery is the first stage, before the domain model, and the business outcome is its kind', () => {
     expect(schema.stages.map((s) => s.name)).toEqual(['discovery', 'domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan']);
     expect(schema.stages[0]).toMatchObject({ position: 1, label: 'Discovery' });
-    expect(Object.values(schema.kinds).filter((k) => k.stage === 'discovery').map((k) => k.name)).toEqual(['business_outcome']);
-    // It comes right after the product in the kinds' order.
+    expect(Object.values(schema.kinds).filter((k) => k.stage === 'discovery').map((k) => k.name)).toEqual(['business_outcome', 'journey', 'journey_step']);
+    // They come right after the product in the kinds' order: the outcomes, then the journeys that reach them.
     const ordered = Object.values(schema.kinds).filter((k) => k.position !== null).sort((a, b) => a.position! - b.position!).map((k) => k.name);
-    expect(ordered.slice(0, 3)).toEqual(['product', 'business_outcome', 'domain']);
+    expect(ordered.slice(0, 5)).toEqual(['product', 'business_outcome', 'journey', 'journey_step', 'domain']);
   });
 
   it('LA-TRC-UC02-R11-T01 A business outcome no capability serves, and a capability that serves no outcome, are coverage gaps', async () => {
