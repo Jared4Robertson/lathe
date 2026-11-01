@@ -10,7 +10,7 @@ import { writeData } from '../../helpers.ts';
 /** A store on a fresh folder holding one standard, built with the Standard aggregate's own commands. */
 export async function codeStandard(): Promise<Store> {
   const store = await openStore(writeData({ product: [{ id: 'TL', title: 'Tool Library', description: 'A neighborhood tool library.' }] }), { latheDataDir: null });
-  await runCommand(store, ADD_STANDARD, { id: 'TL-STD-CODE', title: 'Code', product_id: 'TL', description: 'How the code is written.' });
+  await runCommand(store, ADD_STANDARD, { id: 'TL-STD-CODE', title: 'Code', product_id: 'TL', type: 'engineering', description: 'How the code is written.' });
   await runCommand(store, ADD_STANDARD_RULE, { id: 'TL-STD-CODE-R01', title: 'Node prefix', standard_id: 'TL-STD-CODE', statement: 'Code MUST import node: modules.' });
   await runCommand(store, ADD_STANDARD_RULE_TEST, { id: 'TL-STD-CODE-R01-T01', title: 'No bare built-in import', standard_rule_id: 'TL-STD-CODE-R01', level: 'unit', state: 'automated', file: 'test/imports.test.ts', when: 'Scans the imports.', then: 'Expects every built-in imported with node:.' });
   return store;

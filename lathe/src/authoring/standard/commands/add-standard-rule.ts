@@ -1,8 +1,7 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { StandardRuleRow } from '../../../platform/data/tables.ts';
-import { StandardRepository } from '../repository.ts';
 import { ADD_STANDARD_RULE_IDENTITY } from './identities.generated.ts';
+import { addStandardRule } from './handlers.generated.ts';
 
 /** A new standard rule. */
 export type AddStandardRule = Pick<StandardRuleRow, 'id' | 'title' | 'standard_id' | 'statement' | 'group_name'>;
@@ -18,11 +17,3 @@ export const ADD_STANDARD_RULE = {
   },
   handler: addStandardRule,
 } satisfies CommandDefinition<AddStandardRule>;
-
-/** Adds the rule to its standard. */
-export function addStandardRule(tx: Transaction, input: AddStandardRule): void {
-  const standards = new StandardRepository(tx);
-  const standard = standards.load(input.standard_id) ?? tx.refuse('missing', `there is no standard ${input.standard_id}`);
-  standard.rules.push(input);
-  standards.save(standard);
-}

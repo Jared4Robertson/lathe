@@ -34,7 +34,7 @@ async function refusal(store: Store, definition: AnyCommand, input: unknown): Pr
 
 const fileOf = (store: Store, table: string) => readFileSync(path.join(store.dataDir, `${table}.jsonl`), 'utf8');
 
-describe('LA-TRC-UC07-R50-T01 each Pattern following command (LA-TRC-A3) changes one following through PatternFollowingRepository, and is reached by name from the CLI, the MCP tools and HTTP', () => {
+describe('LA-PAT-AGGREGATE-COMMANDS-R10-T03 each Pattern following command (LA-TRC-A3) changes one following through its repository, and is reached by name from every interface', () => {
   it('LA-PAT-AGGREGATE-TESTS-R03-T03 builds the data set with its own command, and reads a following whole, the patterns a follower follows and a pattern\'s followers', async () => {
     const store = await patternFollowingDataSet();
     expect(runQuery(store, GET_FOLLOWING, { follower_id: 'TL-LEND-UC01', pattern_id: 'TL-PAT-ACT' })).toEqual({
@@ -60,7 +60,7 @@ describe('LA-TRC-UC07-R50-T01 each Pattern following command (LA-TRC-A3) changes
     expect(changed.changes).toHaveLength(1);
   });
 
-  it("LA-PAT-AGGREGATE-COMMANDS-R02-T03 refuses a second following, a setting the pattern does not have, a setting with no value, and an input that is not the command's, changing no file", async () => {
+  it("LA-PAT-AGGREGATE-COMMANDS-R02-T03 LA-PAT-CLI-STEPS-R02-T04 LA-PAT-MCP-STEPS-R02-T04 refuses a second following, a setting the pattern does not have, a setting with no value, and an input that is not the command's, changing no file", async () => {
     const store = await patternFollowingDataSet();
     const before = fileOf(store, 'setting_value');
     expect((await refusal(store, FOLLOW_PATTERN, { follower_id: 'TL-LEND-UC01', pattern_id: 'TL-PAT-ACT' })).problems[0]).toMatchObject({ rule: 'exists', message: 'TL-LEND-UC01 already follows TL-PAT-ACT' });
@@ -71,7 +71,7 @@ describe('LA-TRC-UC07-R50-T01 each Pattern following command (LA-TRC-A3) changes
     expect(fileOf(store, 'setting_value')).toBe(before);
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R01-T03 runs `lathe pattern-following <command>`, the pattern_following_ tools and POST /api/pattern-following/<command>', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R01-T03 LA-PAT-CLI-STEPS-R01-T04 LA-PAT-MCP-STEPS-R01-T04 runs `lathe pattern-following <command>`, the pattern_following_ tools and POST /api/pattern-following/<command>', async () => {
     const store = await patternFollowingDataSet();
     const root = path.dirname(store.dataDir);
     await closeFollowingStores();

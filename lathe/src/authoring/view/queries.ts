@@ -4,7 +4,7 @@
 import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { type ViewKind } from './model.ts';
+import type { ViewKind } from './model.ts';
 import type { ViewPage, ViewSummary } from './read-model.ts';
 import { viewReader, type ViewReader } from './reader.ts';
 import { GET_VIEW_IDENTITY, LIST_VIEWS_IDENTITY, NEXT_VIEW_ID_IDENTITY } from './queries.generated.ts';

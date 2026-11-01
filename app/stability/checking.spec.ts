@@ -16,7 +16,7 @@ const CHECKS = `${PRODUCT}?panel=checks`;
 const PANEL = '.tool-panel.checks-panel';
 /** A view the suite adds while the page is open; nothing uses it, so it is an error. */
 const ADDED = 'LA-V990';
-const ADDED_ROW = `${JSON.stringify({ id: ADDED, title: 'A page nothing reaches', description: 'A view no step happens in.' })}\n`;
+const ADDED_ROW = `${JSON.stringify({ id: ADDED, title: 'A page nothing reaches', description: 'A view that presents nothing.' })}\n`;
 
 /** The desktop shell's bridge, stood in for: it keeps each error count the page sends for the Dock badge. */
 function keepCounts(bridge: LatheDesktop) {
@@ -26,7 +26,7 @@ function keepCounts(bridge: LatheDesktop) {
 }
 
 test.describe('Checking flows', () => {
-  test('LA-CHK-UC07-FL01-T review every problem of a product', async ({ page }) => {
+  test('LA-CHK-UC07-FL-T review every problem of a product', async ({ page }) => {
     const restore = keepData();
     try {
       // S01: the product's Checks panel over its stage: its problems counted, errors first, grouped by check.
@@ -80,7 +80,7 @@ test.describe('Checking flows', () => {
     }
   });
 
-  test('LA-CHK-UC07-FL02-T review every problem of a product in the desktop app', async ({ page }) => {
+  test('LA-PAT-PAGE-STEPS-R01-T02 review every problem of a product in the desktop app', async ({ page }) => {
     const restore = keepData();
     try {
       // S01: the product's Checks panel in the desktop app, its bridge stood in for, sends its error count to the Dock badge.

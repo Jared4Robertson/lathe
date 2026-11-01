@@ -9,6 +9,10 @@ A use case is an actor's goal: who acts, what they want, and the rules the produ
 
 Change the spec only with Lathe's MCP tools (or the `lathe` CLI), never by editing files. Fields, ID patterns and checks are in `lathe/REFERENCE.md` in the Lathe package (`node_modules/@jaredrob/lathe/REFERENCE.md` in a product repo). Before you write, read the domain's terms, commands and queries, its capabilities and use cases (so you do not repeat one), and the product's patterns.
 
+## Essential, not accidental
+
+**Essential complexity** comes from the problem itself: the rules, distinctions and relationships any correct solution must capture, however it is built. **Accidental complexity** comes from the means used to build it: tools, structure and conventions the problem does not require, which other means could change or remove. What is accidental to one product is essential to another (TLS to a tool library, but not to a security product), and a platform is a product that takes on as essential what others want to stop deciding. A use case, its actors and its requirements are essential: ask of each whether a domain expert would recognize it and care. Leaks: a use case for a generic subdomain (sign in, reset a password) is provided by someone else, not written; a requirement that states how the product is built (a route, a table, a library) belongs in the technical specification; and rules repeated across use cases are a pattern in disguise.
+
 ## Capabilities
 
 Every use case sits in a capability: an ordered slice of its domain. Add the domain's capabilities first, then each use case under its capability. A capability with one use case, or none, is a gap; a capability that serves no business outcome is too (`discover-outcomes`).
@@ -26,7 +30,7 @@ Every use case sits in a capability: an ordered slice of its domain. Add the dom
 - the rules diverge: requirements that apply to only some paths are a sign of two use cases;
 - the flows would share nothing beyond the command.
 
-Merge when two use cases differ only by an interface (that is two flows of one use case) or by a value (that is a rule of one).
+Merge when two use cases differ only by an interface (that is one use case offered through both) or by a value (that is a rule of one).
 
 **Actors are roles, never people.** A role is a part of the product (Member, Librarian; Owner, Reader, Agent in Lathe's own specs). Add a new role to the product with a description of what it does; write the same roles in prose.
 
@@ -37,14 +41,14 @@ A UC requirement is one rule the use case must follow at the level of the actor'
 - One rule per record, each testable on its own.
 - It does not restate the domain model. An invariant, specification or constraint the use case's command keeps is already owed there; write a requirement only for what this use case adds: an order of checks, what the actor sees, what is refused and how.
 - It says what, not how. A rule that names a route, status code, field limit or screen element is a view or API requirement (`design-interactions`).
-- It holds whatever the interface: a step of each flow fulfills it. A rule only one interface can meet is a view or API requirement instead.
+- It holds whatever the interface: a step of its flow fulfills it. A rule only one interface can meet is a view or API requirement, or that interface's pattern rule, instead.
 - Sort more than about 8 into groups (Validation, Errors), at least two each.
 
 Every use case has at least one actor and one requirement, unless all its rules come from patterns.
 
 ## Patterns
 
-When two or more use cases would state the same rules, write those rules once as a pattern and let each follow it. A setting is what each follower decides differently, such as the record it saves; a pattern every follower applies the same way has no settings.
+When two or more use cases would state the same rules, write those rules once as a pattern and let each follow it. A pattern is a fixed part, its settings and its slots. A setting is what each follower decides differently from a known set of ways, such as the record it saves; a pattern every follower applies the same way has no settings. A slot is where the variation is open-ended, so code written by hand fills it against a contract stated in one sentence (its statement); each such fill is accidental debt until the pattern can express it. Settings that grow conditions and loops are a language: add a slot or split the pattern instead. Wait for the third example before drawing a pattern; one drawn from fewer overfits.
 
 - When a pattern applies to a whole domain, the domain follows it rather than each use case.
 - A follower's requirements do not restate the pattern's rules.
@@ -56,4 +60,4 @@ When two or more use cases would state the same rules, write those rules once as
 
 - Titles: sentence case, no trailing period, unique within kind and product. A requirement or pattern rule is a sentence that is true when the rule holds ("An unavailable tool is refused with the reason").
 - Something undecided is a question about the use case with an owner role, never "TBD" in a requirement.
-- Next, write each use case's flows (`design-interactions`), then finish with `check-and-fix`.
+- Next, write each use case's flow (`design-interactions`), then finish with `check-and-fix`.

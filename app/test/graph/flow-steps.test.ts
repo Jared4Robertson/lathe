@@ -12,7 +12,7 @@ import { graphMap } from './maps';
 function flowWorkspace(stepCount: number): ServedData {
   const w = testWorkspace();
   for (let i = 4; i <= stepCount; i++) {
-    addRows(w, 'flow_step', { id: `P-D-UC01-FL01-S0${i}`, title: `Step ${i}`, flow_id: 'P-D-UC01-FL01', path: 'main', position: i - 1 });
+    addRows(w, 'flow_step', { id: `P-D-UC01-FL-S0${i}`, title: `Step ${i}`, flow_id: 'P-D-UC01-FL', path: 'main', position: i - 1 });
   }
   return w;
 }
@@ -24,22 +24,22 @@ const spine = (n: { edges: { source: string; target: string; relation: string }[
 describe('flow steps in the graph', () => {
   it('LA-V93-R31-T01 LA-V101-R05-T01 A flow step sits one column to the right of its flow, joined to it by the parent line', () => {
     const index = testIndex();
-    const n = neighborhood(index, 'P-D-UC01-FL01', 2);
-    expect(recordIds(n)).toEqual(expect.arrayContaining(['P-D-UC01-FL01', 'P-D-UC01-FL01-S01', 'P-D-UC01-FL01-S02', 'P-D-UC01-FL01-S03']));
-    expect(spine(n)).toEqual(expect.arrayContaining(['P-D-UC01-FL01 > P-D-UC01-FL01-S01', 'P-D-UC01-FL01 > P-D-UC01-FL01-S02', 'P-D-UC01-FL01 > P-D-UC01-FL01-S03']));
+    const n = neighborhood(index, 'P-D-UC01-FL', 2);
+    expect(recordIds(n)).toEqual(expect.arrayContaining(['P-D-UC01-FL', 'P-D-UC01-FL-S01', 'P-D-UC01-FL-S02', 'P-D-UC01-FL-S03']));
+    expect(spine(n)).toEqual(expect.arrayContaining(['P-D-UC01-FL > P-D-UC01-FL-S01', 'P-D-UC01-FL > P-D-UC01-FL-S02', 'P-D-UC01-FL > P-D-UC01-FL-S03']));
     const column = new Map(n.nodes.map((x) => [x.id, x.column]));
-    for (const step of ['P-D-UC01-FL01-S01', 'P-D-UC01-FL01-S02', 'P-D-UC01-FL01-S03']) expect(column.get(step)).toBe(column.get('P-D-UC01-FL01')! + 1);
+    for (const step of ['P-D-UC01-FL-S01', 'P-D-UC01-FL-S02', 'P-D-UC01-FL-S03']) expect(column.get(step)).toBe(column.get('P-D-UC01-FL')! + 1);
   });
 
   it('LA-V93-R31-T02 LA-V101-R05-T02 A flow shows its steps directly, however many, and its flow test is listed in the test plan, not under it', () => {
     const index = recordIndexOf(flowWorkspace(6));
-    expect(spine(neighborhood(index, 'P-D-UC01-FL01', 1))).toEqual(expect.arrayContaining(['P-D-UC01-FL01 > P-D-UC01-FL01-S01', 'P-D-UC01-FL01 > P-D-UC01-FL01-S06']));
-    expect(isGraphNode(index, 'P-D-UC01-FL01/flow_step')).toBe(false);
+    expect(spine(neighborhood(index, 'P-D-UC01-FL', 1))).toEqual(expect.arrayContaining(['P-D-UC01-FL > P-D-UC01-FL-S01', 'P-D-UC01-FL > P-D-UC01-FL-S06']));
+    expect(isGraphNode(index, 'P-D-UC01-FL/flow_step')).toBe(false);
     // The flow sits in Interaction design's Flows folder, its test in Test plan's.
-    expect(nodeParent(index, 'P-D-UC01-FL01')).toBe('P-D/interaction-design/flow');
-    expect(nodeParent(index, 'P-D-UC01-FL01-T')).toBe('P-D/test-plan/flow_test');
+    expect(nodeParent(index, 'P-D-UC01-FL')).toBe('P-D/interaction-design/flow');
+    expect(nodeParent(index, 'P-D-UC01-FL-T')).toBe('P-D/test-plan/flow_test');
     const map = graphMap(index, 'P');
-    expect(map.nodes.get('P-D-UC01-FL01-S05')!.parent).toBe('P-D-UC01-FL01');
+    expect(map.nodes.get('P-D-UC01-FL-S05')!.parent).toBe('P-D-UC01-FL');
   });
 
 });

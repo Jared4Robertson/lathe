@@ -1,5 +1,5 @@
 // The Trace stage of an address, /<id>?stage=trace (LA-TRC-UC10, LA-V98): one row per use case, from the business
-// outcomes it serves to its acceptance tests (trace.ts), read from the Trace read model (list-trace-rows, LA-TRC-RM13)
+// outcomes it serves to its acceptance tests (trace.ts), read from the Trace read model (list-traced-use-cases, LA-TRC-RM13)
 // again after every reload. It works on every focus (LA-PAT-APP-UX-R17), and the stage stays mounted while the focus
 // moves within its product. Its toolbar is every stage's (views/StageChrome.tsx), with Expand row (the focus's row,
 // every stage), Expand all (one stage, every row) and Tidy up; its key; the canvas (TraceCanvas.tsx) with its

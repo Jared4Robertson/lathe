@@ -21,6 +21,8 @@ Lathe's own kinds cannot be given another parent or more required fields by a pr
 
 **Parent and ID.** Its one parent is a Lathe kind or another product kind; start its ID pattern with the parent's name in angle brackets so IDs number under the parent.
 
+**Essential or accidental.** Every kind declares its complexity: essential (what the problem itself demands, decided once by the product, such as a report its people read), accidental (what comes from the means of building it, such as a kind of code), or as-parent (as the record it sits under, such as a test kind). Never mixed: a kind whose records would be both is two kinds. An accidental kind's records must be generated, provided or fills (`write-the-technical-spec`); an essential kind's must name no technology. Words the product's essential records must not use, such as the name of its framework, go in the product's technology words (`set-technology-words`).
+
 **Obligation or not.** Mark a kind an obligation only when each record is something that must be built and proved; Lathe then counts it in coverage and reports the gaps. A new relation's role says whether its links count as design (the source designs the target), build (the source builds it once its file exists), proof (it proves), or none of these.
 
 **Text.** A kind's text is required or absent: give it a lead field (statement, goal, meaning or description) only when its records need words the title, parent, links and other fields cannot say, and then it is required and the only one. A code-bound kind whose title and file say what it is has none. Give every kind, field and relation a plain description; the app shows it.
@@ -30,6 +32,10 @@ Lathe's own kinds cannot be given another parent or more required fields by a pr
 **Naming records.** Code-bound kinds take the identifier or file name exactly as in code, with no spaces; a check row, the kebab-case name of the mistake. Other kinds: a singular noun phrase for a thing, an imperative verb and object for a goal, a sentence true when the rule holds. Sentence case, no trailing period, unique within kind and product.
 
 **Removing a kind.** Remove its records first, then the declaration.
+
+## Patterns, slots and configuration
+
+A well-defined pattern is a function: the pattern plus its configuration gives the same output every time. It has a fixed part, settings (the known ways it varies) and slots (open-ended variation, filled by hand against a stated contract). Accidental complexity is what the fixed part and settings can express; what is left in the slots is a fill. Keep it deterministic: no hidden inputs such as time, environment, the network or unpinned versions. When settings grow conditions and loops, configuration is becoming a language: add a slot or split the pattern. Draw a pattern at the third occurrence, not the first, since one example overfits.
 
 ## Modeling a code generator
 
@@ -47,6 +53,7 @@ Rules for the emitted files themselves:
 - The first line of every emitted file says it is generated and by what, so nobody edits it by hand. A check or test regenerates and compares (a drift check), so a stale or hand-edited file fails.
 - A declaration the generator reads from the records (a versioned query over them) is the one input; do not keep a second hand-written copy.
 - A mistake the generator would only find when it runs ("an archetype that does not exist") is refused when the record is written: declare the generator's input kinds with required fields and relations so the write fails, rather than checking afterward.
+- An app built on a generator or platform holds only its own essential complexity: the domain's rules, and fills for what is its alone. What the platform supplies (request handlers, storage, TLS, sign-in) is marked `provided_by` the integration that names it, so it counts as built and proved there and is not written again. Example: an app on a code generator keeps its aggregates, invariants and the few handlers it writes by hand as fills; every generated handler, the database and the certificate handling are provided.
 - A record the generator needs that is provided by a dependency (a component the product uses but does not own) is a different thing from code the product owns. Mark which is which, so a check can flag hand-written accidental code that a dependency could provide.
 
 ## A product's own checks

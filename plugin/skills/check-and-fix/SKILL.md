@@ -1,6 +1,6 @@
 ---
 name: check-and-fix
-description: Run lathe check, fix every error it reports, and report warnings, gaps and coverage. Use after changing any Lathe spec data, before committing spec changes, when a write is refused, or when asked whether the spec is consistent or how much is designed, built and proved.
+description: Run lathe check, fix every error it reports, and report warnings, gaps and coverage; review the essential records with fresh eyes before proposing an essential change. Use after changing any Lathe spec data, before committing spec changes, when a write is refused, or when asked whether the spec is consistent or how much is designed, built and proved.
 ---
 
 # Check and fix
@@ -28,6 +28,16 @@ Never change a product's own kinds or checks to make an error go away unless ask
 
 A rule is never waived or recorded as a deliberate deviation. When a record cannot meet a rule, the model is wrong: change it until it does. A command that would change a second aggregate is fixed by splitting the aggregate, or by following the second change through an event and a policy (`model-a-domain`). Ask the Owner when the rule itself seems wrong; a standard is the Owner's to change.
 
+## Review the essential records with fresh eyes
+
+Essential records (outcomes, the domain model, use cases and their requirements, flows, views, terms, quality standards) are the Owner's decisions. A write that names technology in one, or links one to a technical record, is refused; what is already there is a warning (`accidental-in-essential`, `essential-restates-technical`, and `essential-repeated` for a statement repeated across use cases or views, which is a pattern in disguise). What no check can see takes a reader.
+
+Before you propose adding, changing or removing an essential record, list the product's essential records alone, grouped by domain, with the Essential review's list-essential-records query. It leaves out the technical records, the patterns and the tests. Read each record as someone who knows the domain but not software, and ask: would they recognize this record and care about it? List every record that fails, with why (it names how the product is built, restates what the technical specification says, or repeats what a pattern should say once), and what it should say instead. Do not change an essential record on that finding alone: report the list for the Owner to decide.
+
+## Accidental debt and pattern candidates
+
+Every accidental record must be derived, provided or a fill (`accidental-not-accounted-for`). Fills are the product's accidental debt: coverage lists them, and each is a deliberate, visible deviation, not a failure. Read the debt by slot. A slot with three or more fills is a pattern candidate (`pattern-candidate`): report what the fills repeat so the Owner can have it written as a pattern and generated. Do not hide debt by deleting a fill or marking a record provided when it is not.
+
 ## Gaps and coverage
 
 Gaps are the "at least one" and "exactly one" a later stage still owes. They are work to do, not errors. Coverage counts obligations per domain:
@@ -38,4 +48,4 @@ Gaps are the "at least one" and "exactly one" a later stage still owes. They are
 
 ## Report
 
-Say, in a few lines: whether the check passes (the last line); each error you fixed and how; the coverage for each domain you touched and the gaps and warnings your change added or cleared; and any tests not automated yet that you added, and why they wait.
+Say, in a few lines: whether the check passes (the last line); each error you fixed and how; the essential records that failed the fresh-eyes review, when you proposed an essential change; the coverage for each domain you touched and the gaps and warnings your change added or cleared; and any tests not automated yet that you added, and why they wait.

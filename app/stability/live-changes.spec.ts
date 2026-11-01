@@ -48,7 +48,7 @@ const changeOf = (page: Page, id: string) => page.evaluate((id) => {
 }, id);
 
 test.describe('watching the spec change', () => {
-  test('LA-EXP-UC15-FL01-T An Agent\'s changes land on the stage, under Highlight changes, in the panel and the wiki card in the web app, and ] and [ walk them', async ({ page }) => {
+  test('LA-EXP-UC15-FL-T An Agent\'s changes land on the stage, under Highlight changes, in the panel and the wiki card in the web app, and ] and [ walk them', async ({ page }) => {
     const restore = keepData();
     try {
       commitCopy();
@@ -115,7 +115,7 @@ test.describe('watching the spec change', () => {
     }
   });
 
-  test('LA-EXP-UC15-FL02-T The desktop app marks the chat\'s changes on the stage and lists the turn\'s changes from the same diff', async ({ page }) => {
+  test('LA-PAT-PAGE-STEPS-R01-T03 The desktop app marks the chat\'s changes on the stage and lists the turn\'s changes from the same diff', async ({ page }) => {
     const restore = keepData();
     try {
       commitCopy();

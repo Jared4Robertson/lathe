@@ -10,14 +10,12 @@ export const DATA_STORE_FIELDS = {
     domain_id: { kind: 'column', table: 'data_store', column: 'domain_id', required: false, clearable: false },
     kind: { kind: 'column', table: 'data_store', column: 'kind', required: true, clearable: false },
     description: { kind: 'column', table: 'data_store', column: 'description', required: true, clearable: false },
-    provided_by: { kind: 'id', description: 'The integration that reaches it, when it is a service someone else runs that the user must provide.', required: false, clearable: false },
   },
   '/api/data-store/change-data-store': {
     id: { kind: 'column', table: 'data_store', column: 'id', required: true, clearable: false },
     title: { kind: 'column', table: 'data_store', column: 'title', required: false, clearable: false },
     kind: { kind: 'column', table: 'data_store', column: 'kind', required: false, clearable: false },
     description: { kind: 'column', table: 'data_store', column: 'description', required: false, clearable: false },
-    provided_by: { kind: 'id', description: 'The integration that reaches it, when it is a service someone else runs that the user must provide.', required: false, clearable: true },
   },
   '/api/data-store/remove-data-store': {
     id: { kind: 'column', table: 'data_store', column: 'id', required: true, clearable: false },

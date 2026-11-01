@@ -13,7 +13,7 @@ import { main, openApp, section } from './helpers';
 const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.findByRole('toolbar', { name: `Change ${id}` });
 
-describe('LA-V153-R01-T01 an integration\'s records are read through the Integration aggregate\'s own query, never a generic record read', () => {
+describe('LA-V153-R05-T01 an integration\'s records are read through the Integration aggregate\'s own query, never a generic record read', () => {
   it('reads GET /api/integration/get-integration for the adapter, and shows its description', async () => {
     const { requests } = await openApp('/P-INT01-AD', { data: modelWorkspace() });
     expect(await within(main()).findByText("The fixture's adapter mailer.")).toBeInTheDocument();
@@ -28,7 +28,7 @@ describe('LA-V153-R01-T01 an integration\'s records are read through the Integra
   });
 });
 
-describe('LA-V153-R02-T01 the Integration editor writes only through the aggregate\'s own commands, one per change', () => {
+describe('LA-V153-R06-T01 the Integration editor writes only through the aggregate\'s own commands, one per change', () => {
   it('Edit sends Change an integration with only what changed; an emptied system is cleared with null; no Move', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/P-INT01', { data: modelWorkspace(), command: () => ({ answer: ok }) });
@@ -84,7 +84,7 @@ describe('LA-V153-R02-T01 the Integration editor writes only through the aggrega
 describe('LA-V153-R03-T01 a refused Integration command shows every reason, keeps what was entered, and changes nothing', () => {
   it('Remove sends Remove an integration, saying what goes with it, and shows the refusal naming the step that exchanges with it', async () => {
     const user = userEvent.setup();
-    const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'referenced', table: 'integration', key: 'P-INT01', message: 'Integration P-INT01 is referenced, so it stays: flow step P-D-UC01-FL01-S02 exchanges with it' }] };
+    const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'referenced', table: 'integration', key: 'P-INT01', message: 'Integration P-INT01 is referenced, so it stays: flow step P-D-UC01-FL-S02 exchanges with it' }] };
     const { commands } = await openApp('/P-INT01', { data: modelWorkspace(), command: () => ({ answer: refusal }) });
     await user.click(within(await toolbar('P-INT01')).getByRole('button', { name: 'Remove' }));
     const panel = screen.getByRole('region', { name: 'Remove P-INT01?' });
@@ -92,7 +92,7 @@ describe('LA-V153-R03-T01 a refused Integration command shows every reason, keep
     await user.click(within(panel).getByRole('button', { name: 'Remove P-INT01' }));
     const alert = await within(panel).findByRole('alert');
     expect(alert).toHaveTextContent('The removal was refused. Nothing was changed.');
-    expect(alert).toHaveTextContent('flow step P-D-UC01-FL01-S02 exchanges with it');
+    expect(alert).toHaveTextContent('flow step P-D-UC01-FL-S02 exchanges with it');
     expect(alert).toHaveFocus();
     expect(commands).toEqual([{ route: '/api/integration/remove-integration', input: { id: 'P-INT01' } }]);
     expect(window.location.pathname).toBe('/P-INT01');
@@ -105,7 +105,7 @@ describe('LA-V153-R04-T01 an integration\'s page lists the flow steps that excha
     await screen.findByRole('heading', { level: 1, name: 'Mail' });
     const exchanges = await waitFor(() => section(/^Exchanged with by/));
     expect(within(main()).getByRole('heading', { name: /^Exchanged with by/ })).toHaveTextContent('Exchanged with by1');
-    expect(within(exchanges).getByRole('link', { name: /P-D-UC01-FL01-S02/ })).toHaveAttribute('href', '/P-D-UC01-FL01-S02');
+    expect(within(exchanges).getByRole('link', { name: /P-D-UC01-FL-S02/ })).toHaveAttribute('href', '/P-D-UC01-FL-S02');
     // The outside system, among the integration's own facts on its page.
     await waitFor(() => expect(main()).toHaveTextContent('The mail service'));
   });

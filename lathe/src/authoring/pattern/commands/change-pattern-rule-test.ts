@@ -1,7 +1,7 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PatternRuleTestRow } from '../../../platform/data/tables.ts';
-import { changed } from '../model.ts';
+import { changed } from '../../../platform/data/rows.ts';
 import { PatternRepository } from '../repository.ts';
 import { refuseBroken } from '../../../platform/data/rules.ts';
 import { patternRuleTestPerDomain } from '../rules.ts';

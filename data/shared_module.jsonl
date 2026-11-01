@@ -51,10 +51,13 @@
 {"id":"LA-AUT-MOD81","title":"lathe/src/authoring/storage-requirement/commands/index.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/storage-requirement/commands/index.ts"}
 {"id":"LA-AUT-MOD82","title":"lathe/src/authoring/data-store/model.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/data-store/model.ts"}
 {"id":"LA-AUT-MOD83","title":"lathe/src/authoring/data-store/commands/index.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/data-store/commands/index.ts"}
+{"id":"LA-AUT-MOD84","title":"lathe/src/authoring/interface/model.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/interface/model.ts"}
 {"id":"LA-CHK-MOD01","title":"lathe/src/checking/check/model.ts","domain_id":"LA-CHK","file":"lathe/src/checking/check/model.ts"}
 {"id":"LA-CHK-MOD02","title":"lathe/src/checking/check/commands/index.ts","domain_id":"LA-CHK","file":"lathe/src/checking/check/commands/index.ts"}
 {"id":"LA-CHK-MOD03","title":"lathe/src/checking/product-setting/model.ts","domain_id":"LA-CHK","file":"lathe/src/checking/product-setting/model.ts"}
 {"id":"LA-CHK-MOD04","title":"lathe/src/checking/product-setting/commands/index.ts","domain_id":"LA-CHK","file":"lathe/src/checking/product-setting/commands/index.ts"}
+{"id":"LA-CHK-MOD05","title":"lathe/src/essential.ts","domain_id":"LA-CHK","file":"lathe/src/essential.ts"}
+{"id":"LA-CHK-MOD06","title":"lathe/src/write-rules.ts","domain_id":"LA-CHK","file":"lathe/src/write-rules.ts"}
 {"id":"LA-EXP-MOD01","title":"app/src/elk.ts","domain_id":"LA-EXP","file":"app/src/elk.ts"}
 {"id":"LA-EXP-MOD03","title":"app/src/plural.ts","domain_id":"LA-EXP","file":"app/src/plural.ts"}
 {"id":"LA-EXP-MOD06","title":"app/src/graph/steps.ts","domain_id":"LA-EXP","file":"app/src/graph/steps.ts"}
@@ -91,3 +94,4 @@
 {"id":"LA-TRC-MOD01","title":"lathe/src/trace/measures.ts","domain_id":"LA-TRC","file":"lathe/src/trace/measures.ts"}
 {"id":"LA-TRC-MOD03","title":"lathe/src/traceability/pattern-following/model.ts","domain_id":"LA-TRC","file":"lathe/src/traceability/pattern-following/model.ts"}
 {"id":"LA-TRC-MOD04","title":"lathe/src/traceability/pattern-following/commands/index.ts","domain_id":"LA-TRC","file":"lathe/src/traceability/pattern-following/commands/index.ts"}
+{"id":"LA-TRC-MOD05","title":"lathe/src/trace/packages.ts","domain_id":"LA-TRC","file":"lathe/src/trace/packages.ts"}

@@ -42,7 +42,7 @@ describe('components and tests in the graph', () => {
 
   it('LA-V93-R33-T02 A domain reaches its tests through Test plan, then a folder per test kind, as the nav does', () => {
     expect(treeChildren(index, 'P-D')).toContain('P-D/test-plan');
-    expect(treeParent(index, 'P-D-UC01-FL01-T')).toBe('P-D/test-plan/flow_test');
+    expect(treeParent(index, 'P-D-UC01-FL-T')).toBe('P-D/test-plan/flow_test');
     for (const folder of treeChildren(index, 'P-D/test-plan')) {
       expect(folder.startsWith('P-D/test-plan/')).toBe(true);
       for (const test of treeChildren(index, folder)) expect(index.byId.get(test)?.kind).toBe(folder.split('/').pop());

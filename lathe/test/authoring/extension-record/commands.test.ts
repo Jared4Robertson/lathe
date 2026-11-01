@@ -39,8 +39,8 @@ function declared(): Data {
     entity: [{ id: 'TL-LEND-EN01', title: 'Loan', aggregate_id: 'TL-LEND-A1', role: 'root', description: 'The loan itself.' }],
     command: [{ id: 'TL-LEND-CMD01', title: 'Open a loan', entity_id: 'TL-LEND-EN01', description: 'Lends a free tool to a member.' }],
     product_kind: [
-      { name: 'report', product_id: 'TL', label: 'Report', description: 'A script that measures the outcomes.', parent_kind: 'domain', stage: 'technical-specification', obligation: false, id_pattern: '<domain>-RP<nn>', id_example: 'TL-LEND-RP01', title_form: 'identifier' },
-      { name: 'report_section', product_id: 'TL', label: 'Report section', description: 'One section of a report.', parent_kind: 'report', stage: 'technical-specification', obligation: false, id_pattern: '<report>-S<nn>', id_example: 'TL-LEND-RP01-S01' },
+      { name: 'report', product_id: 'TL', label: 'Report', description: 'A script that measures the outcomes.', parent_kind: 'domain', stage: 'technical-specification', obligation: false, complexity: 'accidental', id_pattern: '<domain>-RP<nn>', id_example: 'TL-LEND-RP01', title_form: 'identifier' },
+      { name: 'report_section', product_id: 'TL', label: 'Report section', description: 'One section of a report.', parent_kind: 'report', stage: 'technical-specification', obligation: false, complexity: 'accidental', id_pattern: '<report>-S<nn>', id_example: 'TL-LEND-RP01-S01' },
     ],
     product_kind_field: [
       { kind: 'report', position: 1, name: 'file', type: 'text', required: true, description: 'The script, from the product root.' },
@@ -157,7 +157,7 @@ describe('LA-AUT-UC04-R01-T52 each Extension record command changes one record o
     expect((await refusal(store, CHANGE_EXTENSION_RECORD, { id: 'TL-LEND-RP01', values: { domain_id: 'OT-D' } })).problems[0].rule).toBe('field');
     expect((await refusal(store, CHANGE_EXTENSION_RECORD, { id: 'TL-LEND-RP01', links: { measured_by: ['TL-LEND-CMD01'] } })).problems[0]).toMatchObject({
       rule: 'relation',
-      message: 'a report starts no link of measured_by; it starts reports_on',
+      message: 'a report starts no link of measured_by; it starts fills, provided_by, reports_on',
     });
     expect((await refusal(store, ADD_EXTENSION_RECORD, { kind: 'aggregate', id: 'TL-LEND-A9', parent_id: 'TL-LEND', values: { title: 'X' } })).problems[0]).toMatchObject({
       rule: 'kind',
@@ -193,7 +193,7 @@ describe('LA-AUT-INV186-T a record of a kind a field titles is titled by that fi
   /** The declarations, with a module kind under a domain whose required file field titles it. */
   function titledByFile(): Data {
     const data = declared();
-    data.product_kind.push({ name: 'module', product_id: 'TL', label: 'Module', description: 'Code several records use.', parent_kind: 'domain', stage: 'technical-specification', obligation: false, id_pattern: '<domain>-MOD<nn>', id_example: 'TL-LEND-MOD01', title_form: 'identifier' });
+    data.product_kind.push({ name: 'module', product_id: 'TL', label: 'Module', description: 'Code several records use.', parent_kind: 'domain', stage: 'technical-specification', obligation: false, complexity: 'accidental', id_pattern: '<domain>-MOD<nn>', id_example: 'TL-LEND-MOD01', title_form: 'identifier' });
     data.product_kind_field.push({ kind: 'module', position: 1, name: 'file', type: 'text', required: true, description: 'The module, from the product root.', titles: true });
     return data;
   }

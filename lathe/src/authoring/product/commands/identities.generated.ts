@@ -107,30 +107,3 @@ export const REMOVE_QUESTION_IDENTITY = {
   method: 'POST',
   route: '/api/product/remove-question',
 } as const;
-
-export const ADD_INTERFACE_IDENTITY = {
-  id: 'LA-AUT-CMD132',
-  slice: { aggregate: 'LA-AUT-A1', name: 'product' },
-  name: 'add-interface',
-  description: 'Adds an interface of a product: a way it is used, such as its web app, HTTP API or command line.',
-  method: 'POST',
-  route: '/api/product/add-interface',
-} as const;
-
-export const CHANGE_INTERFACE_IDENTITY = {
-  id: 'LA-AUT-CMD133',
-  slice: { aggregate: 'LA-AUT-A1', name: 'product' },
-  name: 'change-interface',
-  description: 'Changes an interface\'s title, kind or description.',
-  method: 'POST',
-  route: '/api/product/change-interface',
-} as const;
-
-export const REMOVE_INTERFACE_IDENTITY = {
-  id: 'LA-AUT-CMD134',
-  slice: { aggregate: 'LA-AUT-A1', name: 'product' },
-  name: 'remove-interface',
-  description: 'Removes an interface. Refused while a flow goes through it, or anything else references it.',
-  method: 'POST',
-  route: '/api/product/remove-interface',
-} as const;

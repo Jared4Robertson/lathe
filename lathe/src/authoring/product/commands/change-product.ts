@@ -1,7 +1,8 @@
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ProductRow } from '../../../platform/data/tables.ts';
-import { changed, rolesOf, type RoleInput } from '../model.ts';
+import { rolesOf, type RoleInput } from '../model.ts';
+import { changed } from '../../../platform/data/rows.ts';
 import { ProductRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 import { CHANGE_PRODUCT_IDENTITY } from './identities.generated.ts';

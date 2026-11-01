@@ -94,7 +94,7 @@ export const CHANGE_CONSTRAINT_TEST_IDENTITY = {
   id: 'LA-AUT-CMD280',
   slice: { aggregate: 'LA-AUT-A9', name: 'value-object' },
   name: 'change-constraint-test',
-  description: 'Changes a constraint test\'s columns or the test data sets it starts from (the whole list).',
+  description: 'Changes a constraint test\'s way of running or the test data sets it starts from (the whole list).',
   method: 'POST',
   route: '/api/value-object/change-constraint-test',
 } as const;

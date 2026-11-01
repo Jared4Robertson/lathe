@@ -28,7 +28,7 @@ describe('graph columns by tree depth', () => {
     for (const [child, parent] of parentOf) byParent.set(parent, (byParent.get(parent) ?? new Set()).add(column.get(child)!));
     for (const cols of byParent.values()) expect(cols.size).toBe(1);
     // In the map: the records straight in a domain's folders, whatever their stage and kind, at one level; a folder's records at one x.
-    const members = ['P-D-A1', 'P-D-UC01-FL01', 'P-D-EN02-TB', 'P-D-INV01-T'];
+    const members = ['P-D-A1', 'P-D-UC01-FL', 'P-D-EN02-TB', 'P-D-INV01-T'];
     expect(new Set(members.map((id) => map.nodes.get(id)!.level)).size).toBe(1);
     // A stage with one folder (Use cases) holds its records itself, at its folders' level in the other stages.
     expect(map.nodes.get('P-D-CAP01')!.level).toBe(map.nodes.get('P-D/domain-model/aggregate')!.level);

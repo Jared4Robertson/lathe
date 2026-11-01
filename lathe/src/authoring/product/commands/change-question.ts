@@ -1,7 +1,7 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { QuestionRow } from '../../../platform/data/tables.ts';
-import { changed } from '../model.ts';
+import { changed } from '../../../platform/data/rows.ts';
 import { ProductRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 import { CHANGE_QUESTION_IDENTITY } from './identities.generated.ts';
@@ -24,7 +24,7 @@ export const CHANGE_QUESTION = {
 /** Changes the question's columns and what it is about. */
 export function changeQuestion(tx: Transaction, input: ChangeQuestion): void {
   const products = new ProductRepository(tx);
-  const product = products.loadHolding('question', input.id) ?? tx.refuse('missing', `there is no open question ${input.id}`);
+  const product = products.loadHoldingQuestion(input.id) ?? tx.refuse('missing', `there is no open question ${input.id}`);
   product.questions = product.questions.map((q) => (q.row.id !== input.id ? q : { row: changed(q.row, input, ['title', 'owner', 'description']), about: input.about ?? q.about }));
   holdToRules(tx, product);
   products.save(product);

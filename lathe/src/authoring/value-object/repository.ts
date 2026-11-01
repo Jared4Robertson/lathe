@@ -1,10 +1,14 @@
-// ValueObjectRepository (LA-AUT-REPO09): loads and saves the Value object aggregate whole, in its own tables only. A
-// constraint, the value type or a constraint test is reached through the value object that holds it.
-import { AggregateRepository, type InstanceRows } from '../../platform/data/repository.ts';
+// Generated from data/ by `npm run generate`. Do not edit.
+// ValueObjectRepository (LA-AUT-REPO09): Loads a value object whole (its fields, constraints with their tests, and its
+// value type, with what they meet, use and start from) from the transaction's draft and saves exactly the rows that
+// changed, in its aggregate's own tables only; a write to any other table is refused when it is made (`DataFiles`). A
+// record inside a value object is loaded through the value object that holds it (`loadHolding`), and a removal is
+// refused, naming what references it, while anything left references it.
+import { AggregateRepository as Repository, type InstanceRows } from '../../platform/data/repository.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
-import { kindInside, VALUE_OBJECT_KINDS, VALUE_OBJECT_TABLES, valueObjectRows, valueObjectsFrom, type ValueObject, type ValueObjectKind } from './model.ts';
+import { VALUE_OBJECT_TABLES, valueObjectRows, valueObjectsFrom, type ValueObject, type ValueObjectKind } from './model.ts';
 
-export class ValueObjectRepository extends AggregateRepository<ValueObject> {
+export class ValueObjectRepository extends Repository<ValueObject> {
   constructor(tx: Transaction) {
     super(tx, 'ValueObjectRepository', VALUE_OBJECT_TABLES);
   }
@@ -17,20 +21,32 @@ export class ValueObjectRepository extends AggregateRepository<ValueObject> {
     return valueObjectRows(valueObject);
   }
 
-  /**
-   * Loads the value object that holds the record of the kind with this ID: the value object itself, or the one its
-   * record sits under, found up its parents inside the aggregate. Undefined when there is no such record.
-   */
+  /** Loads the value object that holds the record of the kind with this ID, found up its parents; undefined when there is none. */
   loadHolding(kind: ValueObjectKind, id: string): ValueObject | undefined {
-    let at: { kind: ValueObjectKind; id: string } = { kind, id };
-    for (;;) {
-      const row = this.files.find(at.kind, { id: at.id });
-      if (!row) return undefined;
-      if (at.kind === 'value_object') break;
-      const column = VALUE_OBJECT_KINDS[at.kind];
-      at = { kind: column === 'constraint_id' ? 'constraint' : 'value_object', id: String(row[column]) };
+    const root = this.rootOf(kind, id);
+    const valueObject = root === undefined ? undefined : this.load(root);
+    return valueObject && holds(valueObject, kind, id) ? valueObject : undefined;
+  }
+
+  // The root's ID, up the parents of the record of the kind with this ID; undefined when one of them is missing.
+  private rootOf(kind: ValueObjectKind, id: string): string | undefined {
+    const row = this.files.find(kind, { id });
+    if (!row) return undefined;
+    switch (kind) {
+      case 'value_object': return id;
+      case 'constraint': return this.rootOf('value_object', String(row.value_object_id));
+      case 'value_type': return this.rootOf('value_object', String(row.value_object_id));
+      case 'constraint_test': return this.rootOf('constraint', String(row.constraint_id));
     }
-    const valueObject = this.load(at.id);
-    return valueObject && kindInside(valueObject, id) === kind ? valueObject : undefined;
+  }
+}
+
+/** Whether the value object holds the record of the kind with this ID. */
+function holds(valueObject: ValueObject, kind: ValueObjectKind, id: string): boolean {
+  switch (kind) {
+    case 'value_object': return valueObject.root === id;
+    case 'constraint': return valueObject.constraints.some((x) => x.id === id);
+    case 'value_type': return valueObject.valueType?.row.id === id;
+    case 'constraint_test': return valueObject.constraintTests.some((x) => x.row.id === id);
   }
 }

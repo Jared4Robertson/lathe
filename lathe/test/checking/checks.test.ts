@@ -6,17 +6,12 @@ import { adding, changing, complete, loadData, ofCheck, removeData, without } fr
 
 afterAll(removeData);
 
-let clean: Workspace;
-beforeAll(async () => {
-  clean = await loadData(complete());
-});
-
 /** A check row's tests, under its name. */
 const check = (name: string, body: () => void) => describe(name, body);
 
 describe("Lathe's checks", () => {
   it('LA-CHK-UC01-R06-T01 every problem names its check and, when it has one, its record', async () => {
-    let data = without(complete(), 'happens_in', () => true);
+    let data = without(complete(), 'presents', () => true);
     data = changing(data, 'specification_test', () => true, { state: 'not automated yet' });
     const ws = await loadData(data, { silent: ['EX-LEND-INV01-T'], missing: ['src/dates.ts'] });
     expect(new Set(ws.problems.map((p) => p.check)).size).toBeGreaterThan(3);
@@ -31,10 +26,10 @@ describe("Lathe's checks", () => {
 check('test-level-not-allowed', () => {
   it('LA-CHK-UC01-R09-T01 a test at a level its kind does not allow is a warning naming the allowed levels', async () => {
     let data = changing(complete(), 'constraint_test', () => true, { level: 'service' });
-    data = changing(data, 'flow_test', (r) => r.id === 'EX-LEND-UC01-FL01-T', { level: 'service' });
+    data = changing(data, 'flow_test', (r) => r.id === 'EX-LEND-UC01-FL-T', { level: 'service' });
     const ws = await loadData(data);
     expect(ofCheck(ws, 'test-level-not-allowed').map((p) => p.message)).toEqual([
-      'Flow test EX-LEND-UC01-FL01-T runs at level service, which a flow test does not allow; run it at system, browser.',
+      'Flow test EX-LEND-UC01-FL-T runs at level service, which a flow test does not allow; run it at system, browser.',
       'Constraint test EX-VO01-C01-T runs at level service, which a constraint test does not allow; run it at unit, integration.',
     ]);
     // A constraint enforced by a SQL CHECK is tested at integration level, against the database, which a constraint test allows.
@@ -62,7 +57,7 @@ check('package-not-in-manifest', () => {
 describe('nothing uses it', () => {
   let ws: Workspace;
   beforeAll(async () => {
-    let data = without(complete(), 'happens_in', () => true);
+    let data = without(complete(), 'presents', () => true);
     data = without(data, 'exchanges_with', () => true);
     data = without(data, 'checks', () => true);
     data = without(data, 'renders', () => true);
@@ -71,8 +66,8 @@ describe('nothing uses it', () => {
     ws = await loadData(data);
   });
   const unused: [string, string, string][] = [
-    ['view-unused', 'EX-V01', 'View EX-V01 is used by nothing: flow steps happen in it; link the steps that happen in it with happens_in, or remove it.'],
-    ['integration-unused', 'EX-INT01', 'Integration EX-INT01 is used by nothing: flow steps exchange with it; link the steps that exchange with it with exchanges_with, or remove it.'],
+    ['view-unused', 'EX-V01', 'View EX-V01 presents no command or query; link what a person sends or asks in it with presents, or remove it.'],
+    ['integration-unused', 'EX-INT01', 'Integration EX-INT01 is used by nothing: no flow step exchanges with it and it provides nothing; link the steps that exchange with it with exchanges_with, name it the provider of what it provides, or remove it.'],
     ['value-object-unused', 'EX-VO01', 'Value object EX-VO01 is used by nothing: fields of entities, value objects, events or read models are typed with it; type the fields that hold it with it, or remove it.'],
     ['specification-unused', 'EX-LEND-SP01', 'Specification EX-LEND-SP01 is used by nothing: commands check it and queries select by it; link the commands that check it or the queries that select by it, or remove it.'],
     ['test-data-set-unused', 'EX-LEND-TD01', 'Test data set EX-LEND-TD01 is used by nothing: tests start from it; link the tests that start from it with starts_from, or remove it.'],
@@ -129,30 +124,12 @@ check('event-not-by-outbox', () => {
   });
 });
 
-// The complete product's interface made an API: its steps happen in no view.
-const throughApi = () => changing(without(complete(), 'happens_in', () => true), 'interface', () => true, { kind: 'API' });
-
-check('flow-test-level-for-interface', () => {
-  it("LA-AUT-UC06-R10-T01 a flow test at a level its flow's interface does not fit is reported, manual or automated", async () => {
-    expect(ofCheck(clean, 'flow-test-level-for-interface')).toEqual([]);
-    // EX-LEND-UC01-FL01-T is automated, EX-LEND-UC02-FL01-T manual: a manual test names the level the person
-    // exercises, and is held to the same fit.
-    const warning = (useCase: string) => ({
-      severity: 'warning', check: 'flow-test-level-for-interface', record: `EX-LEND-${useCase}-FL01-T`,
-      message: `Flow test EX-LEND-${useCase}-FL01-T runs at level browser, but its flow EX-LEND-${useCase}-FL01 goes through EX-IF01, an interface of kind API, which is tested at system.`,
-    });
-    expect(ofCheck(await loadData(throughApi()), 'flow-test-level-for-interface')).toEqual([warning('UC01'), warning('UC02')]);
-    expect(ofCheck(await loadData(changing(throughApi(), 'flow_test', () => true, { level: 'system' })), 'flow-test-level-for-interface')).toEqual([]);
-    expect(ofCheck(await loadData(changing(complete(), 'interface', () => true, { kind: 'other' })), 'flow-test-level-for-interface')).toEqual([]);
-  });
-});
-
 // A product's own kind with a group_name field, its records under domain EX-LEND in the groups given, under a
 // max_children of 2.
 const houseRules = (groups: string[]) =>
   adding(complete(), {
-    product_setting: [{ product_id: 'EX', max_children: 2, max_entities_per_aggregate: 7 }],
-    product_kind: [{ name: 'house_rule', product_id: 'EX', label: 'House rule', description: 'A rule of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: false }],
+    product_setting: [{ product_id: 'EX', max_children: 2, max_entities_per_aggregate: 7, technology_words: [] }],
+    product_kind: [{ name: 'house_rule', product_id: 'EX', label: 'House rule', description: 'A rule of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: false, complexity: 'essential' }],
     product_kind_field: [{ kind: 'house_rule', position: 1, name: 'group_name', type: 'text', required: false, description: 'Its heading.' }],
     house_rule: groups.map((group_name, i) => ({ id: `EX-LEND-HR${String(i + 1).padStart(2, '0')}`, title: `Rule ${i}`, domain_id: 'EX-LEND', group_name })),
   });
@@ -162,7 +139,7 @@ check('too-many-children', () => {
     Array.from({ length: n }, (_, i) => ({ id: `EX-LEND-UC01-R${String(i + 2).padStart(2, '0')}`, title: `Rule ${i}`, use_case_id: 'EX-LEND-UC01', statement: 'It MUST hold.', ...(group ? { group_name: group(i) } : {}) }));
 
   it('LA-CHK-UC06-R01-T01 a record with more children of one kind than max_children is a warning naming the parent, kind and count', async () => {
-    const ws = await loadData(adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 3, max_entities_per_aggregate: 7 }], uc_requirement: requirements(3) }));
+    const ws = await loadData(adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 3, max_entities_per_aggregate: 7, technology_words: [] }], uc_requirement: requirements(3) }));
     expect(ofCheck(ws, 'too-many-children')).toEqual([
       expect.objectContaining({ severity: 'warning', record: 'EX-LEND-UC01', message: expect.stringContaining('Use case EX-LEND-UC01 has 4 children of kind uc_requirement, more than the 3') }),
     ]);
@@ -181,18 +158,18 @@ check('too-many-children', () => {
 
   it("LA-CHK-UC06-R05-T01 a flow's steps are counted per path, named when not main", async () => {
     const steps = (path: string, n: number, from: number) =>
-      Array.from({ length: n }, (_, i) => ({ id: `EX-LEND-UC01-FL01-S${String(from + i).padStart(2, '0')}`, title: `Step ${from + i}`, flow_id: 'EX-LEND-UC01-FL01', path, position: i + 1 + (path === 'main' ? 2 : 0) }));
-    const limit = { product_setting: [{ product_id: 'EX', max_children: 3, max_entities_per_aggregate: 7 }] };
+      Array.from({ length: n }, (_, i) => ({ id: `EX-LEND-UC01-FL-S${String(from + i).padStart(2, '0')}`, title: `Step ${from + i}`, flow_id: 'EX-LEND-UC01-FL', path, position: i + 1 + (path === 'main' ? 2 : 0) }));
+    const limit = { product_setting: [{ product_id: 'EX', max_children: 3, max_entities_per_aggregate: 7, technology_words: [] }] };
     const even = adding(complete(), { ...limit, flow_step: [...steps('main', 1, 3), ...steps('refused', 3, 4)] });
     expect(ofCheck(await loadData(even), 'too-many-children')).toEqual([]);
     const over = adding(complete(), { ...limit, flow_step: [...steps('main', 1, 3), ...steps('refused', 4, 4)] });
     expect(ofCheck(await loadData(over), 'too-many-children').map((p) => p.message)).toEqual([
-      expect.stringContaining('Flow EX-LEND-UC01-FL01 has 4 children of kind flow_step on path refused, more than the 3'),
+      expect.stringContaining('Flow EX-LEND-UC01-FL has 4 children of kind flow_step on path refused, more than the 3'),
     ]);
   });
 
   it('LA-CHK-UC06-R06-T01 grouped requirements are counted per group, groups compared in any letter case', async () => {
-    const ws = await loadData(adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 2, max_entities_per_aggregate: 7 }], uc_requirement: requirements(4, (i) => (i < 3 ? (i ? 'Limits' : 'limits ') : 'Other')) }));
+    const ws = await loadData(adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 2, max_entities_per_aggregate: 7, technology_words: [] }], uc_requirement: requirements(4, (i) => (i < 3 ? (i ? 'Limits' : 'limits ') : 'Other')) }));
     expect(ofCheck(ws, 'too-many-children').map((p) => p.message)).toEqual([expect.stringContaining('has 3 children of kind uc_requirement in group Limits')]);
   });
 
@@ -212,7 +189,7 @@ check('aggregate-too-large', () => {
 
   describe('LA-STD-MODELING-R01-T01 aggregates are small', () => {
     it('LA-CHK-UC06-R08-T01 an aggregate with more entities than max_entities_per_aggregate is a warning naming it, the count and the limit', async () => {
-      const at = (n: number) => adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 15, max_entities_per_aggregate: 3 }], entity: children(n) });
+      const at = (n: number) => adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 15, max_entities_per_aggregate: 3, technology_words: [] }], entity: children(n) });
       expect(ofCheck(await loadData(at(1)), 'aggregate-too-large')).toEqual([]);
       expect(ofCheck(await loadData(at(2)), 'aggregate-too-large')).toEqual([
         {
@@ -254,7 +231,7 @@ check('lone-child', () => {
     expect(ofCheck(await loadData(data), 'lone-child').map((p) => p.record)).toEqual(['EX-LEND-CAP01', 'EX-LEND-CAP02']);
     // A record of a product's own kind under CAP02 is a second child of it; CAP03 has none.
     const noted = adding(data, {
-      product_kind: [{ name: 'note', product_id: 'EX', label: 'Note', description: 'A note.', parent_kind: 'capability', stage: 'use-cases', obligation: false }],
+      product_kind: [{ name: 'note', product_id: 'EX', label: 'Note', description: 'A note.', parent_kind: 'capability', stage: 'use-cases', obligation: false, complexity: 'essential' }],
       note: [
         { id: 'EX-LEND-CAP01-N01', title: 'Lending is busy', capability_id: 'EX-LEND-CAP01' },
         { id: 'EX-LEND-CAP02-N01', title: 'Prices change', capability_id: 'EX-LEND-CAP02' },

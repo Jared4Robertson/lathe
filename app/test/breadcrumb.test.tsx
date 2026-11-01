@@ -58,7 +58,7 @@ describe('the one breadcrumb', () => {
   });
 
   it('LA-PAT-APP-UX-R16-T02 The header strip, the wiki card and the phone\'s top bar each use the one component; nothing else draws a trail', async () => {
-    await openApp('/P-D-UC01-FL01-S01?stage=graph', { data: testWorkspace() });
+    await openApp('/P-D-UC01-FL-S01?stage=graph', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1 });
     const strip = document.querySelector<HTMLElement>('.header-strip')!;
     expect(within(strip).getByRole('navigation', { name: 'Breadcrumb' })).toHaveClass('breadcrumb');

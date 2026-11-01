@@ -1,10 +1,14 @@
-// SpecificationRepository (LA-AUT-REPO05): loads and saves the Specification aggregate whole, in its own tables only. A
-// predicate or a specification test is reached through the specification that holds it.
-import { AggregateRepository, type InstanceRows } from '../../platform/data/repository.ts';
+// Generated from data/ by `npm run generate`. Do not edit.
+// SpecificationRepository (LA-AUT-REPO05): Loads a specification whole (its predicate and test, the aggregates it
+// reads, and what they meet, use and start from) from the transaction's draft and saves exactly the rows that changed,
+// in its aggregate's own tables only; a write to any other table is refused when it is made (`DataFiles`). A predicate
+// or test is loaded through the specification that holds it (`loadHolding`), and a removal is refused, naming what
+// references it, while anything left references it.
+import { AggregateRepository as Repository, type InstanceRows } from '../../platform/data/repository.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
-import { kindInside, SPECIFICATION_KINDS, SPECIFICATION_TABLES, specificationRows, specificationsFrom, type Specification, type SpecificationKind } from './model.ts';
+import { SPECIFICATION_TABLES, specificationRows, specificationsFrom, type Specification, type SpecificationKind } from './model.ts';
 
-export class SpecificationRepository extends AggregateRepository<Specification> {
+export class SpecificationRepository extends Repository<Specification> {
   constructor(tx: Transaction) {
     super(tx, 'SpecificationRepository', SPECIFICATION_TABLES);
   }
@@ -17,15 +21,30 @@ export class SpecificationRepository extends AggregateRepository<Specification> 
     return specificationRows(specification);
   }
 
-  /**
-   * Loads the specification that holds the record of the kind with this ID: the specification itself, or the one its
-   * predicate or test sits under. Undefined when there is no such record.
-   */
+  /** Loads the specification that holds the record of the kind with this ID, found up its parents; undefined when there is none. */
   loadHolding(kind: SpecificationKind, id: string): Specification | undefined {
+    const root = this.rootOf(kind, id);
+    const specification = root === undefined ? undefined : this.load(root);
+    return specification && holds(specification, kind, id) ? specification : undefined;
+  }
+
+  // The root's ID, up the parents of the record of the kind with this ID; undefined when one of them is missing.
+  private rootOf(kind: SpecificationKind, id: string): string | undefined {
     const row = this.files.find(kind, { id });
     if (!row) return undefined;
-    const column = SPECIFICATION_KINDS[kind];
-    const specification = this.load(column === null ? id : String(row[column]));
-    return specification && kindInside(specification, id) === kind ? specification : undefined;
+    switch (kind) {
+      case 'specification': return id;
+      case 'predicate': return this.rootOf('specification', String(row.specification_id));
+      case 'specification_test': return this.rootOf('specification', String(row.specification_id));
+    }
+  }
+}
+
+/** Whether the specification holds the record of the kind with this ID. */
+function holds(specification: Specification, kind: SpecificationKind, id: string): boolean {
+  switch (kind) {
+    case 'specification': return specification.root === id;
+    case 'predicate': return specification.predicate?.row.id === id;
+    case 'specification_test': return specification.test?.row.id === id;
   }
 }

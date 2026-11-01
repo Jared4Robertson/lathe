@@ -141,7 +141,7 @@ describe.skipIf(!prebuilt && !canBuild)('lathe serve', () => {
     expect(readFileSync(file, 'utf8')).toContain('A writer keeps a thought.');
   }, 30_000);
 
-  it('LA-PLT-EP02-R01-T01 GET /api/events opens an uncached event stream that starts connected', async () => {
+  it('LA-PAT-HTTP-STEPS-R07-T01 GET /api/events opens an uncached event stream that starts connected', async () => {
     const events = await fetch(`${BASE}/api/events`);
     expect(events.status).toBe(200);
     expect(events.headers.get('content-type')).toBe('text/event-stream');

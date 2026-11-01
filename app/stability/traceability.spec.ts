@@ -26,7 +26,7 @@ const repo = path.resolve(import.meta.dirname, '../..');
 const lathe = (...args: string[]) => execFileSync('node', [path.join(repo, 'lathe/bin/lathe.ts'), ...args, '--root', process.env.STABILITY_ROOT!], { stdio: 'pipe' }).toString();
 
 test.describe('Traceability flows', () => {
-  test('LA-TRC-UC09-FL01-T see each domain\'s coverage and the product\'s summary', async ({ page }) => {
+  test('LA-TRC-UC09-FL-T see each domain\'s coverage and the product\'s summary', async ({ page }) => {
     const spec = await servedWorkspace();
     await openPage(page, PRODUCT);
     const wiki = page.locator(WIKI);
@@ -58,7 +58,7 @@ test.describe('Traceability flows', () => {
     await expect(page.locator(`.header-strip h1`)).toHaveText('Traceability');
   });
 
-  test('LA-TRC-UC10-FL01-T trace a use case\'s row from its outcome to its tests on the Trace stage', async ({ page }) => {
+  test('LA-TRC-UC10-FL-T trace a use case\'s row from its outcome to its tests on the Trace stage', async ({ page }) => {
     const spec = await servedWorkspace();
     const useCase = String(rowsOf(spec, 'uc_requirement').find((r) => r.id === REQUIREMENT)!.use_case_id);
     const capability = String(rowsOf(spec, 'use_case').find((u) => u.id === useCase)!.capability_id);
@@ -97,7 +97,7 @@ test.describe('Traceability flows', () => {
     expect(lit.boxes.some((b) => b.row !== null && b.row !== useCase && b.strength < 1), 'the other rows faded').toBe(true);
   });
 
-  test('LA-TRC-UC11-FL01-T see every obligation kind and test state', async ({ page }) => {
+  test('LA-TRC-UC11-FL-T see every obligation kind and test state', async ({ page }) => {
     const spec = await servedWorkspace();
     const coverage = spec.coverage.find((c) => c.domain === TRC)!;
     // S01: a product, then a domain, with one coverage group per obligation kind it has.
@@ -121,7 +121,7 @@ test.describe('Traceability flows', () => {
     }
   });
 
-  test('LA-TRC-UC12-FL01-T see the pattern rules a domain owes', async ({ page }) => {
+  test('LA-TRC-UC12-FL-T see the pattern rules a domain owes', async ({ page }) => {
     const spec = await servedWorkspace();
     const followed = rowsOf(spec, 'follows').filter((l) => l.source_id === EXP).map((l) => String(l.target_id));
     expect(followed.length).toBeGreaterThan(0);
@@ -145,12 +145,16 @@ test.describe('Traceability flows', () => {
     await expect(wiki.getByRole('region', { name: `Followed in ${EXP}` })).toBeVisible();
     // S03: in the graph, the rules sit under the pattern; the wiki card beside it still lists its followers.
     await openPage(page, `/${pattern}?stage=graph`, '.focus-stage .graph-flow .graph-box');
-    const ids = await page.locator('.focus-stage .graph-flow .graph-box').evaluateAll((els) => els.map((e) => e.getAttribute('data-id')));
-    for (const r of rules) expect(ids).toContain(r.id);
+    // A pattern with many rules keeps them in one "pattern_rule" group under it; with few, each rule is drawn on its own.
+    const drawnIds = () => page.locator('.focus-stage .graph-flow .graph-box').evaluateAll((els) => els.map((e) => e.getAttribute('data-id')));
+    await expect.poll(async () => {
+      const ids = await drawnIds();
+      return ids.includes(`${pattern}/pattern_rule`) ? [] : rules.filter((r) => !ids.includes(String(r.id))).map((r) => r.id);
+    }).toEqual([]);
     await expect(page.locator(WIKI).getByRole('region', { name: `Followed in ${EXP}` })).toBeVisible();
   });
 
-  test('LA-TRC-UC13-FL01-T see tests by state with each domain\'s coverage', async ({ page }) => {
+  test('LA-TRC-UC13-FL-T see tests by state with each domain\'s coverage', async ({ page }) => {
     const spec = await servedWorkspace();
     const ofDomain = (id: string) => spec.coverage.find((c) => c.domain === id)!.tests;
     // S01: each domain card's tests by state.
@@ -169,7 +173,7 @@ test.describe('Traceability flows', () => {
     await expect(page.locator(`${WIKI} .coverage`).last().getByLabel('Tests by state')).toHaveText(`Tests ${testsText(ofDomain(TRC))}`);
   });
 
-  test('LA-TRC-UC14-FL01-T trace a record', async ({ page }) => {
+  test('LA-TRC-UC14-FL-T trace a record', async ({ page }) => {
     const restore = keepData();
     try {
       // The suite serves the code too, so the requirement is built; its test, made not automated yet, leaves it a gap to follow.
@@ -214,7 +218,7 @@ test.describe('Traceability flows', () => {
     }
   });
 
-  test('LA-TRC-UC20-FL01-T see the outcomes a record serves', async ({ page }) => {
+  test('LA-PAT-PAGE-STEPS-R01-T05 see the outcomes a record serves', async ({ page }) => {
     const spec = await servedWorkspace();
     // What each record serves, as the Serves reach works it out over Lathe's own data.
     const store = await openStore(path.resolve(import.meta.dirname, '../..'));

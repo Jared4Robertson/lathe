@@ -30,7 +30,7 @@ describe('reloading', () => {
     const first = await buildReference(root);
     expect(await buildReference(root)).toBe(first);
     const store = await openStore(root);
-    await run(store, 'product declare-product-kind', { name: 'memo', product_id: 'EX', label: 'Memo', description: 'A short note.', parent_kind: 'domain', stage: 'use-cases', obligation: false });
+    await run(store, 'product declare-product-kind', { name: 'memo', product_id: 'EX', label: 'Memo', description: 'A short note.', parent_kind: 'domain', stage: 'use-cases', obligation: false, complexity: 'essential' });
     await store.close();
     const next = await buildReference(root);
     expect(next).not.toBe(first);

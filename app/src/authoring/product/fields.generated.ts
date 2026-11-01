@@ -29,6 +29,7 @@ export const PRODUCT_FIELDS = {
     parent_kind: { kind: 'column', table: 'product_kind', column: 'parent_kind', required: true, clearable: false },
     stage: { kind: 'column', table: 'product_kind', column: 'stage', required: false, clearable: false },
     obligation: { kind: 'column', table: 'product_kind', column: 'obligation', required: true, clearable: false },
+    complexity: { kind: 'column', table: 'product_kind', column: 'complexity', required: true, clearable: false },
     id_pattern: { kind: 'column', table: 'product_kind', column: 'id_pattern', required: false, clearable: false },
     id_example: { kind: 'column', table: 'product_kind', column: 'id_example', required: false, clearable: false },
     title_form: { kind: 'column', table: 'product_kind', column: 'title_form', required: false, clearable: false },
@@ -41,6 +42,7 @@ export const PRODUCT_FIELDS = {
     parent_kind: { kind: 'column', table: 'product_kind', column: 'parent_kind', required: false, clearable: false },
     stage: { kind: 'column', table: 'product_kind', column: 'stage', required: false, clearable: true },
     obligation: { kind: 'column', table: 'product_kind', column: 'obligation', required: false, clearable: false },
+    complexity: { kind: 'column', table: 'product_kind', column: 'complexity', required: false, clearable: false },
     id_pattern: { kind: 'column', table: 'product_kind', column: 'id_pattern', required: false, clearable: true },
     id_example: { kind: 'column', table: 'product_kind', column: 'id_example', required: false, clearable: true },
     title_form: { kind: 'column', table: 'product_kind', column: 'title_form', required: false, clearable: true },
@@ -96,21 +98,5 @@ export const PRODUCT_FIELDS = {
   },
   '/api/product/remove-question': {
     id: { kind: 'column', table: 'question', column: 'id', required: true, clearable: false },
-  },
-  '/api/product/add-interface': {
-    id: { kind: 'column', table: 'interface', column: 'id', required: true, clearable: false },
-    title: { kind: 'column', table: 'interface', column: 'title', required: true, clearable: false },
-    product_id: { kind: 'column', table: 'interface', column: 'product_id', required: true, clearable: false },
-    kind: { kind: 'column', table: 'interface', column: 'kind', required: true, clearable: false },
-    description: { kind: 'column', table: 'interface', column: 'description', required: true, clearable: false },
-  },
-  '/api/product/change-interface': {
-    id: { kind: 'column', table: 'interface', column: 'id', required: true, clearable: false },
-    title: { kind: 'column', table: 'interface', column: 'title', required: false, clearable: false },
-    kind: { kind: 'column', table: 'interface', column: 'kind', required: false, clearable: false },
-    description: { kind: 'column', table: 'interface', column: 'description', required: false, clearable: false },
-  },
-  '/api/product/remove-interface': {
-    id: { kind: 'column', table: 'interface', column: 'id', required: true, clearable: false },
   },
 } as const satisfies Record<string, InputFields>;

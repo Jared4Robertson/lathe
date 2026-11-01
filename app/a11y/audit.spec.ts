@@ -15,7 +15,7 @@ import { showCard } from '../stability/measure';
 const GROUP = '/LA-EXP/technical-specification';
 
 /** What only a record's page in the wiki card draws: on a phone the card is a sheet the Reader opens. */
-const inCard = (ready: string) => ready.startsWith('[data-aggregate=') || ready === '.interface-flows';
+const inCard = (ready: string) => ready.startsWith('[data-aggregate=') || ready === '.interface-offers';
 
 /**
  * Opens the page and waits for `ready`: drawn, or only attached when it is the Trace's list, which sits visually hidden
@@ -32,7 +32,7 @@ async function open(page: Page, url: string, ready: string, state: 'visible' | '
 interface State { name: string; run: (page: Page) => Promise<void> }
 
 /** A flow step a row shows; an entity; a Shared record (in no domain). */
-const STEP = '/LA-EXP-UC12-FL01-S03';
+const STEP = '/LA-EXP-UC12-FL-S01';
 const ENTITY = '/LA-EXP-EN01';
 const SHARED = '/LA-PAT-APP-UX';
 
@@ -73,7 +73,7 @@ const PAGES: State[] = [
   { name: 'product page', url: PRODUCT, ready: '.header-strip h1' },
   { name: 'domain page', url: DOMAIN, ready: '.header-strip h1' },
   { name: 'record page', url: RECORD, ready: '.header-strip h1' },
-  { name: 'interface page', url: '/LA-IF03', ready: '.interface-flows' },
+  { name: 'interface page', url: '/LA-IF03', ready: '.interface-offers' },
   { name: 'business outcome page', url: '/LA-BO05', ready: '[data-aggregate="business-outcome"]' },
   { name: 'extension record page', url: '/LA-AUT-MOD10', ready: '[data-aggregate="extension-record"]' },
   { name: 'entry point page', url: '/LA-PLT-ENTRY01', ready: '[data-aggregate="entry-point"]' },
@@ -123,6 +123,12 @@ PAGES.push({ name: 'Trace stage, a row opened', run: async (page: Page) => {
   else await page.locator('.focus-stage .trace-list').getByRole('button', { name: /^Open/ }).first().click();
   await page.waitForTimeout(400);
 } });
+// A flow's page on an interface's tab: that interface's derived version of the flow, its gaps and refusal rules.
+PAGES.push({ name: 'flow page, on an interface\'s tab', run: async (page: Page) => {
+  await open(page, '/LA-AUT-UC06-FL', '[data-aggregate="use-case"] .flow-tabs');
+  await page.locator('[data-aggregate="use-case"] .flow-tabs').getByRole('tab').nth(1).click();
+  await page.waitForTimeout(400);
+} });
 // Changing records: the form generated from the schema (Edit and Add) and the question before a
 // removal with the store's refusal shown inline. None of them writes anything that stays: the
 // forms are not sent, and the store refuses the removal.
@@ -135,8 +141,8 @@ PAGES.push(
   { name: 'the add form, with its problems shown', run: async (page: Page) => {
     await open(page, RECORD, '[data-aggregate="use-case"]');
     const actions = page.getByRole('toolbar', { name: `Change ${RECORD.slice(1)}` });
-    await actions.getByRole('button', { name: 'Add…' }).click();
-    await actions.getByRole('group', { name: /Kinds to add/ }).getByRole('button', { name: 'UC requirement' }).click();
+    // A use case that has its flow can add one kind, a UC requirement, so its toolbar offers that lone button, not the Add… menu.
+    await actions.getByRole('button', { name: 'Add UC requirement' }).click();
     await page.getByRole('form').getByRole('button', { name: 'Add UC requirement' }).click();
     await page.getByRole('form').getByRole('alert').waitFor();
   } },

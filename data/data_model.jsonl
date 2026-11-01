@@ -12,6 +12,7 @@
 {"id":"LA-AUT-EN110-DM","title":"StorageRequirementRow","entity_id":"LA-AUT-EN110","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-AUT-EN111-DM","title":"StorageRequirementTestRow","entity_id":"LA-AUT-EN111","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-AUT-EN112-DM","title":"DataStoreRow","entity_id":"LA-AUT-EN112","file":"lathe/src/platform/data/tables.ts"}
+{"id":"LA-AUT-EN113-DM","title":"SlotRow","entity_id":"LA-AUT-EN113","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-AUT-EN12-DM","title":"UcRequirementRow","entity_id":"LA-AUT-EN12","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-AUT-EN13-DM","title":"PatternRow","entity_id":"LA-AUT-EN13","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-AUT-EN14-DM","title":"PatternRuleRow","entity_id":"LA-AUT-EN14","file":"lathe/src/platform/data/tables.ts"}
@@ -100,3 +101,5 @@
 {"id":"LA-PLT-EN27-DM","title":"WindowChat","entity_id":"LA-PLT-EN27","file":"desktop/src/window-chat/model.ts"}
 {"id":"LA-TRC-EN05-DM","title":"FollowsRow","entity_id":"LA-TRC-EN05","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-TRC-EN06-DM","title":"SettingValueRow","entity_id":"LA-TRC-EN06","file":"lathe/src/platform/data/tables.ts"}
+{"id":"LA-TRC-EN07-DM","title":"FillsRow","entity_id":"LA-TRC-EN07","file":"lathe/src/platform/data/tables.ts"}
+{"id":"LA-TRC-EN08-DM","title":"ProvidedByRow","entity_id":"LA-TRC-EN08","file":"lathe/src/platform/data/tables.ts"}

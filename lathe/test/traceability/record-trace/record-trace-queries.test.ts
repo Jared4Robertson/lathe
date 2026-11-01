@@ -17,7 +17,7 @@ const open: Store[] = [];
 afterEach(async () => { for (const s of open.splice(0)) await s.close(); });
 
 const coverage = (product: string, domain: string | null, provedBy: Record<string, string[]>, gaps: Coverage['gaps'] = []): Coverage => ({
-  product, domain, gaps, obligations: [], tests: { automated: 0, manual: 0, not_automated: 0 }, proved_by: provedBy, pattern_rules: [],
+  product, domain, gaps, obligations: [], tests: { automated: 0, manual: 0, not_automated: 0 }, proved_by: provedBy, pattern_rules: [], debt: [],
 });
 
 /** The two products with a test of EX's invariant, a use case with a requirement, and a test data set; and a run of the checks. */
@@ -30,6 +30,7 @@ async function data(run: Partial<CheckRun> = {}): Promise<ReadView> {
       { id: 'EX-LEND-UC01-R01', title: 'A lent tool is out', use_case_id: 'EX-LEND-UC01', statement: 'A lent tool MUST read as out.', group_name: 'Lending' },
     ],
     invariant_test: [{ id: 'EX-LEND-INV01-T', title: 'Two loans are refused', invariant_id: 'EX-LEND-INV01', level: 'unit', state: 'automated', file: 'test/loan.test.ts', when: 'A second loan of a tool is made.', then: 'It is refused.' }],
+    rule: [{ id: 'EX-LEND-INV01-RL', title: 'oneLoanPerTool', invariant_id: 'EX-LEND-INV01', file: 'src/loans.ts' }],
     test_data_set: [{ id: 'EX-LEND-TD01', title: 'One tool', domain_id: 'EX-LEND', environment: 'Memory.', records: 'One tool.', prepare: 'Seed it.', reset: 'Drop it.', description: 'One tool to lend.' }],
   }));
   open.push(store);
@@ -72,4 +73,16 @@ describe('LA-TRC-UC14-R07-T02 A record\'s trace gives an obligation\'s chain and
     expect(set.runBy).toBeNull();
     expect(() => runQuery(view, GET_RECORD_TRACE, { id: 'EX-NOPE' })).toThrow(StoreError);
   });
+
+  it('LA-TRC-UC14-R09-T01 reads a technical record: the obligations it builds, each with the tests that prove it and their states', async () => {
+    const view = await data({
+      chains: [{ obligation: 'EX-LEND-INV01', design: ['EX-LEND-A1'], build: ['EX-LEND-INV01-RL'], tests: ['EX-LEND-INV01-T'], files: [], links: [] }],
+      coverage: [coverage('EX', 'EX-LEND', { 'EX-LEND-INV01': ['EX-LEND-INV01-T'] })],
+    });
+    const rule = runQuery(view, GET_RECORD_TRACE, { id: 'EX-LEND-INV01-RL' }) as RecordTrace;
+    expect(rule.builds).toEqual([{ id: 'EX-LEND-INV01', tests: [{ id: 'EX-LEND-INV01-T', state: 'automated' }] }]);
+    const test = runQuery(view, GET_RECORD_TRACE, { id: 'EX-LEND-INV01-T' }) as RecordTrace;
+    expect(test.builds).toEqual([]);
+  });
 });
+

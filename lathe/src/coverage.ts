@@ -18,11 +18,13 @@
 // - proved: a test of it exists, automated or manual, at a level its test kind allows (ALLOWED_LEVELS), and an
 //   automated test's file exists and names the test's ID.
 // A pattern rule asks for proof only: it is owed by each domain that follows its pattern (owed_pattern_rules) and
-// proved there by its pattern rule test naming that domain.
+// proved there by its pattern rule test naming that domain. An obligation something outside the product provides
+// (provided_by) is built and proved through its provider, which stands in its proof list.
 //
 // Besides obligations, coverage reports the records short of a minimum, the "at least one" and "exactly one" rules
 // the schema leaves to the checks because records are written stage by stage (GAP_RULES): a use case with no flow, an
-// aggregate with no root, a command with no handler. The checks read the same views and tables.
+// aggregate with no root, a command with no handler; and the accidental debt, each fill: a hand-written technical
+// record that fills a pattern's slot (COVERAGE_DEBT_SQL). The checks read the same views and tables.
 import { sqlName, sqlString, type SchemaDescription, type Stage } from './platform/data/schema.ts';
 import { PACKAGE_FACTS_SQL, PACKAGE_GAP_SQL } from './trace/packages.ts';
 import { MEASURE_GAPS } from './trace/measures.ts';
@@ -69,7 +71,7 @@ export const OBLIGATION_COVERAGE: Readonly<Record<string, { designed: string; bu
     proved: 'One of its storage requirement tests.',
   },
   uc_requirement: {
-    designed: 'A step of each of its use case\'s flows fulfills it: one flow per interface the use case happens through, and at least one.',
+    designed: 'A step of its use case\'s flow fulfills it.',
     built:
       "Every record that carries out its fulfilling steps names a file that exists, and there is at least one: the handler of each command or query a step invokes, with the predicates and services of what that command or query checks, selects by or calls; and the adapter of each integration a step exchanges with. It also rests on those specifications and domain services, and is built only while each of them is.",
     proved: 'One of its use case tests.',
@@ -77,7 +79,7 @@ export const OBLIGATION_COVERAGE: Readonly<Record<string, { designed: string; bu
   view_requirement: { designed: 'By construction, under its view.', built: 'Every UI component that builds it names a file that exists, and there is at least one.', proved: 'One of its view tests.' },
   api_requirement: { designed: 'By construction, under its endpoint.', built: "Its endpoint's handler names a file that exists.", proved: 'One of its endpoint tests.' },
   pattern_rule: {
-    designed: 'Wherever it is owed: by each domain that follows its pattern, itself or through a use case.',
+    designed: 'Wherever it is owed: by each domain that follows its pattern, itself, through a use case, or through an interface that offers one of its use cases.',
     built: 'Not asked: proof only.',
     proved: 'Its pattern rule test naming the owing domain.',
   },
@@ -210,8 +212,8 @@ WHERE NOT EXISTS (SELECT 1 FROM uc_requirement r WHERE r.use_case_id = u.id) AND
   // Interaction design.
   gap('use-case-without-flow', 'interaction-design', ['use_case', 'flow'], 'A use case with no flow.',
     `SELECT u.id, 'Use case ' || u.id || ' has no flow.' AS message FROM use_case u WHERE NOT EXISTS (SELECT 1 FROM flow f WHERE f.use_case_id = u.id)`),
-  gap('interface-without-flow', 'interaction-design', ['interface', 'flow'], 'An interface no flow goes through.',
-    `SELECT i.id, 'Interface ' || i.id || ' has no flow: no use case happens through it yet.' AS message FROM interface i WHERE NOT EXISTS (SELECT 1 FROM flow f WHERE f.interface_id = i.id)`),
+  gap('interface-offers-nothing', 'interaction-design', ['interface', 'use_case'], 'An interface that offers no use case.',
+    `SELECT i.id, 'Interface ' || i.id || ' offers no use case yet.' AS message FROM interface i WHERE NOT EXISTS (SELECT 1 FROM offers o WHERE o.source_id = i.id)`),
   gap('flow-without-main-path', 'interaction-design', ['flow', 'flow_step'], 'A flow with no step on its main path.',
     `SELECT f.id, 'Flow ' || f.id || ' has no step on its main path.' AS message FROM flow f WHERE NOT EXISTS (SELECT 1 FROM flow_step s WHERE s.flow_id = f.id AND s.path = 'main')`),
   gap('endpoint-without-requirement', 'interaction-design', ['endpoint', 'api_requirement'], 'An endpoint with no API requirement.',
@@ -233,7 +235,9 @@ WHERE NOT EXISTS (SELECT 1 FROM persists p WHERE p.target_id = a.id)`),
   missingImpl('command-without-handler', 'command', 'Command', 'command_handler', 'command_id', 'command handler'),
   missingImpl('query-without-handler', 'query', 'Query', 'query_handler', 'query_id', 'query handler'),
   missingImpl('endpoint-without-handler', 'endpoint', 'Endpoint', 'endpoint_handler', 'endpoint_id', 'endpoint handler'),
-  missingImpl('integration-without-adapter', 'integration', 'Integration', 'adapter', 'integration_id', 'adapter'),
+  // An integration that only provides records (a platform, a dependency) is reached by nothing, so it needs no adapter.
+  missingImpl('integration-without-adapter', 'integration', 'Integration', 'adapter', 'integration_id', 'adapter',
+    `\n  AND (EXISTS (SELECT 1 FROM exchanges_with x WHERE x.target_id = r.id) OR NOT EXISTS (SELECT 1 FROM provided_by p WHERE p.target_id = r.id))`),
   // Every repository, reader and table names the data store it is kept in, and every data store keeps something.
   gap('stored-nowhere', 'technical-specification', ['repository', 'reader', 'table', 'data_store'], 'A repository, reader or table that names no data store.',
     `SELECT s.id, k.label || ' ' || s.id || ' names no data store: nothing says where its data lives.' AS message FROM stored_in_source s JOIN meta_kind k ON k.name = s.kind
@@ -280,7 +284,8 @@ WHERE r.kind IN (${list(UNTRACED_KINDS)}) AND NOT EXISTS (SELECT 1 FROM trace_li
  * - test_run (id, kind, parent_id, domain_id, level, state, file, level_allowed, backed): every test with its run by;
  *   backed says an automated test's file exists and names the test's ID (true for any other state).
  * - owed_pattern_rules (domain, id): the rules a domain owes. A domain follows a pattern when the domain itself follows
- *   it or one of its use cases does, and then owes every rule of the pattern, with no exception. The one answer to
+ *   it, one of its use cases does, or an interface that offers one of its use cases does (an interface's pattern says
+ *   how each step is carried out through it), and then owes every rule of the pattern, with no exception. The one answer to
  *   "does this rule apply here", which coverage and the app read.
  * - obligation_impl (obligation_id, impl_id, via_id): the technical records that implement each obligation, each one of
  *   the specific records that build it (OBLIGATION_COVERAGE says which), never any code near it; built means every one
@@ -288,8 +293,8 @@ WHERE r.kind IN (${list(UNTRACED_KINDS)}) AND NOT EXISTS (SELECT 1 FROM trace_li
  * - obligation_rests_on (obligation_id, needs_id): the specifications and domain services a UC requirement rests on,
  *   through the commands and queries its steps invoke; it is built only while each of them is.
  * - obligation_own_built (id, built): each obligation's own build, before what it rests on.
- * - uc_requirement_flow (id, flow_id, fulfilled): each UC requirement with each flow of its use case, and whether a
- *   step of that flow fulfills it; designed means every one does.
+ * - uc_requirement_flow (id, flow_id, fulfilled): each UC requirement with the flow of its use case, and whether a
+ *   step of that flow fulfills it; designed means it does.
  * - obligation_proof (obligation_id, test_id, domain_id, state, counts): the tests of each obligation; counts when it
  *   is automated or manual, at an allowed level and backed.
  * - coverage_owed (product, domain, id, kind): each obligation a domain, or the product outside every domain, owes.
@@ -324,6 +329,8 @@ WITH followers AS (
   SELECT s.domain_id AS domain, f.target_id AS pattern FROM follows f JOIN use_case u ON u.id = f.source_id JOIN record_scope s ON s.id = u.id
   UNION
   SELECT d.id AS domain, f.target_id AS pattern FROM follows f JOIN domain d ON d.id = f.source_id
+  UNION
+  SELECT s.domain_id AS domain, f.target_id AS pattern FROM follows f JOIN offers o ON o.source_id = f.source_id JOIN record_scope s ON s.id = o.target_id
 )
 SELECT DISTINCT f.domain, r.id FROM pattern_rule r JOIN followers f ON f.pattern = r.pattern_id;
 
@@ -378,11 +385,12 @@ FROM fulfills f JOIN invokes i ON i.source_id = f.source_id
 JOIN (SELECT source_id, target_id FROM checks UNION ALL SELECT source_id, target_id FROM selects_by UNION ALL SELECT source_id, target_id FROM calls) c ON c.source_id = i.target_id;
 
 -- Each obligation's own build: at least one of its specific technical records implements it, and every one names a
--- file that exists (an invariant has one, its rule).
+-- file that exists (an invariant has one, its rule); or something outside the product provides it (provided_by).
 CREATE OR REPLACE TABLE obligation_own_built AS
 SELECT o.id,
-  EXISTS (SELECT 1 FROM obligation_impl i WHERE i.obligation_id = o.id)
-    AND NOT EXISTS (SELECT 1 FROM obligation_impl i LEFT JOIN file_facts f ON f.record = i.impl_id WHERE i.obligation_id = o.id AND NOT coalesce(f.file_exists, false)) AS built
+  EXISTS (SELECT 1 FROM provided_by p WHERE p.source_id = o.id)
+  OR (EXISTS (SELECT 1 FROM obligation_impl i WHERE i.obligation_id = o.id)
+    AND NOT EXISTS (SELECT 1 FROM obligation_impl i LEFT JOIN file_facts f ON f.record = i.impl_id WHERE i.obligation_id = o.id AND NOT coalesce(f.file_exists, false))) AS built
 FROM obligation o;
 
 CREATE OR REPLACE TABLE obligation_proof AS
@@ -402,8 +410,8 @@ WITH proofs AS (
 SELECT *, state IN ('automated', 'manual') AND valid AS counts FROM proofs;
 
 -- Each obligation's chain, link by link, each from the record nearer the obligation to the one it leads to (part: the
--- column of its target). Design: a UC requirement's fulfilling steps, their flows, the views they happen in, what they
--- invoke and the integrations they exchange with; a constraint's value object, an invariant's aggregate, a policy's
+-- column of its target). Design: a UC requirement's fulfilling steps, their flows, what they invoke and the
+-- integrations they exchange with; a constraint's value object, an invariant's aggregate, a policy's
 -- command, a storage requirement's aggregate or read model; the commands and queries that call a domain service; the
 -- commands that check a specification and the queries that select by it. Build: what implements it (obligation_impl),
 -- and for a storage requirement the data store its repository or reader is stored in. Tests: its tests
@@ -412,7 +420,6 @@ CREATE OR REPLACE TABLE trace_link AS
 SELECT DISTINCT * FROM (
   SELECT f.target_id AS obligation_id, f.target_id AS source_id, s.flow_id AS target_id, 'design' AS part FROM fulfills f JOIN flow_step s ON s.id = f.source_id
   UNION ALL SELECT f.target_id, s.flow_id, s.id, 'design' FROM fulfills f JOIN flow_step s ON s.id = f.source_id
-  UNION ALL SELECT f.target_id, f.source_id, h.target_id, 'design' FROM fulfills f JOIN happens_in h ON h.source_id = f.source_id
   UNION ALL SELECT f.target_id, f.source_id, i.target_id, 'design' FROM fulfills f JOIN invokes i ON i.source_id = f.source_id
   UNION ALL SELECT f.target_id, f.source_id, x.target_id, 'design' FROM fulfills f JOIN exchanges_with x ON x.source_id = f.source_id
   UNION ALL SELECT id, id, value_object_id, 'design' FROM "constraint"
@@ -426,6 +433,7 @@ SELECT DISTINCT * FROM (
   UNION ALL SELECT obligation_id, coalesce(via_id, obligation_id), impl_id, 'build' FROM obligation_impl
   UNION ALL SELECT i.obligation_id, i.impl_id, d.target_id, 'build' FROM obligation_impl i JOIN storage_requirement s ON s.id = i.obligation_id JOIN stored_in d ON d.source_id = i.impl_id
   UNION ALL SELECT obligation_id, obligation_id, test_id, 'tests' FROM obligation_proof
+  UNION ALL SELECT p.source_id, p.source_id, p.target_id, 'build' FROM provided_by p JOIN obligation o ON o.id = p.source_id
 );
 
 CREATE OR REPLACE VIEW coverage_owed AS
@@ -433,12 +441,15 @@ SELECT s.product_id AS product, s.domain_id AS domain, o.id, o.kind FROM obligat
 UNION ALL
 SELECT s.product_id, p.domain, p.id, 'pattern_rule' FROM owed_pattern_rules p JOIN record_scope s ON s.id = p.domain;
 
--- The tests that count as each owed obligation's proof where it is owed: a pattern rule's only in the owing domain.
+-- The tests that count as each owed obligation's proof where it is owed: a pattern rule's only in the owing domain. A
+-- provided obligation is proved through its provider, which stands in its list.
 CREATE OR REPLACE TABLE coverage_proof AS
 SELECT o.product, o.domain, o.id, p.test_id
-FROM coverage_owed o JOIN obligation_proof p ON p.obligation_id = o.id AND p.counts AND (o.kind <> 'pattern_rule' OR p.domain_id = o.domain);
+FROM coverage_owed o JOIN obligation_proof p ON p.obligation_id = o.id AND p.counts AND (o.kind <> 'pattern_rule' OR p.domain_id = o.domain)
+UNION ALL
+SELECT o.product, o.domain, o.id, p.target_id FROM coverage_owed o JOIN provided_by p ON p.source_id = o.id;
 
--- Each UC requirement with each flow of its use case, and whether a step of that flow fulfills it.
+-- Each UC requirement with the flow of its use case, and whether a step of that flow fulfills it.
 CREATE OR REPLACE TABLE uc_requirement_flow AS
 SELECT q.id, f.id AS flow_id, EXISTS (SELECT 1 FROM fulfills l JOIN flow_step s ON s.id = l.source_id WHERE l.target_id = q.id AND s.flow_id = f.id) AS fulfilled
 FROM uc_requirement q JOIN flow f ON f.use_case_id = q.use_case_id;
@@ -515,6 +526,12 @@ SELECT * FROM missing;`;
 
 /** One row per scope and obligation kind, in scope order then kind order, including empty ones. */
 export const COVERAGE_COUNTS_SQL = `SELECT product, domain, kind, label, proof_only, total, designed, built, proved, not_automated FROM coverage_count ORDER BY product, domain NULLS LAST, ord`;
+
+/**
+ * Every fill, the accidental debt of each scope: (product, domain, id, slot), a hand-written technical record and the
+ * slot it fills, by record then slot.
+ */
+export const COVERAGE_DEBT_SQL = `SELECT s.product_id AS product, s.domain_id AS domain, f.source_id AS id, f.target_id AS slot FROM fills f JOIN record_scope s ON s.id = f.source_id ORDER BY product, domain NULLS LAST, id, slot`;
 
 /** Every gap: (product, domain, id, kind, missing, message), by record. */
 export const COVERAGE_GAPS_SQL = `SELECT product, domain, id, kind, missing, message FROM coverage_gap ORDER BY product, domain NULLS LAST, id, ord, missing, message`;

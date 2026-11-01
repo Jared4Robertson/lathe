@@ -17,8 +17,6 @@ export interface UseCaseReader {
   useCasesOf(capabilityId: string): UseCaseSummary[] | undefined;
   /** A capability's domain and product, or undefined when there is no such capability. */
   capability(id: string): { domain: string; product: string } | undefined;
-  /** A product's interfaces, by ID. */
-  interfacesOf(product: string): string[];
   /** The highest number in use after the prefix, as in <prefix>07, or 0 when none is. */
   highestAfter(prefix: string): number;
   /** How the IDs of a kind are written, read from the schema: its parents, and the letters and digits its ID ends in. */
@@ -51,10 +49,6 @@ export class InMemoryUseCaseReader implements UseCaseReader {
   capability(id: string): { domain: string; product: string } | undefined {
     const found = this.table.capabilities.get(id);
     return found && { domain: found.domain, product: found.product };
-  }
-
-  interfacesOf(product: string): string[] {
-    return this.table.interfaces.get(product) ?? [];
   }
 
   idShape(kind: string): IdShape {

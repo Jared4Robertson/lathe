@@ -1,22 +1,9 @@
 // The Entry point aggregate (LA-AUT-A20): a start-up file of a domain, with the packages it uses and the standard rules it meets. One instance is one
 // entry point, whole: its row, the package_use rows naming it and the meets links it starts, and nothing of another aggregate.
+import type { AggregateShape } from '../../platform/data/repository.ts';
 import { bySource, groupOf } from '../../platform/data/grouped.ts';
-import type { Row, Value } from '../../platform/data/rows.ts';
+import type { Row } from '../../platform/data/rows.ts';
 import type { EntryPointRow } from '../../platform/data/tables.ts';
-
-/**
- * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.
- * Only the columns named in `columns` are taken from the changes.
- */
-export function changed<R extends object>(row: R, changes: object, columns: readonly string[]): R {
-  const next = { ...row } as Record<string, unknown>;
-  for (const [column, value] of Object.entries(changes)) {
-    if (!columns.includes(column) || value === undefined) continue;
-    if (value === null) delete next[column];
-    else next[column] = value as Value;
-  }
-  return next as R;
-}
 
 /** One entry point, whole. */
 export interface EntryPoint {
@@ -31,6 +18,11 @@ export interface EntryPoint {
 
 /** The tables the aggregate keeps its rows in: its kind, the package_use rows naming it, and the meets links it starts. */
 export const ENTRY_POINT_TABLES = ['entry_point', 'package_use', 'meets'] as const;
+
+/** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
+export const ENTRY_POINT_SHAPE = {
+  entry_point: { at: 'entryPoint', lists: { meets: 'meets', packages: 'packages' } },
+} as const satisfies AggregateShape;
 
 /** The entry points in the data, each whole; only the one given, when given. */
 export function entryPointsFrom(rows: (table: string) => Row[], only?: string): EntryPoint[] {

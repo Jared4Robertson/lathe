@@ -5,7 +5,7 @@
 import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { type UseCaseKind } from './model.ts';
+import type { UseCaseKind } from './model.ts';
 import type { UseCasePage, UseCaseSummary } from './read-model.ts';
 import { useCaseReader, type UseCaseReader } from './reader.ts';
 import { GET_USE_CASE_IDENTITY, LIST_USE_CASES_IDENTITY, NEXT_USE_CASE_ID_IDENTITY } from './queries.generated.ts';
@@ -48,8 +48,8 @@ const KINDS: readonly string[] = ['use_case', 'uc_requirement', 'use_case_test',
 
 /**
  * The next free ID for a record of one of the aggregate's kinds under its parent: one past the highest in use. A use
- * case's starts with its capability's domain; a flow's ends in the number of the first interface of its product it has
- * no flow through yet; a flow has one flow test, whose ID is the flow's and T.
+ * case's starts with its capability's domain; a use case has one flow, whose ID is the use case's and FL, and a flow
+ * one flow test, whose ID is the flow's and T.
  */
 export function nextUseCaseId(reader: UseCaseReader, input: { kind: string; parent: string }): string {
   if (!KINDS.includes(input.kind)) refuse('kind', `${input.kind} is not a kind of the Use case aggregate; its kinds are ${KINDS.join(', ')}`);
@@ -66,18 +66,11 @@ export function nextUseCaseId(reader: UseCaseReader, input: { kind: string; pare
       return onePast(reader, `${input.parent}-${shape.letters}`, shape);
     case 'flow_step':
       return onePast(reader, `${input.parent}-${shape.letters}`, shape);
-    case 'flow_test': {
-      const testId = `${input.parent}-${shape.letters}`;
-      if (reader.kindOf(testId)) refuse('exists', `${input.parent} already has its flow test, ${testId}`);
-      return testId;
-    }
+    case 'flow_test':
     case 'flow': {
-      const useCase = getUseCase(reader, { id: input.parent });
-      const product = reader.capability(useCase.useCase.capability_id)!.product;
-      const through = new Set(useCase.flows.map((f) => f.flow.interface_id));
-      const free = reader.interfacesOf(product).filter((i) => !through.has(i))[0];
-      if (!free) refuse('exists', `${input.parent} has a flow through every interface of ${product}; a flow's ID ends in its interface's number, so declare the interface first`);
-      return `${input.parent}-${shape.letters}${/-IF(\d+)$/.exec(free!)![1]}`;
+      const one = `${input.parent}-${shape.letters}`;
+      if (reader.kindOf(one)) refuse('exists', `${input.parent} already has its ${kind === 'flow' ? 'flow' : 'flow test'}, ${one}`);
+      return one;
     }
   }
 }
@@ -105,12 +98,17 @@ function useCaseText(page: UseCasePage): string {
     for (const t of r.tests) lines.push(`  use case test ${t.test.id}: ${t.test.title} (${t.test.state})`);
   }
   for (const f of page.flows) {
-    lines.push(`Flow ${f.flow.id}: ${f.flow.title} (through ${f.flow.interface_id})`);
+    lines.push(`Flow ${f.flow.id}: ${f.flow.title}`);
     for (const s of f.paths.flatMap((p) => p.steps)) {
-      const links = [...s.fulfills.map((x) => `fulfills ${x}`), ...(s.invokes ? [`invokes ${s.invokes}`] : []), ...(s.happensIn ? [`happens in ${s.happensIn}`] : []), ...s.exchangesWith.map((x) => `exchanges with ${x}`)];
-      lines.push(`  ${s.step.path} ${s.step.position}. ${s.step.id}: ${s.step.title}${links.length ? ` [${links.join('; ')}]` : ''}`);
+      const links = [...s.fulfills.map((x) => `fulfills ${x}`), ...(s.invokes ? [`invokes ${s.invokes}`] : []), ...s.exchangesWith.map((x) => `exchanges with ${x}`)];
+      const variant = s.step.interface_id ? ` (only through ${s.step.interface_id})` : '';
+      lines.push(`  ${s.step.path} ${s.step.position}. ${s.step.id}: ${s.step.title}${variant}${links.length ? ` [${links.join('; ')}]` : ''}`);
     }
     if (f.test) lines.push(`  flow test ${f.test.test.id}: ${f.test.test.title} (${f.test.test.state})`);
+    for (const t of f.through) {
+      lines.push(`  through ${t.interface} (${t.kind}${t.actor ? `, by the ${t.actor}` : ''}):`);
+      for (const s of t.paths.flatMap((p) => p.steps)) lines.push(`    ${s.id}${s.reach.length ? ` in ${s.reach.join(', ')}` : ''}${s.unreached ? ' (not reached)' : ''}`);
+    }
   }
   return lines.join('\n');
 }

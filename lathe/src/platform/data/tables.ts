@@ -149,7 +149,7 @@ export interface QueryRow {
   description: string;
 }
 
-/** An HTTP endpoint that exposes exactly one command or query, its parent. Flow steps reach it through their command or query, never directly. */
+/** An HTTP endpoint that exposes exactly one command or query, its parent. A step that invokes it is carried out through it on an API interface: steps reach it through their command or query, never directly. */
 export interface EndpointRow {
   /** The endpoint's ID, such as TL-LEND-EP01. */
   id: string;
@@ -195,7 +195,23 @@ export interface UiComponentRow {
   description: string;
 }
 
-/** A screen or page a person uses. It has no owner: it exists because flow steps happen in it, and its product follows from its ID. */
+/** A way people or programs use the product, such as its web app, its HTTP API or its command line. It offers use cases (offers), is used by some of the product's roles (interface_actor rows) and follows the pattern that says how a step is carried out through it (follows): its version of each flow it offers is derived from that, never written. */
+export interface InterfaceRow {
+  /** The interface's ID: its product's ID and IF<nn>, such as TL-IF01. */
+  id: string;
+  /** The interface's name, such as Web app, HTTP API, CLI, MCP tools or Desktop app. */
+  title: string;
+  /** The product it belongs to. */
+  product_id: string;
+  /** What it is: web app or desktop (a step is carried out in the views that present its command or query), API (through the endpoint that exposes it), CLI or agent tools (by the product's own command or tool for it), or other. */
+  kind: "web app" | "API" | "CLI" | "agent tools" | "desktop" | "other";
+  /** Who uses it and how, in a sentence or two. */
+  description: string;
+  /** Whether people or programs outside the product build on it, so its contract is the product's own commitment: a public API's requirements are essential complexity, an internal one's (such as the API only the product's own app calls) accidental. */
+  public: boolean;
+}
+
+/** A screen or page a person uses. It has no owner: it exists because it presents commands and queries (presents), so a step that invokes one is carried out in it on a web app or desktop interface, and its product follows from its ID. */
 export interface ViewRow {
   /** The view's ID: the product prefix and V<nn>, such as TL-V01. */
   id: string;
@@ -203,6 +219,8 @@ export interface ViewRow {
   title: string;
   /** The address it is shown at, such as /catalog. */
   route?: string;
+  /** The one interface that shows it, such as the desktop app's Dock icon; none when every web app and desktop interface of its product shows it. */
+  interface_id?: string;
   /** What the view shows and lets a person do, in a paragraph. */
   description: string;
   /** Longer notes on the view. */
@@ -623,7 +641,7 @@ export interface EventTypeRow {
   file?: string;
 }
 
-/** An actor's goal: its actors (use_case_actor rows), its UC requirements and its flows, one per interface it happens through. It changes nothing itself; its flows' steps invoke commands and queries. */
+/** An actor's goal: its actors (use_case_actor rows), its UC requirements and its flow, the same through every interface that offers it. It changes nothing itself; its flow's steps invoke commands and queries. */
 export interface UseCaseRow {
   /** The use case's ID, such as TL-LEND-UC01. */
   id: string;
@@ -637,35 +655,19 @@ export interface UseCaseRow {
   notes?: string;
 }
 
-/** A way people or programs use the product, such as its web app, its HTTP API or its command line. A use case happens through one or more interfaces, with one flow for each, and the kind says what that flow's steps go through. */
-export interface InterfaceRow {
-  /** The interface's ID: its product's ID and IF<nn>, such as TL-IF01. Its number ends the ID of every flow through it. */
-  id: string;
-  /** The interface's name, such as Web app, HTTP API, CLI, MCP tools or Desktop app. */
-  title: string;
-  /** The product it belongs to. */
-  product_id: string;
-  /** What it is: web app or desktop (a flow's steps happen in views), API (they call endpoints, through the command or query each exposes), CLI or agent tools (they run commands and queries), or other. A step of an API, CLI or agent tools flow happens in no view. */
-  kind: "web app" | "API" | "CLI" | "agent tools" | "desktop" | "other";
-  /** Who uses it and how, in a sentence or two. */
-  description: string;
-}
-
-/** How its use case is carried out through one interface: the steps on its main path and its alternate paths. A use case has one flow per interface it happens through, and each flow belongs only to it. */
+/** How its use case is carried out, whatever the interface: the steps on its main path and its alternate paths. A use case has one flow, and each interface that offers the use case has its own version of it, derived from the steps' commands and queries by the interface's pattern. */
 export interface FlowRow {
-  /** The flow's ID: its use case's ID, FL and its interface's number, such as TL-LEND-UC01-FL01 for the flow through TL-IF01. */
+  /** The flow's ID: its use case's ID and FL, such as TL-LEND-UC01-FL. */
   id: string;
-  /** The flow's name, such as Borrow a tool at the desk. */
+  /** The flow's name: its use case's title, such as Borrow a tool. */
   title: string;
-  /** The use case it carries out. */
+  /** The use case it carries out, which has no other flow. */
   use_case_id: string;
-  /** The interface it goes through, of the same product; at most one flow per use case and interface. */
-  interface_id: string;
 }
 
-/** One step of a flow, in order on its path. It fulfills UC requirements of its own use case, invokes at most one command or query, happens in at most one view (only on a web app, desktop or other interface) and may exchange with integrations. */
+/** One step of a flow, in order on its path, in the words of the people who take it. It fulfills UC requirements of its own use case, invokes at most one command or query and may exchange with integrations; where it happens is its interface's, derived. A step only one interface can do is a variant: it names that interface. */
 export interface FlowStepRow {
-  /** The step's ID: its flow's ID and S<nn>, such as TL-LEND-UC01-FL01-S01. */
+  /** The step's ID: its flow's ID and S<nn>, such as TL-LEND-UC01-FL-S01. */
   id: string;
   /** What happens, in a few words. */
   title: string;
@@ -673,8 +675,10 @@ export interface FlowStepRow {
   flow_id: string;
   /** The path through the flow the step is on, such as main or refused. */
   path: string;
-  /** The step's place on its path, from 1. */
+  /** The step's place on its path, from 1, among every interface's steps; each interface's version skips the other interfaces' variants. */
   position: number;
+  /** The one interface that does this step, which makes it a variant, such as opening the app from the Dock; none when every interface that offers the use case does it. The interface offers the step's use case. */
+  interface_id?: string;
 }
 
 /** The flow step exchanges with the integration's outside system. */
@@ -689,9 +693,41 @@ export interface FedByRow {
   target_id: string;
 }
 
-/** A smoke test of its flow's main path, end to end, at the level that fits its interface: browser for a web app or desktop, system for an API, a CLI or agent tools. */
+/** Behavior several use cases share, stated once: a fixed part, the settings each use case that follows it fills in (its configuration, the known ways it varies) and its slots (the open-ended variation, filled with code against a contract). Its settings are pattern_setting rows, its rules pattern_rule records and its slots slot records. */
+export interface PatternRow {
+  /** The pattern's ID, such as TL-PAT-LIBRARIAN-ACTION. */
+  id: string;
+  /** The pattern's name, such as Librarian action. */
+  title: string;
+  /** The product it belongs to. */
+  product_id: string;
+  /** The shared behavior, in a paragraph. */
+  description: string;
+  /** Longer notes, such as how a domain or use case uses the pattern. */
+  notes?: string;
+}
+
+/** An open-ended part of a pattern, which neither its fixed part nor its settings can express: code fills it against its contract. A technical record that fills it, written by hand, is a fill (fills): accidental complexity recorded where it is owed, and debt until the pattern can derive it. */
+export interface SlotRow {
+  /** The slot's ID: its pattern's ID and SL<nn>, such as TL-PAT-LIBRARIAN-ACTION-SL01. */
+  id: string;
+  /** What fills it, in a few words, such as Refusal message. */
+  title: string;
+  /** The pattern it belongs to. */
+  pattern_id: string;
+  /** Its contract: what every fill MUST do, in one sentence. */
+  statement: string;
+}
+
+/** The accidental record (a technical record, an endpoint or a data store), written by hand or set up by hand, fills the pattern's slot against its contract: it is a fill, accidental complexity recorded where it is owed and counted as debt until the pattern can derive it. A record of a product's own accidental kind, such as a shared module, fills a slot the same way, with no declaration. */
+export interface FillsRow {
+  source_id: string;
+  target_id: string;
+}
+
+/** The use case's acceptance test: its flow's main path, end to end, through any one interface that offers the use case, at the level that fits that interface (browser for a web app or desktop, system for an API, a CLI or agent tools). How each other interface carries a step out is proved once per rule and domain by its pattern's rule tests, never per use case. */
 export interface FlowTestRow {
-  /** The test's ID: its flow's ID and T, such as TL-LEND-UC01-FL01-T. */
+  /** The test's ID: its flow's ID and T, such as TL-LEND-UC01-FL-T. */
   id: string;
   /** What the test shows, in a sentence. */
   title: string;
@@ -719,27 +755,13 @@ export interface FlowTestRow {
   notes?: string;
 }
 
-/** Behavior several use cases share, stated once with the settings each use case that follows it fills in. Its settings are pattern_setting rows and its rules pattern_rule records. */
-export interface PatternRow {
-  /** The pattern's ID, such as TL-PAT-LIBRARIAN-ACTION. */
-  id: string;
-  /** The pattern's name, such as Librarian action. */
-  title: string;
-  /** The product it belongs to. */
-  product_id: string;
-  /** The shared behavior, in a paragraph. */
-  description: string;
-  /** Longer notes, such as how a domain or use case uses the pattern. */
-  notes?: string;
-}
-
-/** The domain or use case follows the pattern, and gives a value for each of its settings in setting_value rows. */
+/** The domain, use case or interface follows the pattern, and gives a value for each of its settings in setting_value rows. An interface's pattern says how a step is carried out through it, and every domain with a use case the interface offers owes its rules. */
 export interface FollowsRow {
   source_id: string;
   target_id: string;
 }
 
-/** One rule a use case must follow, whatever the interface: a step of each of the use case's own flows fulfills it. A rule only one interface can meet is a view or API requirement instead. */
+/** One rule a use case must follow, whatever the interface: a step of the use case's own flow fulfills it. A rule only one interface can meet is a view or API requirement, or a rule of that interface's pattern, instead. */
 export interface UcRequirementRow {
   /** The requirement's ID: its use case's ID and R<nn>, such as TL-LEND-UC01-R01. */
   id: string;
@@ -759,8 +781,20 @@ export interface FulfillsRow {
   target_id: string;
 }
 
-/** The flow step happens in the view: at most one per step. */
-export interface HappensInRow {
+/** A dev script or config file outside the running product: a build, a generator, a watcher, or a config of the tools it is checked and tested with, such as a type checker's or a test runner's. Its title and file say what it is. */
+export interface ToolingRow {
+  /** The tooling record's ID: its domain's ID and TOOL<nn>, such as TL-LEND-TOOL01. */
+  id: string;
+  /** Its file's name, such as vitest.config.ts. */
+  title: string;
+  /** The domain whose code it builds, checks or tests. */
+  domain_id: string;
+  /** The script or config file, or the folder of them, from the product root; it may not exist yet. */
+  file?: string;
+}
+
+/** The tooling record (a generator) writes the accidental record (a technical record's code, or an endpoint's route) from the spec: the record is derived, never written by hand. A record of a product's own accidental kind, such as a shared module, is generated the same way, with no declaration. */
+export interface GeneratesRow {
   source_id: string;
   target_id: string;
 }
@@ -811,6 +845,16 @@ export interface IntegrationTestRow {
   then: string;
   /** Longer notes on the test, such as when to run it. */
   notes?: string;
+}
+
+/** One role that uses an interface, in order: a role of the interface's product. A step's actor through the interface is the first of its use case's actors the interface lists. */
+export interface InterfaceActorRow {
+  /** The interface. */
+  interface_id: string;
+  /** The role's place among the interface's roles, from 1. */
+  position: number;
+  /** The role, which the product names in its role rows. */
+  role_name: string;
 }
 
 /** A rule that holds for one aggregate on every change, enforced by its rule (rule) in the aggregate's code. Uniqueness across records (no two members share an email) is an invariant too, which a unique key of the table may back up. */
@@ -867,34 +911,14 @@ export interface MeasuredByRow {
   target_id: string;
 }
 
-/** A library of engineering rules that holds for the product's code, such as logging, error handling or naming. What follows one of its rules meets it. */
-export interface StandardRow {
-  /** The standard's ID, such as TL-STD-CODE. */
-  id: string;
-  /** The standard's name. */
-  title: string;
-  /** The product it belongs to. */
-  product_id: string;
-  /** What the standard covers, in a paragraph. */
-  description: string;
-}
-
-/** One rule of a standard. Technical records that follow it link to it with meets; its standard rule tests prove it. */
-export interface StandardRuleRow {
-  /** The rule's ID: its standard's ID and R<nn>, such as TL-STD-CODE-R01. */
-  id: string;
-  /** The rule in a few words. */
-  title: string;
-  /** The standard it belongs to. */
-  standard_id: string;
-  /** The rule, stated with MUST, MUST NOT, SHOULD or MAY. */
-  statement: string;
-  /** A short heading it is shown under among its siblings. */
-  group_name?: string;
-}
-
-/** The technical record follows the standard rule: it shows where the rule is applied, and designs it. */
+/** The technical record follows the rule: a standard rule, which it shows where the rule is applied and so designs; or a pattern rule it carries out, which is the essential record a generic piece of code (a shared component, an entry point, a build script) serves. */
 export interface MeetsRow {
+  source_id: string;
+  target_id: string;
+}
+
+/** The interface offers the use case, of its own product: its actors can carry it out there, and the interface has its own version of the use case's flow, derived by its pattern. */
+export interface OffersRow {
   source_id: string;
   target_id: string;
 }
@@ -1029,6 +1053,12 @@ export interface PredicateRow {
   file?: string;
 }
 
+/** The view presents the command or query: a person sends the command or asks the query there, so a step that invokes it is carried out in the view on a web app or desktop interface. */
+export interface PresentsRow {
+  source_id: string;
+  target_id: string;
+}
+
 /** A kind a product adds to Lathe's, such as a report or a CLI command. Its records sit under one parent kind, and its fields are product_kind_field rows. */
 export interface ProductKindRow {
   /** The kind's name, in lower case with underscores, which is also its table's name; it must not be a table Lathe already has. */
@@ -1043,7 +1073,7 @@ export interface ProductKindRow {
   parent_kind: string;
   /** The stage its records belong to, any of the six, if one; such as technical-specification for a kind of code Lathe has no kind for. */
   stage?: "discovery" | "domain-model" | "use-cases" | "interaction-design" | "technical-specification" | "test-plan";
-  /** Whether a record of the kind is an obligation, to be designed, built and proved. An obligation kind joins the obligation supertype. */
+  /** Whether a record of the kind is an obligation, to be designed, built and proved. An obligation kind joins the obligation supertype, and the records something outside the product may provide (provided_by_source). */
   obligation: boolean;
   /** How its IDs are written, its own pattern, such as <command>-CLI. */
   id_pattern?: string;
@@ -1051,6 +1081,8 @@ export interface ProductKindRow {
   id_example?: string;
   /** For a code-bound kind, how its titles are written (meta_kind_title): identifier, invocation or kebab-case; none for a kind titled in words. */
   title_form?: "identifier" | "invocation" | "kebab-case";
+  /** Whether its records are essential complexity (what the problem itself demands, such as a report the product's people read), accidental (what comes from the means of building it, such as a kind of code), or as-parent: as the record they sit under. Never mixed: a kind that would hold both is two kinds. */
+  complexity: "essential" | "accidental" | "as-parent" | "by-type" | "by-interface";
 }
 
 /** One typed field of a product kind, in order: a column of its table. */
@@ -1099,6 +1131,8 @@ export interface ProductSettingRow {
   max_children: number;
   /** The most entities an aggregate should have before aggregate-too-large warns; the default is 7. */
   max_entities_per_aggregate: number;
+  /** The words, besides Lathe's own, that name technology in this product's essential records, which accidental-in-essential warns of, such as the name of a framework the product is built with; none by default. */
+  technology_words: string[];
 }
 
 /** Fills its read model's table and keeps it current, from events or as a view's query. It writes only its own read model's table. */
@@ -1115,7 +1149,7 @@ export interface ProjectionRow {
   description: string;
 }
 
-/** The data store is a service someone else runs, which the user must provide, reached through the integration: a managed database or a bucket. A store the product owns outright, such as a local file or browser storage, has none. */
+/** The record is provided by something outside the product, which decides it once for everyone who uses it: a dependency, a platform or a generic subdomain, reached through an integration or named by a record of a product's own kind (a component of a design system), once the product adds that pair with a product_relation named provided_by. A data store someone else runs, such as a managed database or a bucket, is provided by the integration that reaches it; a store the product owns outright, such as a local file, has none. A provided record counts as accounted for, and a provided obligation as built and proved, through its provider. One provider per record. */
 export interface ProvidedByRow {
   source_id: string;
   target_id: string;
@@ -1279,6 +1313,34 @@ export interface SpecificationTestRow {
   notes?: string;
 }
 
+/** A library of rules that holds across the product, such as exact money, a latency budget, logging, error handling or naming. Its type says whether its rules are essential (a quality) or accidental (engineering). What follows one of its rules meets it. */
+export interface StandardRow {
+  /** The standard's ID, such as TL-STD-CODE. */
+  id: string;
+  /** The standard's name. */
+  title: string;
+  /** The product it belongs to. */
+  product_id: string;
+  /** quality: what the product's people need of it whatever it is built with, such as exact money, auditability or a latency budget (essential); engineering: how it is built, such as logging, naming or how code is laid out (accidental). */
+  type: "quality" | "engineering";
+  /** What the standard covers, in a paragraph. */
+  description: string;
+}
+
+/** One rule of a standard. Technical records that follow it link to it with meets; its standard rule tests prove it. */
+export interface StandardRuleRow {
+  /** The rule's ID: its standard's ID and R<nn>, such as TL-STD-CODE-R01. */
+  id: string;
+  /** The rule in a few words. */
+  title: string;
+  /** The standard it belongs to. */
+  standard_id: string;
+  /** The rule, stated with MUST, MUST NOT, SHOULD or MAY. */
+  statement: string;
+  /** A short heading it is shown under among its siblings. */
+  group_name?: string;
+}
+
 /** Proves its standard rule in the product's code, such as a scan of the code for what the rule forbids or a test of a place that follows it. */
 export interface StandardRuleTestRow {
   /** The test's ID: its standard rule's ID and T<nn>, such as TL-STD-CODE-R01-T01. */
@@ -1429,18 +1491,6 @@ export interface TableKeyRow {
   condition?: string;
 }
 
-/** A dev script or config file outside the running product: a build, a generator, a watcher, or a config of the tools it is checked and tested with, such as a type checker's or a test runner's. Its title and file say what it is. */
-export interface ToolingRow {
-  /** The tooling record's ID: its domain's ID and TOOL<nn>, such as TL-LEND-TOOL01. */
-  id: string;
-  /** Its file's name, such as vitest.config.ts. */
-  title: string;
-  /** The domain whose code it builds, checks or tests. */
-  domain_id: string;
-  /** The script or config file, or the folder of them, from the product root; it may not exist yet. */
-  file?: string;
-}
-
 /** One actor of a use case, in order: a role of the use case's product. */
 export interface UseCaseActorRow {
   /** The use case. */
@@ -1563,6 +1613,7 @@ export interface TableRows {
   endpoint: EndpointRow;
   api_requirement: ApiRequirementRow;
   ui_component: UiComponentRow;
+  interface: InterfaceRow;
   view: ViewRow;
   view_requirement: ViewRequirementRow;
   builds: BuildsRow;
@@ -1592,28 +1643,30 @@ export interface TableRows {
   event_handler: EventHandlerRow;
   event_type: EventTypeRow;
   use_case: UseCaseRow;
-  interface: InterfaceRow;
   flow: FlowRow;
   flow_step: FlowStepRow;
   exchanges_with: ExchangesWithRow;
   fed_by: FedByRow;
-  flow_test: FlowTestRow;
   pattern: PatternRow;
+  slot: SlotRow;
+  fills: FillsRow;
+  flow_test: FlowTestRow;
   follows: FollowsRow;
   uc_requirement: UcRequirementRow;
   fulfills: FulfillsRow;
-  happens_in: HappensInRow;
+  tooling: ToolingRow;
+  generates: GeneratesRow;
   has_many: HasManyRow;
   has_one: HasOneRow;
   hears: HearsRow;
   integration_test: IntegrationTestRow;
+  interface_actor: InterfaceActorRow;
   invariant: InvariantRow;
   invariant_test: InvariantTestRow;
   invokes: InvokesRow;
   measured_by: MeasuredByRow;
-  standard: StandardRow;
-  standard_rule: StandardRuleRow;
   meets: MeetsRow;
+  offers: OffersRow;
   package_use: PackageUseRow;
   pattern_rule: PatternRuleRow;
   pattern_rule_test: PatternRuleTestRow;
@@ -1622,6 +1675,7 @@ export interface TableRows {
   persists: PersistsRow;
   policy_test: PolicyTestRow;
   predicate: PredicateRow;
+  presents: PresentsRow;
   product_kind: ProductKindRow;
   product_kind_field: ProductKindFieldRow;
   product_relation: ProductRelationRow;
@@ -1641,6 +1695,8 @@ export interface TableRows {
   service: ServiceRow;
   setting_value: SettingValueRow;
   specification_test: SpecificationTestRow;
+  standard: StandardRow;
+  standard_rule: StandardRuleRow;
   standard_rule_test: StandardRuleTestRow;
   test_data_set: TestDataSetRow;
   starts_from: StartsFromRow;
@@ -1649,7 +1705,6 @@ export interface TableRows {
   stored_in: StoredInRow;
   table: TableRow;
   table_key: TableKeyRow;
-  tooling: ToolingRow;
   use_case_actor: UseCaseActorRow;
   use_case_test: UseCaseTestRow;
   value_object_field: ValueObjectFieldRow;

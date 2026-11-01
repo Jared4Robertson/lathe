@@ -45,7 +45,6 @@ export const USE_CASE_FIELDS = {
     id: { kind: 'column', table: 'flow', column: 'id', required: true, clearable: false },
     title: { kind: 'column', table: 'flow', column: 'title', required: true, clearable: false },
     use_case_id: { kind: 'column', table: 'flow', column: 'use_case_id', required: true, clearable: false },
-    interface_id: { kind: 'column', table: 'flow', column: 'interface_id', required: true, clearable: false },
   },
   '/api/use-case/change-flow': {
     id: { kind: 'column', table: 'flow', column: 'id', required: true, clearable: false },
@@ -60,9 +59,9 @@ export const USE_CASE_FIELDS = {
     flow_id: { kind: 'column', table: 'flow_step', column: 'flow_id', required: true, clearable: false },
     path: { kind: 'column', table: 'flow_step', column: 'path', required: true, clearable: false },
     position: { kind: 'column', table: 'flow_step', column: 'position', required: true, clearable: false },
+    interface_id: { kind: 'column', table: 'flow_step', column: 'interface_id', required: false, clearable: false },
     fulfills: { kind: 'ids', description: 'The UC requirements of its own use case it fulfills.', required: false, clearable: false },
     invokes: { kind: 'id', description: 'The command or query it invokes, if any.', required: false, clearable: false },
-    happens_in: { kind: 'id', description: 'The view it happens in, if any: only on a web app, desktop or other interface.', required: false, clearable: false },
     exchanges_with: { kind: 'ids', description: 'The integrations it exchanges with.', required: false, clearable: false },
   },
   '/api/use-case/change-flow-step': {
@@ -70,9 +69,9 @@ export const USE_CASE_FIELDS = {
     title: { kind: 'column', table: 'flow_step', column: 'title', required: false, clearable: false },
     path: { kind: 'column', table: 'flow_step', column: 'path', required: false, clearable: false },
     position: { kind: 'column', table: 'flow_step', column: 'position', required: false, clearable: false },
+    interface_id: { kind: 'column', table: 'flow_step', column: 'interface_id', required: false, clearable: true },
     fulfills: { kind: 'ids', description: 'The UC requirements of its own use case it fulfills.', required: false, clearable: false },
     invokes: { kind: 'id', description: 'The command or query it invokes, if any.', required: false, clearable: true },
-    happens_in: { kind: 'id', description: 'The view it happens in, if any: only on a web app, desktop or other interface.', required: false, clearable: true },
     exchanges_with: { kind: 'ids', description: 'The integrations it exchanges with.', required: false, clearable: false },
   },
   '/api/use-case/remove-flow-step': {

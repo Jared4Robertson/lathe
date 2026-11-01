@@ -5,6 +5,7 @@
 //
 // These are refusals only: broken data. What is merely missing ("at least one", "nothing uses it") is the checks'
 // to report, because records are written stage by stage.
+import { ESSENTIAL_WORDS, wordGroupOf } from '../../essential.ts';
 import { isLeadColumn } from '../../lead.ts';
 import { sqlName, sqlString, type SchemaDescription } from './schema.ts';
 
@@ -22,7 +23,16 @@ export interface IntegrityQuery {
  *   owner;
  * - link (relation, source_id, target_id): every link of every relation;
  * - record_group (id, label): every record that names a group among its siblings, with the group as written: a flow
- *   step's path, and the group_name of every kind that has one, Lathe's and a product's own alike.
+ *   step's path, and the group_name of every kind that has one, Lathe's and a product's own alike;
+ * - record_text (id, kind, title, lead_column, lead): every record's title and lead text, with the lead's column
+ *   (statement, goal, meaning or description), or nulls for a kind with none;
+ * - record_complexity (id, kind, complexity): every record but an open question, essential or accidental: by its kind
+ *   (meta_kind.complexity), or for an as-parent kind (a test, a standard rule) as the nearest record above it that is
+ *   not, for a standard by its type (quality is essential, engineering accidental), and for an API requirement by
+ *   its product's interfaces (essential when the product has a public API interface, otherwise accidental);
+ * - essential_word_group (kind, word_group) and essential_word (word_group, word): the group each kind's essential
+ *   records are read in for technology, and Lathe's words each group has no business with (essential.ts), which
+ *   accidental-in-essential reads as the write refusal does.
  */
 export function storeViewsSql(schema: SchemaDescription): string {
   const kinds = Object.values(schema.kinds).sort((a, b) => a.name.localeCompare(b.name));
@@ -39,13 +49,52 @@ export function storeViewsSql(schema: SchemaDescription): string {
       .filter((k) => schema.tables[k.name].columns.some((c) => c.name === 'group_name'))
       .map((k) => `SELECT id, group_name::VARCHAR FROM ${sqlName(k.name)} WHERE group_name IS NOT NULL`),
   ];
+  const texts = kinds.map((k) => {
+    const lead = schema.tables[k.name].columns.find((c) => isLeadColumn(c.name));
+    return `SELECT id, ${sqlString(k.name)} AS kind, title, ${lead ? sqlString(lead.name) : 'NULL'}::VARCHAR AS lead_column, ${lead ? sqlName(lead.name) : 'NULL'}::VARCHAR AS lead FROM ${sqlName(k.name)}`;
+  });
+  const wordGroups = kinds.flatMap((k) => {
+    const group = wordGroupOf(k);
+    return group ? [`(${sqlString(k.name)}, ${sqlString(group)})`] : [];
+  });
+  const words = ESSENTIAL_WORDS.map((w) => `(${sqlString(w.group)}, ${sqlString(w.word)})`);
   return `
+CREATE OR REPLACE VIEW essential_word_group AS
+SELECT * FROM (VALUES ${wordGroups.join(', ')}) t (kind, word_group);
+CREATE OR REPLACE VIEW essential_word AS
+SELECT * FROM (VALUES ${words.join(', ')}) t (word_group, word);
 CREATE OR REPLACE VIEW record_parent AS
 ${parents.join('\nUNION ALL ')};
 CREATE OR REPLACE VIEW link AS
 ${links.join('\nUNION ALL ')};
 CREATE OR REPLACE VIEW record_group AS
 ${groups.join('\nUNION ALL ')};
+CREATE OR REPLACE VIEW record_text AS
+${texts.join('\nUNION ALL ')};
+CREATE OR REPLACE VIEW record_complexity AS
+WITH RECURSIVE up (id, above) AS (
+  SELECT id, id FROM record_parent
+  UNION ALL
+  SELECT up.id, p.parent_id FROM up JOIN record_parent p ON p.id = up.above JOIN meta_kind k ON k.name = p.kind
+  WHERE k.complexity = 'as-parent' AND p.parent_id IS NOT NULL
+),
+by_interface (id, above) AS (
+  SELECT r.id, r.parent_id FROM record_parent r JOIN meta_kind k ON k.name = r.kind WHERE k.complexity = 'by-interface'
+  UNION ALL
+  SELECT b.id, p.parent_id FROM by_interface b JOIN record_parent p ON p.id = b.above WHERE p.parent_id IS NOT NULL
+),
+public_api AS (
+  SELECT DISTINCT b.id FROM by_interface b JOIN interface i ON i.product_id = b.above WHERE i.public AND i.kind = 'API'
+)
+SELECT up.id, r.kind,
+  CASE k.complexity
+    WHEN 'by-type' THEN CASE s.type WHEN 'quality' THEN 'essential' ELSE 'accidental' END
+    WHEN 'by-interface' THEN CASE WHEN pa.id IS NOT NULL THEN 'essential' ELSE 'accidental' END
+    ELSE k.complexity::VARCHAR END AS complexity
+FROM up JOIN record_parent a ON a.id = up.above JOIN meta_kind k ON k.name = a.kind JOIN record_parent r ON r.id = up.id
+LEFT JOIN standard s ON s.id = a.id
+LEFT JOIN public_api pa ON pa.id = a.id
+WHERE k.complexity IS NOT NULL AND k.complexity <> 'as-parent';
 `;
 }
 
@@ -97,7 +146,7 @@ placed (id, product_id, domain_id, aggregate_id) AS (
 used (id, domain_id) AS (
   ${uses.join('\n  UNION ALL ')}
   UNION ALL
-  SELECT r.source_id, s.domain_id FROM renders r JOIN happens_in h ON h.target_id = r.target_id JOIN placed s ON s.id = h.source_id
+  SELECT r.source_id, s.domain_id FROM renders r JOIN presents h ON h.source_id = r.target_id JOIN placed s ON s.id = h.target_id
 ),
 derived (id, domain_id) AS (
   SELECT id, min(domain_id) FROM used WHERE domain_id IS NOT NULL GROUP BY id HAVING count(DISTINCT domain_id) = 1
@@ -126,17 +175,17 @@ export function recordScopeColumns(schema: SchemaDescription): Map<string, strin
   read('domain', 'product_id');
   for (const u of USED_BY) read(u.table, u.user, u.used);
   read('renders', 'source_id', 'target_id');
-  read('happens_in', 'source_id', 'target_id');
+  read('presents', 'source_id', 'target_id');
   return new Map([...columns].map(([table, set]) => [table, [...set]]));
 }
 
 /**
  * How a domain uses a record with no owner (record_scope): each row of the table names a user, placed in its domain
- * through its parents, and the record it uses. A UI component is used through the views it renders, by the flow
- * steps that happen in them.
+ * through its parents, and the record it uses. A view is used by the commands and queries it presents, and a UI component
+ * through the views it renders.
  */
 const USED_BY: { table: string; user: string; used: string }[] = [
-  { table: 'happens_in', user: 'source_id', used: 'target_id' },
+  { table: 'presents', user: 'target_id', used: 'source_id' },
   { table: 'exchanges_with', user: 'source_id', used: 'target_id' },
   { table: 'entity_field', user: 'entity_id', used: 'type_value_object_id' },
   { table: 'event_field', user: 'domain_event_id', used: 'type_value_object_id' },
@@ -311,6 +360,14 @@ SELECT kind AS table_name, id AS row_key,
 FROM titled WHERE regexp_matches(title, '\\.\\s*$')`,
     },
   ];
+  queries.push({
+    name: 'fill-is-hand-written',
+    description: 'A record that fills a slot is written by hand: no tooling record generates it, since a generated record is derived and a fill is not.',
+    sql: `
+SELECT 'fills' AS table_name, f.source_id || chr(0) || f.target_id AS row_key,
+       f.source_id || ' cannot fill ' || f.target_id || ': ' || g.source_id || ' generates it, so it is derived, and a fill is written by hand; drop the fill, or the generates link if it is written by hand' AS message
+FROM fills f JOIN generates g ON g.target_id = f.source_id`,
+  });
   const formed = kinds.filter((k) => k.titleForm);
   if (formed.length) {
     queries.push({

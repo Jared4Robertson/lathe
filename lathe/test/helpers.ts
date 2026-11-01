@@ -147,9 +147,18 @@ export function adding(data: Data, more: Data): Data {
   return copy;
 }
 
-/** A copy of the data with the rows matching a test removed from a table. */
+/** The links that account for accidental records (complete()'s): a test that removes a record drops them with it. */
+const ACCOUNTING = ['generates', 'fills', 'provided_by'];
+
+/**
+ * A copy of the data with the rows matching a test removed from a table, and the accounting links (ACCOUNTING) that
+ * name a record removed, so a test that takes away a technical record need not take its accounting with it.
+ */
 export function without(data: Data, table: string, match: (row: Row) => boolean): Data {
-  return { ...structuredClone(data), [table]: (data[table] ?? []).filter((r) => !match(r)) };
+  const copy = { ...structuredClone(data), [table]: (data[table] ?? []).filter((r) => !match(r)) };
+  const gone = new Set((data[table] ?? []).filter(match).map((r) => r.id).filter((id) => typeof id === 'string'));
+  if (gone.size) for (const link of ACCOUNTING) if (link !== table && copy[link]) copy[link] = copy[link].filter((r) => !gone.has(r.source_id as string) && !gone.has(r.target_id as string));
+  return copy;
 }
 
 /** A copy of the data with the rows of a table matching a test changed; a change to undefined leaves the column out. */
@@ -228,22 +237,30 @@ export function complete(): Data {
     pattern: [{ id: 'EX-PAT-ACT', title: 'Librarian action', product_id: 'EX', description: 'An action the librarian takes at the desk.' }],
     pattern_setting: [{ pattern_id: 'EX-PAT-ACT', position: 1, name: 'record', meaning: 'The record the action saves.' }],
     pattern_rule: [{ id: 'EX-PAT-ACT-R01', title: 'A saved record reads the same', pattern_id: 'EX-PAT-ACT', statement: 'A saved record MUST read the same everywhere.' }],
+    slot: [{ id: 'EX-PAT-ACT-SL01', title: 'Saving rule', pattern_id: 'EX-PAT-ACT', statement: 'A fill MUST refuse what its record does not allow before anything is saved.' }],
 
-    interface: [{ id: 'EX-IF01', title: 'Web app', product_id: 'EX', kind: 'web app', description: 'The desk app the librarian uses.' }],
+    interface: [{ id: 'EX-IF01', title: 'Web app', product_id: 'EX', kind: 'web app', description: 'The desk app the librarian uses.', public: false }],
+    interface_actor: [
+      { interface_id: 'EX-IF01', position: 1, role_name: 'Member' },
+      { interface_id: 'EX-IF01', position: 2, role_name: 'Librarian' },
+    ],
     flow: [
-      { id: 'EX-LEND-UC01-FL01', title: 'Borrow a tool in the web app', use_case_id: 'EX-LEND-UC01', interface_id: 'EX-IF01' },
-      { id: 'EX-LEND-UC02-FL01', title: 'Add a tool in the web app', use_case_id: 'EX-LEND-UC02', interface_id: 'EX-IF01' },
+      { id: 'EX-LEND-UC01-FL', title: 'Borrow a tool', use_case_id: 'EX-LEND-UC01' },
+      { id: 'EX-LEND-UC02-FL', title: 'Add a tool', use_case_id: 'EX-LEND-UC02' },
     ],
     flow_step: [
-      { id: 'EX-LEND-UC01-FL01-S01', title: 'Borrow a tool', flow_id: 'EX-LEND-UC01-FL01', path: 'main', position: 1 },
-      { id: 'EX-LEND-UC01-FL01-S02', title: 'See the loan', flow_id: 'EX-LEND-UC01-FL01', path: 'main', position: 2 },
-      { id: 'EX-LEND-UC02-FL01-S01', title: 'Add a tool', flow_id: 'EX-LEND-UC02-FL01', path: 'main', position: 1 },
+      { id: 'EX-LEND-UC01-FL-S01', title: 'Borrow a tool', flow_id: 'EX-LEND-UC01-FL', path: 'main', position: 1 },
+      { id: 'EX-LEND-UC01-FL-S02', title: 'See the loan', flow_id: 'EX-LEND-UC01-FL', path: 'main', position: 2 },
+      { id: 'EX-LEND-UC02-FL-S01', title: 'Add a tool', flow_id: 'EX-LEND-UC02-FL', path: 'main', position: 1 },
     ],
     view: [{ id: 'EX-V01', title: 'Catalog', route: '/catalog', description: 'Every tool, with whether it is free.' }],
     view_requirement: [{ id: 'EX-V01-R01', title: 'Free tools first', view_id: 'EX-V01', statement: 'The catalog MUST list free tools first.' }],
     endpoint: [{ id: 'EX-LEND-EP01', title: 'POST /loans', command_id: 'EX-LEND-CMD01', method: 'POST', route: '/loans', description: 'Takes a member and a tool; answers 201 with the loan.' }],
     api_requirement: [{ id: 'EX-LEND-EP01-R01', title: 'Unknown tool', endpoint_id: 'EX-LEND-EP01', statement: 'An unknown tool MUST give 404.' }],
-    integration: [{ id: 'EX-INT01', title: 'Mail', system: 'Mail service', description: 'Reminders sent to members.' }],
+    integration: [
+      { id: 'EX-INT01', title: 'Mail', system: 'Mail service', description: 'Reminders sent to members.' },
+      { id: 'EX-INT02', title: 'Platform', system: 'The platform the library is built on', description: 'The runtime, storage engine, code generator and lint rules the code is built with, decided once outside the library.' },
+    ],
 
     repository: [
       { id: 'EX-LEND-REPO01', title: 'Loans', domain_id: 'EX-LEND', file: 'src/store.ts', description: 'Keeps loans in the loans table.' },
@@ -296,7 +313,8 @@ export function complete(): Data {
     ui_component: [{ id: 'EX-UI01', title: 'CatalogPage', file: 'web/catalog.tsx', description: 'The catalog page.' }],
     endpoint_handler: [{ id: 'EX-LEND-EP01-H', title: 'postLoan', endpoint_id: 'EX-LEND-EP01', file: 'src/router.ts', description: 'Reads the body and calls openLoan.' }],
     adapter: [{ id: 'EX-INT01-AD', title: 'mailer', integration_id: 'EX-INT01', file: 'src/mail.ts', description: 'Sends mail over SMTP.' }],
-    standard: [{ id: 'EX-STD-CODE', title: 'Code', product_id: 'EX', description: 'How the code is written.' }],
+    tooling: [{ id: 'EX-LEND-TOOL01', title: 'generate', domain_id: 'EX-LEND', file: 'scripts/generate.ts' }],
+    standard: [{ id: 'EX-STD-CODE', title: 'Code', product_id: 'EX', type: 'engineering', description: 'How the code is written.' }],
     standard_rule: [{ id: 'EX-STD-CODE-R01', title: 'Node prefix', standard_id: 'EX-STD-CODE', statement: 'Code MUST import node: modules.' }],
 
     constraint_test: [{ id: 'EX-VO01-C01-T', title: 'One at sign', constraint_id: 'EX-VO01-C01', ...automated('unit', 'test/email.test.ts'), accepts: 'a@b.org', refuses: 'a@@b.org' }],
@@ -312,8 +330,8 @@ export function complete(): Data {
     view_test: [{ id: 'EX-V01-R01-T01', title: 'Free tools come first', view_requirement_id: 'EX-V01-R01', ...automated('browser', 'e2e/catalog.spec.ts'), when: 'Opens the catalog', then: 'Expects the free tools first' }],
     endpoint_test: [{ id: 'EX-LEND-EP01-R01-T01', title: 'Unknown tool gives 404', api_requirement_id: 'EX-LEND-EP01-R01', ...automated('service', 'test/api.test.ts'), when: 'Posts a loan for an unknown tool', then: 'Expects 404' }],
     flow_test: [
-      { id: 'EX-LEND-UC01-FL01-T', title: 'Borrow end to end', flow_id: 'EX-LEND-UC01-FL01', ...automated('browser', 'e2e/borrow.spec.ts'), steps: ['Open the catalog', 'Borrow a tool'], expected_result: 'The loan is listed.' },
-      { id: 'EX-LEND-UC02-FL01-T', title: 'Add end to end', flow_id: 'EX-LEND-UC02-FL01', level: 'browser', state: 'manual', manual_reason: 'Done at the desk.', steps: ['Open the catalog', 'Add a tool'], expected_result: 'The tool is listed.' },
+      { id: 'EX-LEND-UC01-FL-T', title: 'Borrow end to end', flow_id: 'EX-LEND-UC01-FL', ...automated('browser', 'e2e/borrow.spec.ts'), steps: ['Open the catalog', 'Borrow a tool'], expected_result: 'The loan is listed.' },
+      { id: 'EX-LEND-UC02-FL-T', title: 'Add end to end', flow_id: 'EX-LEND-UC02-FL', level: 'browser', state: 'manual', manual_reason: 'Done at the desk.', steps: ['Open the catalog', 'Add a tool'], expected_result: 'The tool is listed.' },
     ],
     test_data_set: [{ id: 'EX-LEND-TD01', title: 'One tool on loan', domain_id: 'EX-LEND', records: 'One member, one tool, one active loan.', file: 'test/seed.ts', environment: 'A fresh database.', prepare: 'Run the seed.', reset: 'Drop the database.', description: 'What the lending tests start from.' }],
     starts_from: [{ source_id: 'EX-LEND-INV01-T', target_id: 'EX-LEND-TD01' }],
@@ -334,25 +352,48 @@ export function complete(): Data {
     hears: [{ source_id: 'EX-LEND-PO01', target_id: 'EX-LEND-EV01' }],
     calls: [{ source_id: 'EX-LEND-CMD01', target_id: 'EX-LEND-DS01' }],
     fulfills: [
-      { source_id: 'EX-LEND-UC01-FL01-S01', target_id: 'EX-LEND-UC01-R01' },
-      { source_id: 'EX-LEND-UC01-FL01-S02', target_id: 'EX-LEND-UC01-R01' },
-      { source_id: 'EX-LEND-UC02-FL01-S01', target_id: 'EX-LEND-UC02-R01' },
+      { source_id: 'EX-LEND-UC01-FL-S01', target_id: 'EX-LEND-UC01-R01' },
+      { source_id: 'EX-LEND-UC01-FL-S02', target_id: 'EX-LEND-UC01-R01' },
+      { source_id: 'EX-LEND-UC02-FL-S01', target_id: 'EX-LEND-UC02-R01' },
     ],
     invokes: [
-      { source_id: 'EX-LEND-UC01-FL01-S01', target_id: 'EX-LEND-CMD01' },
-      { source_id: 'EX-LEND-UC01-FL01-S02', target_id: 'EX-LEND-QRY01' },
-      { source_id: 'EX-LEND-UC02-FL01-S01', target_id: 'EX-LEND-CMD02' },
+      { source_id: 'EX-LEND-UC01-FL-S01', target_id: 'EX-LEND-CMD01' },
+      { source_id: 'EX-LEND-UC01-FL-S02', target_id: 'EX-LEND-QRY01' },
+      { source_id: 'EX-LEND-UC02-FL-S01', target_id: 'EX-LEND-CMD02' },
     ],
-    happens_in: [
-      { source_id: 'EX-LEND-UC01-FL01-S01', target_id: 'EX-V01' },
-      { source_id: 'EX-LEND-UC02-FL01-S01', target_id: 'EX-V01' },
+    presents: [
+      { source_id: 'EX-V01', target_id: 'EX-LEND-CMD01' },
+      { source_id: 'EX-V01', target_id: 'EX-LEND-CMD02' },
+      { source_id: 'EX-V01', target_id: 'EX-LEND-QRY01' },
     ],
-    exchanges_with: [{ source_id: 'EX-LEND-UC01-FL01-S02', target_id: 'EX-INT01' }],
+    offers: [
+      { source_id: 'EX-IF01', target_id: 'EX-LEND-UC01' },
+      { source_id: 'EX-IF01', target_id: 'EX-LEND-UC02' },
+    ],
+    exchanges_with: [{ source_id: 'EX-LEND-UC01-FL-S02', target_id: 'EX-INT01' }],
     renders: [{ source_id: 'EX-UI01', target_id: 'EX-V01' }],
     builds: [{ source_id: 'EX-UI01', target_id: 'EX-V01-R01' }],
     follows: [{ source_id: 'EX-LEND-UC02', target_id: 'EX-PAT-ACT' }],
     setting_value: [{ follower_id: 'EX-LEND-UC02', pattern_id: 'EX-PAT-ACT', setting: 'record', value: 'Tool' }],
     meets: [{ source_id: 'EX-LEND-CMD01-H', target_id: 'EX-STD-CODE-R01' }],
+    // Every accidental record is accounted for: the platform provides the data store, the standard, the generator and
+    // the requirement of the internal API the desk app calls (its web framework answers 404 for an unknown resource);
+    // the generator writes the code and the endpoint but for the two fills of the pattern's slot.
+    provided_by: [
+      { source_id: 'EX-LEND-EP01-R01', target_id: 'EX-INT02' },
+      { source_id: 'EX-STORE01', target_id: 'EX-INT02' },
+      { source_id: 'EX-STD-CODE', target_id: 'EX-INT02' },
+      { source_id: 'EX-LEND-TOOL01', target_id: 'EX-INT02' },
+    ],
+    generates: [
+      'EX-LEND-REPO01', 'EX-LEND-REPO02', 'EX-LEND-EN01-DM', 'EX-LEND-EN02-DM', 'EX-LEND-EN03-DM', 'EX-LEND-EN01-TB', 'EX-LEND-EN03-TB',
+      'EX-LEND-RM01-TB', 'EX-VO01-VT', 'EX-LEND-SP01-PR', 'EX-LEND-EV01-ET', 'EX-LEND-EV02-ET', 'EX-LEND-RM01-PJ', 'EX-LEND-RM01-RD',
+      'EX-LEND-CMD02-H', 'EX-LEND-CMD03-H', 'EX-LEND-QRY01-H', 'EX-LEND-PO01-H', 'EX-LEND-DS01-SV', 'EX-UI01', 'EX-LEND-EP01', 'EX-LEND-EP01-H', 'EX-INT01-AD',
+    ].map((id) => ({ source_id: 'EX-LEND-TOOL01', target_id: id })),
+    fills: [
+      { source_id: 'EX-LEND-CMD01-H', target_id: 'EX-PAT-ACT-SL01' },
+      { source_id: 'EX-LEND-INV01-RL', target_id: 'EX-PAT-ACT-SL01' },
+    ],
   };
 }
 
@@ -398,11 +439,11 @@ export function sparse(): Data {
     ],
     pattern: [{ id: 'SP-PAT-X', title: 'Ruleless', product_id: 'SP', description: 'A pattern with no rules.' }],
     interface: [
-      { id: 'SP-IF01', title: 'Web app', product_id: 'SP', kind: 'web app', description: 'The desk app.' },
-      { id: 'SP-IF02', title: 'CLI', product_id: 'SP', kind: 'CLI', description: 'The command line.' },
+      { id: 'SP-IF01', title: 'Web app', product_id: 'SP', kind: 'web app', description: 'The desk app.', public: false },
+      { id: 'SP-IF02', title: 'CLI', product_id: 'SP', kind: 'CLI', description: 'The command line.', public: false },
     ],
-    flow: [{ id: 'SP-D-UC02-FL01', title: 'Return a tool in the web app', use_case_id: 'SP-D-UC02', interface_id: 'SP-IF01' }],
-    flow_step: [{ id: 'SP-D-UC02-FL01-S01', title: 'Refuse', flow_id: 'SP-D-UC02-FL01', path: 'refused', position: 1 }],
+    flow: [{ id: 'SP-D-UC02-FL', title: 'Return a tool', use_case_id: 'SP-D-UC02' }],
+    flow_step: [{ id: 'SP-D-UC02-FL-S01', title: 'Refuse', flow_id: 'SP-D-UC02-FL', path: 'refused', position: 1 }],
     view: [{ id: 'SP-V01', title: 'Catalog', description: 'Every tool.' }],
     endpoint: [
       { id: 'SP-D-EP01', title: 'POST /tools', command_id: 'SP-D-CMD01', method: 'POST', route: '/tools', description: 'Takes a tool; answers 201.' },
@@ -411,7 +452,8 @@ export function sparse(): Data {
     endpoint_handler: [{ id: 'SP-D-EP02-H', title: 'getLoans', endpoint_id: 'SP-D-EP02', file: 'src/router.ts', description: 'Calls the query handler.' }],
     integration: [{ id: 'SP-INT01', title: 'Mail', description: 'Reminders.' }],
     checks: [{ source_id: 'SP-D-CMD01', target_id: 'SP-D-SP01' }],
-    happens_in: [{ source_id: 'SP-D-UC02-FL01-S01', target_id: 'SP-V01' }],
-    exchanges_with: [{ source_id: 'SP-D-UC02-FL01-S01', target_id: 'SP-INT01' }],
+    presents: [{ source_id: 'SP-V01', target_id: 'SP-D-CMD01' }],
+    offers: [{ source_id: 'SP-IF01', target_id: 'SP-D-UC02' }],
+    exchanges_with: [{ source_id: 'SP-D-UC02-FL-S01', target_id: 'SP-INT01' }],
   };
 }

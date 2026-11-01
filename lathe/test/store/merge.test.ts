@@ -71,9 +71,9 @@ describe('mergeData', () => {
   });
 
   it("LA-AUT-UC19-R03-T01 checks the merged table's own rules", async () => {
-    const step = (id: string, position: number) => line({ id, title: 'Step', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position });
+    const step = (id: string, position: number) => line({ id, title: 'Step', flow_id: 'TL-LEND-UC01-FL', path: 'main', position });
     // Each side adds a step 2 to the same path: no line clashes, but the table's unique key does.
-    const result = await mergeData(step('TL-LEND-UC01-FL01-S01', 1), step('TL-LEND-UC01-FL01-S01', 1) + step('TL-LEND-UC01-FL01-S02', 2), step('TL-LEND-UC01-FL01-S01', 1) + step('TL-LEND-UC01-FL01-S03', 2), schema.tables.flow_step);
+    const result = await mergeData(step('TL-LEND-UC01-FL-S01', 1), step('TL-LEND-UC01-FL-S01', 1) + step('TL-LEND-UC01-FL-S03', 2), step('TL-LEND-UC01-FL-S01', 1) + step('TL-LEND-UC01-FL-S02', 2), schema.tables.flow_step);
     expect(result.clashes).toEqual([]);
     expect(result.problems).toEqual([expect.stringContaining('the merged flow_step breaks a rule of its table')]);
     expect((await mergeData('', line({ id: 'TL-LEND-INV02-T', title: 't', invariant_id: 'TL-LEND-INV02', level: 'unit', state: 'done' }), '', schema.tables.invariant_test)).problems).toEqual([

@@ -13,6 +13,7 @@ import type { SchemaDescription, TableDescription } from './schema.ts';
 import { writeAll, type FileChange } from './journal.ts';
 import { StoreError, problemAt, type Origin, type StoreProblem } from './problems.ts';
 import type { ReadView } from './rules.ts';
+import { WRITE_RULES } from '../../write-rules.ts';
 
 /** Every table's rows by key. */
 export type Tables = Map<string, Map<string, Row>>;
@@ -140,12 +141,33 @@ export async function commit(tx: Transaction): Promise<Committed> {
     }
     if (problems.length) throw new StoreError(problems);
   }
-  const before = host.tables;
-  const dataDb = await host.build(schemaDb, schema, tables, origins, changed);
   const names = [...changed].sort();
+  const changes = rowChanges(schema, host.tables, tables, names);
+  refuseWritten(schema, tables, origins, changes);
+  const dataDb = await host.build(schemaDb, schema, tables, origins, changed);
   const files = await writeFiles(host.dataDir, schema, tables, host.builtIn, origins, names);
   await host.adopt({ tables, schema, schemaDb, dataDb });
-  return { tables: names, files, changes: rowChanges(schema, before, tables, names) };
+  return { tables: names, files, changes };
+}
+
+// Holds the rows the write adds or changes to the write rules (write-rules.ts), over the data as it leaves it, and
+// refuses the write with every problem they find.
+function refuseWritten(schema: SchemaDescription, tables: Tables, origins: WeakMap<Row, Origin>, changes: readonly RowChange[]): void {
+  const view: ReadView = {
+    schema,
+    rows: (table) => [...(tables.get(table)?.values() ?? [])],
+    record: (id) => {
+      for (const kind of Object.keys(schema.kinds)) {
+        const row = tables.get(kind)?.get(id);
+        if (row) return { kind, row };
+      }
+      return undefined;
+    },
+  };
+  const problems = WRITE_RULES.flatMap((rule) => rule.check(view, changes));
+  if (problems.length) {
+    throw new StoreError(problems.map((p) => problemAt(origins, p.row, { rule: p.rule, table: p.table, key: describeKey(schema.tables[p.table], p.row), message: p.message })));
+  }
 }
 
 // The rows of the tables a write changed, before and after, paired by key.

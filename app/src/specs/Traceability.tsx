@@ -187,17 +187,50 @@ function RunByFacts({ record, runBy }: { record: RecordSummary; runBy: RunBy }) 
   );
 }
 
+/** A technical record's obligations: each one it builds, with the tests that prove it and their states (LA-TRC-UC14-R09). */
+function BuildsTable({ index, record, builds }: { index: RecordIndex; record: RecordSummary; builds: RecordTrace['builds'] }) {
+  if (builds.length === 0) return null;
+  return (
+    <div className="table-scroll table-stack">
+      <table className="data-table trace-builds" role="table">
+        <caption className="sr-only">The obligations {record.id} builds, and the tests that prove them</caption>
+        <thead role="rowgroup">
+          <tr role="row"><th scope="col" role="columnheader">Builds</th><th scope="col" role="columnheader">Proved by</th></tr>
+        </thead>
+        <tbody role="rowgroup">
+          {builds.map((b) => (
+            <tr key={b.id} data-builds={b.id} role="row">
+              <th scope="row" role="rowheader"><RecordLink index={index} id={b.id} /></th>
+              <td role="cell" data-label="Proved by">
+                <span className="trace-cell">
+                  {b.tests.length === 0 && <span className="badge warning">not proved</span>}
+                  {b.tests.map((t) => (
+                    <span key={t.id} data-state={t.state}>
+                      <RecordLink index={index} id={t.id} showTitle={false} /> <span className="hint">{t.state}</span>
+                    </span>
+                  ))}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export function Traceability({ index, record, skip = new Set() }: { index: RecordIndex; record: RecordSummary; skip?: ReadonlySet<string> }) {
   const read = useRecordTrace(record.id, index);
   if (read.state !== 'read' || read.answer.id !== record.id) return null;
   const trace = read.answer;
   const groups = groupsOf(trace, !!index.meta.kinds.get(record.kind)?.obligation, skip);
-  if (groups.length === 0 && trace.judgments.length === 0 && trace.requirements.length === 0 && !trace.runBy) return null;
+  if (groups.length === 0 && trace.judgments.length === 0 && trace.requirements.length === 0 && trace.builds.length === 0 && !trace.runBy) return null;
   const built = new Set(trace.built);
   return (
     <Section title="Traceability" className="traceability">
       <Judgments index={index} record={record} judgments={trace.judgments} />
       <RequirementTable index={index} useCase={record} requirements={trace.requirements} />
+      <BuildsTable index={index} record={record} builds={trace.builds} />
       {groups.map((g, i) => (
         <Fragment key={g.key}>
           {/* A test's run by follows what it proves. */}

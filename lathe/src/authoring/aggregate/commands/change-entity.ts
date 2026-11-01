@@ -1,10 +1,8 @@
 import { column, ids, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EntityRow } from '../../../platform/data/tables.ts';
-import { changed, fieldRows, type EntityFieldInput } from '../model.ts';
-import { AggregateRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
+import type { EntityFieldInput } from '../model.ts';
 import { CHANGE_ENTITY_IDENTITY } from './identities.generated.ts';
+import { changeEntity } from './handlers.generated.ts';
 
 /** The entity's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeEntity = Pick<EntityRow, 'id'> & {
@@ -31,20 +29,3 @@ export const CHANGE_ENTITY = {
   },
   handler: changeEntity,
 } satisfies CommandDefinition<ChangeEntity>;
-
-/** Changes the entity's columns, fields and links. */
-export function changeEntity(tx: Transaction, input: ChangeEntity): void {
-  const aggregates = new AggregateRepository(tx);
-  const aggregate = aggregates.loadHolding('entity', input.id) ?? tx.refuse('missing', `there is no entity ${input.id}`);
-  aggregate.entities = aggregate.entities.map((entity) => {
-    if (entity.row.id !== input.id) return entity;
-    return {
-      row: changed(entity.row, input, ['title', 'role', 'in_root_table', 'description']),
-      fields: input.fields ? fieldRows(input.id, input.fields) : entity.fields,
-      hasOne: input.has_one ?? entity.hasOne,
-      hasMany: input.has_many ?? entity.hasMany,
-    };
-  });
-  holdToRules(tx, aggregate);
-  aggregates.save(aggregate);
-}

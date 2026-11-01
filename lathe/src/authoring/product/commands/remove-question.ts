@@ -17,7 +17,7 @@ export const REMOVE_QUESTION = {
 /** Removes the question and its about links from its product. */
 export function removeQuestion(tx: Transaction, input: RemoveQuestion): void {
   const products = new ProductRepository(tx);
-  const product = products.loadHolding('question', input.id) ?? tx.refuse('missing', `there is no open question ${input.id}`);
+  const product = products.loadHoldingQuestion(input.id) ?? tx.refuse('missing', `there is no open question ${input.id}`);
   product.questions = product.questions.filter((q) => q.row.id !== input.id);
   products.save(product);
 }

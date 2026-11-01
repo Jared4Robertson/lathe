@@ -73,7 +73,7 @@ function Content({ index, page }: { index: RecordIndex; page: View }) {
       return (
         <>
           <Text index={index} id={id} source={view.description} field="description" />
-          <Facts facts={view.route ? [{ label: 'Route', value: <code>{view.route}</code> }] : []} />
+          <Facts facts={[...(view.route ? [{ label: 'Route', value: <code>{view.route}</code> }] : []), ...(view.interface_id ? [{ label: 'Interface', value: <RecordLink index={index} id={view.interface_id} /> }] : [])]} />
           <Text index={index} id={id} source={view.notes} title="Notes" field="notes" />
           <Requirements index={index} page={page} />
         </>

@@ -5,7 +5,7 @@
 import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { type SpecificationKind } from './model.ts';
+import type { SpecificationKind } from './model.ts';
 import type { SpecificationPage, SpecificationSummary } from './read-model.ts';
 import { specificationReader, type SpecificationReader } from './reader.ts';
 import { GET_SPECIFICATION_IDENTITY, LIST_SPECIFICATIONS_IDENTITY, NEXT_SPECIFICATION_ID_IDENTITY } from './queries.generated.ts';

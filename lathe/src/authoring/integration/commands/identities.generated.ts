@@ -67,7 +67,7 @@ export const CHANGE_INTEGRATION_TEST_IDENTITY = {
   id: 'LA-AUT-CMD342',
   slice: { aggregate: 'LA-AUT-A14', name: 'integration' },
   name: 'change-integration-test',
-  description: 'Changes an integration test\'s columns or the test data sets it starts from (the whole list). Its integration does not change.',
+  description: 'Changes an integration test\'s way of running or the test data sets it starts from (the whole list). Its integration does not change.',
   method: 'POST',
   route: '/api/integration/change-integration-test',
 } as const;

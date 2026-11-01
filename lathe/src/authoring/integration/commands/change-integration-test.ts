@@ -1,9 +1,7 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { IntegrationTestRow } from '../../../platform/data/tables.ts';
-import { changed } from '../model.ts';
-import { IntegrationRepository } from '../repository.ts';
 import { CHANGE_INTEGRATION_TEST_IDENTITY } from './identities.generated.ts';
+import { changeIntegrationTest } from './handlers.generated.ts';
 
 /** The integration test's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeIntegrationTest = Pick<IntegrationTestRow, 'id'> & { title?: IntegrationTestRow['title']; level?: IntegrationTestRow['level']; state?: IntegrationTestRow['state']; when?: IntegrationTestRow['when']; then?: IntegrationTestRow['then']; file?: IntegrationTestRow['file'] | null; manual_reason?: IntegrationTestRow['manual_reason'] | null; size?: IntegrationTestRow['size'] | null; smoke?: IntegrationTestRow['smoke'] | null; external?: IntegrationTestRow['external'] | null; notes?: IntegrationTestRow['notes'] | null; starts_from?: string[] };
@@ -27,11 +25,3 @@ export const CHANGE_INTEGRATION_TEST = {
   },
   handler: changeIntegrationTest,
 } satisfies CommandDefinition<ChangeIntegrationTest>;
-
-/** Changes the integration test's columns and links. */
-export function changeIntegrationTest(tx: Transaction, input: ChangeIntegrationTest): void {
-  const integrations = new IntegrationRepository(tx);
-  const integration = integrations.loadHolding('integration_test', input.id) ?? tx.refuse('missing', `there is no integration test ${input.id}`);
-  integration.tests = integration.tests.map((x) => (x.row.id === input.id ? { row: changed(x.row, input, ['title', 'level', 'state', 'when', 'then', 'file', 'manual_reason', 'size', 'smoke', 'external', 'notes']), startsFrom: input.starts_from ?? x.startsFrom } : x));
-  integrations.save(integration);
-}
