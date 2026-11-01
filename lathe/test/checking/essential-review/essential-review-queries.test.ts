@@ -55,3 +55,13 @@ describe('LA-CHK-UC09-R02-T01 The check-and-fix skill has the Agent hold each es
     expect(section).toContain('Do not change an essential record on that finding alone');
   });
 });
+
+describe('LA-CHK-UC09-FL-T Review the essential records with fresh eyes', () => {
+  it('lists the essential records alone, by domain, and has the skill hold each to the domain-expert question', async () => {
+    const review = runQuery(await view(), LIST_ESSENTIAL_RECORDS, { product_id: 'EX' }) as EssentialReview;
+    expect(review.domains.map((d) => d.title)).toEqual(['Lending', 'In no domain']);
+    const skill = readFileSync(path.join(import.meta.dirname, '../../../../plugin/skills/check-and-fix/SKILL.md'), 'utf8');
+    expect(skill).toContain('would they recognize this record and care about it?');
+    expect(skill).toContain('Do not change an essential record on that finding alone');
+  });
+});
