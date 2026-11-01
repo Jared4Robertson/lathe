@@ -11,6 +11,7 @@ import { readPackageFacts } from './trace/packages.ts';
 import { readTestCases } from './trace/test-cases.ts';
 import { isTraced, matching, normalizePath, sourceFiles, walkFiles } from './trace/source-files.ts';
 import { orderChecks, referenceOf, type Reference } from './reference.ts';
+import { runCheckQuery } from './checking/check/rules.ts';
 import { formatProblem, StoreError } from './platform/data/problems.ts';
 import { openStore, Store, LATHE_DATA_DIR, type StoreOptions } from './platform/data/store.ts';
 import { SCHEMA_DIR } from './platform/data/schema.ts';
@@ -193,7 +194,7 @@ async function runChecks(store: Store, checks: Row[], scope: Map<string, string 
     const fixed = check.severity === 'error_or_warning' ? null : (check.severity as 'error' | 'warning');
     try {
       const start = performance.now();
-      const rows = await readRows<{ severity?: string; record: string | null; message: string }>(on, String(check.query));
+      const rows = await runCheckQuery<{ severity?: string; record: string | null; message: string }>(on, String(check.query));
       if (steps) steps[`check ${name}`] = Math.round((performance.now() - start) * 10) / 10;
       const product = check.product_id === undefined ? null : String(check.product_id);
       return rows
@@ -209,6 +210,7 @@ async function runChecks(store: Store, checks: Row[], scope: Map<string, string 
     }
   };
   if (checks.length === 0) return [];
+  await store.seal();
   const results: Problem[][] = new Array(checks.length);
   const extra = await Promise.all(Array.from({ length: Math.min(CHECK_CONNECTIONS, checks.length) - 1 }, () => store.connect()));
   const connections = [store.connection, ...extra];

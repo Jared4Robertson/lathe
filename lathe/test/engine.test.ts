@@ -88,6 +88,8 @@ describe('checks', () => {
       const store = await openStore(path.dirname(LATHE_DATA_DIR), { latheDataDir: null });
       const rows = store.rows('check');
       const kinds = new Set(Object.keys(store.schema.kinds));
+      // How DuckDB's own parser reads each query.
+      const parsed = new Map((await store.query<{ name: string; tree: string }>('SELECT name, json_serialize_sql(query) AS tree FROM "check"')).map((r) => [r.name, JSON.parse(r.tree) as { error: boolean; statements?: unknown[] }]));
       await store.close();
       expect(rows.length).toBeGreaterThan(0);
       expect(rows.map((r) => r.position).sort((a, b) => Number(a) - Number(b))).toEqual(rows.map((_, i) => i + 1));
@@ -95,9 +97,8 @@ describe('checks', () => {
         const sql = String(row.query).trim();
         expect(sql, String(row.name)).toMatch(/^(SELECT|WITH)\b/);
         expect(row.product_id, String(row.name)).toBeUndefined();
-        // One statement: no ';' outside string literals, except at the very end.
-        const code = sql.replace(/'(?:[^']|'')*'/g, "''").replace(/;\s*$/, '');
-        expect(code, String(row.name)).not.toContain(';');
+        // One statement, a SELECT, as DuckDB reads it.
+        expect(parsed.get(String(row.name)), String(row.name)).toMatchObject({ error: false, statements: [expect.anything()] });
         // Every kind a check names is one of Lathe's.
         for (const kind of (row.kinds as string[] | undefined) ?? []) expect(kinds.has(kind), `${String(row.name)}: ${kind}`).toBe(true);
       }
@@ -118,9 +119,27 @@ describe('checks', () => {
           ['check-query-select', "check house-rule's query starts with neither SELECT nor WITH; a check's query is one SELECT"],
           ['check-query-select', "check house-rule's query returns no record or message; a check's query returns record and message"],
         ]);
-        expect(await add("SELECT NULL AS record, 'a;b' AS message; DROP TABLE domain")).toEqual([
-          ['check-query-select', "check house-rule's query holds more than one statement; a check's query is one SELECT"],
+        // DuckDB's own parser says what is one statement, so no quoting it knows hides a second.
+        const notSelect = [['check-query-select', "check house-rule's query holds a statement that is not a SELECT, as DuckDB reads it; a check's query is one SELECT that only reads"]];
+        expect(await add("SELECT NULL AS record, 'a;b' AS message; DROP TABLE domain")).toEqual(notSelect);
+        expect(await add("SELECT NULL AS record, 'a' AS message; SELECT NULL AS record, 'b' AS message")).toEqual([
+          ['check-query-select', "check house-rule's query holds 2 statements, as DuckDB reads it; a check's query is one SELECT that only reads"],
         ]);
+        // An escape string's \' ends no string; a dollar-quoted string, or a comment, holds a quote that ends none.
+        expect(await add("SELECT NULL AS record, E'a\\'' AS message; COPY (SELECT 1) TO 'x.csv'; SELECT NULL AS record, '' AS message")).toEqual(notSelect);
+        expect(await add("SELECT NULL AS record, $$a'$$ AS message; COPY (SELECT 1) TO $$x.csv$$")).toEqual(notSelect);
+        expect(await add("SELECT NULL AS record, 'a' AS message /* ' */; COPY (SELECT 1) TO 'x.csv' -- '")).toEqual(notSelect);
+        // An INSERT, UPDATE, DELETE or COPY inside a SELECT, in a WITH or a subquery however deep, changes data.
+        const inside = (node: string) => [['check-query-select', `check house-rule's query holds ${node} inside its SELECT, as DuckDB reads it; a check's query is one SELECT that only reads`]];
+        expect(await add("WITH x AS (UPDATE domain SET title = 'x' RETURNING id) SELECT id AS record, 'a' AS message FROM x WHERE false")).toEqual(inside('an UPDATE'));
+        expect(await add("WITH x AS (DELETE FROM domain RETURNING id) SELECT id AS record, 'a' AS message FROM x")).toEqual(inside('a DELETE'));
+        expect(await add("SELECT NULL AS record, 'a' AS message WHERE EXISTS (SELECT 1 FROM (WITH y AS (INSERT INTO term (id) VALUES ('x') RETURNING id) SELECT id FROM y))")).toEqual(inside('an INSERT'));
+        expect(await add("WITH x AS (COPY (SELECT 1) TO 'x.csv') SELECT NULL AS record, 'a' AS message FROM x")).toEqual(inside('a COPY'));
+        // An INSERT … RETURNING or a MERGE is no SELECT at all.
+        expect(await add("INSERT INTO term (id) VALUES ('x') RETURNING id AS record, 'a' AS message")).toEqual([
+          ['check-query-select', "check house-rule's query starts with neither SELECT nor WITH; a check's query is one SELECT"],
+        ]);
+        expect(await add("WITH s AS (SELECT 'x' AS id) MERGE INTO term USING s ON term.id = s.id WHEN MATCHED THEN DELETE RETURNING term.id AS record, 'a' AS message")).toEqual(notSelect);
         expect(await add('SELECT NULL AS record WHERE false')).toEqual([
           ['check-query-select', "check house-rule's query returns no message; a check's query returns record and message"],
         ]);
@@ -134,6 +153,26 @@ describe('checks', () => {
         await store.close();
       }
       expect(read()).toBe(before);
+    });
+
+    it("LA-CHK-INV04-T keeps a check whose ; sits inside a string or a comment: its query is one SELECT, as DuckDB reads it", async () => {
+      const store = await openStore(await build(complete()));
+      try {
+        const queries = [
+          "SELECT NULL AS record, 'it''s; one' AS message WHERE false",
+          "SELECT NULL AS record, E'it\\'s; one' AS message WHERE false",
+          'SELECT NULL AS record, $$a;b$$ AS message WHERE false',
+          "SELECT NULL AS record, $q$a';b$q$ AS message WHERE false",
+          "SELECT NULL AS record, 'a' AS message WHERE false -- ; DROP TABLE domain",
+          "SELECT NULL AS record, 'a' AS message WHERE false;",
+        ];
+        for (const [at, query] of queries.entries()) {
+          await runCommand(store, ADD_CHECK, { name: `house-rule-${at + 1}`, product_id: 'EX', domain_id: 'LA-CHK', position: at + 1, severity: 'warning', summary: 'A house rule.', explanation: 'Made for this test. Fix what it reports.', query });
+        }
+        expect(store.rows('check').filter((r) => r.product_id === 'EX').map((r) => r.query)).toEqual(queries);
+      } finally {
+        await store.close();
+      }
     });
   });
 });
