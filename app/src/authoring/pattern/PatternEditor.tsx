@@ -14,13 +14,15 @@ import { PATTERN_FIELDS } from './fields.generated';
 import { useNextPatternId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
+import { FillSlotForm } from '../../traceability/slot-filling/FillSlotForm';
 import { kindWord, addedUnder } from '../../platform/meta-model/reads';
 
 // The Pattern editor (LA-AUT-A2): the actions on a record of a pattern, each sending one of the aggregate's own
 // commands, POST /api/pattern/<command>, and nothing else. Edit sends its kind's Change with only what changed; Add
 // opens an empty form for the kind that sits under the record (a rule or slot under the pattern, a test under a rule), with
 // the next free ID read from the aggregate (next-id), and sends its Add; Remove says what goes with the record and
-// sends its Remove. The aggregate has no Move. A pattern is added from its product's page (AddPatternForm). A
+// sends its Remove; a slot's Fill slot sends the Slot filling aggregate's Fill a slot (FillSlotForm). The aggregate has
+// no Move. A pattern is added from its product's page (AddPatternForm). A
 // refusal shows every reason the command gave, in its own words, keeps what was entered, and changes nothing.
 
 
@@ -107,7 +109,7 @@ function parentOf(page: PatternPage, kind: PatternKind, id: string): string {
   return page.rules.find((r) => r.tests.some((t) => t.test.id === id))!.rule.id;
 }
 
-type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: Exclude<PatternKind, 'pattern'> } | { mode: 'remove' };
+type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'fill' } | { mode: 'add'; kind: Exclude<PatternKind, 'pattern'> } | { mode: 'remove' };
 
 /** A record of the pattern with its actions; a form or the remove question shows in place of its page. */
 export function PatternEditor({ index, page, children }: { index: RecordIndex; page: PatternPage; children: ReactNode }) {
@@ -135,12 +137,14 @@ export function PatternEditor({ index, page, children }: { index: RecordIndex; p
     };
     return <div className="spec-body"><ChangeForm index={index} specs={specs} current={current} eyebrow={kindWord(index.meta, kind)} id={id} submit={submit} onDone={back} /></div>;
   }
+  if (mode.mode === 'fill') return <div className="spec-body"><FillSlotForm index={index} slot={id} onDone={back} /></div>;
   if (mode.mode === 'add') return <div className="spec-body"><AddForm index={index} product={product} kind={mode.kind} parent={id} onDone={back} /></div>;
   const adds = addedUnder(index.meta, kind, ['pattern_rule', 'pattern_rule_test', 'slot'] as const);
   return (
     <>
       <div className="record-actions" role="toolbar" aria-label={`Change ${id}`} ref={toolbar}>
         <Button icon="edit" onClick={() => setMode({ mode: 'change' })}>Edit</Button>
+        {kind === 'slot' && <Button icon="plus" onClick={() => setMode({ mode: 'fill' })}>Fill slot</Button>}
         {adds.map((add) => <Button key={add} icon="plus" onClick={() => setMode({ mode: 'add', kind: add })}>Add {kindWord(index.meta, add)}</Button>)}
         <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>
       </div>

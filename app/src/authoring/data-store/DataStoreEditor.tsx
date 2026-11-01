@@ -12,9 +12,11 @@ import { DATA_STORE_FIELDS } from './fields.generated';
 import { useNextDataStoreId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
+import { NameProviderForm } from '../../traceability/provision/ProviderForm';
 
 // The Data store editor (LA-AUT-A23): the actions on a data store, each sending one of the aggregate's own commands,
-// POST /api/data-store/<command>, and nothing else. Edit sends Change a data store with only what changed; Remove sends Remove a data store, refused while anything is stored in
+// POST /api/data-store/<command>, and nothing else, besides its provider's, which the Provision aggregate's form names
+// (Name a provider) and Remove provider removes. Edit sends Change a data store with only what changed; Remove sends Remove a data store, refused while anything is stored in
 // it. A data store is added from its product's or domain's page (AddDataStoreForm). The aggregate has no Move. A
 // refusal shows every reason the command gave, keeps what was entered, and changes nothing.
 
@@ -26,7 +28,7 @@ function fieldsOf(adding: boolean): FieldSpec[] {
     : formFields(DATA_STORE_FIELDS['/api/data-store/change-data-store'], ['id'], hints);
 }
 
-type Mode = 'view' | 'change' | 'remove';
+type Mode = 'view' | 'change' | 'remove' | 'provider';
 
 /** The data store with its actions; the form or the remove question shows in place of its page. */
 export function DataStoreEditor({ index, page, children }: { index: RecordIndex; page: DataStorePage; children: ReactNode }) {
@@ -41,6 +43,7 @@ export function DataStoreEditor({ index, page, children }: { index: RecordIndex;
     setMode('view');
     backToActions(`Change ${store.id}`, toolbar);
   };
+  if (mode === 'provider') return <div className="spec-body"><NameProviderForm index={index} record={store.id} onDone={back} /></div>;
   if (mode === 'change') {
     const specs = fieldsOf(false);
     const current = { ...store } as Record<string, unknown>;
@@ -57,6 +60,8 @@ export function DataStoreEditor({ index, page, children }: { index: RecordIndex;
     <>
       <div className="record-actions" role="toolbar" aria-label={`Change ${store.id}`} ref={toolbar}>
         <Button icon="edit" onClick={() => setMode('change')}>Edit</Button>
+        <Button icon="plus" onClick={() => setMode('provider')}>Name a provider</Button>
+        {page.providedBy && <Button onClick={() => void writer.command('/api/provision/remove-provider', { record_id: store.id }).then((a) => a.ok && announce(`Removed the provider of ${store.id}`))}>Remove provider</Button>}
         <Button icon="trash" danger onClick={() => setMode('remove')} aria-expanded={mode === 'remove'}>Remove</Button>
       </div>
       {mode === 'remove' && (
