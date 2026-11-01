@@ -11,20 +11,27 @@ import { VALUE_OBJECT_AGGREGATE, valueObjectRows, valueObjectsFrom, type ValueOb
  * constraint test. Each value type or test after the first of its parent is refused.
  */
 export function valueObjectOneEach(valueTypes: readonly ValueTypeRow[], constraintTests: readonly ConstraintTestRow[]): RuleProblem[] {
-  return [
-    ...beyondFirst(valueTypes, (r) => r.value_object_id).map((r) => ({
-      rule: 'value-object-one-each',
-      table: 'value_type',
-      row: r as unknown as Row,
-      message: `value object ${r.value_object_id} already has its value type, so ${r.id} cannot be a second: a value object has one`,
-    })),
-    ...beyondFirst(constraintTests, (r) => r.constraint_id).map((r) => ({
-      rule: 'value-object-one-each',
-      table: 'constraint_test',
-      row: r as unknown as Row,
-      message: `constraint ${r.constraint_id} already has its test, so ${r.id} cannot be a second: a constraint has one`,
-    })),
-  ];
+  return [...oneValueType(valueTypes), ...oneConstraintTest(constraintTests)];
+}
+
+/** Every value type after the first of its value object (LA-AUT-INV101). */
+export function oneValueType(valueTypes: readonly ValueTypeRow[]): RuleProblem[] {
+  return beyondFirst(valueTypes, (r) => r.value_object_id).map((r) => ({
+    rule: 'value-object-one-each',
+    table: 'value_type',
+    row: r as unknown as Row,
+    message: `value object ${r.value_object_id} already has its value type, so ${r.id} cannot be a second: a value object has one`,
+  }));
+}
+
+/** Every constraint test after the first of its constraint (LA-AUT-INV101). */
+export function oneConstraintTest(constraintTests: readonly ConstraintTestRow[]): RuleProblem[] {
+  return beyondFirst(constraintTests, (r) => r.constraint_id).map((r) => ({
+    rule: 'value-object-one-each',
+    table: 'constraint_test',
+    row: r as unknown as Row,
+    message: `constraint ${r.constraint_id} already has its test, so ${r.id} cannot be a second: a constraint has one`,
+  }));
 }
 
 /** The rules over all data. */

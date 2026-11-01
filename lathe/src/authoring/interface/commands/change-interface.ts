@@ -1,9 +1,7 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { InterfaceRow } from '../../../platform/data/tables.ts';
-import { changed } from '../../../platform/data/rows.ts';
-import { InterfaceRepository } from '../repository.ts';
 import { CHANGE_INTERFACE_IDENTITY } from './identities.generated.ts';
+import { changeInterface } from './handlers.generated.ts';
 
 /** The interface's changes: a column given is set; a list given replaces its roles or the use cases it offers. */
 export type ChangeInterface = Pick<InterfaceRow, 'id'> & { title?: string; kind?: InterfaceRow['kind']; description?: string; public?: boolean; actors?: string[]; offers?: string[] };
@@ -21,13 +19,3 @@ export const CHANGE_INTERFACE = {
   },
   handler: changeInterface,
 } satisfies CommandDefinition<ChangeInterface>;
-
-/** Changes the interface's columns, roles or offered use cases. */
-export function changeInterface(tx: Transaction, input: ChangeInterface): void {
-  const interfaces = new InterfaceRepository(tx);
-  const iface = interfaces.load(input.id) ?? tx.refuse('missing', `there is no interface ${input.id}`);
-  iface.row = changed(iface.row, input, ['title', 'kind', 'description', 'public']);
-  if (input.actors) iface.actors = input.actors;
-  if (input.offers) iface.offers = [...input.offers].sort();
-  interfaces.save(iface);
-}

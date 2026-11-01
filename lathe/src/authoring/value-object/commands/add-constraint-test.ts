@@ -1,10 +1,7 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ConstraintTestRow } from '../../../platform/data/tables.ts';
-import { ValueObjectRepository } from '../repository.ts';
-import { refuseBroken } from '../../../platform/data/rules.ts';
-import { valueObjectOneEach } from '../rules.ts';
 import { ADD_CONSTRAINT_TEST_IDENTITY } from './identities.generated.ts';
+import { addConstraintTest } from './handlers.generated.ts';
 
 export type AddConstraintTest = Pick<ConstraintTestRow, 'id' | 'title' | 'constraint_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'accepts' | 'refuses' | 'notes'> & { starts_from?: string[] };
 
@@ -28,13 +25,3 @@ export const ADD_CONSTRAINT_TEST = {
   },
   handler: addConstraintTest,
 } satisfies CommandDefinition<AddConstraintTest>;
-
-/** Adds the test to its constraint, which has none yet. */
-export function addConstraintTest(tx: Transaction, input: AddConstraintTest): void {
-  const valueObjects = new ValueObjectRepository(tx);
-  const valueObject = valueObjects.loadHolding('constraint', input.constraint_id) ?? tx.refuse('missing', `there is no constraint ${input.constraint_id}`);
-  const { starts_from = [], ...row } = input;
-  refuseBroken(valueObjectOneEach([], [...valueObject.constraintTests.map((t) => t.row), row]));
-  valueObject.constraintTests.push({ row, startsFrom: starts_from });
-  valueObjects.save(valueObject);
-}

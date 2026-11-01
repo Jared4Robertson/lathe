@@ -18,7 +18,8 @@ export const NAME_PROVIDER = {
 /** Names the record's provider, in place of any it had: a record has one. */
 export function nameProvider(tx: Transaction, input: NameProvider): void {
   const provisions = new ProvisionRepository(tx);
-  const provision = provisions.load(input.record_id) ?? provisions.create({ root: input.record_id, provider: input.provider_id });
-  provision.provider = input.provider_id;
+  const providedBy = { source_id: input.record_id, target_id: input.provider_id };
+  const provision = provisions.load(input.record_id) ?? provisions.create({ root: input.record_id, providedBy });
+  provision.providedBy = providedBy;
   provisions.save(provision);
 }

@@ -42,8 +42,8 @@ export const SPECIFICATION_TABLES = ['specification', 'predicate', 'specificatio
 /** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
 export const SPECIFICATION_SHAPE = {
   specification: { at: 'specification', lists: { reads: 'reads' } },
-  predicate: { at: 'predicate', one: true, lists: { meets: 'meets', packages: 'packages' } },
-  specification_test: { at: 'test', one: true, lists: { starts_from: 'startsFrom' } },
+  predicate: { at: 'predicate', one: true, refusedBy: 'onePredicate', lists: { meets: 'meets', packages: 'packages' } },
+  specification_test: { at: 'test', one: true, refusedBy: 'oneSpecificationTest', lists: { starts_from: 'startsFrom' } },
 } as const satisfies AggregateShape;
 
 export type SpecificationKind = keyof typeof SPECIFICATION_SHAPE;

@@ -1,5 +1,6 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
+import { followingOf } from '../model.ts';
 import { PatternFollowingRepository } from '../repository.ts';
 import { STOP_FOLLOWING_PATTERN_IDENTITY } from './identities.generated.ts';
 
@@ -18,6 +19,6 @@ export const STOP_FOLLOWING_PATTERN = {
 /** Removes the following whole. */
 export function stopFollowingPattern(tx: Transaction, input: StopFollowingPattern): void {
   const followings = new PatternFollowingRepository(tx);
-  const following = followings.loadFollowing(input.follower_id, input.pattern_id) ?? tx.refuse('missing', `${input.follower_id} does not follow ${input.pattern_id}`);
+  const following = followings.load(followingOf(input.follower_id, input.pattern_id)) ?? tx.refuse('missing', `${input.follower_id} does not follow ${input.pattern_id}`);
   followings.remove(following);
 }

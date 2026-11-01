@@ -2,14 +2,17 @@
 // The endpoint commands whose handler is the pattern: load the endpoint, add, change or remove one record with the
 // input's columns and lists, hold it to its rules, and save. Each definition takes its handler from here.
 import { changed } from '../../../platform/data/rows.ts';
+import { refuseBroken } from '../../../platform/data/rules.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { EndpointRepository } from '../repository.ts';
+import { oneEndpointHandler } from '../rules.ts';
 import type { AddEndpoint } from './add-endpoint.ts';
 import type { ChangeEndpoint } from './change-endpoint.ts';
 import type { RemoveEndpoint } from './remove-endpoint.ts';
 import type { AddApiRequirement } from './add-api-requirement.ts';
 import type { ChangeApiRequirement } from './change-api-requirement.ts';
 import type { RemoveApiRequirement } from './remove-api-requirement.ts';
+import type { AddEndpointHandler } from './add-endpoint-handler.ts';
 import type { ChangeEndpointHandler } from './change-endpoint-handler.ts';
 import type { RemoveEndpointHandler } from './remove-endpoint-handler.ts';
 import type { AddEndpointTest } from './add-endpoint-test.ts';
@@ -60,6 +63,16 @@ export function removeApiRequirement(tx: Transaction, input: RemoveApiRequiremen
   const endpoint = endpoints.loadHolding('api_requirement', input.id) ?? tx.refuse('missing', `there is no API requirement ${input.id}`);
   endpoint.requirements = endpoint.requirements.filter((x) => x.id !== input.id);
   endpoint.tests = endpoint.tests.filter((x) => x.row.api_requirement_id !== input.id);
+  endpoints.save(endpoint);
+}
+
+/** Adds an endpoint's handler, its one piece of code that serves it: its name in code and its file, with the standard rules it meets and the packages it uses. */
+export function addEndpointHandler(tx: Transaction, input: AddEndpointHandler): void {
+  const endpoints = new EndpointRepository(tx);
+  const endpoint = endpoints.load(input.endpoint_id) ?? tx.refuse('missing', `there is no endpoint ${input.endpoint_id}`);
+  const { meets = [], packages = [], ...row } = input;
+  refuseBroken(oneEndpointHandler([...(endpoint.handler ? [endpoint.handler.row] : []), row]));
+  endpoint.handler = { row, meets: meets, packages: packages };
   endpoints.save(endpoint);
 }
 

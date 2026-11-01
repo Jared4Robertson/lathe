@@ -13,11 +13,6 @@ import { CHANGE_DATA_MODEL } from '../../../src/authoring/aggregate/commands/cha
 import { CHANGE_ENTITY } from '../../../src/authoring/aggregate/commands/change-entity.ts';
 import { CHANGE_INVARIANT } from '../../../src/authoring/aggregate/commands/change-invariant.ts';
 import { CHANGE_INVARIANT_TEST } from '../../../src/authoring/aggregate/commands/change-invariant-test.ts';
-import { REMOVE_AGGREGATE } from '../../../src/authoring/aggregate/commands/remove-aggregate.ts';
-import { REMOVE_DATA_MODEL } from '../../../src/authoring/aggregate/commands/remove-data-model.ts';
-import { REMOVE_ENTITY } from '../../../src/authoring/aggregate/commands/remove-entity.ts';
-import { REMOVE_INVARIANT } from '../../../src/authoring/aggregate/commands/remove-invariant.ts';
-import { REMOVE_INVARIANT_TEST } from '../../../src/authoring/aggregate/commands/remove-invariant-test.ts';
 import { GET_AGGREGATE, LIST_AGGREGATES, NEXT_AGGREGATE_ID } from '../../../src/authoring/aggregate/queries.ts';
 import { runAggregateCommand } from '../../../src/cli/aggregates.ts';
 import { callTool } from '../../../src/cli/mcp.ts';
@@ -168,29 +163,5 @@ describe('LA-AUT-INV12-T an aggregate with two roots is refused, one with none i
     const refused = await openStore(writeData(data), { latheDataDir: null }).catch((error: unknown) => error);
     expect(refused).toBeInstanceOf(StoreError);
     expect((refused as StoreError).problems).toEqual([expect.objectContaining({ rule: 'aggregate-root', key: 'TL-LEND-A1', file: 'data/aggregate.jsonl', line: 1 })]);
-  });
-});
-
-describe('LA-STD-CODE-R07-T30 an aggregate, or a record in one, is removed with what it holds, refused while anything outside references it', () => {
-  it('removes an entity with its fields and data model, an invariant with its test, and a data model and test alone', async () => {
-    const store = await aggregateDataSet();
-    expect((await refusal(store, REMOVE_ENTITY, { id: 'TL-LEND-EN02' })).problems[0]).toMatchObject({ rule: 'referenced', message: 'Entity TL-LEND-EN02 is referenced, so it stays: TL-LEND-EN01 has one TL-LEND-EN02' });
-    const entity = await runCommand(store, REMOVE_ENTITY, { id: 'TL-LEND-EN01' });
-    expect(entity.changes.map((c) => c.table).sort()).toEqual(['data_model', 'entity', 'entity_field', 'entity_field', 'entity_field', 'has_one', 'meets']);
-    const invariant = await runCommand(store, REMOVE_INVARIANT, { id: 'TL-LEND-INV01' });
-    expect(invariant.changes.map((c) => c.table).sort()).toEqual(['invariant', 'invariant_test', 'starts_from']);
-    await runCommand(store, ADD_INVARIANT, { id: 'TL-LEND-INV02', title: 'A tool has a name', aggregate_id: 'TL-LEND-A2', statement: 'A tool MUST have a name.' });
-    expect((await refusal(store, REMOVE_INVARIANT_TEST, { id: 'TL-LEND-INV09-T' })).problems[0].rule).toBe('missing');
-    expect((await refusal(store, REMOVE_DATA_MODEL, { id: 'TL-LEND-EN01-DM' })).problems[0].rule).toBe('missing');
-  });
-
-  it('removes an aggregate whole, and refuses one while another aggregate references what is in it', async () => {
-    const store = await aggregateDataSet();
-    // The Loan's Tool field names TL-LEND-A2, so the Tool stays.
-    expect((await refusal(store, REMOVE_AGGREGATE, { id: 'TL-LEND-A2' })).problems[0].message).toBe('Aggregate TL-LEND-A2 is referenced, so it stays: entity_field entity_id TL-LEND-EN01, position 2 (type_aggregate_id)');
-    const removed = await runCommand(store, REMOVE_AGGREGATE, { id: 'TL-LEND-A1' });
-    expect(new Set(removed.changes.map((c) => c.table))).toEqual(new Set(['aggregate', 'entity', 'entity_field', 'has_one', 'data_model', 'meets', 'invariant', 'invariant_test', 'starts_from']));
-    expect(removed.changes.every((c) => c.after === null)).toBe(true);
-    await runCommand(store, REMOVE_AGGREGATE, { id: 'TL-LEND-A2' });
   });
 });

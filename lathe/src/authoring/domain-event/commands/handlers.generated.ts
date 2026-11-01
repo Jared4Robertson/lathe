@@ -2,12 +2,14 @@
 // The domain-event commands whose handler is the pattern: load the domain event, add, change or remove one record with the
 // input's columns and lists, hold it to its rules, and save. Each definition takes its handler from here.
 import { changed } from '../../../platform/data/rows.ts';
+import { refuseBroken } from '../../../platform/data/rules.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { DomainEventRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
+import { holdToRules, oneEventType } from '../rules.ts';
 import type { AddDomainEvent } from './add-domain-event.ts';
 import type { ChangeDomainEvent } from './change-domain-event.ts';
 import type { RemoveDomainEvent } from './remove-domain-event.ts';
+import type { AddEventType } from './add-event-type.ts';
 import type { ChangeEventType } from './change-event-type.ts';
 import type { RemoveEventType } from './remove-event-type.ts';
 
@@ -35,6 +37,17 @@ export function removeDomainEvent(tx: Transaction, input: RemoveDomainEvent): vo
   const domainEvents = new DomainEventRepository(tx);
   const domainEvent = domainEvents.load(input.id) ?? tx.refuse('missing', `there is no domain event ${input.id}`);
   domainEvents.remove(domainEvent);
+}
+
+/** Adds a domain event's shape in code: its name, how it is delivered and its file, with the standard rules it meets and the packages it uses. An event has one event type. */
+export function addEventType(tx: Transaction, input: AddEventType): void {
+  const domainEvents = new DomainEventRepository(tx);
+  const domainEvent = domainEvents.load(input.domain_event_id) ?? tx.refuse('missing', `there is no domain event ${input.domain_event_id}`);
+  const { meets = [], packages = [], ...row } = input;
+  refuseBroken(oneEventType([...(domainEvent.eventType ? [domainEvent.eventType.row] : []), row]));
+  domainEvent.eventType = { row, meets: meets, packages: packages };
+  holdToRules(tx, domainEvent);
+  domainEvents.save(domainEvent);
 }
 
 /** Changes an event type's title, delivery or file, or the standard rules it meets or the packages it uses (each list whole). Its event does not change. */

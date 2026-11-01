@@ -2,8 +2,9 @@
 // the value it gives each of the pattern's settings. One instance is one following, whole, named by its follower and
 // its pattern.
 import { groupBy, groupOf } from '../../platform/data/grouped.ts';
+import type { AggregateShape } from '../../platform/data/repository.ts';
 import type { Row } from '../../platform/data/rows.ts';
-import type { SettingValueRow } from '../../platform/data/tables.ts';
+import type { FollowsRow, SettingValueRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const PATTERN_FOLLOWING_AGGREGATE = 'LA-TRC-A3';
@@ -15,15 +16,19 @@ export type SettingValueInput = Omit<SettingValueRow, 'follower_id' | 'pattern_i
 export interface PatternFollowing {
   /** The follower and the pattern, as "<follower> follows <pattern>": the instance's root. */
   readonly root: string;
-  /** The domain or use case that follows the pattern. */
-  follower: string;
-  pattern: string;
+  /** The follows link: its source is the domain or use case that follows the pattern, its target the pattern. */
+  follows: FollowsRow;
   /** The value it gives each setting of the pattern, by setting name. */
   values: SettingValueRow[];
 }
 
 /** The tables the Pattern following aggregate keeps its rows in: the link and its part. */
 export const PATTERN_FOLLOWING_TABLES = ['follows', 'setting_value'] as const;
+
+/** How the aggregate's kinds sit in an instance: the follows link, and the setting values its commands give whole. Its repository is generated from it. @public (read by `npm run generate`) */
+export const PATTERN_FOLLOWING_SHAPE = {
+  follows: { at: 'follows', given: { setting_values: 'values' } },
+} as const satisfies AggregateShape;
 
 /** The root of the following of the pattern by the follower. */
 export const followingOf = (follower: string, pattern: string): string => `${follower} follows ${pattern}`;
@@ -34,22 +39,18 @@ export function valueRows(follower: string, pattern: string, values: SettingValu
 }
 
 /** The followings in the data, each whole; only the one whose root is given, when given. */
-export function followingsFrom(rows: (table: string) => Row[], only?: string): PatternFollowing[] {
+export function patternFollowingsFrom(rows: (table: string) => Row[], only?: string): PatternFollowing[] {
   const valuesOf = groupBy(rows('setting_value') as unknown as SettingValueRow[], (v) => followingOf(v.follower_id, v.pattern_id));
-  return rows('follows')
-    .map((l) => ({ follower: String(l.source_id), pattern: String(l.target_id) }))
-    .filter((f) => only === undefined || followingOf(f.follower, f.pattern) === only)
-    .map((f) => ({
-      root: followingOf(f.follower, f.pattern),
-      ...f,
-      values: [...groupOf(valuesOf, followingOf(f.follower, f.pattern))].sort((a, b) => a.setting.localeCompare(b.setting)),
-    }));
+  return (rows('follows') as unknown as FollowsRow[])
+    .map((l) => ({ root: followingOf(l.source_id, l.target_id), follows: { source_id: l.source_id, target_id: l.target_id } }))
+    .filter((f) => only === undefined || f.root === only)
+    .map((f) => ({ ...f, values: [...groupOf(valuesOf, f.root)].sort((a, b) => a.setting.localeCompare(b.setting)) }));
 }
 
 /** The instance's rows, by table. */
-export function followingRows(following: PatternFollowing): Map<string, Row[]> {
+export function patternFollowingRows(following: PatternFollowing): Map<string, Row[]> {
   return new Map<string, Row[]>([
-    ['follows', [{ source_id: following.follower, target_id: following.pattern }]],
+    ['follows', [following.follows as unknown as Row]],
     ['setting_value', following.values as unknown as Row[]],
   ]);
 }
