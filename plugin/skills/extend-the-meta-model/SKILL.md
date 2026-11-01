@@ -33,6 +33,10 @@ Lathe's own kinds cannot be given another parent or more required fields by a pr
 
 **Removing a kind.** Remove its records first, then the declaration.
 
+## Patterns, slots and configuration
+
+A well-defined pattern is a function: the pattern plus its configuration gives the same output every time. It has a fixed part, settings (the known ways it varies) and slots (open-ended variation, filled by hand against a stated contract). Accidental complexity is what the fixed part and settings can express; what is left in the slots is a fill. Keep it deterministic: no hidden inputs such as time, environment, the network or unpinned versions. When settings grow conditions and loops, configuration is becoming a language: add a slot or split the pattern. Draw a pattern at the third occurrence, not the first, since one example overfits.
+
 ## Modeling a code generator
 
 When a product's code is produced by a generator (from a schema, a service declaration, or the product's own records), keep one rule in view: the records own the essential complexity (why and what); the generator owns the accidental complexity (how it is wired). Hand-written code that is only wiring is a candidate for the generator, not for more records.
@@ -49,6 +53,7 @@ Rules for the emitted files themselves:
 - The first line of every emitted file says it is generated and by what, so nobody edits it by hand. A check or test regenerates and compares (a drift check), so a stale or hand-edited file fails.
 - A declaration the generator reads from the records (a versioned query over them) is the one input; do not keep a second hand-written copy.
 - A mistake the generator would only find when it runs ("an archetype that does not exist") is refused when the record is written: declare the generator's input kinds with required fields and relations so the write fails, rather than checking afterward.
+- An app built on a generator or platform holds only its own essential complexity: the domain's rules, and fills for what is its alone. What the platform supplies (request handlers, storage, TLS, sign-in) is marked `provided_by` the integration that names it, so it counts as built and proved there and is not written again. Example: an app on a code generator keeps its aggregates, invariants and the few handlers it writes by hand as fills; every generated handler, the database and the certificate handling are provided.
 - A record the generator needs that is provided by a dependency (a component the product uses but does not own) is a different thing from code the product owns. Mark which is which, so a check can flag hand-written accidental code that a dependency could provide.
 
 ## A product's own checks
