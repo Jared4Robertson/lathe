@@ -20,7 +20,7 @@ const file = (name: string) => () => path.join(temp, name);
 const json = (name: string): unknown => JSON.parse(readFileSync(path.join(temp, name), 'utf8'));
 
 const window = (folder: string, extra: Partial<OpenWindow> = {}): OpenWindow =>
-  ({ folder, product: path.basename(folder), win: { id: folder } as unknown as OpenWindow['win'], errors: 0, dataFiles: null, launchRun: 0, key: folder, ...extra });
+  ({ folder, product: path.basename(folder), win: { id: folder } as unknown as OpenWindow['win'], errors: 0, launchRun: 0, key: folder, ...extra });
 
 describe('LA-PLT-INV14-T The recent folders list puts the latest first, each folder once, at most 10: the Recent folders\' repository keeps it in recent-folders.json', () => {
   it('adds and clears through the repository, and the read model lists them as the menu shows them', () => {

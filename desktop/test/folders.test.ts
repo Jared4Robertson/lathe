@@ -2,7 +2,13 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { checkFolder, displayPath, productNames, windowTitle } from '../src/folders.ts';
+import * as latheConfig from '../../lathe/src/config.ts';
+import { checkFolder as check, displayPath, latheConfigModulePath, loadLatheConfig, productNames as names, windowTitle, type LatheConfigReads } from '../src/folders.ts';
+
+// The folder check and the products' names read with Lathe's own config module, as the app loads it.
+const lathe: LatheConfigReads = latheConfig;
+const checkFolder = (folder: string) => check(folder, lathe);
+const productNames = (dataDirs: string[]) => names(dataDirs, lathe);
 
 const temp = mkdtempSync(path.join(os.tmpdir(), 'lathe-desktop-folders-'));
 afterAll(() => rmSync(temp, { recursive: true, force: true }));
@@ -28,15 +34,31 @@ describe('LA-PLT-SP01-T A folder opens only when it holds lathe.config.json or a
 
   it('LA-PLT-UC11-R08-T01 opens a workspace with the data folder of each product it lists, from its own config', () => {
     const root = folder('workspace', {
-      'lathe.config.json': '{ "products": ["examples/shop", "examples/gone"] }',
+      'lathe.config.json': '{ "products": ["examples/shop"] }',
       'examples/shop/lathe.config.json': '{ "data": "spec" }',
       'data/product.jsonl': '{"id":"LA","title":"Lathe"}\n',
       'examples/shop/spec/product.jsonl': '{"id":"SH","title":"Shop"}\n',
     });
     const check = checkFolder(root);
-    // A listed folder with no config of its own is left for the server to report.
     expect(check).toEqual({ ok: true, dataDirs: [path.join(root, 'data'), path.join(root, 'examples/shop/spec')] });
     expect(check.ok && productNames(check.dataDirs)).toEqual(['Lathe', 'Shop']);
+    // A listed folder with no config of its own is refused with Lathe's reason, as its engine would refuse it.
+    const gone = folder('workspace-gone', { 'lathe.config.json': '{ "products": ["examples/gone"] }' });
+    expect(checkFolder(gone)).toEqual({ ok: false, message: expect.stringMatching(/examples\/gone holds no lathe\.config\.json/) });
+  });
+
+  it('refuses a config Lathe refuses, with its reason', () => {
+    const root = folder('unknown-setting', { 'lathe.config.json': '{ "diagrams": "model" }' });
+    expect(checkFolder(root)).toEqual({ ok: false, message: expect.stringMatching(/unknown setting "diagrams"/) });
+  });
+
+  it("loads Lathe's config module from this repo's source, or the packed app's built package", async () => {
+    const repo = path.resolve(import.meta.dirname, '..', '..');
+    expect(latheConfigModulePath(repo, null)).toBe(path.join(repo, 'lathe', 'src', 'config.ts'));
+    expect(latheConfigModulePath(repo, { resourcesPath: '/Applications/Lathe.app/Contents/Resources' })).toBe('/Applications/Lathe.app/Contents/Resources/node_modules/@jaredrob/lathe/dist/src/config.js');
+    const loaded = await loadLatheConfig(latheConfigModulePath(repo, null));
+    expect(loaded.CONFIG_FILE).toBe('lathe.config.json');
+    expect(loaded.productTitles(path.join(repo, 'data'))).toEqual(['Lathe']);
   });
 
   it('opens a folder with a data folder and no config', () => {
@@ -54,7 +76,7 @@ describe('LA-PLT-SP01-T A folder opens only when it holds lathe.config.json or a
   it('refuses a config that is not valid JSON, naming the file', () => {
     const root = folder('broken', { 'lathe.config.json': '{ data: ' }, ['data']);
     const check = checkFolder(root);
-    expect(!check.ok && check.message).toMatch(/lathe\.config\.json .* is not valid JSON/);
+    expect(!check.ok && check.message).toMatch(/lathe\.config\.json is not valid JSON/);
   });
 
   it('refuses a path that is not a folder', () => {
