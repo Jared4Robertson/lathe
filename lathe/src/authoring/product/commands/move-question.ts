@@ -22,7 +22,7 @@ export const MOVE_QUESTION = {
 /** Puts the question under the product or the other domain; what it is about stays. */
 export function moveQuestion(tx: Transaction, input: MoveQuestion): void {
   const products = new ProductRepository(tx);
-  const product = products.loadHolding('question', input.id) ?? tx.refuse('missing', `there is no open question ${input.id}`);
+  const product = products.loadHoldingQuestion(input.id) ?? tx.refuse('missing', `there is no open question ${input.id}`);
   const to = productUnder(tx, input);
   if (to !== product.root) tx.refuse('parent', `${input.id} is a question of ${product.root}, so it moves only within ${product.root}, not to ${input.product_id ?? input.domain_id}`);
   const question = product.questions.find((q) => q.row.id === input.id)!;

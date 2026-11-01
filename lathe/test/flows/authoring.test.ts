@@ -149,7 +149,7 @@ describe('Authoring flows', () => {
     ]);
     // S03: the use case's one flow, its ID the use case's and FL, offered through the product's interface; S04: its
     // steps in order on their paths.
-    tl.command('product add-interface', { id: 'TL-IF01', title: 'Loan desk', product_id: 'TL', kind: 'web app', description: 'The desk where librarians lend tools.', public: false, offers: ['TL-LEND-UC01'] });
+    tl.command('interface add-interface', { id: 'TL-IF01', title: 'Loan desk', product_id: 'TL', kind: 'web app', description: 'The desk where librarians lend tools.', public: false, offers: ['TL-LEND-UC01'] });
     expect(tl.command('use-case next-id', { kind: 'flow', parent: 'TL-LEND-UC01' })).toBe('TL-LEND-UC01-FL');
     tl.command('use-case add-flow', { id: 'TL-LEND-UC01-FL', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01' });
     const step = (n: string, title: string, pathName: string, position: number) =>
@@ -169,9 +169,9 @@ describe('Authoring flows', () => {
     tl.command('use-case change-flow-step', { id: 'TL-LEND-UC01-FL-S02', position: 2, fulfills: ['TL-LEND-UC01-R01', 'TL-LEND-UC01-R02'] });
     // A step only one interface does is its variant, of an interface that offers the use case.
     tl.command('use-case change-flow-step', { id: 'TL-LEND-UC01-FL-S01', interface_id: 'TL-IF01' });
-    tl.command('product change-interface', { id: 'TL-IF01', offers: ['TL-LEND-UC02'] });
+    tl.command('interface change-interface', { id: 'TL-IF01', offers: ['TL-LEND-UC02'] });
     expect(problemsOf(tl.workspace(), 'variant-not-offered')).toEqual([expect.stringMatching(/^TL-LEND-UC01-FL-S01: /)]);
-    tl.command('product change-interface', { id: 'TL-IF01', offers: ['TL-LEND-UC01', 'TL-LEND-UC02'] });
+    tl.command('interface change-interface', { id: 'TL-IF01', offers: ['TL-LEND-UC01', 'TL-LEND-UC02'] });
     const fixed = tl.workspace();
     expect(problemsOf(fixed, 'step-order')).toEqual([]);
     expect(problemsOf(fixed, 'variant-not-offered')).toEqual([]);

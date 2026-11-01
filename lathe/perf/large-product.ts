@@ -23,7 +23,7 @@ import { ADD_COMMAND_HANDLER } from '../src/authoring/command/commands/add-comma
 import { ADD_CAPABILITY } from '../src/authoring/domain/commands/add-capability.ts';
 import { ADD_DOMAIN } from '../src/authoring/domain/commands/add-domain.ts';
 import { ADD_TERM } from '../src/authoring/domain/commands/add-term.ts';
-import { ADD_INTERFACE } from '../src/authoring/product/commands/add-interface.ts';
+import { ADD_INTERFACE } from '../src/authoring/interface/commands/add-interface.ts';
 import { ADD_PRODUCT } from '../src/authoring/product/commands/add-product.ts';
 import { ADD_QUERY } from '../src/authoring/read-model/commands/add-query.ts';
 import { ADD_QUERY_HANDLER } from '../src/authoring/read-model/commands/add-query-handler.ts';

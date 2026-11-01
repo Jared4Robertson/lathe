@@ -55,7 +55,7 @@ function Requirements({ index, useCase }: { index: RecordIndex; useCase: UseCase
   );
 }
 
-/** An interface's kind, when its name does not say it, from the Product aggregate's list of interfaces. */
+/** An interface's kind, when its name does not say it, from the Product read model's list of interfaces. */
 function InterfaceKind({ index, id }: { index: RecordIndex; id: string }) {
   const read = useInterfaces(index.product, index);
   const iface = read.state === 'read' ? read.answer.find((i) => i.id === id) : undefined;
