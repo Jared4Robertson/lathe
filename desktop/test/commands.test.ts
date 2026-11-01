@@ -1,7 +1,7 @@
 import type { MenuItemConstructorOptions } from 'electron';
 import { describe, expect, it, vi } from 'vitest';
-import { COMMANDS, eventChord, normalizeBinding, platformKeys } from '../../app/src/shell/keymap.ts';
-import { commandKeys, keyPresses, MENU_COMMANDS, TAB_COMMANDS } from '../src/commands.ts';
+import { COMMANDS, eventChord, menuBindings, normalizeBinding, platformKeys, resolveCommands } from '../../app/src/shell/keymap.ts';
+import { keyPresses, MENU_COMMANDS, TAB_COMMANDS } from '../src/commands.ts';
 import { acceleratorOf, menuTemplate } from '../src/menu.ts';
 
 type Item = MenuItemConstructorOptions;
@@ -56,22 +56,22 @@ describe('The native menus offer the app commands, by command ID, without taking
     expect(actions.runCommand.mock.calls.map(([id]) => id)).toEqual(MENU_COMMANDS.map((c) => c.id));
   });
 
-  it("LA-V66-R03-T01 names only commands in the app's keymap, each with one of its default bindings on a Mac and elsewhere", () => {
+  it("LA-V66-R03-T01 names only commands in the app's keymap, and each shows the keymap's menu key unless the menu owns its accelerator", () => {
     for (const command of MENU_COMMANDS) {
       const entry = COMMANDS.find((c) => c.id === command.id);
       expect(entry, command.id).toBeDefined();
-      for (const mac of [true, false]) {
-        expect(platformKeys(entry!, mac).map((k) => normalizeBinding(k, mac)), `${command.id} on ${mac ? 'Mac' : 'other'}`).toContain(normalizeBinding(commandKeys(command, mac), mac));
-      }
+      if (command.accelerator) expect(entry!.menu, `${command.id} has its own accelerator`).toBeUndefined();
+      else expect(platformKeys(entry!, true)[entry!.menu ?? -1], `${command.id} menu key`).toBeDefined();
     }
+    // The other way: a keymap command with a menu key is in the menu.
+    for (const entry of COMMANDS.filter((c) => c.menu !== undefined)) expect(MENU_COMMANDS.some((c) => c.id === entry.id), entry.id).toBe(true);
   });
 
-  it("LA-V66-R03-T01 presses keys that the app's keymap reads as the binding, on a Mac and elsewhere", () => {
+  it("LA-V66-R03-T01 presses keys that the app's keymap reads as the menu binding, on a Mac and elsewhere", () => {
     for (const mac of [true, false]) {
-      for (const command of MENU_COMMANDS) {
-        const keys = commandKeys(command, mac);
-        const chords = keyPresses(keys, mac).map((press) => eventChord(press));
-        expect(chords.join(' '), `${command.id} on ${mac ? 'Mac' : 'other'}`).toBe(normalizeBinding(keys, mac));
+      for (const [id, [key]] of Object.entries(menuBindings(resolveCommands({}, mac), mac))) {
+        const chords = keyPresses(key, mac).map((press) => eventChord(press));
+        expect(chords.join(' '), `${id} on ${mac ? 'Mac' : 'other'}`).toBe(normalizeBinding(key, mac));
       }
     }
   });
@@ -96,6 +96,21 @@ describe('LA-V66-R03 The menus show the person\'s keys without taking them', () 
     // New Tab keeps the menu's own Cmd+T, registered.
     expect(items.find((m) => m.label === 'New Tab')).toEqual(expect.objectContaining({ accelerator: 'CmdOrCtrl+T' }));
     expect(items.find((m) => m.label === 'New Tab')?.registerAccelerator).toBeUndefined();
+  });
+});
+
+describe('LA-V66-R03 The menu follows the keymap', () => {
+  const items = (keys: Record<string, string[]>, mac: boolean) =>
+    flat(menuTemplate({ recent: [], openFolder: vi.fn(), openRecent: vi.fn(), clearRecent: vi.fn(), runCommand: vi.fn(), keys }, mac));
+
+  it('LA-V66-R03-T03 shows each default menu key, and a rebinding changes the item', () => {
+    const defaults = items(menuBindings(resolveCommands({}, true), true), true);
+    expect(defaults.find((m) => m.label === 'Graph Stage')?.accelerator).toBe('Ctrl+1');
+    expect(defaults.find((m) => m.label === 'Quick Open…')?.accelerator).toBe('Cmd+P');
+    const elsewhere = items(menuBindings(resolveCommands({}, false), false), false);
+    expect(elsewhere.find((m) => m.label === 'Show or Collapse Wiki Card')?.accelerator).toBe('Alt+W');
+    const rebound = items(menuBindings(resolveCommands({ stageGraph: ['Ctrl+Shift+J'] }, true), true), true);
+    expect(rebound.find((m) => m.label === 'Graph Stage')?.accelerator).toBe('Ctrl+Shift+J');
   });
 });
 

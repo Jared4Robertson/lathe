@@ -1,14 +1,11 @@
 // The app commands the native menus offer. A menu choice is sent to the page as the command's ID
-// (app/src/shell/keymap.ts), and the app's command system runs it. `keys` is one of the command's
-// default bindings in the keymap on every platform (test/commands.test.ts checks it), which the preload presses for
-// the page when the app has not subscribed to window.latheDesktop.onCommand yet.
+// (app/src/shell/keymap.ts), and the app's command system runs it. The key a command shows is the keymap's `menu` binding,
+// which the page sends (setMenuKeys); this file lists no keys. The preload presses that key for the page when the app has
+// not subscribed to window.latheDesktop.onCommand yet.
 
 export interface MenuCommand {
   id: string;
   label: string;
-  keys: string;
-  /** The binding off a Mac, when the keymap gives another there (its otherKeys). */
-  otherKeys?: string;
   /**
    * The menu item's own accelerator, only for keys a web page never receives, which a browser keeps for its tabs and
    * history (Cmd/Ctrl+T and W, Ctrl+Tab, Cmd/Ctrl+[ and ]): the menu owns them and runs the command by ID.
@@ -17,14 +14,14 @@ export interface MenuCommand {
 }
 
 export const VIEW_COMMANDS: readonly MenuCommand[] = [
-  { id: 'commandPalette', label: 'Command Palette…', keys: 'Mod+Shift+P' },
-  { id: 'quickOpen', label: 'Quick Open…', keys: 'Mod+P' },
-  { id: 'stageGraph', label: 'Graph Stage', keys: 'Ctrl+1' },
-  { id: 'stageErd', label: 'ERD Stage', keys: 'Ctrl+2' },
-  { id: 'stageTrace', label: 'Trace Stage', keys: 'Ctrl+3' },
-  { id: 'toggleWikiCard', label: 'Show or Collapse Wiki Card', keys: 'Ctrl+W', otherKeys: 'Alt+W' },
-  { id: 'toggleNav', label: 'Show or Hide Navigation', keys: 'Mod+B' },
-  { id: 'toggleChat', label: 'Show or Hide Chat', keys: 'Ctrl+Meta+I', otherKeys: 'Ctrl+Alt+C' },
+  { id: 'commandPalette', label: 'Command Palette…' },
+  { id: 'quickOpen', label: 'Quick Open…' },
+  { id: 'stageGraph', label: 'Graph Stage' },
+  { id: 'stageErd', label: 'ERD Stage' },
+  { id: 'stageTrace', label: 'Trace Stage' },
+  { id: 'toggleWikiCard', label: 'Show or Collapse Wiki Card' },
+  { id: 'toggleNav', label: 'Show or Hide Navigation' },
+  { id: 'toggleChat', label: 'Show or Hide Chat' },
 ];
 
 /**
@@ -32,26 +29,21 @@ export const VIEW_COMMANDS: readonly MenuCommand[] = [
  * Ctrl+Tab, Ctrl+Shift+Tab, and Cmd/Ctrl+[ and ] for Back and Forward in the active tab.
  */
 export const TAB_COMMANDS: readonly MenuCommand[] = [
-  { id: 'newTab', label: 'New Tab', keys: 'Alt+Shift+T', accelerator: 'CmdOrCtrl+T' },
-  { id: 'closeTab', label: 'Close Tab', keys: 'Alt+Shift+W', accelerator: 'CmdOrCtrl+W' },
-  { id: 'duplicateTab', label: 'Duplicate Tab', keys: 'Alt+Shift+D' },
-  { id: 'nextTab', label: 'Show Next Tab', keys: 'Ctrl+Tab', accelerator: 'Ctrl+Tab' },
-  { id: 'previousTab', label: 'Show Previous Tab', keys: 'Ctrl+Shift+Tab', accelerator: 'Ctrl+Shift+Tab' },
-  { id: 'goBack', label: 'Back', keys: 'Ctrl+-', accelerator: 'CmdOrCtrl+[' },
-  { id: 'goForward', label: 'Forward', keys: 'Ctrl+Shift+-', accelerator: 'CmdOrCtrl+]' },
+  { id: 'newTab', label: 'New Tab', accelerator: 'CmdOrCtrl+T' },
+  { id: 'closeTab', label: 'Close Tab', accelerator: 'CmdOrCtrl+W' },
+  { id: 'duplicateTab', label: 'Duplicate Tab' },
+  { id: 'nextTab', label: 'Show Next Tab', accelerator: 'Ctrl+Tab' },
+  { id: 'previousTab', label: 'Show Previous Tab', accelerator: 'Ctrl+Shift+Tab' },
+  { id: 'goBack', label: 'Back', accelerator: 'CmdOrCtrl+[' },
+  { id: 'goForward', label: 'Forward', accelerator: 'CmdOrCtrl+]' },
 ];
 
 export const HELP_COMMANDS: readonly MenuCommand[] = [
-  { id: 'goFormat', label: 'Record Format', keys: 'g f' },
-  { id: 'showShortcuts', label: 'Keyboard Shortcuts', keys: 'Mod+/' },
+  { id: 'goFormat', label: 'Record Format' },
+  { id: 'showShortcuts', label: 'Keyboard Shortcuts' },
 ];
 
 export const MENU_COMMANDS: readonly MenuCommand[] = [...VIEW_COMMANDS, ...TAB_COMMANDS, ...HELP_COMMANDS];
-
-/** The binding a command's keys stand for on a platform. */
-export function commandKeys(command: MenuCommand, mac: boolean): string {
-  return mac ? command.keys : (command.otherKeys ?? command.keys);
-}
 
 /** One key press of a binding, as the page's keydown listener reads it. */
 export interface KeyPress {
