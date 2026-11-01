@@ -138,8 +138,6 @@ export function orderGraph(graph: TraceGraph, previous: TraceOrder | null): Trac
 
 /** Each product's last order, kept for the page's life: what a new one keeps. */
 const lastOf = new Map<string, TraceOrder>();
-/** A product's order shown last, if any: the walk's. */
-export const shownOrder = (product: string): TraceOrder | null => lastOf.get(product) ?? null;
 
 /** The last order made: where, how long it took and how many outcomes and rows it ordered (the perf suite reads it). */
 let last: { thread: 'worker' | 'page'; ms: number; boxes: number; count: number } | null = null;

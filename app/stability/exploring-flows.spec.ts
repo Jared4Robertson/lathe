@@ -130,6 +130,9 @@ test.describe('Exploring flows', () => {
   test('LA-EXP-UC04-FL-T walk the graph through folder-like groups: a domain\'s stages and kinds, a group\'s address, events, a pattern\'s rules', async ({ page }) => {
     await openPage(page, '/LA-EXP?stage=graph');
     await graphReady(page);
+    // The depth decides the levels drawn: a domain's stages are its first level, a stage's kinds its second.
+    await page.locator(`${STAGE_BOX} .graph-depth:not(.graph-layout) button`, { hasText: '2' }).click();
+    await expect.poll(async () => (await sceneOf(page)).boxes.some((b) => b.id === 'LA-EXP/interaction-design/flow')).toBe(true);
     const groups = (await sceneOf(page)).boxes.filter((b) => b.group && b.id.startsWith('LA-EXP/')).map((b) => b.id);
     expect(groups).toEqual(expect.arrayContaining(['LA-EXP/domain-model', 'LA-EXP/test-plan', 'LA-EXP/interaction-design/flow']));
     // A group becomes the focus at its own address; the wiki beside it follows.
