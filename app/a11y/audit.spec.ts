@@ -115,7 +115,7 @@ const PAGES: State[] = [
   { name: 'Format page in the wiki card', url: `${PRODUCT}?page=format`, ready: '.wiki-panel.is-format h2' },
   { name: 'Kind page in the wiki card', url: `${RECORD}?page=format/kinds/use_case`, ready: '.wiki-panel.is-format h2' },
   // The Check aggregate's own page: a product's own check, with its actions.
-  { name: 'Check page in the wiki card', url: `${PRODUCT}?page=format/checks/actor-not-a-role`, ready: '.wiki-panel.is-format [data-aggregate="check"]' },
+  { name: 'Check page in the wiki card', url: `${PRODUCT}?page=format/checks/shared-module-group-unknown`, ready: '.wiki-panel.is-format [data-aggregate="check"]' },
   { name: 'Appearance popover', url: `${PRODUCT}?panel=appearance`, ready: '.appearance-popover .theme-rows' },
   { name: 'Products picker', url: '/', ready: '.dialog.products-picker h1' },
 ].map((p) => ({ name: p.name, run: (page: Page) => open(page, p.url, p.ready, 'state' in p ? p.state : 'visible') }));

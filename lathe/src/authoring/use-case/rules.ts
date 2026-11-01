@@ -4,6 +4,7 @@ import { beyondFirst, type AggregateRules, type ReadView, type RuleProblem } fro
 import type { Row } from '../../platform/data/rows.ts';
 import type { FlowRow, FlowStepRow, FlowTestRow } from '../../platform/data/tables.ts';
 import { StoreError } from '../../platform/data/problems.ts';
+import { rolesNotOfProduct } from '../product/rules.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
 import { USE_CASE_AGGREGATE, useCasesFrom, type UseCase } from './model.ts';
 
@@ -26,13 +27,26 @@ export function useCaseOneEach(flows: readonly FlowRow[], flowTests: readonly Fl
   ];
 }
 
+/** The product a use case sits in, through its capability and domain, or undefined while either is missing. */
+function productOf(useCase: UseCase, view: ReadView): string | undefined {
+  const capability = view.record(useCase.useCase.capability_id);
+  const domain = capability?.kind === 'capability' ? view.record(String(capability.row.domain_id)) : undefined;
+  return domain?.kind === 'domain' ? String(domain.row.product_id) : undefined;
+}
+
 /**
  * Every rule the use case breaks (LA-AUT-INV100 one each, as useCaseOneEach says; LA-AUT-INV08 a step fulfills only
  * its own use case's requirements; LA-AUT-INV42 a flow's ID is its use case's and FL; LA-AUT-INV18 each step on a path
- * has its own position). The view gives what the use case names outside itself: the requirements its steps fulfill.
+ * has its own position; LA-AUT-INV193 each actor is one of its product's roles). The view gives what the use case
+ * names outside itself: the requirements its steps fulfill and its product's roles.
  */
 export function useCaseProblems(useCase: UseCase, view: ReadView): RuleProblem[] {
   const problems: RuleProblem[] = [];
+  const product = productOf(useCase, view);
+  if (product !== undefined) {
+    const actors = useCase.actors.map((role, at) => ({ use_case_id: useCase.root, position: at + 1, role_name: role }));
+    problems.push(...rolesNotOfProduct(view, 'use-case-actor-role', 'use_case_actor', `Use case ${useCase.root}`, product, actors, 'as its actor'));
+  }
   const flows = new Map(useCase.flows.map((f) => [f.id, f]));
   for (const flow of useCase.flows) {
     const expected = `${flow.use_case_id}-FL`;

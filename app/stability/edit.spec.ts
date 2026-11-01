@@ -129,7 +129,7 @@ test.describe('editing', () => {
   // The Check page, the Product page's Limits and the Pattern page's Followed by: each sends one of its aggregate's
   // commands, with nothing jumping.
   test('LA-V03-R03-T02 on the Check page, open a product check\'s form and save an edit', ({ page }) =>
-    saveAnEdit(page, '/LA?page=format/checks/actor-not-a-role', /^summary/, "A use case's actor is one of its product's roles, as the stability suite says.", 'actor-not-a-role'));
+    saveAnEdit(page, '/LA?page=format/checks/shared-module-group-unknown', /^summary/, "A shared module's group names an aggregate or capability of its domain, as the stability suite says.", 'shared-module-group-unknown'));
   test('LA-V51-R11-T02 on the Product page, set the product\'s limits', ({ page }) =>
     sendAForm(page, '/LA', 'Change the limits of LA', 'Set limits', 'Set limits', async (form) => {
       await form.getByRole('spinbutton', { name: /^Children of one kind/ }).fill('16');
