@@ -74,7 +74,7 @@ describe('LA-V151-R03-T01 a refused UI component command shows every reason, kee
 
   it('Remove sends Remove a UI component and shows the refusal in the question', async () => {
     const user = userEvent.setup();
-    const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'referenced', table: 'ui_component', key: 'P-UI01', message: 'UI component P-UI01 is referenced, so it stays: P-D-UC01-FL01-S01 names it' }] };
+    const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'referenced', table: 'ui_component', key: 'P-UI01', message: 'UI component P-UI01 is referenced, so it stays: P-D-UC01-FL-S01 names it' }] };
     const { commands } = await openApp('/P-UI01', { data: withPackage(), command: () => ({ answer: refusal }) });
     await user.click(within(await toolbar('P-UI01')).getByRole('button', { name: 'Remove' }));
     const panel = screen.getByRole('region', { name: 'Remove P-UI01?' });

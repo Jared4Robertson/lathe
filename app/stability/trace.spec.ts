@@ -54,12 +54,14 @@ test.describe('the Trace stage stays where the Reader left it', () => {
     const moved = [...before.boxes].filter(([key, b]) => b.row !== null && above.has(b.row) && after.boxes.get(key)?.rect !== b.rect).map(([key]) => key);
     expect(moved).toEqual([]);
 
-    // A step of its first flow: its path across the row, the wiki card on it.
-    const flow = `${USE_CASE}|design/${USE_CASE}-FL01`;
-    expect((await sceneOf(page, false)).boxes.find((b) => b.key === flow)?.toggle).toBeTruthy();
-    const toggle = await reach(page, async () => (await sceneOf(page, false)).boxes.find((b) => b.key === flow)!.toggle!);
-    await page.mouse.click(toggle.x, toggle.y);
-    await page.waitForTimeout(600);
+    // A step of its flow through the web app: its path across the row, the wiki card on it. The flow opens to a box per
+    // interface that offers the use case, the web app's to its version's steps.
+    for (const key of [`${USE_CASE}|design/${USE_CASE}-FL`, `${USE_CASE}|design/${USE_CASE}-FL/LA-IF01`]) {
+      expect((await sceneOf(page, false)).boxes.find((b) => b.key === key)?.toggle).toBeTruthy();
+      const toggle = await reach(page, async () => (await sceneOf(page, false)).boxes.find((b) => b.key === key)!.toggle!);
+      await page.mouse.click(toggle.x, toggle.y);
+      await page.waitForTimeout(600);
+    }
     const centerOf = async (id: string) => { const r = (await sceneOf(page, false)).boxes.find((b) => b.id === id)!.rect; return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
     const step = await reach(page, () => centerOf(STEP));
     await page.mouse.click(step.x, step.y);

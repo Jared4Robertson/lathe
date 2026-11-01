@@ -54,9 +54,9 @@ for (const layout of ['tree', 'nested'] as const) {
     await move(page, () => page.keyboard.press('ArrowRight'));
     const step = at(page);
     await page.locator(`${GRAPH} .graph-box.is-focus`).dispatchEvent('click', { metaKey: true, button: 0 });
-    await expect(page.locator('[role="tablist"] [role="tab"]')).toHaveCount(2);
-    await page.locator('[role="tablist"] [role="tab"]').first().click();
-    await expect(page.locator('[role="tablist"] [role="tab"]').first()).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('[role="tablist"][aria-label="Open pages"] [role="tab"]')).toHaveCount(2);
+    await page.locator('[role="tablist"][aria-label="Open pages"] [role="tab"]').first().click();
+    await expect(page.locator('[role="tablist"][aria-label="Open pages"] [role="tab"]').first()).toHaveAttribute('aria-selected', 'true');
     await graphDrawn(page);
     await page.locator('.focus-stage .graph-depth:not(.graph-layout) button', { hasText: '2' }).click();
     await page.locator('.focus-stage .graph-filters > summary').click();

@@ -43,7 +43,7 @@ const CAPABILITY = { id: 'TL-LEND-CAP01', title: 'Lending', domain_id: 'TL-LEND'
 const USE_CASE = { id: 'TL-LEND-UC01', title: 'Borrow a tool', capability_id: 'TL-LEND-CAP01', goal: 'Take a tool home for the loan period.' };
 const REQUIREMENT = { id: 'TL-LEND-UC01-R01', title: 'A tool on loan is refused', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse to lend a tool that is on loan.' };
 const INTERFACE = { id: 'TL-IF01', title: 'HTTP API', product_id: 'TL', kind: 'API', description: 'The API the desk app calls.', public: false };
-const FLOW = { id: 'TL-LEND-UC01-FL', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' };
+const FLOW = { id: 'TL-LEND-UC01-FL', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01' };
 const STEP = { id: 'TL-LEND-UC01-FL-S01', title: 'The member borrows a free tool', flow_id: 'TL-LEND-UC01-FL', path: 'main', position: 1 };
 const TEST = { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'not automated yet', when: 'With a tool on loan, a member borrows it', then: 'It is refused' };
 

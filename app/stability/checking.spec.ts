@@ -16,7 +16,7 @@ const CHECKS = `${PRODUCT}?panel=checks`;
 const PANEL = '.tool-panel.checks-panel';
 /** A view the suite adds while the page is open; nothing uses it, so it is an error. */
 const ADDED = 'LA-V990';
-const ADDED_ROW = `${JSON.stringify({ id: ADDED, title: 'A page nothing reaches', description: 'A view no step happens in.' })}\n`;
+const ADDED_ROW = `${JSON.stringify({ id: ADDED, title: 'A page nothing reaches', description: 'A view that presents nothing.' })}\n`;
 
 /** The desktop shell's bridge, stood in for: it keeps each error count the page sends for the Dock badge. */
 function keepCounts(bridge: LatheDesktop) {

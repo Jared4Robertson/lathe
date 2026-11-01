@@ -15,7 +15,7 @@ import { showCard } from '../stability/measure';
 const GROUP = '/LA-EXP/technical-specification';
 
 /** What only a record's page in the wiki card draws: on a phone the card is a sheet the Reader opens. */
-const inCard = (ready: string) => ready.startsWith('[data-aggregate=') || ready === '.interface-flows';
+const inCard = (ready: string) => ready.startsWith('[data-aggregate=') || ready === '.interface-offers';
 
 /**
  * Opens the page and waits for `ready`: drawn, or only attached when it is the Trace's list, which sits visually hidden
@@ -73,7 +73,7 @@ const PAGES: State[] = [
   { name: 'product page', url: PRODUCT, ready: '.header-strip h1' },
   { name: 'domain page', url: DOMAIN, ready: '.header-strip h1' },
   { name: 'record page', url: RECORD, ready: '.header-strip h1' },
-  { name: 'interface page', url: '/LA-IF03', ready: '.interface-flows' },
+  { name: 'interface page', url: '/LA-IF03', ready: '.interface-offers' },
   { name: 'business outcome page', url: '/LA-BO05', ready: '[data-aggregate="business-outcome"]' },
   { name: 'extension record page', url: '/LA-AUT-MOD10', ready: '[data-aggregate="extension-record"]' },
   { name: 'entry point page', url: '/LA-PLT-ENTRY01', ready: '[data-aggregate="entry-point"]' },
@@ -121,6 +121,12 @@ PAGES.push({ name: 'Trace stage, a row opened', run: async (page: Page) => {
   const expandRow = page.locator('.focus-stage .stage-toolbar').getByRole('button', { name: 'Expand row' });
   if (await expandRow.count()) await expandRow.click();
   else await page.locator('.focus-stage .trace-list').getByRole('button', { name: /^Open/ }).first().click();
+  await page.waitForTimeout(400);
+} });
+// A flow's page on an interface's tab: that interface's derived version of the flow, its gaps and refusal rules.
+PAGES.push({ name: 'flow page, on an interface\'s tab', run: async (page: Page) => {
+  await open(page, '/LA-AUT-UC06-FL', '[data-aggregate="use-case"] .flow-tabs');
+  await page.locator('[data-aggregate="use-case"] .flow-tabs').getByRole('tab').nth(1).click();
   await page.waitForTimeout(400);
 } });
 // Changing records: the form generated from the schema (Edit and Add) and the question before a

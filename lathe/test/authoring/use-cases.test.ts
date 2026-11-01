@@ -43,7 +43,7 @@ describe('capabilities', () => {
   });
 
   it("LA-AUT-UC02-R05-T01 A use case under a capability, and everything under it, belongs to the capability's domain and counts in its coverage", async () => {
-    for (const id of ['EX-LEND-CAP01', 'EX-LEND-UC01', 'EX-LEND-UC01-R01', 'EX-LEND-UC01-FL01', 'EX-LEND-UC01-FL01-S01', 'EX-LEND-UC01-R01-T01']) {
+    for (const id of ['EX-LEND-CAP01', 'EX-LEND-UC01', 'EX-LEND-UC01-R01', 'EX-LEND-UC01-FL', 'EX-LEND-UC01-FL-S01', 'EX-LEND-UC01-R01-T01']) {
       expect(record(good, id).domain, id).toBe('EX-LEND');
     }
     expect(record(good, 'EX-PAT-ACT').domain).toBeNull();
@@ -66,7 +66,7 @@ describe('patterns', () => {
     expect(parentsOf(schema, 'pattern')).toEqual(['product.product_id']);
     expect(schema.tables.pattern_setting).toMatchObject({ role: 'part', ownerColumn: 'pattern_id' });
     expect(parentsOf(schema, 'pattern_rule')).toEqual(['pattern.pattern_id']);
-    expect(pairsOf(schema, 'follows')).toEqual(['domain>pattern', 'use_case>pattern']);
+    expect(pairsOf(schema, 'follows')).toEqual(['domain>pattern', 'interface>pattern', 'use_case>pattern']);
     expect(schema.relations.follows.role).toBeNull();
     described(await latheReference(), ['pattern', 'pattern_rule'], ['pattern_setting', 'follows', 'setting_value']);
     expect(record(good, 'EX-PAT-ACT')).toMatchObject({ parent: 'EX', domain: null, parts: { pattern_setting: [expect.objectContaining({ name: 'record', position: 1 })] } });
@@ -98,28 +98,31 @@ describe('patterns', () => {
 });
 
 describe('flows', () => {
-  it('LA-AUT-UC06-R01-T01 A use case has one flow per interface, whose steps need a path and a position, fulfill its requirements, invoke a command or query, happen in a view and exchange with integrations', () => {
+  it('LA-AUT-UC06-R01-T01 A use case has one flow, the same through every interface, whose steps need a path and a position, fulfill its requirements, invoke a command or query and exchange with integrations, and may be a variant of one interface', () => {
     expect(parentsOf(schema, 'interface')).toEqual(['product.product_id']);
     expect(requiredOf(schema, 'interface')).toEqual(['product_id', 'kind', 'description', 'public']);
     expect(schema.tables.interface.columns.find((c) => c.name === 'kind')?.values).toEqual(['web app', 'API', 'CLI', 'agent tools', 'desktop', 'other']);
     expect(parentsOf(schema, 'flow')).toEqual(['use_case.use_case_id']);
-    expect(requiredOf(schema, 'flow')).toEqual(['use_case_id', 'interface_id']);
-    expect(schema.tables.flow.unique).toContainEqual(['use_case_id', 'interface_id']);
-    expect(record(good, 'EX-LEND-UC01-FL01')).toMatchObject({ parent: 'EX-LEND-UC01', fields: { interface_id: 'EX-IF01' } });
+    expect(requiredOf(schema, 'flow')).toEqual(['use_case_id']);
+    expect(schema.tables.flow.columns.find((c) => c.name === 'interface_id')).toBeUndefined();
+    expect(record(good, 'EX-LEND-UC01-FL')).toMatchObject({ parent: 'EX-LEND-UC01', fields: { use_case_id: 'EX-LEND-UC01' } });
+    expect(schema.tables.flow_step.columns.find((c) => c.name === 'interface_id')).toMatchObject({ required: false });
     expect(parentsOf(schema, 'flow_step')).toEqual(['flow.flow_id']);
     expect(requiredOf(schema, 'flow_step')).toEqual(['flow_id', 'path', 'position']);
     expect(schema.tables.flow_step.unique).toContainEqual(['flow_id', 'path', 'position']);
     expect(pairsOf(schema, 'fulfills')).toEqual(['flow_step>uc_requirement']);
     expect(pairsOf(schema, 'invokes')).toEqual(['flow_step>command', 'flow_step>query']);
-    expect(pairsOf(schema, 'happens_in')).toEqual(['flow_step>view']);
+    expect(schema.relations.happens_in).toBeUndefined();
+    expect(pairsOf(schema, 'presents')).toEqual(['view>command', 'view>query']);
+    expect(pairsOf(schema, 'offers')).toEqual(['interface>use_case']);
     expect(pairsOf(schema, 'exchanges_with')).toEqual(['flow_step>integration']);
-    expect(record(good, 'EX-LEND-UC01-FL01-S02')).toMatchObject({ parent: 'EX-LEND-UC01-FL01', fields: { path: 'main', position: 2 } });
+    expect(record(good, 'EX-LEND-UC01-FL-S02')).toMatchObject({ parent: 'EX-LEND-UC01-FL', fields: { path: 'main', position: 2 } });
     const from = (id: string) => good.links.filter((l) => l.source === id).map((l) => `${l.relation} ${l.target}`).sort();
-    expect(from('EX-LEND-UC01-FL01-S01')).toEqual(['fulfills EX-LEND-UC01-R01', 'happens_in EX-V01', 'invokes EX-LEND-CMD01']);
-    expect(from('EX-LEND-UC01-FL01-S02')).toEqual(['exchanges_with EX-INT01', 'fulfills EX-LEND-UC01-R01', 'invokes EX-LEND-QRY01']);
+    expect(from('EX-LEND-UC01-FL-S01')).toEqual(['fulfills EX-LEND-UC01-R01', 'invokes EX-LEND-CMD01']);
+    expect(from('EX-LEND-UC01-FL-S02')).toEqual(['exchanges_with EX-INT01', 'fulfills EX-LEND-UC01-R01', 'invokes EX-LEND-QRY01']);
   });
 
-  it('LA-AUT-UC06-R01-T02 A well-formed flow raises no step problem; a second flow through one interface, a repeated position, a step fulfilling another use case and a second invoke are refused', async () => {
+  it('LA-AUT-UC06-R01-T02 A well-formed flow raises no step problem; a second flow for the use case, a repeated position, a step fulfilling another use case and a second invoke are refused', async () => {
     expect(ofCheck(good, 'step-order')).toEqual([]);
     const data = adding(everyKind(), { use_case: [{ id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a borrowed tool back.' }], uc_requirement: [{ id: 'TL-LEND-UC02-R01', title: 'Tool is lent', use_case_id: 'TL-LEND-UC02', statement: 'The library MUST refuse a tool not on loan.' }] });
     expect(await refusals(data)).toEqual([]);
@@ -138,59 +141,27 @@ describe('flows', () => {
     const ws = await loadData(without(complete(), 'fulfills', (l) => l.target_id === 'EX-LEND-UC02-R01'));
     expect(obligation(ws, 'EX-LEND', 'uc_requirement')).toMatchObject({ total: 2, designed: 1 });
     expect(ws.coverage.flatMap((c) => c.gaps).filter((g) => g.missing === 'designed')).toEqual([
-      { id: 'EX-LEND-UC02-R01', kind: 'uc_requirement', missing: 'designed', message: 'UC requirement EX-LEND-UC02-R01 is not designed yet: no step of EX-LEND-UC02-FL01 fulfills it.' },
+      { id: 'EX-LEND-UC02-R01', kind: 'uc_requirement', missing: 'designed', message: 'UC requirement EX-LEND-UC02-R01 is not designed yet: no step of EX-LEND-UC02-FL fulfills it.' },
     ]);
-    expect(ofCheck(ws, 'not-designed')).toEqual([expect.objectContaining({ severity: 'warning', record: 'EX-LEND-UC02-R01', message: 'UC requirement EX-LEND-UC02-R01 is not designed yet: no step of EX-LEND-UC02-FL01 fulfills it.' })]);
+    expect(ofCheck(ws, 'not-designed')).toEqual([expect.objectContaining({ severity: 'warning', record: 'EX-LEND-UC02-R01', message: 'UC requirement EX-LEND-UC02-R01 is not designed yet: no step of EX-LEND-UC02-FL fulfills it.' })]);
   });
 
-  it('LA-AUT-UC06-R07-T02 A UC requirement is designed only once a step of every flow of its use case fulfills it', async () => {
-    // A second flow of UC01, through a CLI, whose one step fulfills nothing: UC01's requirement is no longer designed.
-    const data = adding(complete(), {
-      interface: [{ id: 'EX-IF02', title: 'CLI', product_id: 'EX', kind: 'CLI', description: 'The command line the librarian runs.', public: false }],
-      flow: [{ id: 'EX-LEND-UC01-FL02', title: 'Borrow from the terminal', use_case_id: 'EX-LEND-UC01', interface_id: 'EX-IF02' }],
-      flow_step: [{ id: 'EX-LEND-UC01-FL02-S01', title: 'Run borrow', flow_id: 'EX-LEND-UC01-FL02', path: 'main', position: 1 }],
-      flow_test: [{ id: 'EX-LEND-UC01-FL02-T', title: 'Borrow from the terminal', flow_id: 'EX-LEND-UC01-FL02', level: 'system', state: 'manual', manual_reason: 'Done at the desk.', steps: ['Run borrow with a free tool.'], expected_result: 'The loan is opened.' }],
-    });
-    const short = await loadData(data);
-    expect(obligation(short, 'EX-LEND', 'uc_requirement')).toMatchObject({ total: 2, designed: 1 });
-    expect(ofCheck(short, 'not-designed').map((p) => p.message)).toEqual(['UC requirement EX-LEND-UC01-R01 is not designed yet: no step of EX-LEND-UC01-FL02 fulfills it.']);
-    const met = await loadData(adding(data, { fulfills: [{ source_id: 'EX-LEND-UC01-FL02-S01', target_id: 'EX-LEND-UC01-R01' }] }));
-    expect(obligation(met, 'EX-LEND', 'uc_requirement')).toMatchObject({ total: 2, designed: 2 });
-  });
-
-  it('LA-AUT-UC06-R08-T01 A flow\'s ID is its use case\'s ID, FL and its interface\'s number, and its interface is of its own product', async () => {
+  it('LA-AUT-UC06-R08-T01 A flow\'s ID is its use case\'s ID and FL', async () => {
     const data = everyKind();
     const flow = data.flow[0];
+    expect(flow.id).toBe('TL-LEND-UC01-FL');
     expect(await refusals(data)).toEqual([]);
-    // TL-IF02 is a second interface of TL; a flow through it ends in FL02, not FL03.
-    const second = adding(data, { interface: [{ id: 'TL-IF02', title: 'CLI', product_id: 'TL', kind: 'CLI', description: 'The command line the librarian runs.', public: false }] });
-    expect(await refusals(adding(second, { flow: [{ ...flow, id: 'TL-LEND-UC01-FL02', title: 'Borrow a tool through the CLI', interface_id: 'TL-IF02' }] }))).toEqual([]);
-    expect(await refusals(adding(second, { flow: [{ ...flow, id: 'TL-LEND-UC01-FL03', title: 'Borrow a tool through the CLI', interface_id: 'TL-IF02' }] }))).toEqual([
-      expect.objectContaining({ rule: 'flow-id-interface', message: 'TL-LEND-UC01-FL03 goes through TL-IF02, so its ID is TL-LEND-UC01-FL02' }),
-    ]);
-    // An interface of another product is refused.
-    const other = adding(second, { product: [{ id: 'XX', title: 'Other', description: 'Another product beside the library.' }], interface: [{ id: 'XX-IF02', title: 'CLI', product_id: 'XX', kind: 'CLI', description: 'The other product\'s command line.', public: false }] });
-    expect((await refusals(adding(other, { flow: [{ ...flow, id: 'TL-LEND-UC01-FL02', title: 'Borrow a tool through the CLI', interface_id: 'XX-IF02' }] }))).map((p) => p.rule)).toEqual(['reference-crosses-product']);
+    const second = adding(data, { use_case: [{ id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a borrowed tool back.' }] });
+    expect(await refusals(adding(second, { flow: [{ id: 'TL-LEND-UC02-FL', title: 'Return a tool', use_case_id: 'TL-LEND-UC02' }] }))).toEqual([]);
+    expect(await refusals(adding(second, { flow: [{ id: 'TL-LEND-UC02-FL02', title: 'Return a tool', use_case_id: 'TL-LEND-UC02' }] }))).toContainEqual(
+      expect.objectContaining({ rule: 'flow-id', message: 'TL-LEND-UC02-FL02 is the flow of TL-LEND-UC02, so its ID is TL-LEND-UC02-FL' }),
+    );
   });
 
-  it('LA-AUT-UC06-R09-T01 A step of a flow through an API, a CLI or agent tools happens in no view', async () => {
-    const viewed = everyKind();
-    const step = viewed.flow_step[0];
-    expect(viewed.happens_in).toContainEqual({ source_id: step.id, target_id: 'TL-V01' });
-    expect(await refusals(viewed)).toEqual([]);
-    for (const kind of ['API', 'CLI', 'agent tools']) {
-      const through = changing(viewed, 'interface', () => true, { kind });
-      expect(await refusals(through), kind).toEqual([
-        expect.objectContaining({ rule: 'step-fits-interface', message: `${step.id} is a step of TL-LEND-UC01-FL, which goes through TL-IF01, an interface of kind ${kind}, so it cannot happen in view TL-V01` }),
-      ]);
-    }
-    for (const kind of ['web app', 'desktop', 'other']) expect(await refusals(changing(viewed, 'interface', () => true, { kind })), kind).toEqual([]);
-  });
-
-  it('LA-AUT-UC06-R11-T01 An interface no flow goes through is a gap', async () => {
+  it('LA-AUT-UC06-R11-T01 An interface that offers no use case is a gap', async () => {
     const ws = await loadData(adding(complete(), { interface: [{ id: 'EX-IF02', title: 'CLI', product_id: 'EX', kind: 'CLI', description: 'The command line the librarian runs.', public: false }] }));
-    expect(ws.coverage.flatMap((c) => c.gaps).filter((g) => g.missing === 'interface-without-flow')).toEqual([
-      { id: 'EX-IF02', kind: 'interface', missing: 'interface-without-flow', message: 'Interface EX-IF02 has no flow: no use case happens through it yet.' },
+    expect(ws.coverage.flatMap((c) => c.gaps).filter((g) => g.missing === 'interface-offers-nothing')).toEqual([
+      { id: 'EX-IF02', kind: 'interface', missing: 'interface-offers-nothing', message: 'Interface EX-IF02 offers no use case yet.' },
     ]);
   });
 });
@@ -245,7 +216,7 @@ describe('requirements and tests', () => {
   });
 });
 
-describe('LA-AUT-INV100-T the Use case aggregate refuses a second flow through one interface and a second test of a flow', () => {
+describe('LA-AUT-INV100-T the Use case aggregate refuses a second flow for a use case and a second test of a flow', () => {
   it('refuses each from its command with use-case-one-each, before the unique key underneath', async () => {
     const store = await openStore(writeData(everyKind()), { latheDataDir: null });
     try {
@@ -258,11 +229,11 @@ describe('LA-AUT-INV100-T the Use case aggregate refuses a second flow through o
         }
         throw new Error('not refused');
       };
-      expect(await refused(() => runCommand(store, ADD_FLOW, { id: 'TL-LEND-UC01-FL', title: 'Borrow a tool again', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }))).toContainEqual(
-        expect.objectContaining({ rule: 'use-case-one-each', message: 'use case TL-LEND-UC01 already has its flow through TL-IF01, so TL-LEND-UC01-FL cannot be a second: a use case has one flow per interface' }),
+      expect(await refused(() => runCommand(store, ADD_FLOW, { id: 'TL-LEND-UC01-FL', title: 'Borrow a tool again', use_case_id: 'TL-LEND-UC01' }))).toContainEqual(
+        expect.objectContaining({ rule: 'use-case-one-each', message: 'use case TL-LEND-UC01 already has its flow, so TL-LEND-UC01-FL cannot be a second: a use case has one flow, the same through every interface' }),
       );
-      expect(await refused(() => runCommand(store, ADD_FLOW_TEST, { id: 'TL-LEND-UC01-FL01-T2', title: 'Again', flow_id: 'TL-LEND-UC01-FL', level: 'browser', state: 'automated', file: 'e2e/again.spec.ts', steps: ['Borrow'], expected_result: 'Listed.' }))).toEqual([
-        { rule: 'use-case-one-each', message: 'flow TL-LEND-UC01-FL already has its test, so TL-LEND-UC01-FL01-T2 cannot be a second: a flow has one' },
+      expect(await refused(() => runCommand(store, ADD_FLOW_TEST, { id: 'TL-LEND-UC01-FL-T2', title: 'Again', flow_id: 'TL-LEND-UC01-FL', level: 'browser', state: 'automated', file: 'e2e/again.spec.ts', steps: ['Borrow'], expected_result: 'Listed.' }))).toEqual([
+        { rule: 'use-case-one-each', message: 'flow TL-LEND-UC01-FL already has its test, so TL-LEND-UC01-FL-T2 cannot be a second: a flow has one' },
       ]);
     } finally {
       await store.close();

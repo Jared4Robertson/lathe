@@ -1,1 +1,1 @@
-{"id":"P-D-UC01-FL01-T","title":"Lend a thing at the desk","flow_id":"P-D-UC01-FL01","level":"browser","state":"manual","manual_reason":"Run at the desk before each release.","steps":["Open the desk","Lend the drill"],"expected_result":"The loan shows."}
+{"id":"P-D-UC01-FL-T","title":"Lend a thing at the desk","flow_id":"P-D-UC01-FL","level":"browser","state":"manual","manual_reason":"Run at the desk before each release.","steps":["Open the desk","Lend the drill"],"expected_result":"The loan shows."}

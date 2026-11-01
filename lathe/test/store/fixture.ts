@@ -71,8 +71,9 @@ export function everyKind(): Data {
 
     // Interaction design.
     interface: [{ id: 'TL-IF01', title: 'Web app', product_id: 'TL', kind: 'web app', description: 'The desk app the librarian uses.', public: false }],
-    flow: [{ id: 'TL-LEND-UC01-FL', title: 'Borrow a tool in the web app', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }],
-    flow_step: [{ id: 'TL-LEND-UC01-FL-S01', title: 'Pick a tool', flow_id: 'TL-LEND-UC01-FL', path: 'main', position: 1 }],
+    interface_actor: [{ interface_id: 'TL-IF01', position: 1, role_name: 'Member' }],
+    flow: [{ id: 'TL-LEND-UC01-FL', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01' }],
+    flow_step: [{ id: 'TL-LEND-UC01-FL-S01', title: 'Pick a tool', flow_id: 'TL-LEND-UC01-FL', path: 'main', position: 1, interface_id: 'TL-IF01' }],
     view: [{ id: 'TL-V01', title: 'Catalog', route: '/catalog', description: 'Every tool, with whether it is free.' }],
     view_requirement: [{ id: 'TL-V01-R01', title: 'Free tools first', view_id: 'TL-V01', statement: 'The catalog MUST list free tools first.' }],
     endpoint: [{ id: 'TL-LEND-EP01', title: 'POST /loans', command_id: 'TL-LEND-CMD01', method: 'POST', route: '/loans', description: 'Takes a member and a tool; answers 201 with the loan.' }],
@@ -151,7 +152,8 @@ export function everyKind(): Data {
     calls: [{ source_id: 'TL-LEND-CMD01', target_id: 'TL-LEND-DS01' }],
     fulfills: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-UC01-R01' }],
     invokes: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-CMD01' }],
-    happens_in: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-V01' }],
+    presents: [{ source_id: 'TL-V01', target_id: 'TL-LEND-CMD01' }],
+    offers: [{ source_id: 'TL-IF01', target_id: 'TL-LEND-UC01' }],
     exchanges_with: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-INT01' }],
     renders: [{ source_id: 'TL-UI01', target_id: 'TL-V01' }],
     builds: [{ source_id: 'TL-UI01', target_id: 'TL-V01-R01' }],

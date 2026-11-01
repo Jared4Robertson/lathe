@@ -7,7 +7,7 @@ import { openPage, showCard } from './measure';
 import { keepData } from './scenarios';
 import { clickBox, clickErdBox, erdDrawn, erdSceneOf, expectKeyWhole, focusDrawn, sceneOf, traceDrawn, traceSceneOf } from './scene';
 
-// Exploring's flow tests (LA-EXP-UC01-FL to UC13-FL01): one per flow, each walking its main path in
+// Exploring's flow tests (LA-EXP-UC01-FL to UC13-FL): one per flow, each walking its main path in
 // Chromium over the suite's copy of Lathe's data, as the Reader does. They prove the flow end to
 // end; the scenarios beside them hold each move to "nothing jumps".
 
@@ -221,7 +221,7 @@ test.describe('Exploring flows', () => {
     await expect(page.locator(WIKI)).toHaveCount(0);
     await graphReady(page);
     await focusDrawn(page, 'LA-EXP-UC03-FL');
-    await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => /^LA-EXP-UC03-FL01-S\d+$/.test(b.id)).length).toBe(10);
+    await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => /^LA-EXP-UC03-FL-S\d+$/.test(b.id)).length).toBe(10);
     // A requirement's Trace stage: Expand row opens its use case's row, its box focused in the Use case column, its path
     // lit across the row to the flow whose step fulfills it, the rest faded.
     await page.goto('/LA-EXP-UC03-R18?stage=trace');

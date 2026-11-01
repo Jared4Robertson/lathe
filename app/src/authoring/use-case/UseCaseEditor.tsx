@@ -53,8 +53,8 @@ export function UseCaseEditor({ index, useCase, id, kind, children }: { index: R
   if (mode.mode === 'change') return <div className="spec-body"><ChangeForm context={context} id={id} kind={kind} /></div>;
   if (mode.mode === 'add') return <div className="spec-body"><AddForm context={context} parent={id} kind={mode.kind} /></div>;
   if (mode.mode === 'move') return <div className="spec-body"><MoveForm context={context} /></div>;
-  // A flow has one flow test: once it has it, there is nothing more to add of that kind.
-  const addable = addedUnder(index.meta, kind, INSIDE).filter((k) => k !== 'flow_test' || !useCase.flows.some((f) => f.flow.id === id && f.test));
+  // A use case has one flow and a flow one flow test: once it has it, there is nothing more to add of that kind.
+  const addable = addedUnder(index.meta, kind, INSIDE).filter((k) => (k !== 'flow' || useCase.flows.length === 0) && (k !== 'flow_test' || !useCase.flows.some((f) => f.flow.id === id && f.test)));
   return (
     <>
       <div className="record-actions" role="toolbar" aria-label={`Change ${id}`} ref={toolbar}>
@@ -91,7 +91,7 @@ function productChoices(index: RecordIndex, useCase: UseCasePage, kinds: readonl
 const USE_CASE_HINTS = { goal: LONG, notes: LONG };
 
 /** The fields each kind's Add and Change take, from their inputs (Change leaves out the ID, Add the parent). */
-function fieldsOf(context: FormContext, kind: UseCaseKind, adding: boolean, parent: string): FieldSpec[] {
+function fieldsOf(context: FormContext, kind: UseCaseKind, adding: boolean): FieldSpec[] {
   const { index, useCase } = context;
   const F = USE_CASE_FIELDS;
   const startsFrom = { choices: productChoices(index, useCase, ['test_data_set']) };
@@ -100,21 +100,19 @@ function fieldsOf(context: FormContext, kind: UseCaseKind, adding: boolean, pare
       return addOrChangeFields(adding, F['/api/use-case/add-use-case'], 'capability_id', F['/api/use-case/change-use-case'], USE_CASE_HINTS);
     case 'uc_requirement':
       return addOrChangeFields(adding, F['/api/use-case/add-uc-requirement'], 'use_case_id', F['/api/use-case/change-uc-requirement'], { statement: LONG });
-    case 'flow': {
-      if (!adding) return formFields(F['/api/use-case/change-flow'], ['id']);
-      // The interface is one its use case has no flow through yet.
-      const through = new Set(useCase.flows.map((f) => f.flow.interface_id));
-      const interfaces = productChoices(index, useCase, ['interface']).filter((c) => !through.has(c.id));
-      return formFields(F['/api/use-case/add-flow'], ['use_case_id'], {
-        interface_id: { label: 'Interface', choices: interfaces, description: 'The interface it goes through: one its use case has no flow through yet. The flow\'s ID ends in its number.' },
-      });
-    }
+    case 'flow':
+      return addOrChangeFields(adding, F['/api/use-case/add-flow'], 'use_case_id', F['/api/use-case/change-flow']);
     case 'flow_step': {
-      const flowId = adding ? parent : stepsOfUseCase(useCase).find((s) => s.step.id === parent)!.step.flow_id;
+      // A variant's interface is one of those that offer the use case.
+      const offering = new Set(useCase.flows.flatMap((f) => f.through.map((t) => t.interface)));
       const hints = {
+        interface_id: {
+          label: 'Variant of',
+          choices: productChoices(index, useCase, ['interface']).filter((c) => offering.has(c.id)),
+          description: `Empty when every interface that offers ${useCase.useCase.id} does the step; else the one interface that alone does it.`,
+        },
         fulfills: { choices: useCase.requirements.map(({ requirement: r }) => ({ id: r.id, title: r.title })), description: `The UC requirements of ${useCase.useCase.id} it fulfills.` },
         invokes: { choices: productChoices(index, useCase, ['command', 'query']) },
-        happens_in: { choices: productChoices(index, useCase, ['view']), description: `The view it happens in, if any: only on a web app, desktop or other interface (${flowId} goes through ${useCase.flows.find((f) => f.flow.id === flowId)?.flow.interface_id ?? 'its interface'}).` },
         exchanges_with: { choices: productChoices(index, useCase, ['integration']) },
       };
       return addOrChangeFields(adding, F['/api/use-case/add-flow-step'], 'flow_id', F['/api/use-case/change-flow-step'], hints);
@@ -138,7 +136,7 @@ function currentOf(useCase: UseCasePage, kind: UseCaseKind, id: string): Record<
       return { ...useCase.flows.find((f) => f.flow.id === id)!.flow };
     case 'flow_step': {
       const step: StepOnPage = stepsOfUseCase(useCase).find((s) => s.step.id === id)!;
-      return { ...step.step, invokes: step.invokes ?? undefined, happens_in: step.happensIn ?? undefined, fulfills: step.fulfills, exchanges_with: step.exchangesWith };
+      return { ...step.step, invokes: step.invokes ?? undefined, fulfills: step.fulfills, exchanges_with: step.exchangesWith };
     }
     case 'use_case_test':
       return tested(useCase.requirements.flatMap((r) => r.tests).find((t) => t.test.id === id)!);
@@ -174,7 +172,7 @@ const send = (writer: Writer, route: CommandRoute, input: Record<string, unknown
 function ChangeForm({ context, id, kind }: { context: FormContext; id: string; kind: UseCaseKind }) {
   const { index, useCase, writer, onDone } = context;
   const announce = useAnnounce();
-  const specs = fieldsOf(context, kind, false, id);
+  const specs = fieldsOf(context, kind, false);
   const current = currentOf(useCase, kind, id);
   const [draft, setDraft] = useState<Draft>(() => draftOf(specs, current));
   const submit = async () => {
@@ -195,7 +193,7 @@ function ChangeForm({ context, id, kind }: { context: FormContext; id: string; k
 function AddForm({ context, parent, kind }: { context: FormContext; parent: string; kind: UseCaseKind }) {
   const { index, useCase, writer, onDone } = context;
   const announce = useAnnounce();
-  const specs = fieldsOf(context, kind, true, parent);
+  const specs = fieldsOf(context, kind, true);
   const next = useNextId(kind, parent, index);
   const [draft, setDraft] = useState<Draft>(() => ({
     ...emptyDraft(),
@@ -205,15 +203,6 @@ function AddForm({ context, parent, kind }: { context: FormContext; parent: stri
   useEffect(() => {
     if (next.state === 'read') setDraft((d) => (d.text.id ? d : { ...d, text: { ...d.text, id: next.answer } }));
   }, [next]);
-  // A flow's ID ends in its interface's number: picking the interface names it.
-  const update = (change: (d: Draft) => Draft) => setDraft((d) => {
-    const after = change(d);
-    if (kind === 'flow' && after.text.interface_id !== d.text.interface_id) {
-      const number = /-IF(\d+)$/.exec(after.text.interface_id ?? '')?.[1];
-      if (number) after.text = { ...after.text, id: `${useCase.useCase.id}-FL${number}` };
-    }
-    return after;
-  });
   const submit = async () => {
     const input = addInput(index, specs, draft, { [ADD[kind].parent]: parent });
     const answer = await send(writer, ADD[kind].route, input);
@@ -225,7 +214,7 @@ function AddForm({ context, parent, kind }: { context: FormContext; parent: stri
   };
   return (
     <CommandForm eyebrow={`New ${kindWord(index.meta, kind)} under ${parent}`} title={`Add ${withArticle(index, kind)}`} submit={submit} saveLabel={`Add ${kindWord(index.meta, kind)}`} onCancel={onDone}>
-      {(first) => <Fields index={index} specs={specs} draft={draft} setDraft={update} first={first} />}
+      {(first) => <Fields index={index} specs={specs} draft={draft} setDraft={setDraft} first={first} />}
     </CommandForm>
   );
 }

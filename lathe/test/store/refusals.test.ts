@@ -137,15 +137,15 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     }
   });
 
-  it('refuses a second flow for a use case through one interface', async () => {
-    const problems = await refusal(adding({ flow: [{ id: 'TL-LEND-UC01-FLB', title: 'Borrow online', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }] }));
+  it('refuses a second flow for a use case', async () => {
+    const problems = await refusal(adding({ flow: [{ id: 'TL-LEND-UC01-FLB', title: 'Borrow online', use_case_id: 'TL-LEND-UC01' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'unique', file: 'data/flow.jsonl', line: 2 })]);
   });
 
   it('refuses a second invariant test for one invariant, and a second test of each exactly-one kind', async () => {
     const problems = await refusal(adding({ invariant_test: [{ id: 'TL-LEND-INV01-TB', title: 'Again', invariant_id: 'TL-LEND-INV01', level: 'unit', state: 'not automated yet', when: 'With a tool on loan, lends it again', then: 'It is refused' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'unique', file: 'data/invariant_test.jsonl', line: 2 })]);
-    const flowTest = await refusal(adding({ flow_test: [{ id: 'TL-LEND-UC01-FL01-TB', title: 'Again', flow_id: 'TL-LEND-UC01-FL', level: 'browser', state: 'not automated yet', steps: ['Open the catalog', 'Borrow a tool'], expected_result: 'The loan is listed.' }] }));
+    const flowTest = await refusal(adding({ flow_test: [{ id: 'TL-LEND-UC01-FL-TB', title: 'Again', flow_id: 'TL-LEND-UC01-FL', level: 'browser', state: 'not automated yet', steps: ['Open the catalog', 'Borrow a tool'], expected_result: 'The loan is listed.' }] }));
     expect(flowTest).toEqual([expect.objectContaining({ rule: 'unique', file: 'data/flow_test.jsonl' })]);
   });
 
@@ -182,11 +182,9 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     expect(problems).toEqual([expect.objectContaining({ rule: 'id-prefix', message: 'TL-LEND-UC09-R01 is a UC requirement under TL-LEND-UC01, so its ID starts with TL-LEND-UC01-' })]);
   });
 
-  it('refuses a step invoking two operations, or happening in two views', async () => {
+  it('refuses a step invoking two operations', async () => {
     const invokes = await refusal(adding({ invokes: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-QRY01' }] }));
     expect(invokes).toEqual([expect.objectContaining({ rule: 'unique', table: 'invokes' })]);
-    const views = await refusal(adding({ view: [{ id: 'TL-V02', title: 'Desk', description: 'The desk where tools go out.' }], happens_in: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-V02' }] }));
-    expect(views).toEqual([expect.objectContaining({ rule: 'unique', table: 'happens_in' })]);
   });
 
   it('LA-VO93-C01-T refuses an entities limit below 1, or one that is not a whole number', async () => {

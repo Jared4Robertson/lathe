@@ -1,4 +1,4 @@
-import type { TraceObligation, TraceRow, TraceStep, ProductTrace } from '../../../lathe/src/traceability/trace/read-model';
+import type { TraceObligation, TraceRow, ProductTrace } from '../../../lathe/src/traceability/trace/read-model';
 import { kindLabel, type RecordIndex } from '../exploring/record-summaries/record-index';
 
 // The Trace stage (LA-V98), pure and tested directly: one row per use case of a product's space, each
@@ -8,11 +8,14 @@ import { kindLabel, type RecordIndex } from '../exploring/record-summaries/recor
 //
 // - Outcome: each business outcome once, with a line to every use case its capability serves (serves.ts's reach).
 // - Use case: the use case; expanded, its UC requirements, the aggregates its steps change and the read models they read.
-// - Design flow: a status ("2 flows · all designed"); expanded, its flows (one per interface), each expanding to its
-//   steps, each step to its view (with its view requirements), its endpoints (with their API requirements) and its
-//   integrations.
-// - Technical flow: a status ("4 handlers · 1 not built"); expanded, the selected step's chain: the UI components it
-//   happens in, the endpoints or channels of what it invokes, that command's or query's handler, its repository or
+// - Design flow: a status ("2 interfaces · all designed"); expanded, its flow (one per use case, the same through
+//   every interface), expanding to a box per interface that offers the use case, each opening that interface's version
+//   of the flow (derived): its steps, each to where it is carried out there (the views that present what it invokes,
+//   with their view requirements; the endpoints that expose it, with their API requirements; or the product's own
+//   records) and its integrations, and a dashed gap under a step the interface cannot reach. A flow no interface
+//   offers opens to its steps as written.
+// - Technical flow: a status ("4 handlers · 1 not built"); expanded, the selected step's chain: the UI components
+//   rendering the views that present what it invokes, the endpoints or channels of what it invokes, that command's or query's handler, its repository or
 //   reader, their data store, and the adapters of its integrations. Expanded by Expand all, every step's chain, grouped
 //   by step.
 // - Acceptance test suite: a status ("12 tests · all proved"); expanded, "k of N proved", each UC requirement's use
@@ -70,7 +73,7 @@ export interface Row {
   cells: string[];
   /** Its records' links, from left to right, for its paths. */
   links: RowLink[];
-  /** The steps of its flows, in flow and path order. */
+  /** The steps of its flow, in path order. */
   steps: string[];
 }
 
@@ -100,13 +103,13 @@ export const everyStepKey = (row: string) => innerKey(row, 'technical', '*');
 
 const n = (k: number, one: string, many = `${one}s`) => `${k} ${k === 1 ? one : many}`;
 
-/** A row's stage status in words, and whether it has a gap: "2 flows · all designed", "No flows". */
+/** A row's stage status in words, and whether it has a gap: "2 interfaces · all designed", "No flow". */
 export function statusOf(row: TraceRow, stage: Exclude<TraceStage, 'use-case'>): { title: string; gap: boolean } {
   const { design, technical, suite } = row.status;
   switch (stage) {
     case 'design':
-      if (design.flows === 0) return { title: 'No flows', gap: true };
-      return { title: `${n(design.flows, 'flow')} · ${design.notDesigned === 0 ? 'all designed' : `${n(design.notDesigned, 'requirement')} not designed`}`, gap: design.notDesigned > 0 };
+      if (!row.flow) return { title: 'No flow', gap: true };
+      return { title: `${n(design.interfaces, 'interface')} · ${design.notDesigned === 0 ? 'all designed' : `${n(design.notDesigned, 'requirement')} not designed`}`, gap: design.notDesigned > 0 || design.interfaces === 0 };
     case 'technical':
       if (technical.handlers === 0) return { title: technical.notBuilt > 0 ? `No handlers · ${technical.notBuilt} not built` : 'No handlers', gap: true };
       return { title: `${n(technical.handlers, 'handler')} · ${technical.notBuilt === 0 ? 'all built' : `${technical.notBuilt} not built`}`, gap: technical.notBuilt > 0 };
@@ -166,33 +169,52 @@ function build(index: RecordIndex, trace: ProductTrace): TraceGraph {
     for (const r of data.requirements) if (known(r.id)) { record(useCase, r.id); link(u, r.id); }
     for (const a of [...data.changes, ...data.reads]) if (known(a)) { record(useCase, a); link(u, a); }
 
-    // Design flow: its status, then its flows, their steps, and each step's view, endpoints and integrations.
+    // Design flow: its status, then its flow, a box per interface that offers it, and each interface's version: its
+    // steps, each with where it is carried out there and its integrations, a gap under a step it cannot reach.
     const design = statusOf(data, 'design');
     const designBox = add({ key: `${u}|design`, id: null, row: u, column: 2, depth: 0, parent: null, role: design.gap ? 'gap' : 'status', words: { kind: 'Design flow', title: design.title, meta: `Design flow · ${u}` }, opens: cellKey(u, 'design') });
-    const steps: TraceStep[] = [];
-    for (const f of data.flows) {
-      if (!known(f.id)) continue;
+    const f = data.flow && known(data.flow.id) ? data.flow : null;
+    const steps = f ? f.steps.filter((s) => known(s.id)) : [];
+    if (f) {
       const flow = record(designBox, f.id, { opens: innerKey(u, 'design', f.id) });
       link(u, f.id);
-      for (const s of f.steps) {
-        if (!known(s.id)) continue;
-        steps.push(s);
-        const has = !!s.view || s.endpoints.length > 0 || s.integrations.length > 0;
-        const step = record(flow, s.id, has ? { opens: innerKey(u, 'design', s.id) } : {});
-        link(f.id, s.id);
-        for (const r of s.fulfills) link(r, s.id);
-        if (s.view && known(s.view)) {
-          const v = record(step, s.view);
-          link(s.id, s.view);
-          for (const r of s.viewRequirements) if (known(r.id)) { record(v, r.id); link(s.view, r.id); }
+      const written = new Map(steps.map((s) => [s.id, s]));
+      for (const s of steps) for (const r of s.fulfills) link(r, s.id);
+      const integrations = (parent: string, id: string) => { for (const i of written.get(id)!.integrations) if (known(i)) { record(parent, i); link(id, i); } };
+      const faces = f.through.filter((t) => known(t.interface));
+      if (faces.length === 0) {
+        // No interface offers it: the flow opens to its steps as written.
+        for (const s of steps) {
+          const step = record(flow, s.id, s.integrations.length > 0 ? { opens: innerKey(u, 'design', s.id) } : {});
+          link(f.id, s.id);
+          integrations(step, s.id);
         }
-        for (const e of s.endpoints) {
-          if (!known(e.id)) continue;
-          const ep = record(step, e.id);
-          link(s.id, e.id);
-          for (const r of e.apiRequirements) if (known(r.id)) { record(ep, r.id); link(e.id, r.id); }
+      }
+      for (const t of faces) {
+        const face = record(flow, t.interface, { opens: innerKey(u, 'design', t.interface) });
+        link(f.id, t.interface);
+        for (const s of t.steps) {
+          if (!written.has(s.id)) continue;
+          const views = s.views.filter((v) => known(v.id));
+          const endpoints = s.endpoints.filter((e) => known(e.id));
+          const entries = s.entries.filter(known);
+          const has = views.length + endpoints.length + entries.length + written.get(s.id)!.integrations.length > 0;
+          const step = record(face, s.id, has ? { opens: innerKey(u, 'design', `${t.interface}/${s.id}`) } : {});
+          link(t.interface, s.id);
+          if (s.unreached) plain(step, 'gap:unreached', 'gap', { kind: 'Gap', title: 'Not reached', meta: `Gap · ${s.id} through ${t.interface}` }, { id: s.id });
+          for (const v of views) {
+            const box = record(step, v.id);
+            link(s.id, v.id);
+            for (const r of v.requirements) if (known(r.id)) { record(box, r.id); link(v.id, r.id); }
+          }
+          for (const e of endpoints) {
+            const box = record(step, e.id);
+            link(s.id, e.id);
+            for (const r of e.apiRequirements) if (known(r.id)) { record(box, r.id); link(e.id, r.id); }
+          }
+          for (const e of entries) { record(step, e); link(s.id, e); }
+          integrations(step, s.id);
         }
-        for (const i of s.integrations) if (known(i)) { record(step, i); link(s.id, i); }
       }
     }
 
@@ -228,8 +250,7 @@ function build(index: RecordIndex, trace: ProductTrace): TraceGraph {
       for (const t of r.tests) link(r.id, t);
       if (r.gaps.includes('proved')) link(r.id, `${suiteBox}/gap:${r.id}`);
     }
-    for (const f of data.flows) {
-      if (!known(f.id)) continue;
+    if (f) {
       if (f.test && known(f.test)) { record(suiteBox, f.test); link(f.id, f.test); }
       if (!f.proved) { plain(suiteBox, `gap:${f.id}`, 'gap', { kind: 'Gap', title: f.test ? 'Flow test not automated' : 'No flow test', meta: `Gap · ${f.id}` }, { id: f.id }); link(f.id, `${suiteBox}/gap:${f.id}`); }
     }
@@ -339,7 +360,7 @@ export function rowPath(row: Row, start: readonly string[]): RowPath | null {
   };
   walk(into, 'from', from);
   walk(out, 'to', from);
-  // The tests of the obligations on the path: the requirements a step fulfills, its view's and endpoints' requirements.
+  // The tests of the obligations on the path: the requirements a step fulfills, its views' and endpoints' requirements.
   const obligations = [...ids].filter((k) => out.get(k)?.some((l) => isTestLink(row, l)));
   for (const o of obligations) for (const l of out.get(o)!) if (isTestLink(row, l)) { lit.add(l); ids.add(row.links[l].to); }
   return { row: row.useCase, ids, links: [...lit].sort((a, b) => a - b).map((l) => row.links[l]) };
@@ -354,7 +375,7 @@ function isTestLink(row: Row, l: number): boolean {
     const proof = (o: TraceObligation) => o.tests.forEach((t) => tests.add(t));
     row.data.requirements.forEach(proof);
     row.data.lower.forEach(proof);
-    row.data.flows.forEach((f) => { if (f.test) tests.add(f.test); });
+    if (row.data.flow?.test) tests.add(row.data.flow.test);
     known = new Set(row.links.map((x, i) => (tests.has(x.to) || x.to.startsWith(`${row.useCase}|suite/`) ? i : -1)).filter((i) => i >= 0));
     testLinkCache.set(row, known);
   }
