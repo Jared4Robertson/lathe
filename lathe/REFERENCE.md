@@ -2921,12 +2921,14 @@ One typed field of a product kind, in order: a column of its table.
 | `type` | ENUM('text', 'integer', 'boolean', 'date') | yes | text, integer, boolean or date (YYYY-MM-DD). |
 | `required` | BOOLEAN | yes | Whether every record of the kind must give it. |
 | `description` | VARCHAR | yes | What the field holds. |
+| `titles` | BOOLEAN | no | Whether the field's value is also the record's title, such as a module's file: every write sets the title from it, and a title that differs is refused. Only a required text field titles its kind, and at most one does. |
 
 - **Key:** `kind`, `position`
 - **Unique:** `kind`, `name`
 - **Rule:** `("position" >= 1)`
 - **Rule:** `regexp_full_match("name", '[a-z][a-z0-9_]*')`
 - **Rule:** `("trim"(description) != '')`
+- **Rule:** `titles`
 
 <a id="table-product_relation"></a>
 

@@ -21,7 +21,7 @@ export const CHANGE_EXTENSION_RECORD: CommandDefinition<ChangeExtensionRecord> =
   route: '/api/extension-record/change-extension-record',
   input: {
     id: id('The record.', 'required'),
-    values: values('Its title or declared fields to change, by column name; null clears an optional field.', 'optional'),
+    values: values('Its title or declared fields to change, by column name; null clears an optional field. A title a field of its kind gives follows that field.', 'optional'),
     links: links('The records it links to, by relation: each list replaces that relation\'s links, and an empty one clears them.', 'optional'),
     packages: texts('The packages it uses; the list replaces the list.', 'optional'),
   },
@@ -34,7 +34,7 @@ export function changeExtensionRecord(tx: Transaction, input: ChangeExtensionRec
   const record = records.load(input.id) ?? tx.refuse('missing', `there is no extension record ${input.id}`);
   const problem = undeclared(tx.schema, tx.schema.kinds[record.kind], input);
   if (problem) tx.refuse(problem.rule, problem.message);
-  record.row = withValues(record.row, input.values);
+  record.row = withValues(tx, record.kind, record.row, input.values);
   record.links = withLinks(record.links, input.links);
   if (input.packages) record.packages = [...new Set(input.packages)].sort();
   holdToRules(tx, record);

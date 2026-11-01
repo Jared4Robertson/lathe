@@ -189,6 +189,61 @@ describe("LA-AUT-INV55-T a record of a product's own kind sits in the product th
   });
 });
 
+describe('LA-AUT-INV186-T a record of a kind a field titles is titled by that field\'s value', () => {
+  /** The declarations, with a module kind under a domain whose required file field titles it. */
+  function titledByFile(): Data {
+    const data = declared();
+    data.product_kind.push({ name: 'module', product_id: 'TL', label: 'Module', description: 'Code several records use.', parent_kind: 'domain', stage: 'technical-specification', obligation: false, id_pattern: '<domain>-MOD<nn>', id_example: 'TL-LEND-MOD01', title_form: 'identifier' });
+    data.product_kind_field.push({ kind: 'module', position: 1, name: 'file', type: 'text', required: true, description: 'The module, from the product root.', titles: true });
+    return data;
+  }
+
+  it('titles a record by its file when written without a title, and follows the file when it moves', async () => {
+    const store = await storeOf(titledByFile());
+    await runCommand(store, ADD_EXTENSION_RECORD, { kind: 'module', id: 'TL-LEND-MOD01', parent_id: 'TL-LEND', values: { file: 'src/loans/dates.ts' } });
+    expect(store.rows('module')).toEqual([expect.objectContaining({ id: 'TL-LEND-MOD01', title: 'src/loans/dates.ts', file: 'src/loans/dates.ts' })]);
+    await runCommand(store, CHANGE_EXTENSION_RECORD, { id: 'TL-LEND-MOD01', values: { file: 'src/shared/dates.ts' } });
+    expect(store.rows('module')).toEqual([expect.objectContaining({ title: 'src/shared/dates.ts', file: 'src/shared/dates.ts' })]);
+    // A title given that agrees is taken.
+    await runCommand(store, CHANGE_EXTENSION_RECORD, { id: 'TL-LEND-MOD01', values: { title: 'src/dates.ts', file: 'src/dates.ts' } });
+    expect(store.rows('module')).toEqual([expect.objectContaining({ title: 'src/dates.ts' })]);
+  });
+
+  it('refuses a title that differs from the file, on add and on change, changing no file', async () => {
+    const store = await storeOf(titledByFile());
+    const message = 'TL-LEND-MOD01 is titled "dates.ts", but a module is titled by its file, "src/loans/dates.ts"; leave its title out and it follows its file';
+    const added = await refusal(store, ADD_EXTENSION_RECORD, { kind: 'module', id: 'TL-LEND-MOD01', parent_id: 'TL-LEND', values: { title: 'dates.ts', file: 'src/loans/dates.ts' } });
+    expect(added.problems).toEqual([expect.objectContaining({ rule: 'title-from-field', message })]);
+    await runCommand(store, ADD_EXTENSION_RECORD, { kind: 'module', id: 'TL-LEND-MOD01', parent_id: 'TL-LEND', values: { file: 'src/loans/dates.ts' } });
+    const before = fileOf(store, 'module');
+    const changed = await refusal(store, CHANGE_EXTENSION_RECORD, { id: 'TL-LEND-MOD01', values: { title: 'dates.ts' } });
+    expect(changed.problems).toEqual([expect.objectContaining({ rule: 'title-from-field', message })]);
+    expect(fileOf(store, 'module')).toBe(before);
+  });
+
+  it('refuses a titling field that is not required text, and a second one', async () => {
+    const loadRefusal = async (data: Data) => {
+      try {
+        await (await openStore(writeData(data), { latheDataDir: null })).close();
+      } catch (error) {
+        if (error instanceof StoreError) return error.problems;
+        throw error;
+      }
+      throw new Error('the data loaded');
+    };
+    const optional = titledByFile();
+    optional.product_kind_field[3] = { ...optional.product_kind_field[3], required: false };
+    expect(await loadRefusal(optional)).toEqual([
+      expect.objectContaining({ rule: 'product-kind', message: 'The field file of module titles its records, so it must be a required text field: every module has a title.' }),
+    ]);
+    const second = titledByFile();
+    second.product_kind_field.push({ kind: 'module', position: 2, name: 'name', type: 'text', required: true, description: 'Its name.', titles: true });
+    expect(await loadRefusal(second)).toEqual([
+      expect.objectContaining({ rule: 'product-kind', message: 'The field name of module is a second field that titles its records, after file: at most one field titles a kind.' }),
+    ]);
+  });
+});
+
 describe('LA-AUT-UC04-R01-T53 an extension record goes with its links and packages, refused while referenced', () => {
   it('removes a record with what it starts, and refuses one a record of another kind sits under', async () => {
     const store = await storeOf();

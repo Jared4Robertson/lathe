@@ -25,7 +25,7 @@ export const CHANGE_PRODUCT_KIND: CommandDefinition<ChangeProductKind> = {
     id_pattern: column('product_kind', 'id_pattern', 'clearable'),
     id_example: column('product_kind', 'id_example', 'clearable'),
     title_form: column('product_kind', 'title_form', 'clearable'),
-    fields: parts('product_kind_field', ['name', 'type', 'required', 'description'], 'The columns its table adds, in order. Replaces the list.', 'optional'),
+    fields: parts('product_kind_field', ['name', 'type', 'required', 'description', 'titles'], 'The columns its table adds, in order. Replaces the list.', 'optional'),
   },
   handler: changeProductKind,
 };

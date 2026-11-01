@@ -26,7 +26,7 @@ export const DECLARE_PRODUCT_KIND: CommandDefinition<DeclareProductKind> = {
     id_pattern: column('product_kind', 'id_pattern', 'optional'),
     id_example: column('product_kind', 'id_example', 'optional'),
     title_form: column('product_kind', 'title_form', 'optional'),
-    fields: parts('product_kind_field', ['name', 'type', 'required', 'description'], 'The columns its table adds after id, title and the parent column, in order: each a name, type, whether it is required, and a description.', 'optional'),
+    fields: parts('product_kind_field', ['name', 'type', 'required', 'description', 'titles'], 'The columns its table adds after id, title and the parent column, in order: each a name, type, whether it is required, a description, and whether it titles the records.', 'optional'),
   },
   handler: declareProductKind,
 };
