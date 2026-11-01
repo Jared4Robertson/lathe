@@ -271,7 +271,7 @@ test.describe('keyboard', () => {
     await page.keyboard.press('Escape');
   });
 
-  test('LA-V96-R19-T07 Enter on the focused box toggles the wiki card, and Escape collapses it once quick find has closed', async ({ page }) => {
+  test('LA-V102-R02-T07 Enter on the focused box toggles the wiki card, and Escape collapses it once quick find has closed', async ({ page }) => {
     await open(page, `${RECORD}?stage=graph`, '.focus-stage .graph-flow .graph-box');
     const focusBox = page.locator('.focus-stage .graph-box.is-focus');
     await focusBox.focus();

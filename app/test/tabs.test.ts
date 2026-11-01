@@ -44,7 +44,7 @@ const at = (set: TabSet) => set.tabs.map((t) => `${hereOf(t.place).address}${t.k
 const two = () => newTab(newTab(emptyTabs(), '/A?stage=graph', DEFAULT_VIEW), '/B?stage=erd', view);
 
 describe('the tab model', () => {
-  it('LA-V96-R10-T03 A move never leaves its tab, and a page may be open in several tabs, each its own', () => {
+  it('LA-V103-R01-T03 A move never leaves its tab, and a page may be open in several tabs, each its own', () => {
     let set = two();
     // B moves onto A's page: still B, and now two tabs hold /A.
     set = moveInTab(set, '/A?stage=graph', DEFAULT_VIEW);
@@ -59,7 +59,7 @@ describe('the tab model', () => {
     expect(at(moveInTab(emptyTabs(), '/A', view))).toEqual(['/A<']);
   });
 
-  it('LA-V96-R10-T01 Opening in the same tab never switches tabs, even onto a page another tab holds', () => {
+  it('LA-V103-R01-T01 Opening in the same tab never switches tabs, even onto a page another tab holds', () => {
     const set = two();
     for (const to of ['/A?stage=graph', '/A?stage=erd', '/B?stage=erd', '/D']) {
       const next = moveInTab(set, to, DEFAULT_VIEW);
@@ -72,7 +72,7 @@ describe('the tab model', () => {
     expect(activeTab(switched)!.place.history.map((e) => e.address)).toEqual(['/B?stage=trace']);
   });
 
-  it('LA-V96-R11-T01 A new tab copies the stage, depth and filters, with a fresh history, after the active tab; in the background it leaves the active tab', () => {
+  it('LA-V103-R02-T01 A new tab copies the stage, depth and filters, with a fresh history, after the active tab; in the background it leaves the active tab', () => {
     let set = moveInTab(two(), '/B2?stage=erd', DEFAULT_VIEW);
     set = activateTab(set, set.tabs[0].key);
     // From A (first), a new tab opens after it, not at the end, and is active, with the view given and one entry.
@@ -107,9 +107,9 @@ describe('the tab model', () => {
     expect(closeTab(three, 'nope', '/P')).toBe(three);
   };
   it('LA-EXP-INV07-T There is always a tab: closing activates the right neighbor, else the left, and closing the last leaves one tab on the product', proveLaExpInv07T);
-  it('LA-V96-R12-T01 Closing the active tab activates its right neighbor, or else the left; closing the last leaves one on the product; cycling wraps', proveLaExpInv07T);
+  it('LA-V103-R03-T01 Closing the active tab activates its right neighbor, or else the left; closing the last leaves one on the product; cycling wraps', proveLaExpInv07T);
 
-  it('LA-V96-R31-T01 Each tab has its own Back and Forward: a move drops the forward entries, Back and Forward step within the tab', () => {
+  it('LA-V103-R09-T01 Each tab has its own Back and Forward: a move drops the forward entries, Back and Forward step within the tab', () => {
     let set = two();
     const [a, b] = set.tabs.map((t) => t.key);
     set = moveInTab(set, '/B1', DEFAULT_VIEW);
