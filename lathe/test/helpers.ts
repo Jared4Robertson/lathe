@@ -239,7 +239,7 @@ export function complete(): Data {
     pattern_rule: [{ id: 'EX-PAT-ACT-R01', title: 'A saved record reads the same', pattern_id: 'EX-PAT-ACT', statement: 'A saved record MUST read the same everywhere.' }],
     slot: [{ id: 'EX-PAT-ACT-SL01', title: 'Saving rule', pattern_id: 'EX-PAT-ACT', statement: 'A fill MUST refuse what its record does not allow before anything is saved.' }],
 
-    interface: [{ id: 'EX-IF01', title: 'Web app', product_id: 'EX', kind: 'web app', description: 'The desk app the librarian uses.' }],
+    interface: [{ id: 'EX-IF01', title: 'Web app', product_id: 'EX', kind: 'web app', description: 'The desk app the librarian uses.', public: false }],
     flow: [
       { id: 'EX-LEND-UC01-FL01', title: 'Borrow a tool in the web app', use_case_id: 'EX-LEND-UC01', interface_id: 'EX-IF01' },
       { id: 'EX-LEND-UC02-FL01', title: 'Add a tool in the web app', use_case_id: 'EX-LEND-UC02', interface_id: 'EX-IF01' },
@@ -367,9 +367,11 @@ export function complete(): Data {
     follows: [{ source_id: 'EX-LEND-UC02', target_id: 'EX-PAT-ACT' }],
     setting_value: [{ follower_id: 'EX-LEND-UC02', pattern_id: 'EX-PAT-ACT', setting: 'record', value: 'Tool' }],
     meets: [{ source_id: 'EX-LEND-CMD01-H', target_id: 'EX-STD-CODE-R01' }],
-    // Every accidental record is accounted for: the platform provides the data store, the standard and the generator;
-    // the generator writes the code but for the two fills of the pattern's slot.
+    // Every accidental record is accounted for: the platform provides the data store, the standard, the generator and
+    // the requirement of the internal API the desk app calls (its web framework answers 404 for an unknown resource);
+    // the generator writes the code and the endpoint but for the two fills of the pattern's slot.
     provided_by: [
+      { source_id: 'EX-LEND-EP01-R01', target_id: 'EX-INT02' },
       { source_id: 'EX-STORE01', target_id: 'EX-INT02' },
       { source_id: 'EX-STD-CODE', target_id: 'EX-INT02' },
       { source_id: 'EX-LEND-TOOL01', target_id: 'EX-INT02' },
@@ -377,7 +379,7 @@ export function complete(): Data {
     generates: [
       'EX-LEND-REPO01', 'EX-LEND-REPO02', 'EX-LEND-EN01-DM', 'EX-LEND-EN02-DM', 'EX-LEND-EN03-DM', 'EX-LEND-EN01-TB', 'EX-LEND-EN03-TB',
       'EX-LEND-RM01-TB', 'EX-VO01-VT', 'EX-LEND-SP01-PR', 'EX-LEND-EV01-ET', 'EX-LEND-EV02-ET', 'EX-LEND-RM01-PJ', 'EX-LEND-RM01-RD',
-      'EX-LEND-CMD02-H', 'EX-LEND-CMD03-H', 'EX-LEND-QRY01-H', 'EX-LEND-PO01-H', 'EX-LEND-DS01-SV', 'EX-UI01', 'EX-LEND-EP01-H', 'EX-INT01-AD',
+      'EX-LEND-CMD02-H', 'EX-LEND-CMD03-H', 'EX-LEND-QRY01-H', 'EX-LEND-PO01-H', 'EX-LEND-DS01-SV', 'EX-UI01', 'EX-LEND-EP01', 'EX-LEND-EP01-H', 'EX-INT01-AD',
     ].map((id) => ({ source_id: 'EX-LEND-TOOL01', target_id: id })),
     fills: [
       { source_id: 'EX-LEND-CMD01-H', target_id: 'EX-PAT-ACT-SL01' },
@@ -428,8 +430,8 @@ export function sparse(): Data {
     ],
     pattern: [{ id: 'SP-PAT-X', title: 'Ruleless', product_id: 'SP', description: 'A pattern with no rules.' }],
     interface: [
-      { id: 'SP-IF01', title: 'Web app', product_id: 'SP', kind: 'web app', description: 'The desk app.' },
-      { id: 'SP-IF02', title: 'CLI', product_id: 'SP', kind: 'CLI', description: 'The command line.' },
+      { id: 'SP-IF01', title: 'Web app', product_id: 'SP', kind: 'web app', description: 'The desk app.', public: false },
+      { id: 'SP-IF02', title: 'CLI', product_id: 'SP', kind: 'CLI', description: 'The command line.', public: false },
     ],
     flow: [{ id: 'SP-D-UC02-FL01', title: 'Return a tool in the web app', use_case_id: 'SP-D-UC02', interface_id: 'SP-IF01' }],
     flow_step: [{ id: 'SP-D-UC02-FL01-S01', title: 'Refuse', flow_id: 'SP-D-UC02-FL01', path: 'refused', position: 1 }],

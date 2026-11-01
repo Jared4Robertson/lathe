@@ -10,9 +10,10 @@ import { modelWorkspace } from './fixtures/model';
 import { workspace } from './fixtures/workspace';
 import { main, openApp, section } from './helpers';
 
-// The Aggregate page and its editor (LA-AUT-A6, LA-V130): an aggregate and every record in it are read through the
-// aggregate's own query, and changed only through the aggregate's own commands, one per change, each refusal shown with
-// its reasons; the aggregate lists the domain events that happen to it with what raises and hears them.
+// The Aggregate page and its editor (LA-AUT-A6, LA-V130): what each record shows of its aggregate and the changes it
+// offers, each refusal shown with its reasons, and the domain events that happen to it with what raises and hears them;
+// and, as every aggregate's page does (LA-PAT-RECORD-PAGE), its reads through the aggregate's own query and its writes
+// through the aggregate's own commands, one per change.
 
 const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.findByRole('toolbar', { name: `Change ${id}` });
@@ -24,26 +25,38 @@ function withModel(): ServedData {
   return w;
 }
 
-describe('LA-V130-R01-T01 an aggregate\'s records are read through the Aggregate aggregate\'s own query, never a generic record read', () => {
-  it('reads GET /api/aggregate/get-aggregate for the aggregate, and shows its identity, entities, invariants and events', async () => {
-    const { requests } = await openApp('/DM-SHOP-A1', { data: withModel() });
+describe('LA-V130-R05-T01 an aggregate\'s page shows its identity, entities and invariants, an entity\'s its fields, data model and commands', () => {
+  it('shows the aggregate\'s identity, its entities and its invariants', async () => {
+    await openApp('/DM-SHOP-A1', { data: withModel() });
     expect(await within(main()).findByText('Basket ID')).toBeInTheDocument();
-    expect(requests).toContain('GET /api/aggregate/get-aggregate?id=DM-SHOP-A1');
     const entities = section(/^Entities/);
     expect([...entities.querySelectorAll('a.row-link')].map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-EN01', '/DM-SHOP-EN02']);
     expect([...section(/^Invariants/).querySelectorAll('a.row-link')].map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-INV01']);
   });
 
   it('shows an entity\'s fields with their types, its data model and the commands that change it', async () => {
-    const { requests } = await openApp('/DM-SHOP-EN01', { data: withModel() });
+    await openApp('/DM-SHOP-EN01', { data: withModel() });
     expect(await within(main()).findByText('The basket\'s number.')).toBeInTheDocument();
-    expect(requests).toContain('GET /api/aggregate/get-aggregate?id=DM-SHOP-EN01');
     expect(within(section(/^Data model/)).getByRole('link', { name: /DM-SHOP-EN01-DM/ })).toBeInTheDocument();
     expect(within(section(/^Commands/)).getByRole('link', { name: /DM-SHOP-CMD01/ })).toBeInTheDocument();
   });
 });
 
-describe('LA-V130-R02-T01 the Aggregate editor writes only through the aggregate\'s own commands, one per change', () => {
+describe('LA-PAT-RECORD-PAGE-R19-T01 the Aggregate page reads its records through the Aggregate aggregate\'s own query, never a generic record read', () => {
+  it('reads GET /api/aggregate/get-aggregate for the aggregate', async () => {
+    const { requests } = await openApp('/DM-SHOP-A1', { data: withModel() });
+    expect(await within(main()).findByText('Basket ID')).toBeInTheDocument();
+    expect(requests).toContain('GET /api/aggregate/get-aggregate?id=DM-SHOP-A1');
+  });
+
+  it('reads GET /api/aggregate/get-aggregate for an entity, by the entity\'s own ID', async () => {
+    const { requests } = await openApp('/DM-SHOP-EN01', { data: withModel() });
+    expect(await within(main()).findByText('The basket\'s number.')).toBeInTheDocument();
+    expect(requests).toContain('GET /api/aggregate/get-aggregate?id=DM-SHOP-EN01');
+  });
+});
+
+describe('LA-PAT-RECORD-PAGE-R20-T01 the Aggregate page writes only through the Aggregate aggregate\'s own commands, one per change', () => {
   it('Edit sends Change an invariant with only what changed, and offers no Move', async () => {
     const user = userEvent.setup();
     const changed = () => setRow(withModel(), 'invariant', 'DM-SHOP-INV01', { statement: 'A basket MUST NOT hold more than 40 items.' });
@@ -78,6 +91,20 @@ describe('LA-V130-R02-T01 the Aggregate editor writes only through the aggregate
     ] } }]));
   });
 
+  it('Add sends Add a rule with the invariant\'s RL ID', async () => {
+    const user = userEvent.setup();
+    const { commands } = await openApp('/DM-SHOP-INV01', { data: withModel(), command: () => ({ answer: ok }) });
+    await chooseAdd(user, await toolbar('DM-SHOP-INV01'), 'Rule');
+    const form = screen.getByRole('form', { name: 'Add a rule' });
+    await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-SHOP-INV01-RL'));
+    await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'basket-limit');
+    await user.type(within(form).getByRole('textbox', { name: /^file/ }), 'src/basket/rules.ts');
+    await user.click(within(form).getByRole('button', { name: 'Add rule' }));
+    await waitFor(() => expect(commands).toEqual([{ route: '/api/aggregate/add-rule', input: { invariant_id: 'DM-SHOP-INV01', id: 'DM-SHOP-INV01-RL', title: 'basket-limit', file: 'src/basket/rules.ts' } }]));
+  });
+});
+
+describe('LA-V130-R06-T01 each record of an aggregate offers Edit, Add for what may sit under it, and Remove, never Move', () => {
   it('the aggregate\'s page offers Add for its own kinds and for a domain event, through the aggregates\' own Adds', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/DM-SHOP-A1', { data: withModel(), command: () => ({ answer: ok }) });
@@ -116,18 +143,6 @@ describe('LA-V130-R02-T01 the Aggregate editor writes only through the aggregate
     await user.type(within(form).getByRole('textbox', { name: /^identity/ }), 'Wish list ID');
     await user.click(within(form).getByRole('button', { name: 'Add aggregate' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/aggregate/add-aggregate', input: { domain_id: 'DM-SHOP', id: 'DM-SHOP-A2', title: 'Wish list', description: 'The goods a person means to buy later.', identity: 'Wish list ID' } }]));
-  });
-
-  it('Add sends Add a rule with the invariant\'s RL ID', async () => {
-    const user = userEvent.setup();
-    const { commands } = await openApp('/DM-SHOP-INV01', { data: withModel(), command: () => ({ answer: ok }) });
-    await chooseAdd(user, await toolbar('DM-SHOP-INV01'), 'Rule');
-    const form = screen.getByRole('form', { name: 'Add a rule' });
-    await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-SHOP-INV01-RL'));
-    await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'basket-limit');
-    await user.type(within(form).getByRole('textbox', { name: /^file/ }), 'src/basket/rules.ts');
-    await user.click(within(form).getByRole('button', { name: 'Add rule' }));
-    await waitFor(() => expect(commands).toEqual([{ route: '/api/aggregate/add-rule', input: { invariant_id: 'DM-SHOP-INV01', id: 'DM-SHOP-INV01-RL', title: 'basket-limit', file: 'src/basket/rules.ts' } }]));
   });
 });
 

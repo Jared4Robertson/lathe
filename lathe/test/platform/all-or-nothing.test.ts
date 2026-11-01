@@ -112,7 +112,7 @@ async function crashAt(root: string, at: Crash, steps: Step[]) {
 
 describe('the spec data store saves each change whole or not at all, through a crash at any point of its write', () => {
   it.each<[string, Change]>([
-  ['LA-AUT-A1-SR01-T02', { steps: [['product', 'change-product', { id: 'TL', title: 'Kept whole' }], ['product', 'add-interface', { ...product('TL-IF90'), kind: 'CLI', description: 'A command line kept whole.' }]] }],
+  ['LA-AUT-A1-SR01-T02', { steps: [['product', 'change-product', { id: 'TL', title: 'Kept whole' }], ['product', 'add-interface', { ...product('TL-IF90'), kind: 'CLI', description: 'A command line kept whole.', public: false }]] }],
   ['LA-AUT-A2-SR01-T02', { steps: [['pattern', 'remove-pattern-rule', { id: 'TL-PAT-LIBRARIAN-ACTION-R01' }]] }],
   ['LA-AUT-A3-SR01-T02', { steps: [['standard', 'add-standard', { ...product('TL-STD-KEPT'), type: 'engineering', description: 'A standard kept whole.' }], ['standard', 'add-standard-rule', { id: 'TL-STD-KEPT-R01', title: 'Kept whole', standard_id: 'TL-STD-KEPT', statement: 'Code MUST be kept whole.' }]] }],
   ['LA-AUT-A4-SR01-T02', { steps: [['domain', 'remove-term', { id: 'TL-LEND-TM02' }]] }],
@@ -186,7 +186,7 @@ describe('a write a crash left is settled before anything reads the data, and sa
     const store = await openStore(root, { latheDataDir: null });
     try {
       crash.at = 'journal half written';
-      await expect(write(store, [['product', 'change-product', { id: 'TL', title: 'Kept whole' }], ['product', 'add-interface', { ...product('TL-IF90'), kind: 'CLI', description: 'A command line kept whole.' }]])).rejects.toThrow('crashed');
+      await expect(write(store, [['product', 'change-product', { id: 'TL', title: 'Kept whole' }], ['product', 'add-interface', { ...product('TL-IF90'), kind: 'CLI', description: 'A command line kept whole.', public: false }]])).rejects.toThrow('crashed');
     } finally {
       crash.at = null;
       await store.close();

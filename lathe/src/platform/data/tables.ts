@@ -649,6 +649,8 @@ export interface InterfaceRow {
   kind: "web app" | "API" | "CLI" | "agent tools" | "desktop" | "other";
   /** Who uses it and how, in a sentence or two. */
   description: string;
+  /** Whether people or programs outside the product build on it, so its contract is the product's own commitment: a public API's requirements are essential complexity, an internal one's (such as the API only the product's own app calls) accidental. */
+  public: boolean;
 }
 
 /** How its use case is carried out through one interface: the steps on its main path and its alternate paths. A use case has one flow per interface it happens through, and each flow belongs only to it. */
@@ -715,7 +717,7 @@ export interface SlotRow {
   statement: string;
 }
 
-/** The technical record, written by hand, fills the pattern's slot against its contract: it is a fill, accidental complexity recorded where it is owed and counted as debt until the pattern can derive it. */
+/** The accidental record (a technical record or an endpoint), written by hand, fills the pattern's slot against its contract: it is a fill, accidental complexity recorded where it is owed and counted as debt until the pattern can derive it. */
 export interface FillsRow {
   source_id: string;
   target_id: string;
@@ -789,7 +791,7 @@ export interface ToolingRow {
   file?: string;
 }
 
-/** The tooling record (a generator) writes the technical record's code from the spec: the record is derived, never written by hand. */
+/** The tooling record (a generator) writes the accidental record (a technical record's code, or an endpoint's route) from the spec: the record is derived, never written by hand. */
 export interface GeneratesRow {
   source_id: string;
   target_id: string;
@@ -1090,7 +1092,7 @@ export interface ProductKindRow {
   /** For a code-bound kind, how its titles are written (meta_kind_title): identifier, invocation or kebab-case; none for a kind titled in words. */
   title_form?: "identifier" | "invocation" | "kebab-case";
   /** Whether its records are essential complexity (what the problem itself demands, such as a report the product's people read), accidental (what comes from the means of building it, such as a kind of code), or as-parent: as the record they sit under. Never mixed: a kind that would hold both is two kinds. */
-  complexity: "essential" | "accidental" | "as-parent" | "by-type";
+  complexity: "essential" | "accidental" | "as-parent" | "by-type" | "by-interface";
 }
 
 /** One typed field of a product kind, in order: a column of its table. */

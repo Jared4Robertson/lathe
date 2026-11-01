@@ -11,9 +11,9 @@ Change the spec only with Lathe's MCP tools (or the `lathe` CLI), never by editi
 
 ## Judgment
 
-**Interfaces.** Declare each way the product is used once, under the product (web app, HTTP API, CLI, agent tools, desktop). An interface no flow goes through is not an interface yet.
+**Interfaces.** Declare each way the product is used once, under the product (web app, HTTP API, CLI, agent tools, desktop). An interface no flow goes through is not an interface yet. Mark it public only when people or programs outside the product build on it: a public API's requirements are its contract with the world, essential; an internal API's (the one only the product's own app calls) are accidental and belong in a pattern rule. Endpoints are always accidental, derived from the command or query they expose.
 
-**One flow per interface a use case happens through.** Alternate courses (a refusal, an optional branch) are paths within a flow, never other flows. Every UC requirement is fulfilled by a step in every flow of its use case; a requirement one flow misses is not designed. If only one interface can meet a rule (a disabled button, a status code), it is a view or API requirement instead.
+**One flow per interface a use case happens through.** Alternate courses (a refusal, an optional branch) are paths within a flow, never other flows. Every UC requirement is fulfilled by a step in every flow of its use case; a requirement one flow misses is not designed. If only one interface can meet a rule (a disabled button, a status code), it is a view or API requirement instead. A step says what happens in the people's words; the view it happens in is its link, so "On its page" and "click" are left out (`accidental-in-essential` warns), and a rule every page or command shares is the pattern's, not the step's.
 
 **Steps fit their interface.** Web app and desktop steps happen in views. API steps invoke the command or query an endpoint exposes. CLI and agent tools steps invoke what the command or tool runs. A step invokes at most one command or query, and one that only shows a result invokes nothing. A step links to the operation, never to a route: the endpoint follows from it. A step fulfills only requirements of its own use case.
 

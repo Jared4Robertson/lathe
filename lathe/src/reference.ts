@@ -266,6 +266,7 @@ const COMPLEXITY: Record<Complexity, string> = {
   accidental: 'accidental: what comes from the means used to build it, derived, provided or a fill at a slot',
   'as-parent': 'as the record it sits under',
   'by-type': 'by its type: a quality is essential, engineering accidental',
+  'by-interface': "by its product's interfaces: essential on a public API, otherwise accidental",
 };
 
 const ID_SCOPE: Record<IdScope, string> = { product: "its product's ID", domain: "its domain's ID", parent: "its parent's ID" };

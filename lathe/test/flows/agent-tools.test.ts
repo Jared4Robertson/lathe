@@ -161,9 +161,9 @@ describe('Authoring flows through the MCP tools', () => {
     ], async (a) => {
       // S01: the interfaces, then a flow through each of two, its ID ending in the interface's number, and its steps in
       // order on their paths.
-      await a.ok('product_add_interface', { id: 'TL-IF01', title: 'Loan desk', product_id: 'TL', kind: 'web app', description: 'The desk where librarians lend tools.' });
-      await a.ok('product_add_interface', { id: 'TL-IF02', title: 'Lending API', product_id: 'TL', kind: 'API', description: 'The API other systems lend tools through.' });
-      await a.ok('product_add_interface', { id: 'TL-IF03', title: 'Librarian tools', product_id: 'TL', kind: 'agent tools', description: 'The tools an agent uses to help the librarian.' });
+      await a.ok('product_add_interface', { id: 'TL-IF01', title: 'Loan desk', product_id: 'TL', kind: 'web app', description: 'The desk where librarians lend tools.', public: false });
+      await a.ok('product_add_interface', { id: 'TL-IF02', title: 'Lending API', product_id: 'TL', kind: 'API', description: 'The API other systems lend tools through.', public: true });
+      await a.ok('product_add_interface', { id: 'TL-IF03', title: 'Librarian tools', product_id: 'TL', kind: 'agent tools', description: 'The tools an agent uses to help the librarian.', public: false });
       await a.ok('use_case_add_flow', { id: 'TL-LEND-UC01-FL01', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' });
       await a.ok('use_case_add_flow', { id: 'TL-LEND-UC01-FL02', title: 'Borrow a tool through the API', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF02' });
       const step = (flow: string, n: string, title: string, pathName: string, position: number) =>
@@ -340,7 +340,7 @@ describe('Authoring flows through the MCP tools', () => {
   it('LA-AUT-UC18-FL04-T write the views, endpoints and integrations a flow reaches through the MCP tools', async () => {
     await walk([
       ...LENDING,
-      add('interface', { id: 'TL-IF01', title: 'Loan desk', product_id: 'TL', kind: 'web app', description: 'The desk where librarians lend tools.' }),
+      add('interface', { id: 'TL-IF01', title: 'Loan desk', product_id: 'TL', kind: 'web app', description: 'The desk where librarians lend tools.', public: false }),
       add('flow', { id: 'TL-LEND-UC01-FL01', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }),
       add('flow_step', { id: 'TL-LEND-UC01-FL01-S01', title: 'The member borrows a tool', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 }),
     ], async (a) => {

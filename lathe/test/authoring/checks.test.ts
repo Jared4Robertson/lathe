@@ -186,7 +186,7 @@ check('test-title-not-a-result', () => {
 check('title-breaks-convention', () => {
   const named = async (capabilities: string[], useCases: string[]) => {
     const data = adding(complete(), {
-      interface: [{ id: 'EX-IF02', title: 'Member portal', product_id: 'EX', kind: 'web app', description: 'The pages members use from home.' }],
+      interface: [{ id: 'EX-IF02', title: 'Member portal', product_id: 'EX', kind: 'web app', description: 'The pages members use from home.', public: false }],
       capability: capabilities.map((title, i) => ({ id: `EX-LEND-CAP${String(i + 2).padStart(2, '0')}`, title, domain_id: 'EX-LEND', position: i + 2, description: 'A part of lending.' })),
       use_case: useCases.map((title, i) => ({ id: `EX-LEND-UC${String(i + 3).padStart(2, '0')}`, title, capability_id: 'EX-LEND-CAP01', goal: 'A member gets something done.' })),
     });
@@ -287,20 +287,33 @@ check('outcome-target-undated', () => {
 });
 
 check('accidental-in-essential', () => {
-  it("LA-STD-PRINCIPLES-R05-T02 An essential record that names technology in its title or lead text is a warning, by Lathe's words and the product's own", async () => {
+  it("LA-STD-PRINCIPLES-R05-T02 An essential record that names technology its kind's group has no business with is a warning, by Lathe's words and the product's own", async () => {
     expect(ofCheck(clean, 'accidental-in-essential')).toEqual([]);
+    // A use case's goal that clicks and a UC requirement that names the product's own interface are leaks.
     let data = changing(complete(), 'use_case', (r) => r.id === 'EX-LEND-UC01', { goal: 'A member clicks the borrow button.' });
-    data = changing(data, 'view', () => true, { title: 'Catalog page' });
-    data = changing(data, 'term', () => true, { meaning: 'One tool lent to one member, kept in Postgres until it is returned.' });
-    // An accidental record may name technology: the UI component's description says page.
+    data = changing(data, 'uc_requirement', (r) => r.id === 'EX-LEND-UC01-R01', { statement: 'The Web app MUST refuse a tool whose row says it is on loan.' });
+    // A flow step that clicks is a leak, but a flow names the interface it goes through.
+    data = changing(data, 'flow_step', (r) => r.id === 'EX-LEND-UC01-FL01-S01', { title: 'Click Borrow on the tool' });
+    data = changing(data, 'flow', (r) => r.id === 'EX-LEND-UC01-FL01', { title: 'Borrow a tool in the Web app' });
+    // A view is a page with its buttons and rows; it still may not name the storage behind it.
+    data = changing(data, 'view', () => true, { title: 'Catalog page', description: 'Every tool in a row with a Borrow button, read from the JSON the database keeps.' });
+    // A pattern decides the means and a test drives an interface, so neither is read.
+    data = changing(data, 'pattern_rule', () => true, { statement: 'A saved record MUST answer the same JSON over HTTP.' });
+    data = changing(data, 'view_test', () => true, { when: 'Clicks the catalog page' });
+    // A word that is a term of the record's own domain is its language: the library lends reading tables.
+    data = adding(data, { term: [{ id: 'EX-LEND-TM02', title: 'Table', domain_id: 'EX-LEND', meaning: 'A reading table members borrow by the hour.' }] });
+    data = changing(data, 'use_case', (r) => r.id === 'EX-LEND-UC02', { goal: 'The librarian adds a tool or a table to the catalog.' });
+    data = changing(data, 'term', (r) => r.id === 'EX-LEND-TM01', { meaning: 'One tool lent to one member, kept in Postgres until it is returned.' });
     const ws = await loadData(data);
-    expect(ofCheck(ws, 'accidental-in-essential').map((p) => [p.severity, p.record, p.message])).toEqual([
-      ['warning', 'EX-LEND-UC01', expect.stringContaining('Use case EX-LEND-UC01 is essential but names technology: its goal says "click"')],
-      ['warning', 'EX-V01', expect.stringContaining('its title says "page"')],
+    expect(ofCheck(ws, 'accidental-in-essential').map((p) => [p.record, p.message.replace(/; say .*/, '').replace(/^.* names technology: /, '')])).toEqual([
+      ['EX-LEND-UC01', 'its goal says "click"'],
+      ['EX-LEND-UC01-FL01-S01', 'its title says "click"'],
+      ['EX-LEND-UC01-R01', 'its statement says "web app"'],
+      ['EX-V01', 'its description says "json"'],
     ]);
-    // The product's own technology words count too.
-    const own = await loadData(adding(data, { product_setting: [{ product_id: 'EX', max_children: 15, max_entities_per_aggregate: 7, technology_words: ['Postgres'] }] }));
-    expect(records(ofCheck(own, 'accidental-in-essential'))).toEqual(['EX-LEND-TM01', 'EX-LEND-UC01', 'EX-V01']);
+    // The product's own technology words count in every group, and no term excuses them.
+    const own = await loadData(adding(data, { product_setting: [{ product_id: 'EX', max_children: 15, max_entities_per_aggregate: 7, technology_words: ['Postgres', 'Table'] }] }));
+    expect(records(ofCheck(own, 'accidental-in-essential'))).toEqual(['EX-LEND-TM01', 'EX-LEND-TM02', 'EX-LEND-UC01', 'EX-LEND-UC01-FL01-S01', 'EX-LEND-UC01-R01', 'EX-LEND-UC02', 'EX-V01']);
     expect(ofCheck(own, 'accidental-in-essential').find((p) => p.record === 'EX-LEND-TM01')?.message).toContain('its meaning says "postgres"');
   });
 });
