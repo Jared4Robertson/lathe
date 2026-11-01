@@ -60,18 +60,26 @@ export const productKey = (base: string, sql: string): string => `${base}-${hash
 const fileOf = (key: string) => path.join(cacheDir(), `${key}.duckdb`);
 
 /**
- * Attaches the cache file of key as the database name, read only, and returns the schema stamped in it; or returns
- * undefined, attaching nothing, when there is no file or the file is stale or corrupt (and then removes it).
+ * Copies the cache file of key into a new in-memory database of the given name, and returns the schema stamped in it;
+ * or returns undefined, making nothing, when there is no file or the file is stale or corrupt (and then removes it).
+ * The file is attached read only while it is copied, then detached: no database of the engine stays on a file. A
+ * sealed engine (LA-CHK-INV06) keeps the files of attached databases, and the files beside them, open to every query,
+ * to read and to write; with none attached, it keeps none.
  */
 export async function attachCached(connection: DuckDBConnection, name: string, key: string): Promise<SchemaDescription | undefined> {
   const file = fileOf(key);
   if (!existsSync(file)) return undefined;
+  const source = `${name}_file`;
   try {
-    await connection.run(`ATTACH ${sqlString(file)} AS ${sqlName(name)} (READ_ONLY)`);
-    const [stamp] = (await connection.runAndReadAll(`SELECT key, schema FROM ${sqlName(name)}.${STAMP_SCHEMA}.stamp`)).getRowObjectsJson() as { key: string; schema: string }[];
+    await connection.run(`ATTACH ${sqlString(file)} AS ${sqlName(source)} (READ_ONLY)`);
+    const [stamp] = (await connection.runAndReadAll(`SELECT key, schema FROM ${sqlName(source)}.${STAMP_SCHEMA}.stamp`)).getRowObjectsJson() as { key: string; schema: string }[];
     if (stamp?.key !== key) throw new Error('stale');
+    await connection.run(`ATTACH ':memory:' AS ${sqlName(name)}`);
+    await copyDatabase(connection, source, name, false);
+    await connection.run(`DETACH DATABASE ${sqlName(source)}`);
     return JSON.parse(stamp.schema) as SchemaDescription;
   } catch {
+    await connection.run(`DETACH DATABASE IF EXISTS ${sqlName(source)}`).catch(() => undefined);
     await connection.run(`DETACH DATABASE IF EXISTS ${sqlName(name)}`).catch(() => undefined);
     await rm(file, { force: true }).catch(() => undefined);
     return undefined;

@@ -4,6 +4,7 @@
 import type { Coverage, Problem, TraceChain } from '../../types.ts';
 import type { BaselineAnswer } from '../../server/contract.ts';
 import type { Row } from './rows.ts';
+import type { IntegrityQuery } from './integrity.ts';
 import type { SchemaDescription } from './schema.ts';
 import { StoreError } from './problems.ts';
 
@@ -64,6 +65,12 @@ export interface AggregateRules {
   aggregate: string;
   /** Every row of the data that breaks one of the aggregate's rules. */
   check(view: ReadView): RuleProblem[];
+  /**
+   * The aggregate's rules that only the database can judge, such as one that asks DuckDB's own parser: each a query
+   * over the data, run with the integrity queries on every load and write, returning (table_name, row_key, message)
+   * for each row that breaks it, named by the rule.
+   */
+  queries?: readonly IntegrityQuery[];
 }
 
 /**
