@@ -11,6 +11,7 @@ import path from 'node:path';
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
 import { AGGREGATE_RULES } from '../../aggregate-rules.ts';
 import { productRules } from '../../authoring/product/rules.ts';
+import { sealDatabase } from '../../checking/check/rules.ts';
 import { loadConfig, PACKAGE_DIR } from '../../config.ts';
 import { attachCached, baseKey, copyDatabase, isValidated, markValidated, productKey, validatedKey, writeCached } from './cache.ts';
 import { appendRows, insertRows } from './insert.ts';
@@ -101,6 +102,51 @@ export async function closeEngine(): Promise<void> {
   opened?.instance.closeSync();
 }
 
+// Each instance's file work (the schema cache's attaches and writes), and its seal once it is sealed.
+interface Files {
+  work: Set<Promise<unknown>>;
+  sealed?: Promise<void>;
+}
+const files = new WeakMap<DuckDBInstance, Files>();
+const filesOf = (instance: DuckDBInstance): Files => {
+  let of = files.get(instance);
+  if (!of) files.set(instance, (of = { work: new Set() }));
+  return of;
+};
+
+// Runs work that reads or writes the schema cache's files while the instance is open to them; on a sealed instance it
+// runs nothing and answers undefined (the schema is built afresh instead: the cache is only a shortcut).
+function withFiles<T>(instance: DuckDBInstance, work: () => Promise<T>): Promise<T | undefined> {
+  const of = filesOf(instance);
+  if (of.sealed) return Promise.resolve(undefined);
+  const run = work();
+  of.work.add(run);
+  const done = () => of.work.delete(run);
+  run.then(done, done);
+  return run;
+}
+
+/**
+ * Seals the instance (sealDatabase, LA-CHK-INV06) once its file work in progress is done: no file, URL, extension,
+ * secret or setting, and none of the process's environment in its settings. The settings are global, so one seal
+ * serves every store of the engine until closeEngine. A load seals it before its data's first query runs, so no
+ * integrity query and no check, Lathe's or a product's, runs on an open instance; an instance that cannot be sealed
+ * refuses every load and write after it.
+ */
+function seal(instance: DuckDBInstance): Promise<void> {
+  const of = filesOf(instance);
+  of.sealed ??= (async () => {
+    while (of.work.size) await Promise.allSettled([...of.work]);
+    const connection = await instance.connect();
+    try {
+      await sealDatabase(connection);
+    } finally {
+      connection.closeSync();
+    }
+  })();
+  return of.sealed;
+}
+
 function sharedEngine(): Promise<Engine> {
   engine ??= (async () => {
     const instance = await DuckDBInstance.create(':memory:');
@@ -124,17 +170,17 @@ function sharedEngine(): Promise<Engine> {
   return engine;
 }
 
-// Writes a schema database built afresh to the schema cache, while nothing waits on it.
+// Writes a schema database built afresh to the schema cache, while nothing waits on it; a sealed instance writes nothing.
 function cache(instance: DuckDBInstance, schemaDb: string, key: string, schema: SchemaDescription) {
   inBackground(
-    (async () => {
+    withFiles(instance, async () => {
       const writer = await instance.connect();
       try {
         await writeCached(writer, schemaDb, key, schema);
       } finally {
         writer.closeSync();
       }
-    })(),
+    }),
   );
 }
 
@@ -289,6 +335,14 @@ export class Store {
     const connection = await this.instance.connect();
     await connection.run(`USE ${sqlName(database)}`);
     return connection;
+  }
+
+  /**
+   * Seals the database against everything outside it (LA-CHK-INV06): a load has sealed it already, and the check run
+   * asks again before any check's query runs.
+   */
+  seal(): Promise<void> {
+    return seal(this.instance);
   }
 
   /** Runs a query on the current data and returns its rows as JSON values. */
@@ -619,6 +673,7 @@ export class Store {
     const scopeColumns = recordScopeColumns(schema);
     const sameScope = [...differ].every((table) => !scopeColumns.has(table) || sameColumns(base.get(table), tables.get(table), scopeColumns.get(table)!));
     const overlay = `lathe_overlay_${++databases}`;
+    await seal(this.instance);
     const connection = await this.instance.connect();
     try {
       await connection.run(`ATTACH ':memory:' AS ${sqlName(overlay)}; USE ${sqlName(overlay)}`);
@@ -766,7 +821,7 @@ export class Store {
         const key = productKey((await sharedEngine()).key, sql);
         const builder = await this.instance.connect();
         try {
-          const cached = await attachCached(builder, name, key);
+          const cached = await withFiles(this.instance, () => attachCached(builder, name, key));
           if (cached) return { schemaDb: name, schema: cached };
           await builder.run(`ATTACH ':memory:' AS ${sqlName(name)}`);
           await copyDatabase(builder, BASE_DB, name, false);
@@ -857,6 +912,11 @@ export class Store {
       // integrity queries run, and a refusal drops the database whole. DuckDB reads committed tables far faster
       // than a transaction's own uncommitted rows (a join over them can take a hundred times as long).
       await this.step('commit', () => builder.run('COMMIT'));
+      // No query of the data runs on an instance open to files (LA-CHK-INV06): the schema cache's writes end first.
+      await this.step('seal', () => seal(this.instance)).catch(async (error: unknown) => {
+        await discard();
+        throw error;
+      });
       await this.step('record_scope', () => builder.run(recordScopeSql(schema)));
       // The integrity queries only read, so they run side by side on a few connections; their problems keep the
       // queries' order.
