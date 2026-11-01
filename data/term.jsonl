@@ -53,6 +53,8 @@
 {"id":"LA-AUT-TM70","title":"Event handler","domain_id":"LA-AUT","meaning":"The code that hears one domain event and runs its policy's command.","group_name":"In code"}
 {"id":"LA-AUT-TM71","title":"Endpoint handler","domain_id":"LA-AUT","meaning":"The code that answers one endpoint: it runs the command or query the endpoint exposes and returns its result.","group_name":"In code"}
 {"id":"LA-AUT-TM72","title":"Adapter","domain_id":"LA-AUT","meaning":"The code that talks to one outside system, for the software that depends on it.","group_name":"In code"}
+{"id":"LA-AUT-TM73","title":"Journey","domain_id":"LA-AUT","meaning":"An ordered string of use cases, of one or more actors and any domains, with the policies the product runs between them, from a trigger in the world to a result a business outcome measures; a use case is one sitting of one actor, a journey the goal several of them reach in turn.","group_name":"Use cases and design"}
+{"id":"LA-AUT-TM74","title":"Handoff","domain_id":"LA-AUT","meaning":"A step of a journey the product takes itself, between two actors: a policy it carries out, whenever an event, then a command.","group_name":"Use cases and design"}
 {"id":"LA-CHK-TM01","title":"Check","domain_id":"LA-CHK","meaning":"One rule the engine applies on every load, reporting each thing it finds wrong or still to do."}
 {"id":"LA-CHK-TM02","title":"Problem","domain_id":"LA-CHK","meaning":"One thing a check found wrong or still to do in the loaded data. Problems are the result of a run, never stored."}
 {"id":"LA-CHK-TM03","title":"Error","domain_id":"LA-CHK","meaning":"A problem that means the data is broken. `lathe check` exits 1 on any error."}

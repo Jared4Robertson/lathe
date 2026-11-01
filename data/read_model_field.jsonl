@@ -10,6 +10,7 @@
 {"read_model_id":"LA-AUT-RM11","position":3,"name":"Requirements","meaning":"Its UC requirements by ID, each with its use case tests (and the test data sets they start from) and the steps of its use case that fulfill it.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM11","position":4,"name":"Flows","meaning":"Its flow, with its steps path by path, the main path first and each in position order (with the requirements each fulfills, what it invokes, the interface it is a variant of and the integrations it exchanges with), its flow test, and each offering interface's version of it: its actor, its patterns' rules, and each step with where it is carried out.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM11","position":5,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the use case: the use case, a UC requirement, a use case test, a flow, a flow step or a flow test.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM11","position":6,"name":"Journeys","meaning":"The journeys the use case is a step of, each with the step, its path and position, and the steps before and after it.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM21","position":1,"name":"Product","meaning":"The product's row.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-AUT-RM21","position":2,"name":"Roles","meaning":"Its roles, in order.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM21","position":3,"name":"Declarations","meaning":"Its product kinds with their fields, and its product relations.","type":"text","required":true}
@@ -52,6 +53,7 @@
 {"read_model_id":"LA-AUT-RM28","position":4,"name":"Policies","meaning":"Its policies by ID, each with the event it hears, its event handler (with the standard rules it meets and the packages it uses) and its test (with the test data sets it starts from).","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM28","position":5,"name":"Endpoints","meaning":"The endpoints that expose it, by ID.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM28","position":6,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the command: the command, its handler, a policy, or a policy's event handler or test.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM28","position":7,"name":"Journeys","meaning":"The journeys each of its policies is a handoff in, each with the step, its path and position, and the steps before and after it.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM29","position":1,"name":"Value object","meaning":"The value object's row: its ID, title and description.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-AUT-RM29","position":2,"name":"Product","meaning":"The product its ID names.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM29","position":3,"name":"Fields","meaning":"Its fields in order, each with its type and whether it is required.","type":"text","required":true}
@@ -82,6 +84,7 @@
 {"read_model_id":"LA-AUT-RM36","position":1,"name":"Outcome","meaning":"The outcome's row.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-AUT-RM36","position":2,"name":"Measured by","meaning":"The tests and records that measure it.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM36","position":3,"name":"Served by","meaning":"The capabilities that serve it.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM36","position":4,"name":"Journeys","meaning":"The journeys that serve it, by ID, with their titles.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM37","position":1,"name":"Test data set","meaning":"The test data set's row: its ID, title, domain, environment, accounts, records, prepare, reset, file and description.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-AUT-RM37","position":2,"name":"Started from by","meaning":"The tests that start from it, by ID.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM37","position":3,"name":"Record","meaning":"The record the page is about: the test data set, by ID.","type":"text","required":true}
@@ -109,6 +112,11 @@
 {"read_model_id":"LA-AUT-RM43","position":2,"name":"Parent","meaning":"The product or domain it sits under.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM43","position":3,"name":"Provided by","meaning":"The integration that reaches it, when someone else runs it.","type":"text","required":false}
 {"read_model_id":"LA-AUT-RM43","position":4,"name":"Stores","meaning":"The repositories, readers and tables stored in it, by ID.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM44","position":1,"name":"Journey","meaning":"The journey's row: its ID, title, product, trigger, result and notes.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM44","position":2,"name":"Serves","meaning":"The business outcomes it serves, by ID.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM44","position":3,"name":"Steps","meaning":"Its steps path by path, the main path first and each in position order, each with what it carries out: a use case with its actors (the first its main actor), capability and domain, a policy with the event it hears, the command it sends and its domain, or nothing yet.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM44","position":4,"name":"Test","meaning":"Its journey test, with the test data sets it starts from, or none.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM44","position":5,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the journey: the journey, a step or its test.","type":"text","required":true}
 {"read_model_id":"LA-CHK-RM01","position":1,"name":"Product","meaning":"The product whose space it is.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-CHK-RM01","position":2,"name":"Counts","meaning":"Its errors and warnings, the workspace's among them.","type":"text","required":true,"example":"2 errors · 3 warnings"}
 {"read_model_id":"LA-CHK-RM01","position":3,"name":"Own problems","meaning":"The problems of its records by check, in the order of each check's first problem: errors before warnings, then by check and record. Each names its severity, check, record and message.","type":"text","required":true}
@@ -255,3 +263,4 @@
 {"read_model_id":"LA-TRC-RM13","position":5,"name":"Flow","meaning":"Its flow, with its steps in path order (what each fulfills, the interface it is a variant of, its integrations and its technical chain), each offering interface's version of it, derived (its actor, its patterns' rules, and per step the views, endpoints or own records it is carried out in), and its flow test.","type":"text","required":false}
 {"read_model_id":"LA-TRC-RM13","position":6,"name":"Lower obligations","meaning":"What its acceptance tests rest on: its steps' view and API requirements and its aggregates' invariants and storage requirements, each with its gaps and tests.","type":"text","required":false}
 {"read_model_id":"LA-TRC-RM13","position":7,"name":"Status","meaning":"Per stage: the interfaces its flow is carried out through and its requirements not designed, its handlers and obligations not built, its tests and what is not proved.","type":"text","required":true,"example":"3 flows, all designed · 6 handlers, 2 not built · 20 tests, all proved"}
+{"read_model_id":"LA-TRC-RM13","position":8,"name":"Journeys","meaning":"Each journey of the product: the outcomes it serves, its steps path by path with what each carries out, who acts and whether it is proved, its journey test and whether it counts, and its counts of steps, steps carrying out nothing yet and steps proved; and, on each use case's row, the journeys and steps it is in.","type":"text","required":false,"example":"3 steps · 2 proved · journey test automated"}
