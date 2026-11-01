@@ -3,7 +3,7 @@ import { Section } from '../specs/parts';
 import { ChangeDetails, changeSummary } from './ChangeDetails';
 import { useChanges } from './changes';
 
-// The diff in the wiki card (LA-V96-R27): a record changed from the baseline the Reader picked has a Changes section,
+// The diff in the wiki card (LA-V102-R06): a record changed from the baseline the Reader picked has a Changes section,
 // each changed field old → new and the links added and removed; one added since it says "New since <baseline>". The
 // folded card's summary says it in a line and shows the same diff; the whole page shows it as a Changes section.
 

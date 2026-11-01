@@ -115,7 +115,7 @@ describe('LA-STD-MODELING-R09-T02 each rule record is a rule in its aggregate\'s
   });
 });
 
-describe('LA-STD-MODELING-R11-T01 a query reads only its read model: no query handler or projection imports a repository or an aggregate\'s model, and a query handler reads only through its own read model\'s reader', () => {
+describe('LA-STD-MODELING-R11-T01 LA-PAT-AGGREGATE-QUERIES-R02-T01 LA-PAT-AGGREGATE-QUERIES-R02-T02 LA-PAT-AGGREGATE-QUERIES-R02-T03 LA-PAT-AGGREGATE-QUERIES-R02-T04 LA-PAT-AGGREGATE-QUERIES-R02-T05 a query reads only its read model: no query handler or projection imports a repository or an aggregate\'s model, and a query handler reads only through its own read model\'s reader', () => {
   const files = sources();
   const file = (name: string) => files.find((f) => f.file === name);
   /** Every slice with queries: each folder under lathe/src that has a queries.ts. */

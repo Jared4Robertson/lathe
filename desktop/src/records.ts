@@ -47,7 +47,7 @@ export function revealLabel(platform: NodeJS.Platform): string {
 export interface RecordMenuActions {
   /** Attaches the record to the chat's message (LA-PLT-UC22-R01). */
   askClaude: () => void;
-  /** Opens the record in a new tab of the app's (LA-V96-R11). */
+  /** Opens the record in a new tab of the app's (LA-V103-R02). */
   openInNewTab: () => void;
   reveal: () => void;
   openInEditor: () => void;
