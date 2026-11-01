@@ -67,14 +67,14 @@ test.describe('editing', () => {
       const actions = page.getByRole('toolbar', { name: `Change ${RECORD.slice(1)}` });
       const form = page.getByRole('form', { name: 'Add a UC requirement' });
       const open = await step(page, 'edit', 'open the add form', { keys: [NAV, WIKI_BAR, STRIP, TITLE], allow: CONTENT }, async () => {
-        await actions.getByRole('button', { name: 'Add…' }).click();
-        await actions.getByRole('group', { name: /Kinds to add/ }).getByRole('button', { name: 'UC requirement' }).click();
+        // A use case holds one kind the Owner adds, so its toolbar names it instead of asking which.
+        await actions.getByRole('button', { name: 'Add UC requirement' }).click();
         await form.waitFor();
       });
       expectStable(open);
       await expect(form.getByRole('textbox', { name: /^ID/ })).not.toHaveValue('', { timeout: 20_000 });
       await form.getByRole('textbox', { name: /^title/ }).fill('A requirement the stability suite adds');
-      await form.getByRole('textbox', { name: /^statement/ }).fill('The page MUST hold still while a record is added.');
+      await form.getByRole('textbox', { name: /^statement/ }).fill('What the Reader is reading MUST hold still while a requirement is added.');
       await form.getByRole('button', { name: 'Add UC requirement' }).click();
       await expect(page.locator(`${TITLE} h2`)).toHaveText('A requirement the stability suite adds', { timeout: 20_000 });
     } finally {

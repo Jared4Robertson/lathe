@@ -416,7 +416,7 @@ test.describe('Platform flows in the app', () => {
     const restore = keepData();
     try {
       expectStable(await step(page, 'flow', 'specs reload', { keys: ['nav#nav', '.wiki-panel-head'], allow: ['.wiki-panel-scroll'], settle: 1500 }, async () => {
-        lathe('use-case', 'change-use-case', '--id', RECORD.slice(1), '--goal', 'A goal the flow test writes while the page is open.');
+        lathe('use-case', 'change-use-case', '--id', RECORD.slice(1), '--goal', 'A goal the flow test writes while the Reader reads.');
         await expect(page.locator(WIKI)).toContainText('A goal the flow test writes', { timeout: 20_000 });
       }));
     } finally {
