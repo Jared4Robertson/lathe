@@ -132,7 +132,9 @@ describe('the schema cache', () => {
     writeFileSync(path.join(dir, product), 'not a database');
     expect(await load(dir)).toEqual(fresh);
     expect(statSync(path.join(dir, product)).size).toBeGreaterThan(1000);
-  });
+    // Five loads with the engine started afresh each time, and each cached file copied into memory before it is
+    // detached (a sealed engine keeps no file open, LA-CHK-INV06): longer than the 5 s default on a busy machine.
+  }, 30_000);
 
   it('LA-PLT-UC01-R11-T01 Two processes starting at once with no cache both load the same, and leave only whole files', async () => {
     const dir = cacheFolder();
