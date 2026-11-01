@@ -5,5 +5,5 @@
   "description": "Change Lathe specs the Lathe way: skills for each stage, MCP tools, one per aggregate command and query, and a hook that keeps hand edits out of the data files.",
   "author": { "name": "Jared A Robertson" },
   "keywords": ["specs", "requirements", "traceability", "lathe"],
-  "lathe": { "major": 4 }
+  "lathe": { "major": 5 }
 }
