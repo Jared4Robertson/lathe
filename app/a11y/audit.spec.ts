@@ -107,6 +107,7 @@ const PAGES: State[] = [
   { name: 'Trace stage, a flow step in its row', url: `${STEP}?stage=trace`, ready: TRACE, state: 'attached' as const },
   { name: 'Trace stage, an entity (the product\'s rows)', url: `${ENTITY}?stage=trace`, ready: TRACE, state: 'attached' as const },
   { name: 'Trace stage, the product\'s rows', url: `${PRODUCT}?stage=trace`, ready: TRACE, state: 'attached' as const },
+  { name: 'Trace stage, a journey step (its journey open beside the rows)', url: '/LA-JR01-S01?stage=trace', ready: TRACE, state: 'attached' as const },
   { name: 'ERD stage on a use case', url: `${RECORD}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   { name: 'ERD stage on a Shared record', url: `${SHARED}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   // Nothing replaces the stage (LA-PAT-APP-UX-R20): every tool over it, and the products picker.

@@ -17,6 +17,7 @@ import { GET_BUSINESS_OUTCOME } from '../../../src/authoring/business-outcome/qu
 import { GET_COMMAND } from '../../../src/authoring/command/queries.ts';
 import { REMOVE_POLICY } from '../../../src/authoring/command/commands/remove-policy.ts';
 import { GET_USE_CASE } from '../../../src/authoring/use-case/queries.ts';
+import { GET_SERVES } from '../../../src/traceability/serves/queries.ts';
 import { ADD_USE_CASE } from '../../../src/authoring/use-case/commands/add-use-case.ts';
 import { REMOVE_USE_CASE } from '../../../src/authoring/use-case/commands/remove-use-case.ts';
 import { InputError, type AnyCommand } from '../../../src/platform/commands/definition.ts';
@@ -198,6 +199,22 @@ describe('LA-AUT-UC33-R06-T01 removing a use case a step carries out is refused 
     expect(store.rows('journey_test')).toEqual([]);
     expect(store.record('TL-LEND-UC02')).toBeDefined();
     await runCommand(store, REMOVE_USE_CASE, { id: 'TL-LEND-UC02' });
+  });
+});
+
+describe('LA-AUT-UC33-R04-T01 a journey serves its product\'s outcomes, and what its steps carry out serves them through it', () => {
+  it('refuses another product\'s outcome, and the use case and the policy its steps carry out serve both outcomes through the journey', async () => {
+    const data = base();
+    const store = await storeOf({ ...data, business_outcome: [...data.business_outcome, { id: 'TL-BO02', title: 'Tools back on time', product_id: 'TL', statement: 'Members bring tools back by their due date.', measure: 'Share of loans returned by their due date.', target: 'Nine in ten within a year.' }] });
+    const before = fileOf(store, 'serves');
+    expect(rules(await refusal(store, CHANGE_JOURNEY, { id: 'TL-JR01', serves: ['TL-BO01', 'TL-BO02', 'XX-BO01'] }))).toContain('journey-in-product');
+    expect(fileOf(store, 'serves')).toBe(before);
+    await runCommand(store, CHANGE_JOURNEY, { id: 'TL-JR01', serves: ['TL-BO01', 'TL-BO02'] });
+    await runCommand(store, ADD_JOURNEY_STEP, step('TL-JR01-S02', { carries_out: 'TL-LEND-UC01' }));
+    // The use case serves TL-BO01 through its capability too; TL-BO02 only through the journey.
+    expect(runQuery(store, GET_SERVES, { id: 'TL-LEND-UC01' })).toEqual({ id: 'TL-LEND-UC01', outcomes: ['TL-BO01', 'TL-BO02'], useCases: ['TL-LEND-UC01'], journeys: ['TL-JR01'] });
+    // The handoff's policy serves them through the journey alone.
+    expect(runQuery(store, GET_SERVES, { id: 'TL-LEND-PO01' })).toMatchObject({ outcomes: ['TL-BO01', 'TL-BO02'], journeys: ['TL-JR01'] });
   });
 });
 

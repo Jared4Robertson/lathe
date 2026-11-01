@@ -1,5 +1,5 @@
 // The Trace stage of an address, /<id>?stage=trace (LA-TRC-UC10, LA-V98): one row per use case, from the business
-// outcomes it serves to its acceptance tests (trace.ts), read from the Trace read model (list-traced-use-cases, LA-TRC-RM13)
+// outcomes it serves and the journeys carrying it out to its acceptance tests (trace.ts), read from the Trace read model (list-traced-use-cases, LA-TRC-RM13)
 // again after every reload. It works on every focus (LA-PAT-APP-UX-R17), and the stage stays mounted while the focus
 // moves within its product. Its toolbar is every stage's (views/StageChrome.tsx), with Expand row (the focus's row,
 // every stage), Expand all (one stage, every row) and Tidy up; its key; the canvas (TraceCanvas.tsx) with its
@@ -24,7 +24,7 @@ import { cellKey, TRACE_COLUMN_LABELS, TRACE_STAGES, traceGraph, everyStepKey, r
 import { shownOrder } from './order';
 import { layOutTrace, outcomesBeside } from './layout';
 import { useOpenness } from './open';
-import { TRACE_WALK_LABELS, traceTarget, traceWords } from './walk';
+import { TRACE_WALK_LABELS, traceTarget, traceWords, type Along } from './walk';
 import { traceKeyEntries } from './TraceKey';
 import { TraceList } from './TraceList';
 import { TraceCanvas } from './TraceCanvas';
@@ -71,17 +71,22 @@ function ProductTraceStage(props: TraceViewProps & { product: string; trace: Pro
   const narrow = useNarrow();
   const graph = useMemo(() => traceGraph(index, trace), [index, trace]);
   const [open, setOpen] = useOpenness(props.cameraKey);
-  // The step whose chain the Technical flow column shows: the last step selected.
+  // The step whose chain the Technical flow column shows: the last step selected. A journey step focused shows its
+  // journey open, as a flow step its chain.
   const [step, setStep] = useState<string | null>(null);
-  const focusIsStep = index.byId.get(focus)?.kind === 'flow_step';
+  const focusKind = index.byId.get(focus)?.kind;
+  const focusIsStep = focusKind === 'flow_step';
   if (focusIsStep && step !== focus) setStep(focus);
-  const openness = useMemo<Openness>(() => ({ open, step: focusIsStep ? focus : step }), [open, step, focus, focusIsStep]);
+  const journey = focusKind === 'journey_step' ? graph.journeyOf.get(focus)?.id ?? null : null;
+  const openness = useMemo<Openness>(() => ({ open, step: focusIsStep ? focus : step, journey }), [open, step, focus, focusIsStep, journey]);
   // Tidy up (LA-PAT-APP-UX-R22): the rows ordered afresh, gaps closed, by the stage's shared command and button.
   const [tidy, setTidy] = useState(0);
   useCommand('stageTidy', () => setTidy((t) => t + 1), !narrow);
-  // The box the walk or a click stands on, for the focus it left there (a record may show in several boxes).
-  const [walked, setWalked] = useState<{ focus: string; key: string } | null>(null);
+  // The box the walk or a click stands on, for the focus it left there (a record may show in several boxes), and the
+  // journey the walk is along (walk.ts), if any.
+  const [walked, setWalked] = useState<{ focus: string; key: string; along: Along | null } | null>(null);
   const at = walked?.focus === focus && graph.items.has(walked.key) ? walked.key : null;
+  const along = at ? walked!.along : null;
   const atItem = at ? graph.items.get(at) : undefined;
   /** The ring: the walk's box when it is no record (a status, a gap, a heading). */
   const ring = atItem && (atItem.role !== 'record' || atItem.id !== focus) ? at : null;
@@ -126,14 +131,14 @@ function ProductTraceStage(props: TraceViewProps & { product: string; trace: Pro
   // follows; on another box the ring does. In and Out open and close on the way. Each step is announced.
   const laidNow = useCallback(() => { const order = shownOrder(product); return order ? outcomesBeside(layOutTrace(graph, order, openness), graph.serves, besideNow) : null; }, [product, graph, openness, besideNow]);
   const fromBox = at ?? graph.boxesOf.get(focus)?.[0] ?? (graph.items.has(`outcome/${focus}`) ? `outcome/${focus}` : null);
-  const targetOf = useCallback((move: Move) => { const laid = laidNow(); return laid ? traceTarget(graph, laid, openness, fromBox, move) : null; }, [laidNow, graph, openness, fromBox]);
+  const targetOf = useCallback((move: Move) => { const laid = laidNow(); return laid ? traceTarget(graph, laid, openness, fromBox, move, along) : null; }, [laidNow, graph, openness, fromBox, along]);
   const walkMap = useCallback((move: Move) => {
     const to = targetOf(move);
     if (!to) return null;
     if (to.toggle) toggle(to.toggle);
     const item = graph.items.get(to.to)!;
     const id = item.id && (item.role === 'record' || item.role === 'heading') ? item.id : null;
-    setWalked({ focus: id ?? focus, key: to.to });
+    setWalked({ focus: id ?? focus, key: to.to, along: to.along ?? null });
     if (id && id !== focus) props.onNavigate(id);
     return traceWords(index, graph, to.to);
   }, [targetOf, toggle, graph, focus, index, props.onNavigate]);
@@ -141,7 +146,7 @@ function ProductTraceStage(props: TraceViewProps & { product: string; trace: Pro
   const onBox = useCallback((key: string) => {
     const item = graph.items.get(key)!;
     const id = item.id && (item.role === 'record' || item.role === 'heading') ? item.id : null;
-    setWalked({ focus: id ?? focus, key });
+    setWalked({ focus: id ?? focus, key, along: null });
   }, [graph, focus]);
 
   // What the header strip says.
@@ -149,7 +154,7 @@ function ProductTraceStage(props: TraceViewProps & { product: string; trace: Pro
   useLayoutEffect(() => { onCounts?.(caption); }, [caption, onCounts]);
 
   const changesKey = useChangesKey();
-  const faded = rowsOf(graph, focus).length > 0 || graph.items.has(`outcome/${focus}`);
+  const faded = rowsOf(graph, focus).length > 0 || graph.items.has(`outcome/${focus}`) || graph.journeyOf.has(focus);
   const keyEntries = useMemo(() => (narrow ? [] : [...traceKeyEntries(index, graph, faded), ...changesKey]), [narrow, index, graph, faded, changesKey]);
   const secondary = narrow ? null : (
     <>
