@@ -21,6 +21,8 @@ export interface FolderEntry {
   id: string;
   kind: string;
   title: string;
+  /** A step's path (a flow's or a journey's), lower case, main when it names none; absent for a record with no path. */
+  path?: string;
   /** What sits under it in its own stage, kind by kind. */
   folded: FolderEntry[];
 }
@@ -100,7 +102,7 @@ export function folderTreeTableFrom(view: ReadView): FolderTreeTable {
     seen.add(r.id);
     const stage = stageOf(r.kind);
     const folded = sorted(groupOf(children, r.id).filter((c) => !seen.has(c.id) && (stage === null || stageOf(c.kind) === stage)));
-    return { id: r.id, kind: r.kind, title: r.title, folded: folded.map((c) => entry(c, seen)) };
+    return { id: r.id, kind: r.kind, title: r.title, ...('path' in r.row ? { path: path(r) } : {}), folded: folded.map((c) => entry(c, seen)) };
   };
   const startsBranch = (r: Placed) => {
     if (CONTAINERS.has(r.kind)) return false;
