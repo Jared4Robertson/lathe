@@ -16,7 +16,7 @@ function editors(dir: string): string[] {
   });
 }
 
-describe('LA-STD-CODE-R12-T01 an editor\'s form fields come from its command\'s generated input', () => {
+describe('LA-PAT-FIELD-INPUTS-R03-T01 an editor\'s form fields come from its command\'s generated input', () => {
   it('finds no field spec or clearable list written by hand in an editor, but for a product\'s own kind', () => {
     const found = editors(SRC);
     expect(found.length).toBeGreaterThan(20);

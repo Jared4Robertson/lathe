@@ -39,7 +39,7 @@ export const INTEGRATION_TABLES = ['integration', 'adapter', 'integration_test',
 /** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
 export const INTEGRATION_SHAPE = {
   integration: { at: 'integration' },
-  adapter: { at: 'adapter', one: true, lists: { meets: 'meets', packages: 'packages' } },
+  adapter: { at: 'adapter', one: true, refusedBy: 'oneAdapter', lists: { meets: 'meets', packages: 'packages' } },
   integration_test: { at: 'tests', lists: { starts_from: 'startsFrom' } },
 } as const satisfies AggregateShape;
 

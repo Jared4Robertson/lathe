@@ -2,17 +2,20 @@
 // The value-object commands whose handler is the pattern: load the value object, add, change or remove one record with the
 // input's columns and lists, hold it to its rules, and save. Each definition takes its handler from here.
 import { changed } from '../../../platform/data/rows.ts';
+import { refuseBroken } from '../../../platform/data/rules.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { ValueObjectRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
+import { holdToRules, oneConstraintTest, oneValueType } from '../rules.ts';
 import type { AddValueObject } from './add-value-object.ts';
 import type { ChangeValueObject } from './change-value-object.ts';
 import type { RemoveValueObject } from './remove-value-object.ts';
 import type { AddConstraint } from './add-constraint.ts';
 import type { ChangeConstraint } from './change-constraint.ts';
 import type { RemoveConstraint } from './remove-constraint.ts';
+import type { AddValueType } from './add-value-type.ts';
 import type { ChangeValueType } from './change-value-type.ts';
 import type { RemoveValueType } from './remove-value-type.ts';
+import type { AddConstraintTest } from './add-constraint-test.ts';
 import type { ChangeConstraintTest } from './change-constraint-test.ts';
 import type { RemoveConstraintTest } from './remove-constraint-test.ts';
 
@@ -69,6 +72,17 @@ export function removeConstraint(tx: Transaction, input: RemoveConstraint): void
   valueObjects.save(valueObject);
 }
 
+/** Adds the value type of a value object, its one piece of code, with the standard rules it meets and the packages it uses. */
+export function addValueType(tx: Transaction, input: AddValueType): void {
+  const valueObjects = new ValueObjectRepository(tx);
+  const valueObject = valueObjects.load(input.value_object_id) ?? tx.refuse('missing', `there is no value object ${input.value_object_id}`);
+  const { meets = [], packages = [], ...row } = input;
+  refuseBroken(oneValueType([...(valueObject.valueType ? [valueObject.valueType.row] : []), row]));
+  valueObject.valueType = { row, meets: meets, packages: packages };
+  holdToRules(tx, valueObject);
+  valueObjects.save(valueObject);
+}
+
 /** Changes a value type's title or file, or the standard rules it meets or packages it uses (each the whole list). */
 export function changeValueType(tx: Transaction, input: ChangeValueType): void {
   const valueObjects = new ValueObjectRepository(tx);
@@ -87,11 +101,23 @@ export function removeValueType(tx: Transaction, input: RemoveValueType): void {
   valueObjects.save(valueObject);
 }
 
+/** Adds the test of a constraint, its one test, with the test data sets it starts from. */
+export function addConstraintTest(tx: Transaction, input: AddConstraintTest): void {
+  const valueObjects = new ValueObjectRepository(tx);
+  const valueObject = valueObjects.loadHolding('constraint', input.constraint_id) ?? tx.refuse('missing', `there is no constraint ${input.constraint_id}`);
+  const { starts_from = [], ...row } = input;
+  valueObject.constraintTests.push({ row, startsFrom: starts_from });
+  refuseBroken(oneConstraintTest(valueObject.constraintTests.map((x) => x.row)));
+  holdToRules(tx, valueObject);
+  valueObjects.save(valueObject);
+}
+
 /** Changes a constraint test's way of running or the test data sets it starts from (the whole list). */
 export function changeConstraintTest(tx: Transaction, input: ChangeConstraintTest): void {
   const valueObjects = new ValueObjectRepository(tx);
   const valueObject = valueObjects.loadHolding('constraint_test', input.id) ?? tx.refuse('missing', `there is no constraint test ${input.id}`);
   valueObject.constraintTests = valueObject.constraintTests.map((x) => (x.row.id === input.id ? { row: changed(x.row, input, ['title', 'level', 'state', 'file', 'manual_reason', 'size', 'smoke', 'external', 'accepts', 'refuses', 'notes']), startsFrom: input.starts_from ?? x.startsFrom } : x));
+  refuseBroken(oneConstraintTest(valueObject.constraintTests.map((x) => x.row)));
   holdToRules(tx, valueObject);
   valueObjects.save(valueObject);
 }

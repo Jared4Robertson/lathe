@@ -1,4 +1,4 @@
-// LA-STD-CODE-R04-T01 (LA-STD-CODE-R04): no tracked file names a client product Lathe was tried on, a person as a
+// LA-STD-PRINCIPLES-R07-T01 (LA-STD-PRINCIPLES-R07): no tracked file names a client product Lathe was tried on, a person as a
 // person, or a machine's own paths. A scan of every text file git tracks.
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -42,7 +42,7 @@ function trackedFiles(): string[] {
   return result.stdout.split('\0').filter(Boolean);
 }
 
-describe('LA-STD-CODE-R04-T01 no tracked file names a client product, a person or a machine', () => {
+describe('LA-STD-PRINCIPLES-R07-T01 no tracked file names a client product, a person or a machine', () => {
   it('finds each kind of mention and lets the neutral fixture and the author fields pass', () => {
     // The samples are built from parts, so this file's own text names nothing it forbids.
     const u = '/' + 'Users/';
