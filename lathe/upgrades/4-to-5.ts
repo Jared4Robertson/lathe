@@ -16,8 +16,8 @@ const DURATION = /\b(time|days|hours|minutes|weeks) from\b|\bhow long\b|\bmedian
 const converter: Converter = {
   files(data, notes) {
     const clashes = [
-      ...data.read('product_kind').filter((k) => NEW_TABLES.includes(String(k.name))).map((k) => `the kind ${String(k.name)}`),
-      ...[...new Set(data.read('product_relation').map((r) => String(r.name)).filter((name) => NEW_TABLES.includes(name)))].map((name) => `the relation ${name}`),
+      ...data.read('product_kind').filter((k) => NEW_TABLES.includes(String(k.name))).map((k) => `kind ${String(k.name)}`),
+      ...[...new Set(data.read('product_relation').map((r) => String(r.name)).filter((name) => NEW_TABLES.includes(name)))].map((name) => `relation ${name}`),
     ];
     if (clashes.length) {
       notes.todo(
