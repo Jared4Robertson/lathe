@@ -719,7 +719,7 @@ export interface SlotRow {
   statement: string;
 }
 
-/** The accidental record (a technical record or an endpoint), written by hand, fills the pattern's slot against its contract: it is a fill, accidental complexity recorded where it is owed and counted as debt until the pattern can derive it. A record of a product's own accidental kind, such as a shared module, fills a slot the same way, with no declaration. */
+/** The accidental record (a technical record, an endpoint or a data store), written by hand or set up by hand, fills the pattern's slot against its contract: it is a fill, accidental complexity recorded where it is owed and counted as debt until the pattern can derive it. A record of a product's own accidental kind, such as a shared module, fills a slot the same way, with no declaration. */
 export interface FillsRow {
   source_id: string;
   target_id: string;
@@ -911,35 +911,7 @@ export interface MeasuredByRow {
   target_id: string;
 }
 
-/** A library of rules that holds across the product, such as exact money, a latency budget, logging, error handling or naming. Its type says whether its rules are essential (a quality) or accidental (engineering). What follows one of its rules meets it. */
-export interface StandardRow {
-  /** The standard's ID, such as TL-STD-CODE. */
-  id: string;
-  /** The standard's name. */
-  title: string;
-  /** The product it belongs to. */
-  product_id: string;
-  /** quality: what the product's people need of it whatever it is built with, such as exact money, auditability or a latency budget (essential); engineering: how it is built, such as logging, naming or how code is laid out (accidental). */
-  type: "quality" | "engineering";
-  /** What the standard covers, in a paragraph. */
-  description: string;
-}
-
-/** One rule of a standard. Technical records that follow it link to it with meets; its standard rule tests prove it. */
-export interface StandardRuleRow {
-  /** The rule's ID: its standard's ID and R<nn>, such as TL-STD-CODE-R01. */
-  id: string;
-  /** The rule in a few words. */
-  title: string;
-  /** The standard it belongs to. */
-  standard_id: string;
-  /** The rule, stated with MUST, MUST NOT, SHOULD or MAY. */
-  statement: string;
-  /** A short heading it is shown under among its siblings. */
-  group_name?: string;
-}
-
-/** The technical record follows the standard rule: it shows where the rule is applied, and designs it. */
+/** The technical record follows the rule: a standard rule, which it shows where the rule is applied and so designs; or a pattern rule it carries out, which is the essential record a generic piece of code (a shared component, an entry point, a build script) serves. */
 export interface MeetsRow {
   source_id: string;
   target_id: string;
@@ -1341,6 +1313,34 @@ export interface SpecificationTestRow {
   notes?: string;
 }
 
+/** A library of rules that holds across the product, such as exact money, a latency budget, logging, error handling or naming. Its type says whether its rules are essential (a quality) or accidental (engineering). What follows one of its rules meets it. */
+export interface StandardRow {
+  /** The standard's ID, such as TL-STD-CODE. */
+  id: string;
+  /** The standard's name. */
+  title: string;
+  /** The product it belongs to. */
+  product_id: string;
+  /** quality: what the product's people need of it whatever it is built with, such as exact money, auditability or a latency budget (essential); engineering: how it is built, such as logging, naming or how code is laid out (accidental). */
+  type: "quality" | "engineering";
+  /** What the standard covers, in a paragraph. */
+  description: string;
+}
+
+/** One rule of a standard. Technical records that follow it link to it with meets; its standard rule tests prove it. */
+export interface StandardRuleRow {
+  /** The rule's ID: its standard's ID and R<nn>, such as TL-STD-CODE-R01. */
+  id: string;
+  /** The rule in a few words. */
+  title: string;
+  /** The standard it belongs to. */
+  standard_id: string;
+  /** The rule, stated with MUST, MUST NOT, SHOULD or MAY. */
+  statement: string;
+  /** A short heading it is shown under among its siblings. */
+  group_name?: string;
+}
+
 /** Proves its standard rule in the product's code, such as a scan of the code for what the rule forbids or a test of a place that follows it. */
 export interface StandardRuleTestRow {
   /** The test's ID: its standard rule's ID and T<nn>, such as TL-STD-CODE-R01-T01. */
@@ -1665,8 +1665,6 @@ export interface TableRows {
   invariant_test: InvariantTestRow;
   invokes: InvokesRow;
   measured_by: MeasuredByRow;
-  standard: StandardRow;
-  standard_rule: StandardRuleRow;
   meets: MeetsRow;
   offers: OffersRow;
   package_use: PackageUseRow;
@@ -1697,6 +1695,8 @@ export interface TableRows {
   service: ServiceRow;
   setting_value: SettingValueRow;
   specification_test: SpecificationTestRow;
+  standard: StandardRow;
+  standard_rule: StandardRuleRow;
   standard_rule_test: StandardRuleTestRow;
   test_data_set: TestDataSetRow;
   starts_from: StartsFromRow;
