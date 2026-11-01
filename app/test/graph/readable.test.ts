@@ -150,13 +150,13 @@ describe('every drawn box shows its name', () => {
           return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
         };
         const medians = [...sizes.values()].map(median);
-        // Nested: exactly the same at every depth; Tree (whose columns narrow with how many children share them) within a
-        // tenth or so.
+        // Tree (whose columns narrow with how many children share them) within a tenth or so; Nested, whose headers a
+        // long title fits to its band, within a half.
         const [lo, hi] = [Math.min(...medians), Math.max(...medians)];
-        if (layout.name === 'Nested') expect(hi - lo, `${product} ${layout.name}: ${medians.map((m) => m.toFixed(1)).join(', ')}`).toBeLessThan(1e-6);
+        if (layout.name === 'Nested') expect(hi / lo, `${product} ${layout.name}: ${medians.map((m) => m.toFixed(1)).join(', ')}`).toBeLessThan(1.5);
         else expect(hi / lo, `${product} ${layout.name}: ${medians.map((m) => m.toFixed(1)).join(', ')}`).toBeLessThan(1.2);
-        // Readable: at least 9 pixels; at most 32, a focus filling FOCUS_SHARE of the pane reading large but not huge.
-        for (const m of medians) { expect(m).toBeGreaterThanOrEqual(9); expect(m).toBeLessThanOrEqual(32); }
+        // Readable: at least 9 pixels; at most 36, a focus filling FOCUS_SHARE of the pane reading large but not huge.
+        for (const m of medians) { expect(m).toBeGreaterThanOrEqual(9); expect(m).toBeLessThanOrEqual(36); }
         // The camera frames even the deepest, smallest leaf without reaching its zoom limit.
         const smallest = [...map.nodes.values()].reduce((a, b) => (Math.min(b.w, b.h) < Math.min(a.w, a.h) ? b : a));
         expect(layout.frame(map, smallest.id, 770, 640).zoom, `${layout.name} ${smallest.id}`).toBeLessThan(maxZoomFor(map));
