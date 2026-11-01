@@ -147,9 +147,18 @@ export function adding(data: Data, more: Data): Data {
   return copy;
 }
 
-/** A copy of the data with the rows matching a test removed from a table. */
+/** The links that account for accidental records (complete()'s): a test that removes a record drops them with it. */
+const ACCOUNTING = ['generates', 'fills', 'provided_by'];
+
+/**
+ * A copy of the data with the rows matching a test removed from a table, and the accounting links (ACCOUNTING) that
+ * name a record removed, so a test that takes away a technical record need not take its accounting with it.
+ */
 export function without(data: Data, table: string, match: (row: Row) => boolean): Data {
-  return { ...structuredClone(data), [table]: (data[table] ?? []).filter((r) => !match(r)) };
+  const copy = { ...structuredClone(data), [table]: (data[table] ?? []).filter((r) => !match(r)) };
+  const gone = new Set((data[table] ?? []).filter(match).map((r) => r.id).filter((id) => typeof id === 'string'));
+  if (gone.size) for (const link of ACCOUNTING) if (link !== table && copy[link]) copy[link] = copy[link].filter((r) => !gone.has(r.source_id as string) && !gone.has(r.target_id as string));
+  return copy;
 }
 
 /** A copy of the data with the rows of a table matching a test changed; a change to undefined leaves the column out. */
@@ -228,6 +237,7 @@ export function complete(): Data {
     pattern: [{ id: 'EX-PAT-ACT', title: 'Librarian action', product_id: 'EX', description: 'An action the librarian takes at the desk.' }],
     pattern_setting: [{ pattern_id: 'EX-PAT-ACT', position: 1, name: 'record', meaning: 'The record the action saves.' }],
     pattern_rule: [{ id: 'EX-PAT-ACT-R01', title: 'A saved record reads the same', pattern_id: 'EX-PAT-ACT', statement: 'A saved record MUST read the same everywhere.' }],
+    slot: [{ id: 'EX-PAT-ACT-SL01', title: 'Saving rule', pattern_id: 'EX-PAT-ACT', statement: 'A fill MUST refuse what its record does not allow before anything is saved.' }],
 
     interface: [{ id: 'EX-IF01', title: 'Web app', product_id: 'EX', kind: 'web app', description: 'The desk app the librarian uses.' }],
     flow: [
@@ -243,7 +253,10 @@ export function complete(): Data {
     view_requirement: [{ id: 'EX-V01-R01', title: 'Free tools first', view_id: 'EX-V01', statement: 'The catalog MUST list free tools first.' }],
     endpoint: [{ id: 'EX-LEND-EP01', title: 'POST /loans', command_id: 'EX-LEND-CMD01', method: 'POST', route: '/loans', description: 'Takes a member and a tool; answers 201 with the loan.' }],
     api_requirement: [{ id: 'EX-LEND-EP01-R01', title: 'Unknown tool', endpoint_id: 'EX-LEND-EP01', statement: 'An unknown tool MUST give 404.' }],
-    integration: [{ id: 'EX-INT01', title: 'Mail', system: 'Mail service', description: 'Reminders sent to members.' }],
+    integration: [
+      { id: 'EX-INT01', title: 'Mail', system: 'Mail service', description: 'Reminders sent to members.' },
+      { id: 'EX-INT02', title: 'Platform', system: 'The platform the library is built on', description: 'The runtime, storage engine, code generator and lint rules the code is built with, decided once outside the library.' },
+    ],
 
     repository: [
       { id: 'EX-LEND-REPO01', title: 'Loans', domain_id: 'EX-LEND', file: 'src/store.ts', description: 'Keeps loans in the loans table.' },
@@ -296,6 +309,7 @@ export function complete(): Data {
     ui_component: [{ id: 'EX-UI01', title: 'CatalogPage', file: 'web/catalog.tsx', description: 'The catalog page.' }],
     endpoint_handler: [{ id: 'EX-LEND-EP01-H', title: 'postLoan', endpoint_id: 'EX-LEND-EP01', file: 'src/router.ts', description: 'Reads the body and calls openLoan.' }],
     adapter: [{ id: 'EX-INT01-AD', title: 'mailer', integration_id: 'EX-INT01', file: 'src/mail.ts', description: 'Sends mail over SMTP.' }],
+    tooling: [{ id: 'EX-LEND-TOOL01', title: 'generate', domain_id: 'EX-LEND', file: 'scripts/generate.ts' }],
     standard: [{ id: 'EX-STD-CODE', title: 'Code', product_id: 'EX', type: 'engineering', description: 'How the code is written.' }],
     standard_rule: [{ id: 'EX-STD-CODE-R01', title: 'Node prefix', standard_id: 'EX-STD-CODE', statement: 'Code MUST import node: modules.' }],
 
@@ -353,6 +367,22 @@ export function complete(): Data {
     follows: [{ source_id: 'EX-LEND-UC02', target_id: 'EX-PAT-ACT' }],
     setting_value: [{ follower_id: 'EX-LEND-UC02', pattern_id: 'EX-PAT-ACT', setting: 'record', value: 'Tool' }],
     meets: [{ source_id: 'EX-LEND-CMD01-H', target_id: 'EX-STD-CODE-R01' }],
+    // Every accidental record is accounted for: the platform provides the data store, the standard and the generator;
+    // the generator writes the code but for the two fills of the pattern's slot.
+    provided_by: [
+      { source_id: 'EX-STORE01', target_id: 'EX-INT02' },
+      { source_id: 'EX-STD-CODE', target_id: 'EX-INT02' },
+      { source_id: 'EX-LEND-TOOL01', target_id: 'EX-INT02' },
+    ],
+    generates: [
+      'EX-LEND-REPO01', 'EX-LEND-REPO02', 'EX-LEND-EN01-DM', 'EX-LEND-EN02-DM', 'EX-LEND-EN03-DM', 'EX-LEND-EN01-TB', 'EX-LEND-EN03-TB',
+      'EX-LEND-RM01-TB', 'EX-VO01-VT', 'EX-LEND-SP01-PR', 'EX-LEND-EV01-ET', 'EX-LEND-EV02-ET', 'EX-LEND-RM01-PJ', 'EX-LEND-RM01-RD',
+      'EX-LEND-CMD02-H', 'EX-LEND-CMD03-H', 'EX-LEND-QRY01-H', 'EX-LEND-PO01-H', 'EX-LEND-DS01-SV', 'EX-UI01', 'EX-LEND-EP01-H', 'EX-INT01-AD',
+    ].map((id) => ({ source_id: 'EX-LEND-TOOL01', target_id: id })),
+    fills: [
+      { source_id: 'EX-LEND-CMD01-H', target_id: 'EX-PAT-ACT-SL01' },
+      { source_id: 'EX-LEND-INV01-RL', target_id: 'EX-PAT-ACT-SL01' },
+    ],
   };
 }
 

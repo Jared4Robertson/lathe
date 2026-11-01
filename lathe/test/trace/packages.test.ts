@@ -50,8 +50,8 @@ describe('packages', () => {
     // A name that is not a package name is refused by the table's own CHECK.
     expect(await refusals(naming('Not A Package'))).toEqual([expect.objectContaining({ table: 'package_use' })]);
     const withRecord = adding(complete(), {
-      tooling: [{ id: 'EX-LEND-TOOL01', title: 'vitest.config.ts', domain_id: 'EX-LEND', file: 'vitest.config.ts' }],
-      package_use: [{ record_id: 'EX-LEND-TOOL01', package: 'vitest' }],
+      tooling: [{ id: 'EX-LEND-TOOL02', title: 'vitest.config.ts', domain_id: 'EX-LEND', file: 'vitest.config.ts' }],
+      package_use: [{ record_id: 'EX-LEND-TOOL02', package: 'vitest' }],
     });
     // Written as data files and loaded, as a product's repo is.
     const root = writeData(withRecord);

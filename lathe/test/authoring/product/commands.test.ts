@@ -69,7 +69,7 @@ async function productDataSet(store: Store): Promise<Store> {
     description: 'A script that measures the business outcomes.',
     parent_kind: 'product',
     stage: 'technical-specification',
-    obligation: false,
+    obligation: false, complexity: 'accidental',
     fields: [
       { name: 'file', type: 'text', required: true, description: 'The script.' },
       { name: 'usage', type: 'text', required: false, description: 'How it is run.' },
@@ -143,7 +143,7 @@ describe('LA-AUT-UC04-R01-T51 a product kind and relation are declared, changed 
     expect(store.schema.tables.report.columns.map((c) => c.name)).toEqual(['id', 'title', 'product_id', 'file']);
     await runCommand(store, CHANGE_PRODUCT_RELATION, { name: 'measured_by', source_kind: 'business_outcome', target_kind: 'report', description: 'The report counts the measure.' });
     expect(store.rows('product_relation')).toEqual([expect.objectContaining({ description: 'The report counts the measure.' })]);
-    expect((await refusal(store, DECLARE_PRODUCT_KIND, { name: 'report', product_id: 'TL', label: 'Again', description: 'Twice.', parent_kind: 'product', obligation: false })).problems[0]).toMatchObject({ rule: 'primary-key', message: 'product kind report is declared already' });
+    expect((await refusal(store, DECLARE_PRODUCT_KIND, { name: 'report', product_id: 'TL', label: 'Again', description: 'Twice.', parent_kind: 'product', obligation: false, complexity: 'essential' })).problems[0]).toMatchObject({ rule: 'primary-key', message: 'product kind report is declared already' });
     await runCommand(store, REMOVE_PRODUCT_RELATION, { name: 'measured_by', source_kind: 'business_outcome', target_kind: 'report' });
     const removed = await runCommand(store, REMOVE_PRODUCT_KIND, { name: 'report' });
     expect(removed.tables).toEqual(['product_kind', 'product_kind_field']);
@@ -152,7 +152,7 @@ describe('LA-AUT-UC04-R01-T51 a product kind and relation are declared, changed 
 
   it('refuses a kind named for a table Lathe has, and removing a kind that still has records', async () => {
     const store = await storeAt(writeData(everyKind()));
-    const taken = await refusal(store, DECLARE_PRODUCT_KIND, { name: 'flow', product_id: 'TL', label: 'Flow', description: 'Mine.', parent_kind: 'domain', obligation: false });
+    const taken = await refusal(store, DECLARE_PRODUCT_KIND, { name: 'flow', product_id: 'TL', label: 'Flow', description: 'Mine.', parent_kind: 'domain', obligation: false, complexity: 'essential' });
     expect(taken.problems[0].message).toContain('The product kind flow has the name of a table Lathe already has');
     const before = fileOf(store, 'product_kind');
     const inUse = await refusal(store, REMOVE_PRODUCT_KIND, { name: 'cli_command' });
@@ -233,7 +233,7 @@ describe('LA-AUT-UC23-R01-T53 each Product command and query is reached by name 
     const root = writeData(everyKind());
     const listed = tools(await readSchema(root));
     const tool = listed.find((t) => t.name === 'product_declare_product_kind')!;
-    expect(tool.inputSchema).toMatchObject({ required: ['name', 'product_id', 'label', 'description', 'parent_kind', 'obligation'], additionalProperties: false });
+    expect(tool.inputSchema).toMatchObject({ required: ['name', 'product_id', 'label', 'description', 'parent_kind', 'obligation', 'complexity'], additionalProperties: false });
     expect(listed.map((t) => t.name)).toEqual(expect.arrayContaining(['product_move_question', 'product_get_product', 'product_next_id', 'product_list_interfaces']));
     const added = await callTool(root, 'product_add_question', { id: 'TL-Q01', title: 'Who repairs tools?', product_id: 'TL', owner: 'Librarian', description: 'The desk or a volunteer.' });
     expect(added.isError).toBeUndefined();

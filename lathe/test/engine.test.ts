@@ -142,13 +142,13 @@ describe('loading', () => {
   it('LA-PLT-UC01-R01-T01 loadWorkspace returns the Workspace contract', () => {
     expect(Object.keys(ws).sort()).toEqual(['chains', 'coverage', 'kinds', 'links', 'problems', 'records', 'relations', 'stages']);
     expect(Object.keys(ws.chains[0]).sort()).toEqual(['build', 'design', 'files', 'links', 'obligation', 'tests']);
-    expect(Object.keys(ws.kinds[0]).sort()).toEqual(['description', 'id_scope', 'kind', 'label', 'obligation', 'parent_kinds', 'position', 'required_fields', 'stage']);
+    expect(Object.keys(ws.kinds[0]).sort()).toEqual(['complexity', 'description', 'id_scope', 'kind', 'label', 'obligation', 'parent_kinds', 'position', 'required_fields', 'stage']);
     expect(ws.stages.map((s) => s.stage)).toEqual(['discovery', 'domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan']);
     expect(Object.keys(ws.stages[0]).sort()).toEqual(['description', 'label', 'position', 'stage']);
     expect(Object.keys(ws.relations[0]).sort()).toEqual(['description', 'forward_label', 'relation', 'reverse_label', 'role', 'source_kind', 'target_kind']);
     expect(Object.keys(ws.records[0]).sort()).toEqual(['aggregate', 'domain', 'fields', 'id', 'kind', 'parent', 'parts', 'product', 'title']);
     expect(Object.keys(ws.links[0]).sort()).toEqual(['relation', 'source', 'target']);
-    expect(Object.keys(ws.coverage[0]).sort()).toEqual(['domain', 'gaps', 'obligations', 'pattern_rules', 'product', 'proved_by', 'tests']);
+    expect(Object.keys(ws.coverage[0]).sort()).toEqual(['debt', 'domain', 'gaps', 'obligations', 'pattern_rules', 'product', 'proved_by', 'tests']);
     expect(Object.keys(ws.coverage[0].obligations[0]).sort()).toEqual(['built', 'designed', 'kind', 'label', 'not_automated', 'proof_only', 'proved', 'total']);
     expect(Object.keys(ws.coverage[0].tests).sort()).toEqual(['automated', 'manual', 'not_automated']);
     // Kinds come in kind order, stage by stage, with product and question outside the stages.
@@ -195,7 +195,7 @@ describe('loading', () => {
   /** The complete product with a kind of its own, memo, and one memo. */
   const withMemo = () =>
     build(adding(complete(), {
-      product_kind: [{ name: 'memo', product_id: 'EX', label: 'Memo', description: 'A short note.', parent_kind: 'domain', stage: 'use-cases', obligation: false }],
+      product_kind: [{ name: 'memo', product_id: 'EX', label: 'Memo', description: 'A short note.', parent_kind: 'domain', stage: 'use-cases', obligation: false, complexity: 'essential' }],
       memo: [{ id: 'EX-LEND-M01', title: 'A memo', domain_id: 'EX-LEND' }],
     }));
 
