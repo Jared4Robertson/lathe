@@ -3,14 +3,14 @@
 {"id":"LA-AUT-UC04-FL","title":"Declare a product's own kinds with their relations","use_case_id":"LA-AUT-UC04"}
 {"id":"LA-AUT-UC05-FL","title":"Write a pattern with its rules","use_case_id":"LA-AUT-UC05"}
 {"id":"LA-AUT-UC06-FL","title":"Write a use case with its flow and tests","use_case_id":"LA-AUT-UC06"}
-{"id":"LA-AUT-UC08-FL","title":"Read each kind's stage and order from the schema","use_case_id":"LA-AUT-UC08"}
+{"id":"LA-AUT-UC08-FL","title":"Read where each kind sits in the stages","use_case_id":"LA-AUT-UC08"}
 {"id":"LA-AUT-UC10-FL","title":"Model an aggregate with its entities and invariants","use_case_id":"LA-AUT-UC10"}
 {"id":"LA-AUT-UC11-FL","title":"Read the reference generated from the schema","use_case_id":"LA-AUT-UC11"}
 {"id":"LA-AUT-UC12-FL","title":"Model a command with its handler and policies","use_case_id":"LA-AUT-UC12"}
 {"id":"LA-AUT-UC13-FL","title":"Build a test data set","use_case_id":"LA-AUT-UC13"}
-{"id":"LA-AUT-UC14-FL","title":"Look up a kind or check","use_case_id":"LA-AUT-UC14"}
+{"id":"LA-AUT-UC14-FL","title":"Look up an entry in the reference","use_case_id":"LA-AUT-UC14"}
 {"id":"LA-AUT-UC16-FL","title":"Write a standard with its rules","use_case_id":"LA-AUT-UC16"}
-{"id":"LA-AUT-UC17-FL","title":"Specify a table and its keys","use_case_id":"LA-AUT-UC17"}
+{"id":"LA-AUT-UC17-FL","title":"Specify a table with its keys","use_case_id":"LA-AUT-UC17"}
 {"id":"LA-AUT-UC18-FL","title":"Define a view with its requirements","use_case_id":"LA-AUT-UC18"}
 {"id":"LA-AUT-UC19-FL","title":"Merge two branches' data","use_case_id":"LA-AUT-UC19"}
 {"id":"LA-AUT-UC20-FL","title":"Write a specification with its predicate","use_case_id":"LA-AUT-UC20"}
@@ -45,11 +45,11 @@
 {"id":"LA-EXP-UC06-FL","title":"Read a flow step by step","use_case_id":"LA-EXP-UC06"}
 {"id":"LA-EXP-UC07-FL","title":"Work in one product at a time","use_case_id":"LA-EXP-UC07"}
 {"id":"LA-EXP-UC08-FL","title":"Read a product laid out in stage folders","use_case_id":"LA-EXP-UC08"}
-{"id":"LA-EXP-UC09-FL","title":"Read the technical specification and test plan by kind","use_case_id":"LA-EXP-UC09"}
+{"id":"LA-EXP-UC09-FL","title":"Browse a domain's records by kind","use_case_id":"LA-EXP-UC09"}
 {"id":"LA-EXP-UC10-FL","title":"Explore several places at once in tabs","use_case_id":"LA-EXP-UC10"}
-{"id":"LA-EXP-UC11-FL","title":"Read a domain and its aggregates as an ERD","use_case_id":"LA-EXP-UC11"}
+{"id":"LA-EXP-UC11-FL","title":"Read a domain as an ERD","use_case_id":"LA-EXP-UC11"}
 {"id":"LA-EXP-UC12-FL","title":"Look up a record's history","use_case_id":"LA-EXP-UC12"}
-{"id":"LA-EXP-UC13-FL","title":"Read a domain's operations and integrations","use_case_id":"LA-EXP-UC13"}
+{"id":"LA-EXP-UC13-FL","title":"Read a domain's interaction design","use_case_id":"LA-EXP-UC13"}
 {"id":"LA-EXP-UC15-FL","title":"Watch the spec change","use_case_id":"LA-EXP-UC15"}
 {"id":"LA-EXP-UC16-FL","title":"Follow a journey step by step","use_case_id":"LA-EXP-UC16"}
 {"id":"LA-EXP-UC17-FL","title":"Choose how the graph is drawn","use_case_id":"LA-EXP-UC17"}
@@ -64,12 +64,16 @@
 {"id":"LA-PLT-UC17-FL","title":"Move a product to a new Lathe","use_case_id":"LA-PLT-UC17"}
 {"id":"LA-PLT-UC18-FL","title":"Start the plugin's tools in a product repo","use_case_id":"LA-PLT-UC18"}
 {"id":"LA-PLT-UC19-FL","title":"Work with Claude beside the stage","use_case_id":"LA-PLT-UC19"}
-{"id":"LA-PLT-UC20-FL","title":"Talk to Claude","use_case_id":"LA-PLT-UC20"}
-{"id":"LA-PLT-UC21-FL","title":"Review and undo Claude's changes","use_case_id":"LA-PLT-UC21"}
+{"id":"LA-PLT-UC20-FL","title":"Dictate a message to Claude","use_case_id":"LA-PLT-UC20"}
+{"id":"LA-PLT-UC21-FL","title":"Review Claude's changes","use_case_id":"LA-PLT-UC21"}
 {"id":"LA-PLT-UC22-FL","title":"Compose a message with more than words","use_case_id":"LA-PLT-UC22"}
 {"id":"LA-PLT-UC23-FL","title":"Serve the spec from a product repo","use_case_id":"LA-PLT-UC23"}
 {"id":"LA-PLT-UC24-FL","title":"Rebind a shortcut","use_case_id":"LA-PLT-UC24"}
 {"id":"LA-PLT-UC25-FL","title":"Open a record's data file","use_case_id":"LA-PLT-UC25"}
+{"id":"LA-PLT-UC26-FL","title":"Choose how the chat listens","use_case_id":"LA-PLT-UC26"}
+{"id":"LA-PLT-UC27-FL","title":"Undo Claude's turn","use_case_id":"LA-PLT-UC27"}
+{"id":"LA-PLT-UC28-FL","title":"Clear the recent folders","use_case_id":"LA-PLT-UC28"}
+{"id":"LA-PLT-UC29-FL","title":"Show the Owner a record","use_case_id":"LA-PLT-UC29"}
 {"id":"LA-TRC-UC01-FL","title":"See a domain's coverage","use_case_id":"LA-TRC-UC01"}
 {"id":"LA-TRC-UC02-FL","title":"Count coverage by the meta-model","use_case_id":"LA-TRC-UC02"}
 {"id":"LA-TRC-UC03-FL","title":"Record how a test is run","use_case_id":"LA-TRC-UC03"}
@@ -80,7 +84,7 @@
 {"id":"LA-TRC-UC08-FL","title":"Report tests that count for nothing","use_case_id":"LA-TRC-UC08"}
 {"id":"LA-TRC-UC09-FL","title":"See a product's coverage","use_case_id":"LA-TRC-UC09"}
 {"id":"LA-TRC-UC10-FL","title":"Trace obligations from design to tests","use_case_id":"LA-TRC-UC10"}
-{"id":"LA-TRC-UC11-FL","title":"See every obligation kind and test state","use_case_id":"LA-TRC-UC11"}
+{"id":"LA-TRC-UC11-FL","title":"See coverage of every obligation kind","use_case_id":"LA-TRC-UC11"}
 {"id":"LA-TRC-UC12-FL","title":"See a domain's owed pattern rules","use_case_id":"LA-TRC-UC12"}
 {"id":"LA-TRC-UC13-FL","title":"See tests by state with each domain's coverage","use_case_id":"LA-TRC-UC13"}
 {"id":"LA-TRC-UC14-FL","title":"Trace an obligation to its proof","use_case_id":"LA-TRC-UC14"}
@@ -88,5 +92,6 @@
 {"id":"LA-TRC-UC16-FL","title":"Check each stored record kind against the file that creates it","use_case_id":"LA-TRC-UC16"}
 {"id":"LA-TRC-UC19-FL","title":"Account for every package the product depends on","use_case_id":"LA-TRC-UC19"}
 {"id":"LA-TRC-UC20-FL","title":"See the outcomes each record serves","use_case_id":"LA-TRC-UC20"}
-{"id":"LA-TRC-UC21-FL","title":"Account for hand-written accidental complexity","use_case_id":"LA-TRC-UC21"}
+{"id":"LA-TRC-UC21-FL","title":"Fill a slot by hand","use_case_id":"LA-TRC-UC21"}
 {"id":"LA-TRC-UC22-FL","title":"See how far each journey is proved","use_case_id":"LA-TRC-UC22"}
+{"id":"LA-TRC-UC23-FL","title":"Name what provides a record","use_case_id":"LA-TRC-UC23"}
