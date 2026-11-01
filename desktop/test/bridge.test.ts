@@ -20,7 +20,7 @@ function call(key: string, route: 'focus' | 'open', init: RequestInit = {}, toke
   return fetch(`${env[BRIDGE_ENV]}/${route}`, { ...init, headers: { authorization: `Bearer ${token ?? env[TOKEN_ENV]}`, ...init.headers } });
 }
 
-describe('LA-PLT-UC19-R06-T02 The app bridge answers for its window, and only with its token', () => {
+describe('LA-PLT-UC29-R01-T02 The app bridge answers for its window, and only with its token', () => {
   it('serves on 127.0.0.1 with a window address and a token', () => {
     const env = bridge.envFor('w1');
     expect(env[BRIDGE_ENV]).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/windows\/w1$/);

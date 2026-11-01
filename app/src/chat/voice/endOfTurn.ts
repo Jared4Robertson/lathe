@@ -1,4 +1,4 @@
-// End-of-turn detection for Quick mode (LA-PLT-UC20-R04): whether the Owner has finished their message, judged on the
+// End-of-turn detection for Quick mode (LA-PLT-UC26-R03): whether the Owner has finished their message, judged on the
 // Mac from two things: the words (does the message end as a complete thought?) and the voice (did its pitch fall at
 // the end, as a statement's does?), the helper reading the pitch (desktop/native/speech). A finished thought sends
 // after a short pause, an unfinished one waits longer, and when unsure it waits in between. Where the helper cannot

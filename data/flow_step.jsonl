@@ -230,7 +230,7 @@
 {"id":"LA-EXP-UC13-FL-S01","title":"The reader opens a domain's Interaction design and sees how a client reaches its commands and queries, and the integrations only its steps exchange with","flow_id":"LA-EXP-UC13-FL","path":"main","position":1}
 {"id":"LA-EXP-UC13-FL-S02","title":"They open a command and read how a client reaches it: method, address and API requirements","flow_id":"LA-EXP-UC13-FL","path":"main","position":2}
 {"id":"LA-EXP-UC13-FL-S03","title":"They open an integration and read the steps that exchange with its system","flow_id":"LA-EXP-UC13-FL","path":"main","position":3}
-{"id":"LA-EXP-UC15-FL-S01","title":"While the Reader has the product open on a stage, an Agent adds an aggregate and edits a requirement through the command line","flow_id":"LA-EXP-UC15-FL","path":"main","position":1}
+{"id":"LA-EXP-UC15-FL-S01","title":"While the Reader has the product open on a stage, a change lands: an aggregate added and a requirement edited through the command line","flow_id":"LA-EXP-UC15-FL","path":"main","position":1}
 {"id":"LA-EXP-UC15-FL-S02","title":"The page reloads and the stage marks them: the new aggregate glows, the requirement pulses, and each keeps a New or Changed pill while Highlight changes is on","flow_id":"LA-EXP-UC15-FL","path":"main","position":2}
 {"id":"LA-EXP-UC15-FL-S03","title":"They turn Follow on, and the camera glides to the next change as it lands; their own camera move turns it off, with a note","flow_id":"LA-EXP-UC15-FL","path":"main","position":3}
 {"id":"LA-EXP-UC15-FL-S04","title":"They turn on Highlight changes: everything unchanged since the last commit dims to a fifth and each change carries its pill, outline and tint; they pick since the branch left main, then since I last looked","flow_id":"LA-EXP-UC15-FL","path":"main","position":4}
@@ -253,9 +253,9 @@
 {"id":"LA-PLT-UC02-FL-S02","title":"They set up the merge driver once per clone, as the README says, so git merges the data files through it","flow_id":"LA-PLT-UC02-FL","path":"main","position":2}
 {"id":"LA-PLT-UC02-FL-S03","title":"They run lathe check, which loads the records in the data folder the config names, with the product's own kinds","flow_id":"LA-PLT-UC02-FL","path":"main","position":3}
 {"id":"LA-PLT-UC02-FL-S06","title":"The Owner lists the other products in the workspace's Lathe configuration file, and lathe check checks each in its own folder","flow_id":"LA-PLT-UC02-FL","path":"workspace","position":1}
-{"id":"LA-PLT-UC03-FL-S01","title":"The Agent adds a use case's flow step with its own command while the Reader keeps the record open","flow_id":"LA-PLT-UC03-FL","path":"main","position":1,"interface_id":"LA-IF02"}
+{"id":"LA-PLT-UC03-FL-S01","title":"A use case's flow step is added with its own command while the Reader keeps the record open","flow_id":"LA-PLT-UC03-FL","path":"main","position":1,"interface_id":"LA-IF02"}
 {"id":"LA-PLT-UC03-FL-S02","title":"In the desktop shell, Data files changed sends spec:changed and the open view loads the data again at the same address","flow_id":"LA-PLT-UC03-FL","path":"main","position":2,"interface_id":"LA-IF02"}
-{"id":"LA-PLT-UC03-FL-S03","title":"An Agent adds an aggregate with its own command while the Reader keeps the record open","flow_id":"LA-PLT-UC03-FL","path":"main","position":3,"interface_id":"LA-IF01"}
+{"id":"LA-PLT-UC03-FL-S03","title":"An aggregate is added with its own command while the Reader keeps the record open","flow_id":"LA-PLT-UC03-FL","path":"main","position":3,"interface_id":"LA-IF01"}
 {"id":"LA-PLT-UC03-FL-S04","title":"The file watcher raises Data files changed, the server sends spec:changed and the open view loads the data again at the same address","flow_id":"LA-PLT-UC03-FL","path":"main","position":4,"interface_id":"LA-IF01"}
 {"id":"LA-PLT-UC03-FL-S05","title":"When the data cannot be loaded, the view says what is wrong rather than showing other data","flow_id":"LA-PLT-UC03-FL","path":"refused","position":1}
 {"id":"LA-PLT-UC06-FL-S01","title":"The Reader drags the gap between two panels, or focuses it and steps it with the keys","flow_id":"LA-PLT-UC06-FL","path":"main","position":1}
@@ -274,13 +274,11 @@
 {"id":"LA-PLT-UC07-FL-S10","title":"Someone else imports that file as a theme of their own","flow_id":"LA-PLT-UC07-FL","path":"alternate","position":3}
 {"id":"LA-PLT-UC07-FL-S11","title":"They turn Scroll to zoom on in Appearance, or from the palette, and scroll zooms every stage","flow_id":"LA-PLT-UC07-FL","path":"alternate","position":4}
 {"id":"LA-PLT-UC11-FL-S01","title":"The Reader chooses File › Open Product Folder… and picks a folder","flow_id":"LA-PLT-UC11-FL","path":"main","position":1}
-{"id":"LA-PLT-UC11-FL-S02","title":"It opens in a window of its own, never white, titled with its products and folder, its content reaching the shell only through window.latheDesktop","flow_id":"LA-PLT-UC11-FL","path":"main","position":2}
-{"id":"LA-PLT-UC11-FL-S03","title":"The window serves the product with its own installed Lathe, or the bundled copy, and About says which","flow_id":"LA-PLT-UC11-FL","path":"main","position":3}
-{"id":"LA-PLT-UC11-FL-S04","title":"A link to another site opens in the system browser, and the window stays on Lathe","flow_id":"LA-PLT-UC11-FL","path":"main","position":4}
-{"id":"LA-PLT-UC11-FL-S05","title":"They come back to it from File › Open Recent","flow_id":"LA-PLT-UC11-FL","path":"main","position":5}
-{"id":"LA-PLT-UC11-FL-S06","title":"The next launch reopens the last folder","flow_id":"LA-PLT-UC11-FL","path":"main","position":6}
-{"id":"LA-PLT-UC11-FL-S07","title":"They quit, and the app exits once every window's server has stopped","flow_id":"LA-PLT-UC11-FL","path":"main","position":7}
-{"id":"LA-PLT-UC11-FL-S08","title":"They clear the recent folders from File › Open Recent","flow_id":"LA-PLT-UC11-FL","path":"recent","position":1}
+{"id":"LA-PLT-UC11-FL-S02","title":"It opens in a window of its own, never white, titled with its products and folder, its content reaching the shell only through window.latheDesktop, and served by the product's own installed Lathe or the bundled copy, as About says","flow_id":"LA-PLT-UC11-FL","path":"main","position":2}
+{"id":"LA-PLT-UC11-FL-S04","title":"A link to another site opens in the system browser, and the window stays on Lathe","flow_id":"LA-PLT-UC11-FL","path":"main","position":3}
+{"id":"LA-PLT-UC11-FL-S05","title":"They come back to it from File › Open Recent","flow_id":"LA-PLT-UC11-FL","path":"main","position":4}
+{"id":"LA-PLT-UC11-FL-S06","title":"The next launch reopens the last folder","flow_id":"LA-PLT-UC11-FL","path":"main","position":5}
+{"id":"LA-PLT-UC11-FL-S07","title":"They quit, and the app exits once every window's server has stopped, as the policy that hears each window close stops it","flow_id":"LA-PLT-UC11-FL","path":"main","position":6}
 {"id":"LA-PLT-UC11-FL-S09","title":"A folder that is not a product is refused with what is missing, and no window opens","flow_id":"LA-PLT-UC11-FL","path":"refused","position":1}
 {"id":"LA-PLT-UC11-FL-S10","title":"They move or resize a window, which saves its size and place","flow_id":"LA-PLT-UC11-FL","path":"window","position":1}
 {"id":"LA-PLT-UC11-FL-S11","title":"They close the window: its place is kept, and its server stops","flow_id":"LA-PLT-UC11-FL","path":"window","position":2}
@@ -304,25 +302,19 @@
 {"id":"LA-PLT-UC19-FL-S02","title":"The chat lists the folder's saved sessions by title and date, marking one another Claude client may have open","flow_id":"LA-PLT-UC19-FL","path":"main","position":2}
 {"id":"LA-PLT-UC19-FL-S03","title":"They resume a session, or fork the one open elsewhere; the saved conversation shows first","flow_id":"LA-PLT-UC19-FL","path":"main","position":3}
 {"id":"LA-PLT-UC19-FL-S04","title":"They ask Claude in their own words; it answers as rich text, with their login, settings, skills, plugins and CLAUDE.md","flow_id":"LA-PLT-UC19-FL","path":"main","position":4}
-{"id":"LA-PLT-UC19-FL-S05","title":"Claude asks what the Reader is looking at","flow_id":"LA-PLT-UC19-FL","path":"main","position":5}
-{"id":"LA-PLT-UC19-FL-S06","title":"Claude opens a record in the window","flow_id":"LA-PLT-UC19-FL","path":"main","position":6}
-{"id":"LA-PLT-UC19-FL-S07","title":"Each tool call Claude makes shows as an entry that expands to its input and result","flow_id":"LA-PLT-UC19-FL","path":"main","position":7}
-{"id":"LA-PLT-UC19-FL-S08","title":"A tool that needs permission waits in the chat until they allow it once, allow it always in this chat, or deny it","flow_id":"LA-PLT-UC19-FL","path":"main","position":8}
-{"id":"LA-PLT-UC19-FL-S09","title":"They stop the turn under way","flow_id":"LA-PLT-UC19-FL","path":"main","position":9}
-{"id":"LA-PLT-UC19-FL-S10","title":"After the turn, the records it changed show as diffs, by record","flow_id":"LA-PLT-UC19-FL","path":"main","position":10}
-{"id":"LA-PLT-UC19-FL-S11","title":"A record ID in Claude's answer opens the record on the stage","flow_id":"LA-PLT-UC19-FL","path":"main","position":11}
-{"id":"LA-PLT-UC19-FL-S12","title":"Each session loads the Lathe tools of the Lathe the window runs; the head shows how many, and from which Lathe","flow_id":"LA-PLT-UC19-FL","path":"main","position":12}
-{"id":"LA-PLT-UC19-FL-S13","title":"Before the first message, the empty chat says when Claude Code is not found or not signed in, with the fix","flow_id":"LA-PLT-UC19-FL","path":"main","position":13}
-{"id":"LA-PLT-UC19-FL-S14","title":"They choose a permission mode (Ask, Accept reads, Auto, Bypass after a warning, or View only); the session starts again in it, and the folder keeps it","flow_id":"LA-PLT-UC19-FL","path":"main","position":14}
-{"id":"LA-PLT-UC19-FL-S15","title":"Each message goes with what they are looking at, a chip they can remove; Claude starts from it, and uses the app tools for anything else about the window","flow_id":"LA-PLT-UC19-FL","path":"main","position":15}
+{"id":"LA-PLT-UC19-FL-S07","title":"Each tool call Claude makes shows as an entry that expands to its input and result","flow_id":"LA-PLT-UC19-FL","path":"main","position":5}
+{"id":"LA-PLT-UC19-FL-S08","title":"A tool that needs permission waits in the chat until they allow it once, allow it always in this chat, or deny it","flow_id":"LA-PLT-UC19-FL","path":"main","position":6}
+{"id":"LA-PLT-UC19-FL-S09","title":"They stop the turn under way","flow_id":"LA-PLT-UC19-FL","path":"main","position":7}
+{"id":"LA-PLT-UC19-FL-S10","title":"After the turn, the records it changed show as diffs, by record","flow_id":"LA-PLT-UC19-FL","path":"main","position":8}
+{"id":"LA-PLT-UC19-FL-S11","title":"A record ID in Claude's answer opens the record on the stage","flow_id":"LA-PLT-UC19-FL","path":"main","position":9}
+{"id":"LA-PLT-UC19-FL-S12","title":"Each session loads the Lathe tools of the Lathe the window runs; the head shows how many, and from which Lathe","flow_id":"LA-PLT-UC19-FL","path":"main","position":10}
+{"id":"LA-PLT-UC19-FL-S13","title":"Before the first message, the empty chat says when Claude Code is not found or not signed in, with the fix","flow_id":"LA-PLT-UC19-FL","path":"main","position":11}
+{"id":"LA-PLT-UC19-FL-S14","title":"They choose a permission mode (Ask, Accept reads, Auto, Bypass after a warning, or View only); the session starts again in it, and the folder keeps it","flow_id":"LA-PLT-UC19-FL","path":"main","position":12}
+{"id":"LA-PLT-UC19-FL-S15","title":"Each message goes with what they are looking at, a chip they can remove; Claude starts from it, and uses the app tools for anything else about the window","flow_id":"LA-PLT-UC19-FL","path":"main","position":13}
 {"id":"LA-PLT-UC20-FL-S01","title":"The Owner dictates with the mic control or its key; the words appear in the message box as they speak, to edit and send","flow_id":"LA-PLT-UC20-FL","path":"main","position":1}
-{"id":"LA-PLT-UC20-FL-S02","title":"They turn on voice activation: \"Lathe\" after a pause wakes the chat while its window is in front; \"Lathe, send\", \"cancel\", \"scratch that\" and \"new line\" act on the draft","flow_id":"LA-PLT-UC20-FL","path":"main","position":2}
-{"id":"LA-PLT-UC20-FL-S03","title":"They turn on Quick mode: a dictated message sends by itself when they have finished, after a countdown any sound or key cancels","flow_id":"LA-PLT-UC20-FL","path":"main","position":3}
-{"id":"LA-PLT-UC20-FL-S04","title":"They choose the wake phrase, such as \"Hey Lathe\", and the commands' words","flow_id":"LA-PLT-UC20-FL","path":"main","position":4}
-{"id":"LA-PLT-UC20-FL-S05","title":"The chat offers the mic and the Voice menu only where the Mac can recognize speech on-device, and says why not elsewhere","flow_id":"LA-PLT-UC20-FL","path":"main","position":5}
+{"id":"LA-PLT-UC20-FL-S05","title":"The chat offers the mic and the Voice menu only where the Mac can recognize speech on-device, and says why not elsewhere","flow_id":"LA-PLT-UC20-FL","path":"main","position":2}
 {"id":"LA-PLT-UC21-FL-S01","title":"After a turn that wrote, they review its changes: the stage lights those records alone and next and previous walk through them with their diffs","flow_id":"LA-PLT-UC21-FL","path":"main","position":1}
-{"id":"LA-PLT-UC21-FL-S02","title":"They undo the turn in one step, or are told why it cannot be undone","flow_id":"LA-PLT-UC21-FL","path":"main","position":2}
-{"id":"LA-PLT-UC21-FL-S03","title":"Cmd or Ctrl with a press on a record ID in Claude's answer opens the record in a new tab","flow_id":"LA-PLT-UC21-FL","path":"main","position":3}
+{"id":"LA-PLT-UC21-FL-S03","title":"Cmd or Ctrl with a press on a record ID in Claude's answer opens the record in a new tab","flow_id":"LA-PLT-UC21-FL","path":"main","position":2}
 {"id":"LA-PLT-UC22-FL-S01","title":"They point at a box on the stage and choose Ask Claude About This (menu or key): the record joins the message as a chip, sent as context","flow_id":"LA-PLT-UC22-FL","path":"main","position":1}
 {"id":"LA-PLT-UC22-FL-S02","title":"They type a slash and pick a skill or command from the list, each with its one-line description","flow_id":"LA-PLT-UC22-FL","path":"main","position":2}
 {"id":"LA-PLT-UC22-FL-S03","title":"They choose the model and the effort in the chat's head","flow_id":"LA-PLT-UC22-FL","path":"main","position":3}
@@ -340,6 +332,14 @@
 {"id":"LA-PLT-UC25-FL-S01","title":"From a record they reveal its data file in Finder, open it in the editor or copy its ID; the shell takes only the ID and finds the file itself","flow_id":"LA-PLT-UC25-FL","path":"main","position":1}
 {"id":"LA-PLT-UC25-FL-S02","title":"They choose the editor Open in editor uses, or a custom command, and the shell keeps it in its settings file","flow_id":"LA-PLT-UC25-FL","path":"main","position":2}
 {"id":"LA-PLT-UC25-FL-S03","title":"They open the settings file in the editor to fill in the custom command","flow_id":"LA-PLT-UC25-FL","path":"main","position":3}
+{"id":"LA-PLT-UC26-FL-S01","title":"They turn on voice activation: \"Lathe\" after a pause wakes the chat while its window is in front; \"Lathe, send\", \"cancel\", \"scratch that\" and \"new line\" act on the draft","flow_id":"LA-PLT-UC26-FL","path":"main","position":1}
+{"id":"LA-PLT-UC26-FL-S02","title":"They turn on Quick mode: a dictated message sends by itself when they have finished, after a countdown any sound or key cancels","flow_id":"LA-PLT-UC26-FL","path":"main","position":2}
+{"id":"LA-PLT-UC26-FL-S03","title":"They choose the wake phrase, such as \"Hey Lathe\", and the commands' words","flow_id":"LA-PLT-UC26-FL","path":"main","position":3}
+{"id":"LA-PLT-UC27-FL-S01","title":"They undo the turn in one step, or are told why it cannot be undone","flow_id":"LA-PLT-UC27-FL","path":"main","position":1}
+{"id":"LA-PLT-UC28-FL-S01","title":"The Reader opens File › Open Recent and reads the folders it lists","flow_id":"LA-PLT-UC28-FL","path":"main","position":1}
+{"id":"LA-PLT-UC28-FL-S02","title":"They clear the recent folders from File › Open Recent","flow_id":"LA-PLT-UC28-FL","path":"main","position":2}
+{"id":"LA-PLT-UC29-FL-S01","title":"The Agent asks what the Owner is looking at","flow_id":"LA-PLT-UC29-FL","path":"main","position":1}
+{"id":"LA-PLT-UC29-FL-S02","title":"The Agent opens a record in the window, on the stage it names","flow_id":"LA-PLT-UC29-FL","path":"main","position":2}
 {"id":"LA-TRC-UC01-FL-S01","title":"The Owner runs lathe check and reads one coverage line per domain and obligation kind: designed, built, proved and not automated yet","flow_id":"LA-TRC-UC01-FL","path":"main","position":1}
 {"id":"LA-TRC-UC01-FL-S02","title":"Each gap names the obligation and what it lacks: its design, a built file or a test","flow_id":"LA-TRC-UC01-FL","path":"main","position":2}
 {"id":"LA-TRC-UC01-FL-S03","title":"The gaps are warnings, so the check still passes","flow_id":"LA-TRC-UC01-FL","path":"main","position":3}
@@ -358,11 +358,10 @@
 {"id":"LA-TRC-UC03-FL-S06","title":"A test not automated yet may name the file it will live in; until the file exists that is a warning","flow_id":"LA-TRC-UC03-FL","path":"not automated yet","position":1}
 {"id":"LA-TRC-UC03-FL-S08","title":"A test with an unknown state or level, an automated test with no file, or a manual reason on a test that is not manual is refused","flow_id":"LA-TRC-UC03-FL","path":"refused","position":1}
 {"id":"LA-TRC-UC04-FL-S01","title":"The Owner writes the pattern's rules under the pattern","flow_id":"LA-TRC-UC04-FL","path":"main","position":1}
-{"id":"LA-TRC-UC04-FL-S02","title":"A domain follows the pattern, itself or through its use cases","flow_id":"LA-TRC-UC04-FL","path":"main","position":2}
-{"id":"LA-TRC-UC04-FL-S03","title":"An Agent writes one pattern rule test per rule in each following domain, naming the domain","flow_id":"LA-TRC-UC04-FL","path":"main","position":3}
-{"id":"LA-TRC-UC04-FL-S04","title":"Lathe check counts each rule once in each domain that follows the pattern","flow_id":"LA-TRC-UC04-FL","path":"main","position":4}
-{"id":"LA-TRC-UC04-FL-S05","title":"The gaps and not-proved warnings name each rule with the domain that still owes it","flow_id":"LA-TRC-UC04-FL","path":"main","position":5}
-{"id":"LA-TRC-UC04-FL-S06","title":"A pattern nobody follows is a warning, and an obligation outside every domain counts in the product's Shared coverage","flow_id":"LA-TRC-UC04-FL","path":"main","position":6}
+{"id":"LA-TRC-UC04-FL-S03","title":"An Agent writes one pattern rule test per rule in each following domain, naming the domain","flow_id":"LA-TRC-UC04-FL","path":"main","position":2}
+{"id":"LA-TRC-UC04-FL-S04","title":"Lathe check counts each rule once in each domain that follows the pattern","flow_id":"LA-TRC-UC04-FL","path":"main","position":3}
+{"id":"LA-TRC-UC04-FL-S05","title":"The gaps and not-proved warnings name each rule with the domain that still owes it","flow_id":"LA-TRC-UC04-FL","path":"main","position":4}
+{"id":"LA-TRC-UC04-FL-S06","title":"A pattern nobody follows is a warning, and an obligation outside every domain counts in the product's Shared coverage","flow_id":"LA-TRC-UC04-FL","path":"main","position":5}
 {"id":"LA-TRC-UC05-FL-S01","title":"The Agent writes the test's code, naming the test's own ID in its name","flow_id":"LA-TRC-UC05-FL","path":"main","position":1}
 {"id":"LA-TRC-UC05-FL-S03","title":"The check reads each automated test's file for the test's ID, as a whole ID","flow_id":"LA-TRC-UC05-FL","path":"main","position":2}
 {"id":"LA-TRC-UC05-FL-S04","title":"The file of a manual test or a test not automated yet is checked only for existing","flow_id":"LA-TRC-UC05-FL","path":"main","position":3}
@@ -422,10 +421,11 @@
 {"id":"LA-TRC-UC20-FL-S05","title":"They follow an outcome to its record","flow_id":"LA-TRC-UC20-FL","path":"main","position":5,"interface_id":"LA-IF01"}
 {"id":"LA-TRC-UC20-FL-S06","title":"They open Tools › Checks and read each serves-no-outcome warning","flow_id":"LA-TRC-UC20-FL","path":"main","position":6,"interface_id":"LA-IF01"}
 {"id":"LA-TRC-UC21-FL-S01","title":"The Owner records that a record written by hand fills a slot of the pattern it is owed to","flow_id":"LA-TRC-UC21-FL","path":"main","position":1}
-{"id":"LA-TRC-UC21-FL-S02","title":"They name what provides a record decided outside the product, in place of any provider it had","flow_id":"LA-TRC-UC21-FL","path":"main","position":2}
-{"id":"LA-TRC-UC21-FL-S03","title":"Coverage counts the provided record as accounted for, and lists the fill as debt at its slot","flow_id":"LA-TRC-UC21-FL","path":"main","position":3}
+{"id":"LA-TRC-UC21-FL-S03","title":"Coverage lists the fill as debt at its slot","flow_id":"LA-TRC-UC21-FL","path":"main","position":2}
 {"id":"LA-TRC-UC21-FL-S04","title":"A fill of a record a generator writes is refused with every reason, and nothing changes","flow_id":"LA-TRC-UC21-FL","path":"refused","position":1}
 {"id":"LA-TRC-UC22-FL-S01","title":"The Reader opens a journey and reads its proof: its steps, how many are proved, and its journey test","flow_id":"LA-TRC-UC22-FL","path":"main","position":1}
 {"id":"LA-TRC-UC22-FL-S02","title":"They open an outcome the journey serves and read each journey's proof under its measure","flow_id":"LA-TRC-UC22-FL","path":"main","position":2,"interface_id":"LA-IF01"}
 {"id":"LA-TRC-UC22-FL-S03","title":"On the Trace stage they select a journey, read its numbered lines to the use cases its steps carry out, and walk them in journey order","flow_id":"LA-TRC-UC22-FL","path":"main","position":3,"interface_id":"LA-IF01"}
 {"id":"LA-TRC-UC22-FL-S04","title":"They run the check: a gap for each journey without a test, a main path or an outcome, and for each step that carries out nothing yet","flow_id":"LA-TRC-UC22-FL","path":"main","position":4,"interface_id":"LA-IF03"}
+{"id":"LA-TRC-UC23-FL-S01","title":"They name what provides a record decided outside the product, in place of any provider it had","flow_id":"LA-TRC-UC23-FL","path":"main","position":1}
+{"id":"LA-TRC-UC23-FL-S02","title":"Coverage counts the provided record as accounted for","flow_id":"LA-TRC-UC23-FL","path":"main","position":2}
