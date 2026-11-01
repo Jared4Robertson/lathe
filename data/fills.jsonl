@@ -191,6 +191,7 @@
 {"source_id":"LA-AUT-MOD66","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL03"}
 {"source_id":"LA-AUT-MOD80","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL03"}
 {"source_id":"LA-AUT-MOD82","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL03"}
+{"source_id":"LA-AUT-MOD84","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL03"}
 {"source_id":"LA-AUT-QRY01-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL04"}
 {"source_id":"LA-AUT-QRY05-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL04"}
 {"source_id":"LA-AUT-QRY100-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL04"}
@@ -265,6 +266,7 @@
 {"source_id":"LA-AUT-QRY227-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL04"}
 {"source_id":"LA-AUT-REPO01","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL05"}
 {"source_id":"LA-AUT-REPO19","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL05"}
+{"source_id":"LA-AUT-REPO24","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL05"}
 {"source_id":"LA-AUT-RM01-PJ","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL06"}
 {"source_id":"LA-AUT-RM01-TB","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL08"}
 {"source_id":"LA-AUT-RM02-PJ","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL06"}

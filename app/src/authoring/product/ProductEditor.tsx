@@ -12,6 +12,7 @@ import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/re
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { addressOf } from '../../views/address';
+import { INTERFACE_FIELDS } from '../interface/fields.generated';
 import { PRODUCT_FIELDS } from './fields.generated';
 import { useNextProductId } from './reads';
 import '../../edit/edit.css';
@@ -83,7 +84,7 @@ const questionFields = (index: RecordIndex, product: string, adding: boolean): F
 const interfaceFields = (index: RecordIndex, page: ProductPage, adding: boolean): FieldSpec[] => {
   const useCases: Choice[] = [...index.byId.values()].filter((r) => r.kind === 'use_case' && r.product === page.product.id).map((r) => ({ id: r.id, title: r.title }));
   const roles = page.roles.map((r) => r.name).join(', ');
-  return addOrChangeFields(adding, PRODUCT_FIELDS['/api/product/add-interface'], 'product_id', PRODUCT_FIELDS['/api/product/change-interface'], {
+  return addOrChangeFields(adding, INTERFACE_FIELDS['/api/interface/add-interface'], 'product_id', INTERFACE_FIELDS['/api/interface/change-interface'], {
     description: LONG,
     actors: { label: 'Roles', description: `The roles of the product that use it, one per line, in order${roles ? ` (${roles})` : ''}; none means each use case's main actor.` },
     offers: { label: 'Offers', choices: useCases },
@@ -135,8 +136,8 @@ export function ProductEditor({ index, page, id, kind, children }: {
     switch (mode.mode) {
       case 'change': return <ChangeForm context={context} id={id} kind={kind} />;
       case 'add':
-        // An open question and an interface are the Product aggregate's own; any other record under the product is
-        // added through its own aggregate's Add form.
+        // An open question (the Product aggregate's) and an interface (the Interface aggregate's) are added here, on the
+        // product's page; any other record under the product is added through its own aggregate's Add form.
         if (mode.kind === 'question' || mode.kind === 'interface') return <AddForm context={context} kind={mode.kind} />;
         return <AddUnder index={index} parent={product} kind={mode.kind} onDone={back} />;
       case 'declare-kind': return <KindForm context={context} kind={null} />;
@@ -172,7 +173,7 @@ export function ProductEditor({ index, page, id, kind, children }: {
       {mode.mode === 'remove' && (
         <RemoveQuestion index={index} id={id} label={kind === 'question' ? 'open question' : 'interface'} goes={[]} onCancel={back}
           then={addressOf(kind === 'question' ? page.questions.find((q) => q.id === id)?.domain_id ?? product : product)}
-          remove={() => writer.command(kind === 'question' ? '/api/product/remove-question' : '/api/product/remove-interface', { id })} />
+          remove={() => writer.command(kind === 'question' ? '/api/product/remove-question' : '/api/interface/remove-interface', { id })} />
       )}
       {mode.mode === 'remove-kind' && (
         <RemoveDeclaration title={`Remove the product kind ${mode.name}?`} what={`the product kind ${mode.name} with its fields`} onCancel={back}
@@ -227,7 +228,7 @@ function ChangeForm({ context, id, kind }: { context: FormContext; id: string; k
       case 'question':
         return { specs: questionFields(index, page.product.id, false), current: page.questions.find((q) => q.id === id)! as unknown as Record<string, unknown>, route: '/api/product/change-question' as const, label: 'Open question' };
       case 'interface':
-        return { specs: interfaceFields(index, page, false), current: interfaceNow(page, id), route: '/api/product/change-interface' as const, label: 'Interface' };
+        return { specs: interfaceFields(index, page, false), current: interfaceNow(page, id), route: '/api/interface/change-interface' as const, label: 'Interface' };
     }
   })();
   const submit = async (draft: Draft) => {
@@ -255,7 +256,7 @@ function AddForm({ context, kind }: { context: FormContext; kind: 'question' | '
   }, [suggested]);
   const submit = async (draft: Draft) => {
     const input = addInput(index, specs, draft, { product_id: product });
-    const answer = await send(writer, kind === 'question' ? '/api/product/add-question' : '/api/product/add-interface', input);
+    const answer = await send(writer, kind === 'question' ? '/api/product/add-question' : '/api/interface/add-interface', input);
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;
   };

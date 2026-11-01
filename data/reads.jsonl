@@ -1,7 +1,9 @@
 {"source_id":"LA-AUT-RM01","target_id":"LA-AUT-A1"}
 {"source_id":"LA-AUT-RM02","target_id":"LA-AUT-A1"}
 {"source_id":"LA-AUT-RM11","target_id":"LA-AUT-A11"}
+{"source_id":"LA-AUT-RM11","target_id":"LA-AUT-A24"}
 {"source_id":"LA-AUT-RM21","target_id":"LA-AUT-A1"}
+{"source_id":"LA-AUT-RM21","target_id":"LA-AUT-A24"}
 {"source_id":"LA-AUT-RM22","target_id":"LA-AUT-A2"}
 {"source_id":"LA-AUT-RM23","target_id":"LA-AUT-A3"}
 {"source_id":"LA-AUT-RM24","target_id":"LA-AUT-A4"}
