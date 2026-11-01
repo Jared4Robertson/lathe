@@ -12,6 +12,7 @@ import { RecordFrame } from '../../specs/RecordContent';
 import { saysKind } from '../../specs/InterfaceParts';
 import { groupRecords } from '../../specs/groups';
 import { type RecordIndex, type RecordSummary } from '../../exploring/record-summaries/record-index';
+import { InJourneys } from '../journey/InJourneys';
 import { FlowInterfaces } from './FlowInterfaces';
 import { UseCaseEditor } from './UseCaseEditor';
 import { stepsOf, useUseCase } from './reads';
@@ -96,6 +97,10 @@ function Facts({ facts }: { facts: { label: string; value: ReactNode }[] }) {
   return <dl className="fields use-case-facts">{facts.map((f) => <div key={f.label}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}</dl>;
 }
 
+/** The "In journeys" fact: where the use case sits in time, each journey it is a step of; none when it is in none. */
+const inJourneys = (index: RecordIndex, useCase: UseCaseRead): { label: string; value: ReactNode }[] =>
+  useCase.journeys.length ? [{ label: 'In journeys', value: <InJourneys index={index} journeys={useCase.journeys} id={useCase.useCase.id} /> }] : [];
+
 /** What one record of the use case shows on its page, by the kind it is in the use case. */
 function Content({ index, useCase, id, kind }: { index: RecordIndex; useCase: UseCaseRead; id: string; kind: UseCaseKind }) {
   switch (kind) {
@@ -103,7 +108,10 @@ function Content({ index, useCase, id, kind }: { index: RecordIndex; useCase: Us
       return (
         <>
           <Text index={index} id={id} source={useCase.useCase.goal} field="goal" />
-          <Facts facts={useCase.actors.length ? [{ label: useCase.actors.length === 1 ? 'Actor' : 'Actors', value: useCase.actors.join(', ') }] : []} />
+          <Facts facts={[
+            ...(useCase.actors.length ? [{ label: useCase.actors.length === 1 ? 'Actor' : 'Actors', value: useCase.actors.join(', ') }] : []),
+            ...inJourneys(index, useCase),
+          ]} />
           <Text index={index} id={id} source={useCase.useCase.notes} title="Notes" field="notes" />
           <FlowAndInterfaces index={index} useCase={useCase} />
           <Requirements index={index} useCase={useCase} />
@@ -204,6 +212,7 @@ function Summary({ index, useCase, id, kind }: { index: RecordIndex; useCase: Us
             { label: 'Capability', value: <RecordLink index={index} id={useCase.useCase.capability_id} /> },
             ...(useCase.actors.length ? [{ label: useCase.actors.length === 1 ? 'Actor' : 'Actors', value: useCase.actors.join(', ') }] : []),
             { label: 'Holds', value: `${useCase.flows.length ? 'its flow' : 'no flow'}, ${count(useCase.requirements.length, 'UC requirement', 'UC requirements')}` },
+            ...inJourneys(index, useCase),
           ],
         };
       case 'uc_requirement': {
