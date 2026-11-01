@@ -1,8 +1,11 @@
 {"source_id":"TL-JR01-S01","target_id":"TL-LEND-UC04"}
 {"source_id":"TL-JR01-S02","target_id":"TL-LEND-PO01"}
+{"source_id":"TL-JR01-S03","target_id":"TL-LEND-UC07"}
 {"source_id":"TL-JR01-S04","target_id":"TL-LEND-UC06"}
 {"source_id":"TL-JR01-S05","target_id":"TL-LEND-UC05"}
 {"source_id":"TL-JR02-S01","target_id":"TL-LEND-UC03"}
+{"source_id":"TL-JR02-S02","target_id":"TL-LEND-PO02"}
 {"source_id":"TL-JR02-S03","target_id":"TL-LEND-UC04"}
+{"source_id":"TL-JR02-S04","target_id":"TL-LEND-UC08"}
 {"source_id":"TL-JR03-S01","target_id":"TL-LEND-UC01"}
 {"source_id":"TL-JR03-S02","target_id":"TL-LEND-UC03"}
