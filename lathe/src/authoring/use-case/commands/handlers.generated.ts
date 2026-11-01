@@ -115,11 +115,11 @@ export function addFlowStep(tx: Transaction, input: AddFlowStep): void {
   useCases.save(useCase);
 }
 
-/** Changes a step's title, path, position or the interface it is a variant of (null makes it every interface's), or its links: a list given replaces the list, null clears what it invokes. */
+/** Changes a step's title or the interface it is a variant of (null makes it every interface's), or its links: a list given replaces the list, null clears what it invokes. Its path and position change only by Move a flow step. */
 export function changeFlowStep(tx: Transaction, input: ChangeFlowStep): void {
   const useCases = new UseCaseRepository(tx);
   const useCase = useCases.loadHolding('flow_step', input.id) ?? tx.refuse('missing', `there is no flow step ${input.id}`);
-  useCase.steps = useCase.steps.map((x) => (x.row.id === input.id ? { row: changed(x.row, input, ['title', 'path', 'position', 'interface_id']), fulfills: input.fulfills ?? x.fulfills, exchangesWith: input.exchanges_with ?? x.exchangesWith, invokes: input.invokes === undefined ? x.invokes : input.invokes } : x));
+  useCase.steps = useCase.steps.map((x) => (x.row.id === input.id ? { row: changed(x.row, input, ['title', 'interface_id']), fulfills: input.fulfills ?? x.fulfills, exchangesWith: input.exchanges_with ?? x.exchangesWith, invokes: input.invokes === undefined ? x.invokes : input.invokes } : x));
   holdToRules(tx, useCase);
   useCases.save(useCase);
 }

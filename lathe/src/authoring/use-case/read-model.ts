@@ -11,6 +11,7 @@ import type { FlowRow, FlowStepRow, FlowTestRow, UcRequirementRow, UseCaseRow, U
 import type { UseCaseKind } from './model.ts';
 import { byRecordId } from '../../platform/data/ids.ts';
 import { interfaceVersions, type FlowThrough } from './through.ts';
+import { journeyAppearances, type JourneyAppearance } from '../journey/appearances.ts';
 
 /** A test as the page shows it: its row and the test data sets it starts from. */
 export interface TestOnPage<T> {
@@ -57,6 +58,8 @@ export interface UseCaseTree {
   requirements: RequirementOnPage[];
   /** Its flow, the same through every interface: none, or one. */
   flows: FlowOnPage[];
+  /** The journeys it is a step of, each with the step, its path and position and the steps before and after it. */
+  journeys: JourneyAppearance[];
 }
 
 /** A use case as its page reads it, with the record of it the page is about. */
@@ -113,6 +116,7 @@ function pathsOf(steps: StepOnPage[]): PathOnPage[] {
 export function useCaseTableFrom(view: ReadView): UseCaseTable {
   const [invokes, fulfills, exchangesWith, startsFrom] = ['invokes', 'fulfills', 'exchanges_with', 'starts_from'].map((t) => targets(view, t));
   const versionsOf = interfaceVersions(view);
+  const journeysOf = journeyAppearances(view);
   const actors = grouped<{ position: number; role_name: string }>(view.rows('use_case_actor'), 'use_case_id');
   const requirements = grouped<UcRequirementRow>(view.rows('uc_requirement'), 'use_case_id');
   const useCaseTests = grouped<UseCaseTestRow>(view.rows('use_case_test'), 'uc_requirement_id');
@@ -146,6 +150,7 @@ export function useCaseTableFrom(view: ReadView): UseCaseTable {
         const through = versionsOf(root, ownActors, own.map((s) => ({ id: s.step.id, path: s.step.path, position: s.step.position, variantOf: s.step.interface_id ?? null, operation: s.invokes })));
         return { flow, paths: pathsOf(own), test: test ? tested(test) : null, through };
       }),
+      journeys: journeysOf(root),
     };
     for (const r of tree.requirements) {
       hold(r.requirement.id, 'uc_requirement');
