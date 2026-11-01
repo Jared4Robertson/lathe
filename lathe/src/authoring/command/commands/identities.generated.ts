@@ -22,7 +22,7 @@ export const REMOVE_COMMAND_IDENTITY = {
   id: 'LA-AUT-CMD242',
   slice: { aggregate: 'LA-AUT-A8', name: 'command' },
   name: 'remove-command',
-  description: 'Removes a command whole: its handler, its policies with their event handlers and tests, and the links they start. Refused while anything outside it references what is in it: a step that invokes it, its endpoint or CLI command.',
+  description: 'Removes a command whole: its handler, its policies with their event handlers and tests, and the links they start. Refused while anything outside it references what is in it: a step that invokes it, its endpoint or command-line command.',
   method: 'POST',
   route: '/api/command/remove-command',
 } as const;
@@ -121,7 +121,7 @@ export const CHANGE_POLICY_TEST_IDENTITY = {
   id: 'LA-AUT-CMD253',
   slice: { aggregate: 'LA-AUT-A8', name: 'command' },
   name: 'change-policy-test',
-  description: 'Changes a policy test\'s columns or the test data sets it starts from (the whole list).',
+  description: 'Changes a policy test\'s way of running or the test data sets it starts from (the whole list).',
   method: 'POST',
   route: '/api/command/change-policy-test',
 } as const;

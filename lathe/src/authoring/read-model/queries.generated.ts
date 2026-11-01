@@ -4,7 +4,7 @@ export const GET_READ_MODEL_IDENTITY = {
   id: 'LA-AUT-QRY179',
   slice: { aggregate: 'LA-AUT-A10', name: 'read-model' },
   name: 'get-read-model',
-  description: 'Reads a read model whole as its page shows it, by its ID or the ID of any record in it: the record asked for and its kind, the read model\'s row and fields in order, what it reads, calls and is fed by, its queries by ID each with what it selects by and calls and its handler, its projection and its reader (each piece of code with the standard rules it meets and the packages it uses).',
+  description: 'Reads a read model whole as its readers read it, by its ID or the ID of any record in it: the record asked for and its kind, the read model itself and its fields in order, what it reads, calls and is fed by, its queries by ID each with what it selects by and calls and its handler, its projection and its reader (each piece of code with the standard rules it meets and the packages it uses).',
   method: 'GET',
   route: '/api/read-model/get-read-model',
 } as const;
