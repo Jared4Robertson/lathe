@@ -32,8 +32,8 @@ const extended = () =>
     product_kind_field: [{ kind: 'cli_command', position: 1, name: 'usage', type: 'text', required: true, description: 'How it is typed.' }],
     product_relation: [{ name: 'documents', source_kind: 'cli_command', target_kind: 'view', product_id: 'EX', forward_label: 'Documents', reverse_label: 'Documented by', description: 'The CLI command is documented in the view.' }],
     check: [
-      { name: 'one-handler-file', product_id: 'EX', position: 1, severity: 'warning', summary: 'A house rule.', explanation: 'Made for this test. Fix what it reports.', query: 'SELECT NULL AS record, NULL AS message WHERE false', kinds: ['command_handler'] },
-      { name: 'any-record', product_id: 'EX', position: 2, severity: 'warning', summary: 'Another house rule.', explanation: 'Made for this test. Fix what it reports.', query: 'SELECT NULL AS record, NULL AS message WHERE false' },
+      { name: 'one-handler-file', product_id: 'EX', domain_id: 'LA-CHK', position: 1, severity: 'warning', summary: 'A house rule.', explanation: 'Made for this test. Fix what it reports.', query: 'SELECT NULL AS record, NULL AS message WHERE false', kinds: ['command_handler'] },
+      { name: 'any-record', product_id: 'EX', domain_id: 'LA-CHK', position: 2, severity: 'warning', summary: 'Another house rule.', explanation: 'Made for this test. Fix what it reports.', query: 'SELECT NULL AS record, NULL AS message WHERE false' },
     ],
   });
 
@@ -63,7 +63,7 @@ describe('check rows', () => {
     const store = await openStore(await build(complete()));
     try {
       const error = await runCommand(store, ADD_CHECK, {
-        name: 'house-rule', product_id: 'EX', position: 1, severity: 'warning', summary: 'A house rule. It says two things.', explanation: 'Made for this test. Fix what it reports.', query: 'SELECT NULL AS record, NULL AS message WHERE false',
+        name: 'house-rule', product_id: 'EX', domain_id: 'LA-CHK', position: 1, severity: 'warning', summary: 'A house rule. It says two things.', explanation: 'Made for this test. Fix what it reports.', query: 'SELECT NULL AS record, NULL AS message WHERE false',
       }).then(() => null, (e: unknown) => e);
       expect(error).toBeInstanceOf(StoreError);
       expect((error as StoreError).problems.map((p) => [p.rule, p.message])).toEqual([
@@ -87,7 +87,7 @@ describe('check rows', () => {
       stage: 'domain-model',
     });
     expect(defaults.checks.find((c) => c.check === 'too-many-children')).toMatchObject({ kinds: [], stage: null });
-    const bare = { name: 'bare', position: 1, severity: 'warning', summary: 'Only a summary.', query: 'SELECT 1' };
+    const bare = { name: 'bare', domain_id: 'LA-CHK', position: 1, severity: 'warning', summary: 'Only a summary.', query: 'SELECT 1' };
     expect(await refusals(withTable(everyKind(), 'check', [bare]))).toEqual([expect.objectContaining({ rule: 'required', message: expect.stringContaining('check.explanation is required') })]);
     expect(await refusals(withTable(everyKind(), 'check', [{ ...bare, explanation: 'Why.', severity: 'fatal' }]))).toEqual([expect.objectContaining({ rule: 'column' })]);
   });

@@ -14,7 +14,7 @@ const latheChecks = readFileSync(path.join(LATHE_DATA_DIR, 'check.jsonl'), 'utf8
   .map((line) => JSON.parse(line).name as string);
 
 const row = (name: string, position: number, query: string) => ({
-  name, product_id: 'EX', position, severity: 'warning', summary: `The house rule ${name}.`, explanation: 'Made for this test. Fix what it reports.', query,
+  name, product_id: 'EX', domain_id: 'LA-CHK', position, severity: 'warning', summary: `The house rule ${name}.`, explanation: 'Made for this test. Fix what it reports.', query,
 });
 
 /** The complete product with a domain event nothing hears (a house rule here), two house checks and a product beside it. */

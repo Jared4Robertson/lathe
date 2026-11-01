@@ -39,7 +39,7 @@ type Summaries = ReturnType<typeof LIST_CHECKS.run>;
 describe("LA-CHK-UC02-R50-T01 each Check command (LA-CHK-A1) changes one check row through CheckRepository, keeps Lathe's own read-only, and is reached by name from the CLI, the MCP tools and HTTP", () => {
   it("LA-PAT-AGGREGATE-TESTS-R03-T02 builds the data set with its own Add command, reads a check whole, and lists Lathe's checks before the product's", async () => {
     const store = await checkDataSet();
-    expect(runQuery(store, GET_CHECK, { name: 'loan-without-due-date' })).toMatchObject({ name: 'loan-without-due-date', product: 'TL', position: 2, severity: 'error', kinds: [] });
+    expect(runQuery(store, GET_CHECK, { name: 'loan-without-due-date' })).toMatchObject({ name: 'loan-without-due-date', product: 'TL', domain: 'LA-CHK', position: 2, severity: 'error', kinds: [] });
     const listed = runQuery(store, LIST_CHECKS, { product_id: 'TL' }) as Summaries;
     expect(listed.slice(-2).map((c) => [c.name, c.product])).toEqual([['tool-without-photo', 'TL'], ['loan-without-due-date', 'TL']]);
     expect(listed.filter((c) => c.product === null).length).toBe(store.rows('check').length - 2);
@@ -59,9 +59,9 @@ describe("LA-CHK-UC02-R50-T01 each Check command (LA-CHK-A1) changes one check r
     const store = await checkDataSet();
     const before = checkFile(store);
     const query = 'SELECT NULL AS record, NULL AS message WHERE false';
-    const added = await refusal(store, ADD_CHECK, { name: 'view-unused', product_id: 'TL', position: 3, severity: 'warning', summary: 'x.', explanation: 'x.', query });
+    const added = await refusal(store, ADD_CHECK, { name: 'view-unused', product_id: 'TL', domain_id: 'LA-CHK', position: 3, severity: 'warning', summary: 'x.', explanation: 'x.', query });
     expect(added.problems[0]).toMatchObject({ rule: 'check-name-own', message: "check view-unused already exists as one of Lathe's own (lathe/data/check.jsonl); give the check a name of its own" });
-    expect((await refusal(store, ADD_CHECK, { name: 'tool-without-photo', product_id: 'TL', position: 3, severity: 'warning', summary: 'x.', explanation: 'x.', query })).problems[0].message).toBe('check tool-without-photo already exists');
+    expect((await refusal(store, ADD_CHECK, { name: 'tool-without-photo', product_id: 'TL', domain_id: 'LA-CHK', position: 3, severity: 'warning', summary: 'x.', explanation: 'x.', query })).problems[0].message).toBe('check tool-without-photo already exists');
     expect((await refusal(store, CHANGE_CHECK, { name: 'view-unused', severity: 'warning' })).problems[0]).toMatchObject({ rule: 'check-read-only', message: "check view-unused is Lathe's own (lathe/data/check.jsonl), so it cannot change or be removed" });
     expect((await refusal(store, REMOVE_CHECK, { name: 'view-unused' })).problems[0].rule).toBe('check-read-only');
     await expect(runCommand(store, CHANGE_CHECK, { name: 'tool-without-photo', product_id: 'TL' })).rejects.toThrow(InputError);

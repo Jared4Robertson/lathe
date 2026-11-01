@@ -87,8 +87,8 @@ describe('the spec data store keeps every change through a restart, and a refuse
   ['LA-AUT-A23-SR01-T01', change('data-store', 'data_store', 'TL-LEND-STORE01', 'description')],
   ['LA-CHK-A1-SR01-T01', {
     slice: 'check', command: 'add-check', table: 'check', key: { name: 'kept-check' }, column: 'summary',
-    input: { name: 'kept-check', product_id: 'TL', position: 1, severity: 'warning', summary: 'Kept through a restart.', explanation: 'A check kept through a restart.', query: "SELECT NULL AS record, 'kept' AS message WHERE false" },
-    refused: { name: 'kept-check', product_id: 'TL', position: 1, severity: 'warning', summary: 'Kept through a restart.', explanation: 'A check kept through a restart.', query: "SELECT NULL AS record, 'kept' AS message WHERE false" },
+    input: { name: 'kept-check', product_id: 'TL', domain_id: 'LA-CHK', position: 1, severity: 'warning', summary: 'Kept through a restart.', explanation: 'A check kept through a restart.', query: "SELECT NULL AS record, 'kept' AS message WHERE false" },
+    refused: { name: 'kept-check', product_id: 'TL', domain_id: 'LA-CHK', position: 1, severity: 'warning', summary: 'Kept through a restart.', explanation: 'A check kept through a restart.', query: "SELECT NULL AS record, 'kept' AS message WHERE false" },
   }],
   ['LA-CHK-A2-SR01-T01', { slice: 'product-setting', command: 'set-limits', table: 'product_setting', key: { product_id: 'TL' }, column: 'max_children', input: { product_id: 'TL', max_children: 21, max_entities_per_aggregate: 8 }, refused: { product_id: 'TL-NOPE', max_children: 21, max_entities_per_aggregate: 8 } }],
   ['LA-TRC-A3-SR01-T01', {
