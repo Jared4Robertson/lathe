@@ -1,6 +1,6 @@
 import { recordIndexOf } from '../read-view';
 import { describe, expect, it } from 'vitest';
-import { MAP_SIZE, sizeText } from '../../src/graph/map';
+import { MAP_SIZE, nestedText, sizeText } from '../../src/graph/map';
 import { BORDER, LABEL_PAD, labelHeight, largestFit, linesIn, mapLabel, metaWidth, narrowestWidth, titleWidth, type MapLabel } from '../../src/graph/text';
 import { gridOf, HEADER_SHARE, NEST_GAP, NEST_PAD, type NestedMap, type NestedNode } from '../../src/graph/nested';
 import type { RecordIndex } from '../../src/exploring/record-summaries/record-index';
@@ -111,10 +111,10 @@ describe('the Nested map', () => {
     }
   });
 
-  it('LA-EXP-DS06-T09 LA-EXP-DS07-T03 Siblings share one text scale, their side over TEXT_SIZE or the largest at which every sibling\'s whole label fits, and one header band', () => {
+  it('LA-EXP-DS06-T09 LA-EXP-DS07-T03 Siblings share one text scale, their side over NESTED_TEXT_SIZE or the largest at which every sibling\'s whole label fits, and one header band', () => {
     for (const map of all()) {
       for (const group of siblingGroups(map)) {
-        const most = sizeText(group[0].w);
+        const most = nestedText(group[0].w);
         const text = group[0].text;
         for (const n of group) expect(n.text, n.id).toBe(text);
         expect(text).toBeLessThanOrEqual(most);
@@ -132,9 +132,9 @@ describe('the Nested map', () => {
     // A long title in a busy part lowers its siblings' text with its own, never its cousins'.
     const map = busyAndQuiet();
     const leaf = map.nodes.get('b0.0')!;
-    expect(leaf.text).toBeLessThan(sizeText(leaf.w));
+    expect(leaf.text).toBeLessThan(nestedText(leaf.w));
     expect(map.nodes.get('b1.0')!.text).toBe(leaf.text);
-    expect(map.nodes.get('b0')!.text).toBe(sizeText(map.nodes.get('b0')!.w));
+    expect(map.nodes.get('b0')!.text).toBe(nestedText(map.nodes.get('b0')!.w));
     // Built once per index: the same map object, whatever the focus.
     const index = testIndex();
     expect(nestedMap(index, 'P')).toBe(nestedMap(index, 'P'));
