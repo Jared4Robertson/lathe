@@ -8,6 +8,9 @@ import { describe, expect, it } from 'vitest';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
+// A whole-repo scan: on a loaded machine it takes minutes, so its timeout fits the work.
+const KNIP_MS = 300_000;
+
 const runs = new Map<string, { status: number | null; output: string }>();
 
 /** knip in one package, run once per test run however many tests read it. */
@@ -18,7 +21,7 @@ function knip(pkg: string) {
 
 function runKnip(pkg: string) {
   const cwd = path.join(repo, pkg);
-  const run = spawnSync(path.join(cwd, 'node_modules/.bin/knip'), ['--no-progress', '--no-config-hints'], { cwd, encoding: 'utf8', timeout: 120_000 });
+  const run = spawnSync(path.join(cwd, 'node_modules/.bin/knip'), ['--no-progress', '--no-config-hints'], { cwd, encoding: 'utf8', timeout: KNIP_MS });
   return { status: run.status, output: `${run.stdout ?? ''}${run.stderr ?? ''}${run.error ? String(run.error) : ''}`.trim() };
 }
 
@@ -29,7 +32,7 @@ describe('LA-STD-PRINCIPLES-R04-T02 what serves no purpose is removed', () => {
         const { status, output } = knip(pkg);
         expect(output).toBe('');
         expect(status).toBe(0);
-      }, 120_000);
+      }, KNIP_MS);
     }
   });
 });
@@ -40,5 +43,5 @@ describe('LA-PAT-APP-CODE-R21-T02 No unused files, exports or dependencies in th
     const { status, output } = knip('app');
     expect(output).toBe('');
     expect(status).toBe(0);
-  }, 120_000);
+  }, KNIP_MS);
 });

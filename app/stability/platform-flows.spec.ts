@@ -424,8 +424,8 @@ test.describe('Platform flows in the app', () => {
     }
     // The put-back goal reloads the page too: let it land before the next step measures.
     await expect(page.locator(WIKI)).not.toContainText('A goal the flow test writes', { timeout: 20_000 });
-    // Overlays are placed before they show.
-    expectStable(await step(page, 'flow', 'quick find', { keys: [...KEYS, '.quick-find-button'], allow: ['.quick-open-backdrop'] }, async () => {
+    // Overlays are placed before they show. Quick find previews the resting result on the stage (LA-V64), so the stage's drawing and key, the header's counts and the card (its page, and its height: summary while previewing, LA-V64-R06) change with it; the frame around them holds still.
+    expectStable(await step(page, 'flow', 'quick find', { keys: [...SHELL, '.page-bar-actions', '.header-strip', '.quick-find-button'], allow: ['.quick-open-backdrop', '.focus-stage', '.wiki-panel', '.header-strip-counts'] }, async () => {
       await page.keyboard.press('Control+k');
       await page.keyboard.type('graph', { delay: 40 });
       await page.locator('.quick-open .palette-list li').first().waitFor();
