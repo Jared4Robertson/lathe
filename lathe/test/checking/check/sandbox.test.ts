@@ -1,7 +1,7 @@
 // LA-CHK-INV06: a check's query, and every other query of the data, runs in a database closed to everything outside
 // it. A load seals DuckDB before its first query of the data: no file or URL is read or written, no extension comes
 // in, no setting changes, and no setting shows the process's environment. Lathe's checks and coverage run as before.
-import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -126,5 +126,24 @@ WHERE name IN ('enable_external_access', 'lock_configuration', 'autoload_known_e
       connection.closeSync();
       instance.closeSync();
     }
+  });
+
+  it('LA-CHK-INV06-T a check row that hides a COPY after an escape string loads refused, and writes nothing', async () => {
+    const dir = tempDir();
+    const victim = path.join(dir, 'victim.js');
+    writeFileSync(victim, 'export const original = 1;\n');
+    // The reviewer's row: E'a\'' hid the ; from the old rule, and the COPY overwrote a .js file of the Lathe that ran it.
+    const probe = row('review-probe', 1, `SELECT 'x' AS record, E'a\\'' AS message WHERE false; COPY (SELECT $$export const original = 666;$$) TO $$${victim}$$ (FORMAT csv, HEADER false, QUOTE $$$$); SELECT 'y' AS record, 'z' AS message WHERE false`);
+    const root = await build(complete());
+    writeFileSync(path.join(root, 'data', 'check.jsonl'), `${JSON.stringify(probe)}\n`);
+    const ws = await loadWorkspace(root);
+    expect(ws.records).toEqual([]);
+    expect(ws.problems).toEqual([{
+      severity: 'error',
+      check: 'data-refused',
+      record: null,
+      message: "data/check.jsonl:1: check review-probe's query holds a statement that is not a SELECT, as DuckDB reads it; a check's query is one SELECT [check-query-select]",
+    }]);
+    expect(readFileSync(victim, 'utf8')).toBe('export const original = 1;\n');
   });
 });
