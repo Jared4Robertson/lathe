@@ -22,7 +22,12 @@ export interface IntegrityQuery {
  *   owner;
  * - link (relation, source_id, target_id): every link of every relation;
  * - record_group (id, label): every record that names a group among its siblings, with the group as written: a flow
- *   step's path, and the group_name of every kind that has one, Lathe's and a product's own alike.
+ *   step's path, and the group_name of every kind that has one, Lathe's and a product's own alike;
+ * - record_text (id, kind, title, lead): every record's title and lead text (its statement, goal, meaning or
+ *   description), or a null lead for a kind with none;
+ * - record_complexity (id, kind, complexity): every record but an open question, essential or accidental: by its kind
+ *   (meta_kind.complexity), or for an as-parent kind (a test, a standard rule) as the nearest record above it that is
+ *   not, and for a standard by its type (quality is essential, engineering accidental).
  */
 export function storeViewsSql(schema: SchemaDescription): string {
   const kinds = Object.values(schema.kinds).sort((a, b) => a.name.localeCompare(b.name));
@@ -39,6 +44,10 @@ export function storeViewsSql(schema: SchemaDescription): string {
       .filter((k) => schema.tables[k.name].columns.some((c) => c.name === 'group_name'))
       .map((k) => `SELECT id, group_name::VARCHAR FROM ${sqlName(k.name)} WHERE group_name IS NOT NULL`),
   ];
+  const texts = kinds.map((k) => {
+    const lead = schema.tables[k.name].columns.find((c) => isLeadColumn(c.name));
+    return `SELECT id, ${sqlString(k.name)} AS kind, title, ${lead ? sqlName(lead.name) : 'NULL'}::VARCHAR AS lead FROM ${sqlName(k.name)}`;
+  });
   return `
 CREATE OR REPLACE VIEW record_parent AS
 ${parents.join('\nUNION ALL ')};
@@ -46,6 +55,20 @@ CREATE OR REPLACE VIEW link AS
 ${links.join('\nUNION ALL ')};
 CREATE OR REPLACE VIEW record_group AS
 ${groups.join('\nUNION ALL ')};
+CREATE OR REPLACE VIEW record_text AS
+${texts.join('\nUNION ALL ')};
+CREATE OR REPLACE VIEW record_complexity AS
+WITH RECURSIVE up (id, at) AS (
+  SELECT id, id FROM record_parent
+  UNION ALL
+  SELECT up.id, p.parent_id FROM up JOIN record_parent p ON p.id = up.at JOIN meta_kind k ON k.name = p.kind
+  WHERE k.complexity = 'as-parent' AND p.parent_id IS NOT NULL
+)
+SELECT up.id, r.kind,
+  CASE k.complexity WHEN 'by-type' THEN CASE s.type WHEN 'quality' THEN 'essential' ELSE 'accidental' END ELSE k.complexity::VARCHAR END AS complexity
+FROM up JOIN record_parent a ON a.id = up.at JOIN meta_kind k ON k.name = a.kind JOIN record_parent r ON r.id = up.id
+LEFT JOIN standard s ON s.id = a.id
+WHERE k.complexity IS NOT NULL AND k.complexity <> 'as-parent';
 `;
 }
 
@@ -311,6 +334,14 @@ SELECT kind AS table_name, id AS row_key,
 FROM titled WHERE regexp_matches(title, '\\.\\s*$')`,
     },
   ];
+  queries.push({
+    name: 'fill-is-hand-written',
+    description: 'A record that fills a slot is written by hand: no tooling record generates it, since a generated record is derived and a fill is not.',
+    sql: `
+SELECT 'fills' AS table_name, f.source_id || chr(0) || f.target_id AS row_key,
+       f.source_id || ' cannot fill ' || f.target_id || ': ' || g.source_id || ' generates it, so it is derived, and a fill is written by hand; drop the fill, or the generates link if it is written by hand' AS message
+FROM fills f JOIN generates g ON g.target_id = f.source_id`,
+  });
   const formed = kinds.filter((k) => k.titleForm);
   if (formed.length) {
     queries.push({

@@ -80,12 +80,13 @@ export function productKindSql(
     }
     statements.push(`CREATE TABLE ${sqlName(name)} (\n  ${columns.join(',\n  ')}\n);`, ...comments);
     statements.push(
-      `INSERT INTO meta_kind (name, label, stage, obligation, id_pattern, id_example, product_id) VALUES (${[name, kind.label, kind.stage].map(literal).join(', ')}, ${kind.obligation === true}, ${[kind.id_pattern, kind.id_example, kind.product_id].map(literal).join(', ')});`,
+      `INSERT INTO meta_kind (name, label, stage, obligation, id_pattern, id_example, product_id, complexity) VALUES (${[name, kind.label, kind.stage].map(literal).join(', ')}, ${kind.obligation === true}, ${[kind.id_pattern, kind.id_example, kind.product_id, kind.complexity].map(literal).join(', ')});`,
       `INSERT INTO meta_kind_parent VALUES (${literal(name)}, ${literal(parent)}, 1, ${literal(parentColumn)});`,
       `INSERT INTO meta_table VALUES (${literal(name)}, 'kind', NULL);`,
     );
     if (kind.obligation === true) statements.push(`INSERT INTO meta_supertype_member VALUES ('obligation', ${literal(name)});`);
     if (kind.stage === 'technical-specification') statements.push(`INSERT INTO meta_supertype_member VALUES ('technical_record', ${literal(name)});`);
+    if (kind.obligation === true || kind.stage === 'technical-specification') statements.push(`INSERT INTO meta_supertype_member VALUES ('provided_by_source', ${literal(name)});`);
     if (kind.title_form) statements.push(`INSERT INTO meta_kind_title VALUES (${literal(name)}, ${literal(kind.title_form)});`);
   };
   for (const kind of [...declarations.kinds].sort((a, b) => String(a.name).localeCompare(String(b.name)))) add(kind);

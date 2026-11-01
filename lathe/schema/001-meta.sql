@@ -18,6 +18,10 @@ CREATE TYPE link_role AS ENUM ('design', 'build', 'proof');
 CREATE TYPE link_scope AS ENUM ('product', 'domain', 'aggregate');
 -- How a code-bound kind's titles are written: one identifier as in code, an invocation, or a kebab-case name.
 CREATE TYPE title_form AS ENUM ('identifier', 'invocation', 'kebab-case');
+-- Whether a kind's records are essential complexity, decided once per product (what any correct solution has to
+-- capture), or accidental complexity (what comes from the means used to build it); or whether that follows from the
+-- record they sit under (a test, a standard rule) or from the record's own type (a standard).
+CREATE TYPE complexity AS ENUM ('essential', 'accidental', 'as-parent', 'by-type');
 
 CREATE TABLE meta_table (
   name VARCHAR PRIMARY KEY,
@@ -51,7 +55,8 @@ CREATE TABLE meta_kind (
   id_pattern VARCHAR,
   id_example VARCHAR,
   id_scope id_scope,
-  product_id VARCHAR
+  product_id VARCHAR,
+  complexity complexity
 );
 COMMENT ON TABLE meta_kind IS 'Every kind of record: Lathe''s own and each product''s. A kind''s table has the same name, and its description is that table''s comment.';
 COMMENT ON COLUMN meta_kind.name IS 'The kind''s name, which is also its table''s name, such as use_case.';
@@ -63,6 +68,7 @@ COMMENT ON COLUMN meta_kind.id_pattern IS 'How its IDs are written, such as <P>-
 COMMENT ON COLUMN meta_kind.id_example IS 'An example ID, such as TL-LEND-UC01.';
 COMMENT ON COLUMN meta_kind.id_scope IS 'What its IDs start with, followed by a hyphen: its product''s ID, its domain''s ID or its parent''s ID. A kind with no owner takes its product, or its domain, from that prefix. None for a kind whose IDs are free.';
 COMMENT ON COLUMN meta_kind.product_id IS 'For a product''s own kind, the product that declares it; none for Lathe''s kinds.';
+COMMENT ON COLUMN meta_kind.complexity IS 'Whether its records are essential or accidental complexity. essential: complexity that comes from the problem itself, decided once per product (discovery, the domain model, use cases and patterns, the what of interaction design, test data sets); accidental: complexity that comes from the means used to build the solution (the technical specification), which is derived, provided or a recorded fill at a slot; as-parent: as the record it sits under (a test, a standard rule); by-type: as its own type says (a standard: quality is essential, engineering accidental). A kind is never mixed: one that holds both is split. None for an open question, a note on the spec rather than part of it.';
 
 CREATE TABLE meta_kind_title (
   kind VARCHAR PRIMARY KEY REFERENCES meta_kind (name),
