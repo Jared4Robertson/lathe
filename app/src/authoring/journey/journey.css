@@ -1,0 +1,37 @@
+/* ---------- The Journey page (JourneyPage) ---------- */
+.journey-route { margin: 0 0 8px; }
+.journey-route-word { font: 600 0.78rem var(--mono); text-transform: uppercase; letter-spacing: 0.04em; color: var(--g-discovery); }
+.journey-route .markdown, .journey-route .markdown p { display: inline; margin: 0; }
+.journey-serves { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0 0 6px; }
+.journey-serves-label { font-weight: 600; color: var(--muted); font-size: 0.82rem; }
+.journey-serves .serves-list { display: flex; flex-wrap: wrap; gap: 2px 12px; list-style: none; margin: 0; padding: 0; }
+.journey-proof-line { margin: 0 0 12px; font-size: 0.88rem; color: var(--warn); }
+.journey-proof-line.is-proved, .journey-proof.is-proved { color: var(--g-use-cases); }
+
+/* The steps: an ordered list, a row each; the lanes above it are decoration for a wide screen. */
+.journey-steps { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 0; }
+.journey-step { display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: 4px 10px; align-items: start; padding: 8px 0; border-bottom: 1px solid var(--rule); }
+.journey-step .step-order { font: 600 0.8rem var(--mono); text-align: right; color: var(--muted); padding-top: 2px; }
+.journey-step-body { display: grid; gap: 2px; min-width: 0; }
+.journey-step-title { margin: 0; }
+.journey-step-what, .journey-carries { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+.journey-unlinked { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.journey-place { display: block; }
+.journey-step-side { grid-column: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 0.82rem; }
+.journey-proof { color: var(--warn); white-space: nowrap; }
+
+/* The lane strip: one lane per actor, steps left to right; a lane change is a handoff. Not shown on a phone. */
+.journey-lanes { display: grid; margin: 4px 0 10px; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.journey-lane { display: contents; }
+.journey-lane > * { border-bottom: 1px solid var(--rule); padding: 4px 6px; }
+.journey-lane:last-child > * { border-bottom: 0; }
+.journey-lane-name { font-size: 0.78rem; color: var(--muted); background: var(--paper); white-space: nowrap; }
+.journey-lane-cell { display: flex; align-items: center; justify-content: center; min-height: 2rem; }
+.journey-mark { display: inline-grid; place-items: center; min-width: 1.5rem; height: 1.5rem; padding: 0 4px; border-radius: 999px; font: 600 0.75rem var(--mono); color: var(--on-mark); background: var(--g-use-cases); }
+.journey-mark.is-handoff { background: var(--g-interaction-design); border-radius: 4px; }
+@media (max-width: 600px) { .journey-lanes { display: none; } }
+/* A journey's proof in a list or on a card (JourneyLine, the product's Discovery). */
+.journey-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; }
+.journey-line-proof { margin: 0; font-size: 0.82rem; color: var(--warn); }
+.journey-line-proof.is-proved { color: var(--g-use-cases); }
+/* ---------- End of the Journey page ---------- */
