@@ -21,7 +21,7 @@ type Middleware = (req: IncomingMessage, res: ServerResponse, next: () => void) 
 type WatchListener = (kind: string, file: string) => void;
 
 /** Just enough of a Vite dev server to run the plugin's configureServer hook. */
-function fakeServer(api: () => Promise<unknown>) {
+function fakeServer(api: (id: string) => Promise<unknown>) {
   const middlewares: Middleware[] = [];
   const listeners: WatchListener[] = [];
   const watched: string[] = [];
@@ -30,7 +30,9 @@ function fakeServer(api: () => Promise<unknown>) {
     middlewares: { use: (m: Middleware) => middlewares.push(m) },
     ssrLoadModule: vi.fn(api),
     watcher: { add: (dir: string) => watched.push(dir), on: (_event: string, l: WatchListener) => listeners.push(l) },
-    ws: { send: (payload: unknown) => sent.push(payload) } };
+    ws: { send: (payload: unknown) => sent.push(payload) },
+    moduleGraph: { invalidateAll: vi.fn() },
+    config: { logger: { info: vi.fn(), error: vi.fn() } } };
   return { server, middlewares, listeners, watched, sent };
 }
 
@@ -52,7 +54,7 @@ async function request(middleware: Middleware, url: string, { method = 'GET', bo
   return { status: res.statusCode, headers: answer, body: text, json: () => JSON.parse(text), nextCalled };
 }
 
-async function start(api: () => Promise<unknown>, root: string) {
+async function start(api: (id: string) => Promise<unknown>, root: string) {
   const fake = fakeServer(api);
   const plugin = latheApi(root, engineDir);
   await (plugin.configureServer as (server: unknown) => Promise<void>)(fake.server);
@@ -153,7 +155,7 @@ describe('dev API plugin', () => {
       await mkdir(data);
       await writeFile(path.join(product, 'lathe.config.json'), `${JSON.stringify({ schema: SCHEMA_VERSION })}\n`);
       const fake = await start(async () => realApi, product);
-      expect(fake.watched).toEqual([data, path.join(engineDir, 'data'), path.join(engineDir, 'schema')]);
+      expect(fake.watched).toEqual([data, path.join(engineDir, 'data'), path.join(engineDir, 'src'), path.join(engineDir, 'schema'), path.join(engineDir, 'package.json')]);
       // The product's store is opened by a read; its checks' run is announced once it is ready.
       const m = fake.middlewares[0];
       expect((await request(m, '/api/meta-model/get-meta-model')).status).toBe(200);
@@ -173,12 +175,40 @@ describe('dev API plugin', () => {
       expect(first.data.readModels).toContain('product');
       expect(first.data.readModels).not.toContain('meta-model');
 
-      change(path.join(engineDir, 'schema', '005-use-cases.sql'));
-      expect(changes()).toEqual([{ type: 'custom', event: 'spec:changed', data: { tables: [], readModels: null } }]);
       change(path.join(product, 'data-old', 'x.jsonl'));
       change(path.join(product, 'README.md'));
       await new Promise((resolve) => setTimeout(resolve, 200));
       expect(changes()).toEqual([]);
+    } finally {
+      await realApi.closeStores(product);
+      await rm(product, { recursive: true, force: true });
+    }
+  });
+
+  it('LA-PLT-UC03-R01-T01 reloads the engine once after a burst of changes to its code, schema or manifest, then tells the pages to read everything', async () => {
+    const product = await mkdtemp(path.join(tmpdir(), 'lathe-app-engine-'));
+    try {
+      await writeFile(path.join(product, 'lathe.config.json'), `${JSON.stringify({ schema: SCHEMA_VERSION })}\n`);
+      const loaded: string[] = [];
+      const closeEngine = vi.fn(async () => undefined);
+      const fake = await start(async (id: string) => { loaded.push(id); return id.endsWith('store.ts') ? { closeEngine } : realApi; }, product);
+      const m = fake.middlewares[0];
+      const change = (file: string) => { for (const listener of fake.listeners) listener('change', file); };
+      fake.sent.length = 0;
+      // A merge touches many files; tests and other folders of the package do not reload the engine.
+      for (let i = 0; i < 20; i++) change(path.join(engineDir, 'src', 'server', `file${i}.ts`));
+      change(path.join(engineDir, 'schema', '005-use-cases.sql'));
+      change(path.join(engineDir, 'package.json'));
+      change(path.join(engineDir, 'src', 'server', 'api.test.ts'));
+      change(path.join(engineDir, 'README.md'));
+      expect(fake.sent).toEqual([]);
+      // A request during the reload waits for it.
+      await new Promise((resolve) => setTimeout(resolve, 450));
+      expect((await request(m, '/api/meta-model/get-meta-model')).status).toBe(200);
+      await vi.waitFor(() => expect(fake.sent).toEqual([{ type: 'custom', event: 'spec:changed', data: { tables: [], readModels: null } }]));
+      expect(closeEngine).toHaveBeenCalledTimes(1);
+      expect(fake.server.moduleGraph.invalidateAll).toHaveBeenCalledTimes(1);
+      expect(loaded.filter((id) => id.endsWith('store.ts'))).toHaveLength(1);
     } finally {
       await realApi.closeStores(product);
       await rm(product, { recursive: true, force: true });

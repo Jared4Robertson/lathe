@@ -8,9 +8,13 @@ type DataChange = import('../../lathe/src/server/events.ts').DataChange;
 /** How long the server waits after a data file's change for the next, so one write's files make one reload. */
 const RELOAD_DELAY_MS = 50;
 
+/** How long the server waits after a change to the engine's code or schema for the next, so a merge makes one reload. */
+const ENGINE_RELOAD_DELAY_MS = 400;
+
 // Serves Lathe's API (lathe/src/server/api.ts: the spec, writes and history) inside the Vite dev server. The module
-// is loaded through Vite, so edits to the engine are picked up without a restart, and its packages resolve from
-// lathe/node_modules. `root` is the workspace: vite.config.ts passes LATHE_ROOT, or this repo when it is not set, and
+// is loaded through Vite, and when the engine's code, schema or manifest changes (an edit, a merge) the server closes
+// the old engine's stores and DuckDB instance, imports the engine afresh and tells the pages to read everything again,
+// so no restart is needed. Its packages resolve from lathe/node_modules. `root` is the workspace: vite.config.ts passes LATHE_ROOT, or this repo when it is not set, and
 // the API serves its product and each other product its lathe.config.json lists. When any of their data files change,
 // or the package's own data (Lathe's checks), the API reads only the changed tables again and the pages hear
 // spec:changed with what changed (LA-PLT-EV06); a change to the package's schema changes every read.
@@ -25,7 +29,13 @@ export function latheApi(root: string, engineDir = path.resolve(import.meta.dirn
   return {
     name: 'lathe-api',
     async configureServer(server: ViteDevServer) {
-      const api = () => server.ssrLoadModule(path.join(engineDir, 'src/server/api.ts')) as Promise<ApiModule>;
+      const load = <T>(file: string) => server.ssrLoadModule(path.join(engineDir, file)) as Promise<T>;
+      // An engine reload in progress: requests wait for it, so none runs on a half-closed engine.
+      let reloading: Promise<void> = Promise.resolve();
+      const api = async () => {
+        await reloading;
+        return load<ApiModule>('src/server/api.ts');
+      };
 
       server.middlewares.use(async (req, res, next) => {
         const pathname = decodeURIComponent((req.url ?? '/').split('?')[0]);
@@ -46,24 +56,58 @@ export function latheApi(root: string, engineDir = path.resolve(import.meta.dirn
       });
 
       const send = (change: DataChange) => server.ws.send({ type: 'custom', event: 'spec:changed', data: change });
-      let data: string[];
-      try {
-        const module = await api();
-        data = module.watchTargets(root);
-        module.onDataChange(root, send);
-      } catch {
-        data = [path.resolve(root, 'data')];
-      }
-      // The package's own data (Lathe's checks) is read again as the product's is; its schema changes every read.
-      const engineData = path.join(engineDir, 'data');
-      if (existsSync(engineData) && !data.includes(engineData)) data.push(engineData);
+      let data: string[] = [path.resolve(root, 'data')];
+      let unsubscribe: (() => void) | undefined;
+      // Hears the engine's data changes and lists the folders to watch for them.
+      const attach = async () => {
+        try {
+          const module = await load<ApiModule>('src/server/api.ts');
+          data = module.watchTargets(root);
+          unsubscribe = module.onDataChange(root, send);
+        } catch {
+          data = [path.resolve(root, 'data')];
+        }
+        // The package's own data (Lathe's checks) is read again as the product's is.
+        const engineData = path.join(engineDir, 'data');
+        if (existsSync(engineData) && !data.includes(engineData)) data.push(engineData);
+        for (const dir of data) server.watcher.add(dir);
+      };
+      await attach();
+      const src = path.join(engineDir, 'src');
       const schema = path.join(engineDir, 'schema');
-      const watched = existsSync(schema) ? [...data, schema] : data;
-      for (const dir of watched) server.watcher.add(dir);
+      const manifest = path.join(engineDir, 'package.json');
+      for (const target of [src, schema, manifest]) if (existsSync(target)) server.watcher.add(target);
+
+      // Imports the engine afresh: stops hearing the old module, closes its stores and the shared DuckDB instance (so
+      // it is not held twice), drops every loaded module, loads the new engine and tells the open pages to read all.
+      const reload = async () => {
+        try {
+          unsubscribe?.();
+          unsubscribe = undefined;
+          const old = await load<ApiModule>('src/server/api.ts').catch(() => undefined);
+          await old?.closeStores(root);
+          const store = await load<{ closeEngine(): Promise<void> }>('src/platform/data/store.ts').catch(() => undefined);
+          await store?.closeEngine();
+          server.moduleGraph.invalidateAll();
+          await attach();
+          server.config.logger.info('Lathe engine changed: reloaded it.', { timestamp: true });
+        } catch (error) {
+          server.config.logger.error(`Lathe engine could not be reloaded: ${message(error)}`, { timestamp: true });
+        }
+        send({ tables: [], readModels: null });
+      };
+
       const inside = (dir: string, file: string) => file === dir || file.startsWith(dir + path.sep);
+      const isEngine = (file: string) => inside(schema, file) || file === manifest || (inside(src, file) && !/\.test\.[cm]?tsx?$/.test(file));
       let timer: NodeJS.Timeout | undefined;
+      let engineTimer: NodeJS.Timeout | undefined;
       server.watcher.on('all', (_kind: string, changed: string) => {
-        if (inside(schema, changed)) return send({ tables: [], readModels: null });
+        if (isEngine(changed)) {
+          // A merge touches hundreds of files: one reload follows the last of them.
+          clearTimeout(engineTimer);
+          engineTimer = setTimeout(() => { reloading = reloading.then(reload); }, ENGINE_RELOAD_DELAY_MS);
+          return;
+        }
         if (!data.some((dir) => inside(dir, changed))) return;
         clearTimeout(timer);
         timer = setTimeout(() => void api().then((module) => module.dataFilesChanged(root)).catch(() => undefined), RELOAD_DELAY_MS);
