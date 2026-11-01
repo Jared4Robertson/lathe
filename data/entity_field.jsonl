@@ -11,8 +11,9 @@
 {"entity_id":"LA-AUT-EN02","position":5,"name":"Parent kind","meaning":"The kind its records sit under, their one parent: one of Lathe's or another product kind. Its table gets a required <parent_kind>_id column.","type_value_object_id":"LA-VO06","required":true}
 {"entity_id":"LA-AUT-EN02","position":6,"name":"Stage","meaning":"The stage its records belong to, any of the five, if one; such as technical-specification for a kind of code Lathe has no kind for.","type_value_object_id":"LA-VO16","required":false}
 {"entity_id":"LA-AUT-EN02","position":7,"name":"Obligation","meaning":"Whether a record of the kind is an obligation, to be designed, built and proved. An obligation kind joins the obligation supertype.","type":"yes/no","required":true}
-{"entity_id":"LA-AUT-EN02","position":8,"name":"Id pattern","meaning":"How its IDs are written, its own pattern, such as <command>-CLI.","type":"text","required":false}
-{"entity_id":"LA-AUT-EN02","position":9,"name":"Id example","meaning":"An example ID.","type":"text","required":false}
+{"entity_id":"LA-AUT-EN02","position":8,"name":"Complexity","meaning":"Whether its records are essential complexity, accidental, or as the record they sit under (as-parent); never mixed.","type":"text","required":true,"example":"accidental"}
+{"entity_id":"LA-AUT-EN02","position":9,"name":"Id pattern","meaning":"How its IDs are written, its own pattern, such as <command>-CLI.","type":"text","required":false}
+{"entity_id":"LA-AUT-EN02","position":10,"name":"Id example","meaning":"An example ID.","type":"text","required":false}
 {"entity_id":"LA-AUT-EN03","position":1,"name":"Product","meaning":"The product.","type_value_object_id":"LA-VO01","required":true,"column_name":"product_id"}
 {"entity_id":"LA-AUT-EN03","position":2,"name":"Name","meaning":"The role's name, such as Librarian.","type":"text","required":true}
 {"entity_id":"LA-AUT-EN03","position":3,"name":"Description","meaning":"Who takes the role and what they do.","type":"text","required":true}
@@ -81,6 +82,13 @@
 {"entity_id":"LA-AUT-EN112","position":4,"name":"Domain","meaning":"The domain it sits under, when one domain alone uses it; exactly one of product and domain is given.","type_value_object_id":"LA-VO01","required":false,"column_name":"domain_id"}
 {"entity_id":"LA-AUT-EN112","position":5,"name":"Kind","meaning":"database, object store, file folder, file, browser storage or memory.","type":"text","required":true}
 {"entity_id":"LA-AUT-EN112","position":6,"name":"Description","meaning":"Where it is and what keeps it there.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN113","position":1,"name":"ID","meaning":"The slot's ID: its pattern's ID and SL<nn>, such as TL-PAT-LIBRARIAN-ACTION-SL01.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-AUT-EN113","position":2,"name":"Title","meaning":"What fills it, in a few words.","type_value_object_id":"LA-VO02","required":true}
+{"entity_id":"LA-AUT-EN113","position":3,"name":"Pattern","meaning":"The pattern it belongs to.","type_value_object_id":"LA-VO01","required":true,"column_name":"pattern_id"}
+{"entity_id":"LA-AUT-EN113","position":4,"name":"Statement","meaning":"Its contract: what every fill must do, in one sentence.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN114","position":1,"name":"Interface","meaning":"The interface.","type_value_object_id":"LA-VO01","required":true,"column_name":"interface_id"}
+{"entity_id":"LA-AUT-EN114","position":2,"name":"Position","meaning":"The role's place among the interface's roles, from 1.","type_value_object_id":"LA-VO04","required":true}
+{"entity_id":"LA-AUT-EN114","position":3,"name":"Role name","meaning":"The role, which the product names in its role rows.","type":"text","required":true}
 {"entity_id":"LA-AUT-EN12","position":1,"name":"ID","meaning":"The requirement's ID: its use case's ID and R<nn>, such as TL-LEND-UC01-R01.","type_value_object_id":"LA-VO01","required":true}
 {"entity_id":"LA-AUT-EN12","position":2,"name":"Title","meaning":"The requirement in a few words.","type_value_object_id":"LA-VO02","required":true}
 {"entity_id":"LA-AUT-EN12","position":3,"name":"Use case","meaning":"The use case it belongs to.","type_value_object_id":"LA-VO01","required":true,"column_name":"use_case_id"}
@@ -101,20 +109,21 @@
 {"entity_id":"LA-AUT-EN15","position":2,"name":"Position","meaning":"The setting's place in the pattern, from 1.","type_value_object_id":"LA-VO04","required":true}
 {"entity_id":"LA-AUT-EN15","position":3,"name":"Name","meaning":"The setting's name, in lower case with underscores, such as required_input.","type_value_object_id":"LA-VO06","required":true}
 {"entity_id":"LA-AUT-EN15","position":4,"name":"Meaning","meaning":"What a follower decides in it.","type":"text","required":true}
-{"entity_id":"LA-AUT-EN18","position":1,"name":"ID","meaning":"The flow's ID: its use case's ID, FL and its interface's number, such as TL-LEND-UC01-FL01 for the flow through TL-IF01.","type_value_object_id":"LA-VO01","required":true}
-{"entity_id":"LA-AUT-EN18","position":2,"name":"Title","meaning":"The flow's name, such as Borrow a tool at the desk.","type_value_object_id":"LA-VO02","required":true}
-{"entity_id":"LA-AUT-EN18","position":3,"name":"Use case","meaning":"The use case it carries out; one flow per use case and interface.","type_value_object_id":"LA-VO01","required":true,"column_name":"use_case_id"}
-{"entity_id":"LA-AUT-EN18","position":4,"name":"Interface","meaning":"The interface it goes through, of the same product.","type_value_object_id":"LA-VO01","required":true,"column_name":"interface_id"}
-{"entity_id":"LA-AUT-EN19","position":1,"name":"ID","meaning":"The step's ID: its flow's ID and S<nn>, such as TL-LEND-UC01-FL01-S01.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-AUT-EN18","position":1,"name":"ID","meaning":"The flow's ID: its use case's ID and FL, such as TL-LEND-UC01-FL.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-AUT-EN18","position":2,"name":"Title","meaning":"The flow's name: its use case's title, such as Borrow a tool.","type_value_object_id":"LA-VO02","required":true}
+{"entity_id":"LA-AUT-EN18","position":3,"name":"Use case","meaning":"The use case it carries out, which has no other flow.","type_value_object_id":"LA-VO01","required":true,"column_name":"use_case_id"}
+{"entity_id":"LA-AUT-EN19","position":1,"name":"ID","meaning":"The step's ID: its flow's ID and S<nn>, such as TL-LEND-UC01-FL-S01.","type_value_object_id":"LA-VO01","required":true}
 {"entity_id":"LA-AUT-EN19","position":2,"name":"Title","meaning":"What happens, in a few words.","type_value_object_id":"LA-VO02","required":true}
 {"entity_id":"LA-AUT-EN19","position":3,"name":"Flow","meaning":"The flow it belongs to.","type_value_object_id":"LA-VO01","required":true,"column_name":"flow_id"}
 {"entity_id":"LA-AUT-EN19","position":4,"name":"Path","meaning":"The path through the flow the step is on, such as main or refused.","type_value_object_id":"LA-VO05","required":true}
-{"entity_id":"LA-AUT-EN19","position":5,"name":"Position","meaning":"The step's place on its path, from 1.","type_value_object_id":"LA-VO04","required":true}
+{"entity_id":"LA-AUT-EN19","position":5,"name":"Position","meaning":"The step's place on its path, from 1, among every interface's steps; each interface's version skips the other interfaces' variants.","type_value_object_id":"LA-VO04","required":true}
+{"entity_id":"LA-AUT-EN19","position":6,"name":"Interface","meaning":"The one interface that does this step, which makes it a variant, such as opening the app from the Dock; none when every interface that offers the use case does it.","type_value_object_id":"LA-VO01","required":false,"column_name":"interface_id"}
 {"entity_id":"LA-AUT-EN20","position":1,"name":"ID","meaning":"The view's ID: the product prefix and V<nn>, such as TL-V01.","type_value_object_id":"LA-VO01","required":true}
 {"entity_id":"LA-AUT-EN20","position":2,"name":"Title","meaning":"The view's name, such as Catalog.","type_value_object_id":"LA-VO02","required":true}
 {"entity_id":"LA-AUT-EN20","position":3,"name":"Route","meaning":"The address it is shown at, such as /catalog.","type":"text","required":false}
-{"entity_id":"LA-AUT-EN20","position":4,"name":"Description","meaning":"What the view shows and lets a person do, in a paragraph.","type":"text","required":true}
-{"entity_id":"LA-AUT-EN20","position":5,"name":"Notes","meaning":"Longer notes on the view.","type":"text","required":false}
+{"entity_id":"LA-AUT-EN20","position":4,"name":"Interface","meaning":"The one interface that shows it, such as the desktop app's Dock icon; none when every web app and desktop interface of its product shows it.","type_value_object_id":"LA-VO01","required":false,"column_name":"interface_id"}
+{"entity_id":"LA-AUT-EN20","position":5,"name":"Description","meaning":"What the view shows and lets a person do, in a paragraph.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN20","position":6,"name":"Notes","meaning":"Longer notes on the view.","type":"text","required":false}
 {"entity_id":"LA-AUT-EN21","position":1,"name":"ID","meaning":"The endpoint's ID, such as TL-LEND-EP01.","type_value_object_id":"LA-VO01","required":true}
 {"entity_id":"LA-AUT-EN21","position":2,"name":"Title","meaning":"What the endpoint does, such as Borrow a tool.","type_value_object_id":"LA-VO02","required":true}
 {"entity_id":"LA-AUT-EN21","position":3,"name":"Command","meaning":"The command it exposes; exactly one of command and query is given.","type_aggregate_id":"LA-AUT-A8","required":false,"column_name":"command_id"}
@@ -304,7 +313,8 @@
 {"entity_id":"LA-AUT-EN62","position":1,"name":"ID","meaning":"The standard's ID, such as TL-STD-CODE.","type_value_object_id":"LA-VO01","required":true}
 {"entity_id":"LA-AUT-EN62","position":2,"name":"Title","meaning":"The standard's name.","type_value_object_id":"LA-VO02","required":true}
 {"entity_id":"LA-AUT-EN62","position":3,"name":"Product","meaning":"The product it belongs to.","type_aggregate_id":"LA-AUT-A1","required":true,"column_name":"product_id"}
-{"entity_id":"LA-AUT-EN62","position":4,"name":"Description","meaning":"What the standard covers, in a paragraph.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN62","position":4,"name":"Type","meaning":"quality: what the product's people need of it whatever it is built with, such as exact money or a latency budget (essential); engineering: how it is built, such as logging or naming (accidental).","type":"text","required":true,"example":"engineering"}
+{"entity_id":"LA-AUT-EN62","position":5,"name":"Description","meaning":"What the standard covers, in a paragraph.","type":"text","required":true}
 {"entity_id":"LA-AUT-EN63","position":1,"name":"ID","meaning":"The rule's ID: its standard's ID and R<nn>, such as TL-STD-CODE-R01.","type_value_object_id":"LA-VO01","required":true}
 {"entity_id":"LA-AUT-EN63","position":2,"name":"Title","meaning":"The rule in a few words.","type_value_object_id":"LA-VO02","required":true}
 {"entity_id":"LA-AUT-EN63","position":3,"name":"Standard","meaning":"The standard it belongs to.","type_value_object_id":"LA-VO01","required":true,"column_name":"standard_id"}
@@ -366,7 +376,7 @@
 {"entity_id":"LA-AUT-EN71","position":5,"name":"When","meaning":"What the test does, opening with any state it sets up beyond the test data sets it starts from.","type":"text","required":true}
 {"entity_id":"LA-AUT-EN71","position":6,"name":"Then","meaning":"What the test expects.","type":"text","required":true}
 {"entity_id":"LA-AUT-EN71","position":7,"name":"Notes","meaning":"Longer notes on the test, such as when to run it.","type":"text","required":false}
-{"entity_id":"LA-AUT-EN72","position":1,"name":"ID","meaning":"The test's ID: its flow's ID and T, such as TL-LEND-UC01-FL01-T.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-AUT-EN72","position":1,"name":"ID","meaning":"The test's ID: its flow's ID and T, such as TL-LEND-UC01-FL-T.","type_value_object_id":"LA-VO01","required":true}
 {"entity_id":"LA-AUT-EN72","position":2,"name":"Title","meaning":"What the test shows, in a sentence.","type_value_object_id":"LA-VO02","required":true}
 {"entity_id":"LA-AUT-EN72","position":3,"name":"Flow","meaning":"The flow it proves; it has exactly one test.","type_value_object_id":"LA-VO01","required":true,"column_name":"flow_id"}
 {"entity_id":"LA-AUT-EN72","position":4,"name":"Run by","meaning":"How the test runs: its level, its state, and its file or why it is manual.","type_value_object_id":"LA-VO14","required":true}
@@ -395,11 +405,12 @@
 {"entity_id":"LA-AUT-EN75","position":5,"name":"When","meaning":"What the test does, opening with any state it sets up beyond the test data sets it starts from.","type":"text","required":true}
 {"entity_id":"LA-AUT-EN75","position":6,"name":"Then","meaning":"What the test expects.","type":"text","required":true}
 {"entity_id":"LA-AUT-EN75","position":7,"name":"Notes","meaning":"Longer notes on the test, such as when to run it.","type":"text","required":false}
-{"entity_id":"LA-AUT-EN76","position":1,"name":"ID","meaning":"The interface's ID: its product's ID and IF<nn>, such as TL-IF01. Its number ends the ID of every flow through it.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-AUT-EN76","position":1,"name":"ID","meaning":"The interface's ID: its product's ID and IF<nn>, such as TL-IF01.","type_value_object_id":"LA-VO01","required":true}
 {"entity_id":"LA-AUT-EN76","position":2,"name":"Title","meaning":"The interface's name, such as Web app, HTTP API, CLI, MCP tools or Desktop app.","type_value_object_id":"LA-VO02","required":true}
 {"entity_id":"LA-AUT-EN76","position":3,"name":"Product","meaning":"The product it belongs to.","type_value_object_id":"LA-VO01","required":true,"column_name":"product_id"}
-{"entity_id":"LA-AUT-EN76","position":4,"name":"Kind","meaning":"What it is: web app or desktop (its flows' steps happen in views), API (they call endpoints), CLI or agent tools (they run commands and queries), or other.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN76","position":4,"name":"Kind","meaning":"What it is: web app or desktop (a step is carried out in the views that present its command or query), API (through the endpoint that exposes it), CLI or agent tools (by the product's own command or tool for it), or other.","type":"text","required":true}
 {"entity_id":"LA-AUT-EN76","position":5,"name":"Description","meaning":"Who uses it and how.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN76","position":6,"name":"Public","meaning":"Whether people or programs outside the product build on it, so its contract is the product's own commitment: a public API's requirements are essential, an internal one's accidental.","type":"yes/no","required":true}
 {"entity_id":"LA-AUT-EN80","position":1,"name":"ID","meaning":"The outcome's ID: its product's ID and BO<nn>, such as TL-BO01.","type_value_object_id":"LA-VO01","required":true}
 {"entity_id":"LA-AUT-EN80","position":2,"name":"Title","meaning":"The outcome in a few words.","type_value_object_id":"LA-VO02","required":true}
 {"entity_id":"LA-AUT-EN80","position":3,"name":"Product","meaning":"The product it belongs to.","type_value_object_id":"LA-VO01","required":true,"column_name":"product_id"}
@@ -442,13 +453,14 @@
 {"entity_id":"LA-CHK-EN01","position":3,"name":"Domain","meaning":"The domain whose rules it reports: a domain of Lathe's own spec for Lathe's checks, of the product for its own.","type_aggregate_id":"LA-AUT-A4","required":true,"column_name":"domain_id","example":"LA-TRC"}
 {"entity_id":"LA-CHK-EN01","position":4,"name":"Position","meaning":"When it runs: Lathe's checks in position order, then each product's own.","type":"whole number","required":true,"example":"4"}
 {"entity_id":"LA-CHK-EN01","position":5,"name":"Severity","meaning":"What its problems are: errors, warnings, or either when its query says which for each row.","type_value_object_id":"LA-VO42","required":true,"example":"warning"}
-{"entity_id":"LA-CHK-EN01","position":6,"name":"Summary","meaning":"What it asks, in one sentence.","type":"text","required":true,"example":"A view that no flow step happens in."}
-{"entity_id":"LA-CHK-EN01","position":7,"name":"Explanation","meaning":"What it reports, what it leaves to other checks, and how to fix what it reports.","type":"text","required":true,"example":"A view exists because steps happen in it…"}
+{"entity_id":"LA-CHK-EN01","position":6,"name":"Summary","meaning":"What it asks, in one sentence.","type":"text","required":true,"example":"A view that presents no command or query."}
+{"entity_id":"LA-CHK-EN01","position":7,"name":"Explanation","meaning":"What it reports, what it leaves to other checks, and how to fix what it reports.","type":"text","required":true,"example":"A view exists because it presents commands and queries…"}
 {"entity_id":"LA-CHK-EN01","position":8,"name":"Query","meaning":"The one SELECT that finds its problems (INV04).","type":"text","required":true,"example":"SELECT v.id AS record, … FROM view v WHERE …"}
 {"entity_id":"LA-CHK-EN01","position":9,"name":"Kinds","meaning":"The kinds it concerns, as a list of kind names; none for any kind.","type":"text","required":false,"example":"view"}
 {"entity_id":"LA-CHK-EN03","position":1,"name":"Product","meaning":"The product the settings are for.","type_aggregate_id":"LA-AUT-A1","required":true,"column_name":"product_id","example":"TL"}
 {"entity_id":"LA-CHK-EN03","position":2,"name":"Max children","meaning":"The most children of one kind a record of the product should hold; 15 when the product has no row.","type_value_object_id":"LA-VO43","required":true,"example":"15"}
 {"entity_id":"LA-CHK-EN03","position":3,"name":"Max entities per aggregate","meaning":"The most entities an aggregate of the product should hold; 7 when the product has no row.","type_value_object_id":"LA-VO93","required":true,"example":"7"}
+{"entity_id":"LA-CHK-EN03","position":4,"name":"Technology words","meaning":"The words, besides Lathe's own, that name technology in the product's essential records, which accidental-in-essential warns of; none when the product has no row.","type":"text","required":true,"example":"React"}
 {"entity_id":"LA-EXP-EN01","position":1,"name":"Address","meaning":"Where the page is, to bookmark, share or reload.","type_value_object_id":"LA-VO90","required":true,"example":"/LA-AUT-A1?stage=graph"}
 {"entity_id":"LA-EXP-EN01","position":2,"name":"Page kind","meaning":"What sort of place it is: products, product, domain, record, group, checks, format or settings.","type":"text","required":true,"example":"record"}
 {"entity_id":"LA-EXP-EN01","position":3,"name":"Focus","meaning":"The record or group the page is about: a record ID, or a group's address.","type":"text","required":false,"example":"LA-AUT-A1"}
@@ -520,3 +532,7 @@
 {"entity_id":"LA-TRC-EN05","position":2,"name":"Pattern","meaning":"The pattern followed.","type_aggregate_id":"LA-AUT-A1","required":true,"column_name":"target_id","example":"TL-PAT-LIBRARIAN-ACTION"}
 {"entity_id":"LA-TRC-EN06","position":1,"name":"Setting","meaning":"One of the pattern's settings (a `pattern_setting` name).","type":"text","required":true,"example":"required_input"}
 {"entity_id":"LA-TRC-EN06","position":2,"name":"Value","meaning":"What the setting is for this follower: a value like any other, such as No input.","type":"text","required":true,"example":"The member's name and a valid email address."}
+{"entity_id":"LA-TRC-EN07","position":1,"name":"Record","meaning":"The ID of the technical record that fills the slot.","type":"text","required":true,"column_name":"source_id","example":"TL-LEND-CMD01-H"}
+{"entity_id":"LA-TRC-EN07","position":2,"name":"Slot","meaning":"The slot it fills.","type_aggregate_id":"LA-AUT-A2","required":true,"column_name":"target_id","example":"TL-PAT-LIBRARIAN-ACTION-SL01"}
+{"entity_id":"LA-TRC-EN08","position":1,"name":"Record","meaning":"The ID of the record provided from outside the product.","type":"text","required":true,"column_name":"source_id","example":"TL-STORE01"}
+{"entity_id":"LA-TRC-EN08","position":2,"name":"Provider","meaning":"What provides it: an integration, or a record of a product kind the product lets provide it.","type":"text","required":true,"column_name":"target_id","example":"TL-INT01"}

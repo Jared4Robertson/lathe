@@ -13,7 +13,7 @@ export const CHANGE_TEST_DATA_SET_IDENTITY = {
   id: 'LA-AUT-CMD186',
   slice: { aggregate: 'LA-AUT-A17', name: 'test-data-set' },
   name: 'change-test-data-set',
-  description: 'Changes a test data set\'s columns. Its domain never changes.',
+  description: 'Changes a test data set\'s details. Its domain never changes.',
   method: 'POST',
   route: '/api/test-data-set/change-test-data-set',
 } as const;

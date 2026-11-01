@@ -1,9 +1,7 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { TestDataSetRow } from '../../../platform/data/tables.ts';
-import { changed } from '../model.ts';
-import { TestDataSetRepository } from '../repository.ts';
 import { CHANGE_TEST_DATA_SET_IDENTITY } from './identities.generated.ts';
+import { changeTestDataSet } from './handlers.generated.ts';
 
 /** The test data set's changes: a column given is set, null clears an optional one. */
 export type ChangeTestDataSet = Pick<TestDataSetRow, 'id'> & { title?: TestDataSetRow['title']; environment?: TestDataSetRow['environment']; accounts?: TestDataSetRow['accounts'] | null; records?: TestDataSetRow['records']; prepare?: TestDataSetRow['prepare']; reset?: TestDataSetRow['reset']; file?: TestDataSetRow['file'] | null; description?: TestDataSetRow['description'] };
@@ -23,11 +21,3 @@ export const CHANGE_TEST_DATA_SET = {
   },
   handler: changeTestDataSet,
 } satisfies CommandDefinition<ChangeTestDataSet>;
-
-/** Changes the test data set's columns. */
-export function changeTestDataSet(tx: Transaction, input: ChangeTestDataSet): void {
-  const testDataSets = new TestDataSetRepository(tx);
-  const testDataSet = testDataSets.load(input.id) ?? tx.refuse('missing', `there is no test data set ${input.id}`);
-  testDataSet.testDataSet = changed(testDataSet.testDataSet, input, ['title', 'environment', 'accounts', 'records', 'prepare', 'reset', 'file', 'description']);
-  testDataSets.save(testDataSet);
-}

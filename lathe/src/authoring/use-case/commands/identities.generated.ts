@@ -67,7 +67,7 @@ export const ADD_FLOW_IDENTITY = {
   id: 'LA-AUT-CMD107',
   slice: { aggregate: 'LA-AUT-A11', name: 'use-case' },
   name: 'add-flow',
-  description: 'Adds a flow to its use case, through one interface of its product: its ID ends in the interface\'s number.',
+  description: 'Adds its use case\'s one flow: its ID is the use case\'s and FL.',
   method: 'POST',
   route: '/api/use-case/add-flow',
 } as const;
@@ -76,7 +76,7 @@ export const CHANGE_FLOW_IDENTITY = {
   id: 'LA-AUT-CMD108',
   slice: { aggregate: 'LA-AUT-A11', name: 'use-case' },
   name: 'change-flow',
-  description: 'Changes a flow\'s title. Its interface is in its ID, so a flow through another interface is another flow.',
+  description: 'Changes a flow\'s title, which is its use case\'s.',
   method: 'POST',
   route: '/api/use-case/change-flow',
 } as const;
@@ -94,7 +94,7 @@ export const ADD_FLOW_STEP_IDENTITY = {
   id: 'LA-AUT-CMD110',
   slice: { aggregate: 'LA-AUT-A11', name: 'use-case' },
   name: 'add-flow-step',
-  description: 'Adds a step to its flow, on a path at a position, with the requirements it fulfills, what it invokes, the view it happens in and the integrations it exchanges with.',
+  description: 'Adds a step to its flow, on a path at a position, with the interface it is a variant of if only one does it, the requirements it fulfills, what it invokes and the integrations it exchanges with.',
   method: 'POST',
   route: '/api/use-case/add-flow-step',
 } as const;
@@ -103,7 +103,7 @@ export const CHANGE_FLOW_STEP_IDENTITY = {
   id: 'LA-AUT-CMD111',
   slice: { aggregate: 'LA-AUT-A11', name: 'use-case' },
   name: 'change-flow-step',
-  description: 'Changes a step\'s title, path or position, or its links: a list given replaces the list, null clears what it invokes or the view it happens in.',
+  description: 'Changes a step\'s title, path, position or the interface it is a variant of (null makes it every interface\'s), or its links: a list given replaces the list, null clears what it invokes.',
   method: 'POST',
   route: '/api/use-case/change-flow-step',
 } as const;
@@ -130,7 +130,7 @@ export const CHANGE_USE_CASE_TEST_IDENTITY = {
   id: 'LA-AUT-CMD114',
   slice: { aggregate: 'LA-AUT-A11', name: 'use-case' },
   name: 'change-use-case-test',
-  description: 'Changes a use case test\'s columns or the test data sets it starts from (the whole list).',
+  description: 'Changes a use case test\'s way of running or the test data sets it starts from (the whole list).',
   method: 'POST',
   route: '/api/use-case/change-use-case-test',
 } as const;
@@ -157,7 +157,7 @@ export const CHANGE_FLOW_TEST_IDENTITY = {
   id: 'LA-AUT-CMD117',
   slice: { aggregate: 'LA-AUT-A11', name: 'use-case' },
   name: 'change-flow-test',
-  description: 'Changes a flow test\'s columns or the test data sets it starts from (the whole list).',
+  description: 'Changes a flow test\'s way of running or the test data sets it starts from (the whole list).',
   method: 'POST',
   route: '/api/use-case/change-flow-test',
 } as const;

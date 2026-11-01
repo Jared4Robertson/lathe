@@ -112,32 +112,35 @@ async function crashAt(root: string, at: Crash, steps: Step[]) {
 
 describe('the spec data store saves each change whole or not at all, through a crash at any point of its write', () => {
   it.each<[string, Change]>([
-  ['LA-AUT-A1-SR01-T02', { steps: [['product', 'change-product', { id: 'TL', title: 'Kept whole' }], ['product', 'add-interface', { ...product('TL-IF90'), kind: 'CLI', description: 'A command line kept whole.' }]] }],
+  ['LA-AUT-A1-SR01-T02', { steps: [['product', 'change-product', { id: 'TL', title: 'Kept whole' }], ['product', 'add-question', { ...product('TL-Q90'), owner: 'Librarian', description: 'A question kept whole.' }]] }],
   ['LA-AUT-A2-SR01-T02', { steps: [['pattern', 'remove-pattern-rule', { id: 'TL-PAT-LIBRARIAN-ACTION-R01' }]] }],
-  ['LA-AUT-A3-SR01-T02', { steps: [['standard', 'add-standard', { ...product('TL-STD-KEPT'), description: 'A standard kept whole.' }], ['standard', 'add-standard-rule', { id: 'TL-STD-KEPT-R01', title: 'Kept whole', standard_id: 'TL-STD-KEPT', statement: 'Code MUST be kept whole.' }]] }],
+  ['LA-AUT-A3-SR01-T02', { steps: [['standard', 'add-standard', { ...product('TL-STD-KEPT'), type: 'engineering', description: 'A standard kept whole.' }], ['standard', 'add-standard-rule', { id: 'TL-STD-KEPT-R01', title: 'Kept whole', standard_id: 'TL-STD-KEPT', statement: 'Code MUST be kept whole.' }]] }],
   ['LA-AUT-A4-SR01-T02', { steps: [['domain', 'remove-term', { id: 'TL-LEND-TM02' }]] }],
   ['LA-AUT-A5-SR01-T02', { steps: [['specification', 'remove-specification-test', { id: 'TL-LEND-SP01-T' }]] }],
-  ['LA-AUT-A6-SR01-T02', { steps: [['aggregate', 'remove-invariant', { id: 'TL-LEND-INV02' }]] }],
+  ['LA-AUT-A6-SR01-T02', { setup: [['slot-filling', 'stop-filling-slot', { record_id: 'TL-LEND-INV02-RL', slot_id: 'TL-PAT-LIBRARIAN-ACTION-SL03' }]], steps: [['aggregate', 'remove-invariant', { id: 'TL-LEND-INV02' }]] }],
   ['LA-AUT-A7-SR01-T02', { steps: [['domain-event', 'add-domain-event', { id: 'TL-LEND-EV90', title: 'Member kept', aggregate_id: 'TL-LEND-A1', published: false, description: 'A member was kept whole.', fields: [{ name: 'Member ID', meaning: 'The member kept.', type_aggregate_id: 'TL-LEND-A1', required: true, example: '12' }] }]] }],
-  ['LA-AUT-A8-SR01-T02', { steps: [['command', 'remove-policy', { id: 'TL-LEND-PO01' }]] }],
+  ['LA-AUT-A8-SR01-T02', { setup: [['slot-filling', 'stop-filling-slot', { record_id: 'TL-LEND-PO01-H', slot_id: 'TL-PAT-LIBRARIAN-ACTION-SL01' }]], steps: [['command', 'remove-policy', { id: 'TL-LEND-PO01' }]] }],
   ['LA-AUT-A9-SR01-T02', { steps: [['value-object', 'remove-constraint', { id: 'TL-VO01-C01' }]] }],
-  ['LA-AUT-A10-SR01-T02', { steps: [['read-model', 'remove-query', { id: 'TL-LEND-QRY02' }]] }],
-  ['LA-AUT-A11-SR01-T02', { steps: [['use-case', 'remove-flow', { id: 'TL-LEND-UC01-FL01' }]] }],
+  ['LA-AUT-A10-SR01-T02', { setup: [['slot-filling', 'stop-filling-slot', { record_id: 'TL-LEND-QRY02-H', slot_id: 'TL-PAT-LIBRARIAN-ACTION-SL05' }]], steps: [['read-model', 'remove-query', { id: 'TL-LEND-QRY02' }]] }],
+  ['LA-AUT-A11-SR01-T02', { steps: [['use-case', 'remove-flow', { id: 'TL-LEND-UC01-FL' }]] }],
   ['LA-AUT-A12-SR01-T02', { steps: [['view', 'add-view', { id: 'TL-V90', title: 'Kept whole', description: 'A view kept whole.' }], ['view', 'add-view-requirement', { id: 'TL-V90-R01', title: 'Kept whole', view_id: 'TL-V90', statement: 'The view MUST be kept whole.' }]] }],
-  ['LA-AUT-A13-SR01-T02', { steps: [['endpoint', 'remove-endpoint', { id: 'TL-LEND-EP01' }]] }],
+  ['LA-AUT-A13-SR01-T02', { setup: [['slot-filling', 'stop-filling-slot', { record_id: 'TL-LEND-EP01', slot_id: 'TL-PAT-LIBRARIAN-ACTION-SL02' }], ['slot-filling', 'stop-filling-slot', { record_id: 'TL-LEND-EP01-H', slot_id: 'TL-PAT-LIBRARIAN-ACTION-SL02' }]], steps: [['endpoint', 'remove-endpoint', { id: 'TL-LEND-EP01' }]] }],
   ['LA-AUT-A14-SR01-T02', { steps: [['integration', 'add-integration', { id: 'TL-INT90', title: 'Kept whole', description: 'An integration kept whole.' }], ['integration', 'add-integration-test', { id: 'TL-INT90-T01', title: 'Kept whole', integration_id: 'TL-INT90', level: 'integration', state: 'not automated yet', when: 'It runs.', then: 'It is kept whole.' }]] }],
   ['LA-AUT-A15-SR01-T02', { setup: [['view', 'add-view', { id: 'TL-V90', title: 'Kept whole', description: 'A view kept whole.' }]], steps: [['ui-component', 'add-ui-component', { id: 'TL-UI90', title: 'KeptPage', description: 'A component kept whole.', renders: ['TL-V90'] }]] }],
   ['LA-AUT-A16-SR01-T02', { steps: [['business-outcome', 'add-business-outcome', { ...product('TL-BO90'), statement: 'Members keep coming back.', measure: 'Members who borrow twice a month.', target: 'Half of them within a year.', measured_by: ['TL-LEND-RP01'] }]] }],
   ['LA-AUT-A17-SR01-T02', { oneFile: true, steps: [['test-data-set', 'change-test-data-set', { id: 'TL-LEND-TD01', title: 'Kept whole' }]] }],
-  ['LA-AUT-A18-SR01-T02', { steps: [['table', 'remove-table', { id: 'TL-LEND-EN04-TB' }]] }],
+  ['LA-AUT-A18-SR01-T02', { setup: [['slot-filling', 'stop-filling-slot', { record_id: 'TL-LEND-EN04-TB', slot_id: 'TL-PAT-LIBRARIAN-ACTION-SL04' }]], steps: [['table', 'remove-table', { id: 'TL-LEND-EN04-TB' }]] }],
   ['LA-AUT-A19-SR01-T02', { steps: [['extension-record', 'add-extension-record', { kind: 'report', id: 'TL-LEND-RP90', parent_id: 'TL-LEND', values: { title: 'keptReport', file: 'src/kept.ts', usage: 'npm run kept', description: 'A report kept whole.' }, packages: ['typescript'] }]] }],
   ['LA-AUT-A20-SR01-T02', { steps: [['entry-point', 'add-entry-point', { id: 'TL-LEND-ENTRY90', title: 'kept', domain_id: 'TL-LEND', description: 'An entry point kept whole.', packages: ['typescript'] }]] }],
-  ['LA-AUT-A21-SR01-T02', { steps: [['tooling', 'remove-tooling', { id: 'TL-LEND-TOOL01' }]] }],
+  ['LA-AUT-A21-SR01-T02', { setup: [['slot-filling', 'stop-filling-slot', { record_id: 'TL-LEND-TOOL01', slot_id: 'TL-PAT-LIBRARIAN-ACTION-SL06' }]], steps: [['tooling', 'remove-tooling', { id: 'TL-LEND-TOOL01' }]] }],
   ['LA-AUT-A22-SR01-T02', { steps: [['storage-requirement', 'remove-storage-requirement', { id: 'TL-LEND-A3-SR01' }]] }],
-  ['LA-AUT-A23-SR01-T02', { setup: [['integration', 'add-integration', { id: 'TL-INT90', title: 'Kept whole', description: 'A database service kept whole.' }]], steps: [['data-store', 'add-data-store', { id: 'TL-LEND-STORE90', title: 'KEPT_URL', domain_id: 'TL-LEND', kind: 'database', description: 'A database kept whole.', provided_by: 'TL-INT90' }]] }],
+  ['LA-AUT-A23-SR01-T02', { oneFile: true, steps: [['data-store', 'add-data-store', { id: 'TL-LEND-STORE90', title: 'KEPT_URL', domain_id: 'TL-LEND', kind: 'database', description: 'A database kept whole.' }]] }],
+  ['LA-AUT-A24-SR01-T02', { steps: [['interface', 'add-interface', { ...product('TL-IF90'), kind: 'CLI', description: 'A command line kept whole.', public: false, actors: ['Librarian'], offers: ['TL-LEND-UC01'] }]] }],
   ['LA-CHK-A1-SR01-T02', { oneFile: true, steps: [['check', 'add-check', { name: 'kept-check', product_id: 'TL', domain_id: 'LA-CHK', position: 1, severity: 'warning', summary: 'Kept whole.', explanation: 'A check kept whole.', query: "SELECT NULL AS record, 'kept' AS message WHERE false" }]] }],
   ['LA-CHK-A2-SR01-T02', { oneFile: true, steps: [['product-setting', 'set-limits', { product_id: 'TL', max_children: 21, max_entities_per_aggregate: 8 }]] }],
   ['LA-TRC-A3-SR01-T02', { steps: [['pattern-following', 'follow-pattern', { follower_id: 'TL-LEND-UC03', pattern_id: 'TL-PAT-LIBRARIAN-ACTION', setting_values: [{ setting: 'record', value: 'Loan' }, { setting: 'required_input', value: 'The loan to close.' }, { setting: 'result', value: 'The closed loan.' }] }]] }],
+  ['LA-TRC-A4-SR01-T01', { oneFile: true, steps: [['slot-filling', 'stop-filling-slot', { record_id: 'TL-LEND-TOOL01', slot_id: 'TL-PAT-LIBRARIAN-ACTION-SL06' }], ['slot-filling', 'stop-filling-slot', { record_id: 'TL-LEND-TOOL02', slot_id: 'TL-PAT-LIBRARIAN-ACTION-SL06' }]] }],
+  ['LA-TRC-A5-SR01-T01', { setup: [['integration', 'add-integration', { id: 'TL-INT90', title: 'Kept host', description: 'A host kept whole.' }]], oneFile: true, steps: [['provision', 'name-provider', { record_id: 'TL-LEND-STORE01', provider_id: 'TL-INT90' }], ['provision', 'name-provider', { record_id: 'TL-LEND-STORE02', provider_id: 'TL-INT90' }]] }],
 ])('%s a crash in the write leaves the data as it was or as the change meant, never a mix', async (_id, change) => {
     // As the change means it: the same write, uninterrupted, on another copy.
     const meant = copy();
@@ -186,7 +189,7 @@ describe('a write a crash left is settled before anything reads the data, and sa
     const store = await openStore(root, { latheDataDir: null });
     try {
       crash.at = 'journal half written';
-      await expect(write(store, [['product', 'change-product', { id: 'TL', title: 'Kept whole' }], ['product', 'add-interface', { ...product('TL-IF90'), kind: 'CLI', description: 'A command line kept whole.' }]])).rejects.toThrow('crashed');
+      await expect(write(store, [['product', 'change-product', { id: 'TL', title: 'Kept whole' }], ['product', 'add-question', { ...product('TL-Q90'), owner: 'Librarian', description: 'A question kept whole.' }]])).rejects.toThrow('crashed');
     } finally {
       crash.at = null;
       await store.close();

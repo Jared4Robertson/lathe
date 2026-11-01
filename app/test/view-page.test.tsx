@@ -21,14 +21,6 @@ function withRequirements(): ServedData {
   return addRows(data, 'view_requirement', { id: 'DM-V01-R02', title: 'Shows the shipping', view_id: 'DM-V01', statement: 'The basket page MUST show the shipping cost.', group_name: 'Costs' });
 }
 
-describe('LA-V150-R01-T01 a view\'s records are read through the View aggregate\'s own query, never a generic record read', () => {
-  it('reads GET /api/view/get-view for a requirement, and shows its statement', async () => {
-    const { requests } = await openApp('/DM-V01-R01', { data: withRequirements() });
-    expect(await within(main()).findByText('The basket page MUST show the total.')).toBeInTheDocument();
-    expect(requests).toContain('GET /api/view/get-view?id=DM-V01-R01');
-  });
-});
-
 describe('LA-V150-R04-T01 a view\'s page lists its requirements under their groups, each with the tests that prove it', () => {
   it('shows the route and the requirements table: the ungrouped first, then each group under its heading', async () => {
     await openApp('/DM-V01', { data: withRequirements() });
@@ -44,7 +36,7 @@ describe('LA-V150-R04-T01 a view\'s page lists its requirements under their grou
   });
 });
 
-describe('LA-V150-R02-T01 the View editor writes only through the aggregate\'s own commands, one per change', () => {
+describe('LA-V150-R05-T01 the View editor writes only through the aggregate\'s own commands, one per change', () => {
   it('Edit sends Change a view requirement with only what changed; an emptied group is cleared with null; no Move', async () => {
     const user = userEvent.setup();
     const changed = () => setRow(withRequirements(), 'view_requirement', 'DM-V01-R02', { group_name: null });
@@ -88,7 +80,7 @@ describe('LA-V150-R02-T01 the View editor writes only through the aggregate\'s o
 describe('LA-V150-R03-T01 a refused View command shows every reason, keeps what was entered, and changes nothing', () => {
   it('Remove sends Remove a view and shows the refusal naming what still happens in it', async () => {
     const user = userEvent.setup();
-    const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'referenced', table: 'view', key: 'DM-V01', message: 'View DM-V01 is referenced, so it stays: flow step DM-SHOP-UC01-FL01-S01 happens in it' }] };
+    const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'referenced', table: 'view', key: 'DM-V01', message: 'View DM-V01 is referenced, so it stays: flow step DM-SHOP-UC01-FL-S01 happens in it' }] };
     const { commands } = await openApp('/DM-V01', { data: withRequirements(), command: () => ({ answer: refusal }) });
     await user.click(within(await toolbar('DM-V01')).getByRole('button', { name: 'Remove' }));
     const panel = screen.getByRole('region', { name: 'Remove DM-V01?' });
@@ -96,7 +88,7 @@ describe('LA-V150-R03-T01 a refused View command shows every reason, keeps what 
     await user.click(within(panel).getByRole('button', { name: 'Remove DM-V01' }));
     const alert = await within(panel).findByRole('alert');
     expect(alert).toHaveTextContent('The removal was refused. Nothing was changed.');
-    expect(alert).toHaveTextContent('flow step DM-SHOP-UC01-FL01-S01 happens in it');
+    expect(alert).toHaveTextContent('flow step DM-SHOP-UC01-FL-S01 happens in it');
     expect(alert).toHaveFocus();
     expect(commands).toEqual([{ route: '/api/view/remove-view', input: { id: 'DM-V01' } }]);
     expect(window.location.pathname).toBe('/DM-V01');

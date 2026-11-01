@@ -4,7 +4,7 @@ export const ADD_VIEW_IDENTITY = {
   id: 'LA-AUT-CMD310',
   slice: { aggregate: 'LA-AUT-A12', name: 'view' },
   name: 'add-view',
-  description: 'Adds a view: a screen or page a person uses, with its route. It has no owner; its product follows from its ID.',
+  description: 'Adds a view: a place in an interface a person uses, with its address, the one interface that shows it if only one does, and the commands and queries it presents. It has no owner; its product follows from its ID.',
   method: 'POST',
   route: '/api/view/add-view',
 } as const;
@@ -13,7 +13,7 @@ export const CHANGE_VIEW_IDENTITY = {
   id: 'LA-AUT-CMD311',
   slice: { aggregate: 'LA-AUT-A12', name: 'view' },
   name: 'change-view',
-  description: 'Changes a view\'s title, route, description or notes.',
+  description: 'Changes a view\'s title, address, interface, description or notes, or what it presents (the whole list).',
   method: 'POST',
   route: '/api/view/change-view',
 } as const;
@@ -67,7 +67,7 @@ export const CHANGE_VIEW_TEST_IDENTITY = {
   id: 'LA-AUT-CMD317',
   slice: { aggregate: 'LA-AUT-A12', name: 'view' },
   name: 'change-view-test',
-  description: 'Changes a view test\'s columns or the test data sets it starts from (the whole list). Its requirement does not change.',
+  description: 'Changes a view test\'s way of running or the test data sets it starts from (the whole list). Its requirement does not change.',
   method: 'POST',
   route: '/api/view/change-view-test',
 } as const;

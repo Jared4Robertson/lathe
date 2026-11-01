@@ -8,11 +8,12 @@ afterAll(removeProducts);
 
 /** The loan flow: a step that opens the loan, fulfilling the first requirement, and its command's handler. */
 const DESIGNED = [
-  add('interface', { id: 'TL-IF01', title: 'Loan desk', product_id: 'TL', kind: 'web app', description: 'The desk where librarians lend tools.' }),
-  add('flow', { id: 'TL-LEND-UC01-FL01', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }),
-  add('flow_step', { id: 'TL-LEND-UC01-FL01-S01', title: 'The member borrows a free tool', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 }),
-  link('TL-LEND-UC01-FL01-S01', 'invokes', 'TL-LEND-CMD01'),
-  link('TL-LEND-UC01-FL01-S01', 'fulfills', 'TL-LEND-UC01-R01'),
+  add('interface', { id: 'TL-IF01', title: 'Loan desk', product_id: 'TL', kind: 'web app', description: 'The desk where librarians lend tools.', public: false }),
+  link('TL-IF01', 'offers', 'TL-LEND-UC01'),
+  add('flow', { id: 'TL-LEND-UC01-FL', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01' }),
+  add('flow_step', { id: 'TL-LEND-UC01-FL-S01', title: 'The member borrows a free tool', flow_id: 'TL-LEND-UC01-FL', path: 'main', position: 1 }),
+  link('TL-LEND-UC01-FL-S01', 'invokes', 'TL-LEND-CMD01'),
+  link('TL-LEND-UC01-FL-S01', 'fulfills', 'TL-LEND-UC01-R01'),
   add('command_handler', { id: 'TL-LEND-CMD01-H', title: 'openLoan', command_id: 'TL-LEND-CMD01', file: 'src/loans.ts', description: 'Opens the loan in one transaction.' }),
 ];
 
@@ -37,7 +38,7 @@ const line = (out: string, scope: string, label: string) => out.split('\n').find
 const coverage = (tl: Product, domain: string | null, kind: string) => tl.workspace().coverage.find((c) => c.domain === domain)?.obligations.find((o) => o.kind === kind);
 
 describe('Traceability flows from the command line', () => {
-  it('LA-TRC-UC01-FL03-T see a domain\'s coverage', async () => {
+  it('LA-TRC-UC01-FL-T see a domain\'s coverage', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
@@ -58,13 +59,13 @@ describe('Traceability flows from the command line', () => {
     expect(result.status).toBe(0);
     expect(problemsOf(tl.workspace(), 'not-proved')).toEqual([expect.stringMatching(/^TL-LEND-UC01-R02: /)]);
     // S04: an Agent closes the gap, and the next check counts it.
-    tl.command('use-case add-flow-step', { id: 'TL-LEND-UC01-FL01-S02', title: 'The member owes nothing', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 2, invokes: 'TL-LEND-CMD01', fulfills: ['TL-LEND-UC01-R02'] });
+    tl.command('use-case add-flow-step', { id: 'TL-LEND-UC01-FL-S03', title: 'The member owes nothing', flow_id: 'TL-LEND-UC01-FL', path: 'main', position: 2, invokes: 'TL-LEND-CMD01', fulfills: ['TL-LEND-UC01-R02'] });
     tl.command('use-case change-use-case-test', { id: 'TL-LEND-UC01-R02-T01', state: 'automated', file: 'test/loans.test.ts' });
     tl.write('test/loans.test.ts', "it('TL-LEND-UC01-R01-T01 a tool on loan is refused');\nit('TL-LEND-UC01-R02-T01 a member in debt is refused');\n");
     expect(line(tl.check().stdout, 'TL-LEND', 'UC requirement')).toBe('TL-LEND UC requirement: 2/2 designed, 2/2 built, 2/2 proved');
   });
 
-  it('LA-TRC-UC02-FL03-T count coverage by the meta-model', async () => {
+  it('LA-TRC-UC02-FL-T count coverage by the meta-model', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
@@ -75,7 +76,7 @@ describe('Traceability flows from the command line', () => {
       add('constraint', { id: 'TL-VO01-C01', title: 'One at sign', value_object_id: 'TL-VO01', statement: 'An email address MUST hold exactly one @.' }),
       add('value_type', { id: 'TL-VO01-VT', title: 'EmailAddress', value_object_id: 'TL-VO01', file: 'src/email.ts' }),
       add('invariant', { id: 'TL-LEND-INV01', title: 'One active loan per tool', aggregate_id: 'TL-LEND-A1', statement: 'A tool MUST NOT have two active loans.' }),
-      add('product_kind', { name: 'house_rule', product_id: 'TL', label: 'House rule', description: 'A rule of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: true }),
+      add('product_kind', { name: 'house_rule', product_id: 'TL', label: 'House rule', description: 'A rule of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: true, complexity: 'essential' }),
       add('product_relation', { name: 'checks_rule', source_kind: 'use_case_test', target_kind: 'house_rule', product_id: 'TL', role: 'proof', forward_label: 'Checks', reverse_label: 'Checked by', description: 'The test checks the rule.' }),
     ]);
     await tl.seed([add('house_rule', { id: 'TL-LEND-HR01', title: 'Quiet', domain_id: 'TL-LEND' })]);
@@ -120,7 +121,7 @@ describe('Traceability flows from the command line', () => {
     expect(tl.check().stdout).not.toContain('outcome-not-measured');
   });
 
-  it('LA-TRC-UC03-FL03-T record how a test is run', async () => {
+  it('LA-TRC-UC03-FL-T record how a test is run', async () => {
     const tl = product();
     await tl.seed([...LENDING, add('uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'A member in debt is refused', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse a member who owes a fee.' }), add('uc_requirement', { id: 'TL-LEND-UC01-R03', title: 'The due date is set', use_case_id: 'TL-LEND-UC01', statement: 'The loan MUST be due two weeks after it opens.' })]);
     const addTest = (requirement: string, run: Record<string, string>) =>
@@ -153,7 +154,7 @@ describe('Traceability flows from the command line', () => {
     expect(tl.refuse('use-case change-use-case-test', { id: 'TL-LEND-UC01-R01-T01', external: false })).toContain('external');
   });
 
-  it('LA-TRC-UC04-FL03-T prove the rules of the patterns a domain follows', async () => {
+  it('LA-TRC-UC04-FL-T prove the rules of the patterns a domain follows', async () => {
     const tl = product();
     await tl.seed([...LENDING, ...SHOP, add('pattern', { id: 'TL-PAT-ACT', title: 'Librarian action', product_id: 'TL', description: 'An action a librarian takes that saves a record.' }), add('pattern_setting', { pattern_id: 'TL-PAT-ACT', position: 1, name: 'record', meaning: 'The record the action saves.' })]);
     // S01: the pattern's rules, each owed by every follower.
@@ -196,7 +197,7 @@ describe('Traceability flows from the command line', () => {
     expect(coverage(tl, null, 'constraint')).toMatchObject({ total: 1 });
   });
 
-  it('LA-TRC-UC05-FL03-T check that each test\'s file names it', async () => {
+  it('LA-TRC-UC05-FL-T check that each test\'s file names it', async () => {
     const tl = product();
     await tl.seed([...LENDING, add('uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'A member in debt is refused', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse a member who owes a fee.' }), add('uc_requirement', { id: 'TL-LEND-UC01-R03', title: 'The due date is set', use_case_id: 'TL-LEND-UC01', statement: 'The loan MUST be due two weeks after it opens.' })]);
     // S01: the Agent writes the test's code, but names a longer ID, not the test's own.
@@ -226,7 +227,7 @@ describe('Traceability flows from the command line', () => {
     expect(problemsOf(tl.workspace(), 'test-case-unnamed')).toEqual([]);
   });
 
-  it('LA-TRC-UC06-FL03-T see each domain\'s tests by state', async () => {
+  it('LA-TRC-UC06-FL-T see each domain\'s tests by state', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
@@ -251,7 +252,7 @@ describe('Traceability flows from the command line', () => {
     });
   });
 
-  it('LA-TRC-UC07-FL03-T follow a pattern per domain', async () => {
+  it('LA-TRC-UC07-FL-T follow a pattern per domain', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
@@ -274,14 +275,40 @@ describe('Traceability flows from the command line', () => {
     // S04: the use case that follows a pattern is not asked for requirements of its own.
     expect(gapsOf(ws, 'TL-LEND').filter((g) => g.startsWith('use-case-without-requirement'))).toEqual([]);
     // S05: a product kind declared an obligation is counted like Lathe's.
-    tl.command('product declare-product-kind', { name: 'house_rule', product_id: 'TL', label: 'House rule', description: 'A rule of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: true });
+    tl.command('product declare-product-kind', { name: 'house_rule', product_id: 'TL', label: 'House rule', description: 'A rule of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: true, complexity: 'essential' });
     tl.command('extension-record add-extension-record', { kind: 'house_rule', id: 'TL-LEND-HR01', parent_id: 'TL-LEND', values: { title: 'Quiet' } });
     expect(coverage(tl, 'TL-LEND', 'house_rule')).toMatchObject({ label: 'House rule', total: 1, proved: 0 });
     // S06: a product kind named like one of Lathe's tables is refused.
-    expect(tl.refuse('product declare-product-kind', { name: 'invariant', product_id: 'TL', label: 'Our invariant', description: 'A rule of ours.', parent_kind: 'domain', stage: 'use-cases', obligation: true })).toContain('invariant');
+    expect(tl.refuse('product declare-product-kind', { name: 'invariant', product_id: 'TL', label: 'Our invariant', description: 'A rule of ours.', parent_kind: 'domain', stage: 'use-cases', obligation: true, complexity: 'essential' })).toContain('invariant');
   });
 
-  it('LA-TRC-UC08-FL03-T report tests that count for nothing', async () => {
+  it('LA-TRC-UC21-FL-T account for hand-written accidental complexity', async () => {
+    const tl = product();
+    await tl.seed([
+      ...LENDING,
+      ...PATTERN,
+      add('slot', { id: 'TL-PAT-ACT-SL01', title: 'Refusal message', pattern_id: 'TL-PAT-ACT', statement: 'A fill MUST word the refusal for the librarian.' }),
+      add('tooling', { id: 'TL-LEND-TOOL01', title: 'generate.ts', domain_id: 'TL-LEND', file: 'scripts/generate.ts' }),
+      add('tooling', { id: 'TL-LEND-TOOL02', title: 'routes.generated.ts', domain_id: 'TL-LEND', file: 'src/routes.generated.ts' }),
+      add('tooling', { id: 'TL-LEND-TOOL03', title: 'refusals.ts', domain_id: 'TL-LEND', file: 'src/refusals.ts' }),
+      link('TL-LEND-TOOL01', 'generates', 'TL-LEND-TOOL02'),
+      add('integration', { id: 'TL-INT01', title: 'Database host', system: 'Managed PostgreSQL', description: "The service that runs the library's database." }),
+      add('data_store', { id: 'TL-STORE01', title: 'DATABASE_URL', product_id: 'TL', kind: 'database', description: "The library's database." }),
+    ]);
+    expect(problemsOf(tl.workspace(), 'accidental-not-accounted-for').filter((p) => p.startsWith('TL-STORE01:'))).toHaveLength(1);
+    // S01: a record written by hand fills a slot of the pattern it is owed to.
+    tl.command('slot-filling fill-slot', { record_id: 'TL-LEND-TOOL03', slot_id: 'TL-PAT-ACT-SL01' });
+    // S02: what provides the data store is named.
+    tl.command('provision name-provider', { record_id: 'TL-STORE01', provider_id: 'TL-INT01' });
+    // S03: the provided record is accounted for, and the fill is debt at its slot.
+    const ws = tl.workspace();
+    expect(problemsOf(ws, 'accidental-not-accounted-for').filter((p) => p.startsWith('TL-STORE01:'))).toEqual([]);
+    expect(ws.coverage.find((c) => c.domain === 'TL-LEND')?.debt).toContainEqual({ id: 'TL-LEND-TOOL03', slot: 'TL-PAT-ACT-SL01' });
+    // S04: a fill of a record a generator writes is refused.
+    expect(tl.refuse('slot-filling fill-slot', { record_id: 'TL-LEND-TOOL02', slot_id: 'TL-PAT-ACT-SL01' })).toContain('a fill is written by hand');
+  });
+
+  it('LA-TRC-UC08-FL-T report tests that count for nothing', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
@@ -305,7 +332,7 @@ describe('Traceability flows from the command line', () => {
     expect(out).toContain('[manual-test-file-silent] TL-LEND-UC01-R01-T01:');
   });
 
-  it('LA-TRC-UC20-FL03-T see the outcomes each record serves', async () => {
+  it('LA-TRC-UC20-FL-T see the outcomes each record serves', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,

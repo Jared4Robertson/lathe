@@ -28,7 +28,7 @@ const latheChecks = async () => {
 /** The complete product with a kind, a relation and two checks of its own. */
 const extended = () =>
   adding(complete(), {
-    product_kind: [{ name: 'cli_command', product_id: 'EX', label: 'CLI command', description: "A command of the library's CLI.", parent_kind: 'command', stage: 'technical-specification', obligation: false, id_pattern: '<command>-CLI', id_example: 'EX-LEND-CMD01-CLI' }],
+    product_kind: [{ name: 'cli_command', product_id: 'EX', label: 'CLI command', description: "A command of the library's CLI.", parent_kind: 'command', stage: 'technical-specification', obligation: false, complexity: 'accidental', id_pattern: '<command>-CLI', id_example: 'EX-LEND-CMD01-CLI' }],
     product_kind_field: [{ kind: 'cli_command', position: 1, name: 'usage', type: 'text', required: true, description: 'How it is typed.' }],
     product_relation: [{ name: 'documents', source_kind: 'cli_command', target_kind: 'view', product_id: 'EX', forward_label: 'Documents', reverse_label: 'Documented by', description: 'The CLI command is documented in the view.' }],
     check: [
@@ -115,7 +115,7 @@ describe('the reference', () => {
     // Obligations say what designs, builds and proves them; test kinds the levels they run at.
     expect(defaults.kinds.filter((k) => k.obligation).map((k) => k.kind)).toEqual(['constraint', 'invariant', 'specification', 'policy', 'domain_service', 'storage_requirement', 'uc_requirement', 'pattern_rule', 'view_requirement', 'api_requirement', 'standard_rule']);
     expect(defaults.kinds.filter((k) => k.obligation).every((k) => k.coverage !== null)).toBe(true);
-    expect(defaults.kinds.find((k) => k.kind === 'uc_requirement')?.coverage?.designed).toBe("A step of each of its use case's flows fulfills it: one flow per interface the use case happens through, and at least one.");
+    expect(defaults.kinds.find((k) => k.kind === 'uc_requirement')?.coverage?.designed).toBe("A step of its use case's flow fulfills it.");
     expect(Object.fromEntries(defaults.kinds.filter((k) => k.levels).map((k) => [k.kind, k.levels]))).toEqual(ALLOWED_LEVELS);
     expect(defaults.kinds.every((k) => k.id !== null)).toBe(true);
     // Each kind's table, with its columns, keys and rules.
@@ -212,7 +212,7 @@ describe('the reference script and GET /api/reference', () => {
     expect(readFileSync(out, 'utf8')).toBe(expected);
   });
 
-  it('LA-AUT-EP01-R01-T01 GET /api/reference serves the product reference as JSON', async () => {
+  it('LA-PAT-HTTP-STEPS-R03-T01 GET /api/reference serves the product reference as JSON', async () => {
     let status = 0;
     let body = '';
     const headers: Record<string, string> = {};

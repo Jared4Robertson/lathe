@@ -13,7 +13,7 @@ import { main, openApp, section } from './helpers';
 const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.findByRole('toolbar', { name: `Change ${id}` });
 
-describe('LA-V152-R01-T01 an endpoint\'s records are read through the Endpoint aggregate\'s own query, never a generic record read', () => {
+describe('LA-V152-R05-T01 an endpoint\'s records are read through the Endpoint aggregate\'s own query, never a generic record read', () => {
   it('reads GET /api/endpoint/get-endpoint for an API requirement, and shows its statement', async () => {
     const { requests } = await openApp('/P-D-EP01-R01', { data: modelWorkspace() });
     expect(await within(main()).findByText('It MUST answer 201 with the loan.')).toBeInTheDocument();
@@ -29,7 +29,7 @@ describe('LA-V152-R01-T01 an endpoint\'s records are read through the Endpoint a
   });
 });
 
-describe('LA-V152-R02-T01 the Endpoint editor writes only through the aggregate\'s own commands, one per change, Move for the endpoint alone', () => {
+describe('LA-V152-R06-T01 the Endpoint editor writes only through the aggregate\'s own commands, one per change, Move for the endpoint alone', () => {
   it('Edit sends Change an API requirement with only what changed; an API requirement has no Move', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/P-D-EP01-R01', { data: modelWorkspace(), command: () => ({ answer: ok }) });
@@ -88,7 +88,7 @@ describe('LA-V152-R02-T01 the Endpoint editor writes only through the aggregate\
 describe('LA-V152-R03-T01 a refused Endpoint command shows every reason, keeps what was entered, and changes nothing', () => {
   it('Remove sends Remove an endpoint, saying what goes with it, and shows the refusal', async () => {
     const user = userEvent.setup();
-    const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'referenced', table: 'endpoint', key: 'P-D-EP01', message: 'Endpoint P-D-EP01 is referenced, so it stays: flow step P-D-UC01-FL01-S01 invokes it' }] };
+    const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'referenced', table: 'endpoint', key: 'P-D-EP01', message: 'Endpoint P-D-EP01 is referenced, so it stays: flow step P-D-UC01-FL-S01 invokes it' }] };
     const { commands } = await openApp('/P-D-EP01', { data: modelWorkspace(), command: () => ({ answer: refusal }) });
     await user.click(within(await toolbar('P-D-EP01')).getByRole('button', { name: 'Remove' }));
     const panel = screen.getByRole('region', { name: 'Remove P-D-EP01?' });
@@ -98,7 +98,7 @@ describe('LA-V152-R03-T01 a refused Endpoint command shows every reason, keeps w
     await user.click(within(panel).getByRole('button', { name: 'Remove P-D-EP01' }));
     const alert = await within(panel).findByRole('alert');
     expect(alert).toHaveTextContent('The removal was refused. Nothing was changed.');
-    expect(alert).toHaveTextContent('flow step P-D-UC01-FL01-S01 invokes it');
+    expect(alert).toHaveTextContent('flow step P-D-UC01-FL-S01 invokes it');
     expect(alert).toHaveFocus();
     expect(commands).toEqual([{ route: '/api/endpoint/remove-endpoint', input: { id: 'P-D-EP01' } }]);
     expect(window.location.pathname).toBe('/P-D-EP01');

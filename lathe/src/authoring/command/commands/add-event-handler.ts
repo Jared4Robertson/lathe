@@ -1,9 +1,7 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EventHandlerRow } from '../../../platform/data/tables.ts';
-import { CommandRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
 import { ADD_EVENT_HANDLER_IDENTITY } from './identities.generated.ts';
+import { addEventHandler } from './handlers.generated.ts';
 
 export type AddEventHandler = Pick<EventHandlerRow, 'id' | 'title' | 'policy_id' | 'file' | 'description'> & { meets?: string[]; packages?: string[] };
 
@@ -20,13 +18,3 @@ export const ADD_EVENT_HANDLER = {
   },
   handler: addEventHandler,
 } satisfies CommandDefinition<AddEventHandler>;
-
-/** Adds the event handler to its policy, refused when the policy has one. */
-export function addEventHandler(tx: Transaction, input: AddEventHandler): void {
-  const commands = new CommandRepository(tx);
-  const command = commands.loadHolding('policy', input.policy_id) ?? tx.refuse('missing', `there is no policy ${input.policy_id}`);
-  const { meets = [], packages = [], ...row } = input;
-  command.eventHandlers.push({ row, meets, packages });
-  holdToRules(tx, command);
-  commands.save(command);
-}

@@ -128,7 +128,8 @@ const lowerLabel = (label: string) => (/^[A-Z]{2}/.test(label) ? label : label.c
 
 /**
  * A product's coverage, one line per domain and obligation kind with how many are designed, built and proved, each
- * gap under its kind, the tests per state, and the records short of a minimum; nothing for a scope with none of these.
+ * gap under its kind, the tests per state, the records short of a minimum, and the accidental debt (each fill); nothing
+ * for a scope with none of these.
  */
 export function coverageLines(coverage: Coverage[]): string[] {
   const lines: string[] = [];
@@ -138,7 +139,7 @@ export function coverageLines(coverage: Coverage[]): string[] {
     const kinds = new Set(counted.map((o) => o.kind));
     const minimums = c.gaps.filter((g) => !['designed', 'built', 'proved'].includes(g.missing));
     const tested = c.tests.automated + c.tests.manual + c.tests.not_automated;
-    if (!counted.length && !minimums.length && !tested) continue;
+    if (!counted.length && !minimums.length && !tested && !c.debt.length) continue;
     for (const o of counted) {
       const of = (n: number) => `${n}/${o.total}`;
       // A proof-only kind (a pattern rule) is not asked to be designed or built.
@@ -151,6 +152,10 @@ export function coverageLines(coverage: Coverage[]): string[] {
     if (minimums.length) {
       lines.push(`  ${scope} records short of a minimum (${minimums.length}):`);
       for (const g of minimums) lines.push(`    [${g.missing}] ${g.message}`);
+    }
+    if (c.debt.length) {
+      lines.push(`  ${scope} accidental debt (${c.debt.length} ${c.debt.length === 1 ? 'fill' : 'fills'}):`);
+      for (const d of c.debt) lines.push(`    ${d.id} fills ${d.slot}`);
     }
   }
   return lines;

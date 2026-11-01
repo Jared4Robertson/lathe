@@ -31,7 +31,7 @@ describe('LA-TRC-DS06-T01 a record serves the outcomes of the capabilities of th
     // An endpoint exposing a reached command and its API requirement; an integration a step exchanges with.
     for (const id of ['EX-LEND-EP01', 'EX-LEND-EP01-R01', 'EX-INT01', 'EX-INT01-AD']) expect(through(id), id).toEqual(['EX-LEND-UC01']);
     // The technical records of what is reached, the standard rules they meet, and the tests under reached records.
-    for (const id of ['EX-LEND-CMD01-H', 'EX-LEND-REPO01', 'EX-LEND-INV01-RL', 'EX-STD-CODE-R01', 'EX-LEND-INV01-T', 'EX-LEND-UC01-FL01-T']) expect(through(id), id).toEqual(['EX-LEND-UC01']);
+    for (const id of ['EX-LEND-CMD01-H', 'EX-LEND-REPO01', 'EX-LEND-INV01-RL', 'EX-STD-CODE-R01', 'EX-LEND-INV01-T', 'EX-LEND-UC01-FL-T']) expect(through(id), id).toEqual(['EX-LEND-UC01']);
     // The rules of a pattern the use case follows.
     expect(through('EX-PAT-ACT-R01')).toEqual(['EX-LEND-UC02']);
     // The capability serves its own outcomes; the outcome, the product, the domain and the interface serve none.
@@ -61,7 +61,7 @@ describe('LA-TRC-DS06-T01 a record serves the outcomes of the capabilities of th
 describe("LA-TRC-DS06-T02 a product's own relations carry the reach both ways", () => {
   it("reaches a product's record that links to a reached one, and what a reached record links to, through the product's relations", async () => {
     const data = adding(complete(), {
-      product_kind: [{ name: 'script', product_id: 'EX', label: 'Script', description: 'A script.', parent_kind: 'domain', stage: 'technical-specification', obligation: false }],
+      product_kind: [{ name: 'script', product_id: 'EX', label: 'Script', description: 'A script.', parent_kind: 'domain', stage: 'technical-specification', obligation: false, complexity: 'accidental' }],
       product_kind_field: [{ kind: 'script', position: 1, name: 'file', type: 'text', required: true, description: 'The file.' }],
       product_relation: [
         { name: 'listed_in', source_kind: 'script', target_kind: 'aggregate', product_id: 'EX', forward_label: 'Listed in', reverse_label: 'Lists', description: 'The aggregate lists the script.' },

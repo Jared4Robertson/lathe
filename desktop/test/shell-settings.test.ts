@@ -43,3 +43,14 @@ describe('LA-PLT-INV32-T The editor is one Lathe knows', () => {
     expect(json('unknown-settings.json')).toEqual({ editor: 'zed' });
   });
 });
+
+describe('LA-PLT-A11-SR01 The shell settings are kept across launches, as the person last wrote them', () => {
+  it('LA-PLT-A11-SR01-T01 settings saved read back through a new repository, a hand edit is read on the next load, and a broken file gives the defaults', () => {
+    new ShellSettingsRepository(file('kept.json')).save({ editor: 'zed' });
+    expect(new ShellSettingsRepository(file('kept.json')).load()).toEqual({ editor: 'zed' });
+    writeFileSync(path.join(temp, 'kept.json'), JSON.stringify({ editor: 'cursor' }));
+    expect(new ShellSettingsRepository(file('kept.json')).load()).toEqual({ editor: 'cursor' });
+    writeFileSync(path.join(temp, 'kept.json'), '{ not json');
+    expect(new ShellSettingsRepository(file('kept.json')).load()).toEqual(new ShellSettingsRepository(file('none.json')).load());
+  });
+});

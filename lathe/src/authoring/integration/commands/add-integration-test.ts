@@ -1,8 +1,7 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { IntegrationTestRow } from '../../../platform/data/tables.ts';
-import { IntegrationRepository } from '../repository.ts';
 import { ADD_INTEGRATION_TEST_IDENTITY } from './identities.generated.ts';
+import { addIntegrationTest } from './handlers.generated.ts';
 
 export type AddIntegrationTest = Pick<IntegrationTestRow, 'id' | 'title' | 'integration_id' | 'level' | 'state' | 'when' | 'then' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'notes'> & { starts_from?: string[] };
 
@@ -26,11 +25,3 @@ export const ADD_INTEGRATION_TEST = {
   },
   handler: addIntegrationTest,
 } satisfies CommandDefinition<AddIntegrationTest>;
-
-export function addIntegrationTest(tx: Transaction, input: AddIntegrationTest): void {
-  const integrations = new IntegrationRepository(tx);
-  const integration = integrations.loadHolding('integration', input.integration_id) ?? tx.refuse('missing', `there is no integration ${input.integration_id}`);
-  const { starts_from = [], ...row } = input;
-  integration.tests.push({ row, startsFrom: starts_from });
-  integrations.save(integration);
-}

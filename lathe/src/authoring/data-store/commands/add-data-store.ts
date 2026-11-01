@@ -1,11 +1,11 @@
-import { column, id, type CommandDefinition } from '../../../platform/commands/definition.ts';
+import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { DataStoreRow } from '../../../platform/data/tables.ts';
 import { newDataStore } from '../model.ts';
 import { DataStoreRepository } from '../repository.ts';
 import { ADD_DATA_STORE_IDENTITY } from './identities.generated.ts';
 
-export type AddDataStore = Pick<DataStoreRow, 'id' | 'title' | 'product_id' | 'domain_id' | 'kind' | 'description'> & { provided_by?: string };
+export type AddDataStore = Pick<DataStoreRow, 'id' | 'title' | 'product_id' | 'domain_id' | 'kind' | 'description'>;
 
 export const ADD_DATA_STORE = {
   ...ADD_DATA_STORE_IDENTITY,
@@ -16,7 +16,6 @@ export const ADD_DATA_STORE = {
     domain_id: column('data_store', 'domain_id', 'optional'),
     kind: column('data_store', 'kind', 'required'),
     description: column('data_store', 'description', 'required'),
-    provided_by: id('The integration that reaches it, when it is a service someone else runs that the user must provide.', 'optional'),
   },
   handler: addDataStore,
 } satisfies CommandDefinition<AddDataStore>;
@@ -26,7 +25,6 @@ export function addDataStore(tx: Transaction, input: AddDataStore): void {
   if ((input.product_id === undefined) === (input.domain_id === undefined)) {
     tx.refuse('parent', `data store ${input.id} sits under its product or one of its domains: give exactly one of product_id and domain_id`);
   }
-  const { provided_by, ...row } = input;
-  const store = stores.create(newDataStore(row, provided_by ?? null));
+  const store = stores.create(newDataStore(input));
   stores.save(store);
 }

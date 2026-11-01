@@ -6,7 +6,7 @@ import { holdToRules } from '../rules.ts';
 import { SET_LIMITS_IDENTITY } from './identities.generated.ts';
 
 /** The product and both its limits. */
-export type SetLimits = ProductSettingRow;
+export type SetLimits = Omit<ProductSettingRow, 'technology_words'>;
 
 export const SET_LIMITS = {
   ...SET_LIMITS_IDENTITY,
@@ -18,11 +18,11 @@ export const SET_LIMITS = {
   handler: setLimits,
 } satisfies CommandDefinition<SetLimits>;
 
-/** Sets the product's settings, adding its one row (LA-CHK-INV05) the first time. */
+/** Sets the product's limits, keeping its technology words, and adds its one row (LA-CHK-INV05), with none, the first time. */
 export function setLimits(tx: Transaction, input: SetLimits): void {
   const settings = new ProductSettingRepository(tx);
-  const setting = settings.load(input.product_id) ?? settings.create({ root: input.product_id, setting: input });
-  setting.setting = input;
+  const setting = settings.load(input.product_id) ?? settings.create({ root: input.product_id, setting: { ...input, technology_words: [] } });
+  setting.setting = { ...input, technology_words: setting.setting.technology_words };
   holdToRules(tx, setting);
   settings.save(setting);
 }

@@ -4,7 +4,7 @@
 // kind by its label, places it in its stage, words a link by its relation's labels and draws a field by its column.
 // The projection is the only code that reads the schema for the query, and the only code that writes the table.
 import type { ReadView } from '../data/rules.ts';
-import type { ColumnDescription, IdScope, Stage } from '../data/schema.ts';
+import type { ColumnDescription, Complexity, IdScope, Stage } from '../data/schema.ts';
 
 /** One kind. */
 export interface MetaKind {
@@ -19,6 +19,8 @@ export interface MetaKind {
   /** Its parent columns, one per parent kind. */
   parent_columns: string[];
   obligation: boolean;
+  /** essential, accidental, as-parent (as the record above it: a test, a standard rule) by-type (a standard) or by-interface (an API requirement); null for an open question. */
+  complexity: Complexity | null;
   id_scope: IdScope | null;
   /** The product that declares it, or null for Lathe's own. */
   declared_by: string | null;
@@ -79,6 +81,7 @@ export function metaModelTableFrom(view: ReadView): MetaModelTable {
         parent_kinds: k.parents.map((p) => p.kind),
         parent_columns: k.parents.map((p) => p.column),
         obligation: k.obligation,
+        complexity: k.complexity,
         id_scope: k.idScope,
         declared_by: k.productId,
         description: k.description ?? '',

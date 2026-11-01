@@ -6,6 +6,7 @@ import type { Row } from '../../platform/data/rows.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
 import type { ProductRelationRow } from '../../platform/data/tables.ts';
+import { accountingPairs } from '../../platform/data/product-kinds.ts';
 import { PRODUCT_AGGREGATE, productsFrom, type Product } from './model.ts';
 
 /** Whether the text is missing or blank. */
@@ -46,9 +47,18 @@ function declarationProblems(product: Product, view: ReadView): RuleProblem[] {
   }
   const relation = (row: object, message: string) => problems.push({ rule: 'product-relation-own', table: 'product_relation', row: row as unknown as Row, message });
   // The supertypes an own kind joins as its tables are built (platform/data/product-kinds.ts): an obligation kind the
-  // obligation supertype, a kind of the technical specification the technical records.
+  // obligation supertype, a kind of the technical specification the technical records, and an accidental kind (one of
+  // the technical specification, or one that says it is accidental) the accidental records.
   const ownMember = (table: string, end: string) =>
-    (table === 'obligation' && own.get(end)?.obligation === true) || (table === 'technical_record' && own.get(end)?.stage === 'technical-specification');
+    (table === 'obligation' && own.get(end)?.obligation === true) ||
+    (table === 'technical_record' && own.get(end)?.stage === 'technical-specification') ||
+    (table === 'accidental_record' && (own.get(end)?.stage === 'technical-specification' || own.get(end)?.complexity === 'accidental'));
+  // The provided_by, fills and generates pairs each own kind has without a declaration (platform/data/product-kinds.ts).
+  const accounting = new Set(
+    product.kinds.flatMap(({ row }) =>
+      accountingPairs(row.name, row.obligation === true, ownMember('accidental_record', row.name)).map((p) => p.join(' ')),
+    ),
+  );
   const firstOf = new Map<string, ProductRelationRow>();
   for (const pair of product.relations) {
     if (blank(pair.forward_label) || blank(pair.reverse_label)) relation(pair, `The relation ${pair.name} needs both its labels, forward and reverse.`);
@@ -57,6 +67,10 @@ function declarationProblems(product: Product, view: ReadView): RuleProblem[] {
       continue;
     }
     const existing = schema.relations[pair.name];
+    if (accounting.has(`${pair.name} ${pair.source_kind} ${pair.target_kind}`)) {
+      relation(pair, `Every ${pair.name === 'provided_by' ? 'obligation or accidental' : 'accidental'} kind has the pair ${pair.name} from ${pair.source_kind} to ${pair.target_kind} already, as Lathe's own kinds do; drop the declaration.`);
+      continue;
+    }
     if (existing && existing.productId === null) {
       const fits = (table: string, end: string) =>
         table === 'record_id' || table === end || (schema.supertypes[table]?.includes(end) ?? false) || ownMember(table, end);

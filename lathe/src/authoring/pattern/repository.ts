@@ -1,10 +1,13 @@
-// PatternRepository (LA-AUT-REPO02): loads and saves the Pattern aggregate whole, in its own tables only. A rule or a
-// rule test is reached through the pattern that holds it.
-import { AggregateRepository, type InstanceRows } from '../../platform/data/repository.ts';
+// Generated from data/ by `npm run generate`. Do not edit.
+// PatternRepository (LA-AUT-REPO02): Loads a pattern whole from the transaction's draft (its settings, rules and rule
+// tests) and saves exactly the rows that changed, in the Pattern aggregate's own tables only; a write to any other
+// table is refused when it is made (`DataFiles`). A rule or rule test is loaded through the pattern that holds it
+// (`loadHolding`), and a removal is refused, naming the referrers, while anything outside references what goes.
+import { AggregateRepository as Repository, type InstanceRows } from '../../platform/data/repository.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
-import { kindInside, PATTERN_KINDS, PATTERN_TABLES, patternRows, patternsFrom, type Pattern, type PatternKind } from './model.ts';
+import { PATTERN_TABLES, patternRows, patternsFrom, type Pattern, type PatternKind } from './model.ts';
 
-export class PatternRepository extends AggregateRepository<Pattern> {
+export class PatternRepository extends Repository<Pattern> {
   constructor(tx: Transaction) {
     super(tx, 'PatternRepository', PATTERN_TABLES);
   }
@@ -17,20 +20,32 @@ export class PatternRepository extends AggregateRepository<Pattern> {
     return patternRows(pattern);
   }
 
-  /**
-   * Loads the pattern that holds the record of the kind with this ID: the pattern itself, or the pattern of the rule
-   * or rule test, found up its parents inside the aggregate. Undefined when there is no such record.
-   */
+  /** Loads the pattern that holds the record of the kind with this ID, found up its parents; undefined when there is none. */
   loadHolding(kind: PatternKind, id: string): Pattern | undefined {
-    let at: { kind: PatternKind; id: string } = { kind, id };
-    for (;;) {
-      const row = this.files.find(at.kind, { id: at.id });
-      if (!row) return undefined;
-      if (at.kind === 'pattern') break;
-      const column = PATTERN_KINDS[at.kind];
-      at = { kind: column === 'pattern_id' ? 'pattern' : 'pattern_rule', id: String(row[column]) };
+    const root = this.rootOf(kind, id);
+    const pattern = root === undefined ? undefined : this.load(root);
+    return pattern && holds(pattern, kind, id) ? pattern : undefined;
+  }
+
+  // The root's ID, up the parents of the record of the kind with this ID; undefined when one of them is missing.
+  private rootOf(kind: PatternKind, id: string): string | undefined {
+    const row = this.files.find(kind, { id });
+    if (!row) return undefined;
+    switch (kind) {
+      case 'pattern': return id;
+      case 'pattern_rule': return this.rootOf('pattern', String(row.pattern_id));
+      case 'pattern_rule_test': return this.rootOf('pattern_rule', String(row.pattern_rule_id));
+      case 'slot': return this.rootOf('pattern', String(row.pattern_id));
     }
-    const pattern = this.load(at.id);
-    return pattern && kindInside(pattern, id) === kind ? pattern : undefined;
+  }
+}
+
+/** Whether the pattern holds the record of the kind with this ID. */
+function holds(pattern: Pattern, kind: PatternKind, id: string): boolean {
+  switch (kind) {
+    case 'pattern': return pattern.root === id;
+    case 'pattern_rule': return pattern.rules.some((x) => x.id === id);
+    case 'pattern_rule_test': return pattern.ruleTests.some((x) => x.row.id === id);
+    case 'slot': return pattern.slots.some((x) => x.id === id);
   }
 }

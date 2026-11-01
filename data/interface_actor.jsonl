@@ -1,0 +1,10 @@
+{"interface_id":"LA-IF01","position":1,"role_name":"Owner"}
+{"interface_id":"LA-IF01","position":2,"role_name":"Reader"}
+{"interface_id":"LA-IF02","position":1,"role_name":"Owner"}
+{"interface_id":"LA-IF02","position":2,"role_name":"Reader"}
+{"interface_id":"LA-IF03","position":1,"role_name":"Owner"}
+{"interface_id":"LA-IF03","position":2,"role_name":"Agent"}
+{"interface_id":"LA-IF04","position":1,"role_name":"Agent"}
+{"interface_id":"LA-IF05","position":1,"role_name":"Owner"}
+{"interface_id":"LA-IF05","position":2,"role_name":"Reader"}
+{"interface_id":"LA-IF06","position":1,"role_name":"Agent"}

@@ -50,8 +50,8 @@ describe('packages', () => {
     // A name that is not a package name is refused by the table's own CHECK.
     expect(await refusals(naming('Not A Package'))).toEqual([expect.objectContaining({ table: 'package_use' })]);
     const withRecord = adding(complete(), {
-      tooling: [{ id: 'EX-LEND-TOOL01', title: 'vitest.config.ts', domain_id: 'EX-LEND', file: 'vitest.config.ts' }],
-      package_use: [{ record_id: 'EX-LEND-TOOL01', package: 'vitest' }],
+      tooling: [{ id: 'EX-LEND-TOOL02', title: 'vitest.config.ts', domain_id: 'EX-LEND', file: 'vitest.config.ts' }],
+      package_use: [{ record_id: 'EX-LEND-TOOL02', package: 'vitest' }],
     });
     // Written as data files and loaded, as a product's repo is.
     const root = writeData(withRecord);
@@ -72,10 +72,10 @@ describe('packages', () => {
     };
     const found = await loadData(complete(), { files });
     expect(packageGaps(found).map((g) => g.message)).toEqual(['Product EX depends on 2 packages no record uses: a (package.json), b (app/package.json).']);
-    const listed = await loadData(complete(), { files: { ...files, 'lathe.config.json': '{ "schema": 3, "packages": ["app/nested"] }\n' } });
+    const listed = await loadData(complete(), { files: { ...files, 'lathe.config.json': '{ "schema": 4, "packages": ["app/nested"] }\n' } });
     expect(packageGaps(listed).map((g) => g.message)).toEqual(['Product EX depends on a package no record uses: c (app/nested/package.json).']);
     // A listed folder with no package.json stops the load, as any config mistake does.
-    await expect(loadData(complete(), { files: { ...files, 'lathe.config.json': '{ "schema": 3, "packages": ["server"] }\n' } })).rejects.toThrow('lathe.config.json: packages names server, which holds no package.json.');
-    await expect(loadData(complete(), { files: { 'lathe.config.json': '{ "schema": 3, "packages": ["../elsewhere"] }\n' } })).rejects.toThrow(/packages must list folders inside the product root.*\.\.\/elsewhere is outside it/);
+    await expect(loadData(complete(), { files: { ...files, 'lathe.config.json': '{ "schema": 4, "packages": ["server"] }\n' } })).rejects.toThrow('lathe.config.json: packages names server, which holds no package.json.');
+    await expect(loadData(complete(), { files: { 'lathe.config.json': '{ "schema": 4, "packages": ["../elsewhere"] }\n' } })).rejects.toThrow(/packages must list folders inside the product root.*\.\.\/elsewhere is outside it/);
   });
 });

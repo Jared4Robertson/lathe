@@ -6,6 +6,9 @@ import { CHANGE_PATTERN } from '../../../src/authoring/pattern/commands/change-p
 import { CHANGE_PATTERN_RULE } from '../../../src/authoring/pattern/commands/change-pattern-rule.ts';
 import { REMOVE_PATTERN } from '../../../src/authoring/pattern/commands/remove-pattern.ts';
 import { REMOVE_PATTERN_RULE } from '../../../src/authoring/pattern/commands/remove-pattern-rule.ts';
+import { ADD_SLOT } from '../../../src/authoring/pattern/commands/add-slot.ts';
+import { CHANGE_SLOT } from '../../../src/authoring/pattern/commands/change-slot.ts';
+import { REMOVE_SLOT } from '../../../src/authoring/pattern/commands/remove-slot.ts';
 import { GET_PATTERN, LIST_PATTERNS, NEXT_PATTERN_ID } from '../../../src/authoring/pattern/queries.ts';
 import { runAggregateCommand } from '../../../src/cli/aggregates.ts';
 import { callTool, tools } from '../../../src/cli/mcp.ts';
@@ -41,6 +44,22 @@ describe('LA-AUT-UC05-R05-T02 each Pattern command (LA-AUT-A2) changes one patte
     await expect(runCommand(store, CHANGE_PATTERN_RULE, { id: 'TL-PAT-ACT-R01', setting: 'record' })).rejects.toThrow(InputError);
     const removed = await runCommand(store, REMOVE_PATTERN_RULE, { id: 'TL-PAT-ACT-R01' });
     expect(removed.changes.map((c) => c.table).sort()).toEqual(['pattern_rule', 'pattern_rule_test']);
+  });
+
+  it('adds a slot to its pattern with the next free ID, reads it with the pattern, changes its contract and removes it, writing only the slot table', async () => {
+    const store = await librarianAction();
+    open.push(store);
+    expect(runQuery(store, NEXT_PATTERN_ID, { kind: 'slot', parent: 'TL-PAT-ACT' })).toBe('TL-PAT-ACT-SL01');
+    const added = await runCommand(store, ADD_SLOT, { id: 'TL-PAT-ACT-SL01', title: 'Refusal message', pattern_id: 'TL-PAT-ACT', statement: 'A fill MUST word the refusal for the librarian.' });
+    expect(added.tables).toEqual(['slot']);
+    const whole = runQuery(store, GET_PATTERN, { id: 'TL-PAT-ACT-SL01' }) as ReturnType<typeof GET_PATTERN.run>;
+    expect(whole.record).toEqual({ id: 'TL-PAT-ACT-SL01', kind: 'slot' });
+    expect(whole.slots).toEqual([{ id: 'TL-PAT-ACT-SL01', title: 'Refusal message', pattern_id: 'TL-PAT-ACT', statement: 'A fill MUST word the refusal for the librarian.' }]);
+    expect(GET_PATTERN.text(whole)).toContain('Slot TL-PAT-ACT-SL01: Refusal message');
+    await runCommand(store, CHANGE_SLOT, { id: 'TL-PAT-ACT-SL01', statement: 'A fill MUST name what was refused.' });
+    expect(store.record('TL-PAT-ACT-SL01')?.row).toMatchObject({ statement: 'A fill MUST name what was refused.' });
+    expect((await refused(runCommand(store, CHANGE_SLOT, { id: 'TL-PAT-ACT-SL09', title: 'x' }))).problems[0]).toMatchObject({ rule: 'missing', message: 'there is no slot TL-PAT-ACT-SL09' });
+    expect((await runCommand(store, REMOVE_SLOT, { id: 'TL-PAT-ACT-SL01' })).tables).toEqual(['slot']);
   });
 
   it('refuses dropping a setting a follower gives a value, a pattern a follower follows, and a setting of another shape', async () => {

@@ -4,7 +4,7 @@ export const GET_INTEGRATION_IDENTITY = {
   id: 'LA-AUT-QRY199',
   slice: { aggregate: 'LA-AUT-A14', name: 'integration' },
   name: 'get-integration',
-  description: 'Reads an integration whole as its page shows it, by its ID or the ID of any record in it: the record asked for and its kind, the integration\'s row, its adapter (with the standard rules it meets and the packages it uses), and its integration tests by ID (with the test data sets they start from).',
+  description: 'Reads an integration whole as its readers read it, by its ID or the ID of any record in it: the record asked for and its kind, the integration\'s own details, its adapter (with the standard rules it meets and the packages it uses), and its integration tests by ID (with the test data sets they start from).',
   method: 'GET',
   route: '/api/integration/get-integration',
 } as const;

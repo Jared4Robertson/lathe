@@ -7,7 +7,7 @@ import { holdToRules } from '../rules.ts';
 import { DECLARE_PRODUCT_KIND_IDENTITY } from './identities.generated.ts';
 
 /** A new product kind: its declaration, and its fields in order. */
-export type DeclareProductKind = Pick<ProductKindRow, 'name' | 'product_id' | 'label' | 'description' | 'parent_kind' | 'stage' | 'obligation' | 'id_pattern' | 'id_example' | 'title_form'> & { fields?: FieldInput[] };
+export type DeclareProductKind = Pick<ProductKindRow, 'name' | 'product_id' | 'label' | 'description' | 'parent_kind' | 'stage' | 'obligation' | 'complexity' | 'id_pattern' | 'id_example' | 'title_form'> & { fields?: FieldInput[] };
 
 export const DECLARE_PRODUCT_KIND = {
   ...DECLARE_PRODUCT_KIND_IDENTITY,
@@ -19,6 +19,7 @@ export const DECLARE_PRODUCT_KIND = {
     parent_kind: column('product_kind', 'parent_kind', 'required'),
     stage: column('product_kind', 'stage', 'optional'),
     obligation: column('product_kind', 'obligation', 'required'),
+    complexity: column('product_kind', 'complexity', 'required'),
     id_pattern: column('product_kind', 'id_pattern', 'optional'),
     id_example: column('product_kind', 'id_example', 'optional'),
     title_form: column('product_kind', 'title_form', 'optional'),

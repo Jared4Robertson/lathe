@@ -17,7 +17,11 @@ import { InputError, type AnyCommand } from '../../../src/platform/commands/defi
 import { runCommand, runQuery } from '../../../src/platform/commands/run.ts';
 import { StoreError } from '../../../src/platform/data/problems.ts';
 import type { Store } from '../../../src/platform/data/store.ts';
-import { closeCheckingStores } from '../data-set.ts';
+import { SET_LIMITS } from '../../../src/checking/product-setting/commands/set-limits.ts';
+import { SET_TECHNOLOGY_WORDS } from '../../../src/checking/product-setting/commands/set-technology-words.ts';
+import { GET_LIMITS } from '../../../src/checking/product-setting/queries.ts';
+import { closeCheckingStores, productBesideLathesChecks } from '../data-set.ts';
+import { productSettingDataSet } from '../product-setting/data-set.ts';
 import { checkDataSet } from './data-set.ts';
 
 afterEach(closeCheckingStores);
@@ -36,7 +40,7 @@ async function refusal(store: Store, definition: AnyCommand, input: unknown): Pr
 const checkFile = (store: Store) => readFileSync(path.join(store.dataDir, 'check.jsonl'), 'utf8');
 type Summaries = ReturnType<typeof LIST_CHECKS.run>;
 
-describe("LA-CHK-UC02-R50-T01 each Check command (LA-CHK-A1) changes one check row through CheckRepository, keeps Lathe's own read-only, and is reached by name from the CLI, the MCP tools and HTTP", () => {
+describe("LA-PAT-AGGREGATE-COMMANDS-R10-T02 each Check command (LA-CHK-A1) changes one check through its repository, keeps Lathe's own read-only, and is reached by name from every interface", () => {
   it("LA-PAT-AGGREGATE-TESTS-R03-T02 builds the data set with its own Add command, reads a check whole, and lists Lathe's checks before the product's", async () => {
     const store = await checkDataSet();
     expect(runQuery(store, GET_CHECK, { name: 'loan-without-due-date' })).toMatchObject({ name: 'loan-without-due-date', product: 'TL', domain: 'LA-CHK', position: 2, severity: 'error', kinds: [] });
@@ -55,7 +59,7 @@ describe("LA-CHK-UC02-R50-T01 each Check command (LA-CHK-A1) changes one check r
     expect(checkFile(store)).not.toContain('tool-without-photo');
   });
 
-  it("LA-PAT-AGGREGATE-COMMANDS-R02-T02 refuses a check named like one of Lathe's (LA-CHK-INV01) and any change or removal of Lathe's own (LA-CHK-INV02), naming lathe/data/check.jsonl and changing nothing", async () => {
+  it("LA-PAT-AGGREGATE-COMMANDS-R02-T02 LA-PAT-CLI-STEPS-R02-T02 LA-PAT-MCP-STEPS-R02-T02 refuses a check named like one of Lathe's (LA-CHK-INV01) and any change or removal of Lathe's own (LA-CHK-INV02), naming lathe/data/check.jsonl and changing nothing", async () => {
     const store = await checkDataSet();
     const before = checkFile(store);
     const query = 'SELECT NULL AS record, NULL AS message WHERE false';
@@ -68,7 +72,7 @@ describe("LA-CHK-UC02-R50-T01 each Check command (LA-CHK-A1) changes one check r
     expect(checkFile(store)).toBe(before);
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R01-T02 runs `lathe check <command>`, the check_ tools and POST /api/check/<command>', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R01-T02 LA-PAT-CLI-STEPS-R01-T02 runs `lathe check <command>`, the check_ tools and POST /api/check/<command>', async () => {
     const store = await checkDataSet();
     const root = path.dirname(store.dataDir);
     await closeCheckingStores();
@@ -98,5 +102,53 @@ describe("LA-STD-CODE-R07-T55 a product's check is removed whole, and Lathe's ow
     const removed = await runCommand(store, REMOVE_CHECK, { name: 'loan-without-due-date' });
     expect(removed.changes.map((c) => [c.table, c.key, c.after])).toEqual([['check', 'loan-without-due-date', null]]);
     expect((await refusal(store, REMOVE_CHECK, { name: 'loan-without-due-date' })).problems[0]).toMatchObject({ rule: 'missing', message: 'there is no check loan-without-due-date' });
+  });
+});
+
+describe("LA-PAT-AGGREGATE-COMMANDS-R10-T02 Set the product's limits (LA-CHK-A2) writes the product's one settings through its repository, and is reached by name from every interface", () => {
+  it('reads the defaults until the limits are set, then the product\'s own, kept in one row', async () => {
+    const fresh = await productBesideLathesChecks();
+    expect(runQuery(fresh, GET_LIMITS, { product_id: 'TL' })).toEqual({ product: 'TL', maxChildren: 15, maxEntitiesPerAggregate: 7, technologyWords: [], own: false });
+    const store = await productSettingDataSet();
+    expect(runQuery(store, GET_LIMITS, { product_id: 'TL' })).toEqual({ product: 'TL', maxChildren: 20, maxEntitiesPerAggregate: 9, technologyWords: [], own: true });
+    const again = await runCommand(store, SET_LIMITS, { product_id: 'TL', max_children: 12, max_entities_per_aggregate: 9 });
+    expect(again.changes.map((c) => c.table)).toEqual(['product_setting']);
+    expect(store.rows('product_setting')).toEqual([{ product_id: 'TL', max_children: 12, max_entities_per_aggregate: 9, technology_words: [] }]);
+    expect(() => runQuery(store, GET_LIMITS, { product_id: 'XX' })).toThrow(/there is no product XX/);
+  });
+
+  it('sets the technology words, keeping the limits, and keeps the words when the limits are set', async () => {
+    const fresh = await productBesideLathesChecks();
+    expect((await runCommand(fresh, SET_TECHNOLOGY_WORDS, { product_id: 'TL', technology_words: ['React', ' Postgres ', 'React'] })).tables).toEqual(['product_setting']);
+    expect(fresh.rows('product_setting')).toEqual([{ product_id: 'TL', max_children: 15, max_entities_per_aggregate: 7, technology_words: ['Postgres', 'React'] }]);
+    await runCommand(fresh, SET_LIMITS, { product_id: 'TL', max_children: 12, max_entities_per_aggregate: 9 });
+    expect(runQuery(fresh, GET_LIMITS, { product_id: 'TL' })).toEqual({ product: 'TL', maxChildren: 12, maxEntitiesPerAggregate: 9, technologyWords: ['Postgres', 'React'], own: true });
+    await expect(runCommand(fresh, SET_TECHNOLOGY_WORDS, { product_id: 'TL' })).rejects.toThrow(new InputError('set-technology-words needs technology_words'));
+  });
+
+  it('refuses a limit below 1 and a limit left out, changing nothing', async () => {
+    const store = await productSettingDataSet();
+    await expect(runCommand(store, SET_LIMITS, { product_id: 'TL', max_children: 0, max_entities_per_aggregate: 9 })).rejects.toThrow();
+    await expect(runCommand(store, SET_LIMITS, { product_id: 'TL', max_children: 10 })).rejects.toThrow(new InputError('set-limits needs max_entities_per_aggregate'));
+    expect(store.rows('product_setting')).toEqual([{ product_id: 'TL', max_children: 20, max_entities_per_aggregate: 9, technology_words: [] }]);
+  });
+
+  it('runs `lathe product-setting set-limits`, the product_setting_ tools and POST /api/product-setting/set-limits', async () => {
+    const store = await productSettingDataSet();
+    const root = path.dirname(store.dataDir);
+    await closeCheckingStores();
+    const out: string[] = [];
+    expect(await runAggregateCommand(['product-setting', 'set-limits', '--product_id', 'TL', '--max_children', '30', '--max_entities_per_aggregate', '8', '--root', root], { out: (t) => out.push(t), err: (t) => out.push(t) })).toBe(0);
+    expect((await callTool(root, 'product_setting_get_limits', { product_id: 'TL' })).content[0].text).toBe('Limits of TL\n  max_children: 30\n  max_entities_per_aggregate: 8\n  technology_words: none');
+    const server = createServer((req, res) => void handleApi(root, req, res, new URL(req.url ?? '/', 'http://localhost').pathname));
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+    try {
+      const posted = await fetch(`${base}/api/product-setting/set-limits`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ product_id: 'TL', max_children: 15, max_entities_per_aggregate: 7 }) });
+      expect(posted.status).toBe(200);
+    } finally {
+      await closeStores(root);
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
   });
 });

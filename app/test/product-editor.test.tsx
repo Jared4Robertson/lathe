@@ -94,6 +94,7 @@ describe('LA-V51-R07-T01 the Product editor writes only through the aggregate\'s
     await user.type(within(form).getByRole('textbox', { name: /^label/ }), 'Report');
     await user.type(within(form).getByRole('textbox', { name: /^description/ }), 'A script that counts.');
     await user.type(within(form).getByRole('textbox', { name: /^parent kind/ }), 'domain');
+    await user.selectOptions(within(form).getByRole('combobox', { name: /^complexity/ }), 'essential');
     await user.click(within(form).getByRole('button', { name: 'Add to Fields' }));
     const field = within(form).getByRole('group', { name: 'Fields: row 1' });
     await user.type(within(field).getByRole('textbox', { name: /^name 1/ }), 'file');
@@ -104,7 +105,7 @@ describe('LA-V51-R07-T01 the Product editor writes only through the aggregate\'s
     await waitFor(() => expect(commands).toHaveLength(1));
     expect(commands[0]).toEqual({
       route: '/api/product/declare-product-kind',
-      input: { product_id: 'DM', name: 'report', label: 'Report', description: 'A script that counts.', parent_kind: 'domain', obligation: false, fields: [{ name: 'file', type: 'text', required: true, description: 'The script.' }] } });
+      input: { product_id: 'DM', name: 'report', label: 'Report', description: 'A script that counts.', parent_kind: 'domain', obligation: false, complexity: 'essential', fields: [{ name: 'file', type: 'text', required: true, description: 'The script.' }] } });
   });
 });
 
@@ -130,15 +131,15 @@ describe('LA-V51-R08-T01 a refused Product command shows every reason, keeps wha
 
   it('Remove sends Remove an interface and shows the refusal naming what still references it', async () => {
     const user = userEvent.setup();
-    const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'referenced', table: 'interface', key: 'DM-IF01', message: 'Interface DM-IF01 is referenced, so it stays: flow DM-SHOP-UC01-FL01 goes through it' }] };
+    const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'referenced', table: 'interface', key: 'DM-IF01', message: 'Interface DM-IF01 is referenced, so it stays: flow DM-SHOP-UC01-FL goes through it' }] };
     const { commands } = await openApp('/DM-IF01', { command: () => ({ answer: refusal }) });
     await screen.findByRole('toolbar', { name: 'Change DM-IF01' });
     expect(within(toolbar('DM-IF01')).queryByRole('button', { name: 'Move' })).toBeNull();
     await user.click(within(toolbar('DM-IF01')).getByRole('button', { name: 'Remove' }));
     const panel = screen.getByRole('region', { name: 'Remove DM-IF01?' });
     await user.click(within(panel).getByRole('button', { name: 'Remove DM-IF01' }));
-    expect(await within(panel).findByRole('alert')).toHaveTextContent('flow DM-SHOP-UC01-FL01 goes through it');
-    expect(commands).toEqual([{ route: '/api/product/remove-interface', input: { id: 'DM-IF01' } }]);
+    expect(await within(panel).findByRole('alert')).toHaveTextContent('flow DM-SHOP-UC01-FL goes through it');
+    expect(commands).toEqual([{ route: '/api/interface/remove-interface', input: { id: 'DM-IF01' } }]);
     expect(window.location.pathname).toBe('/DM-IF01');
   });
 });

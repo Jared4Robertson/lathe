@@ -1,10 +1,7 @@
 import { column, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { UseCaseRow } from '../../../platform/data/tables.ts';
-import { newUseCase } from '../model.ts';
-import { UseCaseRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
 import { ADD_USE_CASE_IDENTITY } from './identities.generated.ts';
+import { addUseCase } from './handlers.generated.ts';
 
 /** A new use case: its row, and its actors' role names in order. */
 export type AddUseCase = Pick<UseCaseRow, 'id' | 'title' | 'capability_id' | 'goal' | 'notes'> & { actors?: string[] };
@@ -21,11 +18,3 @@ export const ADD_USE_CASE = {
   },
   handler: addUseCase,
 } satisfies CommandDefinition<AddUseCase>;
-
-export function addUseCase(tx: Transaction, input: AddUseCase): void {
-  const useCases = new UseCaseRepository(tx);
-  const { actors = [], ...row } = input;
-  const useCase = useCases.create(newUseCase(row, actors));
-  holdToRules(tx, useCase);
-  useCases.save(useCase);
-}

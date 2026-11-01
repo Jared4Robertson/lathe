@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RuleBroken } from '../../src/shell/prefs';
-import { foldOrUnfoldNavRow } from '../../src/exploring/nav-row/commands/fold-or-unfold-nav-row';
+import { foldOrUnfoldNavEntry } from '../../src/exploring/nav-row/commands/fold-or-unfold-nav-entry';
 import { foldOrUnfoldNavSection } from '../../src/exploring/nav-row/commands/fold-or-unfold-nav-section';
 import { openNavBranch } from '../../src/exploring/nav-row/commands/open-nav-branch';
 import { navRowRepository } from '../../src/exploring/nav-row/repository';
@@ -12,11 +12,11 @@ const folders = () => JSON.parse(window.sessionStorage.getItem('lathe:nav-folder
 
 describe('LA-EXP-INV21-T the Nav row commands keep the rows through NavRowRepository', () => {
   it('opens a folded row with the branch below it that holds the page, and folds an open one', () => {
-    foldOrUnfoldNavRow({ key: 'b', branch: ['a', 'b', 'c'] });
+    foldOrUnfoldNavEntry({ key: 'b', branch: ['a', 'b', 'c'] });
     expect(folders()).toEqual({ b: true, c: true });
-    foldOrUnfoldNavRow({ key: 'b', branch: ['a', 'b', 'c'] });
+    foldOrUnfoldNavEntry({ key: 'b', branch: ['a', 'b', 'c'] });
     expect(folders()).toEqual({ b: false, c: true });
-    foldOrUnfoldNavRow({ key: 'x', branch: ['a'] });
+    foldOrUnfoldNavEntry({ key: 'x', branch: ['a'] });
     expect(folders()).toEqual({ b: false, c: true, x: true });
   });
 

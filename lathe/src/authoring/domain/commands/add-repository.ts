@@ -1,9 +1,7 @@
 import { column, id, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { RepositoryRow } from '../../../platform/data/tables.ts';
-import { DomainRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
 import { ADD_REPOSITORY_IDENTITY } from './identities.generated.ts';
+import { addRepository } from './handlers.generated.ts';
 
 export type AddRepository = Pick<RepositoryRow, 'id' | 'title' | 'domain_id' | 'file' | 'description'> & { persists?: string; stored_in?: string; meets?: string[]; packages?: string[] };
 
@@ -22,12 +20,3 @@ export const ADD_REPOSITORY = {
   },
   handler: addRepository,
 } satisfies CommandDefinition<AddRepository>;
-
-export function addRepository(tx: Transaction, input: AddRepository): void {
-  const domains = new DomainRepository(tx);
-  const domain = domains.load(input.domain_id) ?? tx.refuse('missing', `there is no domain ${input.domain_id}`);
-  const { persists, stored_in, meets = [], packages = [], ...row } = input;
-  domain.repositories.push({ row, persists: persists ?? null, storedIn: stored_in ?? null, meets, packages });
-  holdToRules(tx, domain);
-  domains.save(domain);
-}

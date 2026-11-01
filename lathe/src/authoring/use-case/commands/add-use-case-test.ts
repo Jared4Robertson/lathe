@@ -1,9 +1,7 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { UseCaseTestRow } from '../../../platform/data/tables.ts';
-import { UseCaseRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
 import { ADD_USE_CASE_TEST_IDENTITY } from './identities.generated.ts';
+import { addUseCaseTest } from './handlers.generated.ts';
 
 export type AddUseCaseTest = Pick<UseCaseTestRow, 'id' | 'title' | 'uc_requirement_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'when' | 'then' | 'notes'> & { starts_from?: string[] };
 
@@ -27,12 +25,3 @@ export const ADD_USE_CASE_TEST = {
   },
   handler: addUseCaseTest,
 } satisfies CommandDefinition<AddUseCaseTest>;
-
-export function addUseCaseTest(tx: Transaction, input: AddUseCaseTest): void {
-  const useCases = new UseCaseRepository(tx);
-  const useCase = useCases.loadHolding('uc_requirement', input.uc_requirement_id) ?? tx.refuse('missing', `there is no UC requirement ${input.uc_requirement_id}`);
-  const { starts_from = [], ...row } = input;
-  useCase.useCaseTests.push({ row, startsFrom: starts_from });
-  holdToRules(tx, useCase);
-  useCases.save(useCase);
-}

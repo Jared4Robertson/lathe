@@ -92,6 +92,13 @@ export interface TableDescription {
 /** A stage, in the order a product is modeled; links run from what is defined first to what is defined later. */
 export type Stage = 'discovery' | 'domain-model' | 'use-cases' | 'interaction-design' | 'technical-specification' | 'test-plan';
 
+/**
+ * Whether a kind's records are essential complexity (decided once per product), accidental (from the means used to
+ * build it), as the record they sit under (as-parent), as their own type says (by-type: a standard), or as their
+ * product's interfaces say (by-interface: an API requirement, essential only on a public API).
+ */
+export type Complexity = 'essential' | 'accidental' | 'as-parent' | 'by-type' | 'by-interface';
+
 /** What a kind's IDs start with, followed by a hyphen: its product's ID, its domain's ID or its parent's ID. */
 export type IdScope = 'product' | 'domain' | 'parent';
 
@@ -110,6 +117,8 @@ export interface KindDescription {
   stage: Stage | null;
   /** Whether its records are obligations: designed, built and proved. */
   obligation: boolean;
+  /** Whether its records are essential or accidental complexity, or follow their parent or type; null for an open question. */
+  complexity: Complexity | null;
   idPattern: string | null;
   idExample: string | null;
   /** What its IDs start with; null when its IDs are free (a product's own kind). */
@@ -316,6 +325,7 @@ export async function describeSchema(connection: DuckDBConnection): Promise<Sche
     id_example: string | null;
     id_scope: IdScope | null;
     product_id: string | null;
+    complexity: Complexity | null;
   }>(connection, 'SELECT * FROM meta_kind ORDER BY name')) {
     if (tables[k.name]?.role !== 'kind') throw new Error(`The kind ${k.name} has no kind table of the same name.`);
     kinds[k.name] = {
@@ -323,6 +333,7 @@ export async function describeSchema(connection: DuckDBConnection): Promise<Sche
       label: k.label,
       stage: k.stage,
       obligation: k.obligation,
+      complexity: k.complexity,
       idPattern: k.id_pattern,
       idExample: k.id_example,
       idScope: k.id_scope,

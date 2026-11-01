@@ -1,9 +1,7 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { InvariantTestRow } from '../../../platform/data/tables.ts';
-import { AggregateRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
 import { ADD_INVARIANT_TEST_IDENTITY } from './identities.generated.ts';
+import { addInvariantTest } from './handlers.generated.ts';
 
 export type AddInvariantTest = Pick<InvariantTestRow, 'id' | 'title' | 'invariant_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'when' | 'then' | 'notes'> & { starts_from?: string[] };
 
@@ -27,12 +25,3 @@ export const ADD_INVARIANT_TEST = {
   },
   handler: addInvariantTest,
 } satisfies CommandDefinition<AddInvariantTest>;
-
-export function addInvariantTest(tx: Transaction, input: AddInvariantTest): void {
-  const aggregates = new AggregateRepository(tx);
-  const aggregate = aggregates.loadHolding('invariant', input.invariant_id) ?? tx.refuse('missing', `there is no invariant ${input.invariant_id}`);
-  const { starts_from = [], ...row } = input;
-  aggregate.invariantTests.push({ row, startsFrom: starts_from });
-  holdToRules(tx, aggregate);
-  aggregates.save(aggregate);
-}

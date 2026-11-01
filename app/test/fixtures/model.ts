@@ -36,6 +36,7 @@ const coverage = (): Coverage[] => [{
   tests: { automated: 3, manual: 1, not_automated: 1 },
   proved_by: { 'P-D-INV01': ['P-D-INV01-T'], 'P-D-PO02': ['P-D-PO02-T'], 'P-D-UC01-R01': ['P-D-UC01-R01-T01'] },
   pattern_rules: [],
+  debt: [],
   gaps: [
     gap('P-D-INV02', 'invariant', 'proved'),
     gap('P-D-UC01-R02', 'uc_requirement', 'proved'),
@@ -43,7 +44,7 @@ const coverage = (): Coverage[] => [{
     gap('P-D-CMD02', 'command', 'record-untraced'),
     gap('P-D-CMD03', 'command', 'record-untraced'),
     gap('P-D-QRY01', 'query', 'record-untraced'),
-    gap('P-D-UC01-FL01-S02', 'flow_step', 'record-untraced'),
+    gap('P-D-UC01-FL-S02', 'flow_step', 'record-untraced'),
   ] }, {
   product: 'P',
   domain: 'P-E',
@@ -51,6 +52,7 @@ const coverage = (): Coverage[] => [{
   tests: { automated: 0, manual: 0, not_automated: 0 },
   proved_by: {},
   pattern_rules: [],
+  debt: [],
   gaps: [gap('P-E-CMD01', 'command', 'record-untraced')] }];
 
 export const modelWorkspace = (): ServedData => fixture('model', { problems: structuredClone(PROBLEMS), coverage: coverage() });

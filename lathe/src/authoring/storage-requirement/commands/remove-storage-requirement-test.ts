@@ -1,7 +1,6 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
-import { StorageRequirementRepository } from '../repository.ts';
 import { REMOVE_STORAGE_REQUIREMENT_TEST_IDENTITY } from './identities.generated.ts';
+import { removeStorageRequirementTest } from './handlers.generated.ts';
 
 /** The storage requirement test to remove. */
 export type RemoveStorageRequirementTest = { id: string };
@@ -13,11 +12,3 @@ export const REMOVE_STORAGE_REQUIREMENT_TEST = {
   },
   handler: removeStorageRequirementTest,
 } satisfies CommandDefinition<RemoveStorageRequirementTest>;
-
-/** Removes the test from its storage requirement. */
-export function removeStorageRequirementTest(tx: Transaction, input: RemoveStorageRequirementTest): void {
-  const requirements = new StorageRequirementRepository(tx);
-  const requirement = requirements.loadHolding('storage_requirement_test', input.id) ?? tx.refuse('missing', `there is no storage requirement test ${input.id}`);
-  requirement.tests = requirement.tests.filter((t) => t.row.id !== input.id);
-  requirements.save(requirement);
-}

@@ -1,10 +1,8 @@
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { DomainEventRow } from '../../../platform/data/tables.ts';
-import { changed, fieldRows, type EventFieldInput } from '../model.ts';
-import { DomainEventRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
+import type { EventFieldInput } from '../model.ts';
 import { CHANGE_DOMAIN_EVENT_IDENTITY } from './identities.generated.ts';
+import { changeDomainEvent } from './handlers.generated.ts';
 
 /** The event's changes: a column given is set; fields, when given, replace the list. */
 export type ChangeDomainEvent = Pick<DomainEventRow, 'id'> & { title?: string; published?: boolean; description?: string; fields?: EventFieldInput[] };
@@ -20,13 +18,3 @@ export const CHANGE_DOMAIN_EVENT = {
   },
   handler: changeDomainEvent,
 } satisfies CommandDefinition<ChangeDomainEvent>;
-
-/** Changes the event's columns and fields. */
-export function changeDomainEvent(tx: Transaction, input: ChangeDomainEvent): void {
-  const events = new DomainEventRepository(tx);
-  const event = events.load(input.id) ?? tx.refuse('missing', `there is no domain event ${input.id}`);
-  event.event = changed(event.event, input, ['title', 'published', 'description']);
-  if (input.fields) event.fields = fieldRows(input.id, input.fields);
-  holdToRules(tx, event);
-  events.save(event);
-}

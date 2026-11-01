@@ -10,7 +10,7 @@ afterAll(removeData);
 /** The complete product with an obligation kind of its own, designed and proved only through relations with a role. */
 const withAuditRules = (): Data =>
   adding(complete(), {
-    product_kind: [{ name: 'audit_rule', product_id: 'EX', label: 'Audit rule', description: 'A rule an auditor checks.', parent_kind: 'domain', stage: 'use-cases', obligation: true, id_pattern: '<domain>-AR<nn>' }],
+    product_kind: [{ name: 'audit_rule', product_id: 'EX', label: 'Audit rule', description: 'A rule an auditor checks.', parent_kind: 'domain', stage: 'use-cases', obligation: true, complexity: 'essential', id_pattern: '<domain>-AR<nn>' }],
     product_relation: [
       { name: 'shapes', source_kind: 'command_handler', target_kind: 'audit_rule', product_id: 'EX', role: 'design', forward_label: 'Shapes', reverse_label: 'Shaped by', description: 'The handler carries out the audit rule.' },
       { name: 'audits', source_kind: 'use_case_test', target_kind: 'audit_rule', product_id: 'EX', role: 'proof', forward_label: 'Audits', reverse_label: 'Audited by', description: 'The test proves the audit rule.' },
@@ -28,7 +28,7 @@ const withAuditRules = (): Data =>
 /** The complete product with a kind of its own in the domain model, and a pair added to Lathe's `about`. */
 const withReport = (): Data =>
   adding(complete(), {
-    product_kind: [{ name: 'report', product_id: 'EX', label: 'Report', description: 'A printed report of a domain.', parent_kind: 'domain', stage: 'domain-model', obligation: false, id_pattern: '<domain>-REP<nn>' }],
+    product_kind: [{ name: 'report', product_id: 'EX', label: 'Report', description: 'A printed report of a domain.', parent_kind: 'domain', stage: 'domain-model', obligation: false, complexity: 'essential', id_pattern: '<domain>-REP<nn>' }],
     product_kind_field: [{ kind: 'report', position: 1, name: 'paper', type: 'text', required: true, description: 'The paper size it prints on.' }],
     product_relation: [
       { name: 'about', source_kind: 'question', target_kind: 'report', product_id: 'EX', forward_label: 'About', reverse_label: 'Questions about this', description: 'The open question concerns the report.' },
@@ -152,7 +152,7 @@ describe('stages', () => {
     const stages = new Set(plain.stages.map((s) => s.stage));
     for (const k of plain.kinds) if (k.stage !== null) expect(stages.has(k.stage), k.kind).toBe(true);
     const ws = await loadData(adding(complete(), {
-      product_kind: [{ name: 'memo', product_id: 'EX', label: 'Memo', description: 'A note about a domain.', parent_kind: 'domain', obligation: false }],
+      product_kind: [{ name: 'memo', product_id: 'EX', label: 'Memo', description: 'A note about a domain.', parent_kind: 'domain', obligation: false, complexity: 'essential' }],
     }));
     expect(ws.kinds.find((k) => k.kind === 'memo')).toMatchObject({ stage: null, position: null });
     expect(ws.stages).toEqual(plain.stages);

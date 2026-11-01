@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addRows } from '../fixtures/load';
+import { addRows, removeRows } from '../fixtures/load';
 import { modelWorkspace } from '../fixtures/model';
 import { cellKey, everyStepKey, innerKey, rowPath, statusOf, visible, type Openness } from '../../src/trace/trace';
 import { orderGraph } from '../../src/trace/order';
@@ -8,12 +8,14 @@ import { litBy } from '../../src/trace/path';
 import { traceTarget } from '../../src/trace/walk';
 import { traced } from './rows';
 
-// The Trace stage (LA-V98), pure: its rows from the Trace read (list-trace-rows, LA-TRC-RM13), its
+// The Trace stage (LA-V98), pure: its rows from the Trace read (list-traced-use-cases, LA-TRC-RM13), its
 // stage statuses, what each open box shows, a selection's path across its row, the walk, and the layout's stability.
 
-/** The model product with a second use case, two outcomes its capability serves, and a use case of a capability serving none. */
+/** The model product with an HTTP API that also offers its use case, a second use case, two outcomes its capability serves, and a use case of a capability serving none. */
 function product() {
   const data = modelWorkspace();
+  addRows(data, 'interface', { id: 'P-IF02', title: 'HTTP API', product_id: 'P', kind: 'API', description: 'The fixture\'s API.', public: true });
+  addRows(data, 'offers', { source_id: 'P-IF02', target_id: 'P-D-UC01' });
   addRows(data, 'use_case',
     { id: 'P-D-UC02', title: 'Return a thing', capability_id: 'P-D-CAP01', goal: 'A member brings a thing back.' });
   addRows(data, 'uc_requirement', { id: 'P-D-UC02-R01', title: 'The return is recorded', use_case_id: 'P-D-UC02', statement: 'The return MUST be recorded.' });
@@ -48,15 +50,15 @@ describe('LA-V98-R15-T02 The Trace stage has one row per use case, each once, wi
 });
 
 describe('LA-V98-R16-T01 A closed row says each stage\'s status, a stage with a gap a dashed gap', () => {
-  it('counts flows and requirements not designed, handlers and what is not built, and tests and what is not proved', () => {
+  it('counts the interfaces a flow goes through and requirements not designed, handlers and what is not built, and tests and what is not proved', () => {
     const { graph } = traced(product());
     const uc1 = graph.rowOf.get('P-D-UC01')!.data;
-    expect(statusOf(uc1, 'design')).toEqual({ title: '1 flow · all designed', gap: false });
+    expect(statusOf(uc1, 'design')).toEqual({ title: '2 interfaces · all designed', gap: false });
     expect(statusOf(uc1, 'technical')).toEqual({ title: '1 handler · all built', gap: false });
     expect(statusOf(uc1, 'suite')).toEqual({ title: '3 tests · 1 not proved', gap: true });
-    // A use case with no flow: no flows, no handlers and no tests, each a gap.
+    // A use case with no flow: no flow, no handlers and no tests, each a gap.
     const uc2 = graph.rowOf.get('P-D-UC02')!.data;
-    expect([statusOf(uc2, 'design'), statusOf(uc2, 'technical'), statusOf(uc2, 'suite')]).toEqual([{ title: 'No flows', gap: true }, { title: 'No handlers', gap: true }, { title: 'No tests', gap: true }]);
+    expect([statusOf(uc2, 'design'), statusOf(uc2, 'technical'), statusOf(uc2, 'suite')]).toEqual([{ title: 'No flow', gap: true }, { title: 'No handlers', gap: true }, { title: 'No tests', gap: true }]);
     expect(graph.items.get('P-D-UC01|suite')!.role).toBe('gap');
     expect(graph.items.get('P-D-UC01|design')!.role).toBe('status');
   });
@@ -67,26 +69,61 @@ describe('LA-V98-R17-T01 Each box opens down to its children, many at once', () 
   const row = graph.rowOf.get('P-D-UC01')!;
   const keys = (cell: number, o: Openness) => visible(graph, row.cells[cell], o).map((k) => graph.items.get(k)!.id ?? k.split('/').at(-1));
 
-  it('opens a use case to its requirements and the aggregates its steps change, and a flow to its steps, each step to its view, endpoints and integrations', () => {
+  it('opens a use case to its requirements and the aggregates its steps change, and the design to its flow, then a box per interface', () => {
     expect(keys(1, NOTHING)).toEqual(['P-D-UC01']);
     expect(keys(1, opened([cellKey('P-D-UC01', 'use-case')]))).toEqual(['P-D-UC01', 'P-D-UC01-R01', 'P-D-UC01-R02', 'P-D-A1', 'P-D-A2', 'P-D-A3']);
-    expect(keys(2, opened([cellKey('P-D-UC01', 'design')]))).toEqual(['P-D-UC01|design', 'P-D-UC01-FL01']);
-    expect(keys(2, opened([cellKey('P-D-UC01', 'design'), innerKey('P-D-UC01', 'design', 'P-D-UC01-FL01'), innerKey('P-D-UC01', 'design', 'P-D-UC01-FL01-S01')])))
-      .toEqual(['P-D-UC01|design', 'P-D-UC01-FL01', 'P-D-UC01-FL01-S01', 'P-V01', 'P-V01-R01', 'P-D-EP01', 'P-D-EP01-R01', 'P-D-UC01-FL01-S02', 'P-D-UC01-FL01-S03']);
+    expect(keys(2, opened([cellKey('P-D-UC01', 'design')]))).toEqual(['P-D-UC01|design', 'P-D-UC01-FL']);
+    expect(keys(2, opened([cellKey('P-D-UC01', 'design'), innerKey('P-D-UC01', 'design', 'P-D-UC01-FL')]))).toEqual(['P-D-UC01|design', 'P-D-UC01-FL', 'P-IF01', 'P-IF02']);
   });
 
   it('opens Technical flow to the selected step\'s chain (a hint with none), and under Expand all to every step\'s, grouped by step', () => {
     const tech = cellKey('P-D-UC01', 'technical');
     expect(keys(3, opened([tech]))).toEqual(['P-D-UC01|technical', 'hint']);
-    expect(keys(3, opened([tech], 'P-D-UC01-FL01-S01'))).toEqual(['P-D-UC01|technical', 'P-D-UC01-FL01-S01', 'P-UI01', 'P-D-EP01', 'P-D-CMD01-H', 'P-D-REPO01']);
-    expect(keys(3, opened([tech, everyStepKey('P-D-UC01')]))).toEqual(['P-D-UC01|technical', 'P-D-UC01-FL01-S01', 'P-UI01', 'P-D-EP01', 'P-D-CMD01-H', 'P-D-REPO01', 'P-D-UC01-FL01-S02', 'P-INT01-AD', 'P-D-UC01-FL01-S03']);
+    expect(keys(3, opened([tech], 'P-D-UC01-FL-S01'))).toEqual(['P-D-UC01|technical', 'P-D-UC01-FL-S01', 'P-UI01', 'P-D-EP01', 'P-D-CMD01-H', 'P-D-REPO01']);
+    expect(keys(3, opened([tech, everyStepKey('P-D-UC01')]))).toEqual(['P-D-UC01|technical', 'P-D-UC01-FL-S01', 'P-UI01', 'P-D-EP01', 'P-D-CMD01-H', 'P-D-REPO01', 'P-D-UC01-FL-S02', 'P-INT01-AD', 'P-D-UC01-FL-S03']);
   });
 
   it('opens the suite to how much is proved, each requirement\'s and flow\'s tests with a gap where proof is missing, and Lower tests to what they rest on', () => {
     const suite = cellKey('P-D-UC01', 'suite');
-    expect(keys(4, opened([suite]))).toEqual(['P-D-UC01|suite', 'proved', 'P-D-UC01-R01-T01', 'P-D-UC01-R02-T01', 'P-D-UC01-R02', 'P-D-UC01-FL01-T', 'lower']);
+    expect(keys(4, opened([suite]))).toEqual(['P-D-UC01|suite', 'proved', 'P-D-UC01-R01-T01', 'P-D-UC01-R02-T01', 'P-D-UC01-R02', 'P-D-UC01-FL-T', 'lower']);
     expect(graph.items.get('P-D-UC01|suite/proved')!.words!.title).toBe('2 of 3 proved');
     expect(keys(4, opened([suite, innerKey('P-D-UC01', 'suite', 'lower')])).slice(-2)).toEqual(['P-D-INV01-T', 'P-D-INV02']);
+  });
+});
+
+describe('LA-V98-R23-T01 The Design flow opens to a box per interface that offers the use case, each with its version of the flow', () => {
+  it('opens each interface to its steps, each to where it is carried out there, a step it cannot reach a dashed gap', () => {
+    // The last step asks for the things: the API exposes that query, but no view of the web app presents it.
+    const { graph } = traced(addRows(product(), 'invokes', { source_id: 'P-D-UC01-FL-S03', target_id: 'P-D-QRY01' }));
+    const row = graph.rowOf.get('P-D-UC01')!;
+    const shown = (o: Openness) => visible(graph, row.cells[2], o).map((k) => {
+      const item = graph.items.get(k)!;
+      return item.role === 'gap' ? `gap:${item.id}` : item.id ?? k;
+    });
+    const flow = [cellKey('P-D-UC01', 'design'), innerKey('P-D-UC01', 'design', 'P-D-UC01-FL')];
+    expect(graph.items.get('P-D-UC01|design/P-D-UC01-FL/P-IF01')).toMatchObject({ role: 'record', id: 'P-IF01', opens: innerKey('P-D-UC01', 'design', 'P-IF01') });
+    // The web app: each step, the first carried out in the view that presents its command (with the view's
+    // requirement), the second with its integration, the third a gap; the box per interface keeps its own steps.
+    expect(shown(opened([...flow, innerKey('P-D-UC01', 'design', 'P-IF01'), innerKey('P-D-UC01', 'design', 'P-IF01/P-D-UC01-FL-S01'), innerKey('P-D-UC01', 'design', 'P-IF01/P-D-UC01-FL-S02')])))
+      .toEqual(['P-D-UC01|design', 'P-D-UC01-FL', 'P-IF01', 'P-D-UC01-FL-S01', 'P-V01', 'P-V01-R01', 'P-D-UC01-FL-S02', 'P-INT01', 'P-D-UC01-FL-S03', 'gap:P-D-UC01-FL-S03', 'P-IF02']);
+    // The API: the endpoints that expose what each step invokes, with their API requirements; nothing is unreached.
+    expect(shown(opened([...flow, innerKey('P-D-UC01', 'design', 'P-IF02'), innerKey('P-D-UC01', 'design', 'P-IF02/P-D-UC01-FL-S01'), innerKey('P-D-UC01', 'design', 'P-IF02/P-D-UC01-FL-S03')])))
+      .toEqual(['P-D-UC01|design', 'P-D-UC01-FL', 'P-IF01', 'P-IF02', 'P-D-UC01-FL-S01', 'P-D-EP01', 'P-D-EP01-R01', 'P-D-UC01-FL-S02', 'P-D-UC01-FL-S03', 'P-D-EP02']);
+    expect(graph.items.get('P-D-UC01|design/P-D-UC01-FL/P-IF01/P-D-UC01-FL-S03/gap:unreached')!.words).toEqual({ kind: 'Gap', title: 'Not reached', meta: 'Gap · P-D-UC01-FL-S03 through P-IF01' });
+    // A step is one record in every interface's box: selecting it lights it in each, with its views and endpoints.
+    expect(graph.boxesOf.get('P-D-UC01-FL-S01')!.filter((k) => k.includes('|design/'))).toEqual(['P-D-UC01|design/P-D-UC01-FL/P-IF01/P-D-UC01-FL-S01', 'P-D-UC01|design/P-D-UC01-FL/P-IF02/P-D-UC01-FL-S01']);
+    const path = rowPath(row, ['P-D-UC01-FL-S01'])!;
+    for (const id of ['P-IF01', 'P-IF02', 'P-V01', 'P-D-EP01', 'P-D-EP01-R01']) expect(path.ids.has(id), id).toBe(true);
+  });
+
+  it('opens a flow no interface offers to its steps as written', () => {
+    const data = product();
+    removeRows(data, 'offers', () => true);
+    const { graph } = traced(data);
+    const row = graph.rowOf.get('P-D-UC01')!;
+    expect(statusOf(row.data, 'design')).toEqual({ title: '0 interfaces · all designed', gap: true });
+    const shown = visible(graph, row.cells[2], opened([cellKey('P-D-UC01', 'design'), innerKey('P-D-UC01', 'design', 'P-D-UC01-FL')])).map((k) => graph.items.get(k)!.id ?? k);
+    expect(shown).toEqual(['P-D-UC01|design', 'P-D-UC01-FL', 'P-D-UC01-FL-S01', 'P-D-UC01-FL-S02', 'P-D-UC01-FL-S03']);
   });
 });
 
@@ -95,30 +132,32 @@ describe('LA-V98-R18-T01 Selecting a box lights its path across its row: require
   const row = graph.rowOf.get('P-D-UC01')!;
 
   it('walks a step back to its requirements, use case and outcomes, and on to its chain and the tests of what it fulfills', () => {
-    const path = rowPath(row, ['P-D-UC01-FL01-S01'])!;
-    for (const id of ['P-BO01', 'P-BO02', 'P-D-UC01', 'P-D-UC01-R01', 'P-D-UC01-FL01', 'P-V01', 'P-V01-R01', 'P-D-EP01', 'P-D-UC01-R01-T01', 'P-D-UC01-FL01-T']) expect(path.ids.has(id), id).toBe(true);
+    const path = rowPath(row, ['P-D-UC01-FL-S01'])!;
+    for (const id of ['P-BO01', 'P-BO02', 'P-D-UC01', 'P-D-UC01-R01', 'P-D-UC01-FL', 'P-IF01', 'P-IF02', 'P-V01', 'P-V01-R01', 'P-D-EP01', 'P-D-UC01-R01-T01', 'P-D-UC01-FL-T']) expect(path.ids.has(id), id).toBe(true);
     expect([...path.ids].some((k) => k.endsWith('/P-D-CMD01-H'))).toBe(true);
     // Not the other requirement, the other steps or their tests.
-    for (const id of ['P-D-UC01-R02', 'P-D-UC01-FL01-S03', 'P-D-UC01-R02-T01']) expect(path.ids.has(id), id).toBe(false);
+    for (const id of ['P-D-UC01-R02', 'P-D-UC01-FL-S03', 'P-D-UC01-R02-T01']) expect(path.ids.has(id), id).toBe(false);
   });
 
   it('lights the boxes that show the path, a closed box standing in for what it holds, with a line across each column it crosses', () => {
     const order = orderGraph(graph, null);
-    const closed = litBy(graph, layOutTrace(graph, order, NOTHING), 'P-D-UC01-FL01-S01', null);
+    const closed = litBy(graph, layOutTrace(graph, order, NOTHING), 'P-D-UC01-FL-S01', null);
     expect(closed.rows).toEqual(['P-D-UC01']);
     // Everything stands in by its row's closed cells.
     expect(closed.box).toBe('P-D-UC01|design');
     expect([...closed.keys!].sort()).toEqual(['P-D-UC01|design', 'P-D-UC01|suite', 'P-D-UC01|technical', 'P-D-UC01|use-case', 'outcome/P-BO01', 'outcome/P-BO02']);
     expect(closed.serves).toEqual(new Set(['P-BO01>P-D-UC01', 'P-BO02>P-D-UC01']));
-    const open = opened([cellKey('P-D-UC01', 'use-case'), cellKey('P-D-UC01', 'design'), innerKey('P-D-UC01', 'design', 'P-D-UC01-FL01'), cellKey('P-D-UC01', 'technical'), cellKey('P-D-UC01', 'suite')], 'P-D-UC01-FL01-S01');
-    const lit = litBy(graph, layOutTrace(graph, order, open), 'P-D-UC01-FL01-S01', null);
-    expect(lit.box).toBe('P-D-UC01|design/P-D-UC01-FL01/P-D-UC01-FL01-S01');
+    const open = opened([cellKey('P-D-UC01', 'use-case'), cellKey('P-D-UC01', 'design'), innerKey('P-D-UC01', 'design', 'P-D-UC01-FL'), innerKey('P-D-UC01', 'design', 'P-IF01'), cellKey('P-D-UC01', 'technical'), cellKey('P-D-UC01', 'suite')], 'P-D-UC01-FL-S01');
+    const lit = litBy(graph, layOutTrace(graph, order, open), 'P-D-UC01-FL-S01', null);
+    expect(lit.box).toBe('P-D-UC01|design/P-D-UC01-FL/P-IF01/P-D-UC01-FL-S01');
+    // The closed API box stands in for the step's box under it.
+    expect(lit.keys!.has('P-D-UC01|design/P-D-UC01-FL/P-IF02')).toBe(true);
     expect(lit.keys!.has('P-D-UC01|use-case/P-D-UC01-R01')).toBe(true);
     expect(lit.keys!.has('P-D-UC01|use-case/P-D-UC01-R02')).toBe(false);
     expect(lit.keys!.has('P-D-UC01|suite/P-D-UC01-R01-T01')).toBe(true);
     expect(lit.lines).toEqual(expect.arrayContaining([
-      ['P-D-UC01|use-case/P-D-UC01-R01', 'P-D-UC01|design/P-D-UC01-FL01/P-D-UC01-FL01-S01'],
-      ['P-D-UC01|design/P-D-UC01-FL01/P-D-UC01-FL01-S01', 'P-D-UC01|technical/step:P-D-UC01-FL01-S01/P-UI01'],
+      ['P-D-UC01|use-case/P-D-UC01-R01', 'P-D-UC01|design/P-D-UC01-FL/P-IF01/P-D-UC01-FL-S01'],
+      ['P-D-UC01|design/P-D-UC01-FL/P-IF01/P-D-UC01-FL-S01', 'P-D-UC01|technical/step:P-D-UC01-FL-S01/P-UI01'],
       ['P-D-UC01|use-case/P-D-UC01-R01', 'P-D-UC01|suite/P-D-UC01-R01-T01'],
     ]));
     // Every line runs left to right.
@@ -132,13 +171,13 @@ describe('LA-V98-R19-T01 The Trace walk goes down a column, along the row\'s lin
   it('moves Up and Down in a column, Right along a link to the nearest box, In opening a box and Out to its parent', () => {
     const { graph } = traced(product());
     const order = orderGraph(graph, null);
-    const open = opened([cellKey('P-D-UC01', 'use-case'), cellKey('P-D-UC01', 'design'), innerKey('P-D-UC01', 'design', 'P-D-UC01-FL01')]);
+    const open = opened([cellKey('P-D-UC01', 'use-case'), cellKey('P-D-UC01', 'design'), innerKey('P-D-UC01', 'design', 'P-D-UC01-FL'), innerKey('P-D-UC01', 'design', 'P-IF01')]);
     const laid = layOutTrace(graph, order, open);
     const r01 = 'P-D-UC01|use-case/P-D-UC01-R01';
     expect(traceTarget(graph, laid, open, 'P-D-UC01|use-case', 'down')).toEqual({ to: r01 });
     expect(traceTarget(graph, laid, open, r01, 'up')).toEqual({ to: 'P-D-UC01|use-case' });
     // Right from a requirement: the step fulfilling it.
-    expect(traceTarget(graph, laid, open, r01, 'right')).toEqual({ to: 'P-D-UC01|design/P-D-UC01-FL01/P-D-UC01-FL01-S01' });
+    expect(traceTarget(graph, laid, open, r01, 'right')).toEqual({ to: 'P-D-UC01|design/P-D-UC01-FL/P-IF01/P-D-UC01-FL-S01' });
     // Right from a closed cell with no link that way: the row's next cell.
     expect(traceTarget(graph, laid, open, 'P-D-UC01|design', 'right')).toEqual({ to: 'P-D-UC01|technical' });
     // Left from a use case: its nearest outcome.

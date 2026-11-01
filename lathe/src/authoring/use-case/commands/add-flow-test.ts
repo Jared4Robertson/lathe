@@ -1,9 +1,7 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { FlowTestRow } from '../../../platform/data/tables.ts';
-import { UseCaseRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
 import { ADD_FLOW_TEST_IDENTITY } from './identities.generated.ts';
+import { addFlowTest } from './handlers.generated.ts';
 
 export type AddFlowTest = Pick<FlowTestRow, 'id' | 'title' | 'flow_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'steps' | 'expected_result' | 'notes'> & { starts_from?: string[] };
 
@@ -27,12 +25,3 @@ export const ADD_FLOW_TEST = {
   },
   handler: addFlowTest,
 } satisfies CommandDefinition<AddFlowTest>;
-
-export function addFlowTest(tx: Transaction, input: AddFlowTest): void {
-  const useCases = new UseCaseRepository(tx);
-  const useCase = useCases.loadHolding('flow', input.flow_id) ?? tx.refuse('missing', `there is no flow ${input.flow_id}`);
-  const { starts_from = [], ...row } = input;
-  useCase.flowTests.push({ row, startsFrom: starts_from });
-  holdToRules(tx, useCase);
-  useCases.save(useCase);
-}

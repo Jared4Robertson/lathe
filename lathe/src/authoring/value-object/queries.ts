@@ -5,7 +5,7 @@
 import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { type ValueObjectKind } from './model.ts';
+import type { ValueObjectKind } from './model.ts';
 import type { ValueObjectPage, ValueObjectSummary } from './read-model.ts';
 import { valueObjectReader, type ValueObjectReader } from './reader.ts';
 import { GET_VALUE_OBJECT_IDENTITY, LIST_VALUE_OBJECTS_IDENTITY, NEXT_VALUE_OBJECT_ID_IDENTITY } from './queries.generated.ts';

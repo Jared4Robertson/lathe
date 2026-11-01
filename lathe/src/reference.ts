@@ -4,7 +4,7 @@
 // own kinds, relations and checks); renderReference writes it as Markdown, by stage, as lathe/REFERENCE.md holds it
 // (`npm --prefix lathe run reference`).
 import { ALLOWED_LEVELS, GAP_RULES, OBLIGATION_COVERAGE } from './coverage.ts';
-import type { ColumnDescription, IdScope, KindDescription, SchemaDescription, Stage, TableDescription, TableRole } from './platform/data/schema.ts';
+import type { ColumnDescription, Complexity, IdScope, KindDescription, SchemaDescription, Stage, TableDescription, TableRole } from './platform/data/schema.ts';
 import type { Row } from './platform/data/rows.ts';
 
 export interface ColumnReference {
@@ -63,6 +63,8 @@ export interface KindReference {
   child_kinds: string[];
   /** Whether its records are obligations: designed, built and proved. */
   obligation: boolean;
+  /** Whether its records are essential or accidental complexity, or as their parent or type says; null for an open question. */
+  complexity: Complexity | null;
   /** For one of Lathe's obligation kinds, what designs, builds and proves it; null otherwise. */
   coverage: ObligationReference | null;
   /** For a test kind, the run by levels it allows; null otherwise. */
@@ -176,6 +178,7 @@ export function referenceOf(schema: SchemaDescription, kindOrder: string[], chec
       parents: k.parents.map((p) => ({ kind: p.kind, column: p.column })),
       child_kinds: kindNames.filter((c) => schema.kinds[c].parents.some((p) => p.kind === name)),
       obligation: k.obligation,
+      complexity: k.complexity,
       coverage: k.productId === null ? (OBLIGATION_COVERAGE[name] ?? null) : null,
       levels: k.productId === null && ALLOWED_LEVELS[name] ? [...ALLOWED_LEVELS[name]] : null,
       id_scope: k.idScope,
@@ -257,6 +260,15 @@ export const gapAnchor = (gap: string) => `gap-${gap}`;
 const code = (text: string) => `\`${text}\``;
 const cell = (text: string) => text.replaceAll('|', '\\|').replaceAll('\n', ' ');
 const SEVERITY: Record<CheckReference['severity'], string> = { error: 'Error', warning: 'Warning', error_or_warning: 'Error or warning' };
+/** A kind's complexity, as the reference words it. */
+const COMPLEXITY: Record<Complexity, string> = {
+  essential: 'essential: what the problem itself demands, decided once per product',
+  accidental: 'accidental: what comes from the means used to build it, derived, provided or a fill at a slot',
+  'as-parent': 'as the record it sits under',
+  'by-type': 'by its type: a quality is essential, engineering accidental',
+  'by-interface': "by its product's interfaces: essential on a public API, otherwise accidental",
+};
+
 const ID_SCOPE: Record<IdScope, string> = { product: "its product's ID", domain: "its domain's ID", parent: "its parent's ID" };
 const TITLE_FORM: Record<NonNullable<KindDescription['titleForm']>, string> = {
   identifier: 'one identifier exactly as in code, with no whitespace',
@@ -301,7 +313,15 @@ check: the store refuses it.
 domain, and lists as gaps each obligation still short of one, and each record short of a minimum the schema leaves to
 it (an "at least one" or "exactly one" that is missing while records are written stage by stage). An obligation is
 proved by a test of it, automated or manual, at a run by level its test kind allows, whose file (when automated)
-exists and names the test's ID.`;
+exists and names the test's ID. An obligation something outside the product provides (\`provided_by\`) is built and
+proved through its provider.
+
+**Complexity.** Every kind says whether its records are essential complexity, what the problem itself demands and
+the product decides once (discovery, the domain model, use cases and patterns, the what of interaction design), or
+accidental complexity, what comes from the means used to build it (the technical specification); a test follows what
+it proves, and a standard its type (a quality is essential, engineering accidental). An accidental record is derived
+(a tooling record \`generates\` it), provided (\`provided_by\`), or a fill: written by hand at a pattern's slot
+(\`fills\`), serving an essential record. Coverage lists each fill as accidental debt.`;
 
 /** The reference as one Markdown document, by stage: each stage's kinds with their tables, checks and gaps; then the other tables, relations and checks of any kind, each with an anchor. */
 export function renderReference(ref: Reference): string {
@@ -338,6 +358,7 @@ export function renderReference(ref: Reference): string {
     out.push(`<a id="${kindAnchor(k.kind)}"></a>`, '', `### ${k.label} (${code(k.kind)})`, '', k.description.trim() || '_No description._', '');
     out.push(`- **Parents:** ${list(k.parents.map((p) => `${kindLink(p.kind)} (${code(p.column)})`), k.kind === 'product' ? 'none (a root record)' : 'none (no owner: it exists because other records use it)')}`);
     out.push(`- **Children:** ${list(k.child_kinds.map(kindLink))}`);
+    if (k.complexity) out.push(`- **Complexity:** ${COMPLEXITY[k.complexity]}`);
     out.push(`- **Obligation:** ${k.obligation ? 'yes: designed, built and proved' : 'no'}`);
     if (k.coverage) out.push(`  - **Designed:** ${k.coverage.designed}`, `  - **Built:** ${k.coverage.built}`, `  - **Proved:** ${k.coverage.proved}`);
     if (k.levels) out.push(`- **Run by levels:** ${k.levels.map(code).join(', ')}`);

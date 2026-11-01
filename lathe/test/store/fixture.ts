@@ -14,7 +14,7 @@ export function everyKind(): Data {
   return {
     product: [{ id: 'TL', title: 'Tool Library', description: 'A neighborhood tool library.' }],
     role: [{ product_id: 'TL', name: 'Member', description: 'Someone who borrows tools.' }, { product_id: 'TL', name: 'Librarian', description: 'Someone who lends and repairs tools at the desk.' }],
-    product_setting: [{ product_id: 'TL', max_children: 15, max_entities_per_aggregate: 7 }],
+    product_setting: [{ product_id: 'TL', max_children: 15, max_entities_per_aggregate: 7, technology_words: [] }],
 
     // Domain model.
     domain: [{ id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }],
@@ -67,11 +67,13 @@ export function everyKind(): Data {
         statement: 'A saved tool MUST read the same in the catalog.',
       },
     ],
+    slot: [{ id: 'TL-PAT-ACT-SL01', title: 'Saving rule', pattern_id: 'TL-PAT-ACT', statement: 'A fill MUST refuse what its record does not allow before anything is saved.' }],
 
     // Interaction design.
-    interface: [{ id: 'TL-IF01', title: 'Web app', product_id: 'TL', kind: 'web app', description: 'The desk app the librarian uses.' }],
-    flow: [{ id: 'TL-LEND-UC01-FL01', title: 'Borrow a tool in the web app', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }],
-    flow_step: [{ id: 'TL-LEND-UC01-FL01-S01', title: 'Pick a tool', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 }],
+    interface: [{ id: 'TL-IF01', title: 'Web app', product_id: 'TL', kind: 'web app', description: 'The desk app the librarian uses.', public: false }],
+    interface_actor: [{ interface_id: 'TL-IF01', position: 1, role_name: 'Member' }],
+    flow: [{ id: 'TL-LEND-UC01-FL', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01' }],
+    flow_step: [{ id: 'TL-LEND-UC01-FL-S01', title: 'Pick a tool', flow_id: 'TL-LEND-UC01-FL', path: 'main', position: 1, interface_id: 'TL-IF01' }],
     view: [{ id: 'TL-V01', title: 'Catalog', route: '/catalog', description: 'Every tool, with whether it is free.' }],
     view_requirement: [{ id: 'TL-V01-R01', title: 'Free tools first', view_id: 'TL-V01', statement: 'The catalog MUST list free tools first.' }],
     endpoint: [{ id: 'TL-LEND-EP01', title: 'POST /loans', command_id: 'TL-LEND-CMD01', method: 'POST', route: '/loans', description: 'Takes a member and a tool; answers 201 with the loan.' }],
@@ -83,6 +85,8 @@ export function everyKind(): Data {
     persists: [{ source_id: 'TL-LEND-REPO01', target_id: 'TL-LEND-A1' }],
     data_store: [{ id: 'TL-STORE01', title: 'DATABASE_URL', product_id: 'TL', kind: 'database', description: "The library's database, run by the service that also sends its mail." }],
     provided_by: [{ source_id: 'TL-STORE01', target_id: 'TL-INT01' }],
+    generates: [{ source_id: 'TL-LEND-TOOL01', target_id: 'TL-LEND-EN01-DM' }],
+    fills: [{ source_id: 'TL-LEND-CMD01-H', target_id: 'TL-PAT-ACT-SL01' }],
     stored_in: [{ source_id: 'TL-LEND-REPO01', target_id: 'TL-STORE01' }],
     data_model: [{ id: 'TL-LEND-EN01-DM', title: 'Loan', entity_id: 'TL-LEND-EN01', file: 'src/lending/loan.ts' }],
     table: [
@@ -111,7 +115,7 @@ export function everyKind(): Data {
     entry_point: [{ id: 'TL-LEND-ENTRY01', title: 'server.ts', domain_id: 'TL-LEND', file: 'src/server.ts', description: 'Opens the database and serves the API.' }],
     tooling: [{ id: 'TL-LEND-TOOL01', title: 'vitest.config.ts', domain_id: 'TL-LEND', file: 'vitest.config.ts' }],
     package_use: [{ record_id: 'TL-INT01-AD', package: 'nodemailer' }],
-    standard: [{ id: 'TL-STD-CODE', title: 'Code', product_id: 'TL', description: 'How the code is written.' }],
+    standard: [{ id: 'TL-STD-CODE', title: 'Code', product_id: 'TL', type: 'engineering', description: 'How the code is written.' }],
     standard_rule: [{ id: 'TL-STD-CODE-R01', title: 'Node prefix', standard_id: 'TL-STD-CODE', statement: 'Code MUST import node: modules.' }],
 
     // Test plan.
@@ -124,7 +128,7 @@ export function everyKind(): Data {
     use_case_test: [{ id: 'TL-LEND-UC01-R01-T01', title: 'A lent tool is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'system', state: 'automated', file: 'test/borrow.test.ts', when: 'Borrows a tool on loan', then: 'Expects a refusal' }],
     view_test: [{ id: 'TL-V01-R01-T01', title: 'Free tools come first', view_requirement_id: 'TL-V01-R01', level: 'browser', state: 'automated', file: 'e2e/catalog.spec.ts', when: 'Opens the catalog', then: 'Expects the free tools first' }],
     endpoint_test: [{ id: 'TL-LEND-EP01-R01-T01', title: 'Unknown tool gives 404', api_requirement_id: 'TL-LEND-EP01-R01', level: 'service', state: 'automated', file: 'test/api.test.ts', when: 'Posts a loan for an unknown tool', then: 'Expects 404' }],
-    flow_test: [{ id: 'TL-LEND-UC01-FL01-T', title: 'Borrow end to end', flow_id: 'TL-LEND-UC01-FL01', level: 'browser', state: 'automated', file: 'e2e/borrow.spec.ts', steps: ['Open the catalog', 'Borrow a tool'], expected_result: 'The loan is listed.' }],
+    flow_test: [{ id: 'TL-LEND-UC01-FL-T', title: 'Borrow end to end', flow_id: 'TL-LEND-UC01-FL', level: 'browser', state: 'automated', file: 'e2e/borrow.spec.ts', steps: ['Open the catalog', 'Borrow a tool'], expected_result: 'The loan is listed.' }],
     test_data_set: [{ id: 'TL-LEND-TD01', title: 'One tool on loan', domain_id: 'TL-LEND', environment: 'A fresh database.', accounts: 'One member.', records: 'One tool, on loan to the member.', prepare: 'Run the seed.', reset: 'Drop the database.', file: 'test/seed.ts', description: 'What the lending tests start from.' }],
     integration_test: [{ id: 'TL-INT01-T01', title: 'A mail is sent', integration_id: 'TL-INT01', level: 'system', state: 'manual', manual_reason: 'The mail service has no test mode.', size: 'volume', smoke: true, external: true, when: 'Sends a reminder', then: 'Expects the mail to arrive' }],
     pattern_rule_test: [{ id: 'TL-PAT-ACT-R01-T01', title: 'A saved tool reads the same', pattern_rule_id: 'TL-PAT-ACT-R01', domain_id: 'TL-LEND', ...automated('test/catalog.test.ts'), when: 'Saves a tool', then: 'Expects the catalog to read the same' }],
@@ -146,10 +150,11 @@ export function everyKind(): Data {
     hears: [{ source_id: 'TL-LEND-PO01', target_id: 'TL-LEND-EV01' }],
     fed_by: [{ source_id: 'TL-LEND-RM01', target_id: 'TL-LEND-EV01' }],
     calls: [{ source_id: 'TL-LEND-CMD01', target_id: 'TL-LEND-DS01' }],
-    fulfills: [{ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-LEND-UC01-R01' }],
-    invokes: [{ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-LEND-CMD01' }],
-    happens_in: [{ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-V01' }],
-    exchanges_with: [{ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-INT01' }],
+    fulfills: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-UC01-R01' }],
+    invokes: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-CMD01' }],
+    presents: [{ source_id: 'TL-V01', target_id: 'TL-LEND-CMD01' }],
+    offers: [{ source_id: 'TL-IF01', target_id: 'TL-LEND-UC01' }],
+    exchanges_with: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-INT01' }],
     renders: [{ source_id: 'TL-UI01', target_id: 'TL-V01' }],
     builds: [{ source_id: 'TL-UI01', target_id: 'TL-V01-R01' }],
     follows: [{ source_id: 'TL-LEND-UC01', target_id: 'TL-PAT-ACT' }],
@@ -161,7 +166,7 @@ export function everyKind(): Data {
     starts_from: [{ source_id: 'TL-INT01-T01', target_id: 'TL-LEND-TD01' }],
 
     // A product's own kind, a technical kind under the command, with a relation of its own.
-    product_kind: [{ name: 'cli_command', product_id: 'TL', label: 'CLI command', description: "A command of the library's CLI.", parent_kind: 'command', stage: 'technical-specification', obligation: false, id_pattern: '<command>-CLI' }],
+    product_kind: [{ name: 'cli_command', product_id: 'TL', label: 'CLI command', description: "A command of the library's CLI.", parent_kind: 'command', stage: 'technical-specification', obligation: false, complexity: 'accidental', id_pattern: '<command>-CLI' }],
     product_kind_field: [{ kind: 'cli_command', position: 1, name: 'usage', type: 'text', required: true, description: 'How it is typed.' }],
     product_relation: [
       { name: 'documents', source_kind: 'cli_command', target_kind: 'view', product_id: 'TL', forward_label: 'Documents', reverse_label: 'Documented by', description: 'The CLI command is documented in the view.' },

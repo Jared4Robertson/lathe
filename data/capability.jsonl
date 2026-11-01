@@ -8,9 +8,9 @@
 {"id":"LA-EXP-CAP01","title":"Spec reading","domain_id":"LA-EXP","position":1,"description":"Product, domain and record pages: coverage, obligation kinds and test states, finding a record and following its links."}
 {"id":"LA-EXP-CAP02","title":"Workspace navigation","domain_id":"LA-EXP","position":2,"description":"One address per record, its Graph, ERD and Trace stages behind floating panels, the wiki card, the nav, quick find and keyboard shortcuts."}
 {"id":"LA-EXP-CAP03","title":"Graph exploration","domain_id":"LA-EXP","position":3,"description":"Walking the model as a left-to-right graph with folder-like groups."}
-{"id":"LA-PLT-CAP01","title":"Workbench","domain_id":"LA-PLT","position":1,"description":"Panels, themes, phones, stability and accessibility: what every page stands on."}
+{"id":"LA-PLT-CAP01","title":"Workbench","domain_id":"LA-PLT","position":1,"description":"Panels, themes, phones, stability and accessibility: what every view stands on."}
 {"id":"LA-PLT-CAP02","title":"Keyboard control","domain_id":"LA-PLT","position":2,"description":"Commands, their keys and the hints that show them."}
-{"id":"LA-PLT-CAP03","title":"Live loading","domain_id":"LA-PLT","position":3,"description":"Loading a workspace from the data files, from code or a page, fast enough to reload live, and pages that follow the data files as they change."}
+{"id":"LA-PLT-CAP03","title":"Live loading","domain_id":"LA-PLT","position":3,"description":"Loading a workspace from the data files, from code or a view, fast enough to reload live, and views that follow the data files as they change."}
 {"id":"LA-PLT-CAP04","title":"Desktop hosting","domain_id":"LA-PLT","position":4,"description":"Opening products in windows, iterating on Lathe in the shell with hot reload, using Lathe from the native menus, a window that looks like part of Lathe, and an app that feels native on a Mac."}
 {"id":"LA-PLT-CAP05","title":"Repo setup","domain_id":"LA-PLT","position":5,"description":"Setting Lathe up in a product's repo, moving a product to a new Lathe, and starting the plugin's tools there."}
 {"id":"LA-TRC-CAP01","title":"Coverage measurement","domain_id":"LA-TRC","position":1,"description":"How much of each obligation is designed, built and proved, what is proved only by tests not automated yet, and what is still missing."}

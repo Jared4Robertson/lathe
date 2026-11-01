@@ -21,6 +21,7 @@
 {"source_id":"LA-AUT-REPO21","target_id":"LA-AUT-A21"}
 {"source_id":"LA-AUT-REPO22","target_id":"LA-AUT-A22"}
 {"source_id":"LA-AUT-REPO23","target_id":"LA-AUT-A23"}
+{"source_id":"LA-AUT-REPO24","target_id":"LA-AUT-A24"}
 {"source_id":"LA-CHK-REPO01","target_id":"LA-CHK-A1"}
 {"source_id":"LA-CHK-REPO02","target_id":"LA-CHK-A2"}
 {"source_id":"LA-EXP-REPO02","target_id":"LA-EXP-A2"}
@@ -38,3 +39,5 @@
 {"source_id":"LA-PLT-REPO25","target_id":"LA-PLT-A15"}
 {"source_id":"LA-PLT-REPO26","target_id":"LA-PLT-A16"}
 {"source_id":"LA-TRC-REPO01","target_id":"LA-TRC-A3"}
+{"source_id":"LA-TRC-REPO02","target_id":"LA-TRC-A4"}
+{"source_id":"LA-TRC-REPO03","target_id":"LA-TRC-A5"}

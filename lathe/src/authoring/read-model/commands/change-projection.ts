@@ -1,10 +1,7 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ProjectionRow } from '../../../platform/data/tables.ts';
-import { changed } from '../model.ts';
-import { ReadModelRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
 import { CHANGE_PROJECTION_IDENTITY } from './identities.generated.ts';
+import { changeProjection } from './handlers.generated.ts';
 
 /** The projection's changes: a column given is set, null clears an optional one; a list given replaces the list. */
 export type ChangeProjection = Pick<ProjectionRow, 'id'> & { title?: ProjectionRow['title']; file?: ProjectionRow['file'] | null; description?: ProjectionRow['description']; meets?: string[]; packages?: string[] };
@@ -21,13 +18,3 @@ export const CHANGE_PROJECTION = {
   },
   handler: changeProjection,
 } satisfies CommandDefinition<ChangeProjection>;
-
-/** Changes the projection's columns, links and packages. */
-export function changeProjection(tx: Transaction, input: ChangeProjection): void {
-  const readModels = new ReadModelRepository(tx);
-  const readModel = readModels.loadHolding('projection', input.id) ?? tx.refuse('missing', `there is no projection ${input.id}`);
-  const projection = readModel.projection!;
-  readModel.projection = { row: changed(projection.row, input, ['title', 'file', 'description']), meets: input.meets ?? projection.meets, packages: input.packages ?? projection.packages };
-  holdToRules(tx, readModel);
-  readModels.save(readModel);
-}

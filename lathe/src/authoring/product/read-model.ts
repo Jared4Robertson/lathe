@@ -33,13 +33,8 @@ export interface ByCapability<T> {
   items: T[];
 }
 
-/** A flow through an interface, with the use case it carries out. */
-export interface FlowThrough extends Named {
-  useCase: Named;
-}
-
-/** An interface with the flows through it and the product's use cases with none, each by capability. */
-export type InterfaceEntry = InterfaceRow & { flows: ByCapability<FlowThrough>[]; missing: ByCapability<Named>[] };
+/** An interface with the roles that use it, the patterns it follows, the use cases it offers and the product's use cases it does not, each by capability. */
+export type InterfaceEntry = InterfaceRow & { actors: string[]; patterns: string[]; offers: ByCapability<Named>[]; missing: ByCapability<Named>[] };
 
 /** One product's page: its row and roles, outcomes and domains, declarations, open questions and interfaces. */
 export interface ProductPage {
@@ -74,7 +69,9 @@ function productPagesFrom(view: ReadView): ProductPage[] {
   const fields = view.rows('product_kind_field') as unknown as ProductKindFieldRow[];
   const capabilities = view.rows('capability');
   const useCases = view.rows('use_case');
-  const flows = view.rows('flow');
+  const offers = new Set(view.rows('offers').map((l) => `${String(l.source_id)} ${String(l.target_id)}`));
+  const follows = bySource(view.rows('follows'));
+  const actors = view.rows('interface_actor');
   return products.map((product) => {
     const own = (r: Row) => r.product_id === product.id;
     // The product's capabilities by domain, then place, each with its use cases by ID.
@@ -87,19 +84,13 @@ function productPagesFrom(view: ReadView): ProductPage[] {
         useCases: useCases.filter((u) => u.capability_id === c.id).map((u) => ({ id: String(u.id), title: String(u.title) })).sort(byRecordId),
       }));
     const interfaceOf = (iface: InterfaceRow): InterfaceEntry => {
-      const through = (useCase: Named) => flows.find((f) => f.use_case_id === useCase.id && f.interface_id === iface.id);
+      const offered = (useCase: Named) => offers.has(`${iface.id} ${useCase.id}`);
       return {
         ...iface,
-        flows: ownCapabilities
-          .map(({ capability, useCases: list }) => ({
-            capability,
-            items: list.flatMap((u) => {
-              const flow = through(u);
-              return flow ? [{ id: String(flow.id), title: String(flow.title), useCase: u }] : [];
-            }),
-          }))
-          .filter((g) => g.items.length > 0),
-        missing: ownCapabilities.map(({ capability, useCases: list }) => ({ capability, items: list.filter((u) => !through(u)) })).filter((g) => g.items.length > 0),
+        actors: actors.filter((a) => a.interface_id === iface.id).sort((a, b) => Number(a.position) - Number(b.position)).map((a) => String(a.role_name)),
+        patterns: [...(follows.get(iface.id) ?? [])].sort(),
+        offers: ownCapabilities.map(({ capability, useCases: list }) => ({ capability, items: list.filter(offered) })).filter((g) => g.items.length > 0),
+        missing: ownCapabilities.map(({ capability, useCases: list }) => ({ capability, items: list.filter((u) => !offered(u)) })).filter((g) => g.items.length > 0),
       };
     };
     return {

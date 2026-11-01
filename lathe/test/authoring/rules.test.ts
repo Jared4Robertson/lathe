@@ -215,9 +215,9 @@ describe('LA-AUT-INV17-T a second capability at a position of its domain is refu
 describe('LA-AUT-INV18-T a second step at a position of a path, compared trimmed and in any letter case, is refused by step-position; another path may use it', () => {
   it('refuses it, and adds the step on another path', async () => {
     const on = await store();
-    const step = { id: 'TL-LEND-UC01-FL01-S02', title: 'Pick another tool', flow_id: 'TL-LEND-UC01-FL01', path: ' Main', position: 1 };
+    const step = { id: 'TL-LEND-UC01-FL-S03', title: 'Pick another tool', flow_id: 'TL-LEND-UC01-FL', path: ' Main', position: 1 };
     expect(await refused(on, ADD_FLOW_STEP, step, 'flow_step')).toEqual([
-      { rule: 'step-position', message: 'step TL-LEND-UC01-FL01-S01 is at position 1 of path main of TL-LEND-UC01-FL01, so TL-LEND-UC01-FL01-S02 cannot be too: each step on a path has its own position' },
+      { rule: 'step-position', message: 'step TL-LEND-UC01-FL-S01 is at position 1 of path main of TL-LEND-UC01-FL, so TL-LEND-UC01-FL-S03 cannot be too: each step on a path has its own position' },
     ]);
     await runCommand(on, ADD_FLOW_STEP, { ...step, path: 'refused' });
     expect(on.rows('flow_step')).toHaveLength(2);
@@ -227,7 +227,7 @@ describe('LA-AUT-INV18-T a second step at a position of a path, compared trimmed
 describe("LA-AUT-INV22-T a product kind declared twice, named like a Lathe table, or under no kind is refused by product-kind-declared", () => {
   it('refuses each', async () => {
     const on = await store();
-    const kind = { product_id: 'TL', name: 'domain_note', label: 'Domain note', description: 'A note on a domain.', parent_kind: 'domain', obligation: false };
+    const kind = { product_id: 'TL', name: 'domain_note', label: 'Domain note', description: 'A note on a domain.', parent_kind: 'domain', obligation: false, complexity: 'essential' };
     expect(await refused(on, DECLARE_PRODUCT_KIND, { ...kind, name: 'aggregate' }, 'product_kind')).toEqual([
       { rule: 'product-kind-declared', message: 'The product kind aggregate has the name of a table Lathe already has; give it another name.' },
     ]);
@@ -240,7 +240,7 @@ describe("LA-AUT-INV22-T a product kind declared twice, named like a Lathe table
   });
 
   it("is refused on load by the same rule, before the schema is built; a kind of its own loads and leaves Lathe's kinds as they are", async () => {
-    const rule = { name: 'domain_note', product_id: 'TL', label: 'Domain note', description: 'A note on a domain.', parent_kind: 'domain', obligation: false };
+    const rule = { name: 'domain_note', product_id: 'TL', label: 'Domain note', description: 'A note on a domain.', parent_kind: 'domain', obligation: false, complexity: 'essential' };
     const own = await openStore(writeData(adding(everyKind(), { product_kind: [rule], domain_note: [{ id: 'TL-LEND-NOTE01', title: 'Lending hours', domain_id: 'TL-LEND' }] })), { latheDataDir: null });
     open.push(own);
     const [scope] = await own.query<{ domain_id: string }>("SELECT domain_id FROM record_scope WHERE id = 'TL-LEND-NOTE01'");
@@ -289,6 +289,18 @@ describe("LA-AUT-INV23-T a pair Lathe's relation's ends do not accept, a pair na
     const meets = { product_id: 'TL', name: 'meets', source_kind: 'cli_command', target_kind: 'standard_rule', forward_label: 'Meets', reverse_label: 'Met by', description: 'The CLI command follows the standard rule.' };
     await runCommand(on, DECLARE_PRODUCT_RELATION, meets);
     expect(on.rows('product_relation')).toContainEqual(expect.objectContaining({ name: 'meets', source_kind: 'cli_command', target_kind: 'standard_rule' }));
+  });
+
+  it("gives an accidental own kind Lathe's pairs of provided_by, fills and generates without a declaration, and refuses declaring one", async () => {
+    const on = await store();
+    const pairs = await on.query<{ relation: string; source_kind: string; target_kind: string }>(
+      "SELECT relation, source_kind, target_kind FROM meta_relation_pair WHERE 'cli_command' IN (source_kind, target_kind) AND relation IN ('provided_by', 'fills', 'generates') ORDER BY relation",
+    );
+    expect(pairs.map((p) => `${p.relation} ${p.source_kind} ${p.target_kind}`)).toEqual(['fills cli_command slot', 'generates tooling cli_command', 'provided_by cli_command integration']);
+    const fills = { product_id: 'TL', name: 'fills', source_kind: 'cli_command', target_kind: 'slot', forward_label: 'Fills', reverse_label: 'Filled by', description: 'The CLI command fills the slot.' };
+    expect(await refused(on, DECLARE_PRODUCT_RELATION, fills, 'product_relation')).toEqual([
+      { rule: 'product-relation-own', message: "Every accidental kind has the pair fills from cli_command to slot already, as Lathe's own kinds do; drop the declaration." },
+    ]);
   });
 
   it('is refused on load without both labels', async () => {

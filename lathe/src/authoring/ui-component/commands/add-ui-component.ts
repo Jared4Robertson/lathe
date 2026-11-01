@@ -1,8 +1,7 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { UiComponentRow } from '../../../platform/data/tables.ts';
-import { UiComponentRepository } from '../repository.ts';
 import { ADD_UI_COMPONENT_IDENTITY } from './identities.generated.ts';
+import { addUiComponent } from './handlers.generated.ts';
 
 export type AddUiComponent = Pick<UiComponentRow, 'id' | 'title' | 'description' | 'file'> & { renders?: string[]; builds?: string[]; meets?: string[]; packages?: string[] };
 
@@ -20,11 +19,3 @@ export const ADD_UI_COMPONENT = {
   },
   handler: addUiComponent,
 } satisfies CommandDefinition<AddUiComponent>;
-
-/** Adds the UI component, new and whole. */
-export function addUiComponent(tx: Transaction, input: AddUiComponent): void {
-  const components = new UiComponentRepository(tx);
-  const { renders = [], builds = [], meets = [], packages = [], ...row } = input;
-  const component = components.create({ root: row.id, component: row, renders, builds, meets, packages });
-  components.save(component);
-}

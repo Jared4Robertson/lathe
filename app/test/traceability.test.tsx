@@ -46,7 +46,7 @@ describe('traceability', () => {
     let trace = await show(data, 'DM-SHOP-UC01-R01');
     expect(groupTitles(trace)).toEqual(['Designed by', 'Built by', 'Proved by']);
     expect(groupIds(trace, 'Designed by')).toEqual(data.chains.find((c) => c.obligation === 'DM-SHOP-UC01-R01')!.design);
-    expect(groupIds(trace, 'Designed by')).toEqual(['DM-SHOP-CMD01', 'DM-SHOP-UC01-FL01', 'DM-SHOP-UC01-FL01-S01', 'DM-V01']);
+    expect(groupIds(trace, 'Designed by')).toEqual(['DM-SHOP-CMD01', 'DM-SHOP-UC01-FL', 'DM-SHOP-UC01-FL-S01']);
     expect(groupIds(trace, 'Built by')).toEqual(['DM-SHOP-CMD01-H']);
     expect(groupIds(trace, 'Proved by')).toEqual(['DM-SHOP-UC01-R01-T01']);
     // Only build records carry the built mark; designed, built and proved: no gap.
@@ -123,13 +123,14 @@ describe('traceability', () => {
     const rows = [...table.querySelectorAll('tbody tr[data-requirement]')] as HTMLElement[];
     expect(rows.map((r) => r.dataset.requirement)).toEqual(['DM-SHOP-UC01-R01', 'DM-SHOP-UC01-R02']);
     const cells = (r: HTMLElement) => [...r.querySelectorAll('td')].map((td) => td.textContent);
-    expect(cells(rows[0])).toEqual(['DM-SHOP-CMD01DM-SHOP-UC01-FL01DM-SHOP-UC01-FL01-S01DM-V01', 'DM-SHOP-CMD01-H', 'DM-SHOP-UC01-R01-T01']);
-    expect(cells(rows[1])).toEqual(['DM-SHOP-UC01-FL01DM-SHOP-UC01-FL01-S03', 'not built', 'not proved']);
+    expect(cells(rows[0])).toEqual(['DM-SHOP-CMD01DM-SHOP-UC01-FLDM-SHOP-UC01-FL-S01', 'DM-SHOP-CMD01-H', 'DM-SHOP-UC01-R01-T01']);
+    expect(cells(rows[1])).toEqual(['DM-SHOP-UC01-FLDM-SHOP-UC01-FL-S03', 'not built', 'not proved']);
     expect(within(rows[0]).getAllByRole('link').map((a) => a.getAttribute('href'))).toContain('/DM-SHOP-UC01-R01-T01');
     // R02 sits under its group's heading.
     expect(table.querySelector('tbody[data-group="Refusals"]')).toHaveTextContent('Refusals');
-    expect(groupTitles(trace)).toEqual(['Follows']);
+    expect(groupTitles(trace)).toEqual(['Follows', 'Offered through']);
     expect(groupIds(trace, 'Follows')).toEqual(['DM-PAT-AUDIT']);
+    expect(groupIds(trace, 'Offered through')).toEqual(['DM-IF01']);
   });
 
   it('LA-V92-R59-T01 A test shows Proves (its parent) and how it is run: its level, its state, and the file that runs it or why it is manual', async () => {
@@ -145,14 +146,14 @@ describe('traceability', () => {
 
     // A manual flow test: no file, its reason.
     const model = modelWorkspace();
-    trace = await show(model, 'P-D-UC01-FL01-T');
-    expect(groupIds(trace, 'Proves')).toEqual(['P-D-UC01-FL01']);
+    trace = await show(model, 'P-D-UC01-FL-T');
+    expect(groupIds(trace, 'Proves')).toEqual(['P-D-UC01-FL']);
     const manual = within(trace).getByRole('heading', { level: 3, name: 'Run by' }).closest('section') as HTMLElement;
     expect(manual).toHaveTextContent(/Level\s*browser/);
     expect(manual).toHaveTextContent('Manual because');
     expect(manual).toHaveTextContent('Run at the desk before each release.');
     expect(manual).not.toHaveTextContent('File');
-    expect(traceOf(model, 'P-D-UC01-FL01-T').runBy).toMatchObject({ level: 'browser', state: 'manual', file: null });
+    expect(traceOf(model, 'P-D-UC01-FL-T').runBy).toMatchObject({ level: 'browser', state: 'manual', file: null });
   });
 
   it('LA-PAT-RECORD-PAGE-R07-T01 No page shows a relation code as a heading or label: wiki, record facts, graph and ERD view read the labels', async () => {
@@ -174,9 +175,9 @@ describe('traceability', () => {
     expect(offenders).toEqual([]);
 
     // The labels every view reads, by link and by relation.
-    expect(linkLabel(index, { source: 'P-D-UC01-FL01-S01', relation: 'fulfills', target: 'P-D-UC01-R01' }, 'source')).toBe('Fulfills');
-    expect(linkLabel(index, { source: 'P-D-UC01-FL01-S01', relation: 'fulfills', target: 'P-D-UC01-R01' }, 'target')).toBe('Fulfilled by');
-    expect(relationLabelOf(index.meta.relations, 'happens_in')).toBe('Happens in');
+    expect(linkLabel(index, { source: 'P-D-UC01-FL-S01', relation: 'fulfills', target: 'P-D-UC01-R01' }, 'source')).toBe('Fulfills');
+    expect(linkLabel(index, { source: 'P-D-UC01-FL-S01', relation: 'fulfills', target: 'P-D-UC01-R01' }, 'target')).toBe('Fulfilled by');
+    expect(relationLabelOf(index.meta.relations, 'presents')).toBe('Presents');
     expect(relationLabelOf(index.meta.relations, 'hears', 'target')).toBe('Heard by');
     expect(linkLabel(index, { source: 'P-D-CMD01', relation: 'checks', target: 'P-D-SP01' }, 'target')).toBe('Checked by');
   }, 120_000);
@@ -198,6 +199,6 @@ describe('traceability', () => {
     // The steps that fulfill a UC requirement show once, in Designed by.
     trace = await show(data, 'P-D-UC01-R01');
     expect(groupTitles(trace)).not.toContain('Fulfilled by');
-    expect(groupIds(trace, 'Designed by')).toContain('P-D-UC01-FL01-S01');
+    expect(groupIds(trace, 'Designed by')).toContain('P-D-UC01-FL-S01');
   });
 });

@@ -28,7 +28,7 @@ describe('LA-V122-R02-T01 the Pattern editor writes only through the aggregate\'
     const user = userEvent.setup();
     const { commands } = await openApp('/DM-PAT-AUDIT', { data: patternWorkspace(), command: () => ({ answer: ok }) });
     const actions = await toolbar('DM-PAT-AUDIT');
-    expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add pattern rule', 'Remove']);
+    expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add pattern rule', 'Add slot', 'Remove']);
     await user.click(within(actions).getByRole('button', { name: 'Edit' }));
     const form = screen.getByRole('form', { name: 'Edit DM-PAT-AUDIT' });
     await user.click(within(form).getByRole('button', { name: 'Remove Settings: row 2' }));

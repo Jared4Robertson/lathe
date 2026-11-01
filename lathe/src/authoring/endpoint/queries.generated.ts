@@ -4,7 +4,7 @@ export const GET_ENDPOINT_IDENTITY = {
   id: 'LA-AUT-QRY194',
   slice: { aggregate: 'LA-AUT-A13', name: 'endpoint' },
   name: 'get-endpoint',
-  description: 'Reads an endpoint whole as its page shows it, by its ID or the ID of any record in it: the record asked for and its kind, the endpoint\'s row, its handler (with the standard rules it meets and the packages it uses), and its API requirements by ID, each with its tests (with the test data sets they start from).',
+  description: 'Reads an endpoint whole as its readers read it, by its ID or the ID of any record in it: the record asked for and its kind, the endpoint\'s own details, its handler (with the standard rules it meets and the packages it uses), and its API requirements by ID, each with its tests (with the test data sets they start from).',
   method: 'GET',
   route: '/api/endpoint/get-endpoint',
 } as const;

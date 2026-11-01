@@ -38,7 +38,7 @@ const stepKey = (layout: string, step: 'out' | 'in' | 'previous' | 'next') => (l
 // tab copies), whichever tab the page lands in. Only the person's own change in the graph (the toolbar, v, + and -)
 // changes them.
 
-const FLOW = 'P-D-UC01-FL01';
+const FLOW = 'P-D-UC01-FL';
 const layoutGroup = () => within(screen.getByRole('group', { name: 'Layout' }));
 /** The layout and depth the toolbar shows, and the Minimap switch. */
 const drawn = () => ({

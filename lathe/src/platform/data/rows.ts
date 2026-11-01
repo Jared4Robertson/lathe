@@ -112,3 +112,17 @@ export function rowLine(table: TableDescription, row: Row): string {
 export function tableText(table: TableDescription, rows: Row[]): string {
   return sortRows(table, rows).map((row) => `${rowLine(table, row)}\n`).join('');
 }
+
+/**
+ * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.
+ * Only the columns named in `columns` are taken from the changes. Every aggregate's Change commands apply their input with it.
+ */
+export function changed<R extends object>(row: R, changes: object, columns: readonly string[]): R {
+  const next = { ...row } as Record<string, unknown>;
+  for (const [column, value] of Object.entries(changes)) {
+    if (!columns.includes(column) || value === undefined) continue;
+    if (value === null) delete next[column];
+    else next[column] = value as Value;
+  }
+  return next as R;
+}

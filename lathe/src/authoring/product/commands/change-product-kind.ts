@@ -1,13 +1,14 @@
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ProductKindRow } from '../../../platform/data/tables.ts';
-import { changed, fieldsOf, type FieldInput } from '../model.ts';
+import { fieldsOf, type FieldInput } from '../model.ts';
+import { changed } from '../../../platform/data/rows.ts';
 import { ProductRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 import { CHANGE_PRODUCT_KIND_IDENTITY } from './identities.generated.ts';
 
 /** The kind's changes: a column given is set, null clears an optional one; fields, when given, replace the list. */
-export type ChangeProductKind = Pick<ProductKindRow, 'name'> & { label?: string; description?: string; parent_kind?: string; stage?: ProductKindRow['stage'] | null; obligation?: boolean; id_pattern?: string | null; id_example?: string | null; title_form?: ProductKindRow['title_form'] | null; fields?: FieldInput[] };
+export type ChangeProductKind = Pick<ProductKindRow, 'name'> & { label?: string; description?: string; parent_kind?: string; stage?: ProductKindRow['stage'] | null; obligation?: boolean; complexity?: ProductKindRow['complexity']; id_pattern?: string | null; id_example?: string | null; title_form?: ProductKindRow['title_form'] | null; fields?: FieldInput[] };
 
 export const CHANGE_PRODUCT_KIND = {
   ...CHANGE_PRODUCT_KIND_IDENTITY,
@@ -18,6 +19,7 @@ export const CHANGE_PRODUCT_KIND = {
     parent_kind: column('product_kind', 'parent_kind', 'optional'),
     stage: column('product_kind', 'stage', 'clearable'),
     obligation: column('product_kind', 'obligation', 'optional'),
+    complexity: column('product_kind', 'complexity', 'optional'),
     id_pattern: column('product_kind', 'id_pattern', 'clearable'),
     id_example: column('product_kind', 'id_example', 'clearable'),
     title_form: column('product_kind', 'title_form', 'clearable'),
@@ -33,7 +35,7 @@ export function changeProductKind(tx: Transaction, input: ChangeProductKind): vo
   product.kinds = product.kinds.map((kind) =>
     kind.row.name !== input.name
       ? kind
-      : { row: changed(kind.row, input, ['label', 'description', 'parent_kind', 'stage', 'obligation', 'id_pattern', 'id_example', 'title_form']), fields: input.fields ? fieldsOf(kind.row.name, input.fields) : kind.fields },
+      : { row: changed(kind.row, input, ['label', 'description', 'parent_kind', 'stage', 'obligation', 'complexity', 'id_pattern', 'id_example', 'title_form']), fields: input.fields ? fieldsOf(kind.row.name, input.fields) : kind.fields },
   );
   holdToRules(tx, product);
   products.save(product);

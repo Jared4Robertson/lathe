@@ -31,12 +31,14 @@ COMMENT ON COLUMN role.description IS 'Who takes the role and what they do in th
 CREATE TABLE product_setting (
   product_id VARCHAR PRIMARY KEY REFERENCES product (id),
   max_children INTEGER NOT NULL CHECK (max_children >= 1),
-  max_entities_per_aggregate INTEGER NOT NULL CHECK (max_entities_per_aggregate >= 1)
+  max_entities_per_aggregate INTEGER NOT NULL CHECK (max_entities_per_aggregate >= 1),
+  technology_words VARCHAR[] NOT NULL
 );
 COMMENT ON TABLE product_setting IS 'A product''s typed settings for its checks. A product without a row takes the defaults.';
 COMMENT ON COLUMN product_setting.product_id IS 'The product.';
 COMMENT ON COLUMN product_setting.max_children IS 'The most children of one kind a record should have before too-many-children warns; the default is 15.';
 COMMENT ON COLUMN product_setting.max_entities_per_aggregate IS 'The most entities an aggregate should have before aggregate-too-large warns; the default is 7.';
+COMMENT ON COLUMN product_setting.technology_words IS 'The words, besides Lathe''s own, that name technology in this product''s essential records, which accidental-in-essential warns of, such as the name of a framework the product is built with; none by default.';
 
 CREATE TABLE business_outcome (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
@@ -59,7 +61,7 @@ COMMENT ON COLUMN business_outcome.measured_outside IS 'How the outcome is measu
 COMMENT ON COLUMN business_outcome.notes IS 'Longer notes, such as where the measure comes from.';
 
 INSERT INTO meta_kind VALUES
-  ('product', 'Product', NULL, 1, false, '<P>', 'TL', NULL, NULL),
-  ('business_outcome', 'Business outcome', 'discovery', 2, false, '<P>-BO<nn>', 'TL-BO01', 'parent', NULL);
+  ('product', 'Product', NULL, 1, false, '<P>', 'TL', NULL, NULL, 'essential'),
+  ('business_outcome', 'Business outcome', 'discovery', 2, false, '<P>-BO<nn>', 'TL-BO01', 'parent', NULL, 'essential');
 INSERT INTO meta_kind_parent VALUES ('business_outcome', 'product', 1, 'product_id');
 INSERT INTO meta_table VALUES ('product', 'kind', NULL), ('role', 'part', 'product_id'), ('product_setting', 'checking', NULL), ('business_outcome', 'kind', NULL);

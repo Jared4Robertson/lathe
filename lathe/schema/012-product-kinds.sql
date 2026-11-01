@@ -13,7 +13,8 @@ CREATE TABLE product_kind (
   obligation BOOLEAN NOT NULL,
   id_pattern VARCHAR,
   id_example VARCHAR,
-  title_form title_form
+  title_form title_form,
+  complexity complexity NOT NULL CHECK (complexity NOT IN ('by-type', 'by-interface'))
 );
 COMMENT ON TABLE product_kind IS 'A kind a product adds to Lathe''s, such as a report or a CLI command. Its records sit under one parent kind, and its fields are product_kind_field rows.';
 COMMENT ON COLUMN product_kind.name IS 'The kind''s name, in lower case with underscores, which is also its table''s name; it must not be a table Lathe already has.';
@@ -22,9 +23,10 @@ COMMENT ON COLUMN product_kind.label IS 'The kind''s name as people read it, suc
 COMMENT ON COLUMN product_kind.description IS 'What a record of the kind is.';
 COMMENT ON COLUMN product_kind.parent_kind IS 'The kind its records sit under, their one parent: one of Lathe''s or another product kind. Its table gets a required <parent_kind>_id column.';
 COMMENT ON COLUMN product_kind.stage IS 'The stage its records belong to, any of the six, if one; such as technical-specification for a kind of code Lathe has no kind for.';
-COMMENT ON COLUMN product_kind.obligation IS 'Whether a record of the kind is an obligation, to be designed, built and proved. An obligation kind joins the obligation supertype.';
+COMMENT ON COLUMN product_kind.obligation IS 'Whether a record of the kind is an obligation, to be designed, built and proved. An obligation kind joins the obligation supertype, and the records something outside the product may provide (provided_by_source).';
 COMMENT ON COLUMN product_kind.id_pattern IS 'How its IDs are written, its own pattern, such as <command>-CLI.';
 COMMENT ON COLUMN product_kind.id_example IS 'An example ID.';
+COMMENT ON COLUMN product_kind.complexity IS 'Whether its records are essential complexity (what the problem itself demands, such as a report the product''s people read), accidental (what comes from the means of building it, such as a kind of code), or as-parent: as the record they sit under. Never mixed: a kind that would hold both is two kinds.';
 COMMENT ON COLUMN product_kind.title_form IS 'For a code-bound kind, how its titles are written (meta_kind_title): identifier, invocation or kebab-case; none for a kind titled in words.';
 
 CREATE TABLE product_kind_field (

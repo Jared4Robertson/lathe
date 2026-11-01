@@ -271,7 +271,7 @@ describe('themes', () => {
     expect(refused({ ...file, tokens: { '--body': 'x}; @import url(evil)' } })).toMatch(/not a value it takes/);
   });
 
-  it('LA-V62-R04-T01 A theme file imports as a new theme of one\'s own, kept in local storage; a bad one is refused, saying why', async () => {
+  it('LA-V62-R04-T01 LA-PAT-PAGE-STEPS-R02-T04 A theme file imports as a new theme of one\'s own, kept in local storage; a bad one is refused, saying why', async () => {
     await appearance();
     const upload = screen.getByLabelText('Import a theme file');
     fireEvent.change(upload, { target: { files: [new File(['{"format":"lathe-theme","version":9}'], 'bad.json')] } });

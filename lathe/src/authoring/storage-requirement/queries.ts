@@ -5,7 +5,7 @@
 import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { type StorageRequirementKind } from './model.ts';
+import type { StorageRequirementKind } from './model.ts';
 import type { StorageRequirementPage, StorageRequirementSummary } from './read-model.ts';
 import { storageRequirementReader, type StorageRequirementReader } from './reader.ts';
 import { GET_STORAGE_REQUIREMENT_IDENTITY, LIST_STORAGE_REQUIREMENTS_IDENTITY, NEXT_STORAGE_REQUIREMENT_ID_IDENTITY } from './queries.generated.ts';

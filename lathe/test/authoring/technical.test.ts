@@ -52,11 +52,11 @@ describe('the interaction design', () => {
     expect((await refusals(withTable(everyKind(), 'endpoint', [{ ...endpoint, query_id: 'TL-LEND-QRY01' }]))).map((p) => p.rule)).toEqual(['check']);
     // A step invokes a command or a query, never an endpoint.
     expect(pairsOf(schema, 'invokes')).toEqual(['flow_step>command', 'flow_step>query']);
-    const direct = await refusals(withTable(everyKind(), 'invokes', [{ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-LEND-EP01' }]));
+    const direct = await refusals(withTable(everyKind(), 'invokes', [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-EP01' }]));
     expect(direct).toEqual([expect.objectContaining({ table: 'invokes', file: 'data/invokes.jsonl', line: 1 })]);
   });
 
-  it('LA-AUT-UC18-R05-T01 LA-AUT-UC27-R01-T01 A view or an integration has no owner and takes its product from its ID, and one no step uses is an error', async () => {
+  it('LA-AUT-UC18-R05-T01 LA-AUT-UC27-R01-T01 A view or an integration has no owner and takes its product from its ID, and a view that presents nothing, or an integration no step uses, is an error', async () => {
     for (const kind of ['view', 'integration']) {
       expect(parentsOf(schema, kind), kind).toEqual([]);
       expect(schema.kinds[kind].idScope, kind).toBe('product');
@@ -64,7 +64,7 @@ describe('the interaction design', () => {
     expect(record(good, 'EX-V01')).toMatchObject({ parent: null, product: 'EX' });
     expect(record(good, 'EX-INT01')).toMatchObject({ parent: null, product: 'EX' });
     expect([...ofCheck(good, 'view-unused'), ...ofCheck(good, 'integration-unused')]).toEqual([]);
-    const ws = await loadData(without(without(complete(), 'happens_in', () => true), 'exchanges_with', () => true));
+    const ws = await loadData(without(without(complete(), 'presents', () => true), 'exchanges_with', () => true));
     expect(ofCheck(ws, 'view-unused')).toEqual([expect.objectContaining({ severity: 'error', record: 'EX-V01' })]);
     expect(ofCheck(ws, 'integration-unused')).toEqual([expect.objectContaining({ severity: 'error', record: 'EX-INT01' })]);
     // An ID that names no product is refused.
@@ -170,9 +170,11 @@ describe('standards', () => {
     ]);
     const meets = schema.relations.meets;
     expect(meets).toMatchObject({ role: null, forwardLabel: 'Meets', reverseLabel: 'Met by' });
-    expect(meets.pairs.every((p) => p.target === 'standard_rule')).toBe(true);
-    // Every technical kind meets standard rules but the data store, which names no code (a rule it met could never be built).
-    expect(meets.pairs.map((p) => p.source).sort()).toEqual(technical().filter((k) => k !== 'data_store').sort());
+    // Every technical kind meets standard rules, and the pattern rules it carries out, but the data store, which names
+    // no code (a rule it met could never be built).
+    const sources = technical().filter((k) => k !== 'data_store').sort();
+    for (const target of ['standard_rule', 'pattern_rule']) expect(meets.pairs.filter((p) => p.target === target).map((p) => p.source).sort(), target).toEqual(sources);
+    expect(meets.pairs).toHaveLength(sources.length * 2);
     expect(parentsOf(schema, 'standard_rule_test')).toEqual(['standard_rule.standard_rule_id']);
     expect([schema.kinds.standard_rule_test].map((k) => [k.stage, k.idPattern, k.obligation])).toEqual([['test-plan', '<standard rule>-T<nn>', false]]);
     expect(ALLOWED_LEVELS.standard_rule_test).toEqual(['unit', 'integration', 'service', 'system', 'browser']);

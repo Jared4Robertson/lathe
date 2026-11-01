@@ -1,8 +1,7 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { StorageRequirementTestRow } from '../../../platform/data/tables.ts';
-import { StorageRequirementRepository } from '../repository.ts';
 import { ADD_STORAGE_REQUIREMENT_TEST_IDENTITY } from './identities.generated.ts';
+import { addStorageRequirementTest } from './handlers.generated.ts';
 
 export type AddStorageRequirementTest = Pick<StorageRequirementTestRow, 'id' | 'title' | 'storage_requirement_id' | 'level' | 'state' | 'when' | 'then' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'notes'> & { starts_from?: string[] };
 
@@ -26,11 +25,3 @@ export const ADD_STORAGE_REQUIREMENT_TEST = {
   },
   handler: addStorageRequirementTest,
 } satisfies CommandDefinition<AddStorageRequirementTest>;
-
-export function addStorageRequirementTest(tx: Transaction, input: AddStorageRequirementTest): void {
-  const requirements = new StorageRequirementRepository(tx);
-  const requirement = requirements.load(input.storage_requirement_id) ?? tx.refuse('missing', `there is no storage requirement ${input.storage_requirement_id}`);
-  const { starts_from = [], ...row } = input;
-  requirement.tests.push({ row, startsFrom: starts_from });
-  requirements.save(requirement);
-}

@@ -1,28 +1,14 @@
 // The Product aggregate (LA-AUT-A1): a product with its roles, the kinds (with their fields) and relations it declares
-// as its own, its open questions (under the product or one of its domains, with what each is about) and its
-// interfaces. One instance is one product, whole; nothing in it belongs to another aggregate, and it holds only the
-// links its own records start.
+// as its own, and its open questions (under the product or one of its domains, with what each is about). One instance
+// is one product, whole; nothing in it belongs to another aggregate, and it holds only the links its own records
+// start. Its interfaces are aggregates of their own (LA-AUT-A24).
 import type { Transaction } from '../../platform/data/transaction.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
-import type { Row, Value } from '../../platform/data/rows.ts';
-import type { InterfaceRow, ProductKindFieldRow, ProductKindRow, ProductRelationRow, ProductRow, QuestionRow, RoleRow } from '../../platform/data/tables.ts';
+import type { Row } from '../../platform/data/rows.ts';
+import type { ProductKindFieldRow, ProductKindRow, ProductRelationRow, ProductRow, QuestionRow, RoleRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const PRODUCT_AGGREGATE = 'LA-AUT-A1';
-
-/**
- * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.
- * Only the columns named in `columns` are taken from the changes.
- */
-export function changed<R extends object>(row: R, changes: object, columns: readonly string[]): R {
-  const next = { ...row } as Record<string, unknown>;
-  for (const [column, value] of Object.entries(changes)) {
-    if (!columns.includes(column) || value === undefined) continue;
-    if (value === null) delete next[column];
-    else next[column] = value as Value;
-  }
-  return next as R;
-}
 
 /** A role as a command gives it: its name and description; the product fills the rest. */
 export type RoleInput = Omit<RoleRow, 'product_id'>;
@@ -51,15 +37,14 @@ export interface Product {
   kinds: ProductKind[];
   relations: ProductRelationRow[];
   questions: Question[];
-  interfaces: InterfaceRow[];
 }
 
 /** The tables the Product aggregate keeps its rows in: its kinds, declarations, parts, and the relation its questions start. */
-export const PRODUCT_TABLES = ['product', 'role', 'product_kind', 'product_kind_field', 'product_relation', 'question', 'about', 'interface'] as const;
+export const PRODUCT_TABLES = ['product', 'role', 'product_kind', 'product_kind_field', 'product_relation', 'question', 'about'] as const;
 
 /** A new product, with nothing under it yet but its roles. */
 export function newProduct(product: ProductRow, roles: RoleInput[]): Product {
-  return { root: product.id, product, roles: rolesOf(product.id, roles), kinds: [], relations: [], questions: [], interfaces: [] };
+  return { root: product.id, product, roles: rolesOf(product.id, roles), kinds: [], relations: [], questions: [] };
 }
 
 /** The roles as rows of the product. */
@@ -84,7 +69,6 @@ export function productsFrom(rows: (table: string) => Row[], productOfDomain: (d
   const fields = rows('product_kind_field') as unknown as ProductKindFieldRow[];
   const relations = rows('product_relation') as unknown as ProductRelationRow[];
   const questions = rows('question') as unknown as QuestionRow[];
-  const interfaces = rows('interface') as unknown as InterfaceRow[];
   const about = bySource(rows('about'));
   const fieldsOf = groupBy(fields, (f) => f.kind);
   return products.map((product) => {
@@ -98,7 +82,6 @@ export function productsFrom(rows: (table: string) => Row[], productOfDomain: (d
       questions: questions
         .filter((q) => (q.product_id ?? (q.domain_id === undefined ? undefined : productOfDomain(q.domain_id))) === product.id)
         .map((row) => ({ row, about: groupOf(about, row.id) })),
-      interfaces: interfaces.filter(own),
     };
   });
 }
@@ -115,7 +98,6 @@ export function productRows(product: Product): Map<string, Row[]> {
     ['product_relation', product.relations.map(asRow)],
     ['question', product.questions.map((q) => asRow(q.row))],
     ['about', product.questions.flatMap((q) => q.about.map((target) => ({ source_id: q.row.id, target_id: target })))],
-    ['interface', product.interfaces.map(asRow)],
   ]);
 }
 

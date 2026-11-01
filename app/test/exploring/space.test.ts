@@ -32,7 +32,7 @@ describe('LA-EXP-INV20-T the Space commands keep the spaces through SpaceReposit
   });
 });
 
-describe('LA-EXP-INV20-T A space\'s last page is a page of a space', () => {
+describe('LA-EXP-INV20-T LA-PAT-PAGE-STEPS-R02-T03 A space\'s last page is a page of a space', () => {
   it('refuses another with its reason, and nothing is saved', () => {
     expect(() => holdToRules({ ...NO_SPACE_MEMORY, pages: { P: '/' } })).toThrow(RuleBroken);
     expect(() => holdToRules({ ...NO_SPACE_MEMORY, pages: { P: '/' } })).toThrow('The last page of space P, /, is not a page of a space.');

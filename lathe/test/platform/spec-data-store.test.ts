@@ -64,7 +64,7 @@ describe('the spec data store keeps every change through a restart, and a refuse
   it.each<[string, Kept]>([
   ['LA-AUT-A1-SR01-T01', change('product', 'product', 'TL')],
   ['LA-AUT-A2-SR01-T01', change('pattern', 'pattern', 'TL-PAT-LIBRARIAN-ACTION')],
-  ['LA-AUT-A3-SR01-T01', add('standard', 'standard', { id: 'TL-STD-KEPT', title: 'Kept', product_id: 'TL', description: 'A standard kept through a restart.' })],
+  ['LA-AUT-A3-SR01-T01', add('standard', 'standard', { id: 'TL-STD-KEPT', title: 'Kept', product_id: 'TL', type: 'engineering', description: 'A standard kept through a restart.' })],
   ['LA-AUT-A4-SR01-T01', change('domain', 'domain', 'TL-LEND')],
   ['LA-AUT-A5-SR01-T01', change('specification', 'specification', 'TL-LEND-SP01')],
   ['LA-AUT-A6-SR01-T01', change('aggregate', 'aggregate', 'TL-LEND-A1')],
@@ -85,6 +85,7 @@ describe('the spec data store keeps every change through a restart, and a refuse
   ['LA-AUT-A21-SR01-T01', change('tooling', 'tooling', 'TL-LEND-TOOL01', 'file', 'tsconfig.kept.json')],
   ['LA-AUT-A22-SR01-T01', change('storage-requirement', 'storage_requirement', 'TL-LEND-A3-SR01')],
   ['LA-AUT-A23-SR01-T01', change('data-store', 'data_store', 'TL-LEND-STORE01', 'description')],
+  ['LA-AUT-A24-SR01-T01', change('interface', 'interface', 'TL-IF01')],
   ['LA-CHK-A1-SR01-T01', {
     slice: 'check', command: 'add-check', table: 'check', key: { name: 'kept-check' }, column: 'summary',
     input: { name: 'kept-check', product_id: 'TL', domain_id: 'LA-CHK', position: 1, severity: 'warning', summary: 'Kept through a restart.', explanation: 'A check kept through a restart.', query: "SELECT NULL AS record, 'kept' AS message WHERE false" },

@@ -13,11 +13,14 @@ import { ENDPOINT_COMMANDS } from './authoring/endpoint/commands/index.ts';
 import { ENTRY_POINT_COMMANDS } from './authoring/entry-point/commands/index.ts';
 import { EXTENSION_RECORD_COMMANDS } from './authoring/extension-record/commands/index.ts';
 import { INTEGRATION_COMMANDS } from './authoring/integration/commands/index.ts';
+import { INTERFACE_COMMANDS } from './authoring/interface/commands/index.ts';
 import { PATTERN_COMMANDS } from './authoring/pattern/commands/index.ts';
 import { PATTERN_FOLLOWING_COMMANDS } from './traceability/pattern-following/commands/index.ts';
 import { PRODUCT_COMMANDS } from './authoring/product/commands/index.ts';
 import { PRODUCT_SETTING_COMMANDS } from './checking/product-setting/commands/index.ts';
+import { PROVISION_COMMANDS } from './traceability/provision/commands/index.ts';
 import { READ_MODEL_COMMANDS } from './authoring/read-model/commands/index.ts';
+import { SLOT_FILLING_COMMANDS } from './traceability/slot-filling/commands/index.ts';
 import { SPECIFICATION_COMMANDS } from './authoring/specification/commands/index.ts';
 import { STANDARD_COMMANDS } from './authoring/standard/commands/index.ts';
 import { STORAGE_REQUIREMENT_COMMANDS } from './authoring/storage-requirement/commands/index.ts';
@@ -33,13 +36,16 @@ import { GET_BUSINESS_OUTCOME, LIST_BUSINESS_OUTCOMES, NEXT_BUSINESS_OUTCOME_ID 
 import { GET_CHECK, LIST_CHECKS } from './checking/check/queries.ts';
 import { GET_COMMAND, LIST_COMMANDS, NEXT_COMMAND_ID } from './authoring/command/queries.ts';
 import { GET_COVERAGE } from './traceability/coverage/queries.ts';
+import { LIST_COVERAGE_GAPS, FIND_UNUSED_PACKAGES } from './traceability/coverage-gaps/queries.ts';
 import { GET_DATA_STORE, LIST_DATA_STORES, NEXT_DATA_STORE_ID } from './authoring/data-store/queries.ts';
 import { GET_DOMAIN, LIST_DOMAINS, NEXT_DOMAIN_ID } from './authoring/domain/queries.ts';
 import { GET_DOMAIN_EVENT, LIST_DOMAIN_EVENTS, NEXT_DOMAIN_EVENT_ID } from './authoring/domain-event/queries.ts';
 import { GET_ENDPOINT, LIST_ENDPOINTS, NEXT_ENDPOINT_ID } from './authoring/endpoint/queries.ts';
 import { GET_ENTRY_POINT, LIST_ENTRY_POINTS, NEXT_ENTRY_POINT_ID } from './authoring/entry-point/queries.ts';
 import { GET_ERD } from './exploring/erd/queries.ts';
+import { LIST_ESSENTIAL_RECORDS } from './checking/essential-review/queries.ts';
 import { GET_EXTENSION_RECORD, LIST_EXTENSION_RECORDS, NEXT_EXTENSION_RECORD_ID } from './authoring/extension-record/queries.ts';
+import { LIST_TRACED_ADDRESSES } from './traceability/file-facts/queries.ts';
 import { GET_FOLDER_TREE } from './exploring/folder-tree/queries.ts';
 import { GET_INTEGRATION, LIST_INTEGRATIONS, NEXT_INTEGRATION_ID } from './authoring/integration/queries.ts';
 import { GET_META_MODEL } from './platform/meta-model/queries.ts';
@@ -57,10 +63,12 @@ import { GET_SERVES, LIST_SERVES } from './traceability/serves/queries.ts';
 import { GET_SPECIFICATION, LIST_SPECIFICATIONS, NEXT_SPECIFICATION_ID } from './authoring/specification/queries.ts';
 import { GET_STANDARD, LIST_STANDARDS, NEXT_STANDARD_ID } from './authoring/standard/queries.ts';
 import { GET_STORAGE_REQUIREMENT, LIST_STORAGE_REQUIREMENTS, NEXT_STORAGE_REQUIREMENT_ID } from './authoring/storage-requirement/queries.ts';
+import { FIND_UNDEFINED_STORED_KINDS } from './traceability/stored-record-facts/queries.ts';
 import { GET_TABLE, LIST_TABLES, NEXT_TABLE_ID } from './authoring/table/queries.ts';
 import { GET_TEST_DATA_SET, LIST_TEST_DATA_SETS, NEXT_TEST_DATA_SET_ID } from './authoring/test-data-set/queries.ts';
+import { GET_TEST_COUNTS } from './traceability/tests-by-state/queries.ts';
 import { GET_TOOLING, LIST_TOOLING, NEXT_TOOLING_ID } from './authoring/tooling/queries.ts';
-import { LIST_TRACE_ROWS } from './traceability/trace/queries.ts';
+import { LIST_TRACED_USE_CASES } from './traceability/trace/queries.ts';
 import { GET_UI_COMPONENT, LIST_UI_COMPONENTS, NEXT_UI_COMPONENT_ID } from './authoring/ui-component/queries.ts';
 import { GET_USE_CASE, LIST_USE_CASES, NEXT_USE_CASE_ID } from './authoring/use-case/queries.ts';
 import { GET_VALUE_OBJECT, LIST_VALUE_OBJECTS, NEXT_VALUE_OBJECT_ID } from './authoring/value-object/queries.ts';
@@ -78,11 +86,14 @@ const COMMANDS = [
   ...ENTRY_POINT_COMMANDS,
   ...EXTENSION_RECORD_COMMANDS,
   ...INTEGRATION_COMMANDS,
+  ...INTERFACE_COMMANDS,
   ...PATTERN_COMMANDS,
   ...PATTERN_FOLLOWING_COMMANDS,
   ...PRODUCT_COMMANDS,
   ...PRODUCT_SETTING_COMMANDS,
+  ...PROVISION_COMMANDS,
   ...READ_MODEL_COMMANDS,
+  ...SLOT_FILLING_COMMANDS,
   ...SPECIFICATION_COMMANDS,
   ...STANDARD_COMMANDS,
   ...STORAGE_REQUIREMENT_COMMANDS,
@@ -113,6 +124,8 @@ export const ALL_QUERIES: readonly AnyQuery[] = [
   LIST_COMMANDS,
   NEXT_COMMAND_ID,
   GET_COVERAGE,
+  LIST_COVERAGE_GAPS,
+  FIND_UNUSED_PACKAGES,
   GET_DATA_STORE,
   LIST_DATA_STORES,
   NEXT_DATA_STORE_ID,
@@ -129,9 +142,11 @@ export const ALL_QUERIES: readonly AnyQuery[] = [
   LIST_ENTRY_POINTS,
   NEXT_ENTRY_POINT_ID,
   GET_ERD,
+  LIST_ESSENTIAL_RECORDS,
   GET_EXTENSION_RECORD,
   LIST_EXTENSION_RECORDS,
   NEXT_EXTENSION_RECORD_ID,
+  LIST_TRACED_ADDRESSES,
   GET_FOLDER_TREE,
   GET_INTEGRATION,
   LIST_INTEGRATIONS,
@@ -167,16 +182,18 @@ export const ALL_QUERIES: readonly AnyQuery[] = [
   GET_STORAGE_REQUIREMENT,
   LIST_STORAGE_REQUIREMENTS,
   NEXT_STORAGE_REQUIREMENT_ID,
+  FIND_UNDEFINED_STORED_KINDS,
   GET_TABLE,
   LIST_TABLES,
   NEXT_TABLE_ID,
   GET_TEST_DATA_SET,
   LIST_TEST_DATA_SETS,
   NEXT_TEST_DATA_SET_ID,
+  GET_TEST_COUNTS,
   GET_TOOLING,
   LIST_TOOLING,
   NEXT_TOOLING_ID,
-  LIST_TRACE_ROWS,
+  LIST_TRACED_USE_CASES,
   GET_UI_COMPONENT,
   LIST_UI_COMPONENTS,
   NEXT_UI_COMPONENT_ID,

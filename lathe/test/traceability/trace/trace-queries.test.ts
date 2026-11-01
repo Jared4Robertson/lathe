@@ -3,7 +3,7 @@
 // status per stage, read from the rows and the checks' run through the read model's reader, as the CLI, the MCP tools
 // and the HTTP API read it.
 import { afterEach, describe, expect, it } from 'vitest';
-import { LIST_TRACE_ROWS } from '../../../src/traceability/trace/queries.ts';
+import { LIST_TRACED_USE_CASES } from '../../../src/traceability/trace/queries.ts';
 import type { ProductTrace } from '../../../src/traceability/trace/read-model.ts';
 import { answerQuery, runQuery } from '../../../src/platform/commands/run.ts';
 import type { CheckRun, ReadView } from '../../../src/platform/data/rules.ts';
@@ -18,7 +18,7 @@ afterEach(async () => { for (const s of open.splice(0)) await s.close(); });
 
 const gap = (id: string, kind: string, missing: string): CoverageGap => ({ id, kind, missing, message: `${id} misses ${missing}.` });
 const chain = (obligation: string, tests: string[]): TraceChain => ({ obligation, design: [], build: [], tests, files: [], links: [] });
-const coverage = (gaps: CoverageGap[]): Coverage => ({ product: 'EX', domain: 'EX-LEND', gaps, obligations: [], tests: { automated: 0, manual: 0, not_automated: 0 }, proved_by: {}, pattern_rules: [] });
+const coverage = (gaps: CoverageGap[]): Coverage => ({ product: 'EX', domain: 'EX-LEND', gaps, obligations: [], tests: { automated: 0, manual: 0, not_automated: 0 }, proved_by: {}, pattern_rules: [], debt: [] });
 
 /** The complete data set with a run of the checks that found these gaps and these tests. */
 async function view(run: Omit<CheckRun, 'problems'>): Promise<ReadView> {
@@ -33,7 +33,7 @@ describe('LA-TRC-UC10-R06-T01 A product\'s trace rows read gives each use case o
       chains: [chain('EX-LEND-UC01-R01', ['EX-LEND-UC01-R01-T01']), chain('EX-LEND-INV01', ['EX-LEND-INV01-T01'])],
       coverage: [coverage([gap('EX-V01-R01', 'view_requirement', 'built'), gap('EX-V01-R01', 'view_requirement', 'proved')])],
     });
-    const ex = runQuery(data, LIST_TRACE_ROWS, { product_id: 'EX' }) as ProductTrace;
+    const ex = runQuery(data, LIST_TRACED_USE_CASES, { product_id: 'EX' }) as ProductTrace;
     expect(ex.product).toBe('EX');
     expect(ex.outcomes).toEqual(['EX-BO01']);
     expect(ex.rows.map((r) => r.useCase)).toEqual(['EX-LEND-UC01', 'EX-LEND-UC02']);
@@ -44,41 +44,47 @@ describe('LA-TRC-UC10-R06-T01 A product\'s trace rows read gives each use case o
       changes: ['EX-LEND-A1', 'EX-LEND-A2'],
       reads: ['EX-LEND-RM01'],
     });
-    // Its flow's steps in path order, each with its design and its technical chain, and the flow's test.
-    const [flow] = uc1.flows;
-    expect(flow).toMatchObject({ id: 'EX-LEND-UC01-FL01', interface: 'EX-IF01', test: 'EX-LEND-UC01-FL01-T', proved: true });
-    expect(flow.steps.map((s) => s.id)).toEqual(['EX-LEND-UC01-FL01-S01', 'EX-LEND-UC01-FL01-S02']);
+    // Its flow's steps in path order, each with its operation and its technical chain, and the flow's test; each interface's version is derived.
+    const flow = uc1.flow!;
+    expect(flow).toMatchObject({ id: 'EX-LEND-UC01-FL', test: 'EX-LEND-UC01-FL-T', proved: true });
+    expect(flow.steps.map((s) => s.id)).toEqual(['EX-LEND-UC01-FL-S01', 'EX-LEND-UC01-FL-S02']);
     expect(flow.steps[0]).toEqual({
-      id: 'EX-LEND-UC01-FL01-S01', path: 'main', position: 1, fulfills: ['EX-LEND-UC01-R01'], operation: 'EX-LEND-CMD01', view: 'EX-V01',
-      viewRequirements: [{ id: 'EX-V01-R01', gaps: ['built', 'proved'], tests: [] }],
-      endpoints: [{ id: 'EX-LEND-EP01', apiRequirements: [{ id: 'EX-LEND-EP01-R01', gaps: [], tests: [] }] }],
+      id: 'EX-LEND-UC01-FL-S01', path: 'main', position: 1, variantOf: null, fulfills: ['EX-LEND-UC01-R01'], operation: 'EX-LEND-CMD01',
       integrations: [],
       chain: { components: ['EX-UI01'], entries: ['EX-LEND-EP01'], handlers: ['EX-LEND-CMD01-H'], stores: ['EX-LEND-REPO01'], dataStores: ['EX-STORE01'], adapters: [] },
     });
+    // The web app's version of the flow: the step is carried out in the view that presents its command, with the view's requirements.
+    expect(flow.through).toHaveLength(1);
+    expect(flow.through[0]).toMatchObject({ interface: 'EX-IF01', kind: 'web app', actor: 'Member' });
+    expect(flow.through[0].steps[0]).toEqual({
+      id: 'EX-LEND-UC01-FL-S01',
+      views: [{ id: 'EX-V01', requirements: [{ id: 'EX-V01-R01', gaps: ['built', 'proved'], tests: [] }] }],
+      endpoints: [], entries: [], unreached: false,
+    });
     // A query's reader stands where a command's repository would, and an integration's adapter beside it.
-    expect(flow.steps[1].chain).toEqual({ components: [], entries: [], handlers: ['EX-LEND-QRY01-H'], stores: ['EX-LEND-RM01-RD'], dataStores: ['EX-STORE01'], adapters: ['EX-INT01-AD'] });
-    // What its tests rest on: its steps' view and API requirements, its aggregates' invariants and storage requirements.
-    expect(uc1.lower.map((o) => o.id)).toEqual(['EX-LEND-A1-SR01', 'EX-LEND-EP01-R01', 'EX-LEND-INV01', 'EX-V01-R01']);
+    expect(flow.steps[1].chain).toEqual({ components: ['EX-UI01'], entries: [], handlers: ['EX-LEND-QRY01-H'], stores: ['EX-LEND-RM01-RD'], dataStores: ['EX-STORE01'], adapters: ['EX-INT01-AD'] });
+    // What its tests rest on: the view and API requirements of the interfaces that carry its steps (the fixture's only interface is a web app, so no API requirement), its aggregates' invariants and storage requirements.
+    expect(uc1.lower.map((o) => o.id)).toEqual(['EX-LEND-A1-SR01', 'EX-LEND-INV01', 'EX-V01-R01']);
     expect(uc1.lower.find((o) => o.id === 'EX-LEND-INV01')!.tests).toEqual(['EX-LEND-INV01-T01']);
-    expect(uc1.status).toEqual({ design: { flows: 1, notDesigned: 0 }, technical: { handlers: 2, notBuilt: 1 }, suite: { tests: 2, owed: 2, notProved: 0 } });
-    expect(LIST_TRACE_ROWS.text(ex).split('\n')[1]).toBe('  EX-LEND-UC01 (EX-BO01): 1 flow, all designed · 2 handlers, 1 not built · 2 tests, all proved');
+    expect(uc1.status).toEqual({ design: { interfaces: 1, notDesigned: 0 }, technical: { handlers: 2, notBuilt: 1 }, suite: { tests: 2, owed: 2, notProved: 0 } });
+    expect(LIST_TRACED_USE_CASES.text(ex).split('\n')[1]).toBe('  EX-LEND-UC01 (EX-BO01): 1 interface, all designed · 2 handlers, 1 not built · 2 tests, all proved');
   });
 
   it('counts a requirement no step designs and one not proved, and refuses an unknown product and data without the checks\' run', async () => {
     const data = await view({ chains: [], coverage: [coverage([gap('EX-LEND-UC01-R01', 'uc_requirement', 'designed'), gap('EX-LEND-UC01-R01', 'uc_requirement', 'proved')])] });
-    const uc1 = (runQuery(data, LIST_TRACE_ROWS, { product_id: 'EX' }) as ProductTrace).rows[0];
+    const uc1 = (runQuery(data, LIST_TRACED_USE_CASES, { product_id: 'EX' }) as ProductTrace).rows[0];
     expect(uc1.requirements).toEqual([{ id: 'EX-LEND-UC01-R01', gaps: ['designed', 'proved'], tests: [] }]);
     expect(uc1.status.design.notDesigned).toBe(1);
     expect(uc1.status.suite.notProved).toBe(1);
-    expect(() => runQuery(data, LIST_TRACE_ROWS, { product_id: 'NOPE' })).toThrow(StoreError);
+    expect(() => runQuery(data, LIST_TRACED_USE_CASES, { product_id: 'NOPE' })).toThrow(StoreError);
     const store = open[0];
-    expect(() => answerQuery(store, LIST_TRACE_ROWS, { product_id: 'EX' })).toThrow(/LA-TRC-QRY18 reads the checks' run/);
+    expect(() => answerQuery(store, LIST_TRACED_USE_CASES, { product_id: 'EX' })).toThrow(/LA-TRC-QRY18 reads the checks' run/);
   });
 
-  it('runs the checks first for `lathe trace list-trace-rows`', async () => {
+  it('runs the checks first for `lathe trace list-traced-use-cases`', async () => {
     const root = writeData(complete());
     const out: string[] = [];
-    expect(await runAggregateCommand(['trace', 'list-trace-rows', '--product_id', 'EX', '--root', root.replace(/\/data$/, '')], { out: (t) => out.push(t), err: (t) => out.push(t) })).toBe(0);
-    expect(out[0]).toMatch(/^EX: 2 use cases, 1 outcome\n {2}EX-LEND-UC01 \(EX-BO01\): 1 flow/);
+    expect(await runAggregateCommand(['trace', 'list-traced-use-cases', '--product_id', 'EX', '--root', root.replace(/\/data$/, '')], { out: (t) => out.push(t), err: (t) => out.push(t) })).toBe(0);
+    expect(out[0]).toMatch(/^EX: 2 use cases, 1 outcome\n {2}EX-LEND-UC01 \(EX-BO01\): 1 interface/);
   });
 });
