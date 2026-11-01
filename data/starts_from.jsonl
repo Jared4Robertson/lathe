@@ -195,12 +195,14 @@
 {"source_id":"LA-AUT-UC33-R01-T01","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-UC33-R02-T01","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-UC33-R03-T01","target_id":"LA-AUT-TD01"}
+{"source_id":"LA-AUT-UC33-R03-T02","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-AUT-UC33-R04-T01","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-UC33-R05-T01","target_id":"LA-AUT-TD01"}
+{"source_id":"LA-AUT-UC33-R05-T02","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-AUT-UC33-R06-T01","target_id":"LA-AUT-TD01"}
-{"source_id":"LA-AUT-UC33-R07-T01","target_id":"LA-AUT-TD01"}
-{"source_id":"LA-AUT-UC33-R08-T01","target_id":"LA-AUT-TD01"}
-{"source_id":"LA-AUT-UC33-R09-T01","target_id":"LA-AUT-TD01"}
+{"source_id":"LA-AUT-UC33-R07-T01","target_id":"LA-AUT-TD02"}
+{"source_id":"LA-AUT-UC33-R08-T01","target_id":"LA-AUT-TD02"}
+{"source_id":"LA-AUT-UC33-R09-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-CHK-DS01-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-CHK-INV01-T","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-CHK-INV02-T","target_id":"LA-AUT-TD02"}
@@ -521,6 +523,7 @@
 {"source_id":"LA-STD-MODELING-R01-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-STD-MODELING-R02-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-STD-MODELING-R03-T01","target_id":"LA-AUT-TD02"}
+{"source_id":"LA-STD-MODELING-R03-T03","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-STD-MODELING-R05-T02","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-STD-MODELING-R07-T02","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-STD-MODELING-R12-T03","target_id":"LA-EXP-TD01"}
@@ -624,9 +627,9 @@
 {"source_id":"LA-TRC-UC14-FL-T","target_id":"LA-EXP-TD02"}
 {"source_id":"LA-TRC-UC19-FL-T","target_id":"LA-AUT-TD03"}
 {"source_id":"LA-TRC-UC22-FL-T","target_id":"LA-AUT-TD03"}
-{"source_id":"LA-TRC-UC22-R01-T01","target_id":"LA-TRC-TD01"}
+{"source_id":"LA-TRC-UC22-R01-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-TRC-UC22-R02-T01","target_id":"LA-EXP-TD02"}
-{"source_id":"LA-TRC-UC22-R03-T01","target_id":"LA-TRC-TD01"}
+{"source_id":"LA-TRC-UC22-R03-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-V01-R01-T01","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-V01-R02-T01","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-V02-R01-T01","target_id":"LA-EXP-TD01"}
