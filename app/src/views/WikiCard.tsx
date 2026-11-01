@@ -200,7 +200,7 @@ function NoPage({ kind }: { kind: string }) {
   return <div className="spec-body placeholder"><p>No aggregate has a page for the kind <code>{kind}</code>.</p></div>;
 }
 
-/** The whole wiki page (More): a record's page ends with its History (LA-V96-R26), read only when asked. */
+/** The whole wiki page (More): a record's page ends with its History (LA-V102-R05), read only when asked. */
 function WikiContent({ index, route }: { index: RecordIndex; route: FocusRoute }) {
   if (route.page === 'group') return <GroupWiki index={index} gid={focusOf(route)} />;
   return (
