@@ -13,6 +13,9 @@
 {"source_id":"LA-AUT-EN111-TB","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-AUT-EN112-TB","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-AUT-EN113-TB","target_id":"LA-PLT-STORE01"}
+{"source_id":"LA-AUT-EN115-TB","target_id":"LA-PLT-STORE01"}
+{"source_id":"LA-AUT-EN116-TB","target_id":"LA-PLT-STORE01"}
+{"source_id":"LA-AUT-EN117-TB","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-AUT-EN12-TB","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-AUT-EN13-TB","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-AUT-EN14-TB","target_id":"LA-PLT-STORE01"}
@@ -100,6 +103,7 @@
 {"source_id":"LA-AUT-REPO22","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-AUT-REPO23","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-AUT-REPO24","target_id":"LA-PLT-STORE01"}
+{"source_id":"LA-AUT-REPO25","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-AUT-RM01-TB","target_id":"LA-STORE04"}
 {"source_id":"LA-AUT-RM02-RD","target_id":"LA-STORE04"}
 {"source_id":"LA-AUT-RM02-TB","target_id":"LA-STORE04"}
@@ -149,6 +153,8 @@
 {"source_id":"LA-AUT-RM42-TB","target_id":"LA-STORE04"}
 {"source_id":"LA-AUT-RM43-RD","target_id":"LA-STORE04"}
 {"source_id":"LA-AUT-RM43-TB","target_id":"LA-STORE04"}
+{"source_id":"LA-AUT-RM44-RD","target_id":"LA-STORE04"}
+{"source_id":"LA-AUT-RM44-TB","target_id":"LA-STORE04"}
 {"source_id":"LA-AUT-TB30","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-AUT-TB31","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-AUT-TB40","target_id":"LA-PLT-STORE01"}
@@ -172,6 +178,7 @@
 {"source_id":"LA-AUT-TB89","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-AUT-TB90","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-AUT-TB92","target_id":"LA-PLT-STORE01"}
+{"source_id":"LA-AUT-TB95","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-CHK-EN01-TB","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-CHK-EN03-TB","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-CHK-REPO01","target_id":"LA-PLT-STORE01"}
