@@ -84,7 +84,7 @@ export const emptyDraft = (): Draft => ({ text: {}, ids: {}, parts: {} });
  * (formFields); only a product's own kind, declared in its data, builds them from its declaration.
  */
 export type FieldSpec = { field: string; clearable?: boolean } & (
-  | { column: string; table: string; label?: string; long?: boolean; required?: boolean }
+  | { column: string; table: string; label?: string; long?: boolean; required?: boolean; choices?: Choice[]; description?: string }
   | { label: string; description: string; texts: true; required?: boolean }
   | { label: string; description: string; one: Choice[]; required?: boolean }
   | { label: string; description: string; many: Choice[] }
@@ -101,8 +101,8 @@ export type InputFields = Readonly<Record<string, InputField>>;
 
 /**
  * What a form adds to a field that its command's input cannot say: its label where the field's name does not read
- * well, long text, the records a field naming one or more may choose from, and a description that names the record
- * at hand.
+ * well, long text, the records a field naming one or more may choose from (a column naming one is then chosen too),
+ * and a description that names the record at hand.
  */
 export interface FieldHint {
   label?: string;
@@ -129,7 +129,10 @@ export function formFields<F extends InputFields>(input: F, without: readonly (k
     const label = hint.label ?? labelOf(field);
     switch (f.kind) {
       case 'column':
-        return { ...shared, column: f.column, table: f.table, ...(hint.label ? { label: hint.label } : {}), ...(hint.long ? { long: true } : {}), ...(f.required ? { required: true } : {}) };
+        return {
+          ...shared, column: f.column, table: f.table, ...(hint.label ? { label: hint.label } : {}), ...(hint.long ? { long: true } : {}), ...(f.required ? { required: true } : {}),
+          ...(hint.choices ? { choices: hint.choices } : {}), ...(hint.description ? { description: hint.description } : {}),
+        };
       case 'texts':
         return { ...shared, label, description: hint.description ?? f.description, texts: true, required: f.required };
       case 'id':
@@ -169,6 +172,15 @@ export function Fields({ index, specs, draft, setDraft, first }: {
             <PartsField key={spec.field} id={id} label={spec.label} description={spec.description}
               columns={spec.columns.map((c) => columnOf(index, spec.table, c))} rows={draft.parts[spec.field] ?? []}
               onChange={(rows) => setDraft((d) => ({ ...d, parts: { ...d.parts, [spec.field]: rows } }))} />
+          );
+        }
+        if ('column' in spec && spec.choices) {
+          // A column naming a record (such as a flow's interface), chosen among the records it may name.
+          const column = columnOf(index, spec.table, spec.column);
+          return (
+            <IdField key={spec.field} id={id} label={spec.label ?? labelOf(spec.column)} description={spec.description ?? column.description ?? ''} choices={spec.choices}
+              required={spec.required ?? column.required} inputRef={ref}
+              value={draft.text[spec.field] ?? ''} onChange={(value) => setDraft((d) => ({ ...d, text: { ...d.text, [spec.field]: value } }))} />
           );
         }
         if ('column' in spec) {

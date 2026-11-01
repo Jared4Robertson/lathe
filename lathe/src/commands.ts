@@ -97,7 +97,7 @@ const COMMANDS = [
 
 export const ALL_COMMANDS: readonly AnyCommand[] = COMMANDS;
 
-/** Each command's route, with its input: what the app sends, typed by its definition. */
+/** Each command's route, with its input: what the app sends, typed by its definition. @public (the app's writer) */
 export type CommandInputs = InputsByRoute<(typeof COMMANDS)[number]>;
 
 export const ALL_QUERIES: readonly AnyQuery[] = [

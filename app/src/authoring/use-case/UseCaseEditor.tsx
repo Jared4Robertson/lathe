@@ -102,13 +102,12 @@ function fieldsOf(context: FormContext, kind: UseCaseKind, adding: boolean, pare
       return addOrChangeFields(adding, F['/api/use-case/add-uc-requirement'], 'use_case_id', F['/api/use-case/change-uc-requirement'], { statement: LONG });
     case 'flow': {
       if (!adding) return formFields(F['/api/use-case/change-flow'], ['id']);
-      // The interface is a column the form draws as a choice: one its use case has no flow through yet.
+      // The interface is one its use case has no flow through yet.
       const through = new Set(useCase.flows.map((f) => f.flow.interface_id));
       const interfaces = productChoices(index, useCase, ['interface']).filter((c) => !through.has(c.id));
-      return [
-        ...formFields(F['/api/use-case/add-flow'], ['use_case_id', 'interface_id']),
-        { field: 'interface_id', label: 'Interface', description: 'The interface it goes through: one its use case has no flow through yet. The flow\'s ID ends in its number.', one: interfaces, required: true },
-      ];
+      return formFields(F['/api/use-case/add-flow'], ['use_case_id'], {
+        interface_id: { label: 'Interface', choices: interfaces, description: 'The interface it goes through: one its use case has no flow through yet. The flow\'s ID ends in its number.' },
+      });
     }
     case 'flow_step': {
       const flowId = adding ? parent : stepsOfUseCase(useCase).find((s) => s.step.id === parent)!.step.flow_id;
