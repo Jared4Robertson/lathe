@@ -3,7 +3,7 @@ import { desktopStandIn } from '../test/desktop-bridge';
 import type { LatheDesktop } from '../src/shell/desktop-bridge';
 
 // The desktop app in a browser: the shell's bridge (window.latheDesktop) stood in for before the page loads, so the
-// app shows what it shows in the desktop app (its tab strip, LA-V96-R10..R17, R31). Every suite uses this one
+// app shows what it shows in the desktop app (its tab strip, LA-V103-R01..R17, R31). Every suite uses this one
 // stand-in (test/desktop-bridge.ts, typed by the bridge itself); a test changes only the members it watches.
 
 /** Changes the stand-in's members in the page, before the app loads; `arg` is sent to the page as JSON. */
