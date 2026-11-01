@@ -115,7 +115,7 @@ test.describe('watching the spec change', () => {
     }
   });
 
-  test('LA-EXP-UC15-FL-T The desktop app marks the chat\'s changes on the stage and lists the turn\'s changes from the same diff', async ({ page }) => {
+  test('LA-PAT-PAGE-STEPS-R01-T03 The desktop app marks the chat\'s changes on the stage and lists the turn\'s changes from the same diff', async ({ page }) => {
     const restore = keepData();
     try {
       commitCopy();

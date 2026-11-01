@@ -139,7 +139,7 @@ async function eventsUntil(response: Response, wanted: string, timeoutMs: number
 }
 
 describe('Platform flows', () => {
-  it('LA-PLT-UC01-FL-T an Agent\'s script loads the workspace, sees refused data as data-refused errors, and loads again after a write', async () => {
+  it('LA-PLT-UC01-FL-T LA-PAT-PACKAGE-STEPS-R01-T01 LA-PAT-PACKAGE-STEPS-R02-T01 an Agent\'s script loads the workspace, sees refused data as data-refused errors, and loads again after a write', async () => {
     // A product with a record of nearly every kind, every obligation designed, built and proved.
     const root = await build(complete());
 
@@ -213,7 +213,7 @@ describe('Platform flows', () => {
     expect(child.signalCode).toBe('SIGINT');
   }, 120_000);
 
-  it.skipIf(!canServe)('LA-PLT-UC16-FL-T every change is one command of its aggregate: the CLI, the MCP tools and POST /api/<aggregate>/<command>, refusals change nothing, open pages reload, and git merges row by row', async () => {
+  it.skipIf(!canServe)('LA-PLT-UC16-FL-T LA-PAT-CLI-STEPS-R01-T03 LA-PAT-CLI-STEPS-R02-T03 LA-PAT-MCP-STEPS-R01-T03 LA-PAT-MCP-STEPS-R02-T03 LA-PAT-HTTP-STEPS-R01-T01 LA-PAT-HTTP-STEPS-R02-T01 every change is one command of its aggregate: the CLI, the MCP tools and POST /api/<aggregate>/<command>, refusals change nothing, open pages reload, and git merges row by row', async () => {
     const root = temp('lathe-layer-');
     git(root, 'init', '-q');
     writeFileSync(path.join(root, '.gitattributes'), '**/data/*.jsonl merge=lathe-data\n');

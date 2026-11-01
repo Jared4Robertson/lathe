@@ -80,7 +80,7 @@ test.describe('Checking flows', () => {
     }
   });
 
-  test('LA-CHK-UC07-FL-T review every problem of a product in the desktop app', async ({ page }) => {
+  test('LA-PAT-PAGE-STEPS-R01-T02 review every problem of a product in the desktop app', async ({ page }) => {
     const restore = keepData();
     try {
       // S01: the product's Checks panel in the desktop app, its bridge stood in for, sends its error count to the Dock badge.

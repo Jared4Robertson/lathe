@@ -7,7 +7,7 @@
 // - the views that present what its steps invoke, their view requirements and the UI components that render the view or build one of
 //   its requirements; the integrations its steps exchange with;
 // - the endpoints that expose a reached command or query, and their API requirements;
-// - the rules of the patterns it follows, or its domain follows;
+// - the rules of the patterns it follows, its domain follows, or an interface that offers it follows;
 // and from what that reaches: an aggregate's entities, invariants and storage requirements and the value objects its
 // fields hold (with their constraints); a read model's storage requirements, the aggregates it reads and the value
 // objects its fields hold; the aggregate a reached specification reads; the technical records that implement each
@@ -116,6 +116,7 @@ export function useCaseReaches(view: Pick<ReadView, 'schema' | 'rows'>): Map<str
   const renderedBy = into('renders');
   const builtBy = into('builds');
   const follows = out('follows');
+  const offeredBy = into('offers');
   const rulesOf = under('pattern_rule', 'pattern_id');
   const meets = out('meets');
   // The technical records that implement a design record, each by the column naming it, and the repository by persists.
@@ -191,7 +192,8 @@ export function useCaseReaches(view: Pick<ReadView, 'schema' | 'rows'>): Map<str
         }
       }
     }
-    for (const pattern of [...(follows.get(useCase) ?? []), ...(follows.get(domainOf.get(capability ?? '') ?? '') ?? [])]) reach(rulesOf.get(pattern));
+    const followed = [useCase, domainOf.get(capability ?? '') ?? '', ...(offeredBy.get(useCase) ?? [])].flatMap((follower) => follows.get(follower) ?? []);
+    for (const pattern of followed) reach(rulesOf.get(pattern));
     // What each reached record reaches in turn.
     for (let at = 0; at < queue.length; at++) {
       const id = queue[at];

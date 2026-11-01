@@ -79,8 +79,8 @@ export interface TraceThrough {
   interface: string;
   kind: string;
   actor: string | null;
-  /** The rules that say how a refusal is shown there. */
-  refusal: string[];
+  /** The rules of the patterns it follows: how it reaches a step's command or query and shows a refusal. */
+  rules: string[];
   steps: TraceStepThrough[];
 }
 
@@ -263,7 +263,7 @@ export function traceTableFrom(view: ReadView): TraceTable {
           interface: v.interface,
           kind: v.kind,
           actor: v.actor,
-          refusal: v.refusal,
+          rules: v.rules,
           steps: v.paths.flatMap((p) => p.steps).map((s) => {
             const kind = (r: string) => kindOf(r);
             return {

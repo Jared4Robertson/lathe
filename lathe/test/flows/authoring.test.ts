@@ -147,30 +147,38 @@ describe('Authoring flows', () => {
       add('uc_requirement', { id: 'TL-LEND-UC02-R01', title: 'The return is dated', use_case_id: 'TL-LEND-UC02', statement: 'The return MUST carry its date.' }),
       add('view', { id: 'TL-V01', title: 'Loan desk', description: 'Where the librarian opens and closes loans.' }),
     ]);
-    // S01: the flow through the product's interface, its ID ending in the interface's number, and its steps in order on
-    // their paths.
-    tl.command('product add-interface', { id: 'TL-IF01', title: 'Loan desk', product_id: 'TL', kind: 'web app', description: 'The desk where librarians lend tools.', public: false });
+    // S03: the use case's one flow, its ID the use case's and FL, offered through the product's interface; S04: its
+    // steps in order on their paths.
+    tl.command('product add-interface', { id: 'TL-IF01', title: 'Loan desk', product_id: 'TL', kind: 'web app', description: 'The desk where librarians lend tools.', public: false, offers: ['TL-LEND-UC01'] });
     expect(tl.command('use-case next-id', { kind: 'flow', parent: 'TL-LEND-UC01' })).toBe('TL-LEND-UC01-FL');
-    tl.command('use-case add-flow', { id: 'TL-LEND-UC01-FL', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' });
+    tl.command('use-case add-flow', { id: 'TL-LEND-UC01-FL', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01' });
     const step = (n: string, title: string, pathName: string, position: number) =>
-      tl.command('use-case add-flow-step', { id: `TL-LEND-UC01-FL01-${n}`, title, flow_id: 'TL-LEND-UC01-FL', path: pathName, position });
+      tl.command('use-case add-flow-step', { id: `TL-LEND-UC01-FL-${n}`, title, flow_id: 'TL-LEND-UC01-FL', path: pathName, position });
     step('S01', 'The member asks for a tool at the desk', 'main', 1);
     step('S02', 'The librarian opens the loan', 'main', 3);
     step('S03', 'A tool on loan is refused', 'refused', 1);
-    // S02: each step's requirements, operation and view.
-    tl.command('use-case change-flow-step', { id: 'TL-LEND-UC01-FL-S01', happens_in: 'TL-V01' });
+    // Each step's requirements and operation; the desk's view presents the command, so the web app reaches the step.
     tl.command('use-case change-flow-step', { id: 'TL-LEND-UC01-FL-S03', invokes: 'TL-LEND-CMD01' });
     tl.command('use-case change-flow-step', { id: 'TL-LEND-UC01-FL-S02', fulfills: ['TL-LEND-UC01-R01'] });
-    // S04: the check reports the path that skips a number and the requirement no step fulfills.
+    tl.command('view change-view', { id: 'TL-V01', presents: ['TL-LEND-CMD01'] });
+    // The check reports the path that skips a number and the requirements no step fulfills.
     const ws = tl.workspace();
-    expect(problemsOf(ws, 'step-order')).toEqual([expect.stringMatching(/^TL-LEND-UC01-FL-S03: .*no step has position 2/)]);
+    expect(problemsOf(ws, 'step-order')).toEqual([expect.stringMatching(/^TL-LEND-UC01-FL-S02: .*no step has position 2/)]);
     expect(problemsOf(ws, 'not-designed')).toEqual([expect.stringMatching(/^TL-LEND-UC01-R02: /), expect.stringMatching(/^TL-LEND-UC02-R01: /)]);
-    tl.command('use-case change-flow-step', { id: 'TL-LEND-UC01-FL-S03', position: 2, fulfills: ['TL-LEND-UC01-R02'] });
+    expect(problemsOf(ws, 'step-unreached')).toEqual([]);
+    tl.command('use-case change-flow-step', { id: 'TL-LEND-UC01-FL-S02', position: 2, fulfills: ['TL-LEND-UC01-R01', 'TL-LEND-UC01-R02'] });
+    // A step only one interface does is its variant, of an interface that offers the use case.
+    tl.command('use-case change-flow-step', { id: 'TL-LEND-UC01-FL-S01', interface_id: 'TL-IF01' });
+    tl.command('product change-interface', { id: 'TL-IF01', offers: ['TL-LEND-UC02'] });
+    expect(problemsOf(tl.workspace(), 'variant-not-offered')).toEqual([expect.stringMatching(/^TL-LEND-UC01-FL-S01: /)]);
+    tl.command('product change-interface', { id: 'TL-IF01', offers: ['TL-LEND-UC01', 'TL-LEND-UC02'] });
     const fixed = tl.workspace();
     expect(problemsOf(fixed, 'step-order')).toEqual([]);
+    expect(problemsOf(fixed, 'variant-not-offered')).toEqual([]);
     expect(problemsOf(fixed, 'not-designed')).toEqual([expect.stringMatching(/^TL-LEND-UC02-R01: /)]);
-    // S03: a repeated position on a path, or a requirement of another use case, is refused.
-    tl.refuse('use-case add-flow-step', { id: 'TL-LEND-UC01-FL01-S04', title: 'Again', flow_id: 'TL-LEND-UC01-FL', path: 'main', position: 2 });
+    // S07: a second flow, a repeated position on a path, or a requirement of another use case, is refused.
+    tl.refuse('use-case add-flow', { id: 'TL-LEND-UC01-FL02', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01' });
+    tl.refuse('use-case add-flow-step', { id: 'TL-LEND-UC01-FL-S04', title: 'Again', flow_id: 'TL-LEND-UC01-FL', path: 'main', position: 2 });
     expect(tl.refuse('use-case change-flow-step', { id: 'TL-LEND-UC01-FL-S01', fulfills: ['TL-LEND-UC02-R01'] })).toContain('TL-LEND-UC02-R01');
   });
 
@@ -403,7 +411,7 @@ describe('Authoring flows', () => {
     await tl.seed([
       ...LENDING,
       add('interface', { id: 'TL-IF01', title: 'Loan desk', product_id: 'TL', kind: 'web app', description: 'The desk where librarians lend tools.', public: false }),
-      add('flow', { id: 'TL-LEND-UC01-FL', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }),
+      add('flow', { id: 'TL-LEND-UC01-FL', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01' }),
       add('flow_step', { id: 'TL-LEND-UC01-FL-S01', title: 'The member borrows a tool', flow_id: 'TL-LEND-UC01-FL', path: 'main', position: 1 }),
     ]);
     // S01: an endpoint under the command it exposes.
@@ -413,13 +421,15 @@ describe('Authoring flows', () => {
     tl.command('view add-view-requirement', { id: 'TL-V01-R01', title: 'The due date shows', view_id: 'TL-V01', statement: 'The desk MUST show the loan\'s due date.' });
     tl.command('endpoint add-api-requirement', { id: 'TL-LEND-EP01-R01', title: 'A loan on loan is refused', endpoint_id: 'TL-LEND-EP01', statement: 'The endpoint MUST answer 409 for a tool on loan.' });
     tl.command('integration add-integration', { id: 'TL-INT01', title: 'Mail', system: 'The mail service', description: 'Sends the library\'s mail to members.' });
-    // S03: the check reports the view and integration nothing uses, until a step links them.
+    // S04: the check reports the view that presents nothing and the integration no step exchanges with, until the view
+    // presents the step's command and the step exchanges with the integration.
     const unused = tl.workspace();
     expect([...problemsOf(unused, 'view-unused'), ...problemsOf(unused, 'integration-unused')]).toEqual([expect.stringMatching(/^TL-V01: /), expect.stringMatching(/^TL-INT01: /)]);
-    tl.command('use-case change-flow-step', { id: 'TL-LEND-UC01-FL-S01', happens_in: 'TL-V01', exchanges_with: ['TL-INT01'], invokes: 'TL-LEND-CMD01' });
+    tl.command('view change-view', { id: 'TL-V01', presents: ['TL-LEND-CMD01'] });
+    tl.command('use-case change-flow-step', { id: 'TL-LEND-UC01-FL-S01', exchanges_with: ['TL-INT01'], invokes: 'TL-LEND-CMD01' });
     const ws = tl.workspace();
     expect(ws.problems.filter((p) => p.severity === 'error')).toEqual([]);
-    // The view and the integration belong to the domain whose step uses them.
+    // The view belongs to the domain whose command it presents, the integration to the domain whose step uses it.
     const domainOf = (id: string) => ws.records.find((r) => r.id === id)?.domain;
     expect(['TL-LEND-EP01', 'TL-V01', 'TL-INT01'].map(domainOf)).toEqual(['TL-LEND', 'TL-LEND', 'TL-LEND']);
   });

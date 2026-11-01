@@ -41,7 +41,7 @@ test.describe('editing', () => {
   // Each scenario puts the served data back as it ends; the server reloads it a moment later. The next scenario starts
   // after that reload, so its page never receives the previous one's restore while it is measured.
   test.afterEach(async ({ page }) => { await page.waitForTimeout(1500); });
-  test('LA-AUT-UC06-FL-T on the Use case page, open a requirement\'s form and save an edit', async ({ page }) => {
+  test('LA-PAT-PAGE-STEPS-R01-T01 on the Use case page, open a requirement\'s form and save an edit', async ({ page }) => {
     const restore = keepData();
     try {
       await openPage(page, EDITED);
@@ -82,7 +82,7 @@ test.describe('editing', () => {
     }
   });
 
-  test('LA-V101-R03-T03 ask to remove a referenced use case, and see the refusal', async ({ page }) => {
+  test('LA-V101-R03-T03 LA-PAT-PAGE-STEPS-R02-T01 ask to remove a referenced use case, and see the refusal', async ({ page }) => {
     const restore = keepData();
     try {
       await openPage(page, REFERENCED);
@@ -106,26 +106,26 @@ test.describe('editing', () => {
   });
   // The Domain, Test data set, Pattern and Standard pages: each saves one field as its kind's Change command, with
   // nothing jumping. Each is its aggregate's web-app flow test.
-  test('LA-AUT-UC02-FL-T on the Domain records page, open a term\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-TM01', /^group name/, 'Stability'));
-  test('LA-AUT-UC13-FL-T on the Test data set page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-TD30', /^reset/, 'Throw the folder away.'));
-  test('LA-AUT-UC05-FL-T on the Pattern page, open a rule\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-PAT-RECORD-PAGE-R01', /^group name/, 'Stability'));
-  test('LA-AUT-UC16-FL-T on the Standard page, open a rule\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-STD-CODE-R01', /^group name/, 'Stability'));
+  test('LA-PAT-PAGE-STEPS-R01-T01 on the Domain records page, open a term\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-TM01', /^group name/, 'Stability'));
+  test('LA-PAT-PAGE-STEPS-R01-T01 on the Test data set page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-TD30', /^reset/, 'Throw the folder away.'));
+  test('LA-PAT-PAGE-STEPS-R01-T01 on the Pattern page, open a rule\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-PAT-RECORD-PAGE-R01', /^group name/, 'Stability'));
+  test('LA-PAT-PAGE-STEPS-R01-T01 on the Standard page, open a rule\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-STD-CODE-R01', /^group name/, 'Stability'));
   // The Product, Business outcome, Entry point and Tooling pages: each saves one field as its kind's Change command, with
   // nothing jumping. Each is its aggregate's web-app flow test.
   test('LA-AUT-UC23-FL-T on the Product page, open an interface\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-IF03', /^description/, 'The command line, as the stability suite describes it.'));
-  test('LA-AUT-UC22-FL-T on the Business outcome page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-BO05', /^notes/, 'Noted by the stability suite.'));
+  test('LA-PAT-PAGE-STEPS-R01-T01 on the Business outcome page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-BO05', /^notes/, 'Noted by the stability suite.'));
   test('LA-AUT-UC29-FL-T on the Entry point page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-PLT-ENTRY01', /^description/, 'Starts the server, as the stability suite describes it.'));
   test('LA-AUT-UC30-FL-T on the Tooling page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-TOOL01', /^title/, 'schema-types.ts'));
   // The View and UI component pages: each saves one field as its kind's Change command, with nothing jumping. Each is its
   // aggregate's web-app flow test.
-  test('LA-AUT-UC18-FL-T on the View page, open a requirement\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-V123-R04', /^group name/, 'Stability'));
+  test('LA-PAT-PAGE-STEPS-R01-T01 on the View page, open a requirement\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-V123-R04', /^group name/, 'Stability'));
   test('LA-AUT-UC28-FL-T on the UI component page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-UI226', /^description/, 'The Standard page, as the stability suite describes it.'));
   // The Endpoint and Integration pages: each saves one field as its kind's Change command, with nothing jumping. Each is
   // its aggregate's web-app flow test.
   test('LA-AUT-UC26-FL-T on the Endpoint page, open an API requirement\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-EP01-R01', /^group name/, 'Stability'));
   test('LA-AUT-UC27-FL-T on the Integration page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-INT04', /^system/, 'git, as the stability suite names it'));
-  test('LA-AUT-UC31-FL-T on the Storage requirement page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-A22-SR01', /^title/, 'Every change to a storage requirement is saved whole'));
-  test('LA-AUT-UC32-FL-T on the Data store page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-STORE04', /^description/, 'Each process\'s own memory, as the stability suite describes it.'));
+  test('LA-PAT-PAGE-STEPS-R01-T01 on the Storage requirement page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-A22-SR01', /^title/, 'Every change to a storage requirement is saved whole'));
+  test('LA-PAT-PAGE-STEPS-R01-T01 on the Data store page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-STORE04', /^description/, 'Each process\'s own memory, as the stability suite describes it.'));
   // The Check page, the Product page's Limits and the Pattern page's Followed by: each sends one of its aggregate's
   // commands, with nothing jumping.
   test('LA-V03-R03-T02 on the Check page, open a product check\'s form and save an edit', ({ page }) =>
@@ -140,14 +140,14 @@ test.describe('editing', () => {
     }, 'Follow'));
   // The Table, Specification, Read model and Value object pages: each saves one field as its kind's Change command, with
   // nothing jumping. Each is its aggregate's web-app flow test.
-  test('LA-AUT-UC17-FL-T on the Table page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-EN54-TB', /^title/, 'projections'));
-  test('LA-AUT-UC20-FL-T on the Specification page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-SP09', /^title/, 'Data files clash in a merge'));
-  test('LA-AUT-UC21-FL-T on the Read model page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-RM25', /^description/, 'A specification as the stability suite reads it.'));
+  test('LA-PAT-PAGE-STEPS-R01-T01 on the Table page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-EN54-TB', /^title/, 'projections'));
+  test('LA-PAT-PAGE-STEPS-R01-T01 on the Specification page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-SP09', /^title/, 'Data files clash in a merge'));
+  test('LA-PAT-PAGE-STEPS-R01-T01 on the Read model page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-RM25', /^description/, 'A specification as the stability suite reads it.'));
   test('LA-AUT-UC24-FL-T on the Value object page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-VO01', /^description/, 'Names one record across the store, as the stability suite describes it.'));
   // The Aggregate, Domain event and Command pages, likewise.
-  test('LA-AUT-UC10-FL-T on the Aggregate page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-A6', /^identity/, 'Stability'));
+  test('LA-PAT-PAGE-STEPS-R01-T01 on the Aggregate page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-A6', /^identity/, 'Stability'));
   test('LA-AUT-UC25-FL-T on the Domain event page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-EV03', /^description/, 'Stability'));
-  test('LA-AUT-UC12-FL-T on the Command page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-CMD210', /^description/, 'Stability'));
+  test('LA-PAT-PAGE-STEPS-R01-T01 on the Command page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-CMD210', /^description/, 'Stability'));
 });
 
 /** Opens the page, opens a form from one of its toolbars, fills it and sends it, with nothing outside the card moving. */

@@ -719,7 +719,6 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .button.flow-tab[aria-selected="true"] { border-bottom-color: var(--steel); color: var(--ink); font-weight: 600; }
 .flow-tab-panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 .flow-tab-panel:focus-visible { outline: 2px solid var(--steel); outline-offset: 4px; border-radius: 4px; }
-.flow-refusal { margin: 0 0 6px; font-size: 0.86rem; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
 .flow-steps .step-variant { white-space: nowrap; }
 .flow-steps .step-gap { display: inline-block; padding: 0 6px; border: 1px dashed var(--muted); border-radius: 4px; color: var(--muted); }
 /* ---------- End of flow steps ---------- */
