@@ -5,7 +5,7 @@
 {"id":"LA-AUT-UC02-FL-S05","title":"The Owner adds the domain's services and its repositories, each persisting one aggregate","flow_id":"LA-AUT-UC02-FL","path":"main","position":5}
 {"id":"LA-AUT-UC02-FL-S06","title":"The Owner renames a domain the check finds named for a technology","flow_id":"LA-AUT-UC02-FL","path":"main","position":6}
 {"id":"LA-AUT-UC03-FL-S01","title":"The Owner writes the change into Lathe's migrations and reviews the diff in git","flow_id":"LA-AUT-UC03-FL","path":"main","position":1}
-{"id":"LA-AUT-UC03-FL-S02","title":"They regenerate the row types and the reference; a test fails while either is stale","flow_id":"LA-AUT-UC03-FL","path":"main","position":2}
+{"id":"LA-AUT-UC03-FL-S02","title":"They regenerate the record types and the reference; a test fails while either is stale","flow_id":"LA-AUT-UC03-FL","path":"main","position":2}
 {"id":"LA-AUT-UC03-FL-S03","title":"The next load applies the migrations in order and checks every product's data against them","flow_id":"LA-AUT-UC03-FL","path":"main","position":3}
 {"id":"LA-AUT-UC03-FL-S04","title":"When existing data may not pass the change, they raise the schema version and write the converter that moves it forward","flow_id":"LA-AUT-UC03-FL","path":"main","position":4}
 {"id":"LA-AUT-UC04-FL-S01","title":"The Owner declares a product kind with its fields, in a stage","flow_id":"LA-AUT-UC04-FL","path":"main","position":1}
@@ -43,8 +43,8 @@
 {"id":"LA-AUT-UC13-FL-S03","title":"The Owner changes a data set's preparation and reset","flow_id":"LA-AUT-UC13-FL","path":"main","position":3}
 {"id":"LA-AUT-UC13-FL-S04","title":"The Owner removes a data set no test starts from","flow_id":"LA-AUT-UC13-FL","path":"main","position":4}
 {"id":"LA-AUT-UC14-FL-S01","title":"The Reader opens the record format from the palette or the shortcuts sheet","flow_id":"LA-AUT-UC14-FL","path":"main","position":1}
-{"id":"LA-AUT-UC14-FL-S02","title":"They open a kind's page from the wiki card's kind line or a column label","flow_id":"LA-AUT-UC14-FL","path":"main","position":2}
-{"id":"LA-AUT-UC14-FL-S03","title":"They open a check's page from a problem's code","flow_id":"LA-AUT-UC14-FL","path":"main","position":3}
+{"id":"LA-AUT-UC14-FL-S02","title":"They open a kind from the kind line of a wiki card or from a list's heading","flow_id":"LA-AUT-UC14-FL","path":"main","position":2}
+{"id":"LA-AUT-UC14-FL-S03","title":"They open a check from a problem's code","flow_id":"LA-AUT-UC14-FL","path":"main","position":3}
 {"id":"LA-AUT-UC14-FL-S04","title":"They find a kind or a check by quick find","flow_id":"LA-AUT-UC14-FL","path":"find","position":1}
 {"id":"LA-AUT-UC16-FL-S01","title":"The Owner reads the standard whole, with what it holds, before changing it","flow_id":"LA-AUT-UC16-FL","path":"main","position":1}
 {"id":"LA-AUT-UC16-FL-S02","title":"The Owner adds a standard and its rules","flow_id":"LA-AUT-UC16-FL","path":"main","position":2}
@@ -55,7 +55,7 @@
 {"id":"LA-AUT-UC17-FL-S03","title":"The Owner changes a table's keys, a unique key naming the invariant it enforces","flow_id":"LA-AUT-UC17-FL","path":"main","position":3}
 {"id":"LA-AUT-UC17-FL-S04","title":"The Owner moves a table to the record it now stores","flow_id":"LA-AUT-UC17-FL","path":"main","position":4}
 {"id":"LA-AUT-UC18-FL-S01","title":"The Owner reads the view whole, with what it holds, before changing it","flow_id":"LA-AUT-UC18-FL","path":"main","position":1}
-{"id":"LA-AUT-UC18-FL-S02","title":"The Owner adds a view with its route and the commands and queries it presents","flow_id":"LA-AUT-UC18-FL","path":"main","position":2}
+{"id":"LA-AUT-UC18-FL-S02","title":"The Owner adds a view with its address and the commands and queries it presents","flow_id":"LA-AUT-UC18-FL","path":"main","position":2}
 {"id":"LA-AUT-UC18-FL-S03","title":"The Owner adds the view's requirements and their tests","flow_id":"LA-AUT-UC18-FL","path":"main","position":3}
 {"id":"LA-AUT-UC18-FL-S04","title":"The Owner removes a view that presents nothing","flow_id":"LA-AUT-UC18-FL","path":"main","position":4}
 {"id":"LA-AUT-UC19-FL-S01","title":"Git merges two branches and runs the merge driver for each data file","flow_id":"LA-AUT-UC19-FL","path":"main","position":1}
@@ -89,7 +89,7 @@
 {"id":"LA-AUT-UC25-FL-S04","title":"The Owner marks the event published when other domains hear it","flow_id":"LA-AUT-UC25-FL","path":"main","position":4}
 {"id":"LA-AUT-UC25-FL-S05","title":"The Owner adds an event field named twice, and is refused with every reason","flow_id":"LA-AUT-UC25-FL","path":"refused","position":1}
 {"id":"LA-AUT-UC26-FL-S01","title":"The Owner reads the endpoint whole, with what it holds, before changing it","flow_id":"LA-AUT-UC26-FL","path":"main","position":1}
-{"id":"LA-AUT-UC26-FL-S02","title":"The Owner adds an endpoint under the command or query it exposes, titled by its method and route","flow_id":"LA-AUT-UC26-FL","path":"main","position":2}
+{"id":"LA-AUT-UC26-FL-S02","title":"The Owner records how a web client reaches the command or query, titled by its method and address","flow_id":"LA-AUT-UC26-FL","path":"main","position":2}
 {"id":"LA-AUT-UC26-FL-S03","title":"The Owner adds the endpoint's API requirements and its handler","flow_id":"LA-AUT-UC26-FL","path":"main","position":3}
 {"id":"LA-AUT-UC26-FL-S04","title":"The Owner moves an endpoint to the command or query it now exposes","flow_id":"LA-AUT-UC26-FL","path":"main","position":4}
 {"id":"LA-AUT-UC27-FL-S01","title":"The Owner reads the integration whole, with what it holds, before changing it","flow_id":"LA-AUT-UC27-FL","path":"main","position":1}
@@ -122,10 +122,10 @@
 {"id":"LA-CHK-UC01-FL-S01","title":"The Agent runs lathe check on the product root","flow_id":"LA-CHK-UC01-FL","path":"main","position":1}
 {"id":"LA-CHK-UC01-FL-S02","title":"The command prints every error, then every warning, each naming its check and record, then one coverage line per domain and obligation kind","flow_id":"LA-CHK-UC01-FL","path":"main","position":2}
 {"id":"LA-CHK-UC01-FL-S03","title":"The command exits with status 1 when there is an error, 0 otherwise","flow_id":"LA-CHK-UC01-FL","path":"main","position":3}
-{"id":"LA-CHK-UC01-FL-S04","title":"With --json, the command prints the whole workspace instead","flow_id":"LA-CHK-UC01-FL","path":"json","position":1}
+{"id":"LA-CHK-UC01-FL-S04","title":"With the machine-readable option, the command prints the whole workspace instead","flow_id":"LA-CHK-UC01-FL","path":"json","position":1}
 {"id":"LA-CHK-UC01-FL-S05","title":"Data the store refuses becomes data-refused errors naming the file, the line and the rule, and nothing else is checked","flow_id":"LA-CHK-UC01-FL","path":"refused","position":1}
 {"id":"LA-CHK-UC02-FL-S01","title":"The Agent adds the check with lathe check add-check: a name, a position, a severity, a summary, an explanation and one SELECT","flow_id":"LA-CHK-UC02-FL","path":"main","position":1}
-{"id":"LA-CHK-UC02-FL-S02","title":"The next check runs every check row in order, the new one among them, each query reading the typed tables, views and file facts","flow_id":"LA-CHK-UC02-FL","path":"main","position":2}
+{"id":"LA-CHK-UC02-FL-S02","title":"The next check runs every check in order, the new one among them, each reading the typed records and file facts","flow_id":"LA-CHK-UC02-FL","path":"main","position":2}
 {"id":"LA-CHK-UC05-FL-S01","title":"The Owner decides a rule belongs to their product, not to Lathe","flow_id":"LA-CHK-UC05-FL","path":"main","position":1}
 {"id":"LA-CHK-UC05-FL-S03","title":"They add it as a check of their product","flow_id":"LA-CHK-UC05-FL","path":"main","position":2}
 {"id":"LA-CHK-UC05-FL-S04","title":"They run the check: Lathe's checks run first, then the product's, whose problems carry the check's name and concern only its product's records","flow_id":"LA-CHK-UC05-FL","path":"main","position":3}
@@ -140,9 +140,9 @@
 {"id":"LA-CHK-UC06-FL-S04","title":"It warns of each capability or group with one child","flow_id":"LA-CHK-UC06-FL","path":"main","position":4}
 {"id":"LA-CHK-UC06-FL-S05","title":"The Owner or an Agent adds a capability as a level between the children, and checks again","flow_id":"LA-CHK-UC06-FL","path":"main","position":5}
 {"id":"LA-CHK-UC07-FL-S01","title":"While an Agent writes records, the Owner keeps the Checks panel open: its problems, errors first, grouped by check, and the workspace's below","flow_id":"LA-CHK-UC07-FL","path":"main","position":1}
-{"id":"LA-CHK-UC07-FL-S02","title":"Each time a data file changes, the page reloads and shows the problems as they are now","flow_id":"LA-CHK-UC07-FL","path":"main","position":2}
+{"id":"LA-CHK-UC07-FL-S02","title":"Each time a data file changes, the display reloads and shows the problems as they are now","flow_id":"LA-CHK-UC07-FL","path":"main","position":2}
 {"id":"LA-CHK-UC07-FL-S03","title":"The Owner opens a problem's record to see it and its problems, and goes back","flow_id":"LA-CHK-UC07-FL","path":"main","position":3}
-{"id":"LA-CHK-UC07-FL-S05","title":"They follow a check's code to the check's page in the reference","flow_id":"LA-CHK-UC07-FL","path":"main","position":4}
+{"id":"LA-CHK-UC07-FL-S05","title":"They follow a check's code to the check in the reference","flow_id":"LA-CHK-UC07-FL","path":"main","position":4}
 {"id":"LA-CHK-UC07-FL-S06","title":"The Dock badge shows the error count of the product in front","flow_id":"LA-CHK-UC07-FL","path":"main","position":5}
 {"id":"LA-CHK-UC08-FL-S01","title":"Claude Code loads Lathe's plugin, which declares the guard hook on Write, Edit, MultiEdit and NotebookEdit","flow_id":"LA-CHK-UC08-FL","path":"main","position":1}
 {"id":"LA-CHK-UC08-FL-S02","title":"The Agent adds a flow step with its tool, which holds the use case to its rules in one transaction","flow_id":"LA-CHK-UC08-FL","path":"main","position":2}
@@ -154,19 +154,19 @@
 {"id":"LA-EXP-UC01-FL-S05","title":"They open the record they found","flow_id":"LA-EXP-UC01-FL","path":"main","position":4}
 {"id":"LA-EXP-UC02-FL-S01","title":"The reader reads a record's page: its fields, sanitized text, parts, parent, children and problems","flow_id":"LA-EXP-UC02-FL","path":"main","position":1}
 {"id":"LA-EXP-UC02-FL-S02","title":"They follow a link out or in, named by its relation's label, or a record named in the text; an unknown ID stays text","flow_id":"LA-EXP-UC02-FL","path":"main","position":2}
-{"id":"LA-EXP-UC02-FL-S03","title":"A click anywhere on a row opens its record","flow_id":"LA-EXP-UC02-FL","path":"main","position":3}
+{"id":"LA-EXP-UC02-FL-S03","title":"Selecting anywhere along an item in a list opens its record","flow_id":"LA-EXP-UC02-FL","path":"main","position":3}
 {"id":"LA-EXP-UC03-FL-S01","title":"The reader switches the page in hand to its Graph stage, never from the nav","flow_id":"LA-EXP-UC03-FL","path":"main","position":1}
 {"id":"LA-EXP-UC03-FL-S02","title":"The graph frames the focus in the product's one map, at depth 1, its parent at the left","flow_id":"LA-EXP-UC03-FL","path":"main","position":2}
 {"id":"LA-EXP-UC03-FL-S03","title":"The graph shows each node with its stage, kind, problems and gaps, with a key, and spotlights what a hovered node joins","flow_id":"LA-EXP-UC03-FL","path":"main","position":3}
-{"id":"LA-EXP-UC03-FL-S05","title":"They click a node: the camera glides to it, the map holds still, the address and the header strip follow","flow_id":"LA-EXP-UC03-FL","path":"main","position":4}
+{"id":"LA-EXP-UC03-FL-S05","title":"They select a node: the camera glides to it, the map holds still, the address and the header strip follow","flow_id":"LA-EXP-UC03-FL","path":"main","position":4}
 {"id":"LA-EXP-UC03-FL-S06","title":"The wiki card shows the focused record's page","flow_id":"LA-EXP-UC03-FL","path":"main","position":5}
 {"id":"LA-EXP-UC03-FL-S07","title":"They filter kinds and switch the minimap on","flow_id":"LA-EXP-UC03-FL","path":"main","position":6}
 {"id":"LA-EXP-UC03-FL-S08","title":"They switch the layout to Nested or Map","flow_id":"LA-EXP-UC03-FL","path":"main","position":7}
 {"id":"LA-EXP-UC03-FL-S09","title":"From the keyboard they move between nodes, step out, in and across, and Escape clears the filters","flow_id":"LA-EXP-UC03-FL","path":"main","position":8}
 {"id":"LA-EXP-UC03-FL-S10","title":"They open a node's record page","flow_id":"LA-EXP-UC03-FL","path":"main","position":9}
 {"id":"LA-EXP-UC03-FL-S11","title":"In the Map they turn All links on to see every link in view","flow_id":"LA-EXP-UC03-FL","path":"main","position":10}
-{"id":"LA-EXP-UC04-FL-S01","title":"On a domain the graph shows its stages and kind groups as folders, each with its name, count and marks, in its own column","flow_id":"LA-EXP-UC04-FL","path":"main","position":1}
-{"id":"LA-EXP-UC04-FL-S02","title":"They click a group, which becomes the focus at its own address","flow_id":"LA-EXP-UC04-FL","path":"main","position":2}
+{"id":"LA-EXP-UC04-FL-S01","title":"On a domain the graph shows its stages and kind groups as folders, each with its name, count and marks, in its own lane","flow_id":"LA-EXP-UC04-FL","path":"main","position":1}
+{"id":"LA-EXP-UC04-FL-S02","title":"They select a group, which becomes the focus at its own address","flow_id":"LA-EXP-UC04-FL","path":"main","position":2}
 {"id":"LA-EXP-UC04-FL-S03","title":"The graph puts an aggregate's events in a Domain events group, as spark flags","flow_id":"LA-EXP-UC04-FL","path":"main","position":3}
 {"id":"LA-EXP-UC04-FL-S04","title":"The graph puts a pattern's rules under it","flow_id":"LA-EXP-UC04-FL","path":"main","position":4}
 {"id":"LA-EXP-UC04-FL-S05","title":"The graph fills the stage behind the wiki card and reports each move to the page","flow_id":"LA-EXP-UC04-FL","path":"main","position":5}
@@ -174,9 +174,9 @@
 {"id":"LA-EXP-UC05-FL-S02","title":"The record, group, product or domain opens at its one address, in the views the link names","flow_id":"LA-EXP-UC05-FL","path":"main","position":2}
 {"id":"LA-EXP-UC05-FL-S03","title":"They switch between the Graph, ERD and Trace stages, collapse and resize the wiki card, and the focus stays centered in the open space","flow_id":"LA-EXP-UC05-FL","path":"main","position":3}
 {"id":"LA-EXP-UC05-FL-S04","title":"Following a link in the wiki card or clicking on the stage moves them both, and Back and Forward move both","flow_id":"LA-EXP-UC05-FL","path":"main","position":4}
-{"id":"LA-EXP-UC05-FL-S05","title":"The wiki shows one level deep, grouped requirements under headings, and long lists ten rows at a time","flow_id":"LA-EXP-UC05-FL","path":"main","position":5}
-{"id":"LA-EXP-UC05-FL-S06","title":"They fold the nav's sections, collapse it to a rail, or open it as a sheet on a narrow screen","flow_id":"LA-EXP-UC05-FL","path":"main","position":6}
-{"id":"LA-EXP-UC06-FL-S01","title":"The reader opens a flow's page and reads its steps in order, a table per path","flow_id":"LA-EXP-UC06-FL","path":"main","position":1}
+{"id":"LA-EXP-UC05-FL-S05","title":"The wiki shows one level deep, grouped requirements under headings, and long lists ten items at a time","flow_id":"LA-EXP-UC05-FL","path":"main","position":5}
+{"id":"LA-EXP-UC05-FL-S06","title":"They fold the nav's sections, collapse it to a rail, or open it as a sheet on a narrow display","flow_id":"LA-EXP-UC05-FL","path":"main","position":6}
+{"id":"LA-EXP-UC06-FL-S01","title":"The reader opens a flow and reads its steps in order, a list per path","flow_id":"LA-EXP-UC06-FL","path":"main","position":1}
 {"id":"LA-EXP-UC06-FL-S02","title":"The Reader unfolds a step to read more; a step with problems shows its badge","flow_id":"LA-EXP-UC06-FL","path":"main","position":2}
 {"id":"LA-EXP-UC06-FL-S04","title":"In the Graph stage the steps sit under the flow","flow_id":"LA-EXP-UC06-FL","path":"main","position":3}
 {"id":"LA-EXP-UC06-FL-S05","title":"In the Trace stage of a requirement, the reader sees the step that fulfills it, its flow and what it invokes","flow_id":"LA-EXP-UC06-FL","path":"main","position":4}
@@ -189,7 +189,7 @@
 {"id":"LA-EXP-UC07-FL-S07","title":"From the products picker they choose a space","flow_id":"LA-EXP-UC07-FL","path":"main","position":7}
 {"id":"LA-EXP-UC07-FL-S08","title":"With one product there is no rail: the nav takes its width, the product's name and icon at its top","flow_id":"LA-EXP-UC07-FL","path":"one product","position":1}
 {"id":"LA-EXP-UC08-FL-S01","title":"Under the current space the nav lists the product page, Shared and each domain, which unfolds into its five stages with counts","flow_id":"LA-EXP-UC08-FL","path":"main","position":1}
-{"id":"LA-EXP-UC08-FL-S02","title":"Opening a page opens the nav rows that hold it","flow_id":"LA-EXP-UC08-FL","path":"main","position":2}
+{"id":"LA-EXP-UC08-FL-S02","title":"Opening a record opens the nav entries that hold it","flow_id":"LA-EXP-UC08-FL","path":"main","position":2}
 {"id":"LA-EXP-UC08-FL-S03","title":"The nav lists the capabilities in order under Use cases, then the use cases outside any","flow_id":"LA-EXP-UC08-FL","path":"main","position":3}
 {"id":"LA-EXP-UC08-FL-S05","title":"The domain page heads its records with the same stages","flow_id":"LA-EXP-UC08-FL","path":"main","position":4}
 {"id":"LA-EXP-UC09-FL-S01","title":"The domain page lists Technical specification by technical kind","flow_id":"LA-EXP-UC09-FL","path":"main","position":1}
@@ -197,52 +197,52 @@
 {"id":"LA-EXP-UC09-FL-S04","title":"In the nav the kind groups fold with their counts, and the current page's branch opens","flow_id":"LA-EXP-UC09-FL","path":"main","position":3}
 {"id":"LA-EXP-UC09-FL-S05","title":"In the graph they reach the same records through the same groups, and the header strip's breadcrumb names where each sits","flow_id":"LA-EXP-UC09-FL","path":"main","position":4}
 {"id":"LA-EXP-UC10-FL-S01","title":"The Reader moves through the stage, the links and quick find, and every move stays in the active tab, even onto a record another tab holds","flow_id":"LA-EXP-UC10-FL","path":"main","position":1,"interface_id":"LA-IF02"}
-{"id":"LA-EXP-UC10-FL-S02","title":"The Reader opens a new tab by Cmd or Ctrl+click or a middle-click, Open in New Tab, Cmd+Enter in quick open, Cmd+T or Duplicate Tab","flow_id":"LA-EXP-UC10-FL","path":"main","position":2,"interface_id":"LA-IF02"}
-{"id":"LA-EXP-UC10-FL-S03","title":"The Reader flips between tabs by a click, Ctrl+Tab or View › Tabs, and the address follows the active tab","flow_id":"LA-EXP-UC10-FL","path":"main","position":3,"interface_id":"LA-IF02"}
+{"id":"LA-EXP-UC10-FL-S02","title":"The Reader opens a new tab by Cmd or Ctrl with a press, a middle press, Open in New Tab, Cmd+Enter in quick open, Cmd+T or Duplicate Tab","flow_id":"LA-EXP-UC10-FL","path":"main","position":2,"interface_id":"LA-IF02"}
+{"id":"LA-EXP-UC10-FL-S03","title":"The Reader flips between tabs by a press, Ctrl+Tab or View › Tabs, and the address follows the active tab","flow_id":"LA-EXP-UC10-FL","path":"main","position":3,"interface_id":"LA-IF02"}
 {"id":"LA-EXP-UC10-FL-S04","title":"The Reader moves through the stage, the links and quick find, each move staying in the browser tab as one entry of its history","flow_id":"LA-EXP-UC10-FL","path":"main","position":4,"interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC10-FL-S05","title":"Cmd or Ctrl+click or a middle-click on a box or a link opens its address in a new browser tab","flow_id":"LA-EXP-UC10-FL","path":"main","position":5,"interface_id":"LA-IF01"}
+{"id":"LA-EXP-UC10-FL-S05","title":"Cmd or Ctrl with a press, or a middle press, on a box or a link opens its address in a new browser tab","flow_id":"LA-EXP-UC10-FL","path":"main","position":5,"interface_id":"LA-IF01"}
 {"id":"LA-EXP-UC10-FL-S06","title":"The Reader flips between browser tabs, each its own place","flow_id":"LA-EXP-UC10-FL","path":"main","position":6,"interface_id":"LA-IF01"}
 {"id":"LA-EXP-UC10-FL-S07","title":"Each browser tab keeps its own stage, depth, filters and wiki card; the layout and the minimap are the session's","flow_id":"LA-EXP-UC10-FL","path":"main","position":7,"interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC10-FL-S08","title":"The Reader closes a tab by its button, a middle-click, Cmd+W or Alt+Shift+W","flow_id":"LA-EXP-UC10-FL","path":"main","position":8,"interface_id":"LA-IF02"}
+{"id":"LA-EXP-UC10-FL-S08","title":"The Reader closes a tab by its close control, a middle press, Cmd+W or Alt+Shift+W","flow_id":"LA-EXP-UC10-FL","path":"main","position":8,"interface_id":"LA-IF02"}
 {"id":"LA-EXP-UC10-FL-S09","title":"The app brings back every tab with its place and history after a reload","flow_id":"LA-EXP-UC10-FL","path":"main","position":9,"interface_id":"LA-IF02"}
-{"id":"LA-EXP-UC10-FL-S10","title":"The Reader goes Back and Forward within the active tab, by the title bar's buttons, Cmd+[ and Cmd+] or View › Tabs","flow_id":"LA-EXP-UC10-FL","path":"main","position":10,"interface_id":"LA-IF02"}
+{"id":"LA-EXP-UC10-FL-S10","title":"The Reader goes Back and Forward within the active tab, by the title bar's controls, Cmd+[ and Cmd+] or View › Tabs","flow_id":"LA-EXP-UC10-FL","path":"main","position":10,"interface_id":"LA-IF02"}
 {"id":"LA-EXP-UC10-FL-S11","title":"Back and Forward step through the browser tab's own history","flow_id":"LA-EXP-UC10-FL","path":"main","position":11,"interface_id":"LA-IF01"}
 {"id":"LA-EXP-UC10-FL-S12","title":"A reload brings back the browser tab's place","flow_id":"LA-EXP-UC10-FL","path":"main","position":12,"interface_id":"LA-IF01"}
 {"id":"LA-EXP-UC11-FL-S01","title":"On a domain, aggregate or entity page the reader opens the ERD stage","flow_id":"LA-EXP-UC11-FL","path":"main","position":1}
 {"id":"LA-EXP-UC11-FL-S02","title":"A domain's ERD shows its aggregates as boundaries around their entities, and the relationship and reference lines between them","flow_id":"LA-EXP-UC11-FL","path":"main","position":2}
-{"id":"LA-EXP-UC11-FL-S03","title":"They click an aggregate's box: its entities with their fields, and the aggregates around it faded","flow_id":"LA-EXP-UC11-FL","path":"main","position":3}
+{"id":"LA-EXP-UC11-FL-S03","title":"They select an aggregate's box: its entities with their fields, and the aggregates around it faded","flow_id":"LA-EXP-UC11-FL","path":"main","position":3}
 {"id":"LA-EXP-UC11-FL-S04","title":"On an entity the same ERD picks it out","flow_id":"LA-EXP-UC11-FL","path":"main","position":4}
 {"id":"LA-EXP-UC11-FL-S05","title":"The Reader reads the key under the diagram","flow_id":"LA-EXP-UC11-FL","path":"main","position":5}
 {"id":"LA-EXP-UC12-FL-S01","title":"They expand the wiki card and show the history: the uncommitted change first, an older commit's diff, Load more","flow_id":"LA-EXP-UC12-FL","path":"main","position":1}
-{"id":"LA-EXP-UC13-FL-S01","title":"The reader opens a domain's Interaction design and sees its endpoints, and the integrations only its steps exchange with","flow_id":"LA-EXP-UC13-FL","path":"main","position":1}
-{"id":"LA-EXP-UC13-FL-S02","title":"They open a command and read its endpoint, method, route and API requirements","flow_id":"LA-EXP-UC13-FL","path":"main","position":2}
+{"id":"LA-EXP-UC13-FL-S01","title":"The reader opens a domain's Interaction design and sees how a client reaches its commands and queries, and the integrations only its steps exchange with","flow_id":"LA-EXP-UC13-FL","path":"main","position":1}
+{"id":"LA-EXP-UC13-FL-S02","title":"They open a command and read how a client reaches it: method, address and API requirements","flow_id":"LA-EXP-UC13-FL","path":"main","position":2}
 {"id":"LA-EXP-UC13-FL-S03","title":"They open an integration and read the steps that exchange with its system","flow_id":"LA-EXP-UC13-FL","path":"main","position":3}
-{"id":"LA-EXP-UC15-FL-S01","title":"While the Reader has the product open on a stage, an Agent adds an aggregate and edits a requirement through the CLI","flow_id":"LA-EXP-UC15-FL","path":"main","position":1}
+{"id":"LA-EXP-UC15-FL-S01","title":"While the Reader has the product open on a stage, an Agent adds an aggregate and edits a requirement through the command line","flow_id":"LA-EXP-UC15-FL","path":"main","position":1}
 {"id":"LA-EXP-UC15-FL-S02","title":"The page reloads and the stage marks them: the new aggregate glows, the requirement pulses, and each keeps a New or Changed pill while Highlight changes is on","flow_id":"LA-EXP-UC15-FL","path":"main","position":2}
 {"id":"LA-EXP-UC15-FL-S03","title":"They turn Follow on, and the camera glides to the next change as it lands; their own camera move turns it off, with a note","flow_id":"LA-EXP-UC15-FL","path":"main","position":3}
 {"id":"LA-EXP-UC15-FL-S04","title":"They turn on Highlight changes: everything unchanged since the last commit dims to a fifth and each change carries its pill, outline and tint; they pick since the branch left main, then since I last looked","flow_id":"LA-EXP-UC15-FL","path":"main","position":4}
-{"id":"LA-EXP-UC15-FL-S05","title":"They open the Changes panel from its count and click a change, which focuses its record on the stage","flow_id":"LA-EXP-UC15-FL","path":"main","position":5}
+{"id":"LA-EXP-UC15-FL-S05","title":"They open the Changes panel from its count and select a change, which focuses its record on the stage","flow_id":"LA-EXP-UC15-FL","path":"main","position":5}
 {"id":"LA-EXP-UC15-FL-S06","title":"The wiki card shows the record's changes: each field old → new, the links added and removed","flow_id":"LA-EXP-UC15-FL","path":"main","position":6}
 {"id":"LA-EXP-UC15-FL-S07","title":"They zoom out: each container shows how many records under it are new, changed or removed, the nav shows the same beside each folder, and the minimap and the edge hints point to changes out of view","flow_id":"LA-EXP-UC15-FL","path":"main","position":7}
 {"id":"LA-EXP-UC15-FL-S08","title":"They press ] and [ to walk the focus through the changed records, each announced","flow_id":"LA-EXP-UC15-FL","path":"main","position":8}
 {"id":"LA-PLT-UC01-FL-S01","title":"The Agent's script calls loadWorkspace(root) and reads the records, links, problems and coverage","flow_id":"LA-PLT-UC01-FL","path":"main","position":1}
 {"id":"LA-PLT-UC01-FL-S02","title":"After a write, the script loads again within the budgets","flow_id":"LA-PLT-UC01-FL","path":"main","position":2}
 {"id":"LA-PLT-UC01-FL-S03","title":"Data the store refuses ends the load with one data-refused error per refusal and no records","flow_id":"LA-PLT-UC01-FL","path":"refused","position":1}
-{"id":"LA-PLT-UC02-FL-S01","title":"The Owner installs the package and runs lathe init with the product's name and prefix, and names the test files in lathe.config.json when they differ from the common names","flow_id":"LA-PLT-UC02-FL","path":"main","position":1}
+{"id":"LA-PLT-UC02-FL-S01","title":"The Owner installs the package and runs lathe init with the product's name and prefix, and names the test files in the product's Lathe configuration file when they differ from the common names","flow_id":"LA-PLT-UC02-FL","path":"main","position":1}
 {"id":"LA-PLT-UC02-FL-S02","title":"They set up the merge driver once per clone, as the README says, so git merges the data files through it","flow_id":"LA-PLT-UC02-FL","path":"main","position":2}
 {"id":"LA-PLT-UC02-FL-S03","title":"They add the first domain with its own command, in the data folder the config names, then the product's other records","flow_id":"LA-PLT-UC02-FL","path":"main","position":3}
 {"id":"LA-PLT-UC02-FL-S04","title":"They run lathe serve to browse and edit the spec, with no build tools in the repo","flow_id":"LA-PLT-UC02-FL","path":"main","position":4}
-{"id":"LA-PLT-UC02-FL-S05","title":"They stop lathe serve from the terminal, and it closes the database before it ends","flow_id":"LA-PLT-UC02-FL","path":"main","position":5}
-{"id":"LA-PLT-UC02-FL-S06","title":"The Owner lists the other products in the workspace's lathe.config.json, and lathe check checks each in its own folder","flow_id":"LA-PLT-UC02-FL","path":"workspace","position":1}
+{"id":"LA-PLT-UC02-FL-S05","title":"They stop lathe serve from the terminal, and it closes the store before it ends","flow_id":"LA-PLT-UC02-FL","path":"main","position":5}
+{"id":"LA-PLT-UC02-FL-S06","title":"The Owner lists the other products in the workspace's Lathe configuration file, and lathe check checks each in its own folder","flow_id":"LA-PLT-UC02-FL","path":"workspace","position":1}
 {"id":"LA-PLT-UC02-FL-S07","title":"lathe serve shows each product as a space, and writes each change to its own product's folder","flow_id":"LA-PLT-UC02-FL","path":"workspace","position":2}
-{"id":"LA-PLT-UC03-FL-S01","title":"The Agent adds a use case's flow step with its own command while the Reader keeps the page open","flow_id":"LA-PLT-UC03-FL","path":"main","position":1,"interface_id":"LA-IF02"}
-{"id":"LA-PLT-UC03-FL-S02","title":"In the desktop app, Data files changed sends spec:changed and the open page loads the data again at the same address","flow_id":"LA-PLT-UC03-FL","path":"main","position":2,"interface_id":"LA-IF02"}
-{"id":"LA-PLT-UC03-FL-S03","title":"An Agent adds an aggregate with its own command while the Reader keeps the page open","flow_id":"LA-PLT-UC03-FL","path":"main","position":3,"interface_id":"LA-IF01"}
-{"id":"LA-PLT-UC03-FL-S04","title":"The file watcher raises Data files changed, the server sends spec:changed and the open page loads the data again at the same address","flow_id":"LA-PLT-UC03-FL","path":"main","position":4,"interface_id":"LA-IF01"}
-{"id":"LA-PLT-UC03-FL-S05","title":"When the data cannot be loaded, the page says what is wrong rather than showing other data","flow_id":"LA-PLT-UC03-FL","path":"refused","position":1}
+{"id":"LA-PLT-UC03-FL-S01","title":"The Agent adds a use case's flow step with its own command while the Reader keeps the record open","flow_id":"LA-PLT-UC03-FL","path":"main","position":1,"interface_id":"LA-IF02"}
+{"id":"LA-PLT-UC03-FL-S02","title":"In the desktop shell, Data files changed sends spec:changed and the open view loads the data again at the same address","flow_id":"LA-PLT-UC03-FL","path":"main","position":2,"interface_id":"LA-IF02"}
+{"id":"LA-PLT-UC03-FL-S03","title":"An Agent adds an aggregate with its own command while the Reader keeps the record open","flow_id":"LA-PLT-UC03-FL","path":"main","position":3,"interface_id":"LA-IF01"}
+{"id":"LA-PLT-UC03-FL-S04","title":"The file watcher raises Data files changed, the server sends spec:changed and the open view loads the data again at the same address","flow_id":"LA-PLT-UC03-FL","path":"main","position":4,"interface_id":"LA-IF01"}
+{"id":"LA-PLT-UC03-FL-S05","title":"When the data cannot be loaded, the view says what is wrong rather than showing other data","flow_id":"LA-PLT-UC03-FL","path":"refused","position":1}
 {"id":"LA-PLT-UC04-FL-S01","title":"The Reader presses Cmd/Ctrl+Shift+P; the palette lists the commands that apply, from the one keymap, each with its keys for the platform","flow_id":"LA-PLT-UC04-FL","path":"main","position":1}
 {"id":"LA-PLT-UC04-FL-S02","title":"They run commands by their VS Code keys, such as Cmd/Ctrl+B to hide the navigation","flow_id":"LA-PLT-UC04-FL","path":"main","position":2}
-{"id":"LA-PLT-UC04-FL-S03","title":"The app announces to a screen reader what the command changed","flow_id":"LA-PLT-UC04-FL","path":"main","position":3}
+{"id":"LA-PLT-UC04-FL-S03","title":"The app announces to assistive technology what the command changed","flow_id":"LA-PLT-UC04-FL","path":"main","position":3}
 {"id":"LA-PLT-UC04-FL-S05","title":"They press ?; the shortcuts sheet lists every shortcut by group, with a search and each shortcut's keys to change","flow_id":"LA-PLT-UC04-FL","path":"main","position":4}
 {"id":"LA-PLT-UC04-FL-S06","title":"They choose a key in the sheet and press a new one, and the palette, the sheet and every hint show it at once","flow_id":"LA-PLT-UC04-FL","path":"main","position":5}
 {"id":"LA-PLT-UC04-FL-S07","title":"They remove a key they no longer want from a shortcut in the sheet","flow_id":"LA-PLT-UC04-FL","path":"main","position":6}
@@ -251,11 +251,11 @@
 {"id":"LA-PLT-UC04-FL-S10","title":"The app fires no single-key shortcut while the Reader types in a search box, and passes keys it doesn't handle to the window","flow_id":"LA-PLT-UC04-FL","path":"typing","position":1}
 {"id":"LA-PLT-UC05-FL-S01","title":"The Reader rests on a control and its tooltip names its keys","flow_id":"LA-PLT-UC05-FL","path":"main","position":1}
 {"id":"LA-PLT-UC05-FL-S02","title":"They open the palette and read each command's keys","flow_id":"LA-PLT-UC05-FL","path":"main","position":2}
-{"id":"LA-PLT-UC05-FL-S03","title":"A screen reader hears the keys","flow_id":"LA-PLT-UC05-FL","path":"main","position":3}
+{"id":"LA-PLT-UC05-FL-S03","title":"Assistive technology announces the keys","flow_id":"LA-PLT-UC05-FL","path":"main","position":3}
 {"id":"LA-PLT-UC05-FL-S04","title":"The Reader rebinds a key in the shortcuts sheet, and every hint follows, the menu's key labels with them","flow_id":"LA-PLT-UC05-FL","path":"main","position":4,"interface_id":"LA-IF02"}
 {"id":"LA-PLT-UC05-FL-S05","title":"They rebind a key in the shortcuts sheet and every hint follows, the toolbar and the palette with it","flow_id":"LA-PLT-UC05-FL","path":"main","position":5,"interface_id":"LA-IF01"}
 {"id":"LA-PLT-UC06-FL-S01","title":"The Reader drags the gap between two panels, or focuses it and steps it with the keys","flow_id":"LA-PLT-UC06-FL","path":"main","position":1}
-{"id":"LA-PLT-UC06-FL-S02","title":"Lathe remembers the sizes; a double-click resets one","flow_id":"LA-PLT-UC06-FL","path":"main","position":2}
+{"id":"LA-PLT-UC06-FL-S02","title":"Lathe remembers the sizes; a double press on the divider resets one","flow_id":"LA-PLT-UC06-FL","path":"main","position":2}
 {"id":"LA-PLT-UC06-FL-S03","title":"Dragging the navigation small folds it to its rail","flow_id":"LA-PLT-UC06-FL","path":"main","position":3}
 {"id":"LA-PLT-UC06-FL-S04","title":"They collapse the wiki card; the stage takes its room and recenters, and the toggle brings it back","flow_id":"LA-PLT-UC06-FL","path":"main","position":4}
 {"id":"LA-PLT-UC07-FL-S01","title":"The Reader presses g then t and arrows through the themes, each shown on the whole app at once","flow_id":"LA-PLT-UC07-FL","path":"main","position":1}
@@ -269,32 +269,32 @@
 {"id":"LA-PLT-UC07-FL-S09","title":"They delete their copy, after being asked","flow_id":"LA-PLT-UC07-FL","path":"alternate","position":2}
 {"id":"LA-PLT-UC07-FL-S10","title":"Someone else imports that file as a theme of their own","flow_id":"LA-PLT-UC07-FL","path":"alternate","position":3}
 {"id":"LA-PLT-UC07-FL-S11","title":"They turn Scroll to zoom on in Appearance, or from the palette, and scroll zooms every stage","flow_id":"LA-PLT-UC07-FL","path":"alternate","position":4}
-{"id":"LA-PLT-UC08-FL-S01","title":"On a phone the Reader opens Lathe: a compact top bar, the page filling the screen, text they can read","flow_id":"LA-PLT-UC08-FL","path":"main","position":1}
+{"id":"LA-PLT-UC08-FL-S01","title":"On a phone the Reader opens Lathe: a compact top bar, the view filling the display, text they can read","flow_id":"LA-PLT-UC08-FL","path":"main","position":1}
 {"id":"LA-PLT-UC08-FL-S02","title":"They tap search in the top bar, type a use case's ID and tap the result","flow_id":"LA-PLT-UC08-FL","path":"main","position":2}
-{"id":"LA-PLT-UC08-FL-S03","title":"The wiki fills the screen; they tap Graph in the page bar","flow_id":"LA-PLT-UC08-FL","path":"main","position":3}
+{"id":"LA-PLT-UC08-FL-S03","title":"The wiki fills the display; they tap Graph in the view bar","flow_id":"LA-PLT-UC08-FL","path":"main","position":3}
 {"id":"LA-PLT-UC08-FL-S04","title":"They pinch out, tap a node to see its name, and tap Open","flow_id":"LA-PLT-UC08-FL","path":"main","position":4}
 {"id":"LA-PLT-UC08-FL-S05","title":"They pull up the wiki card sheet, drag it to full height, then swipe it away","flow_id":"LA-PLT-UC08-FL","path":"main","position":5}
-{"id":"LA-PLT-UC08-FL-S06","title":"They open the nav sheet from the menu button and choose the domain","flow_id":"LA-PLT-UC08-FL","path":"main","position":6}
+{"id":"LA-PLT-UC08-FL-S06","title":"They open the nav sheet from the menu control and choose the domain","flow_id":"LA-PLT-UC08-FL","path":"main","position":6}
 {"id":"LA-PLT-UC08-FL-S07","title":"Back, twice, takes them back to the use case they started from","flow_id":"LA-PLT-UC08-FL","path":"main","position":7}
 {"id":"LA-PLT-UC08-FL-S08","title":"On a tablet in landscape they keep the workbench, with targets sized for a finger","flow_id":"LA-PLT-UC08-FL","path":"tablet","position":1}
-{"id":"LA-PLT-UC09-FL-S01","title":"The Reader opens a page; nothing drawn moves as the specs and fonts arrive","flow_id":"LA-PLT-UC09-FL","path":"main","position":1}
-{"id":"LA-PLT-UC09-FL-S02","title":"The Reader moves between records by the nav, a link, a graph click, Back and quick find; the frame stays","flow_id":"LA-PLT-UC09-FL","path":"main","position":2}
+{"id":"LA-PLT-UC09-FL-S01","title":"The Reader opens a record; nothing drawn moves as the specs and fonts arrive","flow_id":"LA-PLT-UC09-FL","path":"main","position":1}
+{"id":"LA-PLT-UC09-FL-S02","title":"The Reader moves between records by the nav, a link, a node in the graph, Back and quick find; the frame stays","flow_id":"LA-PLT-UC09-FL","path":"main","position":2}
 {"id":"LA-PLT-UC09-FL-S04","title":"They collapse, show and resize the wiki card; only it moves, and the stage recenters","flow_id":"LA-PLT-UC09-FL","path":"main","position":3}
-{"id":"LA-PLT-UC09-FL-S05","title":"The Reader folds rows and uses Expand all","flow_id":"LA-PLT-UC09-FL","path":"main","position":4}
+{"id":"LA-PLT-UC09-FL-S05","title":"The Reader folds sections and uses Expand all","flow_id":"LA-PLT-UC09-FL","path":"main","position":4}
 {"id":"LA-PLT-UC09-FL-S07","title":"They resize panels, which follow the pointer","flow_id":"LA-PLT-UC09-FL","path":"main","position":5}
 {"id":"LA-PLT-UC09-FL-S08","title":"The Reader re-centers the graph, changes its depth and moves around the ERD; the canvas and its bars hold still","flow_id":"LA-PLT-UC09-FL","path":"main","position":6}
 {"id":"LA-PLT-UC09-FL-S10","title":"The specs reload while they are scrolled part-way down; what was in view stays","flow_id":"LA-PLT-UC09-FL","path":"main","position":7}
 {"id":"LA-PLT-UC09-FL-S11","title":"The Reader opens a tooltip, quick find, the palette and the sheet, each placed before it shows","flow_id":"LA-PLT-UC09-FL","path":"main","position":8}
 {"id":"LA-PLT-UC09-FL-S13","title":"They switch the theme; only colors change","flow_id":"LA-PLT-UC09-FL","path":"main","position":9}
 {"id":"LA-PLT-UC09-FL-S14","title":"The app answers each move within the performance budgets","flow_id":"LA-PLT-UC09-FL","path":"main","position":10}
-{"id":"LA-PLT-UC09-FL-S16","title":"On a phone they open and close the sheets; the page behind stays","flow_id":"LA-PLT-UC09-FL","path":"phone","position":1,"interface_id":"LA-IF01"}
+{"id":"LA-PLT-UC09-FL-S16","title":"On a phone they open and close the sheets; the view behind stays","flow_id":"LA-PLT-UC09-FL","path":"phone","position":1,"interface_id":"LA-IF01"}
 {"id":"LA-PLT-UC10-FL-S01","title":"In the desktop app, the Reader tabs round the nav, the tab panel, the wiki card and the stage; every control is reached, named for what it shows, big enough and never inside another, and every box that scrolls takes focus","flow_id":"LA-PLT-UC10-FL","path":"main","position":1,"interface_id":"LA-IF02"}
-{"id":"LA-PLT-UC10-FL-S02","title":"The Reader opens a record from the nav or quick find; focus stays on the page","flow_id":"LA-PLT-UC10-FL","path":"main","position":2}
+{"id":"LA-PLT-UC10-FL-S02","title":"The Reader opens a record from the nav or quick find; focus stays on the record","flow_id":"LA-PLT-UC10-FL","path":"main","position":2}
 {"id":"LA-PLT-UC10-FL-S05","title":"They switch stages and collapse and show the wiki card; each change is announced","flow_id":"LA-PLT-UC10-FL","path":"main","position":3}
-{"id":"LA-PLT-UC10-FL-S06","title":"They pick the High contrast theme by keyboard; every page reads clearly in it, in light and dark","flow_id":"LA-PLT-UC10-FL","path":"main","position":4}
+{"id":"LA-PLT-UC10-FL-S06","title":"They pick the High contrast theme by keyboard; every view reads clearly in it, in light and dark","flow_id":"LA-PLT-UC10-FL","path":"main","position":4}
 {"id":"LA-PLT-UC10-FL-S07","title":"The Reader opens a dialog; focus is held inside and comes back to the opener","flow_id":"LA-PLT-UC10-FL","path":"main","position":5}
 {"id":"LA-PLT-UC11-FL-S01","title":"The Reader chooses File › Open Product Folder… and picks a folder","flow_id":"LA-PLT-UC11-FL","path":"main","position":1}
-{"id":"LA-PLT-UC11-FL-S02","title":"It opens in a window of its own, never white, titled with its products and folder, the page reaching the shell only through window.latheDesktop","flow_id":"LA-PLT-UC11-FL","path":"main","position":2}
+{"id":"LA-PLT-UC11-FL-S02","title":"It opens in a window of its own, never white, titled with its products and folder, its content reaching the shell only through window.latheDesktop","flow_id":"LA-PLT-UC11-FL","path":"main","position":2}
 {"id":"LA-PLT-UC11-FL-S03","title":"The window serves the product with its own installed Lathe, or the bundled copy, and About says which","flow_id":"LA-PLT-UC11-FL","path":"main","position":3}
 {"id":"LA-PLT-UC11-FL-S04","title":"A link to another site opens in the system browser, and the window stays on Lathe","flow_id":"LA-PLT-UC11-FL","path":"main","position":4}
 {"id":"LA-PLT-UC11-FL-S05","title":"They come back to it from File › Open Recent","flow_id":"LA-PLT-UC11-FL","path":"main","position":5}
@@ -307,38 +307,38 @@
 {"id":"LA-PLT-UC11-FL-S12","title":"A workspace's folder opens with every product it lists, each a space, titled with them all","flow_id":"LA-PLT-UC11-FL","path":"workspace","position":1}
 {"id":"LA-PLT-UC12-FL-S01","title":"The Owner runs npm --prefix desktop run dev; a window loads the 5199 dev server when it serves the opened folder","flow_id":"LA-PLT-UC12-FL","path":"main","position":1}
 {"id":"LA-PLT-UC12-FL-S02","title":"A change to the main process or a preload restarts Electron","flow_id":"LA-PLT-UC12-FL","path":"main","position":2}
-{"id":"LA-PLT-UC12-FL-S03","title":"A change to a record reloads the page in every mode","flow_id":"LA-PLT-UC12-FL","path":"main","position":3}
+{"id":"LA-PLT-UC12-FL-S03","title":"A change to a record reloads the view in every mode","flow_id":"LA-PLT-UC12-FL","path":"main","position":3}
 {"id":"LA-PLT-UC12-FL-S04","title":"They build the app as it ships, locally and unsigned","flow_id":"LA-PLT-UC12-FL","path":"main","position":4}
 {"id":"LA-PLT-UC12-FL-S05","title":"Otherwise the shell starts a dev server of its own for the folder","flow_id":"LA-PLT-UC12-FL","path":"alternate","position":1}
 {"id":"LA-PLT-UC13-FL-S01","title":"The Reader opens the menu bar: File, Edit, View, Window and Help","flow_id":"LA-PLT-UC13-FL","path":"main","position":1}
-{"id":"LA-PLT-UC13-FL-S02","title":"They choose a View item; the page runs the command by its ID, as if its key had been pressed","flow_id":"LA-PLT-UC13-FL","path":"main","position":2}
-{"id":"LA-PLT-UC13-FL-S03","title":"The page knows it runs in the desktop app","flow_id":"LA-PLT-UC13-FL","path":"main","position":3}
+{"id":"LA-PLT-UC13-FL-S02","title":"They choose a View item; the app runs the command by its ID, as if its key had been pressed","flow_id":"LA-PLT-UC13-FL","path":"main","position":2}
+{"id":"LA-PLT-UC13-FL-S03","title":"The app knows it runs inside its desktop shell","flow_id":"LA-PLT-UC13-FL","path":"main","position":3}
 {"id":"LA-PLT-UC14-FL-S01","title":"The window has no system title bar; Lathe draws its own, with the window's controls over it","flow_id":"LA-PLT-UC14-FL","path":"main","position":1}
 {"id":"LA-PLT-UC14-FL-S02","title":"The Reader goes back and forward from the bar","flow_id":"LA-PLT-UC14-FL","path":"main","position":2}
-{"id":"LA-PLT-UC14-FL-S03","title":"They click the command center to open quick find","flow_id":"LA-PLT-UC14-FL","path":"main","position":3}
+{"id":"LA-PLT-UC14-FL-S03","title":"They press the command center to open quick find","flow_id":"LA-PLT-UC14-FL","path":"main","position":3}
 {"id":"LA-PLT-UC14-FL-S04","title":"They show and hide the navigation from the bar","flow_id":"LA-PLT-UC14-FL","path":"main","position":4}
-{"id":"LA-PLT-UC14-FL-S05","title":"They drag the window by the bar and double-click it to zoom","flow_id":"LA-PLT-UC14-FL","path":"main","position":5}
+{"id":"LA-PLT-UC14-FL-S05","title":"They drag the window by the bar and double-press it to zoom","flow_id":"LA-PLT-UC14-FL","path":"main","position":5}
 {"id":"LA-PLT-UC14-FL-S06","title":"They change the theme; the bar and the window's controls follow","flow_id":"LA-PLT-UC14-FL","path":"main","position":6}
 {"id":"LA-PLT-UC15-FL-S01","title":"The Owner keeps Lathe in the Dock; its icon reads at every size, with a DEV band in development","flow_id":"LA-PLT-UC15-FL","path":"main","position":1}
 {"id":"LA-PLT-UC15-FL-S02","title":"They open a folder; the window opens on the shell color with a launch view until the specs answer, and behaves like a native window","flow_id":"LA-PLT-UC15-FL","path":"main","position":2}
-{"id":"LA-PLT-UC15-FL-S03","title":"The page reports its check errors to the shell","flow_id":"LA-PLT-UC15-FL","path":"main","position":3}
+{"id":"LA-PLT-UC15-FL-S03","title":"The app reports its check errors to the shell","flow_id":"LA-PLT-UC15-FL","path":"main","position":3}
 {"id":"LA-PLT-UC15-FL-S04","title":"The Dock badge counts the errors of the window in front","flow_id":"LA-PLT-UC15-FL","path":"main","position":4}
 {"id":"LA-PLT-UC15-FL-S05","title":"The Dock menu opens another folder and lists the recent ones","flow_id":"LA-PLT-UC15-FL","path":"main","position":5}
 {"id":"LA-PLT-UC15-FL-S06","title":"About Lathe shows the versions, and Settings… opens Appearance","flow_id":"LA-PLT-UC15-FL","path":"main","position":6}
 {"id":"LA-PLT-UC15-FL-S07","title":"From a record they reveal its data file in Finder, open it in the editor or copy its ID; the shell takes only the ID and finds the file itself","flow_id":"LA-PLT-UC15-FL","path":"main","position":7}
-{"id":"LA-PLT-UC15-FL-S08","title":"They choose the editor Open in editor uses, or a custom command, and the shell keeps it in settings.json","flow_id":"LA-PLT-UC15-FL","path":"main","position":8}
-{"id":"LA-PLT-UC15-FL-S09","title":"They open settings.json in the editor to fill in the custom command or the path to claude","flow_id":"LA-PLT-UC15-FL","path":"main","position":9}
+{"id":"LA-PLT-UC15-FL-S08","title":"They choose the editor Open in editor uses, or a custom command, and the shell keeps it in its settings file","flow_id":"LA-PLT-UC15-FL","path":"main","position":8}
+{"id":"LA-PLT-UC15-FL-S09","title":"They open the settings file in the editor to fill in the custom command or the path to claude","flow_id":"LA-PLT-UC15-FL","path":"main","position":9}
 {"id":"LA-PLT-UC15-FL-S10","title":"Opening Lathe again, or a folder from Finder, goes to the running app","flow_id":"LA-PLT-UC15-FL","path":"main","position":10}
 {"id":"LA-PLT-UC15-FL-S11","title":"A run that was killed leaves macOS nothing to reopen","flow_id":"LA-PLT-UC15-FL","path":"main","position":11}
-{"id":"LA-PLT-UC15-FL-S12","title":"When the engine cannot load the folder, the error page says why and offers Retry, another folder and the folder itself","flow_id":"LA-PLT-UC15-FL","path":"refused","position":1}
-{"id":"LA-PLT-UC16-FL-S01","title":"The app sends one command's fields to its route, POST /api/<aggregate>/<command>, which runs it in its own transaction","flow_id":"LA-PLT-UC16-FL","path":"main","position":1}
-{"id":"LA-PLT-UC16-FL-S02","title":"The server answers with the rows the command changed, Data files changed reloads open pages, and git merges the change row by row","flow_id":"LA-PLT-UC16-FL","path":"main","position":2}
-{"id":"LA-PLT-UC16-FL-S03","title":"A command from another site, not sent as JSON or over 1 MB is refused before it runs","flow_id":"LA-PLT-UC16-FL","path":"refused","position":1}
+{"id":"LA-PLT-UC15-FL-S12","title":"When the engine cannot load the folder, the error view says why and offers Retry, another folder and the folder itself","flow_id":"LA-PLT-UC15-FL","path":"refused","position":1}
+{"id":"LA-PLT-UC16-FL-S01","title":"The app sends one command's fields to the server, which runs it in its own transaction","flow_id":"LA-PLT-UC16-FL","path":"main","position":1}
+{"id":"LA-PLT-UC16-FL-S02","title":"The server answers with the records the command changed, Data files changed reloads open views, and git merges the change record by record","flow_id":"LA-PLT-UC16-FL","path":"main","position":2}
+{"id":"LA-PLT-UC16-FL-S03","title":"A command from another site, not sent as a structured request or over 1 MB is refused before it runs","flow_id":"LA-PLT-UC16-FL","path":"refused","position":1}
 {"id":"LA-PLT-UC16-FL-S04","title":"The command refuses a change that breaks its aggregate's rules, with every reason, and no file changes","flow_id":"LA-PLT-UC16-FL","path":"refused","position":2}
 {"id":"LA-PLT-UC17-FL-S01","title":"The Owner updates Lathe in the product repo, and the next load stops with what to do","flow_id":"LA-PLT-UC17-FL","path":"main","position":1}
 {"id":"LA-PLT-UC17-FL-S02","title":"With the work committed, they run lathe upgrade, which converts the data one version at a time and says what changed","flow_id":"LA-PLT-UC17-FL","path":"main","position":2}
 {"id":"LA-PLT-UC17-FL-S03","title":"They finish what it lists to do by hand, run lathe check, and commit the upgrade as one commit","flow_id":"LA-PLT-UC17-FL","path":"main","position":3}
-{"id":"LA-PLT-UC18-FL-S01","title":"Claude Code starts the plugin's launcher, which finds the product repo and starts its installed Lathe's MCP tools","flow_id":"LA-PLT-UC18-FL","path":"main","position":1}
+{"id":"LA-PLT-UC18-FL-S01","title":"Claude Code starts the plugin's launcher, which finds the product repo and starts its installed Lathe's tools","flow_id":"LA-PLT-UC18-FL","path":"main","position":1}
 {"id":"LA-PLT-UC18-FL-S02","title":"The Agent calls a tool; when the skills were written for another major version, the first result alone carries one warning naming both","flow_id":"LA-PLT-UC18-FL","path":"main","position":2}
 {"id":"LA-PLT-UC18-FL-S03","title":"The launcher says why it cannot start outside a Lathe repo","flow_id":"LA-PLT-UC18-FL","path":"refused","position":1}
 {"id":"LA-PLT-UC19-FL-S01","title":"The Owner shows the chat from the title bar or its key; the stage frames its focus in what the chat leaves","flow_id":"LA-PLT-UC19-FL","path":"main","position":1}
@@ -347,7 +347,7 @@
 {"id":"LA-PLT-UC19-FL-S04","title":"They ask Claude in their own words; it answers as rich text, with their login, settings, skills, plugins and CLAUDE.md","flow_id":"LA-PLT-UC19-FL","path":"main","position":4}
 {"id":"LA-PLT-UC19-FL-S05","title":"Claude asks what the Reader is looking at","flow_id":"LA-PLT-UC19-FL","path":"main","position":5}
 {"id":"LA-PLT-UC19-FL-S06","title":"Claude opens a record in the window","flow_id":"LA-PLT-UC19-FL","path":"main","position":6}
-{"id":"LA-PLT-UC19-FL-S07","title":"Each tool call Claude makes shows as a row that expands to its input and result","flow_id":"LA-PLT-UC19-FL","path":"main","position":7}
+{"id":"LA-PLT-UC19-FL-S07","title":"Each tool call Claude makes shows as an entry that expands to its input and result","flow_id":"LA-PLT-UC19-FL","path":"main","position":7}
 {"id":"LA-PLT-UC19-FL-S08","title":"A tool that needs permission waits in the chat until they allow it once, allow it always in this chat, or deny it","flow_id":"LA-PLT-UC19-FL","path":"main","position":8}
 {"id":"LA-PLT-UC19-FL-S09","title":"They stop the turn under way","flow_id":"LA-PLT-UC19-FL","path":"main","position":9}
 {"id":"LA-PLT-UC19-FL-S10","title":"After the turn, the records it changed show as diffs, by record","flow_id":"LA-PLT-UC19-FL","path":"main","position":10}
@@ -356,14 +356,14 @@
 {"id":"LA-PLT-UC19-FL-S13","title":"Before the first message, the empty chat says when Claude Code is not found or not signed in, with the fix","flow_id":"LA-PLT-UC19-FL","path":"main","position":13}
 {"id":"LA-PLT-UC19-FL-S14","title":"They choose a permission mode (Ask, Accept reads, Auto, Bypass after a warning, or View only); the session starts again in it, and the folder keeps it","flow_id":"LA-PLT-UC19-FL","path":"main","position":14}
 {"id":"LA-PLT-UC19-FL-S15","title":"Each message goes with what they are looking at, a chip they can remove; Claude starts from it, and uses the app tools for anything else about the window","flow_id":"LA-PLT-UC19-FL","path":"main","position":15}
-{"id":"LA-PLT-UC20-FL-S01","title":"The Owner dictates with the mic button or its key; the words appear in the message box as they speak, to edit and send","flow_id":"LA-PLT-UC20-FL","path":"main","position":1}
+{"id":"LA-PLT-UC20-FL-S01","title":"The Owner dictates with the mic control or its key; the words appear in the message box as they speak, to edit and send","flow_id":"LA-PLT-UC20-FL","path":"main","position":1}
 {"id":"LA-PLT-UC20-FL-S02","title":"They turn on voice activation: \"Lathe\" after a pause wakes the chat while its window is in front; \"Lathe, send\", \"cancel\", \"scratch that\" and \"new line\" act on the draft","flow_id":"LA-PLT-UC20-FL","path":"main","position":2}
 {"id":"LA-PLT-UC20-FL-S03","title":"They turn on Quick mode: a dictated message sends by itself when they have finished, after a countdown any sound or key cancels","flow_id":"LA-PLT-UC20-FL","path":"main","position":3}
 {"id":"LA-PLT-UC20-FL-S04","title":"They choose the wake phrase, such as \"Hey Lathe\", and the commands' words","flow_id":"LA-PLT-UC20-FL","path":"main","position":4}
 {"id":"LA-PLT-UC20-FL-S05","title":"The chat offers the mic and the Voice menu only where the Mac can recognize speech on-device, and says why not elsewhere","flow_id":"LA-PLT-UC20-FL","path":"main","position":5}
 {"id":"LA-PLT-UC21-FL-S01","title":"After a turn that wrote, they review its changes: the stage lights those records alone and next and previous walk through them with their diffs","flow_id":"LA-PLT-UC21-FL","path":"main","position":1}
-{"id":"LA-PLT-UC21-FL-S02","title":"They undo the turn in one click, or are told why it cannot be undone","flow_id":"LA-PLT-UC21-FL","path":"main","position":2}
-{"id":"LA-PLT-UC21-FL-S03","title":"Cmd or Ctrl+click on a record ID in Claude's answer opens the record in a new tab","flow_id":"LA-PLT-UC21-FL","path":"main","position":3}
+{"id":"LA-PLT-UC21-FL-S02","title":"They undo the turn in one step, or are told why it cannot be undone","flow_id":"LA-PLT-UC21-FL","path":"main","position":2}
+{"id":"LA-PLT-UC21-FL-S03","title":"Cmd or Ctrl with a press on a record ID in Claude's answer opens the record in a new tab","flow_id":"LA-PLT-UC21-FL","path":"main","position":3}
 {"id":"LA-PLT-UC22-FL-S01","title":"They point at a box on the stage and choose Ask Claude About This (menu or key): the record joins the message as a chip, sent as context","flow_id":"LA-PLT-UC22-FL","path":"main","position":1}
 {"id":"LA-PLT-UC22-FL-S02","title":"They type a slash and pick a skill or command from the list, each with its one-line description","flow_id":"LA-PLT-UC22-FL","path":"main","position":2}
 {"id":"LA-PLT-UC22-FL-S03","title":"They choose the model and the effort in the chat's head","flow_id":"LA-PLT-UC22-FL","path":"main","position":3}
@@ -399,14 +399,14 @@
 {"id":"LA-TRC-UC05-FL-S08","title":"The check reports a file that does not name its test as an error naming the test and the file, and the Agent names it","flow_id":"LA-TRC-UC05-FL","path":"refused","position":1}
 {"id":"LA-TRC-UC05-FL-S09","title":"The check reports a test case that names no such test as an error naming its file and line, and the Agent names it or removes it","flow_id":"LA-TRC-UC05-FL","path":"refused","position":2}
 {"id":"LA-TRC-UC06-FL-S01","title":"The Owner runs lathe check and, after each domain's obligation lines, reads its tests by state","flow_id":"LA-TRC-UC06-FL","path":"main","position":1}
-{"id":"LA-TRC-UC06-FL-S02","title":"An Agent reads the same counts from lathe check --json, on each domain's coverage","flow_id":"LA-TRC-UC06-FL","path":"json","position":1}
+{"id":"LA-TRC-UC06-FL-S02","title":"An Agent reads the same counts from the machine-readable output of lathe check, on each domain's coverage","flow_id":"LA-TRC-UC06-FL","path":"json","position":1}
 {"id":"LA-TRC-UC07-FL-S01","title":"The Owner makes a domain follow a pattern with lathe pattern-following follow-pattern","flow_id":"LA-TRC-UC07-FL","path":"main","position":1}
 {"id":"LA-TRC-UC07-FL-S02","title":"They give the pattern's settings their values with lathe pattern-following change-setting-values, or none where the pattern has none","flow_id":"LA-TRC-UC07-FL","path":"main","position":2}
 {"id":"LA-TRC-UC07-FL-S03","title":"They read which domains and use cases follow a pattern, with lathe pattern-following list-followers","flow_id":"LA-TRC-UC07-FL","path":"main","position":3}
 {"id":"LA-TRC-UC07-FL-S04","title":"Lathe check counts each of the pattern's rules in the domain, once, and asks only for proof","flow_id":"LA-TRC-UC07-FL","path":"main","position":4}
 {"id":"LA-TRC-UC07-FL-S05","title":"The domain's use cases that follow it are not asked for requirements of their own","flow_id":"LA-TRC-UC07-FL","path":"main","position":5}
 {"id":"LA-TRC-UC07-FL-S06","title":"A product kind declared an obligation is counted like Lathe's","flow_id":"LA-TRC-UC07-FL","path":"main","position":6}
-{"id":"LA-TRC-UC07-FL-S07","title":"A product kind named like one of Lathe's tables is refused","flow_id":"LA-TRC-UC07-FL","path":"refused","position":1}
+{"id":"LA-TRC-UC07-FL-S07","title":"A product kind named like one of Lathe's own record types is refused","flow_id":"LA-TRC-UC07-FL","path":"refused","position":1}
 {"id":"LA-TRC-UC08-FL-S01","title":"The Owner runs lathe check","flow_id":"LA-TRC-UC08-FL","path":"main","position":1}
 {"id":"LA-TRC-UC08-FL-S02","title":"A pattern rule test in a domain that does not owe its rule is reported, with the reason","flow_id":"LA-TRC-UC08-FL","path":"main","position":2}
 {"id":"LA-TRC-UC08-FL-S03","title":"A manual test whose file does not name it is a warning","flow_id":"LA-TRC-UC08-FL","path":"main","position":3}
@@ -414,39 +414,39 @@
 {"id":"LA-TRC-UC09-FL-S01","title":"The Reader opens a product and reads each domain card's coverage bars","flow_id":"LA-TRC-UC09-FL","path":"main","position":1}
 {"id":"LA-TRC-UC09-FL-S02","title":"They read the product's Summary: coverage, tests by state, open questions, errors and warnings","flow_id":"LA-TRC-UC09-FL","path":"main","position":2}
 {"id":"LA-TRC-UC09-FL-S03","title":"They read the product's open questions and problems","flow_id":"LA-TRC-UC09-FL","path":"main","position":3}
-{"id":"LA-TRC-UC09-FL-S04","title":"The Reader opens a domain card to its domain page","flow_id":"LA-TRC-UC09-FL","path":"main","position":4}
+{"id":"LA-TRC-UC09-FL-S04","title":"The Reader opens a domain card to its domain","flow_id":"LA-TRC-UC09-FL","path":"main","position":4}
 {"id":"LA-TRC-UC10-FL-S01","title":"The Reader opens the Trace stage on a use case","flow_id":"LA-TRC-UC10-FL","path":"main","position":1}
-{"id":"LA-TRC-UC10-FL-S02","title":"They read its row from its outcomes to its acceptance tests, with each stage's status","flow_id":"LA-TRC-UC10-FL","path":"main","position":2}
+{"id":"LA-TRC-UC10-FL-S02","title":"They read its line from its outcomes to its acceptance tests, with each stage's status","flow_id":"LA-TRC-UC10-FL","path":"main","position":2}
 {"id":"LA-TRC-UC10-FL-S03","title":"They open its stages down to its flows, their steps and their technical chain","flow_id":"LA-TRC-UC10-FL","path":"main","position":3}
-{"id":"LA-TRC-UC10-FL-S04","title":"They select a requirement and follow its path across the row to its tests","flow_id":"LA-TRC-UC10-FL","path":"main","position":4}
+{"id":"LA-TRC-UC10-FL-S04","title":"They select a requirement and follow its path along the line to its tests","flow_id":"LA-TRC-UC10-FL","path":"main","position":4}
 {"id":"LA-TRC-UC11-FL-S01","title":"The Reader opens a product, then a domain, and reads one coverage group per obligation kind","flow_id":"LA-TRC-UC11-FL","path":"main","position":1}
-{"id":"LA-TRC-UC11-FL-S02","title":"They open a gap, such as an API requirement no test proves yet, on its record page","flow_id":"LA-TRC-UC11-FL","path":"main","position":2}
-{"id":"LA-TRC-UC11-FL-S03","title":"On the record page each test shows its state","flow_id":"LA-TRC-UC11-FL","path":"main","position":3}
-{"id":"LA-TRC-UC12-FL-S01","title":"The Reader opens a domain page and unfolds Patterns we follow: each pattern, its rules, and whether this domain proves each","flow_id":"LA-TRC-UC12-FL","path":"main","position":1}
+{"id":"LA-TRC-UC11-FL-S02","title":"They open a gap, such as an API requirement no test proves yet, on its record","flow_id":"LA-TRC-UC11-FL","path":"main","position":2}
+{"id":"LA-TRC-UC11-FL-S03","title":"On the record each test shows its state","flow_id":"LA-TRC-UC11-FL","path":"main","position":3}
+{"id":"LA-TRC-UC12-FL-S01","title":"The Reader opens a domain and unfolds Patterns we follow: each pattern, its rules, and whether this domain proves each","flow_id":"LA-TRC-UC12-FL","path":"main","position":1}
 {"id":"LA-TRC-UC12-FL-S02","title":"They open a pattern: its settings, its rules, and the domains and use cases that follow it, with each domain's standing per rule","flow_id":"LA-TRC-UC12-FL","path":"main","position":2}
 {"id":"LA-TRC-UC12-FL-S03","title":"The graph sets the pattern's rules under the pattern","flow_id":"LA-TRC-UC12-FL","path":"main","position":3}
 {"id":"LA-TRC-UC13-FL-S01","title":"The Reader reads each domain card's tests by state","flow_id":"LA-TRC-UC13-FL","path":"main","position":1}
 {"id":"LA-TRC-UC13-FL-S02","title":"In the product's Summary they read the tests by state in total","flow_id":"LA-TRC-UC13-FL","path":"main","position":2}
 {"id":"LA-TRC-UC13-FL-S03","title":"They open a domain and read the same in its Coverage section","flow_id":"LA-TRC-UC13-FL","path":"main","position":3}
-{"id":"LA-TRC-UC14-FL-S01","title":"In the desktop app, the Reader opens a domain, searches for a requirement and opens it","flow_id":"LA-TRC-UC14-FL","path":"main","position":1}
+{"id":"LA-TRC-UC14-FL-S01","title":"In the app window, the Reader opens a domain, searches for a requirement and opens it","flow_id":"LA-TRC-UC14-FL","path":"main","position":1}
 {"id":"LA-TRC-UC14-FL-S03","title":"Below its text, its Traceability lists what designs, builds and proves it, with a callout for each gap","flow_id":"LA-TRC-UC14-FL","path":"main","position":2}
-{"id":"LA-TRC-UC14-FL-S04","title":"They follow a test to its record page: what it proves and its run by","flow_id":"LA-TRC-UC14-FL","path":"main","position":3}
-{"id":"LA-TRC-UC14-FL-S05","title":"The Reader follows a gap's callout to the page of the check that reports it","flow_id":"LA-TRC-UC14-FL","path":"main","position":4}
-{"id":"LA-TRC-UC15-FL-S01","title":"The Agent writes an endpoint or a view with its route, and names the route in the code that serves it","flow_id":"LA-TRC-UC15-FL","path":"main","position":1}
-{"id":"LA-TRC-UC15-FL-S02","title":"Lathe check reads each endpoint handler's and UI component's file for its record's route, in the normal form","flow_id":"LA-TRC-UC15-FL","path":"main","position":2}
-{"id":"LA-TRC-UC15-FL-S03","title":"Lathe check reads the handlers' files and the router files for the routes their code serves, and lists each one no record has as a gap","flow_id":"LA-TRC-UC15-FL","path":"main","position":3}
-{"id":"LA-TRC-UC15-FL-S04","title":"A file that does not name its record's route is an error naming the record, the route and the file, and the Agent corrects one or the other","flow_id":"LA-TRC-UC15-FL","path":"refused","position":1}
-{"id":"LA-TRC-UC15-FL-S05","title":"A served route no record has is a gap, and the Agent adds its endpoint or view, or removes the route if nothing uses it","flow_id":"LA-TRC-UC15-FL","path":"refused","position":2}
-{"id":"LA-TRC-UC16-FL-S01","title":"The Agent names, on each table a database keeps, the file that creates it","flow_id":"LA-TRC-UC16-FL","path":"main","position":1}
-{"id":"LA-TRC-UC16-FL-S02","title":"Lathe check reads each table's file and compares its name, columns and keys with the spec","flow_id":"LA-TRC-UC16-FL","path":"main","position":2}
-{"id":"LA-TRC-UC16-FL-S03","title":"A part the file does not define is a warning naming the table, the file and the part, and the Agent fixes the file or the spec","flow_id":"LA-TRC-UC16-FL","path":"refused","position":1}
-{"id":"LA-TRC-UC19-FL-S01","title":"The Agent adds a dependency to a package.json the product lists","flow_id":"LA-TRC-UC19-FL","path":"main","position":1}
+{"id":"LA-TRC-UC14-FL-S04","title":"They follow a test to its record: what it proves and its run by","flow_id":"LA-TRC-UC14-FL","path":"main","position":3}
+{"id":"LA-TRC-UC14-FL-S05","title":"The Reader follows a gap's callout to the check that reports it","flow_id":"LA-TRC-UC14-FL","path":"main","position":4}
+{"id":"LA-TRC-UC15-FL-S01","title":"The Agent records a web address for a command or query, or for a view, and names that address in the code that serves it","flow_id":"LA-TRC-UC15-FL","path":"main","position":1}
+{"id":"LA-TRC-UC15-FL-S02","title":"Lathe check reads the files of the code that serves each address for its record's address, in the normal form","flow_id":"LA-TRC-UC15-FL","path":"main","position":2}
+{"id":"LA-TRC-UC15-FL-S03","title":"Lathe check reads the serving files and the router files for the addresses their code serves, and lists each one no record has as a gap","flow_id":"LA-TRC-UC15-FL","path":"main","position":3}
+{"id":"LA-TRC-UC15-FL-S04","title":"A file that does not name its record's address is an error naming the record, the address and the file, and the Agent corrects one or the other","flow_id":"LA-TRC-UC15-FL","path":"refused","position":1}
+{"id":"LA-TRC-UC15-FL-S05","title":"A served address no record has is a gap, and the Agent records its contract or view, or removes the address if nothing uses it","flow_id":"LA-TRC-UC15-FL","path":"refused","position":2}
+{"id":"LA-TRC-UC16-FL-S01","title":"The Agent names, for each stored record type, the file that creates it","flow_id":"LA-TRC-UC16-FL","path":"main","position":1}
+{"id":"LA-TRC-UC16-FL-S02","title":"Lathe check reads each type's file and compares its name, fields and keys with the spec","flow_id":"LA-TRC-UC16-FL","path":"main","position":2}
+{"id":"LA-TRC-UC16-FL-S03","title":"A part the file does not define is a warning naming the type, the file and the part, and the Agent fixes the file or the spec","flow_id":"LA-TRC-UC16-FL","path":"refused","position":1}
+{"id":"LA-TRC-UC19-FL-S01","title":"The Agent adds a dependency to a package manifest the product lists","flow_id":"LA-TRC-UC19-FL","path":"main","position":1}
 {"id":"LA-TRC-UC19-FL-S02","title":"Lathe check reports each package no record names as one gap on the product, with the manifests that list it","flow_id":"LA-TRC-UC19-FL","path":"main","position":2}
 {"id":"LA-TRC-UC19-FL-S03","title":"The Agent names the package on the technical record that uses it; the store refuses it on any other record","flow_id":"LA-TRC-UC19-FL","path":"main","position":3}
 {"id":"LA-TRC-UC19-FL-S04","title":"Once the package leaves the manifest, the record that still names it is an error until the Agent removes the name","flow_id":"LA-TRC-UC19-FL","path":"main","position":4}
-{"id":"LA-TRC-UC20-FL-S01","title":"The Reader opens an aggregate's page","flow_id":"LA-TRC-UC20-FL","path":"main","position":1,"interface_id":"LA-IF01"}
+{"id":"LA-TRC-UC20-FL-S01","title":"The Reader opens an aggregate","flow_id":"LA-TRC-UC20-FL","path":"main","position":1,"interface_id":"LA-IF01"}
 {"id":"LA-TRC-UC20-FL-S02","title":"Its facts name the outcomes it serves, each a link","flow_id":"LA-TRC-UC20-FL","path":"main","position":2}
 {"id":"LA-TRC-UC20-FL-S03","title":"They run lathe serves list-serves for the product: each record with its outcomes, then those serving none","flow_id":"LA-TRC-UC20-FL","path":"main","position":3,"interface_id":"LA-IF03"}
 {"id":"LA-TRC-UC20-FL-S04","title":"They run lathe check: a serves-no-outcome warning for each record none reaches, saying how to fix it","flow_id":"LA-TRC-UC20-FL","path":"main","position":4,"interface_id":"LA-IF03"}
-{"id":"LA-TRC-UC20-FL-S05","title":"They follow an outcome to its page","flow_id":"LA-TRC-UC20-FL","path":"main","position":5,"interface_id":"LA-IF01"}
+{"id":"LA-TRC-UC20-FL-S05","title":"They follow an outcome to its record","flow_id":"LA-TRC-UC20-FL","path":"main","position":5,"interface_id":"LA-IF01"}
 {"id":"LA-TRC-UC20-FL-S06","title":"They open Tools › Checks and read each serves-no-outcome warning","flow_id":"LA-TRC-UC20-FL","path":"main","position":6,"interface_id":"LA-IF01"}
