@@ -1,20 +1,16 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { AggregateRow } from '../../../platform/data/tables.ts';
-import { AGGREGATE_SLICE, newAggregate } from '../model.ts';
+import { newAggregate } from '../model.ts';
 import { AggregateRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_AGGREGATE_IDENTITY } from './identities.generated.ts';
 
 /** A new aggregate: its row. */
 export type AddAggregate = Pick<AggregateRow, 'id' | 'title' | 'domain_id' | 'description' | 'identity' | 'notes'>;
 
 export const ADD_AGGREGATE: CommandDefinition<AddAggregate> = {
-  id: 'LA-AUT-CMD210',
-  slice: AGGREGATE_SLICE,
-  name: 'add-aggregate',
-  description: 'Adds an aggregate under a domain, with nothing in it yet.',
-  method: 'POST',
-  route: '/api/aggregate/add-aggregate',
+  ...ADD_AGGREGATE_IDENTITY,
   input: {
     id: column('aggregate', 'id', 'required'),
     title: column('aggregate', 'title', 'required'),

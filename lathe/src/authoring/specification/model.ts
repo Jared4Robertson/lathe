@@ -2,16 +2,12 @@
 // it reads, its predicate in code (with the standard rules it meets and the packages it uses) and its test (with the
 // test data sets it starts from). One instance is one specification, whole; it holds only the links its own records
 // start.
-import type { Slice } from '../../platform/commands/definition.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { PredicateRow, SpecificationRow, SpecificationTestRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const SPECIFICATION_AGGREGATE = 'LA-AUT-A5';
-
-/** How the interfaces reach the aggregate's commands: `lathe specification`, the specification_ tools, /api/specification/. */
-export const SPECIFICATION_SLICE: Slice = { aggregate: SPECIFICATION_AGGREGATE, name: 'specification' };
 
 /**
  * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.

@@ -1,4 +1,4 @@
-// The View aggregate's commands (LA-AUT-A12), as the CLI, the MCP server and the HTTP API register them.
+// Generated from data/ by `npm run generate`. Do not edit.
 import type { AnyCommand } from '../../../platform/commands/definition.ts';
 import { ADD_VIEW } from './add-view.ts';
 import { CHANGE_VIEW } from './change-view.ts';

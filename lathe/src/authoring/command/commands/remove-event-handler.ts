@@ -1,18 +1,13 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { COMMAND_SLICE } from '../model.ts';
 import { CommandRepository } from '../repository.ts';
+import { REMOVE_EVENT_HANDLER_IDENTITY } from './identities.generated.ts';
 
 /** The event handler to remove. */
 export type RemoveEventHandler = { id: string };
 
 export const REMOVE_EVENT_HANDLER: CommandDefinition<RemoveEventHandler> = {
-  id: 'LA-AUT-CMD251',
-  slice: COMMAND_SLICE,
-  name: 'remove-event-handler',
-  description: 'Removes an event handler with the links it starts and the packages it uses. Refused while anything else references it.',
-  method: 'POST',
-  route: '/api/command/remove-event-handler',
+  ...REMOVE_EVENT_HANDLER_IDENTITY,
   input: {
     id: column('event_handler', 'id', 'required'),
   },

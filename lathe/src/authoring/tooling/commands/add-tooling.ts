@@ -1,18 +1,13 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ToolingRow } from '../../../platform/data/tables.ts';
-import { TOOLING_SLICE } from '../model.ts';
 import { ToolingRepository } from '../repository.ts';
+import { ADD_TOOLING_IDENTITY } from './identities.generated.ts';
 
 export type AddTooling = Pick<ToolingRow, 'id' | 'title' | 'domain_id' | 'file'> & { packages?: string[]; meets?: string[] };
 
 export const ADD_TOOLING: CommandDefinition<AddTooling> = {
-  id: 'LA-AUT-CMD155',
-  slice: TOOLING_SLICE,
-  name: 'add-tooling',
-  description: 'Adds a tooling record under its domain, with the packages it uses and the standard rules it meets.',
-  method: 'POST',
-  route: '/api/tooling/add-tooling',
+  ...ADD_TOOLING_IDENTITY,
   input: {
     id: column('tooling', 'id', 'required'),
     title: column('tooling', 'title', 'required'),

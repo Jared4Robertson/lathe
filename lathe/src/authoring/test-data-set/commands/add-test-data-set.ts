@@ -1,19 +1,15 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { TestDataSetRow } from '../../../platform/data/tables.ts';
-import { TEST_DATA_SET_SLICE, newTestDataSet } from '../model.ts';
+import { newTestDataSet } from '../model.ts';
 import { TestDataSetRepository } from '../repository.ts';
+import { ADD_TEST_DATA_SET_IDENTITY } from './identities.generated.ts';
 
 /** A new test data set: its row. */
 export type AddTestDataSet = Pick<TestDataSetRow, 'id' | 'title' | 'domain_id' | 'environment' | 'accounts' | 'records' | 'prepare' | 'reset' | 'file' | 'description'>;
 
 export const ADD_TEST_DATA_SET: CommandDefinition<AddTestDataSet> = {
-  id: 'LA-AUT-CMD185',
-  slice: TEST_DATA_SET_SLICE,
-  name: 'add-test-data-set',
-  description: 'Adds a test data set to the domain whose tests it serves: where it runs, what it starts with, how to prepare and reset it, and the file that builds it.',
-  method: 'POST',
-  route: '/api/test-data-set/add-test-data-set',
+  ...ADD_TEST_DATA_SET_IDENTITY,
   input: {
     id: column('test_data_set', 'id', 'required'),
     title: column('test_data_set', 'title', 'required'),

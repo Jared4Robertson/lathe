@@ -1,9 +1,10 @@
 import { column, ids, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EntityRow } from '../../../platform/data/tables.ts';
-import { AGGREGATE_SLICE, changed, fieldRows, type EntityFieldInput } from '../model.ts';
+import { changed, fieldRows, type EntityFieldInput } from '../model.ts';
 import { AggregateRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_ENTITY_IDENTITY } from './identities.generated.ts';
 
 /** The entity's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeEntity = Pick<EntityRow, 'id'> & {
@@ -17,12 +18,7 @@ export type ChangeEntity = Pick<EntityRow, 'id'> & {
 };
 
 export const CHANGE_ENTITY: CommandDefinition<ChangeEntity> = {
-  id: 'LA-AUT-CMD214',
-  slice: AGGREGATE_SLICE,
-  name: 'change-entity',
-  description: "Changes an entity's title, role, description or whether it is stored in its root's table, or its fields (the whole list, in order) or the entities it holds (each list whole). Its aggregate does not change.",
-  method: 'POST',
-  route: '/api/aggregate/change-entity',
+  ...CHANGE_ENTITY_IDENTITY,
   input: {
     id: column('entity', 'id', 'required'),
     title: column('entity', 'title', 'optional'),

@@ -2,12 +2,12 @@
 // which the query runner gives each handler: a standard whole as its page reads it, the standards of a product, and
 // the next free ID for a rule or rule test. A handler never sees the data, a repository or the aggregate's model; each
 // changes nothing.
-import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { STANDARD_SLICE } from './model.ts';
 import type { StandardPage, StandardSummary } from './read-model.ts';
 import { standardReader, type StandardReader } from './reader.ts';
+import { GET_STANDARD_IDENTITY, LIST_STANDARDS_IDENTITY, NEXT_STANDARD_ID_IDENTITY } from './queries.generated.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
@@ -23,12 +23,7 @@ export function getStandard(reader: StandardReader, input: { id: string }): Stan
 
 /** GET a standard whole (LA-AUT-QRY142). */
 export const GET_STANDARD: QueryDefinition<{ id: string }, StandardPage, StandardReader> = {
-  id: 'LA-AUT-QRY142',
-  slice: STANDARD_SLICE,
-  name: 'get-standard',
-  description: 'Reads a standard whole as its page shows it, by its ID or the ID of any rule or rule test in it: the record asked for and its kind, the standard\'s row, and its rules by ID, each with the records that meet it and its tests (with the test data sets they start from).',
-  method: 'GET',
-  route: '/api/standard/get-standard',
+  ...GET_STANDARD_IDENTITY,
   input: { id: id('The standard, or a rule or rule test in it.', 'required') },
   reader: standardReader,
   run: getStandard,
@@ -42,18 +37,12 @@ export function listStandards(reader: StandardReader, input: { product_id: strin
 
 /** List the standards of a product (LA-AUT-QRY143). */
 export const LIST_STANDARDS: QueryDefinition<{ product_id: string }, StandardSummary[], StandardReader> = {
-  id: 'LA-AUT-QRY143',
-  slice: STANDARD_SLICE,
-  name: 'list-standards',
-  description: 'Lists the standards of a product, by ID, with their titles.',
-  method: 'GET',
-  route: '/api/standard/list-standards',
+  ...LIST_STANDARDS_IDENTITY,
   input: { product_id: id('The product.', 'required') },
   reader: standardReader,
   run: listStandards,
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No standards.'),
 };
-
 
 /** The kinds of the aggregate with an ID under a parent; how each is written the schema says (`idShape`). */
 const KINDS: readonly string[] = ['standard_rule', 'standard_rule_test'];
@@ -74,12 +63,7 @@ export function nextStandardId(reader: StandardReader, input: { kind: string; pa
 
 /** Get the next ID for a record of the Standard aggregate (LA-AUT-QRY144). */
 export const NEXT_STANDARD_ID: QueryDefinition<{ kind: string; parent: string }, string, StandardReader> = {
-  id: 'LA-AUT-QRY144',
-  slice: STANDARD_SLICE,
-  name: 'next-id',
-  description: 'The next free ID for a standard rule (under a standard) or a standard rule test (under a rule): one past the highest in use.',
-  method: 'GET',
-  route: '/api/standard/next-id',
+  ...NEXT_STANDARD_ID_IDENTITY,
   input: {
     kind: id('The kind: standard_rule or standard_rule_test.', 'required'),
     parent: id('The record it will sit under.', 'required'),
@@ -99,6 +83,3 @@ function standardText(page: StandardPage): string {
   }
   return lines.join('\n');
 }
-
-/** The Standard aggregate's queries, as the CLI and the MCP server register them. */
-export const STANDARD_QUERIES: readonly AnyQuery[] = [GET_STANDARD, LIST_STANDARDS, NEXT_STANDARD_ID];

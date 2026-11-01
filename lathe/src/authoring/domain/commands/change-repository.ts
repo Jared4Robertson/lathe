@@ -1,20 +1,16 @@
 import { column, id, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { RepositoryRow } from '../../../platform/data/tables.ts';
-import { DOMAIN_SLICE, changed } from '../model.ts';
+import { changed } from '../model.ts';
 import { DomainRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_REPOSITORY_IDENTITY } from './identities.generated.ts';
 
 /** The repository's changes: a column given is set, null clears an optional one or the aggregate it persists; a list given replaces the list. */
 export type ChangeRepository = Pick<RepositoryRow, 'id'> & { title?: RepositoryRow['title']; file?: RepositoryRow['file'] | null; description?: RepositoryRow['description']; persists?: string | null; stored_in?: string | null; meets?: string[]; packages?: string[] };
 
 export const CHANGE_REPOSITORY: CommandDefinition<ChangeRepository> = {
-  id: 'LA-AUT-CMD173',
-  slice: DOMAIN_SLICE,
-  name: 'change-repository',
-  description: "Changes a repository's title, file or description, the aggregate it persists or the data store it is stored in (null clears either), or the standard rules it meets or packages it uses (each the whole list).",
-  method: 'POST',
-  route: '/api/domain/change-repository',
+  ...CHANGE_REPOSITORY_IDENTITY,
   input: {
     id: column('repository', 'id', 'required'),
     title: column('repository', 'title', 'optional'),

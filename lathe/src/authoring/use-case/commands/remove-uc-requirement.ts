@@ -1,18 +1,13 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { USE_CASE_SLICE } from '../model.ts';
 import { UseCaseRepository } from '../repository.ts';
+import { REMOVE_UC_REQUIREMENT_IDENTITY } from './identities.generated.ts';
 
 /** The requirement to remove. */
 export type RemoveUcRequirement = { id: string };
 
 export const REMOVE_UC_REQUIREMENT: CommandDefinition<RemoveUcRequirement> = {
-  id: 'LA-AUT-CMD106',
-  slice: USE_CASE_SLICE,
-  name: 'remove-uc-requirement',
-  description: 'Removes a UC requirement with its use case tests and the links they start. Refused while a step fulfills it, or anything else references it or its tests.',
-  method: 'POST',
-  route: '/api/use-case/remove-uc-requirement',
+  ...REMOVE_UC_REQUIREMENT_IDENTITY,
   input: {
     id: column('uc_requirement', 'id', 'required'),
   },

@@ -1,19 +1,15 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ApiRequirementRow } from '../../../platform/data/tables.ts';
-import { changed, ENDPOINT_SLICE } from '../model.ts';
+import { changed } from '../model.ts';
 import { EndpointRepository } from '../repository.ts';
+import { CHANGE_API_REQUIREMENT_IDENTITY } from './identities.generated.ts';
 
 /** The API requirement's changes: a column given is set, null clears an optional one. */
 export type ChangeApiRequirement = Pick<ApiRequirementRow, 'id'> & { title?: ApiRequirementRow['title']; statement?: ApiRequirementRow['statement']; group_name?: ApiRequirementRow['group_name'] | null };
 
 export const CHANGE_API_REQUIREMENT: CommandDefinition<ChangeApiRequirement> = {
-  id: 'LA-AUT-CMD325',
-  slice: ENDPOINT_SLICE,
-  name: 'change-api-requirement',
-  description: "Changes an API requirement's title, statement or group. Its endpoint does not change.",
-  method: 'POST',
-  route: '/api/endpoint/change-api-requirement',
+  ...CHANGE_API_REQUIREMENT_IDENTITY,
   input: {
     id: column('api_requirement', 'id', 'required'),
     title: column('api_requirement', 'title', 'optional'),

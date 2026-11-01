@@ -1,19 +1,14 @@
 import { column, id, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { RepositoryRow } from '../../../platform/data/tables.ts';
-import { DOMAIN_SLICE } from '../model.ts';
 import { DomainRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_REPOSITORY_IDENTITY } from './identities.generated.ts';
 
 export type AddRepository = Pick<RepositoryRow, 'id' | 'title' | 'domain_id' | 'file' | 'description'> & { persists?: string; stored_in?: string; meets?: string[]; packages?: string[] };
 
 export const ADD_REPOSITORY: CommandDefinition<AddRepository> = {
-  id: 'LA-AUT-CMD172',
-  slice: DOMAIN_SLICE,
-  name: 'add-repository',
-  description: 'Adds a repository to its domain, with the aggregate it persists, the data store it is stored in, the standard rules it meets and the packages it uses.',
-  method: 'POST',
-  route: '/api/domain/add-repository',
+  ...ADD_REPOSITORY_IDENTITY,
   input: {
     id: column('repository', 'id', 'required'),
     title: column('repository', 'title', 'required'),

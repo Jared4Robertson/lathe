@@ -1,15 +1,8 @@
 // The Tooling aggregate (LA-AUT-A21): a dev script or config file of a domain, with the packages it uses and the standard rules it meets. One instance is one
 // tooling record, whole: its row, the package_use rows naming it and the meets links it starts, and nothing of another aggregate.
-import type { Slice } from '../../platform/commands/definition.ts';
 import { bySource, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { ToolingRow } from '../../platform/data/tables.ts';
-
-/** The aggregate's record ID in Lathe's own spec. */
-export const TOOLING_AGGREGATE = 'LA-AUT-A21';
-
-/** How the interfaces reach the aggregate's commands: `lathe tooling`, the tooling_ tools, /api/tooling/. */
-export const TOOLING_SLICE: Slice = { aggregate: TOOLING_AGGREGATE, name: 'tooling' };
 
 /**
  * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.

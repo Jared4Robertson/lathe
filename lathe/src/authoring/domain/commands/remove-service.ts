@@ -1,18 +1,13 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { DOMAIN_SLICE } from '../model.ts';
 import { DomainRepository } from '../repository.ts';
+import { REMOVE_SERVICE_IDENTITY } from './identities.generated.ts';
 
 /** The service to remove. */
 export type RemoveService = { id: string };
 
 export const REMOVE_SERVICE: CommandDefinition<RemoveService> = {
-  id: 'LA-AUT-CMD177',
-  slice: DOMAIN_SLICE,
-  name: 'remove-service',
-  description: 'Removes a service with the links it starts and the packages it uses. Refused while anything references it.',
-  method: 'POST',
-  route: '/api/domain/remove-service',
+  ...REMOVE_SERVICE_IDENTITY,
   input: {
     id: column('service', 'id', 'required'),
   },

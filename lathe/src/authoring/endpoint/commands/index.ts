@@ -1,4 +1,4 @@
-// The Endpoint aggregate's commands (LA-AUT-A13), as the CLI, the MCP server and the HTTP API register them.
+// Generated from data/ by `npm run generate`. Do not edit.
 import type { AnyCommand } from '../../../platform/commands/definition.ts';
 import { ADD_ENDPOINT } from './add-endpoint.ts';
 import { CHANGE_ENDPOINT } from './change-endpoint.ts';

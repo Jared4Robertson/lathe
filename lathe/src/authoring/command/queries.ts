@@ -2,12 +2,13 @@
 // which the query runner gives each handler: a command whole as its page reads it, the commands of an entity, and the
 // next free ID for a record of one of its kinds. A handler never sees the data, a repository or the aggregate's model;
 // each changes nothing.
-import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { COMMAND_SLICE, type CommandKind } from './model.ts';
+import { type CommandKind } from './model.ts';
 import type { CommandPage, CommandSummary } from './read-model.ts';
 import { commandReader, type CommandReader } from './reader.ts';
+import { GET_COMMAND_IDENTITY, LIST_COMMANDS_IDENTITY, NEXT_COMMAND_ID_IDENTITY } from './queries.generated.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
@@ -23,12 +24,7 @@ export function getCommand(reader: CommandReader, input: { id: string }): Comman
 
 /** GET a command whole (LA-AUT-QRY159). */
 export const GET_COMMAND: QueryDefinition<{ id: string }, CommandPage, CommandReader> = {
-  id: 'LA-AUT-QRY159',
-  slice: COMMAND_SLICE,
-  name: 'get-command',
-  description: 'Reads a command whole as its page shows it, by its ID or the ID of any record in it: the record asked for and its kind, the command\'s row, the events it raises, the specifications it checks and the domain services it calls, its handler, its policies with the event each hears, their event handlers and tests, and the endpoints that expose it.',
-  method: 'GET',
-  route: '/api/command/get-command',
+  ...GET_COMMAND_IDENTITY,
   input: { id: id('The command, or its handler, a policy, or a policy\'s event handler or test.', 'required') },
   reader: commandReader,
   run: getCommand,
@@ -42,12 +38,7 @@ export function listCommands(reader: CommandReader, input: { entity_id: string }
 
 /** List the commands of an entity (LA-AUT-QRY160). */
 export const LIST_COMMANDS: QueryDefinition<{ entity_id: string }, CommandSummary[], CommandReader> = {
-  id: 'LA-AUT-QRY160',
-  slice: COMMAND_SLICE,
-  name: 'list-commands',
-  description: 'Lists the commands that change an entity, by ID, with their titles.',
-  method: 'GET',
-  route: '/api/command/list-commands',
+  ...LIST_COMMANDS_IDENTITY,
   input: { entity_id: id('The entity.', 'required') },
   reader: commandReader,
   run: listCommands,
@@ -87,12 +78,7 @@ export function nextCommandId(reader: CommandReader, input: { kind: string; pare
 
 /** Get the next ID for a record of the Command aggregate (LA-AUT-QRY161). */
 export const NEXT_COMMAND_ID: QueryDefinition<{ kind: string; parent: string }, string, CommandReader> = {
-  id: 'LA-AUT-QRY161',
-  slice: COMMAND_SLICE,
-  name: 'next-id',
-  description: 'The next free ID for a command (under an entity), a command handler or policy (under a command), or an event handler or policy test (under a policy): one past the highest in use.',
-  method: 'GET',
-  route: '/api/command/next-id',
+  ...NEXT_COMMAND_ID_IDENTITY,
   input: {
     kind: id('The kind: command, command_handler, policy, event_handler or policy_test.', 'required'),
     parent: id('The record it will sit under.', 'required'),
@@ -121,6 +107,3 @@ function commandText(page: CommandPage): string {
   for (const e of page.endpoints) lines.push(`Endpoint ${e}`);
   return lines.join('\n');
 }
-
-/** The Command aggregate's queries, as the CLI and the MCP server register them. */
-export const COMMAND_QUERIES: readonly AnyQuery[] = [GET_COMMAND, LIST_COMMANDS, NEXT_COMMAND_ID];

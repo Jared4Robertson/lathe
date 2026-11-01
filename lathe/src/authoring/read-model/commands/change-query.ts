@@ -1,20 +1,16 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { QueryRow } from '../../../platform/data/tables.ts';
-import { READ_MODEL_SLICE, changed } from '../model.ts';
+import { changed } from '../model.ts';
 import { ReadModelRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_QUERY_IDENTITY } from './identities.generated.ts';
 
 /** The query's changes: a column given is set; a list given replaces the list. */
 export type ChangeQuery = Pick<QueryRow, 'id'> & { title?: QueryRow['title']; description?: QueryRow['description']; selects_by?: string[]; calls?: string[] };
 
 export const CHANGE_QUERY: CommandDefinition<ChangeQuery> = {
-  id: 'LA-AUT-CMD289',
-  slice: READ_MODEL_SLICE,
-  name: 'change-query',
-  description: "Changes a query's title or description, or the specifications it selects by or domain services it calls (each the whole list). Its read model never changes.",
-  method: 'POST',
-  route: '/api/read-model/change-query',
+  ...CHANGE_QUERY_IDENTITY,
   input: {
     id: column('query', 'id', 'required'),
     title: column('query', 'title', 'optional'),

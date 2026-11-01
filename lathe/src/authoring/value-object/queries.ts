@@ -2,12 +2,13 @@
 // (reader.ts), which the query runner gives each handler: a value object whole as its page reads it, the value objects
 // of a product, and the next free ID for a record of one of its kinds. A handler never sees the data, a repository or
 // the aggregate's model; each changes nothing.
-import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { VALUE_OBJECT_SLICE, type ValueObjectKind } from './model.ts';
+import { type ValueObjectKind } from './model.ts';
 import type { ValueObjectPage, ValueObjectSummary } from './read-model.ts';
 import { valueObjectReader, type ValueObjectReader } from './reader.ts';
+import { GET_VALUE_OBJECT_IDENTITY, LIST_VALUE_OBJECTS_IDENTITY, NEXT_VALUE_OBJECT_ID_IDENTITY } from './queries.generated.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
@@ -23,12 +24,7 @@ export function getValueObject(reader: ValueObjectReader, input: { id: string })
 
 /** GET a value object whole (LA-AUT-QRY174). */
 export const GET_VALUE_OBJECT: QueryDefinition<{ id: string }, ValueObjectPage, ValueObjectReader> = {
-  id: 'LA-AUT-QRY174',
-  slice: VALUE_OBJECT_SLICE,
-  name: 'get-value-object',
-  description: 'Reads a value object whole as its page shows it, by its ID or the ID of any record in it: the record asked for and its kind, the value object\'s row and the product its ID names, its fields in order, its constraints by ID each with its test (and the test data sets it starts from), and its value type with the standard rules it meets and the packages it uses.',
-  method: 'GET',
-  route: '/api/value-object/get-value-object',
+  ...GET_VALUE_OBJECT_IDENTITY,
   input: { id: id('The value object, or a constraint, its value type or a constraint test in it.', 'required') },
   reader: valueObjectReader,
   run: getValueObject,
@@ -42,18 +38,12 @@ export function listValueObjects(reader: ValueObjectReader, input: { product_id:
 
 /** List the value objects of a product (LA-AUT-QRY175). */
 export const LIST_VALUE_OBJECTS: QueryDefinition<{ product_id: string }, ValueObjectSummary[], ValueObjectReader> = {
-  id: 'LA-AUT-QRY175',
-  slice: VALUE_OBJECT_SLICE,
-  name: 'list-value-objects',
-  description: 'Lists the value objects of a product (those whose ID names it), by ID, with their titles.',
-  method: 'GET',
-  route: '/api/value-object/list-value-objects',
+  ...LIST_VALUE_OBJECTS_IDENTITY,
   input: { product_id: id('The product.', 'required') },
   reader: valueObjectReader,
   run: listValueObjects,
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No value objects.'),
 };
-
 
 /** The kinds of the aggregate with an ID under a parent; how each is written the schema says (`idShape`). */
 const KINDS: readonly string[] = ['value_object', 'constraint', 'value_type', 'constraint_test'];
@@ -85,12 +75,7 @@ export function nextValueObjectId(reader: ValueObjectReader, input: { kind: stri
 
 /** Get the next ID for a record of the Value object aggregate (LA-AUT-QRY176). */
 export const NEXT_VALUE_OBJECT_ID: QueryDefinition<{ kind: string; parent: string }, string, ValueObjectReader> = {
-  id: 'LA-AUT-QRY176',
-  slice: VALUE_OBJECT_SLICE,
-  name: 'next-id',
-  description: 'The next free ID for a value object (under its product) or a constraint (under its value object): one past the highest in use; or the one ID of a value type (under its value object) or a constraint test (under its constraint).',
-  method: 'GET',
-  route: '/api/value-object/next-id',
+  ...NEXT_VALUE_OBJECT_ID_IDENTITY,
   input: {
     kind: id('The kind: value_object, constraint, value_type or constraint_test.', 'required'),
     parent: id('The record it will sit under: a product for a value object, a constraint for a constraint test, else the value object.', 'required'),
@@ -116,6 +101,3 @@ function valueObjectText(page: ValueObjectPage): string {
   if (valueType) lines.push(`Value type ${valueType.valueType.id}: ${valueType.valueType.title}${valueType.valueType.file ? ` (${valueType.valueType.file})` : ''}${listed([...valueType.meets.map((x) => `meets ${x}`), ...valueType.packages.map((x) => `uses ${x}`)])}`);
   return lines.join('\n');
 }
-
-/** The Value object aggregate's queries, as the CLI and the MCP server register them. */
-export const VALUE_OBJECT_QUERIES: readonly AnyQuery[] = [GET_VALUE_OBJECT, LIST_VALUE_OBJECTS, NEXT_VALUE_OBJECT_ID];

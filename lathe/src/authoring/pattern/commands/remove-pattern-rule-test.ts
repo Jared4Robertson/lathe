@@ -1,18 +1,13 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { PATTERN_SLICE } from '../model.ts';
 import { PatternRepository } from '../repository.ts';
+import { REMOVE_PATTERN_RULE_TEST_IDENTITY } from './identities.generated.ts';
 
 /** The test to remove. */
 export type RemovePatternRuleTest = { id: string };
 
 export const REMOVE_PATTERN_RULE_TEST: CommandDefinition<RemovePatternRuleTest> = {
-  id: 'LA-AUT-CMD198',
-  slice: PATTERN_SLICE,
-  name: 'remove-pattern-rule-test',
-  description: 'Removes a pattern rule test and the links it starts. Refused while anything references it.',
-  method: 'POST',
-  route: '/api/pattern/remove-pattern-rule-test',
+  ...REMOVE_PATTERN_RULE_TEST_IDENTITY,
   input: {
     id: column('pattern_rule_test', 'id', 'required'),
   },

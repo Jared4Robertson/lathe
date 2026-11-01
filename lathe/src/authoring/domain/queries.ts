@@ -2,12 +2,12 @@
 // which the query runner gives each handler: a domain whole as its page reads it, the domains of a product, and the
 // next free ID for a record of one of its numbered kinds. A handler never sees the data, a repository or the
 // aggregate's model; each changes nothing.
-import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { DOMAIN_SLICE } from './model.ts';
 import type { DomainPage, DomainSummary } from './read-model.ts';
 import { domainReader, type DomainReader } from './reader.ts';
+import { GET_DOMAIN_IDENTITY, LIST_DOMAINS_IDENTITY, NEXT_DOMAIN_ID_IDENTITY } from './queries.generated.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
@@ -23,12 +23,7 @@ export function getDomain(reader: DomainReader, input: { id: string }): DomainPa
 
 /** GET a domain whole (LA-AUT-QRY130). */
 export const GET_DOMAIN: QueryDefinition<{ id: string }, DomainPage, DomainReader> = {
-  id: 'LA-AUT-QRY130',
-  slice: DOMAIN_SLICE,
-  name: 'get-domain',
-  description: 'Reads a domain whole as its page shows it, by its ID or the ID of any record in it: the record asked for and its kind, the domain\'s row, its capabilities in order with the outcomes they serve and their use cases, its terms bottom-up with the terms they build on, its domain services with their services and tests, and its repositories with the aggregates they persist.',
-  method: 'GET',
-  route: '/api/domain/get-domain',
+  ...GET_DOMAIN_IDENTITY,
   input: { id: id('The domain, or a capability, term, domain service, service, test or repository in it.', 'required') },
   reader: domainReader,
   run: getDomain,
@@ -42,12 +37,7 @@ export function listDomains(reader: DomainReader, input: { product_id: string })
 
 /** List the domains of a product (LA-AUT-QRY131). */
 export const LIST_DOMAINS: QueryDefinition<{ product_id: string }, DomainSummary[], DomainReader> = {
-  id: 'LA-AUT-QRY131',
-  slice: DOMAIN_SLICE,
-  name: 'list-domains',
-  description: 'Lists the domains of a product, by ID, with their titles.',
-  method: 'GET',
-  route: '/api/domain/list-domains',
+  ...LIST_DOMAINS_IDENTITY,
   input: { product_id: id('The product.', 'required') },
   reader: domainReader,
   run: listDomains,
@@ -79,12 +69,7 @@ export function nextDomainId(reader: DomainReader, input: { kind: string; parent
 
 /** Get the next ID for a record of the Domain aggregate (LA-AUT-QRY132). */
 export const NEXT_DOMAIN_ID: QueryDefinition<{ kind: string; parent: string }, string, DomainReader> = {
-  id: 'LA-AUT-QRY132',
-  slice: DOMAIN_SLICE,
-  name: 'next-id',
-  description: 'The next free ID for a capability, term, domain service or repository (under a domain), or a service or domain service test (under a domain service): one past the highest in use.',
-  method: 'GET',
-  route: '/api/domain/next-id',
+  ...NEXT_DOMAIN_ID_IDENTITY,
   input: {
     kind: id('The kind: capability, term, domain_service, repository, service or domain_service_test.', 'required'),
     parent: id('The record it will sit under.', 'required'),
@@ -111,6 +96,3 @@ function domainText(page: DomainPage): string {
   for (const r of page.repositories) lines.push(`Repository ${r.repository.id}: ${r.repository.title}${listed([...(r.persists ? [`persists ${r.persists}`] : []), ...technical(r)])}`);
   return lines.join('\n');
 }
-
-/** The Domain aggregate's queries, as the CLI and the MCP server register them. */
-export const DOMAIN_QUERIES: readonly AnyQuery[] = [GET_DOMAIN, LIST_DOMAINS, NEXT_DOMAIN_ID];

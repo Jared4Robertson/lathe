@@ -1,19 +1,15 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { StandardRuleTestRow } from '../../../platform/data/tables.ts';
-import { STANDARD_SLICE, changed } from '../model.ts';
+import { changed } from '../model.ts';
 import { StandardRepository } from '../repository.ts';
+import { CHANGE_STANDARD_RULE_TEST_IDENTITY } from './identities.generated.ts';
 
 /** The test's changes: a column given is set, null clears an optional one; starts_from, when given, replaces the list. */
 export type ChangeStandardRuleTest = Pick<StandardRuleTestRow, 'id'> & { title?: StandardRuleTestRow['title']; level?: StandardRuleTestRow['level']; state?: StandardRuleTestRow['state']; file?: StandardRuleTestRow['file'] | null; manual_reason?: StandardRuleTestRow['manual_reason'] | null; size?: StandardRuleTestRow['size'] | null; smoke?: StandardRuleTestRow['smoke'] | null; external?: StandardRuleTestRow['external'] | null; when?: StandardRuleTestRow['when']; then?: StandardRuleTestRow['then']; notes?: StandardRuleTestRow['notes'] | null; starts_from?: string[] };
 
 export const CHANGE_STANDARD_RULE_TEST: CommandDefinition<ChangeStandardRuleTest> = {
-  id: 'LA-AUT-CMD207',
-  slice: STANDARD_SLICE,
-  name: 'change-standard-rule-test',
-  description: "Changes a standard rule test's columns or the test data sets it starts from (the whole list).",
-  method: 'POST',
-  route: '/api/standard/change-standard-rule-test',
+  ...CHANGE_STANDARD_RULE_TEST_IDENTITY,
   input: {
     id: column('standard_rule_test', 'id', 'required'),
     title: column('standard_rule_test', 'title', 'optional'),

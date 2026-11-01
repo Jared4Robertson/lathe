@@ -1,13 +1,13 @@
 // The Extension record aggregate's own reads (read model LA-AUT-RM39): a record of a product's own kind as its page
 // shows it, the records of a kind under one parent, and the next free ID for a record of a kind. Each reads only the
 // read model and its kind's declaration, through its reader (reader.ts), and changes nothing.
-import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { idEnd, onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import type { KindDescription } from '../../platform/data/schema.ts';
-import { EXTENSION_RECORD_SLICE } from './model.ts';
 import type { ExtensionRecordPage, ExtensionRecordSummary } from './read-model.ts';
 import { extensionRecordReader, type ExtensionRecordReader } from './reader.ts';
+import { GET_EXTENSION_RECORD_IDENTITY, LIST_EXTENSION_RECORDS_IDENTITY, NEXT_EXTENSION_RECORD_ID_IDENTITY } from './queries.generated.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
@@ -28,12 +28,7 @@ export function getExtensionRecord(reader: ExtensionRecordReader, input: { id: s
 
 /** GET an extension record whole (LA-AUT-QRY118). */
 export const GET_EXTENSION_RECORD: QueryDefinition<{ id: string }, ExtensionRecordPage, ExtensionRecordReader> = {
-  id: 'LA-AUT-QRY118',
-  slice: EXTENSION_RECORD_SLICE,
-  name: 'get-extension-record',
-  description: "Reads a record of a product's own kind whole: its kind, its row, the links it starts by relation, and the packages it uses.",
-  method: 'GET',
-  route: '/api/extension-record/get-extension-record',
+  ...GET_EXTENSION_RECORD_IDENTITY,
   input: { id: id('The record.', 'required') },
   reader: extensionRecordReader,
   run: getExtensionRecord,
@@ -47,12 +42,7 @@ export function listExtensionRecords(reader: ExtensionRecordReader, input: { kin
 
 /** List the records of a product kind under one parent (LA-AUT-QRY119). */
 export const LIST_EXTENSION_RECORDS: QueryDefinition<{ kind: string; parent: string }, ExtensionRecordSummary[], ExtensionRecordReader> = {
-  id: 'LA-AUT-QRY119',
-  slice: EXTENSION_RECORD_SLICE,
-  name: 'list-extension-records',
-  description: 'Lists the records of a product kind under one parent, by ID, with their titles.',
-  method: 'GET',
-  route: '/api/extension-record/list-extension-records',
+  ...LIST_EXTENSION_RECORDS_IDENTITY,
   input: {
     kind: id('The product kind, by name.', 'required'),
     parent: id('The record they sit under.', 'required'),
@@ -87,12 +77,7 @@ export function nextExtensionRecordId(reader: ExtensionRecordReader, input: { ki
 
 /** Get the next ID for a record of a product kind (LA-AUT-QRY126). */
 export const NEXT_EXTENSION_RECORD_ID: QueryDefinition<{ kind: string; parent: string }, string, ExtensionRecordReader> = {
-  id: 'LA-AUT-QRY126',
-  slice: EXTENSION_RECORD_SLICE,
-  name: 'next-id',
-  description: "The next free ID for a record of a product kind under its parent, by the kind's declared ID pattern: one past the highest in use.",
-  method: 'GET',
-  route: '/api/extension-record/next-id',
+  ...NEXT_EXTENSION_RECORD_ID_IDENTITY,
   input: {
     kind: id('The product kind, by name.', 'required'),
     parent: id('The record it will sit under.', 'required'),
@@ -110,6 +95,3 @@ function extensionRecordText(record: ExtensionRecordPage): string {
   if (record.packages.length) lines.push(`  packages: ${record.packages.join(', ')}`);
   return lines.join('\n');
 }
-
-/** The Extension record aggregate's queries, as the CLI and the MCP server register them. */
-export const EXTENSION_RECORD_QUERIES: readonly AnyQuery[] = [GET_EXTENSION_RECORD, LIST_EXTENSION_RECORDS, NEXT_EXTENSION_RECORD_ID];

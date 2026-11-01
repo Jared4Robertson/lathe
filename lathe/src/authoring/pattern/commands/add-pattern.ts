@@ -1,19 +1,15 @@
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PatternRow } from '../../../platform/data/tables.ts';
-import { PATTERN_SLICE, newPattern, type PatternSetting } from '../model.ts';
+import { newPattern, type PatternSetting } from '../model.ts';
 import { PatternRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_PATTERN_IDENTITY } from './identities.generated.ts';
 
 export type AddPattern = Pick<PatternRow, 'id' | 'title' | 'product_id' | 'description' | 'notes'> & { settings?: PatternSetting[] };
 
 export const ADD_PATTERN: CommandDefinition<AddPattern> = {
-  id: 'LA-AUT-CMD190',
-  slice: PATTERN_SLICE,
-  name: 'add-pattern',
-  description: 'Adds a pattern to its product, with its settings in order.',
-  method: 'POST',
-  route: '/api/pattern/add-pattern',
+  ...ADD_PATTERN_IDENTITY,
   input: {
     id: column('pattern', 'id', 'required'),
     title: column('pattern', 'title', 'required'),

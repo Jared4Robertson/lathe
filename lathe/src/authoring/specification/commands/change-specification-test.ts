@@ -1,19 +1,15 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { SpecificationTestRow } from '../../../platform/data/tables.ts';
-import { SPECIFICATION_SLICE, changed } from '../model.ts';
+import { changed } from '../model.ts';
 import { SpecificationRepository } from '../repository.ts';
+import { CHANGE_SPECIFICATION_TEST_IDENTITY } from './identities.generated.ts';
 
 /** The test's changes: a column given is set, null clears an optional one; starts_from, when given, replaces the list. */
 export type ChangeSpecificationTest = Pick<SpecificationTestRow, 'id'> & { title?: SpecificationTestRow['title']; level?: SpecificationTestRow['level']; state?: SpecificationTestRow['state']; file?: SpecificationTestRow['file'] | null; manual_reason?: SpecificationTestRow['manual_reason'] | null; size?: SpecificationTestRow['size'] | null; smoke?: SpecificationTestRow['smoke'] | null; external?: SpecificationTestRow['external'] | null; when?: SpecificationTestRow['when']; then?: SpecificationTestRow['then']; notes?: SpecificationTestRow['notes'] | null; starts_from?: string[] };
 
 export const CHANGE_SPECIFICATION_TEST: CommandDefinition<ChangeSpecificationTest> = {
-  id: 'LA-AUT-CMD267',
-  slice: SPECIFICATION_SLICE,
-  name: 'change-specification-test',
-  description: "Changes a specification test's columns or the test data sets it starts from (the whole list).",
-  method: 'POST',
-  route: '/api/specification/change-specification-test',
+  ...CHANGE_SPECIFICATION_TEST_IDENTITY,
   input: {
     id: column('specification_test', 'id', 'required'),
     title: column('specification_test', 'title', 'optional'),

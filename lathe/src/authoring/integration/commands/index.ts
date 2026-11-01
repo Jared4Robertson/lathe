@@ -1,4 +1,4 @@
-// The Integration aggregate's commands (LA-AUT-A14), as the CLI, the MCP server and the HTTP API register them.
+// Generated from data/ by `npm run generate`. Do not edit.
 import type { AnyCommand } from '../../../platform/commands/definition.ts';
 import { ADD_INTEGRATION } from './add-integration.ts';
 import { CHANGE_INTEGRATION } from './change-integration.ts';

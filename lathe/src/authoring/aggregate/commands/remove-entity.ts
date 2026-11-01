@@ -1,18 +1,13 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { AGGREGATE_SLICE } from '../model.ts';
 import { AggregateRepository } from '../repository.ts';
+import { REMOVE_ENTITY_IDENTITY } from './identities.generated.ts';
 
 /** The entity to remove. */
 export type RemoveEntity = { id: string };
 
 export const REMOVE_ENTITY: CommandDefinition<RemoveEntity> = {
-  id: 'LA-AUT-CMD215',
-  slice: AGGREGATE_SLICE,
-  name: 'remove-entity',
-  description: 'Removes an entity with its fields, its data model and the links they start. Refused while anything else references them: a command under it, its table, or another entity that holds it.',
-  method: 'POST',
-  route: '/api/aggregate/remove-entity',
+  ...REMOVE_ENTITY_IDENTITY,
   input: {
     id: column('entity', 'id', 'required'),
   },

@@ -1,19 +1,15 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ToolingRow } from '../../../platform/data/tables.ts';
-import { changed, TOOLING_SLICE } from '../model.ts';
+import { changed } from '../model.ts';
 import { ToolingRepository } from '../repository.ts';
+import { CHANGE_TOOLING_IDENTITY } from './identities.generated.ts';
 
 /** The tooling record's changes: a column given is set; packages and meets, when given, replace the list. */
 export type ChangeTooling = Pick<ToolingRow, 'id'> & { title?: string; file?: string | null; packages?: string[]; meets?: string[] };
 
 export const CHANGE_TOOLING: CommandDefinition<ChangeTooling> = {
-  id: 'LA-AUT-CMD156',
-  slice: TOOLING_SLICE,
-  name: 'change-tooling',
-  description: "Changes a tooling record's title, file, packages or standard rules met. Its domain stays.",
-  method: 'POST',
-  route: '/api/tooling/change-tooling',
+  ...CHANGE_TOOLING_IDENTITY,
   input: {
     id: column('tooling', 'id', 'required'),
     title: column('tooling', 'title', 'optional'),

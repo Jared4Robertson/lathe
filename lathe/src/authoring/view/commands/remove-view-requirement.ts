@@ -1,18 +1,13 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { VIEW_SLICE } from '../model.ts';
 import { ViewRepository } from '../repository.ts';
+import { REMOVE_VIEW_REQUIREMENT_IDENTITY } from './identities.generated.ts';
 
 /** The view requirement to remove. */
 export type RemoveViewRequirement = { id: string };
 
 export const REMOVE_VIEW_REQUIREMENT: CommandDefinition<RemoveViewRequirement> = {
-  id: 'LA-AUT-CMD315',
-  slice: VIEW_SLICE,
-  name: 'remove-view-requirement',
-  description: 'Removes a view requirement with its view tests and the links they start. Refused while anything else references them.',
-  method: 'POST',
-  route: '/api/view/remove-view-requirement',
+  ...REMOVE_VIEW_REQUIREMENT_IDENTITY,
   input: {
     id: column('view_requirement', 'id', 'required'),
   },

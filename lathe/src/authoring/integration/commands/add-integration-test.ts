@@ -1,18 +1,13 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { IntegrationTestRow } from '../../../platform/data/tables.ts';
-import { INTEGRATION_SLICE } from '../model.ts';
 import { IntegrationRepository } from '../repository.ts';
+import { ADD_INTEGRATION_TEST_IDENTITY } from './identities.generated.ts';
 
 export type AddIntegrationTest = Pick<IntegrationTestRow, 'id' | 'title' | 'integration_id' | 'level' | 'state' | 'when' | 'then' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'notes'> & { starts_from?: string[] };
 
 export const ADD_INTEGRATION_TEST: CommandDefinition<AddIntegrationTest> = {
-  id: 'LA-AUT-CMD341',
-  slice: INTEGRATION_SLICE,
-  name: 'add-integration-test',
-  description: 'Adds an integration test under its integration, with the test data sets it starts from.',
-  method: 'POST',
-  route: '/api/integration/add-integration-test',
+  ...ADD_INTEGRATION_TEST_IDENTITY,
   input: {
     id: column('integration_test', 'id', 'required'),
     title: column('integration_test', 'title', 'required'),

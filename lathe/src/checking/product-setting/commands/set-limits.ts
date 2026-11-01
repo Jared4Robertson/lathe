@@ -1,20 +1,15 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ProductSettingRow } from '../../../platform/data/tables.ts';
-import { PRODUCT_SETTING_SLICE } from '../model.ts';
 import { ProductSettingRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { SET_LIMITS_IDENTITY } from './identities.generated.ts';
 
 /** The product and both its limits. */
 export type SetLimits = ProductSettingRow;
 
 export const SET_LIMITS: CommandDefinition<SetLimits> = {
-  id: 'LA-CHK-CMD04',
-  slice: PRODUCT_SETTING_SLICE,
-  name: 'set-limits',
-  description: "Sets a product's settings row: the most children of one kind a record should hold, and the most entities an aggregate should hold. A product without the row takes the defaults, 15 and 7.",
-  method: 'POST',
-  route: '/api/product-setting/set-limits',
+  ...SET_LIMITS_IDENTITY,
   input: {
     product_id: column('product_setting', 'product_id', 'required'),
     max_children: column('product_setting', 'max_children', 'required'),
