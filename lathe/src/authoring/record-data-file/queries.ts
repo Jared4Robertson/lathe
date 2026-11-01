@@ -2,7 +2,7 @@
 // through its reader (reader.ts), so the desktop app finds a record's file by asking the engine that loaded it. Its
 // handler never sees the data and changes nothing. This slice holds only the read, so it names its read model where an
 // aggregate's slice names its aggregate.
-import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { FIND_RECORD_DATA_FILE_IDENTITY } from './queries.generated.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import type { RecordDataFile } from './read-model.ts';
@@ -23,6 +23,3 @@ export const FIND_RECORD_DATA_FILE: QueryDefinition<{ id: string }, RecordDataFi
   run: findRecordDataFile,
   text: (found) => found.file,
 };
-
-/** The Record's data file read's queries, as the CLI and the MCP server register them. */
-export const RECORD_DATA_FILE_QUERIES: readonly AnyQuery[] = [FIND_RECORD_DATA_FILE];
