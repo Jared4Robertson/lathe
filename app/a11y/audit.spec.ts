@@ -141,8 +141,8 @@ PAGES.push(
   { name: 'the add form, with its problems shown', run: async (page: Page) => {
     await open(page, RECORD, '[data-aggregate="use-case"]');
     const actions = page.getByRole('toolbar', { name: `Change ${RECORD.slice(1)}` });
-    await actions.getByRole('button', { name: 'Add…' }).click();
-    await actions.getByRole('group', { name: /Kinds to add/ }).getByRole('button', { name: 'UC requirement' }).click();
+    // A use case that has its flow can add one kind, a UC requirement, so its toolbar offers that lone button, not the Add… menu.
+    await actions.getByRole('button', { name: 'Add UC requirement' }).click();
     await page.getByRole('form').getByRole('button', { name: 'Add UC requirement' }).click();
     await page.getByRole('form').getByRole('alert').waitFor();
   } },
