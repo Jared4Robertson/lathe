@@ -5,6 +5,7 @@
 //
 // These are refusals only: broken data. What is merely missing ("at least one", "nothing uses it") is the checks'
 // to report, because records are written stage by stage.
+import { ESSENTIAL_WORDS, wordGroupOf } from '../../essential.ts';
 import { isLeadColumn } from '../../lead.ts';
 import { sqlName, sqlString, type SchemaDescription } from './schema.ts';
 
@@ -28,7 +29,10 @@ export interface IntegrityQuery {
  * - record_complexity (id, kind, complexity): every record but an open question, essential or accidental: by its kind
  *   (meta_kind.complexity), or for an as-parent kind (a test, a standard rule) as the nearest record above it that is
  *   not, for a standard by its type (quality is essential, engineering accidental), and for an API requirement by
- *   its product's interfaces (essential when the product has a public API interface, otherwise accidental).
+ *   its product's interfaces (essential when the product has a public API interface, otherwise accidental);
+ * - essential_word_group (kind, word_group) and essential_word (word_group, word): the group each kind's essential
+ *   records are read in for technology, and Lathe's words each group has no business with (essential.ts), which
+ *   accidental-in-essential reads as the write refusal does.
  */
 export function storeViewsSql(schema: SchemaDescription): string {
   const kinds = Object.values(schema.kinds).sort((a, b) => a.name.localeCompare(b.name));
@@ -49,7 +53,16 @@ export function storeViewsSql(schema: SchemaDescription): string {
     const lead = schema.tables[k.name].columns.find((c) => isLeadColumn(c.name));
     return `SELECT id, ${sqlString(k.name)} AS kind, title, ${lead ? sqlString(lead.name) : 'NULL'}::VARCHAR AS lead_column, ${lead ? sqlName(lead.name) : 'NULL'}::VARCHAR AS lead FROM ${sqlName(k.name)}`;
   });
+  const wordGroups = kinds.flatMap((k) => {
+    const group = wordGroupOf(k);
+    return group ? [`(${sqlString(k.name)}, ${sqlString(group)})`] : [];
+  });
+  const words = ESSENTIAL_WORDS.map((w) => `(${sqlString(w.group)}, ${sqlString(w.word)})`);
   return `
+CREATE OR REPLACE VIEW essential_word_group AS
+SELECT * FROM (VALUES ${wordGroups.join(', ')}) t (kind, word_group);
+CREATE OR REPLACE VIEW essential_word AS
+SELECT * FROM (VALUES ${words.join(', ')}) t (word_group, word);
 CREATE OR REPLACE VIEW record_parent AS
 ${parents.join('\nUNION ALL ')};
 CREATE OR REPLACE VIEW link AS
