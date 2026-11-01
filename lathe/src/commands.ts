@@ -14,6 +14,7 @@ import { ENTRY_POINT_COMMANDS } from './authoring/entry-point/commands/index.ts'
 import { EXTENSION_RECORD_COMMANDS } from './authoring/extension-record/commands/index.ts';
 import { INTEGRATION_COMMANDS } from './authoring/integration/commands/index.ts';
 import { INTERFACE_COMMANDS } from './authoring/interface/commands/index.ts';
+import { JOURNEY_COMMANDS } from './authoring/journey/commands/index.ts';
 import { PATTERN_COMMANDS } from './authoring/pattern/commands/index.ts';
 import { PATTERN_FOLLOWING_COMMANDS } from './traceability/pattern-following/commands/index.ts';
 import { PRODUCT_COMMANDS } from './authoring/product/commands/index.ts';
@@ -48,6 +49,7 @@ import { GET_EXTENSION_RECORD, LIST_EXTENSION_RECORDS, NEXT_EXTENSION_RECORD_ID 
 import { LIST_TRACED_ADDRESSES } from './traceability/file-facts/queries.ts';
 import { GET_FOLDER_TREE } from './exploring/folder-tree/queries.ts';
 import { GET_INTEGRATION, LIST_INTEGRATIONS, NEXT_INTEGRATION_ID } from './authoring/integration/queries.ts';
+import { GET_JOURNEY, LIST_JOURNEYS, NEXT_JOURNEY_ID } from './authoring/journey/queries.ts';
 import { GET_META_MODEL } from './platform/meta-model/queries.ts';
 import { GET_PATTERN, LIST_PATTERNS, NEXT_PATTERN_ID } from './authoring/pattern/queries.ts';
 import { GET_FOLLOWING, LIST_FOLLOWINGS, LIST_FOLLOWERS } from './traceability/pattern-following/queries.ts';
@@ -68,7 +70,7 @@ import { GET_TABLE, LIST_TABLES, NEXT_TABLE_ID } from './authoring/table/queries
 import { GET_TEST_DATA_SET, LIST_TEST_DATA_SETS, NEXT_TEST_DATA_SET_ID } from './authoring/test-data-set/queries.ts';
 import { GET_TEST_COUNTS } from './traceability/tests-by-state/queries.ts';
 import { GET_TOOLING, LIST_TOOLING, NEXT_TOOLING_ID } from './authoring/tooling/queries.ts';
-import { LIST_TRACED_USE_CASES } from './traceability/trace/queries.ts';
+import { LIST_TRACED_USE_CASES, GET_JOURNEY_PROOF } from './traceability/trace/queries.ts';
 import { GET_UI_COMPONENT, LIST_UI_COMPONENTS, NEXT_UI_COMPONENT_ID } from './authoring/ui-component/queries.ts';
 import { GET_USE_CASE, LIST_USE_CASES, NEXT_USE_CASE_ID } from './authoring/use-case/queries.ts';
 import { GET_VALUE_OBJECT, LIST_VALUE_OBJECTS, NEXT_VALUE_OBJECT_ID } from './authoring/value-object/queries.ts';
@@ -87,6 +89,7 @@ const COMMANDS = [
   ...EXTENSION_RECORD_COMMANDS,
   ...INTEGRATION_COMMANDS,
   ...INTERFACE_COMMANDS,
+  ...JOURNEY_COMMANDS,
   ...PATTERN_COMMANDS,
   ...PATTERN_FOLLOWING_COMMANDS,
   ...PRODUCT_COMMANDS,
@@ -151,6 +154,9 @@ export const ALL_QUERIES: readonly AnyQuery[] = [
   GET_INTEGRATION,
   LIST_INTEGRATIONS,
   NEXT_INTEGRATION_ID,
+  GET_JOURNEY,
+  LIST_JOURNEYS,
+  NEXT_JOURNEY_ID,
   GET_META_MODEL,
   GET_PATTERN,
   LIST_PATTERNS,
@@ -194,6 +200,7 @@ export const ALL_QUERIES: readonly AnyQuery[] = [
   LIST_TOOLING,
   NEXT_TOOLING_ID,
   LIST_TRACED_USE_CASES,
+  GET_JOURNEY_PROOF,
   GET_UI_COMPONENT,
   LIST_UI_COMPONENTS,
   NEXT_UI_COMPONENT_ID,

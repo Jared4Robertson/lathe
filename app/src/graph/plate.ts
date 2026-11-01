@@ -2,7 +2,7 @@ import { kindLabel, type RecordIndex } from '../exploring/record-summaries/recor
 import { groupKindLabel, groupName, stageFor, type BoxStage } from './model';
 import type { MapNode } from './map';
 import type { NestedNode } from './nested';
-import type { GroundNode } from './ground';
+import { FAR_TEXT, type GroundNode } from './ground';
 import { countOf } from '../plural';
 import { treeGroup } from './tree';
 import { nodeShape, outlineOf, SHAPES, type Mark, type Outline, type Shape } from './shapes';
@@ -70,6 +70,11 @@ export interface Plate {
    * of records at one size on screen whatever the zoom (paint.ts), as a map labels its places; null for a box.
    */
   area: { role: 'ground' | 'district' | 'neighborhood' | 'area'; name: string; count: string } | null;
+  /**
+   * A Map's leaf record's label from afar (LA-EXP-DS12): the same plate with its title alone at a larger text scale,
+   * drawn where its own title would read under the readable size (paint.ts labelPlate); null for every other box.
+   */
+  far: Plate | null;
   /** The marks' counts, for the accessible description. */
   errors: number;
   warnings: number;
@@ -175,7 +180,7 @@ export function plateOf(index: RecordIndex, id: string, source: PlateSource): Pl
     id, place: (source.view === 'tree' ? source.place : undefined) ?? id, kind,
     kindLabel: plain ? plain.kindLabel : record ? kindLabel(index, record.kind) : groupKindLabel(index, id), title: words.title, meta: words.meta,
     stage, group: !plain && !record, shape, view: source.view, x, y, w, h, text: t, ...marks,
-    dashed: plain ? plain.dashed : kind === 'question', area: null,
+    dashed: plain ? plain.dashed : kind === 'question', area: null, far: null,
   };
 
   if (source.view === 'map' && source.node.role !== 'record') {
@@ -220,7 +225,14 @@ export function plateOf(index: RecordIndex, id: string, source: PlateSource): Pl
   const placed = placeLines({ lines: n.lines, box, centered: n.centered, top: n.header > 0, t, icons });
   const outline = outlineOf('box', { x, y, w, h }, scale);
   const badges = marked ? badgesAt(marks, x + w - border - BADGE.right * t, y + border + BADGE.top * t, t) : [];
-  return { ...base, scale, outline, edged: false, border, decoration: null, label: { x: box.left, y: box.top, w: box.right - box.left, h: box.bottom - box.top }, lines: placed.lines, icons: placed.icons, badges };
+  const plate: Plate = { ...base, scale, outline, edged: false, border, decoration: null, label: { x: box.left, y: box.top, w: box.right - box.left, h: box.bottom - box.top }, lines: placed.lines, icons: placed.icons, badges };
+  const far = source.view === 'map' ? source.node.far : null;
+  if (!far) return plate;
+  // From afar: the title alone at FAR_TEXT, centered in the box, its border and badges as they are.
+  const f = FAR_TEXT;
+  const farBox = { left: x + border + LABEL_PAD * f, right: x + w - border - LABEL_PAD * f, top: y + border + LABEL_PAD_BLOCK * f, bottom: y + h - border - LABEL_PAD_BLOCK * f };
+  const farPlaced = placeLines({ lines: far, box: farBox, centered: true, top: false, t: f, icons: [] });
+  return { ...plate, far: { ...plate, text: f, label: { x: farBox.left, y: farBox.top, w: farBox.right - farBox.left, h: farBox.bottom - farBox.top }, lines: farPlaced.lines, icons: [] } };
 }
 
 /** The accessible name of a box: "Use case (center) Browse the map", "Stage Use cases (4) in LA-EXP". */

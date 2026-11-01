@@ -53,8 +53,16 @@ export const TREE_TEXT_SIZE = 250;
  * focus's own header no larger than readable; its padding and gaps keep TEXT_SIZE.
  */
 export const NESTED_TEXT_SIZE = 200;
-/** A Nested box's largest text scale for its side: its side over NESTED_TEXT_SIZE. */
+/** A Nested box's largest text scale for its side, as a parent's header: its side over NESTED_TEXT_SIZE. */
 export const nestedText = (side: number) => side / NESTED_TEXT_SIZE;
+/**
+ * The Nested map's share for a leaf's label, centered in its square: a leaf's text scale is at most its side over this,
+ * so its title is at most a tenth of its side (TITLE_FONT over 125) and the leaves inside a framed parent read at a
+ * comfortable size; a header, held to its band, keeps NESTED_TEXT_SIZE.
+ */
+export const NESTED_LEAF_TEXT_SIZE = 125;
+/** A Nested leaf's largest text scale for its side: its side over NESTED_LEAF_TEXT_SIZE. */
+export const nestedLeafText = (side: number) => side / NESTED_LEAF_TEXT_SIZE;
 /** A Tree box's largest text scale for its width: its width over TREE_TEXT_SIZE. */
 export const treeText = (width: number) => width / TREE_TEXT_SIZE;
 /** The product's column's width over its height, in the Tree map. */

@@ -103,7 +103,7 @@ export const CHANGE_FLOW_STEP_IDENTITY = {
   id: 'LA-AUT-CMD111',
   slice: { aggregate: 'LA-AUT-A11', name: 'use-case' },
   name: 'change-flow-step',
-  description: 'Changes a step\'s title, path, position or the interface it is a variant of (null makes it every interface\'s), or its links: a list given replaces the list, null clears what it invokes.',
+  description: 'Changes a step\'s title or the interface it is a variant of (null makes it every interface\'s), or its links: a list given replaces the list, null clears what it invokes. Its path and position change only by Move a flow step.',
   method: 'POST',
   route: '/api/use-case/change-flow-step',
 } as const;
@@ -169,4 +169,13 @@ export const REMOVE_FLOW_TEST_IDENTITY = {
   description: 'Removes a flow test with the links it starts. Refused while anything else references it, such as a business outcome it measures.',
   method: 'POST',
   route: '/api/use-case/remove-flow-test',
+} as const;
+
+export const MOVE_FLOW_STEP_IDENTITY = {
+  id: 'LA-AUT-CMD386',
+  slice: { aggregate: 'LA-AUT-A11', name: 'use-case' },
+  name: 'move-flow-step',
+  description: 'Moves a step to another position, on its own path or another, shifting the steps of the old path and the new so each stays numbered 1, 2, 3.',
+  method: 'POST',
+  route: '/api/use-case/move-flow-step',
 } as const;

@@ -1,10 +1,11 @@
 import type { CommandPage as Command } from '../../../../lathe/src/authoring/command/read-model';
 import { plural } from '../../plural';
 import type { AggregatePageProps } from '../../record/pages';
-import { RowsSection, Summary, TestScenario, Text, readState, type Fact } from '../../record/page-parts';
+import { Facts, RowsSection, Summary, TestScenario, Text, readState, type Fact } from '../../record/page-parts';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { RecordLink } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
+import { InJourneys } from '../journey/InJourneys';
 import { CommandEditor } from './CommandEditor';
 import { useCommand } from './reads';
 
@@ -20,6 +21,10 @@ import { useCommand } from './reads';
 const titleOf = (index: RecordIndex, kind: string) => plural(kindLabel(index, kind));
 
 const policyOf = (page: Command, id: string) => page.policies.find((p) => p.policy.id === id || p.eventHandler?.handler.id === id || p.test?.test.id === id)!;
+
+/** The "In journeys" fact of a policy: the journeys it is a handoff in; none when it is in none. */
+const inJourneys = (index: RecordIndex, p: Command['policies'][number]): Fact[] =>
+  p.journeys.length ? [{ label: 'In journeys', value: <InJourneys index={index} journeys={p.journeys} id={p.policy.id} /> }] : [];
 
 /** What one record of the command shows on its page, by the kind it is in the command. */
 function Content({ index, page }: { index: RecordIndex; page: Command }) {
@@ -41,6 +46,7 @@ function Content({ index, page }: { index: RecordIndex; page: Command }) {
       return (
         <>
           <Text index={index} id={id} source={p.policy.statement} field="statement" />
+          <Facts facts={inJourneys(index, p)} />
           <RowsSection index={index} title={titleOf(index, 'event_handler')} ids={p.eventHandler ? [p.eventHandler.handler.id] : []} label={`${titleOf(index, 'event_handler')} of ${id}`} empty="No event handler carries it out yet." />
           <RowsSection index={index} title={titleOf(index, 'policy_test')} ids={p.test ? [p.test.test.id] : []} label={`${titleOf(index, 'policy_test')} of ${id}`} empty="No test proves it yet." />
         </>
@@ -80,7 +86,7 @@ function summaryOf(index: RecordIndex, page: Command): { lead?: string; facts: F
       return { lead: page.handler!.handler.description, facts: [ofCommand, ...technicalFacts(page.handler!.handler.file, page.handler!.packages)] };
     case 'policy': {
       const p = policyOf(page, id);
-      return { lead: p.policy.statement, facts: [ofCommand, { label: 'Hears', value: p.hears ? <RecordLink index={index} id={p.hears} /> : 'nothing yet' }] };
+      return { lead: p.policy.statement, facts: [ofCommand, { label: 'Hears', value: p.hears ? <RecordLink index={index} id={p.hears} /> : 'nothing yet' }, ...inJourneys(index, p)] };
     }
     case 'event_handler': {
       const p = policyOf(page, id);

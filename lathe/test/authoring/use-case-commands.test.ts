@@ -11,6 +11,7 @@ import { ADD_USE_CASE } from '../../src/authoring/use-case/commands/add-use-case
 import { CHANGE_FLOW_STEP } from '../../src/authoring/use-case/commands/change-flow-step.ts';
 import { CHANGE_USE_CASE } from '../../src/authoring/use-case/commands/change-use-case.ts';
 import { CHANGE_USE_CASE_TEST } from '../../src/authoring/use-case/commands/change-use-case-test.ts';
+import { MOVE_FLOW_STEP } from '../../src/authoring/use-case/commands/move-flow-step.ts';
 import { MOVE_USE_CASE } from '../../src/authoring/use-case/commands/move-use-case.ts';
 import { REMOVE_FLOW } from '../../src/authoring/use-case/commands/remove-flow.ts';
 import { REMOVE_UC_REQUIREMENT } from '../../src/authoring/use-case/commands/remove-uc-requirement.ts';
@@ -118,10 +119,25 @@ describe('LA-AUT-UC06-R12-T01 each Use case command (LA-AUT-A11) changes one use
     const stepOf = () => (runQuery(store, GET_USE_CASE, { id: 'TL-LEND-UC01' }) as ReturnType<typeof GET_USE_CASE.run>).flows[0].paths[0].steps[0];
     await runCommand(store, CHANGE_FLOW_STEP, { id: 'TL-LEND-UC01-FL-S01', interface_id: 'TL-IF01' });
     expect(stepOf().step.interface_id).toBe('TL-IF01');
-    await runCommand(store, CHANGE_FLOW_STEP, { id: 'TL-LEND-UC01-FL-S01', interface_id: null, exchanges_with: [], position: 1 });
+    await runCommand(store, CHANGE_FLOW_STEP, { id: 'TL-LEND-UC01-FL-S01', interface_id: null, exchanges_with: [] });
     const step = stepOf();
     expect(step.step.interface_id ?? null).toBeNull();
     expect(step).toMatchObject({ exchangesWith: [], invokes: 'TL-LEND-CMD01', fulfills: ['TL-LEND-UC01-R01'] });
+  });
+
+  it('LA-AUT-UC06-R12-T03 moves a flow step to a position of its path or another, every path staying numbered 1, 2, 3', async () => {
+    const store = await storeOf();
+    const step = (id: string, extra: Record<string, unknown>) => ({ id, title: id, flow_id: 'TL-LEND-UC01-FL', path: 'main', position: 2, ...extra });
+    await runCommand(store, ADD_FLOW_STEP, step('TL-LEND-UC01-FL-S02', {}));
+    await runCommand(store, ADD_FLOW_STEP, step('TL-LEND-UC01-FL-S03', { position: 3 }));
+    const where = () => store.rows('flow_step').map((s) => `${String(s.id).split('-').pop()} ${s.path} ${s.position}`).sort();
+    await runCommand(store, MOVE_FLOW_STEP, { id: 'TL-LEND-UC01-FL-S03', position: 1 });
+    expect(where()).toEqual(['S01 main 2', 'S02 main 3', 'S03 main 1']);
+    await runCommand(store, MOVE_FLOW_STEP, { id: 'TL-LEND-UC01-FL-S01', path: 'refused', position: 1 });
+    expect(where()).toEqual(['S01 refused 1', 'S02 main 2', 'S03 main 1']);
+    const before = fileOf(store, 'flow_step');
+    expect((await refusal(store, MOVE_FLOW_STEP, { id: 'TL-LEND-UC01-FL-S02', position: 3 })).problems[0].rule).toBe('position');
+    expect(fileOf(store, 'flow_step')).toBe(before);
   });
 
   it('refuses a step fulfilling another use case\'s requirement, with its reason, and changes no file', async () => {

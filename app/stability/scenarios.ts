@@ -13,6 +13,11 @@ export const AGGREGATE = '/LA-EXP-A1';
 /** A UC requirement of RECORD: what the edit scenarios change, then put back. */
 export const EDITED = '/LA-PLT-UC05-R05';
 
+/** Lathe's own journey "Take a new use case to proof", with its steps in order and a step that carries out nothing yet: the journeys scenario and the journey page's audit. */
+export const JOURNEY = '/LA-JR01';
+/** A use case that is a step of JOURNEY: its In journeys fact leads back to the journey. */
+export const JOURNEY_USE_CASE = '/LA-AUT-UC06';
+
 /** The shell's frame: the nav and the page beside it. */
 export const SHELL = ['nav#nav', '#main'];
 /** A focus page's frame: the floating page bar, the header strip and the wiki card (each holds still while what it shows changes). */

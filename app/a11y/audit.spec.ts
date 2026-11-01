@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from '../stability/test';
-import { AGGREGATE, DOMAIN, EDITED, PRODUCT, RECORD, REFERENCED } from '../stability/scenarios';
+import { AGGREGATE, DOMAIN, EDITED, JOURNEY, JOURNEY_USE_CASE, PRODUCT, RECORD, REFERENCED } from '../stability/scenarios';
 import { audit, LOOKS, useLook, type Finding } from './axe';
 import { withChat } from './chat';
 import { asDesktop } from '../stability/desktop';
@@ -98,12 +98,16 @@ const PAGES: State[] = [
   { name: 'specification page', url: '/LA-AUT-SP09', ready: '[data-aggregate="specification"] .record-lead' },
   { name: 'value object page', url: '/LA-VO01', ready: '[data-aggregate="value-object"] .entity-fields' },
   { name: 'read model page', url: '/LA-AUT-RM25', ready: '[data-aggregate="read-model"] .read-model-queries' },
+  // A journey (its lane strip and ordered steps, with Move up and Move down), and a use case's In journeys.
+  { name: 'journey page', url: JOURNEY, ready: '[data-aggregate="journey"] .journey-steps' },
+  { name: 'use case page in journeys', url: JOURNEY_USE_CASE, ready: '[data-aggregate="use-case"] .in-journeys' },
   { name: 'group page', url: GROUP, ready: '.header-strip h1' },
   ...STAGES,
   // Every stage works on every focus (LA-PAT-APP-UX-R17): the shapes a stage takes outside its own kinds.
   { name: 'Trace stage, a flow step in its row', url: `${STEP}?stage=trace`, ready: TRACE, state: 'attached' as const },
   { name: 'Trace stage, an entity (the product\'s rows)', url: `${ENTITY}?stage=trace`, ready: TRACE, state: 'attached' as const },
   { name: 'Trace stage, the product\'s rows', url: `${PRODUCT}?stage=trace`, ready: TRACE, state: 'attached' as const },
+  { name: 'Trace stage, a journey step (its journey open beside the rows)', url: '/LA-JR01-S01?stage=trace', ready: TRACE, state: 'attached' as const },
   { name: 'ERD stage on a use case', url: `${RECORD}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   { name: 'ERD stage on a Shared record', url: `${SHARED}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   // Nothing replaces the stage (LA-PAT-APP-UX-R20): every tool over it, and the products picker.

@@ -4,7 +4,9 @@ import { Refusal, problemText } from '../../edit/fields';
 import type { AggregatePageProps } from '../../record/pages';
 import { Markdown } from '../../specs/Markdown';
 import { Prose } from '../../specs/mentions';
-import { RecordLink, Section } from '../../specs/parts';
+import { RecordLink, Section, SpecLink } from '../../specs/parts';
+import { checkPagePath } from '../../format/reference';
+import { JourneyLineRead } from '../journey/JourneyLine';
 import { RecordFrame } from '../../specs/RecordContent';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { BusinessOutcomeEditor } from './BusinessOutcomeEditor';
@@ -23,6 +25,26 @@ function Text({ index, id, source, title, field }: { index: RecordIndex; id: str
   return title ? <Section title={title} className={`record-${field}`}>{prose}</Section> : <div className="record-lead" data-field={field}>{prose}</div>;
 }
 
+/** The journeys that serve the outcome, each with how far it is proved; for a duration measure that no journey serves, the check that says so. */
+function Journeys({ index, page }: { index: RecordIndex; page: Outcome }) {
+  const { outcome, journeys } = page;
+  const owed = (index.problemsFor.get(outcome.id) ?? []).some((p) => p.check === 'outcome-duration-without-journey');
+  return (
+    <Section title="Journeys" count={journeys.length} className="outcome-journeys">
+      {journeys.length === 0 ? (
+        <p className="hint">
+          No journey serves it yet.
+          {owed && <> Its measure reads as a duration, which a journey times: <SpecLink to={checkPagePath('outcome-duration-without-journey')} className="check-link" title="How the outcome-duration-without-journey check works"><code className="check-name">outcome-duration-without-journey</code></SpecLink></>}
+        </p>
+      ) : (
+        <ul className="plain record-list" aria-label={`Journeys that serve ${outcome.id}`}>
+          {journeys.map((j) => <li key={j.id}><JourneyLineRead index={index} id={j.id} /></li>)}
+        </ul>
+      )}
+    </Section>
+  );
+}
+
 /** The outcome's own texts, in their order. */
 function Content({ index, page }: { index: RecordIndex; page: Outcome }) {
   const { outcome } = page;
@@ -31,6 +53,7 @@ function Content({ index, page }: { index: RecordIndex; page: Outcome }) {
       <Text index={index} id={outcome.id} source={outcome.statement} field="statement" />
       <Text index={index} id={outcome.id} source={outcome.measure} title="Measure" field="measure" />
       <Text index={index} id={outcome.id} source={outcome.target} title="Target" field="target" />
+      <Journeys index={index} page={page} />
       <Text index={index} id={outcome.id} source={outcome.measured_outside} title="Measured outside the code" field="measured_outside" />
       <Text index={index} id={outcome.id} source={outcome.notes} title="Notes" field="notes" />
     </>
@@ -43,7 +66,7 @@ function Summary({ index, page }: { index: RecordIndex; page: Outcome }) {
   const facts: { label: string; value: ReactNode }[] = [
     { label: 'Product', value: <RecordLink index={index} id={page.outcome.product_id} /> },
     { label: 'Target', value: page.outcome.target },
-    { label: 'Holds', value: `${count(page.servedBy.length, 'capability serving it', 'capabilities serving it')}, ${count(page.measuredBy.length, 'measure', 'measures')}` },
+    { label: 'Holds', value: `${count(page.servedBy.length, 'capability serving it', 'capabilities serving it')}, ${count(page.journeys.length, 'journey', 'journeys')}, ${count(page.measuredBy.length, 'measure', 'measures')}` },
   ];
   return (
     <>

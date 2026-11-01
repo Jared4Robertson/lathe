@@ -42,6 +42,7 @@ export function plateAt(p: Plate, to: Box): Plate {
     lines: p.lines.map((l) => ({ ...l, size: l.size * s, x: X(l.x) + (l.width * (sx - s)) / 2, baseline: Y(l.baseline), top: Y(l.top), height: l.height * s, width: l.width * s })),
     icons: p.icons.map((i) => ({ ...i, x: X(i.x), y: Y(i.y), w: i.w * s, h: i.h * s })),
     badges: p.badges.map((b) => ({ ...b, x: X(b.x), y: Y(b.y), w: b.w * s, h: b.h * s, size: b.size * s })),
+    far: p.far && plateAt(p.far, to),
   };
 }
 

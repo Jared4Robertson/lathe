@@ -7,8 +7,10 @@
 // reader behind it, their data store, and the adapters of its integrations), and each offering interface's version of
 // the flow (derived by the use case's through.ts: per step, the views with their requirements, the endpoints with
 // their API requirements, or the product's own records it is carried out in); its flow test; the lower obligations its
-// suite rests on (view and API requirements, invariants and storage requirements, with their tests); and a status per
-// stage. Gaps and
+// suite rests on (view and API requirements, invariants and storage requirements, with their tests); the journeys whose
+// steps carry it out; and a status per stage. Beside the rows, each journey of the product with how far it is proved
+// (TraceJourney): a step carrying out a use case is proved when every UC requirement of it and its flow test are, a
+// handoff when its policy is, and the journey when its journey test counts and every step is proved. Gaps and
 // tests are the checks' run's (`ReadView.checked`: coverage's gaps, the chains' tests), as the Trace read model reads
 // them; the rest are the rows'. The projection is the only code that reads them for the query and the only code that
 // writes the read model's table; the query handler reads it only through the reader.
@@ -119,20 +121,63 @@ export interface TraceRow {
   flow: TraceFlow | null;
   /** The lower obligations its acceptance tests rest on: its steps' view and API requirements, its aggregates' invariants and storage requirements. */
   lower: TraceObligation[];
+  /** The journey steps that carry it out, by journey then step. */
+  journeys: { journey: string; step: string }[];
   status: TraceStatus;
 }
 
-/** A product's trace: its outcomes, and a row per use case of its space, each once, in ID order. */
+/** One step of a journey, with who acts and whether what it carries out is proved. */
+export interface TraceJourneyStep {
+  id: string;
+  path: string;
+  position: number;
+  /** The use case or policy it carries out, or null while it carries out nothing yet. */
+  carriesOut: string | null;
+  kind: 'use_case' | 'policy' | null;
+  /** The use case's actors, its main actor first; none for a policy, where the product itself acts. */
+  actors: string[];
+  /** Whether what it carries out is designed: a use case with a flow and every UC requirement designed, a policy with no design gap. */
+  designed: boolean;
+  /** Whether it is built: a use case with a flow and every requirement its steps carry built, a policy with no build gap. */
+  built: boolean;
+  /** Whether it is proved: a use case with a flow test that counts and every UC requirement proved, a policy proved by its test. */
+  proved: boolean;
+}
+
+/** A journey's proof, rolled up from its steps and its journey test on every read, never stored. */
+export interface TraceJourney {
+  id: string;
+  product: string;
+  /** The business outcomes it serves, in ID order. */
+  outcomes: string[];
+  /** Its steps, the main path first, then the other paths by name, each by position. */
+  steps: TraceJourneyStep[];
+  /** Its journey test, or null. */
+  test: string | null;
+  /** Whether its journey test counts: automated with a file that exists and names it, or manual, at a level a journey test allows. */
+  testProved: boolean;
+  /** Whether the journey is proved: its journey test counts and it has steps, each proved. */
+  proved: boolean;
+  /** Its steps, those carrying out nothing yet, and those proved, designed and built. */
+  status: { steps: number; unlinked: number; stepsProved: number; designed: number; built: number };
+}
+
+/** A product's trace: its outcomes, a row per use case of its space, each once, in ID order, and its journeys in ID order. */
 export interface ProductTrace {
   product: string;
   outcomes: string[];
   rows: TraceRow[];
+  journeys: TraceJourney[];
 }
 
-/** The read model's table, kept in memory: each product's trace, by product. */
+/** The read model's table, kept in memory: each product's trace, by product, and each journey's proof, by journey. */
 export interface TraceTable {
   products: Map<string, ProductTrace>;
+  journeys: Map<string, TraceJourney>;
 }
+
+/** The checks whose problem on a test means it is not backed: its file is missing, does not name it, or its level is not allowed. */
+const UNBACKED = new Set(['test-file-missing', 'test-file-missing-id', 'test-level-not-allowed']);
 
 const GAPS: readonly TraceGap[] = ['designed', 'built', 'proved'];
 const byId = (ids: Iterable<string>) => [...new Set(ids)].sort(compareIds);
@@ -210,6 +255,15 @@ export function traceTableFrom(view: ReadView): TraceTable {
   const versionsOf = interfaceVersions(view);
   const actorsOf = new Map<string, string[]>();
   for (const a of [...rows('use_case_actor')].sort((x, y) => Number(x.position) - Number(y.position))) actorsOf.set(String(a.use_case_id), [...(actorsOf.get(String(a.use_case_id)) ?? []), String(a.role_name)]);
+
+  // Journeys: each step's journey, what it carries out, and the steps carrying out each use case.
+  const journeyOfStep = one('journey_step', 'journey_id');
+  const carriesOut = new Map(rows('carries_out').map((l) => [String(l.source_id), String(l.target_id)]));
+  const journeysOf = into('carries_out');
+  const servesOutcomes = out('serves');
+  const journeyTestOf = new Map(rows('journey_test').map((t) => [String(t.journey_id), t]));
+  const unbacked = new Set((run?.problems ?? []).filter((p) => UNBACKED.has(p.check) && p.record).map((p) => String(p.record)));
+  const policies = new Set(rows('policy').map((p) => String(p.id)));
 
   const reaches = useCaseReaches(view);
   const placed = placementOf(view);
@@ -301,6 +355,7 @@ export function traceTableFrom(view: ReadView): TraceTable {
       reads,
       flow,
       lower,
+      journeys: (journeysOf.get(useCase) ?? []).map((step) => ({ journey: String(journeyOfStep.get(step)), step })).sort((a, b) => compareIds(a.journey, b.journey) || compareIds(a.step, b.step)),
       status: {
         design: { interfaces: flow?.through.length ?? 0, notDesigned: requirements.filter((r) => r.gaps.includes('designed')).length },
         technical: { handlers: new Set(steps.flatMap((s) => s.chain.handlers)).size, notBuilt: notBuilt.size },
@@ -309,16 +364,62 @@ export function traceTableFrom(view: ReadView): TraceTable {
     };
   };
 
+  /** A journey's proof, from its steps' rows (or, for a handoff, its policy's gaps) and its journey test. */
+  const journeyOf = (j: Row, product: string, outcomes: readonly string[], rowOfUseCase: Map<string, TraceRow>): TraceJourney => {
+    const id = String(j.id);
+    const steps = rows('journey_step').filter((s) => s.journey_id === id).sort(stepOrder).map((s): TraceJourneyStep => {
+      const step = String(s.id);
+      const target = carriesOut.get(step) ?? null;
+      const base = { id: step, path: String(s.path), position: Number(s.position), carriesOut: target };
+      if (target !== null && policies.has(target)) {
+        const { gaps } = obligation(target);
+        return { ...base, kind: 'policy', actors: [], designed: !gaps.includes('designed'), built: !gaps.includes('built'), proved: !gaps.includes('proved') };
+      }
+      const row = target === null ? undefined : rowOfUseCase.get(target);
+      if (target === null) return { ...base, kind: null, actors: [], designed: false, built: false, proved: false };
+      if (!row) return { ...base, kind: 'use_case', actors: actorsOf.get(target) ?? [], designed: false, built: false, proved: false };
+      const flow = row.flow !== null;
+      return {
+        ...base,
+        kind: 'use_case',
+        actors: actorsOf.get(target) ?? [],
+        designed: flow && row.status.design.notDesigned === 0,
+        built: flow && row.status.technical.notBuilt === 0,
+        proved: !!row.flow?.proved && row.requirements.every((r) => !r.gaps.includes('proved')),
+      };
+    });
+    const test = journeyTestOf.get(id);
+    const testProved = !!test && (test.state === 'automated' || test.state === 'manual') && !unbacked.has(String(test.id));
+    const stepsProved = steps.filter((s) => s.proved).length;
+    return {
+      id,
+      product,
+      outcomes: byId((servesOutcomes.get(id) ?? []).filter((o) => outcomes.includes(o))),
+      steps,
+      test: test ? String(test.id) : null,
+      testProved,
+      proved: testProved && steps.length > 0 && stepsProved === steps.length,
+      status: {
+        steps: steps.length,
+        unlinked: steps.filter((s) => s.carriesOut === null).length,
+        stepsProved,
+        designed: steps.filter((s) => s.designed).length,
+        built: steps.filter((s) => s.built).length,
+      },
+    };
+  };
+
   const products = new Map<string, ProductTrace>();
+  const journeys = new Map<string, TraceJourney>();
   for (const row of rows('product')) {
     const product = String(row.id);
     const outcomes = rows('business_outcome').map((o) => String(o.id)).filter((o) => placed.get(o)?.product === product).sort(compareIds);
     const useCases = rows('use_case').map((u) => String(u.id)).filter((u) => space(u, product)).sort(compareIds);
-    products.set(product, {
-      product,
-      outcomes,
-      rows: useCases.map((u) => rowOf(u, (reaches.get(u)?.outcomes ?? []).filter((o) => outcomes.includes(o)))),
-    });
+    const traced = useCases.map((u) => rowOf(u, (reaches.get(u)?.outcomes ?? []).filter((o) => outcomes.includes(o))));
+    const rowOfUseCase = new Map(traced.map((r) => [r.useCase, r]));
+    const own = rows('journey').filter((j) => j.product_id === product).sort((a, b) => compareIds(String(a.id), String(b.id))).map((j) => journeyOf(j, product, outcomes, rowOfUseCase));
+    for (const j of own) journeys.set(j.id, j);
+    products.set(product, { product, outcomes, rows: traced, journeys: own });
   }
-  return { products };
+  return { products, journeys };
 }

@@ -29,8 +29,8 @@ import { StageCamera, ZOOM_STEP } from '../views/StageChrome';
 import { useChanges } from '../changes/changes';
 import { highlightFade, marksMoving, useStageMarks, type MarkTree } from '../changes/marks';
 import { anchorOf, rollupText, totalChanges, type ChangeCounts } from '../changes/rollup';
-import { TRACE_COLUMN_LABELS, TRACE_COLUMNS, TRACE_STAGES, isOpen, type TraceGraph, type TraceStage, type Item, type Openness } from './trace';
-import { lastTraceOrder, useTraceOrder } from './order';
+import { JOURNEY_COLUMN, STAGE_COLUMN, TRACE_COLUMN_LABELS, TRACE_COLUMNS, TRACE_STAGES, isOpen, stageOfColumn, type TraceGraph, type TraceStage, type Item, type Openness } from './trace';
+import { lastTraceOrder, type Ordered } from './order';
 import { columnLeft, ITEM_HEIGHT, ITEM_WIDTH, layOutTrace, outcomesBeside, OUTSIDE_GAP, type BoxPlace, type TraceLaid } from './layout';
 import { litBy, type Lit } from './path';
 
@@ -38,8 +38,9 @@ import { litBy, type Lit } from './path';
 // its right (▾ when open), which opens it. A column is drawn only where the camera shows it: each box in view (a tenth
 // of the pane to spare), and when its boxes are under 3 px tall or past the budget of 260, each run of them as one bar,
 // the lit path still marked on it. A box whose title would draw under 5 px is a plain block (graph/camera.ts
-// BLOCK_BELOW_PX). The serves links are drawn as curves from each outcome to the use cases it is served by, under the
-// boxes; the selection's path in its row is drawn the same way, from each record on it to the next across the columns,
+// BLOCK_BELOW_PX). The serves links are drawn as curves from each outcome to the use cases and journeys it is served by,
+// and the journeys' from each journey (or its step's box while open) to the rows it carries out, labeled with the steps'
+// numbers, under the boxes; the selection's path in its row is drawn the same way, from each record on it to the next across the columns,
 // and lit, the rest of the view faded. The columns' names stay at the top of the frame, a ▸ beside each stage's name
 // opening it in every row (Expand all). While a row is focused, the outcomes it serves slide beside it and glide home
 // when none is (layout.ts outcomesBeside, LA-V98-R22). The camera frames the focus's row; opening a box, a new order (Tidy up) or a
@@ -68,7 +69,9 @@ const TOGGLE = 18;
 const TOGGLE_ROOM = TOGGLE + 10;
 
 /** The stage of each column's own boxes that are no record: a status in its stage's color. */
-const COLUMN_STAGE: readonly BoxStage[] = ['discovery', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan'];
+const COLUMN_STAGE: readonly BoxStage[] = ['discovery', 'discovery', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan'];
+/** The size of a journey line's label, in CSS pixels at zoom 1. */
+const CARRY_FONT = 11;
 
 /** One drawn box as the test hook reports it, in the page's pixels. */
 export interface TraceSceneBox {
@@ -85,7 +88,8 @@ export interface TraceScene {
   canvas: { left: number; top: number; width: number; height: number };
   boxes: TraceSceneBox[];
   bars: number;
-  lines: { from: string; to: string; kind: 'serves' | 'path'; lit: boolean }[];
+  /** Each line drawn: an outcome's (serves), a journey's to a row it carries out (carries, with its steps' numbers) and the path's. */
+  lines: { from: string; to: string; kind: 'serves' | 'carries' | 'path'; lit: boolean; label?: string }[];
   columns: { name: string; count: number; open: boolean; rollup: string | null }[];
   rows: string[];
   outsideTop: number | null;
@@ -103,8 +107,8 @@ export interface TraceCanvasProps {
   at: string | null;
   /** Whether every row has a stage open (Expand all), by stage. */
   every: Readonly<Record<TraceStage, boolean>>;
-  /** A count Tidy up raises: the rows are ordered afresh, their rooms closed, once for each. */
-  tidy: number;
+  /** The rows' order and the graph it was made for (useTraceOrder, called by the view); null before the first. */
+  ordered: Ordered | null;
   /** The row whose outcomes sit beside it (LA-V98-R22, layout.ts outcomesBeside); null keeps each at its own place. */
   beside: string | null;
   /** Opens or closes a box's children. */
@@ -132,7 +136,7 @@ export function TraceCanvas(props: TraceCanvasProps) {
     void pageMeasure(fonts).then((m) => { if (live) setMeasure(m); });
     return () => { live = false; };
   }, [fonts.body, fonts.mono]);
-  const ordered = useTraceOrder(props.graph, props.tidy);
+  const { ordered } = props;
   const home = useMemo(() => (ordered ? layOutTrace(ordered.graph, ordered.order, props.open) : null), [ordered, props.open]);
   const laid = useMemo(() => (ordered && home ? outcomesBeside(home, ordered.graph.serves, props.beside) : null), [ordered, home, props.beside]);
   if (!measure || !ordered || !laid) return <div className="graph-flow trace-flow" aria-busy="true" />;
@@ -192,9 +196,9 @@ function plainOf(item: Item): PlainBox {
 }
 
 /** What one frame draws. */
-interface TraceFrame { plates: Plate[]; bars: Bar[]; barred: boolean; serves: number[]; marks: { key: string; x: number; y: number }[] }
+interface TraceFrame { plates: Plate[]; bars: Bar[]; barred: boolean; serves: number[]; journeyServes: number[]; carries: number[]; marks: { key: string; x: number; y: number }[] }
 
-function TraceScene({ index, focus, graph, laid, open, at, beside, every, onToggle, onEvery, onBox, onNavigate, onPeek, space, ring: ringAt, cameraKey, onOpenNew, fonts, theme }: Omit<TraceCanvasProps, 'tidy'> & { laid: TraceLaid; fonts: GraphFonts; theme: number }) {
+function TraceScene({ index, focus, graph, laid, open, at, beside, every, onToggle, onEvery, onBox, onNavigate, onPeek, space, ring: ringAt, cameraKey, onOpenNew, fonts, theme }: Omit<TraceCanvasProps, 'ordered'> & { laid: TraceLaid; fonts: GraphFonts; theme: number }) {
   const wrapper = useRef<TraceHost>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
@@ -256,8 +260,9 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
     let bottom = own.y + own.h;
     for (const r of lit.rows) { const band = laid.rows.get(r); if (band) { top = Math.min(top, band.y); bottom = Math.max(bottom, band.y + band.h); } }
     const tall = (head.h - 48) / Math.max(1, bottom - top);
-    // As large as reads, up to every column from the Use case column on fitting across.
-    const fromUseCase = laid.width - columnLeft(1);
+    // As large as reads, up to every column from the Use case column on fitting across (the Journey column beside it
+    // when there is room).
+    const fromUseCase = laid.width - columnLeft(STAGE_COLUMN['use-case']);
     const zoom = Math.max(ROW_ZOOM, Math.min(1, Math.max(fits, across / fromUseCase), tall));
     // The outcomes beside the row, in the frame with it when they fit at that zoom.
     const column = graph.items.get(focusKey!)?.column ?? 0;
@@ -270,8 +275,9 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
     const atY = own.y * zoom + y;
     if (atY + own.h * zoom > head.y + head.h - 24) y -= atY + own.h * zoom - (head.y + head.h - 24);
     // Across: every column when they fit; else from the Outcome column when the row's outcomes are beside it and the
-    // focus's box still fits, else from the column before the focus's (the Use case column's for a row's own boxes).
-    const first = outcomes.length > 0 && (own.x + own.w) * zoom <= across ? 0 : column === 0 ? 0 : Math.max(1, column - 1);
+    // focus's box still fits, or for a journey's box, else from the column before the focus's (the Journey column for a
+    // row's use case).
+    const first = outcomes.length > 0 && (own.x + own.w) * zoom <= across ? 0 : column <= JOURNEY_COLUMN ? 0 : Math.max(1, column - 1);
     const x = laid.width * zoom <= across ? head.x + (head.w - laid.width * zoom) / 2 : head.x + 24 - columnLeft(first) * zoom;
     // The focused box always whole in the frame (LA-PAT-APP-UX-R23).
     return wholeIn({ x, y, zoom }, own, head);
@@ -359,7 +365,8 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
   useLayoutEffect(() => { if (wrapper.current) look.current = readLook(wrapper.current); requestPaint(); }, [theme]);
   const fadeLook = useMemo<Pick<FadeLook, 'focusFade'>>(() => ({ get focusFade() { return look.current.focusFade; } }), []);
   const changes = useChanges();
-  const counts = useMemo(() => [graph.outcomes.length, graph.rows.length, ...TRACE_STAGES.slice(1).map((s) => graph.rows.filter((r) => graph.items.get(r.cells[TRACE_STAGES.indexOf(s) + 1])!.role === 'gap').length)], [graph]);
+  // Each column's count: its outcomes, journeys and use cases; a stage's, its rows with a gap.
+  const counts = useMemo(() => [graph.outcomes.length, graph.journeys.length, graph.rows.length, ...TRACE_STAGES.slice(1).map((s) => graph.rows.filter((r) => graph.items.get(r.cells[STAGE_COLUMN[s]])!.role === 'gap').length)], [graph]);
   const fade = useMemo(() => {
     const own = lit.keys ? keptFade((key) => lit.keys!.has(key), fadeLook) : () => 1;
     return changes.highlight ? faintest(own, highlightFade(changes.byId, (key) => recordAt(graph, key))) : own;
@@ -381,7 +388,7 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
     if (!item || !at) return null;
     const plain = item.role === 'record' && item.id ? undefined : plainOf(item);
     const id = plain ? key : item.id!;
-    const label: MapLabel = plain ? { title: plain.title, meta: plain.meta, shape: 'box' } : treeLabel(index, id);
+    const label: MapLabel = plain ? { title: plain.title, meta: plain.meta, shape: 'box' } : { ...treeLabel(index, id), ...(item.meta ? { meta: item.meta } : {}) };
     const border = (s: number) => BORDER * s;
     // Its text as large as its label fits, beside its toggle when it opens, and never under LEAST_TEXT (a longer title is cut, whole in its tooltip).
     const room = at.w - (item.opens ? TOGGLE_ROOM : 0);
@@ -426,7 +433,7 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
       }
     });
     const barred = !whole && (ITEM_HEIGHT * v.zoom < BAR_BELOW_PX || shown.length > BOX_BUDGET);
-    const out: TraceFrame = { plates: [], bars: [], barred, serves: [], marks: [] };
+    const out: TraceFrame = { plates: [], bars: [], barred, serves: [], journeyServes: [], carries: [], marks: [] };
     if (!barred) {
       for (const { key } of shown) {
         const home = plateFor(key);
@@ -448,14 +455,11 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
       const keys = sp.key !== null && sp.lit ? sp.lit.keys : lit.keys;
       if (keys) for (const { key } of shown) if (keys.has(key)) { const p = laid.places.get(key)!; out.marks.push({ key, x: p.x, y: p.y }); }
     }
-    // The serves links in view: each outcome's to the rows it is served by.
-    graph.serves.forEach(([o, u], i) => {
-      const a = laid.places.get(`outcome/${o}`);
-      const b = laid.places.get(`${u}|use-case`);
-      if (!a || !b) return;
-      if (!whole && (Math.max(a.y, b.y) + ITEM_HEIGHT < top || Math.min(a.y, b.y) > bottom)) return;
-      out.serves.push(i);
-    });
+    // The links in view: each outcome's to the rows and journeys it is served by, each journey's to the rows it carries out.
+    const inView = (a: BoxPlace | undefined, b: BoxPlace | undefined) => !!a && !!b && (whole || !(Math.max(a.y, b.y) + ITEM_HEIGHT < top || Math.min(a.y, b.y) > bottom));
+    graph.serves.forEach(([o, u], i) => { if (inView(laid.places.get(`outcome/${o}`), laid.places.get(`${u}|use-case`))) out.serves.push(i); });
+    graph.journeyServes.forEach(([o, j], i) => { if (inView(laid.places.get(`outcome/${o}`), laid.places.get(`journey/${j}`))) out.journeyServes.push(i); });
+    laid.carries.forEach((c, i) => { if (inView(laid.places.get(c.from), laid.places.get(c.to))) out.carries.push(i); });
     return out;
   }, [laid, graph, plateFor, lit]);
 
@@ -486,22 +490,54 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
         c.moveTo(x0, y0);
         c.bezierCurveTo(x0 + bend, y0, x1 - bend, y1, x1, y1);
       };
-      // The serves links: lit on the path, faint off it.
-      const onPath = (o: string, u: string) => (spotLit ?? lit).serves.has(`${o}>${u}`);
+      // The serves links and the journeys' lines: lit on the path, faint off it.
+      const onPath = (from: string, to: string) => (spotLit ?? lit).links.has(`${from}>${to}`);
       const anyLit = !!(spotLit ?? lit).keys;
+      const drawn: { a: string; b: string; on: boolean; label?: string }[] = [
+        ...frame.serves.map((i) => { const [o, u] = graph.serves[i]; return { a: `outcome/${o}`, b: `${u}|use-case`, on: onPath(o, u) }; }),
+        ...frame.journeyServes.map((i) => { const [o, j] = graph.journeyServes[i]; return { a: `outcome/${o}`, b: `journey/${j}`, on: onPath(o, j) }; }),
+        ...frame.carries.map((i) => { const l = laid.carries[i]; return { a: l.from, b: l.to, on: onPath(l.journey, l.useCase), label: l.label }; }),
+      ];
       for (const strong of [false, true]) {
         c.globalAlpha = strong ? 0.9 : anyLit ? 0.18 : 0.4;
         c.strokeStyle = lk.discoveryEdge;
         c.lineWidth = Math.max(0.75, Math.min(2.5, (strong ? 2 : 1.25) * v.zoom));
         c.beginPath();
-        for (const i of frame.serves) {
-          const [o, u] = graph.serves[i];
-          if (onPath(o, u) !== strong) continue;
-          const a = placeAt(`outcome/${o}`, now);
-          const b = placeAt(`${u}|use-case`, now);
+        for (const d of drawn) {
+          if (d.on !== strong) continue;
+          const a = placeAt(d.a, now);
+          const b = placeAt(d.b, now);
           if (a && b) curve(a, b);
         }
         c.stroke();
+      }
+      // Each journey line's steps' numbers, in a pill at the line's middle, while they read.
+      const px = CARRY_FONT * v.zoom;
+      if (px >= 6) {
+        c.save();
+        c.font = fontFor(fonts, 'badge', px);
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        for (const d of drawn) {
+          if (!d.label) continue;
+          const a = placeAt(d.a, now);
+          const b = placeAt(d.b, now);
+          if (!a || !b) continue;
+          const w = c.measureText(d.label).width + px;
+          const x = (X(a.x + a.w) + X(b.x)) / 2;
+          const y = (Y(a.y + a.h / 2) + Y(b.y + b.h / 2)) / 2;
+          c.globalAlpha = d.on ? 1 : anyLit ? 0.35 : 0.85;
+          c.beginPath();
+          c.roundRect(x - w / 2, y - px * 0.75, w, px * 1.5, px * 0.75);
+          c.fillStyle = lk.sheet;
+          c.fill();
+          c.strokeStyle = lk.discoveryEdge;
+          c.lineWidth = 1;
+          c.stroke();
+          c.fillStyle = lk.ink;
+          c.fillText(d.label, x, y);
+        }
+        c.restore();
       }
       // The selection's path across its row, and the hover's: from each box on it to the next, column to column.
       for (const path of [lit, ...(spotLit ? [spotLit] : [])]) {
@@ -620,7 +656,8 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
     const v = view.current;
     if (box && y >= box.y && y <= box.y + HEAD_PX) {
       const column = TRACE_COLUMNS.findIndex((_, i) => { const l = columnLeft(i) * v.zoom + v.x; return x >= l && x <= l + ITEM_WIDTH * v.zoom; });
-      if (column >= 1) onEvery(TRACE_STAGES[column - 1]);
+      const stage = stageOfColumn(column);
+      if (stage) onEvery(stage);
       return;
     }
     const hit = hitAt(x, y);
@@ -683,9 +720,11 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
         outsideTop: laid.outsideTop,
         ordered: lastTraceOrder(),
         rows: [...laid.rows.keys()],
-        columns: TRACE_COLUMNS.map((c, i) => ({ name: TRACE_COLUMN_LABELS[c], count: counts[i] ?? 0, open: i > 0 && every[TRACE_STAGES[i - 1]], rollup: rolls[i] ? rollupText(rolls[i]!) : null })),
+        columns: TRACE_COLUMNS.map((c, i) => ({ name: TRACE_COLUMN_LABELS[c], count: counts[i] ?? 0, open: ((stage) => !!stage && every[stage])(stageOfColumn(i)), rollup: rolls[i] ? rollupText(rolls[i]!) : null })),
         lines: [
-          ...frame.serves.map((i) => ({ from: `outcome/${graph.serves[i][0]}`, to: `${graph.serves[i][1]}|use-case`, kind: 'serves' as const, lit: path.serves.has(`${graph.serves[i][0]}>${graph.serves[i][1]}`) })),
+          ...frame.serves.map((i) => ({ from: `outcome/${graph.serves[i][0]}`, to: `${graph.serves[i][1]}|use-case`, kind: 'serves' as const, lit: path.links.has(`${graph.serves[i][0]}>${graph.serves[i][1]}`) })),
+          ...frame.journeyServes.map((i) => ({ from: `outcome/${graph.journeyServes[i][0]}`, to: `journey/${graph.journeyServes[i][1]}`, kind: 'serves' as const, lit: path.links.has(`${graph.journeyServes[i][0]}>${graph.journeyServes[i][1]}`) })),
+          ...frame.carries.map((i) => { const l = laid.carries[i]; return { from: l.from, to: l.to, kind: 'carries' as const, lit: path.links.has(`${l.journey}>${l.useCase}`), label: l.label }; }),
           ...path.lines.map(([from, to]) => ({ from, to, kind: 'path' as const, lit: true })),
         ],
         boxes: frame.plates.map((p) => {
@@ -736,7 +775,7 @@ function markTree(graph: TraceGraph): MarkTree {
   const known = treeCache.get(graph);
   if (known) return known;
   const nodes = new Map<string, { parent: string | null }>();
-  for (const [key, item] of graph.items) nodes.set(key, { parent: item.parent ?? (item.row && item.column > 1 ? `${item.row}|use-case` : null) });
+  for (const [key, item] of graph.items) nodes.set(key, { parent: item.parent ?? (item.row && item.column > STAGE_COLUMN['use-case'] ? `${item.row}|use-case` : null) });
   const tree: MarkTree = { nodes, idOf: (place) => recordAt(graph, place), placeOfId: (id) => graph.boxesOf.get(id)?.[0] ?? null };
   treeCache.set(graph, tree);
   return tree;
@@ -749,7 +788,7 @@ function paintRows(g: CanvasRenderingContext2D, laid: TraceLaid, graph: TraceGra
   g.strokeStyle = look.rule;
   g.lineWidth = 1;
   g.beginPath();
-  const left = X(columnLeft(1) - 12);
+  const left = X(columnLeft(STAGE_COLUMN['use-case']) - 12);
   const right = X(laid.width + 12);
   for (const band of laid.rows.values()) {
     const y = Y(band.y + band.h + 11);
@@ -837,19 +876,21 @@ function paintHeads(g: CanvasRenderingContext2D, counts: readonly number[], roll
   TRACE_COLUMNS.forEach((c, i) => {
     const mid = (columnLeft(i) + ITEM_WIDTH / 2) * v.zoom + v.x;
     const name = TRACE_COLUMN_LABELS[c];
-    // A stage's count is its rows with a gap; the outcomes' and use cases' their own.
-    const countText = i >= 2 ? (counts[i] ? `${counts[i]} with gaps` : 'no gaps') : String(counts[i] ?? 0);
+    // A stage's count is its rows with a gap; the outcomes', journeys' and use cases' their own.
+    const stage = stageOfColumn(i);
+    const gaps = !!stage && stage !== 'use-case';
+    const countText = gaps ? (counts[i] ? `${counts[i]} with gaps` : 'no gaps') : String(counts[i] ?? 0);
     g.font = fontFor(fonts, 'title', HEAD_FONT);
     const nameW = g.measureText(name).width;
     g.font = fontFor(fonts, 'meta', HEAD_FONT - 1);
     const countW = g.measureText(countText).width;
-    const glyph = i >= 1 ? 14 : 0;
+    const glyph = stage ? 14 : 0;
     const start = mid - (glyph + nameW + 6 + countW) / 2;
     const roll = rolls[i];
     const line = box.y + (roll ? 9 : HEAD_PX / 2);
     g.textAlign = 'left';
     if (glyph) {
-      const open = every[TRACE_STAGES[i - 1]];
+      const open = every[stage!];
       const cx = start + 5;
       const cy = line;
       g.fillStyle = look.muted;
@@ -862,7 +903,7 @@ function paintHeads(g: CanvasRenderingContext2D, counts: readonly number[], roll
     g.fillStyle = look.ink;
     g.font = fontFor(fonts, 'title', HEAD_FONT);
     g.fillText(name, start + glyph, line);
-    g.fillStyle = i >= 2 && counts[i] ? look.warn : look.muted;
+    g.fillStyle = gaps && counts[i] ? look.warn : look.muted;
     g.font = fontFor(fonts, 'meta', HEAD_FONT - 1);
     g.fillText(countText, start + glyph + nameW + 6, line);
     if (roll) {

@@ -8,7 +8,7 @@ import type { ProductServes, RecordServes } from './read-model.ts';
 import { servesReader, type ServesReader } from './reader.ts';
 import { GET_SERVES_IDENTITY, LIST_SERVES_IDENTITY } from './queries.generated.ts';
 
-/** The outcomes the record serves, and the use cases it serves them through. */
+/** The outcomes the record serves, and the use cases and journeys it serves them through. */
 export function getServes(reader: ServesReader, input: { id: string }): RecordServes {
   const serves = reader.servesOf(input.id);
   if (!serves) throw new StoreError([{ rule: 'missing', message: `there is no record ${input.id}` }]);
@@ -21,7 +21,7 @@ export const GET_SERVES: QueryDefinition<{ id: string }, RecordServes, ServesRea
   input: { id: id('The record.', 'required') },
   reader: servesReader,
   run: getServes,
-  text: (s) => `${s.id} serves ${s.outcomes.length ? s.outcomes.join(', ') : 'no outcome'}${s.useCases.length ? ` through ${s.useCases.join(', ')}` : ''}`,
+  text: (s) => `${s.id} serves ${s.outcomes.length ? s.outcomes.join(', ') : 'no outcome'}${s.useCases.length ? ` through ${s.useCases.join(', ')}` : ''}${s.journeys.length ? ` via ${s.journeys.join(', ')}` : ''}`,
 };
 
 /** Each record of the product's space that serves an outcome, and the aggregates, read models and obligations none reaches. */

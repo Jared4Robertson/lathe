@@ -45,6 +45,7 @@ export const ALLOWED_LEVELS: Readonly<Record<string, readonly string[]>> = {
   view_test: ['unit', 'browser'],
   endpoint_test: ['service', 'system'],
   flow_test: ['system', 'browser'],
+  journey_test: ['service', 'system', 'browser'],
   integration_test: ['integration', 'service', 'system'],
   pattern_rule_test: ['unit', 'integration', 'service', 'system', 'browser'],
   standard_rule_test: ['unit', 'integration', 'service', 'system', 'browser'],
@@ -110,7 +111,7 @@ const list = (items: readonly string[]) => items.map(sqlString).join(', ');
  * its describes' names), with test_case_id, each ID it or its describes name; test_level_allowed, the levels each test
  * kind allows (typed by the schema's test_level, so a level it does not know fails the load); source_file, each of
  * the product's source files and whether a technical record names it or a folder holding it (trace/source-files.ts);
- * record_serves, each record a use case reaches with each outcome it serves through it (trace/serves.ts);
+ * record_serves, each record a use case or a journey's handoff reaches with each outcome it serves through it (trace/serves.ts);
  * and package_facts, the packages the product's package.json files list (trace/packages.ts).
  */
 export const FACT_TABLES_SQL = `
@@ -162,8 +163,17 @@ const UNTRACED_KINDS = ['flow_step', 'command', 'query', 'ui_component'] as cons
 /** The "at least one" and "exactly one" minimums, by stage, reported as coverage gaps. */
 export const GAP_RULES: GapRule[] = [
   // Discovery: the trace runs from a business outcome through the capabilities that serve it.
+  // A capability must serve each outcome even when a journey does: capabilities group what the business can do,
+  // journeys put it in order.
   gap('outcome-not-served', 'discovery', ['business_outcome', 'capability'], 'A business outcome no capability serves.',
-    `SELECT o.id, 'Business outcome ' || o.id || ' is served by no capability.' AS message FROM business_outcome o WHERE NOT EXISTS (SELECT 1 FROM serves s WHERE s.target_id = o.id)`),
+    `SELECT o.id, 'Business outcome ' || o.id || ' is served by no capability.' AS message FROM business_outcome o
+WHERE NOT EXISTS (SELECT 1 FROM serves s JOIN capability c ON c.id = s.source_id WHERE s.target_id = o.id)`),
+  gap('journey-serves-no-outcome', 'discovery', ['journey', 'business_outcome'], 'A journey that serves no business outcome.',
+    `SELECT j.id, 'Journey ' || j.id || ' serves no business outcome: link the outcome its result moves.' AS message FROM journey j
+WHERE NOT EXISTS (SELECT 1 FROM serves s WHERE s.source_id = j.id)`),
+  gap('journey-without-main-path', 'discovery', ['journey', 'journey_step'], 'A journey with no step on its main path.',
+    `SELECT j.id, 'Journey ' || j.id || ' has no step on its main path: write the steps from its trigger to its result.' AS message FROM journey j
+WHERE NOT EXISTS (SELECT 1 FROM journey_step s WHERE s.journey_id = j.id AND s.path = 'main')`),
   ...MEASURE_GAPS,
   // Domain model.
   gap('domain-without-aggregate', 'domain-model', ['domain', 'aggregate'], 'A domain with no aggregate.',
@@ -207,6 +217,10 @@ WHERE NOT EXISTS (SELECT 1 FROM reads r WHERE r.source_id = m.id)${schema.relati
   gap('use-case-without-requirement', 'use-cases', ['use_case', 'uc_requirement'], 'A use case with no UC requirement that follows no pattern.',
     `SELECT u.id, 'Use case ' || u.id || ' has no UC requirement and follows no pattern.' AS message FROM use_case u
 WHERE NOT EXISTS (SELECT 1 FROM uc_requirement r WHERE r.use_case_id = u.id) AND NOT EXISTS (SELECT 1 FROM follows f WHERE f.source_id = u.id)`),
+  // A journey is written before the use cases it needs: a step that carries out nothing yet is one to write.
+  gap('journey-step-unlinked', 'use-cases', ['journey_step', 'use_case', 'policy'], 'A journey step that carries out no use case or policy yet.',
+    `SELECT s.id, 'Journey step ' || s.id || ' carries out no use case or policy yet: write the use case (or the policy, for a handoff) and link the step.' AS message FROM journey_step s
+WHERE NOT EXISTS (SELECT 1 FROM carries_out c WHERE c.source_id = s.id)`),
   gap('pattern-without-rule', 'use-cases', ['pattern', 'pattern_rule'], 'A pattern with no rule.',
     `SELECT p.id, 'Pattern ' || p.id || ' has no rule.' AS message FROM pattern p WHERE NOT EXISTS (SELECT 1 FROM pattern_rule r WHERE r.pattern_id = p.id)`),
   // Interaction design.
@@ -276,6 +290,9 @@ WHERE r.kind IN (${list(UNTRACED_KINDS)}) AND NOT EXISTS (SELECT 1 FROM trace_li
   // Test plan; an obligation's own test is its proof, counted above.
   gap('flow-without-test', 'test-plan', ['flow', 'flow_test'], 'A flow with no flow test of its main path.',
     `SELECT f.id, 'Flow ' || f.id || ' has no flow test.' AS message FROM flow f WHERE NOT EXISTS (SELECT 1 FROM flow_test t WHERE t.flow_id = f.id)`),
+  gap('journey-without-test', 'test-plan', ['journey', 'journey_test'], 'A journey with no journey test.',
+    `SELECT j.id, 'Journey ' || j.id || ' has no journey test: add the one that drives its main path from its trigger to its result.' AS message FROM journey j
+WHERE NOT EXISTS (SELECT 1 FROM journey_test t WHERE t.journey_id = j.id)`),
 ];
 
 /**

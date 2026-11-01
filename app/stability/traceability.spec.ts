@@ -71,7 +71,7 @@ test.describe('Traceability flows', () => {
     await openPage(page, `/${useCase}?stage=trace`);
     await traceDrawn(page, 900);
     const row = await traceSceneOf(page, true);
-    expect(row.columns.map((c) => c.name)).toEqual(['Outcome', 'Use case', 'Design flow', 'Technical flow', 'Acceptance test suite']);
+    expect(row.columns.map((c) => c.name)).toEqual(['Outcome', 'Journey', 'Use case', 'Design flow', 'Technical flow', 'Acceptance test suite']);
     expect(row.rows.filter((r) => r === useCase)).toHaveLength(1);
     expect(box(row, `${useCase}|use-case`)).toMatchObject({ focus: true });
     expect(row.lines.filter((l) => l.kind === 'serves' && l.to === `${useCase}|use-case`).map((l) => l.from).sort()).toEqual(outcomes.map((o) => `outcome/${o}`).sort());
@@ -236,8 +236,13 @@ test.describe('Traceability flows', () => {
       await whole();
       const outcomes = served.get(id)!.outcomes;
       expect(outcomes.length).toBeGreaterThan(0);
-      await expect(wiki.getByRole('list', { name: `Outcomes ${id} serves` }).getByRole('link')).toHaveCount(outcomes.length);
-      for (const o of outcomes) await expect(wiki.getByRole('list', { name: `Outcomes ${id} serves` }).getByRole('link', { name: new RegExp(`^${o} `) })).toBeVisible();
+      const list = wiki.getByRole('list', { name: `Outcomes ${id} serves` });
+      // One item per outcome; an outcome a journey carries also names that journey after "via" (a link of its own).
+      await expect(list.getByRole('listitem')).toHaveCount(outcomes.length);
+      for (const o of outcomes) await expect(list.getByRole('link', { name: new RegExp(`^${o} `) })).toBeVisible();
+      const journeys = served.get(id)!.journeys;
+      const via = await list.locator('a[href^="/LA-JR"]').evaluateAll((links) => links.map((a) => a.getAttribute('href')!.slice(1)));
+      expect([...new Set(via)].sort()).toEqual(journeys);
     }
     // S03: an outcome leads to its own page.
     const first = served.get(viewRequirement)!.outcomes[0];

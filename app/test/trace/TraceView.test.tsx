@@ -19,6 +19,16 @@ const withOutcome = () => {
   addRows(data, 'use_case', { id: 'P-D-UC02', title: 'Return a thing', capability_id: 'P-D-CAP01', goal: 'A member brings a thing back.' });
   return data;
 };
+/** The product with a journey serving its outcome: lending (P-D-UC01), then returning (P-D-UC02). */
+const withJourney = () => {
+  const data = withOutcome();
+  addRows(data, 'journey', { id: 'P-JR01', title: 'Lend a thing and get it back', product_id: 'P', trigger: 'A member wants a thing.', result: 'The thing is back on the shelf.' });
+  addRows(data, 'journey_step',
+    { id: 'P-JR01-S01', title: 'The librarian lends the thing', journey_id: 'P-JR01', path: 'main', position: 1 },
+    { id: 'P-JR01-S02', title: 'The member brings it back', journey_id: 'P-JR01', path: 'main', position: 2 });
+  addRows(data, 'carries_out', { source_id: 'P-JR01-S01', target_id: 'P-D-UC01' }, { source_id: 'P-JR01-S02', target_id: 'P-D-UC02' });
+  return addRows(data, 'serves', { source_id: 'P-JR01', target_id: 'P-BO01' });
+};
 const traceStage = () => screen.getByRole('region', { name: 'Trace stage' });
 const stageButton = (name: string) => within(screen.getByRole('group', { name: 'Stage' })).getByRole('button', { name });
 const counts = () => document.querySelector('.header-strip-counts');
@@ -43,18 +53,26 @@ const click = async (key: string, toggle = false) => {
 const toolbarButton = (name: string) => within(traceStage()).getByRole('button', { name });
 
 describe('the Trace stage', () => {
-  it('LA-V98-R15-T01 The Trace stage draws one row per use case across the five columns, each use case once, with a line from its outcome, read from list-traced-use-cases', async () => {
-    const { requests } = await openTrace('/P-D-UC01?stage=trace');
+  it('LA-V98-R15-T01 The Trace stage draws one row per use case across the six columns, each use case once, with a line from its outcome, read from list-traced-use-cases', async () => {
+    const { requests } = await openTrace('/P-D-UC01?stage=trace', withJourney());
     const scene = await drawn();
     expect(requests).toContain('GET /api/trace/list-traced-use-cases?product_id=P');
-    expect(scene.columns.map((c) => c.name)).toEqual(['Outcome', 'Use case', 'Design flow', 'Technical flow', 'Acceptance test suite']);
+    expect(scene.columns.map((c) => c.name)).toEqual(['Outcome', 'Journey', 'Use case', 'Design flow', 'Technical flow', 'Acceptance test suite']);
+    expect(scene.columns.map((c) => c.count)).toEqual([1, 1, 2, 1, 1, 2]);
     expect(scene.rows).toEqual(['P-D-UC01', 'P-D-UC02']);
-    // Each use case once, in the Use case column; the outcome once, with a line to each row it serves.
+    // Each use case once, in the Use case column; the outcome once, with a line to each row it serves and to the journey.
     expect(scene.boxes.filter((b) => b.id === 'P-D-UC01')).toHaveLength(1);
-    expect(box(scene, 'P-D-UC01|use-case')).toMatchObject({ column: 1, focus: true, kind: 'use_case' });
+    expect(box(scene, 'P-D-UC01|use-case')).toMatchObject({ column: 2, focus: true, kind: 'use_case' });
     expect(box(scene, 'outcome/P-BO01')).toMatchObject({ column: 0 });
-    expect(scene.lines.filter((l) => l.kind === 'serves').map((l) => `${l.from}>${l.to}`)).toEqual(['outcome/P-BO01>P-D-UC01|use-case', 'outcome/P-BO01>P-D-UC02|use-case']);
+    expect(scene.lines.filter((l) => l.kind === 'serves').map((l) => `${l.from}>${l.to}`)).toEqual(['outcome/P-BO01>P-D-UC01|use-case', 'outcome/P-BO01>P-D-UC02|use-case', 'outcome/P-BO01>journey/P-JR01']);
+    // The journey beside the rows, its proof on its box, a line to each row its steps carry out labeled with the step.
+    expect(box(scene, 'journey/P-JR01')).toMatchObject({ column: 1, row: null, kind: 'journey', meta: '2 steps · 0 proved · no test', opens: true, open: false });
+    expect(scene.lines.filter((l) => l.kind === 'carries').map((l) => `${l.from}>${l.to} ${l.label}`)).toEqual(['journey/P-JR01>P-D-UC01|use-case 1', 'journey/P-JR01>P-D-UC02|use-case 2']);
     await waitFor(() => expect(counts()).toHaveTextContent('2 use cases · 2 with gaps · 0 serve no outcome'));
+    // Its toggle opens it to its steps, each line then from its step.
+    await click('journey/P-JR01', true);
+    await waitFor(async () => expect(box(await drawn(), 'journey/P-JR01/P-JR01-S02')).toMatchObject({ column: 1, depth: 1, meta: 'Step 2 · P-D-UC02 · ✗' }));
+    expect((await drawn()).lines.filter((l) => l.kind === 'carries').map((l) => l.from)).toEqual(['journey/P-JR01/P-JR01-S01', 'journey/P-JR01/P-JR01-S02']);
   });
 
   it('LA-V98-R16-T02 A closed row shows a status per stage, a stage with a gap a dashed box', async () => {
@@ -80,7 +98,7 @@ describe('the Trace stage', () => {
     // Expand all, Suite: the suite of every row, and the column's name says so.
     const every = within(traceStage()).getByRole('group', { name: 'Expand all' });
     fireEvent.click(within(every).getByRole('button', { name: 'Suite' }));
-    await waitFor(async () => expect((await drawn()).columns[4].open).toBe(true));
+    await waitFor(async () => expect((await drawn()).columns[5].open).toBe(true));
     expect(box(await drawn(), 'P-D-UC02|suite')!.open).toBe(true);
     expect(within(every).getByRole('button', { name: 'Suite' })).toHaveAttribute('aria-pressed', 'true');
     // Expand all, Technical: every step's chain, grouped by step.
@@ -149,7 +167,7 @@ describe('the Trace stage', () => {
       await openTrace('/P-D-UC01?stage=trace');
       const list = await within(traceStage()).findByRole('region', { name: 'Trace rows' });
       expect(traceStage().querySelector('.trace-flow')).toBeNull();
-      expect(within(list).getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual(['Outcome', 'Use case', 'Design flow', 'Technical flow', 'Acceptance test suite']);
+      expect(within(list).getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual(['Outcome', 'Journey', 'Use case', 'Design flow', 'Technical flow', 'Acceptance test suite']);
       const design = within(list).getByRole('region', { name: 'Design flow' });
       // Open (the place may keep it open from before).
       const toggle = within(design).getByRole('button', { name: /1 interface · all designed/ });
@@ -173,7 +191,7 @@ describe('the Trace stage', () => {
     await waitFor(async () => expect(box(await drawn(), 'P-D-UC02|use-case')?.pill).toBe('added'));
     const scene = await drawn();
     expect(box(scene, 'outcome/P-BO01')!.pill).toBe('added');
-    expect(scene.columns[1].rollup).toBe('1 new');
+    expect(scene.columns[2].rollup).toBe('1 new');
     await waitFor(async () => expect(box(await drawn(), 'P-D-UC01|design')!.strength).toBeLessThanOrEqual(0.2 + 1e-9));
   });
   it('LA-V98-R01-T01 Trace works on every focus: Ctrl+3 or the switch shows it, never disabled, on a use case, a requirement and a record no row shows', async () => {
