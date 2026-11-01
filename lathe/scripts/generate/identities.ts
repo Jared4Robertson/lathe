@@ -10,6 +10,7 @@
 // the endpoint's handler (the identity's name, ending in _IDENTITY, in the generated file).
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { byRecordId } from '../../src/platform/data/ids.ts';
 import { GENERATED_HEADER, type Generated } from './output.ts';
 
 type Row = Record<string, unknown>;
@@ -34,7 +35,6 @@ export interface Identity {
 }
 
 const SUFFIX = '_IDENTITY';
-const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id, 'en', { numeric: true });
 const snake = (name: string) => name.toUpperCase().replaceAll('-', '_');
 const quote = (text: string) => `'${text.replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`;
 const relative = (from: string, to: string) => {
@@ -123,7 +123,7 @@ export function readIdentities(repo: string): Identity[] {
   const constants = index(drafts.map((d) => ({ constant: d.constant, id: d.id })), 'constant');
   for (const [constant, own] of constants) if (own.length > 1) problems.push(`${own.map((d) => String(d.id)).join(', ')} share the constant ${constant}`);
   if (problems.length) throw new Error(`The records of Lathe's commands and queries disagree:\n${problems.map((p) => `- ${p}`).join('\n')}`);
-  return drafts.sort(byId);
+  return drafts.sort(byRecordId);
 }
 
 const identityText = (d: Identity) => `export const ${d.identity} = {
