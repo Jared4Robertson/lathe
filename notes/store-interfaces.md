@@ -42,10 +42,10 @@ The full description, with every column's meaning, is `store.schema` at run time
 | use-cases | `uc_requirement` | use_case (use_case_id) | statement, group_name? | `<use case>-R<nn>` |
 | use-cases | `pattern` | product (product_id) | description, notes? | `<P>-PAT-<name>` |
 | use-cases | `pattern_rule` | pattern (pattern_id) | statement, group_name?, notes? | `<pattern>-R<nn>` |
-| interaction-design | `interface` | product (product_id) | kind (web app/API/CLI/agent tools/desktop/other), description | `<P>-IF<nn>` |
-| interaction-design | `flow` | use_case (use_case_id) | interface_id (the interface it goes through) | `<use case>-FL<nn>`, `<nn>` its interface's number |
-| interaction-design | `flow_step` | flow (flow_id) | path, position (int) | `<flow>-S<nn>` |
-| interaction-design | `view` | none | route?, description, notes? | `<P>-V<nn>` |
+| interaction-design | `interface` | product (product_id) | kind (web app/API/CLI/agent tools/desktop/other), description, public; its roles as `interface_actor` rows | `<P>-IF<nn>` |
+| interaction-design | `flow` | use_case (use_case_id, one flow per use case) | title (its use case's) | `<use case>-FL` |
+| interaction-design | `flow_step` | flow (flow_id) | path, position (int), interface_id? (the one interface it is a variant of) | `<flow>-S<nn>` |
+| interaction-design | `view` | none | route?, interface_id? (the one interface that shows it), description, notes? | `<P>-V<nn>` |
 | interaction-design | `view_requirement` | view (view_id) | statement, group_name? | `<view>-R<nn>` |
 | interaction-design | `endpoint` | command (command_id) or query (query_id) | method (GET/POST/PUT/PATCH/DELETE/HEAD/OPTIONS), route, description, notes? | `<P>-<D>-EP<nn>` |
 | interaction-design | `api_requirement` | endpoint (endpoint_id) | statement, group_name? | `<endpoint>-R<nn>` |
@@ -88,6 +88,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | `check` (checking) | name | name, product_id?, position (int), severity (error/warning/error_or_warning), summary, explanation, query, kinds? (list) |
 | `entity_field` (part) | entity_id, position | entity_id, position (int), name, meaning, type? (text/whole number/decimal/date/time/date and time/yes/no), type_value_object_id?, type_aggregate_id?, required (bool), column_name?, example? |
 | `event_field` (part) | domain_event_id, position | domain_event_id, position (int), name, meaning, type? (text/whole number/decimal/date/time/date and time/yes/no), type_value_object_id?, type_aggregate_id?, required (bool), column_name?, example? |
+| `interface_actor` (part) | interface_id, position | interface_id, position (int), role_name |
 | `pattern_setting` (part) | pattern_id, position | pattern_id, position (int), name, meaning |
 | `product_kind` (declaration) | name | name, product_id, label, description, parent_kind, stage? (domain-model/use-cases/interaction-design/technical-specification/test-plan), obligation (bool), id_pattern?, id_example? |
 | `product_kind_field` (declaration) | kind, position | kind, position (int), name, type (text/integer/boolean/date), required (bool), description; a field named statement, goal, meaning or description is the kind's lead: at most one, and required |
@@ -106,17 +107,18 @@ The full description, with every column's meaning, is `store.schema` at run time
 | `calls` | domain | operation | domain_service | command→domain_service, query→domain_service |
 | `checks` | domain | command | specification | command→specification |
 | `exchanges_with` | product | flow_step | integration | flow_step→integration |
-| `follows` | product | follows_source | pattern | domain→pattern, use_case→pattern |
+| `follows` | product | follows_source | pattern | domain→pattern, use_case→pattern, interface→pattern |
 | `fulfills` (design) | product | flow_step | uc_requirement | flow_step→uc_requirement |
-| `happens_in` (one per source) | product | flow_step | view | flow_step→view |
 | `has_many` | product | entity | entity | entity→entity |
 | `has_one` | product | entity | entity | entity→entity |
 | `hears` (one per source) | product | policy | domain_event | policy→domain_event |
 | `invokes` (one per source) | product | flow_step | operation | flow_step→command, flow_step→query |
 | `measured_by` | product | business_outcome | record_id | 12 pairs: business_outcome→every test kind; a product adds its own kinds with a product_relation named measured_by |
 | `meets` | product | technical_record | standard_rule | 14 pairs: every member of technical_record (the technical kinds; a standard rule is proved by its standard rule tests) |
+| `offers` | product | interface | use_case | interface→use_case |
 | `persists` (one per source, one per target) | product | repository | aggregate | repository→aggregate |
 | `stored_in` (one per source) | product | stored_in_source | data_store | repository→data_store, reader→data_store, table→data_store |
+| `presents` | product | view | operation | view→command, view→query |
 | `provided_by` (one per source) | product | data_store | integration | data_store→integration |
 | `raises` | aggregate | command | domain_event | command→domain_event |
 | `reads` | domain | reads_source | aggregate | read_model→aggregate, specification→aggregate |
@@ -138,7 +140,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 Notes on the tables:
 - **Fields.** `entity_field`, `value_object_field`, `event_field` and `read_model_field` share one shape. A field's type is exactly one of `type` (a basic type: text, whole number, decimal, date, time, date and time, yes/no), `type_value_object_id` or `type_aggregate_id` (a reference by ID; another domain's aggregate is allowed). `required` says whether every record gives it a value; `column_name` names its column when that differs from the field's name (Member ID in `id`). A name is unique in its owner, trimmed and in any letter case. An entity's value objects are the ones its fields are typed with: no link stores them twice.
 - **Tables and keys.** A table's columns follow from its entity's or read model's fields (a value object's fields flattened), so `table` stores its `name`, `storage` (`table`, `view`, `materialized view`, `browser storage`, `file`, `in memory`; an entity's is never a view or a materialized view) and its `table_key` rows (none for browser storage, a file or in memory): `primary` (at most one), `unique` (with the `invariant_id` it enforces and a `condition` for a partial key, both optional), `foreign` (with its `target_table_id`, required, of the same domain) and `index`. An entity has at most one table: a child entity with `in_root_table: true` has none and is stored in its root's table.
-- **Exactly one, at most one.** One flow per use case and interface (`UNIQUE (use_case_id, interface_id)`), one test per constraint, invariant, specification, policy and flow, one technical record per design record (and one table per entity or read model): a `UNIQUE` parent column. One pattern rule test per rule and domain: `UNIQUE (pattern_rule_id, domain_id)`. A policy hears one event, a step invokes one operation and happens in one view: link tables with a unique `source_id`. "At least one" is a check's to report, never a refusal.
+- **Exactly one, at most one.** One flow per use case (`UNIQUE (use_case_id)`), one test per constraint, invariant, specification, policy and flow, one technical record per design record (and one table per entity or read model): a `UNIQUE` parent column. One pattern rule test per rule and domain: `UNIQUE (pattern_rule_id, domain_id)`. A policy hears one event, a step invokes one operation: link tables with a unique `source_id`. "At least one" is a check's to report, never a refusal.
 - **Product kinds.** A `product_kind` row with its `product_kind_field` rows gets a table of its own named after it: `id`, `title`, `<parent_kind>_id` (required, a foreign key to the parent kind's table), then its fields typed `text`, `integer`, `boolean` or `date`, `NOT NULL` when required. It may sit in any of the six stages (or none) under any kind, with its own free-form ID pattern (no `id_scope`). `obligation: true` joins the `obligation` supertype. A `product_relation` with a new name gets a link table of scope `product` (its ends point at the one source or target kind, else at `record_id`); one with Lathe's name adds a pair to that relation when the link table's ends accept the two kinds. A product kind may not take a table name Lathe has.
 
 ## What the database refuses, and the validation queries
@@ -153,8 +155,7 @@ Validation queries (`validationQueries(schema)`, run on each new data database j
 | `link-crosses-product` | A link whose ends sit in different products (an ownerless record's product comes from its ID). |
 | `link-scope` | A link of a `domain`-scoped relation across domains (`checks`, `reads`, `selects_by`, `calls`), or of the `aggregate`-scoped `raises` across aggregates. |
 | `step-fulfills-own-use-case` | A flow step fulfilling a UC requirement of another use case. |
-| `flow-id-interface` | A flow whose ID is not its use case's ID, FL and its interface's number. |
-| `step-fits-interface` | A step of a flow through an API, a CLI or agent tools that happens in a view. |
+| `flow-id` | A flow whose ID is not its use case's ID and FL. |
 | `policy-hears-published` | A policy hearing another domain's event that is not published. |
 | `id-prefix` | An ID that does not start with its scope's ID and a hyphen: its parent's, its domain's (so a query and its read model, or an endpoint and its operation, are of one domain) or its product's; and an ownerless record whose prefix names no product, or for a specification no domain. |
 | `aggregate-root` | An aggregate with more than one root entity. |
