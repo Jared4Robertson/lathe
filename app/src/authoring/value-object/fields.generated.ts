@@ -13,7 +13,7 @@ export const VALUE_OBJECT_FIELDS = {
     id: { kind: 'column', table: 'value_object', column: 'id', required: true, clearable: false },
     title: { kind: 'column', table: 'value_object', column: 'title', required: false, clearable: false },
     description: { kind: 'column', table: 'value_object', column: 'description', required: false, clearable: false },
-    fields: { kind: 'parts', table: 'value_object_field', columns: ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'], description: 'Its fields in order, each a name, what it means, exactly one type (a basic type, another value object or an aggregate), whether it is required, and its column\'s name and an example when they help. Replaces the list.', required: false, clearable: false },
+    fields: { kind: 'parts', table: 'value_object_field', columns: ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'], description: 'Its fields in order, each a name, what it means, exactly one type (a basic type, another value object or an aggregate), whether it is required, and its column\'s name and an example when they help.', required: false, clearable: false },
   },
   '/api/value-object/remove-value-object': {
     id: { kind: 'column', table: 'value_object', column: 'id', required: true, clearable: false },
@@ -44,8 +44,8 @@ export const VALUE_OBJECT_FIELDS = {
     id: { kind: 'column', table: 'value_type', column: 'id', required: true, clearable: false },
     title: { kind: 'column', table: 'value_type', column: 'title', required: false, clearable: false },
     file: { kind: 'column', table: 'value_type', column: 'file', required: false, clearable: true },
-    meets: { kind: 'ids', description: 'The standard rules it meets. Replaces the list.', required: false, clearable: false },
-    packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files. Replaces the list.', required: false, clearable: false },
+    meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
+    packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files.', required: false, clearable: false },
   },
   '/api/value-object/remove-value-type': {
     id: { kind: 'column', table: 'value_type', column: 'id', required: true, clearable: false },
@@ -79,7 +79,7 @@ export const VALUE_OBJECT_FIELDS = {
     accepts: { kind: 'column', table: 'constraint_test', column: 'accepts', required: false, clearable: false },
     refuses: { kind: 'column', table: 'constraint_test', column: 'refuses', required: false, clearable: false },
     notes: { kind: 'column', table: 'constraint_test', column: 'notes', required: false, clearable: true },
-    starts_from: { kind: 'ids', description: 'The test data sets it starts from. Replaces the list.', required: false, clearable: false },
+    starts_from: { kind: 'ids', description: 'The test data sets it starts from.', required: false, clearable: false },
   },
   '/api/value-object/remove-constraint-test': {
     id: { kind: 'column', table: 'constraint_test', column: 'id', required: true, clearable: false },

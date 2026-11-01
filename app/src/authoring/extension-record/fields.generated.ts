@@ -13,9 +13,9 @@ export const EXTENSION_RECORD_FIELDS = {
   },
   '/api/extension-record/change-extension-record': {
     id: { kind: 'id', description: 'The record.', required: true, clearable: false },
-    values: { kind: 'values', description: 'Its title or declared fields to change, by column name; null clears an optional field. A title a field of its kind gives follows that field.', required: false, clearable: false },
-    links: { kind: 'links', description: 'The records it links to, by relation: each list replaces that relation\'s links, and an empty one clears them.', required: false, clearable: false },
-    packages: { kind: 'texts', description: 'The packages it uses; the list replaces the list.', required: false, clearable: false },
+    values: { kind: 'values', description: 'Its title or declared fields to change, by column name. A title a field of its kind gives follows that field.', required: false, clearable: false },
+    links: { kind: 'links', description: 'The records it links to, by relation.', required: false, clearable: false },
+    packages: { kind: 'texts', description: 'The packages it uses.', required: false, clearable: false },
   },
   '/api/extension-record/remove-extension-record': {
     id: { kind: 'id', description: 'The record.', required: true, clearable: false },

@@ -17,8 +17,8 @@ export const ENTRY_POINT_FIELDS = {
     title: { kind: 'column', table: 'entry_point', column: 'title', required: false, clearable: false },
     file: { kind: 'column', table: 'entry_point', column: 'file', required: false, clearable: true },
     description: { kind: 'column', table: 'entry_point', column: 'description', required: false, clearable: false },
-    packages: { kind: 'texts', description: 'The packages it uses. Replaces the list.', required: false, clearable: false },
-    meets: { kind: 'ids', description: 'The standard rules it meets. Replaces the list.', required: false, clearable: false },
+    packages: { kind: 'texts', description: 'The packages it uses.', required: false, clearable: false },
+    meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
   },
   '/api/entry-point/remove-entry-point': {
     id: { kind: 'column', table: 'entry_point', column: 'id', required: true, clearable: false },

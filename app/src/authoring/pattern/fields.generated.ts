@@ -16,7 +16,7 @@ export const PATTERN_FIELDS = {
     title: { kind: 'column', table: 'pattern', column: 'title', required: false, clearable: false },
     description: { kind: 'column', table: 'pattern', column: 'description', required: false, clearable: false },
     notes: { kind: 'column', table: 'pattern', column: 'notes', required: false, clearable: true },
-    settings: { kind: 'parts', table: 'pattern_setting', columns: ['name', 'meaning'], description: 'Its settings in order, each a name (lower case with underscores) and what a follower decides in it. Replaces the list.', required: false, clearable: false },
+    settings: { kind: 'parts', table: 'pattern_setting', columns: ['name', 'meaning'], description: 'Its settings in order, each a name (lower case with underscores) and what a follower decides in it.', required: false, clearable: false },
   },
   '/api/pattern/remove-pattern': {
     id: { kind: 'column', table: 'pattern', column: 'id', required: true, clearable: false },
@@ -70,7 +70,7 @@ export const PATTERN_FIELDS = {
     when: { kind: 'column', table: 'pattern_rule_test', column: 'when', required: false, clearable: false },
     then: { kind: 'column', table: 'pattern_rule_test', column: 'then', required: false, clearable: false },
     notes: { kind: 'column', table: 'pattern_rule_test', column: 'notes', required: false, clearable: true },
-    starts_from: { kind: 'ids', description: 'The test data sets it starts from. Replaces the list.', required: false, clearable: false },
+    starts_from: { kind: 'ids', description: 'The test data sets it starts from.', required: false, clearable: false },
   },
   '/api/pattern/remove-pattern-rule-test': {
     id: { kind: 'column', table: 'pattern_rule_test', column: 'id', required: true, clearable: false },

@@ -13,7 +13,7 @@ export const SPECIFICATION_FIELDS = {
     id: { kind: 'column', table: 'specification', column: 'id', required: true, clearable: false },
     title: { kind: 'column', table: 'specification', column: 'title', required: false, clearable: false },
     statement: { kind: 'column', table: 'specification', column: 'statement', required: false, clearable: false },
-    reads: { kind: 'ids', description: 'The aggregates it reads, of its own domain. Replaces the list.', required: false, clearable: false },
+    reads: { kind: 'ids', description: 'The aggregates it reads, of its own domain.', required: false, clearable: false },
   },
   '/api/specification/remove-specification': {
     id: { kind: 'column', table: 'specification', column: 'id', required: true, clearable: false },
@@ -30,8 +30,8 @@ export const SPECIFICATION_FIELDS = {
     id: { kind: 'column', table: 'predicate', column: 'id', required: true, clearable: false },
     title: { kind: 'column', table: 'predicate', column: 'title', required: false, clearable: false },
     file: { kind: 'column', table: 'predicate', column: 'file', required: false, clearable: true },
-    meets: { kind: 'ids', description: 'The standard rules it meets. Replaces the list.', required: false, clearable: false },
-    packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files. Replaces the list.', required: false, clearable: false },
+    meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
+    packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files.', required: false, clearable: false },
   },
   '/api/specification/remove-predicate': {
     id: { kind: 'column', table: 'predicate', column: 'id', required: true, clearable: false },
@@ -65,7 +65,7 @@ export const SPECIFICATION_FIELDS = {
     when: { kind: 'column', table: 'specification_test', column: 'when', required: false, clearable: false },
     then: { kind: 'column', table: 'specification_test', column: 'then', required: false, clearable: false },
     notes: { kind: 'column', table: 'specification_test', column: 'notes', required: false, clearable: true },
-    starts_from: { kind: 'ids', description: 'The test data sets it starts from. Replaces the list.', required: false, clearable: false },
+    starts_from: { kind: 'ids', description: 'The test data sets it starts from.', required: false, clearable: false },
   },
   '/api/specification/remove-specification-test': {
     id: { kind: 'column', table: 'specification_test', column: 'id', required: true, clearable: false },

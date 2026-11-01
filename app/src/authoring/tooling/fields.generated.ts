@@ -15,8 +15,8 @@ export const TOOLING_FIELDS = {
     id: { kind: 'column', table: 'tooling', column: 'id', required: true, clearable: false },
     title: { kind: 'column', table: 'tooling', column: 'title', required: false, clearable: false },
     file: { kind: 'column', table: 'tooling', column: 'file', required: false, clearable: true },
-    packages: { kind: 'texts', description: 'The packages it uses. Replaces the list.', required: false, clearable: false },
-    meets: { kind: 'ids', description: 'The standard rules it meets. Replaces the list.', required: false, clearable: false },
+    packages: { kind: 'texts', description: 'The packages it uses.', required: false, clearable: false },
+    meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
   },
   '/api/tooling/remove-tooling': {
     id: { kind: 'column', table: 'tooling', column: 'id', required: true, clearable: false },

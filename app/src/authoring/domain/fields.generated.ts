@@ -34,7 +34,7 @@ export const DOMAIN_FIELDS = {
     title: { kind: 'column', table: 'capability', column: 'title', required: false, clearable: false },
     position: { kind: 'column', table: 'capability', column: 'position', required: false, clearable: false },
     description: { kind: 'column', table: 'capability', column: 'description', required: false, clearable: false },
-    serves: { kind: 'ids', description: 'The business outcomes it serves. Replaces the list.', required: false, clearable: false },
+    serves: { kind: 'ids', description: 'The business outcomes it serves.', required: false, clearable: false },
   },
   '/api/domain/remove-capability': {
     id: { kind: 'column', table: 'capability', column: 'id', required: true, clearable: false },
@@ -52,7 +52,7 @@ export const DOMAIN_FIELDS = {
     title: { kind: 'column', table: 'term', column: 'title', required: false, clearable: false },
     meaning: { kind: 'column', table: 'term', column: 'meaning', required: false, clearable: false },
     group_name: { kind: 'column', table: 'term', column: 'group_name', required: false, clearable: true },
-    builds_on: { kind: 'ids', description: 'The terms its meaning uses, each defined without it. Replaces the list.', required: false, clearable: false },
+    builds_on: { kind: 'ids', description: 'The terms its meaning uses, each defined without it.', required: false, clearable: false },
   },
   '/api/domain/remove-term': {
     id: { kind: 'column', table: 'term', column: 'id', required: true, clearable: false },
@@ -89,8 +89,8 @@ export const DOMAIN_FIELDS = {
     description: { kind: 'column', table: 'repository', column: 'description', required: false, clearable: false },
     persists: { kind: 'id', description: 'The aggregate it loads and saves, whole: one of its own domain.', required: false, clearable: true },
     stored_in: { kind: 'id', description: 'The data store it loads and saves its aggregate in.', required: false, clearable: true },
-    meets: { kind: 'ids', description: 'The standard rules it meets. Replaces the list.', required: false, clearable: false },
-    packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files. Replaces the list.', required: false, clearable: false },
+    meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
+    packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files.', required: false, clearable: false },
   },
   '/api/domain/remove-repository': {
     id: { kind: 'column', table: 'repository', column: 'id', required: true, clearable: false },
@@ -107,8 +107,8 @@ export const DOMAIN_FIELDS = {
     id: { kind: 'column', table: 'service', column: 'id', required: true, clearable: false },
     title: { kind: 'column', table: 'service', column: 'title', required: false, clearable: false },
     file: { kind: 'column', table: 'service', column: 'file', required: false, clearable: true },
-    meets: { kind: 'ids', description: 'The standard rules it meets. Replaces the list.', required: false, clearable: false },
-    packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files. Replaces the list.', required: false, clearable: false },
+    meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
+    packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files.', required: false, clearable: false },
   },
   '/api/domain/remove-service': {
     id: { kind: 'column', table: 'service', column: 'id', required: true, clearable: false },
@@ -142,7 +142,7 @@ export const DOMAIN_FIELDS = {
     when: { kind: 'column', table: 'domain_service_test', column: 'when', required: false, clearable: false },
     then: { kind: 'column', table: 'domain_service_test', column: 'then', required: false, clearable: false },
     notes: { kind: 'column', table: 'domain_service_test', column: 'notes', required: false, clearable: true },
-    starts_from: { kind: 'ids', description: 'The test data sets it starts from. Replaces the list.', required: false, clearable: false },
+    starts_from: { kind: 'ids', description: 'The test data sets it starts from.', required: false, clearable: false },
   },
   '/api/domain/remove-domain-service-test': {
     id: { kind: 'column', table: 'domain_service_test', column: 'id', required: true, clearable: false },

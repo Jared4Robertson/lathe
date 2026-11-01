@@ -16,7 +16,7 @@ export const DOMAIN_EVENT_FIELDS = {
     title: { kind: 'column', table: 'domain_event', column: 'title', required: false, clearable: false },
     published: { kind: 'column', table: 'domain_event', column: 'published', required: false, clearable: false },
     description: { kind: 'column', table: 'domain_event', column: 'description', required: false, clearable: false },
-    fields: { kind: 'parts', table: 'event_field', columns: ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'], description: 'The fields it carries, in order. Replaces the list.', required: false, clearable: false },
+    fields: { kind: 'parts', table: 'event_field', columns: ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'], description: 'The fields it carries, in order.', required: false, clearable: false },
   },
   '/api/domain-event/remove-domain-event': {
     id: { kind: 'column', table: 'domain_event', column: 'id', required: true, clearable: false },
@@ -35,8 +35,8 @@ export const DOMAIN_EVENT_FIELDS = {
     title: { kind: 'column', table: 'event_type', column: 'title', required: false, clearable: false },
     delivery: { kind: 'column', table: 'event_type', column: 'delivery', required: false, clearable: true },
     file: { kind: 'column', table: 'event_type', column: 'file', required: false, clearable: true },
-    meets: { kind: 'ids', description: 'The standard rules it follows. Replaces the list.', required: false, clearable: false },
-    packages: { kind: 'texts', description: 'The packages it uses. Replaces the list.', required: false, clearable: false },
+    meets: { kind: 'ids', description: 'The standard rules it follows.', required: false, clearable: false },
+    packages: { kind: 'texts', description: 'The packages it uses.', required: false, clearable: false },
   },
   '/api/domain-event/remove-event-type': {
     id: { kind: 'column', table: 'event_type', column: 'id', required: true, clearable: false },

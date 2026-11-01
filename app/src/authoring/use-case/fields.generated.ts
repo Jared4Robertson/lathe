@@ -16,7 +16,7 @@ export const USE_CASE_FIELDS = {
     title: { kind: 'column', table: 'use_case', column: 'title', required: false, clearable: false },
     goal: { kind: 'column', table: 'use_case', column: 'goal', required: false, clearable: false },
     notes: { kind: 'column', table: 'use_case', column: 'notes', required: false, clearable: true },
-    actors: { kind: 'texts', description: 'The roles of the product that are its actors, in order: the first is the main actor. Replaces the list.', required: false, clearable: false },
+    actors: { kind: 'texts', description: 'The roles of the product that are its actors, in order: the first is the main actor.', required: false, clearable: false },
   },
   '/api/use-case/move-use-case': {
     id: { kind: 'column', table: 'use_case', column: 'id', required: true, clearable: false },
@@ -70,10 +70,10 @@ export const USE_CASE_FIELDS = {
     title: { kind: 'column', table: 'flow_step', column: 'title', required: false, clearable: false },
     path: { kind: 'column', table: 'flow_step', column: 'path', required: false, clearable: false },
     position: { kind: 'column', table: 'flow_step', column: 'position', required: false, clearable: false },
-    fulfills: { kind: 'ids', description: 'The UC requirements of its own use case it fulfills. Replaces the list.', required: false, clearable: false },
+    fulfills: { kind: 'ids', description: 'The UC requirements of its own use case it fulfills.', required: false, clearable: false },
     invokes: { kind: 'id', description: 'The command or query it invokes, if any.', required: false, clearable: true },
     happens_in: { kind: 'id', description: 'The view it happens in, if any: only on a web app, desktop or other interface.', required: false, clearable: true },
-    exchanges_with: { kind: 'ids', description: 'The integrations it exchanges with. Replaces the list.', required: false, clearable: false },
+    exchanges_with: { kind: 'ids', description: 'The integrations it exchanges with.', required: false, clearable: false },
   },
   '/api/use-case/remove-flow-step': {
     id: { kind: 'column', table: 'flow_step', column: 'id', required: true, clearable: false },
@@ -107,7 +107,7 @@ export const USE_CASE_FIELDS = {
     when: { kind: 'column', table: 'use_case_test', column: 'when', required: false, clearable: false },
     then: { kind: 'column', table: 'use_case_test', column: 'then', required: false, clearable: false },
     notes: { kind: 'column', table: 'use_case_test', column: 'notes', required: false, clearable: true },
-    starts_from: { kind: 'ids', description: 'The test data sets it starts from. Replaces the list.', required: false, clearable: false },
+    starts_from: { kind: 'ids', description: 'The test data sets it starts from.', required: false, clearable: false },
   },
   '/api/use-case/remove-use-case-test': {
     id: { kind: 'column', table: 'use_case_test', column: 'id', required: true, clearable: false },
@@ -141,7 +141,7 @@ export const USE_CASE_FIELDS = {
     steps: { kind: 'column', table: 'flow_test', column: 'steps', required: false, clearable: false },
     expected_result: { kind: 'column', table: 'flow_test', column: 'expected_result', required: false, clearable: false },
     notes: { kind: 'column', table: 'flow_test', column: 'notes', required: false, clearable: true },
-    starts_from: { kind: 'ids', description: 'The test data sets it starts from. Replaces the list.', required: false, clearable: false },
+    starts_from: { kind: 'ids', description: 'The test data sets it starts from.', required: false, clearable: false },
   },
   '/api/use-case/remove-flow-test': {
     id: { kind: 'column', table: 'flow_test', column: 'id', required: true, clearable: false },

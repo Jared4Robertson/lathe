@@ -65,7 +65,7 @@ export const VIEW_FIELDS = {
     smoke: { kind: 'column', table: 'view_test', column: 'smoke', required: false, clearable: true },
     external: { kind: 'column', table: 'view_test', column: 'external', required: false, clearable: true },
     notes: { kind: 'column', table: 'view_test', column: 'notes', required: false, clearable: true },
-    starts_from: { kind: 'ids', description: 'The test data sets it starts from. Replaces the list.', required: false, clearable: false },
+    starts_from: { kind: 'ids', description: 'The test data sets it starts from.', required: false, clearable: false },
   },
   '/api/view/remove-view-test': {
     id: { kind: 'column', table: 'view_test', column: 'id', required: true, clearable: false },
