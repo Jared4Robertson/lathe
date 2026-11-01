@@ -10,6 +10,7 @@ import type { Row } from '../../platform/data/rows.ts';
 import type { CommandHandlerRow, CommandRow, EventHandlerRow, PolicyRow, PolicyTestRow } from '../../platform/data/tables.ts';
 import type { CommandKind } from './model.ts';
 import { compareIds } from '../../platform/data/ids.ts';
+import { journeyAppearances, type JourneyAppearance } from '../journey/appearances.ts';
 
 /** A handler as the page shows it: its row, the standard rules it meets and the packages it uses. */
 export interface HandlerOnPage<T> {
@@ -24,12 +25,13 @@ export interface PolicyTestOnPage {
   startsFrom: string[];
 }
 
-/** A policy as the page shows it: its row, the event it hears, its event handler and its test. */
+/** A policy as the page shows it: its row, the event it hears, its event handler and its test, and the journeys it is a handoff in. */
 export interface PolicyOnPage {
   policy: PolicyRow;
   hears: string | null;
   eventHandler: HandlerOnPage<EventHandlerRow> | null;
   test: PolicyTestOnPage | null;
+  journeys: JourneyAppearance[];
 }
 
 /** A command whole, as its page shows it. */
@@ -93,6 +95,7 @@ export function commandTableFrom(view: ReadView): CommandTable {
   const eventHandlers = grouped<EventHandlerRow>(view.rows('event_handler'), 'policy_id');
   const tests = grouped<PolicyTestRow>(view.rows('policy_test'), 'policy_id');
   const endpoints = grouped<{ id: string }>(view.rows('endpoint').filter((e) => e.command_id !== undefined), 'command_id');
+  const journeysOf = journeyAppearances(view);
   const built = <T extends { id: string }>(handler: T | undefined): HandlerOnPage<T> | null => (handler ? { handler, meets: meets(handler.id), packages: packages(handler.id) } : null);
 
   const domainOfAggregate = new Map(view.rows('aggregate').map((a) => [String(a.id), String(a.domain_id)]));
@@ -113,7 +116,7 @@ export function commandTableFrom(view: ReadView): CommandTable {
       handler: built((handlers.get(root) ?? [])[0]),
       policies: [...(policies.get(root) ?? [])].sort((a, b) => compareIds(a.id, b.id)).map((policy) => {
         const test = (tests.get(policy.id) ?? [])[0];
-        return { policy, hears: hears(policy.id)[0] ?? null, eventHandler: built((eventHandlers.get(policy.id) ?? [])[0]), test: test ? { test, startsFrom: startsFrom(test.id) } : null };
+        return { policy, hears: hears(policy.id)[0] ?? null, eventHandler: built((eventHandlers.get(policy.id) ?? [])[0]), test: test ? { test, startsFrom: startsFrom(test.id) } : null, journeys: journeysOf(policy.id) };
       }),
       endpoints: (endpoints.get(root) ?? []).map((e) => e.id).sort(compareIds),
     };

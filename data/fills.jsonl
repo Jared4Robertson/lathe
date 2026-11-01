@@ -24,6 +24,8 @@
 {"source_id":"LA-AUT-CMD322-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL01"}
 {"source_id":"LA-AUT-CMD360-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL01"}
 {"source_id":"LA-AUT-CMD370-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL01"}
+{"source_id":"LA-AUT-CMD381-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL01"}
+{"source_id":"LA-AUT-CMD386-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL01"}
 {"source_id":"LA-AUT-EN01-TB","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL08"}
 {"source_id":"LA-AUT-EN02-TB","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL08"}
 {"source_id":"LA-AUT-EN03-TB","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL08"}
@@ -137,6 +139,12 @@
 {"source_id":"LA-AUT-INV184-RL","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
 {"source_id":"LA-AUT-INV185-RL","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
 {"source_id":"LA-AUT-INV186-RL","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
+{"source_id":"LA-AUT-INV187-RL","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
+{"source_id":"LA-AUT-INV188-RL","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
+{"source_id":"LA-AUT-INV189-RL","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
+{"source_id":"LA-AUT-INV190-RL","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
+{"source_id":"LA-AUT-INV191-RL","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
+{"source_id":"LA-AUT-INV192-RL","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
 {"source_id":"LA-AUT-INV22-RL","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
 {"source_id":"LA-AUT-INV23-RL","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
 {"source_id":"LA-AUT-INV24-RL","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
@@ -252,6 +260,9 @@
 {"source_id":"LA-AUT-QRY225-H","target_id":"LA-PAT-AGGREGATE-QUERIES-SL01"}
 {"source_id":"LA-AUT-QRY226-H","target_id":"LA-PAT-AGGREGATE-QUERIES-SL01"}
 {"source_id":"LA-AUT-QRY227-H","target_id":"LA-PAT-AGGREGATE-QUERIES-SL01"}
+{"source_id":"LA-AUT-QRY228-H","target_id":"LA-PAT-AGGREGATE-QUERIES-SL01"}
+{"source_id":"LA-AUT-QRY229-H","target_id":"LA-PAT-AGGREGATE-QUERIES-SL01"}
+{"source_id":"LA-AUT-QRY230-H","target_id":"LA-PAT-AGGREGATE-QUERIES-SL01"}
 {"source_id":"LA-AUT-REPO01","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL05"}
 {"source_id":"LA-AUT-REPO19","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL05"}
 {"source_id":"LA-AUT-RM01-PJ","target_id":"LA-PAT-AGGREGATE-QUERIES-SL02"}

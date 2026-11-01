@@ -166,7 +166,8 @@ describe('Authoring flows', () => {
     expect(problemsOf(ws, 'step-order')).toEqual([expect.stringMatching(/^TL-LEND-UC01-FL-S02: .*no step has position 2/)]);
     expect(problemsOf(ws, 'not-designed')).toEqual([expect.stringMatching(/^TL-LEND-UC01-R02: /), expect.stringMatching(/^TL-LEND-UC02-R01: /)]);
     expect(problemsOf(ws, 'step-unreached')).toEqual([]);
-    tl.command('use-case change-flow-step', { id: 'TL-LEND-UC01-FL-S02', position: 2, fulfills: ['TL-LEND-UC01-R01', 'TL-LEND-UC01-R02'] });
+    tl.command('use-case move-flow-step', { id: 'TL-LEND-UC01-FL-S02', position: 2 });
+    tl.command('use-case change-flow-step', { id: 'TL-LEND-UC01-FL-S02', fulfills: ['TL-LEND-UC01-R01', 'TL-LEND-UC01-R02'] });
     // A step only one interface does is its variant, of an interface that offers the use case.
     tl.command('use-case change-flow-step', { id: 'TL-LEND-UC01-FL-S01', interface_id: 'TL-IF01' });
     tl.command('interface change-interface', { id: 'TL-IF01', offers: ['TL-LEND-UC02'] });

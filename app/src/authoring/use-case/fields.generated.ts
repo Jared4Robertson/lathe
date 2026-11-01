@@ -67,8 +67,6 @@ export const USE_CASE_FIELDS = {
   '/api/use-case/change-flow-step': {
     id: { kind: 'column', table: 'flow_step', column: 'id', required: true, clearable: false },
     title: { kind: 'column', table: 'flow_step', column: 'title', required: false, clearable: false },
-    path: { kind: 'column', table: 'flow_step', column: 'path', required: false, clearable: false },
-    position: { kind: 'column', table: 'flow_step', column: 'position', required: false, clearable: false },
     interface_id: { kind: 'column', table: 'flow_step', column: 'interface_id', required: false, clearable: true },
     fulfills: { kind: 'ids', description: 'The UC requirements of its own use case it fulfills.', required: false, clearable: false },
     invokes: { kind: 'id', description: 'The command or query it invokes, if any.', required: false, clearable: true },
@@ -144,5 +142,10 @@ export const USE_CASE_FIELDS = {
   },
   '/api/use-case/remove-flow-test': {
     id: { kind: 'column', table: 'flow_test', column: 'id', required: true, clearable: false },
+  },
+  '/api/use-case/move-flow-step': {
+    id: { kind: 'column', table: 'flow_step', column: 'id', required: true, clearable: false },
+    path: { kind: 'column', table: 'flow_step', column: 'path', required: false, clearable: false },
+    position: { kind: 'column', table: 'flow_step', column: 'position', required: true, clearable: false },
   },
 } as const satisfies Record<string, InputFields>;
