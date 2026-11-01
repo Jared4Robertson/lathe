@@ -96,7 +96,7 @@ describe('graph page', () => {
     await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
   });
 
-  it('LA-V93-R10-T05 The graph opens at depth 1, framing the parent and the children, and depth 2 and 3 frame more levels below; only parent lines are drawn', async () => {
+  it('LA-V93-R10-T05 The graph opens at depth 1, framing the parent and the children, and depth 2 and 3 draw more levels below; only parent lines are drawn', async () => {
     await showGraph('/P-D/use-cases');
     const depth = within(screen.getByRole('group', { name: 'Depth' }));
     expect(depth.getAllByRole('button').map((b) => b.textContent)).toEqual(['1', '2', '3']);
@@ -155,7 +155,7 @@ describe('graph page', () => {
 
   it('LA-V93-R14-T01 The plain arrows step through the tree from a focused box, Enter re-centers on the focused box, and Escape clears the filters', async () => {
     await showGraph(`/${STEP}`);
-    await waitFor(() => expect(node('P-V01')).not.toBeNull());
+    await waitFor(() => expect(node('P-D-UC01-FL-S03')).not.toBeNull());
     const center = node(STEP)!;
     center.focus();
     expect(document.activeElement).toBe(center);
@@ -180,11 +180,11 @@ describe('graph page', () => {
     fireEvent.keyDown(canvas, { key: 'ArrowLeft', altKey: true });
     expect(window.location.pathname).toBe(`/${STEP}`);
     // Enter on a box with keyboard focus re-centers on it (Tab, the browser's, steps through the boxes).
-    await waitFor(() => expect(node('P-V01')).not.toBeNull());
-    node('P-V01')!.focus();
-    fireEvent.keyDown(node('P-V01')!, { key: 'Enter' });
-    expect(window.location.pathname).toBe(addressOf('P-V01'));
-    await waitFor(() => expect(document.activeElement).toBe(node('P-V01')));
+    await waitFor(() => expect(node('P-D-UC01-FL-S03')).not.toBeNull());
+    node('P-D-UC01-FL-S03')!.focus();
+    fireEvent.keyDown(node('P-D-UC01-FL-S03')!, { key: 'Enter' });
+    expect(window.location.pathname).toBe(addressOf('P-D-UC01-FL-S03'));
+    await waitFor(() => expect(document.activeElement).toBe(node('P-D-UC01-FL-S03')));
 
     // Hide views, then Escape brings them back.
     const views = screen.getByRole('checkbox', { name: 'View' }) as HTMLInputElement;
@@ -271,6 +271,8 @@ describe('graph groups on the page', () => {
     await waitFor(() => expect(title()).toMatch(/^Domain model \(\d+\)$/));
     const stageTitle = title();
     await waitFor(() => expect(groupNode('P-D/domain-model')?.focus).toBe(true));
+    // Its members' column starts at the right edge, in view once the camera arrives.
+    await waitFor(() => expect(drawnBox('P-D/domain-model/aggregate')).toBeDefined());
     const left = (id: string) => drawnBox(id)!.map.x;
     expect(left('P-D')).toBeLessThan(left('P-D/domain-model'));
     expect(left('P-D/domain-model')).toBeLessThan(left('P-D/domain-model/aggregate'));
@@ -317,13 +319,13 @@ describe('graph groups on the page', () => {
     const index = testIndex();
     const props = { index, onNavigate: (id: string) => moves.push(id), onCounts: (c: string) => counts.push(c) };
     const { rerender } = render(<GraphView {...props} settings={DEFAULT_GRAPH_SETTINGS} focus={STEP} />);
-    await waitFor(() => expect(node('P-V01')).not.toBeNull());
+    await waitFor(() => expect(node('P-D-UC01-FL-S03')).not.toBeNull());
     expect(counts.at(-1)).toMatch(/^\d+ records? · .*\d+ links?$/);
-    fireEvent.click(node('P-V01')!);
-    expect(moves).toEqual(['P-V01']);
+    fireEvent.click(node('P-D-UC01-FL-S03')!);
+    expect(moves).toEqual(['P-D-UC01-FL-S03']);
     expect(window.location.pathname).toBe('/somewhere-else');
-    rerender(<GraphView {...props} settings={DEFAULT_GRAPH_SETTINGS} focus="P-V01" />);
-    await waitFor(() => expect(isCenter('P-V01')).toBe(true));
+    rerender(<GraphView {...props} settings={DEFAULT_GRAPH_SETTINGS} focus="P-D-UC01-FL-S03" />);
+    await waitFor(() => expect(isCenter('P-D-UC01-FL-S03')).toBe(true));
     expect(window.location.pathname).toBe('/somewhere-else');
 
     // When its container changes size, it fits the picture to the new size.

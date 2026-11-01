@@ -29,21 +29,14 @@ async function openSpace(page: Page) {
   }, STAGE);
 }
 
-/**
- * The focus's drawn box lies whole in the open space, so no panel covers it; or, when the camera frames its children's
- * column (camera.ts frameChildren, their titles too small otherwise), the focus is the strip at the open space's left
- * edge: its right part in the open space, whole top to bottom.
- */
+/** The focus's drawn box lies whole in the open space, so no panel covers it (LA-PAT-APP-UX-R23). */
 async function expectFocusInOpenSpace(page: Page, what: string) {
   await expect.poll(async () => {
     const focus = (await sceneOf(page)).boxes.find((b) => b.focus);
     const open = await openSpace(page);
     if (!focus) return 'no focus drawn';
     const { left, top, width, height } = focus.rect;
-    const rows = top >= open.top - 1 && top + height <= open.bottom + 1;
-    const whole = left >= open.left - 1 && left + width <= open.right + 1;
-    const strip = left < open.left && left + width > open.left + 1 && left + width <= open.right + 1;
-    const inside = rows && (whole || strip);
+    const inside = top >= open.top - 1 && top + height <= open.bottom + 1 && left >= open.left - 1 && left + width <= open.right + 1;
     return inside ? 'inside' : `outside: ${JSON.stringify({ focus: focus.rect, open })}`;
   }, { message: `${what}: the focus sits in the open space`, timeout: 5000 }).toBe('inside');
 }
