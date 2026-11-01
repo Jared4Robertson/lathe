@@ -16,7 +16,7 @@ async function withProblem() {
 }
 
 test.describe('Authoring flows', () => {
-  test('LA-AUT-UC14-FL01-T look up a kind or check', async ({ page }) => {
+  test('LA-AUT-UC14-FL-T look up a kind or check', async ({ page }) => {
     const WITH_PROBLEM = await withProblem();
     // S01: the record format, from the command palette.
     await openPage(page, RECORD);

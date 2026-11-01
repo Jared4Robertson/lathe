@@ -215,9 +215,9 @@ describe('LA-AUT-INV17-T a second capability at a position of its domain is refu
 describe('LA-AUT-INV18-T a second step at a position of a path, compared trimmed and in any letter case, is refused by step-position; another path may use it', () => {
   it('refuses it, and adds the step on another path', async () => {
     const on = await store();
-    const step = { id: 'TL-LEND-UC01-FL01-S02', title: 'Pick another tool', flow_id: 'TL-LEND-UC01-FL01', path: ' Main', position: 1 };
+    const step = { id: 'TL-LEND-UC01-FL-S03', title: 'Pick another tool', flow_id: 'TL-LEND-UC01-FL', path: ' Main', position: 1 };
     expect(await refused(on, ADD_FLOW_STEP, step, 'flow_step')).toEqual([
-      { rule: 'step-position', message: 'step TL-LEND-UC01-FL01-S01 is at position 1 of path main of TL-LEND-UC01-FL01, so TL-LEND-UC01-FL01-S02 cannot be too: each step on a path has its own position' },
+      { rule: 'step-position', message: 'step TL-LEND-UC01-FL-S01 is at position 1 of path main of TL-LEND-UC01-FL, so TL-LEND-UC01-FL-S03 cannot be too: each step on a path has its own position' },
     ]);
     await runCommand(on, ADD_FLOW_STEP, { ...step, path: 'refused' });
     expect(on.rows('flow_step')).toHaveLength(2);

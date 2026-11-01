@@ -1151,7 +1151,7 @@ How its use case is carried out through one interface: the steps on its main pat
 - **Children:** [`flow_step`](#kind-flow_step), [`flow_test`](#kind-flow_test)
 - **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
-- **ID:** `<use case>-FL<nn>`, such as `TL-LEND-UC01-FL01`; it starts with its parent's ID
+- **ID:** `<use case>-FL<nn>`, such as `TL-LEND-UC01-FL`; it starts with its parent's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`step-order`](#check-step-order), [`flow-test-level-for-interface`](#check-flow-test-level-for-interface), [`flow-title-off-pattern`](#check-flow-title-off-pattern)
@@ -1161,7 +1161,7 @@ How its use case is carried out through one interface: the steps on its main pat
 
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
-| `id` | VARCHAR → `record_id` | yes | The flow's ID: its use case's ID, FL and its interface's number, such as TL-LEND-UC01-FL01 for the flow through TL-IF01. |
+| `id` | VARCHAR → `record_id` | yes | The flow's ID: its use case's ID, FL and its interface's number, such as TL-LEND-UC01-FL for the flow through TL-IF01. |
 | `title` | VARCHAR | yes | The flow's name, such as Borrow a tool at the desk. |
 | `use_case_id` | VARCHAR → [`use_case`](#table-use_case) | yes | The use case it carries out. |
 | `interface_id` | VARCHAR → [`interface`](#table-interface) | yes | The interface it goes through, of the same product; at most one flow per use case and interface. |
@@ -1180,7 +1180,7 @@ One step of a flow, in order on its path. It fulfills UC requirements of its own
 - **Children:** none
 - **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
-- **ID:** `<flow>-S<nn>`, such as `TL-LEND-UC01-FL01-S01`; it starts with its parent's ID
+- **ID:** `<flow>-S<nn>`, such as `TL-LEND-UC01-FL-S01`; it starts with its parent's ID
 - **Links out:** Exchanges with ([`exchanges_with`](#relation-exchanges_with)), Fulfills ([`fulfills`](#relation-fulfills)), Happens in ([`happens_in`](#relation-happens_in)), Invokes ([`invokes`](#relation-invokes))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`step-order`](#check-step-order), [`step-without-endpoint`](#check-step-without-endpoint)
@@ -1190,7 +1190,7 @@ One step of a flow, in order on its path. It fulfills UC requirements of its own
 
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
-| `id` | VARCHAR → `record_id` | yes | The step's ID: its flow's ID and S<nn>, such as TL-LEND-UC01-FL01-S01. |
+| `id` | VARCHAR → `record_id` | yes | The step's ID: its flow's ID and S<nn>, such as TL-LEND-UC01-FL-S01. |
 | `title` | VARCHAR | yes | What happens, in a few words. |
 | `flow_id` | VARCHAR → [`flow`](#table-flow) | yes | The flow it belongs to. |
 | `path` | VARCHAR | yes | The path through the flow the step is on, such as main or refused. |
@@ -2635,7 +2635,7 @@ A smoke test of its flow's main path, end to end, at the level that fits its int
 - **Complexity:** as the record it sits under
 - **Obligation:** no
 - **Run by levels:** `system`, `browser`
-- **ID:** `<flow>-T`, such as `TL-LEND-UC01-FL01-T`; it starts with its parent's ID
+- **ID:** `<flow>-T`, such as `TL-LEND-UC01-FL-T`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
 - **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed), [`flow-test-level-for-interface`](#check-flow-test-level-for-interface), [`test-title-not-a-result`](#check-test-title-not-a-result)
@@ -2644,7 +2644,7 @@ A smoke test of its flow's main path, end to end, at the level that fits its int
 
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
-| `id` | VARCHAR → `record_id` | yes | The test's ID: its flow's ID and T, such as TL-LEND-UC01-FL01-T. |
+| `id` | VARCHAR → `record_id` | yes | The test's ID: its flow's ID and T, such as TL-LEND-UC01-FL-T. |
 | `title` | VARCHAR | yes | What the test shows, in a sentence. |
 | `flow_id` | VARCHAR → [`flow`](#table-flow) | yes | The flow it proves; it has exactly one test. |
 | `level` | ENUM('unit', 'integration', 'service', 'system', 'browser') | yes | How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. |

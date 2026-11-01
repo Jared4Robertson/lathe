@@ -109,8 +109,8 @@ export function removeFlow(tx: Transaction, input: RemoveFlow): void {
 export function addFlowStep(tx: Transaction, input: AddFlowStep): void {
   const useCases = new UseCaseRepository(tx);
   const useCase = useCases.loadHolding('flow', input.flow_id) ?? tx.refuse('missing', `there is no flow ${input.flow_id}`);
-  const { fulfills = [], invokes, happens_in, exchanges_with = [], ...row } = input;
-  useCase.steps.push({ row, fulfills: fulfills, exchangesWith: exchanges_with, invokes: invokes ?? null, happensIn: happens_in ?? null });
+  const { fulfills = [], invokes, exchanges_with = [], ...row } = input;
+  useCase.steps.push({ row, fulfills: fulfills, exchangesWith: exchanges_with, invokes: invokes ?? null });
   holdToRules(tx, useCase);
   useCases.save(useCase);
 }
@@ -119,7 +119,7 @@ export function addFlowStep(tx: Transaction, input: AddFlowStep): void {
 export function changeFlowStep(tx: Transaction, input: ChangeFlowStep): void {
   const useCases = new UseCaseRepository(tx);
   const useCase = useCases.loadHolding('flow_step', input.id) ?? tx.refuse('missing', `there is no flow step ${input.id}`);
-  useCase.steps = useCase.steps.map((x) => (x.row.id === input.id ? { row: changed(x.row, input, ['title', 'path', 'position']), fulfills: input.fulfills ?? x.fulfills, exchangesWith: input.exchanges_with ?? x.exchangesWith, invokes: input.invokes === undefined ? x.invokes : input.invokes, happensIn: input.happens_in === undefined ? x.happensIn : input.happens_in } : x));
+  useCase.steps = useCase.steps.map((x) => (x.row.id === input.id ? { row: changed(x.row, input, ['title', 'path', 'position', 'interface_id']), fulfills: input.fulfills ?? x.fulfills, exchangesWith: input.exchanges_with ?? x.exchangesWith, invokes: input.invokes === undefined ? x.invokes : input.invokes } : x));
   holdToRules(tx, useCase);
   useCases.save(useCase);
 }

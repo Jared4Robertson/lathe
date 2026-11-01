@@ -70,7 +70,7 @@ describe('every route the code serves has a record', () => {
 });
 
 describe('Routes kept in step from the command line', () => {
-  it('LA-TRC-UC15-FL03-T routes and records are kept in step from the command line', async () => {
+  it('LA-TRC-UC15-FL-T routes and records are kept in step from the command line', async () => {
     const tl = product();
     // S01: an Agent writes an endpoint and its handler, whose file names the route with its parameter written another way.
     await tl.seed([

@@ -1,12 +1,14 @@
 // The Trace read model (LA-TRC-RM13), shaped for the Trace stage: one row per use case of a product's
 // space, from the business outcomes its capability serves to its acceptance tests. Each row holds the use case's UC
 // requirements (with their gaps and tests), the aggregates its steps change and the read models they read (from the
-// Serves reach, trace/serves.ts), its flows (one per interface) with their steps, each step with what it fulfills,
-// the view it happens in and that view's requirements, the endpoints of what it invokes and their API requirements, the
-// integrations it exchanges with, and its technical chain (the UI components rendering its view, the endpoints or the
-// product's own channels of what it invokes, that command's or query's handler, the repository or reader behind it,
-// their data store, and the adapters of its integrations); its flow tests; the lower obligations its suite rests on
-// (view and API requirements, invariants and storage requirements, with their tests); and a status per stage. Gaps and
+// Serves reach, trace/serves.ts), its flow with its steps, each step with what it fulfills, the integrations it
+// exchanges with and its technical chain (the UI components rendering the views that present what it invokes, the
+// endpoints or the product's own channels of what it invokes, that command's or query's handler, the repository or
+// reader behind it, their data store, and the adapters of its integrations), and each offering interface's version of
+// the flow (derived by the use case's through.ts: per step, the views with their requirements, the endpoints with
+// their API requirements, or the product's own records it is carried out in); its flow test; the lower obligations its
+// suite rests on (view and API requirements, invariants and storage requirements, with their tests); and a status per
+// stage. Gaps and
 // tests are the checks' run's (`ReadView.checked`: coverage's gaps, the chains' tests), as the Trace read model reads
 // them; the rest are the rows'. The projection is the only code that reads them for the query and the only code that
 // writes the read model's table; the query handler reads it only through the reader.
@@ -15,6 +17,7 @@ import type { Row } from '../../platform/data/rows.ts';
 import { compareIds } from '../../platform/data/ids.ts';
 import { inSpace, placementOf } from '../../exploring/placement.ts';
 import { useCaseReaches } from '../../trace/serves.ts';
+import { interfaceVersions } from '../../authoring/use-case/through.ts';
 
 /** What an obligation misses, as coverage names it. */
 export type TraceGap = 'designed' | 'built' | 'proved';
@@ -30,7 +33,7 @@ export interface TraceObligation {
 
 /** A step's technical chain, from where it happens to where its data lives: each layer's records in ID order. */
 export interface TraceChain {
-  /** The UI components that render the view the step happens in. */
+  /** The UI components that render the views that present what the step invokes. */
   components: string[];
   /** The endpoints, and the product's own interaction design records (an IPC channel, a CLI command), of what it invokes. */
   entries: string[];
@@ -44,30 +47,49 @@ export interface TraceChain {
   adapters: string[];
 }
 
-/** One step of a flow. */
+/** One step of a flow, the same through every interface. */
 export interface TraceStep {
   id: string;
   path: string;
   position: number;
+  /** The interface it is a variant of, or null when every interface does it. */
+  variantOf: string | null;
   /** The UC requirements it fulfills, in ID order. */
   fulfills: string[];
   /** The command or query it invokes, or null. */
   operation: string | null;
-  /** The view it happens in, or null, and that view's requirements. */
-  view: string | null;
-  viewRequirements: TraceObligation[];
-  /** The endpoints exposing what it invokes, each with its API requirements. */
-  endpoints: { id: string; apiRequirements: TraceObligation[] }[];
   /** The integrations it exchanges with. */
   integrations: string[];
   chain: TraceChain;
 }
 
-/** One flow of a use case: through one interface, its steps in path and position order, and its flow test. */
+/** A step as one interface carries it out: where (views with their requirements, endpoints with their API requirements, or the product's own records), derived. */
+export interface TraceStepThrough {
+  id: string;
+  views: { id: string; requirements: TraceObligation[] }[];
+  endpoints: { id: string; apiRequirements: TraceObligation[] }[];
+  /** The product's own interaction design records it is carried out in, such as a CLI command. */
+  entries: string[];
+  /** It invokes a command or query this interface has no way to reach. */
+  unreached: boolean;
+}
+
+/** A flow as one interface carries it out, derived: its actor and its steps, the other interfaces' variants left out. */
+export interface TraceThrough {
+  interface: string;
+  kind: string;
+  actor: string | null;
+  /** The rules that say how a refusal is shown there. */
+  refusal: string[];
+  steps: TraceStepThrough[];
+}
+
+/** A use case's flow: its steps in path and position order, each interface's version, and its flow test. */
 export interface TraceFlow {
   id: string;
-  interface: string;
   steps: TraceStep[];
+  /** Each offering interface's version, by interface ID. */
+  through: TraceThrough[];
   /** Its flow test, or null. */
   test: string | null;
   /** Whether its flow test counts as proof: there is one, automated or manual. */
@@ -76,8 +98,8 @@ export interface TraceFlow {
 
 /** A row's status per stage, as its collapsed cells say it. */
 export interface TraceStatus {
-  /** Its flows, and its UC requirements no step designs. */
-  design: { flows: number; notDesigned: number };
+  /** The interfaces its flow is carried out through (none without a flow), and its UC requirements no step designs. */
+  design: { interfaces: number; notDesigned: number };
   /** The handlers its steps' chains reach, and its obligations (UC, view and API requirements) not built. */
   technical: { handlers: number; notBuilt: number };
   /** Its acceptance tests (use case and flow tests), what they owe proof of (each UC requirement and flow), and how many of those are not proved. */
@@ -93,7 +115,8 @@ export interface TraceRow {
   /** The aggregates its steps change and the read models they read, by the Serves reach, in ID order. */
   changes: string[];
   reads: string[];
-  flows: TraceFlow[];
+  /** Its flow, or null. */
+  flow: TraceFlow | null;
   /** The lower obligations its acceptance tests rest on: its steps' view and API requirements, its aggregates' invariants and storage requirements. */
   lower: TraceObligation[];
   status: TraceStatus;
@@ -157,7 +180,7 @@ export function traceTableFrom(view: ReadView): TraceTable {
   for (const s of rows('flow_step')) stepRows.set(String(s.flow_id), [...(stepRows.get(String(s.flow_id)) ?? []), s]);
   const fulfills = out('fulfills');
   const invokes = out('invokes');
-  const happensIn = out('happens_in');
+  const presentedIn = into('presents');
   const exchangesWith = out('exchanges_with');
   const viewRequirementsOf = under('view_requirement', 'view_id');
   const endpointsOf = merge(under('endpoint', 'command_id'), under('endpoint', 'query_id'));
@@ -184,6 +207,9 @@ export function traceTableFrom(view: ReadView): TraceTable {
     }
   }
   const kindOf = (id: string) => view.record(id)?.kind;
+  const versionsOf = interfaceVersions(view);
+  const actorsOf = new Map<string, string[]>();
+  for (const a of [...rows('use_case_actor')].sort((x, y) => Number(x.position) - Number(y.position))) actorsOf.set(String(a.use_case_id), [...(actorsOf.get(String(a.use_case_id)) ?? []), String(a.role_name)]);
 
   const reaches = useCaseReaches(view);
   const placed = placementOf(view);
@@ -193,7 +219,7 @@ export function traceTableFrom(view: ReadView): TraceTable {
   const stepOf = (s: Row): TraceStep => {
     const id = String(s.id);
     const operation = invokes.get(id)?.[0] ?? null;
-    const viewId = happensIn.get(id)?.[0] ?? null;
+    const views = operation ? byId(presentedIn.get(operation) ?? []) : [];
     const integrations = byId(exchangesWith.get(id) ?? []);
     const endpoints = operation ? byId(endpointsOf.get(operation) ?? []) : [];
     const command = operation ? entityOfCommand.get(operation) : undefined;
@@ -204,14 +230,12 @@ export function traceTableFrom(view: ReadView): TraceTable {
       id,
       path: String(s.path),
       position: Number(s.position),
+      variantOf: typeof s.interface_id === 'string' ? s.interface_id : null,
       fulfills: byId(fulfills.get(id) ?? []),
       operation,
-      view: viewId,
-      viewRequirements: byId(viewId ? viewRequirementsOf.get(viewId) ?? [] : []).map(obligation),
-      endpoints: endpoints.map((e) => ({ id: e, apiRequirements: byId(apiRequirementsOf.get(e) ?? []).map(obligation) })),
       integrations,
       chain: {
-        components: byId(viewId ? renderedBy.get(viewId) ?? [] : []),
+        components: byId(views.flatMap((v) => renderedBy.get(v) ?? [])),
         entries: byId([...endpoints, ...(operation ? ownEntries.get(operation) ?? [] : [])]),
         handlers: byId(operation ? handlersOf.get(operation) ?? [] : []),
         stores,
@@ -225,44 +249,62 @@ export function traceTableFrom(view: ReadView): TraceTable {
 
   const rowOf = (useCase: string, outcomes: readonly string[]): TraceRow => {
     const requirements = byId(requirementsOf.get(useCase) ?? []).map(obligation);
-    const flows = flowRows.filter((f) => f.use_case_id === useCase).sort((a, b) => compareIds(String(a.id), String(b.id))).map((f): TraceFlow => {
+    const f = flowRows.filter((x) => x.use_case_id === useCase).sort((a, b) => compareIds(String(a.id), String(b.id)))[0];
+    let flow: TraceFlow | null = null;
+    if (f) {
       const id = String(f.id);
       const test = flowTestOf.get(id);
-      return {
+      const steps = [...(stepRows.get(id) ?? [])].sort(stepOrder).map(stepOf);
+      const versions = versionsOf(useCase, actorsOf.get(useCase) ?? [], steps.map((s) => ({ id: s.id, path: s.path, position: s.position, variantOf: s.variantOf, operation: s.operation })));
+      flow = {
         id,
-        interface: String(f.interface_id),
-        steps: [...(stepRows.get(id) ?? [])].sort(stepOrder).map(stepOf),
+        steps,
+        through: versions.map((v) => ({
+          interface: v.interface,
+          kind: v.kind,
+          actor: v.actor,
+          refusal: v.refusal,
+          steps: v.paths.flatMap((p) => p.steps).map((s) => {
+            const kind = (r: string) => kindOf(r);
+            return {
+              id: s.id,
+              views: s.reach.filter((r) => kind(r) === 'view').map((v) => ({ id: v, requirements: byId(viewRequirementsOf.get(v) ?? []).map(obligation) })),
+              endpoints: s.reach.filter((r) => kind(r) === 'endpoint').map((e) => ({ id: e, apiRequirements: byId(apiRequirementsOf.get(e) ?? []).map(obligation) })),
+              entries: s.reach.filter((r) => kind(r) !== 'view' && kind(r) !== 'endpoint'),
+              unreached: s.unreached,
+            };
+          }),
+        })),
         test: test ? String(test.id) : null,
         proved: !!test && test.state !== 'not automated yet',
       };
-    });
+    }
     const reached = [...(reaches.get(useCase)?.reached ?? [])];
     const changes = byId(reached.filter((id) => kindOf(id) === 'aggregate'));
     const reads = byId(reached.filter((id) => kindOf(id) === 'read_model'));
-    const steps = flows.flatMap((f) => f.steps);
+    const steps = flow?.steps ?? [];
+    const carried = (flow?.through ?? []).flatMap((t) => t.steps);
+    const designObligations = [...carried.flatMap((s) => s.views.flatMap((v) => v.requirements)), ...carried.flatMap((s) => s.endpoints.flatMap((e) => e.apiRequirements))];
     const lower = byId([
-      ...steps.flatMap((s) => s.viewRequirements.map((r) => r.id)),
-      ...steps.flatMap((s) => s.endpoints.flatMap((e) => e.apiRequirements.map((r) => r.id))),
+      ...designObligations.map((r) => r.id),
       ...changes.flatMap((a) => invariantsOf.get(a) ?? []),
       ...[...changes, ...reads].flatMap((m) => storageOf.get(m) ?? []),
     ]).map(obligation);
-    const notBuilt = new Set([
-      ...requirements.filter((r) => r.gaps.includes('built')).map((r) => r.id),
-      ...steps.flatMap((s) => [...s.viewRequirements, ...s.endpoints.flatMap((e) => e.apiRequirements)]).filter((r) => r.gaps.includes('built')).map((r) => r.id),
-    ]);
-    const tests = requirements.reduce((n, r) => n + r.tests.length, 0) + flows.filter((f) => f.test !== null).length;
+    const notBuilt = new Set([...requirements, ...designObligations].filter((r) => r.gaps.includes('built')).map((r) => r.id));
+    const flows = flow ? [flow] : [];
+    const tests = requirements.reduce((n, r) => n + r.tests.length, 0) + flows.filter((x) => x.test !== null).length;
     return {
       useCase,
       outcomes: [...outcomes],
       requirements,
       changes,
       reads,
-      flows,
+      flow,
       lower,
       status: {
-        design: { flows: flows.length, notDesigned: requirements.filter((r) => r.gaps.includes('designed')).length },
+        design: { interfaces: flow?.through.length ?? 0, notDesigned: requirements.filter((r) => r.gaps.includes('designed')).length },
         technical: { handlers: new Set(steps.flatMap((s) => s.chain.handlers)).size, notBuilt: notBuilt.size },
-        suite: { tests, owed: requirements.length + flows.length, notProved: requirements.filter((r) => r.gaps.includes('proved')).length + flows.filter((f) => !f.proved).length },
+        suite: { tests, owed: requirements.length + flows.length, notProved: requirements.filter((r) => r.gaps.includes('proved')).length + flows.filter((x) => !x.proved).length },
       },
     };
   };

@@ -9,7 +9,7 @@ import { cameraOf, clickBox, GRAPH, graphDrawn } from './scene';
 // differently before the person changed the settings) and pages that are not; the layout, depth and minimap stay as
 // the person set them, in the tab they were set in.
 
-const FLOW = 'LA-EXP-UC03-FL01';
+const FLOW = 'LA-EXP-UC03-FL';
 const LAYOUTS = { tree: 'Tree', nested: 'Nested' } as const;
 /** The arrow for each step in each layout (LA-V93-R19): Tree steps Left out and Right in; Nested, Up out and Down in. */
 const NESTED = { out: 'ArrowUp', in: 'ArrowDown', previous: 'ArrowLeft', next: 'ArrowRight' } as const;

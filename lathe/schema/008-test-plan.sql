@@ -322,8 +322,8 @@ CREATE TABLE flow_test (
   CHECK (state <> 'automated' OR file IS NOT NULL),
   CHECK ((state = 'manual') = (manual_reason IS NOT NULL))
 );
-COMMENT ON TABLE flow_test IS 'A smoke test of its flow''s main path, end to end, at the level that fits its interface: browser for a web app or desktop, system for an API, a CLI or agent tools.';
-COMMENT ON COLUMN flow_test.id IS 'The test''s ID: its flow''s ID and T, such as TL-LEND-UC01-FL01-T.';
+COMMENT ON TABLE flow_test IS 'The use case''s acceptance test: its flow''s main path, end to end, through any one interface that offers the use case, at the level that fits that interface (browser for a web app or desktop, system for an API, a CLI or agent tools). How each other interface carries a step out is proved once per rule and domain by its pattern''s rule tests, never per use case.';
+COMMENT ON COLUMN flow_test.id IS 'The test''s ID: its flow''s ID and T, such as TL-LEND-UC01-FL-T.';
 COMMENT ON COLUMN flow_test.title IS 'What the test shows, in a sentence.';
 COMMENT ON COLUMN flow_test.flow_id IS 'The flow it proves; it has exactly one test.';
 COMMENT ON COLUMN flow_test.level IS 'How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises.';
@@ -446,7 +446,7 @@ INSERT INTO meta_kind VALUES
   ('use_case_test', 'Use case test', 'test-plan', 60, false, '<UC requirement>-T<nn>', 'TL-LEND-UC01-R01-T01', 'parent', NULL, 'as-parent'),
   ('view_test', 'View test', 'test-plan', 61, false, '<view requirement>-T<nn>', 'TL-V01-R01-T01', 'parent', NULL, 'as-parent'),
   ('endpoint_test', 'Endpoint test', 'test-plan', 62, false, '<API requirement>-T<nn>', 'TL-LEND-EP01-R01-T01', 'parent', NULL, 'as-parent'),
-  ('flow_test', 'Flow test', 'test-plan', 63, false, '<flow>-T', 'TL-LEND-UC01-FL01-T', 'parent', NULL, 'as-parent'),
+  ('flow_test', 'Flow test', 'test-plan', 63, false, '<flow>-T', 'TL-LEND-UC01-FL-T', 'parent', NULL, 'as-parent'),
   ('integration_test', 'Integration test', 'test-plan', 64, false, '<integration>-T<nn>', 'TL-INT01-T01', 'parent', NULL, 'as-parent'),
   ('pattern_rule_test', 'Pattern rule test', 'test-plan', 65, false, '<pattern rule>-T<nn>', 'TL-PAT-ACT-R01-T01', 'parent', NULL, 'as-parent'),
   ('standard_rule_test', 'Standard rule test', 'test-plan', 66, false, '<standard rule>-T<nn>', 'TL-STD-CODE-R01-T01', 'parent', NULL, 'as-parent');

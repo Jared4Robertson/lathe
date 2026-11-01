@@ -170,13 +170,13 @@ describe('the schema version', () => {
     ]);
     const read = (table: string) => readFileSync(path.join(root, 'data', `${table}.jsonl`), 'utf8');
     expect(read('interface')).toBe(line({ id: 'TL-IF01', title: 'Interface', product_id: 'TL', kind: 'other', description: 'Every flow written before interfaces were declared goes through this one.', public: false }));
-    expect(read('flow')).toBe(line({ id: 'TL-LEND-UC01-FL01', title: 'Borrow', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }));
-    expect(read('flow_step')).toContain('"id":"TL-LEND-UC01-FL01-S01"');
-    expect(read('flow_test')).toContain('"id":"TL-LEND-UC01-FL01-T","title":"Borrow end to end","flow_id":"TL-LEND-UC01-FL01"');
-    expect(read('flow_test')).toContain('"steps":["Run TL-LEND-UC01-FL01-S01"]');
+    expect(read('flow')).toBe(line({ id: 'TL-LEND-UC01-FL', title: 'Borrow', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }));
+    expect(read('flow_step')).toContain('"id":"TL-LEND-UC01-FL-S01"');
+    expect(read('flow_test')).toContain('"id":"TL-LEND-UC01-FL-T","title":"Borrow end to end","flow_id":"TL-LEND-UC01-FL"');
+    expect(read('flow_test')).toContain('"steps":["Run TL-LEND-UC01-FL-S01"]');
     expect(read('flow_test')).toContain('"level":"system"');
-    expect(read('fulfills')).toBe(line({ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-LEND-UC01-R01' }));
-    expect(read('uc_requirement')).toContain('as TL-LEND-UC01-FL01-S01 shows.');
+    expect(read('fulfills')).toBe(line({ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-UC01-R01' }));
+    expect(read('uc_requirement')).toContain('as TL-LEND-UC01-FL-S01 shows.');
     expect(readConfig(root).schema).toBe(SCHEMA_VERSION);
   });
   it('LA-AUT-UC03-R08-T03 1-to-2 gives every test one of the five levels, and a manual test the level that fits its kind', async () => {
@@ -266,7 +266,7 @@ describe('the schema version', () => {
         { id: 'TL-LEND-CMD02', title: 'Close a loan', entity_id: 'TL-LEND-EN01' },
       ],
       data_model: [{ id: 'TL-LEND-EN01-DM', title: 'Loan', entity_id: 'TL-LEND-EN01', description: 'The Loan interface.' }],
-      flow_step: [{ id: 'TL-LEND-UC01-FL01-S01', title: 'Borrow', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 }],
+      flow_step: [{ id: 'TL-LEND-UC01-FL-S01', title: 'Borrow', flow_id: 'TL-LEND-UC01-FL', path: 'main', position: 1 }],
       invariant_test: [
         { id: 'TL-LEND-INV01-T', title: 'A second loan is refused', given: 'A tool on loan.', when: 'Lends it again.', then: 'Expects a refusal.' },
         { id: 'TL-LEND-INV02-T', title: 'A loan has a due date', given: 'An empty library', then: 'Expects a due date.' },

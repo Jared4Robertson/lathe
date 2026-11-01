@@ -1,5 +1,5 @@
 // The Use case aggregate (LA-AUT-A11): a use case with its actors, its UC requirements and their use case tests, and
-// its flows with their steps (and the links each step starts) and their flow tests. One instance is one use case,
+// its one flow with its steps (and the links each step starts) and its flow test. One instance is one use case,
 // whole; nothing in it belongs to another aggregate, and it holds only the links its own records start.
 import type { AggregateShape } from '../../platform/data/repository.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
@@ -16,8 +16,6 @@ export interface FlowStep {
   fulfills: string[];
   /** The command or query it invokes, if any. */
   invokes: string | null;
-  /** The view it happens in, if any. */
-  happensIn: string | null;
   /** The integrations it exchanges with. */
   exchangesWith: string[];
 }
@@ -53,7 +51,6 @@ export const USE_CASE_TABLES = [
   'flow_test',
   'fulfills',
   'invokes',
-  'happens_in',
   'exchanges_with',
   'starts_from',
 ] as const;
@@ -64,7 +61,7 @@ export const USE_CASE_SHAPE = {
   uc_requirement: { at: 'requirements' },
   use_case_test: { at: 'useCaseTests', lists: { starts_from: 'startsFrom' } },
   flow: { at: 'flows' },
-  flow_step: { at: 'steps', lists: { fulfills: 'fulfills', exchanges_with: 'exchangesWith' }, links: { invokes: 'invokes', happens_in: 'happensIn' } },
+  flow_step: { at: 'steps', lists: { fulfills: 'fulfills', exchanges_with: 'exchangesWith' }, links: { invokes: 'invokes' } },
   flow_test: { at: 'flowTests', lists: { starts_from: 'startsFrom' } },
 } as const satisfies AggregateShape;
 
@@ -89,7 +86,7 @@ export function useCasesFrom(rows: (table: string) => Row[], only?: string): Use
   );
   const flowTestsOf = groupBy((rows('flow_test') as unknown as FlowTestRow[]).filter((t) => useCaseOfFlow.has(t.flow_id)), (t) => useCaseOfFlow.get(t.flow_id));
   const actorsOf = groupBy(rows('use_case_actor'), (a) => a.use_case_id);
-  const [fulfills, invokes, happensIn, exchangesWith, startsFrom] = ['fulfills', 'invokes', 'happens_in', 'exchanges_with', 'starts_from'].map((table) => bySource(rows(table)));
+  const [fulfills, invokes, exchangesWith, startsFrom] = ['fulfills', 'invokes', 'exchanges_with', 'starts_from'].map((table) => bySource(rows(table)));
   return useCases.map((useCase) => ({
     root: useCase.id,
     useCase,
@@ -101,7 +98,6 @@ export function useCasesFrom(rows: (table: string) => Row[], only?: string): Use
       row,
       fulfills: groupOf(fulfills, row.id),
       invokes: groupOf(invokes, row.id)[0] ?? null,
-      happensIn: groupOf(happensIn, row.id)[0] ?? null,
       exchangesWith: groupOf(exchangesWith, row.id),
     })),
     flowTests: groupOf(flowTestsOf, useCase.id).map((row) => ({ row, startsFrom: groupOf(startsFrom, row.id) })),
@@ -123,7 +119,6 @@ export function useCaseRows(useCase: UseCase): Map<string, Row[]> {
     ['flow_test', useCase.flowTests.map((t) => asRow(t.row))],
     ['fulfills', useCase.steps.flatMap((s) => links(s.row.id, s.fulfills))],
     ['invokes', useCase.steps.flatMap((s) => links(s.row.id, [s.invokes]))],
-    ['happens_in', useCase.steps.flatMap((s) => links(s.row.id, [s.happensIn]))],
     ['exchanges_with', useCase.steps.flatMap((s) => links(s.row.id, s.exchangesWith))],
     ['starts_from', [...useCase.useCaseTests, ...useCase.flowTests].flatMap((t) => links(t.row.id, t.startsFrom))],
   ]);

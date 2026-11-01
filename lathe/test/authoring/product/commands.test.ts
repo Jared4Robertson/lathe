@@ -199,7 +199,7 @@ describe('LA-AUT-UC23-R01-T52 a record of a product goes with what it holds, ref
     const store = await storeAt(writeData(data));
     const refused = await refusal(store, REMOVE_INTERFACE, { id: 'TL-IF01' });
     expect(refused.problems[0]).toMatchObject({ rule: 'referenced' });
-    expect(refused.problems[0].message).toMatch(/^Interface TL-IF01 is referenced, so it stays: flow TL-LEND-UC01-FL01 \(interface_id\)/);
+    expect(refused.problems[0].message).toMatch(/^Interface TL-IF01 is referenced, so it stays: flow TL-LEND-UC01-FL \(interface_id\)/);
     await runCommand(store, ADD_INTERFACE, { id: 'TL-IF02', title: 'CLI', product_id: 'TL', kind: 'CLI', description: 'The librarian\'s scripts.', public: false });
     expect((await runCommand(store, REMOVE_INTERFACE, { id: 'TL-IF02' })).tables).toEqual(['interface']);
   });

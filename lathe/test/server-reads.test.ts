@@ -25,12 +25,12 @@ describe('LA-AUT-UC06-R14-T02 each Use case query is read by name over HTTP, GET
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
     try {
-      const whole = await fetch(`${base}/api/use-case/get-use-case?id=TL-LEND-UC01-FL01-S01`);
+      const whole = await fetch(`${base}/api/use-case/get-use-case?id=TL-LEND-UC01-FL-S01`);
       expect(whole.status).toBe(200);
       const page = (await whole.json()) as UseCasePage;
-      expect(page.record).toEqual({ id: 'TL-LEND-UC01-FL01-S01', kind: 'flow_step' });
+      expect(page.record).toEqual({ id: 'TL-LEND-UC01-FL-S01', kind: 'flow_step' });
       expect(page.useCase.id).toBe('TL-LEND-UC01');
-      expect(page.flows.flatMap((f) => f.paths.flatMap((p) => p.steps.map((s) => s.step.id)))).toContain('TL-LEND-UC01-FL01-S01');
+      expect(page.flows.flatMap((f) => f.paths.flatMap((p) => p.steps.map((s) => s.step.id)))).toContain('TL-LEND-UC01-FL-S01');
 
       const next = await fetch(`${base}/api/use-case/next-id?kind=uc_requirement&parent=TL-LEND-UC01`);
       expect(await next.json()).toBe('TL-LEND-UC01-R02');

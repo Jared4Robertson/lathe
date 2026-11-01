@@ -32,7 +32,7 @@ async function open(page: Page, url: string, ready: string, state: 'visible' | '
 interface State { name: string; run: (page: Page) => Promise<void> }
 
 /** A flow step a row shows; an entity; a Shared record (in no domain). */
-const STEP = '/LA-EXP-UC12-FL01-S03';
+const STEP = '/LA-EXP-UC12-FL-S01';
 const ENTITY = '/LA-EXP-EN01';
 const SHARED = '/LA-PAT-APP-UX';
 
