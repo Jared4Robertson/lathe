@@ -6,6 +6,7 @@ CREATE TYPE check_severity AS ENUM ('error', 'warning', 'error_or_warning');
 CREATE TABLE "check" (
   name VARCHAR PRIMARY KEY CHECK (regexp_full_match(name, '[a-z0-9]+(-[a-z0-9]+)*')),
   product_id VARCHAR REFERENCES product (id),
+  domain_id VARCHAR NOT NULL CHECK (trim(domain_id) <> ''),
   position INTEGER NOT NULL CHECK (position >= 1),
   severity check_severity NOT NULL,
   summary VARCHAR NOT NULL CHECK (trim(summary) <> ''),
@@ -16,6 +17,7 @@ CREATE TABLE "check" (
 COMMENT ON TABLE "check" IS 'A check: a query over the tables that returns a row (severity, check, record, message) for each problem it finds. An error means the workspace is broken; a warning is work still to do.';
 COMMENT ON COLUMN "check".name IS 'The check''s name, in lower case with hyphens, such as value-object-unused.';
 COMMENT ON COLUMN "check".product_id IS 'For a product''s own check, the product; none for Lathe''s checks.';
+COMMENT ON COLUMN "check".domain_id IS 'The domain whose rules it reports: a domain of Lathe''s own spec for Lathe''s checks, of the product for its own. Not a foreign key, because Lathe''s checks load into every product.';
 COMMENT ON COLUMN "check".position IS 'Its place in the run order, from 1: Lathe''s checks run first, then the product''s own.';
 COMMENT ON COLUMN "check".severity IS 'What its rows report: error, warning, or error_or_warning when its rows say which.';
 COMMENT ON COLUMN "check".summary IS 'What it reports, in one sentence.';

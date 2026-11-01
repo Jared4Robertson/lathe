@@ -307,6 +307,8 @@ export interface CheckRow {
   name: string;
   /** For a product's own check, the product; none for Lathe's checks. */
   product_id?: string;
+  /** The domain whose rules it reports: a domain of Lathe's own spec for Lathe's checks, of the product for its own. Not a foreign key, because Lathe's checks load into every product. */
+  domain_id: string;
   /** Its place in the run order, from 1: Lathe's checks run first, then the product's own. */
   position: number;
   /** What its rows report: error, warning, or error_or_warning when its rows say which. */
