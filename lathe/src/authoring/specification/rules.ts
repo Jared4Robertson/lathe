@@ -10,20 +10,27 @@ import { SPECIFICATION_AGGREGATE } from './model.ts';
  * Each predicate or test after the first of its specification is refused.
  */
 export function specificationOneEach(predicates: readonly PredicateRow[], tests: readonly SpecificationTestRow[]): RuleProblem[] {
-  return [
-    ...beyondFirst(predicates, (r) => r.specification_id).map((r) => ({
-      rule: 'specification-one-each',
-      table: 'predicate',
-      row: r as unknown as Row,
-      message: `specification ${r.specification_id} already has its predicate, so ${r.id} cannot be a second: a specification has one`,
-    })),
-    ...beyondFirst(tests, (r) => r.specification_id).map((r) => ({
-      rule: 'specification-one-each',
-      table: 'specification_test',
-      row: r as unknown as Row,
-      message: `specification ${r.specification_id} already has its test, so ${r.id} cannot be a second: a specification has one`,
-    })),
-  ];
+  return [...onePredicate(predicates), ...oneSpecificationTest(tests)];
+}
+
+/** Every predicate after the first of its specification (LA-AUT-INV103). */
+export function onePredicate(predicates: readonly PredicateRow[]): RuleProblem[] {
+  return beyondFirst(predicates, (r) => r.specification_id).map((r) => ({
+    rule: 'specification-one-each',
+    table: 'predicate',
+    row: r as unknown as Row,
+    message: `specification ${r.specification_id} already has its predicate, so ${r.id} cannot be a second: a specification has one`,
+  }));
+}
+
+/** Every specification test after the first of its specification (LA-AUT-INV103). */
+export function oneSpecificationTest(tests: readonly SpecificationTestRow[]): RuleProblem[] {
+  return beyondFirst(tests, (r) => r.specification_id).map((r) => ({
+    rule: 'specification-one-each',
+    table: 'specification_test',
+    row: r as unknown as Row,
+    message: `specification ${r.specification_id} already has its test, so ${r.id} cannot be a second: a specification has one`,
+  }));
 }
 
 /** The rules over all data. */

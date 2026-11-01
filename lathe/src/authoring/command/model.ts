@@ -65,7 +65,7 @@ export const COMMAND_TABLES = [
 /** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
 export const COMMAND_SHAPE = {
   command: { at: 'command', lists: { raises: 'raises', checks: 'checks', calls: 'calls' } },
-  command_handler: { at: 'handler', one: true, lists: { meets: 'meets', packages: 'packages' } },
+  command_handler: { at: 'handler', one: true, refusedBy: 'oneCommandHandler', lists: { meets: 'meets', packages: 'packages' } },
   policy: { at: 'policies', links: { hears: 'hears' } },
   event_handler: { at: 'eventHandlers', lists: { meets: 'meets', packages: 'packages' } },
   policy_test: { at: 'policyTests', lists: { starts_from: 'startsFrom' } },

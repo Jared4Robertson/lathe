@@ -49,8 +49,8 @@ export const VALUE_OBJECT_TABLES = ['value_object', 'value_object_field', 'const
 export const VALUE_OBJECT_SHAPE = {
   value_object: { at: 'valueObject', given: { fields: 'fields' } },
   constraint: { at: 'constraints' },
-  value_type: { at: 'valueType', one: true, lists: { meets: 'meets', packages: 'packages' } },
-  constraint_test: { at: 'constraintTests', lists: { starts_from: 'startsFrom' } },
+  value_type: { at: 'valueType', one: true, refusedBy: 'oneValueType', lists: { meets: 'meets', packages: 'packages' } },
+  constraint_test: { at: 'constraintTests', refusedBy: 'oneConstraintTest', lists: { starts_from: 'startsFrom' } },
 } as const satisfies AggregateShape;
 
 export type ValueObjectKind = keyof typeof VALUE_OBJECT_SHAPE;

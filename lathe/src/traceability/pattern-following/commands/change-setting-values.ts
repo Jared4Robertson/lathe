@@ -1,6 +1,6 @@
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { valueRows, type SettingValueInput } from '../model.ts';
+import { followingOf, valueRows, type SettingValueInput } from '../model.ts';
 import { PatternFollowingRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 import { CHANGE_SETTING_VALUES_IDENTITY } from './identities.generated.ts';
@@ -21,7 +21,7 @@ export const CHANGE_SETTING_VALUES = {
 /** Replaces the following's setting values. */
 export function changeSettingValues(tx: Transaction, input: ChangeSettingValues): void {
   const followings = new PatternFollowingRepository(tx);
-  const following = followings.loadFollowing(input.follower_id, input.pattern_id) ?? tx.refuse('missing', `${input.follower_id} does not follow ${input.pattern_id}`);
+  const following = followings.load(followingOf(input.follower_id, input.pattern_id)) ?? tx.refuse('missing', `${input.follower_id} does not follow ${input.pattern_id}`);
   following.values = valueRows(input.follower_id, input.pattern_id, input.setting_values);
   holdToRules(tx, following);
   followings.save(following);
