@@ -1,10 +1,7 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { DomainRow } from '../../../platform/data/tables.ts';
-import { newDomain } from '../model.ts';
-import { DomainRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
 import { ADD_DOMAIN_IDENTITY } from './identities.generated.ts';
+import { addDomain } from './handlers.generated.ts';
 
 /** A new domain: its row. */
 export type AddDomain = Pick<DomainRow, 'id' | 'title' | 'product_id' | 'subdomain_type' | 'description' | 'notes'>;
@@ -21,11 +18,3 @@ export const ADD_DOMAIN = {
   },
   handler: addDomain,
 } satisfies CommandDefinition<AddDomain>;
-
-/** Adds the domain, whole and new. */
-export function addDomain(tx: Transaction, input: AddDomain): void {
-  const domains = new DomainRepository(tx);
-  const domain = domains.create(newDomain(input));
-  holdToRules(tx, domain);
-  domains.save(domain);
-}

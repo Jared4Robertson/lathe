@@ -5,7 +5,7 @@
 import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { type IntegrationKind } from './model.ts';
+import type { IntegrationKind } from './model.ts';
 import type { IntegrationPage, IntegrationSummary } from './read-model.ts';
 import { integrationReader, type IntegrationReader } from './reader.ts';
 import { GET_INTEGRATION_IDENTITY, LIST_INTEGRATIONS_IDENTITY, NEXT_INTEGRATION_ID_IDENTITY } from './queries.generated.ts';

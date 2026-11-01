@@ -2,26 +2,13 @@
 // packages it uses) and its integration tests (with the test data sets each starts from). An integration has no
 // owner: its product follows from its ID. One instance is one integration, whole; it holds only the links its own
 // records start.
+import type { AggregateShape } from '../../platform/data/repository.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
-import type { Row, Value } from '../../platform/data/rows.ts';
+import type { Row } from '../../platform/data/rows.ts';
 import type { AdapterRow, IntegrationRow, IntegrationTestRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const INTEGRATION_AGGREGATE = 'LA-AUT-A14';
-
-/**
- * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.
- * Only the columns named in `columns` are taken from the changes.
- */
-export function changed<R extends object>(row: R, changes: object, columns: readonly string[]): R {
-  const next = { ...row } as Record<string, unknown>;
-  for (const [column, value] of Object.entries(changes)) {
-    if (!columns.includes(column) || value === undefined) continue;
-    if (value === null) delete next[column];
-    else next[column] = value as Value;
-  }
-  return next as R;
-}
 
 /** A technical record with the standard rules it meets and the packages it uses. */
 export interface Built<T> {
@@ -49,13 +36,15 @@ export interface Integration {
 /** The tables the Integration aggregate keeps its rows in: its kinds and the relations its records start. */
 export const INTEGRATION_TABLES = ['integration', 'adapter', 'integration_test', 'meets', 'package_use', 'starts_from'] as const;
 
-/** The kinds of the aggregate's records. */
-export type IntegrationKind = 'integration' | 'adapter' | 'integration_test';
+/** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
+export const INTEGRATION_SHAPE = {
+  integration: { at: 'integration' },
+  adapter: { at: 'adapter', one: true, lists: { meets: 'meets', packages: 'packages' } },
+  integration_test: { at: 'tests', lists: { starts_from: 'startsFrom' } },
+} as const satisfies AggregateShape;
 
-/** A new integration, with nothing under it yet. */
-export function newIntegration(integration: IntegrationRow): Integration {
-  return { root: integration.id, integration, adapter: null, tests: [] };
-}
+/** The kinds of the aggregate's records. */
+export type IntegrationKind = keyof typeof INTEGRATION_SHAPE;
 
 /** The integrations in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function integrationsFrom(rows: (table: string) => Row[], only?: string): Integration[] {
@@ -92,10 +81,3 @@ export function integrationRows(integration: Integration): Map<string, Row[]> {
   ]);
 }
 
-/** The kind of the record with this ID inside the integration, or undefined. */
-export function kindInside(integration: Integration, id: string): IntegrationKind | undefined {
-  if (integration.root === id) return 'integration';
-  if (integration.adapter?.row.id === id) return 'adapter';
-  if (integration.tests.some((t) => t.row.id === id)) return 'integration_test';
-  return undefined;
-}

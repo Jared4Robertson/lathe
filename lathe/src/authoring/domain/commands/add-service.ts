@@ -1,9 +1,7 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ServiceRow } from '../../../platform/data/tables.ts';
-import { DomainRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
 import { ADD_SERVICE_IDENTITY } from './identities.generated.ts';
+import { addService } from './handlers.generated.ts';
 
 export type AddService = Pick<ServiceRow, 'id' | 'title' | 'domain_service_id' | 'file'> & { meets?: string[]; packages?: string[] };
 
@@ -19,12 +17,3 @@ export const ADD_SERVICE = {
   },
   handler: addService,
 } satisfies CommandDefinition<AddService>;
-
-export function addService(tx: Transaction, input: AddService): void {
-  const domains = new DomainRepository(tx);
-  const domain = domains.loadHolding('domain_service', input.domain_service_id) ?? tx.refuse('missing', `there is no domain service ${input.domain_service_id}`);
-  const { meets = [], packages = [], ...row } = input;
-  domain.services.push({ row, meets, packages });
-  holdToRules(tx, domain);
-  domains.save(domain);
-}

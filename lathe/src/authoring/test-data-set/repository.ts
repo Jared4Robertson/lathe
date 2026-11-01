@@ -1,9 +1,12 @@
-// TestDataSetRepository (LA-AUT-REPO17): loads and saves the Test data set aggregate whole, in its own table only.
-import { AggregateRepository, type InstanceRows } from '../../platform/data/repository.ts';
+// Generated from data/ by `npm run generate`. Do not edit.
+// TestDataSetRepository (LA-AUT-REPO17): Loads a test data set whole from the transaction's draft and saves exactly the
+// rows that changed, in the Test data set aggregate's own table only; a write to any other table is refused when it is
+// made (`DataFiles`), and a removal is refused, naming the referrers, while a test starts from it.
+import { AggregateRepository as Repository, type InstanceRows } from '../../platform/data/repository.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
 import { TEST_DATA_SET_TABLES, testDataSetRows, testDataSetsFrom, type TestDataSet } from './model.ts';
 
-export class TestDataSetRepository extends AggregateRepository<TestDataSet> {
+export class TestDataSetRepository extends Repository<TestDataSet> {
   constructor(tx: Transaction) {
     super(tx, 'TestDataSetRepository', TEST_DATA_SET_TABLES);
   }

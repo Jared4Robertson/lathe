@@ -1,9 +1,7 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { RuleRow } from '../../../platform/data/tables.ts';
-import { AggregateRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
 import { ADD_RULE_IDENTITY } from './identities.generated.ts';
+import { addRule } from './handlers.generated.ts';
 
 export type AddRule = Pick<RuleRow, 'id' | 'title' | 'invariant_id' | 'file'> & { meets?: string[]; packages?: string[] };
 
@@ -19,12 +17,3 @@ export const ADD_RULE = {
   },
   handler: addRule,
 } satisfies CommandDefinition<AddRule>;
-
-export function addRule(tx: Transaction, input: AddRule): void {
-  const aggregates = new AggregateRepository(tx);
-  const aggregate = aggregates.loadHolding('invariant', input.invariant_id) ?? tx.refuse('missing', `there is no invariant ${input.invariant_id}`);
-  const { meets = [], packages = [], ...row } = input;
-  aggregate.rules.push({ row, meets, packages });
-  holdToRules(tx, aggregate);
-  aggregates.save(aggregate);
-}

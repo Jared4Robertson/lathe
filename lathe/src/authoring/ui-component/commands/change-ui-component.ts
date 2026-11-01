@@ -1,9 +1,7 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { UiComponentRow } from '../../../platform/data/tables.ts';
-import { changed } from '../model.ts';
-import { UiComponentRepository } from '../repository.ts';
 import { CHANGE_UI_COMPONENT_IDENTITY } from './identities.generated.ts';
+import { changeUiComponent } from './handlers.generated.ts';
 
 /** The UI component's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeUiComponent = Pick<UiComponentRow, 'id'> & { title?: UiComponentRow['title']; description?: UiComponentRow['description']; file?: UiComponentRow['file'] | null; renders?: string[]; builds?: string[]; meets?: string[]; packages?: string[] };
@@ -22,15 +20,3 @@ export const CHANGE_UI_COMPONENT = {
   },
   handler: changeUiComponent,
 } satisfies CommandDefinition<ChangeUiComponent>;
-
-/** Changes the UI component's columns and links. */
-export function changeUiComponent(tx: Transaction, input: ChangeUiComponent): void {
-  const components = new UiComponentRepository(tx);
-  const component = components.load(input.id) ?? tx.refuse('missing', `there is no UI component ${input.id}`);
-  component.component = changed(component.component, input, ['title', 'description', 'file']);
-  component.renders = input.renders ?? component.renders;
-  component.builds = input.builds ?? component.builds;
-  component.meets = input.meets ?? component.meets;
-  component.packages = input.packages ?? component.packages;
-  components.save(component);
-}

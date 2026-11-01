@@ -1,9 +1,7 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ValueTypeRow } from '../../../platform/data/tables.ts';
-import { changed } from '../model.ts';
-import { ValueObjectRepository } from '../repository.ts';
 import { CHANGE_VALUE_TYPE_IDENTITY } from './identities.generated.ts';
+import { changeValueType } from './handlers.generated.ts';
 
 /** The value type's changes: a column given is set, null clears an optional one; a list given replaces the list. */
 export type ChangeValueType = Pick<ValueTypeRow, 'id'> & { title?: ValueTypeRow['title']; file?: ValueTypeRow['file'] | null; meets?: string[]; packages?: string[] };
@@ -19,12 +17,3 @@ export const CHANGE_VALUE_TYPE = {
   },
   handler: changeValueType,
 } satisfies CommandDefinition<ChangeValueType>;
-
-/** Changes the value type's columns, links and packages. */
-export function changeValueType(tx: Transaction, input: ChangeValueType): void {
-  const valueObjects = new ValueObjectRepository(tx);
-  const valueObject = valueObjects.loadHolding('value_type', input.id) ?? tx.refuse('missing', `there is no value type ${input.id}`);
-  const valueType = valueObject.valueType!;
-  valueObject.valueType = { row: changed(valueType.row, input, ['title', 'file']), meets: input.meets ?? valueType.meets, packages: input.packages ?? valueType.packages };
-  valueObjects.save(valueObject);
-}

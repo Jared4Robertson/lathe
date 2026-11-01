@@ -1,10 +1,8 @@
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PatternRow } from '../../../platform/data/tables.ts';
-import { changed, type PatternSetting } from '../model.ts';
-import { PatternRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
+import type { PatternSetting } from '../model.ts';
 import { CHANGE_PATTERN_IDENTITY } from './identities.generated.ts';
+import { changePattern } from './handlers.generated.ts';
 
 /** The pattern's changes: a column given is set, null clears an optional one; settings, when given, replace the list. */
 export type ChangePattern = Pick<PatternRow, 'id'> & { title?: PatternRow['title']; description?: PatternRow['description']; notes?: PatternRow['notes'] | null; settings?: PatternSetting[] };
@@ -20,13 +18,3 @@ export const CHANGE_PATTERN = {
   },
   handler: changePattern,
 } satisfies CommandDefinition<ChangePattern>;
-
-/** Changes the pattern's columns and settings. */
-export function changePattern(tx: Transaction, input: ChangePattern): void {
-  const patterns = new PatternRepository(tx);
-  const pattern = patterns.load(input.id) ?? tx.refuse('missing', `there is no pattern ${input.id}`);
-  pattern.pattern = changed(pattern.pattern, input, ['title', 'description', 'notes']);
-  if (input.settings) pattern.settings = input.settings;
-  holdToRules(tx, pattern);
-  patterns.save(pattern);
-}

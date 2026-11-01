@@ -1,10 +1,12 @@
-// ViewRepository (LA-AUT-REPO12): loads and saves the View aggregate whole, in its own tables only. A view requirement
-// or a view test is reached through the view that holds it.
-import { AggregateRepository, type InstanceRows } from '../../platform/data/repository.ts';
+// Generated from data/ by `npm run generate`. Do not edit.
+// ViewRepository (LA-AUT-REPO12): Loads a view whole from the transaction's draft (its view requirements and their view
+// tests, with the test data sets each starts from) and saves exactly the rows that changed, in the View aggregate's own
+// tables only; a write to any other table is refused when it is made.
+import { AggregateRepository as Repository, type InstanceRows } from '../../platform/data/repository.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
-import { kindInside, VIEW_TABLES, viewRows, viewsFrom, type View, type ViewKind } from './model.ts';
+import { VIEW_TABLES, viewRows, viewsFrom, type View, type ViewKind } from './model.ts';
 
-export class ViewRepository extends AggregateRepository<View> {
+export class ViewRepository extends Repository<View> {
   constructor(tx: Transaction) {
     super(tx, 'ViewRepository', VIEW_TABLES);
   }
@@ -17,18 +19,30 @@ export class ViewRepository extends AggregateRepository<View> {
     return viewRows(view);
   }
 
-  /**
-   * Loads the view that holds the record of the kind with this ID: the view itself, or the view of the requirement or
-   * test, found up its parents. Undefined when there is no such record.
-   */
+  /** Loads the view that holds the record of the kind with this ID, found up its parents; undefined when there is none. */
   loadHolding(kind: ViewKind, id: string): View | undefined {
-    let at: { kind: ViewKind; id: string } = { kind, id };
-    while (at.kind !== 'view') {
-      const row = this.files.find(at.kind, { id: at.id });
-      if (!row) return undefined;
-      at = at.kind === 'view_test' ? { kind: 'view_requirement', id: String(row.view_requirement_id) } : { kind: 'view', id: String(row.view_id) };
+    const root = this.rootOf(kind, id);
+    const view = root === undefined ? undefined : this.load(root);
+    return view && holds(view, kind, id) ? view : undefined;
+  }
+
+  // The root's ID, up the parents of the record of the kind with this ID; undefined when one of them is missing.
+  private rootOf(kind: ViewKind, id: string): string | undefined {
+    const row = this.files.find(kind, { id });
+    if (!row) return undefined;
+    switch (kind) {
+      case 'view': return id;
+      case 'view_requirement': return this.rootOf('view', String(row.view_id));
+      case 'view_test': return this.rootOf('view_requirement', String(row.view_requirement_id));
     }
-    const view = this.load(at.id);
-    return view && kindInside(view, id) === kind ? view : undefined;
+  }
+}
+
+/** Whether the view holds the record of the kind with this ID. */
+function holds(view: View, kind: ViewKind, id: string): boolean {
+  switch (kind) {
+    case 'view': return view.root === id;
+    case 'view_requirement': return view.requirements.some((x) => x.id === id);
+    case 'view_test': return view.tests.some((x) => x.row.id === id);
   }
 }

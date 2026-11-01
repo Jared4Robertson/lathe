@@ -1,8 +1,7 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { StandardRuleTestRow } from '../../../platform/data/tables.ts';
-import { StandardRepository } from '../repository.ts';
 import { ADD_STANDARD_RULE_TEST_IDENTITY } from './identities.generated.ts';
+import { addStandardRuleTest } from './handlers.generated.ts';
 
 export type AddStandardRuleTest = Pick<StandardRuleTestRow, 'id' | 'title' | 'standard_rule_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'when' | 'then' | 'notes'> & { starts_from?: string[] };
 
@@ -26,11 +25,3 @@ export const ADD_STANDARD_RULE_TEST = {
   },
   handler: addStandardRuleTest,
 } satisfies CommandDefinition<AddStandardRuleTest>;
-
-export function addStandardRuleTest(tx: Transaction, input: AddStandardRuleTest): void {
-  const standards = new StandardRepository(tx);
-  const standard = standards.loadHolding('standard_rule', input.standard_rule_id) ?? tx.refuse('missing', `there is no standard rule ${input.standard_rule_id}`);
-  const { starts_from = [], ...row } = input;
-  standard.ruleTests.push({ row, startsFrom: starts_from });
-  standards.save(standard);
-}

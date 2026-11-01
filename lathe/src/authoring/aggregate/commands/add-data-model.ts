@@ -1,9 +1,7 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { DataModelRow } from '../../../platform/data/tables.ts';
-import { AggregateRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
 import { ADD_DATA_MODEL_IDENTITY } from './identities.generated.ts';
+import { addDataModel } from './handlers.generated.ts';
 
 export type AddDataModel = Pick<DataModelRow, 'id' | 'title' | 'entity_id' | 'file'> & { meets?: string[]; packages?: string[] };
 
@@ -19,12 +17,3 @@ export const ADD_DATA_MODEL = {
   },
   handler: addDataModel,
 } satisfies CommandDefinition<AddDataModel>;
-
-export function addDataModel(tx: Transaction, input: AddDataModel): void {
-  const aggregates = new AggregateRepository(tx);
-  const aggregate = aggregates.loadHolding('entity', input.entity_id) ?? tx.refuse('missing', `there is no entity ${input.entity_id}`);
-  const { meets = [], packages = [], ...row } = input;
-  aggregate.dataModels.push({ row, meets, packages });
-  holdToRules(tx, aggregate);
-  aggregates.save(aggregate);
-}

@@ -1,26 +1,13 @@
 // The Domain event aggregate (LA-AUT-A7): a domain event with the fields it carries, in order, and its event type
 // (with the standard rules it meets and the packages it uses). One instance is one event, whole; it holds only the
 // links its own records start.
+import type { AggregateShape } from '../../platform/data/repository.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
-import type { Row, Value } from '../../platform/data/rows.ts';
+import type { Row } from '../../platform/data/rows.ts';
 import type { DomainEventRow, EventFieldRow, EventTypeRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const DOMAIN_EVENT_AGGREGATE = 'LA-AUT-A7';
-
-/**
- * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.
- * Only the columns named in `columns` are taken from the changes.
- */
-export function changed<R extends object>(row: R, changes: object, columns: readonly string[]): R {
-  const next = { ...row } as Record<string, unknown>;
-  for (const [column, value] of Object.entries(changes)) {
-    if (!columns.includes(column) || value === undefined) continue;
-    if (value === null) delete next[column];
-    else next[column] = value as Value;
-  }
-  return next as R;
-}
 
 /** An event field as a command gives it: its event and position come from the event and its place in the list. */
 export type EventFieldInput = Omit<EventFieldRow, 'domain_event_id' | 'position'>;
@@ -45,23 +32,13 @@ export interface DomainEvent {
 /** The tables the Domain event aggregate keeps its rows in: its kinds, its part, and the relations its records start. */
 export const DOMAIN_EVENT_TABLES = ['domain_event', 'event_field', 'event_type', 'meets', 'package_use'] as const;
 
-/** The kinds of the aggregate's records, each with the column that names its parent inside the aggregate. */
-export const DOMAIN_EVENT_KINDS = {
-  domain_event: null,
-  event_type: 'domain_event_id',
-} as const;
+/** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
+export const DOMAIN_EVENT_SHAPE = {
+  domain_event: { at: 'event', lists: { fields: 'fields' } },
+  event_type: { at: 'eventType', one: true, lists: { meets: 'meets', packages: 'packages' } },
+} as const satisfies AggregateShape;
 
-export type DomainEventKind = keyof typeof DOMAIN_EVENT_KINDS;
-
-/** The event's fields as rows, in the order given. */
-export function fieldRows(eventId: string, fields: EventFieldInput[]): EventFieldRow[] {
-  return fields.map((field, at) => ({ domain_event_id: eventId, position: at + 1, ...field }));
-}
-
-/** A new domain event with its fields, with no event type yet. */
-export function newDomainEvent(event: DomainEventRow, fields: EventFieldInput[]): DomainEvent {
-  return { root: event.id, event, fields: fieldRows(event.id, fields), eventType: null };
-}
+export type DomainEventKind = keyof typeof DOMAIN_EVENT_SHAPE;
 
 /** The domain events in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function domainEventsFrom(rows: (table: string) => Row[], only?: string): DomainEvent[] {
@@ -97,9 +74,3 @@ export function domainEventRows(event: DomainEvent): Map<string, Row[]> {
   ]);
 }
 
-/** The kind of the record with this ID inside the event, or undefined. */
-export function kindInside(event: DomainEvent, id: string): DomainEventKind | undefined {
-  if (event.root === id) return 'domain_event';
-  if (event.eventType?.row.id === id) return 'event_type';
-  return undefined;
-}
