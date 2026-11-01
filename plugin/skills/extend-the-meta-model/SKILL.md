@@ -17,11 +17,13 @@ Lathe's own kinds cannot be given another parent or more required fields by a pr
 
 ## Judgment
 
-**Stage.** A product kind sits in one of the six stages (or none) and shows there. Discovery: why the product exists beyond an outcome, such as a persona. Domain model: a concept DDD's kinds leave out, such as a saga. Use cases: something a use case owns. Interaction design: a design record of a channel Lathe has no kind for. Technical specification: code that implements no design record. Test plan: a test kind of the product's own.
+**Stage.** A product kind sits in one of the six stages (or none) and shows there. Discovery: why the product exists beyond an outcome or a journey, such as a persona. Domain model: a concept DDD's kinds leave out, such as a saga. Use cases: something a use case owns. Interaction design: a design record of a channel Lathe has no kind for. Technical specification: code that implements no design record. Test plan: a test kind of the product's own.
 
 **Parent and ID.** Its one parent is a Lathe kind or another product kind; start its ID pattern with the parent's name in angle brackets so IDs number under the parent.
 
 **Essential or accidental.** Every kind declares its complexity: essential (what the problem itself demands, decided once by the product, such as a report its people read), accidental (what comes from the means of building it, such as a kind of code), or as-parent (as the record it sits under, such as a test kind). Never mixed: a kind whose records would be both is two kinds. An accidental kind's records must be generated, provided or fills (`write-the-technical-spec`); an essential kind's must name no technology. Words the product's essential records must not use, such as the name of its framework, go in the product's technology words (`set-technology-words`).
+
+**Supertypes.** A relation that targets or starts from several kinds uses a supertype Lathe declares, such as `carries_out_target` (a use case or a policy, what a journey step carries out) and `serves_source` (a capability or a journey, what serves an outcome). A product's relation may use them; it cannot add a kind to one.
 
 **Obligation or not.** Mark a kind an obligation only when each record is something that must be built and proved; Lathe then counts it in coverage and reports the gaps. A new relation's role says whether its links count as design (the source designs the target), build (the source builds it once its file exists), proof (it proves), or none of these.
 
