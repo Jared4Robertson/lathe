@@ -1,8 +1,7 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { InterfaceRow } from '../../../platform/data/tables.ts';
-import { ProductRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
+import { InterfaceRepository } from '../repository.ts';
 import { ADD_INTERFACE_IDENTITY } from './identities.generated.ts';
 
 /** A new interface. */
@@ -23,13 +22,11 @@ export const ADD_INTERFACE = {
   handler: addInterface,
 } satisfies CommandDefinition<AddInterface>;
 
-/** Adds the interface to its product. */
+/** Adds the interface under its product (read, never loaded: a product is Product's record). */
 export function addInterface(tx: Transaction, input: AddInterface): void {
-  const products = new ProductRepository(tx);
+  const interfaces = new InterfaceRepository(tx);
   if (tx.record(input.id)) tx.refuse('primary-key', `interface ${input.id} already exists`);
-  const product = products.load(input.product_id) ?? tx.refuse('missing', `there is no product ${input.product_id}`);
+  if (tx.record(input.product_id)?.kind !== 'product') tx.refuse('missing', `there is no product ${input.product_id}`);
   const { actors = [], offers = [], ...row } = input;
-  product.interfaces.push({ row, actors, offers: [...offers].sort() });
-  holdToRules(tx, product);
-  products.save(product);
+  interfaces.save(interfaces.create({ root: row.id, row, actors, offers: [...offers].sort() }));
 }

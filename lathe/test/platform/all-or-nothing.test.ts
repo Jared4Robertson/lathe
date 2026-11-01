@@ -112,7 +112,7 @@ async function crashAt(root: string, at: Crash, steps: Step[]) {
 
 describe('the spec data store saves each change whole or not at all, through a crash at any point of its write', () => {
   it.each<[string, Change]>([
-  ['LA-AUT-A1-SR01-T02', { steps: [['product', 'change-product', { id: 'TL', title: 'Kept whole' }], ['product', 'add-interface', { ...product('TL-IF90'), kind: 'CLI', description: 'A command line kept whole.', public: false }]] }],
+  ['LA-AUT-A1-SR01-T02', { steps: [['product', 'change-product', { id: 'TL', title: 'Kept whole' }], ['product', 'add-question', { ...product('TL-Q90'), owner: 'Librarian', description: 'A question kept whole.' }]] }],
   ['LA-AUT-A2-SR01-T02', { steps: [['pattern', 'remove-pattern-rule', { id: 'TL-PAT-LIBRARIAN-ACTION-R01' }]] }],
   ['LA-AUT-A3-SR01-T02', { steps: [['standard', 'add-standard', { ...product('TL-STD-KEPT'), type: 'engineering', description: 'A standard kept whole.' }], ['standard', 'add-standard-rule', { id: 'TL-STD-KEPT-R01', title: 'Kept whole', standard_id: 'TL-STD-KEPT', statement: 'Code MUST be kept whole.' }]] }],
   ['LA-AUT-A4-SR01-T02', { steps: [['domain', 'remove-term', { id: 'TL-LEND-TM02' }]] }],
@@ -135,6 +135,7 @@ describe('the spec data store saves each change whole or not at all, through a c
   ['LA-AUT-A21-SR01-T02', { setup: [['slot-filling', 'stop-filling-slot', { record_id: 'TL-LEND-TOOL01', slot_id: 'TL-PAT-LIBRARIAN-ACTION-SL06' }]], steps: [['tooling', 'remove-tooling', { id: 'TL-LEND-TOOL01' }]] }],
   ['LA-AUT-A22-SR01-T02', { steps: [['storage-requirement', 'remove-storage-requirement', { id: 'TL-LEND-A3-SR01' }]] }],
   ['LA-AUT-A23-SR01-T02', { oneFile: true, steps: [['data-store', 'add-data-store', { id: 'TL-LEND-STORE90', title: 'KEPT_URL', domain_id: 'TL-LEND', kind: 'database', description: 'A database kept whole.' }]] }],
+  ['LA-AUT-A24-SR01-T02', { steps: [['interface', 'add-interface', { ...product('TL-IF90'), kind: 'CLI', description: 'A command line kept whole.', public: false, actors: ['Librarian'], offers: ['TL-LEND-UC01'] }]] }],
   ['LA-CHK-A1-SR01-T02', { oneFile: true, steps: [['check', 'add-check', { name: 'kept-check', product_id: 'TL', domain_id: 'LA-CHK', position: 1, severity: 'warning', summary: 'Kept whole.', explanation: 'A check kept whole.', query: "SELECT NULL AS record, 'kept' AS message WHERE false" }]] }],
   ['LA-CHK-A2-SR01-T02', { oneFile: true, steps: [['product-setting', 'set-limits', { product_id: 'TL', max_children: 21, max_entities_per_aggregate: 8 }]] }],
   ['LA-TRC-A3-SR01-T02', { steps: [['pattern-following', 'follow-pattern', { follower_id: 'TL-LEND-UC03', pattern_id: 'TL-PAT-LIBRARIAN-ACTION', setting_values: [{ setting: 'record', value: 'Loan' }, { setting: 'required_input', value: 'The loan to close.' }, { setting: 'result', value: 'The closed loan.' }] }]] }],
@@ -186,7 +187,7 @@ describe('a write a crash left is settled before anything reads the data, and sa
     const store = await openStore(root, { latheDataDir: null });
     try {
       crash.at = 'journal half written';
-      await expect(write(store, [['product', 'change-product', { id: 'TL', title: 'Kept whole' }], ['product', 'add-interface', { ...product('TL-IF90'), kind: 'CLI', description: 'A command line kept whole.', public: false }]])).rejects.toThrow('crashed');
+      await expect(write(store, [['product', 'change-product', { id: 'TL', title: 'Kept whole' }], ['product', 'add-question', { ...product('TL-Q90'), owner: 'Librarian', description: 'A question kept whole.' }]])).rejects.toThrow('crashed');
     } finally {
       crash.at = null;
       await store.close();

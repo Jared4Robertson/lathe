@@ -13,6 +13,7 @@ import { ENDPOINT_COMMANDS } from './authoring/endpoint/commands/index.ts';
 import { ENTRY_POINT_COMMANDS } from './authoring/entry-point/commands/index.ts';
 import { EXTENSION_RECORD_COMMANDS } from './authoring/extension-record/commands/index.ts';
 import { INTEGRATION_COMMANDS } from './authoring/integration/commands/index.ts';
+import { INTERFACE_COMMANDS } from './authoring/interface/commands/index.ts';
 import { PATTERN_COMMANDS } from './authoring/pattern/commands/index.ts';
 import { PATTERN_FOLLOWING_COMMANDS } from './traceability/pattern-following/commands/index.ts';
 import { PRODUCT_COMMANDS } from './authoring/product/commands/index.ts';
@@ -80,6 +81,7 @@ const COMMANDS = [
   ...ENTRY_POINT_COMMANDS,
   ...EXTENSION_RECORD_COMMANDS,
   ...INTEGRATION_COMMANDS,
+  ...INTERFACE_COMMANDS,
   ...PATTERN_COMMANDS,
   ...PATTERN_FOLLOWING_COMMANDS,
   ...PRODUCT_COMMANDS,
