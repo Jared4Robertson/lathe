@@ -2,16 +2,12 @@
 // by has_one and has_many), its entities' data models (with the standard rules they meet and the packages they use),
 // and its invariants with the rule that enforces each (built the same way) and their tests. One instance is one aggregate, whole; it holds only the links its own records
 // start.
-import type { Slice } from '../../platform/commands/definition.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { AggregateRow, DataModelRow, EntityFieldRow, EntityRow, InvariantRow, InvariantTestRow, RuleRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const AGGREGATE_AGGREGATE = 'LA-AUT-A6';
-
-/** How the interfaces reach the aggregate's commands: `lathe aggregate`, the aggregate_ tools, /api/aggregate/. */
-export const AGGREGATE_SLICE: Slice = { aggregate: AGGREGATE_AGGREGATE, name: 'aggregate' };
 
 /**
  * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.

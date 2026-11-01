@@ -1,18 +1,13 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { COMMAND_SLICE } from '../model.ts';
 import { CommandRepository } from '../repository.ts';
+import { REMOVE_POLICY_IDENTITY } from './identities.generated.ts';
 
 /** The policy to remove. */
 export type RemovePolicy = { id: string };
 
 export const REMOVE_POLICY: CommandDefinition<RemovePolicy> = {
-  id: 'LA-AUT-CMD248',
-  slice: COMMAND_SLICE,
-  name: 'remove-policy',
-  description: 'Removes a policy with its event handler and test and the links they start. Refused while anything else references them.',
-  method: 'POST',
-  route: '/api/command/remove-policy',
+  ...REMOVE_POLICY_IDENTITY,
   input: {
     id: column('policy', 'id', 'required'),
   },

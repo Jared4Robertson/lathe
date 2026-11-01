@@ -1,18 +1,13 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { ENDPOINT_SLICE } from '../model.ts';
 import { EndpointRepository } from '../repository.ts';
+import { REMOVE_ENDPOINT_HANDLER_IDENTITY } from './identities.generated.ts';
 
 /** The endpoint handler to remove. */
 export type RemoveEndpointHandler = { id: string };
 
 export const REMOVE_ENDPOINT_HANDLER: CommandDefinition<RemoveEndpointHandler> = {
-  id: 'LA-AUT-CMD329',
-  slice: ENDPOINT_SLICE,
-  name: 'remove-endpoint-handler',
-  description: 'Removes an endpoint handler with the links it starts and the packages it uses. Refused while anything else references them.',
-  method: 'POST',
-  route: '/api/endpoint/remove-endpoint-handler',
+  ...REMOVE_ENDPOINT_HANDLER_IDENTITY,
   input: {
     id: column('endpoint_handler', 'id', 'required'),
   },

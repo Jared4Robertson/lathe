@@ -2,12 +2,12 @@
 // which the query runner gives each handler: a data store whole as its page reads it, the data stores of a product or
 // domain, and the next free ID for a data store. A handler never sees the data, a repository or the aggregate's model;
 // each changes nothing.
-import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { DATA_STORE_SLICE } from './model.ts';
 import type { DataStorePage, DataStoreSummary } from './read-model.ts';
 import { dataStoreReader, type DataStoreReader } from './reader.ts';
+import { GET_DATA_STORE_IDENTITY, LIST_DATA_STORES_IDENTITY, NEXT_DATA_STORE_ID_IDENTITY } from './queries.generated.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
@@ -23,12 +23,7 @@ export function getDataStore(reader: DataStoreReader, input: { id: string }): Da
 
 /** GET a data store whole (LA-AUT-QRY225). */
 export const GET_DATA_STORE: QueryDefinition<{ id: string }, DataStorePage, DataStoreReader> = {
-  id: 'LA-AUT-QRY225',
-  slice: DATA_STORE_SLICE,
-  name: 'get-data-store',
-  description: "Reads a data store whole as its page shows it: its row, the product or domain it sits under, the integration that reaches it, and the repositories, readers and tables stored in it.",
-  method: 'GET',
-  route: '/api/data-store/get-data-store',
+  ...GET_DATA_STORE_IDENTITY,
   input: { id: id('The data store.', 'required') },
   reader: dataStoreReader,
   run: getDataStore,
@@ -42,12 +37,7 @@ export function listDataStores(reader: DataStoreReader, input: { parent: string 
 
 /** List the data stores of a product or domain (LA-AUT-QRY226). */
 export const LIST_DATA_STORES: QueryDefinition<{ parent: string }, DataStoreSummary[], DataStoreReader> = {
-  id: 'LA-AUT-QRY226',
-  slice: DATA_STORE_SLICE,
-  name: 'list-data-stores',
-  description: "Lists the data stores of a product (its own and its domains') or of a domain, by ID, with their titles and kinds.",
-  method: 'GET',
-  route: '/api/data-store/list-data-stores',
+  ...LIST_DATA_STORES_IDENTITY,
   input: { parent: id('The product or domain.', 'required') },
   reader: dataStoreReader,
   run: listDataStores,
@@ -65,12 +55,7 @@ export function nextDataStoreId(reader: DataStoreReader, input: { kind: string; 
 
 /** Get the next ID for a data store (LA-AUT-QRY227). */
 export const NEXT_DATA_STORE_ID: QueryDefinition<{ kind: string; parent: string }, string, DataStoreReader> = {
-  id: 'LA-AUT-QRY227',
-  slice: DATA_STORE_SLICE,
-  name: 'next-id',
-  description: 'The next free ID for a data store under its product or domain: one past the highest in use.',
-  method: 'GET',
-  route: '/api/data-store/next-id',
+  ...NEXT_DATA_STORE_ID_IDENTITY,
   input: {
     kind: id('The kind: data_store.', 'required'),
     parent: id('The product or domain it will sit under.', 'required'),
@@ -88,6 +73,3 @@ function dataStoreText(page: DataStorePage): string {
   for (const r of page.stores) lines.push(`Stores ${r.kind} ${r.id}: ${r.title}`);
   return lines.join('\n');
 }
-
-/** The Data store aggregate's queries, as the CLI and the MCP server register them. */
-export const DATA_STORE_QUERIES: readonly AnyQuery[] = [GET_DATA_STORE, LIST_DATA_STORES, NEXT_DATA_STORE_ID];

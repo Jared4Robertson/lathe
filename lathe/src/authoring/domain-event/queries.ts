@@ -2,12 +2,13 @@
 // (reader.ts), which the query runner gives each handler: a domain event whole as its page reads it, the events of an
 // aggregate, and the next free ID for a record of one of its kinds. A handler never sees the data, a repository or the
 // aggregate's model; each changes nothing.
-import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { DOMAIN_EVENT_SLICE, type DomainEventKind } from './model.ts';
+import { type DomainEventKind } from './model.ts';
 import type { DomainEventPage, DomainEventSummary } from './read-model.ts';
 import { domainEventReader, type DomainEventReader } from './reader.ts';
+import { GET_DOMAIN_EVENT_IDENTITY, LIST_DOMAIN_EVENTS_IDENTITY, NEXT_DOMAIN_EVENT_ID_IDENTITY } from './queries.generated.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
@@ -23,12 +24,7 @@ export function getDomainEvent(reader: DomainEventReader, input: { id: string })
 
 /** GET a domain event whole (LA-AUT-QRY155). */
 export const GET_DOMAIN_EVENT: QueryDefinition<{ id: string }, DomainEventPage, DomainEventReader> = {
-  id: 'LA-AUT-QRY155',
-  slice: DOMAIN_EVENT_SLICE,
-  name: 'get-domain-event',
-  description: 'Reads a domain event whole as its page shows it, by its ID or its event type\'s: the record asked for and its kind, the event\'s row, the fields it carries in order, its event type with the standard rules it meets and the packages it uses, and the commands that raise it and the policies that hear it.',
-  method: 'GET',
-  route: '/api/domain-event/get-domain-event',
+  ...GET_DOMAIN_EVENT_IDENTITY,
   input: { id: id('The domain event, or its event type.', 'required') },
   reader: domainEventReader,
   run: getDomainEvent,
@@ -42,12 +38,7 @@ export function listDomainEvents(reader: DomainEventReader, input: { aggregate_i
 
 /** List the domain events of an aggregate (LA-AUT-QRY156). */
 export const LIST_DOMAIN_EVENTS: QueryDefinition<{ aggregate_id: string }, DomainEventSummary[], DomainEventReader> = {
-  id: 'LA-AUT-QRY156',
-  slice: DOMAIN_EVENT_SLICE,
-  name: 'list-domain-events',
-  description: 'Lists the domain events that happen to an aggregate, by ID, with their titles.',
-  method: 'GET',
-  route: '/api/domain-event/list-domain-events',
+  ...LIST_DOMAIN_EVENTS_IDENTITY,
   input: { aggregate_id: id('The aggregate.', 'required') },
   reader: domainEventReader,
   run: listDomainEvents,
@@ -77,12 +68,7 @@ export function nextDomainEventId(reader: DomainEventReader, input: { kind: stri
 
 /** Get the next ID for a record of the Domain event aggregate (LA-AUT-QRY157). */
 export const NEXT_DOMAIN_EVENT_ID: QueryDefinition<{ kind: string; parent: string }, string, DomainEventReader> = {
-  id: 'LA-AUT-QRY157',
-  slice: DOMAIN_EVENT_SLICE,
-  name: 'next-id',
-  description: 'The next free ID for a domain event (under an aggregate) or its event type (under the event): one past the highest in use.',
-  method: 'GET',
-  route: '/api/domain-event/next-id',
+  ...NEXT_DOMAIN_EVENT_ID_IDENTITY,
   input: {
     kind: id('The kind: domain_event or event_type.', 'required'),
     parent: id('The record it will sit under.', 'required'),
@@ -109,6 +95,3 @@ function domainEventText(page: DomainEventPage): string {
   if (page.heardBy.length) lines.push(`Heard by ${page.heardBy.join(', ')}`);
   return lines.join('\n');
 }
-
-/** The Domain event aggregate's queries, as the CLI and the MCP server register them. */
-export const DOMAIN_EVENT_QUERIES: readonly AnyQuery[] = [GET_DOMAIN_EVENT, LIST_DOMAIN_EVENTS, NEXT_DOMAIN_EVENT_ID];

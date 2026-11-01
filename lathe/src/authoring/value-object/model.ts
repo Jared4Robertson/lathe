@@ -2,16 +2,12 @@
 // constraints with their tests (and the test data sets they start from), and its value type in code (with the standard
 // rules it meets and the packages it uses). One instance is one value object, whole; it holds only the links its own
 // records start.
-import type { Slice } from '../../platform/commands/definition.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { ConstraintRow, ConstraintTestRow, ValueObjectFieldRow, ValueObjectRow, ValueTypeRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const VALUE_OBJECT_AGGREGATE = 'LA-AUT-A9';
-
-/** How the interfaces reach the aggregate's commands: `lathe value-object`, the value_object_ tools, /api/value-object/. */
-export const VALUE_OBJECT_SLICE: Slice = { aggregate: VALUE_OBJECT_AGGREGATE, name: 'value-object' };
 
 /**
  * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.

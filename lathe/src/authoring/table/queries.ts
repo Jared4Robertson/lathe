@@ -1,12 +1,12 @@
 // The Table aggregate's own reads, each answered from its read model (LA-AUT-RM38) through its reader (reader.ts),
 // which the query runner gives each handler: a table whole as its page reads it, the tables under a parent, and the
 // next free ID for a table. A handler never sees the data, a repository or the aggregate's model; each changes nothing.
-import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { TABLE_SLICE } from './model.ts';
 import type { TablePage, TableSummary } from './read-model.ts';
 import { tableReader, type TableReader } from './reader.ts';
+import { GET_TABLE_IDENTITY, LIST_TABLES_IDENTITY, NEXT_TABLE_ID_IDENTITY } from './queries.generated.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
@@ -22,12 +22,7 @@ export function getTable(reader: TableReader, input: { id: string }): TablePage 
 
 /** GET a table whole (LA-AUT-QRY185). */
 export const GET_TABLE: QueryDefinition<{ id: string }, TablePage, TableReader> = {
-  id: 'LA-AUT-QRY185',
-  slice: TABLE_SLICE,
-  name: 'get-table',
-  description: 'Reads a table whole as its page shows it, by its ID: its row, the entity, read model or domain it sits under, its keys in order, the standard rules it meets and the packages it uses.',
-  method: 'GET',
-  route: '/api/table/get-table',
+  ...GET_TABLE_IDENTITY,
   input: { id: id('The table.', 'required') },
   reader: tableReader,
   run: getTable,
@@ -52,12 +47,7 @@ export function listTables(reader: TableReader, input: { parent: string }): Tabl
 
 /** List the tables under a parent (LA-AUT-QRY186). */
 export const LIST_TABLES: QueryDefinition<{ parent: string }, TableSummary[], TableReader> = {
-  id: 'LA-AUT-QRY186',
-  slice: TABLE_SLICE,
-  name: 'list-tables',
-  description: 'Lists the tables under an entity, a read model or a domain, by ID, with their titles.',
-  method: 'GET',
-  route: '/api/table/list-tables',
+  ...LIST_TABLES_IDENTITY,
   input: { parent: id('The entity, read model or domain.', 'required') },
   reader: tableReader,
   run: listTables,
@@ -80,12 +70,7 @@ export function nextTableId(reader: TableReader, input: { parent: string }): str
 
 /** Get the next ID for a table (LA-AUT-QRY187). */
 export const NEXT_TABLE_ID: QueryDefinition<{ parent: string }, string, TableReader> = {
-  id: 'LA-AUT-QRY187',
-  slice: TABLE_SLICE,
-  name: 'next-id',
-  description: "The next free ID for a table: the one ID of an entity's or read model's table, or a domain's next own table, one past the highest in use.",
-  method: 'GET',
-  route: '/api/table/next-id',
+  ...NEXT_TABLE_ID_IDENTITY,
   input: { parent: id('The entity, read model or domain it will sit under.', 'required') },
   reader: tableReader,
   run: nextTableId,
@@ -105,6 +90,3 @@ function tableText(page: TablePage): string {
   for (const p of page.packages) lines.push(`  uses ${p}`);
   return lines.join('\n');
 }
-
-/** The Table aggregate's queries, as the CLI and the MCP server register them. */
-export const TABLE_QUERIES: readonly AnyQuery[] = [GET_TABLE, LIST_TABLES, NEXT_TABLE_ID];

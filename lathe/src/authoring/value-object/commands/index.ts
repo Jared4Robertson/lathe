@@ -1,4 +1,4 @@
-// The Value object aggregate's commands, as the CLI, the MCP server and the HTTP API register them.
+// Generated from data/ by `npm run generate`. Do not edit.
 import type { AnyCommand } from '../../../platform/commands/definition.ts';
 import { ADD_VALUE_OBJECT } from './add-value-object.ts';
 import { CHANGE_VALUE_OBJECT } from './change-value-object.ts';

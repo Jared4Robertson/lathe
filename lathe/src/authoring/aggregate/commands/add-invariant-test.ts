@@ -1,19 +1,14 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { InvariantTestRow } from '../../../platform/data/tables.ts';
-import { AGGREGATE_SLICE } from '../model.ts';
 import { AggregateRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_INVARIANT_TEST_IDENTITY } from './identities.generated.ts';
 
 export type AddInvariantTest = Pick<InvariantTestRow, 'id' | 'title' | 'invariant_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'when' | 'then' | 'notes'> & { starts_from?: string[] };
 
 export const ADD_INVARIANT_TEST: CommandDefinition<AddInvariantTest> = {
-  id: 'LA-AUT-CMD222',
-  slice: AGGREGATE_SLICE,
-  name: 'add-invariant-test',
-  description: 'Adds the test of an invariant, with the test data sets it starts from.',
-  method: 'POST',
-  route: '/api/aggregate/add-invariant-test',
+  ...ADD_INVARIANT_TEST_IDENTITY,
   input: {
     id: column('invariant_test', 'id', 'required'),
     title: column('invariant_test', 'title', 'required'),

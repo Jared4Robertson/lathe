@@ -1,9 +1,10 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { InvariantTestRow } from '../../../platform/data/tables.ts';
-import { AGGREGATE_SLICE, changed } from '../model.ts';
+import { changed } from '../model.ts';
 import { AggregateRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_INVARIANT_TEST_IDENTITY } from './identities.generated.ts';
 
 /** The test's changes: a column given is set, null clears an optional one; starts_from, when given, replaces the list. */
 export type ChangeInvariantTest = Pick<InvariantTestRow, 'id'> & {
@@ -22,12 +23,7 @@ export type ChangeInvariantTest = Pick<InvariantTestRow, 'id'> & {
 };
 
 export const CHANGE_INVARIANT_TEST: CommandDefinition<ChangeInvariantTest> = {
-  id: 'LA-AUT-CMD223',
-  slice: AGGREGATE_SLICE,
-  name: 'change-invariant-test',
-  description: "Changes an invariant test's columns or the test data sets it starts from (the whole list).",
-  method: 'POST',
-  route: '/api/aggregate/change-invariant-test',
+  ...CHANGE_INVARIANT_TEST_IDENTITY,
   input: {
     id: column('invariant_test', 'id', 'required'),
     title: column('invariant_test', 'title', 'optional'),

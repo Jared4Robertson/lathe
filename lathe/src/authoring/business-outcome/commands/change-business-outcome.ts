@@ -1,8 +1,9 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { BusinessOutcomeRow } from '../../../platform/data/tables.ts';
-import { BUSINESS_OUTCOME_SLICE, changed } from '../model.ts';
+import { changed } from '../model.ts';
 import { BusinessOutcomeRepository } from '../repository.ts';
+import { CHANGE_BUSINESS_OUTCOME_IDENTITY } from './identities.generated.ts';
 
 /** The outcome's changes: a column given is set, null clears an optional one; measured_by, when given, replaces the list. */
 export type ChangeBusinessOutcome = Pick<BusinessOutcomeRow, 'id'> & {
@@ -16,12 +17,7 @@ export type ChangeBusinessOutcome = Pick<BusinessOutcomeRow, 'id'> & {
 };
 
 export const CHANGE_BUSINESS_OUTCOME: CommandDefinition<ChangeBusinessOutcome> = {
-  id: 'LA-AUT-CMD141',
-  slice: BUSINESS_OUTCOME_SLICE,
-  name: 'change-business-outcome',
-  description: "Changes a business outcome's title, statement, measure, target, how it is measured outside the code or notes, or what measures it (the whole list). Its product stays.",
-  method: 'POST',
-  route: '/api/business-outcome/change-business-outcome',
+  ...CHANGE_BUSINESS_OUTCOME_IDENTITY,
   input: {
     id: column('business_outcome', 'id', 'required'),
     title: column('business_outcome', 'title', 'optional'),

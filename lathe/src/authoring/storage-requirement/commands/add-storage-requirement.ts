@@ -1,18 +1,14 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { StorageRequirementRow } from '../../../platform/data/tables.ts';
-import { STORAGE_REQUIREMENT_SLICE, newStorageRequirement } from '../model.ts';
+import { newStorageRequirement } from '../model.ts';
 import { StorageRequirementRepository } from '../repository.ts';
+import { ADD_STORAGE_REQUIREMENT_IDENTITY } from './identities.generated.ts';
 
 export type AddStorageRequirement = Pick<StorageRequirementRow, 'id' | 'title' | 'aggregate_id' | 'read_model_id' | 'statement'>;
 
 export const ADD_STORAGE_REQUIREMENT: CommandDefinition<AddStorageRequirement> = {
-  id: 'LA-AUT-CMD360',
-  slice: STORAGE_REQUIREMENT_SLICE,
-  name: 'add-storage-requirement',
-  description: 'Adds a storage requirement under the one aggregate or read model whose data it is about (exactly one of aggregate_id and read_model_id): what of it must be kept, and how well.',
-  method: 'POST',
-  route: '/api/storage-requirement/add-storage-requirement',
+  ...ADD_STORAGE_REQUIREMENT_IDENTITY,
   input: {
     id: column('storage_requirement', 'id', 'required'),
     title: column('storage_requirement', 'title', 'required'),

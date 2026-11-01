@@ -1,9 +1,10 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { CheckRow } from '../../../platform/data/tables.ts';
-import { changed, CHECK_SLICE } from '../model.ts';
+import { changed } from '../model.ts';
 import { CheckRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_CHECK_IDENTITY } from './identities.generated.ts';
 
 /** The check's changes: a column given is set, null clears an optional one. */
 export type ChangeCheck = Pick<CheckRow, 'name'> & {
@@ -16,12 +17,7 @@ export type ChangeCheck = Pick<CheckRow, 'name'> & {
 };
 
 export const CHANGE_CHECK: CommandDefinition<ChangeCheck> = {
-  id: 'LA-CHK-CMD02',
-  slice: CHECK_SLICE,
-  name: 'change-check',
-  description: "Changes a check row's place in the run order, severity, summary, explanation, query or kinds. Its name and product do not change, and Lathe's own checks are read-only.",
-  method: 'POST',
-  route: '/api/check/change-check',
+  ...CHANGE_CHECK_IDENTITY,
   input: {
     name: column('check', 'name', 'required'),
     position: column('check', 'position', 'optional'),

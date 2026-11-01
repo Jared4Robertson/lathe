@@ -1,20 +1,15 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { InvariantRow } from '../../../platform/data/tables.ts';
-import { AGGREGATE_SLICE } from '../model.ts';
 import { AggregateRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_INVARIANT_IDENTITY } from './identities.generated.ts';
 
 /** A new invariant. */
 export type AddInvariant = Pick<InvariantRow, 'id' | 'title' | 'aggregate_id' | 'statement'>;
 
 export const ADD_INVARIANT: CommandDefinition<AddInvariant> = {
-  id: 'LA-AUT-CMD216',
-  slice: AGGREGATE_SLICE,
-  name: 'add-invariant',
-  description: 'Adds an invariant to its aggregate: a rule that holds on every change.',
-  method: 'POST',
-  route: '/api/aggregate/add-invariant',
+  ...ADD_INVARIANT_IDENTITY,
   input: {
     id: column('invariant', 'id', 'required'),
     title: column('invariant', 'title', 'required'),

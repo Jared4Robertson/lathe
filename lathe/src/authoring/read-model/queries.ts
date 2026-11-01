@@ -2,12 +2,13 @@
 // (reader.ts), which the query runner gives each handler: a read model whole as its page reads it, the read models of a
 // domain, and the next free ID for a record of one of its kinds. A handler never sees the data, a repository or the
 // aggregate's model; each changes nothing.
-import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { READ_MODEL_SLICE, type ReadModelKind } from './model.ts';
+import { type ReadModelKind } from './model.ts';
 import type { ReadModelPage, ReadModelSummary } from './read-model.ts';
 import { readModelReader, type ReadModelReader } from './reader.ts';
+import { GET_READ_MODEL_IDENTITY, LIST_READ_MODELS_IDENTITY, NEXT_READ_MODEL_ID_IDENTITY } from './queries.generated.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
@@ -23,12 +24,7 @@ export function getReadModel(reader: ReadModelReader, input: { id: string }): Re
 
 /** GET a read model whole (LA-AUT-QRY179). */
 export const GET_READ_MODEL: QueryDefinition<{ id: string }, ReadModelPage, ReadModelReader> = {
-  id: 'LA-AUT-QRY179',
-  slice: READ_MODEL_SLICE,
-  name: 'get-read-model',
-  description: 'Reads a read model whole as its page shows it, by its ID or the ID of any record in it: the record asked for and its kind, the read model\'s row and fields in order, what it reads, calls and is fed by, its queries by ID each with what it selects by and calls and its handler, its projection and its reader (each piece of code with the standard rules it meets and the packages it uses).',
-  method: 'GET',
-  route: '/api/read-model/get-read-model',
+  ...GET_READ_MODEL_IDENTITY,
   input: { id: id('The read model, or a query, its projection, its reader or a query handler in it.', 'required') },
   reader: readModelReader,
   run: getReadModel,
@@ -42,18 +38,12 @@ export function listReadModels(reader: ReadModelReader, input: { domain_id: stri
 
 /** List the read models of a domain (LA-AUT-QRY180). */
 export const LIST_READ_MODELS: QueryDefinition<{ domain_id: string }, ReadModelSummary[], ReadModelReader> = {
-  id: 'LA-AUT-QRY180',
-  slice: READ_MODEL_SLICE,
-  name: 'list-read-models',
-  description: 'Lists the read models of a domain, by ID, with their titles.',
-  method: 'GET',
-  route: '/api/read-model/list-read-models',
+  ...LIST_READ_MODELS_IDENTITY,
   input: { domain_id: id('The domain.', 'required') },
   reader: readModelReader,
   run: listReadModels,
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No read models.'),
 };
-
 
 /** The one ID of each kind a read model or a query has one of, and its name in a refusal. */
 const ONE: Record<'projection' | 'reader' | 'query_handler', { suffix: string; name: string }> = {
@@ -94,12 +84,7 @@ export function nextReadModelId(reader: ReadModelReader, input: { kind: string; 
 
 /** Get the next ID for a record of the Read model aggregate (LA-AUT-QRY181). */
 export const NEXT_READ_MODEL_ID: QueryDefinition<{ kind: string; parent: string }, string, ReadModelReader> = {
-  id: 'LA-AUT-QRY181',
-  slice: READ_MODEL_SLICE,
-  name: 'next-id',
-  description: 'The next free ID for a read model (under its domain) or a query (under its read model): one past the highest in use; or the one ID of a projection or a reader (under its read model) or a query handler (under its query).',
-  method: 'GET',
-  route: '/api/read-model/next-id',
+  ...NEXT_READ_MODEL_ID_IDENTITY,
   input: {
     kind: id('The kind: read_model, query, projection, reader or query_handler.', 'required'),
     parent: id('The record it will sit under: a domain for a read model, a query for a query handler, else the read model.', 'required'),
@@ -131,6 +116,3 @@ function readModelText(page: ReadModelPage): string {
   if (page.reader) lines.push(code('Reader', page.reader));
   return lines.join('\n');
 }
-
-/** The Read model aggregate's queries, as the CLI and the MCP server register them. */
-export const READ_MODEL_QUERIES: readonly AnyQuery[] = [GET_READ_MODEL, LIST_READ_MODELS, NEXT_READ_MODEL_ID];

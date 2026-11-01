@@ -1,18 +1,13 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EndpointTestRow } from '../../../platform/data/tables.ts';
-import { ENDPOINT_SLICE } from '../model.ts';
 import { EndpointRepository } from '../repository.ts';
+import { ADD_ENDPOINT_TEST_IDENTITY } from './identities.generated.ts';
 
 export type AddEndpointTest = Pick<EndpointTestRow, 'id' | 'title' | 'api_requirement_id' | 'level' | 'state' | 'when' | 'then' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'notes'> & { starts_from?: string[] };
 
 export const ADD_ENDPOINT_TEST: CommandDefinition<AddEndpointTest> = {
-  id: 'LA-AUT-CMD330',
-  slice: ENDPOINT_SLICE,
-  name: 'add-endpoint-test',
-  description: 'Adds an endpoint test under its API requirement, with the test data sets it starts from.',
-  method: 'POST',
-  route: '/api/endpoint/add-endpoint-test',
+  ...ADD_ENDPOINT_TEST_IDENTITY,
   input: {
     id: column('endpoint_test', 'id', 'required'),
     title: column('endpoint_test', 'title', 'required'),

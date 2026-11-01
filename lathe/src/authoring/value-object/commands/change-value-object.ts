@@ -1,20 +1,16 @@
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ValueObjectRow } from '../../../platform/data/tables.ts';
-import { FIELD_COLUMNS, VALUE_OBJECT_SLICE, changed, type ValueObjectField } from '../model.ts';
+import { FIELD_COLUMNS, changed, type ValueObjectField } from '../model.ts';
 import { ValueObjectRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_VALUE_OBJECT_IDENTITY } from './identities.generated.ts';
 
 /** The value object's changes: a column given is set; fields, when given, replace the list. */
 export type ChangeValueObject = Pick<ValueObjectRow, 'id'> & { title?: ValueObjectRow['title']; description?: ValueObjectRow['description']; fields?: ValueObjectField[] };
 
 export const CHANGE_VALUE_OBJECT: CommandDefinition<ChangeValueObject> = {
-  id: 'LA-AUT-CMD271',
-  slice: VALUE_OBJECT_SLICE,
-  name: 'change-value-object',
-  description: "Changes a value object's title or description, or its fields (the whole list, in order).",
-  method: 'POST',
-  route: '/api/value-object/change-value-object',
+  ...CHANGE_VALUE_OBJECT_IDENTITY,
   input: {
     id: column('value_object', 'id', 'required'),
     title: column('value_object', 'title', 'optional'),

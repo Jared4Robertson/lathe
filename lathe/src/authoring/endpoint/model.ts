@@ -2,16 +2,12 @@
 // data sets each starts from), and its endpoint handler (with the standard rules it meets and the packages it uses).
 // An endpoint sits under the one command or query it exposes, outside the aggregate. One instance is one endpoint,
 // whole; it holds only the links its own records start.
-import type { Slice } from '../../platform/commands/definition.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { ApiRequirementRow, EndpointHandlerRow, EndpointRow, EndpointTestRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const ENDPOINT_AGGREGATE = 'LA-AUT-A13';
-
-/** How the interfaces reach the aggregate's commands: `lathe endpoint`, the endpoint_ tools, /api/endpoint/. */
-export const ENDPOINT_SLICE: Slice = { aggregate: ENDPOINT_AGGREGATE, name: 'endpoint' };
 
 /**
  * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.

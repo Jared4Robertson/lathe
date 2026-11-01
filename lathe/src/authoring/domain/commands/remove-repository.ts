@@ -1,18 +1,13 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { DOMAIN_SLICE } from '../model.ts';
 import { DomainRepository } from '../repository.ts';
+import { REMOVE_REPOSITORY_IDENTITY } from './identities.generated.ts';
 
 /** The repository to remove. */
 export type RemoveRepository = { id: string };
 
 export const REMOVE_REPOSITORY: CommandDefinition<RemoveRepository> = {
-  id: 'LA-AUT-CMD174',
-  slice: DOMAIN_SLICE,
-  name: 'remove-repository',
-  description: 'Removes a repository with the links it starts and the packages it uses. Refused while anything references it.',
-  method: 'POST',
-  route: '/api/domain/remove-repository',
+  ...REMOVE_REPOSITORY_IDENTITY,
   input: {
     id: column('repository', 'id', 'required'),
   },

@@ -1,18 +1,13 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { DATA_STORE_SLICE } from '../model.ts';
 import { DataStoreRepository } from '../repository.ts';
+import { REMOVE_DATA_STORE_IDENTITY } from './identities.generated.ts';
 
 /** The data store to remove. */
 export type RemoveDataStore = { id: string };
 
 export const REMOVE_DATA_STORE: CommandDefinition<RemoveDataStore> = {
-  id: 'LA-AUT-CMD372',
-  slice: DATA_STORE_SLICE,
-  name: 'remove-data-store',
-  description: 'Removes a data store with the link it starts. Refused while a repository, reader or table is stored in it, naming each.',
-  method: 'POST',
-  route: '/api/data-store/remove-data-store',
+  ...REMOVE_DATA_STORE_IDENTITY,
   input: {
     id: column('data_store', 'id', 'required'),
   },

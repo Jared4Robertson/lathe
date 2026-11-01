@@ -1,20 +1,15 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { UcRequirementRow } from '../../../platform/data/tables.ts';
-import { USE_CASE_SLICE } from '../model.ts';
 import { UseCaseRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_UC_REQUIREMENT_IDENTITY } from './identities.generated.ts';
 
 /** A new UC requirement. */
 export type AddUcRequirement = Pick<UcRequirementRow, 'id' | 'title' | 'use_case_id' | 'statement' | 'group_name'>;
 
 export const ADD_UC_REQUIREMENT: CommandDefinition<AddUcRequirement> = {
-  id: 'LA-AUT-CMD104',
-  slice: USE_CASE_SLICE,
-  name: 'add-uc-requirement',
-  description: 'Adds a UC requirement to its use case.',
-  method: 'POST',
-  route: '/api/use-case/add-uc-requirement',
+  ...ADD_UC_REQUIREMENT_IDENTITY,
   input: {
     id: column('uc_requirement', 'id', 'required'),
     title: column('uc_requirement', 'title', 'required'),

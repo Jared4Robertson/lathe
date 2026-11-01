@@ -1,18 +1,13 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { StandardRuleTestRow } from '../../../platform/data/tables.ts';
-import { STANDARD_SLICE } from '../model.ts';
 import { StandardRepository } from '../repository.ts';
+import { ADD_STANDARD_RULE_TEST_IDENTITY } from './identities.generated.ts';
 
 export type AddStandardRuleTest = Pick<StandardRuleTestRow, 'id' | 'title' | 'standard_rule_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'when' | 'then' | 'notes'> & { starts_from?: string[] };
 
 export const ADD_STANDARD_RULE_TEST: CommandDefinition<AddStandardRuleTest> = {
-  id: 'LA-AUT-CMD206',
-  slice: STANDARD_SLICE,
-  name: 'add-standard-rule-test',
-  description: 'Adds a standard rule test under its rule, with the test data sets it starts from.',
-  method: 'POST',
-  route: '/api/standard/add-standard-rule-test',
+  ...ADD_STANDARD_RULE_TEST_IDENTITY,
   input: {
     id: column('standard_rule_test', 'id', 'required'),
     title: column('standard_rule_test', 'title', 'required'),

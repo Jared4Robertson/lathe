@@ -1,4 +1,4 @@
-// The Domain event aggregate's commands (LA-AUT-A7), as the CLI, the MCP server and the HTTP API register them.
+// Generated from data/ by `npm run generate`. Do not edit.
 import type { AnyCommand } from '../../../platform/commands/definition.ts';
 import { ADD_DOMAIN_EVENT } from './add-domain-event.ts';
 import { CHANGE_DOMAIN_EVENT } from './change-domain-event.ts';

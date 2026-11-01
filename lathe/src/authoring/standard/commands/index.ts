@@ -1,4 +1,4 @@
-// The Standard aggregate's commands, as the CLI, the MCP server and the HTTP API register them.
+// Generated from data/ by `npm run generate`. Do not edit.
 import type { AnyCommand } from '../../../platform/commands/definition.ts';
 import { ADD_STANDARD } from './add-standard.ts';
 import { CHANGE_STANDARD } from './change-standard.ts';

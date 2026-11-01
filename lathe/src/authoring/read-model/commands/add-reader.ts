@@ -1,20 +1,15 @@
 import { column, id, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ReaderRow } from '../../../platform/data/tables.ts';
-import { READ_MODEL_SLICE } from '../model.ts';
 import { ReadModelRepository } from '../repository.ts';
 import { refuseBroken } from '../../../platform/data/rules.ts';
 import { holdToRules, readModelOneEach } from '../rules.ts';
+import { ADD_READER_IDENTITY } from './identities.generated.ts';
 
 export type AddReader = Pick<ReaderRow, 'id' | 'title' | 'read_model_id' | 'file' | 'description'> & { stored_in?: string; meets?: string[]; packages?: string[] };
 
 export const ADD_READER: CommandDefinition<AddReader> = {
-  id: 'LA-AUT-CMD297',
-  slice: READ_MODEL_SLICE,
-  name: 'add-reader',
-  description: "Adds a read model's reader, the one way its query handlers read its table, with the data store it reads the table in, the standard rules it meets and the packages it uses.",
-  method: 'POST',
-  route: '/api/read-model/add-reader',
+  ...ADD_READER_IDENTITY,
   input: {
     id: column('reader', 'id', 'required'),
     title: column('reader', 'title', 'required'),

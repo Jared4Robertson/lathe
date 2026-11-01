@@ -2,12 +2,13 @@
 // (reader.ts), which the query runner gives each handler: an integration whole as its page reads it, the integrations
 // of a product, and the next free ID for a record of one of its kinds. A handler never sees the data, a repository or
 // the aggregate's model; each changes nothing.
-import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { INTEGRATION_SLICE, type IntegrationKind } from './model.ts';
+import { type IntegrationKind } from './model.ts';
 import type { IntegrationPage, IntegrationSummary } from './read-model.ts';
 import { integrationReader, type IntegrationReader } from './reader.ts';
+import { GET_INTEGRATION_IDENTITY, LIST_INTEGRATIONS_IDENTITY, NEXT_INTEGRATION_ID_IDENTITY } from './queries.generated.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
@@ -23,12 +24,7 @@ export function getIntegration(reader: IntegrationReader, input: { id: string })
 
 /** GET an integration whole (LA-AUT-QRY199). */
 export const GET_INTEGRATION: QueryDefinition<{ id: string }, IntegrationPage, IntegrationReader> = {
-  id: 'LA-AUT-QRY199',
-  slice: INTEGRATION_SLICE,
-  name: 'get-integration',
-  method: 'GET',
-  route: '/api/integration/get-integration',
-  description: "Reads an integration whole as its page shows it, by its ID or the ID of any record in it: the record asked for and its kind, the integration's row, its adapter (with the standard rules it meets and the packages it uses), and its integration tests by ID (with the test data sets they start from).",
+  ...GET_INTEGRATION_IDENTITY,
   input: { id: id('The integration, or its adapter or an integration test.', 'required') },
   reader: integrationReader,
   run: getIntegration,
@@ -42,18 +38,12 @@ export function listIntegrations(reader: IntegrationReader, input: { product_id:
 
 /** List the integrations of a product (LA-AUT-QRY200). */
 export const LIST_INTEGRATIONS: QueryDefinition<{ product_id: string }, IntegrationSummary[], IntegrationReader> = {
-  id: 'LA-AUT-QRY200',
-  slice: INTEGRATION_SLICE,
-  name: 'list-integrations',
-  method: 'GET',
-  route: '/api/integration/list-integrations',
-  description: 'Lists the integrations of a product, by ID, with their titles.',
+  ...LIST_INTEGRATIONS_IDENTITY,
   input: { product_id: id('The product.', 'required') },
   reader: integrationReader,
   run: listIntegrations,
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No integrations.'),
 };
-
 
 /** The kinds of the aggregate with an ID under a parent; how each is written the schema says (`idShape`). */
 const KINDS: readonly string[] = ['integration', 'adapter', 'integration_test'];
@@ -80,12 +70,7 @@ export function nextIntegrationId(reader: IntegrationReader, input: { kind: stri
 
 /** Get the next ID in an integration (LA-AUT-QRY201). */
 export const NEXT_INTEGRATION_ID: QueryDefinition<{ kind: string; parent: string }, string, IntegrationReader> = {
-  id: 'LA-AUT-QRY201',
-  slice: INTEGRATION_SLICE,
-  name: 'next-id',
-  method: 'GET',
-  route: '/api/integration/next-id',
-  description: 'The next free ID for an integration (under a product), or an adapter or integration test (under an integration): one past the highest in use.',
+  ...NEXT_INTEGRATION_ID_IDENTITY,
   input: {
     kind: id('The kind: integration, adapter or integration_test.', 'required'),
     parent: id('The record it will sit under: for an integration, its product.', 'required'),
@@ -107,6 +92,3 @@ function integrationText(page: IntegrationPage): string {
   for (const t of page.tests) lines.push(`Integration test ${t.test.id}: ${t.test.title} (${t.test.state})`);
   return lines.join('\n');
 }
-
-/** The Integration aggregate's queries, as the CLI and the MCP server register them. */
-export const INTEGRATION_QUERIES: readonly AnyQuery[] = [GET_INTEGRATION, LIST_INTEGRATIONS, NEXT_INTEGRATION_ID];

@@ -1,18 +1,14 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { SpecificationRow } from '../../../platform/data/tables.ts';
-import { SPECIFICATION_SLICE, newSpecification } from '../model.ts';
+import { newSpecification } from '../model.ts';
 import { SpecificationRepository } from '../repository.ts';
+import { ADD_SPECIFICATION_IDENTITY } from './identities.generated.ts';
 
 export type AddSpecification = Pick<SpecificationRow, 'id' | 'title' | 'statement'> & { reads?: string[] };
 
 export const ADD_SPECIFICATION: CommandDefinition<AddSpecification> = {
-  id: 'LA-AUT-CMD260',
-  slice: SPECIFICATION_SLICE,
-  name: 'add-specification',
-  description: 'Adds a specification, in the domain its ID names, with the aggregates it reads.',
-  method: 'POST',
-  route: '/api/specification/add-specification',
+  ...ADD_SPECIFICATION_IDENTITY,
   input: {
     id: column('specification', 'id', 'required'),
     title: column('specification', 'title', 'required'),

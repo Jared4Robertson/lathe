@@ -1,19 +1,14 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ViewRequirementRow } from '../../../platform/data/tables.ts';
-import { VIEW_SLICE } from '../model.ts';
 import { ViewRepository } from '../repository.ts';
+import { ADD_VIEW_REQUIREMENT_IDENTITY } from './identities.generated.ts';
 
 /** A new view requirement. */
 export type AddViewRequirement = Pick<ViewRequirementRow, 'id' | 'title' | 'view_id' | 'statement' | 'group_name'>;
 
 export const ADD_VIEW_REQUIREMENT: CommandDefinition<AddViewRequirement> = {
-  id: 'LA-AUT-CMD313',
-  slice: VIEW_SLICE,
-  name: 'add-view-requirement',
-  description: 'Adds a view requirement under its view: one rule the view must follow.',
-  method: 'POST',
-  route: '/api/view/add-view-requirement',
+  ...ADD_VIEW_REQUIREMENT_IDENTITY,
   input: {
     id: column('view_requirement', 'id', 'required'),
     title: column('view_requirement', 'title', 'required'),

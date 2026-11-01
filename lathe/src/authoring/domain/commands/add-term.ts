@@ -1,19 +1,14 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { TermRow } from '../../../platform/data/tables.ts';
-import { DOMAIN_SLICE } from '../model.ts';
 import { DomainRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_TERM_IDENTITY } from './identities.generated.ts';
 
 export type AddTerm = Pick<TermRow, 'id' | 'title' | 'domain_id' | 'meaning' | 'group_name'> & { builds_on?: string[] };
 
 export const ADD_TERM: CommandDefinition<AddTerm> = {
-  id: 'LA-AUT-CMD166',
-  slice: DOMAIN_SLICE,
-  name: 'add-term',
-  description: "Adds a term to its domain's glossary, with what it means there and the terms it builds on.",
-  method: 'POST',
-  route: '/api/domain/add-term',
+  ...ADD_TERM_IDENTITY,
   input: {
     id: column('term', 'id', 'required'),
     title: column('term', 'title', 'required'),

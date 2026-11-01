@@ -1,18 +1,13 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { DOMAIN_EVENT_SLICE } from '../model.ts';
 import { DomainEventRepository } from '../repository.ts';
+import { REMOVE_DOMAIN_EVENT_IDENTITY } from './identities.generated.ts';
 
 /** The event to remove. */
 export type RemoveDomainEvent = { id: string };
 
 export const REMOVE_DOMAIN_EVENT: CommandDefinition<RemoveDomainEvent> = {
-  id: 'LA-AUT-CMD232',
-  slice: DOMAIN_EVENT_SLICE,
-  name: 'remove-domain-event',
-  description: 'Removes a domain event whole: its fields, its event type and the links it starts. Refused while anything else references it: a command that raises it, a policy that hears it or a read model it feeds.',
-  method: 'POST',
-  route: '/api/domain-event/remove-domain-event',
+  ...REMOVE_DOMAIN_EVENT_IDENTITY,
   input: {
     id: column('domain_event', 'id', 'required'),
   },

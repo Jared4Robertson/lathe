@@ -1,9 +1,10 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PolicyTestRow } from '../../../platform/data/tables.ts';
-import { changed, COMMAND_SLICE } from '../model.ts';
+import { changed } from '../model.ts';
 import { CommandRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_POLICY_TEST_IDENTITY } from './identities.generated.ts';
 
 /** The test's changes: a column given is set, null clears an optional one; starts_from, when given, replaces the list. */
 export type ChangePolicyTest = Pick<PolicyTestRow, 'id'> & {
@@ -22,12 +23,7 @@ export type ChangePolicyTest = Pick<PolicyTestRow, 'id'> & {
 };
 
 export const CHANGE_POLICY_TEST: CommandDefinition<ChangePolicyTest> = {
-  id: 'LA-AUT-CMD253',
-  slice: COMMAND_SLICE,
-  name: 'change-policy-test',
-  description: "Changes a policy test's columns or the test data sets it starts from (the whole list).",
-  method: 'POST',
-  route: '/api/command/change-policy-test',
+  ...CHANGE_POLICY_TEST_IDENTITY,
   input: {
     id: column('policy_test', 'id', 'required'),
     title: column('policy_test', 'title', 'optional'),

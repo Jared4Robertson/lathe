@@ -1,18 +1,13 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { AGGREGATE_SLICE } from '../model.ts';
 import { AggregateRepository } from '../repository.ts';
+import { REMOVE_INVARIANT_TEST_IDENTITY } from './identities.generated.ts';
 
 /** The test to remove. */
 export type RemoveInvariantTest = { id: string };
 
 export const REMOVE_INVARIANT_TEST: CommandDefinition<RemoveInvariantTest> = {
-  id: 'LA-AUT-CMD224',
-  slice: AGGREGATE_SLICE,
-  name: 'remove-invariant-test',
-  description: 'Removes an invariant test with the links it starts. Refused while anything else references it, such as a business outcome it measures.',
-  method: 'POST',
-  route: '/api/aggregate/remove-invariant-test',
+  ...REMOVE_INVARIANT_TEST_IDENTITY,
   input: {
     id: column('invariant_test', 'id', 'required'),
   },

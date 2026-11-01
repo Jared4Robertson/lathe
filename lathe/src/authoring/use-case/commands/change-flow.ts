@@ -1,20 +1,15 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { FlowRow } from '../../../platform/data/tables.ts';
-import { USE_CASE_SLICE } from '../model.ts';
 import { UseCaseRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_FLOW_IDENTITY } from './identities.generated.ts';
 
 /** The flow's new title. */
 export type ChangeFlow = Pick<FlowRow, 'id' | 'title'>;
 
 export const CHANGE_FLOW: CommandDefinition<ChangeFlow> = {
-  id: 'LA-AUT-CMD108',
-  slice: USE_CASE_SLICE,
-  name: 'change-flow',
-  description: "Changes a flow's title. Its interface is in its ID, so a flow through another interface is another flow.",
-  method: 'POST',
-  route: '/api/use-case/change-flow',
+  ...CHANGE_FLOW_IDENTITY,
   input: {
     id: column('flow', 'id', 'required'),
     title: column('flow', 'title', 'required'),

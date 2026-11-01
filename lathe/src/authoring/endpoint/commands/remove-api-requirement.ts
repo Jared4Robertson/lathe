@@ -1,18 +1,13 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { ENDPOINT_SLICE } from '../model.ts';
 import { EndpointRepository } from '../repository.ts';
+import { REMOVE_API_REQUIREMENT_IDENTITY } from './identities.generated.ts';
 
 /** The API requirement to remove. */
 export type RemoveApiRequirement = { id: string };
 
 export const REMOVE_API_REQUIREMENT: CommandDefinition<RemoveApiRequirement> = {
-  id: 'LA-AUT-CMD326',
-  slice: ENDPOINT_SLICE,
-  name: 'remove-api-requirement',
-  description: 'Removes an API requirement with its endpoint tests and the links they start. Refused while anything else references them.',
-  method: 'POST',
-  route: '/api/endpoint/remove-api-requirement',
+  ...REMOVE_API_REQUIREMENT_IDENTITY,
   input: {
     id: column('api_requirement', 'id', 'required'),
   },

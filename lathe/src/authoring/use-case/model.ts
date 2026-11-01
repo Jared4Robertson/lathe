@@ -1,16 +1,12 @@
 // The Use case aggregate (LA-AUT-A11): a use case with its actors, its UC requirements and their use case tests, and
 // its flows with their steps (and the links each step starts) and their flow tests. One instance is one use case,
 // whole; nothing in it belongs to another aggregate, and it holds only the links its own records start.
-import type { Slice } from '../../platform/commands/definition.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { FlowRow, FlowStepRow, FlowTestRow, UcRequirementRow, UseCaseRow, UseCaseTestRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const USE_CASE_AGGREGATE = 'LA-AUT-A11';
-
-/** How the interfaces reach the aggregate's commands: `lathe use-case`, the use_case_ tools, /api/use-case/. */
-export const USE_CASE_SLICE: Slice = { aggregate: USE_CASE_AGGREGATE, name: 'use-case' };
 
 /**
  * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.
