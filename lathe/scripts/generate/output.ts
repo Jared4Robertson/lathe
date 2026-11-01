@@ -18,4 +18,4 @@ export interface Output {
 }
 
 /** The folders generated files are written under, from the repo root: a generated file there that no output makes is removed. */
-export const GENERATED_ROOTS: readonly string[] = ['lathe/src'];
+export const GENERATED_ROOTS: readonly string[] = ['lathe/src', 'app/src'];

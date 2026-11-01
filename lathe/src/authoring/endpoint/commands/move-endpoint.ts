@@ -7,7 +7,7 @@ import { MOVE_ENDPOINT_IDENTITY } from './identities.generated.ts';
 /** The endpoint and the one command or query it moves to. */
 export type MoveEndpoint = Pick<EndpointRow, 'id' | 'command_id' | 'query_id'>;
 
-export const MOVE_ENDPOINT: CommandDefinition<MoveEndpoint> = {
+export const MOVE_ENDPOINT = {
   ...MOVE_ENDPOINT_IDENTITY,
   input: {
     id: column('endpoint', 'id', 'required'),
@@ -15,7 +15,7 @@ export const MOVE_ENDPOINT: CommandDefinition<MoveEndpoint> = {
     query_id: column('endpoint', 'query_id', 'optional'),
   },
   handler: moveEndpoint,
-};
+} satisfies CommandDefinition<MoveEndpoint>;
 
 /** Puts the endpoint under the command or query it now exposes; what is in it keeps its IDs. */
 export function moveEndpoint(tx: Transaction, input: MoveEndpoint): void {

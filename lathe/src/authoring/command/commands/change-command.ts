@@ -9,7 +9,7 @@ import { CHANGE_COMMAND_IDENTITY } from './identities.generated.ts';
 /** The command's changes: a column given is set; a list given replaces its list. */
 export type ChangeCommand = Pick<CommandRow, 'id'> & { title?: string; description?: string; raises?: string[]; checks?: string[]; calls?: string[] };
 
-export const CHANGE_COMMAND: CommandDefinition<ChangeCommand> = {
+export const CHANGE_COMMAND = {
   ...CHANGE_COMMAND_IDENTITY,
   input: {
     id: column('command', 'id', 'required'),
@@ -20,7 +20,7 @@ export const CHANGE_COMMAND: CommandDefinition<ChangeCommand> = {
     calls: ids('The domain services of its domain it calls. Replaces the list.', 'optional'),
   },
   handler: changeCommand,
-};
+} satisfies CommandDefinition<ChangeCommand>;
 
 /** Changes the command's columns and links. */
 export function changeCommand(tx: Transaction, input: ChangeCommand): void {

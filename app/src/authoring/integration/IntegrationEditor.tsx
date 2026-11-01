@@ -3,15 +3,15 @@ import type { IntegrationKind } from '../../../../lathe/src/authoring/integratio
 import type { IntegrationPage } from '../../../../lathe/src/authoring/integration/read-model';
 import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
-import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
+import { addInput, addOrChangeFields, changeInput, CommandForm, draftOf, emptyDraft, Fields, formFields, LONG, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
 import { AddMenu } from '../../edit/AddMenu';
-import { useWriter, type Writer } from '../../edit/write';
+import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendIntegration, type IntegrationCommands, type IntegrationRoute } from './commands';
+import { INTEGRATION_FIELDS } from './fields.generated';
 import { useNextIntegrationId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -35,47 +35,21 @@ function addsUnder(page: IntegrationPage): Exclude<IntegrationKind, 'integration
 const choicesOf = (index: RecordIndex, product: string | undefined, kind: string): Choice[] =>
   [...index.byId.values()].filter((r) => r.kind === kind && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
-/** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order; packages are one per line. */
+/** The fields each kind's Add and Change take, from their inputs; the hints add long text and the choices. */
 function fieldsOf(index: RecordIndex, product: string | undefined, kind: IntegrationKind, adding: boolean): FieldSpec[] {
-  const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
+  const F = INTEGRATION_FIELDS;
   switch (kind) {
     case 'integration':
-      return [
-        ...id('integration'),
-        { field: 'title', column: 'title', table: 'integration' },
-        { field: 'system', column: 'system', table: 'integration' },
-        { field: 'description', column: 'description', table: 'integration', long: true },
-      ];
+      // An integration has no parent column to leave out: its ID names its product.
+      return adding ? formFields(F['/api/integration/add-integration'], [], { description: LONG }) : formFields(F['/api/integration/change-integration'], ['id'], { description: LONG });
     case 'adapter':
-      return [
-        ...id('adapter'),
-        { field: 'title', column: 'title', table: 'adapter' },
-        { field: 'file', column: 'file', table: 'adapter' },
-        { field: 'description', column: 'description', table: 'adapter', long: true },
-        { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files, one per line.', texts: true },
-        { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: choicesOf(index, product, 'standard_rule') },
-      ];
-    case 'integration_test': {
-      const table = 'integration_test';
-      return [
-        ...id(table),
-        { field: 'title', column: 'title', table },
-        { field: 'when', column: 'when', table, long: true },
-        { field: 'then', column: 'then', table, long: true },
-        { field: 'level', column: 'level', table },
-        { field: 'state', column: 'state', table },
-        { field: 'file', column: 'file', table },
-        { field: 'manual_reason', column: 'manual_reason', table, long: true },
-        { field: 'size', column: 'size', table },
-        { field: 'smoke', column: 'smoke', table },
-        { field: 'external', column: 'external', table },
-        { field: 'notes', column: 'notes', table, long: true },
-        { field: 'starts_from', label: 'Starts from', description: 'The test data sets it starts from.', many: choicesOf(index, product, 'test_data_set') },
-      ];
-    }
+      return addOrChangeFields(adding, F['/api/integration/add-adapter'], 'integration_id', F['/api/integration/change-adapter'], { description: LONG, meets: { choices: choicesOf(index, product, 'standard_rule') } });
+    case 'integration_test':
+      return addOrChangeFields(adding, F['/api/integration/add-integration-test'], 'integration_id', F['/api/integration/change-integration-test'], {
+        when: LONG, then: LONG, manual_reason: LONG, notes: LONG, starts_from: { choices: choicesOf(index, product, 'test_data_set') },
+      });
   }
 }
-
 
 /** The record's current values, by its input's field names: its row's columns and the links it starts. */
 function currentOf(page: IntegrationPage, kind: IntegrationKind, id: string): Record<string, unknown> {
@@ -91,28 +65,28 @@ function currentOf(page: IntegrationPage, kind: IntegrationKind, id: string): Re
   }
 }
 
-/** Each kind's Change command, and the fields it may clear with null. */
-const CHANGE: Record<IntegrationKind, { route: IntegrationRoute; clearable: readonly string[] }> = {
-  integration: { route: '/api/integration/change-integration', clearable: ['system'] },
-  adapter: { route: '/api/integration/change-adapter', clearable: ['file'] },
-  integration_test: { route: '/api/integration/change-integration-test', clearable: ['file', 'manual_reason', 'size', 'smoke', 'external', 'notes'] },
+/** Each kind's Change command. */
+const CHANGE: Record<IntegrationKind, CommandRoute> = {
+  integration: '/api/integration/change-integration',
+  adapter: '/api/integration/change-adapter',
+  integration_test: '/api/integration/change-integration-test',
 };
 
 /** Each kind's Add command under the integration. */
-const ADD: Record<Exclude<IntegrationKind, 'integration'>, IntegrationRoute> = {
+const ADD: Record<Exclude<IntegrationKind, 'integration'>, CommandRoute> = {
   adapter: '/api/integration/add-adapter',
   integration_test: '/api/integration/add-integration-test',
 };
 
 /** Each kind's Remove command. */
-const REMOVE: Record<IntegrationKind, IntegrationRoute> = {
+const REMOVE: Record<IntegrationKind, CommandRoute> = {
   integration: '/api/integration/remove-integration',
   adapter: '/api/integration/remove-adapter',
   integration_test: '/api/integration/remove-integration-test',
 };
 
 /** Sends a command whose input this form has built to its kind's shape: the route names the type it takes. */
-const send = (writer: Writer, route: IntegrationRoute, input: Record<string, unknown>): Promise<WriteAnswer> => sendIntegration(writer, route, input as unknown as IntegrationCommands[typeof route]);
+const send = (writer: Writer, route: CommandRoute, input: Record<string, unknown>): Promise<WriteAnswer> => writer.command(route, input as unknown as CommandInputs[typeof route]);
 
 /** What goes with a record when it is removed, inside the integration: what sits under it. */
 function goesWith(page: IntegrationPage, kind: IntegrationKind): string[] {
@@ -140,9 +114,9 @@ export function IntegrationEditor({ index, page, children }: { index: RecordInde
     const specs = fieldsOf(index, product, kind, false);
     const current = currentOf(page, kind, id);
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, specs, draft, current, { id }, CHANGE[kind].clearable);
+      const input = changeInput(index, specs, draft, current, { id });
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
-      const answer = await send(writer, CHANGE[kind].route, input);
+      const answer = await send(writer, CHANGE[kind], input);
       if (answer.ok) { announce(`Saved ${id}`); back(); }
       return answer;
     };
@@ -160,7 +134,7 @@ export function IntegrationEditor({ index, page, children }: { index: RecordInde
       </div>
       {mode.mode === 'remove' && (
         <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={goesWith(page, kind)} then={then} onCancel={back}
-          remove={() => sendIntegration(writer, REMOVE[kind], { id })} />
+          remove={() => writer.command(REMOVE[kind], { id })} />
       )}
       {children}
     </>

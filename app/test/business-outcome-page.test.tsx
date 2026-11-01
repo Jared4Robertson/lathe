@@ -2,8 +2,6 @@ import type { ServedData } from './read-view';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { BUSINESS_OUTCOME_COMMANDS } from '../../lathe/src/authoring/business-outcome/commands/index';
-import type { BusinessOutcomeCommands } from '../src/authoring/business-outcome/commands';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
@@ -37,11 +35,6 @@ describe('LA-V110-R01-T01 an outcome\'s page reads the outcome through its own q
     expect(requests).toContain('GET /api/business-outcome/get-business-outcome?id=DM-BO01');
     expect(within(main()).getByRole('heading', { name: 'Measure' }).closest('section')).toHaveTextContent('Baskets checked out over baskets started, each week.');
     expect(within(main()).getByRole('heading', { name: 'Target' }).closest('section')).toHaveTextContent('Two in three within a quarter.');
-  });
-
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof BusinessOutcomeCommands)[] = ['/api/business-outcome/add-business-outcome', '/api/business-outcome/change-business-outcome', '/api/business-outcome/remove-business-outcome'];
-    expect([...routes].sort()).toEqual(BUSINESS_OUTCOME_COMMANDS.map((c) => c.route).sort());
   });
 });
 

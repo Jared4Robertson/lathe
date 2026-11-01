@@ -6,7 +6,7 @@ import { ADD_BUSINESS_OUTCOME_IDENTITY } from './identities.generated.ts';
 
 export type AddBusinessOutcome = Pick<BusinessOutcomeRow, 'id' | 'title' | 'product_id' | 'statement' | 'measure' | 'target' | 'measured_outside' | 'notes'> & { measured_by?: string[] };
 
-export const ADD_BUSINESS_OUTCOME: CommandDefinition<AddBusinessOutcome> = {
+export const ADD_BUSINESS_OUTCOME = {
   ...ADD_BUSINESS_OUTCOME_IDENTITY,
   input: {
     id: column('business_outcome', 'id', 'required'),
@@ -20,7 +20,7 @@ export const ADD_BUSINESS_OUTCOME: CommandDefinition<AddBusinessOutcome> = {
     measured_by: ids('The tests, or records of the product\'s own kinds, that measure it.', 'optional'),
   },
   handler: addBusinessOutcome,
-};
+} satisfies CommandDefinition<AddBusinessOutcome>;
 
 /** Adds the outcome, whole and new. */
 export function addBusinessOutcome(tx: Transaction, input: AddBusinessOutcome): void {

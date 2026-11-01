@@ -8,7 +8,7 @@ import { CHANGE_CONSTRAINT_TEST_IDENTITY } from './identities.generated.ts';
 /** The test's changes: a column given is set, null clears an optional one; starts_from, when given, replaces the list. */
 export type ChangeConstraintTest = Pick<ConstraintTestRow, 'id'> & { title?: ConstraintTestRow['title']; level?: ConstraintTestRow['level']; state?: ConstraintTestRow['state']; file?: ConstraintTestRow['file'] | null; manual_reason?: ConstraintTestRow['manual_reason'] | null; size?: ConstraintTestRow['size'] | null; smoke?: ConstraintTestRow['smoke'] | null; external?: ConstraintTestRow['external'] | null; accepts?: ConstraintTestRow['accepts']; refuses?: ConstraintTestRow['refuses']; notes?: ConstraintTestRow['notes'] | null; starts_from?: string[] };
 
-export const CHANGE_CONSTRAINT_TEST: CommandDefinition<ChangeConstraintTest> = {
+export const CHANGE_CONSTRAINT_TEST = {
   ...CHANGE_CONSTRAINT_TEST_IDENTITY,
   input: {
     id: column('constraint_test', 'id', 'required'),
@@ -26,7 +26,7 @@ export const CHANGE_CONSTRAINT_TEST: CommandDefinition<ChangeConstraintTest> = {
     starts_from: ids('The test data sets it starts from. Replaces the list.', 'optional'),
   },
   handler: changeConstraintTest,
-};
+} satisfies CommandDefinition<ChangeConstraintTest>;
 
 /** Changes the test's columns and the data sets it starts from. */
 export function changeConstraintTest(tx: Transaction, input: ChangeConstraintTest): void {

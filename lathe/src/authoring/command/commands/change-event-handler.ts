@@ -9,7 +9,7 @@ import { CHANGE_EVENT_HANDLER_IDENTITY } from './identities.generated.ts';
 /** The event handler's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeEventHandler = Pick<EventHandlerRow, 'id'> & { title?: string; file?: string | null; description?: string; meets?: string[]; packages?: string[] };
 
-export const CHANGE_EVENT_HANDLER: CommandDefinition<ChangeEventHandler> = {
+export const CHANGE_EVENT_HANDLER = {
   ...CHANGE_EVENT_HANDLER_IDENTITY,
   input: {
     id: column('event_handler', 'id', 'required'),
@@ -20,7 +20,7 @@ export const CHANGE_EVENT_HANDLER: CommandDefinition<ChangeEventHandler> = {
     packages: texts('The packages it uses. Replaces the list.', 'optional'),
   },
   handler: changeEventHandler,
-};
+} satisfies CommandDefinition<ChangeEventHandler>;
 
 /** Changes the event handler's columns and links. */
 export function changeEventHandler(tx: Transaction, input: ChangeEventHandler): void {

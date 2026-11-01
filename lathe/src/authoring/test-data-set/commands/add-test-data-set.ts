@@ -8,7 +8,7 @@ import { ADD_TEST_DATA_SET_IDENTITY } from './identities.generated.ts';
 /** A new test data set: its row. */
 export type AddTestDataSet = Pick<TestDataSetRow, 'id' | 'title' | 'domain_id' | 'environment' | 'accounts' | 'records' | 'prepare' | 'reset' | 'file' | 'description'>;
 
-export const ADD_TEST_DATA_SET: CommandDefinition<AddTestDataSet> = {
+export const ADD_TEST_DATA_SET = {
   ...ADD_TEST_DATA_SET_IDENTITY,
   input: {
     id: column('test_data_set', 'id', 'required'),
@@ -23,7 +23,7 @@ export const ADD_TEST_DATA_SET: CommandDefinition<AddTestDataSet> = {
     description: column('test_data_set', 'description', 'required'),
   },
   handler: addTestDataSet,
-};
+} satisfies CommandDefinition<AddTestDataSet>;
 
 /** Adds the test data set, whole and new. */
 export function addTestDataSet(tx: Transaction, input: AddTestDataSet): void {

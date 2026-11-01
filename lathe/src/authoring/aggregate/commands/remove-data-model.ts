@@ -6,13 +6,13 @@ import { REMOVE_DATA_MODEL_IDENTITY } from './identities.generated.ts';
 /** The data model to remove. */
 export type RemoveDataModel = { id: string };
 
-export const REMOVE_DATA_MODEL: CommandDefinition<RemoveDataModel> = {
+export const REMOVE_DATA_MODEL = {
   ...REMOVE_DATA_MODEL_IDENTITY,
   input: {
     id: column('data_model', 'id', 'required'),
   },
   handler: removeDataModel,
-};
+} satisfies CommandDefinition<RemoveDataModel>;
 
 /** Removes the data model from its entity. */
 export function removeDataModel(tx: Transaction, input: RemoveDataModel): void {

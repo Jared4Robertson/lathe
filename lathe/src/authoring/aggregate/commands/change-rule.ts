@@ -9,7 +9,7 @@ import { CHANGE_RULE_IDENTITY } from './identities.generated.ts';
 /** The rule's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeRule = Pick<RuleRow, 'id'> & { title?: string; file?: string | null; meets?: string[]; packages?: string[] };
 
-export const CHANGE_RULE: CommandDefinition<ChangeRule> = {
+export const CHANGE_RULE = {
   ...CHANGE_RULE_IDENTITY,
   input: {
     id: column('rule', 'id', 'required'),
@@ -19,7 +19,7 @@ export const CHANGE_RULE: CommandDefinition<ChangeRule> = {
     packages: texts('The packages it uses. Replaces the list.', 'optional'),
   },
   handler: changeRule,
-};
+} satisfies CommandDefinition<ChangeRule>;
 
 /** Changes the rule's columns and links. */
 export function changeRule(tx: Transaction, input: ChangeRule): void {

@@ -8,7 +8,7 @@ import { ADD_INVARIANT_IDENTITY } from './identities.generated.ts';
 /** A new invariant. */
 export type AddInvariant = Pick<InvariantRow, 'id' | 'title' | 'aggregate_id' | 'statement'>;
 
-export const ADD_INVARIANT: CommandDefinition<AddInvariant> = {
+export const ADD_INVARIANT = {
   ...ADD_INVARIANT_IDENTITY,
   input: {
     id: column('invariant', 'id', 'required'),
@@ -17,7 +17,7 @@ export const ADD_INVARIANT: CommandDefinition<AddInvariant> = {
     statement: column('invariant', 'statement', 'required'),
   },
   handler: addInvariant,
-};
+} satisfies CommandDefinition<AddInvariant>;
 
 /** Adds the invariant to its aggregate. */
 export function addInvariant(tx: Transaction, input: AddInvariant): void {

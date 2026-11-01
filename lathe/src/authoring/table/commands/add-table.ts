@@ -8,7 +8,7 @@ import { ADD_TABLE_IDENTITY } from './identities.generated.ts';
 
 export type AddTable = Pick<TableRow, 'id' | 'title' | 'entity_id' | 'read_model_id' | 'domain_id' | 'name' | 'storage' | 'file'> & { keys?: TableKey[]; stored_in?: string; meets?: string[]; packages?: string[] };
 
-export const ADD_TABLE: CommandDefinition<AddTable> = {
+export const ADD_TABLE = {
   ...ADD_TABLE_IDENTITY,
   input: {
     id: column('table', 'id', 'required'),
@@ -25,7 +25,7 @@ export const ADD_TABLE: CommandDefinition<AddTable> = {
     packages: texts("The packages it uses, by their names in the product's package.json files.", 'optional'),
   },
   handler: addTable,
-};
+} satisfies CommandDefinition<AddTable>;
 
 export function addTable(tx: Transaction, input: AddTable): void {
   const tables = new TableRepository(tx);

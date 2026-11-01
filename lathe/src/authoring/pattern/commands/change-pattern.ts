@@ -9,7 +9,7 @@ import { CHANGE_PATTERN_IDENTITY } from './identities.generated.ts';
 /** The pattern's changes: a column given is set, null clears an optional one; settings, when given, replace the list. */
 export type ChangePattern = Pick<PatternRow, 'id'> & { title?: PatternRow['title']; description?: PatternRow['description']; notes?: PatternRow['notes'] | null; settings?: PatternSetting[] };
 
-export const CHANGE_PATTERN: CommandDefinition<ChangePattern> = {
+export const CHANGE_PATTERN = {
   ...CHANGE_PATTERN_IDENTITY,
   input: {
     id: column('pattern', 'id', 'required'),
@@ -19,7 +19,7 @@ export const CHANGE_PATTERN: CommandDefinition<ChangePattern> = {
     settings: parts('pattern_setting', ['name', 'meaning'], 'Its settings in order, each a name (lower case with underscores) and what a follower decides in it. Replaces the list.', 'optional'),
   },
   handler: changePattern,
-};
+} satisfies CommandDefinition<ChangePattern>;
 
 /** Changes the pattern's columns and settings. */
 export function changePattern(tx: Transaction, input: ChangePattern): void {

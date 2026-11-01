@@ -9,7 +9,7 @@ import { CHANGE_USE_CASE_TEST_IDENTITY } from './identities.generated.ts';
 /** The test's changes: a column given is set, null clears an optional one; starts_from, when given, replaces the list. */
 export type ChangeUseCaseTest = Pick<UseCaseTestRow, 'id'> & { title?: UseCaseTestRow['title']; level?: UseCaseTestRow['level']; state?: UseCaseTestRow['state']; when?: UseCaseTestRow['when']; then?: UseCaseTestRow['then']; file?: UseCaseTestRow['file'] | null; manual_reason?: UseCaseTestRow['manual_reason'] | null; size?: UseCaseTestRow['size'] | null; smoke?: UseCaseTestRow['smoke'] | null; external?: UseCaseTestRow['external'] | null; notes?: UseCaseTestRow['notes'] | null; starts_from?: string[] };
 
-export const CHANGE_USE_CASE_TEST: CommandDefinition<ChangeUseCaseTest> = {
+export const CHANGE_USE_CASE_TEST = {
   ...CHANGE_USE_CASE_TEST_IDENTITY,
   input: {
     id: column('use_case_test', 'id', 'required'),
@@ -27,7 +27,7 @@ export const CHANGE_USE_CASE_TEST: CommandDefinition<ChangeUseCaseTest> = {
     starts_from: ids('The test data sets it starts from. Replaces the list.', 'optional'),
   },
   handler: changeUseCaseTest,
-};
+} satisfies CommandDefinition<ChangeUseCaseTest>;
 
 /** Changes the test's columns and the data sets it starts from. */
 export function changeUseCaseTest(tx: Transaction, input: ChangeUseCaseTest): void {

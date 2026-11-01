@@ -16,7 +16,7 @@ export type AddExtensionRecord = {
   packages?: string[];
 };
 
-export const ADD_EXTENSION_RECORD: CommandDefinition<AddExtensionRecord> = {
+export const ADD_EXTENSION_RECORD = {
   ...ADD_EXTENSION_RECORD_IDENTITY,
   input: {
     kind: id('The product kind it is a record of, by name, such as report.', 'required'),
@@ -27,7 +27,7 @@ export const ADD_EXTENSION_RECORD: CommandDefinition<AddExtensionRecord> = {
     packages: texts('The packages it uses, as package.json lists them; only a technical record uses one.', 'optional'),
   },
   handler: addExtensionRecord,
-};
+} satisfies CommandDefinition<AddExtensionRecord>;
 
 /** Adds the record, whole and new, held to its kind's declaration. */
 export function addExtensionRecord(tx: Transaction, input: AddExtensionRecord): void {

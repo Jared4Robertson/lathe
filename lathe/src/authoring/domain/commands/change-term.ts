@@ -9,7 +9,7 @@ import { CHANGE_TERM_IDENTITY } from './identities.generated.ts';
 /** The term's changes: a column given is set, null clears an optional one; builds_on, when given, replaces the list. */
 export type ChangeTerm = Pick<TermRow, 'id'> & { title?: TermRow['title']; meaning?: TermRow['meaning']; group_name?: TermRow['group_name'] | null; builds_on?: string[] };
 
-export const CHANGE_TERM: CommandDefinition<ChangeTerm> = {
+export const CHANGE_TERM = {
   ...CHANGE_TERM_IDENTITY,
   input: {
     id: column('term', 'id', 'required'),
@@ -19,7 +19,7 @@ export const CHANGE_TERM: CommandDefinition<ChangeTerm> = {
     builds_on: ids('The terms its meaning uses, each defined without it. Replaces the list.', 'optional'),
   },
   handler: changeTerm,
-};
+} satisfies CommandDefinition<ChangeTerm>;
 
 /** Changes the term's columns and links; refused when they lead back to it. */
 export function changeTerm(tx: Transaction, input: ChangeTerm): void {

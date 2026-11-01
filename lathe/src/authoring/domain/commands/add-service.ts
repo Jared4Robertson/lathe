@@ -7,7 +7,7 @@ import { ADD_SERVICE_IDENTITY } from './identities.generated.ts';
 
 export type AddService = Pick<ServiceRow, 'id' | 'title' | 'domain_service_id' | 'file'> & { meets?: string[]; packages?: string[] };
 
-export const ADD_SERVICE: CommandDefinition<AddService> = {
+export const ADD_SERVICE = {
   ...ADD_SERVICE_IDENTITY,
   input: {
     id: column('service', 'id', 'required'),
@@ -18,7 +18,7 @@ export const ADD_SERVICE: CommandDefinition<AddService> = {
     packages: texts("The packages it uses, by their names in the product's package.json files.", 'optional'),
   },
   handler: addService,
-};
+} satisfies CommandDefinition<AddService>;
 
 export function addService(tx: Transaction, input: AddService): void {
   const domains = new DomainRepository(tx);

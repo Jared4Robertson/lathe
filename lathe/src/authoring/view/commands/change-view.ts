@@ -8,7 +8,7 @@ import { CHANGE_VIEW_IDENTITY } from './identities.generated.ts';
 /** The view's changes: a column given is set, null clears an optional one. */
 export type ChangeView = Pick<ViewRow, 'id'> & { title?: ViewRow['title']; description?: ViewRow['description']; route?: ViewRow['route'] | null; notes?: ViewRow['notes'] | null };
 
-export const CHANGE_VIEW: CommandDefinition<ChangeView> = {
+export const CHANGE_VIEW = {
   ...CHANGE_VIEW_IDENTITY,
   input: {
     id: column('view', 'id', 'required'),
@@ -18,7 +18,7 @@ export const CHANGE_VIEW: CommandDefinition<ChangeView> = {
     notes: column('view', 'notes', 'clearable'),
   },
   handler: changeView,
-};
+} satisfies CommandDefinition<ChangeView>;
 
 /** Changes the view's columns. */
 export function changeView(tx: Transaction, input: ChangeView): void {

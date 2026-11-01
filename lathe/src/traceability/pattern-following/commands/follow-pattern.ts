@@ -8,7 +8,7 @@ import { FOLLOW_PATTERN_IDENTITY } from './identities.generated.ts';
 /** The follower, the pattern and the setting values it gives. */
 export type FollowPattern = { follower_id: string; pattern_id: string; setting_values?: SettingValueInput[] };
 
-export const FOLLOW_PATTERN: CommandDefinition<FollowPattern> = {
+export const FOLLOW_PATTERN = {
   ...FOLLOW_PATTERN_IDENTITY,
   input: {
     follower_id: column('setting_value', 'follower_id', 'required'),
@@ -16,7 +16,7 @@ export const FOLLOW_PATTERN: CommandDefinition<FollowPattern> = {
     setting_values: parts('setting_value', ['setting', 'value'], "Each of the pattern's settings with its value.", 'optional'),
   },
   handler: followPattern,
-};
+} satisfies CommandDefinition<FollowPattern>;
 
 /** Adds the following, new and whole. */
 export function followPattern(tx: Transaction, input: FollowPattern): void {

@@ -2,8 +2,6 @@ import { chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { STANDARD_COMMANDS } from '../../lathe/src/authoring/standard/commands/index';
-import type { StandardCommands } from '../src/authoring/standard/commands';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { setRow } from './fixtures/load';
 import { standardWorkspace } from './fixtures/standards';
@@ -21,15 +19,6 @@ describe('LA-V123-R01-T01 a standard\'s records are read through the Standard ag
     const { requests } = await openApp('/DM-STD-CODE-R01', { data: standardWorkspace() });
     expect(await within(main()).findByText('A command handler MUST own its transaction.')).toBeInTheDocument();
     expect(requests).toContain('GET /api/standard/get-standard?id=DM-STD-CODE-R01');
-  });
-
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof StandardCommands)[] = [
-      '/api/standard/add-standard', '/api/standard/add-standard-rule', '/api/standard/add-standard-rule-test',
-      '/api/standard/change-standard', '/api/standard/change-standard-rule', '/api/standard/change-standard-rule-test',
-      '/api/standard/remove-standard', '/api/standard/remove-standard-rule', '/api/standard/remove-standard-rule-test',
-    ];
-    expect([...routes].sort()).toEqual(STANDARD_COMMANDS.map((c) => c.route).sort());
   });
 });
 

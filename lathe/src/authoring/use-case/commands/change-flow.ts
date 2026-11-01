@@ -8,14 +8,14 @@ import { CHANGE_FLOW_IDENTITY } from './identities.generated.ts';
 /** The flow's new title. */
 export type ChangeFlow = Pick<FlowRow, 'id' | 'title'>;
 
-export const CHANGE_FLOW: CommandDefinition<ChangeFlow> = {
+export const CHANGE_FLOW = {
   ...CHANGE_FLOW_IDENTITY,
   input: {
     id: column('flow', 'id', 'required'),
     title: column('flow', 'title', 'required'),
   },
   handler: changeFlow,
-};
+} satisfies CommandDefinition<ChangeFlow>;
 
 /** Changes the flow's title. */
 export function changeFlow(tx: Transaction, input: ChangeFlow): void {

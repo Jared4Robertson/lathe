@@ -6,13 +6,13 @@ import { REMOVE_ENDPOINT_HANDLER_IDENTITY } from './identities.generated.ts';
 /** The endpoint handler to remove. */
 export type RemoveEndpointHandler = { id: string };
 
-export const REMOVE_ENDPOINT_HANDLER: CommandDefinition<RemoveEndpointHandler> = {
+export const REMOVE_ENDPOINT_HANDLER = {
   ...REMOVE_ENDPOINT_HANDLER_IDENTITY,
   input: {
     id: column('endpoint_handler', 'id', 'required'),
   },
   handler: removeEndpointHandler,
-};
+} satisfies CommandDefinition<RemoveEndpointHandler>;
 
 /** Removes the endpoint handler from its endpoint. */
 export function removeEndpointHandler(tx: Transaction, input: RemoveEndpointHandler): void {

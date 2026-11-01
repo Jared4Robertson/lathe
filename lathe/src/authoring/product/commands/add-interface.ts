@@ -8,7 +8,7 @@ import { ADD_INTERFACE_IDENTITY } from './identities.generated.ts';
 /** A new interface. */
 export type AddInterface = Pick<InterfaceRow, 'id' | 'title' | 'product_id' | 'kind' | 'description'>;
 
-export const ADD_INTERFACE: CommandDefinition<AddInterface> = {
+export const ADD_INTERFACE = {
   ...ADD_INTERFACE_IDENTITY,
   input: {
     id: column('interface', 'id', 'required'),
@@ -18,7 +18,7 @@ export const ADD_INTERFACE: CommandDefinition<AddInterface> = {
     description: column('interface', 'description', 'required'),
   },
   handler: addInterface,
-};
+} satisfies CommandDefinition<AddInterface>;
 
 /** Adds the interface to its product. */
 export function addInterface(tx: Transaction, input: AddInterface): void {

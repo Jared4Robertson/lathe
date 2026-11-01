@@ -8,7 +8,7 @@ import { ADD_PATTERN_IDENTITY } from './identities.generated.ts';
 
 export type AddPattern = Pick<PatternRow, 'id' | 'title' | 'product_id' | 'description' | 'notes'> & { settings?: PatternSetting[] };
 
-export const ADD_PATTERN: CommandDefinition<AddPattern> = {
+export const ADD_PATTERN = {
   ...ADD_PATTERN_IDENTITY,
   input: {
     id: column('pattern', 'id', 'required'),
@@ -19,7 +19,7 @@ export const ADD_PATTERN: CommandDefinition<AddPattern> = {
     settings: parts('pattern_setting', ['name', 'meaning'], 'Its settings in order, each a name (lower case with underscores) and what a follower decides in it.', 'optional'),
   },
   handler: addPattern,
-};
+} satisfies CommandDefinition<AddPattern>;
 
 export function addPattern(tx: Transaction, input: AddPattern): void {
   const patterns = new PatternRepository(tx);

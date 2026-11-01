@@ -7,7 +7,7 @@ import { ADD_USE_CASE_TEST_IDENTITY } from './identities.generated.ts';
 
 export type AddUseCaseTest = Pick<UseCaseTestRow, 'id' | 'title' | 'uc_requirement_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'when' | 'then' | 'notes'> & { starts_from?: string[] };
 
-export const ADD_USE_CASE_TEST: CommandDefinition<AddUseCaseTest> = {
+export const ADD_USE_CASE_TEST = {
   ...ADD_USE_CASE_TEST_IDENTITY,
   input: {
     id: column('use_case_test', 'id', 'required'),
@@ -26,7 +26,7 @@ export const ADD_USE_CASE_TEST: CommandDefinition<AddUseCaseTest> = {
     starts_from: ids('The test data sets it starts from.', 'optional'),
   },
   handler: addUseCaseTest,
-};
+} satisfies CommandDefinition<AddUseCaseTest>;
 
 export function addUseCaseTest(tx: Transaction, input: AddUseCaseTest): void {
   const useCases = new UseCaseRepository(tx);

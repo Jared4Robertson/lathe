@@ -6,13 +6,13 @@ import { REMOVE_ENTRY_POINT_IDENTITY } from './identities.generated.ts';
 /** The entry point to remove. */
 export type RemoveEntryPoint = { id: string };
 
-export const REMOVE_ENTRY_POINT: CommandDefinition<RemoveEntryPoint> = {
+export const REMOVE_ENTRY_POINT = {
   ...REMOVE_ENTRY_POINT_IDENTITY,
   input: {
     id: column('entry_point', 'id', 'required'),
   },
   handler: removeEntryPoint,
-};
+} satisfies CommandDefinition<RemoveEntryPoint>;
 
 /** Removes the entry point whole. */
 export function removeEntryPoint(tx: Transaction, input: RemoveEntryPoint): void {

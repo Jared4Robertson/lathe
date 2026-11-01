@@ -6,14 +6,14 @@ import { STOP_FOLLOWING_PATTERN_IDENTITY } from './identities.generated.ts';
 /** The follower and the pattern it stops following. */
 export type StopFollowingPattern = { follower_id: string; pattern_id: string };
 
-export const STOP_FOLLOWING_PATTERN: CommandDefinition<StopFollowingPattern> = {
+export const STOP_FOLLOWING_PATTERN = {
   ...STOP_FOLLOWING_PATTERN_IDENTITY,
   input: {
     follower_id: column('setting_value', 'follower_id', 'required'),
     pattern_id: column('setting_value', 'pattern_id', 'required'),
   },
   handler: stopFollowingPattern,
-};
+} satisfies CommandDefinition<StopFollowingPattern>;
 
 /** Removes the following whole. */
 export function stopFollowingPattern(tx: Transaction, input: StopFollowingPattern): void {

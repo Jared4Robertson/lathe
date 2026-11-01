@@ -12,7 +12,7 @@ export type AddFlowStep = Pick<FlowStepRow, 'id' | 'title' | 'flow_id' | 'path' 
   exchanges_with?: string[];
 };
 
-export const ADD_FLOW_STEP: CommandDefinition<AddFlowStep> = {
+export const ADD_FLOW_STEP = {
   ...ADD_FLOW_STEP_IDENTITY,
   input: {
     id: column('flow_step', 'id', 'required'),
@@ -26,7 +26,7 @@ export const ADD_FLOW_STEP: CommandDefinition<AddFlowStep> = {
     exchanges_with: ids('The integrations it exchanges with.', 'optional'),
   },
   handler: addFlowStep,
-};
+} satisfies CommandDefinition<AddFlowStep>;
 
 export function addFlowStep(tx: Transaction, input: AddFlowStep): void {
   const useCases = new UseCaseRepository(tx);

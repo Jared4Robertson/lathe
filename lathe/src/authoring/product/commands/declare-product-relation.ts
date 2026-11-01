@@ -9,7 +9,7 @@ import { DECLARE_PRODUCT_RELATION_IDENTITY } from './identities.generated.ts';
 /** A new product relation pair. */
 export type DeclareProductRelation = Pick<ProductRelationRow, 'name' | 'source_kind' | 'target_kind' | 'product_id' | 'role' | 'forward_label' | 'reverse_label' | 'description'>;
 
-export const DECLARE_PRODUCT_RELATION: CommandDefinition<DeclareProductRelation> = {
+export const DECLARE_PRODUCT_RELATION = {
   ...DECLARE_PRODUCT_RELATION_IDENTITY,
   input: {
     name: column('product_relation', 'name', 'required'),
@@ -22,7 +22,7 @@ export const DECLARE_PRODUCT_RELATION: CommandDefinition<DeclareProductRelation>
     description: column('product_relation', 'description', 'required'),
   },
   handler: declareProductRelation,
-};
+} satisfies CommandDefinition<DeclareProductRelation>;
 
 /** Adds the relation pair to the product that declares it. */
 export function declareProductRelation(tx: Transaction, input: DeclareProductRelation): void {

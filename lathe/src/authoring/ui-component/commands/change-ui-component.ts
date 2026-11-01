@@ -8,7 +8,7 @@ import { CHANGE_UI_COMPONENT_IDENTITY } from './identities.generated.ts';
 /** The UI component's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeUiComponent = Pick<UiComponentRow, 'id'> & { title?: UiComponentRow['title']; description?: UiComponentRow['description']; file?: UiComponentRow['file'] | null; renders?: string[]; builds?: string[]; meets?: string[]; packages?: string[] };
 
-export const CHANGE_UI_COMPONENT: CommandDefinition<ChangeUiComponent> = {
+export const CHANGE_UI_COMPONENT = {
   ...CHANGE_UI_COMPONENT_IDENTITY,
   input: {
     id: column('ui_component', 'id', 'required'),
@@ -21,7 +21,7 @@ export const CHANGE_UI_COMPONENT: CommandDefinition<ChangeUiComponent> = {
     packages: texts('The packages it uses. Replaces the list.', 'optional'),
   },
   handler: changeUiComponent,
-};
+} satisfies CommandDefinition<ChangeUiComponent>;
 
 /** Changes the UI component's columns and links. */
 export function changeUiComponent(tx: Transaction, input: ChangeUiComponent): void {

@@ -8,7 +8,7 @@ import { CHANGE_ENTRY_POINT_IDENTITY } from './identities.generated.ts';
 /** The entry point's changes: a column given is set; packages and meets, when given, replace the list. */
 export type ChangeEntryPoint = Pick<EntryPointRow, 'id'> & { title?: string; file?: string | null; description?: string; packages?: string[]; meets?: string[] };
 
-export const CHANGE_ENTRY_POINT: CommandDefinition<ChangeEntryPoint> = {
+export const CHANGE_ENTRY_POINT = {
   ...CHANGE_ENTRY_POINT_IDENTITY,
   input: {
     id: column('entry_point', 'id', 'required'),
@@ -19,7 +19,7 @@ export const CHANGE_ENTRY_POINT: CommandDefinition<ChangeEntryPoint> = {
     meets: ids('The standard rules it meets. Replaces the list.', 'optional'),
   },
   handler: changeEntryPoint,
-};
+} satisfies CommandDefinition<ChangeEntryPoint>;
 
 /** Changes the entry point's own columns and lists. */
 export function changeEntryPoint(tx: Transaction, input: ChangeEntryPoint): void {

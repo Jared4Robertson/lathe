@@ -8,7 +8,7 @@ import { ADD_UC_REQUIREMENT_IDENTITY } from './identities.generated.ts';
 /** A new UC requirement. */
 export type AddUcRequirement = Pick<UcRequirementRow, 'id' | 'title' | 'use_case_id' | 'statement' | 'group_name'>;
 
-export const ADD_UC_REQUIREMENT: CommandDefinition<AddUcRequirement> = {
+export const ADD_UC_REQUIREMENT = {
   ...ADD_UC_REQUIREMENT_IDENTITY,
   input: {
     id: column('uc_requirement', 'id', 'required'),
@@ -18,7 +18,7 @@ export const ADD_UC_REQUIREMENT: CommandDefinition<AddUcRequirement> = {
     group_name: column('uc_requirement', 'group_name', 'optional'),
   },
   handler: addUcRequirement,
-};
+} satisfies CommandDefinition<AddUcRequirement>;
 
 /** Adds the requirement to its use case. */
 export function addUcRequirement(tx: Transaction, input: AddUcRequirement): void {

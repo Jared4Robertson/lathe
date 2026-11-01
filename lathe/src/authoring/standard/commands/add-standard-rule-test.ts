@@ -6,7 +6,7 @@ import { ADD_STANDARD_RULE_TEST_IDENTITY } from './identities.generated.ts';
 
 export type AddStandardRuleTest = Pick<StandardRuleTestRow, 'id' | 'title' | 'standard_rule_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'when' | 'then' | 'notes'> & { starts_from?: string[] };
 
-export const ADD_STANDARD_RULE_TEST: CommandDefinition<AddStandardRuleTest> = {
+export const ADD_STANDARD_RULE_TEST = {
   ...ADD_STANDARD_RULE_TEST_IDENTITY,
   input: {
     id: column('standard_rule_test', 'id', 'required'),
@@ -25,7 +25,7 @@ export const ADD_STANDARD_RULE_TEST: CommandDefinition<AddStandardRuleTest> = {
     starts_from: ids('The test data sets it starts from.', 'optional'),
   },
   handler: addStandardRuleTest,
-};
+} satisfies CommandDefinition<AddStandardRuleTest>;
 
 export function addStandardRuleTest(tx: Transaction, input: AddStandardRuleTest): void {
   const standards = new StandardRepository(tx);

@@ -6,13 +6,13 @@ import { REMOVE_REPOSITORY_IDENTITY } from './identities.generated.ts';
 /** The repository to remove. */
 export type RemoveRepository = { id: string };
 
-export const REMOVE_REPOSITORY: CommandDefinition<RemoveRepository> = {
+export const REMOVE_REPOSITORY = {
   ...REMOVE_REPOSITORY_IDENTITY,
   input: {
     id: column('repository', 'id', 'required'),
   },
   handler: removeRepository,
-};
+} satisfies CommandDefinition<RemoveRepository>;
 
 /** Removes the repository from its domain. */
 export function removeRepository(tx: Transaction, input: RemoveRepository): void {

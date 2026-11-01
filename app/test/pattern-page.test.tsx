@@ -2,8 +2,6 @@ import { chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { PATTERN_COMMANDS } from '../../lathe/src/authoring/pattern/commands/index';
-import type { PatternCommands } from '../src/authoring/pattern/commands';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { setRow } from './fixtures/load';
 import { patternWorkspace } from './fixtures/patterns';
@@ -22,15 +20,6 @@ describe('LA-V122-R01-T01 a pattern\'s records are read through the Pattern aggr
     expect(await within(main()).findByText(/Records MUST be kept for/)).toBeInTheDocument();
     expect(requests).toContain('GET /api/pattern/get-pattern?id=DM-PAT-AUDIT-R02');
     expect(within(main()).getByRole('heading', { name: /^Owed by/ })).toBeInTheDocument();
-  });
-
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof PatternCommands)[] = [
-      '/api/pattern/add-pattern', '/api/pattern/add-pattern-rule', '/api/pattern/add-pattern-rule-test',
-      '/api/pattern/change-pattern', '/api/pattern/change-pattern-rule', '/api/pattern/change-pattern-rule-test',
-      '/api/pattern/remove-pattern', '/api/pattern/remove-pattern-rule', '/api/pattern/remove-pattern-rule-test',
-    ];
-    expect([...routes].sort()).toEqual(PATTERN_COMMANDS.map((c) => c.route).sort());
   });
 });
 

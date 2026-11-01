@@ -12,7 +12,7 @@ export type AddEntity = Pick<EntityRow, 'id' | 'title' | 'aggregate_id' | 'role'
   has_many?: string[];
 };
 
-export const ADD_ENTITY: CommandDefinition<AddEntity> = {
+export const ADD_ENTITY = {
   ...ADD_ENTITY_IDENTITY,
   input: {
     id: column('entity', 'id', 'required'),
@@ -26,7 +26,7 @@ export const ADD_ENTITY: CommandDefinition<AddEntity> = {
     has_many: ids('The entities of its aggregate it holds any number of.', 'optional'),
   },
   handler: addEntity,
-};
+} satisfies CommandDefinition<AddEntity>;
 
 export function addEntity(tx: Transaction, input: AddEntity): void {
   const aggregates = new AggregateRepository(tx);

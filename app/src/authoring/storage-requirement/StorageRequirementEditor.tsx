@@ -3,15 +3,15 @@ import type { StorageRequirementKind } from '../../../../lathe/src/authoring/sto
 import type { StorageRequirementPage } from '../../../../lathe/src/authoring/storage-requirement/read-model';
 import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
-import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
+import { addInput, addOrChangeFields, changeInput, CommandForm, draftOf, emptyDraft, Fields, formFields, LONG, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
 import { AddMenu } from '../../edit/AddMenu';
-import { useWriter, type Writer } from '../../edit/write';
+import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendStorageRequirement, type StorageRequirementCommands, type StorageRequirementRoute } from './commands';
+import { STORAGE_REQUIREMENT_FIELDS } from './fields.generated';
 import { useNextStorageRequirementId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -28,28 +28,18 @@ import { kindWord } from '../../platform/meta-model/reads';
 const dataSets = (index: RecordIndex, product: string): Choice[] =>
   [...index.byId.values()].filter((r) => r.kind === 'test_data_set' && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
-/** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order. */
+/** The fields each kind's Add and Change take, from their inputs; the hints add long text and the choices. */
 function fieldsOf(index: RecordIndex, product: string, kind: StorageRequirementKind, adding: boolean): FieldSpec[] {
-  const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
+  const F = STORAGE_REQUIREMENT_FIELDS;
   if (kind === 'storage_requirement') {
-    return [...id(kind), { field: 'title', column: 'title', table: kind }, { field: 'statement', column: 'statement', table: kind, long: true }];
+    // Add names its one parent, an aggregate or a read model, in the column the form picks from the record it is about.
+    return adding
+      ? formFields(F['/api/storage-requirement/add-storage-requirement'], ['aggregate_id', 'read_model_id'], { statement: LONG })
+      : formFields(F['/api/storage-requirement/change-storage-requirement'], ['id'], { statement: LONG });
   }
-  const table = kind;
-  return [
-    ...id(table),
-    { field: 'title', column: 'title', table },
-    { field: 'when', column: 'when', table, long: true },
-    { field: 'then', column: 'then', table, long: true },
-    { field: 'level', column: 'level', table },
-    { field: 'state', column: 'state', table },
-    { field: 'file', column: 'file', table },
-    { field: 'manual_reason', column: 'manual_reason', table, long: true },
-    { field: 'size', column: 'size', table },
-    { field: 'smoke', column: 'smoke', table },
-    { field: 'external', column: 'external', table },
-    { field: 'notes', column: 'notes', table, long: true },
-    { field: 'starts_from', label: 'Starts from', description: 'The test data sets it starts from.', many: dataSets(index, product) },
-  ];
+  return addOrChangeFields(adding, F['/api/storage-requirement/add-storage-requirement-test'], 'storage_requirement_id', F['/api/storage-requirement/change-storage-requirement-test'], {
+    when: LONG, then: LONG, manual_reason: LONG, notes: LONG, starts_from: { choices: dataSets(index, product) },
+  });
 }
 
 /** The record's current values, by its input's field names. */
@@ -59,21 +49,21 @@ function currentOf(page: StorageRequirementPage): Record<string, unknown> {
   return { ...test, starts_from: startsFrom };
 }
 
-/** Each kind's Change command, and the fields it may clear with null. */
-const CHANGE: Record<StorageRequirementKind, { route: StorageRequirementRoute; clearable: readonly string[] }> = {
-  storage_requirement: { route: '/api/storage-requirement/change-storage-requirement', clearable: [] },
-  storage_requirement_test: { route: '/api/storage-requirement/change-storage-requirement-test', clearable: ['file', 'manual_reason', 'size', 'smoke', 'external', 'notes'] },
+/** Each kind's Change command. */
+const CHANGE: Record<StorageRequirementKind, CommandRoute> = {
+  storage_requirement: '/api/storage-requirement/change-storage-requirement',
+  storage_requirement_test: '/api/storage-requirement/change-storage-requirement-test',
 };
 
 /** Each kind's Remove command. */
-const REMOVE: Record<StorageRequirementKind, StorageRequirementRoute> = {
+const REMOVE: Record<StorageRequirementKind, CommandRoute> = {
   storage_requirement: '/api/storage-requirement/remove-storage-requirement',
   storage_requirement_test: '/api/storage-requirement/remove-storage-requirement-test',
 };
 
 /** Sends a command whose input this form has built to its kind's shape: the route names the type it takes. */
-const send = (writer: Writer, route: StorageRequirementRoute, input: Record<string, unknown>): Promise<WriteAnswer> =>
-  sendStorageRequirement(writer, route, input as unknown as StorageRequirementCommands[typeof route]);
+const send = (writer: Writer, route: CommandRoute, input: Record<string, unknown>): Promise<WriteAnswer> =>
+  writer.command(route, input as unknown as CommandInputs[typeof route]);
 
 type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add' } | { mode: 'remove' };
 
@@ -95,9 +85,9 @@ export function StorageRequirementEditor({ index, page, children }: { index: Rec
     const specs = fieldsOf(index, product, kind, false);
     const current = currentOf(page);
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, specs, draft, current, { id }, CHANGE[kind].clearable);
+      const input = changeInput(index, specs, draft, current, { id });
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
-      const answer = await send(writer, CHANGE[kind].route, input);
+      const answer = await send(writer, CHANGE[kind], input);
       if (answer.ok) { announce(`Saved ${id}`); back(); }
       return answer;
     };
@@ -115,7 +105,7 @@ export function StorageRequirementEditor({ index, page, children }: { index: Rec
       {mode.mode === 'remove' && (
         <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={isRequirement ? page.tests.map((t) => t.test.id) : []}
           then={addressOf(isRequirement ? page.parent.id : page.requirement.id)} onCancel={back}
-          remove={() => sendStorageRequirement(writer, REMOVE[kind], { id })} />
+          remove={() => writer.command(REMOVE[kind], { id })} />
       )}
       {children}
     </>

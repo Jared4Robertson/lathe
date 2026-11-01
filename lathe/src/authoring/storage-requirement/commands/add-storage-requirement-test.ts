@@ -6,7 +6,7 @@ import { ADD_STORAGE_REQUIREMENT_TEST_IDENTITY } from './identities.generated.ts
 
 export type AddStorageRequirementTest = Pick<StorageRequirementTestRow, 'id' | 'title' | 'storage_requirement_id' | 'level' | 'state' | 'when' | 'then' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'notes'> & { starts_from?: string[] };
 
-export const ADD_STORAGE_REQUIREMENT_TEST: CommandDefinition<AddStorageRequirementTest> = {
+export const ADD_STORAGE_REQUIREMENT_TEST = {
   ...ADD_STORAGE_REQUIREMENT_TEST_IDENTITY,
   input: {
     id: column('storage_requirement_test', 'id', 'required'),
@@ -25,7 +25,7 @@ export const ADD_STORAGE_REQUIREMENT_TEST: CommandDefinition<AddStorageRequireme
     starts_from: ids('The test data sets it starts from.', 'optional'),
   },
   handler: addStorageRequirementTest,
-};
+} satisfies CommandDefinition<AddStorageRequirementTest>;
 
 export function addStorageRequirementTest(tx: Transaction, input: AddStorageRequirementTest): void {
   const requirements = new StorageRequirementRepository(tx);

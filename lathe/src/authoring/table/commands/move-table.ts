@@ -9,7 +9,7 @@ import { MOVE_TABLE_IDENTITY } from './identities.generated.ts';
 /** The table and the one parent it moves to. */
 export type MoveTable = Pick<TableRow, 'id' | 'entity_id' | 'read_model_id' | 'domain_id'>;
 
-export const MOVE_TABLE: CommandDefinition<MoveTable> = {
+export const MOVE_TABLE = {
   ...MOVE_TABLE_IDENTITY,
   input: {
     id: column('table', 'id', 'required'),
@@ -18,7 +18,7 @@ export const MOVE_TABLE: CommandDefinition<MoveTable> = {
     domain_id: column('table', 'domain_id', 'optional'),
   },
   handler: moveTable,
-};
+} satisfies CommandDefinition<MoveTable>;
 
 /** Puts the table under its new parent, clearing the one it had; its keys keep their places. */
 export function moveTable(tx: Transaction, input: MoveTable): void {

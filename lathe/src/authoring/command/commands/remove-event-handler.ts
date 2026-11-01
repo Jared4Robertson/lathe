@@ -6,13 +6,13 @@ import { REMOVE_EVENT_HANDLER_IDENTITY } from './identities.generated.ts';
 /** The event handler to remove. */
 export type RemoveEventHandler = { id: string };
 
-export const REMOVE_EVENT_HANDLER: CommandDefinition<RemoveEventHandler> = {
+export const REMOVE_EVENT_HANDLER = {
   ...REMOVE_EVENT_HANDLER_IDENTITY,
   input: {
     id: column('event_handler', 'id', 'required'),
   },
   handler: removeEventHandler,
-};
+} satisfies CommandDefinition<RemoveEventHandler>;
 
 /** Removes the event handler from its policy. */
 export function removeEventHandler(tx: Transaction, input: RemoveEventHandler): void {

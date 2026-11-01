@@ -10,7 +10,7 @@ import { ADD_PATTERN_RULE_TEST } from './add-pattern-rule-test.ts';
 import { CHANGE_PATTERN_RULE_TEST } from './change-pattern-rule-test.ts';
 import { REMOVE_PATTERN_RULE_TEST } from './remove-pattern-rule-test.ts';
 
-export const PATTERN_COMMANDS: readonly AnyCommand[] = [
+export const PATTERN_COMMANDS = [
   ADD_PATTERN,
   CHANGE_PATTERN,
   REMOVE_PATTERN,
@@ -20,4 +20,4 @@ export const PATTERN_COMMANDS: readonly AnyCommand[] = [
   ADD_PATTERN_RULE_TEST,
   CHANGE_PATTERN_RULE_TEST,
   REMOVE_PATTERN_RULE_TEST,
-];
+] as const satisfies readonly AnyCommand[];

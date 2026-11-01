@@ -3,8 +3,6 @@ import { chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { VIEW_COMMANDS } from '../../lathe/src/authoring/view/commands/index';
-import type { ViewCommands } from '../src/authoring/view/commands';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
@@ -28,15 +26,6 @@ describe('LA-V150-R01-T01 a view\'s records are read through the View aggregate\
     const { requests } = await openApp('/DM-V01-R01', { data: withRequirements() });
     expect(await within(main()).findByText('The basket page MUST show the total.')).toBeInTheDocument();
     expect(requests).toContain('GET /api/view/get-view?id=DM-V01-R01');
-  });
-
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof ViewCommands)[] = [
-      '/api/view/add-view', '/api/view/add-view-requirement', '/api/view/add-view-test',
-      '/api/view/change-view', '/api/view/change-view-requirement', '/api/view/change-view-test',
-      '/api/view/remove-view', '/api/view/remove-view-requirement', '/api/view/remove-view-test',
-    ];
-    expect([...routes].sort()).toEqual(VIEW_COMMANDS.map((c) => c.route).sort());
   });
 });
 
