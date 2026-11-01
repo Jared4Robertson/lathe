@@ -47,7 +47,7 @@ describe('LA-AUT-UC08-R05-T01 the meta model gives kinds, stages and relations f
     const kinds = meta.kindList;
     const positions = kinds.map((k) => k.position);
     expect(positions).toEqual([...positions].sort((a, b) => a! - b!));
-    expect(kinds.slice(0, 3).map((k) => k.kind)).toEqual(['product', 'business_outcome', 'domain']);
+    expect(kinds.slice(0, 5).map((k) => k.kind)).toEqual(['product', 'business_outcome', 'journey', 'journey_step', 'domain']);
     expect(kinds.at(-1)!.kind).toBe('question');
     expect(meta.kinds.get('uc_requirement')).toMatchObject({ label: 'UC requirement', stage: 'use-cases', parent_kinds: ['use_case'], obligation: true, id_scope: 'parent' });
     expect(meta.kinds.get('endpoint')!.parent_kinds).toEqual(['command', 'query']);
