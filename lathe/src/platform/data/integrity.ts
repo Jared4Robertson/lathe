@@ -58,15 +58,15 @@ ${groups.join('\nUNION ALL ')};
 CREATE OR REPLACE VIEW record_text AS
 ${texts.join('\nUNION ALL ')};
 CREATE OR REPLACE VIEW record_complexity AS
-WITH RECURSIVE up (id, at) AS (
+WITH RECURSIVE up (id, above) AS (
   SELECT id, id FROM record_parent
   UNION ALL
-  SELECT up.id, p.parent_id FROM up JOIN record_parent p ON p.id = up.at JOIN meta_kind k ON k.name = p.kind
+  SELECT up.id, p.parent_id FROM up JOIN record_parent p ON p.id = up.above JOIN meta_kind k ON k.name = p.kind
   WHERE k.complexity = 'as-parent' AND p.parent_id IS NOT NULL
 )
 SELECT up.id, r.kind,
   CASE k.complexity WHEN 'by-type' THEN CASE s.type WHEN 'quality' THEN 'essential' ELSE 'accidental' END ELSE k.complexity::VARCHAR END AS complexity
-FROM up JOIN record_parent a ON a.id = up.at JOIN meta_kind k ON k.name = a.kind JOIN record_parent r ON r.id = up.id
+FROM up JOIN record_parent a ON a.id = up.above JOIN meta_kind k ON k.name = a.kind JOIN record_parent r ON r.id = up.id
 LEFT JOIN standard s ON s.id = a.id
 WHERE k.complexity IS NOT NULL AND k.complexity <> 'as-parent';
 `;
