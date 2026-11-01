@@ -1,6 +1,6 @@
 // ProductRepository (LA-AUT-REPO01): loads and saves the Product aggregate whole, in its own tables only. A record
-// inside a product (a question, an interface) or one of its declarations (a product kind, a product relation) is
-// reached through the product that holds it.
+// inside a product (an open question) or one of its declarations (a product kind, a product relation) is reached
+// through the product that holds it.
 import { AggregateRepository, type InstanceRows } from '../../platform/data/repository.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
 import { PRODUCT_TABLES, productRows, productsFrom, type Product } from './model.ts';
@@ -24,9 +24,9 @@ export class ProductRepository extends AggregateRepository<Product> {
     return record?.kind === 'domain' ? String(record.row.product_id) : undefined;
   }
 
-  /** Loads the product that holds the question or interface with this ID; undefined when there is no such record. */
-  loadHolding(kind: 'question' | 'interface', id: string): Product | undefined {
-    const row = this.files.find(kind, { id });
+  /** Loads the product that holds the open question with this ID; undefined when there is no such question. */
+  loadHoldingQuestion(id: string): Product | undefined {
+    const row = this.files.find('question', { id });
     if (!row) return undefined;
     const product = row.product_id !== undefined ? String(row.product_id) : this.productOfDomain(String(row.domain_id));
     return product === undefined ? undefined : this.load(product);

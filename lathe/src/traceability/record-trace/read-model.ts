@@ -67,6 +67,8 @@ export interface RecordTrace {
   judgments: Judgment[];
   /** For a use case: its UC requirements, each with its group heading and its judgment in the use case's domain. */
   requirements: { id: string; group: string | null; judgment: Judgment | null }[];
+  /** For a technical record: the obligations whose chains it builds, each with the tests that prove it and their states. */
+  builds: { id: string; tests: { id: string; state: string }[] }[];
   /** For a test: what it proves (its parent), or null. */
   proves: string | null;
   runBy: RunBy | null;
@@ -158,7 +160,7 @@ export function recordTraceTableFrom(view: ReadView): RecordTraceTable {
       load();
       const record = placed!.get(id);
       if (!record) return undefined;
-      const trace: RecordTrace = { id, chain: [], built: [], judgments: [], requirements: [], proves: null, runBy: null, links: [] };
+      const trace: RecordTrace = { id, chain: [], built: [], judgments: [], requirements: [], builds: [], proves: null, runBy: null, links: [] };
       if (schema.kinds[record.kind]?.obligation) {
         const chain = chains.get(id);
         const group = (role: ChainGroup['role'], label: string, ids: readonly string[]): ChainGroup[] => (ids.length > 0 ? [{ role, label, ids: [...ids] }] : []);
@@ -177,6 +179,11 @@ export function recordTraceTableFrom(view: ReadView): RecordTraceTable {
           const r = placed!.get(rid)!;
           return { id: rid, group: str(r.row, 'group_name').trim() || null, judgment: r.domain ? judge(r, r.domain) : null };
         });
+      } else if (schema.kinds[record.kind]?.stage === 'technical-specification') {
+        trace.builds = sortIds((run?.chains ?? []).filter((c) => c.build.includes(id)).map((c) => c.obligation)).map((obligation) => ({
+          id: obligation,
+          tests: sortIds(chains.get(obligation)?.tests ?? []).map((t) => ({ id: t, state: str(placed!.get(t)?.row ?? {}, 'state') })),
+        }));
       } else if (isTestKind(record.kind)) {
         const file = str(record.row, 'file').trim() || null;
         trace.proves = record.parent;

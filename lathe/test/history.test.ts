@@ -87,7 +87,7 @@ async function get(root: string, url: string) {
 }
 
 describe.skipIf(!hasGit)('record history', () => {
-  it("LA-EXP-EP01-R01-T01 GET /api/history lists the commits that changed a record's rows, newest first, with the columns each changed and the uncommitted changes", async () => {
+  it("LA-PAT-HTTP-STEPS-R04-T01 GET /api/history lists the commits that changed a record's rows, newest first, with the columns each changed and the uncommitted changes", async () => {
     const { status, body } = await get(repo, `/api/history?id=${UC}`);
     expect(status).toBe(200);
     const answer = body as Extract<HistoryAnswer, { state: 'ok' }>;
@@ -126,7 +126,7 @@ describe.skipIf(!hasGit)('record history', () => {
     ]);
   });
 
-  it('LA-EXP-EP01-R01-T02 GET /api/history answers 404 for an unknown record, 400 without an ID, and says calmly when the folder is not a git repo', async () => {
+  it('LA-PAT-HTTP-STEPS-R04-T01 GET /api/history answers 404 for an unknown record, 400 without an ID, and says calmly when the folder is not a git repo', async () => {
     expect((await get(repo, '/api/history?id=EX-NOTE-UC99')).status).toBe(404);
     expect((await get(repo, '/api/history?id=')).status).toBe(400);
     expect((await get(repo, `/api/history?id=${UC}&skip=-1`)).status).toBe(400);
@@ -136,13 +136,13 @@ describe.skipIf(!hasGit)('record history', () => {
     expect(noRepo.body.message).toMatch(/not a git repository/);
   });
 
-  it("LA-EXP-EP01-R02-T01 GET /api/history finds the record's data file from the data by its ID, never from a path the request names", async () => {
+  it("LA-PAT-HTTP-STEPS-R04-T01 GET /api/history finds the record's data file from the data by its ID, never from a path the request names", async () => {
     expect((await get(plain, `/api/history?id=${UC}`)).body).toMatchObject({ files: ['data/use_case.jsonl'] });
     expect([400, 404]).toContain((await get(repo, '/api/history?id=../data/use_case.jsonl')).status);
   });
 
   describe('LA-STD-CODE-R02-T01 reading a record\'s history changes nothing in the repo', () => {
-    it('LA-EXP-EP01-R02-T02 GET /api/history changes nothing in the repo', async () => {
+    it('LA-PAT-HTTP-STEPS-R05-T01 GET /api/history changes nothing in the repo', async () => {
       const status = git(repo, 'status', '--porcelain');
       const config = git(repo, 'config', '--local', '--list');
       expect((await get(repo, `/api/history?id=${UC}`)).status).toBe(200);
@@ -174,14 +174,14 @@ describe.skipIf(!hasGit)('record history', () => {
     expect(slow.timedOut).toBe(true);
   });
 
-  it("LA-EXP-EP01-R02-T03 git's -G finds a line by its first column's value only", async () => {
+  it("LA-PAT-HTTP-STEPS-R05-T01 git's -G finds a line by its first column's value only", async () => {
     const touched = await runGit(repo, ['log', '--format=%s', '-G', firstColumnPattern('EX-PAT-NOTE'), '--', 'data']);
     // The pattern's commits, and not the link from UC01 that names the pattern as its target.
     expect(touched.stdout.trim().split('\n')).toEqual(['Describe the pattern', 'Add the example product']);
   });
 });
 
-describe('LA-EXP-EP01-R02-T03 reading history', () => {
+describe('LA-PAT-HTTP-STEPS-R05-T01 reading history', () => {
   it('parses git log records written with its field and record separators', () => {
     const hash = 'a'.repeat(40);
     expect(parseLog(`${hash}\x1faaaaaaa\x1f2026-10-25T10:00:00+00:00\x1fOwner\x1fA subject\x1e\n`)).toEqual([

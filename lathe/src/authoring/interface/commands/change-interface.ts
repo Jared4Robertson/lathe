@@ -2,8 +2,7 @@ import { column, ids, texts, type CommandDefinition } from '../../../platform/co
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { InterfaceRow } from '../../../platform/data/tables.ts';
 import { changed } from '../../../platform/data/rows.ts';
-import { ProductRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
+import { InterfaceRepository } from '../repository.ts';
 import { CHANGE_INTERFACE_IDENTITY } from './identities.generated.ts';
 
 /** The interface's changes: a column given is set; a list given replaces its roles or the use cases it offers. */
@@ -25,13 +24,10 @@ export const CHANGE_INTERFACE = {
 
 /** Changes the interface's columns, roles or offered use cases. */
 export function changeInterface(tx: Transaction, input: ChangeInterface): void {
-  const products = new ProductRepository(tx);
-  const product = products.loadHolding('interface', input.id) ?? tx.refuse('missing', `there is no interface ${input.id}`);
-  product.interfaces = product.interfaces.map((i) =>
-    i.row.id === input.id
-      ? { row: changed(i.row, input, ['title', 'kind', 'description', 'public']), actors: input.actors ?? i.actors, offers: input.offers ? [...input.offers].sort() : i.offers }
-      : i,
-  );
-  holdToRules(tx, product);
-  products.save(product);
+  const interfaces = new InterfaceRepository(tx);
+  const iface = interfaces.load(input.id) ?? tx.refuse('missing', `there is no interface ${input.id}`);
+  iface.row = changed(iface.row, input, ['title', 'kind', 'description', 'public']);
+  if (input.actors) iface.actors = input.actors;
+  if (input.offers) iface.offers = [...input.offers].sort();
+  interfaces.save(iface);
 }

@@ -132,7 +132,7 @@ describe('writing a spec end to end', () => {
       await call('domain_add_capability', CAPABILITY);
       await call('use_case_add_use_case', USE_CASE);
       await call('use_case_add_uc_requirement', REQUIREMENT);
-      await call('product_add_interface', INTERFACE);
+      await call('interface_add_interface', INTERFACE);
       await call('use_case_add_flow', FLOW);
       await call('use_case_add_flow_step', { ...STEP, invokes: 'TL-LEND-CMD01', fulfills: ['TL-LEND-UC01-R01'] });
       await call('use_case_add_use_case_test', TEST);

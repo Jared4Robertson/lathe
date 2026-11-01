@@ -12,9 +12,6 @@ import { ADD_QUESTION } from './add-question.ts';
 import { CHANGE_QUESTION } from './change-question.ts';
 import { MOVE_QUESTION } from './move-question.ts';
 import { REMOVE_QUESTION } from './remove-question.ts';
-import { ADD_INTERFACE } from './add-interface.ts';
-import { CHANGE_INTERFACE } from './change-interface.ts';
-import { REMOVE_INTERFACE } from './remove-interface.ts';
 
 export const PRODUCT_COMMANDS = [
   ADD_PRODUCT,
@@ -29,7 +26,4 @@ export const PRODUCT_COMMANDS = [
   CHANGE_QUESTION,
   MOVE_QUESTION,
   REMOVE_QUESTION,
-  ADD_INTERFACE,
-  CHANGE_INTERFACE,
-  REMOVE_INTERFACE,
 ] as const satisfies readonly AnyCommand[];

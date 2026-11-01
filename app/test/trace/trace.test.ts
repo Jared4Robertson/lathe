@@ -8,7 +8,7 @@ import { litBy } from '../../src/trace/path';
 import { traceTarget } from '../../src/trace/walk';
 import { traced } from './rows';
 
-// The Trace stage (LA-V98), pure: its rows from the Trace read (list-trace-rows, LA-TRC-RM13), its
+// The Trace stage (LA-V98), pure: its rows from the Trace read (list-traced-use-cases, LA-TRC-RM13), its
 // stage statuses, what each open box shows, a selection's path across its row, the walk, and the layout's stability.
 
 /** The model product with an HTTP API that also offers its use case, a second use case, two outcomes its capability serves, and a use case of a capability serving none. */

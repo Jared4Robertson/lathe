@@ -64,6 +64,8 @@
 {"source_id":"TL-LEND-SP02-PR","target_id":"TL-PAT-LIBRARIAN-ACTION-SL03"}
 {"source_id":"TL-LEND-SP03-PR","target_id":"TL-PAT-LIBRARIAN-ACTION-SL03"}
 {"source_id":"TL-LEND-SP04-PR","target_id":"TL-PAT-LIBRARIAN-ACTION-SL03"}
+{"source_id":"TL-LEND-STORE01","target_id":"TL-PAT-LIBRARIAN-ACTION-SL04"}
+{"source_id":"TL-LEND-STORE02","target_id":"TL-PAT-LIBRARIAN-ACTION-SL05"}
 {"source_id":"TL-LEND-TB01","target_id":"TL-PAT-LIBRARIAN-ACTION-SL04"}
 {"source_id":"TL-LEND-TOOL01","target_id":"TL-PAT-LIBRARIAN-ACTION-SL06"}
 {"source_id":"TL-LEND-TOOL02","target_id":"TL-PAT-LIBRARIAN-ACTION-SL06"}

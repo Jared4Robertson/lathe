@@ -24,7 +24,7 @@ import { kindLabel, type RecordIndex } from '../exploring/record-summaries/recor
 //
 // Each cell is a tree of boxes (`Item`), whatever is open: what shows is each open box's children (`visible`), and a box
 // that does not show stands in by its nearest shown parent (`standIn`), so a path through a collapsed cell lights the
-// box that holds it. Everything comes from the Trace read model (list-trace-rows, LA-TRC-RM13); the index gives only
+// box that holds it. Everything comes from the Trace read model (list-traced-use-cases, LA-TRC-RM13); the index gives only
 // titles, kinds and stages to draw. Where each box goes is layout.ts's.
 
 /** The five columns, left to right. */

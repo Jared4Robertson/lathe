@@ -191,7 +191,7 @@ describe('removing', () => {
     // A use case goes whole, with its actors, setting values and its own links, once nothing outside it points at it.
     await run(store, 'product change-question', { id: 'TL-LEND-Q01', about: [] });
     await run(store, 'pattern-following stop-following-pattern', { follower_id: 'TL-LEND-UC01', pattern_id: 'TL-PAT-ACT' });
-    await run(store, 'product change-interface', { id: 'TL-IF01', offers: [] });
+    await run(store, 'interface change-interface', { id: 'TL-IF01', offers: [] });
     await run(store, 'use-case remove-use-case', { id: 'TL-LEND-UC01' });
     for (const table of ['use_case', 'use_case_actor', 'uc_requirement', 'flow', 'setting_value', 'follows']) expect(store.rows(table)).toEqual([]);
     // A table goes with its keys.

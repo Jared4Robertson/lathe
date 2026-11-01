@@ -32,6 +32,7 @@
 {"id":"LA-CHK-UC06-FL","title":"Keep each level of the spec a useful size","use_case_id":"LA-CHK-UC06"}
 {"id":"LA-CHK-UC07-FL","title":"Review every problem of a product","use_case_id":"LA-CHK-UC07"}
 {"id":"LA-CHK-UC08-FL","title":"Keep every change to the spec checked","use_case_id":"LA-CHK-UC08"}
+{"id":"LA-CHK-UC09-FL","title":"Review the essential records with fresh eyes","use_case_id":"LA-CHK-UC09"}
 {"id":"LA-EXP-UC01-FL","title":"Find a record in a domain","use_case_id":"LA-EXP-UC01"}
 {"id":"LA-EXP-UC02-FL","title":"Follow a record's links","use_case_id":"LA-EXP-UC02"}
 {"id":"LA-EXP-UC03-FL","title":"Walk the model as a graph","use_case_id":"LA-EXP-UC03"}
@@ -86,3 +87,4 @@
 {"id":"LA-TRC-UC16-FL","title":"Check each stored record kind against the file that creates it","use_case_id":"LA-TRC-UC16"}
 {"id":"LA-TRC-UC19-FL","title":"Account for every package the product depends on","use_case_id":"LA-TRC-UC19"}
 {"id":"LA-TRC-UC20-FL","title":"See the outcomes each record serves","use_case_id":"LA-TRC-UC20"}
+{"id":"LA-TRC-UC21-FL","title":"Account for hand-written accidental complexity","use_case_id":"LA-TRC-UC21"}

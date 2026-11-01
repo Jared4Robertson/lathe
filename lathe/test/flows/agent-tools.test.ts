@@ -161,9 +161,9 @@ describe('Authoring flows through the MCP tools', () => {
     ], async (a) => {
       // The interfaces, two offering the use case; its one flow, the same through each, and its steps in order on
       // their paths.
-      await a.ok('product_add_interface', { id: 'TL-IF01', title: 'Loan desk', product_id: 'TL', kind: 'web app', description: 'The desk where librarians lend tools.', public: false, offers: ['TL-LEND-UC01'] });
-      await a.ok('product_add_interface', { id: 'TL-IF02', title: 'Lending API', product_id: 'TL', kind: 'API', description: 'The API other systems lend tools through.', public: true, offers: ['TL-LEND-UC01'] });
-      await a.ok('product_add_interface', { id: 'TL-IF03', title: 'Librarian tools', product_id: 'TL', kind: 'agent tools', description: 'The tools an agent uses to help the librarian.', public: false });
+      await a.ok('interface_add_interface', { id: 'TL-IF01', title: 'Loan desk', product_id: 'TL', kind: 'web app', description: 'The desk where librarians lend tools.', public: false, offers: ['TL-LEND-UC01'] });
+      await a.ok('interface_add_interface', { id: 'TL-IF02', title: 'Lending API', product_id: 'TL', kind: 'API', description: 'The API other systems lend tools through.', public: true, offers: ['TL-LEND-UC01'] });
+      await a.ok('interface_add_interface', { id: 'TL-IF03', title: 'Librarian tools', product_id: 'TL', kind: 'agent tools', description: 'The tools an agent uses to help the librarian.', public: false });
       await a.ok('use_case_add_flow', { id: 'TL-LEND-UC01-FL', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01' });
       const step = (n: string, title: string, pathName: string, position: number, more: Record<string, unknown> = {}) =>
         a.ok('use_case_add_flow_step', { id: `TL-LEND-UC01-FL-${n}`, title, flow_id: 'TL-LEND-UC01-FL', path: pathName, position, ...more });
@@ -188,7 +188,7 @@ describe('Authoring flows through the MCP tools', () => {
       // The Agent fixes each and checks again.
       await a.ok('use_case_change_flow_step', { id: 'TL-LEND-UC01-FL-S02', position: 2, fulfills: ['TL-LEND-UC01-R01', 'TL-LEND-UC01-R02'] });
       await a.ok('endpoint_add_endpoint', { id: 'TL-LEND-EP01', title: 'POST /loans', command_id: 'TL-LEND-CMD01', method: 'POST', route: '/loans', description: 'Opens a loan.' });
-      await a.ok('product_change_interface', { id: 'TL-IF03', offers: ['TL-LEND-UC02'] });
+      await a.ok('interface_change_interface', { id: 'TL-IF03', offers: ['TL-LEND-UC02'] });
       const fixed = await a.check();
       expect(fixed.problems.filter((p) => ['step-order', 'step-unreached'].includes(p.check))).toEqual([]);
       expect(found(fixed, 'not-designed').filter((m) => m.includes('TL-LEND-UC01-FL'))).toEqual([]);

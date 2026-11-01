@@ -4,6 +4,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { DEFAULT_TESTS, loadConfig, loadWorkspace, openStore, readConfig, SCHEMA_VERSION, SchemaVersionError, schemaVersionMessage } from '../src/index.ts';
+import { ProductRepoConfigRepository } from '../src/platform/product-repo/repository.ts';
 import { removeData, writeData } from './helpers.ts';
 
 afterAll(removeData);
@@ -67,5 +68,17 @@ describe('product configuration', () => {
       writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ schema }));
       expect(() => readConfig(root)).toThrow(/schema must be a whole number from 1/);
     }
+  });
+});
+
+describe('LA-PLT-A10-SR01 the product repo\'s config is kept at its root, whole, beside the data it names', () => {
+  it('LA-PLT-A10-SR01-T01 a config saved reads back whole through a new repository, a repo without one reads none, and a broken one is refused', () => {
+    const root = writeData({});
+    new ProductRepoConfigRepository(root).save({ schema: SCHEMA_VERSION, data: 'spec-data' });
+    expect(new ProductRepoConfigRepository(root).load()).toEqual({ schema: SCHEMA_VERSION, data: 'spec-data' });
+    expect(readConfig(root).dataDir).toBe(path.join(root, 'spec-data'));
+    expect(new ProductRepoConfigRepository(path.join(root, 'none')).load()).toBeUndefined();
+    writeFileSync(path.join(root, 'lathe.config.json'), '{ "schema": ');
+    expect(() => new ProductRepoConfigRepository(root).load()).toThrow(/lathe.config.json is not valid JSON/);
   });
 });
