@@ -3,6 +3,7 @@ import type { PathOnPage, StepOnPage } from '../../../../lathe/src/authoring/use
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/icons';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
+import { StepMoves } from '../../edit/StepMoves';
 import { ProblemBadge, RecordLink, Section } from '../../specs/parts';
 
 // A flow's steps as a table, in order (the Use case page, the flow as written): the step, what happens (a variant
@@ -83,7 +84,7 @@ export function FlowSteps({ index, flow, paths }: { index: RecordIndex; flow: st
           </tr>
         </thead>
         <tbody role="rowgroup">
-          {onPath.map((step) => {
+          {onPath.map((step, at) => {
             const { id } = step.step;
             const linked = COLUMNS.map((c) => ({ heading: c.heading, ids: c.of(step) }));
             const isOpen = open.has(id);
@@ -98,6 +99,7 @@ export function FlowSteps({ index, flow, paths }: { index: RecordIndex; flow: st
                       <span className="step-order">{step.step.position}</span>
                       <RecordLink index={index} id={id} showTitle={false} />
                     </span>
+                    <StepMoves route="/api/use-case/move-flow-step" id={id} up={onPath[at - 1]?.step.position ?? null} down={onPath[at + 1]?.step.position ?? null} />
                   </th>
                   <td className="step-what" role="cell">
                     {step.step.title} <VariantTag index={index} step={step} /> <ProblemBadge problems={index.problemsFor.get(id) ?? []} />

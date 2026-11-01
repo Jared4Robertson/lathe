@@ -286,12 +286,16 @@ function parentOf(useCase: UseCasePage, kind: UseCaseKind, id: string): string {
   }
 }
 
-/** Add a use case to a capability (from the capability's page): the aggregate's own Add, its ID the next free one. */
-export function AddUseCaseForm({ index, parent, onDone }: { index: RecordIndex; parent: string; onDone: () => void }) {
+/**
+ * Add a use case to a capability (from the capability's page): the aggregate's own Add, its ID the next free one. From a
+ * journey step that carries out nothing yet it opens with the step's words as `title`, and `afterAdd` links the step
+ * to the use case once it is added.
+ */
+export function AddUseCaseForm({ index, parent, onDone, title, afterAdd }: { index: RecordIndex; parent: string; onDone: () => void; title?: string; afterAdd?: (id: string) => Promise<void> }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextId('use_case', parent, index);
-  const [draft, setDraft] = useState<Draft>(emptyDraft);
+  const [draft, setDraft] = useState<Draft>(() => ({ ...emptyDraft(), text: title ? { title } as Record<string, string> : {} }));
   useEffect(() => {
     if (next.state === 'read') setDraft((d) => (d.text.id ? d : { ...d, text: { ...d.text, id: next.answer } }));
   }, [next]);
@@ -299,7 +303,11 @@ export function AddUseCaseForm({ index, parent, onDone }: { index: RecordIndex; 
   const submit = async () => {
     const input = addInput(index, specs, draft, { capability_id: parent });
     const answer = await send(writer, '/api/use-case/add-use-case', input);
-    if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
+    if (answer.ok) {
+      announce(`Added ${String(input.id)}`);
+      await afterAdd?.(String(input.id));
+      navigate(addressOf(String(input.id)));
+    }
     return answer;
   };
   return (

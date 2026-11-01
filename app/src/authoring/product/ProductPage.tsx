@@ -16,12 +16,14 @@ import { problemsUnder, StageSections } from '../../specs/SpecPages';
 import { ownerFolders } from '../../exploring/folder-tree/folders';
 import { addressOf } from '../../views/address';
 import { kindInProduct, ProductEditor, type DeclarationActions, type ProductRecordKind } from './ProductEditor';
+import { useTraceRows } from '../../traceability/trace/reads';
+import { proofLine } from '../journey/JourneyLine';
 import { useProduct } from './reads';
 
 // The Product page (LA-AUT-A1's page, LA-V51): a product at its ID (/<id>), and its open questions and interfaces, each
 // at its own address, drawn from the product's page read through the aggregate's own query (GET
 // /api/product/get-product) and changed only through its own commands (ProductEditor). A product shows its description,
-// its business outcomes, its domains as cards with their coverage, what it shares in its stages, its summary, its roles,
+// its discovery (business outcomes and journeys), its domains as cards with their coverage, what it shares in its stages, its summary, its roles,
 // its interfaces, the kinds and relations it declares as its own, its open questions and its problems; an open question
 // its description, owner, where it sits and what it is about; an interface its kind, its description, the roles that
 // use it, the patterns it follows, the use cases it offers and those it does not, by capability. The coverage, the stages' folders and problems still come from the
@@ -40,10 +42,10 @@ function Facts({ facts }: { facts: { label: string; value: ReactNode }[] }) {
   return <dl className="fields product-facts">{facts.map((f) => <div key={f.label}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}</dl>;
 }
 
-/** The product's business outcomes, the discovery stage: each with its statement, measure, target and the capabilities that serve it. */
+/** The product's business outcomes: each with its statement, measure, target and the capabilities that serve it. */
 function BusinessOutcomes({ index, page }: { index: RecordIndex; page: Product }) {
   return (
-    <Section title="Business outcomes" count={page.outcomes.length} className="stage stage-discovery product-outcomes">
+    <Section title="Business outcomes" count={page.outcomes.length} level={3} className="stage stage-discovery product-outcomes">
       <p className="hint">What the product exists to achieve, each measurable, and the capabilities that serve it.</p>
       {page.outcomes.length === 0 && <p className="hint">No business outcomes yet.</p>}
       <CardGrid stack label="Business outcomes">
@@ -65,6 +67,31 @@ function BusinessOutcomes({ index, page }: { index: RecordIndex; page: Product }
           </Card>
         ))}
       </CardGrid>
+    </Section>
+  );
+}
+
+/** The product's journeys, each a card with its steps count and how far it is proved, and how many of its use cases some journey carries out. */
+function Journeys({ index, product }: { index: RecordIndex; product: string }) {
+  const read = useTraceRows(product, index);
+  const trace = read.state === 'read' && read.answer.product === product ? read.answer : null;
+  const journeys = [...index.byId.values()].filter((r) => r.kind === 'journey' && r.product === product);
+  const inJourney = trace ? trace.rows.filter((r) => r.journeys.length > 0).length : 0;
+  return (
+    <Section title="Journeys" count={journeys.length} level={3} className="stage stage-discovery product-journeys">
+      <p className="hint">The use cases and handoffs, in order, from a trigger to a result, each serving the outcomes above.</p>
+      {journeys.length === 0 && <p className="hint">No journeys yet.</p>}
+      <CardGrid stack label="Journeys">
+        {journeys.map((j) => {
+          const proof = trace?.journeys.find((t) => t.id === j.id);
+          return (
+            <Card key={j.id} accent href={addressOf(j.id)} title={<><code>{j.id}</code><strong>{j.title}</strong></>}>
+              {proof && <p className={`journey-line-proof${proof.proved ? ' is-proved' : ''}`} data-meta="proof">{proof.proved ? '✓ ' : ''}{proofLine(proof)}</p>}
+            </Card>
+          );
+        })}
+      </CardGrid>
+      {trace && <p className="hint" data-fact="use-cases-in-journeys">Use cases in a journey: {inJourney} of {trace.rows.length}</p>}
     </Section>
   );
 }
@@ -160,18 +187,24 @@ function Declarations({ index, page, actions }: { index: RecordIndex; page: Prod
   );
 }
 
+/** How many journeys the product has. */
+const countJourneys = (index: RecordIndex, product: string) => [...index.byId.values()].filter((r) => r.kind === 'journey' && r.product === product).length;
+
 /** The product's own page: its outcomes, domains, shared records, summary, declarations, open questions and problems. */
 function ProductContent({ index, page, actions }: { index: RecordIndex; page: Product; actions: DeclarationActions | null }) {
   const id = page.product.id;
   const problems = problemsUnder(index, 'product', id);
-  // Its business outcomes have a section of their own, so Shared holds the other stages.
+  // Its discovery (business outcomes and journeys) has a section of its own, so Shared holds the other stages.
   const shared = ownerFolders(index, id).stages.filter((s) => s.stage !== 'discovery' && s.count > 0);
   const ownCount = shared.reduce((n, s) => n + s.count, 0);
   return (
     <div className="spec-body" data-aggregate="product">
       <Text index={index} id={id} source={page.product.description} field="description" />
       <Text index={index} id={id} source={page.product.notes} title="Notes" field="notes" />
-      <BusinessOutcomes index={index} page={page} />
+      <Section title="Discovery" count={page.outcomes.length + countJourneys(index, id)} className="product-discovery">
+        <BusinessOutcomes index={index} page={page} />
+        <Journeys index={index} product={id} />
+      </Section>
       <Section title="Domains" count={page.domains.length}>
         {page.domains.length === 0 && <p className="hint">No domains yet.</p>}
         <CardGrid label="Domains">
