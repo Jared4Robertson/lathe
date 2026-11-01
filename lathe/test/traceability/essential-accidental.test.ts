@@ -21,7 +21,7 @@ describe('essential and accidental complexity', () => {
     // outside world, essential, and nothing need account for it.
     const unprovided = without(complete(), 'provided_by', (r) => r.source_id === 'EX-LEND-EP01-R01');
     expect(records(ofCheck(await loadData(unprovided), 'accidental-not-accounted-for'))).toEqual(['EX-LEND-EP01-R01']);
-    const publicApi = changing(without(unprovided, 'happens_in', () => true), 'interface', () => true, { kind: 'API', public: true });
+    const publicApi = changing(unprovided, 'interface', () => true, { kind: 'API', public: true });
     expect(ofCheck(await loadData(publicApi), 'accidental-not-accounted-for')).toEqual([]);
     // Every kind of a stage says which it is; only the open question, outside the stages, says none.
     expect(ws.kinds.filter((k) => k.complexity === null).map((k) => k.kind)).toEqual(['question']);

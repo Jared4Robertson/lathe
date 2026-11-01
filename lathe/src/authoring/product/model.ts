@@ -1,6 +1,6 @@
 // The Product aggregate (LA-AUT-A1): a product with its roles, the kinds (with their fields) and relations it declares
 // as its own, its open questions (under the product or one of its domains, with what each is about) and its
-// interfaces. One instance is one product, whole; nothing in it belongs to another aggregate, and it holds only the
+// interfaces (each with the roles that use it and the use cases it offers). One instance is one product, whole; nothing in it belongs to another aggregate, and it holds only the
 // links its own records start.
 import type { Transaction } from '../../platform/data/transaction.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
@@ -28,6 +28,13 @@ export interface Question {
   about: string[];
 }
 
+/** An interface with the roles that use it, in order, and the use cases it offers. */
+export interface Interface {
+  row: InterfaceRow;
+  actors: string[];
+  offers: string[];
+}
+
 /** One product, whole. */
 export interface Product {
   /** The product's ID: the aggregate's root. */
@@ -37,11 +44,11 @@ export interface Product {
   kinds: ProductKind[];
   relations: ProductRelationRow[];
   questions: Question[];
-  interfaces: InterfaceRow[];
+  interfaces: Interface[];
 }
 
 /** The tables the Product aggregate keeps its rows in: its kinds, declarations, parts, and the relation its questions start. */
-export const PRODUCT_TABLES = ['product', 'role', 'product_kind', 'product_kind_field', 'product_relation', 'question', 'about', 'interface'] as const;
+export const PRODUCT_TABLES = ['product', 'role', 'product_kind', 'product_kind_field', 'product_relation', 'question', 'about', 'interface', 'interface_actor', 'offers'] as const;
 
 /** A new product, with nothing under it yet but its roles. */
 export function newProduct(product: ProductRow, roles: RoleInput[]): Product {
@@ -72,6 +79,8 @@ export function productsFrom(rows: (table: string) => Row[], productOfDomain: (d
   const questions = rows('question') as unknown as QuestionRow[];
   const interfaces = rows('interface') as unknown as InterfaceRow[];
   const about = bySource(rows('about'));
+  const offers = bySource(rows('offers'));
+  const actorsOf = groupBy(rows('interface_actor'), (a) => a.interface_id);
   const fieldsOf = groupBy(fields, (f) => f.kind);
   return products.map((product) => {
     const own = (r: { product_id?: string }) => r.product_id === product.id;
@@ -84,7 +93,11 @@ export function productsFrom(rows: (table: string) => Row[], productOfDomain: (d
       questions: questions
         .filter((q) => (q.product_id ?? (q.domain_id === undefined ? undefined : productOfDomain(q.domain_id))) === product.id)
         .map((row) => ({ row, about: groupOf(about, row.id) })),
-      interfaces: interfaces.filter(own),
+      interfaces: interfaces.filter(own).map((row) => ({
+        row,
+        actors: [...groupOf(actorsOf, row.id)].sort((a, b) => Number(a.position) - Number(b.position)).map((a) => String(a.role_name)),
+        offers: groupOf(offers, row.id),
+      })),
     };
   });
 }
@@ -101,7 +114,9 @@ export function productRows(product: Product): Map<string, Row[]> {
     ['product_relation', product.relations.map(asRow)],
     ['question', product.questions.map((q) => asRow(q.row))],
     ['about', product.questions.flatMap((q) => q.about.map((target) => ({ source_id: q.row.id, target_id: target })))],
-    ['interface', product.interfaces.map(asRow)],
+    ['interface', product.interfaces.map((i) => asRow(i.row))],
+    ['interface_actor', product.interfaces.flatMap((i) => i.actors.map((role, at) => ({ interface_id: i.row.id, position: at + 1, role_name: role })))],
+    ['offers', product.interfaces.flatMap((i) => i.offers.map((target) => ({ source_id: i.row.id, target_id: target })))],
   ]);
 }
 

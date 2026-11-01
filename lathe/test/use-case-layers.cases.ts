@@ -20,12 +20,12 @@ export function useCaseLayerCases(): void {
     const io = { out: (t: string) => out.push(t), err: (t: string) => err.push(t), stdin: async () => JSON.stringify({ id: 'TL-LEND-UC01-R02', title: 'Member known', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse an unknown member.' }) };
     expect(await runAggregateCommand(['use-case', 'add-uc-requirement', '--json', '-', '--root', root], io)).toBe(0);
     expect(JSON.parse(out.pop()!)).toMatchObject({ tables: ['uc_requirement'] });
-    expect(await runAggregateCommand(['use-case', 'change-flow-step', '--id', 'TL-LEND-UC01-FL01-S01', '--fulfills', 'TL-LEND-UC01-R01', '--fulfills', 'TL-LEND-UC01-R02', '--root', root], io)).toBe(0);
-    expect(out.pop()).toContain('Added fulfills source_id TL-LEND-UC01-FL01-S01, target_id TL-LEND-UC01-R02');
+    expect(await runAggregateCommand(['use-case', 'change-flow-step', '--id', 'TL-LEND-UC01-FL-S01', '--fulfills', 'TL-LEND-UC01-R01', '--fulfills', 'TL-LEND-UC01-R02', '--root', root], io)).toBe(0);
+    expect(out.pop()).toContain('Added fulfills source_id TL-LEND-UC01-FL-S01, target_id TL-LEND-UC01-R02');
     expect(await runAggregateCommand(['use-case', 'remove-uc-requirement', '--id', 'TL-LEND-UC01-R02', '--root', root], io)).toBe(1);
     expect(err.pop()).toMatch(/^Refused; nothing changed:\n {2}UC requirement TL-LEND-UC01-R02 is referenced, so it stays: .* \[referenced\]$/);
     expect(await runAggregateCommand(['use-case', 'add-flow-step', '--help', '--root', root], io)).toBe(0);
-    expect(out.pop()).toContain('--position                 integer, required. The step\'s place on its path, from 1.');
+    expect(out.pop()).toContain('--position                 integer, required. The step\'s place on its path, from 1, among every interface\'s steps; each interface\'s version skips the other interfaces\' variants.');
     expect(await runAggregateCommand(['use-case', 'next-id', '--kind', 'uc_requirement', '--parent', 'TL-LEND-UC01', '--root', root], io)).toBe(0);
     expect(out.pop()).toBe('TL-LEND-UC01-R03');
     expect(await runAggregateCommand(['use-case', 'add-flow-step', '--colour', 'red', '--root', root], io)).toBe(2);
@@ -40,7 +40,7 @@ export function useCaseLayerCases(): void {
     expect(listed.map((t) => t.name)).toEqual(expect.arrayContaining(['use_case_move_use_case', 'use_case_get_use_case', 'use_case_next_id']));
     const added = await callTool(root, 'use_case_add_uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'Member known', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse an unknown member.' });
     expect(added.isError).toBeUndefined();
-    const refused = await callTool(root, 'use_case_add_flow', { id: 'TL-LEND-UC01-FL01', title: 'Again', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01', extra: 1 });
+    const refused = await callTool(root, 'use_case_add_flow', { id: 'TL-LEND-UC01-FL', title: 'Again', use_case_id: 'TL-LEND-UC01', extra: 1 });
     expect(refused).toMatchObject({ isError: true, structuredContent: { refused: true, problems: [{ rule: 'input' }] } });
     const read = await callTool(root, 'use_case_get_use_case', { id: 'TL-LEND-UC01-R02' });
     expect(read.content[0].text).toContain('UC requirement TL-LEND-UC01-R02: Member known');
@@ -81,12 +81,12 @@ export function useCaseLayerCases(): void {
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
     try {
-      const whole = await fetch(`${base}/api/use-case/get-use-case?id=TL-LEND-UC01-FL01-S01`);
+      const whole = await fetch(`${base}/api/use-case/get-use-case?id=TL-LEND-UC01-FL-S01`);
       expect(whole.status).toBe(200);
       const page = (await whole.json()) as UseCasePage;
-      expect(page.record).toEqual({ id: 'TL-LEND-UC01-FL01-S01', kind: 'flow_step' });
+      expect(page.record).toEqual({ id: 'TL-LEND-UC01-FL-S01', kind: 'flow_step' });
       expect(page.useCase.id).toBe('TL-LEND-UC01');
-      expect(page.flows.flatMap((f) => f.paths.flatMap((p) => p.steps.map((s) => s.step.id)))).toContain('TL-LEND-UC01-FL01-S01');
+      expect(page.flows.flatMap((f) => f.paths.flatMap((p) => p.steps.map((s) => s.step.id)))).toContain('TL-LEND-UC01-FL-S01');
 
       const next = await fetch(`${base}/api/use-case/next-id?kind=uc_requirement&parent=TL-LEND-UC01`);
       expect(await next.json()).toBe('TL-LEND-UC01-R02');

@@ -1,6 +1,6 @@
-{"id":"TL-LEND-UC01-FL01","title":"Register a member through the HTTP API","use_case_id":"TL-LEND-UC01","interface_id":"TL-IF01"}
-{"id":"TL-LEND-UC02-FL01","title":"Add a tool through the HTTP API","use_case_id":"TL-LEND-UC02","interface_id":"TL-IF01"}
-{"id":"TL-LEND-UC03-FL01","title":"Borrow a tool through the HTTP API","use_case_id":"TL-LEND-UC03","interface_id":"TL-IF01"}
-{"id":"TL-LEND-UC04-FL01","title":"Return a tool through the HTTP API","use_case_id":"TL-LEND-UC04","interface_id":"TL-IF01"}
-{"id":"TL-LEND-UC05-FL01","title":"Report damage through the HTTP API","use_case_id":"TL-LEND-UC05","interface_id":"TL-IF01"}
-{"id":"TL-LEND-UC06-FL01","title":"Mark a tool repaired through the HTTP API","use_case_id":"TL-LEND-UC06","interface_id":"TL-IF01"}
+{"id":"TL-LEND-UC01-FL","title":"Register a member","use_case_id":"TL-LEND-UC01"}
+{"id":"TL-LEND-UC02-FL","title":"Add a tool","use_case_id":"TL-LEND-UC02"}
+{"id":"TL-LEND-UC03-FL","title":"Borrow a tool","use_case_id":"TL-LEND-UC03"}
+{"id":"TL-LEND-UC04-FL","title":"Return a tool","use_case_id":"TL-LEND-UC04"}
+{"id":"TL-LEND-UC05-FL","title":"Report damage","use_case_id":"TL-LEND-UC05"}
+{"id":"TL-LEND-UC06-FL","title":"Mark a tool repaired","use_case_id":"TL-LEND-UC06"}

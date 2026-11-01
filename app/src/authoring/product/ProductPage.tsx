@@ -23,8 +23,8 @@ import { useProduct } from './reads';
 // /api/product/get-product) and changed only through its own commands (ProductEditor). A product shows its description,
 // its business outcomes, its domains as cards with their coverage, what it shares in its stages, its summary, its roles,
 // its interfaces, the kinds and relations it declares as its own, its open questions and its problems; an open question
-// its description, owner, where it sits and what it is about; an interface its kind, its description, the flows through
-// it and the use cases with none, by capability. The coverage, the stages' folders and problems still come from the
+// its description, owner, where it sits and what it is about; an interface its kind, its description, the roles that
+// use it, the patterns it follows, the use cases it offers and those it does not, by capability. The coverage, the stages' folders and problems still come from the
 // workspace's index until the stage reads land; what every record's page holds around its content is the Record page's.
 
 /** A text of the record, read as Markdown with the IDs it names as links, under its heading or as the page's lead. */
@@ -89,6 +89,9 @@ function Questions({ index, questions }: { index: RecordIndex; questions: Questi
   );
 }
 
+/** How many use cases of the product an interface offers, or does not. */
+const offered = (iface: InterfaceEntry, which: 'offers' | 'missing' = 'offers') => iface[which].reduce((n, g) => n + g.items.length, 0);
+
 /** The product's roles, interfaces, and the kinds and relations it declares as its own, with each declaration's actions. */
 function Declarations({ index, page, actions }: { index: RecordIndex; page: Product; actions: DeclarationActions | null }) {
   return (
@@ -102,7 +105,16 @@ function Declarations({ index, page, actions }: { index: RecordIndex; page: Prod
         {page.interfaces.length === 0 ? <p className="hint">No interfaces yet.</p> : (
           <ul className="plain record-list">
             {page.interfaces.map((i) => (
-              <li key={i.id}><div className="record-row"><RecordLink index={index} id={i.id} row /><span className="row-tags"><small className="meta">{i.kind}</small></span></div></li>
+              <li key={i.id}>
+                <div className="record-row">
+                  <RecordLink index={index} id={i.id} row />
+                  <span className="row-tags">
+                    <small className="meta">{i.kind}</small>
+                    {i.actors.length > 0 && <small className="meta" data-meta="roles">{i.actors.join(', ')}</small>}
+                    <small className="meta" data-meta="offers">offers {offered(i)} of {offered(i) + offered(i, 'missing')}</small>
+                  </span>
+                </div>
+              </li>
             ))}
           </ul>
         )}
@@ -208,27 +220,23 @@ function ByCapabilities<T extends { id: string }>({ groups, label, render }: { g
   );
 }
 
-/** An interface's flows by capability and use case, and the product's use cases with no flow through it (LA-V51-R06). */
-function InterfaceFlows({ index, iface }: { index: RecordIndex; iface: InterfaceEntry }) {
-  const count = (groups: { items: unknown[] }[]) => groups.reduce((n, g) => n + g.items.length, 0);
+/** The use cases an interface offers by capability, and the product's use cases it does not offer (LA-V51-R09). */
+function InterfaceOffers({ index, iface }: { index: RecordIndex; iface: InterfaceEntry }) {
   return (
     <>
-      <Section title="Flows through it" count={count(iface.flows)} className="interface-flows">
-        {iface.flows.length === 0 ? <p className="hint">No flow goes through this interface yet.</p> : (
-          <ByCapabilities groups={iface.flows} label={`Flows through ${iface.id}`} render={(flow) => (
+      <Section title="Use cases it offers" count={offered(iface)} className="interface-offers">
+        {iface.offers.length === 0 ? <p className="hint">It offers no use case yet.</p> : (
+          <ByCapabilities groups={iface.offers} label={`Use cases ${iface.id} offers`} render={(useCase) => (
             <div className="record-row">
-              <RecordLink index={index} id={flow.id} row />
-              <span className="row-tags">
-                <small className="meta" data-meta="use-case">{flow.useCase.title}</small>
-                <ProblemBadge problems={index.problemsFor.get(flow.id) ?? []} />
-              </span>
+              <RecordLink index={index} id={useCase.id} row />
+              <span className="row-tags"><ProblemBadge problems={index.problemsFor.get(useCase.id) ?? []} /></span>
             </div>
           )} />
         )}
       </Section>
-      <Section title="Use cases with no flow through it" count={count(iface.missing)} className="interface-missing">
-        {iface.missing.length === 0 ? <p className="hint">Every use case has a flow through this interface.</p> : (
-          <ByCapabilities groups={iface.missing} label={`Use cases with no flow through ${iface.id}`} render={(useCase) => (
+      <Section title="Use cases it does not offer" count={offered(iface, 'missing')} className="interface-missing">
+        {iface.missing.length === 0 ? <p className="hint">It offers every use case of the product.</p> : (
+          <ByCapabilities groups={iface.missing} label={`Use cases ${iface.id} does not offer`} render={(useCase) => (
             <div className="record-row"><RecordLink index={index} id={useCase.id} row /></div>
           )} />
         )}
@@ -257,8 +265,12 @@ function RecordContentOf({ index, page, id, kind }: { index: RecordIndex; page: 
   return (
     <>
       <Text index={index} id={id} source={iface.description} field="description" />
-      <Facts facts={[{ label: 'Kind', value: iface.kind }]} />
-      <InterfaceFlows index={index} iface={iface} />
+      <Facts facts={[
+        { label: 'Kind', value: iface.kind },
+        { label: iface.actors.length === 1 ? 'Role' : 'Roles', value: iface.actors.length ? iface.actors.join(', ') : <span className="hint">None named: the main actor of each use case</span> },
+        ...(iface.patterns.length ? [{ label: 'Patterns', value: <ul className="plain">{iface.patterns.map((p) => <li key={p}><RecordLink index={index} id={p} /></li>)}</ul> }] : []),
+      ]} />
+      <InterfaceOffers index={index} iface={iface} />
     </>
   );
 }
@@ -276,7 +288,7 @@ function Summary({ index, page, id, kind }: { index: RecordIndex; page: Product;
       }
       case 'interface': {
         const iface = page.interfaces.find((x) => x.id === id)!;
-        return { lead: iface.description, facts: [{ label: 'Kind', value: iface.kind }, { label: 'Flows through it', value: iface.flows.reduce((n, g) => n + g.items.length, 0) }] };
+        return { lead: iface.description, facts: [{ label: 'Kind', value: iface.kind }, { label: 'Offers', value: count(offered(iface), 'use case', 'use cases') }] };
       }
     }
   })();

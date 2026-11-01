@@ -240,14 +240,18 @@ export function complete(): Data {
     slot: [{ id: 'EX-PAT-ACT-SL01', title: 'Saving rule', pattern_id: 'EX-PAT-ACT', statement: 'A fill MUST refuse what its record does not allow before anything is saved.' }],
 
     interface: [{ id: 'EX-IF01', title: 'Web app', product_id: 'EX', kind: 'web app', description: 'The desk app the librarian uses.', public: false }],
+    interface_actor: [
+      { interface_id: 'EX-IF01', position: 1, role_name: 'Member' },
+      { interface_id: 'EX-IF01', position: 2, role_name: 'Librarian' },
+    ],
     flow: [
-      { id: 'EX-LEND-UC01-FL01', title: 'Borrow a tool in the web app', use_case_id: 'EX-LEND-UC01', interface_id: 'EX-IF01' },
-      { id: 'EX-LEND-UC02-FL01', title: 'Add a tool in the web app', use_case_id: 'EX-LEND-UC02', interface_id: 'EX-IF01' },
+      { id: 'EX-LEND-UC01-FL', title: 'Borrow a tool', use_case_id: 'EX-LEND-UC01' },
+      { id: 'EX-LEND-UC02-FL', title: 'Add a tool', use_case_id: 'EX-LEND-UC02' },
     ],
     flow_step: [
-      { id: 'EX-LEND-UC01-FL01-S01', title: 'Borrow a tool', flow_id: 'EX-LEND-UC01-FL01', path: 'main', position: 1 },
-      { id: 'EX-LEND-UC01-FL01-S02', title: 'See the loan', flow_id: 'EX-LEND-UC01-FL01', path: 'main', position: 2 },
-      { id: 'EX-LEND-UC02-FL01-S01', title: 'Add a tool', flow_id: 'EX-LEND-UC02-FL01', path: 'main', position: 1 },
+      { id: 'EX-LEND-UC01-FL-S01', title: 'Borrow a tool', flow_id: 'EX-LEND-UC01-FL', path: 'main', position: 1 },
+      { id: 'EX-LEND-UC01-FL-S02', title: 'See the loan', flow_id: 'EX-LEND-UC01-FL', path: 'main', position: 2 },
+      { id: 'EX-LEND-UC02-FL-S01', title: 'Add a tool', flow_id: 'EX-LEND-UC02-FL', path: 'main', position: 1 },
     ],
     view: [{ id: 'EX-V01', title: 'Catalog', route: '/catalog', description: 'Every tool, with whether it is free.' }],
     view_requirement: [{ id: 'EX-V01-R01', title: 'Free tools first', view_id: 'EX-V01', statement: 'The catalog MUST list free tools first.' }],
@@ -326,8 +330,8 @@ export function complete(): Data {
     view_test: [{ id: 'EX-V01-R01-T01', title: 'Free tools come first', view_requirement_id: 'EX-V01-R01', ...automated('browser', 'e2e/catalog.spec.ts'), when: 'Opens the catalog', then: 'Expects the free tools first' }],
     endpoint_test: [{ id: 'EX-LEND-EP01-R01-T01', title: 'Unknown tool gives 404', api_requirement_id: 'EX-LEND-EP01-R01', ...automated('service', 'test/api.test.ts'), when: 'Posts a loan for an unknown tool', then: 'Expects 404' }],
     flow_test: [
-      { id: 'EX-LEND-UC01-FL01-T', title: 'Borrow end to end', flow_id: 'EX-LEND-UC01-FL01', ...automated('browser', 'e2e/borrow.spec.ts'), steps: ['Open the catalog', 'Borrow a tool'], expected_result: 'The loan is listed.' },
-      { id: 'EX-LEND-UC02-FL01-T', title: 'Add end to end', flow_id: 'EX-LEND-UC02-FL01', level: 'browser', state: 'manual', manual_reason: 'Done at the desk.', steps: ['Open the catalog', 'Add a tool'], expected_result: 'The tool is listed.' },
+      { id: 'EX-LEND-UC01-FL-T', title: 'Borrow end to end', flow_id: 'EX-LEND-UC01-FL', ...automated('browser', 'e2e/borrow.spec.ts'), steps: ['Open the catalog', 'Borrow a tool'], expected_result: 'The loan is listed.' },
+      { id: 'EX-LEND-UC02-FL-T', title: 'Add end to end', flow_id: 'EX-LEND-UC02-FL', level: 'browser', state: 'manual', manual_reason: 'Done at the desk.', steps: ['Open the catalog', 'Add a tool'], expected_result: 'The tool is listed.' },
     ],
     test_data_set: [{ id: 'EX-LEND-TD01', title: 'One tool on loan', domain_id: 'EX-LEND', records: 'One member, one tool, one active loan.', file: 'test/seed.ts', environment: 'A fresh database.', prepare: 'Run the seed.', reset: 'Drop the database.', description: 'What the lending tests start from.' }],
     starts_from: [{ source_id: 'EX-LEND-INV01-T', target_id: 'EX-LEND-TD01' }],
@@ -348,20 +352,25 @@ export function complete(): Data {
     hears: [{ source_id: 'EX-LEND-PO01', target_id: 'EX-LEND-EV01' }],
     calls: [{ source_id: 'EX-LEND-CMD01', target_id: 'EX-LEND-DS01' }],
     fulfills: [
-      { source_id: 'EX-LEND-UC01-FL01-S01', target_id: 'EX-LEND-UC01-R01' },
-      { source_id: 'EX-LEND-UC01-FL01-S02', target_id: 'EX-LEND-UC01-R01' },
-      { source_id: 'EX-LEND-UC02-FL01-S01', target_id: 'EX-LEND-UC02-R01' },
+      { source_id: 'EX-LEND-UC01-FL-S01', target_id: 'EX-LEND-UC01-R01' },
+      { source_id: 'EX-LEND-UC01-FL-S02', target_id: 'EX-LEND-UC01-R01' },
+      { source_id: 'EX-LEND-UC02-FL-S01', target_id: 'EX-LEND-UC02-R01' },
     ],
     invokes: [
-      { source_id: 'EX-LEND-UC01-FL01-S01', target_id: 'EX-LEND-CMD01' },
-      { source_id: 'EX-LEND-UC01-FL01-S02', target_id: 'EX-LEND-QRY01' },
-      { source_id: 'EX-LEND-UC02-FL01-S01', target_id: 'EX-LEND-CMD02' },
+      { source_id: 'EX-LEND-UC01-FL-S01', target_id: 'EX-LEND-CMD01' },
+      { source_id: 'EX-LEND-UC01-FL-S02', target_id: 'EX-LEND-QRY01' },
+      { source_id: 'EX-LEND-UC02-FL-S01', target_id: 'EX-LEND-CMD02' },
     ],
-    happens_in: [
-      { source_id: 'EX-LEND-UC01-FL01-S01', target_id: 'EX-V01' },
-      { source_id: 'EX-LEND-UC02-FL01-S01', target_id: 'EX-V01' },
+    presents: [
+      { source_id: 'EX-V01', target_id: 'EX-LEND-CMD01' },
+      { source_id: 'EX-V01', target_id: 'EX-LEND-CMD02' },
+      { source_id: 'EX-V01', target_id: 'EX-LEND-QRY01' },
     ],
-    exchanges_with: [{ source_id: 'EX-LEND-UC01-FL01-S02', target_id: 'EX-INT01' }],
+    offers: [
+      { source_id: 'EX-IF01', target_id: 'EX-LEND-UC01' },
+      { source_id: 'EX-IF01', target_id: 'EX-LEND-UC02' },
+    ],
+    exchanges_with: [{ source_id: 'EX-LEND-UC01-FL-S02', target_id: 'EX-INT01' }],
     renders: [{ source_id: 'EX-UI01', target_id: 'EX-V01' }],
     builds: [{ source_id: 'EX-UI01', target_id: 'EX-V01-R01' }],
     follows: [{ source_id: 'EX-LEND-UC02', target_id: 'EX-PAT-ACT' }],
@@ -433,8 +442,8 @@ export function sparse(): Data {
       { id: 'SP-IF01', title: 'Web app', product_id: 'SP', kind: 'web app', description: 'The desk app.', public: false },
       { id: 'SP-IF02', title: 'CLI', product_id: 'SP', kind: 'CLI', description: 'The command line.', public: false },
     ],
-    flow: [{ id: 'SP-D-UC02-FL01', title: 'Return a tool in the web app', use_case_id: 'SP-D-UC02', interface_id: 'SP-IF01' }],
-    flow_step: [{ id: 'SP-D-UC02-FL01-S01', title: 'Refuse', flow_id: 'SP-D-UC02-FL01', path: 'refused', position: 1 }],
+    flow: [{ id: 'SP-D-UC02-FL', title: 'Return a tool', use_case_id: 'SP-D-UC02' }],
+    flow_step: [{ id: 'SP-D-UC02-FL-S01', title: 'Refuse', flow_id: 'SP-D-UC02-FL', path: 'refused', position: 1 }],
     view: [{ id: 'SP-V01', title: 'Catalog', description: 'Every tool.' }],
     endpoint: [
       { id: 'SP-D-EP01', title: 'POST /tools', command_id: 'SP-D-CMD01', method: 'POST', route: '/tools', description: 'Takes a tool; answers 201.' },
@@ -443,7 +452,8 @@ export function sparse(): Data {
     endpoint_handler: [{ id: 'SP-D-EP02-H', title: 'getLoans', endpoint_id: 'SP-D-EP02', file: 'src/router.ts', description: 'Calls the query handler.' }],
     integration: [{ id: 'SP-INT01', title: 'Mail', description: 'Reminders.' }],
     checks: [{ source_id: 'SP-D-CMD01', target_id: 'SP-D-SP01' }],
-    happens_in: [{ source_id: 'SP-D-UC02-FL01-S01', target_id: 'SP-V01' }],
-    exchanges_with: [{ source_id: 'SP-D-UC02-FL01-S01', target_id: 'SP-INT01' }],
+    presents: [{ source_id: 'SP-V01', target_id: 'SP-D-CMD01' }],
+    offers: [{ source_id: 'SP-IF01', target_id: 'SP-D-UC02' }],
+    exchanges_with: [{ source_id: 'SP-D-UC02-FL-S01', target_id: 'SP-INT01' }],
   };
 }

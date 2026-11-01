@@ -1,7 +1,7 @@
 // The Use case aggregate's read model (LA-AUT-RM11), shaped for its readers: the Use case page reads a use case as a
-// tree (its requirements each with their tests and the steps that fulfill them; its flows by interface, each with its
-// steps path by path in order and its flow test), a capability's list reads each use case's ID and title, and the
-// editor's next ID reads the IDs in use and what a new use case or flow is named after. The projection
+// tree (its requirements each with their tests and the steps that fulfill them; its flow with its steps path by path in
+// order, its flow test and each offering interface's version of it, derived by through.ts), a capability's list reads
+// each use case's ID and title, and the editor's next ID reads the IDs in use. The projection
 // (useCaseTableFrom) is the only code that reads the source rows and the only code that writes the read model's table;
 // the query handlers read that table only through the reader (reader.ts). Nothing here is the aggregate's own instance
 // type.
@@ -10,6 +10,7 @@ import type { Row } from '../../platform/data/rows.ts';
 import type { FlowRow, FlowStepRow, FlowTestRow, UcRequirementRow, UseCaseRow, UseCaseTestRow } from '../../platform/data/tables.ts';
 import type { UseCaseKind } from './model.ts';
 import { byRecordId } from '../../platform/data/ids.ts';
+import { interfaceVersions, type FlowThrough } from './through.ts';
 
 /** A test as the page shows it: its row and the test data sets it starts from. */
 export interface TestOnPage<T> {
@@ -28,7 +29,6 @@ export interface RequirementOnPage {
 export interface StepOnPage {
   step: FlowStepRow;
   invokes: string | null;
-  happensIn: string | null;
   fulfills: string[];
   exchangesWith: string[];
 }
@@ -39,11 +39,13 @@ export interface PathOnPage {
   steps: StepOnPage[];
 }
 
-/** A flow as the page shows it: its row, its paths (main first, then the others by name) and its flow test. */
+/** A flow as the page shows it: its row, its paths (main first, then the others by name), its flow test and each offering interface's version of it. */
 export interface FlowOnPage {
   flow: FlowRow;
   paths: PathOnPage[];
   test: TestOnPage<FlowTestRow> | null;
+  /** How each interface that offers the use case carries the flow out, derived, by interface ID. */
+  through: FlowThrough[];
 }
 
 /** A use case whole, as its page shows it. */
@@ -53,7 +55,7 @@ export interface UseCaseTree {
   actors: string[];
   /** Its UC requirements, by ID. */
   requirements: RequirementOnPage[];
-  /** Its flows, by the interface each goes through. */
+  /** Its flow, the same through every interface: none, or one. */
   flows: FlowOnPage[];
 }
 
@@ -77,8 +79,6 @@ export interface UseCaseTable {
   holding: Map<string, { root: string; kind: UseCaseKind }>;
   /** Each capability's use cases, by ID, with the capability's domain and product. */
   capabilities: Map<string, { domain: string; product: string; useCases: UseCaseSummary[] }>;
-  /** Each product's interfaces, by ID. */
-  interfaces: Map<string, string[]>;
   /** Every record ID in use, with its kind: what a next ID is one past, and what a refusal names. */
   kinds: Map<string, string>;
 }
@@ -111,7 +111,8 @@ function pathsOf(steps: StepOnPage[]): PathOnPage[] {
 
 /** The projection: the read model's table, built from the rows on each read (in memory; nothing keeps it). */
 export function useCaseTableFrom(view: ReadView): UseCaseTable {
-  const [invokes, happensIn, fulfills, exchangesWith, startsFrom] = ['invokes', 'happens_in', 'fulfills', 'exchanges_with', 'starts_from'].map((t) => targets(view, t));
+  const [invokes, fulfills, exchangesWith, startsFrom] = ['invokes', 'fulfills', 'exchanges_with', 'starts_from'].map((t) => targets(view, t));
+  const versionsOf = interfaceVersions(view);
   const actors = grouped<{ position: number; role_name: string }>(view.rows('use_case_actor'), 'use_case_id');
   const requirements = grouped<UcRequirementRow>(view.rows('uc_requirement'), 'use_case_id');
   const useCaseTests = grouped<UseCaseTestRow>(view.rows('use_case_test'), 'uc_requirement_id');
@@ -126,13 +127,14 @@ export function useCaseTableFrom(view: ReadView): UseCaseTable {
     const root = useCase.id;
     const hold = (id: string, kind: UseCaseKind) => holding.set(id, { root, kind });
     hold(root, 'use_case');
-    const ownFlows = [...(flows.get(root) ?? [])].sort((a, b) => a.interface_id.localeCompare(b.interface_id) || byRecordId(a, b));
+    const ownFlows = [...(flows.get(root) ?? [])].sort(byRecordId);
     const ownSteps = ownFlows.flatMap((f) =>
-      (steps.get(f.id) ?? []).map((step) => ({ step, invokes: invokes(step.id)[0] ?? null, happensIn: happensIn(step.id)[0] ?? null, fulfills: fulfills(step.id), exchangesWith: exchangesWith(step.id) })),
+      (steps.get(f.id) ?? []).map((step) => ({ step, invokes: invokes(step.id)[0] ?? null, fulfills: fulfills(step.id), exchangesWith: exchangesWith(step.id) })),
     );
+    const ownActors = [...(actors.get(root) ?? [])].sort((a, b) => Number(a.position) - Number(b.position)).map((a) => String(a.role_name));
     const tree: UseCaseTree = {
       useCase,
-      actors: [...(actors.get(root) ?? [])].sort((a, b) => Number(a.position) - Number(b.position)).map((a) => String(a.role_name)),
+      actors: ownActors,
       requirements: [...(requirements.get(root) ?? [])].sort(byRecordId).map((requirement) => ({
         requirement,
         tests: [...(useCaseTests.get(requirement.id) ?? [])].sort(byRecordId).map(tested),
@@ -140,7 +142,9 @@ export function useCaseTableFrom(view: ReadView): UseCaseTable {
       })),
       flows: ownFlows.map((flow) => {
         const test = (flowTests.get(flow.id) ?? [])[0];
-        return { flow, paths: pathsOf(ownSteps.filter((s) => s.step.flow_id === flow.id)), test: test ? tested(test) : null };
+        const own = ownSteps.filter((s) => s.step.flow_id === flow.id);
+        const through = versionsOf(root, ownActors, own.map((s) => ({ id: s.step.id, path: s.step.path, position: s.step.position, variantOf: s.step.interface_id ?? null, operation: s.invokes })));
+        return { flow, paths: pathsOf(own), test: test ? tested(test) : null, through };
       }),
     };
     for (const r of tree.requirements) {
@@ -163,8 +167,7 @@ export function useCaseTableFrom(view: ReadView): UseCaseTable {
       { domain: String(c.domain_id), product: productOf.get(String(c.domain_id)) ?? '', useCases: (listed.get(String(c.id)) ?? []).map((u) => ({ id: u.id, title: u.title })).sort(byRecordId) },
     ]),
   );
-  const interfaces = new Map([...grouped<{ id: string }>(view.rows('interface'), 'product_id')].map(([product, rows]) => [product, rows.map((i) => i.id).sort()]));
   const kinds = new Map<string, string>();
   for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
-  return { useCases, holding, capabilities, interfaces, kinds };
+  return { useCases, holding, capabilities, kinds };
 }

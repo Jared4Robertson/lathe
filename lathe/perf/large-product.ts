@@ -7,8 +7,8 @@
 //
 // Building it takes minutes, so it is kept in the cache folder under a name made of a hash of this file and the schema's
 // migrations (largeProduct() builds it again only when either changes). Its shape, per domain: four capabilities of four
-// use cases each (three requirements with a test each, a flow per interface of four steps fulfilling them, and a flow
-// test), four aggregates (three entities, two invariants with tests, four commands with handlers), two read models
+// use cases each (three requirements with a test each, a flow of four steps fulfilling them, offered through both
+// interfaces, and a flow test), four aggregates (three entities, two invariants with tests, four commands with handlers), two read models
 // (three queries with handlers), and ten terms. DOMAINS domains make about 64,000 records.
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
@@ -70,7 +70,7 @@ const domainCode = (d: number) => `D${String(d + 1).padStart(3, '0')}`;
 type Step = readonly [AnyCommand, Record<string, unknown>];
 
 /** The commands that write one domain, in an order each can run in. */
-function domainSteps(d: number, interfaces: string[]): Step[] {
+function domainSteps(d: number, useCases: string[]): Step[] {
   const next = random(d + 1);
   const pick = <T,>(items: readonly T[]) => items[Math.floor(next() * items.length)];
   const domain = `${LARGE_PRODUCT}-${domainCode(d)}`;
@@ -130,14 +130,13 @@ function domainSteps(d: number, interfaces: string[]): Step[] {
         steps.push([ADD_UC_REQUIREMENT, { id, title: `The ${noun} is right ${d + 1}.${useCase}.${q}`, use_case_id: uc, statement: `The ${noun} MUST be right, part ${q}.` }]);
         steps.push([ADD_USE_CASE_TEST, { id: `${id}-T01`, title: `the ${noun} is right ${d + 1}.${useCase}.${q}`, uc_requirement_id: id, level: 'service', state: 'automated', file: `test/${domainCode(d)}.test.ts`, when: 'Runs the use case.', then: 'Expects it right.' }]);
       }
-      interfaces.forEach((iface, f) => {
-        const flow = `${uc}-FL${pad(f + 1)}`;
-        steps.push([ADD_FLOW, { id: flow, title: `${title} in the ${['web app', 'CLI'][f]}`, use_case_id: uc, interface_id: iface }]);
-        for (let s = 1; s <= 4; s++) {
-          steps.push([ADD_FLOW_STEP, { id: `${flow}-S${pad(s)}`, title: `The Owner does step ${d + 1}.${useCase}.${f + 1}.${s}`, flow_id: flow, path: 'main', position: s, fulfills: [requirements[(s - 1) % requirements.length]] }]);
-        }
-        steps.push([ADD_FLOW_TEST, { id: `${flow}-T`, title: `${title} works in the ${['web app', 'CLI'][f]}`, flow_id: flow, level: 'browser', state: 'automated', file: `test/${domainCode(d)}.spec.ts`, steps: ['Does the steps'], expected_result: 'Expects it done.' }]);
-      });
+      useCases.push(uc);
+      const flow = `${uc}-FL`;
+      steps.push([ADD_FLOW, { id: flow, title, use_case_id: uc }]);
+      for (let s = 1; s <= 4; s++) {
+        steps.push([ADD_FLOW_STEP, { id: `${flow}-S${pad(s)}`, title: `The Owner does step ${d + 1}.${useCase}.${s}`, flow_id: flow, path: 'main', position: s, fulfills: [requirements[(s - 1) % requirements.length]] }]);
+      }
+      steps.push([ADD_FLOW_TEST, { id: `${flow}-T`, title: `${title} works`, flow_id: flow, level: 'browser', state: 'automated', file: `test/${domainCode(d)}.spec.ts`, steps: ['Does the steps'], expected_result: 'Expects it done.' }]);
     }
   }
   return steps;
@@ -150,16 +149,19 @@ export async function writeLargeProduct(root: string, domains = DOMAINS): Promis
   writeFileSync(path.join(root, CONFIG_FILE), `${JSON.stringify({ schema: SCHEMA_VERSION })}\n`);
   const store = await openStore(root, { latheDataDir: null });
   try {
-    const interfaces = [`${LARGE_PRODUCT}-IF01`, `${LARGE_PRODUCT}-IF02`];
     await runCommands(store, [
       [ADD_PRODUCT, { id: LARGE_PRODUCT, title: 'Large product', description: 'A synthetic product about ten times Lathe\'s own spec, for the performance budgets.', roles: [{ name: 'Owner', description: 'Decides what the product is for.' }] }],
-      [ADD_INTERFACE, { id: interfaces[0], title: 'Web app', product_id: LARGE_PRODUCT, kind: 'web app', description: 'The pages.', public: false }],
-      [ADD_INTERFACE, { id: interfaces[1], title: 'CLI', product_id: LARGE_PRODUCT, kind: 'CLI', description: 'The command line.', public: false }],
     ]);
+    const useCases: string[] = [];
     for (let d = 0; d < domains; d += DOMAINS_PER_WRITE) {
-      const steps = Array.from({ length: Math.min(DOMAINS_PER_WRITE, domains - d) }, (_, i) => domainSteps(d + i, interfaces)).flat();
+      const steps = Array.from({ length: Math.min(DOMAINS_PER_WRITE, domains - d) }, (_, i) => domainSteps(d + i, useCases)).flat();
       await runCommands(store, steps);
     }
+    // Both interfaces offer every use case, used by the Owner.
+    await runCommands(store, [
+      [ADD_INTERFACE, { id: `${LARGE_PRODUCT}-IF01`, title: 'Web app', product_id: LARGE_PRODUCT, kind: 'web app', description: 'The pages.', public: false, actors: ['Owner'], offers: useCases }],
+      [ADD_INTERFACE, { id: `${LARGE_PRODUCT}-IF02`, title: 'CLI', product_id: LARGE_PRODUCT, kind: 'CLI', description: 'The command line.', public: false, actors: ['Owner'], offers: useCases }],
+    ]);
   } finally {
     await store.close();
   }

@@ -15,18 +15,18 @@ const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.getByRole('toolbar', { name: `Change ${id}` });
 
 describe('LA-V101-R01-T01 a use case\'s page reads the use case whole through its own query, never a generic record read', () => {
-  it('reads GET /api/use-case/get-use-case for the record, and shows its goal, actors, flows by interface and requirements', async () => {
+  it('reads GET /api/use-case/get-use-case for the record, and shows its goal, actors, flow and requirements', async () => {
     const { requests } = await openApp('/DM-SHOP-UC01');
     expect(await within(main()).findByText('A shopper adds an item.')).toBeInTheDocument();
     expect(requests).toContain('GET /api/use-case/get-use-case?id=DM-SHOP-UC01');
-    expect(within(main()).getByRole('heading', { name: /Flows by interface/ })).toBeInTheDocument();
+    expect(within(main()).getByRole('heading', { name: /^Flow\s*1/ })).toBeInTheDocument();
     expect(within(main()).getByRole('heading', { name: /^UC requirements/ })).toBeInTheDocument();
   });
 
   it('reads a requirement through its use case, and lists the steps that fulfill it', async () => {
     const { requests } = await openApp('/DM-SHOP-UC01-R01');
     const fulfilled = (await within(main()).findByRole('heading', { name: /Fulfilled by/ })).closest('section')!;
-    expect(within(fulfilled).getByRole('link', { name: /DM-SHOP-UC01-FL01-S01/ })).toBeInTheDocument();
+    expect(within(fulfilled).getByRole('link', { name: /DM-SHOP-UC01-FL-S01/ })).toBeInTheDocument();
     expect(requests).toContain('GET /api/use-case/get-use-case?id=DM-SHOP-UC01-R01');
   });
 });
@@ -53,13 +53,13 @@ describe('LA-V101-R02-T01 the Use case editor writes only through the aggregate\
 
   it('adds a flow step from its flow\'s page, with the next free ID and position, and the requirement it fulfills', async () => {
     const user = userEvent.setup();
-    const added = (): ServedData => addRows(workspace(), 'flow_step', { id: 'DM-SHOP-UC01-FL01-S04', title: 'Shop saves the basket', flow_id: 'DM-SHOP-UC01-FL01', path: 'main', position: 3 });
-    const { commands } = await openApp('/DM-SHOP-UC01-FL01', { command: () => ({ answer: ok, data: added() }) });
+    const added = (): ServedData => addRows(workspace(), 'flow_step', { id: 'DM-SHOP-UC01-FL-S04', title: 'Shop saves the basket', flow_id: 'DM-SHOP-UC01-FL', path: 'main', position: 3 });
+    const { commands } = await openApp('/DM-SHOP-UC01-FL', { command: () => ({ answer: ok, data: added() }) });
     await within(main()).findByRole('heading', { name: /^Steps/ });
-    await chooseAdd(user, toolbar('DM-SHOP-UC01-FL01'), 'Flow step');
+    await chooseAdd(user, toolbar('DM-SHOP-UC01-FL'), 'Flow step');
     const form = screen.getByRole('form', { name: 'Add a flow step' });
     const id = within(form).getByRole('textbox', { name: /^ID/ });
-    await waitFor(() => expect(id).toHaveValue('DM-SHOP-UC01-FL01-S04'));
+    await waitFor(() => expect(id).toHaveValue('DM-SHOP-UC01-FL-S04'));
     expect(within(form).getByRole('spinbutton', { name: /^position/ })).toHaveValue(3);
     await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'Shop saves the basket');
     await user.type(within(form).getByRole('combobox', { name: /Add to Fulfills/ }), 'DM-SHOP-UC01-R01{Enter}');
@@ -67,8 +67,8 @@ describe('LA-V101-R02-T01 the Use case editor writes only through the aggregate\
     await waitFor(() => expect(commands).toHaveLength(1));
     expect(commands[0]).toEqual({
       route: '/api/use-case/add-flow-step',
-      input: { flow_id: 'DM-SHOP-UC01-FL01', id: 'DM-SHOP-UC01-FL01-S04', title: 'Shop saves the basket', path: 'main', position: 3, fulfills: ['DM-SHOP-UC01-R01'] } });
-    await waitFor(() => expect(window.location.pathname).toBe('/DM-SHOP-UC01-FL01-S04'));
+      input: { flow_id: 'DM-SHOP-UC01-FL', id: 'DM-SHOP-UC01-FL-S04', title: 'Shop saves the basket', path: 'main', position: 3, fulfills: ['DM-SHOP-UC01-R01'] } });
+    await waitFor(() => expect(window.location.pathname).toBe('/DM-SHOP-UC01-FL-S04'));
   });
 
   it('Move is its own action: it sends Move a use case to the capability chosen', async () => {
@@ -83,8 +83,8 @@ describe('LA-V101-R02-T01 the Use case editor writes only through the aggregate\
   });
 
   it('offers Move only for a kind the aggregate has a Move command for', async () => {
-    await openApp('/DM-SHOP-UC01-FL01');
-    const actions = await screen.findByRole('toolbar', { name: 'Change DM-SHOP-UC01-FL01' });
+    await openApp('/DM-SHOP-UC01-FL');
+    const actions = await screen.findByRole('toolbar', { name: 'Change DM-SHOP-UC01-FL' });
     expect(within(actions).queryByRole('button', { name: 'Move' })).toBeNull();
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(expect.arrayContaining(['Edit', 'Add…', 'Remove']));
   });
@@ -110,35 +110,35 @@ describe('LA-V101-R02-T01 the Use case editor writes only through the aggregate\
 describe('LA-V101-R03-T01 a refused Use case command shows every reason in its own words, keeps what was entered, and changes nothing', () => {
   it('shows the rule\'s refusal at the top of the form, takes focus to it, and keeps the draft', async () => {
     const user = userEvent.setup();
-    const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'step-fulfills-own-use-case', table: 'fulfills', key: 'DM-SHOP-UC01-FL01-S02', message: 'DM-SHOP-UC01-FL01-S02 fulfills DM-PAY-UC01-R01, a requirement of another use case' }] };
-    const { commands } = await openApp('/DM-SHOP-UC01-FL01-S02', { command: () => ({ answer: refusal }) });
-    await screen.findByRole('toolbar', { name: 'Change DM-SHOP-UC01-FL01-S02' });
-    await user.click(within(toolbar('DM-SHOP-UC01-FL01-S02')).getByRole('button', { name: 'Edit' }));
-    const form = screen.getByRole('form', { name: 'Edit DM-SHOP-UC01-FL01-S02' });
+    const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'step-fulfills-own-use-case', table: 'fulfills', key: 'DM-SHOP-UC01-FL-S02', message: 'DM-SHOP-UC01-FL-S02 fulfills DM-PAY-UC01-R01, a requirement of another use case' }] };
+    const { commands } = await openApp('/DM-SHOP-UC01-FL-S02', { command: () => ({ answer: refusal }) });
+    await screen.findByRole('toolbar', { name: 'Change DM-SHOP-UC01-FL-S02' });
+    await user.click(within(toolbar('DM-SHOP-UC01-FL-S02')).getByRole('button', { name: 'Edit' }));
+    const form = screen.getByRole('form', { name: 'Edit DM-SHOP-UC01-FL-S02' });
     const title = within(form).getByRole('textbox', { name: /^title/ });
     await user.type(title, ' at once');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     const alert = await within(form).findByRole('alert');
     expect(alert).toHaveTextContent('The change was refused. Nothing was saved.');
-    expect(alert).toHaveTextContent('DM-SHOP-UC01-FL01-S02: DM-SHOP-UC01-FL01-S02 fulfills DM-PAY-UC01-R01, a requirement of another use case');
+    expect(alert).toHaveTextContent('DM-SHOP-UC01-FL-S02: DM-SHOP-UC01-FL-S02 fulfills DM-PAY-UC01-R01, a requirement of another use case');
     expect(alert).toHaveFocus();
     expect(title).toHaveValue('Shop shows the basket at once');
-    expect(commands).toEqual([{ route: '/api/use-case/change-flow-step', input: { id: 'DM-SHOP-UC01-FL01-S02', title: 'Shop shows the basket at once' } }]);
+    expect(commands).toEqual([{ route: '/api/use-case/change-flow-step', input: { id: 'DM-SHOP-UC01-FL-S02', title: 'Shop shows the basket at once' } }]);
   });
 
   it('Remove names what goes with the record, sends its Remove, and shows the refusal naming what still references it', async () => {
     const user = userEvent.setup();
-    const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'referenced', table: 'flow', key: 'DM-SHOP-UC01-FL01', message: 'Flow DM-SHOP-UC01-FL01 is referenced, so it stays: test DM-SHOP-T01 names it' }] };
-    const { commands } = await openApp('/DM-SHOP-UC01-FL01', { command: () => ({ answer: refusal }) });
+    const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'referenced', table: 'flow', key: 'DM-SHOP-UC01-FL', message: 'Flow DM-SHOP-UC01-FL is referenced, so it stays: test DM-SHOP-T01 names it' }] };
+    const { commands } = await openApp('/DM-SHOP-UC01-FL', { command: () => ({ answer: refusal }) });
     await within(main()).findByRole('heading', { name: /^Steps/ });
-    await user.click(within(toolbar('DM-SHOP-UC01-FL01')).getByRole('button', { name: 'Remove' }));
-    const panel = screen.getByRole('region', { name: 'Remove DM-SHOP-UC01-FL01?' });
-    expect(within(panel).getByRole('heading', { name: 'Remove DM-SHOP-UC01-FL01?' })).toHaveFocus();
+    await user.click(within(toolbar('DM-SHOP-UC01-FL')).getByRole('button', { name: 'Remove' }));
+    const panel = screen.getByRole('region', { name: 'Remove DM-SHOP-UC01-FL?' });
+    expect(within(panel).getByRole('heading', { name: 'Remove DM-SHOP-UC01-FL?' })).toHaveFocus();
     expect(panel).toHaveTextContent('with the 3 records under it');
     expect(commands).toEqual([]);
-    await user.click(within(panel).getByRole('button', { name: 'Remove DM-SHOP-UC01-FL01' }));
+    await user.click(within(panel).getByRole('button', { name: 'Remove DM-SHOP-UC01-FL' }));
     expect(await within(panel).findByRole('alert')).toHaveTextContent('test DM-SHOP-T01 names it');
-    expect(commands).toEqual([{ route: '/api/use-case/remove-flow', input: { id: 'DM-SHOP-UC01-FL01' } }]);
-    expect(window.location.pathname).toBe('/DM-SHOP-UC01-FL01');
+    expect(commands).toEqual([{ route: '/api/use-case/remove-flow', input: { id: 'DM-SHOP-UC01-FL' } }]);
+    expect(window.location.pathname).toBe('/DM-SHOP-UC01-FL');
   });
 });

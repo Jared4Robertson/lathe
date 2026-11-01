@@ -15,7 +15,7 @@ describe("Authoring's rules kept by checks", () => {
   it('LA-AUT-UC18-R05-T02 A view, integration, value object, specification or UI component that nothing uses is an error', async () => {
     const unused = ['view-unused', 'integration-unused', 'value-object-unused', 'specification-unused', 'ui-component-unused'];
     for (const check of unused) expect(ofCheck(clean, check), check).toEqual([]);
-    let data = without(complete(), 'happens_in', () => true);
+    let data = without(complete(), 'presents', () => true);
     data = without(data, 'exchanges_with', () => true);
     data = without(data, 'checks', () => true);
     data = without(data, 'renders', () => true);

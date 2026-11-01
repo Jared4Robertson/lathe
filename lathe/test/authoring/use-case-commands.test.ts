@@ -69,24 +69,38 @@ describe('LA-AUT-UC06-R12-T01 each Use case command (LA-AUT-A11) changes one use
   it('adds a requirement, a flow and a step with its links, and reads the use case whole by any record in it', async () => {
     const store = await storeOf();
     await runCommand(store, ADD_UC_REQUIREMENT, { id: 'TL-LEND-UC02-R01', title: 'Tool is on loan', use_case_id: 'TL-LEND-UC02', statement: 'The library MUST refuse a tool not on loan.' });
-    await runCommand(store, ADD_FLOW, { id: 'TL-LEND-UC02-FL01', title: 'Return a tool at the desk', use_case_id: 'TL-LEND-UC02', interface_id: 'TL-IF01' });
-    const step = { id: 'TL-LEND-UC02-FL01-S01', title: 'Scan the tool', flow_id: 'TL-LEND-UC02-FL01', path: 'main', position: 1, fulfills: ['TL-LEND-UC02-R01'], happens_in: 'TL-V01' };
+    await runCommand(store, ADD_FLOW, { id: 'TL-LEND-UC02-FL', title: 'Return a tool', use_case_id: 'TL-LEND-UC02' });
+    const step = { id: 'TL-LEND-UC02-FL-S01', title: 'Scan the tool', flow_id: 'TL-LEND-UC02-FL', path: 'main', position: 1, fulfills: ['TL-LEND-UC02-R01'], interface_id: 'TL-IF01' };
     const committed = await runCommand(store, ADD_FLOW_STEP, step);
-    expect(committed.tables).toEqual(['flow_step', 'fulfills', 'happens_in']);
-    const whole = runQuery(store, GET_USE_CASE, { id: 'TL-LEND-UC02-FL01-S01' }) as ReturnType<typeof GET_USE_CASE.run>;
-    expect(whole.record).toEqual({ id: 'TL-LEND-UC02-FL01-S01', kind: 'flow_step' });
+    expect(committed.tables).toEqual(['flow_step', 'fulfills']);
+    const whole = runQuery(store, GET_USE_CASE, { id: 'TL-LEND-UC02-FL-S01' }) as ReturnType<typeof GET_USE_CASE.run>;
+    expect(whole.record).toEqual({ id: 'TL-LEND-UC02-FL-S01', kind: 'flow_step' });
     expect(whole.useCase.id).toBe('TL-LEND-UC02');
-    const added = { step: { id: step.id, title: step.title, flow_id: step.flow_id, path: 'main', position: 1 }, fulfills: ['TL-LEND-UC02-R01'], invokes: null, happensIn: 'TL-V01', exchangesWith: [] };
-    expect(whole.flows).toEqual([{ flow: expect.objectContaining({ id: 'TL-LEND-UC02-FL01' }), paths: [{ name: 'main', steps: [added] }], test: null }]);
+    const added = { step: { id: step.id, title: step.title, flow_id: step.flow_id, path: 'main', position: 1, interface_id: 'TL-IF01' }, fulfills: ['TL-LEND-UC02-R01'], invokes: null, exchangesWith: [] };
+    expect(whole.flows).toEqual([{ flow: expect.objectContaining({ id: 'TL-LEND-UC02-FL' }), paths: [{ name: 'main', steps: [added] }], test: null, through: [] }]);
     expect(whole.requirements).toEqual([{ requirement: expect.objectContaining({ id: 'TL-LEND-UC02-R01' }), tests: [], fulfilledBy: [step.id] }]);
     expect(runQuery(store, LIST_USE_CASES, { capability_id: 'TL-LEND-CAP01' })).toEqual([
       { id: 'TL-LEND-UC01', title: 'Borrow a tool' },
       { id: 'TL-LEND-UC02', title: 'Return a tool' },
     ]);
-    expect(runQuery(store, NEXT_USE_CASE_ID, { kind: 'flow_step', parent: 'TL-LEND-UC02-FL01' })).toBe('TL-LEND-UC02-FL01-S02');
+    expect(runQuery(store, NEXT_USE_CASE_ID, { kind: 'flow_step', parent: 'TL-LEND-UC02-FL' })).toBe('TL-LEND-UC02-FL-S02');
     expect(runQuery(store, NEXT_USE_CASE_ID, { kind: 'use_case', parent: 'TL-LEND-CAP01' })).toBe('TL-LEND-UC03');
-    expect(runQuery(store, NEXT_USE_CASE_ID, { kind: 'flow_test', parent: 'TL-LEND-UC02-FL01' })).toBe('TL-LEND-UC02-FL01-T');
-    expect(() => runQuery(store, NEXT_USE_CASE_ID, { kind: 'flow', parent: 'TL-LEND-UC02' })).toThrow(/a flow through every interface of TL/);
+    expect(runQuery(store, NEXT_USE_CASE_ID, { kind: 'flow_test', parent: 'TL-LEND-UC02-FL' })).toBe('TL-LEND-UC02-FL-T');
+    expect(() => runQuery(store, NEXT_USE_CASE_ID, { kind: 'flow', parent: 'TL-LEND-UC02' })).toThrow(/TL-LEND-UC02 already has its flow, TL-LEND-UC02-FL/);
+  });
+
+  it('LA-AUT-UC06-R10-T01 reads the use case with each offering interface\'s version of its flow, derived: where each step is carried out, the actor and the variants left out', async () => {
+    const data = everyKind();
+    data.interface = [...data.interface, { id: 'TL-IF02', title: 'CLI', product_id: 'TL', kind: 'API', description: 'The HTTP API.', public: false }];
+    data.interface_actor = [...data.interface_actor, { interface_id: 'TL-IF02', position: 1, role_name: 'Librarian' }, { interface_id: 'TL-IF02', position: 2, role_name: 'Member' }];
+    data.offers = [...data.offers, { source_id: 'TL-IF02', target_id: 'TL-LEND-UC01' }];
+    data.flow_step = [...data.flow_step.map(({ interface_id: _, ...step }) => step), { id: 'TL-LEND-UC01-FL-S02', title: 'Open the app', flow_id: 'TL-LEND-UC01-FL', path: 'main', position: 2, interface_id: 'TL-IF01' }];
+    const store = await storeOf(data);
+    const [flow] = (runQuery(store, GET_USE_CASE, { id: 'TL-LEND-UC01' }) as ReturnType<typeof GET_USE_CASE.run>).flows;
+    expect(flow.through.map((t) => [t.interface, t.kind, t.actor])).toEqual([['TL-IF01', 'web app', 'Member'], ['TL-IF02', 'API', 'Member']]);
+    // The web app carries step 1 out in the view that presents its command, and has its own variant, step 2; the API has an endpoint for the command and leaves the variant out.
+    expect(flow.through[0].paths).toEqual([{ name: 'main', steps: [{ id: 'TL-LEND-UC01-FL-S01', reach: ['TL-V01'], unreached: false }, { id: 'TL-LEND-UC01-FL-S02', reach: [], unreached: false }] }]);
+    expect(flow.through[1].paths).toEqual([{ name: 'main', steps: [{ id: 'TL-LEND-UC01-FL-S01', reach: ['TL-LEND-EP01'], unreached: false }] }]);
   });
 
   it('refuses an Add whose ID its own use case already holds, even with the same content, and changes no file', async () => {
@@ -101,35 +115,30 @@ describe('LA-AUT-UC06-R12-T01 each Use case command (LA-AUT-A11) changes one use
 
   it('changes a step\'s links: a list replaces the list, null clears a single link', async () => {
     const store = await storeOf();
-    await runCommand(store, CHANGE_FLOW_STEP, { id: 'TL-LEND-UC01-FL01-S01', happens_in: null, exchanges_with: [], position: 1 });
-    const step = (runQuery(store, GET_USE_CASE, { id: 'TL-LEND-UC01' }) as ReturnType<typeof GET_USE_CASE.run>).flows[0].paths[0].steps[0];
-    expect(step).toMatchObject({ happensIn: null, exchangesWith: [], invokes: 'TL-LEND-CMD01', fulfills: ['TL-LEND-UC01-R01'] });
+    const stepOf = () => (runQuery(store, GET_USE_CASE, { id: 'TL-LEND-UC01' }) as ReturnType<typeof GET_USE_CASE.run>).flows[0].paths[0].steps[0];
+    await runCommand(store, CHANGE_FLOW_STEP, { id: 'TL-LEND-UC01-FL-S01', interface_id: 'TL-IF01' });
+    expect(stepOf().step.interface_id).toBe('TL-IF01');
+    await runCommand(store, CHANGE_FLOW_STEP, { id: 'TL-LEND-UC01-FL-S01', interface_id: null, exchanges_with: [], position: 1 });
+    const step = stepOf();
+    expect(step.step.interface_id ?? null).toBeNull();
+    expect(step).toMatchObject({ exchangesWith: [], invokes: 'TL-LEND-CMD01', fulfills: ['TL-LEND-UC01-R01'] });
   });
 
   it('refuses a step fulfilling another use case\'s requirement, with its reason, and changes no file', async () => {
     const store = await storeOf();
     const before = fileOf(store, 'fulfills');
     await runCommand(store, ADD_UC_REQUIREMENT, { id: 'TL-LEND-UC02-R01', title: 'Tool is on loan', use_case_id: 'TL-LEND-UC02', statement: 'The library MUST refuse a tool not on loan.' });
-    const refused = await refusal(store, CHANGE_FLOW_STEP, { id: 'TL-LEND-UC01-FL01-S01', fulfills: ['TL-LEND-UC01-R01', 'TL-LEND-UC02-R01'] });
+    const refused = await refusal(store, CHANGE_FLOW_STEP, { id: 'TL-LEND-UC01-FL-S01', fulfills: ['TL-LEND-UC01-R01', 'TL-LEND-UC02-R01'] });
     expect(refused.problems).toEqual([
-      expect.objectContaining({ rule: 'step-fulfills-own-use-case', message: 'TL-LEND-UC01-FL01-S01 is a step of the flow of TL-LEND-UC01, so it cannot fulfill TL-LEND-UC02-R01, a requirement of TL-LEND-UC02' }),
+      expect.objectContaining({ rule: 'step-fulfills-own-use-case', message: 'TL-LEND-UC01-FL-S01 is a step of the flow of TL-LEND-UC01, so it cannot fulfill TL-LEND-UC02-R01, a requirement of TL-LEND-UC02' }),
     ]);
     expect(fileOf(store, 'fulfills')).toBe(before);
   });
 
-  it('LA-AUT-INV42-T refuses a flow whose ID does not end in its interface\'s number', async () => {
+  it('LA-AUT-INV42-T refuses a flow whose ID is not its use case\'s and FL', async () => {
     const store = await storeOf();
-    const refused = await refusal(store, ADD_FLOW, { id: 'TL-LEND-UC02-FL02', title: 'Return a tool at the desk', use_case_id: 'TL-LEND-UC02', interface_id: 'TL-IF01' });
-    expect(refused.problems).toEqual([expect.objectContaining({ rule: 'flow-id-interface', message: 'TL-LEND-UC02-FL02 goes through TL-IF01, so its ID is TL-LEND-UC02-FL01' })]);
-  });
-
-  it('LA-AUT-INV43-T refuses a view for a step of a flow through a CLI', async () => {
-    const data = everyKind();
-    data.interface = data.interface.map((i) => ({ ...i, kind: 'CLI' }));
-    data.happens_in = [];
-    const store = await storeOf(data);
-    const refused = await refusal(store, CHANGE_FLOW_STEP, { id: 'TL-LEND-UC01-FL01-S01', happens_in: 'TL-V01' });
-    expect(refused.problems.map((p) => p.rule)).toEqual(['step-fits-interface']);
+    const refused = await refusal(store, ADD_FLOW, { id: 'TL-LEND-UC02-FL02', title: 'Return a tool', use_case_id: 'TL-LEND-UC02' });
+    expect(refused.problems).toEqual([expect.objectContaining({ rule: 'flow-id', message: 'TL-LEND-UC02-FL02 is the flow of TL-LEND-UC02, so its ID is TL-LEND-UC02-FL' })]);
   });
 
   it('moves a use case under another capability, with what is in it', async () => {
@@ -168,13 +177,13 @@ describe('LA-AUT-UC06-R13-T01 LA-STD-CODE-R07-T01 a use case, or a record in one
   it('removes a use case whole, and refuses one while another aggregate references what is in it', async () => {
     const store = await storeOf();
     await runCommand(store, ADD_UC_REQUIREMENT, { id: 'TL-LEND-UC02-R01', title: 'Tool is on loan', use_case_id: 'TL-LEND-UC02', statement: 'The library MUST refuse a tool not on loan.' });
-    await runCommand(store, ADD_FLOW, { id: 'TL-LEND-UC02-FL01', title: 'Return a tool at the desk', use_case_id: 'TL-LEND-UC02', interface_id: 'TL-IF01' });
-    await runCommand(store, ADD_FLOW_STEP, { id: 'TL-LEND-UC02-FL01-S01', title: 'Scan the tool', flow_id: 'TL-LEND-UC02-FL01', path: 'main', position: 1, fulfills: ['TL-LEND-UC02-R01'] });
+    await runCommand(store, ADD_FLOW, { id: 'TL-LEND-UC02-FL', title: 'Return a tool', use_case_id: 'TL-LEND-UC02' });
+    await runCommand(store, ADD_FLOW_STEP, { id: 'TL-LEND-UC02-FL-S01', title: 'Scan the tool', flow_id: 'TL-LEND-UC02-FL', path: 'main', position: 1, fulfills: ['TL-LEND-UC02-R01'] });
     const removed = await runCommand(store, REMOVE_USE_CASE, { id: 'TL-LEND-UC02' });
     expect(removed.changes.filter((c) => c.after === null).map((c) => `${c.table} ${c.key}`).sort()).toEqual([
-      'flow TL-LEND-UC02-FL01',
-      'flow_step TL-LEND-UC02-FL01-S01',
-      'fulfills source_id TL-LEND-UC02-FL01-S01, target_id TL-LEND-UC02-R01',
+      'flow TL-LEND-UC02-FL',
+      'flow_step TL-LEND-UC02-FL-S01',
+      'fulfills source_id TL-LEND-UC02-FL-S01, target_id TL-LEND-UC02-R01',
       'uc_requirement TL-LEND-UC02-R01',
       'use_case TL-LEND-UC02',
       'use_case_actor use_case_id TL-LEND-UC02, position 1',
@@ -190,9 +199,9 @@ describe('LA-AUT-UC06-R13-T01 LA-STD-CODE-R07-T01 a use case, or a record in one
   it('refuses removing a requirement a step fulfills, and removes a flow with its steps and test', async () => {
     const store = await storeOf();
     const refused = await refusal(store, REMOVE_UC_REQUIREMENT, { id: 'TL-LEND-UC01-R01' });
-    expect(refused.problems[0]).toMatchObject({ rule: 'referenced', message: 'UC requirement TL-LEND-UC01-R01 is referenced, so it stays: TL-LEND-UC01-FL01-S01 fulfills TL-LEND-UC01-R01' });
-    const removed = await runCommand(store, REMOVE_FLOW, { id: 'TL-LEND-UC01-FL01' });
-    expect(removed.changes.filter((c) => c.after === null).map((c) => c.table).sort()).toEqual(['exchanges_with', 'flow', 'flow_step', 'flow_test', 'fulfills', 'happens_in', 'invokes']);
+    expect(refused.problems[0]).toMatchObject({ rule: 'referenced', message: 'UC requirement TL-LEND-UC01-R01 is referenced, so it stays: TL-LEND-UC01-FL-S01 fulfills TL-LEND-UC01-R01' });
+    const removed = await runCommand(store, REMOVE_FLOW, { id: 'TL-LEND-UC01-FL' });
+    expect(removed.changes.filter((c) => c.after === null).map((c) => c.table).sort()).toEqual(['exchanges_with', 'flow', 'flow_step', 'flow_test', 'fulfills', 'invokes']);
   });
 
   it('refuses removing a use case test a business outcome is measured by', async () => {

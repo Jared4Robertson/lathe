@@ -21,7 +21,7 @@ describe('LA-EXP-UC02-R08-T03 the space\'s record index, from the record summari
   it('gives a kind with no owner its product from its ID, and a specification its domain too', () => {
     const index = recordIndexOf(workspace(), 'DM');
     expect(index.byId.get('DM-VO01')).toMatchObject({ kind: 'value_object', parent: null, product: 'DM', domain: null });
-    expect(index.byId.get('DM-V01')).toMatchObject({ kind: 'view', parent: null, product: 'DM', domain: null });
+    expect(index.byId.get('DM-V01')).toMatchObject({ kind: 'view', parent: null, product: 'DM', domain: 'DM-SHOP' });
     expect(index.byId.get('DM-SHOP-SP01')).toMatchObject({ kind: 'specification', parent: null, product: 'DM', domain: 'DM-SHOP' });
     expect(index.byId.get('DM-VO01-C01')).toMatchObject({ parent: 'DM-VO01', product: 'DM', domain: null });
   });
@@ -36,7 +36,7 @@ describe('LA-EXP-UC02-R08-T03 the space\'s record index, from the record summari
 
   it('reads each relation table as links, both ways', () => {
     const index = recordIndexOf(workspace(), 'DM');
-    expect(index.outgoing.get('DM-SHOP-UC01-FL01-S01')!.map((l) => `${l.relation} ${l.target}`)).toContain('fulfills DM-SHOP-UC01-R01');
+    expect(index.outgoing.get('DM-SHOP-UC01-FL-S01')!.map((l) => `${l.relation} ${l.target}`)).toContain('fulfills DM-SHOP-UC01-R01');
     expect(index.incoming.get('DM-SHOP-EV01')!.map((l) => `${l.relation} ${l.source}`)).toEqual(['raises DM-SHOP-CMD01']);
   });
 });

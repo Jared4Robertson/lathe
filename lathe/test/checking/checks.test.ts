@@ -6,17 +6,12 @@ import { adding, changing, complete, loadData, ofCheck, removeData, without } fr
 
 afterAll(removeData);
 
-let clean: Workspace;
-beforeAll(async () => {
-  clean = await loadData(complete());
-});
-
 /** A check row's tests, under its name. */
 const check = (name: string, body: () => void) => describe(name, body);
 
 describe("Lathe's checks", () => {
   it('LA-CHK-UC01-R06-T01 every problem names its check and, when it has one, its record', async () => {
-    let data = without(complete(), 'happens_in', () => true);
+    let data = without(complete(), 'presents', () => true);
     data = changing(data, 'specification_test', () => true, { state: 'not automated yet' });
     const ws = await loadData(data, { silent: ['EX-LEND-INV01-T'], missing: ['src/dates.ts'] });
     expect(new Set(ws.problems.map((p) => p.check)).size).toBeGreaterThan(3);
@@ -31,10 +26,10 @@ describe("Lathe's checks", () => {
 check('test-level-not-allowed', () => {
   it('LA-CHK-UC01-R09-T01 a test at a level its kind does not allow is a warning naming the allowed levels', async () => {
     let data = changing(complete(), 'constraint_test', () => true, { level: 'service' });
-    data = changing(data, 'flow_test', (r) => r.id === 'EX-LEND-UC01-FL01-T', { level: 'service' });
+    data = changing(data, 'flow_test', (r) => r.id === 'EX-LEND-UC01-FL-T', { level: 'service' });
     const ws = await loadData(data);
     expect(ofCheck(ws, 'test-level-not-allowed').map((p) => p.message)).toEqual([
-      'Flow test EX-LEND-UC01-FL01-T runs at level service, which a flow test does not allow; run it at system, browser.',
+      'Flow test EX-LEND-UC01-FL-T runs at level service, which a flow test does not allow; run it at system, browser.',
       'Constraint test EX-VO01-C01-T runs at level service, which a constraint test does not allow; run it at unit, integration.',
     ]);
     // A constraint enforced by a SQL CHECK is tested at integration level, against the database, which a constraint test allows.
@@ -62,7 +57,7 @@ check('package-not-in-manifest', () => {
 describe('nothing uses it', () => {
   let ws: Workspace;
   beforeAll(async () => {
-    let data = without(complete(), 'happens_in', () => true);
+    let data = without(complete(), 'presents', () => true);
     data = without(data, 'exchanges_with', () => true);
     data = without(data, 'checks', () => true);
     data = without(data, 'renders', () => true);
@@ -71,7 +66,7 @@ describe('nothing uses it', () => {
     ws = await loadData(data);
   });
   const unused: [string, string, string][] = [
-    ['view-unused', 'EX-V01', 'View EX-V01 is used by nothing: flow steps happen in it; link the steps that happen in it with happens_in, or remove it.'],
+    ['view-unused', 'EX-V01', 'View EX-V01 presents no command or query; link what a person sends or asks in it with presents, or remove it.'],
     ['integration-unused', 'EX-INT01', 'Integration EX-INT01 is used by nothing: no flow step exchanges with it and it provides nothing; link the steps that exchange with it with exchanges_with, name it the provider of what it provides, or remove it.'],
     ['value-object-unused', 'EX-VO01', 'Value object EX-VO01 is used by nothing: fields of entities, value objects, events or read models are typed with it; type the fields that hold it with it, or remove it.'],
     ['specification-unused', 'EX-LEND-SP01', 'Specification EX-LEND-SP01 is used by nothing: commands check it and queries select by it; link the commands that check it or the queries that select by it, or remove it.'],
@@ -129,24 +124,6 @@ check('event-not-by-outbox', () => {
   });
 });
 
-// The complete product's interface made an API: its steps happen in no view.
-const throughApi = () => changing(without(complete(), 'happens_in', () => true), 'interface', () => true, { kind: 'API' });
-
-check('flow-test-level-for-interface', () => {
-  it("LA-AUT-UC06-R10-T01 a flow test at a level its flow's interface does not fit is reported, manual or automated", async () => {
-    expect(ofCheck(clean, 'flow-test-level-for-interface')).toEqual([]);
-    // EX-LEND-UC01-FL01-T is automated, EX-LEND-UC02-FL01-T manual: a manual test names the level the person
-    // exercises, and is held to the same fit.
-    const warning = (useCase: string) => ({
-      severity: 'warning', check: 'flow-test-level-for-interface', record: `EX-LEND-${useCase}-FL01-T`,
-      message: `Flow test EX-LEND-${useCase}-FL01-T runs at level browser, but its flow EX-LEND-${useCase}-FL01 goes through EX-IF01, an interface of kind API, which is tested at system.`,
-    });
-    expect(ofCheck(await loadData(throughApi()), 'flow-test-level-for-interface')).toEqual([warning('UC01'), warning('UC02')]);
-    expect(ofCheck(await loadData(changing(throughApi(), 'flow_test', () => true, { level: 'system' })), 'flow-test-level-for-interface')).toEqual([]);
-    expect(ofCheck(await loadData(changing(complete(), 'interface', () => true, { kind: 'other' })), 'flow-test-level-for-interface')).toEqual([]);
-  });
-});
-
 // A product's own kind with a group_name field, its records under domain EX-LEND in the groups given, under a
 // max_children of 2.
 const houseRules = (groups: string[]) =>
@@ -181,13 +158,13 @@ check('too-many-children', () => {
 
   it("LA-CHK-UC06-R05-T01 a flow's steps are counted per path, named when not main", async () => {
     const steps = (path: string, n: number, from: number) =>
-      Array.from({ length: n }, (_, i) => ({ id: `EX-LEND-UC01-FL01-S${String(from + i).padStart(2, '0')}`, title: `Step ${from + i}`, flow_id: 'EX-LEND-UC01-FL01', path, position: i + 1 + (path === 'main' ? 2 : 0) }));
+      Array.from({ length: n }, (_, i) => ({ id: `EX-LEND-UC01-FL-S${String(from + i).padStart(2, '0')}`, title: `Step ${from + i}`, flow_id: 'EX-LEND-UC01-FL', path, position: i + 1 + (path === 'main' ? 2 : 0) }));
     const limit = { product_setting: [{ product_id: 'EX', max_children: 3, max_entities_per_aggregate: 7, technology_words: [] }] };
     const even = adding(complete(), { ...limit, flow_step: [...steps('main', 1, 3), ...steps('refused', 3, 4)] });
     expect(ofCheck(await loadData(even), 'too-many-children')).toEqual([]);
     const over = adding(complete(), { ...limit, flow_step: [...steps('main', 1, 3), ...steps('refused', 4, 4)] });
     expect(ofCheck(await loadData(over), 'too-many-children').map((p) => p.message)).toEqual([
-      expect.stringContaining('Flow EX-LEND-UC01-FL01 has 4 children of kind flow_step on path refused, more than the 3'),
+      expect.stringContaining('Flow EX-LEND-UC01-FL has 4 children of kind flow_step on path refused, more than the 3'),
     ]);
   });
 

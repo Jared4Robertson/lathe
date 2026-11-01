@@ -66,18 +66,17 @@ describe('product page', () => {
   it('LA-V90-R21-T02 The product page lists what it shares in its stages, each in its stage\'s color', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    // Both domains use the value object and the view, so the product shares them.
+    // Both domains use the value object, so the product shares it; the product's interface sits there too.
     const level = section(/^Shared\s*\d/);
     const stages = [...level.querySelectorAll('.stage')].map((s) => [s.className, s.querySelector('.stage-title')?.textContent]);
     expect(stages).toEqual([
       ['stage stage-domain-model', 'Domain model1'],
-      ['stage stage-interaction-design', 'Interaction design2'],
+      ['stage stage-interaction-design', 'Interaction design1'],
     ]);
-    // Domain model holds only value objects, so it lists them itself; Interaction design keeps its folders.
+    // Domain model holds only value objects, so it lists them itself.
     expect(within(level).queryByRole('heading', { name: /^Value objects/ })).toBeNull();
     expect(within(stageOf('domain-model', level)).getByRole('link', { name: /DM-VO01/ })).toBeInTheDocument();
-    expect(within(level).getByRole('heading', { name: /^Views/ })).toBeInTheDocument();
-    expect(within(level).getByRole('link', { name: /DM-V01\s*Basket page/ })).toHaveAttribute('href', '/DM-V01');
+    expect(within(stageOf('interaction-design', level)).getByRole('link', { name: /DM-IF01\s*Web app/ })).toHaveAttribute('href', '/DM-IF01');
     // A domain's records are never listed in Shared.
     expect(level).not.toHaveTextContent('DM-SHOP-SP01');
   });

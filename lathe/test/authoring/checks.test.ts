@@ -121,24 +121,21 @@ check('term-used-unlinked', () => {
 });
 
 check('flow-title-off-pattern', () => {
-  it("LA-STD-MODELING-R06-T02 a flow not titled as its use case's title, in or through, and its interface's title is a warning", async () => {
+  it("LA-STD-MODELING-R06-T02 a flow not titled as its use case's title is a warning", async () => {
     expect(ofCheck(clean, 'flow-title-off-pattern')).toEqual([]);
-    const titled = (title: string) => changing(complete(), 'flow', (r) => r.id === 'EX-LEND-UC01-FL01', { title });
-    for (const title of ['Borrow a tool in the web app', 'borrow a tool through Web app', 'Borrow a tool in web app']) {
-      expect(ofCheck(await loadData(titled(title)), 'flow-title-off-pattern'), title).toEqual([]);
-    }
-    const found = ofCheck(await loadData(titled('Borrow at the desk')), 'flow-title-off-pattern');
+    const titled = (title: string) => changing(complete(), 'flow', (r) => r.id === 'EX-LEND-UC01-FL', { title });
+    expect(ofCheck(await loadData(titled('  borrow A tool ')), 'flow-title-off-pattern')).toEqual([]);
+    const found = ofCheck(await loadData(titled('Borrow a tool in the web app')), 'flow-title-off-pattern');
     expect(found).toEqual([
       expect.objectContaining({
         severity: 'warning',
-        record: 'EX-LEND-UC01-FL01',
-        message:
-          'Flow EX-LEND-UC01-FL01 is titled "Borrow at the desk", but its use case EX-LEND-UC01 is "Borrow a tool" and its interface EX-IF01 is "Web app"; title it "Borrow a tool in the web app".',
+        record: 'EX-LEND-UC01-FL',
+        message: 'Flow EX-LEND-UC01-FL is titled "Borrow a tool in the web app", but its use case EX-LEND-UC01 is "Borrow a tool"; title it "Borrow a tool".',
       }),
     ]);
-    // A renamed use case shows in its flows.
+    // A renamed use case shows in its flow.
     const renamed = changing(complete(), 'use_case', (r) => r.id === 'EX-LEND-UC01', { title: 'Lend a tool' });
-    expect(records(ofCheck(await loadData(renamed), 'flow-title-off-pattern'))).toEqual(['EX-LEND-UC01-FL01']);
+    expect(records(ofCheck(await loadData(renamed), 'flow-title-off-pattern'))).toEqual(['EX-LEND-UC01-FL']);
   });
 });
 
@@ -236,35 +233,107 @@ check('step-order', () => {
   it('LA-AUT-UC06-R80-T01 a path whose positions skip a number is reported once, on the first step after the gap', async () => {
     const data = adding(complete(), {
       flow_step: [
-        { id: 'EX-LEND-UC01-FL01-S03', title: 'Refused', flow_id: 'EX-LEND-UC01-FL01', path: 'refused', position: 2 },
-        { id: 'EX-LEND-UC01-FL01-S04', title: 'Told why', flow_id: 'EX-LEND-UC01-FL01', path: 'Refused', position: 3 },
+        { id: 'EX-LEND-UC01-FL-S03', title: 'Refused', flow_id: 'EX-LEND-UC01-FL', path: 'refused', position: 2 },
+        { id: 'EX-LEND-UC01-FL-S04', title: 'Told why', flow_id: 'EX-LEND-UC01-FL', path: 'Refused', position: 3 },
       ],
     });
     expect(ofCheck(await loadData(data), 'step-order')).toEqual([
       {
-        severity: 'error', check: 'step-order', record: 'EX-LEND-UC01-FL01-S03',
-        message: 'Flow step EX-LEND-UC01-FL01-S03 has position 2 on path refused in flow EX-LEND-UC01-FL01, but no step of that path has position 1; number the steps of a path 1, 2, 3 and so on, with no gaps.',
+        severity: 'error', check: 'step-order', record: 'EX-LEND-UC01-FL-S03',
+        message: 'Flow step EX-LEND-UC01-FL-S03 has position 2 on path refused in flow EX-LEND-UC01-FL, but no step of that path has position 1; number the steps of a path 1, 2, 3 and so on, with no gaps.',
       },
     ]);
   });
 });
 
-// The complete product's interface made an API: its steps happen in no view.
-const throughApi = () => changing(without(complete(), 'happens_in', () => true), 'interface', () => true, { kind: 'API' });
+/** The complete product's one interface made another kind. */
+const ofKind = (kind: string) => changing(complete(), 'interface', () => true, { kind });
+/** The complete product with a second interface, a CLI that offers the first use case and has no command of its own. */
+const withCli = () =>
+  adding(complete(), {
+    interface: [{ id: 'EX-IF02', title: 'CLI', product_id: 'EX', kind: 'CLI', description: 'The command line the librarian runs.', public: false }],
+    offers: [{ source_id: 'EX-IF02', target_id: 'EX-LEND-UC01' }],
+  });
+const unreached = (step: string, operation: string, interface_: string, kind: string, wants: string) => ({
+  severity: 'warning', check: 'step-unreached', record: step,
+  message: `Flow step ${step} invokes ${operation}, but ${interface_}, an interface of kind ${kind} that offers its use case, has no ${wants}; add one, or make the step a variant of the interfaces that reach it.`,
+});
 
-check('step-without-endpoint', () => {
-  it('LA-AUT-UC06-R09-T02 a step of an API flow that invokes what no endpoint exposes is reported, on the step', async () => {
-    expect(ofCheck(clean, 'step-without-endpoint')).toEqual([]);
-    expect(ofCheck(await loadData(throughApi()), 'step-without-endpoint')).toEqual([
+check('step-unreached', () => {
+  it('LA-AUT-UC06-R09-T02 an interface that offers a use case reaches what each of its steps invokes: a web app or desktop through a view that presents it, an API through an endpoint, a CLI or agent tools through a record of the product\'s own; else the step is reported', async () => {
+    expect(ofCheck(clean, 'step-unreached')).toEqual([]);
+    // A web app or desktop: a view presents the command or query.
+    const bare = await loadData(without(complete(), 'presents', (l) => l.target_id === 'EX-LEND-QRY01'));
+    expect(ofCheck(bare, 'step-unreached')).toEqual([unreached('EX-LEND-UC01-FL-S02', 'EX-LEND-QRY01', 'EX-IF01', 'web app', 'view that presents it')]);
+    const desktop = await loadData(changing(without(complete(), 'presents', (l) => l.target_id === 'EX-LEND-CMD02'), 'interface', () => true, { kind: 'desktop' }));
+    expect(ofCheck(desktop, 'step-unreached')).toEqual([unreached('EX-LEND-UC02-FL-S01', 'EX-LEND-CMD02', 'EX-IF01', 'desktop', 'view that presents it')]);
+    // A view of another interface does not reach it.
+    const elsewhere = await loadData(adding(complete(), { interface: [{ id: 'EX-IF02', title: 'Desk', product_id: 'EX', kind: 'desktop', description: 'The desk app.', public: false }] }));
+    expect(ofCheck(elsewhere, 'step-unreached')).toEqual([]);
+    const own = await loadData(changing(without(complete(), 'presents', (l) => l.target_id === 'EX-LEND-QRY01'), 'view', () => true, { interface_id: 'EX-IF01' }));
+    expect(ofCheck(own, 'step-unreached').map((p) => p.record)).toEqual(['EX-LEND-UC01-FL-S02']);
+    const theirs = await loadData(adding(changing(complete(), 'view', () => true, { interface_id: 'EX-IF02' }), { interface: [{ id: 'EX-IF02', title: 'Desk', product_id: 'EX', kind: 'desktop', description: 'The desk app.', public: false }] }));
+    expect(ofCheck(theirs, 'step-unreached').map((p) => p.record)).toEqual(['EX-LEND-UC01-FL-S01', 'EX-LEND-UC01-FL-S02', 'EX-LEND-UC02-FL-S01']);
+    // An API: an endpoint exposes it. Only the command has one.
+    expect(ofCheck(await loadData(ofKind('API')), 'step-unreached')).toEqual([
+      unreached('EX-LEND-UC01-FL-S02', 'EX-LEND-QRY01', 'EX-IF01', 'API', 'endpoint that exposes it'),
+      unreached('EX-LEND-UC02-FL-S01', 'EX-LEND-CMD02', 'EX-IF01', 'API', 'endpoint that exposes it'),
+    ]);
+    // A CLI or agent tools: a record of the product's own interaction design kinds under it. None here.
+    for (const kind of ['CLI', 'agent tools']) {
+      expect(ofCheck(await loadData(ofKind(kind)), 'step-unreached').map((p) => p.record), kind).toEqual(['EX-LEND-UC01-FL-S01', 'EX-LEND-UC01-FL-S02', 'EX-LEND-UC02-FL-S01']);
+    }
+    // An interface of kind other reaches its operations in a way no record says.
+    expect(ofCheck(await loadData(ofKind('other')), 'step-unreached')).toEqual([]);
+    // Each interface that offers the use case is held to it, but a variant of another interface is not.
+    expect(ofCheck(await loadData(withCli()), 'step-unreached').map((p) => [p.record, p.message.includes('EX-IF02')])).toEqual([['EX-LEND-UC01-FL-S01', true], ['EX-LEND-UC01-FL-S02', true]]);
+    const variants = changing(withCli(), 'flow_step', (r) => String(r.id).startsWith('EX-LEND-UC01-FL-S'), { interface_id: 'EX-IF01' });
+    expect(ofCheck(await loadData(variants), 'step-unreached')).toEqual([]);
+  });
+});
+
+check('variant-not-offered', () => {
+  it('LA-AUT-UC06-R09-T03 a step that is a variant of an interface that does not offer its use case is an error', async () => {
+    expect(ofCheck(clean, 'variant-not-offered')).toEqual([]);
+    const data = adding(complete(), { interface: [{ id: 'EX-IF02', title: 'CLI', product_id: 'EX', kind: 'other', description: 'The command line the librarian runs.', public: false }] });
+    const variant = changing(data, 'flow_step', (r) => r.id === 'EX-LEND-UC01-FL-S01', { interface_id: 'EX-IF02' });
+    expect(ofCheck(await loadData(variant), 'variant-not-offered')).toEqual([
       {
-        severity: 'warning', check: 'step-without-endpoint', record: 'EX-LEND-UC01-FL01-S02',
-        message: 'Flow step EX-LEND-UC01-FL01-S02 goes through EX-IF01, an API, so it calls an endpoint, but no endpoint exposes EX-LEND-QRY01, which it invokes; add one under EX-LEND-QRY01, or have the step invoke what an endpoint exposes.',
-      },
-      {
-        severity: 'warning', check: 'step-without-endpoint', record: 'EX-LEND-UC02-FL01-S01',
-        message: 'Flow step EX-LEND-UC02-FL01-S01 goes through EX-IF01, an API, so it calls an endpoint, but no endpoint exposes EX-LEND-CMD02, which it invokes; add one under EX-LEND-CMD02, or have the step invoke what an endpoint exposes.',
+        severity: 'error', check: 'variant-not-offered', record: 'EX-LEND-UC01-FL-S01',
+        message: 'Flow step EX-LEND-UC01-FL-S01 is a variant of EX-IF02, which does not offer its use case EX-LEND-UC01; offer it there, or name an interface that does.',
       },
     ]);
+    const offered = adding(variant, { offers: [{ source_id: 'EX-IF02', target_id: 'EX-LEND-UC01' }] });
+    expect(ofCheck(await loadData(offered), 'variant-not-offered')).toEqual([]);
+  });
+});
+
+check('flow-not-offered', () => {
+  it('LA-AUT-UC06-R09-T04 a use case with a flow that no interface offers is a warning', async () => {
+    expect(ofCheck(clean, 'flow-not-offered')).toEqual([]);
+    const ws = await loadData(without(complete(), 'offers', (l) => l.target_id === 'EX-LEND-UC02'));
+    expect(ofCheck(ws, 'flow-not-offered')).toEqual([
+      {
+        severity: 'warning', check: 'flow-not-offered', record: 'EX-LEND-UC02',
+        message: 'Use case EX-LEND-UC02 has a flow, EX-LEND-UC02-FL, but no interface offers it; offer it through the interfaces it happens through.',
+      },
+    ]);
+  });
+});
+
+check('interface-actor-not-the-use-case', () => {
+  it('LA-AUT-UC06-R09-T05 an interface that lists roles and offers a use case none of whose actors is among them is a warning', async () => {
+    expect(ofCheck(clean, 'interface-actor-not-the-use-case')).toEqual([]);
+    // The interface lists only the Librarian, but Borrow a tool is the Member's.
+    const only = without(complete(), 'interface_actor', (r) => r.role_name === 'Member');
+    expect(ofCheck(await loadData(only), 'interface-actor-not-the-use-case')).toEqual([
+      {
+        severity: 'warning', check: 'interface-actor-not-the-use-case', record: 'EX-IF01',
+        message: "Interface EX-IF01 offers EX-LEND-UC01, but none of its roles (Librarian) is one of the use case's actors.",
+      },
+    ]);
+    // An interface that lists no role is open to every actor.
+    expect(ofCheck(await loadData(without(complete(), 'interface_actor', () => true)), 'interface-actor-not-the-use-case')).toEqual([]);
   });
 });
 
@@ -292,9 +361,14 @@ check('accidental-in-essential', () => {
     // A use case's goal that clicks and a UC requirement that names the product's own interface are leaks.
     let data = changing(complete(), 'use_case', (r) => r.id === 'EX-LEND-UC01', { goal: 'A member clicks the borrow button.' });
     data = changing(data, 'uc_requirement', (r) => r.id === 'EX-LEND-UC01-R01', { statement: 'The Web app MUST refuse a tool whose row says it is on loan.' });
-    // A flow step that clicks is a leak, but a flow names the interface it goes through.
-    data = changing(data, 'flow_step', (r) => r.id === 'EX-LEND-UC01-FL01-S01', { title: 'Click Borrow on the tool' });
-    data = changing(data, 'flow', (r) => r.id === 'EX-LEND-UC01-FL01', { title: 'Borrow a tool in the Web app' });
+    // A flow step that clicks is a leak, and so is one that names an interface unless it is that interface's variant.
+    data = changing(data, 'flow_step', (r) => r.id === 'EX-LEND-UC01-FL-S01', { title: 'Click Borrow on the tool' });
+    data = adding(data, {
+      flow_step: [
+        { id: 'EX-LEND-UC01-FL-S03', title: 'Open the Web app', flow_id: 'EX-LEND-UC01-FL', path: 'extra', position: 1, interface_id: 'EX-IF01' },
+        { id: 'EX-LEND-UC01-FL-S04', title: 'Open the Web app again', flow_id: 'EX-LEND-UC01-FL', path: 'extra', position: 2 },
+      ],
+    });
     // A view is a page with its buttons and rows; it still may not name the storage behind it.
     data = changing(data, 'view', () => true, { title: 'Catalog page', description: 'Every tool in a row with a Borrow button, read from the JSON the database keeps.' });
     // A pattern decides the means and a test drives an interface, so neither is read.
@@ -307,13 +381,14 @@ check('accidental-in-essential', () => {
     const ws = await loadData(data);
     expect(ofCheck(ws, 'accidental-in-essential').map((p) => [p.record, p.message.replace(/; say .*/, '').replace(/^.* names technology: /, '')])).toEqual([
       ['EX-LEND-UC01', 'its goal says "click"'],
-      ['EX-LEND-UC01-FL01-S01', 'its title says "click"'],
+      ['EX-LEND-UC01-FL-S01', 'its title says "click"'],
+      ['EX-LEND-UC01-FL-S04', 'its title says "web app"'],
       ['EX-LEND-UC01-R01', 'its statement says "web app"'],
       ['EX-V01', 'its description says "json"'],
     ]);
     // The product's own technology words count in every group, and no term excuses them.
     const own = await loadData(adding(data, { product_setting: [{ product_id: 'EX', max_children: 15, max_entities_per_aggregate: 7, technology_words: ['Postgres', 'Table'] }] }));
-    expect(records(ofCheck(own, 'accidental-in-essential'))).toEqual(['EX-LEND-TM01', 'EX-LEND-TM02', 'EX-LEND-UC01', 'EX-LEND-UC01-FL01-S01', 'EX-LEND-UC01-R01', 'EX-LEND-UC02', 'EX-V01']);
+    expect(records(ofCheck(own, 'accidental-in-essential'))).toEqual(['EX-LEND-TM01', 'EX-LEND-TM02', 'EX-LEND-UC01', 'EX-LEND-UC01-FL-S01', 'EX-LEND-UC01-FL-S04', 'EX-LEND-UC01-R01', 'EX-LEND-UC02', 'EX-V01']);
     expect(ofCheck(own, 'accidental-in-essential').find((p) => p.record === 'EX-LEND-TM01')?.message).toContain('its meaning says "postgres"');
   });
 });

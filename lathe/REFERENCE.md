@@ -453,7 +453,7 @@ A request to change exactly one aggregate: the one its entity belongs to. It sit
 - **Obligation:** no
 - **ID:** `<P>-<D>-CMD<nn>`, such as `TL-LEND-CMD01`; it starts with its domain's ID
 - **Links out:** Calls ([`calls`](#relation-calls)), Checks ([`checks`](#relation-checks)), Raises ([`raises`](#relation-raises))
-- **Links in:** Questions about this ([`about`](#relation-about)), Invoked by ([`invokes`](#relation-invokes))
+- **Links in:** Questions about this ([`about`](#relation-about)), Invoked by ([`invokes`](#relation-invokes)), Presented in ([`presents`](#relation-presents))
 - **Gaps:** [`command-without-handler`](#gap-command-without-handler)
 
 <a id="table-command"></a>
@@ -537,7 +537,7 @@ A question asked of one read model, its parent. It changes nothing, and may sele
 - **Obligation:** no
 - **ID:** `<P>-<D>-QRY<nn>`, such as `TL-LEND-QRY01`; it starts with its domain's ID
 - **Links out:** Calls ([`calls`](#relation-calls)), Selects by ([`selects_by`](#relation-selects_by))
-- **Links in:** Questions about this ([`about`](#relation-about)), Invoked by ([`invokes`](#relation-invokes))
+- **Links in:** Questions about this ([`about`](#relation-about)), Invoked by ([`invokes`](#relation-invokes)), Presented in ([`presents`](#relation-presents))
 - **Checks:** [`query-title-verb`](#check-query-title-verb)
 - **Gaps:** [`query-without-handler`](#gap-query-without-handler)
 
@@ -854,7 +854,7 @@ An ordered slice of a domain that groups its use cases, such as Catalog or Lendi
 
 ### Use case (`use_case`)
 
-An actor's goal: its actors (use_case_actor rows), its UC requirements and its flows, one per interface it happens through. It changes nothing itself; its flows' steps invoke commands and queries.
+An actor's goal: its actors (use_case_actor rows), its UC requirements and its flow, the same through every interface that offers it. It changes nothing itself; its flow's steps invoke commands and queries.
 
 - **Parents:** [`capability`](#kind-capability) (`capability_id`)
 - **Children:** [`uc_requirement`](#kind-uc_requirement), [`flow`](#kind-flow)
@@ -862,7 +862,7 @@ An actor's goal: its actors (use_case_actor rows), its UC requirements and its f
 - **Obligation:** no
 - **ID:** `<P>-<D>-UC<nn>`, such as `TL-LEND-UC01`; it starts with its domain's ID
 - **Links out:** Follows ([`follows`](#relation-follows))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links in:** Questions about this ([`about`](#relation-about)), Offered through ([`offers`](#relation-offers))
 - **Parts:** [`use_case_actor`](#table-use_case_actor)
 - **Checks:** [`pattern-setting-missing`](#check-pattern-setting-missing), [`pattern-not-followed`](#check-pattern-not-followed), [`title-breaks-convention`](#check-title-breaks-convention), [`flow-title-off-pattern`](#check-flow-title-off-pattern)
 - **Gaps:** [`use-case-without-actor`](#gap-use-case-without-actor), [`use-case-without-requirement`](#gap-use-case-without-requirement), [`use-case-without-flow`](#gap-use-case-without-flow)
@@ -901,13 +901,13 @@ One actor of a use case, in order: a role of the use case's product.
 
 ### UC requirement (`uc_requirement`)
 
-One rule a use case must follow, whatever the interface: a step of each of the use case's own flows fulfills it. A rule only one interface can meet is a view or API requirement instead.
+One rule a use case must follow, whatever the interface: a step of the use case's own flow fulfills it. A rule only one interface can meet is a view or API requirement, or a rule of that interface's pattern, instead.
 
 - **Parents:** [`use_case`](#kind-use_case) (`use_case_id`)
 - **Children:** [`use_case_test`](#kind-use_case_test)
 - **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** yes: designed, built and proved
-  - **Designed:** A step of each of its use case's flows fulfills it: one flow per interface the use case happens through, and at least one.
+  - **Designed:** A step of its use case's flow fulfills it.
   - **Built:** Every record that carries out its fulfilling steps names a file that exists, and there is at least one: the handler of each command or query a step invokes, with the predicates and services of what that command or query checks, selects by or calls; and the adapter of each integration a step exchanges with. It also rests on those specifications and domain services, and is built only while each of them is.
   - **Proved:** One of its use case tests.
 - **ID:** `<use case>-R<nn>`, such as `TL-LEND-UC01-R01`; it starts with its parent's ID
@@ -989,7 +989,7 @@ One rule of a pattern. Every domain that follows the pattern owes it, with no ex
 - **Children:** [`pattern_rule_test`](#kind-pattern_rule_test)
 - **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** yes: designed, built and proved
-  - **Designed:** Wherever it is owed: by each domain that follows its pattern, itself or through a use case.
+  - **Designed:** Wherever it is owed: by each domain that follows its pattern, itself, through a use case, or through an interface that offers one of its use cases.
   - **Built:** Not asked: proof only.
   - **Proved:** Its pattern rule test naming the owing domain.
 - **ID:** `<pattern>-R<nn>`, such as `TL-PAT-LIBRARIAN-ACTION-R01`; it starts with its parent's ID
@@ -1108,32 +1108,33 @@ Each is reported in coverage, under the record that falls short, never as a prob
 
 ## Interaction design
 
-The product's interfaces, each use case's flows (one per interface it happens through) and their steps, and the views, endpoints and integrations the steps reach, with their requirements.
+The product's interfaces and the use cases each offers, each use case's flow and its steps, and the views, endpoints and integrations the steps reach, with their requirements.
 
 <a id="kind-interface"></a>
 
 ### Interface (`interface`)
 
-A way people or programs use the product, such as its web app, its HTTP API or its command line. A use case happens through one or more interfaces, with one flow for each, and the kind says what that flow's steps go through.
+A way people or programs use the product, such as its web app, its HTTP API or its command line. It offers use cases (offers), is used by some of the product's roles (interface_actor rows) and follows the pattern that says how a step is carried out through it (follows): its version of each flow it offers is derived from that, never written.
 
 - **Parents:** [`product`](#kind-product) (`product_id`)
 - **Children:** none
 - **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-IF<nn>`, such as `TL-IF01`; it starts with its parent's ID
-- **Links out:** none
+- **Links out:** Follows ([`follows`](#relation-follows)), Offers ([`offers`](#relation-offers))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`flow-test-level-for-interface`](#check-flow-test-level-for-interface), [`title-breaks-convention`](#check-title-breaks-convention), [`flow-title-off-pattern`](#check-flow-title-off-pattern)
-- **Gaps:** [`interface-without-flow`](#gap-interface-without-flow)
+- **Parts:** [`interface_actor`](#table-interface_actor)
+- **Checks:** [`title-breaks-convention`](#check-title-breaks-convention), [`flow-title-off-pattern`](#check-flow-title-off-pattern)
+- **Gaps:** [`interface-offers-nothing`](#gap-interface-offers-nothing)
 
 <a id="table-interface"></a>
 
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
-| `id` | VARCHAR → `record_id` | yes | The interface's ID: its product's ID and IF<nn>, such as TL-IF01. Its number ends the ID of every flow through it. |
+| `id` | VARCHAR → `record_id` | yes | The interface's ID: its product's ID and IF<nn>, such as TL-IF01. |
 | `title` | VARCHAR | yes | The interface's name, such as Web app, HTTP API, CLI, MCP tools or Desktop app. |
 | `product_id` | VARCHAR → [`product`](#table-product) | yes | The product it belongs to. |
-| `kind` | ENUM('web app', 'API', 'CLI', 'agent tools', 'desktop', 'other') | yes | What it is: web app or desktop (a flow's steps happen in views), API (they call endpoints, through the command or query each exposes), CLI or agent tools (they run commands and queries), or other. A step of an API, CLI or agent tools flow happens in no view. |
+| `kind` | ENUM('web app', 'API', 'CLI', 'agent tools', 'desktop', 'other') | yes | What it is: web app or desktop (a step is carried out in the views that present its command or query), API (through the endpoint that exposes it), CLI or agent tools (by the product's own command or tool for it), or other. |
 | `description` | VARCHAR | yes | Who uses it and how, in a sentence or two. |
 | `public` | BOOLEAN | yes | Whether people or programs outside the product build on it, so its contract is the product's own commitment: a public API's requirements are essential complexity, an internal one's (such as the API only the product's own app calls) accidental. |
 
@@ -1141,60 +1142,76 @@ A way people or programs use the product, such as its web app, its HTTP API or i
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `("trim"(description) != '')`
 
+<a id="table-interface_actor"></a>
+
+#### `interface_actor`
+
+One role that uses an interface, in order: a role of the interface's product. A step's actor through the interface is the first of its use case's actors the interface lists.
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `interface_id` | VARCHAR → [`interface`](#table-interface) | yes | The interface. |
+| `position` | INTEGER | yes | The role's place among the interface's roles, from 1. |
+| `role_name` | VARCHAR | yes | The role, which the product names in its role rows. |
+
+- **Key:** `interface_id`, `position`
+- **Unique:** `interface_id`, `role_name`
+- **Rule:** `("position" >= 1)`
+
 <a id="kind-flow"></a>
 
 ### Flow (`flow`)
 
-How its use case is carried out through one interface: the steps on its main path and its alternate paths. A use case has one flow per interface it happens through, and each flow belongs only to it.
+How its use case is carried out, whatever the interface: the steps on its main path and its alternate paths. A use case has one flow, and each interface that offers the use case has its own version of it, derived from the steps' commands and queries by the interface's pattern.
 
 - **Parents:** [`use_case`](#kind-use_case) (`use_case_id`)
 - **Children:** [`flow_step`](#kind-flow_step), [`flow_test`](#kind-flow_test)
 - **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
-- **ID:** `<use case>-FL<nn>`, such as `TL-LEND-UC01-FL01`; it starts with its parent's ID
+- **ID:** `<use case>-FL`, such as `TL-LEND-UC01-FL`; it starts with its parent's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`step-order`](#check-step-order), [`flow-test-level-for-interface`](#check-flow-test-level-for-interface), [`flow-title-off-pattern`](#check-flow-title-off-pattern)
+- **Checks:** [`step-order`](#check-step-order), [`flow-title-off-pattern`](#check-flow-title-off-pattern)
 - **Gaps:** [`flow-without-main-path`](#gap-flow-without-main-path), [`flow-without-test`](#gap-flow-without-test)
 
 <a id="table-flow"></a>
 
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
-| `id` | VARCHAR → `record_id` | yes | The flow's ID: its use case's ID, FL and its interface's number, such as TL-LEND-UC01-FL01 for the flow through TL-IF01. |
-| `title` | VARCHAR | yes | The flow's name, such as Borrow a tool at the desk. |
-| `use_case_id` | VARCHAR → [`use_case`](#table-use_case) | yes | The use case it carries out. |
-| `interface_id` | VARCHAR → [`interface`](#table-interface) | yes | The interface it goes through, of the same product; at most one flow per use case and interface. |
+| `id` | VARCHAR → `record_id` | yes | The flow's ID: its use case's ID and FL, such as TL-LEND-UC01-FL. |
+| `title` | VARCHAR | yes | The flow's name: its use case's title, such as Borrow a tool. |
+| `use_case_id` | VARCHAR → [`use_case`](#table-use_case) | yes | The use case it carries out, which has no other flow. |
 
 - **Key:** `id`
-- **Unique:** `use_case_id`, `interface_id`
+- **Unique:** `use_case_id`
 - **Rule:** `("trim"(title) != '')`
 
 <a id="kind-flow_step"></a>
 
 ### Flow step (`flow_step`)
 
-One step of a flow, in order on its path. It fulfills UC requirements of its own use case, invokes at most one command or query, happens in at most one view (only on a web app, desktop or other interface) and may exchange with integrations.
+One step of a flow, in order on its path, in the words of the people who take it. It fulfills UC requirements of its own use case, invokes at most one command or query and may exchange with integrations; where it happens is its interface's, derived. A step only one interface can do is a variant: it names that interface.
 
 - **Parents:** [`flow`](#kind-flow) (`flow_id`)
 - **Children:** none
 - **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
-- **ID:** `<flow>-S<nn>`, such as `TL-LEND-UC01-FL01-S01`; it starts with its parent's ID
-- **Links out:** Exchanges with ([`exchanges_with`](#relation-exchanges_with)), Fulfills ([`fulfills`](#relation-fulfills)), Happens in ([`happens_in`](#relation-happens_in)), Invokes ([`invokes`](#relation-invokes))
+- **ID:** `<flow>-S<nn>`, such as `TL-LEND-UC01-FL-S01`; it starts with its parent's ID
+- **Links out:** Exchanges with ([`exchanges_with`](#relation-exchanges_with)), Fulfills ([`fulfills`](#relation-fulfills)), Invokes ([`invokes`](#relation-invokes))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`step-order`](#check-step-order), [`step-without-endpoint`](#check-step-without-endpoint)
+- **Checks:** [`step-order`](#check-step-order), [`step-unreached`](#check-step-unreached)
 - **Gaps:** [`record-untraced`](#gap-record-untraced)
 
 <a id="table-flow_step"></a>
 
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
-| `id` | VARCHAR → `record_id` | yes | The step's ID: its flow's ID and S<nn>, such as TL-LEND-UC01-FL01-S01. |
+| `id` | VARCHAR → `record_id` | yes | The step's ID: its flow's ID and S<nn>, such as TL-LEND-UC01-FL-S01. |
 | `title` | VARCHAR | yes | What happens, in a few words. |
 | `flow_id` | VARCHAR → [`flow`](#table-flow) | yes | The flow it belongs to. |
 | `path` | VARCHAR | yes | The path through the flow the step is on, such as main or refused. |
-| `position` | INTEGER | yes | The step's place on its path, from 1. |
+| `position` | INTEGER | yes | The step's place on its path, from 1, among every interface's steps; each interface's version skips the other interfaces' variants. |
+| `interface_id` | VARCHAR → [`interface`](#table-interface) | no | The one interface that does this step, which makes it a variant, such as opening the app from the Dock; none when every interface that offers the use case does it. The interface offers the step's use case. |
 
 - **Key:** `id`
 - **Unique:** `flow_id`, `path`, `position`
@@ -1206,15 +1223,15 @@ One step of a flow, in order on its path. It fulfills UC requirements of its own
 
 ### View (`view`)
 
-A screen or page a person uses. It has no owner: it exists because flow steps happen in it, and its product follows from its ID.
+A screen or page a person uses. It has no owner: it exists because it presents commands and queries (presents), so a step that invokes one is carried out in it on a web app or desktop interface, and its product follows from its ID.
 
 - **Parents:** none (no owner: it exists because other records use it)
 - **Children:** [`view_requirement`](#kind-view_requirement)
 - **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-V<nn>`, such as `TL-V01`; it starts with its product's ID
-- **Links out:** none
-- **Links in:** Questions about this ([`about`](#relation-about)), Hosts ([`happens_in`](#relation-happens_in)), Rendered by ([`renders`](#relation-renders))
+- **Links out:** Presents ([`presents`](#relation-presents))
+- **Links in:** Questions about this ([`about`](#relation-about)), Rendered by ([`renders`](#relation-renders))
 - **Checks:** [`view-unused`](#check-view-unused), [`view-route-not-in-file`](#check-view-route-not-in-file)
 - **Gaps:** [`view-without-ui-component`](#gap-view-without-ui-component)
 
@@ -1225,6 +1242,7 @@ A screen or page a person uses. It has no owner: it exists because flow steps ha
 | `id` | VARCHAR → `record_id` | yes | The view's ID: the product prefix and V<nn>, such as TL-V01. |
 | `title` | VARCHAR | yes | The view's name, such as Catalog. |
 | `route` | VARCHAR | no | The address it is shown at, such as /catalog. |
+| `interface_id` | VARCHAR → [`interface`](#table-interface) | no | The one interface that shows it, such as the desktop app's Dock icon; none when every web app and desktop interface of its product shows it. |
 | `description` | VARCHAR | yes | What the view shows and lets a person do, in a paragraph. |
 | `notes` | VARCHAR | no | Longer notes on the view. |
 
@@ -1268,7 +1286,7 @@ One rule a view must follow, such as what it shows while loading or a field's li
 
 ### Endpoint (`endpoint`)
 
-An HTTP endpoint that exposes exactly one command or query, its parent. Flow steps reach it through their command or query, never directly.
+An HTTP endpoint that exposes exactly one command or query, its parent. A step that invokes it is carried out through it on an API interface: steps reach it through their command or query, never directly.
 
 - **Parents:** [`command`](#kind-command) (`command_id`), [`query`](#kind-query) (`query_id`)
 - **Children:** [`api_requirement`](#kind-api_requirement), [`endpoint_handler`](#kind-endpoint_handler)
@@ -1277,7 +1295,7 @@ An HTTP endpoint that exposes exactly one command or query, its parent. Flow ste
 - **ID:** `<P>-<D>-EP<nn>`, such as `TL-LEND-EP01`; it starts with its domain's ID
 - **Links out:** Fills ([`fills`](#relation-fills)), Provided by ([`provided_by`](#relation-provided_by))
 - **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
-- **Checks:** [`endpoint-route-not-in-file`](#check-endpoint-route-not-in-file), [`step-without-endpoint`](#check-step-without-endpoint)
+- **Checks:** [`endpoint-route-not-in-file`](#check-endpoint-route-not-in-file), [`step-unreached`](#check-step-unreached)
 - **Gaps:** [`endpoint-without-requirement`](#gap-endpoint-without-requirement), [`endpoint-without-handler`](#gap-endpoint-without-handler)
 
 <a id="table-endpoint"></a>
@@ -1369,9 +1387,9 @@ An outside system the product exchanges with, such as a payment provider or a ma
 
 **Error** · Lathe's · Kinds: [`view`](#kind-view)
 
-A view that nothing uses.
+A view that presents no command or query.
 
-A view has no owner: it exists because flow steps happen in it. One that nothing uses is a leftover, or a link is missing. Link the steps that happen in it with happens_in, or remove it.
+A view has no owner: it exists because a person sends commands or asks queries in it, so a step that invokes one is carried out there on a web app or desktop interface. One that presents nothing is a leftover, or a link is missing. Link what it presents with presents, or remove it.
 
 <a id="check-integration-unused"></a>
 
@@ -1413,15 +1431,15 @@ A view whose route no file of the UI components that render it names.
 
 A view's route is the address it is shown at, and the UI components that render it show it there, so one of their files names the route, written any way routes are written (`/tools/{toolId}`, `/tools/:toolId`, `/tools/<tool-id>`, `/tools/[toolId]`, a template's `${toolId}`, or a regular expression literal that matches it, such as `/^\/tools\/(\d+)$/`), in code, a string or a comment. Parameters match whatever their names, and only the path counts: a query string or fragment is not part of a route. Then a reader of the record finds the code, and an address changed on one side and not the other is caught. A view with no route, or whose components' files do not exist yet, is not checked. Correct the view's route, or name it in the file of the component that shows the view at that address.
 
-<a id="check-step-without-endpoint"></a>
+<a id="check-step-unreached"></a>
 
-### `step-without-endpoint`
+### `step-unreached`
 
 **Warning** · Lathe's · Kinds: [`flow_step`](#kind-flow_step), [`endpoint`](#kind-endpoint)
 
-A step of a flow through an API that invokes a command or query no endpoint exposes.
+A step that invokes a command or query one of the interfaces that offer its use case cannot reach.
 
-A flow through an interface of kind API happens as requests: each step that invokes a command or query calls the endpoint that exposes it, so an endpoint must expose what the step invokes. (A step of a flow through a web app, a desktop app, a CLI or agent tools names its command or query the same way; only an API's are reached through endpoints. A step of an API, CLI or agent tools flow that happens in a view is refused by the store, step-fits-interface.) Add the endpoint under the command or query, or have the step invoke what an endpoint exposes.
+A use case's flow is the same through every interface that offers it, and each interface carries a step out through its own means: a web app or desktop in a view that presents the step's command or query (a view of every such interface, or of that one), an API through the endpoint that exposes it, a CLI or agent tools through a record of the product's own interaction design kinds under it (such as Lathe's CLI commands). So each interface that offers the use case must reach what each step invokes, but for a step that is another interface's variant. An interface of kind other reaches its operations in a way no record says, so it is not read. Have a view present the command or query, add the endpoint or the product's own record under it, make the step a variant of the interfaces that do reach it, or stop offering the use case through that interface.
 
 <a id="check-flow-title-off-pattern"></a>
 
@@ -1429,9 +1447,9 @@ A flow through an interface of kind API happens as requests: each step that invo
 
 **Warning** · Lathe's · Kinds: [`flow`](#kind-flow), [`use_case`](#kind-use_case), [`interface`](#kind-interface)
 
-A flow whose title is not its use case's title, then in or through, then its interface's title.
+A flow whose title is not its use case's title.
 
-A use case has one flow per interface it happens through, so a flow's title is its use case's title with its interface's: "Borrow a tool in the web app", "Borrow a tool through the HTTP API". Then each flow of a use case reads as the same goal in another place, and a renamed use case or interface shows in every flow that still has the old title. The check compares in any letter case and allows "in" or "through", with or without "the" before the interface. Retitle the flow as its use case's title, then in or through, then its interface's title.
+A use case has one flow, the same through every interface that offers it, so the flow's title is its use case's: a renamed use case then shows in a flow that still has the old title. The check compares trimmed and in any letter case. Retitle the flow as its use case.
 
 ### Coverage gaps: interaction design
 
@@ -1440,7 +1458,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | Gap | Kinds | What it reports |
 | --- | --- | --- |
 | <a id="gap-use-case-without-flow"></a>`use-case-without-flow` | [`use_case`](#kind-use_case), [`flow`](#kind-flow) | A use case with no flow. |
-| <a id="gap-interface-without-flow"></a>`interface-without-flow` | [`interface`](#kind-interface), [`flow`](#kind-flow) | An interface no flow goes through. |
+| <a id="gap-interface-offers-nothing"></a>`interface-offers-nothing` | [`interface`](#kind-interface), [`use_case`](#kind-use_case) | An interface that offers no use case. |
 | <a id="gap-flow-without-main-path"></a>`flow-without-main-path` | [`flow`](#kind-flow), [`flow_step`](#kind-flow_step) | A flow with no step on its main path. |
 | <a id="gap-endpoint-without-requirement"></a>`endpoint-without-requirement` | [`endpoint`](#kind-endpoint), [`api_requirement`](#kind-api_requirement) | An endpoint with no API requirement. |
 | <a id="gap-route-without-record"></a>`route-without-record` | [`product`](#kind-product), [`endpoint`](#kind-endpoint), [`view`](#kind-view) | A route the code serves that no endpoint or view has. |
@@ -2628,23 +2646,23 @@ Proves its API requirement at the endpoint: the request and the response.
 
 ### Flow test (`flow_test`)
 
-A smoke test of its flow's main path, end to end, at the level that fits its interface: browser for a web app or desktop, system for an API, a CLI or agent tools.
+The use case's acceptance test: its flow's main path, end to end, through any one interface that offers the use case, at the level that fits that interface (browser for a web app or desktop, system for an API, a CLI or agent tools). How each other interface carries a step out is proved once per rule and domain by its pattern's rule tests, never per use case.
 
 - **Parents:** [`flow`](#kind-flow) (`flow_id`)
 - **Children:** none
 - **Complexity:** as the record it sits under
 - **Obligation:** no
 - **Run by levels:** `system`, `browser`
-- **ID:** `<flow>-T`, such as `TL-LEND-UC01-FL01-T`; it starts with its parent's ID
+- **ID:** `<flow>-T`, such as `TL-LEND-UC01-FL-T`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed), [`flow-test-level-for-interface`](#check-flow-test-level-for-interface), [`test-title-not-a-result`](#check-test-title-not-a-result)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed), [`test-title-not-a-result`](#check-test-title-not-a-result)
 
 <a id="table-flow_test"></a>
 
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
-| `id` | VARCHAR → `record_id` | yes | The test's ID: its flow's ID and T, such as TL-LEND-UC01-FL01-T. |
+| `id` | VARCHAR → `record_id` | yes | The test's ID: its flow's ID and T, such as TL-LEND-UC01-FL-T. |
 | `title` | VARCHAR | yes | What the test shows, in a sentence. |
 | `flow_id` | VARCHAR → [`flow`](#table-flow) | yes | The flow it proves; it has exactly one test. |
 | `level` | ENUM('unit', 'integration', 'service', 'system', 'browser') | yes | How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. |
@@ -2880,16 +2898,6 @@ A test data set's file is the seed or fixture that builds it, a file or a folder
 A test case in the product's test files names a test whose file it is in, so every test in the code leads back to the record it proves.
 
 test-file-missing-id follows a test record to its code; this check follows the code back. The engine reads the product's test files (those matching the tests globs in lathe.config.json, by default **/*.test.{ts,tsx,js,mjs} and **/*.spec.{ts,tsx,js}, never in node_modules, dist or another product's folder, and every file a test record names) as text and finds each test case: a call of it or test, with its modifiers and each forms, whose name is a string or template literal, inside the describe calls around it. A test case must name, in its own name, its describes' names or its each rows, the ID of a test (or of a product kind's record that proves an obligation) whose file is the file it is in. One that names none proves nothing anyone can find. Start its name, or its describe's, with the ID of the test it proves, adding that test when the spec lacks it, or remove the test case if it proves nothing.
-
-<a id="check-flow-test-level-for-interface"></a>
-
-### `flow-test-level-for-interface`
-
-**Warning** · Lathe's · Kinds: [`flow_test`](#kind-flow_test), [`flow`](#kind-flow), [`interface`](#kind-interface)
-
-A flow test at a level that does not fit its flow's interface.
-
-A flow test walks its flow's main path the way its interface is used: in a real browser or the desktop shell (browser) for a web app or a desktop app, and from outside the running product through its requests or commands (system) for an API, a CLI or agent tools. A manual test names the level the person exercises, so it is held to the same fit. A flow through an interface of kind other may be tested at any level a flow test allows. Run the test at the level that fits, or give the flow the interface it really goes through.
 
 <a id="check-test-title-not-a-result"></a>
 
@@ -3279,7 +3287,7 @@ The accidental record (a technical record or an endpoint), written by hand, fill
 
 ### `follows`
 
-The domain or use case follows the pattern, and gives a value for each of its settings in setting_value rows.
+The domain, use case or interface follows the pattern, and gives a value for each of its settings in setting_value rows. An interface's pattern says how a step is carried out through it, and every domain with a use case the interface offers owes its rules.
 
 - **Reads:** Follows / Followed by
 - **Role:** none
@@ -3287,6 +3295,7 @@ The domain or use case follows the pattern, and gives a value for each of its se
 | From | To | Meaning |
 | --- | --- | --- |
 | [`domain`](#kind-domain) | [`pattern`](#kind-pattern) | The whole domain follows the pattern, and so owes each of its rules. |
+| [`interface`](#kind-interface) | [`pattern`](#kind-pattern) | Each step through the interface is carried out as the pattern says. |
 | [`use_case`](#kind-use_case) | [`pattern`](#kind-pattern) | The use case follows the pattern and gives a value for each of its settings. |
 
 <a id="relation-fulfills"></a>
@@ -3332,19 +3341,6 @@ The tooling record (a generator) writes the accidental record (a technical recor
 | [`tooling`](#kind-tooling) | [`tooling`](#kind-tooling) | The tooling record generates the tooling's code. |
 | [`tooling`](#kind-tooling) | [`ui_component`](#kind-ui_component) | The tooling record generates the UI component's code. |
 | [`tooling`](#kind-tooling) | [`value_type`](#kind-value_type) | The tooling record generates the value type's code. |
-
-<a id="relation-happens_in"></a>
-
-### `happens_in`
-
-The flow step happens in the view: at most one per step.
-
-- **Reads:** Happens in / Hosts
-- **Role:** none
-
-| From | To | Meaning |
-| --- | --- | --- |
-| [`flow_step`](#kind-flow_step) | [`view`](#kind-view) | The step happens in the view. |
 
 <a id="relation-has_many"></a>
 
@@ -3454,6 +3450,19 @@ The technical record follows the standard rule: it shows where the rule is appli
 | [`ui_component`](#kind-ui_component) | [`standard_rule`](#kind-standard_rule) | The UI component follows the standard rule. |
 | [`value_type`](#kind-value_type) | [`standard_rule`](#kind-standard_rule) | The value type follows the standard rule. |
 
+<a id="relation-offers"></a>
+
+### `offers`
+
+The interface offers the use case, of its own product: its actors can carry it out there, and the interface has its own version of the use case's flow, derived by its pattern.
+
+- **Reads:** Offers / Offered through
+- **Role:** none
+
+| From | To | Meaning |
+| --- | --- | --- |
+| [`interface`](#kind-interface) | [`use_case`](#kind-use_case) | The use case is carried out through the interface. |
+
 <a id="relation-persists"></a>
 
 ### `persists`
@@ -3466,6 +3475,20 @@ The repository loads and saves the aggregate, whole: one repository per aggregat
 | From | To | Meaning |
 | --- | --- | --- |
 | [`repository`](#kind-repository) | [`aggregate`](#kind-aggregate) | The repository loads and saves the aggregate, whole. |
+
+<a id="relation-presents"></a>
+
+### `presents`
+
+The view presents the command or query: a person sends the command or asks the query there, so a step that invokes it is carried out in the view on a web app or desktop interface.
+
+- **Reads:** Presents / Presented in
+- **Role:** none
+
+| From | To | Meaning |
+| --- | --- | --- |
+| [`view`](#kind-view) | [`command`](#kind-command) | A person sends the command in the view. |
+| [`view`](#kind-view) | [`query`](#kind-query) | A person asks the query in the view. |
 
 <a id="relation-provided_by"></a>
 
@@ -3661,6 +3684,16 @@ A record with more children of one kind than its product's max_children setting.
 
 The setting is the product's product_setting row (15 when it has none). A parent with that many children of one kind is missing a level between them, such as a capability or another aggregate. It counts a parent's children of each kind of the five design stages, discovery to the technical specification, since those are read as lists under their parent; a test is read under what it proves. Children are also counted per group, read from the record_group view, since each group reads under its own heading: a flow's steps per path, since each path reads as its own list, and the records of every kind with a `group_name` (terms, UC requirements, view requirements, API requirements, pattern rules, standard rules and a product's own kinds) per `group_name`; the ungrouped ones are one list. Paths and groups are compared trimmed and in any letter case. Add a level, or a group, and move the children into it.
 
+<a id="check-flow-not-offered"></a>
+
+### `flow-not-offered`
+
+**Warning** · Lathe's
+
+A use case with a flow that no interface offers.
+
+A flow says how its use case is carried out whatever the interface, and each interface that offers the use case has its own version of it. A use case no interface offers has a flow nobody can follow. Offer it through the interfaces it happens through.
+
 <a id="check-accidental-not-accounted-for"></a>
 
 ### `accidental-not-accounted-for`
@@ -3679,7 +3712,27 @@ Essential complexity is decided once, per product; accidental complexity, what c
 
 An essential record whose title or lead text names technology its kind of record has no business with: a mechanism of an interface or of storage, a technical kind, one of the product's interfaces, or a word the product lists as technology.
 
-Essential complexity is what any correct solution has to capture, however it is built, so an essential record says what the product's people need in their own words and leaves how it is built to the patterns and the technical specification (LA-STD-PRINCIPLES). The check reads each essential record's title and lead text (its statement, goal, meaning or description), in any letter case, as whole words, singular or plural, code in backticks included, for the words of its kind's group. The domain model, use cases, flows and every other essential kind are read for the interface words page, screen, button, click, endpoint, route, URL, HTTP and query string; the storage words table, row, column, JSON, SQL and database; the titles of the product's own interfaces (such as CLI or Web app); and the technical kinds. A flow and its steps go through one interface, so that interface's own title is theirs. A view and its requirements are on their interface by nature, so pages, screens, buttons, clicks, rows, columns, tables, routes and URLs are theirs: they are read for endpoint, HTTP, query string, JSON, SQL, database and the technical kinds. An interface, an integration and an API requirement are a contract with the outside world, which names its mechanism: they are read for the technical kinds only. Patterns, their rules and slots are where the product decides its accidental complexity once, and a test says how it proves through the interface it drives, so neither is read. The technical kinds are data store, repository, data model, value type, event type, projection, command handler, query handler, event handler, endpoint handler, adapter, entry point and UI component. A word that is the title of a term of the record's own domain (of any of its product's domains, for a record that sits in none, such as a view) is that domain's language, not technology, so it is not reported there: a product about specs has a term Table. The words the product's settings list as technology (technology_words) are read in every group and never excused. A mixed kind, one whose records hold both, is split rather than excused. Say what is needed without the mechanism, move the mechanism to the pattern or technical record that decides it, or split the record.
+Essential complexity is what any correct solution has to capture, however it is built, so an essential record says what the product's people need in their own words and leaves how it is built to the patterns and the technical specification (LA-STD-PRINCIPLES). The check reads each essential record's title and lead text (its statement, goal, meaning or description), in any letter case, as whole words, singular or plural, code in backticks included, for the words of its kind's group. The domain model, use cases, flows and every other essential kind are read for the interface words page, screen, button, click, endpoint, route, URL, HTTP and query string; the storage words table, row, column, JSON, SQL and database; the titles of the product's own interfaces (such as CLI or Web app); and the technical kinds. A step only one interface can do (a variant) names that interface, so the interface's own title is the step's. A view and its requirements are on their interface by nature, so pages, screens, buttons, clicks, rows, columns, tables, routes and URLs are theirs: they are read for endpoint, HTTP, query string, JSON, SQL, database and the technical kinds. An interface, an integration and an API requirement are a contract with the outside world, which names its mechanism: they are read for the technical kinds only. Patterns, their rules and slots are where the product decides its accidental complexity once, and a test says how it proves through the interface it drives, so neither is read. The technical kinds are data store, repository, data model, value type, event type, projection, command handler, query handler, event handler, endpoint handler, adapter, entry point and UI component. A word that is the title of a term of the record's own domain (of any of its product's domains, for a record that sits in none, such as a view) is that domain's language, not technology, so it is not reported there: a product about specs has a term Table. The words the product's settings list as technology (technology_words) are read in every group and never excused. A mixed kind, one whose records hold both, is split rather than excused. Say what is needed without the mechanism, move the mechanism to the pattern or technical record that decides it, or split the record.
+
+<a id="check-variant-not-offered"></a>
+
+### `variant-not-offered`
+
+**Error** · Lathe's
+
+A variant step whose interface does not offer its use case.
+
+A step only one interface can do names that interface, and that interface's version of the flow is the only one that has it. An interface that does not offer the use case has no version, so the step would be in none. Offer the use case through the interface, name another interface that does, or make the step every interface's.
+
+<a id="check-interface-actor-not-the-use-case"></a>
+
+### `interface-actor-not-the-use-case`
+
+**Warning** · Lathe's
+
+An interface that offers a use case none of whose actors uses the interface.
+
+A step's actor through an interface is the first of its use case's actors that the interface lists among its roles (interface_actor). When the interface lists roles and none of them is one of the use case's actors, nobody can carry the use case out there. List the role among the interface's, add it to the use case's actors, or stop offering the use case through the interface.
 
 <a id="check-data-refused"></a>
 

@@ -1,5 +1,5 @@
-// The View aggregate (LA-AUT-A12): a view with its view requirements and their view tests (with the test data sets
-// each starts from). A view has no owner: its product follows from its ID. One instance is one view, whole; it holds
+// The View aggregate (LA-AUT-A12): a view with the commands and queries it presents, its view requirements and their
+// view tests (with the test data sets each starts from). A view has no owner: its product follows from its ID. One instance is one view, whole; it holds
 // only the links its own records start.
 import type { AggregateShape } from '../../platform/data/repository.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
@@ -17,16 +17,18 @@ export interface View {
   /** The view's ID: the instance's root. */
   readonly root: string;
   view: ViewRow;
+  /** The commands and queries it presents, sorted. */
+  presents: string[];
   requirements: ViewRequirementRow[];
   tests: Tested<ViewTestRow>[];
 }
 
-/** The tables the View aggregate keeps its rows in: its kinds and the relation its tests start. */
-export const VIEW_TABLES = ['view', 'view_requirement', 'view_test', 'starts_from'] as const;
+/** The tables the View aggregate keeps its rows in: its kinds and the relations it and its tests start. */
+export const VIEW_TABLES = ['view', 'presents', 'view_requirement', 'view_test', 'starts_from'] as const;
 
 /** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
 export const VIEW_SHAPE = {
-  view: { at: 'view' },
+  view: { at: 'view', lists: { presents: 'presents' } },
   view_requirement: { at: 'requirements' },
   view_test: { at: 'tests', lists: { starts_from: 'startsFrom' } },
 } as const satisfies AggregateShape;
@@ -44,9 +46,11 @@ export function viewsFrom(rows: (table: string) => Row[], only?: string): View[]
   const requirementsOf = groupBy(requirements, (r) => r.view_id);
   const testsOf = groupBy((rows('view_test') as unknown as ViewTestRow[]).filter((t) => viewOf.has(t.view_requirement_id)), (t) => viewOf.get(t.view_requirement_id));
   const startsFrom = bySource(rows('starts_from'));
+  const presents = bySource(rows('presents'));
   return views.map((view) => ({
     root: view.id,
     view,
+    presents: groupOf(presents, view.id),
     requirements: groupOf(requirementsOf, view.id),
     tests: groupOf(testsOf, view.id).map((row) => ({ row, startsFrom: groupOf(startsFrom, row.id) })),
   }));
@@ -57,6 +61,7 @@ export function viewRows(view: View): Map<string, Row[]> {
   const asRow = <T extends object>(row: T) => row as unknown as Row;
   return new Map<string, Row[]>([
     ['view', [asRow(view.view)]],
+    ['presents', view.presents.map((target) => ({ source_id: view.root, target_id: target }))],
     ['view_requirement', view.requirements.map(asRow)],
     ['view_test', view.tests.map((t) => asRow(t.row))],
     ['starts_from', view.tests.flatMap((t) => t.startsFrom.map((target) => ({ source_id: t.row.id, target_id: target })))],

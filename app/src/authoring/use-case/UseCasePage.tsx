@@ -7,21 +7,22 @@ import { TreeList } from '../../components/TreeList';
 import type { AggregatePageProps } from '../../record/pages';
 import { Markdown } from '../../specs/Markdown';
 import { Prose } from '../../specs/mentions';
-import { ProblemBadge, RecordLink, RecordRowBody, Section, nestedCount, recordText } from '../../specs/parts';
+import { RecordLink, RecordRowBody, Section, nestedCount, recordText } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
 import { saysKind } from '../../specs/InterfaceParts';
 import { groupRecords } from '../../specs/groups';
 import { type RecordIndex, type RecordSummary } from '../../exploring/record-summaries/record-index';
-import { FlowSteps } from './FlowSteps';
+import { FlowInterfaces } from './FlowInterfaces';
 import { UseCaseEditor } from './UseCaseEditor';
 import { stepsOf, useUseCase } from './reads';
 import { useInterfaces } from '../product/reads';
 
 // The Use case page (LA-AUT-A11's page): any record of a use case, at its address (/<id>), drawn from the use case read whole
 // (GET /api/use-case/get-use-case) and changed only through its own commands (UseCaseEditor). A use case shows its
-// goal, actors and notes, its flows by interface and its UC requirements with their tests; a UC requirement its
-// statement, its tests and the steps that fulfill it; a flow the interface it goes through and its steps, path by path
-// in step order; a step what it links to; a test its scenario and what it starts from. What every record's page holds
+// goal, actors and notes, its flow and the interfaces that offer it, and its UC requirements with their tests; a UC
+// requirement its statement, its tests and the steps that fulfill it; a flow a tab per offering interface (the flow as
+// written, then each interface's derived version, FlowInterfaces); a step what it links to and the interface it is a
+// variant of; a test its scenario and what it starts from. What every record's page holds
 // around that (traceability, problems, facts and links) is the Record page's (RecordFrame); the titles of the records
 // it names come from the workspace's index while the other aggregates are read whole.
 
@@ -54,43 +55,30 @@ function Requirements({ index, useCase }: { index: RecordIndex; useCase: UseCase
   );
 }
 
-/** An interface's name, with its kind when the name does not say it. */
-function InterfaceTag({ index, id }: { index: RecordIndex; id: string }) {
-  const iface = useInterface(index, id);
-  // Its title from the space's summaries until the Product aggregate's list gives its kind.
-  if (!iface) return <small className="meta" data-meta="interface">{index.byId.get(id)?.title ?? id}</small>;
-  return <small className="meta" data-meta="interface">{saysKind(iface) ? iface.title : `${iface.title} · ${iface.kind}`}</small>;
-}
-
-/** An interface of the space's product with its kind, from the Product aggregate's list of interfaces, or undefined while it is read. */
-function useInterface(index: RecordIndex, id: string): { id: string; title: string; kind: string } | undefined {
-  const read = useInterfaces(index.product, index);
-  return read.state === 'read' ? read.answer.find((i) => i.id === id) : undefined;
-}
-
-/** A flow's interface kind, when the interface's name does not say it. */
+/** An interface's kind, when its name does not say it, from the Product aggregate's list of interfaces. */
 function InterfaceKind({ index, id }: { index: RecordIndex; id: string }) {
-  const iface = useInterface(index, id);
-  return iface && !saysKind(iface) ? <> <small className="meta">{iface.kind}</small></> : null;
+  const read = useInterfaces(index.product, index);
+  const iface = read.state === 'read' ? read.answer.find((i) => i.id === id) : undefined;
+  return iface && !saysKind(iface) ? <small className="meta" data-meta="interface-kind">{iface.kind}</small> : null;
 }
 
-/** The use case's flows, one row per flow named by the interface it goes through. */
-function FlowsByInterface({ index, useCase }: { index: RecordIndex; useCase: UseCaseRead }) {
-  if (useCase.flows.length === 0) return null;
-  const flows = useCase.flows.map((f) => f.flow);
+/** The use case's flow, the same through every interface, and the interfaces that offer it. */
+function FlowAndInterfaces({ index, useCase }: { index: RecordIndex; useCase: UseCaseRead }) {
+  const flow = useCase.flows[0];
+  if (!flow) return null;
+  const offering = flow.through.map((t) => t.interface);
   return (
-    <Section title="Flows by interface" count={flows.length} className="use-case-flows">
-      <LongList label={`Flows of ${useCase.useCase.id}`} className="record-list flow-list" items={flows} itemKey={(f) => f.id}
-        searchText={(f) => `${f.id} ${f.title} ${index.byId.get(f.interface_id)?.title ?? ''}`}
-        render={(f) => (
-          <div className="record-row">
-            <RecordLink index={index} id={f.id} row />
-            <span className="row-tags">
-              <InterfaceTag index={index} id={f.interface_id} />
-              <ProblemBadge problems={index.problemsFor.get(f.id) ?? []} />
-            </span>
-          </div>
-        )} />
+    <Section title="Flow" count={1} className="use-case-flow">
+      <Rows index={index} ids={[flow.flow.id]} label={`Flow of ${useCase.useCase.id}`} />
+      <Section title="Offered through" count={offering.length} level={3} className="use-case-interfaces">
+        {offering.length === 0 ? <p className="hint">No interface offers it yet.</p> : (
+          <ul className="plain record-list" aria-label={`Interfaces that offer ${useCase.useCase.id}`}>
+            {offering.map((i) => (
+              <li key={i}><div className="record-row"><RecordLink index={index} id={i} row /><span className="row-tags"><InterfaceKind index={index} id={i} /></span></div></li>
+            ))}
+          </ul>
+        )}
+      </Section>
     </Section>
   );
 }
@@ -117,7 +105,7 @@ function Content({ index, useCase, id, kind }: { index: RecordIndex; useCase: Us
           <Text index={index} id={id} source={useCase.useCase.goal} field="goal" />
           <Facts facts={useCase.actors.length ? [{ label: useCase.actors.length === 1 ? 'Actor' : 'Actors', value: useCase.actors.join(', ') }] : []} />
           <Text index={index} id={id} source={useCase.useCase.notes} title="Notes" field="notes" />
-          <FlowsByInterface index={index} useCase={useCase} />
+          <FlowAndInterfaces index={index} useCase={useCase} />
           <Requirements index={index} useCase={useCase} />
         </>
       );
@@ -136,14 +124,11 @@ function Content({ index, useCase, id, kind }: { index: RecordIndex; useCase: Us
       );
     }
     case 'flow': {
-      const { flow, paths, test } = useCase.flows.find((f) => f.flow.id === id)!;
+      const flow = useCase.flows.find((f) => f.flow.id === id)!;
+      const { test } = flow;
       return (
         <>
-          <p className="flow-interface">
-            Through <RecordLink index={index} id={flow.interface_id} />
-            <InterfaceKind index={index} id={flow.interface_id} />
-          </p>
-          <FlowSteps index={index} flow={id} paths={paths} />
+          <FlowInterfaces key={id} index={index} flow={flow} />
           {test && <Section title="Flow test" count={1}><Rows index={index} ids={[test.test.id]} label={`Flow test of ${id}`} /></Section>}
         </>
       );
@@ -152,13 +137,15 @@ function Content({ index, useCase, id, kind }: { index: RecordIndex; useCase: Us
       const step = useCase.flows.flatMap(stepsOf).find((s) => s.step.id === id)!;
       const links: { label: string; words: string; ids: string[] }[] = [
         { label: 'Invokes', words: 'invokes', ids: step.invokes ? [step.invokes] : [] },
-        { label: 'Happens in', words: 'happens in', ids: step.happensIn ? [step.happensIn] : [] },
         { label: 'Fulfills', words: 'fulfills', ids: step.fulfills },
         { label: 'Exchanges with', words: 'exchanges with', ids: step.exchangesWith },
       ];
       return (
         <>
-          <Facts facts={[{ label: 'Flow', value: <RecordLink index={index} id={step.step.flow_id} /> }, { label: 'Path', value: step.step.path }, { label: 'Position', value: step.step.position }]} />
+          <Facts facts={[
+            { label: 'Flow', value: <RecordLink index={index} id={step.step.flow_id} /> }, { label: 'Path', value: step.step.path }, { label: 'Position', value: step.step.position },
+            ...(step.step.interface_id ? [{ label: 'Only in', value: <RecordLink index={index} id={step.step.interface_id} /> }] : []),
+          ]} />
           {links.filter((l) => l.ids.length > 0).map((l) => (
             <Section key={l.label} title={l.label} count={l.ids.length} level={3}><Rows index={index} ids={l.ids} label={`${id} ${l.words}`} /></Section>
           ))}
@@ -216,7 +203,7 @@ function Summary({ index, useCase, id, kind }: { index: RecordIndex; useCase: Us
           facts: [
             { label: 'Capability', value: <RecordLink index={index} id={useCase.useCase.capability_id} /> },
             ...(useCase.actors.length ? [{ label: useCase.actors.length === 1 ? 'Actor' : 'Actors', value: useCase.actors.join(', ') }] : []),
-            { label: 'Holds', value: `${count(useCase.flows.length, 'flow', 'flows')}, ${count(useCase.requirements.length, 'UC requirement', 'UC requirements')}` },
+            { label: 'Holds', value: `${useCase.flows.length ? 'its flow' : 'no flow'}, ${count(useCase.requirements.length, 'UC requirement', 'UC requirements')}` },
           ],
         };
       case 'uc_requirement': {
@@ -225,7 +212,7 @@ function Summary({ index, useCase, id, kind }: { index: RecordIndex; useCase: Us
       }
       case 'flow': {
         const flow = useCase.flows.find((f) => f.flow.id === id)!;
-        return { facts: [{ label: 'Use case', value: <RecordLink index={index} id={useCase.useCase.id} /> }, { label: 'Through', value: <RecordLink index={index} id={flow.flow.interface_id} /> }, { label: 'Steps', value: stepsOf(flow).length }] };
+        return { facts: [{ label: 'Use case', value: <RecordLink index={index} id={useCase.useCase.id} /> }, { label: 'Offered through', value: count(flow.through.length, 'interface', 'interfaces') }, { label: 'Steps', value: stepsOf(flow).length }] };
       }
       case 'flow_step': {
         const step = useCase.flows.flatMap(stepsOf).find((s) => s.step.id === id)!;
