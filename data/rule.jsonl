@@ -24,6 +24,7 @@
 {"id":"LA-AUT-INV183-RL","title":"event-field-name","invariant_id":"LA-AUT-INV183","file":"lathe/src/authoring/domain-event/rules.ts"}
 {"id":"LA-AUT-INV184-RL","title":"read-model-field-one-type","invariant_id":"LA-AUT-INV184","file":"lathe/src/authoring/read-model/rules.ts"}
 {"id":"LA-AUT-INV185-RL","title":"read-model-field-name","invariant_id":"LA-AUT-INV185","file":"lathe/src/authoring/read-model/rules.ts"}
+{"id":"LA-AUT-INV186-RL","title":"title-from-field","invariant_id":"LA-AUT-INV186","file":"lathe/src/authoring/extension-record/rules.ts"}
 {"id":"LA-AUT-INV22-RL","title":"product-kind-declared","invariant_id":"LA-AUT-INV22","file":"lathe/src/authoring/product/rules.ts"}
 {"id":"LA-AUT-INV23-RL","title":"product-relation-own","invariant_id":"LA-AUT-INV23","file":"lathe/src/authoring/product/rules.ts"}
 {"id":"LA-AUT-INV24-RL","title":"product-declaration-described","invariant_id":"LA-AUT-INV24","file":"lathe/src/authoring/product/rules.ts"}

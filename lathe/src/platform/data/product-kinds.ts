@@ -51,6 +51,7 @@ export function productKindSql(
       `COMMENT ON COLUMN ${sqlName(name)}.${sqlName(parentColumn)} IS ${literal(`The ${parent} it sits under.`)};`,
     ];
     const leads = fields.filter((f) => isLeadColumn(String(f.name)));
+    const titling = fields.filter((f) => f.titles === true);
     for (const field of fields) {
       const column = String(field.name);
       if (column === 'id' || column === 'title' || column === parentColumn) {
@@ -63,6 +64,14 @@ export function productKindSql(
       }
       if (isLeadColumn(column) && field.required !== true) {
         problems.push({ table: 'product_kind_field', row: field, message: `The field ${column} of ${name} is its lead text, so it must be required: a kind's text is required or absent.` });
+        continue;
+      }
+      if (field.titles === true && (field.type !== 'text' || field.required !== true)) {
+        problems.push({ table: 'product_kind_field', row: field, message: `The field ${column} of ${name} titles its records, so it must be a required text field: every ${name} has a title.` });
+        continue;
+      }
+      if (field.titles === true && field !== titling[0]) {
+        problems.push({ table: 'product_kind_field', row: field, message: `The field ${column} of ${name} is a second field that titles its records, after ${String(titling[0].name)}: at most one field titles a kind.` });
         continue;
       }
       const type = FIELD_SQL_TYPES[field.type as keyof typeof FIELD_SQL_TYPES];
