@@ -6,7 +6,7 @@ import { ADD_INTEGRATION_TEST_IDENTITY } from './identities.generated.ts';
 
 export type AddIntegrationTest = Pick<IntegrationTestRow, 'id' | 'title' | 'integration_id' | 'level' | 'state' | 'when' | 'then' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'notes'> & { starts_from?: string[] };
 
-export const ADD_INTEGRATION_TEST: CommandDefinition<AddIntegrationTest> = {
+export const ADD_INTEGRATION_TEST = {
   ...ADD_INTEGRATION_TEST_IDENTITY,
   input: {
     id: column('integration_test', 'id', 'required'),
@@ -25,7 +25,7 @@ export const ADD_INTEGRATION_TEST: CommandDefinition<AddIntegrationTest> = {
     starts_from: ids('The test data sets it starts from.', 'optional'),
   },
   handler: addIntegrationTest,
-};
+} satisfies CommandDefinition<AddIntegrationTest>;
 
 export function addIntegrationTest(tx: Transaction, input: AddIntegrationTest): void {
   const integrations = new IntegrationRepository(tx);

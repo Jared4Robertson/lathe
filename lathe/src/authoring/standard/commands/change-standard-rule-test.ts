@@ -8,7 +8,7 @@ import { CHANGE_STANDARD_RULE_TEST_IDENTITY } from './identities.generated.ts';
 /** The test's changes: a column given is set, null clears an optional one; starts_from, when given, replaces the list. */
 export type ChangeStandardRuleTest = Pick<StandardRuleTestRow, 'id'> & { title?: StandardRuleTestRow['title']; level?: StandardRuleTestRow['level']; state?: StandardRuleTestRow['state']; file?: StandardRuleTestRow['file'] | null; manual_reason?: StandardRuleTestRow['manual_reason'] | null; size?: StandardRuleTestRow['size'] | null; smoke?: StandardRuleTestRow['smoke'] | null; external?: StandardRuleTestRow['external'] | null; when?: StandardRuleTestRow['when']; then?: StandardRuleTestRow['then']; notes?: StandardRuleTestRow['notes'] | null; starts_from?: string[] };
 
-export const CHANGE_STANDARD_RULE_TEST: CommandDefinition<ChangeStandardRuleTest> = {
+export const CHANGE_STANDARD_RULE_TEST = {
   ...CHANGE_STANDARD_RULE_TEST_IDENTITY,
   input: {
     id: column('standard_rule_test', 'id', 'required'),
@@ -26,7 +26,7 @@ export const CHANGE_STANDARD_RULE_TEST: CommandDefinition<ChangeStandardRuleTest
     starts_from: ids('The test data sets it starts from. Replaces the list.', 'optional'),
   },
   handler: changeStandardRuleTest,
-};
+} satisfies CommandDefinition<ChangeStandardRuleTest>;
 
 /** Changes the test's columns and the data sets it starts from. */
 export function changeStandardRuleTest(tx: Transaction, input: ChangeStandardRuleTest): void {

@@ -6,13 +6,13 @@ import { REMOVE_VALUE_OBJECT_IDENTITY } from './identities.generated.ts';
 /** The value object to remove. */
 export type RemoveValueObject = { id: string };
 
-export const REMOVE_VALUE_OBJECT: CommandDefinition<RemoveValueObject> = {
+export const REMOVE_VALUE_OBJECT = {
   ...REMOVE_VALUE_OBJECT_IDENTITY,
   input: {
     id: column('value_object', 'id', 'required'),
   },
   handler: removeValueObject,
-};
+} satisfies CommandDefinition<RemoveValueObject>;
 
 /** Removes the value object whole. */
 export function removeValueObject(tx: Transaction, input: RemoveValueObject): void {

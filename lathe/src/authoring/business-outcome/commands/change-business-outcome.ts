@@ -16,7 +16,7 @@ export type ChangeBusinessOutcome = Pick<BusinessOutcomeRow, 'id'> & {
   measured_by?: string[];
 };
 
-export const CHANGE_BUSINESS_OUTCOME: CommandDefinition<ChangeBusinessOutcome> = {
+export const CHANGE_BUSINESS_OUTCOME = {
   ...CHANGE_BUSINESS_OUTCOME_IDENTITY,
   input: {
     id: column('business_outcome', 'id', 'required'),
@@ -29,7 +29,7 @@ export const CHANGE_BUSINESS_OUTCOME: CommandDefinition<ChangeBusinessOutcome> =
     measured_by: ids('The tests, or records of the product\'s own kinds, that measure it. Replaces the list.', 'optional'),
   },
   handler: changeBusinessOutcome,
-};
+} satisfies CommandDefinition<ChangeBusinessOutcome>;
 
 /** Changes the outcome's own columns and what measures it. */
 export function changeBusinessOutcome(tx: Transaction, input: ChangeBusinessOutcome): void {

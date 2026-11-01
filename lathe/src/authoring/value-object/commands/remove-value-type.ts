@@ -6,13 +6,13 @@ import { REMOVE_VALUE_TYPE_IDENTITY } from './identities.generated.ts';
 /** The value type to remove. */
 export type RemoveValueType = { id: string };
 
-export const REMOVE_VALUE_TYPE: CommandDefinition<RemoveValueType> = {
+export const REMOVE_VALUE_TYPE = {
   ...REMOVE_VALUE_TYPE_IDENTITY,
   input: {
     id: column('value_type', 'id', 'required'),
   },
   handler: removeValueType,
-};
+} satisfies CommandDefinition<RemoveValueType>;
 
 /** Removes the value type from its value object. */
 export function removeValueType(tx: Transaction, input: RemoveValueType): void {

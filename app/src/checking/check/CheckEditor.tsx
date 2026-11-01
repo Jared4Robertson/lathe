@@ -3,13 +3,12 @@ import type { CheckPage } from '../../../../lathe/src/checking/check/read-model'
 import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
-import { useWriter } from '../../edit/write';
+import { useWriter, type CommandInputs } from '../../edit/write';
 import { checkPagePath, formatPath } from '../../format/reference';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { useSpaces } from '../../shell/spaces';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
-import { sendCheck, type CheckCommands } from './commands';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
 
@@ -63,7 +62,7 @@ export function CheckEditor({ index, page, children }: { index: RecordIndex; pag
     const submit = async (draft: Draft) => {
       const input = changeInput(index, specs, draft, current, { name }, CLEARABLE);
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
-      const answer = await sendCheck(writer, '/api/check/change-check', input as unknown as CheckCommands['/api/check/change-check']);
+      const answer = await writer.command('/api/check/change-check', input as unknown as CommandInputs['/api/check/change-check']);
       if (answer.ok) { announce(`Saved ${name}`); back(); }
       return answer;
     };
@@ -77,7 +76,7 @@ export function CheckEditor({ index, page, children }: { index: RecordIndex; pag
       </div>
       {mode === 'remove' && (
         <RemoveQuestion index={index} id={name} label="check" goes={[]} then={formatPath} onCancel={back}
-          remove={() => sendCheck(writer, '/api/check/remove-check', { name })} />
+          remove={() => writer.command('/api/check/remove-check', { name })} />
       )}
       {children}
     </>
@@ -109,7 +108,7 @@ function AddCheckForm({ index, product, onDone }: { index: RecordIndex; product:
   const specs = fieldsOf(true);
   const submit = async () => {
     const input = addInput(index, specs, draft, { product_id: product });
-    const answer = await sendCheck(writer, '/api/check/add-check', input as unknown as CheckCommands['/api/check/add-check']);
+    const answer = await writer.command('/api/check/add-check', input as unknown as CommandInputs['/api/check/add-check']);
     if (answer.ok) { announce(`Added ${String(input.name)}`); navigate(checkPagePath(String(input.name))); }
     return answer;
   };

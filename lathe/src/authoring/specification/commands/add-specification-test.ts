@@ -8,7 +8,7 @@ import { ADD_SPECIFICATION_TEST_IDENTITY } from './identities.generated.ts';
 
 export type AddSpecificationTest = Pick<SpecificationTestRow, 'id' | 'title' | 'specification_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'when' | 'then' | 'notes'> & { starts_from?: string[] };
 
-export const ADD_SPECIFICATION_TEST: CommandDefinition<AddSpecificationTest> = {
+export const ADD_SPECIFICATION_TEST = {
   ...ADD_SPECIFICATION_TEST_IDENTITY,
   input: {
     id: column('specification_test', 'id', 'required'),
@@ -27,7 +27,7 @@ export const ADD_SPECIFICATION_TEST: CommandDefinition<AddSpecificationTest> = {
     starts_from: ids('The test data sets it starts from.', 'optional'),
   },
   handler: addSpecificationTest,
-};
+} satisfies CommandDefinition<AddSpecificationTest>;
 
 /** Adds the test to its specification, which has none yet. */
 export function addSpecificationTest(tx: Transaction, input: AddSpecificationTest): void {

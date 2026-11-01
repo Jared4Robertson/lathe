@@ -8,7 +8,7 @@ import { ADD_CHECK_IDENTITY } from './identities.generated.ts';
 /** A new check row. */
 export type AddCheck = Pick<CheckRow, 'name' | 'product_id' | 'domain_id' | 'position' | 'severity' | 'summary' | 'explanation' | 'query' | 'kinds'>;
 
-export const ADD_CHECK: CommandDefinition<AddCheck> = {
+export const ADD_CHECK = {
   ...ADD_CHECK_IDENTITY,
   input: {
     name: column('check', 'name', 'required'),
@@ -22,7 +22,7 @@ export const ADD_CHECK: CommandDefinition<AddCheck> = {
     kinds: column('check', 'kinds', 'optional'),
   },
   handler: addCheck,
-};
+} satisfies CommandDefinition<AddCheck>;
 
 /** Adds the check, new and whole: a name one of Lathe's own has is refused by its rules (LA-CHK-INV01), one the product's has as a key taken. */
 export function addCheck(tx: Transaction, input: AddCheck): void {

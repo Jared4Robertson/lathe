@@ -16,7 +16,7 @@ import { ADD_POLICY_TEST } from './add-policy-test.ts';
 import { CHANGE_POLICY_TEST } from './change-policy-test.ts';
 import { REMOVE_POLICY_TEST } from './remove-policy-test.ts';
 
-export const COMMAND_COMMANDS: readonly AnyCommand[] = [
+export const COMMAND_COMMANDS = [
   ADD_COMMAND,
   CHANGE_COMMAND,
   REMOVE_COMMAND,
@@ -32,4 +32,4 @@ export const COMMAND_COMMANDS: readonly AnyCommand[] = [
   ADD_POLICY_TEST,
   CHANGE_POLICY_TEST,
   REMOVE_POLICY_TEST,
-];
+] as const satisfies readonly AnyCommand[];

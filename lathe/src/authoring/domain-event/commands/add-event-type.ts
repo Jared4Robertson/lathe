@@ -8,7 +8,7 @@ import { ADD_EVENT_TYPE_IDENTITY } from './identities.generated.ts';
 
 export type AddEventType = Pick<EventTypeRow, 'id' | 'title' | 'domain_event_id' | 'delivery' | 'file'> & { meets?: string[]; packages?: string[] };
 
-export const ADD_EVENT_TYPE: CommandDefinition<AddEventType> = {
+export const ADD_EVENT_TYPE = {
   ...ADD_EVENT_TYPE_IDENTITY,
   input: {
     id: column('event_type', 'id', 'required'),
@@ -20,7 +20,7 @@ export const ADD_EVENT_TYPE: CommandDefinition<AddEventType> = {
     packages: texts('The packages it uses, each listed in one of the product\'s package.json files.', 'optional'),
   },
   handler: addEventType,
-};
+} satisfies CommandDefinition<AddEventType>;
 
 /** Adds the event type to its event, refused when the event has one. */
 export function addEventType(tx: Transaction, input: AddEventType): void {

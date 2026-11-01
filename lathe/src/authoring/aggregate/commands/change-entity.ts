@@ -17,7 +17,7 @@ export type ChangeEntity = Pick<EntityRow, 'id'> & {
   has_many?: string[];
 };
 
-export const CHANGE_ENTITY: CommandDefinition<ChangeEntity> = {
+export const CHANGE_ENTITY = {
   ...CHANGE_ENTITY_IDENTITY,
   input: {
     id: column('entity', 'id', 'required'),
@@ -30,7 +30,7 @@ export const CHANGE_ENTITY: CommandDefinition<ChangeEntity> = {
     has_many: ids('The entities of its aggregate it holds any number of. Replaces the list.', 'optional'),
   },
   handler: changeEntity,
-};
+} satisfies CommandDefinition<ChangeEntity>;
 
 /** Changes the entity's columns, fields and links. */
 export function changeEntity(tx: Transaction, input: ChangeEntity): void {

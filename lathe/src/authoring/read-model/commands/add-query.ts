@@ -7,7 +7,7 @@ import { ADD_QUERY_IDENTITY } from './identities.generated.ts';
 
 export type AddQuery = Pick<QueryRow, 'id' | 'title' | 'read_model_id' | 'description'> & { selects_by?: string[]; calls?: string[] };
 
-export const ADD_QUERY: CommandDefinition<AddQuery> = {
+export const ADD_QUERY = {
   ...ADD_QUERY_IDENTITY,
   input: {
     id: column('query', 'id', 'required'),
@@ -18,7 +18,7 @@ export const ADD_QUERY: CommandDefinition<AddQuery> = {
     calls: ids('The domain services it calls, of its own domain.', 'optional'),
   },
   handler: addQuery,
-};
+} satisfies CommandDefinition<AddQuery>;
 
 /** Adds the query to its read model. */
 export function addQuery(tx: Transaction, input: AddQuery): void {

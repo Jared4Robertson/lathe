@@ -8,7 +8,7 @@ import { CHANGE_VIEW_TEST_IDENTITY } from './identities.generated.ts';
 /** The view test's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeViewTest = Pick<ViewTestRow, 'id'> & { title?: ViewTestRow['title']; level?: ViewTestRow['level']; state?: ViewTestRow['state']; when?: ViewTestRow['when']; then?: ViewTestRow['then']; file?: ViewTestRow['file'] | null; manual_reason?: ViewTestRow['manual_reason'] | null; size?: ViewTestRow['size'] | null; smoke?: ViewTestRow['smoke'] | null; external?: ViewTestRow['external'] | null; notes?: ViewTestRow['notes'] | null; starts_from?: string[] };
 
-export const CHANGE_VIEW_TEST: CommandDefinition<ChangeViewTest> = {
+export const CHANGE_VIEW_TEST = {
   ...CHANGE_VIEW_TEST_IDENTITY,
   input: {
     id: column('view_test', 'id', 'required'),
@@ -26,7 +26,7 @@ export const CHANGE_VIEW_TEST: CommandDefinition<ChangeViewTest> = {
     starts_from: ids('The test data sets it starts from. Replaces the list.', 'optional'),
   },
   handler: changeViewTest,
-};
+} satisfies CommandDefinition<ChangeViewTest>;
 
 /** Changes the view test's columns and links. */
 export function changeViewTest(tx: Transaction, input: ChangeViewTest): void {

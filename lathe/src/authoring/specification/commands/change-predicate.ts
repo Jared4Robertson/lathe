@@ -8,7 +8,7 @@ import { CHANGE_PREDICATE_IDENTITY } from './identities.generated.ts';
 /** The predicate's changes: a column given is set, null clears an optional one; a list given replaces the list. */
 export type ChangePredicate = Pick<PredicateRow, 'id'> & { title?: PredicateRow['title']; file?: PredicateRow['file'] | null; meets?: string[]; packages?: string[] };
 
-export const CHANGE_PREDICATE: CommandDefinition<ChangePredicate> = {
+export const CHANGE_PREDICATE = {
   ...CHANGE_PREDICATE_IDENTITY,
   input: {
     id: column('predicate', 'id', 'required'),
@@ -18,7 +18,7 @@ export const CHANGE_PREDICATE: CommandDefinition<ChangePredicate> = {
     packages: texts("The packages it uses, by their names in the product's package.json files. Replaces the list.", 'optional'),
   },
   handler: changePredicate,
-};
+} satisfies CommandDefinition<ChangePredicate>;
 
 /** Changes the predicate's columns, links and packages. */
 export function changePredicate(tx: Transaction, input: ChangePredicate): void {

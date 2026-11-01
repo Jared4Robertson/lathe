@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { BusinessOutcomePage } from '../../../../lathe/src/authoring/business-outcome/read-model';
 import { Button } from '../../components/Button';
-import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
+import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, formFields, LONG, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
-import { useWriter } from '../../edit/write';
+import { useWriter, type CommandInputs } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendBusinessOutcome, type BusinessOutcomeCommands } from './commands';
+import { BUSINESS_OUTCOME_FIELDS } from './fields.generated';
 import { useNextBusinessOutcomeId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -26,18 +26,12 @@ function measures(index: RecordIndex, product: string): Choice[] {
     .map((r) => ({ id: r.id, title: r.title }));
 }
 
-/** The fields Add and Change take (Change leaves out the ID), in their input's order. */
+/** The fields Add and Change take, from their inputs (Change's key and Add's product are sent by the form itself). */
 function fieldsOf(index: RecordIndex, product: string, adding: boolean): FieldSpec[] {
-  return [
-    ...(adding ? [{ field: 'id', column: 'id', table: 'business_outcome' }] : []),
-    { field: 'title', column: 'title', table: 'business_outcome' },
-    { field: 'statement', column: 'statement', table: 'business_outcome', long: true },
-    { field: 'measure', column: 'measure', table: 'business_outcome', long: true },
-    { field: 'target', column: 'target', table: 'business_outcome', long: true },
-    { field: 'measured_outside', column: 'measured_outside', table: 'business_outcome', long: true },
-    { field: 'notes', column: 'notes', table: 'business_outcome', long: true },
-    { field: 'measured_by', label: 'Measured by', description: 'The tests, or records of the product\'s own kinds, that measure it.', many: measures(index, product) },
-  ];
+  const hints = { statement: LONG, measure: LONG, target: LONG, measured_outside: LONG, notes: LONG, measured_by: { label: 'Measured by', choices: measures(index, product) } };
+  return adding
+    ? formFields(BUSINESS_OUTCOME_FIELDS['/api/business-outcome/add-business-outcome'], ['product_id'], hints)
+    : formFields(BUSINESS_OUTCOME_FIELDS['/api/business-outcome/change-business-outcome'], ['id'], hints);
 }
 
 type Mode = 'view' | 'change' | 'remove';
@@ -61,9 +55,9 @@ export function BusinessOutcomeEditor({ index, page, children }: { index: Record
     return (
       <div className="spec-body">
         <ChangeForm index={index} specs={specs} current={current} id={outcome.id} onDone={back} submit={async (draft) => {
-          const input = changeInput(index, specs, draft, current, { id: outcome.id }, ['measured_outside', 'notes']);
+          const input = changeInput(index, specs, draft, current, { id: outcome.id });
           if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
-          const answer = await sendBusinessOutcome(writer, '/api/business-outcome/change-business-outcome', input as unknown as BusinessOutcomeCommands['/api/business-outcome/change-business-outcome']);
+          const answer = await writer.command('/api/business-outcome/change-business-outcome', input as unknown as CommandInputs['/api/business-outcome/change-business-outcome']);
           if (answer.ok) { announce(`Saved ${outcome.id}`); back(); }
           return answer;
         }} />
@@ -78,7 +72,7 @@ export function BusinessOutcomeEditor({ index, page, children }: { index: Record
       </div>
       {mode === 'remove' && (
         <RemoveQuestion index={index} id={outcome.id} label="business outcome" goes={[]} then={addressOf(outcome.product_id)} onCancel={back}
-          remove={() => sendBusinessOutcome(writer, '/api/business-outcome/remove-business-outcome', { id: outcome.id })} />
+          remove={() => writer.command('/api/business-outcome/remove-business-outcome', { id: outcome.id })} />
       )}
       {children}
     </>
@@ -114,7 +108,7 @@ export function AddBusinessOutcomeForm({ index, parent, onDone }: { index: Recor
   const specs = fieldsOf(index, parent, true);
   const submit = async () => {
     const input = addInput(index, specs, draft, { product_id: parent });
-    const answer = await sendBusinessOutcome(writer, '/api/business-outcome/add-business-outcome', input as unknown as BusinessOutcomeCommands['/api/business-outcome/add-business-outcome']);
+    const answer = await writer.command('/api/business-outcome/add-business-outcome', input as unknown as CommandInputs['/api/business-outcome/add-business-outcome']);
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;
   };

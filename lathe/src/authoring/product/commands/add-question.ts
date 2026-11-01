@@ -8,7 +8,7 @@ import { ADD_QUESTION_IDENTITY } from './identities.generated.ts';
 
 export type AddQuestion = Pick<QuestionRow, 'id' | 'title' | 'product_id' | 'domain_id' | 'owner' | 'description'> & { about?: string[] };
 
-export const ADD_QUESTION: CommandDefinition<AddQuestion> = {
+export const ADD_QUESTION = {
   ...ADD_QUESTION_IDENTITY,
   input: {
     id: column('question', 'id', 'required'),
@@ -20,7 +20,7 @@ export const ADD_QUESTION: CommandDefinition<AddQuestion> = {
     about: ids('The records it is about, of its own product.', 'optional'),
   },
   handler: addQuestion,
-};
+} satisfies CommandDefinition<AddQuestion>;
 
 /** Adds the question to the product it sits in. */
 export function addQuestion(tx: Transaction, input: AddQuestion): void {

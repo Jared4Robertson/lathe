@@ -7,7 +7,7 @@ import { ADD_SPECIFICATION_IDENTITY } from './identities.generated.ts';
 
 export type AddSpecification = Pick<SpecificationRow, 'id' | 'title' | 'statement'> & { reads?: string[] };
 
-export const ADD_SPECIFICATION: CommandDefinition<AddSpecification> = {
+export const ADD_SPECIFICATION = {
   ...ADD_SPECIFICATION_IDENTITY,
   input: {
     id: column('specification', 'id', 'required'),
@@ -16,7 +16,7 @@ export const ADD_SPECIFICATION: CommandDefinition<AddSpecification> = {
     reads: ids('The aggregates it reads, of its own domain.', 'optional'),
   },
   handler: addSpecification,
-};
+} satisfies CommandDefinition<AddSpecification>;
 
 export function addSpecification(tx: Transaction, input: AddSpecification): void {
   const specifications = new SpecificationRepository(tx);

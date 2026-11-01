@@ -6,13 +6,13 @@ import { REMOVE_STANDARD_IDENTITY } from './identities.generated.ts';
 /** The standard to remove. */
 export type RemoveStandard = { id: string };
 
-export const REMOVE_STANDARD: CommandDefinition<RemoveStandard> = {
+export const REMOVE_STANDARD = {
   ...REMOVE_STANDARD_IDENTITY,
   input: {
     id: column('standard', 'id', 'required'),
   },
   handler: removeStandard,
-};
+} satisfies CommandDefinition<RemoveStandard>;
 
 /** Removes the standard whole. */
 export function removeStandard(tx: Transaction, input: RemoveStandard): void {

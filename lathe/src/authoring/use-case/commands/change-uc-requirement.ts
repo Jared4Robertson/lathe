@@ -9,7 +9,7 @@ import { CHANGE_UC_REQUIREMENT_IDENTITY } from './identities.generated.ts';
 /** The requirement's changes: a column given is set, null clears an optional one. */
 export type ChangeUcRequirement = Pick<UcRequirementRow, 'id'> & { title?: string; statement?: string; group_name?: string | null };
 
-export const CHANGE_UC_REQUIREMENT: CommandDefinition<ChangeUcRequirement> = {
+export const CHANGE_UC_REQUIREMENT = {
   ...CHANGE_UC_REQUIREMENT_IDENTITY,
   input: {
     id: column('uc_requirement', 'id', 'required'),
@@ -18,7 +18,7 @@ export const CHANGE_UC_REQUIREMENT: CommandDefinition<ChangeUcRequirement> = {
     group_name: column('uc_requirement', 'group_name', 'clearable'),
   },
   handler: changeUcRequirement,
-};
+} satisfies CommandDefinition<ChangeUcRequirement>;
 
 /** Changes the requirement's own columns. */
 export function changeUcRequirement(tx: Transaction, input: ChangeUcRequirement): void {

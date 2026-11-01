@@ -6,12 +6,11 @@ import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
 import { AddMenu } from '../../edit/AddMenu';
-import { useWriter, type Writer } from '../../edit/write';
+import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendSpecification, type SpecificationCommands, type SpecificationRoute } from './commands';
 import { useNextSpecificationId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -84,28 +83,28 @@ function currentOf(page: SpecificationPage, kind: SpecificationKind): Record<str
 }
 
 /** Each kind's Change command, and the fields it may clear with null. */
-const CHANGE: Record<SpecificationKind, { route: SpecificationRoute; clearable: readonly string[] }> = {
+const CHANGE: Record<SpecificationKind, { route: CommandRoute; clearable: readonly string[] }> = {
   specification: { route: '/api/specification/change-specification', clearable: [] },
   predicate: { route: '/api/specification/change-predicate', clearable: ['file'] },
   specification_test: { route: '/api/specification/change-specification-test', clearable: ['file', 'manual_reason', 'size', 'smoke', 'external', 'notes'] },
 };
 
 /** Each kind's Add command. */
-const ADD: Record<SpecificationKind, SpecificationRoute> = {
+const ADD: Record<SpecificationKind, CommandRoute> = {
   specification: '/api/specification/add-specification',
   predicate: '/api/specification/add-predicate',
   specification_test: '/api/specification/add-specification-test',
 };
 
 /** Each kind's Remove command. */
-const REMOVE: Record<SpecificationKind, SpecificationRoute> = {
+const REMOVE: Record<SpecificationKind, CommandRoute> = {
   specification: '/api/specification/remove-specification',
   predicate: '/api/specification/remove-predicate',
   specification_test: '/api/specification/remove-specification-test',
 };
 
 /** Sends a command whose input this form has built to its kind's shape: the route names the type it takes. */
-const send = (writer: Writer, route: SpecificationRoute, input: Record<string, unknown>): Promise<WriteAnswer> => sendSpecification(writer, route, input as unknown as SpecificationCommands[typeof route]);
+const send = (writer: Writer, route: CommandRoute, input: Record<string, unknown>): Promise<WriteAnswer> => writer.command(route, input as unknown as CommandInputs[typeof route]);
 
 type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: Inside } | { mode: 'remove' };
 
@@ -149,7 +148,7 @@ export function SpecificationEditor({ index, page, children }: { index: RecordIn
       </div>
       {mode.mode === 'remove' && (
         <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={goes} then={addressOf(then)} onCancel={back}
-          remove={() => sendSpecification(writer, REMOVE[kind], { id })} />
+          remove={() => writer.command(REMOVE[kind], { id })} />
       )}
       {children}
     </>

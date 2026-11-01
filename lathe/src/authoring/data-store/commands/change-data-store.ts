@@ -8,7 +8,7 @@ import { CHANGE_DATA_STORE_IDENTITY } from './identities.generated.ts';
 /** The data store's changes: a column given is set; provided_by given sets the integration, null clears it. */
 export type ChangeDataStore = Pick<DataStoreRow, 'id'> & { title?: DataStoreRow['title']; kind?: DataStoreRow['kind']; description?: DataStoreRow['description']; provided_by?: string | null };
 
-export const CHANGE_DATA_STORE: CommandDefinition<ChangeDataStore> = {
+export const CHANGE_DATA_STORE = {
   ...CHANGE_DATA_STORE_IDENTITY,
   input: {
     id: column('data_store', 'id', 'required'),
@@ -18,7 +18,7 @@ export const CHANGE_DATA_STORE: CommandDefinition<ChangeDataStore> = {
     provided_by: id('The integration that reaches it, when it is a service someone else runs that the user must provide.', 'clearable'),
   },
   handler: changeDataStore,
-};
+} satisfies CommandDefinition<ChangeDataStore>;
 
 /** Changes the data store's columns and the integration that reaches it. */
 export function changeDataStore(tx: Transaction, input: ChangeDataStore): void {

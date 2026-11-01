@@ -6,13 +6,13 @@ import { REMOVE_QUERY_HANDLER_IDENTITY } from './identities.generated.ts';
 /** The query handler to remove. */
 export type RemoveQueryHandler = { id: string };
 
-export const REMOVE_QUERY_HANDLER: CommandDefinition<RemoveQueryHandler> = {
+export const REMOVE_QUERY_HANDLER = {
   ...REMOVE_QUERY_HANDLER_IDENTITY,
   input: {
     id: column('query_handler', 'id', 'required'),
   },
   handler: removeQueryHandler,
-};
+} satisfies CommandDefinition<RemoveQueryHandler>;
 
 /** Removes the handler from its read model. */
 export function removeQueryHandler(tx: Transaction, input: RemoveQueryHandler): void {

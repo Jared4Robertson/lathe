@@ -4,12 +4,11 @@ import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
-import { useWriter } from '../../edit/write';
+import { useWriter, type CommandInputs } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendEntryPoint, type EntryPointCommands } from './commands';
 import { useNextEntryPointId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -60,7 +59,7 @@ export function EntryPointEditor({ index, page, children }: { index: RecordIndex
     const submit = async (draft: Draft) => {
       const input = changeInput(index, specs, draft, current, { id: entryPoint.id }, ['file']);
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
-      const answer = await sendEntryPoint(writer, '/api/entry-point/change-entry-point', input as unknown as EntryPointCommands['/api/entry-point/change-entry-point']);
+      const answer = await writer.command('/api/entry-point/change-entry-point', input as unknown as CommandInputs['/api/entry-point/change-entry-point']);
       if (answer.ok) { announce(`Saved ${entryPoint.id}`); back(); }
       return answer;
     };
@@ -74,7 +73,7 @@ export function EntryPointEditor({ index, page, children }: { index: RecordIndex
       </div>
       {mode === 'remove' && (
         <RemoveQuestion index={index} id={entryPoint.id} label="entry point" goes={[]} then={addressOf(entryPoint.domain_id)} onCancel={back}
-          remove={() => sendEntryPoint(writer, '/api/entry-point/remove-entry-point', { id: entryPoint.id })} />
+          remove={() => writer.command('/api/entry-point/remove-entry-point', { id: entryPoint.id })} />
       )}
       {children}
     </>
@@ -110,7 +109,7 @@ export function AddEntryPointForm({ index, parent, onDone }: { index: RecordInde
   const specs = fieldsOf(index, parent, true);
   const submit = async () => {
     const input = addInput(index, specs, draft, { domain_id: parent });
-    const answer = await sendEntryPoint(writer, '/api/entry-point/add-entry-point', input as unknown as EntryPointCommands['/api/entry-point/add-entry-point']);
+    const answer = await writer.command('/api/entry-point/add-entry-point', input as unknown as CommandInputs['/api/entry-point/add-entry-point']);
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;
   };

@@ -8,7 +8,7 @@ import { ADD_ADAPTER_IDENTITY } from './identities.generated.ts';
 
 export type AddAdapter = Pick<AdapterRow, 'id' | 'title' | 'integration_id' | 'description' | 'file'> & { meets?: string[]; packages?: string[] };
 
-export const ADD_ADAPTER: CommandDefinition<AddAdapter> = {
+export const ADD_ADAPTER = {
   ...ADD_ADAPTER_IDENTITY,
   input: {
     id: column('adapter', 'id', 'required'),
@@ -20,7 +20,7 @@ export const ADD_ADAPTER: CommandDefinition<AddAdapter> = {
     packages: texts("The packages it uses, each listed in one of the product's package.json files.", 'optional'),
   },
   handler: addAdapter,
-};
+} satisfies CommandDefinition<AddAdapter>;
 
 export function addAdapter(tx: Transaction, input: AddAdapter): void {
   const integrations = new IntegrationRepository(tx);

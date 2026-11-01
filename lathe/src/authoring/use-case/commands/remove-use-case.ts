@@ -6,13 +6,13 @@ import { REMOVE_USE_CASE_IDENTITY } from './identities.generated.ts';
 /** The use case to remove. */
 export type RemoveUseCase = { id: string };
 
-export const REMOVE_USE_CASE: CommandDefinition<RemoveUseCase> = {
+export const REMOVE_USE_CASE = {
   ...REMOVE_USE_CASE_IDENTITY,
   input: {
     id: column('use_case', 'id', 'required'),
   },
   handler: removeUseCase,
-};
+} satisfies CommandDefinition<RemoveUseCase>;
 
 /** Removes the use case whole. */
 export function removeUseCase(tx: Transaction, input: RemoveUseCase): void {

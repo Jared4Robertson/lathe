@@ -6,12 +6,11 @@ import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import { IdField, type Choice } from '../../edit/fields';
 import { AddMenu } from '../../edit/AddMenu';
-import { useWriter, type Writer } from '../../edit/write';
+import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendEndpoint, type EndpointCommands, type EndpointRoute } from './commands';
 import { useNextEndpointId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -113,7 +112,7 @@ function currentOf(page: EndpointPage, kind: EndpointKind, id: string): Record<s
 }
 
 /** Each kind's Change command, and the fields it may clear with null. */
-const CHANGE: Record<EndpointKind, { route: EndpointRoute; clearable: readonly string[] }> = {
+const CHANGE: Record<EndpointKind, { route: CommandRoute; clearable: readonly string[] }> = {
   endpoint: { route: '/api/endpoint/change-endpoint', clearable: ['notes'] },
   api_requirement: { route: '/api/endpoint/change-api-requirement', clearable: ['group_name'] },
   endpoint_handler: { route: '/api/endpoint/change-endpoint-handler', clearable: ['file'] },
@@ -121,14 +120,14 @@ const CHANGE: Record<EndpointKind, { route: EndpointRoute; clearable: readonly s
 };
 
 /** Each kind's Add command (an endpoint's names its parent by the parent's kind, in AddEndpointForm), and the field that names its parent. */
-const ADD: Record<Exclude<EndpointKind, 'endpoint'>, { route: EndpointRoute; parent: string }> = {
+const ADD: Record<Exclude<EndpointKind, 'endpoint'>, { route: CommandRoute; parent: string }> = {
   api_requirement: { route: '/api/endpoint/add-api-requirement', parent: 'endpoint_id' },
   endpoint_handler: { route: '/api/endpoint/add-endpoint-handler', parent: 'endpoint_id' },
   endpoint_test: { route: '/api/endpoint/add-endpoint-test', parent: 'api_requirement_id' },
 };
 
 /** Each kind's Remove command. */
-const REMOVE: Record<EndpointKind, EndpointRoute> = {
+const REMOVE: Record<EndpointKind, CommandRoute> = {
   endpoint: '/api/endpoint/remove-endpoint',
   api_requirement: '/api/endpoint/remove-api-requirement',
   endpoint_handler: '/api/endpoint/remove-endpoint-handler',
@@ -136,7 +135,7 @@ const REMOVE: Record<EndpointKind, EndpointRoute> = {
 };
 
 /** Sends a command whose input this form has built to its kind's shape: the route names the type it takes. */
-const send = (writer: Writer, route: EndpointRoute, input: Record<string, unknown>): Promise<WriteAnswer> => sendEndpoint(writer, route, input as unknown as EndpointCommands[typeof route]);
+const send = (writer: Writer, route: CommandRoute, input: Record<string, unknown>): Promise<WriteAnswer> => writer.command(route, input as unknown as CommandInputs[typeof route]);
 
 /** What goes with a record when it is removed, inside the endpoint: what sits under it. */
 function goesWith(page: EndpointPage, kind: EndpointKind, id: string): string[] {
@@ -192,7 +191,7 @@ export function EndpointEditor({ index, page, children }: { index: RecordIndex; 
       </div>
       {mode.mode === 'remove' && (
         <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={goesWith(page, kind, id)} then={addressOf(parentOf(page, kind, id))} onCancel={back}
-          remove={() => sendEndpoint(writer, REMOVE[kind], { id })} />
+          remove={() => writer.command(REMOVE[kind], { id })} />
       )}
       {children}
     </>
@@ -252,7 +251,7 @@ function MoveForm({ index, page, writer, onDone }: { index: RecordIndex; page: E
   const submit = async () => {
     if (target === exposes) { announce('Nothing changed'); onDone(); return null; }
     const by = index.byId.get(target)?.kind === 'query' ? 'query_id' : 'command_id';
-    const answer = await sendEndpoint(writer, MOVE.endpoint!, { id: endpoint.id, [by]: target });
+    const answer = await writer.command(MOVE.endpoint!, { id: endpoint.id, [by]: target });
     if (answer.ok) { announce(`Moved ${endpoint.id}`); onDone(); }
     return answer;
   };

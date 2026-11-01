@@ -9,7 +9,7 @@ import { CHANGE_REPOSITORY_IDENTITY } from './identities.generated.ts';
 /** The repository's changes: a column given is set, null clears an optional one or the aggregate it persists; a list given replaces the list. */
 export type ChangeRepository = Pick<RepositoryRow, 'id'> & { title?: RepositoryRow['title']; file?: RepositoryRow['file'] | null; description?: RepositoryRow['description']; persists?: string | null; stored_in?: string | null; meets?: string[]; packages?: string[] };
 
-export const CHANGE_REPOSITORY: CommandDefinition<ChangeRepository> = {
+export const CHANGE_REPOSITORY = {
   ...CHANGE_REPOSITORY_IDENTITY,
   input: {
     id: column('repository', 'id', 'required'),
@@ -22,7 +22,7 @@ export const CHANGE_REPOSITORY: CommandDefinition<ChangeRepository> = {
     packages: texts("The packages it uses, by their names in the product's package.json files. Replaces the list.", 'optional'),
   },
   handler: changeRepository,
-};
+} satisfies CommandDefinition<ChangeRepository>;
 
 /** Changes the repository's columns, links and packages. */
 export function changeRepository(tx: Transaction, input: ChangeRepository): void {

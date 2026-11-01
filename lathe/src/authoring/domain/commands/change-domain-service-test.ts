@@ -9,7 +9,7 @@ import { CHANGE_DOMAIN_SERVICE_TEST_IDENTITY } from './identities.generated.ts';
 /** The test's changes: a column given is set, null clears an optional one; starts_from, when given, replaces the list. */
 export type ChangeDomainServiceTest = Pick<DomainServiceTestRow, 'id'> & { title?: DomainServiceTestRow['title']; level?: DomainServiceTestRow['level']; state?: DomainServiceTestRow['state']; file?: DomainServiceTestRow['file'] | null; manual_reason?: DomainServiceTestRow['manual_reason'] | null; size?: DomainServiceTestRow['size'] | null; smoke?: DomainServiceTestRow['smoke'] | null; external?: DomainServiceTestRow['external'] | null; when?: DomainServiceTestRow['when']; then?: DomainServiceTestRow['then']; notes?: DomainServiceTestRow['notes'] | null; starts_from?: string[] };
 
-export const CHANGE_DOMAIN_SERVICE_TEST: CommandDefinition<ChangeDomainServiceTest> = {
+export const CHANGE_DOMAIN_SERVICE_TEST = {
   ...CHANGE_DOMAIN_SERVICE_TEST_IDENTITY,
   input: {
     id: column('domain_service_test', 'id', 'required'),
@@ -27,7 +27,7 @@ export const CHANGE_DOMAIN_SERVICE_TEST: CommandDefinition<ChangeDomainServiceTe
     starts_from: ids('The test data sets it starts from. Replaces the list.', 'optional'),
   },
   handler: changeDomainServiceTest,
-};
+} satisfies CommandDefinition<ChangeDomainServiceTest>;
 
 /** Changes the test's columns and the data sets it starts from. */
 export function changeDomainServiceTest(tx: Transaction, input: ChangeDomainServiceTest): void {

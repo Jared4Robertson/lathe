@@ -8,7 +8,7 @@ import { CHANGE_SPECIFICATION_IDENTITY } from './identities.generated.ts';
 /** The specification's changes: a column given is set; reads, when given, replaces the list. */
 export type ChangeSpecification = Pick<SpecificationRow, 'id'> & { title?: SpecificationRow['title']; statement?: SpecificationRow['statement']; reads?: string[] };
 
-export const CHANGE_SPECIFICATION: CommandDefinition<ChangeSpecification> = {
+export const CHANGE_SPECIFICATION = {
   ...CHANGE_SPECIFICATION_IDENTITY,
   input: {
     id: column('specification', 'id', 'required'),
@@ -17,7 +17,7 @@ export const CHANGE_SPECIFICATION: CommandDefinition<ChangeSpecification> = {
     reads: ids('The aggregates it reads, of its own domain. Replaces the list.', 'optional'),
   },
   handler: changeSpecification,
-};
+} satisfies CommandDefinition<ChangeSpecification>;
 
 /** Changes the specification's columns and the aggregates it reads. */
 export function changeSpecification(tx: Transaction, input: ChangeSpecification): void {

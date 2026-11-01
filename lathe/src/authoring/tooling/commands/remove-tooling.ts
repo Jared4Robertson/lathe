@@ -6,13 +6,13 @@ import { REMOVE_TOOLING_IDENTITY } from './identities.generated.ts';
 /** The tooling record to remove. */
 export type RemoveTooling = { id: string };
 
-export const REMOVE_TOOLING: CommandDefinition<RemoveTooling> = {
+export const REMOVE_TOOLING = {
   ...REMOVE_TOOLING_IDENTITY,
   input: {
     id: column('tooling', 'id', 'required'),
   },
   handler: removeTooling,
-};
+} satisfies CommandDefinition<RemoveTooling>;
 
 /** Removes the tooling record whole. */
 export function removeTooling(tx: Transaction, input: RemoveTooling): void {

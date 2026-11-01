@@ -2,8 +2,6 @@ import type { ServedData } from './read-view';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { ENTRY_POINT_COMMANDS } from '../../lathe/src/authoring/entry-point/commands/index';
-import type { EntryPointCommands } from '../src/authoring/entry-point/commands';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
@@ -30,11 +28,6 @@ describe('LA-V112-R01-T01 an entry point\'s page reads it through its own query,
     expect(requests).toContain('GET /api/entry-point/get-entry-point?id=DM-SHOP-ENTRY01');
     expect(main().querySelector('[data-field="file"]')).toHaveTextContent('src/server.ts');
     expect(within(main()).getByRole('heading', { name: /^Packages/ }).closest('section')).toHaveTextContent('express');
-  });
-
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof EntryPointCommands)[] = ['/api/entry-point/add-entry-point', '/api/entry-point/change-entry-point', '/api/entry-point/remove-entry-point'];
-    expect([...routes].sort()).toEqual(ENTRY_POINT_COMMANDS.map((c) => c.route).sort());
   });
 });
 

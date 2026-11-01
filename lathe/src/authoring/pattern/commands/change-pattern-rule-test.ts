@@ -10,7 +10,7 @@ import { CHANGE_PATTERN_RULE_TEST_IDENTITY } from './identities.generated.ts';
 /** The test's changes: a column given is set, null clears an optional one; starts_from, when given, replaces the list. */
 export type ChangePatternRuleTest = Pick<PatternRuleTestRow, 'id'> & { title?: PatternRuleTestRow['title']; domain_id?: PatternRuleTestRow['domain_id']; level?: PatternRuleTestRow['level']; state?: PatternRuleTestRow['state']; file?: PatternRuleTestRow['file'] | null; manual_reason?: PatternRuleTestRow['manual_reason'] | null; size?: PatternRuleTestRow['size'] | null; smoke?: PatternRuleTestRow['smoke'] | null; external?: PatternRuleTestRow['external'] | null; when?: PatternRuleTestRow['when']; then?: PatternRuleTestRow['then']; notes?: PatternRuleTestRow['notes'] | null; starts_from?: string[] };
 
-export const CHANGE_PATTERN_RULE_TEST: CommandDefinition<ChangePatternRuleTest> = {
+export const CHANGE_PATTERN_RULE_TEST = {
   ...CHANGE_PATTERN_RULE_TEST_IDENTITY,
   input: {
     id: column('pattern_rule_test', 'id', 'required'),
@@ -29,7 +29,7 @@ export const CHANGE_PATTERN_RULE_TEST: CommandDefinition<ChangePatternRuleTest> 
     starts_from: ids('The test data sets it starts from. Replaces the list.', 'optional'),
   },
   handler: changePatternRuleTest,
-};
+} satisfies CommandDefinition<ChangePatternRuleTest>;
 
 /** Changes the test's columns and the data sets it starts from. */
 export function changePatternRuleTest(tx: Transaction, input: ChangePatternRuleTest): void {

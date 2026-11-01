@@ -6,12 +6,11 @@ import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
 import { AddMenu } from '../../edit/AddMenu';
-import { useWriter, type Writer } from '../../edit/write';
+import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendValueObject, type ValueObjectCommands, type ValueObjectRoute } from './commands';
 import { useNextValueObjectId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -97,7 +96,7 @@ function currentOf(page: ValueObjectPage, kind: ValueObjectKind, id: string): Re
 }
 
 /** Each kind's Change command, and the fields it may clear with null. */
-const CHANGE: Record<ValueObjectKind, { route: ValueObjectRoute; clearable: readonly string[] }> = {
+const CHANGE: Record<ValueObjectKind, { route: CommandRoute; clearable: readonly string[] }> = {
   value_object: { route: '/api/value-object/change-value-object', clearable: [] },
   constraint: { route: '/api/value-object/change-constraint', clearable: [] },
   value_type: { route: '/api/value-object/change-value-type', clearable: ['file'] },
@@ -105,14 +104,14 @@ const CHANGE: Record<ValueObjectKind, { route: ValueObjectRoute; clearable: read
 };
 
 /** Each kind's Add command, and the field that names its parent. */
-const ADD: Record<Inside, { route: ValueObjectRoute; parent: string }> = {
+const ADD: Record<Inside, { route: CommandRoute; parent: string }> = {
   constraint: { route: '/api/value-object/add-constraint', parent: 'value_object_id' },
   value_type: { route: '/api/value-object/add-value-type', parent: 'value_object_id' },
   constraint_test: { route: '/api/value-object/add-constraint-test', parent: 'constraint_id' },
 };
 
 /** Each kind's Remove command. */
-const REMOVE: Record<ValueObjectKind, ValueObjectRoute> = {
+const REMOVE: Record<ValueObjectKind, CommandRoute> = {
   value_object: '/api/value-object/remove-value-object',
   constraint: '/api/value-object/remove-constraint',
   value_type: '/api/value-object/remove-value-type',
@@ -120,7 +119,7 @@ const REMOVE: Record<ValueObjectKind, ValueObjectRoute> = {
 };
 
 /** Sends a command whose input this form has built to its kind's shape: the route names the type it takes. */
-const send = (writer: Writer, route: ValueObjectRoute, input: Record<string, unknown>): Promise<WriteAnswer> => sendValueObject(writer, route, input as unknown as ValueObjectCommands[typeof route]);
+const send = (writer: Writer, route: CommandRoute, input: Record<string, unknown>): Promise<WriteAnswer> => writer.command(route, input as unknown as CommandInputs[typeof route]);
 
 /** The kinds added under a record of each kind, inside the value object: one of a kind it holds one of only while it has none. */
 function addedUnder(page: ValueObjectPage, kind: ValueObjectKind, id: string): Inside[] {
@@ -182,7 +181,7 @@ export function ValueObjectEditor({ index, page, children }: { index: RecordInde
       </div>
       {mode.mode === 'remove' && (
         <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={goesWith(page, kind, id)} then={addressOf(parentOf(index, page, kind, id))} onCancel={back}
-          remove={() => sendValueObject(writer, REMOVE[kind], { id })} />
+          remove={() => writer.command(REMOVE[kind], { id })} />
       )}
       {children}
     </>

@@ -4,12 +4,11 @@ import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
-import { useWriter } from '../../edit/write';
+import { useWriter, type CommandInputs } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendDataStore, type DataStoreCommands } from './commands';
 import { useNextDataStoreId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -57,7 +56,7 @@ export function DataStoreEditor({ index, page, children }: { index: RecordIndex;
     const submit = async (draft: Draft) => {
       const input = changeInput(index, specs, draft, current, { id: store.id }, ['provided_by']);
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
-      const answer = await sendDataStore(writer, '/api/data-store/change-data-store', input as unknown as DataStoreCommands['/api/data-store/change-data-store']);
+      const answer = await writer.command('/api/data-store/change-data-store', input as unknown as CommandInputs['/api/data-store/change-data-store']);
       if (answer.ok) { announce(`Saved ${store.id}`); back(); }
       return answer;
     };
@@ -71,7 +70,7 @@ export function DataStoreEditor({ index, page, children }: { index: RecordIndex;
       </div>
       {mode === 'remove' && (
         <RemoveQuestion index={index} id={store.id} label="data store" goes={[]} then={addressOf(page.parent.id)} onCancel={back}
-          remove={() => sendDataStore(writer, '/api/data-store/remove-data-store', { id: store.id })} />
+          remove={() => writer.command('/api/data-store/remove-data-store', { id: store.id })} />
       )}
       {children}
     </>
@@ -109,7 +108,7 @@ export function AddDataStoreForm({ index, parent, onDone }: { index: RecordIndex
   const specs = fieldsOf(index, product, true);
   const submit = async () => {
     const input = addInput(index, specs, draft, { [under?.kind === 'domain' ? 'domain_id' : 'product_id']: parent });
-    const answer = await sendDataStore(writer, '/api/data-store/add-data-store', input as unknown as DataStoreCommands['/api/data-store/add-data-store']);
+    const answer = await writer.command('/api/data-store/add-data-store', input as unknown as CommandInputs['/api/data-store/add-data-store']);
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;
   };

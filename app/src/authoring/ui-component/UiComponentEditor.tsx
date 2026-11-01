@@ -4,12 +4,11 @@ import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
-import { useWriter } from '../../edit/write';
+import { useWriter, type CommandInputs } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendUiComponent, type UiComponentCommands } from './commands';
 import { useNextUiComponentId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -61,7 +60,7 @@ export function UiComponentEditor({ index, page, children }: { index: RecordInde
     const submit = async (draft: Draft) => {
       const input = changeInput(index, specs, draft, current, { id }, ['file']);
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
-      const answer = await sendUiComponent(writer, '/api/ui-component/change-ui-component', input as unknown as UiComponentCommands['/api/ui-component/change-ui-component']);
+      const answer = await writer.command('/api/ui-component/change-ui-component', input as unknown as CommandInputs['/api/ui-component/change-ui-component']);
       if (answer.ok) { announce(`Saved ${id}`); back(); }
       return answer;
     };
@@ -75,7 +74,7 @@ export function UiComponentEditor({ index, page, children }: { index: RecordInde
       </div>
       {mode === 'remove' && (
         <RemoveQuestion index={index} id={id} label="UI component" goes={[]} then={addressOf(product)} onCancel={back}
-          remove={() => sendUiComponent(writer, '/api/ui-component/remove-ui-component', { id })} />
+          remove={() => writer.command('/api/ui-component/remove-ui-component', { id })} />
       )}
       {children}
     </>
@@ -111,7 +110,7 @@ export function AddUiComponentForm({ index, parent, onDone }: { index: RecordInd
   const specs = fieldsOf(index, parent, true);
   const submit = async () => {
     const input = addInput(index, specs, draft, {});
-    const answer = await sendUiComponent(writer, '/api/ui-component/add-ui-component', input as unknown as UiComponentCommands['/api/ui-component/add-ui-component']);
+    const answer = await writer.command('/api/ui-component/add-ui-component', input as unknown as CommandInputs['/api/ui-component/add-ui-component']);
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;
   };

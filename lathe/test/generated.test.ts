@@ -42,8 +42,9 @@ describe('LA-STD-CODE-R11-T01 the generated files are a fresh generation from th
     expect(identities.map((d) => d.id).sort()).toEqual([...ALL_COMMANDS, ...ALL_QUERIES].map((d) => d.id).sort());
     const wrong = identities.flatMap((d) => {
       const text = read(d.file);
-      const start = text.search(new RegExp(`^export const ${d.constant}: (Command|Query)Definition<`, 'm'));
-      const body = start < 0 ? '' : text.slice(start, text.indexOf('\n};', start));
+      // A command is written `satisfies CommandDefinition<T>` (its route kept literal for the app), a query annotated.
+      const start = text.search(new RegExp(`^export const ${d.constant}(: QueryDefinition<.*)? = \\{$`, 'm'));
+      const body = start < 0 ? '' : text.slice(start, text.indexOf('\n}', start));
       if (!body) return [`${d.file} defines no ${d.constant}`];
       return [
         ...(body.includes(`\n  ...${d.identity},\n`) ? [] : [`${d.constant} does not spread ${d.identity}`]),
@@ -95,10 +96,10 @@ describe('LA-STD-CODE-R11-T02 a command or query with records and no definition 
   route: '/api/widget/add-widget',
 } as const;`);
     expect(files.get('lathe/src/demo/widget/queries.generated.ts')).toContain("slice: { aggregate: 'XX-A1', name: 'widget' },");
-    expect(files.get('lathe/src/demo/widget/commands/index.ts')).toContain('export const WIDGET_COMMANDS: readonly AnyCommand[] = [\n  ADD_WIDGET,\n];');
+    expect(files.get('lathe/src/demo/widget/commands/index.ts')).toContain('export const WIDGET_COMMANDS = [\n  ADD_WIDGET,\n] as const satisfies readonly AnyCommand[];');
     expect(files.get('lathe/src/commands.ts')).toContain("import { GET_WIDGET } from './demo/widget/queries.ts';");
     const scaffolds = scaffoldFiles(repo);
-    expect(scaffolds.get('lathe/src/demo/widget/commands/add-widget.ts')).toContain('export const ADD_WIDGET: CommandDefinition<AddWidget> = {\n  ...ADD_WIDGET_IDENTITY,\n  input: {},\n  handler: addWidget,\n};');
+    expect(scaffolds.get('lathe/src/demo/widget/commands/add-widget.ts')).toContain('export const ADD_WIDGET = {\n  ...ADD_WIDGET_IDENTITY,\n  input: {},\n  handler: addWidget,\n} satisfies CommandDefinition<AddWidget>;');
     expect(scaffolds.get('lathe/src/demo/widget/queries.ts')).toContain('export const GET_WIDGET: QueryDefinition<Record<string, never>, never, unknown> = {\n  ...GET_WIDGET_IDENTITY,');
   });
 

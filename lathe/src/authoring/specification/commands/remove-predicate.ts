@@ -6,13 +6,13 @@ import { REMOVE_PREDICATE_IDENTITY } from './identities.generated.ts';
 /** The predicate to remove. */
 export type RemovePredicate = { id: string };
 
-export const REMOVE_PREDICATE: CommandDefinition<RemovePredicate> = {
+export const REMOVE_PREDICATE = {
   ...REMOVE_PREDICATE_IDENTITY,
   input: {
     id: column('predicate', 'id', 'required'),
   },
   handler: removePredicate,
-};
+} satisfies CommandDefinition<RemovePredicate>;
 
 /** Removes the predicate from its specification. */
 export function removePredicate(tx: Transaction, input: RemovePredicate): void {

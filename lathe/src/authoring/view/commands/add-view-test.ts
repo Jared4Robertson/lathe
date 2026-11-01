@@ -6,7 +6,7 @@ import { ADD_VIEW_TEST_IDENTITY } from './identities.generated.ts';
 
 export type AddViewTest = Pick<ViewTestRow, 'id' | 'title' | 'view_requirement_id' | 'level' | 'state' | 'when' | 'then' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'notes'> & { starts_from?: string[] };
 
-export const ADD_VIEW_TEST: CommandDefinition<AddViewTest> = {
+export const ADD_VIEW_TEST = {
   ...ADD_VIEW_TEST_IDENTITY,
   input: {
     id: column('view_test', 'id', 'required'),
@@ -25,7 +25,7 @@ export const ADD_VIEW_TEST: CommandDefinition<AddViewTest> = {
     starts_from: ids('The test data sets it starts from.', 'optional'),
   },
   handler: addViewTest,
-};
+} satisfies CommandDefinition<AddViewTest>;
 
 export function addViewTest(tx: Transaction, input: AddViewTest): void {
   const views = new ViewRepository(tx);

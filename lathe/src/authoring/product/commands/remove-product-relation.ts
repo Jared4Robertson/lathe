@@ -8,7 +8,7 @@ import { REMOVE_PRODUCT_RELATION_IDENTITY } from './identities.generated.ts';
 /** The product relation pair to remove. */
 export type RemoveProductRelation = Pick<ProductRelationRow, 'name' | 'source_kind' | 'target_kind'>;
 
-export const REMOVE_PRODUCT_RELATION: CommandDefinition<RemoveProductRelation> = {
+export const REMOVE_PRODUCT_RELATION = {
   ...REMOVE_PRODUCT_RELATION_IDENTITY,
   input: {
     name: column('product_relation', 'name', 'required'),
@@ -16,7 +16,7 @@ export const REMOVE_PRODUCT_RELATION: CommandDefinition<RemoveProductRelation> =
     target_kind: column('product_relation', 'target_kind', 'required'),
   },
   handler: removeProductRelation,
-};
+} satisfies CommandDefinition<RemoveProductRelation>;
 
 /** Removes the pair from the product that declares it. */
 export function removeProductRelation(tx: Transaction, input: RemoveProductRelation): void {

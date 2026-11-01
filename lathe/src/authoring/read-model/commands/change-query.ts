@@ -9,7 +9,7 @@ import { CHANGE_QUERY_IDENTITY } from './identities.generated.ts';
 /** The query's changes: a column given is set; a list given replaces the list. */
 export type ChangeQuery = Pick<QueryRow, 'id'> & { title?: QueryRow['title']; description?: QueryRow['description']; selects_by?: string[]; calls?: string[] };
 
-export const CHANGE_QUERY: CommandDefinition<ChangeQuery> = {
+export const CHANGE_QUERY = {
   ...CHANGE_QUERY_IDENTITY,
   input: {
     id: column('query', 'id', 'required'),
@@ -19,7 +19,7 @@ export const CHANGE_QUERY: CommandDefinition<ChangeQuery> = {
     calls: ids('The domain services it calls, of its own domain. Replaces the list.', 'optional'),
   },
   handler: changeQuery,
-};
+} satisfies CommandDefinition<ChangeQuery>;
 
 /** Changes the query's columns and links. */
 export function changeQuery(tx: Transaction, input: ChangeQuery): void {

@@ -8,7 +8,7 @@ import { CHANGE_INTEGRATION_IDENTITY } from './identities.generated.ts';
 /** The integration's changes: a column given is set, null clears an optional one. */
 export type ChangeIntegration = Pick<IntegrationRow, 'id'> & { title?: IntegrationRow['title']; description?: IntegrationRow['description']; system?: IntegrationRow['system'] | null };
 
-export const CHANGE_INTEGRATION: CommandDefinition<ChangeIntegration> = {
+export const CHANGE_INTEGRATION = {
   ...CHANGE_INTEGRATION_IDENTITY,
   input: {
     id: column('integration', 'id', 'required'),
@@ -17,7 +17,7 @@ export const CHANGE_INTEGRATION: CommandDefinition<ChangeIntegration> = {
     system: column('integration', 'system', 'clearable'),
   },
   handler: changeIntegration,
-};
+} satisfies CommandDefinition<ChangeIntegration>;
 
 /** Changes the integration's columns. */
 export function changeIntegration(tx: Transaction, input: ChangeIntegration): void {

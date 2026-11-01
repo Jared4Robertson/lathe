@@ -9,7 +9,7 @@ import { CHANGE_COMMAND_HANDLER_IDENTITY } from './identities.generated.ts';
 /** The handler's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeCommandHandler = Pick<CommandHandlerRow, 'id'> & { title?: string; file?: string | null; description?: string; meets?: string[]; packages?: string[] };
 
-export const CHANGE_COMMAND_HANDLER: CommandDefinition<ChangeCommandHandler> = {
+export const CHANGE_COMMAND_HANDLER = {
   ...CHANGE_COMMAND_HANDLER_IDENTITY,
   input: {
     id: column('command_handler', 'id', 'required'),
@@ -20,7 +20,7 @@ export const CHANGE_COMMAND_HANDLER: CommandDefinition<ChangeCommandHandler> = {
     packages: texts('The packages it uses. Replaces the list.', 'optional'),
   },
   handler: changeCommandHandler,
-};
+} satisfies CommandDefinition<ChangeCommandHandler>;
 
 /** Changes the handler's columns and links. */
 export function changeCommandHandler(tx: Transaction, input: ChangeCommandHandler): void {

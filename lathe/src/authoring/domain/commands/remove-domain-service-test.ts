@@ -6,13 +6,13 @@ import { REMOVE_DOMAIN_SERVICE_TEST_IDENTITY } from './identities.generated.ts';
 /** The test to remove. */
 export type RemoveDomainServiceTest = { id: string };
 
-export const REMOVE_DOMAIN_SERVICE_TEST: CommandDefinition<RemoveDomainServiceTest> = {
+export const REMOVE_DOMAIN_SERVICE_TEST = {
   ...REMOVE_DOMAIN_SERVICE_TEST_IDENTITY,
   input: {
     id: column('domain_service_test', 'id', 'required'),
   },
   handler: removeDomainServiceTest,
-};
+} satisfies CommandDefinition<RemoveDomainServiceTest>;
 
 /** Removes the test from its domain service. */
 export function removeDomainServiceTest(tx: Transaction, input: RemoveDomainServiceTest): void {

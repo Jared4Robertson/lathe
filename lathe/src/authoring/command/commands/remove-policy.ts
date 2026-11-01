@@ -6,13 +6,13 @@ import { REMOVE_POLICY_IDENTITY } from './identities.generated.ts';
 /** The policy to remove. */
 export type RemovePolicy = { id: string };
 
-export const REMOVE_POLICY: CommandDefinition<RemovePolicy> = {
+export const REMOVE_POLICY = {
   ...REMOVE_POLICY_IDENTITY,
   input: {
     id: column('policy', 'id', 'required'),
   },
   handler: removePolicy,
-};
+} satisfies CommandDefinition<RemovePolicy>;
 
 /** Removes the policy, its event handler and its test from its command. */
 export function removePolicy(tx: Transaction, input: RemovePolicy): void {

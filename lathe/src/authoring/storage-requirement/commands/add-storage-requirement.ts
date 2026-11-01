@@ -7,7 +7,7 @@ import { ADD_STORAGE_REQUIREMENT_IDENTITY } from './identities.generated.ts';
 
 export type AddStorageRequirement = Pick<StorageRequirementRow, 'id' | 'title' | 'aggregate_id' | 'read_model_id' | 'statement'>;
 
-export const ADD_STORAGE_REQUIREMENT: CommandDefinition<AddStorageRequirement> = {
+export const ADD_STORAGE_REQUIREMENT = {
   ...ADD_STORAGE_REQUIREMENT_IDENTITY,
   input: {
     id: column('storage_requirement', 'id', 'required'),
@@ -17,7 +17,7 @@ export const ADD_STORAGE_REQUIREMENT: CommandDefinition<AddStorageRequirement> =
     statement: column('storage_requirement', 'statement', 'required'),
   },
   handler: addStorageRequirement,
-};
+} satisfies CommandDefinition<AddStorageRequirement>;
 
 export function addStorageRequirement(tx: Transaction, input: AddStorageRequirement): void {
   const requirements = new StorageRequirementRepository(tx);

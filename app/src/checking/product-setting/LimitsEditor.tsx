@@ -2,10 +2,9 @@ import { useRef, useState, type ReactNode } from 'react';
 import type { Limits } from '../../../../lathe/src/checking/product-setting/read-model';
 import { Button } from '../../components/Button';
 import { addInput, CommandForm, draftOf, Fields, type Draft, type FieldSpec } from '../../edit/command-form';
-import { useWriter } from '../../edit/write';
+import { useWriter, type CommandInputs } from '../../edit/write';
 import { useAnnounce } from '../../shell/commands';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
-import { sendProductSetting, type ProductSettingCommands } from './commands';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
 
@@ -48,7 +47,7 @@ function SetLimitsForm({ index, limits, onDone }: { index: RecordIndex; limits: 
   const [draft, setDraft] = useState<Draft>(() => draftOf(FIELDS, { max_children: limits.maxChildren, max_entities_per_aggregate: limits.maxEntitiesPerAggregate }));
   const submit = async () => {
     const input = addInput(index, FIELDS, draft, { product_id: limits.product });
-    const answer = await sendProductSetting(writer, '/api/product-setting/set-limits', input as unknown as ProductSettingCommands['/api/product-setting/set-limits']);
+    const answer = await writer.command('/api/product-setting/set-limits', input as unknown as CommandInputs['/api/product-setting/set-limits']);
     if (answer.ok) { announce(`Set the limits of ${limits.product}`); onDone(); }
     return answer;
   };

@@ -4,12 +4,11 @@ import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
-import { useWriter } from '../../edit/write';
+import { useWriter, type CommandInputs } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendTooling, type ToolingCommands } from './commands';
 import { useNextToolingId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -58,7 +57,7 @@ export function ToolingEditor({ index, page, children }: { index: RecordIndex; p
     const submit = async (draft: Draft) => {
       const input = changeInput(index, specs, draft, current, { id: tooling.id }, ['file']);
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
-      const answer = await sendTooling(writer, '/api/tooling/change-tooling', input as unknown as ToolingCommands['/api/tooling/change-tooling']);
+      const answer = await writer.command('/api/tooling/change-tooling', input as unknown as CommandInputs['/api/tooling/change-tooling']);
       if (answer.ok) { announce(`Saved ${tooling.id}`); back(); }
       return answer;
     };
@@ -72,7 +71,7 @@ export function ToolingEditor({ index, page, children }: { index: RecordIndex; p
       </div>
       {mode === 'remove' && (
         <RemoveQuestion index={index} id={tooling.id} label="tooling record" goes={[]} then={addressOf(tooling.domain_id)} onCancel={back}
-          remove={() => sendTooling(writer, '/api/tooling/remove-tooling', { id: tooling.id })} />
+          remove={() => writer.command('/api/tooling/remove-tooling', { id: tooling.id })} />
       )}
       {children}
     </>
@@ -108,7 +107,7 @@ export function AddToolingForm({ index, parent, onDone }: { index: RecordIndex; 
   const specs = fieldsOf(index, parent, true);
   const submit = async () => {
     const input = addInput(index, specs, draft, { domain_id: parent });
-    const answer = await sendTooling(writer, '/api/tooling/add-tooling', input as unknown as ToolingCommands['/api/tooling/add-tooling']);
+    const answer = await writer.command('/api/tooling/add-tooling', input as unknown as CommandInputs['/api/tooling/add-tooling']);
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;
   };

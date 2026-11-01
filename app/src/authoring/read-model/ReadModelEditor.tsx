@@ -6,13 +6,12 @@ import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
 import { AddMenu } from '../../edit/AddMenu';
-import { useWriter, type Writer } from '../../edit/write';
+import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { adderOf, othersAddedUnder } from '../../record/pages';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendReadModel, type ReadModelCommands, type ReadModelRoute } from './commands';
 import { useNextReadModelId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -100,7 +99,7 @@ function currentOf(page: ReadModelPage, kind: ReadModelKind, id: string): Record
 }
 
 /** Each kind's Change command, and the fields it may clear with null. */
-const CHANGE: Record<ReadModelKind, { route: ReadModelRoute; clearable: readonly string[] }> = {
+const CHANGE: Record<ReadModelKind, { route: CommandRoute; clearable: readonly string[] }> = {
   read_model: { route: '/api/read-model/change-read-model', clearable: [] },
   query: { route: '/api/read-model/change-query', clearable: [] },
   projection: { route: '/api/read-model/change-projection', clearable: ['file'] },
@@ -109,7 +108,7 @@ const CHANGE: Record<ReadModelKind, { route: ReadModelRoute; clearable: readonly
 };
 
 /** Each kind's Add command, and the field that names its parent. */
-const ADD: Record<Inside, { route: ReadModelRoute; parent: string }> = {
+const ADD: Record<Inside, { route: CommandRoute; parent: string }> = {
   query: { route: '/api/read-model/add-query', parent: 'read_model_id' },
   projection: { route: '/api/read-model/add-projection', parent: 'read_model_id' },
   reader: { route: '/api/read-model/add-reader', parent: 'read_model_id' },
@@ -117,7 +116,7 @@ const ADD: Record<Inside, { route: ReadModelRoute; parent: string }> = {
 };
 
 /** Each kind's Remove command. */
-const REMOVE: Record<ReadModelKind, ReadModelRoute> = {
+const REMOVE: Record<ReadModelKind, CommandRoute> = {
   read_model: '/api/read-model/remove-read-model',
   query: '/api/read-model/remove-query',
   projection: '/api/read-model/remove-projection',
@@ -126,7 +125,7 @@ const REMOVE: Record<ReadModelKind, ReadModelRoute> = {
 };
 
 /** Sends a command whose input this form has built to its kind's shape: the route names the type it takes. */
-const send = (writer: Writer, route: ReadModelRoute, input: Record<string, unknown>): Promise<WriteAnswer> => sendReadModel(writer, route, input as unknown as ReadModelCommands[typeof route]);
+const send = (writer: Writer, route: CommandRoute, input: Record<string, unknown>): Promise<WriteAnswer> => writer.command(route, input as unknown as CommandInputs[typeof route]);
 
 /** The kinds added under a record of each kind, inside the read model: one of a kind it holds one of only while it has none. */
 function addedUnder(page: ReadModelPage, kind: ReadModelKind, id: string): Inside[] {
@@ -196,7 +195,7 @@ export function ReadModelEditor({ index, page, children }: { index: RecordIndex;
       </div>
       {mode.mode === 'remove' && (
         <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={goesWith(page, kind, id)} then={addressOf(parentOf(page, kind, id))} onCancel={back}
-          remove={() => sendReadModel(writer, REMOVE[kind], { id })} />
+          remove={() => writer.command(REMOVE[kind], { id })} />
       )}
       {children}
     </>

@@ -9,7 +9,7 @@ import { CHANGE_INVARIANT_IDENTITY } from './identities.generated.ts';
 /** The invariant's changes: a column given is set. */
 export type ChangeInvariant = Pick<InvariantRow, 'id'> & { title?: string; statement?: string };
 
-export const CHANGE_INVARIANT: CommandDefinition<ChangeInvariant> = {
+export const CHANGE_INVARIANT = {
   ...CHANGE_INVARIANT_IDENTITY,
   input: {
     id: column('invariant', 'id', 'required'),
@@ -17,7 +17,7 @@ export const CHANGE_INVARIANT: CommandDefinition<ChangeInvariant> = {
     statement: column('invariant', 'statement', 'optional'),
   },
   handler: changeInvariant,
-};
+} satisfies CommandDefinition<ChangeInvariant>;
 
 /** Changes the invariant's columns. */
 export function changeInvariant(tx: Transaction, input: ChangeInvariant): void {

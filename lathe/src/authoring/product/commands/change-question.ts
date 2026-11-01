@@ -9,7 +9,7 @@ import { CHANGE_QUESTION_IDENTITY } from './identities.generated.ts';
 /** The question's changes: a column given is set; about, when given, replaces the list. */
 export type ChangeQuestion = Pick<QuestionRow, 'id'> & { title?: string; owner?: string; description?: string; about?: string[] };
 
-export const CHANGE_QUESTION: CommandDefinition<ChangeQuestion> = {
+export const CHANGE_QUESTION = {
   ...CHANGE_QUESTION_IDENTITY,
   input: {
     id: column('question', 'id', 'required'),
@@ -19,7 +19,7 @@ export const CHANGE_QUESTION: CommandDefinition<ChangeQuestion> = {
     about: ids('The records it is about, of its own product. Replaces the list.', 'optional'),
   },
   handler: changeQuestion,
-};
+} satisfies CommandDefinition<ChangeQuestion>;
 
 /** Changes the question's columns and what it is about. */
 export function changeQuestion(tx: Transaction, input: ChangeQuestion): void {

@@ -6,13 +6,13 @@ import { REMOVE_TABLE_IDENTITY } from './identities.generated.ts';
 /** The table to remove. */
 export type RemoveTable = { id: string };
 
-export const REMOVE_TABLE: CommandDefinition<RemoveTable> = {
+export const REMOVE_TABLE = {
   ...REMOVE_TABLE_IDENTITY,
   input: {
     id: column('table', 'id', 'required'),
   },
   handler: removeTable,
-};
+} satisfies CommandDefinition<RemoveTable>;
 
 /** Removes the table whole. */
 export function removeTable(tx: Transaction, input: RemoveTable): void {

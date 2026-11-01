@@ -8,7 +8,7 @@ import { ADD_VALUE_TYPE_IDENTITY } from './identities.generated.ts';
 
 export type AddValueType = Pick<ValueTypeRow, 'id' | 'title' | 'value_object_id' | 'file'> & { meets?: string[]; packages?: string[] };
 
-export const ADD_VALUE_TYPE: CommandDefinition<AddValueType> = {
+export const ADD_VALUE_TYPE = {
   ...ADD_VALUE_TYPE_IDENTITY,
   input: {
     id: column('value_type', 'id', 'required'),
@@ -19,7 +19,7 @@ export const ADD_VALUE_TYPE: CommandDefinition<AddValueType> = {
     packages: texts("The packages it uses, by their names in the product's package.json files.", 'optional'),
   },
   handler: addValueType,
-};
+} satisfies CommandDefinition<AddValueType>;
 
 /** Adds the value type to its value object, which has none yet. */
 export function addValueType(tx: Transaction, input: AddValueType): void {

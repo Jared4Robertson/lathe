@@ -9,7 +9,7 @@ import { CHANGE_PATTERN_RULE_IDENTITY } from './identities.generated.ts';
 /** The rule's changes: a column given is set, null clears an optional one. */
 export type ChangePatternRule = Pick<PatternRuleRow, 'id'> & { title?: PatternRuleRow['title']; statement?: PatternRuleRow['statement']; group_name?: PatternRuleRow['group_name'] | null; notes?: PatternRuleRow['notes'] | null };
 
-export const CHANGE_PATTERN_RULE: CommandDefinition<ChangePatternRule> = {
+export const CHANGE_PATTERN_RULE = {
   ...CHANGE_PATTERN_RULE_IDENTITY,
   input: {
     id: column('pattern_rule', 'id', 'required'),
@@ -19,7 +19,7 @@ export const CHANGE_PATTERN_RULE: CommandDefinition<ChangePatternRule> = {
     notes: column('pattern_rule', 'notes', 'clearable'),
   },
   handler: changePatternRule,
-};
+} satisfies CommandDefinition<ChangePatternRule>;
 
 /** Changes the rule's columns. */
 export function changePatternRule(tx: Transaction, input: ChangePatternRule): void {

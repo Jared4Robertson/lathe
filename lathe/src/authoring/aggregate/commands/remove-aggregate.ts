@@ -6,13 +6,13 @@ import { REMOVE_AGGREGATE_IDENTITY } from './identities.generated.ts';
 /** The aggregate to remove. */
 export type RemoveAggregate = { id: string };
 
-export const REMOVE_AGGREGATE: CommandDefinition<RemoveAggregate> = {
+export const REMOVE_AGGREGATE = {
   ...REMOVE_AGGREGATE_IDENTITY,
   input: {
     id: column('aggregate', 'id', 'required'),
   },
   handler: removeAggregate,
-};
+} satisfies CommandDefinition<RemoveAggregate>;
 
 /** Removes the aggregate whole. */
 export function removeAggregate(tx: Transaction, input: RemoveAggregate): void {

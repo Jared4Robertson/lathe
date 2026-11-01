@@ -13,7 +13,7 @@ export type ChangeExtensionRecord = {
   packages?: string[];
 };
 
-export const CHANGE_EXTENSION_RECORD: CommandDefinition<ChangeExtensionRecord> = {
+export const CHANGE_EXTENSION_RECORD = {
   ...CHANGE_EXTENSION_RECORD_IDENTITY,
   input: {
     id: id('The record.', 'required'),
@@ -22,7 +22,7 @@ export const CHANGE_EXTENSION_RECORD: CommandDefinition<ChangeExtensionRecord> =
     packages: texts('The packages it uses; the list replaces the list.', 'optional'),
   },
   handler: changeExtensionRecord,
-};
+} satisfies CommandDefinition<ChangeExtensionRecord>;
 
 /** Changes the record's columns, links and packages. */
 export function changeExtensionRecord(tx: Transaction, input: ChangeExtensionRecord): void {

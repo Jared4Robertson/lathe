@@ -6,12 +6,11 @@ import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
 import { AddMenu } from '../../edit/AddMenu';
-import { useWriter, type Writer } from '../../edit/write';
+import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendIntegration, type IntegrationCommands, type IntegrationRoute } from './commands';
 import { useNextIntegrationId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -92,27 +91,27 @@ function currentOf(page: IntegrationPage, kind: IntegrationKind, id: string): Re
 }
 
 /** Each kind's Change command, and the fields it may clear with null. */
-const CHANGE: Record<IntegrationKind, { route: IntegrationRoute; clearable: readonly string[] }> = {
+const CHANGE: Record<IntegrationKind, { route: CommandRoute; clearable: readonly string[] }> = {
   integration: { route: '/api/integration/change-integration', clearable: ['system'] },
   adapter: { route: '/api/integration/change-adapter', clearable: ['file'] },
   integration_test: { route: '/api/integration/change-integration-test', clearable: ['file', 'manual_reason', 'size', 'smoke', 'external', 'notes'] },
 };
 
 /** Each kind's Add command under the integration. */
-const ADD: Record<Exclude<IntegrationKind, 'integration'>, IntegrationRoute> = {
+const ADD: Record<Exclude<IntegrationKind, 'integration'>, CommandRoute> = {
   adapter: '/api/integration/add-adapter',
   integration_test: '/api/integration/add-integration-test',
 };
 
 /** Each kind's Remove command. */
-const REMOVE: Record<IntegrationKind, IntegrationRoute> = {
+const REMOVE: Record<IntegrationKind, CommandRoute> = {
   integration: '/api/integration/remove-integration',
   adapter: '/api/integration/remove-adapter',
   integration_test: '/api/integration/remove-integration-test',
 };
 
 /** Sends a command whose input this form has built to its kind's shape: the route names the type it takes. */
-const send = (writer: Writer, route: IntegrationRoute, input: Record<string, unknown>): Promise<WriteAnswer> => sendIntegration(writer, route, input as unknown as IntegrationCommands[typeof route]);
+const send = (writer: Writer, route: CommandRoute, input: Record<string, unknown>): Promise<WriteAnswer> => writer.command(route, input as unknown as CommandInputs[typeof route]);
 
 /** What goes with a record when it is removed, inside the integration: what sits under it. */
 function goesWith(page: IntegrationPage, kind: IntegrationKind): string[] {
@@ -160,7 +159,7 @@ export function IntegrationEditor({ index, page, children }: { index: RecordInde
       </div>
       {mode.mode === 'remove' && (
         <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={goesWith(page, kind)} then={then} onCancel={back}
-          remove={() => sendIntegration(writer, REMOVE[kind], { id })} />
+          remove={() => writer.command(REMOVE[kind], { id })} />
       )}
       {children}
     </>

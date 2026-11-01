@@ -2,8 +2,6 @@ import { chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { PRODUCT_COMMANDS } from '../../lathe/src/authoring/product/commands/index';
-import type { ProductCommands } from '../src/authoring/product/commands';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
@@ -27,17 +25,6 @@ describe('LA-V51-R06-T01 the product\'s page and the nav read the products throu
     const nav = await openApp('/DM-Q01');
     expect(await within(main()).findByText('Undecided.')).toBeInTheDocument();
     expect(nav.requests).toContain('GET /api/product/get-product?id=DM-Q01');
-  });
-
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof ProductCommands)[] = [
-      '/api/product/add-product', '/api/product/change-product',
-      '/api/product/declare-product-kind', '/api/product/change-product-kind', '/api/product/remove-product-kind',
-      '/api/product/declare-product-relation', '/api/product/change-product-relation', '/api/product/remove-product-relation',
-      '/api/product/add-question', '/api/product/change-question', '/api/product/move-question', '/api/product/remove-question',
-      '/api/product/add-interface', '/api/product/change-interface', '/api/product/remove-interface',
-    ];
-    expect([...routes].sort()).toEqual(PRODUCT_COMMANDS.map((c) => c.route).sort());
   });
 });
 

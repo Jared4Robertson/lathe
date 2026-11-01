@@ -2,8 +2,6 @@ import type { ServedData } from './read-view';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { TOOLING_COMMANDS } from '../../lathe/src/authoring/tooling/commands/index';
-import type { ToolingCommands } from '../src/authoring/tooling/commands';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
@@ -30,11 +28,6 @@ describe('LA-V113-R01-T01 a tooling record\'s page reads it through its own quer
     expect(packages).toHaveTextContent('vitest');
     expect(requests).toContain('GET /api/tooling/get-tooling?id=DM-SHOP-TOOL01');
     expect(main().querySelector('[data-field="file"]')).toHaveTextContent('vitest.config.ts');
-  });
-
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof ToolingCommands)[] = ['/api/tooling/add-tooling', '/api/tooling/change-tooling', '/api/tooling/remove-tooling'];
-    expect([...routes].sort()).toEqual(TOOLING_COMMANDS.map((c) => c.route).sort());
   });
 });
 

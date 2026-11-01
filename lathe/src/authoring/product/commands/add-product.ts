@@ -9,7 +9,7 @@ import { ADD_PRODUCT_IDENTITY } from './identities.generated.ts';
 /** A new product: its row, and its roles. */
 export type AddProduct = Pick<ProductRow, 'id' | 'title' | 'description' | 'icon' | 'color' | 'notes'> & { roles?: RoleInput[] };
 
-export const ADD_PRODUCT: CommandDefinition<AddProduct> = {
+export const ADD_PRODUCT = {
   ...ADD_PRODUCT_IDENTITY,
   input: {
     id: column('product', 'id', 'required'),
@@ -21,7 +21,7 @@ export const ADD_PRODUCT: CommandDefinition<AddProduct> = {
     roles: parts('role', ['name', 'description'], 'The roles its records name, such as Owner or Librarian, each with its name and description.', 'optional'),
   },
   handler: addProduct,
-};
+} satisfies CommandDefinition<AddProduct>;
 
 export function addProduct(tx: Transaction, input: AddProduct): void {
   const products = new ProductRepository(tx);

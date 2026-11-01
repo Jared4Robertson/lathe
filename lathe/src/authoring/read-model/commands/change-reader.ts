@@ -9,7 +9,7 @@ import { CHANGE_READER_IDENTITY } from './identities.generated.ts';
 /** The reader's changes: a column given is set, null clears an optional one; a list given replaces the list. */
 export type ChangeReader = Pick<ReaderRow, 'id'> & { title?: ReaderRow['title']; file?: ReaderRow['file'] | null; description?: ReaderRow['description']; stored_in?: string | null; meets?: string[]; packages?: string[] };
 
-export const CHANGE_READER: CommandDefinition<ChangeReader> = {
+export const CHANGE_READER = {
   ...CHANGE_READER_IDENTITY,
   input: {
     id: column('reader', 'id', 'required'),
@@ -21,7 +21,7 @@ export const CHANGE_READER: CommandDefinition<ChangeReader> = {
     packages: texts("The packages it uses, by their names in the product's package.json files. Replaces the list.", 'optional'),
   },
   handler: changeReader,
-};
+} satisfies CommandDefinition<ChangeReader>;
 
 /** Changes the reader's columns, links and packages. */
 export function changeReader(tx: Transaction, input: ChangeReader): void {

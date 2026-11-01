@@ -7,7 +7,7 @@ import { ADD_INVARIANT_TEST_IDENTITY } from './identities.generated.ts';
 
 export type AddInvariantTest = Pick<InvariantTestRow, 'id' | 'title' | 'invariant_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'when' | 'then' | 'notes'> & { starts_from?: string[] };
 
-export const ADD_INVARIANT_TEST: CommandDefinition<AddInvariantTest> = {
+export const ADD_INVARIANT_TEST = {
   ...ADD_INVARIANT_TEST_IDENTITY,
   input: {
     id: column('invariant_test', 'id', 'required'),
@@ -26,7 +26,7 @@ export const ADD_INVARIANT_TEST: CommandDefinition<AddInvariantTest> = {
     starts_from: ids('The test data sets it starts from.', 'optional'),
   },
   handler: addInvariantTest,
-};
+} satisfies CommandDefinition<AddInvariantTest>;
 
 export function addInvariantTest(tx: Transaction, input: AddInvariantTest): void {
   const aggregates = new AggregateRepository(tx);

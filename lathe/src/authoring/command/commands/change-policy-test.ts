@@ -22,7 +22,7 @@ export type ChangePolicyTest = Pick<PolicyTestRow, 'id'> & {
   starts_from?: string[];
 };
 
-export const CHANGE_POLICY_TEST: CommandDefinition<ChangePolicyTest> = {
+export const CHANGE_POLICY_TEST = {
   ...CHANGE_POLICY_TEST_IDENTITY,
   input: {
     id: column('policy_test', 'id', 'required'),
@@ -40,7 +40,7 @@ export const CHANGE_POLICY_TEST: CommandDefinition<ChangePolicyTest> = {
     starts_from: ids('The test data sets it starts from. Replaces the list.', 'optional'),
   },
   handler: changePolicyTest,
-};
+} satisfies CommandDefinition<ChangePolicyTest>;
 
 /** Changes the test's columns and the data sets it starts from. */
 export function changePolicyTest(tx: Transaction, input: ChangePolicyTest): void {

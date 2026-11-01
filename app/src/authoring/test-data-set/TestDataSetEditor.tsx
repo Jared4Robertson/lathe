@@ -2,12 +2,11 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { TestDataSetPage } from '../../../../lathe/src/authoring/test-data-set/read-model';
 import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
-import { useWriter } from '../../edit/write';
+import { useWriter, type CommandInputs } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendTestDataSet, type TestDataSetCommands } from './commands';
 import { useNextTestDataSetId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -55,7 +54,7 @@ export function TestDataSetEditor({ index, page, children }: { index: RecordInde
     const submit = async (draft: Draft) => {
       const input = changeInput(index, specs, draft, current, { id: set.id }, ['accounts', 'file']);
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
-      const answer = await sendTestDataSet(writer, '/api/test-data-set/change-test-data-set', input as unknown as TestDataSetCommands['/api/test-data-set/change-test-data-set']);
+      const answer = await writer.command('/api/test-data-set/change-test-data-set', input as unknown as CommandInputs['/api/test-data-set/change-test-data-set']);
       if (answer.ok) { announce(`Saved ${set.id}`); back(); }
       return answer;
     };
@@ -69,7 +68,7 @@ export function TestDataSetEditor({ index, page, children }: { index: RecordInde
       </div>
       {mode === 'remove' && (
         <RemoveQuestion index={index} id={set.id} label="test data set" goes={[]} then={addressOf(set.domain_id)} onCancel={back}
-          remove={() => sendTestDataSet(writer, '/api/test-data-set/remove-test-data-set', { id: set.id })} />
+          remove={() => writer.command('/api/test-data-set/remove-test-data-set', { id: set.id })} />
       )}
       {children}
     </>
@@ -105,7 +104,7 @@ export function AddTestDataSetForm({ index, parent, onDone }: { index: RecordInd
   const specs = fieldsOf(true);
   const submit = async () => {
     const input = addInput(index, specs, draft, { domain_id: parent });
-    const answer = await sendTestDataSet(writer, '/api/test-data-set/add-test-data-set', input as unknown as TestDataSetCommands['/api/test-data-set/add-test-data-set']);
+    const answer = await writer.command('/api/test-data-set/add-test-data-set', input as unknown as CommandInputs['/api/test-data-set/add-test-data-set']);
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;
   };

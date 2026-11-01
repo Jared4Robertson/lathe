@@ -6,7 +6,7 @@ import { ADD_ENDPOINT_TEST_IDENTITY } from './identities.generated.ts';
 
 export type AddEndpointTest = Pick<EndpointTestRow, 'id' | 'title' | 'api_requirement_id' | 'level' | 'state' | 'when' | 'then' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'notes'> & { starts_from?: string[] };
 
-export const ADD_ENDPOINT_TEST: CommandDefinition<AddEndpointTest> = {
+export const ADD_ENDPOINT_TEST = {
   ...ADD_ENDPOINT_TEST_IDENTITY,
   input: {
     id: column('endpoint_test', 'id', 'required'),
@@ -25,7 +25,7 @@ export const ADD_ENDPOINT_TEST: CommandDefinition<AddEndpointTest> = {
     starts_from: ids('The test data sets it starts from.', 'optional'),
   },
   handler: addEndpointTest,
-};
+} satisfies CommandDefinition<AddEndpointTest>;
 
 export function addEndpointTest(tx: Transaction, input: AddEndpointTest): void {
   const endpoints = new EndpointRepository(tx);

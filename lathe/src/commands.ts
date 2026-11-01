@@ -1,7 +1,7 @@
 // Generated from data/ by `npm run generate`. Do not edit.
 // Every command and query, as the CLI (`lathe <slice> <name>`), the MCP server (one tool each) and the HTTP API
 // (`POST /api/<slice>/<name>`, or GET for a query) register them.
-import type { AnyCommand, AnyQuery } from './platform/commands/definition.ts';
+import type { AnyCommand, AnyQuery, InputsByRoute } from './platform/commands/definition.ts';
 import { AGGREGATE_COMMANDS } from './authoring/aggregate/commands/index.ts';
 import { BUSINESS_OUTCOME_COMMANDS } from './authoring/business-outcome/commands/index.ts';
 import { CHECK_COMMANDS } from './checking/check/commands/index.ts';
@@ -66,7 +66,7 @@ import { GET_USE_CASE, LIST_USE_CASES, NEXT_USE_CASE_ID } from './authoring/use-
 import { GET_VALUE_OBJECT, LIST_VALUE_OBJECTS, NEXT_VALUE_OBJECT_ID } from './authoring/value-object/queries.ts';
 import { GET_VIEW, LIST_VIEWS, NEXT_VIEW_ID } from './authoring/view/queries.ts';
 
-export const ALL_COMMANDS: readonly AnyCommand[] = [
+const COMMANDS = [
   ...AGGREGATE_COMMANDS,
   ...BUSINESS_OUTCOME_COMMANDS,
   ...CHECK_COMMANDS,
@@ -93,7 +93,12 @@ export const ALL_COMMANDS: readonly AnyCommand[] = [
   ...USE_CASE_COMMANDS,
   ...VALUE_OBJECT_COMMANDS,
   ...VIEW_COMMANDS,
-];
+] as const;
+
+export const ALL_COMMANDS: readonly AnyCommand[] = COMMANDS;
+
+/** Each command's route, with its input: what the app sends, typed by its definition. */
+export type CommandInputs = InputsByRoute<(typeof COMMANDS)[number]>;
 
 export const ALL_QUERIES: readonly AnyQuery[] = [
   GET_AGGREGATE,

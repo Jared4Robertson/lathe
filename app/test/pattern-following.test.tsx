@@ -1,8 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { PATTERN_FOLLOWING_COMMANDS } from '../../lathe/src/traceability/pattern-following/commands/index';
-import type { PatternFollowingCommands } from '../src/traceability/pattern-following/commands';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { patternWorkspace } from './fixtures/patterns';
 import { main, openApp, section } from './helpers';
@@ -41,13 +39,6 @@ describe('LA-V122-R06-T01 a pattern\'s followers are read through the Pattern fo
     const { requests } = await openApp('/DM-PAT-AUDIT-R01', { data: patternWorkspace() });
     expect(await within(main()).findByRole('heading', { name: /^Owed by1/ })).toBeInTheDocument();
     expect(requests).toContain('GET /api/pattern-following/list-followers?pattern_id=DM-PAT-AUDIT');
-  });
-
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof PatternFollowingCommands)[] = [
-      '/api/pattern-following/follow-pattern', '/api/pattern-following/change-setting-values', '/api/pattern-following/stop-following-pattern',
-    ];
-    expect([...routes].sort()).toEqual(PATTERN_FOLLOWING_COMMANDS.map((c) => c.route).sort());
   });
 });
 

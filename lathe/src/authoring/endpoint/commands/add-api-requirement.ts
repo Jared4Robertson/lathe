@@ -7,7 +7,7 @@ import { ADD_API_REQUIREMENT_IDENTITY } from './identities.generated.ts';
 /** A new API requirement. */
 export type AddApiRequirement = Pick<ApiRequirementRow, 'id' | 'title' | 'endpoint_id' | 'statement' | 'group_name'>;
 
-export const ADD_API_REQUIREMENT: CommandDefinition<AddApiRequirement> = {
+export const ADD_API_REQUIREMENT = {
   ...ADD_API_REQUIREMENT_IDENTITY,
   input: {
     id: column('api_requirement', 'id', 'required'),
@@ -17,7 +17,7 @@ export const ADD_API_REQUIREMENT: CommandDefinition<AddApiRequirement> = {
     group_name: column('api_requirement', 'group_name', 'optional'),
   },
   handler: addApiRequirement,
-};
+} satisfies CommandDefinition<AddApiRequirement>;
 
 export function addApiRequirement(tx: Transaction, input: AddApiRequirement): void {
   const endpoints = new EndpointRepository(tx);
