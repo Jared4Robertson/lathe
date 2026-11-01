@@ -710,6 +710,8 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .flow-steps .step-head { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .flow-steps .step-order { font: 600 0.8rem var(--mono); min-width: 1.6em; text-align: right; color: var(--muted); }
 :is(.flow-steps, .flow-tab-panel) .step-ids { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 2px 8px; }
+/* An interface's pattern and rule links are 24 px targets (WCAG 2.5.8, LA-V61-R47). */
+.flow-tab-panel .step-ids > li > .record-link { min-block-size: 24px; align-items: center; }
 .flow-steps tr.flow-step-detail > td { background: var(--paper); padding: 6px 10px 8px 32px; }
 .flow-step-more { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
 .flow-step-more h4 { margin: 4px 0 2px; font-size: 0.8rem; color: var(--muted); font-weight: 600; }
