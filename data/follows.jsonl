@@ -1,3 +1,4 @@
+{"source_id":"LA-AUT","target_id":"LA-PAT-AGGREGATE-QUERIES"}
 {"source_id":"LA-AUT-UC02","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
 {"source_id":"LA-AUT-UC02","target_id":"LA-PAT-AGGREGATE-TESTS"}
 {"source_id":"LA-AUT-UC02","target_id":"LA-PAT-FIELD-INPUTS"}
@@ -134,12 +135,14 @@
 {"source_id":"LA-AUT-UC33","target_id":"LA-PAT-RECORD-DATA-FILE"}
 {"source_id":"LA-AUT-UC33","target_id":"LA-PAT-RECORD-PAGE"}
 {"source_id":"LA-AUT-UC33","target_id":"LA-PAT-SHELL-ACTIONS"}
+{"source_id":"LA-CHK","target_id":"LA-PAT-AGGREGATE-QUERIES"}
 {"source_id":"LA-CHK-UC02","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
 {"source_id":"LA-CHK-UC02","target_id":"LA-PAT-AGGREGATE-TESTS"}
 {"source_id":"LA-CHK-UC05","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
 {"source_id":"LA-CHK-UC05","target_id":"LA-PAT-AGGREGATE-TESTS"}
 {"source_id":"LA-CHK-UC06","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
 {"source_id":"LA-CHK-UC06","target_id":"LA-PAT-AGGREGATE-TESTS"}
+{"source_id":"LA-EXP","target_id":"LA-PAT-AGGREGATE-QUERIES"}
 {"source_id":"LA-EXP","target_id":"LA-PAT-APP-CODE"}
 {"source_id":"LA-EXP","target_id":"LA-PAT-APP-UX"}
 {"source_id":"LA-IF01","target_id":"LA-PAT-PAGE-STEPS"}
@@ -148,8 +151,10 @@
 {"source_id":"LA-IF04","target_id":"LA-PAT-MCP-STEPS"}
 {"source_id":"LA-IF05","target_id":"LA-PAT-HTTP-STEPS"}
 {"source_id":"LA-IF06","target_id":"LA-PAT-PACKAGE-STEPS"}
+{"source_id":"LA-PLT","target_id":"LA-PAT-AGGREGATE-QUERIES"}
 {"source_id":"LA-PLT","target_id":"LA-PAT-APP-CODE"}
 {"source_id":"LA-PLT","target_id":"LA-PAT-APP-UX"}
 {"source_id":"LA-PLT-UC15","target_id":"LA-PAT-SHELL-ACTIONS"}
+{"source_id":"LA-TRC","target_id":"LA-PAT-AGGREGATE-QUERIES"}
 {"source_id":"LA-TRC-UC07","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
 {"source_id":"LA-TRC-UC07","target_id":"LA-PAT-AGGREGATE-TESTS"}

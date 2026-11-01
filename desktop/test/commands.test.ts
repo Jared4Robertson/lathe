@@ -161,7 +161,7 @@ describe('The app menu has About and Settings, File chooses the editor, and View
     expect(actions.chooseEditor).toHaveBeenCalledWith('zed');
   });
 
-  it('LA-V96-R17-T01 has View › Tabs: new, close, duplicate, next, previous, back and forward, with Cmd+T, Cmd+W, Ctrl+Tab, Cmd+[ and Cmd+] owned by the menu', () => {
+  it('LA-V103-R08-T01 has View › Tabs: new, close, duplicate, next, previous, back and forward, with Cmd+T, Cmd+W, Ctrl+Tab, Cmd+[ and Cmd+] owned by the menu', () => {
     const { menu, actions } = full(true);
     const tabs = submenu(submenu(menu.find((m) => m.label === 'View')).find((m) => m.label === 'Tabs'));
     expect(tabs.map((m) => [m.label, m.accelerator])).toEqual([
