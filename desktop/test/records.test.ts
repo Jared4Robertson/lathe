@@ -1,20 +1,12 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { LOCAL_ACTION_CHANNELS } from '../src/launch.ts';
-import { DataFiles, findDataFile, parseRecordId, recordMenuTemplate, revealLabel } from '../src/records.ts';
+import { FIND_RECORD_DATA_FILE } from '../../lathe/src/authoring/record-data-file/queries.ts';
+import { parseRecordId, RECORD_DATA_FILE_ROUTE, recordDataFile, recordMenuTemplate, revealLabel } from '../src/records.ts';
 
-const temp = mkdtempSync(path.join(os.tmpdir(), 'lathe-records-'));
-afterAll(() => rmSync(temp, { recursive: true, force: true }));
-
-function write(file: string, text: string) {
-  mkdirSync(path.dirname(file), { recursive: true });
-  writeFileSync(file, text);
-}
-
-describe('LA-PAT-RECORD-DATA-FILE-R01-T01 LA-PAT-SHELL-ACTIONS-R01-T02 The record actions take only a record ID, each on its own channel, and find the data file themselves', () => {
+describe('LA-PAT-RECORD-DATA-FILE-R01-T01 LA-PAT-SHELL-ACTIONS-R01-T02 The record actions take only a record ID, each on its own channel, and ask the engine for the data file', () => {
   it('accepts exactly { id } with a record ID, each action on its own channel', () => {
     expect(parseRecordId({ id: 'SMK-ORD' })).toBe('SMK-ORD');
     expect(parseRecordId({ id: 'LA-V71-R01' })).toBe('LA-V71-R01');
@@ -40,31 +32,18 @@ describe('LA-PAT-RECORD-DATA-FILE-R01-T01 LA-PAT-SHELL-ACTIONS-R01-T02 The recor
     for (const input of refused) expect(parseRecordId(input), JSON.stringify(input)).toBeNull();
   });
 
-  it('finds the data file whose row starts with the record\'s id, never a row that only names it, and finds it again when it changes', () => {
-    const data = path.join(temp, 'data');
-    write(path.join(data, 'product.jsonl'), '{"id":"SMK","title":"Smoke"}\n');
-    write(path.join(data, 'domain.jsonl'), '{"id":"SMK-ORD","title":"Orders","product_id":"SMK"}\n{"id":"SMK-ORDERS","title":"Longer","product_id":"SMK"}\n');
-    write(path.join(data, 'about.jsonl'), '{"source_id":"SMK-Q01","target_id":"SMK-NOTE"}\n');
-    write(path.join(data, 'notes.txt'), '{"id":"SMK-NOTE"}');
-    expect(findDataFile(data, 'SMK')).toBe(path.join(data, 'product.jsonl'));
-    expect(findDataFile(data, 'SMK-ORDERS')).toBe(path.join(data, 'domain.jsonl'));
-    expect(findDataFile(data, 'SMK-NOTE')).toBeNull();
-    expect(findDataFile(path.join(temp, 'missing'), 'SMK')).toBeNull();
-
-    const files = new DataFiles([data]);
-    expect(files.find('SMK-ORD')).toBe(path.join(data, 'domain.jsonl'));
-    expect(files.find('SMK-NONE')).toBeNull();
-    // A record that became another kind is in that kind's file now.
-    write(path.join(data, 'domain.jsonl'), '{"id":"SMK-ORDERS","title":"Longer","product_id":"SMK"}\n');
-    write(path.join(data, 'pattern.jsonl'), '{"id":"SMK-ORD","title":"Orders","product_id":"SMK"}\n');
-    expect(files.find('SMK-ORD')).toBe(path.join(data, 'pattern.jsonl'));
-
-    // In a workspace, each product's records are found in its own data folder.
-    const other = path.join(temp, 'examples/shop/data');
-    write(path.join(other, 'product.jsonl'), '{"id":"SH","title":"Shop"}\n');
-    const workspace = new DataFiles([data, other]);
-    expect(workspace.find('SMK')).toBe(path.join(data, 'product.jsonl'));
-    expect(workspace.find('SH')).toBe(path.join(other, 'product.jsonl'));
+  it("asks the window's engine which data file holds the record, and takes only a full path to a data file", async () => {
+    expect(RECORD_DATA_FILE_ROUTE).toBe(FIND_RECORD_DATA_FILE.route);
+    const answering = (status: number, body: unknown) => vi.fn(async () => new Response(JSON.stringify(body), { status })) as unknown as typeof fetch;
+    const engine = answering(200, { id: 'SMK-ORD', file: '/p/shop/data/domain.jsonl' });
+    expect(await recordDataFile('http://127.0.0.1:5400', 'SMK-ORD', engine)).toBe('/p/shop/data/domain.jsonl');
+    expect(engine).toHaveBeenCalledWith('http://127.0.0.1:5400/api/record-data-file/find-record-data-file?id=SMK-ORD');
+    // No record has the ID, an older Lathe has no such read, an answer that is no data file, or no answer at all.
+    expect(await recordDataFile('http://127.0.0.1:5400', 'SMK-NONE', answering(422, { error: 'no record has the ID SMK-NONE' }))).toBeNull();
+    expect(await recordDataFile('http://127.0.0.1:5400', 'SMK', answering(404, { error: 'Not found' }))).toBeNull();
+    expect(await recordDataFile('http://127.0.0.1:5400', 'SMK', answering(200, { file: 'data/product.jsonl' }))).toBeNull();
+    expect(await recordDataFile('http://127.0.0.1:5400', 'SMK', answering(200, { file: '/etc/hosts' }))).toBeNull();
+    expect(await recordDataFile('http://127.0.0.1:5400', 'SMK', vi.fn(async () => { throw new Error('refused'); }) as unknown as typeof fetch)).toBeNull();
   });
 
   it('offers reveal, open in the editor and copy ID in the native menu, the first two only for a record with a file', () => {

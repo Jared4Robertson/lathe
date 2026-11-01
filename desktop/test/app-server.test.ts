@@ -15,7 +15,7 @@ import type { OpenWindow } from '../src/product-window/model.ts';
 import { startServe, type AppServer } from '../src/servers.ts';
 
 const window = (folder: string, extra: Partial<OpenWindow> = {}): OpenWindow =>
-  ({ folder, product: path.basename(folder), win: { id: folder } as unknown as OpenWindow['win'], errors: 0, dataFiles: null, launchRun: 0, key: folder, ...extra });
+  ({ folder, product: path.basename(folder), win: { id: folder } as unknown as OpenWindow['win'], errors: 0, launchRun: 0, key: folder, ...extra });
 const temp = mkdtempSync(path.join(os.tmpdir(), 'lathe-app-server-'));
 afterAll(() => rmSync(temp, { recursive: true, force: true }));
 let files = 0;

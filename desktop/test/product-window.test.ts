@@ -21,7 +21,7 @@ const file = (name: string) => () => path.join(temp, name);
 const json = (name: string): unknown => JSON.parse(readFileSync(path.join(temp, name), 'utf8'));
 
 const window = (folder: string, extra: Partial<OpenWindow> = {}): OpenWindow =>
-  ({ folder, product: path.basename(folder), win: { id: folder } as unknown as OpenWindow['win'], errors: 0, dataFiles: null, launchRun: 0, key: folder, ...extra });
+  ({ folder, product: path.basename(folder), win: { id: folder } as unknown as OpenWindow['win'], errors: 0, launchRun: 0, key: folder, ...extra });
 
 describe('LA-PLT-INV05-T Each folder has one window: the Product window\'s repository keeps the open windows in memory and the places and chrome in their files', () => {
   it('opens a folder once, raising Product window opened to the recent folders and then the server, and closing raises Product window closed to the server and the chat', async () => {
@@ -53,8 +53,8 @@ describe('LA-PLT-INV05-T Each folder has one window: the Product window\'s repos
 
   it('takes an error count only as a number, and record actions only as exactly { id }', async () => {
     const windows = new ProductWindowRepository({ places: file('ws2.json'), chrome: file('c2.json') });
-    const find = vi.fn(() => '/p/b/data/use_case.jsonl');
-    await openProductFolder(windows, { window: window('/p/b', { dataFiles: { find } as unknown as OpenWindow['dataFiles'] }) }, { onWindowOpenedAddRecentFolder: () => {}, onWindowOpenedStartAppServer: async () => {} });
+    const dataFileOf = vi.fn(async () => '/p/b/data/use_case.jsonl');
+    await openProductFolder(windows, { window: window('/p/b') }, { onWindowOpenedAddRecentFolder: () => {}, onWindowOpenedStartAppServer: async () => {} });
     expect(reportErrorCount(windows, { folder: '/p/b', count: 3 })).toBe(true);
     expect(reportErrorCount(windows, { folder: '/p/b', count: '3' })).toBe(false);
     expect(windows.load().open.get('/p/b')?.errors).toBe(3);
@@ -64,8 +64,10 @@ describe('LA-PLT-INV05-T Each folder has one window: the Product window\'s repos
     expect(reportMenuKeys(windows, { folder: '/p/x', keys: {} })).toBe(false);
     expect(windows.load().open.get('/p/b')?.menuKeys).toEqual({ toggleNav: ['Shift+Meta+J'] });
     const reveal = vi.fn();
-    revealRecordDataFile(windows, { folder: '/p/b', request: { id: 'LA-AUT-UC01', path: '/etc' } }, reveal);
-    revealRecordDataFile(windows, { folder: '/p/b', request: { id: 'LA-AUT-UC01' } }, reveal);
+    await revealRecordDataFile(windows, { folder: '/p/b', request: { id: 'LA-AUT-UC01', path: '/etc' } }, dataFileOf, reveal);
+    await revealRecordDataFile(windows, { folder: '/p/x', request: { id: 'LA-AUT-UC01' } }, dataFileOf, reveal);
+    await revealRecordDataFile(windows, { folder: '/p/b', request: { id: 'LA-AUT-UC01' } }, dataFileOf, reveal);
+    expect(dataFileOf.mock.calls).toEqual([['/p/b', 'LA-AUT-UC01']]);
     expect(reveal.mock.calls).toEqual([['/p/b/data/use_case.jsonl']]);
   });
 

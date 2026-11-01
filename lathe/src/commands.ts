@@ -50,6 +50,7 @@ import { GET_PRODUCT, LIST_INTERFACES, NEXT_PRODUCT_ID, LIST_PRODUCTS } from './
 import { GET_LIMITS } from './checking/product-setting/queries.ts';
 import { GET_READ_MODEL, LIST_READ_MODELS, NEXT_READ_MODEL_ID } from './authoring/read-model/queries.ts';
 import { LIST_RECORD_CHANGES } from './exploring/record-changes/queries.ts';
+import { FIND_RECORD_DATA_FILE } from './authoring/record-data-file/queries.ts';
 import { LIST_RECORD_SUMMARIES } from './exploring/record-summaries/queries.ts';
 import { GET_RECORD_TRACE } from './traceability/record-trace/queries.ts';
 import { GET_SERVES, LIST_SERVES } from './traceability/serves/queries.ts';
@@ -147,6 +148,7 @@ export const ALL_QUERIES: readonly AnyQuery[] = [
   LIST_READ_MODELS,
   NEXT_READ_MODEL_ID,
   LIST_RECORD_CHANGES,
+  FIND_RECORD_DATA_FILE,
   LIST_RECORD_SUMMARIES,
   GET_RECORD_TRACE,
   GET_SERVES,
