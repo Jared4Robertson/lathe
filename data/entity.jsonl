@@ -77,16 +77,16 @@
 {"id":"LA-AUT-EN85","title":"Test data set","aggregate_id":"LA-AUT-A17","role":"root","description":"What some tests start from: the environment, the accounts and the starting records, how to prepare and reset them, and the file that builds them. Tests link to it with starts_from."}
 {"id":"LA-AUT-EN90","title":"Reader","aggregate_id":"LA-AUT-A10","role":"child","description":"Reads its read model's table for the read model's query handlers: the one way they reach its storage. It reads only its own read model's table, which the projection alone fills."}
 {"id":"LA-AUT-EN96","title":"Rule","aggregate_id":"LA-AUT-A6","role":"child","description":"Its invariant in code: the rule in the aggregate's rules.ts that the aggregate's commands run before saving and every load runs over all data, named as its refusal names it. An invariant is built only through its rule."}
-{"id":"LA-CHK-EN01","title":"Check","aggregate_id":"LA-CHK-A1","role":"root","description":"One rule the engine applies: a row of the `check` table whose query returns a row for each problem it finds."}
-{"id":"LA-CHK-EN03","title":"Product setting","aggregate_id":"LA-CHK-A2","role":"root","description":"A product's `product_setting` row: the most children of one kind a record of the product should hold, the most entities an aggregate should hold, and the words that name technology in its essential records."}
+{"id":"LA-CHK-EN01","title":"Check","aggregate_id":"LA-CHK-A1","role":"root","description":"One rule the engine applies: a check whose query reports each problem it finds."}
+{"id":"LA-CHK-EN03","title":"Product setting","aggregate_id":"LA-CHK-A2","role":"root","description":"A product's settings: the most children of one kind a record of the product should hold, the most entities an aggregate should hold, and the words that name technology in its essential records."}
 {"id":"LA-EXP-EN01","title":"Page","aggregate_id":"LA-EXP-A1","role":"root","description":"One place in the app, identified by its address, showing a view of one loaded workspace."}
 {"id":"LA-EXP-EN02","title":"Space","aggregate_id":"LA-EXP-A2","role":"root","description":"One product as a place to work in, in the rail."}
-{"id":"LA-EXP-EN03","title":"Nav row","aggregate_id":"LA-EXP-A3","role":"root","description":"A row of the nav that folds, and whether the reader has it folded."}
-{"id":"LA-EXP-EN09","title":"Tab set","aggregate_id":"LA-EXP-A5","role":"root","description":"The tabs open in one space of the desktop app, in order, with one active."}
-{"id":"LA-EXP-EN10","title":"Tab","aggregate_id":"LA-EXP-A5","role":"child","in_root_table":true,"description":"One place in the row: its focus and stage, its view, and its own history of where the Reader went in it."}
+{"id":"LA-EXP-EN03","title":"Nav entry","aggregate_id":"LA-EXP-A3","role":"root","description":"An entry of the nav that folds, and whether the reader has it folded."}
+{"id":"LA-EXP-EN09","title":"Tab set","aggregate_id":"LA-EXP-A5","role":"root","description":"The tabs open in one space, in order, with one active."}
+{"id":"LA-EXP-EN10","title":"Tab","aggregate_id":"LA-EXP-A5","role":"child","in_root_table":true,"description":"One place among the tabs: its focus and stage, its view, and its own history of where the Reader went in it."}
 {"id":"LA-EXP-EN11","title":"Session settings","aggregate_id":"LA-EXP-A6","role":"root","description":"How the graph is laid out and how wide the wiki card is, for this browser session."}
 {"id":"LA-EXP-EN12","title":"History entry","aggregate_id":"LA-EXP-A5","role":"child","in_root_table":true,"description":"One place a tab went to, in its own Back and Forward history."}
-{"id":"LA-PLT-EN02","title":"Panel","aggregate_id":"LA-PLT-A2","role":"root","description":"One part of the page's layout, which always shows the page's focus and can be hidden without losing it."}
+{"id":"LA-PLT-EN02","title":"Panel","aggregate_id":"LA-PLT-A2","role":"root","description":"One part of the view's layout, which always shows the view's focus and can be hidden without losing it."}
 {"id":"LA-PLT-EN06","title":"Theme","aggregate_id":"LA-PLT-A4","role":"child","description":"One theme: a named set of token values with a light set and a dark set."}
 {"id":"LA-PLT-EN08","title":"Product window","aggregate_id":"LA-PLT-A6","role":"root","description":"One window showing one product folder."}
 {"id":"LA-PLT-EN09","title":"Recent folder","aggregate_id":"LA-PLT-A9","role":"child","in_root_table":true,"description":"One folder the person opened lately, for File › Open Recent and the next launch."}
@@ -100,6 +100,6 @@
 {"id":"LA-PLT-EN26","title":"Voice settings","aggregate_id":"LA-PLT-A15","role":"root","description":"The person's voice settings: the two modes and the phrases the voice grammar reads."}
 {"id":"LA-PLT-EN27","title":"Window chat","aggregate_id":"LA-PLT-A16","role":"root","description":"One product window's chat, kept by the window's folder."}
 {"id":"LA-TRC-EN05","title":"Pattern following","aggregate_id":"LA-TRC-A3","role":"root","description":"A domain or use case that follows one pattern."}
-{"id":"LA-TRC-EN06","title":"Setting value","aggregate_id":"LA-TRC-A3","role":"child","description":"A `setting_value` row: the value a following use case, or a domain that follows the pattern itself, gives one of the pattern's settings."}
+{"id":"LA-TRC-EN06","title":"Setting value","aggregate_id":"LA-TRC-A3","role":"child","description":"A setting value: the value a following use case, or a domain that follows the pattern itself, gives one of the pattern's settings."}
 {"id":"LA-TRC-EN07","title":"Slot filling","aggregate_id":"LA-TRC-A4","role":"root","description":"A technical record that fills one slot (a `fills` link)."}
-{"id":"LA-TRC-EN08","title":"Provision","aggregate_id":"LA-TRC-A5","role":"root","description":"A data store, technical record or obligation and what provides it (a `provided_by` link)."}
+{"id":"LA-TRC-EN08","title":"Provision","aggregate_id":"LA-TRC-A5","role":"root","description":"A technical record or obligation and what provides it (a provided-by link)."}
