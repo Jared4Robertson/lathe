@@ -93,8 +93,8 @@ const count = (n: number, noun: string) => `${n} ${n === 1 ? noun : `${noun}s`}`
 
 export const MAX_DEPTH = 3;
 const DEPTHS = [1, 2, 3];
-/** Depth is how many levels below the focus the camera frames, folders and stages included. The Nested camera frames the focus's box, whatever the depth, so it has none. */
-const DEPTH_LABELS = ['Frame the focus and its children', 'Frame two levels below the focus', 'Frame three levels below the focus'];
+/** Depth is how many levels below the focus the Tree draws, folders and stages included. The Nested view draws every level, so it has none. */
+const DEPTH_LABELS = ['Draw the focus and its children', 'Draw two levels below the focus', 'Draw three levels below the focus'];
 /** The view after this one, for the switch's command. */
 export const nextLayout = (layout: GraphLayout): GraphLayout => GRAPH_LAYOUTS[(GRAPH_LAYOUTS.findIndex((l) => l.layout === layout) + 1) % GRAPH_LAYOUTS.length].layout;
 
@@ -550,9 +550,9 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
     if (!size) return { boxes: [], bars: [] };
     const d = map.view !== 'tree'
       ? drawnNested(map, v, size.w, size.h, always)
-      : drawnFor(map, v, size.w, size.h, always);
+      : drawnFor(map, v, size.w, size.h, always, (map.nodes.get(focus)?.level ?? 0) + depth);
     return { boxes: d.boxes.filter((b) => !hidden.has(b.id)), bars: d.bars.filter((b) => !hidden.has(b.parent)) };
-  }, [map, size, always, hidden]);
+  }, [map, size, always, hidden, focus, depth]);
   const latestDrawnAt = useRef(drawnAt);
   latestDrawnAt.current = drawnAt;
 
@@ -599,7 +599,7 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
     return plate;
   }, [plates, map, index]);
 
-  /** The camera that frames the focus: the focus and the levels the depth shows, in the frame. */
+  /** The camera that frames the focus: most of the frame's width, its parent's strip at the left (LA-EXP-DS09). */
   const framing = useCallback((): Viewport | null => {
     // With a host that floats panels, never before their first measure: the first picture is framed once, in place.
     // A focus the map shown does not hold yet (its new layout is still being made) leaves the camera where it is.
@@ -610,12 +610,12 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
     // The focus is never left without its label: where its visible part cannot hold it, the camera moves to where it can;
     // and the focused box is always whole in the frame (LA-PAT-APP-UX-R23).
     const plate = plateFor(framed);
-    const v = map.view === 'map' ? frameGround(map, framed, box.w, box.h, maxZoom) : map.view === 'nested' ? frameNested(map, framed, box.w, box.h, maxZoom) : frameOnMap(map, framed, depth, box.w, box.h, maxZoom);
+    const v = map.view === 'map' ? frameGround(map, framed, box.w, box.h, maxZoom) : map.view === 'nested' ? frameNested(map, framed, box.w, box.h, maxZoom) : frameOnMap(map, framed, box.w, box.h, maxZoom);
     const at = { x: v.x + box.x, y: v.y + box.y, zoom: v.zoom };
     return wholeIn(plate ? keepLabel(plate, at, { left: box.x, top: box.y, right: box.x + box.w, bottom: box.y + box.h }) : at, map.nodes.get(framed)!, box);
-  }, [size, map, focus, depth, frameBox, space, open, plateFor, index]);
+  }, [size, map, focus, frameBox, space, open, plateFor, index]);
 
-  // Frame the focus whenever it, the depth, the stage's size or the open space changes: a glide,
+  // Frame the focus whenever it, the stage's size or the open space changes: a glide,
   // except the first picture, a resize of the stage and a map that has just been laid out, which
   // frame at once. A panel collapsed, opened or resized recenters the focus with a short glide
   // (at once under reduced motion, readMotion).
@@ -625,8 +625,8 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
   const framedEmpty = useRef(false);
 
   // Each place keeps its camera (the Tab set's cameras, exploring/tab-set): as the place shown changes (another tab), the one left keeps where
-  // its camera was, and the one shown takes its own back, at once, when it still frames the same focus, layout and depth.
-  const framedNow = `${focus} ${layout} ${depth}`;
+  // its camera was, and the one shown takes its own back, at once, when it still frames the same focus and layout.
+  const framedNow = `${focus} ${layout}`;
   const cameraPlace = useRef<{ key: string | undefined; framed: string }>({ key: cameraKey, framed: framedNow });
   /** A kept camera waiting for the stage's first measure; and the framing a camera taken back stands in for. */
   const keptView = useRef<Viewport | null>(cameraKey ? keptCamera<Viewport>(cameraKey, 'graph', framedNow) : null);
@@ -649,11 +649,11 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
     if (key && sizeRef.current) runTabSetCommand(keepCamera, { place: key, stage: 'graph', camera: { framed, view: view.current } });
   }, []);
   /**
-   * What the camera last framed: the focus's box on its map, the depth, the stage's size and open space. New data that
+   * What the camera last framed: the focus's box on its map, the stage's size and open space. New data that
    * leaves all of them alone leaves the camera where it is; where it moved the focus, the camera glides with it (LA-PAT-APP-UX-R22).
    */
   const lastFramed = useRef<{ key: string; box: { x: number; y: number; w: number; h: number } } | null>(null);
-  const framedKey = size ? `${focus} ${depth} ${map.view} ${map.roots[0]} ${size.w}x${size.h} ${insetKey}` : '';
+  const framedKey = size ? `${focus} ${map.view} ${map.roots[0]} ${size.w}x${size.h} ${insetKey}` : '';
   const rememberFraming = () => { const n = map.nodes.get(focus); lastFramed.current = n && size ? { key: framedKey, box: { x: n.x, y: n.y, w: n.w, h: n.h } } : null; };
   useLayoutEffect(() => {
     if (skipFraming.current === framing) { skipFraming.current = null; rememberFraming(); return; }
