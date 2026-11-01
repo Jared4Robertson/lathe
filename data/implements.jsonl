@@ -102,9 +102,9 @@
 {"source_id":"LA-PLT-MOD31","target_id":"LA-V62-R01"}
 {"source_id":"LA-PLT-MOD31","target_id":"LA-V62-R05"}
 {"source_id":"LA-PLT-MOD31","target_id":"LA-V63-R02"}
-{"source_id":"LA-PLT-MOD32","target_id":"LA-PLT-UC02-R04"}
-{"source_id":"LA-PLT-MOD32","target_id":"LA-PLT-UC02-R06"}
-{"source_id":"LA-PLT-MOD32","target_id":"LA-PLT-UC02-R11"}
+{"source_id":"LA-PLT-MOD32","target_id":"LA-PLT-UC23-R01"}
+{"source_id":"LA-PLT-MOD32","target_id":"LA-PLT-UC23-R02"}
+{"source_id":"LA-PLT-MOD32","target_id":"LA-PLT-UC23-R03"}
 {"source_id":"LA-PLT-MOD33","target_id":"LA-PLT-UC19-R03"}
 {"source_id":"LA-PLT-MOD33","target_id":"LA-PLT-UC20-R01"}
 {"source_id":"LA-PLT-MOD34","target_id":"LA-V99-R01"}

@@ -54,6 +54,12 @@
 {"use_case_id":"LA-AUT-UC32","position":2,"role_name":"Agent"}
 {"use_case_id":"LA-AUT-UC33","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-AUT-UC33","position":2,"role_name":"Agent"}
+{"use_case_id":"LA-AUT-UC34","position":1,"role_name":"Owner"}
+{"use_case_id":"LA-AUT-UC34","position":2,"role_name":"Agent"}
+{"use_case_id":"LA-AUT-UC35","position":1,"role_name":"Owner"}
+{"use_case_id":"LA-AUT-UC35","position":2,"role_name":"Agent"}
+{"use_case_id":"LA-AUT-UC36","position":1,"role_name":"Owner"}
+{"use_case_id":"LA-AUT-UC36","position":2,"role_name":"Agent"}
 {"use_case_id":"LA-CHK-UC01","position":1,"role_name":"Agent"}
 {"use_case_id":"LA-CHK-UC01","position":2,"role_name":"Owner"}
 {"use_case_id":"LA-CHK-UC02","position":1,"role_name":"Agent"}
@@ -82,6 +88,7 @@
 {"use_case_id":"LA-EXP-UC13","position":1,"role_name":"Reader"}
 {"use_case_id":"LA-EXP-UC15","position":1,"role_name":"Reader"}
 {"use_case_id":"LA-EXP-UC16","position":1,"role_name":"Reader"}
+{"use_case_id":"LA-EXP-UC17","position":1,"role_name":"Reader"}
 {"use_case_id":"LA-PLT-UC01","position":1,"role_name":"Agent"}
 {"use_case_id":"LA-PLT-UC02","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-PLT-UC02","position":2,"role_name":"Agent"}
@@ -106,6 +113,7 @@
 {"use_case_id":"LA-PLT-UC20","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-PLT-UC21","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-PLT-UC22","position":1,"role_name":"Owner"}
+{"use_case_id":"LA-PLT-UC23","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-TRC-UC01","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-TRC-UC02","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-TRC-UC03","position":1,"role_name":"Owner"}
