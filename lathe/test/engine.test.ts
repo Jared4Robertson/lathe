@@ -120,15 +120,26 @@ describe('checks', () => {
           ['check-query-select', "check house-rule's query returns no record or message; a check's query returns record and message"],
         ]);
         // DuckDB's own parser says what is one statement, so no quoting it knows hides a second.
-        const notSelect = [['check-query-select', "check house-rule's query holds a statement that is not a SELECT, as DuckDB reads it; a check's query is one SELECT"]];
+        const notSelect = [['check-query-select', "check house-rule's query holds a statement that is not a SELECT, as DuckDB reads it; a check's query is one SELECT that only reads"]];
         expect(await add("SELECT NULL AS record, 'a;b' AS message; DROP TABLE domain")).toEqual(notSelect);
         expect(await add("SELECT NULL AS record, 'a' AS message; SELECT NULL AS record, 'b' AS message")).toEqual([
-          ['check-query-select', "check house-rule's query holds 2 statements, as DuckDB reads it; a check's query is one SELECT"],
+          ['check-query-select', "check house-rule's query holds 2 statements, as DuckDB reads it; a check's query is one SELECT that only reads"],
         ]);
         // An escape string's \' ends no string; a dollar-quoted string, or a comment, holds a quote that ends none.
         expect(await add("SELECT NULL AS record, E'a\\'' AS message; COPY (SELECT 1) TO 'x.csv'; SELECT NULL AS record, '' AS message")).toEqual(notSelect);
         expect(await add("SELECT NULL AS record, $$a'$$ AS message; COPY (SELECT 1) TO $$x.csv$$")).toEqual(notSelect);
         expect(await add("SELECT NULL AS record, 'a' AS message /* ' */; COPY (SELECT 1) TO 'x.csv' -- '")).toEqual(notSelect);
+        // An INSERT, UPDATE, DELETE or COPY inside a SELECT, in a WITH or a subquery however deep, changes data.
+        const inside = (node: string) => [['check-query-select', `check house-rule's query holds ${node} inside its SELECT, as DuckDB reads it; a check's query is one SELECT that only reads`]];
+        expect(await add("WITH x AS (UPDATE domain SET title = 'x' RETURNING id) SELECT id AS record, 'a' AS message FROM x WHERE false")).toEqual(inside('an UPDATE'));
+        expect(await add("WITH x AS (DELETE FROM domain RETURNING id) SELECT id AS record, 'a' AS message FROM x")).toEqual(inside('a DELETE'));
+        expect(await add("SELECT NULL AS record, 'a' AS message WHERE EXISTS (SELECT 1 FROM (WITH y AS (INSERT INTO term (id) VALUES ('x') RETURNING id) SELECT id FROM y))")).toEqual(inside('an INSERT'));
+        expect(await add("WITH x AS (COPY (SELECT 1) TO 'x.csv') SELECT NULL AS record, 'a' AS message FROM x")).toEqual(inside('a COPY'));
+        // An INSERT … RETURNING or a MERGE is no SELECT at all.
+        expect(await add("INSERT INTO term (id) VALUES ('x') RETURNING id AS record, 'a' AS message")).toEqual([
+          ['check-query-select', "check house-rule's query starts with neither SELECT nor WITH; a check's query is one SELECT"],
+        ]);
+        expect(await add("WITH s AS (SELECT 'x' AS id) MERGE INTO term USING s ON term.id = s.id WHEN MATCHED THEN DELETE RETURNING term.id AS record, 'a' AS message")).toEqual(notSelect);
         expect(await add('SELECT NULL AS record WHERE false')).toEqual([
           ['check-query-select', "check house-rule's query returns no message; a check's query returns record and message"],
         ]);

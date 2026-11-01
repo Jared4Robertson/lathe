@@ -3,7 +3,7 @@
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { StatementType, type DuckDBConnection } from '@duckdb/node-api';
+import type { DuckDBConnection } from '@duckdb/node-api';
 import { servesOf } from './trace/serves.ts';
 import { COVERAGE_COUNTS_SQL, COVERAGE_DEBT_SQL, COVERAGE_GAPS_SQL, COVERAGE_PROOFS_SQL, COVERAGE_TESTS_SQL, OWED_PATTERN_RULES_SQL, coverageViewsSql, FACT_TABLES_SQL, TEST_KINDS, TRACE_FILES_SQL, TRACE_LINKS_SQL, TRACE_OBLIGATIONS_SQL } from './coverage.ts';
 import { CONFIG_FILE, loadConfig, productClash, workspaceProducts, type LatheConfig } from './config.ts';
@@ -11,6 +11,7 @@ import { readPackageFacts } from './trace/packages.ts';
 import { readTestCases } from './trace/test-cases.ts';
 import { isTraced, matching, normalizePath, sourceFiles, walkFiles } from './trace/source-files.ts';
 import { orderChecks, referenceOf, type Reference } from './reference.ts';
+import { runCheckQuery } from './checking/check/rules.ts';
 import { formatProblem, StoreError } from './platform/data/problems.ts';
 import { openStore, Store, LATHE_DATA_DIR, type StoreOptions } from './platform/data/store.ts';
 import { SCHEMA_DIR } from './platform/data/schema.ts';
@@ -166,21 +167,6 @@ async function readRows<T>(connection: DuckDBConnection, sql: string): Promise<T
   return (await connection.runAndReadAll(sql)).getRowObjectsJson() as unknown as T[];
 }
 
-// Runs a check's query only as the one SELECT statement DuckDB reads in it (LA-CHK-INV04), on the sealed database
-// (LA-CHK-INV06): a query of several statements, or of one that is not a SELECT, is refused before any of it runs,
-// whatever the rules let through.
-async function readCheckRows<T>(connection: DuckDBConnection, sql: string): Promise<T[]> {
-  const statements = await connection.extractStatements(sql);
-  if (statements.count !== 1) throw new Error(`its query holds ${statements.count} statements; a check's query is one SELECT`);
-  const statement = await statements.prepare(0);
-  try {
-    if (statement.statementType !== StatementType.SELECT) throw new Error("its query is not a SELECT; a check's query is one SELECT");
-    return (await statement.runAndReadAll()).getRowObjectsJson() as unknown as T[];
-  } finally {
-    statement.destroySync();
-  }
-}
-
 async function append(connection: DuckDBConnection, table: string, rows: (string | number | boolean | null)[][]) {
   const appender = await connection.createAppender(table);
   for (const row of rows) {
@@ -208,7 +194,7 @@ async function runChecks(store: Store, checks: Row[], scope: Map<string, string 
     const fixed = check.severity === 'error_or_warning' ? null : (check.severity as 'error' | 'warning');
     try {
       const start = performance.now();
-      const rows = await readCheckRows<{ severity?: string; record: string | null; message: string }>(on, String(check.query));
+      const rows = await runCheckQuery<{ severity?: string; record: string | null; message: string }>(on, String(check.query));
       if (steps) steps[`check ${name}`] = Math.round((performance.now() - start) * 10) / 10;
       const product = check.product_id === undefined ? null : String(check.product_id);
       return rows
