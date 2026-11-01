@@ -89,7 +89,7 @@ describe('LA-V122-R07-T01 the following\'s editor writes only through the Patter
   });
 });
 
-describe('LA-V122-R08-T01 a refused Pattern following command shows every reason, keeps what was entered, and changes nothing', () => {
+describe('LA-V122-R08-T01 LA-PAT-PAGE-STEPS-R02-T05 a refused Pattern following command shows every reason, keeps what was entered, and changes nothing', () => {
   it('a refused Change values keeps the form open with the reasons at its top, focused', async () => {
     const user = userEvent.setup();
     const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'check', table: 'setting_value', key: 'DM-SHOP', message: 'setting colour is not one of DM-PAT-AUDIT\'s settings' }] };

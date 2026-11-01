@@ -66,7 +66,7 @@ export const LIST_INTERFACES: QueryDefinition<{ product_id: string }, { id: stri
  * its ID and IF): one past the highest in use.
  */
 export function nextProductId(reader: ProductReader, input: { kind: string; parent: string }): string {
-  if (input.kind !== 'question' && input.kind !== 'interface') refuse('kind', `${input.kind} is not a kind of the Product aggregate with an ID under a parent; its kinds are question and interface`);
+  if (input.kind !== 'question' && input.kind !== 'interface') refuse('kind', `${input.kind} is not a kind the product numbers under a parent; its kinds are question and interface`);
   const shape = reader.idShape(input.kind);
   const parent = reader.kindOf(input.parent);
   if (!parent || !shape.parents.includes(parent)) refuse('parent', `${input.kind === 'question' ? 'an open question' : 'an interface'} sits under ${shape.parents.map((k) => `a ${k}`).join(' or ')}, and ${input.parent} is ${parent ? `a ${parent}` : 'no record'}`);

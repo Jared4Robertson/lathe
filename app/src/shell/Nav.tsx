@@ -17,7 +17,7 @@ import { navChanges, rollupText, type ChangeCounts } from '../changes/rollup';
 import { useRunCommand, useShortcutHint } from './commands';
 import { SPACE_KEYS, spaceCommandId } from './keymap';
 import { useAggregate } from './prefs';
-import { foldOrUnfoldNavRow } from '../exploring/nav-row/commands/fold-or-unfold-nav-row';
+import { foldOrUnfoldNavEntry } from '../exploring/nav-row/commands/fold-or-unfold-nav-entry';
 import { foldOrUnfoldNavSection } from '../exploring/nav-row/commands/fold-or-unfold-nav-section';
 import { openNavBranch } from '../exploring/nav-row/commands/open-nav-branch';
 import { isFolderOpen, isSectionOpen } from '../exploring/nav-row/model';
@@ -339,7 +339,7 @@ function SpaceItems({ index, space, path, reveal }: { index: RecordIndex; space:
   const branchKeys = branch ? branch.split('\n') : [];
   /** A closed row that holds the current page is marked, and opening it opens the branch down to the page. */
   const holds = (key: string) => !isOpen(key) && branchKeys.includes(key);
-  const toggle = (key: string) => foldOrUnfoldNavRow({ key, branch: branchKeys });
+  const toggle = (key: string) => foldOrUnfoldNavEntry({ key, branch: branchKeys });
 
   // The current page's branch opens itself on the nav's first draw and after a move made in the nav,
   // before paint; a move made elsewhere leaves the rows where they are (LA-V61-R28).

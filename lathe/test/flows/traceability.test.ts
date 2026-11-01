@@ -282,6 +282,32 @@ describe('Traceability flows from the command line', () => {
     expect(tl.refuse('product declare-product-kind', { name: 'invariant', product_id: 'TL', label: 'Our invariant', description: 'A rule of ours.', parent_kind: 'domain', stage: 'use-cases', obligation: true, complexity: 'essential' })).toContain('invariant');
   });
 
+  it('LA-TRC-UC21-FL-T account for hand-written accidental complexity', async () => {
+    const tl = product();
+    await tl.seed([
+      ...LENDING,
+      ...PATTERN,
+      add('slot', { id: 'TL-PAT-ACT-SL01', title: 'Refusal message', pattern_id: 'TL-PAT-ACT', statement: 'A fill MUST word the refusal for the librarian.' }),
+      add('tooling', { id: 'TL-LEND-TOOL01', title: 'generate.ts', domain_id: 'TL-LEND', file: 'scripts/generate.ts' }),
+      add('tooling', { id: 'TL-LEND-TOOL02', title: 'routes.generated.ts', domain_id: 'TL-LEND', file: 'src/routes.generated.ts' }),
+      add('tooling', { id: 'TL-LEND-TOOL03', title: 'refusals.ts', domain_id: 'TL-LEND', file: 'src/refusals.ts' }),
+      link('TL-LEND-TOOL01', 'generates', 'TL-LEND-TOOL02'),
+      add('integration', { id: 'TL-INT01', title: 'Database host', system: 'Managed PostgreSQL', description: "The service that runs the library's database." }),
+      add('data_store', { id: 'TL-STORE01', title: 'DATABASE_URL', product_id: 'TL', kind: 'database', description: "The library's database." }),
+    ]);
+    expect(problemsOf(tl.workspace(), 'accidental-not-accounted-for').filter((p) => p.startsWith('TL-STORE01:'))).toHaveLength(1);
+    // S01: a record written by hand fills a slot of the pattern it is owed to.
+    tl.command('slot-filling fill-slot', { record_id: 'TL-LEND-TOOL03', slot_id: 'TL-PAT-ACT-SL01' });
+    // S02: what provides the data store is named.
+    tl.command('provision name-provider', { record_id: 'TL-STORE01', provider_id: 'TL-INT01' });
+    // S03: the provided record is accounted for, and the fill is debt at its slot.
+    const ws = tl.workspace();
+    expect(problemsOf(ws, 'accidental-not-accounted-for').filter((p) => p.startsWith('TL-STORE01:'))).toEqual([]);
+    expect(ws.coverage.find((c) => c.domain === 'TL-LEND')?.debt).toContainEqual({ id: 'TL-LEND-TOOL03', slot: 'TL-PAT-ACT-SL01' });
+    // S04: a fill of a record a generator writes is refused.
+    expect(tl.refuse('slot-filling fill-slot', { record_id: 'TL-LEND-TOOL02', slot_id: 'TL-PAT-ACT-SL01' })).toContain('a fill is written by hand');
+  });
+
   it('LA-TRC-UC08-FL-T report tests that count for nothing', async () => {
     const tl = product();
     await tl.seed([

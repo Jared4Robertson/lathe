@@ -7,7 +7,7 @@ import type { TraceHost, TraceScene } from '../../src/trace/TraceCanvas';
 import { openApp } from '../helpers';
 
 // The Trace stage (LA-V98) in the app: one row per use case on the canvas, from its outcomes to its acceptance tests,
-// read from the Trace read (list-trace-rows); its toolbar's Expand row and Expand all, the path a selection lights, its
+// read from the Trace read (list-traced-use-cases); its toolbar's Expand row and Expand all, the path a selection lights, its
 // camera, its accessible layer, and on a phone one use case at a time. It works on every focus (LA-PAT-APP-UX-R17) and
 // is ordered once (LA-PAT-APP-UX-R19).
 
@@ -43,10 +43,10 @@ const click = async (key: string, toggle = false) => {
 const toolbarButton = (name: string) => within(traceStage()).getByRole('button', { name });
 
 describe('the Trace stage', () => {
-  it('LA-V98-R15-T01 The Trace stage draws one row per use case across the five columns, each use case once, with a line from its outcome, read from list-trace-rows', async () => {
+  it('LA-V98-R15-T01 The Trace stage draws one row per use case across the five columns, each use case once, with a line from its outcome, read from list-traced-use-cases', async () => {
     const { requests } = await openTrace('/P-D-UC01?stage=trace');
     const scene = await drawn();
-    expect(requests).toContain('GET /api/trace/list-trace-rows?product_id=P');
+    expect(requests).toContain('GET /api/trace/list-traced-use-cases?product_id=P');
     expect(scene.columns.map((c) => c.name)).toEqual(['Outcome', 'Use case', 'Design flow', 'Technical flow', 'Acceptance test suite']);
     expect(scene.rows).toEqual(['P-D-UC01', 'P-D-UC02']);
     // Each use case once, in the Use case column; the outcome once, with a line to each row it serves.

@@ -212,7 +212,7 @@ describe('the reference script and GET /api/reference', () => {
     expect(readFileSync(out, 'utf8')).toBe(expected);
   });
 
-  it('LA-AUT-EP01-R01-T01 GET /api/reference serves the product reference as JSON', async () => {
+  it('LA-PAT-HTTP-STEPS-R03-T01 GET /api/reference serves the product reference as JSON', async () => {
     let status = 0;
     let body = '';
     const headers: Record<string, string> = {};

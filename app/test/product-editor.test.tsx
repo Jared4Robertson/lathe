@@ -139,7 +139,7 @@ describe('LA-V51-R08-T01 a refused Product command shows every reason, keeps wha
     const panel = screen.getByRole('region', { name: 'Remove DM-IF01?' });
     await user.click(within(panel).getByRole('button', { name: 'Remove DM-IF01' }));
     expect(await within(panel).findByRole('alert')).toHaveTextContent('flow DM-SHOP-UC01-FL goes through it');
-    expect(commands).toEqual([{ route: '/api/product/remove-interface', input: { id: 'DM-IF01' } }]);
+    expect(commands).toEqual([{ route: '/api/interface/remove-interface', input: { id: 'DM-IF01' } }]);
     expect(window.location.pathname).toBe('/DM-IF01');
   });
 });

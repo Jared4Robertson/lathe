@@ -37,8 +37,8 @@ CREATE TABLE builds (source_id VARCHAR NOT NULL REFERENCES ui_component (id), ta
 COMMENT ON TABLE builds IS 'The UI component builds the view requirement: its code does what the requirement says. A view requirement is built only through the components that build it, never through any component that renders its view.';
 CREATE TABLE follows (source_id VARCHAR NOT NULL REFERENCES follows_source (id), target_id VARCHAR NOT NULL REFERENCES pattern (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE follows IS 'The domain, use case or interface follows the pattern, and gives a value for each of its settings in setting_value rows. An interface''s pattern says how a step is carried out through it, and every domain with a use case the interface offers owes its rules.';
-CREATE TABLE meets (source_id VARCHAR NOT NULL REFERENCES technical_record (id), target_id VARCHAR NOT NULL REFERENCES standard_rule (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE meets IS 'The technical record follows the standard rule: it shows where the rule is applied, and designs it.';
+CREATE TABLE meets (source_id VARCHAR NOT NULL REFERENCES technical_record (id), target_id VARCHAR NOT NULL REFERENCES meets_target (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE meets IS 'The technical record follows the rule: a standard rule, which it shows where the rule is applied and so designs; or a pattern rule it carries out, which is the essential record a generic piece of code (a shared component, an entry point, a build script) serves.';
 CREATE TABLE persists (source_id VARCHAR NOT NULL UNIQUE REFERENCES repository (id), target_id VARCHAR NOT NULL UNIQUE REFERENCES aggregate (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE persists IS 'The repository loads and saves the aggregate, whole: one repository per aggregate, and one aggregate per repository.';
 CREATE TABLE stored_in (source_id VARCHAR NOT NULL UNIQUE REFERENCES stored_in_source (id), target_id VARCHAR NOT NULL REFERENCES data_store (id), PRIMARY KEY (source_id, target_id));
@@ -46,7 +46,7 @@ COMMENT ON TABLE stored_in IS 'The repository, reader or table is kept in the da
 CREATE TABLE provided_by (source_id VARCHAR NOT NULL UNIQUE REFERENCES provided_by_source (id), target_id VARCHAR NOT NULL REFERENCES record_id (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE provided_by IS 'The record is provided by something outside the product, which decides it once for everyone who uses it: a dependency, a platform or a generic subdomain, reached through an integration or named by a record of a product''s own kind (a component of a design system), once the product adds that pair with a product_relation named provided_by. A data store someone else runs, such as a managed database or a bucket, is provided by the integration that reaches it; a store the product owns outright, such as a local file, has none. A provided record counts as accounted for, and a provided obligation as built and proved, through its provider. One provider per record.';
 CREATE TABLE fills (source_id VARCHAR NOT NULL REFERENCES accidental_record (id), target_id VARCHAR NOT NULL REFERENCES slot (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE fills IS 'The accidental record (a technical record or an endpoint), written by hand, fills the pattern''s slot against its contract: it is a fill, accidental complexity recorded where it is owed and counted as debt until the pattern can derive it. A record of a product''s own accidental kind, such as a shared module, fills a slot the same way, with no declaration.';
+COMMENT ON TABLE fills IS 'The accidental record (a technical record, an endpoint or a data store), written by hand or set up by hand, fills the pattern''s slot against its contract: it is a fill, accidental complexity recorded where it is owed and counted as debt until the pattern can derive it. A record of a product''s own accidental kind, such as a shared module, fills a slot the same way, with no declaration.';
 CREATE TABLE generates (source_id VARCHAR NOT NULL REFERENCES tooling (id), target_id VARCHAR NOT NULL REFERENCES accidental_record (id), PRIMARY KEY (source_id, target_id), CHECK (source_id <> target_id));
 COMMENT ON TABLE generates IS 'The tooling record (a generator) writes the accidental record (a technical record''s code, or an endpoint''s route) from the spec: the record is derived, never written by hand. A record of a product''s own accidental kind, such as a shared module, is generated the same way, with no declaration.';
 CREATE TABLE serves (source_id VARCHAR NOT NULL REFERENCES capability (id), target_id VARCHAR NOT NULL REFERENCES business_outcome (id), PRIMARY KEY (source_id, target_id));
@@ -167,7 +167,7 @@ INSERT INTO meta_relation_pair VALUES
   ('about', 'question', '*', 'The open question concerns that record.'),
   ('builds_on', 'term', 'term', 'The term''s meaning uses the other term, which is defined before it.');
 
--- The pairs of provided_by, fills and generates, one per member of the supertype their end accepts, worded by its label.
+-- The pairs of provided_by, fills and generates, and of meets to a pattern rule, one per member of the supertype their end accepts, worded by its label.
 -- A product's own kind that joins the supertype gains the same pairs as its table is built (product-kinds.ts), never declared.
 INSERT INTO meta_relation_pair
   WITH named AS (
@@ -176,7 +176,8 @@ INSERT INTO meta_relation_pair
   )
   SELECT 'provided_by', kind, 'integration', 'The ' || label || ' is provided by what the integration reaches, outside the product.' FROM named WHERE supertype = 'provided_by_source'
   UNION ALL SELECT 'fills', kind, 'slot', 'The ' || label || ', written by hand, fills the slot.' FROM named WHERE supertype = 'accidental_record'
-  UNION ALL SELECT 'generates', 'tooling', kind, 'The tooling record generates the ' || label || '''s code.' FROM named WHERE supertype = 'accidental_record';
+  UNION ALL SELECT 'generates', 'tooling', kind, 'The tooling record generates the ' || label || '''s code.' FROM named WHERE supertype = 'accidental_record'
+  UNION ALL SELECT 'meets', kind, 'pattern_rule', 'The ' || label || ' carries out the pattern rule.' FROM named WHERE supertype = 'technical_record';
 
 INSERT INTO meta_table SELECT name, 'link', NULL FROM meta_relation;
 

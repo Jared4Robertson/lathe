@@ -80,7 +80,7 @@ describe('LA-V03-R03-T01 the Check editor writes only through the aggregate\'s o
   });
 });
 
-describe('LA-V03-R04-T01 a refused Check command shows every reason, keeps what was entered, and changes nothing', () => {
+describe('LA-V03-R04-T01 LA-PAT-PAGE-STEPS-R02-T02 a refused Check command shows every reason, keeps what was entered, and changes nothing', () => {
   it('a refused change keeps the form open with the reasons at its top, focused', async () => {
     const user = userEvent.setup();
     const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'check', table: 'check', key: 'domain-without-owner', message: 'a check of the product runs after Lathe\'s: its position counts from 1' }] };

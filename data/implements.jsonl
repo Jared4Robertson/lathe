@@ -16,8 +16,10 @@
 {"source_id":"LA-AUT-MOD66","target_id":"LA-AUT-A15-SR01"}
 {"source_id":"LA-AUT-MOD80","target_id":"LA-AUT-A22-SR01"}
 {"source_id":"LA-AUT-MOD82","target_id":"LA-AUT-A23-SR01"}
+{"source_id":"LA-AUT-MOD84","target_id":"LA-AUT-A24-SR01"}
 {"source_id":"LA-CHK-MOD01","target_id":"LA-CHK-A1-SR01"}
 {"source_id":"LA-CHK-MOD03","target_id":"LA-CHK-A2-SR01"}
+{"source_id":"LA-CHK-MOD05","target_id":"LA-CHK-UC08-R04"}
 {"source_id":"LA-CHK-MOD06","target_id":"LA-CHK-UC08-R04"}
 {"source_id":"LA-CHK-MOD06","target_id":"LA-CHK-UC08-R05"}
 {"source_id":"LA-EXP-MOD01","target_id":"LA-V94-R01"}
@@ -62,9 +64,13 @@
 {"source_id":"LA-PLT-MOD03","target_id":"LA-V62-R01"}
 {"source_id":"LA-PLT-MOD03","target_id":"LA-V62-R02"}
 {"source_id":"LA-PLT-MOD03","target_id":"LA-V62-R03"}
+{"source_id":"LA-PLT-MOD04","target_id":"LA-PLT-UC03-R01"}
 {"source_id":"LA-PLT-MOD05","target_id":"LA-PLT-UC19-R03"}
 {"source_id":"LA-PLT-MOD05","target_id":"LA-PLT-UC20-R01"}
 {"source_id":"LA-PLT-MOD05","target_id":"LA-V61-R12"}
+{"source_id":"LA-PLT-MOD06","target_id":"LA-PLT-A11-SR01"}
+{"source_id":"LA-PLT-MOD06","target_id":"LA-PLT-A6-SR01"}
+{"source_id":"LA-PLT-MOD06","target_id":"LA-PLT-A9-SR01"}
 {"source_id":"LA-PLT-MOD08","target_id":"LA-PLT-UC18-R01"}
 {"source_id":"LA-PLT-MOD08","target_id":"LA-PLT-UC18-R02"}
 {"source_id":"LA-PLT-MOD08","target_id":"LA-PLT-UC18-R03"}
@@ -90,7 +96,11 @@
 {"source_id":"LA-PLT-MOD34","target_id":"LA-V99-R01"}
 {"source_id":"LA-PLT-MOD34","target_id":"LA-V99-R02"}
 {"source_id":"LA-PLT-MOD34","target_id":"LA-V99-R03"}
+{"source_id":"LA-PLT-MOD35","target_id":"LA-PLT-A15-SR01"}
 {"source_id":"LA-PLT-MOD36","target_id":"LA-PLT-UC19-R03"}
 {"source_id":"LA-PLT-MOD36","target_id":"LA-PLT-UC19-R05"}
 {"source_id":"LA-PLT-MOD36","target_id":"LA-PLT-UC19-R08"}
+{"source_id":"LA-TRC-MOD01","target_id":"LA-TRC-UC02-R13"}
 {"source_id":"LA-TRC-MOD03","target_id":"LA-TRC-A3-SR01"}
+{"source_id":"LA-TRC-MOD05","target_id":"LA-TRC-UC19-R01"}
+{"source_id":"LA-TRC-MOD05","target_id":"LA-TRC-UC19-R04"}
