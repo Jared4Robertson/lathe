@@ -78,6 +78,11 @@ export function dueDate(borrowedAt: Date, timeZone: string): string {
   return addDays(localDate(borrowedAt, timeZone), LOAN_DAYS);
 }
 
+/** TL-LEND-DS01-SV, TL-LEND-INV04: a renewal moves the due date on LOAN_DAYS calendar days from the current one. */
+export function renewedDueDate(currentDueDate: string): string {
+  return addDays(currentDueDate, LOAN_DAYS);
+}
+
 /** A rule broken by a request. The endpoint handlers turn `status` into the HTTP status. */
 export class LendingError extends Error {
   readonly code: string;

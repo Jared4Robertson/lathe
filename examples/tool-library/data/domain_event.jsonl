@@ -4,3 +4,5 @@
 {"id":"TL-LEND-EV04","title":"Tool repaired","aggregate_id":"TL-LEND-A2","published":false,"description":"A librarian marked a damaged tool repaired, so it is in good condition and can be lent again."}
 {"id":"TL-LEND-EV05","title":"Loan opened","aggregate_id":"TL-LEND-A3","published":false,"description":"A member borrowed a tool, and the loan runs until its due date."}
 {"id":"TL-LEND-EV06","title":"Tool returned","aggregate_id":"TL-LEND-A3","published":false,"description":"A librarian recorded a tool's return, which closes its loan and says what condition the tool came back in."}
+{"id":"TL-LEND-EV07","title":"Loan renewed","aggregate_id":"TL-LEND-A3","published":false,"description":"A member renewed a loan before it was overdue, which moved its due date on 14 calendar days."}
+{"id":"TL-LEND-EV08","title":"Member reminded","aggregate_id":"TL-LEND-A3","published":false,"description":"The library reminded a member that their loan is due the next day (or that day, when the reminder could not go out the day before)."}

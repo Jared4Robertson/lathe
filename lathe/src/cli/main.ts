@@ -117,7 +117,7 @@ async function startServer() {
   }
   running.server.on('listening', () => console.log(`Lathe is serving ${root} at http://127.0.0.1:${port}`));
   running.server.on('error', (error) => fail(`Could not start the server: ${error.message}`));
-  // Stopped from a terminal: stop cleanly (LA-PLT-UC02-R06), then end by the same signal, as before. A second signal,
+  // Stopped from a terminal: stop cleanly (LA-PLT-UC23-R02), then end by the same signal, as before. A second signal,
   // or a stop that takes longer than STOP_TIMEOUT, ends it at once.
   for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     process.once(signal, () => {

@@ -1,5 +1,5 @@
 // Loads and saves the Loan aggregate, whole, in the loans table: its return, a child kept in the loan's row,
-// is `returned_at`, `return_condition` and `return_note`.
+// is `returned_at`, `return_condition` and `return_note`; its renewal and reminder are `renewed_at` and `reminded_at`.
 // Spec: the repository TL-LEND-REPO03 (examples/tool-library/data/).
 import type { Database, Row } from './database.ts';
 import { Loan, type NewLoan } from './loan.ts';
@@ -11,6 +11,8 @@ function toLoan(r: Row): Loan {
     toolId: Number(r.tool_id),
     borrowedAt: String(r.borrowed_at),
     dueDate: String(r.due_date),
+    renewedAt: r.renewed_at == null ? null : String(r.renewed_at),
+    remindedAt: r.reminded_at == null ? null : String(r.reminded_at),
     return:
       r.returned_at == null
         ? null
@@ -30,13 +32,15 @@ export class LoanRepository {
   add(loan: NewLoan): Loan {
     const r = this.db.sqlite
       .prepare(
-        'INSERT INTO loans (member_id, tool_id, borrowed_at, due_date, returned_at, return_condition, return_note) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *',
+        'INSERT INTO loans (member_id, tool_id, borrowed_at, due_date, renewed_at, reminded_at, returned_at, return_condition, return_note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *',
       )
       .get(
         loan.memberId,
         loan.toolId,
         loan.borrowedAt,
         loan.dueDate,
+        loan.renewedAt,
+        loan.remindedAt,
         loan.return?.returnedAt ?? null,
         loan.return?.condition ?? null,
         loan.return?.note ?? null,
@@ -69,11 +73,35 @@ export class LoanRepository {
     return r && toLoan(r);
   }
 
-  /** Saves the loan's return, whole, and returns the loan as stored. */
+  /**
+   * The active loans whose member has not been reminded yet and whose due date falls from `from` to `to`
+   * (YYYY-MM-DD, both included), in due date order, then ID order.
+   */
+  notRemindedDueBetween(from: string, to: string): Loan[] {
+    return (
+      this.db.sqlite
+        .prepare(
+          'SELECT * FROM loans WHERE returned_at IS NULL AND reminded_at IS NULL AND due_date BETWEEN ? AND ? ORDER BY due_date, id',
+        )
+        .all(from, to) as Row[]
+    ).map(toLoan);
+  }
+
+  /** Saves the loan whole (its due date, renewal, reminder and return) and returns it as stored. */
   save(loan: Loan): Loan {
     const r = this.db.sqlite
-      .prepare('UPDATE loans SET returned_at = ?, return_condition = ?, return_note = ? WHERE id = ? RETURNING *')
-      .get(loan.return?.returnedAt ?? null, loan.return?.condition ?? null, loan.return?.note ?? null, loan.id) as Row;
+      .prepare(
+        'UPDATE loans SET due_date = ?, renewed_at = ?, reminded_at = ?, returned_at = ?, return_condition = ?, return_note = ? WHERE id = ? RETURNING *',
+      )
+      .get(
+        loan.dueDate,
+        loan.renewedAt,
+        loan.remindedAt,
+        loan.return?.returnedAt ?? null,
+        loan.return?.condition ?? null,
+        loan.return?.note ?? null,
+        loan.id,
+      ) as Row;
     return toLoan(r);
   }
 }

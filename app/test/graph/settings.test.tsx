@@ -137,6 +137,24 @@ describe('moving through the graph keeps how it is drawn', () => {
     });
   }
 
+  it('LA-EXP-UC17-R01-T01 LA-EXP-UC17-FL-T The layout, the minimap and all links chosen in the graph hold on another record and after a reload', async () => {
+    await openApp('/DM-SHOP-UC01?stage=graph');
+    // S01 the minimap; S02 the layout, Nested then the Map; S03 all links in the Map.
+    fireEvent.click(await screen.findByRole('switch', { name: 'Minimap' }));
+    fireEvent.click(layoutGroup().getByRole('button', { name: 'Nested' }));
+    await waitFor(() => expect(sessionSettingsRepository.load().graph.layout).toBe('nested'));
+    fireEvent.click(layoutGroup().getByRole('button', { name: 'Map' }));
+    fireEvent.click(await screen.findByRole('switch', { name: 'All links' }));
+    const chosen = { layout: 'map', minimap: true, allLinks: true };
+    await waitFor(() => expect(sessionSettingsRepository.load().graph).toEqual(chosen));
+    // S04: on another record, and after the app opens again, the graph is drawn as chosen.
+    await openApp('/DM-SHOP?stage=graph');
+    await waitFor(() => expect(screen.getByRole('switch', { name: 'Minimap' })).toBeChecked());
+    expect(screen.getByRole('switch', { name: 'All links' })).toBeChecked();
+    expect(layoutGroup().getByRole('button', { name: 'Map' })).toHaveAttribute('aria-pressed', 'true');
+    expect(sessionSettingsRepository.load().graph).toEqual(chosen);
+  });
+
   it('LA-V93-R72-T03 The graph\'s settings last the session: the minimap comes back on reload', async () => {
     await openApp('/DM-SHOP-UC01?stage=graph');
     const minimap = await screen.findByRole('switch', { name: 'Minimap' });

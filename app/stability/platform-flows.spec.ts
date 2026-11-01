@@ -77,7 +77,7 @@ test.describe('Platform flows in the app', () => {
     await expect(page.locator(`.header-strip h1`)).toHaveText('Walk the model as a graph', { timeout: 20_000 });
   });
 
-  test('LA-PLT-UC04-FL-T work the app from the keyboard: the palette, VS Code keys, the announcement, a search box, the shortcuts sheet', async ({ page }) => {
+  test('LA-STD-EXPERIENCE-R05-T02 work the app from the keyboard: the palette, VS Code keys, the announcement, a search box, the shortcuts sheet', async ({ page }) => {
     await openPage(page, RECORD);
     await page.keyboard.press('Control+Shift+p');
     await expect(palette(page)).toBeVisible();
@@ -116,7 +116,7 @@ test.describe('Platform flows in the app', () => {
     await expect(sheet.getByRole('rowheader', { name: 'Command palette' })).toBeVisible();
   });
 
-  test('LA-PLT-UC05-FL-T see each command\'s shortcut where it is used: a tooltip, the palette, the screen reader, a rebinding followed everywhere', async ({ page }) => {
+  test('LA-STD-EXPERIENCE-R06-T02 LA-PLT-UC24-FL-T see each command\'s shortcut where it is used: a tooltip, the palette, the screen reader, a rebinding followed everywhere', async ({ page }) => {
     await openPage(page, RECORD);
     const graphButton = page.getByRole('group', { name: 'Stage' }).getByRole('button', { name: 'Graph' });
     await graphButton.hover();
@@ -297,16 +297,16 @@ test.describe('Platform flows in the app', () => {
   test.describe('on a phone', () => {
     test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
 
-    test('LA-PLT-UC08-FL-T read the spec on a phone: search, the graph by touch, the sheets, the nav, Back, a tablet', async ({ page }) => {
+    test('LA-STD-EXPERIENCE-R03-T02 read the spec on a phone: search, the graph by touch, the sheets, the nav, Back, a tablet', async ({ page }) => {
       await openPage(page, '/LA', '.topbar');
       await expect(page.getByRole('banner')).toBeVisible();
       // Search from the top bar, and open a use case.
       await page.getByRole('banner').getByRole('button', { name: 'Quick find' }).tap();
-      await page.locator('.quick-open input').fill('LA-PLT-UC05');
-      const hit = page.locator('.quick-open .palette-list li').filter({ hasText: /LA-PLT-UC05(?![-\d])/ }).first();
+      await page.locator('.quick-open input').fill('LA-PLT-UC07');
+      const hit = page.locator('.quick-open .palette-list li').filter({ hasText: /LA-PLT-UC07(?![-\d])/ }).first();
       await hit.waitFor();
       await hit.tap();
-      await page.waitForURL((u) => u.pathname === '/LA-PLT-UC05');
+      await page.waitForURL((u) => u.pathname === '/LA-PLT-UC07');
       // The stage fills the screen under the bars; the wiki card opens as a bottom sheet.
       const stage = (await page.locator('.focus-stage').boundingBox())!;
       expect(stage.width).toBeGreaterThan(360);
@@ -356,7 +356,7 @@ test.describe('Platform flows in the app', () => {
       await page.goBack();
       await page.waitForURL((u) => u.pathname === `/${node!.id}`);
       await page.goBack();
-      await page.waitForURL((u) => u.pathname === '/LA-PLT-UC05');
+      await page.waitForURL((u) => u.pathname === '/LA-PLT-UC07');
       // A tablet in landscape keeps the floating panels, with targets sized for a finger.
       await page.setViewportSize({ width: 1180, height: 820 });
       await expect(page.locator('nav#nav')).toBeVisible();
@@ -366,7 +366,7 @@ test.describe('Platform flows in the app', () => {
     });
   });
 
-  test('LA-PLT-UC09-FL-T read without anything jumping: open, move, stages, folds, resize, the graph, a reload, overlays, the theme', async ({ page }) => {
+  test('LA-STD-EXPERIENCE-R01-T02 read without anything jumping: open, move, stages, folds, resize, the graph, a reload, overlays, the theme', async ({ page }) => {
     const KEYS = [...SHELL, ...FOCUS];
     const CONTENT = ['.wiki-panel-scroll', '.header-strip'];
     await openPage(page, RECORD);
@@ -442,7 +442,7 @@ test.describe('Platform flows in the app', () => {
     }));
   });
 
-  test('LA-PLT-UC10-FL-T use Lathe with a keyboard and a screen reader: Tab round, focus kept on the page, announcements, High contrast, a held dialog', async ({ page }) => {
+  test('LA-STD-EXPERIENCE-R04-T02 use Lathe with a keyboard and a screen reader: Tab round, focus kept on the page, announcements, High contrast, a held dialog', async ({ page }) => {
     await openPage(page, RECORD);
     // Tab round the nav, the page bar, the wiki card and the stage.
     const reached = new Set<string>();

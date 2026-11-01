@@ -17,3 +17,8 @@
 {"id":"TL-LEND-UC05-FL-S02","title":"The catalog shows the tool needing repair, and borrowing it is refused","flow_id":"TL-LEND-UC05-FL","path":"main","position":2}
 {"id":"TL-LEND-UC06-FL-S01","title":"Once fixed, the librarian marks the tool repaired, and it is available again","flow_id":"TL-LEND-UC06-FL","path":"main","position":1}
 {"id":"TL-LEND-UC06-FL-S02","title":"The catalog lists the tool as available, as the library showed it","flow_id":"TL-LEND-UC06-FL","path":"main","position":2}
+{"id":"TL-LEND-UC07-FL-S01","title":"The librarian opens the tools waiting for repair, the longest waiting first","flow_id":"TL-LEND-UC07-FL","path":"main","position":1}
+{"id":"TL-LEND-UC07-FL-S02","title":"The librarian sees which of them are still out on loan","flow_id":"TL-LEND-UC07-FL","path":"main","position":2}
+{"id":"TL-LEND-UC08-FL-S01","title":"Before the loan is due, the member renews it","flow_id":"TL-LEND-UC08-FL","path":"main","position":1}
+{"id":"TL-LEND-UC08-FL-S02","title":"The library answers with the loan and its new due date","flow_id":"TL-LEND-UC08-FL","path":"main","position":2}
+{"id":"TL-LEND-UC08-FL-S03","title":"When the loan cannot be renewed, the renewal is refused with the reason","flow_id":"TL-LEND-UC08-FL","path":"refused","position":1}

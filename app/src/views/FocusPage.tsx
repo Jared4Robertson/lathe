@@ -230,7 +230,7 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
   ), [card.width, collapseCard]);
   useEffect(() => { setSheet(false); }, [narrow]);
 
-  // What the page shows, for Claude's app_focus tool in the desktop chat (LA-PLT-UC19-R06).
+  // What the page shows, for Claude's app_focus tool in the desktop chat (LA-PLT-UC29-R01).
   const selectedNow = useCallback(() => peek.get().selected, [peek]);
   useViewState({ focus, stage, selected: null, wikiCard: cardShown }, selectedNow);
 

@@ -140,11 +140,11 @@ describe.skipIf(process.platform !== 'darwin')('The desktop app opens a product 
     expect(result.bridge?.nodeInPage).toBe(false);
   });
 
-  it('LA-PLT-UC13-R03-T01 tells the page it runs in the desktop app', () => {
+  it('LA-STD-EXPERIENCE-R08-T02 tells the page it runs in the desktop app', () => {
     expect(result.bridge?.isDesktop).toBe(true);
   });
 
-  it('LA-PLT-UC13-FL-T the Reader uses Lathe from the native menus: File, Edit, View, Window and Help, a View item run by its command ID, in the desktop app', () => {
+  it('LA-STD-EXPERIENCE-R08-T03 the Reader uses Lathe from the native menus: File, Edit, View, Window and Help, a View item run by its command ID, in the desktop app', () => {
     // The app menu (named after the app) comes first on macOS.
     expect(result.menu?.top.slice(1)).toEqual(['File', 'Edit', 'View', 'Window', 'Help']);
     expect(result.menu?.view).toEqual(expect.arrayContaining(['Command Palette…', 'Graph Stage', 'ERD Stage', 'Trace Stage', 'Show or Collapse Wiki Card', 'Show or Hide Navigation', 'Show or Hide Chat']));

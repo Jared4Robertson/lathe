@@ -38,6 +38,16 @@ Before you propose adding, changing or removing an essential record, list the pr
 
 Every accidental record must be derived, provided or a fill (`accidental-not-accounted-for`). Fills are the product's accidental debt: coverage lists them, and each is a deliberate, visible deviation, not a failure. Read the debt by slot. A slot with three or more fills is a pattern candidate (`pattern-candidate`): report what the fills repeat so the Owner can have it written as a pattern and generated. Do not hide debt by deleting a fill or marking a record provided when it is not.
 
+## Use case line checks
+
+A use case is one goal one actor sets out to finish in one sitting, which leaves something the business cares about true (LA-STD-MODELING-R15). Three warnings read the line:
+
+- `use-case-changes-many-aggregates`: the use case's actors' own steps send commands of more than one aggregate, counted per interface that offers it (its shared steps and that interface's variants). Queries, steps on a path named refused and another actor's writes are not counted. Split it by goal; make the later change a policy that hears the first's event; make another actor's write the trigger, not a step; write a link from the record that owns it; or make the goals a journey (`discover-outcomes`).
+- `use-case-title-joins-goals`: the title holds "and", "or" or a list outside a "with" phrase. Split it into a use case per goal, or name the parts of one thing with "with" ("Write a use case with its flow and tests").
+- `another-actor-writes-in-a-step`: a step whose subject is a role that is not one of the use case's actors sends a command. Start the flow where the use case's actors take over, or make the write a use case of its own and string the two in a journey.
+
+Fix the use case, not the step's wording: rewording a step so the check stops reading it hides the second goal.
+
 ## Journey checks
 
 - `step-order` (error) covers the steps of each path of a flow and of a journey: number them 1, 2, 3 without gaps, or move a step with the move command.

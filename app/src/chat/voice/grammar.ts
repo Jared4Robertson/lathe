@@ -1,4 +1,4 @@
-// The voice grammar (LA-PLT-UC20-R02): how what the Owner says becomes the chat's message, a wake or a command. The
+// The voice grammar (LA-PLT-UC26-R01): how what the Owner says becomes the chat's message, a wake or a command. The
 // recognizer's words come with their times, and the voice activity's pauses beside them (withPauses); then:
 //  - waiting (voice activation on, not dictating): the wake phrase after a pause wakes the chat, and the rest of the
 //    utterance is the message's first words ("Lathe, zoom into this" → "zoom into this"); a mid-sentence "Lathe" (no

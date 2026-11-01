@@ -99,7 +99,7 @@ async function refusal(store: Store, definition: AnyCommand, input: unknown): Pr
 
 const fileOf = (store: Store, table: string) => readFileSync(path.join(store.dataDir, `${table}.jsonl`), 'utf8');
 
-describe('LA-AUT-UC23-R01-T51 each Product command changes one product through ProductRepository, held to its rules', () => {
+describe('LA-AUT-UC35-R01-T51 each Product command changes one product through ProductRepository, held to its rules', () => {
   it('adds a product whole with its roles, writing only its own tables', async () => {
     const store = await ownStore();
     expect(store.rows('role').map((r) => r.name)).toEqual(['Librarian', 'Member']);
@@ -155,7 +155,7 @@ describe('LA-AUT-UC04-R01-T51 a product kind and relation are declared, changed 
   });
 });
 
-describe('LA-AUT-UC23-R02-T51 an open question sits under its product or one of its domains, owned by a role, about records of its product', () => {
+describe('LA-AUT-UC36-R01-T01 an open question sits under its product or one of its domains, owned by a role, about records of its product', () => {
   it('adds a question about records, moves it to a domain and back, and removes it with its links', async () => {
     const store = await storeAt(writeData(everyKind()));
     await runCommand(store, ADD_QUESTION, { id: 'TL-Q01', title: 'Who repairs tools?', product_id: 'TL', owner: 'Librarian', description: 'The desk or a volunteer.', about: ['TL-LEND-UC01'] });
@@ -186,7 +186,7 @@ describe('LA-AUT-INV50-T an open question is owned by one of its product\'s role
   });
 });
 
-describe('LA-AUT-UC23-R01-T52 removing a record of a product that is not there is refused', () => {
+describe('LA-AUT-UC35-R01-T52 removing a record of a product that is not there is refused', () => {
   it('refuses removing a question or a product kind that is not there', async () => {
     const store = await ownStore();
     expect((await refusal(store, REMOVE_QUESTION, { id: 'TL-Q09' })).problems[0]).toMatchObject({ rule: 'missing', message: 'there is no open question TL-Q09' });
@@ -194,7 +194,7 @@ describe('LA-AUT-UC23-R01-T52 removing a record of a product that is not there i
   });
 });
 
-describe('LA-AUT-UC23-R01-T53 each Product command and query is reached by name from the CLI, the MCP tools and HTTP', () => {
+describe('LA-AUT-UC35-R01-T53 each Product command and query is reached by name from the CLI, the MCP tools and HTTP', () => {
   it('runs `lathe product <command>` with flags or JSON, prints the refusal with its reasons, and helps from the schema', async () => {
     const root = writeData(everyKind());
     const out: string[] = [];
