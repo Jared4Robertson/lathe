@@ -25,7 +25,7 @@ export interface PatternFollowing {
 /** The tables the Pattern following aggregate keeps its rows in: the link and its part. */
 export const PATTERN_FOLLOWING_TABLES = ['follows', 'setting_value'] as const;
 
-/** How the aggregate's kinds sit in an instance: the follows link, and the setting values its commands give whole. */
+/** How the aggregate's kinds sit in an instance: the follows link, and the setting values its commands give whole. Its repository is generated from it. @public (read by `npm run generate`) */
 export const PATTERN_FOLLOWING_SHAPE = {
   follows: { at: 'follows', given: { setting_values: 'values' } },
 } as const satisfies AggregateShape;

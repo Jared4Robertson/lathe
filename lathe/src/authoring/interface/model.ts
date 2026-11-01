@@ -21,7 +21,7 @@ export interface Interface {
 /** The tables the Interface aggregate keeps its rows in: its kinds, and the relation it starts. */
 export const INTERFACE_TABLES = ['interface', 'interface_actor', 'offers'] as const;
 
-/** How the aggregate's kind sits in an instance: the interface's row, its roles in order and the use cases it offers. */
+/** How the aggregate's kind sits in an instance: the interface's row, its roles in order and the use cases it offers. Its repository is generated from it. @public (read by `npm run generate`) */
 export const INTERFACE_SHAPE = {
   interface: { at: 'row', lists: { actors: 'actors', offers: 'offers' } },
 } as const satisfies AggregateShape;
