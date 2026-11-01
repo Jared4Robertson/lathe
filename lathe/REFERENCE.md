@@ -47,13 +47,13 @@ it proves, and a standard its type (a quality is essential, engineering accident
 
 ## Discovery
 
-The business outcomes the product exists to achieve, each a measurable statement with its measure and target, which its capabilities serve.
+The business outcomes the product exists to achieve, each a measurable statement with its measure and target, which its capabilities serve, and the journeys that reach them: the use cases and handoffs, in order, from a trigger to a result.
 
 <a id="kind-business_outcome"></a>
 
 ### Business outcome (`business_outcome`)
 
-A business outcome: a measurable change the product exists to bring about, which its capabilities serve and its tests or records measure (measured_by). The trace runs from it to a capability, a use case, the code and the tests.
+A business outcome: a measurable change the product exists to bring about, which its capabilities and journeys serve and its tests or records measure (measured_by). The trace runs from it to a capability or a journey, a use case, the code and the tests.
 
 - **Parents:** [`product`](#kind-product) (`product_id`)
 - **Children:** none
@@ -84,6 +84,66 @@ A business outcome: a measurable change the product exists to bring about, which
 - **Rule:** `("trim"(measure) != '')`
 - **Rule:** `("trim"("target") != '')`
 - **Rule:** `("trim"(measured_outside) != '')`
+
+<a id="kind-journey"></a>
+
+### Journey (`journey`)
+
+A journey: the use cases and handoffs, in order, that take the product's people from a trigger to a result a business outcome measures, across actors and domains. It serves business outcomes as a capability does, and its journey test drives it end to end.
+
+- **Parents:** [`product`](#kind-product) (`product_id`)
+- **Children:** [`journey_step`](#kind-journey_step), [`journey_test`](#kind-journey_test)
+- **Complexity:** essential: what the problem itself demands, decided once per product
+- **Obligation:** no
+- **ID:** `<P>-JR<nn>`, such as `TL-JR01`; it starts with its parent's ID
+- **Links out:** Serves ([`serves`](#relation-serves))
+- **Links in:** Questions about this ([`about`](#relation-about))
+
+<a id="table-journey"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The journey's ID: its product's ID and JR<nn>, such as TL-JR01. |
+| `title` | VARCHAR | yes | The summary goal, verb first, naming no interface, such as Get a damaged tool back in lending. |
+| `product_id` | VARCHAR → [`product`](#table-product) | yes | The product it belongs to. A journey crosses domains, never products. |
+| `trigger` | VARCHAR | yes | What starts it, in the world, in a sentence, such as A tool is found damaged. |
+| `result` | VARCHAR | yes | What it ends in, which an outcome measures, in a sentence, such as The tool is available to borrow again. |
+| `notes` | VARCHAR | no | Longer notes on the journey, such as where its time is lost. |
+
+- **Key:** `id`
+- **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"("trigger") != '')`
+- **Rule:** `("trim"(result) != '')`
+
+<a id="kind-journey_step"></a>
+
+### Journey step (`journey_step`)
+
+One step of a journey, in order on its path, in the journey's words. It carries out one use case or one policy (a handoff), of its own product (carries_out); a step that carries out nothing yet is a use case still to write. Its actors are its use case's, derived; a handoff's actor is the product itself.
+
+- **Parents:** [`journey`](#kind-journey) (`journey_id`)
+- **Children:** none
+- **Complexity:** essential: what the problem itself demands, decided once per product
+- **Obligation:** no
+- **ID:** `<journey>-S<nn>`, such as `TL-JR01-S01`; it starts with its parent's ID
+- **Links out:** Carries out ([`carries_out`](#relation-carries_out))
+- **Links in:** Questions about this ([`about`](#relation-about))
+
+<a id="table-journey_step"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The step's ID: its journey's ID and S<nn>, such as TL-JR01-S01. |
+| `title` | VARCHAR | yes | What happens, in the journey's words, such as The librarian takes the tool back needing repair. |
+| `journey_id` | VARCHAR → [`journey`](#table-journey) | yes | The journey it belongs to. |
+| `path` | VARCHAR | yes | The path it is on: main, or an alternate named for when it is taken, such as found outside a return. |
+| `position` | INTEGER | yes | Its place on its path, from 1. |
+
+- **Key:** `id`
+- **Unique:** `journey_id`, `path`, `position`
+- **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(path) != '')`
+- **Rule:** `("position" >= 1)`
 
 ### Checks: discovery
 
@@ -569,7 +629,7 @@ Whenever an event, then a command (event storming). It belongs to the command it
   - **Proved:** Its policy test.
 - **ID:** `<P>-<D>-PO<nn>`, such as `TL-LEND-PO01`; it starts with its domain's ID
 - **Links out:** Hears ([`hears`](#relation-hears)), Provided by ([`provided_by`](#relation-provided_by))
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links in:** Questions about this ([`about`](#relation-about)), Carried out in ([`carries_out`](#relation-carries_out))
 - **Checks:** [`event-not-by-outbox`](#check-event-not-by-outbox), [`serves-no-outcome`](#check-serves-no-outcome)
 - **Gaps:** [`policy-hears-nothing`](#gap-policy-hears-nothing)
 
@@ -862,7 +922,7 @@ An actor's goal: its actors (use_case_actor rows), its UC requirements and its f
 - **Obligation:** no
 - **ID:** `<P>-<D>-UC<nn>`, such as `TL-LEND-UC01`; it starts with its domain's ID
 - **Links out:** Follows ([`follows`](#relation-follows))
-- **Links in:** Questions about this ([`about`](#relation-about)), Offered through ([`offers`](#relation-offers))
+- **Links in:** Questions about this ([`about`](#relation-about)), Carried out in ([`carries_out`](#relation-carries_out)), Offered through ([`offers`](#relation-offers))
 - **Parts:** [`use_case_actor`](#table-use_case_actor)
 - **Checks:** [`pattern-setting-missing`](#check-pattern-setting-missing), [`pattern-not-followed`](#check-pattern-not-followed), [`title-breaks-convention`](#check-title-breaks-convention), [`flow-title-off-pattern`](#check-flow-title-off-pattern)
 - **Gaps:** [`use-case-without-actor`](#gap-use-case-without-actor), [`use-case-without-requirement`](#gap-use-case-without-requirement), [`use-case-without-flow`](#gap-use-case-without-flow)
@@ -2686,6 +2746,48 @@ The use case's acceptance test: its flow's main path, end to end, through any on
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
 
+<a id="kind-journey_test"></a>
+
+### Journey test (`journey_test`)
+
+The journey's test: its main path, end to end, from its trigger to its result, across the use cases and handoffs it carries out, at the lowest level that can observe the result (service, system or browser). It proves the journey only; each step's use case and policy is proved by its own tests.
+
+- **Parents:** [`journey`](#kind-journey) (`journey_id`)
+- **Children:** none
+- **Complexity:** as the record it sits under
+- **Obligation:** no
+- **ID:** `<journey>-T`, such as `TL-JR01-T`; it starts with its parent's ID
+- **Links out:** Starts from ([`starts_from`](#relation-starts_from))
+- **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
+
+<a id="table-journey_test"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The test's ID: its journey's ID and T, such as TL-JR01-T. |
+| `title` | VARCHAR | yes | What the test shows, in a sentence. |
+| `journey_id` | VARCHAR → [`journey`](#table-journey) | yes | The journey it proves; it has exactly one test. |
+| `level` | ENUM('unit', 'integration', 'service', 'system', 'browser') | yes | How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. |
+| `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
+| `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
+| `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
+| `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
+| `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
+| `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
+| `steps` | VARCHAR[] | yes | What the test does along the journey's main path, step by step, from its trigger. |
+| `expected_result` | VARCHAR | yes | What it expects at the end: the journey's result. |
+| `notes` | VARCHAR | no | Longer notes on the test, such as when to run it. |
+
+- **Key:** `id`
+- **Unique:** `journey_id`
+- **Rule:** `("trim"(title) != '')`
+- **Rule:** `smoke`
+- **Rule:** `"external"`
+- **Rule:** `(len(steps) >= 1)`
+- **Rule:** `("trim"(expected_result) != '')`
+- **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
+- **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
+
 <a id="kind-integration_test"></a>
 
 ### Integration test (`integration_test`)
@@ -2928,7 +3030,7 @@ The product, the roles its records name and its open questions, which belong to 
 A product: the root of a set of specifications.
 
 - **Parents:** none (a root record)
-- **Children:** [`business_outcome`](#kind-business_outcome), [`domain`](#kind-domain), [`pattern`](#kind-pattern), [`interface`](#kind-interface), [`data_store`](#kind-data_store), [`standard`](#kind-standard), [`question`](#kind-question)
+- **Children:** [`business_outcome`](#kind-business_outcome), [`journey`](#kind-journey), [`domain`](#kind-domain), [`pattern`](#kind-pattern), [`interface`](#kind-interface), [`data_store`](#kind-data_store), [`standard`](#kind-standard), [`question`](#kind-question)
 - **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>`, such as `TL`
@@ -3213,6 +3315,20 @@ The command, query or read model uses the domain service, of its own domain.
 | [`query`](#kind-query) | [`domain_service`](#kind-domain_service) | The query uses the domain service. |
 | [`read_model`](#kind-read_model) | [`domain_service`](#kind-domain_service) | The read model's projection uses the domain service. |
 
+<a id="relation-carries_out"></a>
+
+### `carries_out`
+
+The journey step carries out the use case or the policy, of its own product: at most one per step. A step that carries out nothing yet is a use case still to write.
+
+- **Reads:** Carries out / Carried out in
+- **Role:** none
+
+| From | To | Meaning |
+| --- | --- | --- |
+| [`journey_step`](#kind-journey_step) | [`policy`](#kind-policy) | The step is a handoff: the product itself acts, by the policy. |
+| [`journey_step`](#kind-journey_step) | [`use_case`](#kind-use_case) | The step is the use case, taken by its actors. |
+
 <a id="relation-checks"></a>
 
 ### `checks`
@@ -3414,6 +3530,7 @@ The business outcome is measured by the test or record: a test of any kind, or a
 | [`business_outcome`](#kind-business_outcome) | [`flow_test`](#kind-flow_test) | The business outcome is measured by the flow test. |
 | [`business_outcome`](#kind-business_outcome) | [`integration_test`](#kind-integration_test) | The business outcome is measured by the integration test. |
 | [`business_outcome`](#kind-business_outcome) | [`invariant_test`](#kind-invariant_test) | The business outcome is measured by the invariant test. |
+| [`business_outcome`](#kind-business_outcome) | [`journey_test`](#kind-journey_test) | The business outcome is measured by the journey test. |
 | [`business_outcome`](#kind-business_outcome) | [`pattern_rule_test`](#kind-pattern_rule_test) | The business outcome is measured by the pattern rule test. |
 | [`business_outcome`](#kind-business_outcome) | [`policy_test`](#kind-policy_test) | The business outcome is measured by the policy test. |
 | [`business_outcome`](#kind-business_outcome) | [`specification_test`](#kind-specification_test) | The business outcome is measured by the specification test. |
@@ -3611,7 +3728,7 @@ The query selects the records that satisfy the specification, of its own domain.
 
 ### `serves`
 
-The capability serves the business outcome: what it is for. A capability may serve several outcomes, and an outcome be served by several capabilities.
+The capability or journey serves the business outcome: what it is for. A capability or journey may serve several outcomes, and an outcome be served by several capabilities and journeys.
 
 - **Reads:** Serves / Served by
 - **Role:** none
@@ -3619,6 +3736,7 @@ The capability serves the business outcome: what it is for. A capability may ser
 | From | To | Meaning |
 | --- | --- | --- |
 | [`capability`](#kind-capability) | [`business_outcome`](#kind-business_outcome) | The capability serves the business outcome. |
+| [`journey`](#kind-journey) | [`business_outcome`](#kind-business_outcome) | The journey serves the business outcome: its result is what the outcome measures. |
 
 <a id="relation-starts_from"></a>
 
@@ -3637,6 +3755,7 @@ The test starts from the test data set: it is prepared before the test and reset
 | [`flow_test`](#kind-flow_test) | [`test_data_set`](#kind-test_data_set) | The flow test starts from the test data set. |
 | [`integration_test`](#kind-integration_test) | [`test_data_set`](#kind-test_data_set) | The integration test starts from the test data set. |
 | [`invariant_test`](#kind-invariant_test) | [`test_data_set`](#kind-test_data_set) | The invariant test starts from the test data set. |
+| [`journey_test`](#kind-journey_test) | [`test_data_set`](#kind-test_data_set) | The journey test starts from the test data set. |
 | [`pattern_rule_test`](#kind-pattern_rule_test) | [`test_data_set`](#kind-test_data_set) | The pattern rule test starts from the test data set. |
 | [`policy_test`](#kind-policy_test) | [`test_data_set`](#kind-test_data_set) | The policy test starts from the test data set. |
 | [`specification_test`](#kind-specification_test) | [`test_data_set`](#kind-test_data_set) | The specification test starts from the test data set. |
