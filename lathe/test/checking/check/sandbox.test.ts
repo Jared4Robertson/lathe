@@ -25,7 +25,7 @@ afterAll(() => {
 });
 
 const row = (name: string, position: number, query: string) => ({
-  name, product_id: 'EX', position, severity: 'warning', summary: `The house rule ${name}.`, explanation: 'Made for this test. Fix what it reports.', query,
+  name, product_id: 'EX', domain_id: 'LA-CHK', position, severity: 'warning', summary: `The house rule ${name}.`, explanation: 'Made for this test. Fix what it reports.', query,
 });
 
 const closed = /file system operations are disabled by configuration/;

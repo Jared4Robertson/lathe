@@ -167,7 +167,7 @@ describe('checks', () => {
           "SELECT NULL AS record, 'a' AS message WHERE false;",
         ];
         for (const [at, query] of queries.entries()) {
-          await runCommand(store, ADD_CHECK, { name: `house-rule-${at + 1}`, product_id: 'EX', position: at + 1, severity: 'warning', summary: 'A house rule.', explanation: 'Made for this test. Fix what it reports.', query });
+          await runCommand(store, ADD_CHECK, { name: `house-rule-${at + 1}`, product_id: 'EX', domain_id: 'LA-CHK', position: at + 1, severity: 'warning', summary: 'A house rule.', explanation: 'Made for this test. Fix what it reports.', query });
         }
         expect(store.rows('check').filter((r) => r.product_id === 'EX').map((r) => r.query)).toEqual(queries);
       } finally {

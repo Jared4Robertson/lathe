@@ -383,6 +383,7 @@
 {"source_id":"LA-CHK-INV03-RL","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
 {"source_id":"LA-CHK-INV04-RL","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
 {"source_id":"LA-CHK-INV05-RL","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
+{"source_id":"LA-CHK-INV06-RL","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
 {"source_id":"LA-CHK-MOD01","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL03"}
 {"source_id":"LA-CHK-MOD03","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL03"}
 {"source_id":"LA-CHK-MOD05","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL16"}
