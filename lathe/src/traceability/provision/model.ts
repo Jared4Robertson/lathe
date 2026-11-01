@@ -18,7 +18,7 @@ export interface Provision {
 /** The tables the Provision aggregate keeps its rows in: the link. */
 export const PROVISION_TABLES = ['provided_by'] as const;
 
-/** How the aggregate's kind sits in an instance: the provided_by link. */
+/** How the aggregate's kind sits in an instance: the provided_by link. Its repository is generated from it. @public (read by `npm run generate`) */
 export const PROVISION_SHAPE = {
   provided_by: { at: 'providedBy' },
 } as const satisfies AggregateShape;

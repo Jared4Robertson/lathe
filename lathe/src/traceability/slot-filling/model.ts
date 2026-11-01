@@ -16,7 +16,7 @@ export interface SlotFilling {
 /** The tables the Slot filling aggregate keeps its rows in: the link. */
 export const SLOT_FILLING_TABLES = ['fills'] as const;
 
-/** How the aggregate's kind sits in an instance: the fills link. */
+/** How the aggregate's kind sits in an instance: the fills link. Its repository is generated from it. @public (read by `npm run generate`) */
 export const SLOT_FILLING_SHAPE = {
   fills: { at: 'fills' },
 } as const satisfies AggregateShape;
