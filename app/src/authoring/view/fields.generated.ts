@@ -8,14 +8,18 @@ export const VIEW_FIELDS = {
     title: { kind: 'column', table: 'view', column: 'title', required: true, clearable: false },
     description: { kind: 'column', table: 'view', column: 'description', required: true, clearable: false },
     route: { kind: 'column', table: 'view', column: 'route', required: false, clearable: false },
+    interface_id: { kind: 'column', table: 'view', column: 'interface_id', required: false, clearable: false },
     notes: { kind: 'column', table: 'view', column: 'notes', required: false, clearable: false },
+    presents: { kind: 'ids', description: 'The commands and queries a person sends or asks in it.', required: false, clearable: false },
   },
   '/api/view/change-view': {
     id: { kind: 'column', table: 'view', column: 'id', required: true, clearable: false },
     title: { kind: 'column', table: 'view', column: 'title', required: false, clearable: false },
     description: { kind: 'column', table: 'view', column: 'description', required: false, clearable: false },
     route: { kind: 'column', table: 'view', column: 'route', required: false, clearable: true },
+    interface_id: { kind: 'column', table: 'view', column: 'interface_id', required: false, clearable: true },
     notes: { kind: 'column', table: 'view', column: 'notes', required: false, clearable: true },
+    presents: { kind: 'ids', description: 'The commands and queries a person sends or asks in it.', required: false, clearable: false },
   },
   '/api/view/remove-view': {
     id: { kind: 'column', table: 'view', column: 'id', required: true, clearable: false },

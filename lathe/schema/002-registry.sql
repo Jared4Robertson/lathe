@@ -19,7 +19,7 @@ COMMENT ON TABLE reads_source IS 'The records that read aggregates: specificatio
 CREATE TABLE calls_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
 COMMENT ON TABLE calls_source IS 'The records that use domain services: commands, queries and read models.';
 CREATE TABLE follows_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
-COMMENT ON TABLE follows_source IS 'The records that may follow a pattern: domains and use cases.';
+COMMENT ON TABLE follows_source IS 'The records that may follow a pattern: domains, use cases and interfaces (an interface''s pattern says how each step of a flow is carried out through it).';
 CREATE TABLE technical_record (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
 CREATE TABLE test (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
 COMMENT ON TABLE test IS 'Every test, of each test kind: what may start from a test data set.';
@@ -41,7 +41,7 @@ INSERT INTO meta_supertype_member
   UNION ALL SELECT 'operation', kind FROM (VALUES ('command'), ('query')) AS t (kind)
   UNION ALL SELECT 'reads_source', kind FROM (VALUES ('specification'), ('read_model')) AS t (kind)
   UNION ALL SELECT 'calls_source', kind FROM (VALUES ('command'), ('query'), ('read_model')) AS t (kind)
-  UNION ALL SELECT 'follows_source', kind FROM (VALUES ('domain'), ('use_case')) AS t (kind)
+  UNION ALL SELECT 'follows_source', kind FROM (VALUES ('domain'), ('use_case'), ('interface')) AS t (kind)
   UNION ALL SELECT 'technical_record', kind FROM (VALUES ('repository'), ('data_model'), ('table'), ('value_type'), ('rule'), ('predicate'),
     ('event_type'), ('projection'), ('reader'), ('command_handler'), ('query_handler'), ('event_handler'), ('service'), ('ui_component'),
     ('endpoint_handler'), ('adapter'), ('entry_point'), ('tooling')) AS t (kind)

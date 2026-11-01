@@ -25,7 +25,7 @@ export interface Placed {
 
 /** How a domain uses a record with no owner: each row of the table names a user, placed through its parents, and what it uses. */
 const USED_BY: { table: string; user: string; used: string }[] = [
-  { table: 'happens_in', user: 'source_id', used: 'target_id' },
+  { table: 'presents', user: 'target_id', used: 'source_id' },
   { table: 'exchanges_with', user: 'source_id', used: 'target_id' },
   { table: 'entity_field', user: 'entity_id', used: 'type_value_object_id' },
   { table: 'event_field', user: 'domain_event_id', used: 'type_value_object_id' },
@@ -137,9 +137,9 @@ function placeRecords(view: ReadView): Map<string, Placed> {
     if (domain) users.set(used, (users.get(used) ?? new Set()).add(domain));
   };
   for (const u of USED_BY) if (schema.tables[u.table]) for (const row of view.rows(u.table)) use(text(row[u.used]), text(row[u.user]));
-  if (schema.tables.renders && schema.tables.happens_in) {
-    const stepsIn = groupBy(view.rows('happens_in'), (h) => h.target_id);
-    for (const r of view.rows('renders')) for (const step of groupOf(stepsIn, String(r.target_id))) use(String(r.source_id), String(step.source_id));
+  if (schema.tables.renders && schema.tables.presents) {
+    const presented = groupBy(view.rows('presents'), (h) => h.source_id);
+    for (const r of view.rows('renders')) for (const p of groupOf(presented, String(r.target_id))) use(String(r.source_id), String(p.target_id));
   }
   for (const r of placed.values()) {
     if (r.domain) continue;

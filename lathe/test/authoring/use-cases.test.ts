@@ -127,7 +127,7 @@ describe('flows', () => {
     const step = data.flow_step[0];
     expect((await refusals(adding(data, { flow: [{ ...flow, title: 'Borrow again' }] }))).map((p) => p.rule)).toEqual(['primary-key']);
     expect((await refusals(adding(data, { flow: [{ ...flow, id: 'TL-LEND-UC01-FL02' }] }))).map((p) => p.rule)).toContain('unique');
-    expect((await refusals(adding(data, { flow_step: [{ ...step, id: 'TL-LEND-UC01-FL01-S02' }] }))).map((p) => p.rule)).toEqual(['unique']);
+    expect((await refusals(adding(data, { flow_step: [{ ...step, id: 'TL-LEND-UC01-FL-S03' }] }))).map((p) => p.rule)).toEqual(['unique']);
     expect(await refusals(adding(data, { fulfills: [{ source_id: step.id, target_id: 'TL-LEND-UC02-R01' }] }))).toEqual([
       expect.objectContaining({ rule: 'step-fulfills-own-use-case' }),
     ]);
@@ -181,7 +181,7 @@ describe('flows', () => {
     for (const kind of ['API', 'CLI', 'agent tools']) {
       const through = changing(viewed, 'interface', () => true, { kind });
       expect(await refusals(through), kind).toEqual([
-        expect.objectContaining({ rule: 'step-fits-interface', message: `${step.id} is a step of TL-LEND-UC01-FL01, which goes through TL-IF01, an interface of kind ${kind}, so it cannot happen in view TL-V01` }),
+        expect.objectContaining({ rule: 'step-fits-interface', message: `${step.id} is a step of TL-LEND-UC01-FL, which goes through TL-IF01, an interface of kind ${kind}, so it cannot happen in view TL-V01` }),
       ]);
     }
     for (const kind of ['web app', 'desktop', 'other']) expect(await refusals(changing(viewed, 'interface', () => true, { kind })), kind).toEqual([]);
@@ -258,11 +258,11 @@ describe('LA-AUT-INV100-T the Use case aggregate refuses a second flow through o
         }
         throw new Error('not refused');
       };
-      expect(await refused(() => runCommand(store, ADD_FLOW, { id: 'TL-LEND-UC01-FL01', title: 'Borrow a tool again', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }))).toContainEqual(
-        expect.objectContaining({ rule: 'use-case-one-each', message: 'use case TL-LEND-UC01 already has its flow through TL-IF01, so TL-LEND-UC01-FL01 cannot be a second: a use case has one flow per interface' }),
+      expect(await refused(() => runCommand(store, ADD_FLOW, { id: 'TL-LEND-UC01-FL', title: 'Borrow a tool again', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }))).toContainEqual(
+        expect.objectContaining({ rule: 'use-case-one-each', message: 'use case TL-LEND-UC01 already has its flow through TL-IF01, so TL-LEND-UC01-FL cannot be a second: a use case has one flow per interface' }),
       );
-      expect(await refused(() => runCommand(store, ADD_FLOW_TEST, { id: 'TL-LEND-UC01-FL01-T2', title: 'Again', flow_id: 'TL-LEND-UC01-FL01', level: 'browser', state: 'automated', file: 'e2e/again.spec.ts', steps: ['Borrow'], expected_result: 'Listed.' }))).toEqual([
-        { rule: 'use-case-one-each', message: 'flow TL-LEND-UC01-FL01 already has its test, so TL-LEND-UC01-FL01-T2 cannot be a second: a flow has one' },
+      expect(await refused(() => runCommand(store, ADD_FLOW_TEST, { id: 'TL-LEND-UC01-FL01-T2', title: 'Again', flow_id: 'TL-LEND-UC01-FL', level: 'browser', state: 'automated', file: 'e2e/again.spec.ts', steps: ['Borrow'], expected_result: 'Listed.' }))).toEqual([
+        { rule: 'use-case-one-each', message: 'flow TL-LEND-UC01-FL already has its test, so TL-LEND-UC01-FL01-T2 cannot be a second: a flow has one' },
       ]);
     } finally {
       await store.close();

@@ -10,7 +10,7 @@ import { TRACE, traceSceneOf } from './scene';
 // (LA-V98-R22), and the camera frames them with the focused box.
 
 const USE_CASE = 'LA-AUT-UC06';
-const STEP = 'LA-AUT-UC06-FL01-S03';
+const STEP = 'LA-AUT-UC06-FL-S04';
 
 const sceneOf = (page: Page, whole = true) => traceSceneOf(page, whole);
 /** Each box's place on the page, by its key, and the camera. */

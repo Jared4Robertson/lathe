@@ -75,23 +75,23 @@ describe('LA-AUT-UC06-R12-T01 each Use case command (LA-AUT-A11) changes one use
   it('adds a requirement, a flow and a step with its links, and reads the use case whole by any record in it', async () => {
     const store = await storeOf();
     await runCommand(store, ADD_UC_REQUIREMENT, { id: 'TL-LEND-UC02-R01', title: 'Tool is on loan', use_case_id: 'TL-LEND-UC02', statement: 'The library MUST refuse a tool not on loan.' });
-    await runCommand(store, ADD_FLOW, { id: 'TL-LEND-UC02-FL01', title: 'Return a tool at the desk', use_case_id: 'TL-LEND-UC02', interface_id: 'TL-IF01' });
-    const step = { id: 'TL-LEND-UC02-FL01-S01', title: 'Scan the tool', flow_id: 'TL-LEND-UC02-FL01', path: 'main', position: 1, fulfills: ['TL-LEND-UC02-R01'], happens_in: 'TL-V01' };
+    await runCommand(store, ADD_FLOW, { id: 'TL-LEND-UC02-FL', title: 'Return a tool at the desk', use_case_id: 'TL-LEND-UC02', interface_id: 'TL-IF01' });
+    const step = { id: 'TL-LEND-UC02-FL-S01', title: 'Scan the tool', flow_id: 'TL-LEND-UC02-FL', path: 'main', position: 1, fulfills: ['TL-LEND-UC02-R01'], happens_in: 'TL-V01' };
     const committed = await runCommand(store, ADD_FLOW_STEP, step);
     expect(committed.tables).toEqual(['flow_step', 'fulfills', 'happens_in']);
-    const whole = runQuery(store, GET_USE_CASE, { id: 'TL-LEND-UC02-FL01-S01' }) as ReturnType<typeof GET_USE_CASE.run>;
-    expect(whole.record).toEqual({ id: 'TL-LEND-UC02-FL01-S01', kind: 'flow_step' });
+    const whole = runQuery(store, GET_USE_CASE, { id: 'TL-LEND-UC02-FL-S01' }) as ReturnType<typeof GET_USE_CASE.run>;
+    expect(whole.record).toEqual({ id: 'TL-LEND-UC02-FL-S01', kind: 'flow_step' });
     expect(whole.useCase.id).toBe('TL-LEND-UC02');
     const added = { step: { id: step.id, title: step.title, flow_id: step.flow_id, path: 'main', position: 1 }, fulfills: ['TL-LEND-UC02-R01'], invokes: null, happensIn: 'TL-V01', exchangesWith: [] };
-    expect(whole.flows).toEqual([{ flow: expect.objectContaining({ id: 'TL-LEND-UC02-FL01' }), paths: [{ name: 'main', steps: [added] }], test: null }]);
+    expect(whole.flows).toEqual([{ flow: expect.objectContaining({ id: 'TL-LEND-UC02-FL' }), paths: [{ name: 'main', steps: [added] }], test: null }]);
     expect(whole.requirements).toEqual([{ requirement: expect.objectContaining({ id: 'TL-LEND-UC02-R01' }), tests: [], fulfilledBy: [step.id] }]);
     expect(runQuery(store, LIST_USE_CASES, { capability_id: 'TL-LEND-CAP01' })).toEqual([
       { id: 'TL-LEND-UC01', title: 'Borrow a tool' },
       { id: 'TL-LEND-UC02', title: 'Return a tool' },
     ]);
-    expect(runQuery(store, NEXT_USE_CASE_ID, { kind: 'flow_step', parent: 'TL-LEND-UC02-FL01' })).toBe('TL-LEND-UC02-FL01-S02');
+    expect(runQuery(store, NEXT_USE_CASE_ID, { kind: 'flow_step', parent: 'TL-LEND-UC02-FL' })).toBe('TL-LEND-UC02-FL-S03');
     expect(runQuery(store, NEXT_USE_CASE_ID, { kind: 'use_case', parent: 'TL-LEND-CAP01' })).toBe('TL-LEND-UC03');
-    expect(runQuery(store, NEXT_USE_CASE_ID, { kind: 'flow_test', parent: 'TL-LEND-UC02-FL01' })).toBe('TL-LEND-UC02-FL01-T');
+    expect(runQuery(store, NEXT_USE_CASE_ID, { kind: 'flow_test', parent: 'TL-LEND-UC02-FL' })).toBe('TL-LEND-UC02-FL-T');
     expect(() => runQuery(store, NEXT_USE_CASE_ID, { kind: 'flow', parent: 'TL-LEND-UC02' })).toThrow(/a flow through every interface of TL/);
   });
 
@@ -107,7 +107,7 @@ describe('LA-AUT-UC06-R12-T01 each Use case command (LA-AUT-A11) changes one use
 
   it('changes a step\'s links: a list replaces the list, null clears a single link', async () => {
     const store = await storeOf();
-    await runCommand(store, CHANGE_FLOW_STEP, { id: 'TL-LEND-UC01-FL01-S01', happens_in: null, exchanges_with: [], position: 1 });
+    await runCommand(store, CHANGE_FLOW_STEP, { id: 'TL-LEND-UC01-FL-S01', happens_in: null, exchanges_with: [], position: 1 });
     const step = (runQuery(store, GET_USE_CASE, { id: 'TL-LEND-UC01' }) as ReturnType<typeof GET_USE_CASE.run>).flows[0].paths[0].steps[0];
     expect(step).toMatchObject({ happensIn: null, exchangesWith: [], invokes: 'TL-LEND-CMD01', fulfills: ['TL-LEND-UC01-R01'] });
   });
@@ -116,9 +116,9 @@ describe('LA-AUT-UC06-R12-T01 each Use case command (LA-AUT-A11) changes one use
     const store = await storeOf();
     const before = fileOf(store, 'fulfills');
     await runCommand(store, ADD_UC_REQUIREMENT, { id: 'TL-LEND-UC02-R01', title: 'Tool is on loan', use_case_id: 'TL-LEND-UC02', statement: 'The library MUST refuse a tool not on loan.' });
-    const refused = await refusal(store, CHANGE_FLOW_STEP, { id: 'TL-LEND-UC01-FL01-S01', fulfills: ['TL-LEND-UC01-R01', 'TL-LEND-UC02-R01'] });
+    const refused = await refusal(store, CHANGE_FLOW_STEP, { id: 'TL-LEND-UC01-FL-S01', fulfills: ['TL-LEND-UC01-R01', 'TL-LEND-UC02-R01'] });
     expect(refused.problems).toEqual([
-      expect.objectContaining({ rule: 'step-fulfills-own-use-case', message: 'TL-LEND-UC01-FL01-S01 is a step of the flow of TL-LEND-UC01, so it cannot fulfill TL-LEND-UC02-R01, a requirement of TL-LEND-UC02' }),
+      expect.objectContaining({ rule: 'step-fulfills-own-use-case', message: 'TL-LEND-UC01-FL-S01 is a step of the flow of TL-LEND-UC01, so it cannot fulfill TL-LEND-UC02-R01, a requirement of TL-LEND-UC02' }),
     ]);
     expect(fileOf(store, 'fulfills')).toBe(before);
   });
@@ -126,7 +126,7 @@ describe('LA-AUT-UC06-R12-T01 each Use case command (LA-AUT-A11) changes one use
   it('LA-AUT-INV42-T refuses a flow whose ID does not end in its interface\'s number', async () => {
     const store = await storeOf();
     const refused = await refusal(store, ADD_FLOW, { id: 'TL-LEND-UC02-FL02', title: 'Return a tool at the desk', use_case_id: 'TL-LEND-UC02', interface_id: 'TL-IF01' });
-    expect(refused.problems).toEqual([expect.objectContaining({ rule: 'flow-id-interface', message: 'TL-LEND-UC02-FL02 goes through TL-IF01, so its ID is TL-LEND-UC02-FL01' })]);
+    expect(refused.problems).toEqual([expect.objectContaining({ rule: 'flow-id-interface', message: 'TL-LEND-UC02-FL02 goes through TL-IF01, so its ID is TL-LEND-UC02-FL' })]);
   });
 
   it('LA-AUT-INV43-T refuses a view for a step of a flow through a CLI', async () => {
@@ -134,7 +134,7 @@ describe('LA-AUT-UC06-R12-T01 each Use case command (LA-AUT-A11) changes one use
     data.interface = data.interface.map((i) => ({ ...i, kind: 'CLI' }));
     data.happens_in = [];
     const store = await storeOf(data);
-    const refused = await refusal(store, CHANGE_FLOW_STEP, { id: 'TL-LEND-UC01-FL01-S01', happens_in: 'TL-V01' });
+    const refused = await refusal(store, CHANGE_FLOW_STEP, { id: 'TL-LEND-UC01-FL-S01', happens_in: 'TL-V01' });
     expect(refused.problems.map((p) => p.rule)).toEqual(['step-fits-interface']);
   });
 
@@ -174,13 +174,13 @@ describe('LA-AUT-UC06-R13-T01 LA-STD-CODE-R07-T01 a use case, or a record in one
   it('removes a use case whole, and refuses one while another aggregate references what is in it', async () => {
     const store = await storeOf();
     await runCommand(store, ADD_UC_REQUIREMENT, { id: 'TL-LEND-UC02-R01', title: 'Tool is on loan', use_case_id: 'TL-LEND-UC02', statement: 'The library MUST refuse a tool not on loan.' });
-    await runCommand(store, ADD_FLOW, { id: 'TL-LEND-UC02-FL01', title: 'Return a tool at the desk', use_case_id: 'TL-LEND-UC02', interface_id: 'TL-IF01' });
-    await runCommand(store, ADD_FLOW_STEP, { id: 'TL-LEND-UC02-FL01-S01', title: 'Scan the tool', flow_id: 'TL-LEND-UC02-FL01', path: 'main', position: 1, fulfills: ['TL-LEND-UC02-R01'] });
+    await runCommand(store, ADD_FLOW, { id: 'TL-LEND-UC02-FL', title: 'Return a tool at the desk', use_case_id: 'TL-LEND-UC02', interface_id: 'TL-IF01' });
+    await runCommand(store, ADD_FLOW_STEP, { id: 'TL-LEND-UC02-FL-S01', title: 'Scan the tool', flow_id: 'TL-LEND-UC02-FL', path: 'main', position: 1, fulfills: ['TL-LEND-UC02-R01'] });
     const removed = await runCommand(store, REMOVE_USE_CASE, { id: 'TL-LEND-UC02' });
     expect(removed.changes.filter((c) => c.after === null).map((c) => `${c.table} ${c.key}`).sort()).toEqual([
-      'flow TL-LEND-UC02-FL01',
-      'flow_step TL-LEND-UC02-FL01-S01',
-      'fulfills source_id TL-LEND-UC02-FL01-S01, target_id TL-LEND-UC02-R01',
+      'flow TL-LEND-UC02-FL',
+      'flow_step TL-LEND-UC02-FL-S01',
+      'fulfills source_id TL-LEND-UC02-FL-S01, target_id TL-LEND-UC02-R01',
       'uc_requirement TL-LEND-UC02-R01',
       'use_case TL-LEND-UC02',
       'use_case_actor use_case_id TL-LEND-UC02, position 1',
@@ -196,8 +196,8 @@ describe('LA-AUT-UC06-R13-T01 LA-STD-CODE-R07-T01 a use case, or a record in one
   it('refuses removing a requirement a step fulfills, and removes a flow with its steps and test', async () => {
     const store = await storeOf();
     const refused = await refusal(store, REMOVE_UC_REQUIREMENT, { id: 'TL-LEND-UC01-R01' });
-    expect(refused.problems[0]).toMatchObject({ rule: 'referenced', message: 'UC requirement TL-LEND-UC01-R01 is referenced, so it stays: TL-LEND-UC01-FL01-S01 fulfills TL-LEND-UC01-R01' });
-    const removed = await runCommand(store, REMOVE_FLOW, { id: 'TL-LEND-UC01-FL01' });
+    expect(refused.problems[0]).toMatchObject({ rule: 'referenced', message: 'UC requirement TL-LEND-UC01-R01 is referenced, so it stays: TL-LEND-UC01-FL-S01 fulfills TL-LEND-UC01-R01' });
+    const removed = await runCommand(store, REMOVE_FLOW, { id: 'TL-LEND-UC01-FL' });
     expect(removed.changes.filter((c) => c.after === null).map((c) => c.table).sort()).toEqual(['exchanges_with', 'flow', 'flow_step', 'flow_test', 'fulfills', 'happens_in', 'invokes']);
   });
 
@@ -218,8 +218,8 @@ describe('LA-AUT-UC06-R14-T01 each Use case command and query is reached by name
     const io = { out: (t: string) => out.push(t), err: (t: string) => err.push(t), stdin: async () => JSON.stringify({ id: 'TL-LEND-UC01-R02', title: 'Member known', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse an unknown member.' }) };
     expect(await runAggregateCommand(['use-case', 'add-uc-requirement', '--json', '-', '--root', root], io)).toBe(0);
     expect(JSON.parse(out.pop()!)).toMatchObject({ tables: ['uc_requirement'] });
-    expect(await runAggregateCommand(['use-case', 'change-flow-step', '--id', 'TL-LEND-UC01-FL01-S01', '--fulfills', 'TL-LEND-UC01-R01', '--fulfills', 'TL-LEND-UC01-R02', '--root', root], io)).toBe(0);
-    expect(out.pop()).toContain('Added fulfills source_id TL-LEND-UC01-FL01-S01, target_id TL-LEND-UC01-R02');
+    expect(await runAggregateCommand(['use-case', 'change-flow-step', '--id', 'TL-LEND-UC01-FL-S01', '--fulfills', 'TL-LEND-UC01-R01', '--fulfills', 'TL-LEND-UC01-R02', '--root', root], io)).toBe(0);
+    expect(out.pop()).toContain('Added fulfills source_id TL-LEND-UC01-FL-S01, target_id TL-LEND-UC01-R02');
     expect(await runAggregateCommand(['use-case', 'remove-uc-requirement', '--id', 'TL-LEND-UC01-R02', '--root', root], io)).toBe(1);
     expect(err.pop()).toMatch(/^Refused; nothing changed:\n {2}UC requirement TL-LEND-UC01-R02 is referenced, so it stays: .* \[referenced\]$/);
     expect(await runAggregateCommand(['use-case', 'add-flow-step', '--help', '--root', root], io)).toBe(0);
@@ -238,7 +238,7 @@ describe('LA-AUT-UC06-R14-T01 each Use case command and query is reached by name
     expect(listed.map((t) => t.name)).toEqual(expect.arrayContaining(['use_case_move_use_case', 'use_case_get_use_case', 'use_case_next_id']));
     const added = await callTool(root, 'use_case_add_uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'Member known', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse an unknown member.' });
     expect(added.isError).toBeUndefined();
-    const refused = await callTool(root, 'use_case_add_flow', { id: 'TL-LEND-UC01-FL01', title: 'Again', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01', extra: 1 });
+    const refused = await callTool(root, 'use_case_add_flow', { id: 'TL-LEND-UC01-FL', title: 'Again', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01', extra: 1 });
     expect(refused).toMatchObject({ isError: true, structuredContent: { refused: true, problems: [{ rule: 'input' }] } });
     const read = await callTool(root, 'use_case_get_use_case', { id: 'TL-LEND-UC01-R02' });
     expect(read.content[0].text).toContain('UC requirement TL-LEND-UC01-R02: Member known');

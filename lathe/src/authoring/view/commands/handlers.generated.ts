@@ -17,7 +17,8 @@ import type { RemoveViewTest } from './remove-view-test.ts';
 /** Adds a view: a screen or page a person uses, with its route. It has no owner; its product follows from its ID. */
 export function addView(tx: Transaction, input: AddView): void {
   const views = new ViewRepository(tx);
-  const view = views.create({ root: input.id, view: input, requirements: [], tests: [] });
+  const { presents = [], ...row } = input;
+  const view = views.create({ root: row.id, view: row, presents: presents, requirements: [], tests: [] });
   views.save(view);
 }
 
@@ -25,7 +26,8 @@ export function addView(tx: Transaction, input: AddView): void {
 export function changeView(tx: Transaction, input: ChangeView): void {
   const views = new ViewRepository(tx);
   const view = views.load(input.id) ?? tx.refuse('missing', `there is no view ${input.id}`);
-  view.view = changed(view.view, input, ['title', 'description', 'route', 'notes']);
+  view.view = changed(view.view, input, ['title', 'description', 'route', 'interface_id', 'notes']);
+  view.presents = input.presents ?? view.presents;
   views.save(view);
 }
 

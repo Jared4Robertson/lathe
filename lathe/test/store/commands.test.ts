@@ -181,7 +181,7 @@ describe('removing', () => {
   it('LA-STD-CODE-R07-T02 removes a record with its parts and the links it starts', async () => {
     const { store, root } = await fresh();
     // The step's links are its own, so they go with it.
-    await run(store, 'use-case remove-flow-step', { id: 'TL-LEND-UC01-FL01-S01' });
+    await run(store, 'use-case remove-flow-step', { id: 'TL-LEND-UC01-FL-S01' });
     for (const table of ['fulfills', 'invokes', 'happens_in', 'exchanges_with']) {
       expect(store.rows(table)).toEqual([]);
       expect(readdirSync(path.join(root, 'data'))).not.toContain(`${table}.jsonl`);
@@ -256,9 +256,9 @@ describe('a command', () => {
     });
     await run(store, 'extension-record add-extension-record', { kind: 'house_rule', id: 'TL-LEND-HR01', parent_id: 'TL-LEND', values: { title: 'Quiet', group_name: ' Noise' } });
     await run(store, 'extension-record add-extension-record', { kind: 'house_rule', id: 'TL-LEND-HR02', parent_id: 'TL-LEND', values: { title: 'Tidy' } });
-    expect(await sql(store, "SELECT id, label FROM record_group WHERE id IN ('TL-LEND-HR01', 'TL-LEND-HR02', 'TL-LEND-UC01-FL01-S01') ORDER BY id")).toEqual([
+    expect(await sql(store, "SELECT id, label FROM record_group WHERE id IN ('TL-LEND-HR01', 'TL-LEND-HR02', 'TL-LEND-UC01-FL-S01') ORDER BY id")).toEqual([
       { id: 'TL-LEND-HR01', label: ' Noise' },
-      { id: 'TL-LEND-UC01-FL01-S01', label: 'main' },
+      { id: 'TL-LEND-UC01-FL-S01', label: 'main' },
     ]);
     await store.close();
   });

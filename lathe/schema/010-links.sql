@@ -25,16 +25,18 @@ CREATE TABLE fulfills (source_id VARCHAR NOT NULL REFERENCES flow_step (id), tar
 COMMENT ON TABLE fulfills IS 'The flow step fulfills the UC requirement, of its own use case; this designs the requirement.';
 CREATE TABLE invokes (source_id VARCHAR NOT NULL UNIQUE REFERENCES flow_step (id), target_id VARCHAR NOT NULL REFERENCES operation (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE invokes IS 'The flow step invokes the command or query: at most one per step.';
-CREATE TABLE happens_in (source_id VARCHAR NOT NULL UNIQUE REFERENCES flow_step (id), target_id VARCHAR NOT NULL REFERENCES view (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE happens_in IS 'The flow step happens in the view: at most one per step.';
 CREATE TABLE exchanges_with (source_id VARCHAR NOT NULL REFERENCES flow_step (id), target_id VARCHAR NOT NULL REFERENCES integration (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE exchanges_with IS 'The flow step exchanges with the integration''s outside system.';
+CREATE TABLE presents (source_id VARCHAR NOT NULL REFERENCES view (id), target_id VARCHAR NOT NULL REFERENCES operation (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE presents IS 'The view presents the command or query: a person sends the command or asks the query there, so a step that invokes it is carried out in the view on a web app or desktop interface.';
+CREATE TABLE offers (source_id VARCHAR NOT NULL REFERENCES interface (id), target_id VARCHAR NOT NULL REFERENCES use_case (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE offers IS 'The interface offers the use case, of its own product: its actors can carry it out there, and the interface has its own version of the use case''s flow, derived by its pattern.';
 CREATE TABLE renders (source_id VARCHAR NOT NULL REFERENCES ui_component (id), target_id VARCHAR NOT NULL REFERENCES view (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE renders IS 'The UI component renders the view, or part of it.';
 CREATE TABLE builds (source_id VARCHAR NOT NULL REFERENCES ui_component (id), target_id VARCHAR NOT NULL REFERENCES view_requirement (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE builds IS 'The UI component builds the view requirement: its code does what the requirement says. A view requirement is built only through the components that build it, never through any component that renders its view.';
 CREATE TABLE follows (source_id VARCHAR NOT NULL REFERENCES follows_source (id), target_id VARCHAR NOT NULL REFERENCES pattern (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE follows IS 'The domain or use case follows the pattern, and gives a value for each of its settings in setting_value rows.';
+COMMENT ON TABLE follows IS 'The domain, use case or interface follows the pattern, and gives a value for each of its settings in setting_value rows. An interface''s pattern says how a step is carried out through it, and every domain with a use case the interface offers owes its rules.';
 CREATE TABLE meets (source_id VARCHAR NOT NULL REFERENCES technical_record (id), target_id VARCHAR NOT NULL REFERENCES standard_rule (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE meets IS 'The technical record follows the standard rule: it shows where the rule is applied, and designs it.';
 CREATE TABLE persists (source_id VARCHAR NOT NULL UNIQUE REFERENCES repository (id), target_id VARCHAR NOT NULL UNIQUE REFERENCES aggregate (id), PRIMARY KEY (source_id, target_id));
@@ -70,7 +72,8 @@ INSERT INTO meta_relation VALUES
   ('calls', NULL, 'domain', 'Calls', 'Called by', NULL),
   ('fulfills', 'design', 'product', 'Fulfills', 'Fulfilled by', NULL),
   ('invokes', NULL, 'product', 'Invokes', 'Invoked by', NULL),
-  ('happens_in', NULL, 'product', 'Happens in', 'Hosts', NULL),
+  ('presents', NULL, 'product', 'Presents', 'Presented in', NULL),
+  ('offers', NULL, 'product', 'Offers', 'Offered through', NULL),
   ('exchanges_with', NULL, 'product', 'Exchanges with', 'Exchanged with by', NULL),
   ('renders', NULL, 'product', 'Renders', 'Rendered by', NULL),
   ('builds', 'build', 'product', 'Builds', 'Built by', NULL),
@@ -103,12 +106,15 @@ INSERT INTO meta_relation_pair VALUES
   ('fulfills', 'flow_step', 'uc_requirement', 'The step fulfills the UC requirement of its use case.'),
   ('invokes', 'flow_step', 'command', 'The step sends the command.'),
   ('invokes', 'flow_step', 'query', 'The step asks the query.'),
-  ('happens_in', 'flow_step', 'view', 'The step happens in the view.'),
+  ('presents', 'view', 'command', 'A person sends the command in the view.'),
+  ('presents', 'view', 'query', 'A person asks the query in the view.'),
+  ('offers', 'interface', 'use_case', 'The use case is carried out through the interface.'),
   ('exchanges_with', 'flow_step', 'integration', 'The step exchanges with the outside system.'),
   ('renders', 'ui_component', 'view', 'The UI component renders the view, or part of it.'),
   ('builds', 'ui_component', 'view_requirement', 'The UI component''s code does what the view requirement says.'),
   ('follows', 'domain', 'pattern', 'The whole domain follows the pattern, and so owes each of its rules.'),
   ('follows', 'use_case', 'pattern', 'The use case follows the pattern and gives a value for each of its settings.'),
+  ('follows', 'interface', 'pattern', 'Each step through the interface is carried out as the pattern says.'),
   ('meets', 'repository', 'standard_rule', 'The repository follows the standard rule.'),
   ('meets', 'data_model', 'standard_rule', 'The data model follows the standard rule.'),
   ('meets', 'table', 'standard_rule', 'The table follows the standard rule.'),

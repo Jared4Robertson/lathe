@@ -4,7 +4,7 @@
 // - what its steps invoke: a command, and through it its entity's aggregate, the specifications it checks, the domain
 //   services it calls and the events it raises, with each policy that hears one and that policy's command, reached in
 //   turn; a query, and through it its read model, the specifications it selects by and the domain services it calls;
-// - the views its steps happen in, their view requirements and the UI components that render the view or build one of
+// - the views that present what its steps invoke, their view requirements and the UI components that render the view or build one of
 //   its requirements; the integrations its steps exchange with;
 // - the endpoints that expose a reached command or query, and their API requirements;
 // - the rules of the patterns it follows, or its domain follows;
@@ -88,7 +88,7 @@ export function useCaseReaches(view: Pick<ReadView, 'schema' | 'rows'>): Map<str
   const flowsOf = under('flow', 'use_case_id');
   const stepsOf = under('flow_step', 'flow_id');
   const invokes = out('invokes');
-  const happensIn = out('happens_in');
+  const presentedIn = into('presents');
   const exchangesWith = out('exchanges_with');
   const entityOfCommand = one('command', 'entity_id');
   const aggregateOfEntity = one('entity', 'aggregate_id');
@@ -183,7 +183,7 @@ export function useCaseReaches(view: Pick<ReadView, 'schema' | 'rows'>): Map<str
         reach([step]);
         reach(invokes.get(step));
         reach(exchangesWith.get(step));
-        for (const v of happensIn.get(step) ?? []) {
+        for (const v of (invokes.get(step) ?? []).flatMap((operation) => presentedIn.get(operation) ?? [])) {
           reach([v]);
           reach(viewRequirementsOf.get(v));
           reach(renderedBy.get(v));
