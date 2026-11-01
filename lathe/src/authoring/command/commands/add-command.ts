@@ -1,19 +1,15 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { CommandRow } from '../../../platform/data/tables.ts';
-import { COMMAND_SLICE, newCommand } from '../model.ts';
+import { newCommand } from '../model.ts';
 import { CommandRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_COMMAND_IDENTITY } from './identities.generated.ts';
 
 export type AddCommand = Pick<CommandRow, 'id' | 'title' | 'entity_id' | 'description'> & { raises?: string[]; checks?: string[]; calls?: string[] };
 
 export const ADD_COMMAND: CommandDefinition<AddCommand> = {
-  id: 'LA-AUT-CMD240',
-  slice: COMMAND_SLICE,
-  name: 'add-command',
-  description: 'Adds a command under the entity it changes, with the events of its aggregate it raises, the specifications it checks and the domain services it calls.',
-  method: 'POST',
-  route: '/api/command/add-command',
+  ...ADD_COMMAND_IDENTITY,
   input: {
     id: column('command', 'id', 'required'),
     title: column('command', 'title', 'required'),

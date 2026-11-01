@@ -1,16 +1,12 @@
 // The Command aggregate (LA-AUT-A8): a command with the events it raises, the specifications it checks and the
 // domain services it calls, its handler, and the policies that send it, each with the event it hears, its event
 // handler and its test. One instance is one command, whole; it holds only the links its own records start.
-import type { Slice } from '../../platform/commands/definition.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { CommandHandlerRow, CommandRow, EventHandlerRow, PolicyRow, PolicyTestRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const COMMAND_AGGREGATE = 'LA-AUT-A8';
-
-/** How the interfaces reach the aggregate's commands: `lathe command`, the command_ tools, /api/command/. */
-export const COMMAND_SLICE: Slice = { aggregate: COMMAND_AGGREGATE, name: 'command' };
 
 /**
  * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.

@@ -1,12 +1,12 @@
 // The Product aggregate's own reads (read model LA-AUT-RM21): a product's page, every product as the nav lists it, the
 // interfaces of a product, and the next free ID for an open question or an interface. Each reads only the read model,
 // through its reader (reader.ts), and changes nothing.
-import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { PRODUCT_SLICE } from './model.ts';
 import type { ProductPage, ProductSummary } from './read-model.ts';
 import { productReader, type ProductReader } from './reader.ts';
+import { GET_PRODUCT_IDENTITY, LIST_INTERFACES_IDENTITY, NEXT_PRODUCT_ID_IDENTITY, LIST_PRODUCTS_IDENTITY } from './queries.generated.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
@@ -25,12 +25,7 @@ export function getProduct(reader: ProductReader, input: { id: string }): Produc
 
 /** GET a product whole (LA-AUT-QRY110). */
 export const GET_PRODUCT: QueryDefinition<{ id: string }, ProductPage, ProductReader> = {
-  id: 'LA-AUT-QRY110',
-  slice: PRODUCT_SLICE,
-  name: 'get-product',
-  description: 'Reads a product whole, by its ID, the ID of an open question or interface in it, or the name of a kind it declares: its row, roles, business outcomes and domains, declared kinds with their fields, relations, open questions with what they are about, and interfaces with the flows through each.',
-  method: 'GET',
-  route: '/api/product/get-product',
+  ...GET_PRODUCT_IDENTITY,
   input: { id: id('The product, an open question or interface in it, or a product kind it declares.', 'required') },
   reader: productReader,
   run: getProduct,
@@ -44,12 +39,7 @@ export function listProducts(reader: ProductReader): ProductSummary[] {
 
 /** List the products (LA-AUT-QRY113). */
 export const LIST_PRODUCTS: QueryDefinition<Record<string, never>, ProductSummary[], ProductReader> = {
-  id: 'LA-AUT-QRY113',
-  slice: PRODUCT_SLICE,
-  name: 'list-products',
-  description: 'Lists every product, by ID, with its title, and its icon and color when it gives them.',
-  method: 'GET',
-  route: '/api/product/list-products',
+  ...LIST_PRODUCTS_IDENTITY,
   input: {},
   reader: productReader,
   run: listProducts,
@@ -64,12 +54,7 @@ export function listInterfaces(reader: ProductReader, input: { product_id: strin
 
 /** List the interfaces of a product (LA-AUT-QRY111). */
 export const LIST_INTERFACES: QueryDefinition<{ product_id: string }, { id: string; title: string; kind: string }[], ProductReader> = {
-  id: 'LA-AUT-QRY111',
-  slice: PRODUCT_SLICE,
-  name: 'list-interfaces',
-  description: 'Lists the interfaces of a product, by ID, with their titles and kinds.',
-  method: 'GET',
-  route: '/api/product/list-interfaces',
+  ...LIST_INTERFACES_IDENTITY,
   input: { product_id: id('The product.', 'required') },
   reader: productReader,
   run: listInterfaces,
@@ -90,12 +75,7 @@ export function nextProductId(reader: ProductReader, input: { kind: string; pare
 
 /** Get the next ID for a record of the Product aggregate (LA-AUT-QRY112). */
 export const NEXT_PRODUCT_ID: QueryDefinition<{ kind: string; parent: string }, string, ProductReader> = {
-  id: 'LA-AUT-QRY112',
-  slice: PRODUCT_SLICE,
-  name: 'next-id',
-  description: 'The next free ID for an open question (under a product or a domain) or an interface (under a product): one past the highest in use.',
-  method: 'GET',
-  route: '/api/product/next-id',
+  ...NEXT_PRODUCT_ID_IDENTITY,
   input: {
     kind: id('The kind: question or interface.', 'required'),
     parent: id('The record it will sit under.', 'required'),
@@ -123,6 +103,3 @@ function productText(product: ProductPage): string {
   for (const i of product.interfaces) lines.push(`Interface ${i.id}: ${i.title} (${i.kind})`);
   return lines.join('\n');
 }
-
-/** The Product aggregate's queries, as the CLI and the MCP server register them. */
-export const PRODUCT_QUERIES: readonly AnyQuery[] = [GET_PRODUCT, LIST_PRODUCTS, LIST_INTERFACES, NEXT_PRODUCT_ID];

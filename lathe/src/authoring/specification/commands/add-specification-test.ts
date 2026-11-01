@@ -1,20 +1,15 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { SpecificationTestRow } from '../../../platform/data/tables.ts';
-import { SPECIFICATION_SLICE } from '../model.ts';
 import { SpecificationRepository } from '../repository.ts';
 import { refuseBroken } from '../../../platform/data/rules.ts';
 import { specificationOneEach } from '../rules.ts';
+import { ADD_SPECIFICATION_TEST_IDENTITY } from './identities.generated.ts';
 
 export type AddSpecificationTest = Pick<SpecificationTestRow, 'id' | 'title' | 'specification_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'when' | 'then' | 'notes'> & { starts_from?: string[] };
 
 export const ADD_SPECIFICATION_TEST: CommandDefinition<AddSpecificationTest> = {
-  id: 'LA-AUT-CMD266',
-  slice: SPECIFICATION_SLICE,
-  name: 'add-specification-test',
-  description: 'Adds the test of a specification, its one test, with the test data sets it starts from.',
-  method: 'POST',
-  route: '/api/specification/add-specification-test',
+  ...ADD_SPECIFICATION_TEST_IDENTITY,
   input: {
     id: column('specification_test', 'id', 'required'),
     title: column('specification_test', 'title', 'required'),

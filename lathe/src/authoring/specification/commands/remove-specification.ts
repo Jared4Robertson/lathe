@@ -1,18 +1,13 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { SPECIFICATION_SLICE } from '../model.ts';
 import { SpecificationRepository } from '../repository.ts';
+import { REMOVE_SPECIFICATION_IDENTITY } from './identities.generated.ts';
 
 /** The specification to remove. */
 export type RemoveSpecification = { id: string };
 
 export const REMOVE_SPECIFICATION: CommandDefinition<RemoveSpecification> = {
-  id: 'LA-AUT-CMD262',
-  slice: SPECIFICATION_SLICE,
-  name: 'remove-specification',
-  description: 'Removes a specification whole: its predicate and test, and the links they start. Refused while anything outside it references what is in it, such as a command that checks it.',
-  method: 'POST',
-  route: '/api/specification/remove-specification',
+  ...REMOVE_SPECIFICATION_IDENTITY,
   input: {
     id: column('specification', 'id', 'required'),
   },

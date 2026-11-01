@@ -1,16 +1,12 @@
 // The Domain event aggregate (LA-AUT-A7): a domain event with the fields it carries, in order, and its event type
 // (with the standard rules it meets and the packages it uses). One instance is one event, whole; it holds only the
 // links its own records start.
-import type { Slice } from '../../platform/commands/definition.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { DomainEventRow, EventFieldRow, EventTypeRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const DOMAIN_EVENT_AGGREGATE = 'LA-AUT-A7';
-
-/** How the interfaces reach the aggregate's commands: `lathe domain-event`, the domain_event_ tools, /api/domain-event/. */
-export const DOMAIN_EVENT_SLICE: Slice = { aggregate: DOMAIN_EVENT_AGGREGATE, name: 'domain-event' };
 
 /**
  * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.

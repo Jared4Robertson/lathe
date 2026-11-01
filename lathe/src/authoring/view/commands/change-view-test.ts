@@ -1,19 +1,15 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ViewTestRow } from '../../../platform/data/tables.ts';
-import { changed, VIEW_SLICE } from '../model.ts';
+import { changed } from '../model.ts';
 import { ViewRepository } from '../repository.ts';
+import { CHANGE_VIEW_TEST_IDENTITY } from './identities.generated.ts';
 
 /** The view test's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeViewTest = Pick<ViewTestRow, 'id'> & { title?: ViewTestRow['title']; level?: ViewTestRow['level']; state?: ViewTestRow['state']; when?: ViewTestRow['when']; then?: ViewTestRow['then']; file?: ViewTestRow['file'] | null; manual_reason?: ViewTestRow['manual_reason'] | null; size?: ViewTestRow['size'] | null; smoke?: ViewTestRow['smoke'] | null; external?: ViewTestRow['external'] | null; notes?: ViewTestRow['notes'] | null; starts_from?: string[] };
 
 export const CHANGE_VIEW_TEST: CommandDefinition<ChangeViewTest> = {
-  id: 'LA-AUT-CMD317',
-  slice: VIEW_SLICE,
-  name: 'change-view-test',
-  description: "Changes a view test's columns or the test data sets it starts from (the whole list). Its requirement does not change.",
-  method: 'POST',
-  route: '/api/view/change-view-test',
+  ...CHANGE_VIEW_TEST_IDENTITY,
   input: {
     id: column('view_test', 'id', 'required'),
     title: column('view_test', 'title', 'optional'),

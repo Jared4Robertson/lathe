@@ -1,12 +1,12 @@
 // The UI component aggregate's own reads, each answered from its read model (LA-AUT-RM35) through its reader
 // (reader.ts), which the query runner gives each handler: a UI component whole, the UI components of a product, and
 // the next free ID for one. A handler never sees the data, a repository or the model; each changes nothing.
-import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { UI_COMPONENT_SLICE } from './model.ts';
 import type { UiComponentPage, UiComponentSummary } from './read-model.ts';
 import { uiComponentReader, type UiComponentReader } from './reader.ts';
+import { GET_UI_COMPONENT_IDENTITY, LIST_UI_COMPONENTS_IDENTITY, NEXT_UI_COMPONENT_ID_IDENTITY } from './queries.generated.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
@@ -20,12 +20,7 @@ export function getUiComponent(reader: UiComponentReader, input: { id: string })
 
 /** GET a UI component whole (LA-AUT-QRY204). */
 export const GET_UI_COMPONENT: QueryDefinition<{ id: string }, UiComponentPage, UiComponentReader> = {
-  id: 'LA-AUT-QRY204',
-  slice: UI_COMPONENT_SLICE,
-  name: 'get-ui-component',
-  method: 'GET',
-  route: '/api/ui-component/get-ui-component',
-  description: "Reads a UI component whole as its page shows it: the record asked for and its kind, the component's row, and the views it renders, the view requirements it builds, the standard rules it meets and the packages it uses, each list sorted.",
+  ...GET_UI_COMPONENT_IDENTITY,
   input: { id: id('The UI component.', 'required') },
   reader: uiComponentReader,
   run: getUiComponent,
@@ -47,12 +42,7 @@ export function listUiComponents(reader: UiComponentReader, input: { product_id:
 
 /** List the UI components of a product (LA-AUT-QRY205). */
 export const LIST_UI_COMPONENTS: QueryDefinition<{ product_id: string }, UiComponentSummary[], UiComponentReader> = {
-  id: 'LA-AUT-QRY205',
-  slice: UI_COMPONENT_SLICE,
-  name: 'list-ui-components',
-  method: 'GET',
-  route: '/api/ui-component/list-ui-components',
-  description: 'Lists the UI components of a product, by ID, with their titles.',
+  ...LIST_UI_COMPONENTS_IDENTITY,
   input: { product_id: id('The product.', 'required') },
   reader: uiComponentReader,
   run: listUiComponents,
@@ -68,17 +58,9 @@ export function nextUiComponentId(reader: UiComponentReader, input: { product_id
 
 /** Get the next ID for a UI component (LA-AUT-QRY206). */
 export const NEXT_UI_COMPONENT_ID: QueryDefinition<{ product_id: string }, string, UiComponentReader> = {
-  id: 'LA-AUT-QRY206',
-  slice: UI_COMPONENT_SLICE,
-  name: 'next-id',
-  method: 'GET',
-  route: '/api/ui-component/next-id',
-  description: "The next free ID for a UI component of a product: one past the highest in use.",
+  ...NEXT_UI_COMPONENT_ID_IDENTITY,
   input: { product_id: id('The product.', 'required') },
   reader: uiComponentReader,
   run: nextUiComponentId,
   text: (next) => next,
 };
-
-/** The UI component aggregate's queries, as the CLI and the MCP server register them. */
-export const UI_COMPONENT_QUERIES: readonly AnyQuery[] = [GET_UI_COMPONENT, LIST_UI_COMPONENTS, NEXT_UI_COMPONENT_ID];

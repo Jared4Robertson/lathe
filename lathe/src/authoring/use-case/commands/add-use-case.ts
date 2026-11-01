@@ -1,20 +1,16 @@
 import { column, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { UseCaseRow } from '../../../platform/data/tables.ts';
-import { newUseCase, USE_CASE_SLICE } from '../model.ts';
+import { newUseCase } from '../model.ts';
 import { UseCaseRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_USE_CASE_IDENTITY } from './identities.generated.ts';
 
 /** A new use case: its row, and its actors' role names in order. */
 export type AddUseCase = Pick<UseCaseRow, 'id' | 'title' | 'capability_id' | 'goal' | 'notes'> & { actors?: string[] };
 
 export const ADD_USE_CASE: CommandDefinition<AddUseCase> = {
-  id: 'LA-AUT-CMD100',
-  slice: USE_CASE_SLICE,
-  name: 'add-use-case',
-  description: 'Adds a use case under a capability, with its actors in order, the main actor first.',
-  method: 'POST',
-  route: '/api/use-case/add-use-case',
+  ...ADD_USE_CASE_IDENTITY,
   input: {
     id: column('use_case', 'id', 'required'),
     title: column('use_case', 'title', 'required'),

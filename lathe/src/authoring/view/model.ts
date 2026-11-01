@@ -1,16 +1,9 @@
 // The View aggregate (LA-AUT-A12): a view with its view requirements and their view tests (with the test data sets
 // each starts from). A view has no owner: its product follows from its ID. One instance is one view, whole; it holds
 // only the links its own records start.
-import type { Slice } from '../../platform/commands/definition.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { ViewRequirementRow, ViewRow, ViewTestRow } from '../../platform/data/tables.ts';
-
-/** The aggregate's record ID in Lathe's own spec. */
-export const VIEW_AGGREGATE = 'LA-AUT-A12';
-
-/** How the interfaces reach the aggregate's commands: `lathe view`, the view_ tools, /api/view/. */
-export const VIEW_SLICE: Slice = { aggregate: VIEW_AGGREGATE, name: 'view' };
 
 /**
  * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.

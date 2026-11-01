@@ -1,11 +1,11 @@
 // The Pattern following aggregate's own reads, each answered from its read model (LA-TRC-RM10) through its reader
 // (reader.ts): one following whole, the patterns a domain or use case follows, and a pattern's followers by domain. A handler never sees the data; each
 // changes nothing. A following is named by its follower and pattern, so it has no next ID.
-import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { PATTERN_FOLLOWING_SLICE } from './model.ts';
 import type { FollowingPage, PatternFollowers } from './read-model.ts';
 import { followingReader, type FollowingReader } from './reader.ts';
+import { GET_FOLLOWING_IDENTITY, LIST_FOLLOWINGS_IDENTITY, LIST_FOLLOWERS_IDENTITY } from './queries.generated.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
@@ -21,12 +21,7 @@ export function getFollowing(reader: FollowingReader, input: { follower_id: stri
 
 /** GET a following whole (LA-TRC-QRY10). */
 export const GET_FOLLOWING: QueryDefinition<{ follower_id: string; pattern_id: string }, FollowingPage, FollowingReader> = {
-  id: 'LA-TRC-QRY10',
-  slice: PATTERN_FOLLOWING_SLICE,
-  name: 'get-following',
-  method: 'GET',
-  route: '/api/pattern-following/get-following',
-  description: "Reads a domain's or use case's following of a pattern whole: the value it gives each of the pattern's settings.",
+  ...GET_FOLLOWING_IDENTITY,
   input: { follower_id: id('The domain or use case.', 'required'), pattern_id: id('The pattern.', 'required') },
   reader: followingReader,
   run: getFollowing,
@@ -40,12 +35,7 @@ export function listFollowings(reader: FollowingReader, input: { follower_id: st
 
 /** List the patterns a domain or use case follows (LA-TRC-QRY11). */
 export const LIST_FOLLOWINGS: QueryDefinition<{ follower_id: string }, string[], FollowingReader> = {
-  id: 'LA-TRC-QRY11',
-  slice: PATTERN_FOLLOWING_SLICE,
-  name: 'list-followings',
-  method: 'GET',
-  route: '/api/pattern-following/list-followings',
-  description: 'Lists the patterns a domain or use case follows, by ID.',
+  ...LIST_FOLLOWINGS_IDENTITY,
   input: { follower_id: id('The domain or use case.', 'required') },
   reader: followingReader,
   run: listFollowings,
@@ -59,12 +49,7 @@ export function listFollowers(reader: FollowingReader, input: { pattern_id: stri
 
 /** List a pattern's followers (LA-TRC-QRY14). */
 export const LIST_FOLLOWERS: QueryDefinition<{ pattern_id: string }, PatternFollowers, FollowingReader> = {
-  id: 'LA-TRC-QRY14',
-  slice: PATTERN_FOLLOWING_SLICE,
-  name: 'list-followers',
-  method: 'GET',
-  route: '/api/pattern-following/list-followers',
-  description: "Lists a pattern's followers by domain, in ID order: whether the domain itself follows it, and each of its use cases that does, each with the value it gives each of the pattern's settings.",
+  ...LIST_FOLLOWERS_IDENTITY,
   input: { pattern_id: id('The pattern.', 'required') },
   reader: followingReader,
   run: listFollowers,
@@ -79,6 +64,3 @@ export const LIST_FOLLOWERS: QueryDefinition<{ pattern_id: string }, PatternFoll
           ])
           .join('\n'),
 };
-
-/** The Pattern following aggregate's queries, as the CLI and the MCP server register them. */
-export const PATTERN_FOLLOWING_QUERIES: readonly AnyQuery[] = [GET_FOLLOWING, LIST_FOLLOWINGS, LIST_FOLLOWERS];

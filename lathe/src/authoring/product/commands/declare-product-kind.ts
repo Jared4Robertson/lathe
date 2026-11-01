@@ -1,20 +1,16 @@
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ProductKindRow } from '../../../platform/data/tables.ts';
-import { PRODUCT_SLICE, fieldsOf, type FieldInput } from '../model.ts';
+import { fieldsOf, type FieldInput } from '../model.ts';
 import { ProductRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { DECLARE_PRODUCT_KIND_IDENTITY } from './identities.generated.ts';
 
 /** A new product kind: its declaration, and its fields in order. */
 export type DeclareProductKind = Pick<ProductKindRow, 'name' | 'product_id' | 'label' | 'description' | 'parent_kind' | 'stage' | 'obligation' | 'id_pattern' | 'id_example' | 'title_form'> & { fields?: FieldInput[] };
 
 export const DECLARE_PRODUCT_KIND: CommandDefinition<DeclareProductKind> = {
-  id: 'LA-AUT-CMD122',
-  slice: PRODUCT_SLICE,
-  name: 'declare-product-kind',
-  description: "Declares a kind of the product's own, with its fields in order: the next load gives it a table of its own.",
-  method: 'POST',
-  route: '/api/product/declare-product-kind',
+  ...DECLARE_PRODUCT_KIND_IDENTITY,
   input: {
     name: column('product_kind', 'name', 'required'),
     product_id: column('product_kind', 'product_id', 'required'),

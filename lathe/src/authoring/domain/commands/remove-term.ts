@@ -1,18 +1,13 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { DOMAIN_SLICE } from '../model.ts';
 import { DomainRepository } from '../repository.ts';
+import { REMOVE_TERM_IDENTITY } from './identities.generated.ts';
 
 /** The term to remove. */
 export type RemoveTerm = { id: string };
 
 export const REMOVE_TERM: CommandDefinition<RemoveTerm> = {
-  id: 'LA-AUT-CMD168',
-  slice: DOMAIN_SLICE,
-  name: 'remove-term',
-  description: 'Removes a term from its domain. Refused while anything references it.',
-  method: 'POST',
-  route: '/api/domain/remove-term',
+  ...REMOVE_TERM_IDENTITY,
   input: {
     id: column('term', 'id', 'required'),
   },

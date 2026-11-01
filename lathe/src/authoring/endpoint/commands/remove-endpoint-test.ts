@@ -1,18 +1,13 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { ENDPOINT_SLICE } from '../model.ts';
 import { EndpointRepository } from '../repository.ts';
+import { REMOVE_ENDPOINT_TEST_IDENTITY } from './identities.generated.ts';
 
 /** The endpoint test to remove. */
 export type RemoveEndpointTest = { id: string };
 
 export const REMOVE_ENDPOINT_TEST: CommandDefinition<RemoveEndpointTest> = {
-  id: 'LA-AUT-CMD332',
-  slice: ENDPOINT_SLICE,
-  name: 'remove-endpoint-test',
-  description: 'Removes an endpoint test with the links it starts. Refused while anything else references them.',
-  method: 'POST',
-  route: '/api/endpoint/remove-endpoint-test',
+  ...REMOVE_ENDPOINT_TEST_IDENTITY,
   input: {
     id: column('endpoint_test', 'id', 'required'),
   },

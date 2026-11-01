@@ -1,19 +1,14 @@
 import { column, id, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PolicyRow } from '../../../platform/data/tables.ts';
-import { COMMAND_SLICE } from '../model.ts';
 import { CommandRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_POLICY_IDENTITY } from './identities.generated.ts';
 
 export type AddPolicy = Pick<PolicyRow, 'id' | 'title' | 'command_id' | 'statement'> & { hears?: string };
 
 export const ADD_POLICY: CommandDefinition<AddPolicy> = {
-  id: 'LA-AUT-CMD246',
-  slice: COMMAND_SLICE,
-  name: 'add-policy',
-  description: "Adds a policy under the command it sends, with the one event it hears: its own domain's, or another domain's published one.",
-  method: 'POST',
-  route: '/api/command/add-policy',
+  ...ADD_POLICY_IDENTITY,
   input: {
     id: column('policy', 'id', 'required'),
     title: column('policy', 'title', 'required'),

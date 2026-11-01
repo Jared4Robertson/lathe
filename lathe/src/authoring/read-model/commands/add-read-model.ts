@@ -1,19 +1,15 @@
 import { column, ids, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ReadModelRow } from '../../../platform/data/tables.ts';
-import { FIELD_COLUMNS, READ_MODEL_SLICE, newReadModel, type ReadModelField } from '../model.ts';
+import { FIELD_COLUMNS, newReadModel, type ReadModelField } from '../model.ts';
 import { ReadModelRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_READ_MODEL_IDENTITY } from './identities.generated.ts';
 
 export type AddReadModel = Pick<ReadModelRow, 'id' | 'title' | 'domain_id' | 'description'> & { fields?: ReadModelField[]; reads?: string[]; calls?: string[]; fed_by?: string[] };
 
 export const ADD_READ_MODEL: CommandDefinition<AddReadModel> = {
-  id: 'LA-AUT-CMD285',
-  slice: READ_MODEL_SLICE,
-  name: 'add-read-model',
-  description: 'Adds a read model to its domain, with its fields in order, the aggregates it reads, the domain services its projection calls and the events that feed it.',
-  method: 'POST',
-  route: '/api/read-model/add-read-model',
+  ...ADD_READ_MODEL_IDENTITY,
   input: {
     id: column('read_model', 'id', 'required'),
     title: column('read_model', 'title', 'required'),

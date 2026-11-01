@@ -1,19 +1,15 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { AdapterRow } from '../../../platform/data/tables.ts';
-import { changed, INTEGRATION_SLICE } from '../model.ts';
+import { changed } from '../model.ts';
 import { IntegrationRepository } from '../repository.ts';
+import { CHANGE_ADAPTER_IDENTITY } from './identities.generated.ts';
 
 /** The adapter's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeAdapter = Pick<AdapterRow, 'id'> & { title?: AdapterRow['title']; description?: AdapterRow['description']; file?: AdapterRow['file'] | null; meets?: string[]; packages?: string[] };
 
 export const CHANGE_ADAPTER: CommandDefinition<ChangeAdapter> = {
-  id: 'LA-AUT-CMD339',
-  slice: INTEGRATION_SLICE,
-  name: 'change-adapter',
-  description: "Changes an adapter's title, file or description, or the standard rules it meets or the packages it uses (each list whole). Its integration does not change.",
-  method: 'POST',
-  route: '/api/integration/change-adapter',
+  ...CHANGE_ADAPTER_IDENTITY,
   input: {
     id: column('adapter', 'id', 'required'),
     title: column('adapter', 'title', 'optional'),

@@ -1,18 +1,13 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { BusinessOutcomeRow } from '../../../platform/data/tables.ts';
-import { BUSINESS_OUTCOME_SLICE } from '../model.ts';
 import { BusinessOutcomeRepository } from '../repository.ts';
+import { ADD_BUSINESS_OUTCOME_IDENTITY } from './identities.generated.ts';
 
 export type AddBusinessOutcome = Pick<BusinessOutcomeRow, 'id' | 'title' | 'product_id' | 'statement' | 'measure' | 'target' | 'measured_outside' | 'notes'> & { measured_by?: string[] };
 
 export const ADD_BUSINESS_OUTCOME: CommandDefinition<AddBusinessOutcome> = {
-  id: 'LA-AUT-CMD140',
-  slice: BUSINESS_OUTCOME_SLICE,
-  name: 'add-business-outcome',
-  description: 'Adds a business outcome under its product, with the tests and records that measure it.',
-  method: 'POST',
-  route: '/api/business-outcome/add-business-outcome',
+  ...ADD_BUSINESS_OUTCOME_IDENTITY,
   input: {
     id: column('business_outcome', 'id', 'required'),
     title: column('business_outcome', 'title', 'required'),

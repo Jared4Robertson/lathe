@@ -1,4 +1,4 @@
-// The Domain aggregate's commands, as the CLI, the MCP server and the HTTP API register them.
+// Generated from data/ by `npm run generate`. Do not edit.
 import type { AnyCommand } from '../../../platform/commands/definition.ts';
 import { ADD_DOMAIN } from './add-domain.ts';
 import { CHANGE_DOMAIN } from './change-domain.ts';

@@ -1,19 +1,15 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { UiComponentRow } from '../../../platform/data/tables.ts';
-import { changed, UI_COMPONENT_SLICE } from '../model.ts';
+import { changed } from '../model.ts';
 import { UiComponentRepository } from '../repository.ts';
+import { CHANGE_UI_COMPONENT_IDENTITY } from './identities.generated.ts';
 
 /** The UI component's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeUiComponent = Pick<UiComponentRow, 'id'> & { title?: UiComponentRow['title']; description?: UiComponentRow['description']; file?: UiComponentRow['file'] | null; renders?: string[]; builds?: string[]; meets?: string[]; packages?: string[] };
 
 export const CHANGE_UI_COMPONENT: CommandDefinition<ChangeUiComponent> = {
-  id: 'LA-AUT-CMD346',
-  slice: UI_COMPONENT_SLICE,
-  name: 'change-ui-component',
-  description: "Changes a UI component's title, file or description, or the views it renders, the view requirements it builds, the standard rules it meets or the packages it uses (each list whole).",
-  method: 'POST',
-  route: '/api/ui-component/change-ui-component',
+  ...CHANGE_UI_COMPONENT_IDENTITY,
   input: {
     id: column('ui_component', 'id', 'required'),
     title: column('ui_component', 'title', 'optional'),

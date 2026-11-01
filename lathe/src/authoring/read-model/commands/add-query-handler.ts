@@ -1,19 +1,14 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { QueryHandlerRow } from '../../../platform/data/tables.ts';
-import { READ_MODEL_SLICE } from '../model.ts';
 import { ReadModelRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_QUERY_HANDLER_IDENTITY } from './identities.generated.ts';
 
 export type AddQueryHandler = Pick<QueryHandlerRow, 'id' | 'title' | 'query_id' | 'file' | 'description'> & { meets?: string[]; packages?: string[] };
 
 export const ADD_QUERY_HANDLER: CommandDefinition<AddQueryHandler> = {
-  id: 'LA-AUT-CMD294',
-  slice: READ_MODEL_SLICE,
-  name: 'add-query-handler',
-  description: 'Adds the handler that answers a query, its one piece of code, with the standard rules it meets and the packages it uses.',
-  method: 'POST',
-  route: '/api/read-model/add-query-handler',
+  ...ADD_QUERY_HANDLER_IDENTITY,
   input: {
     id: column('query_handler', 'id', 'required'),
     title: column('query_handler', 'title', 'required'),

@@ -4,16 +4,12 @@
 // standard rules it meets and the packages it uses), and its reader, through which the query handlers read it (with the
 // standard rules it meets and the packages it uses). One instance is one read model, whole; it holds only the links its
 // own records start. Where it is stored is its table's, an aggregate of its own (A18).
-import type { Slice } from '../../platform/commands/definition.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { ProjectionRow, QueryHandlerRow, QueryRow, ReadModelFieldRow, ReadModelRow, ReaderRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const READ_MODEL_AGGREGATE = 'LA-AUT-A10';
-
-/** How the interfaces reach the aggregate's commands: `lathe read-model`, the read_model_ tools, /api/read-model/. */
-export const READ_MODEL_SLICE: Slice = { aggregate: READ_MODEL_AGGREGATE, name: 'read-model' };
 
 /**
  * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.

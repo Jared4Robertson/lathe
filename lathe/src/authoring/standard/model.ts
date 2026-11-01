@@ -1,16 +1,9 @@
 // The Standard aggregate (LA-AUT-A3): engineering rules the product's code follows: a standard with its rules, and each
 // rule's tests (with the test data sets they start from). One instance is one standard, whole; the technical records
 // that meet its rules start those links in their own aggregates.
-import type { Slice } from '../../platform/commands/definition.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { StandardRow, StandardRuleRow, StandardRuleTestRow } from '../../platform/data/tables.ts';
-
-/** The aggregate's record ID in Lathe's own spec. */
-export const STANDARD_AGGREGATE = 'LA-AUT-A3';
-
-/** How the interfaces reach the aggregate's commands: `lathe standard`, the standard_ tools, /api/standard/. */
-export const STANDARD_SLICE: Slice = { aggregate: STANDARD_AGGREGATE, name: 'standard' };
 
 /**
  * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.

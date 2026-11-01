@@ -1,18 +1,13 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { DOMAIN_SLICE } from '../model.ts';
 import { DomainRepository } from '../repository.ts';
+import { REMOVE_CAPABILITY_IDENTITY } from './identities.generated.ts';
 
 /** The capability to remove. */
 export type RemoveCapability = { id: string };
 
 export const REMOVE_CAPABILITY: CommandDefinition<RemoveCapability> = {
-  id: 'LA-AUT-CMD165',
-  slice: DOMAIN_SLICE,
-  name: 'remove-capability',
-  description: 'Removes a capability and the links it starts. Refused while a use case sits under it or anything else references it.',
-  method: 'POST',
-  route: '/api/domain/remove-capability',
+  ...REMOVE_CAPABILITY_IDENTITY,
   input: {
     id: column('capability', 'id', 'required'),
   },

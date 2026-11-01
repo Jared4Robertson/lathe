@@ -1,18 +1,13 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { AGGREGATE_SLICE } from '../model.ts';
 import { AggregateRepository } from '../repository.ts';
+import { REMOVE_DATA_MODEL_IDENTITY } from './identities.generated.ts';
 
 /** The data model to remove. */
 export type RemoveDataModel = { id: string };
 
 export const REMOVE_DATA_MODEL: CommandDefinition<RemoveDataModel> = {
-  id: 'LA-AUT-CMD221',
-  slice: AGGREGATE_SLICE,
-  name: 'remove-data-model',
-  description: 'Removes a data model with the links it starts and the packages it uses. Refused while anything else references it.',
-  method: 'POST',
-  route: '/api/aggregate/remove-data-model',
+  ...REMOVE_DATA_MODEL_IDENTITY,
   input: {
     id: column('data_model', 'id', 'required'),
   },

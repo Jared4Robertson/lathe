@@ -2,12 +2,12 @@
 // (reader.ts), which the query runner gives each handler: a test data set whole as its page reads it, the test data
 // sets of a domain, and the next free ID for one. A handler never sees the data, a repository or the aggregate's
 // model; each changes nothing.
-import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { TEST_DATA_SET_SLICE } from './model.ts';
 import type { TestDataSetPage, TestDataSetSummary } from './read-model.ts';
 import { testDataSetReader, type TestDataSetReader } from './reader.ts';
+import { GET_TEST_DATA_SET_IDENTITY, LIST_TEST_DATA_SETS_IDENTITY, NEXT_TEST_DATA_SET_ID_IDENTITY } from './queries.generated.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
@@ -21,12 +21,7 @@ export function getTestDataSet(reader: TestDataSetReader, input: { id: string })
 
 /** GET a test data set whole (LA-AUT-QRY135). */
 export const GET_TEST_DATA_SET: QueryDefinition<{ id: string }, TestDataSetPage, TestDataSetReader> = {
-  id: 'LA-AUT-QRY135',
-  slice: TEST_DATA_SET_SLICE,
-  name: 'get-test-data-set',
-  description: 'Reads a test data set whole as its page shows it, by its ID: its environment, accounts and records, how to prepare and reset it, the file that builds it, and the tests that start from it.',
-  method: 'GET',
-  route: '/api/test-data-set/get-test-data-set',
+  ...GET_TEST_DATA_SET_IDENTITY,
   input: { id: id('The test data set.', 'required') },
   reader: testDataSetReader,
   run: getTestDataSet,
@@ -40,12 +35,7 @@ export function listTestDataSets(reader: TestDataSetReader, input: { domain_id: 
 
 /** List the test data sets of a domain (LA-AUT-QRY136). */
 export const LIST_TEST_DATA_SETS: QueryDefinition<{ domain_id: string }, TestDataSetSummary[], TestDataSetReader> = {
-  id: 'LA-AUT-QRY136',
-  slice: TEST_DATA_SET_SLICE,
-  name: 'list-test-data-sets',
-  description: 'Lists the test data sets of a domain, by ID, with their titles.',
-  method: 'GET',
-  route: '/api/test-data-set/list-test-data-sets',
+  ...LIST_TEST_DATA_SETS_IDENTITY,
   input: { domain_id: id('The domain.', 'required') },
   reader: testDataSetReader,
   run: listTestDataSets,
@@ -61,12 +51,7 @@ export function nextTestDataSetId(reader: TestDataSetReader, input: { domain_id:
 
 /** Get the next ID for a test data set (LA-AUT-QRY137). */
 export const NEXT_TEST_DATA_SET_ID: QueryDefinition<{ domain_id: string }, string, TestDataSetReader> = {
-  id: 'LA-AUT-QRY137',
-  slice: TEST_DATA_SET_SLICE,
-  name: 'next-id',
-  description: 'The next free ID for a test data set of a domain: one past the highest in use.',
-  method: 'GET',
-  route: '/api/test-data-set/next-id',
+  ...NEXT_TEST_DATA_SET_ID_IDENTITY,
   input: { domain_id: id('The domain it will sit under.', 'required') },
   reader: testDataSetReader,
   run: nextTestDataSetId,
@@ -83,6 +68,3 @@ function testDataSetText({ testDataSet: row, startedFromBy }: TestDataSetPage): 
   if (startedFromBy.length) lines.push(`  started from by: ${startedFromBy.join(', ')}`);
   return lines.join('\n');
 }
-
-/** The Test data set aggregate's queries, as the CLI and the MCP server register them. */
-export const TEST_DATA_SET_QUERIES: readonly AnyQuery[] = [GET_TEST_DATA_SET, LIST_TEST_DATA_SETS, NEXT_TEST_DATA_SET_ID];

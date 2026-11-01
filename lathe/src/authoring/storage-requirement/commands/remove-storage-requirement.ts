@@ -1,18 +1,13 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { STORAGE_REQUIREMENT_SLICE } from '../model.ts';
 import { StorageRequirementRepository } from '../repository.ts';
+import { REMOVE_STORAGE_REQUIREMENT_IDENTITY } from './identities.generated.ts';
 
 /** The storage requirement to remove. */
 export type RemoveStorageRequirement = { id: string };
 
 export const REMOVE_STORAGE_REQUIREMENT: CommandDefinition<RemoveStorageRequirement> = {
-  id: 'LA-AUT-CMD362',
-  slice: STORAGE_REQUIREMENT_SLICE,
-  name: 'remove-storage-requirement',
-  description: 'Removes a storage requirement whole: its storage requirement tests and the links they start. Refused while anything outside it references what is in it.',
-  method: 'POST',
-  route: '/api/storage-requirement/remove-storage-requirement',
+  ...REMOVE_STORAGE_REQUIREMENT_IDENTITY,
   input: {
     id: column('storage_requirement', 'id', 'required'),
   },

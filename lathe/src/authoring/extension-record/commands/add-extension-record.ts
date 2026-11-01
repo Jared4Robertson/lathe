@@ -1,9 +1,10 @@
 import { id, links, texts, values, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { parentColumn, productKinds } from '../declaration.ts';
-import { EXTENSION_RECORD_SLICE, undeclared, withLinks, withValues } from '../model.ts';
+import { undeclared, withLinks, withValues } from '../model.ts';
 import { ExtensionRecordRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_EXTENSION_RECORD_IDENTITY } from './identities.generated.ts';
 
 /** A new record of a product kind: its kind, ID and parent, its title and fields, and what it links to and uses. */
 export type AddExtensionRecord = {
@@ -16,12 +17,7 @@ export type AddExtensionRecord = {
 };
 
 export const ADD_EXTENSION_RECORD: CommandDefinition<AddExtensionRecord> = {
-  id: 'LA-AUT-CMD145',
-  slice: EXTENSION_RECORD_SLICE,
-  name: 'add-extension-record',
-  description: "Adds a record of a product's own kind under its parent, with its title and declared fields, the links it starts and the packages it uses.",
-  method: 'POST',
-  route: '/api/extension-record/add-extension-record',
+  ...ADD_EXTENSION_RECORD_IDENTITY,
   input: {
     kind: id('The product kind it is a record of, by name, such as report.', 'required'),
     id: id("The record's ID, as its kind's ID pattern says.", 'required'),

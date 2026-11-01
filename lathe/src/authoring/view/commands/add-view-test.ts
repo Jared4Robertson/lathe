@@ -1,18 +1,13 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ViewTestRow } from '../../../platform/data/tables.ts';
-import { VIEW_SLICE } from '../model.ts';
 import { ViewRepository } from '../repository.ts';
+import { ADD_VIEW_TEST_IDENTITY } from './identities.generated.ts';
 
 export type AddViewTest = Pick<ViewTestRow, 'id' | 'title' | 'view_requirement_id' | 'level' | 'state' | 'when' | 'then' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'notes'> & { starts_from?: string[] };
 
 export const ADD_VIEW_TEST: CommandDefinition<AddViewTest> = {
-  id: 'LA-AUT-CMD316',
-  slice: VIEW_SLICE,
-  name: 'add-view-test',
-  description: 'Adds a view test under its view requirement, with the test data sets it starts from.',
-  method: 'POST',
-  route: '/api/view/add-view-test',
+  ...ADD_VIEW_TEST_IDENTITY,
   input: {
     id: column('view_test', 'id', 'required'),
     title: column('view_test', 'title', 'required'),

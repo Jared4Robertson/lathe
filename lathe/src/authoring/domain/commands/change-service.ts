@@ -1,20 +1,16 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ServiceRow } from '../../../platform/data/tables.ts';
-import { DOMAIN_SLICE, changed } from '../model.ts';
+import { changed } from '../model.ts';
 import { DomainRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_SERVICE_IDENTITY } from './identities.generated.ts';
 
 /** The service's changes: a column given is set, null clears an optional one; a list given replaces the list. */
 export type ChangeService = Pick<ServiceRow, 'id'> & { title?: ServiceRow['title']; file?: ServiceRow['file'] | null; meets?: string[]; packages?: string[] };
 
 export const CHANGE_SERVICE: CommandDefinition<ChangeService> = {
-  id: 'LA-AUT-CMD176',
-  slice: DOMAIN_SLICE,
-  name: 'change-service',
-  description: "Changes a service's title or file, or the standard rules it meets or packages it uses (each the whole list).",
-  method: 'POST',
-  route: '/api/domain/change-service',
+  ...CHANGE_SERVICE_IDENTITY,
   input: {
     id: column('service', 'id', 'required'),
     title: column('service', 'title', 'optional'),

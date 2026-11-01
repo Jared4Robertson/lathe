@@ -1,19 +1,15 @@
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { DomainEventRow } from '../../../platform/data/tables.ts';
-import { DOMAIN_EVENT_SLICE, newDomainEvent, type EventFieldInput } from '../model.ts';
+import { newDomainEvent, type EventFieldInput } from '../model.ts';
 import { DomainEventRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_DOMAIN_EVENT_IDENTITY } from './identities.generated.ts';
 
 export type AddDomainEvent = Pick<DomainEventRow, 'id' | 'title' | 'aggregate_id' | 'published' | 'description'> & { fields?: EventFieldInput[] };
 
 export const ADD_DOMAIN_EVENT: CommandDefinition<AddDomainEvent> = {
-  id: 'LA-AUT-CMD230',
-  slice: DOMAIN_EVENT_SLICE,
-  name: 'add-domain-event',
-  description: 'Adds a domain event to the aggregate it happens to, with the fields it carries, in order.',
-  method: 'POST',
-  route: '/api/domain-event/add-domain-event',
+  ...ADD_DOMAIN_EVENT_IDENTITY,
   input: {
     id: column('domain_event', 'id', 'required'),
     title: column('domain_event', 'title', 'required'),

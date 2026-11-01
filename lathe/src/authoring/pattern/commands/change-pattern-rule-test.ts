@@ -1,21 +1,17 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PatternRuleTestRow } from '../../../platform/data/tables.ts';
-import { PATTERN_SLICE, changed } from '../model.ts';
+import { changed } from '../model.ts';
 import { PatternRepository } from '../repository.ts';
 import { refuseBroken } from '../../../platform/data/rules.ts';
 import { patternRuleTestPerDomain } from '../rules.ts';
+import { CHANGE_PATTERN_RULE_TEST_IDENTITY } from './identities.generated.ts';
 
 /** The test's changes: a column given is set, null clears an optional one; starts_from, when given, replaces the list. */
 export type ChangePatternRuleTest = Pick<PatternRuleTestRow, 'id'> & { title?: PatternRuleTestRow['title']; domain_id?: PatternRuleTestRow['domain_id']; level?: PatternRuleTestRow['level']; state?: PatternRuleTestRow['state']; file?: PatternRuleTestRow['file'] | null; manual_reason?: PatternRuleTestRow['manual_reason'] | null; size?: PatternRuleTestRow['size'] | null; smoke?: PatternRuleTestRow['smoke'] | null; external?: PatternRuleTestRow['external'] | null; when?: PatternRuleTestRow['when']; then?: PatternRuleTestRow['then']; notes?: PatternRuleTestRow['notes'] | null; starts_from?: string[] };
 
 export const CHANGE_PATTERN_RULE_TEST: CommandDefinition<ChangePatternRuleTest> = {
-  id: 'LA-AUT-CMD197',
-  slice: PATTERN_SLICE,
-  name: 'change-pattern-rule-test',
-  description: "Changes a pattern rule test's columns, the domain it proves the rule in, or the test data sets it starts from (the whole list).",
-  method: 'POST',
-  route: '/api/pattern/change-pattern-rule-test',
+  ...CHANGE_PATTERN_RULE_TEST_IDENTITY,
   input: {
     id: column('pattern_rule_test', 'id', 'required'),
     title: column('pattern_rule_test', 'title', 'optional'),

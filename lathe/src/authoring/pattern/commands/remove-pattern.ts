@@ -1,18 +1,13 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { PATTERN_SLICE } from '../model.ts';
 import { PatternRepository } from '../repository.ts';
+import { REMOVE_PATTERN_IDENTITY } from './identities.generated.ts';
 
 /** The pattern to remove. */
 export type RemovePattern = { id: string };
 
 export const REMOVE_PATTERN: CommandDefinition<RemovePattern> = {
-  id: 'LA-AUT-CMD192',
-  slice: PATTERN_SLICE,
-  name: 'remove-pattern',
-  description: 'Removes a pattern whole: its settings, rules and rule tests, and the links they start. Refused while anything outside it references what is in it, such as a follower.',
-  method: 'POST',
-  route: '/api/pattern/remove-pattern',
+  ...REMOVE_PATTERN_IDENTITY,
   input: {
     id: column('pattern', 'id', 'required'),
   },
