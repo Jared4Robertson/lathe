@@ -589,6 +589,7 @@
 {"source_id":"LA-AUT-TOOL01","target_id":"LA-STD-PRINCIPLES-R06"}
 {"source_id":"LA-AUT-TOOL02","target_id":"LA-STD-PRINCIPLES-R02"}
 {"source_id":"LA-AUT-TOOL03","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
+{"source_id":"LA-AUT-TOOL03","target_id":"LA-PAT-AGGREGATE-COMMANDS-R16"}
 {"source_id":"LA-AUT-TOOL03","target_id":"LA-PAT-FIELD-INPUTS-R03"}
 {"source_id":"LA-AUT-TOOL03","target_id":"LA-STD-PRINCIPLES-R06"}
 {"source_id":"LA-CHK-CMD01-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R14"}
