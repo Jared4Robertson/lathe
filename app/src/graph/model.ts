@@ -191,11 +191,10 @@ export function filterKind(index: RecordIndex, id: string): string | null {
 }
 
 /**
- * The picture the camera frames around a focus (a record or a group), by levels of the graph's tree
+ * The picture the summary counts around a focus (a record or a group), by levels of the graph's tree
  * (see tree.ts), a level being any node: a record, a stage, a folder or a group. It is the focus's
- * parent, kept at the left edge for context, the focus, and its descendants down to `depth` levels
- * below it (LA-EXP-DS09), with the parent lines between them; the rest of the map stays where it is
- * around it.
+ * parent, the focus, and its descendants down to `depth` levels below it, the levels the depth draws
+ * (LA-EXP-DS09), with the parent lines between them; the rest of the map stays where it is around it.
  *
  * The kind filters hide kinds, and nothing is reached through a hidden record. The focus is never
  * hidden. The result is the same for the same input.

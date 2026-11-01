@@ -47,6 +47,14 @@ export const TEXT_SIZE = 400;
  * TEXT_SIZE, since its headers take room from its children's boxes.
  */
 export const TREE_TEXT_SIZE = 250;
+/**
+ * The Nested map's own text share: a box's text scale is at most its side over this. Larger than TEXT_SIZE, so the
+ * children of a focus that fills most of the open space's width (LA-EXP-DS09) read at a useful size inside it, and the
+ * focus's own header no larger than readable; its padding and gaps keep TEXT_SIZE.
+ */
+export const NESTED_TEXT_SIZE = 200;
+/** A Nested box's largest text scale for its side: its side over NESTED_TEXT_SIZE. */
+export const nestedText = (side: number) => side / NESTED_TEXT_SIZE;
 /** A Tree box's largest text scale for its width: its width over TREE_TEXT_SIZE. */
 export const treeText = (width: number) => width / TREE_TEXT_SIZE;
 /** The product's column's width over its height, in the Tree map. */
