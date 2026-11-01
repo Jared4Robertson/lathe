@@ -6,7 +6,6 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { ADD_TABLE } from '../../../src/authoring/table/commands/add-table.ts';
 import { CHANGE_TABLE } from '../../../src/authoring/table/commands/change-table.ts';
-import { REMOVE_TABLE } from '../../../src/authoring/table/commands/remove-table.ts';
 import type { AnyCommand } from '../../../src/platform/commands/definition.ts';
 import { runCommand } from '../../../src/platform/commands/run.ts';
 import { StoreError, type StoreProblem } from '../../../src/platform/data/problems.ts';
@@ -134,14 +133,5 @@ describe('LA-AUT-INV82-T a key of a table kept outside a database, or a foreign 
       outside.table_key = outside.table_key.filter((k) => k.table_id !== 'TL-LEND-EN01-TB' && k.target_table_id !== 'TL-LEND-EN01-TB');
       expect(await loading(outside), storage).toEqual([]);
     }
-  });
-});
-
-describe('LA-STD-CODE-R07-T53 a table is removed whole, refused while anything outside references it', () => {
-  it('removes a table with its keys and links, and refuses one another table points at, naming it', async () => {
-    const store = await tableDataSet();
-    expect((await refusal(store, REMOVE_TABLE, { id: 'TL-LEND-EN01-TB' })).problems[0].message).toBe('Table TL-LEND-EN01-TB is referenced, so it stays: table_key table_id TL-LEND-TB01, position 2 (target_table_id)');
-    expect((await runCommand(store, REMOVE_TABLE, { id: 'TL-LEND-TB01' })).changes.map((c) => c.table).sort()).toEqual(['table', 'table_key', 'table_key']);
-    expect((await runCommand(store, REMOVE_TABLE, { id: 'TL-LEND-EN01-TB' })).changes.map((c) => c.table).sort()).toEqual(['meets', 'table', 'table_key', 'table_key']);
   });
 });

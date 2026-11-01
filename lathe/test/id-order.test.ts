@@ -1,5 +1,5 @@
-// LA-STD-CODE-R08-T01 (LA-STD-CODE-R08): record IDs are put in ID order through each package's one ID collator, made
-// once: the engine's in lathe/src/platform/data/ids.ts, the app's in app/src/exploring/record-summaries/record-index.ts.
+// LA-PAT-APP-CODE-R27, proved in Exploring and Platform (T01 and T02): record IDs are put in ID order through each
+// package's one ID collator, made once: the engine's in lathe/src/platform/data/ids.ts, the app's in app/src/exploring/record-summaries/record-index.ts.
 // No other code makes a collator or sorts with a numeric localeCompare, which builds a collator on every comparison.
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -34,7 +34,7 @@ function ownOrders(text: string): number[] {
   return text.split('\n').flatMap((line, at) => (/new Intl\.Collator\(|localeCompare\([^)]*numeric/.test(line) ? [at + 1] : []));
 }
 
-describe('LA-STD-CODE-R08-T01 record IDs are ordered by the one ID collator of each package', () => {
+describe('LA-PAT-APP-CODE-R27-T01 LA-PAT-APP-CODE-R27-T02 record IDs are ordered by the one ID collator of each package', () => {
   it('finds a collator of its own and a numeric localeCompare, and lets a plain localeCompare pass', () => {
     expect(ownOrders("const c = new Intl.Collator('en', { numeric: true });")).toEqual([1]);
     expect(ownOrders("ids.sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));")).toEqual([1]);

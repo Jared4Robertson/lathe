@@ -60,8 +60,8 @@ export const READ_MODEL_TABLES = ['read_model', 'read_model_field', 'query', 'pr
 export const READ_MODEL_SHAPE = {
   read_model: { at: 'readModel', lists: { reads: 'reads', calls: 'calls', fed_by: 'fedBy' }, given: { fields: 'fields' } },
   query: { at: 'queries', lists: { selects_by: 'selectsBy', calls: 'calls' } },
-  projection: { at: 'projection', one: true, lists: { meets: 'meets', packages: 'packages' } },
-  reader: { at: 'reader', one: true, lists: { meets: 'meets', packages: 'packages' }, links: { stored_in: 'storedIn' } },
+  projection: { at: 'projection', one: true, refusedBy: 'oneProjection', lists: { meets: 'meets', packages: 'packages' } },
+  reader: { at: 'reader', one: true, refusedBy: 'oneReader', lists: { meets: 'meets', packages: 'packages' }, links: { stored_in: 'storedIn' } },
   query_handler: { at: 'queryHandlers', lists: { meets: 'meets', packages: 'packages' } },
 } as const satisfies AggregateShape;
 

@@ -96,7 +96,7 @@ describe("LA-PAT-AGGREGATE-COMMANDS-R10-T02 each Check command (LA-CHK-A1) chang
   });
 });
 
-describe("LA-STD-CODE-R07-T55 a product's check is removed whole, and Lathe's own are never removed", () => {
+describe("LA-PAT-AGGREGATE-COMMANDS-R13-T02 a product's check is removed whole, and Lathe's own are never removed", () => {
   it('removes the check row and nothing else', async () => {
     const store = await checkDataSet();
     const removed = await runCommand(store, REMOVE_CHECK, { name: 'loan-without-due-date' });
