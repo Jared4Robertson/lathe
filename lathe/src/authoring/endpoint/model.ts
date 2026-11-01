@@ -2,26 +2,13 @@
 // data sets each starts from), and its endpoint handler (with the standard rules it meets and the packages it uses).
 // An endpoint sits under the one command or query it exposes, outside the aggregate. One instance is one endpoint,
 // whole; it holds only the links its own records start.
+import type { AggregateShape } from '../../platform/data/repository.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
-import type { Row, Value } from '../../platform/data/rows.ts';
+import type { Row } from '../../platform/data/rows.ts';
 import type { ApiRequirementRow, EndpointHandlerRow, EndpointRow, EndpointTestRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const ENDPOINT_AGGREGATE = 'LA-AUT-A13';
-
-/**
- * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.
- * Only the columns named in `columns` are taken from the changes.
- */
-export function changed<R extends object>(row: R, changes: object, columns: readonly string[]): R {
-  const next = { ...row } as Record<string, unknown>;
-  for (const [column, value] of Object.entries(changes)) {
-    if (!columns.includes(column) || value === undefined) continue;
-    if (value === null) delete next[column];
-    else next[column] = value as Value;
-  }
-  return next as R;
-}
 
 /** A technical record with the standard rules it meets and the packages it uses. */
 export interface Built<T> {
@@ -50,13 +37,16 @@ export interface Endpoint {
 /** The tables the Endpoint aggregate keeps its rows in: its kinds and the relations its records start. */
 export const ENDPOINT_TABLES = ['endpoint', 'api_requirement', 'endpoint_handler', 'endpoint_test', 'meets', 'package_use', 'starts_from'] as const;
 
-/** The kinds of the aggregate's records. */
-export type EndpointKind = 'endpoint' | 'api_requirement' | 'endpoint_handler' | 'endpoint_test';
+/** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
+export const ENDPOINT_SHAPE = {
+  endpoint: { at: 'endpoint' },
+  api_requirement: { at: 'requirements' },
+  endpoint_handler: { at: 'handler', one: true, lists: { meets: 'meets', packages: 'packages' } },
+  endpoint_test: { at: 'tests', lists: { starts_from: 'startsFrom' } },
+} as const satisfies AggregateShape;
 
-/** A new endpoint, with nothing under it yet. */
-export function newEndpoint(endpoint: EndpointRow): Endpoint {
-  return { root: endpoint.id, endpoint, requirements: [], handler: null, tests: [] };
-}
+/** The kinds of the aggregate's records. */
+export type EndpointKind = keyof typeof ENDPOINT_SHAPE;
 
 /** The endpoints in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function endpointsFrom(rows: (table: string) => Row[], only?: string): Endpoint[] {
@@ -98,11 +88,3 @@ export function endpointRows(endpoint: Endpoint): Map<string, Row[]> {
   ]);
 }
 
-/** The kind of the record with this ID inside the endpoint, or undefined. */
-export function kindInside(endpoint: Endpoint, id: string): EndpointKind | undefined {
-  if (endpoint.root === id) return 'endpoint';
-  if (endpoint.requirements.some((r) => r.id === id)) return 'api_requirement';
-  if (endpoint.handler?.row.id === id) return 'endpoint_handler';
-  if (endpoint.tests.some((t) => t.row.id === id)) return 'endpoint_test';
-  return undefined;
-}

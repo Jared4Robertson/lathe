@@ -1,10 +1,7 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { CommandRow } from '../../../platform/data/tables.ts';
-import { newCommand } from '../model.ts';
-import { CommandRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
 import { ADD_COMMAND_IDENTITY } from './identities.generated.ts';
+import { addCommand } from './handlers.generated.ts';
 
 export type AddCommand = Pick<CommandRow, 'id' | 'title' | 'entity_id' | 'description'> & { raises?: string[]; checks?: string[]; calls?: string[] };
 
@@ -21,11 +18,3 @@ export const ADD_COMMAND = {
   },
   handler: addCommand,
 } satisfies CommandDefinition<AddCommand>;
-
-export function addCommand(tx: Transaction, input: AddCommand): void {
-  const commands = new CommandRepository(tx);
-  const { raises = [], checks = [], calls = [], ...row } = input;
-  const command = commands.create(newCommand(row, { raises, checks, calls }));
-  holdToRules(tx, command);
-  commands.save(command);
-}

@@ -4,26 +4,13 @@
 // standard rules it meets and the packages it uses), and its reader, through which the query handlers read it (with the
 // standard rules it meets and the packages it uses). One instance is one read model, whole; it holds only the links its
 // own records start. Where it is stored is its table's, an aggregate of its own (A18).
+import type { AggregateShape } from '../../platform/data/repository.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
-import type { Row, Value } from '../../platform/data/rows.ts';
+import type { Row } from '../../platform/data/rows.ts';
 import type { ProjectionRow, QueryHandlerRow, QueryRow, ReadModelFieldRow, ReadModelRow, ReaderRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const READ_MODEL_AGGREGATE = 'LA-AUT-A10';
-
-/**
- * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.
- * Only the columns named in `columns` are taken from the changes.
- */
-export function changed<R extends object>(row: R, changes: object, columns: readonly string[]): R {
-  const next = { ...row } as Record<string, unknown>;
-  for (const [column, value] of Object.entries(changes)) {
-    if (!columns.includes(column) || value === undefined) continue;
-    if (value === null) delete next[column];
-    else next[column] = value as Value;
-  }
-  return next as R;
-}
 
 /** The columns of a field a command gives: its read model and its position follow from the list it is in. */
 export const FIELD_COLUMNS = ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'] as const;
@@ -69,16 +56,16 @@ export interface ReadModel {
 /** The tables the Read model aggregate keeps its rows in: its kinds, its part, and the relations and parts its records start. */
 export const READ_MODEL_TABLES = ['read_model', 'read_model_field', 'query', 'projection', 'reader', 'query_handler', 'reads', 'calls', 'fed_by', 'selects_by', 'meets', 'package_use', 'stored_in'] as const;
 
-/** The kinds of the aggregate's records, each with the column that names its parent inside the aggregate. */
-export const READ_MODEL_KINDS = {
-  read_model: null,
-  query: 'read_model_id',
-  projection: 'read_model_id',
-  reader: 'read_model_id',
-  query_handler: 'query_id',
-} as const;
+/** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
+export const READ_MODEL_SHAPE = {
+  read_model: { at: 'readModel', lists: { reads: 'reads', calls: 'calls', fed_by: 'fedBy' }, given: { fields: 'fields' } },
+  query: { at: 'queries', lists: { selects_by: 'selectsBy', calls: 'calls' } },
+  projection: { at: 'projection', one: true, lists: { meets: 'meets', packages: 'packages' } },
+  reader: { at: 'reader', one: true, lists: { meets: 'meets', packages: 'packages' }, links: { stored_in: 'storedIn' } },
+  query_handler: { at: 'queryHandlers', lists: { meets: 'meets', packages: 'packages' } },
+} as const satisfies AggregateShape;
 
-export type ReadModelKind = keyof typeof READ_MODEL_KINDS;
+export type ReadModelKind = keyof typeof READ_MODEL_SHAPE;
 
 /** A new read model with its fields and links, and no queries or projection yet. */
 export function newReadModel(readModel: ReadModelRow, parts: Pick<ReadModel, 'fields' | 'reads' | 'calls' | 'fedBy'>): ReadModel {
@@ -144,12 +131,3 @@ export function readModelRows(readModel: ReadModel): Map<string, Row[]> {
   ]);
 }
 
-/** The kind of the record with this ID inside the read model, or undefined. */
-export function kindInside(readModel: ReadModel, id: string): ReadModelKind | undefined {
-  if (readModel.root === id) return 'read_model';
-  if (readModel.queries.some((q) => q.row.id === id)) return 'query';
-  if (readModel.projection?.row.id === id) return 'projection';
-  if (readModel.reader?.row.id === id) return 'reader';
-  if (readModel.queryHandlers.some((h) => h.row.id === id)) return 'query_handler';
-  return undefined;
-}

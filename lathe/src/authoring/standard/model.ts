@@ -1,23 +1,10 @@
 // The Standard aggregate (LA-AUT-A3): engineering rules the product's code follows: a standard with its rules, and each
 // rule's tests (with the test data sets they start from). One instance is one standard, whole; the technical records
 // that meet its rules start those links in their own aggregates.
+import type { AggregateShape } from '../../platform/data/repository.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
-import type { Row, Value } from '../../platform/data/rows.ts';
+import type { Row } from '../../platform/data/rows.ts';
 import type { StandardRow, StandardRuleRow, StandardRuleTestRow } from '../../platform/data/tables.ts';
-
-/**
- * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.
- * Only the columns named in `columns` are taken from the changes.
- */
-export function changed<R extends object>(row: R, changes: object, columns: readonly string[]): R {
-  const next = { ...row } as Record<string, unknown>;
-  for (const [column, value] of Object.entries(changes)) {
-    if (!columns.includes(column) || value === undefined) continue;
-    if (value === null) delete next[column];
-    else next[column] = value as Value;
-  }
-  return next as R;
-}
 
 /** A test with the test data sets it starts from. */
 export interface Tested<T> {
@@ -37,19 +24,14 @@ export interface Standard {
 /** The tables the Standard aggregate keeps its rows in: its kinds and the relation its tests start. */
 export const STANDARD_TABLES = ['standard', 'standard_rule', 'standard_rule_test', 'starts_from'] as const;
 
-/** The kinds of the aggregate's records, each with the column that names its parent inside the aggregate. */
-export const STANDARD_KINDS = {
-  standard: null,
-  standard_rule: 'standard_id',
-  standard_rule_test: 'standard_rule_id',
-} as const;
+/** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
+export const STANDARD_SHAPE = {
+  standard: { at: 'standard' },
+  standard_rule: { at: 'rules' },
+  standard_rule_test: { at: 'ruleTests', lists: { starts_from: 'startsFrom' } },
+} as const satisfies AggregateShape;
 
-export type StandardKind = keyof typeof STANDARD_KINDS;
-
-/** A new standard, with no rules yet. */
-export function newStandard(standard: StandardRow): Standard {
-  return { root: standard.id, standard, rules: [], ruleTests: [] };
-}
+export type StandardKind = keyof typeof STANDARD_SHAPE;
 
 /** The standards in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function standardsFrom(rows: (table: string) => Row[], only?: string): Standard[] {
@@ -80,10 +62,3 @@ export function standardRows(standard: Standard): Map<string, Row[]> {
   ]);
 }
 
-/** The kind of the record with this ID inside the standard, or undefined. */
-export function kindInside(standard: Standard, id: string): StandardKind | undefined {
-  if (standard.root === id) return 'standard';
-  if (standard.rules.some((r) => r.id === id)) return 'standard_rule';
-  if (standard.ruleTests.some((t) => t.row.id === id)) return 'standard_rule_test';
-  return undefined;
-}

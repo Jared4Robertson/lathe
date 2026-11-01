@@ -5,7 +5,7 @@
 import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { type EndpointKind } from './model.ts';
+import type { EndpointKind } from './model.ts';
 import type { EndpointPage, EndpointSummary } from './read-model.ts';
 import { endpointReader, type EndpointReader } from './reader.ts';
 import { GET_ENDPOINT_IDENTITY, LIST_ENDPOINTS_IDENTITY, NEXT_ENDPOINT_ID_IDENTITY } from './queries.generated.ts';

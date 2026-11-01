@@ -5,7 +5,7 @@
 import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { type ReadModelKind } from './model.ts';
+import type { ReadModelKind } from './model.ts';
 import type { ReadModelPage, ReadModelSummary } from './read-model.ts';
 import { readModelReader, type ReadModelReader } from './reader.ts';
 import { GET_READ_MODEL_IDENTITY, LIST_READ_MODELS_IDENTITY, NEXT_READ_MODEL_ID_IDENTITY } from './queries.generated.ts';

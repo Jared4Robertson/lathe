@@ -1,10 +1,8 @@
 import { column, id, ids, parts, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { TableRow } from '../../../platform/data/tables.ts';
-import { KEY_COLUMNS, changed, type TableKey } from '../model.ts';
-import { TableRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
+import { KEY_COLUMNS, type TableKey } from '../model.ts';
 import { CHANGE_TABLE_IDENTITY } from './identities.generated.ts';
+import { changeTable } from './handlers.generated.ts';
 
 /** The table's changes: a column given is set, null clears an optional one; a list given replaces the list. */
 export type ChangeTable = Pick<TableRow, 'id'> & { title?: TableRow['title']; name?: TableRow['name']; storage?: TableRow['storage']; file?: TableRow['file'] | null; keys?: TableKey[]; stored_in?: string | null; meets?: string[]; packages?: string[] };
@@ -24,16 +22,3 @@ export const CHANGE_TABLE = {
   },
   handler: changeTable,
 } satisfies CommandDefinition<ChangeTable>;
-
-/** Changes the table's columns, keys and links. */
-export function changeTable(tx: Transaction, input: ChangeTable): void {
-  const tables = new TableRepository(tx);
-  const table = tables.load(input.id) ?? tx.refuse('missing', `there is no table ${input.id}`);
-  table.table = changed(table.table, input, ['title', 'name', 'storage', 'file']);
-  if (input.keys) table.keys = input.keys;
-  if (input.stored_in !== undefined) table.storedIn = input.stored_in;
-  if (input.meets) table.meets = input.meets;
-  if (input.packages) table.packages = input.packages;
-  holdToRules(tx, table);
-  tables.save(table);
-}

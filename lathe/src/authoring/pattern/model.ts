@@ -1,26 +1,13 @@
 // The Pattern aggregate (LA-AUT-A2): behavior several use cases share, written once: a pattern with its settings in
 // order, its rules, each rule's tests per following domain (with the test data sets they start from) and its slots.
 // One instance is one pattern, whole; who follows it, and the values they give its settings, are Pattern following's.
+import type { AggregateShape } from '../../platform/data/repository.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
-import type { Row, Value } from '../../platform/data/rows.ts';
+import type { Row } from '../../platform/data/rows.ts';
 import type { PatternRow, PatternRuleRow, PatternRuleTestRow, PatternSettingRow, SlotRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const PATTERN_AGGREGATE = 'LA-AUT-A2';
-
-/**
- * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.
- * Only the columns named in `columns` are taken from the changes.
- */
-export function changed<R extends object>(row: R, changes: object, columns: readonly string[]): R {
-  const next = { ...row } as Record<string, unknown>;
-  for (const [column, value] of Object.entries(changes)) {
-    if (!columns.includes(column) || value === undefined) continue;
-    if (value === null) delete next[column];
-    else next[column] = value as Value;
-  }
-  return next as R;
-}
 
 /** One setting of a pattern: what each follower decides. Its position is its place in the pattern's list. */
 export type PatternSetting = Pick<PatternSettingRow, 'name' | 'meaning'>;
@@ -47,20 +34,15 @@ export interface Pattern {
 /** The tables the Pattern aggregate keeps its rows in: its kinds, its part, and the relation its tests start. */
 export const PATTERN_TABLES = ['pattern', 'pattern_setting', 'pattern_rule', 'pattern_rule_test', 'slot', 'starts_from'] as const;
 
-/** The kinds of the aggregate's records, each with the column that names its parent inside the aggregate. */
-export const PATTERN_KINDS = {
-  pattern: null,
-  pattern_rule: 'pattern_id',
-  pattern_rule_test: 'pattern_rule_id',
-  slot: 'pattern_id',
-} as const;
+/** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
+export const PATTERN_SHAPE = {
+  pattern: { at: 'pattern', given: { settings: 'settings' } },
+  pattern_rule: { at: 'rules' },
+  pattern_rule_test: { at: 'ruleTests', lists: { starts_from: 'startsFrom' } },
+  slot: { at: 'slots' },
+} as const satisfies AggregateShape;
 
-export type PatternKind = keyof typeof PATTERN_KINDS;
-
-/** A new pattern with its settings, and no rules or slots yet. */
-export function newPattern(pattern: PatternRow, settings: PatternSetting[]): Pattern {
-  return { root: pattern.id, pattern, settings, rules: [], ruleTests: [], slots: [] };
-}
+export type PatternKind = keyof typeof PATTERN_SHAPE;
 
 /** The patterns in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function patternsFrom(rows: (table: string) => Row[], only?: string): Pattern[] {
@@ -99,11 +81,3 @@ export function patternRows(pattern: Pattern): Map<string, Row[]> {
   ]);
 }
 
-/** The kind of the record with this ID inside the pattern, or undefined. */
-export function kindInside(pattern: Pattern, id: string): PatternKind | undefined {
-  if (pattern.root === id) return 'pattern';
-  if (pattern.rules.some((r) => r.id === id)) return 'pattern_rule';
-  if (pattern.ruleTests.some((t) => t.row.id === id)) return 'pattern_rule_test';
-  if (pattern.slots.some((s) => s.id === id)) return 'slot';
-  return undefined;
-}

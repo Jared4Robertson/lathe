@@ -5,7 +5,7 @@
 import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { type CommandKind } from './model.ts';
+import type { CommandKind } from './model.ts';
 import type { CommandPage, CommandSummary } from './read-model.ts';
 import { commandReader, type CommandReader } from './reader.ts';
 import { GET_COMMAND_IDENTITY, LIST_COMMANDS_IDENTITY, NEXT_COMMAND_ID_IDENTITY } from './queries.generated.ts';

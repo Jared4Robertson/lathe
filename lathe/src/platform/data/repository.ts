@@ -9,6 +9,28 @@ import type { Transaction } from './transaction.ts';
 /** An instance's rows, by table. */
 export type InstanceRows = Map<string, Row[]>;
 
+/**
+ * How one of an aggregate's kinds sits in an instance: the instance's property that holds its records (`at`), whether
+ * it has at most one (`one`: the property then holds it or null), its lists by input field with the property that holds
+ * each (`lists`: the links it starts, and its parts as rows, owned and numbered), its parts held as the input gives
+ * them (`given`: owned and numbered only as its rows are written) and its single links (`links`: the one record it
+ * names, or null). A kind with any of them is held as its `row` beside them; the root's sit on the instance. Its parent
+ * inside the aggregate is the schema's.
+ */
+export interface KindShape {
+  at: string;
+  one?: true;
+  lists?: Readonly<Record<string, string>>;
+  given?: Readonly<Record<string, string>>;
+  links?: Readonly<Record<string, string>>;
+}
+
+/**
+ * An aggregate's shape: each of its kinds by table name, the root first. `npm run generate` writes the aggregate's
+ * repository and the handlers of its pattern commands (Add, Change and Remove of one kind) from it.
+ */
+export type AggregateShape = Readonly<Record<string, KindShape>>;
+
 /** One aggregate's repository over a transaction: it loads and saves that aggregate's instances and nothing else. */
 export abstract class AggregateRepository<M extends { readonly root: string }> {
   protected readonly tx: Transaction;

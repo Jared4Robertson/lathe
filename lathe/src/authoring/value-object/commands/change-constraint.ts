@@ -1,9 +1,7 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ConstraintRow } from '../../../platform/data/tables.ts';
-import { changed } from '../model.ts';
-import { ValueObjectRepository } from '../repository.ts';
 import { CHANGE_CONSTRAINT_IDENTITY } from './identities.generated.ts';
+import { changeConstraint } from './handlers.generated.ts';
 
 /** The constraint's changes: a column given is set. */
 export type ChangeConstraint = Pick<ConstraintRow, 'id'> & { title?: ConstraintRow['title']; statement?: ConstraintRow['statement'] };
@@ -17,11 +15,3 @@ export const CHANGE_CONSTRAINT = {
   },
   handler: changeConstraint,
 } satisfies CommandDefinition<ChangeConstraint>;
-
-/** Changes the constraint's columns. */
-export function changeConstraint(tx: Transaction, input: ChangeConstraint): void {
-  const valueObjects = new ValueObjectRepository(tx);
-  const valueObject = valueObjects.loadHolding('constraint', input.id) ?? tx.refuse('missing', `there is no constraint ${input.id}`);
-  valueObject.constraints = valueObject.constraints.map((c) => (c.id === input.id ? changed(c, input, ['title', 'statement']) : c));
-  valueObjects.save(valueObject);
-}
