@@ -16,7 +16,7 @@ import { loadConfig, PACKAGE_DIR } from '../../config.ts';
 import { attachCached, baseKey, copyDatabase, isValidated, markValidated, productKey, validatedKey, writeCached } from './cache.ts';
 import { appendRows, insertRows } from './insert.ts';
 import { settleWrite, type Settled } from './journal.ts';
-import { integrityQueries, recordScopeColumns, recordScopeSql, storeViewsSql } from './integrity.ts';
+import { integrityQueries, recordScopeColumns, recordScopeSql, storeViewsSql, type IntegrityQuery } from './integrity.ts';
 import { problemAt, StoreError, type Origin, type StoreProblem } from './problems.ts';
 import { productKindSql, type DeclarationProblem } from './product-kinds.ts';
 import type { Located } from './references.ts';
@@ -694,7 +694,7 @@ export class Store {
       await this.step('write holds: record_scope', () =>
         connection.run(sameScope ? `CREATE VIEW record_scope AS SELECT * FROM ${sqlName(this.dataDb)}.record_scope` : recordScopeSql(schema)));
       // The integrity queries only read, so they run side by side on a few connections.
-      const queries = integrityQueries(schema);
+      const queries = allIntegrityQueries(schema);
       const extra = await Promise.all(
         Array.from({ length: Math.min(VALIDATION_CONNECTIONS, queries.length) - 1 }, async () => {
           const other = await this.instance.connect();
@@ -920,7 +920,7 @@ export class Store {
       await this.step('record_scope', () => builder.run(recordScopeSql(schema)));
       // The integrity queries only read, so they run side by side on a few connections; their problems keep the
       // queries' order.
-      const queries = integrityQueries(schema);
+      const queries = allIntegrityQueries(schema);
       const found: { table_name: string; row_key: string; message: string }[][] = new Array(queries.length);
       const extra = await Promise.all(
         Array.from({ length: Math.min(VALIDATION_CONNECTIONS, queries.length) - 1 }, async () => {
@@ -1153,6 +1153,11 @@ const signatureOf = (file: string): string => {
 };
 
 /** Every data file of the folders, by its path, with its signature. */
+// The integrity queries of the schema, then each aggregate's rules that only the database can judge.
+function allIntegrityQueries(schema: SchemaDescription): IntegrityQuery[] {
+  return [...integrityQueries(schema), ...AGGREGATE_RULES.flatMap((rules) => rules.queries ?? [])];
+}
+
 function signaturesOf(folders: Folder[]): Map<string, string> {
   return new Map(folders.flatMap((folder) => folder.files.map((file) => {
     const full = path.join(folder.dir, file);

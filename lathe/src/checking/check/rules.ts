@@ -1,13 +1,17 @@
 // The Check aggregate's rules, written once: each command's handler runs them on the check before it saves or removes
 // it, and every load and commit runs them over all data (checkRules, listed in AGGREGATE_RULES).
 import type { DuckDBConnection } from '@duckdb/node-api';
+import type { IntegrityQuery } from '../../platform/data/integrity.ts';
 import type { AggregateRules, ReadView, RuleProblem } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
 import { CHECK_AGGREGATE, checksFrom, type Check } from './model.ts';
 
-/** The query's code with its string literals emptied and one trailing semicolon dropped: what is left is SQL. */
+/**
+ * The query's code with its plain string literals emptied and one trailing semicolon dropped, for the columns it names.
+ * Whether it is one statement is DuckDB's to say (checkQueries): no pattern can follow every way DuckDB quotes text.
+ */
 const codeOf = (query: string) => query.trim().replace(/'(?:[^']|'')*'/g, "''").replace(/;\s*$/, '');
 
 /**
@@ -35,7 +39,6 @@ export function checkProblems(check: Check, view: ReadView, isLathes: (row: Row)
   if (query.trim()) {
     const code = codeOf(query);
     if (!/^(SELECT|WITH)\b/i.test(code)) problem({ rule: 'check-query-select' }, `check ${name}'s query starts with neither SELECT nor WITH; a check's query is one SELECT`);
-    else if (code.includes(';')) problem({ rule: 'check-query-select' }, `check ${name}'s query holds more than one statement; a check's query is one SELECT`);
     const missing = ['record', 'message'].filter((column) => !new RegExp(`\\b${column}\\b`).test(code));
     if (missing.length) problem({ rule: 'check-query-select' }, `check ${name}'s query returns no ${missing.join(' or ')}; a check's query returns record and message`);
     const returnsSeverity = /\bAS severity\b/.test(code);
@@ -49,6 +52,28 @@ export function checkProblems(check: Check, view: ReadView, isLathes: (row: Row)
   }
   return problems;
 }
+
+/**
+ * The part of LA-CHK-INV04 only DuckDB can judge: a check's query is exactly one statement, a SELECT, as DuckDB's own
+ * parser reads it (json_serialize_sql serializes SELECT statements only, and lists each). So no quoting DuckDB knows
+ * (E'…' escapes, $$…$$, comments) hides a second statement. A query DuckDB cannot parse at all runs no statement: its
+ * check reports that it could not run.
+ */
+const checkQueries: IntegrityQuery[] = [
+  {
+    name: 'check-query-select',
+    description: "A check's query that DuckDB reads as more than one statement, or as one that is not a SELECT.",
+    sql: `WITH parsed AS (
+  SELECT name, json_serialize_sql(query)::JSON AS tree FROM "check"
+)
+SELECT 'check' AS table_name, name AS row_key,
+  'check ' || name || '''s query ' || CASE WHEN (tree->>'error')::BOOLEAN THEN 'holds a statement that is not a SELECT'
+    ELSE 'holds ' || json_array_length(tree->'statements') || ' statements' END || ', as DuckDB reads it; a check''s query is one SELECT' AS message
+FROM parsed
+WHERE CASE WHEN (tree->>'error')::BOOLEAN THEN tree->>'error_type' <> 'parser' ELSE json_array_length(tree->'statements') <> 1 END
+ORDER BY name`,
+  },
+];
 
 // What seals the database against everything outside it (LA-CHK-INV06). DuckDB's settings, global to its instance:
 // - enable_external_access off: no file or URL is read or written (COPY, read_text, read_csv, glob, ATTACH or EXPORT
@@ -88,6 +113,7 @@ export async function sealDatabase(connection: DuckDBConnection): Promise<void> 
 export const checkRules: AggregateRules = {
   aggregate: CHECK_AGGREGATE,
   check: (view) => checksFrom((table) => view.rows(table)).flatMap((check) => checkProblems(check, view)),
+  queries: checkQueries,
 };
 
 /** Refuses the command, with every reason, when the check as it would be saved or removed breaks one of its rules. */
