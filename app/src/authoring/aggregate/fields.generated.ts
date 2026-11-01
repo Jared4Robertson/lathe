@@ -38,9 +38,9 @@ export const AGGREGATE_FIELDS = {
     role: { kind: 'column', table: 'entity', column: 'role', required: false, clearable: false },
     in_root_table: { kind: 'column', table: 'entity', column: 'in_root_table', required: false, clearable: true },
     description: { kind: 'column', table: 'entity', column: 'description', required: false, clearable: false },
-    fields: { kind: 'parts', table: 'entity_field', columns: ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'], description: 'Its fields, in order: each its name, meaning, one type (a basic type, a value object or an aggregate), whether it is required, and its column name and an example when it has them. Replaces the list.', required: false, clearable: false },
-    has_one: { kind: 'ids', description: 'The entities of its aggregate it holds exactly one of. Replaces the list.', required: false, clearable: false },
-    has_many: { kind: 'ids', description: 'The entities of its aggregate it holds any number of. Replaces the list.', required: false, clearable: false },
+    fields: { kind: 'parts', table: 'entity_field', columns: ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'], description: 'Its fields, in order: each its name, meaning, one type (a basic type, a value object or an aggregate), whether it is required, and its column name and an example when it has them.', required: false, clearable: false },
+    has_one: { kind: 'ids', description: 'The entities of its aggregate it holds exactly one of.', required: false, clearable: false },
+    has_many: { kind: 'ids', description: 'The entities of its aggregate it holds any number of.', required: false, clearable: false },
   },
   '/api/aggregate/remove-entity': {
     id: { kind: 'column', table: 'entity', column: 'id', required: true, clearable: false },
@@ -71,8 +71,8 @@ export const AGGREGATE_FIELDS = {
     id: { kind: 'column', table: 'data_model', column: 'id', required: true, clearable: false },
     title: { kind: 'column', table: 'data_model', column: 'title', required: false, clearable: false },
     file: { kind: 'column', table: 'data_model', column: 'file', required: false, clearable: true },
-    meets: { kind: 'ids', description: 'The standard rules it follows. Replaces the list.', required: false, clearable: false },
-    packages: { kind: 'texts', description: 'The packages it uses. Replaces the list.', required: false, clearable: false },
+    meets: { kind: 'ids', description: 'The standard rules it follows.', required: false, clearable: false },
+    packages: { kind: 'texts', description: 'The packages it uses.', required: false, clearable: false },
   },
   '/api/aggregate/remove-data-model': {
     id: { kind: 'column', table: 'data_model', column: 'id', required: true, clearable: false },
@@ -106,7 +106,7 @@ export const AGGREGATE_FIELDS = {
     when: { kind: 'column', table: 'invariant_test', column: 'when', required: false, clearable: false },
     then: { kind: 'column', table: 'invariant_test', column: 'then', required: false, clearable: false },
     notes: { kind: 'column', table: 'invariant_test', column: 'notes', required: false, clearable: true },
-    starts_from: { kind: 'ids', description: 'The test data sets it starts from. Replaces the list.', required: false, clearable: false },
+    starts_from: { kind: 'ids', description: 'The test data sets it starts from.', required: false, clearable: false },
   },
   '/api/aggregate/remove-invariant-test': {
     id: { kind: 'column', table: 'invariant_test', column: 'id', required: true, clearable: false },
@@ -123,8 +123,8 @@ export const AGGREGATE_FIELDS = {
     id: { kind: 'column', table: 'rule', column: 'id', required: true, clearable: false },
     title: { kind: 'column', table: 'rule', column: 'title', required: false, clearable: false },
     file: { kind: 'column', table: 'rule', column: 'file', required: false, clearable: true },
-    meets: { kind: 'ids', description: 'The standard rules it follows. Replaces the list.', required: false, clearable: false },
-    packages: { kind: 'texts', description: 'The packages it uses. Replaces the list.', required: false, clearable: false },
+    meets: { kind: 'ids', description: 'The standard rules it follows.', required: false, clearable: false },
+    packages: { kind: 'texts', description: 'The packages it uses.', required: false, clearable: false },
   },
   '/api/aggregate/remove-rule': {
     id: { kind: 'column', table: 'rule', column: 'id', required: true, clearable: false },

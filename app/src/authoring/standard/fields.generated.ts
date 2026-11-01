@@ -62,7 +62,7 @@ export const STANDARD_FIELDS = {
     when: { kind: 'column', table: 'standard_rule_test', column: 'when', required: false, clearable: false },
     then: { kind: 'column', table: 'standard_rule_test', column: 'then', required: false, clearable: false },
     notes: { kind: 'column', table: 'standard_rule_test', column: 'notes', required: false, clearable: true },
-    starts_from: { kind: 'ids', description: 'The test data sets it starts from. Replaces the list.', required: false, clearable: false },
+    starts_from: { kind: 'ids', description: 'The test data sets it starts from.', required: false, clearable: false },
   },
   '/api/standard/remove-standard-rule-test': {
     id: { kind: 'column', table: 'standard_rule_test', column: 'id', required: true, clearable: false },

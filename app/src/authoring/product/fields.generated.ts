@@ -19,7 +19,7 @@ export const PRODUCT_FIELDS = {
     icon: { kind: 'column', table: 'product', column: 'icon', required: false, clearable: true },
     color: { kind: 'column', table: 'product', column: 'color', required: false, clearable: true },
     notes: { kind: 'column', table: 'product', column: 'notes', required: false, clearable: true },
-    roles: { kind: 'parts', table: 'role', columns: ['name', 'description'], description: 'The roles its records name, such as Owner or Librarian, each with its name and description. Replaces the list.', required: false, clearable: false },
+    roles: { kind: 'parts', table: 'role', columns: ['name', 'description'], description: 'The roles its records name, such as Owner or Librarian, each with its name and description.', required: false, clearable: false },
   },
   '/api/product/declare-product-kind': {
     name: { kind: 'column', table: 'product_kind', column: 'name', required: true, clearable: false },
@@ -44,7 +44,7 @@ export const PRODUCT_FIELDS = {
     id_pattern: { kind: 'column', table: 'product_kind', column: 'id_pattern', required: false, clearable: true },
     id_example: { kind: 'column', table: 'product_kind', column: 'id_example', required: false, clearable: true },
     title_form: { kind: 'column', table: 'product_kind', column: 'title_form', required: false, clearable: true },
-    fields: { kind: 'parts', table: 'product_kind_field', columns: ['name', 'type', 'required', 'description', 'titles'], description: 'The columns its table adds, in order. Replaces the list.', required: false, clearable: false },
+    fields: { kind: 'parts', table: 'product_kind_field', columns: ['name', 'type', 'required', 'description', 'titles'], description: 'The columns its table adds, in order.', required: false, clearable: false },
   },
   '/api/product/remove-product-kind': {
     name: { kind: 'column', table: 'product_kind', column: 'name', required: true, clearable: false },
@@ -87,7 +87,7 @@ export const PRODUCT_FIELDS = {
     title: { kind: 'column', table: 'question', column: 'title', required: false, clearable: false },
     owner: { kind: 'column', table: 'question', column: 'owner', required: false, clearable: false },
     description: { kind: 'column', table: 'question', column: 'description', required: false, clearable: false },
-    about: { kind: 'ids', description: 'The records it is about, of its own product. Replaces the list.', required: false, clearable: false },
+    about: { kind: 'ids', description: 'The records it is about, of its own product.', required: false, clearable: false },
   },
   '/api/product/move-question': {
     id: { kind: 'column', table: 'question', column: 'id', required: true, clearable: false },

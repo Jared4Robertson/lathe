@@ -32,8 +32,8 @@ export const INTEGRATION_FIELDS = {
     title: { kind: 'column', table: 'adapter', column: 'title', required: false, clearable: false },
     description: { kind: 'column', table: 'adapter', column: 'description', required: false, clearable: false },
     file: { kind: 'column', table: 'adapter', column: 'file', required: false, clearable: true },
-    meets: { kind: 'ids', description: 'The standard rules it follows. Replaces the list.', required: false, clearable: false },
-    packages: { kind: 'texts', description: 'The packages it uses. Replaces the list.', required: false, clearable: false },
+    meets: { kind: 'ids', description: 'The standard rules it follows.', required: false, clearable: false },
+    packages: { kind: 'texts', description: 'The packages it uses.', required: false, clearable: false },
   },
   '/api/integration/remove-adapter': {
     id: { kind: 'column', table: 'adapter', column: 'id', required: true, clearable: false },
@@ -67,7 +67,7 @@ export const INTEGRATION_FIELDS = {
     smoke: { kind: 'column', table: 'integration_test', column: 'smoke', required: false, clearable: true },
     external: { kind: 'column', table: 'integration_test', column: 'external', required: false, clearable: true },
     notes: { kind: 'column', table: 'integration_test', column: 'notes', required: false, clearable: true },
-    starts_from: { kind: 'ids', description: 'The test data sets it starts from. Replaces the list.', required: false, clearable: false },
+    starts_from: { kind: 'ids', description: 'The test data sets it starts from.', required: false, clearable: false },
   },
   '/api/integration/remove-integration-test': {
     id: { kind: 'column', table: 'integration_test', column: 'id', required: true, clearable: false },

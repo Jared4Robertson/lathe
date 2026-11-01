@@ -12,13 +12,29 @@ import { ALL_COMMANDS } from '../../src/commands.ts';
 const quote = (text: string) => `'${text.replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`;
 const snake = (name: string) => name.toUpperCase().replaceAll('-', '_');
 
+/** What a description says of the command alone (a list replaces, null or an empty list clears): the CLI's and the tools' help, not a form's. */
+export const COMMAND_ONLY = /\b(replaces?|clears?|null)\b/i;
+
+/**
+ * A field's description as a form shows it: the definition's, without the sentences or clauses (after a ; or :) that
+ * say how the command treats the value, since a person in a form sees the list or value they are editing.
+ */
+export function formDescription(description: string): string {
+  const sentences = description.split(/(?<=\.)\s+/).map((sentence) => {
+    const clauses = sentence.replace(/\.$/, '').split(/(?=[;:]\s)/);
+    const kept = [clauses[0], ...clauses.slice(1).filter((c) => !COMMAND_ONLY.test(c))];
+    return COMMAND_ONLY.test(kept[0]) ? '' : `${kept.join('')}.`;
+  });
+  return sentences.filter(Boolean).join(' ');
+}
+
 /** One field as a literal, its keys in one order. */
 function fieldText(field: Field): string {
   const parts = [`kind: ${quote(field.kind)}`];
   if ('table' in field) parts.push(`table: ${quote(field.table)}`);
   if ('column' in field) parts.push(`column: ${quote(field.column)}`);
   if ('columns' in field) parts.push(`columns: [${field.columns.map(quote).join(', ')}]`);
-  if ('description' in field) parts.push(`description: ${quote(field.description)}`);
+  if ('description' in field) parts.push(`description: ${quote(formDescription(field.description))}`);
   parts.push(`required: ${field.required}`, `clearable: ${field.clearable}`);
   return `{ ${parts.join(', ')} }`;
 }

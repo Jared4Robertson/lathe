@@ -47,7 +47,7 @@ export const STORAGE_REQUIREMENT_FIELDS = {
     when: { kind: 'column', table: 'storage_requirement_test', column: 'when', required: false, clearable: false },
     then: { kind: 'column', table: 'storage_requirement_test', column: 'then', required: false, clearable: false },
     notes: { kind: 'column', table: 'storage_requirement_test', column: 'notes', required: false, clearable: true },
-    starts_from: { kind: 'ids', description: 'The test data sets it starts from. Replaces the list.', required: false, clearable: false },
+    starts_from: { kind: 'ids', description: 'The test data sets it starts from.', required: false, clearable: false },
   },
   '/api/storage-requirement/remove-storage-requirement-test': {
     id: { kind: 'column', table: 'storage_requirement_test', column: 'id', required: true, clearable: false },

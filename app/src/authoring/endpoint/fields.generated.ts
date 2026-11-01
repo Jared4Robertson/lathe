@@ -59,8 +59,8 @@ export const ENDPOINT_FIELDS = {
     title: { kind: 'column', table: 'endpoint_handler', column: 'title', required: false, clearable: false },
     description: { kind: 'column', table: 'endpoint_handler', column: 'description', required: false, clearable: false },
     file: { kind: 'column', table: 'endpoint_handler', column: 'file', required: false, clearable: true },
-    meets: { kind: 'ids', description: 'The standard rules it follows. Replaces the list.', required: false, clearable: false },
-    packages: { kind: 'texts', description: 'The packages it uses. Replaces the list.', required: false, clearable: false },
+    meets: { kind: 'ids', description: 'The standard rules it follows.', required: false, clearable: false },
+    packages: { kind: 'texts', description: 'The packages it uses.', required: false, clearable: false },
   },
   '/api/endpoint/remove-endpoint-handler': {
     id: { kind: 'column', table: 'endpoint_handler', column: 'id', required: true, clearable: false },
@@ -94,7 +94,7 @@ export const ENDPOINT_FIELDS = {
     smoke: { kind: 'column', table: 'endpoint_test', column: 'smoke', required: false, clearable: true },
     external: { kind: 'column', table: 'endpoint_test', column: 'external', required: false, clearable: true },
     notes: { kind: 'column', table: 'endpoint_test', column: 'notes', required: false, clearable: true },
-    starts_from: { kind: 'ids', description: 'The test data sets it starts from. Replaces the list.', required: false, clearable: false },
+    starts_from: { kind: 'ids', description: 'The test data sets it starts from.', required: false, clearable: false },
   },
   '/api/endpoint/remove-endpoint-test': {
     id: { kind: 'column', table: 'endpoint_test', column: 'id', required: true, clearable: false },

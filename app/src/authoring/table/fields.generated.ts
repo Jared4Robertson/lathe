@@ -23,10 +23,10 @@ export const TABLE_FIELDS = {
     name: { kind: 'column', table: 'table', column: 'name', required: false, clearable: false },
     storage: { kind: 'column', table: 'table', column: 'storage', required: false, clearable: false },
     file: { kind: 'column', table: 'table', column: 'file', required: false, clearable: true },
-    keys: { kind: 'parts', table: 'table_key', columns: ['type', 'columns', 'name', 'invariant_id', 'target_table_id', 'condition'], description: 'Its keys in order: one primary at most, a unique key with the invariant it enforces (and a condition for a partial one), a foreign key with the table it points at, or an index. Only a table in a database has keys. Replaces the list.', required: false, clearable: false },
+    keys: { kind: 'parts', table: 'table_key', columns: ['type', 'columns', 'name', 'invariant_id', 'target_table_id', 'condition'], description: 'Its keys in order: one primary at most, a unique key with the invariant it enforces (and a condition for a partial one), a foreign key with the table it points at, or an index. Only a table in a database has keys.', required: false, clearable: false },
     stored_in: { kind: 'id', description: 'The data store it is kept in.', required: false, clearable: true },
-    meets: { kind: 'ids', description: 'The standard rules it meets. Replaces the list.', required: false, clearable: false },
-    packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files. Replaces the list.', required: false, clearable: false },
+    meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
+    packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files.', required: false, clearable: false },
   },
   '/api/table/move-table': {
     id: { kind: 'column', table: 'table', column: 'id', required: true, clearable: false },

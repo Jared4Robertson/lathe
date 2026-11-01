@@ -16,9 +16,9 @@ export const COMMAND_FIELDS = {
     id: { kind: 'column', table: 'command', column: 'id', required: true, clearable: false },
     title: { kind: 'column', table: 'command', column: 'title', required: false, clearable: false },
     description: { kind: 'column', table: 'command', column: 'description', required: false, clearable: false },
-    raises: { kind: 'ids', description: 'The events of its aggregate it raises. Replaces the list.', required: false, clearable: false },
-    checks: { kind: 'ids', description: 'The specifications of its domain it checks before it acts. Replaces the list.', required: false, clearable: false },
-    calls: { kind: 'ids', description: 'The domain services of its domain it calls. Replaces the list.', required: false, clearable: false },
+    raises: { kind: 'ids', description: 'The events of its aggregate it raises.', required: false, clearable: false },
+    checks: { kind: 'ids', description: 'The specifications of its domain it checks before it acts.', required: false, clearable: false },
+    calls: { kind: 'ids', description: 'The domain services of its domain it calls.', required: false, clearable: false },
   },
   '/api/command/remove-command': {
     id: { kind: 'column', table: 'command', column: 'id', required: true, clearable: false },
@@ -37,8 +37,8 @@ export const COMMAND_FIELDS = {
     title: { kind: 'column', table: 'command_handler', column: 'title', required: false, clearable: false },
     file: { kind: 'column', table: 'command_handler', column: 'file', required: false, clearable: true },
     description: { kind: 'column', table: 'command_handler', column: 'description', required: false, clearable: false },
-    meets: { kind: 'ids', description: 'The standard rules it follows. Replaces the list.', required: false, clearable: false },
-    packages: { kind: 'texts', description: 'The packages it uses. Replaces the list.', required: false, clearable: false },
+    meets: { kind: 'ids', description: 'The standard rules it follows.', required: false, clearable: false },
+    packages: { kind: 'texts', description: 'The packages it uses.', required: false, clearable: false },
   },
   '/api/command/remove-command-handler': {
     id: { kind: 'column', table: 'command_handler', column: 'id', required: true, clearable: false },
@@ -73,8 +73,8 @@ export const COMMAND_FIELDS = {
     title: { kind: 'column', table: 'event_handler', column: 'title', required: false, clearable: false },
     file: { kind: 'column', table: 'event_handler', column: 'file', required: false, clearable: true },
     description: { kind: 'column', table: 'event_handler', column: 'description', required: false, clearable: false },
-    meets: { kind: 'ids', description: 'The standard rules it follows. Replaces the list.', required: false, clearable: false },
-    packages: { kind: 'texts', description: 'The packages it uses. Replaces the list.', required: false, clearable: false },
+    meets: { kind: 'ids', description: 'The standard rules it follows.', required: false, clearable: false },
+    packages: { kind: 'texts', description: 'The packages it uses.', required: false, clearable: false },
   },
   '/api/command/remove-event-handler': {
     id: { kind: 'column', table: 'event_handler', column: 'id', required: true, clearable: false },
@@ -108,7 +108,7 @@ export const COMMAND_FIELDS = {
     when: { kind: 'column', table: 'policy_test', column: 'when', required: false, clearable: false },
     then: { kind: 'column', table: 'policy_test', column: 'then', required: false, clearable: false },
     notes: { kind: 'column', table: 'policy_test', column: 'notes', required: false, clearable: true },
-    starts_from: { kind: 'ids', description: 'The test data sets it starts from. Replaces the list.', required: false, clearable: false },
+    starts_from: { kind: 'ids', description: 'The test data sets it starts from.', required: false, clearable: false },
   },
   '/api/command/remove-policy-test': {
     id: { kind: 'column', table: 'policy_test', column: 'id', required: true, clearable: false },
