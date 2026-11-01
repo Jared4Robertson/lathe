@@ -4,7 +4,7 @@ export const ADD_ENDPOINT_IDENTITY = {
   id: 'LA-AUT-CMD320',
   slice: { aggregate: 'LA-AUT-A13', name: 'endpoint' },
   name: 'add-endpoint',
-  description: 'Adds an endpoint under the one command or query it exposes (exactly one of command_id and query_id), titled by its method and route.',
+  description: 'Adds an endpoint under the one command or query it exposes (exactly one of command_id and query_id), titled by its method and address.',
   method: 'POST',
   route: '/api/endpoint/add-endpoint',
 } as const;
@@ -13,7 +13,7 @@ export const CHANGE_ENDPOINT_IDENTITY = {
   id: 'LA-AUT-CMD321',
   slice: { aggregate: 'LA-AUT-A13', name: 'endpoint' },
   name: 'change-endpoint',
-  description: 'Changes an endpoint\'s title, method, route, description or notes. The command or query it exposes changes only by Move an endpoint.',
+  description: 'Changes an endpoint\'s title, method, address, description or notes. The command or query it exposes changes only by Move an endpoint.',
   method: 'POST',
   route: '/api/endpoint/change-endpoint',
 } as const;
@@ -103,7 +103,7 @@ export const CHANGE_ENDPOINT_TEST_IDENTITY = {
   id: 'LA-AUT-CMD331',
   slice: { aggregate: 'LA-AUT-A13', name: 'endpoint' },
   name: 'change-endpoint-test',
-  description: 'Changes an endpoint test\'s columns or the test data sets it starts from (the whole list). Its requirement does not change.',
+  description: 'Changes an endpoint test\'s way of running or the test data sets it starts from (the whole list). Its requirement does not change.',
   method: 'POST',
   route: '/api/endpoint/change-endpoint-test',
 } as const;

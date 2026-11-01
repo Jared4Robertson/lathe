@@ -175,7 +175,7 @@ export const CHANGE_DOMAIN_SERVICE_TEST_IDENTITY = {
   id: 'LA-AUT-CMD179',
   slice: { aggregate: 'LA-AUT-A4', name: 'domain' },
   name: 'change-domain-service-test',
-  description: 'Changes a domain service test\'s columns or the test data sets it starts from (the whole list).',
+  description: 'Changes a domain service test\'s way of running or the test data sets it starts from (the whole list).',
   method: 'POST',
   route: '/api/domain/change-domain-service-test',
 } as const;

@@ -4,7 +4,7 @@ export const GET_STORAGE_REQUIREMENT_IDENTITY = {
   id: 'LA-AUT-QRY220',
   slice: { aggregate: 'LA-AUT-A22', name: 'storage-requirement' },
   name: 'get-storage-requirement',
-  description: 'Reads a storage requirement whole as its page shows it, by its ID or the ID of one of its storage requirement tests: the record asked for and its kind, the requirement\'s row, the aggregate or read model it is about, the repository or reader that builds it with the data store that names, and its storage requirement tests with the test data sets each starts from.',
+  description: 'Reads a storage requirement whole as its readers read it, by its ID or the ID of one of its storage requirement tests: the record asked for and its kind, the requirement\'s own details, the aggregate or read model it is about, the repository or reader that builds it with the data store that names, and its storage requirement tests with the test data sets each starts from.',
   method: 'GET',
   route: '/api/storage-requirement/get-storage-requirement',
 } as const;
