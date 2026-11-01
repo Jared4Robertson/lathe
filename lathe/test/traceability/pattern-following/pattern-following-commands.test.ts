@@ -34,7 +34,7 @@ async function refusal(store: Store, definition: AnyCommand, input: unknown): Pr
 
 const fileOf = (store: Store, table: string) => readFileSync(path.join(store.dataDir, `${table}.jsonl`), 'utf8');
 
-describe('LA-TRC-UC07-R50-T01 each Pattern following command (LA-TRC-A3) changes one following through PatternFollowingRepository, and is reached by name from the CLI, the MCP tools and HTTP', () => {
+describe('LA-PAT-AGGREGATE-COMMANDS-R10-T03 each Pattern following command (LA-TRC-A3) changes one following through its repository, and is reached by name from every interface', () => {
   it('LA-PAT-AGGREGATE-TESTS-R03-T03 builds the data set with its own command, and reads a following whole, the patterns a follower follows and a pattern\'s followers', async () => {
     const store = await patternFollowingDataSet();
     expect(runQuery(store, GET_FOLLOWING, { follower_id: 'TL-LEND-UC01', pattern_id: 'TL-PAT-ACT' })).toEqual({

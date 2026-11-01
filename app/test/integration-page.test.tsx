@@ -13,7 +13,7 @@ import { main, openApp, section } from './helpers';
 const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.findByRole('toolbar', { name: `Change ${id}` });
 
-describe('LA-V153-R01-T01 an integration\'s records are read through the Integration aggregate\'s own query, never a generic record read', () => {
+describe('LA-V153-R05-T01 an integration\'s records are read through the Integration aggregate\'s own query, never a generic record read', () => {
   it('reads GET /api/integration/get-integration for the adapter, and shows its description', async () => {
     const { requests } = await openApp('/P-INT01-AD', { data: modelWorkspace() });
     expect(await within(main()).findByText("The fixture's adapter mailer.")).toBeInTheDocument();
@@ -28,7 +28,7 @@ describe('LA-V153-R01-T01 an integration\'s records are read through the Integra
   });
 });
 
-describe('LA-V153-R02-T01 the Integration editor writes only through the aggregate\'s own commands, one per change', () => {
+describe('LA-V153-R06-T01 the Integration editor writes only through the aggregate\'s own commands, one per change', () => {
   it('Edit sends Change an integration with only what changed; an emptied system is cleared with null; no Move', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/P-INT01', { data: modelWorkspace(), command: () => ({ answer: ok }) });

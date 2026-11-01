@@ -67,7 +67,7 @@ export const CHANGE_SPECIFICATION_TEST_IDENTITY = {
   id: 'LA-AUT-CMD267',
   slice: { aggregate: 'LA-AUT-A5', name: 'specification' },
   name: 'change-specification-test',
-  description: 'Changes a specification test\'s columns or the test data sets it starts from (the whole list).',
+  description: 'Changes a specification test\'s way of running or the test data sets it starts from (the whole list).',
   method: 'POST',
   route: '/api/specification/change-specification-test',
 } as const;

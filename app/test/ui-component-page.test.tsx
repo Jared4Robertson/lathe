@@ -16,7 +16,7 @@ const toolbar = (id: string) => screen.findByRole('toolbar', { name: `Change ${i
 /** The model fixture with its UI component using a package. */
 const withPackage = (): ServedData => addRows(modelWorkspace(), 'package_use', { record_id: 'P-UI01', package: 'react' });
 
-describe('LA-V151-R01-T01 a UI component is read through the UI component aggregate\'s own query, never a generic record read', () => {
+describe('LA-V151-R04-T01 a UI component is read through the UI component aggregate\'s own query, never a generic record read', () => {
   it('reads GET /api/ui-component/get-ui-component, and shows its description and its packages, the views it renders in its Traceability', async () => {
     const { requests } = await openApp('/P-UI01', { data: withPackage() });
     expect(await within(main()).findByText('The fixture\'s ui component Loan table.')).toBeInTheDocument();
@@ -26,7 +26,7 @@ describe('LA-V151-R01-T01 a UI component is read through the UI component aggreg
   });
 });
 
-describe('LA-V151-R02-T01 the UI component editor writes only through the aggregate\'s own commands, one per change', () => {
+describe('LA-V151-R05-T01 the UI component editor writes only through the aggregate\'s own commands, one per change', () => {
   it('Edit sends Change a UI component with only what changed: an emptied file is cleared with null, the packages whole; no Move', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/P-UI01', { data: withPackage(), command: () => ({ answer: ok }) });

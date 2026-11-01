@@ -15,7 +15,7 @@ export function addTestDataSet(tx: Transaction, input: AddTestDataSet): void {
   testDataSets.save(testDataSet);
 }
 
-/** Changes a test data set's columns. Its domain never changes. */
+/** Changes a test data set's details. Its domain never changes. */
 export function changeTestDataSet(tx: Transaction, input: ChangeTestDataSet): void {
   const testDataSets = new TestDataSetRepository(tx);
   const testDataSet = testDataSets.load(input.id) ?? tx.refuse('missing', `there is no test data set ${input.id}`);
