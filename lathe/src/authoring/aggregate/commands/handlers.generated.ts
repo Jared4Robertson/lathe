@@ -141,7 +141,7 @@ export function addInvariantTest(tx: Transaction, input: AddInvariantTest): void
   aggregates.save(aggregate);
 }
 
-/** Changes an invariant test's columns or the test data sets it starts from (the whole list). */
+/** Changes what an invariant test says, or the test data sets it starts from (the whole list). */
 export function changeInvariantTest(tx: Transaction, input: ChangeInvariantTest): void {
   const aggregates = new AggregateRepository(tx);
   const aggregate = aggregates.loadHolding('invariant_test', input.id) ?? tx.refuse('missing', `there is no invariant test ${input.id}`);
