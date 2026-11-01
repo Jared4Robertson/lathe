@@ -2,19 +2,22 @@
 // The read-model commands whose handler is the pattern: load the read model, add, change or remove one record with the
 // input's columns and lists, hold it to its rules, and save. Each definition takes its handler from here.
 import { changed } from '../../../platform/data/rows.ts';
+import { refuseBroken } from '../../../platform/data/rules.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { ReadModelRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
+import { holdToRules, oneProjection, oneReader } from '../rules.ts';
 import type { ChangeReadModel } from './change-read-model.ts';
 import type { RemoveReadModel } from './remove-read-model.ts';
 import type { AddQuery } from './add-query.ts';
 import type { ChangeQuery } from './change-query.ts';
 import type { RemoveQuery } from './remove-query.ts';
+import type { AddProjection } from './add-projection.ts';
 import type { ChangeProjection } from './change-projection.ts';
 import type { RemoveProjection } from './remove-projection.ts';
 import type { AddQueryHandler } from './add-query-handler.ts';
 import type { ChangeQueryHandler } from './change-query-handler.ts';
 import type { RemoveQueryHandler } from './remove-query-handler.ts';
+import type { AddReader } from './add-reader.ts';
 import type { ChangeReader } from './change-reader.ts';
 import type { RemoveReader } from './remove-reader.ts';
 
@@ -66,6 +69,17 @@ export function removeQuery(tx: Transaction, input: RemoveQuery): void {
   readModels.save(readModel);
 }
 
+/** Adds the projection that fills a read model, its one piece of code, with the standard rules it meets and the packages it uses. */
+export function addProjection(tx: Transaction, input: AddProjection): void {
+  const readModels = new ReadModelRepository(tx);
+  const readModel = readModels.load(input.read_model_id) ?? tx.refuse('missing', `there is no read model ${input.read_model_id}`);
+  const { meets = [], packages = [], ...row } = input;
+  refuseBroken(oneProjection([...(readModel.projection ? [readModel.projection.row] : []), row]));
+  readModel.projection = { row, meets: meets, packages: packages };
+  holdToRules(tx, readModel);
+  readModels.save(readModel);
+}
+
 /** Changes a projection's title, file or description, or the standard rules it meets or packages it uses (each the whole list). */
 export function changeProjection(tx: Transaction, input: ChangeProjection): void {
   const readModels = new ReadModelRepository(tx);
@@ -108,6 +122,17 @@ export function removeQueryHandler(tx: Transaction, input: RemoveQueryHandler): 
   const readModels = new ReadModelRepository(tx);
   const readModel = readModels.loadHolding('query_handler', input.id) ?? tx.refuse('missing', `there is no query handler ${input.id}`);
   readModel.queryHandlers = readModel.queryHandlers.filter((x) => x.row.id !== input.id);
+  readModels.save(readModel);
+}
+
+/** Adds a read model's reader, the one way its query handlers read its table, with the data store it reads the table in, the standard rules it meets and the packages it uses. */
+export function addReader(tx: Transaction, input: AddReader): void {
+  const readModels = new ReadModelRepository(tx);
+  const readModel = readModels.load(input.read_model_id) ?? tx.refuse('missing', `there is no read model ${input.read_model_id}`);
+  const { stored_in, meets = [], packages = [], ...row } = input;
+  refuseBroken(oneReader([...(readModel.reader ? [readModel.reader.row] : []), row]));
+  readModel.reader = { row, meets: meets, packages: packages, storedIn: stored_in ?? null };
+  holdToRules(tx, readModel);
   readModels.save(readModel);
 }
 

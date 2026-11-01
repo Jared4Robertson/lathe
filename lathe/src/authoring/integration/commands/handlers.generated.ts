@@ -2,11 +2,14 @@
 // The integration commands whose handler is the pattern: load the integration, add, change or remove one record with the
 // input's columns and lists, hold it to its rules, and save. Each definition takes its handler from here.
 import { changed } from '../../../platform/data/rows.ts';
+import { refuseBroken } from '../../../platform/data/rules.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { IntegrationRepository } from '../repository.ts';
+import { oneAdapter } from '../rules.ts';
 import type { AddIntegration } from './add-integration.ts';
 import type { ChangeIntegration } from './change-integration.ts';
 import type { RemoveIntegration } from './remove-integration.ts';
+import type { AddAdapter } from './add-adapter.ts';
 import type { ChangeAdapter } from './change-adapter.ts';
 import type { RemoveAdapter } from './remove-adapter.ts';
 import type { AddIntegrationTest } from './add-integration-test.ts';
@@ -33,6 +36,16 @@ export function removeIntegration(tx: Transaction, input: RemoveIntegration): vo
   const integrations = new IntegrationRepository(tx);
   const integration = integrations.load(input.id) ?? tx.refuse('missing', `there is no integration ${input.id}`);
   integrations.remove(integration);
+}
+
+/** Adds an integration's adapter, its one piece of code that talks to the outside system: its name in code and its file, with the standard rules it meets and the packages it uses. */
+export function addAdapter(tx: Transaction, input: AddAdapter): void {
+  const integrations = new IntegrationRepository(tx);
+  const integration = integrations.load(input.integration_id) ?? tx.refuse('missing', `there is no integration ${input.integration_id}`);
+  const { meets = [], packages = [], ...row } = input;
+  refuseBroken(oneAdapter([...(integration.adapter ? [integration.adapter.row] : []), row]));
+  integration.adapter = { row, meets: meets, packages: packages };
+  integrations.save(integration);
 }
 
 /** Changes an adapter's title, file or description, or the standard rules it meets or the packages it uses (each list whole). Its integration does not change. */

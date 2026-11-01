@@ -1,5 +1,6 @@
 import { id, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
+import { fillingOf } from '../model.ts';
 import { SlotFillingRepository } from '../repository.ts';
 import { STOP_FILLING_SLOT_IDENTITY } from './identities.generated.ts';
 
@@ -18,6 +19,6 @@ export const STOP_FILLING_SLOT = {
 /** Removes the fill whole. */
 export function stopFillingSlot(tx: Transaction, input: StopFillingSlot): void {
   const fillings = new SlotFillingRepository(tx);
-  const filling = fillings.loadFilling(input.record_id, input.slot_id) ?? tx.refuse('missing', `${input.record_id} does not fill ${input.slot_id}`);
+  const filling = fillings.load(fillingOf(input.record_id, input.slot_id)) ?? tx.refuse('missing', `${input.record_id} does not fill ${input.slot_id}`);
   fillings.remove(filling);
 }
