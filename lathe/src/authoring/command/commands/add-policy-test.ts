@@ -1,9 +1,7 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PolicyTestRow } from '../../../platform/data/tables.ts';
-import { CommandRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
 import { ADD_POLICY_TEST_IDENTITY } from './identities.generated.ts';
+import { addPolicyTest } from './handlers.generated.ts';
 
 export type AddPolicyTest = Pick<PolicyTestRow, 'id' | 'title' | 'policy_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'when' | 'then' | 'notes'> & { starts_from?: string[] };
 
@@ -27,12 +25,3 @@ export const ADD_POLICY_TEST = {
   },
   handler: addPolicyTest,
 } satisfies CommandDefinition<AddPolicyTest>;
-
-export function addPolicyTest(tx: Transaction, input: AddPolicyTest): void {
-  const commands = new CommandRepository(tx);
-  const command = commands.loadHolding('policy', input.policy_id) ?? tx.refuse('missing', `there is no policy ${input.policy_id}`);
-  const { starts_from = [], ...row } = input;
-  command.policyTests.push({ row, startsFrom: starts_from });
-  holdToRules(tx, command);
-  commands.save(command);
-}

@@ -1,9 +1,7 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EventTypeRow } from '../../../platform/data/tables.ts';
-import { changed } from '../model.ts';
-import { DomainEventRepository } from '../repository.ts';
 import { CHANGE_EVENT_TYPE_IDENTITY } from './identities.generated.ts';
+import { changeEventType } from './handlers.generated.ts';
 
 /** The event type's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeEventType = Pick<EventTypeRow, 'id'> & { title?: string; delivery?: EventTypeRow['delivery'] | null; file?: string | null; meets?: string[]; packages?: string[] };
@@ -20,12 +18,3 @@ export const CHANGE_EVENT_TYPE = {
   },
   handler: changeEventType,
 } satisfies CommandDefinition<ChangeEventType>;
-
-/** Changes the event type's columns and links. */
-export function changeEventType(tx: Transaction, input: ChangeEventType): void {
-  const events = new DomainEventRepository(tx);
-  const event = events.loadHolding('event_type', input.id) ?? tx.refuse('missing', `there is no event type ${input.id}`);
-  const type = event.eventType!;
-  event.eventType = { row: changed(type.row, input, ['title', 'delivery', 'file']), meets: input.meets ?? type.meets, packages: input.packages ?? type.packages };
-  events.save(event);
-}

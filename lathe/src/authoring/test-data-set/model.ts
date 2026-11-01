@@ -1,22 +1,9 @@
 // The Test data set aggregate (LA-AUT-A17): what some tests start from, in one domain: its environment, accounts and
 // records, how to prepare and reset it, and the file that builds it. One instance is one test data set; tests link to
 // it with starts_from, a link their own aggregates start.
-import type { Row, Value } from '../../platform/data/rows.ts';
+import type { AggregateShape } from '../../platform/data/repository.ts';
+import type { Row } from '../../platform/data/rows.ts';
 import type { TestDataSetRow } from '../../platform/data/tables.ts';
-
-/**
- * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.
- * Only the columns named in `columns` are taken from the changes.
- */
-export function changed<R extends object>(row: R, changes: object, columns: readonly string[]): R {
-  const next = { ...row } as Record<string, unknown>;
-  for (const [column, value] of Object.entries(changes)) {
-    if (!columns.includes(column) || value === undefined) continue;
-    if (value === null) delete next[column];
-    else next[column] = value as Value;
-  }
-  return next as R;
-}
 
 /** One test data set, whole. */
 export interface TestDataSet {
@@ -27,6 +14,11 @@ export interface TestDataSet {
 
 /** The tables the Test data set aggregate keeps its rows in: its one kind. */
 export const TEST_DATA_SET_TABLES = ['test_data_set'] as const;
+
+/** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
+export const TEST_DATA_SET_SHAPE = {
+  test_data_set: { at: 'testDataSet' },
+} as const satisfies AggregateShape;
 
 /** A new test data set. */
 export function newTestDataSet(testDataSet: TestDataSetRow): TestDataSet {

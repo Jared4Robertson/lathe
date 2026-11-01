@@ -1,11 +1,11 @@
-// `npm run generate`: writes every generated file from Lathe's records (generate/outputs.ts), removes a generated
+// `npm run generate`: writes every generated file from Lathe's records (outputs.ts), removes a generated
 // file no output makes any more, then scaffolds what is not written yet (a command's file, a query's definition).
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { GENERATED_HEADER, GENERATED_ROOTS } from './generate/output.ts';
-import { generatedFiles, scaffoldFiles } from './generate/outputs.ts';
+import { GENERATED_HEADER, GENERATED_ROOTS } from './output.ts';
+import { generatedFiles, scaffoldFiles } from './outputs.ts';
 
-const REPO = path.join(import.meta.dirname, '..', '..');
+const REPO = path.join(import.meta.dirname, '..', '..', '..');
 
 /** Every file under the generated roots whose first line is the generated header, from the repo root. */
 function generatedOnDisk(dir: string): string[] {
@@ -21,7 +21,7 @@ const write = (file: string, text: string) => {
   writeFileSync(path.join(REPO, file), text);
 };
 
-const files = generatedFiles(REPO);
+const files = await generatedFiles(REPO);
 let written = 0;
 for (const [file, text] of files) {
   const full = path.join(REPO, file);

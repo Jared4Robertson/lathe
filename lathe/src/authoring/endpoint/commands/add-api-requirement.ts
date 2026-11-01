@@ -1,8 +1,7 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ApiRequirementRow } from '../../../platform/data/tables.ts';
-import { EndpointRepository } from '../repository.ts';
 import { ADD_API_REQUIREMENT_IDENTITY } from './identities.generated.ts';
+import { addApiRequirement } from './handlers.generated.ts';
 
 /** A new API requirement. */
 export type AddApiRequirement = Pick<ApiRequirementRow, 'id' | 'title' | 'endpoint_id' | 'statement' | 'group_name'>;
@@ -18,10 +17,3 @@ export const ADD_API_REQUIREMENT = {
   },
   handler: addApiRequirement,
 } satisfies CommandDefinition<AddApiRequirement>;
-
-export function addApiRequirement(tx: Transaction, input: AddApiRequirement): void {
-  const endpoints = new EndpointRepository(tx);
-  const endpoint = endpoints.loadHolding('endpoint', input.endpoint_id) ?? tx.refuse('missing', `there is no endpoint ${input.endpoint_id}`);
-  endpoint.requirements.push(input);
-  endpoints.save(endpoint);
-}

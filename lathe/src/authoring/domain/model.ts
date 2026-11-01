@@ -3,26 +3,13 @@
 // its repositories (each with the aggregate it persists). Its technical records, the repositories and services, carry
 // the standard rules they meet and the packages they use. One instance is one domain, whole; it holds only the links
 // its own records start.
+import type { AggregateShape } from '../../platform/data/repository.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
-import type { Row, Value } from '../../platform/data/rows.ts';
+import type { Row } from '../../platform/data/rows.ts';
 import type { CapabilityRow, DomainRow, DomainServiceRow, DomainServiceTestRow, RepositoryRow, ServiceRow, TermRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const DOMAIN_AGGREGATE = 'LA-AUT-A4';
-
-/**
- * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.
- * Only the columns named in `columns` are taken from the changes.
- */
-export function changed<R extends object>(row: R, changes: object, columns: readonly string[]): R {
-  const next = { ...row } as Record<string, unknown>;
-  for (const [column, value] of Object.entries(changes)) {
-    if (!columns.includes(column) || value === undefined) continue;
-    if (value === null) delete next[column];
-    else next[column] = value as Value;
-  }
-  return next as R;
-}
 
 /** A capability with the business outcomes it serves. */
 export interface Capability {
@@ -86,23 +73,18 @@ export const DOMAIN_TABLES = [
   'builds_on',
 ] as const;
 
-/** The kinds of the aggregate's records, each with the column that names its parent inside the aggregate. */
-export const DOMAIN_KINDS = {
-  domain: null,
-  capability: 'domain_id',
-  term: 'domain_id',
-  domain_service: 'domain_id',
-  repository: 'domain_id',
-  service: 'domain_service_id',
-  domain_service_test: 'domain_service_id',
-} as const;
+/** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
+export const DOMAIN_SHAPE = {
+  domain: { at: 'domain' },
+  capability: { at: 'capabilities', lists: { serves: 'serves' } },
+  term: { at: 'terms', lists: { builds_on: 'buildsOn' } },
+  domain_service: { at: 'domainServices' },
+  service: { at: 'services', lists: { meets: 'meets', packages: 'packages' } },
+  domain_service_test: { at: 'domainServiceTests', lists: { starts_from: 'startsFrom' } },
+  repository: { at: 'repositories', lists: { meets: 'meets', packages: 'packages' }, links: { persists: 'persists', stored_in: 'storedIn' } },
+} as const satisfies AggregateShape;
 
-export type DomainKind = keyof typeof DOMAIN_KINDS;
-
-/** A new domain, with nothing under it yet. */
-export function newDomain(domain: DomainRow): Domain {
-  return { root: domain.id, domain, capabilities: [], terms: [], domainServices: [], services: [], domainServiceTests: [], repositories: [] };
-}
+export type DomainKind = keyof typeof DOMAIN_SHAPE;
 
 /** The domains in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function domainsFrom(rows: (table: string) => Row[], only?: string): Domain[] {
@@ -161,14 +143,3 @@ export function domainRows(domain: Domain): Map<string, Row[]> {
   ]);
 }
 
-/** The kind of the record with this ID inside the domain, or undefined. */
-export function kindInside(domain: Domain, id: string): DomainKind | undefined {
-  if (domain.root === id) return 'domain';
-  if (domain.capabilities.some((c) => c.row.id === id)) return 'capability';
-  if (domain.terms.some((t) => t.row.id === id)) return 'term';
-  if (domain.domainServices.some((s) => s.id === id)) return 'domain_service';
-  if (domain.repositories.some((r) => r.row.id === id)) return 'repository';
-  if (domain.services.some((s) => s.row.id === id)) return 'service';
-  if (domain.domainServiceTests.some((t) => t.row.id === id)) return 'domain_service_test';
-  return undefined;
-}

@@ -29,12 +29,17 @@ export interface Identity {
   identity: string;
   /** The file the definition is written in, and the file its identity is generated into, from the repo root. */
   file: string;
+  /** The file its handler is in: the definition's, or the slice's generated handlers. */
+  handlerFile: string;
   generated: string;
   /** Its handler's name: the command's handler function, or the query's run function. */
   handler: string;
 }
 
 const SUFFIX = '_IDENTITY';
+
+/** The file in a slice's commands/ that its generated handlers are written to. */
+export const HANDLERS_FILE = 'handlers.generated.ts';
 const snake = (name: string) => name.toUpperCase().replaceAll('-', '_');
 const quote = (text: string) => `'${text.replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`;
 const relative = (from: string, to: string) => {
@@ -76,8 +81,7 @@ export function readIdentities(repo: string): Identity[] {
   const drafts = handlers.flatMap(({ kind, h, id }) => {
     const record = records[kind].get(id);
     if (!record) return problems.push(`${String(h.id)} handles ${id}, which is no ${kind}`), [];
-    const file = String(h.file);
-    const dir = kind === 'command' ? path.dirname(path.dirname(file)) : path.dirname(file);
+    const dir = kind === 'command' ? path.dirname(path.dirname(String(h.file))) : path.dirname(String(h.file));
     const generated = kind === 'command' ? `${dir}/commands/identities.generated.ts` : `${dir}/queries.generated.ts`;
     const cli = one(clis[kind], id, `${kind === 'command' ? 'cli_command' : 'cli_query'} records`, id);
     const endpoint = one(endpoints[kind], id, 'endpoints', id);
@@ -86,6 +90,9 @@ export function readIdentities(repo: string): Identity[] {
     const named = /^lathe ([a-z][a-z0-9-]*) ([a-z][a-z0-9-]*)$/.exec(String(cli.title));
     if (!named) return problems.push(`${String(cli.id)} is titled ${JSON.stringify(cli.title)}; it is titled lathe <slice> <name>`), [];
     const [, slice, name] = named;
+    // A command is defined in its own file, which holds its handler too unless the handler is generated (handlers.generated.ts).
+    const file = kind === 'command' ? `${dir}/commands/${name}.ts` : String(h.file);
+    if (kind === 'command' && h.file !== file && h.file !== `${dir}/commands/${HANDLERS_FILE}`) problems.push(`${String(h.id)} names the file ${String(h.file)}; ${id}'s handler is written in ${file} or generated into ${dir}/commands/${HANDLERS_FILE}`);
     const method = kind === 'command' ? 'POST' : 'GET';
     const route = `/api/${slice}/${name}`;
     const tool = `${slice}_${name}`.replaceAll('-', '_');
@@ -104,7 +111,7 @@ export function readIdentities(repo: string): Identity[] {
     if (!String(dir).endsWith(`/${slice}`)) problems.push(`${id}'s handler is in ${dir}; lathe ${slice} is the slice in a folder named ${slice}`);
     if (typeof record.description !== 'string' || !record.description.trim()) problems.push(`${id} has no description`);
     return [{
-      kind, id, name, method, route, file, generated, identity, constant: identity.slice(0, -SUFFIX.length), handler: String(h.title), description: String(record.description),
+      kind, id, name, method, route, file, handlerFile: String(h.file), generated, identity, constant: identity.slice(0, -SUFFIX.length), handler: String(h.title), description: String(record.description),
       slice: { name: slice, dir, aggregate: kind === 'command' ? (aggregateOf.get(String(record.entity_id)) ?? '') : String(record.read_model_id) },
     } satisfies Identity];
   });

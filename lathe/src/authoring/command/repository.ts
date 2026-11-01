@@ -1,41 +1,55 @@
-// CommandRepository (LA-AUT-REPO08): loads and saves the Command aggregate whole, in its own tables only. A record
-// inside a command (its handler, a policy, a policy's event handler or test) is reached through the command that
-// holds it.
-import { AggregateRepository, type InstanceRows } from '../../platform/data/repository.ts';
+// Generated from data/ by `npm run generate`. Do not edit.
+// CommandRepository (LA-AUT-REPO08): Loads a command whole from the transaction's draft (the events it raises, the
+// specifications it checks and the domain services it calls, its handler, and its policies with the event each hears,
+// their event handlers and tests) and saves exactly the rows that changed, in the Command aggregate's own tables only;
+// a write to any other table is refused when it is made (`DataFiles`). A record inside one is loaded through the root
+// that holds it (`loadHolding`), and a removal is refused, naming the referrers, while anything outside what goes
+// references it.
+import { AggregateRepository as Repository, type InstanceRows } from '../../platform/data/repository.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
-import { COMMAND_KINDS, COMMAND_TABLES, commandRows, commandsFrom, kindInside, type CommandInstance, type CommandKind } from './model.ts';
+import { COMMAND_TABLES, commandRows, commandsFrom, type Command, type CommandKind } from './model.ts';
 
-/** The kind each parent column of the aggregate's kinds names. */
-const PARENT_KIND = { command_id: 'command', policy_id: 'policy' } as const;
-
-export class CommandRepository extends AggregateRepository<CommandInstance> {
+export class CommandRepository extends Repository<Command> {
   constructor(tx: Transaction) {
     super(tx, 'CommandRepository', COMMAND_TABLES);
   }
 
-  protected read(rootId: string): CommandInstance | undefined {
+  protected read(rootId: string): Command | undefined {
     return commandsFrom((table) => this.files.rows(table), rootId)[0];
   }
 
-  protected rowsOf(command: CommandInstance): InstanceRows {
+  protected rowsOf(command: Command): InstanceRows {
     return commandRows(command);
   }
 
-  /**
-   * Loads the command that holds the record of the kind with this ID: the command itself, or the command of the
-   * handler, policy, event handler or policy test, found up its parents inside the aggregate. Undefined when there is
-   * no such record.
-   */
-  loadHolding(kind: CommandKind, id: string): CommandInstance | undefined {
-    let at: { kind: CommandKind; id: string } = { kind, id };
-    for (;;) {
-      const row = this.files.find(at.kind, { id: at.id });
-      if (!row) return undefined;
-      if (at.kind === 'command') break;
-      const column = COMMAND_KINDS[at.kind];
-      at = { kind: PARENT_KIND[column], id: String(row[column]) };
+  /** Loads the command that holds the record of the kind with this ID, found up its parents; undefined when there is none. */
+  loadHolding(kind: CommandKind, id: string): Command | undefined {
+    const root = this.rootOf(kind, id);
+    const command = root === undefined ? undefined : this.load(root);
+    return command && holds(command, kind, id) ? command : undefined;
+  }
+
+  // The root's ID, up the parents of the record of the kind with this ID; undefined when one of them is missing.
+  private rootOf(kind: CommandKind, id: string): string | undefined {
+    const row = this.files.find(kind, { id });
+    if (!row) return undefined;
+    switch (kind) {
+      case 'command': return id;
+      case 'command_handler': return this.rootOf('command', String(row.command_id));
+      case 'policy': return this.rootOf('command', String(row.command_id));
+      case 'event_handler': return this.rootOf('policy', String(row.policy_id));
+      case 'policy_test': return this.rootOf('policy', String(row.policy_id));
     }
-    const command = this.load(at.id);
-    return command && kindInside(command, id) === kind ? command : undefined;
+  }
+}
+
+/** Whether the command holds the record of the kind with this ID. */
+function holds(command: Command, kind: CommandKind, id: string): boolean {
+  switch (kind) {
+    case 'command': return command.root === id;
+    case 'command_handler': return command.handler?.row.id === id;
+    case 'policy': return command.policies.some((x) => x.row.id === id);
+    case 'event_handler': return command.eventHandlers.some((x) => x.row.id === id);
+    case 'policy_test': return command.policyTests.some((x) => x.row.id === id);
   }
 }

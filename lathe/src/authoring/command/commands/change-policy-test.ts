@@ -1,10 +1,7 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PolicyTestRow } from '../../../platform/data/tables.ts';
-import { changed } from '../model.ts';
-import { CommandRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
 import { CHANGE_POLICY_TEST_IDENTITY } from './identities.generated.ts';
+import { changePolicyTest } from './handlers.generated.ts';
 
 /** The test's changes: a column given is set, null clears an optional one; starts_from, when given, replaces the list. */
 export type ChangePolicyTest = Pick<PolicyTestRow, 'id'> & {
@@ -41,14 +38,3 @@ export const CHANGE_POLICY_TEST = {
   },
   handler: changePolicyTest,
 } satisfies CommandDefinition<ChangePolicyTest>;
-
-/** Changes the test's columns and the data sets it starts from. */
-export function changePolicyTest(tx: Transaction, input: ChangePolicyTest): void {
-  const commands = new CommandRepository(tx);
-  const command = commands.loadHolding('policy_test', input.id) ?? tx.refuse('missing', `there is no policy test ${input.id}`);
-  command.policyTests = command.policyTests.map((test) =>
-    test.row.id === input.id ? { row: changed(test.row, input, ['title', 'level', 'state', 'file', 'manual_reason', 'size', 'smoke', 'external', 'when', 'then', 'notes']), startsFrom: input.starts_from ?? test.startsFrom } : test,
-  );
-  holdToRules(tx, command);
-  commands.save(command);
-}

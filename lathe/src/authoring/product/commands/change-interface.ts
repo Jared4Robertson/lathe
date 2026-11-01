@@ -1,7 +1,7 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { InterfaceRow } from '../../../platform/data/tables.ts';
-import { changed } from '../model.ts';
+import { changed } from '../../../platform/data/rows.ts';
 import { ProductRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 import { CHANGE_INTERFACE_IDENTITY } from './identities.generated.ts';
