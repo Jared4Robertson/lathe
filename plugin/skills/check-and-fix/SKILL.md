@@ -1,6 +1,6 @@
 ---
 name: check-and-fix
-description: Run lathe check, fix every error it reports, and report warnings, recorded exceptions, gaps and coverage. Use after changing any Lathe spec data, before committing spec changes, when a write is refused, or when asked whether the spec is consistent or how much is designed, built and proved.
+description: Run lathe check, fix every error it reports, and report warnings, gaps and coverage. Use after changing any Lathe spec data, before committing spec changes, when a write is refused, or when asked whether the spec is consistent or how much is designed, built and proved.
 ---
 
 # Check and fix
