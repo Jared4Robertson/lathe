@@ -7,7 +7,8 @@
 // public, which makes its API requirements essential: none is at first, and the Owner is asked to mark the ones
 // people or programs outside the product build on. An accidental product kind gains Lathe's pairs of provided_by,
 // fills and generates, and an obligation kind the pair of provided_by, as Lathe's own kinds have them, so a product's
-// declaration of one of those pairs is dropped.
+// declaration of one of those pairs is dropped. A product with technical records is asked to account for them (derive,
+// provide or fill each).
 //
 // And a use case has one flow, the same whatever the interface (neutralFlows): its flows, one per interface under
 // schema 3, merge into <use case>-FL with the union of their steps. Steps of different flows that invoke the same
@@ -33,6 +34,9 @@ function accountingPairs(kinds: Record<string, unknown>[]): Set<string> {
   }
   return pairs;
 }
+
+/** The tables of the technical records a product most often has, which schema 4 asks to be accounted for. */
+const TECHNICAL_TABLES = ['adapter', 'command_handler', 'data_model', 'endpoint_handler', 'event_handler', 'query_handler', 'repository', 'table', 'ui_component'];
 
 type Raw = Record<string, unknown>;
 
@@ -237,6 +241,13 @@ const converter: Converter = {
     }
 
     neutralFlows(data, notes);
+
+    const technical = TECHNICAL_TABLES.filter((t) => data.read(t).length > 0);
+    if (technical.length) {
+      notes.todo(
+        `Technical records are accidental complexity and must now be accounted for: derived (a tooling record generates it), provided (provided_by the platform, library or generator that supplies it) or a fill at a pattern's slot, naming the essential record it serves. Run \`lathe check\` and read the accidental-not-accounted-for warnings; before writing a fill, ask whether the record can be deleted, is essential in disguise, is provided, or a pattern could derive it. Technical records found in: ${technical.join(', ')}.`,
+      );
+    }
   },
 };
 

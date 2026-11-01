@@ -9,6 +9,10 @@ A use case is an actor's goal: who acts, what they want, and the rules the produ
 
 Change the spec only with Lathe's MCP tools (or the `lathe` CLI), never by editing files. Fields, ID patterns and checks are in `lathe/REFERENCE.md` in the Lathe package (`node_modules/@jaredrob/lathe/REFERENCE.md` in a product repo). Before you write, read the domain's terms, commands and queries, its capabilities and use cases (so you do not repeat one), and the product's patterns.
 
+## Essential, not accidental
+
+**Essential complexity** comes from the problem itself: the rules, distinctions and relationships any correct solution must capture, however it is built. **Accidental complexity** comes from the means used to build it: tools, structure and conventions the problem does not require, which other means could change or remove. What is accidental to one product is essential to another (TLS to a tool library, but not to a security product), and a platform is a product that takes on as essential what others want to stop deciding. A use case, its actors and its requirements are essential: ask of each whether a domain expert would recognize it and care. Leaks: a use case for a generic subdomain (sign in, reset a password) is provided by someone else, not written; a requirement that states how the product is built (a route, a table, a library) belongs in the technical specification; and rules repeated across use cases are a pattern in disguise.
+
 ## Capabilities
 
 Every use case sits in a capability: an ordered slice of its domain. Add the domain's capabilities first, then each use case under its capability. A capability with one use case, or none, is a gap; a capability that serves no business outcome is too (`discover-outcomes`).

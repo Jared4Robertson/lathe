@@ -21,6 +21,8 @@ Change the spec only with Lathe's MCP tools (or the `lathe` CLI), never by editi
 
 **Step titles** say what the actor or the system does, in the present tense ("The member picks a tool"). They carry no text beyond the title; what a title cannot hold goes into a requirement the step fulfills.
 
+**What, not how.** What a person needs to see and decide, and in what order, is essential: it belongs in the step and the view's requirements. How a screen is laid out, styled or wired is accidental: it belongs in the interface's pattern, written once, or is derived. A view requirement that mixes the two is split: keep the what, move the how.
+
 **Views** have no owner: a view exists because it presents commands and queries, a person sending or asking each there, and a step that invokes one is carried out in it on a web app or desktop. A view only one interface shows (the desktop's Dock icon) names it. A view requirement is one rule about this screen (what it shows while loading, a field's limits, which button is disabled). It does not restate a UC requirement: the step fulfills that; the view requirement says how it shows here and has its own test.
 
 **Endpoints** expose exactly one command or query. Keep the description to the request and responses in brief; state every rule that must be built and tested as an API requirement (a body's shape, each refusal's status and error code, what success returns, a size limit). A rule shared by every endpoint, such as the shape of an error, is a pattern their use cases follow or a standard rule their handlers meet.
