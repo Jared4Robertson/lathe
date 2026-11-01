@@ -1,6 +1,6 @@
 {"id":"LA-AUT-UC02-FL","title":"Split a product into domains by capability","use_case_id":"LA-AUT-UC02"}
 {"id":"LA-AUT-UC03-FL","title":"Change Lathe's schema with a migration","use_case_id":"LA-AUT-UC03"}
-{"id":"LA-AUT-UC04-FL","title":"Declare a product's own kinds and relations","use_case_id":"LA-AUT-UC04"}
+{"id":"LA-AUT-UC04-FL","title":"Declare a product's own kinds with their relations","use_case_id":"LA-AUT-UC04"}
 {"id":"LA-AUT-UC05-FL","title":"Write a pattern with its rules","use_case_id":"LA-AUT-UC05"}
 {"id":"LA-AUT-UC06-FL","title":"Write a use case with its flow and tests","use_case_id":"LA-AUT-UC06"}
 {"id":"LA-AUT-UC08-FL","title":"Read each kind's stage and order from the schema","use_case_id":"LA-AUT-UC08"}
@@ -16,7 +16,7 @@
 {"id":"LA-AUT-UC20-FL","title":"Write a specification with its predicate","use_case_id":"LA-AUT-UC20"}
 {"id":"LA-AUT-UC21-FL","title":"Model a read model with its queries","use_case_id":"LA-AUT-UC21"}
 {"id":"LA-AUT-UC22-FL","title":"Write the business outcomes the product exists to achieve","use_case_id":"LA-AUT-UC22"}
-{"id":"LA-AUT-UC23-FL","title":"Describe a product's roles and interfaces","use_case_id":"LA-AUT-UC23"}
+{"id":"LA-AUT-UC23-FL","title":"Describe a product's interfaces","use_case_id":"LA-AUT-UC23"}
 {"id":"LA-AUT-UC24-FL","title":"Define a value object with its constraints","use_case_id":"LA-AUT-UC24"}
 {"id":"LA-AUT-UC25-FL","title":"Model a domain event with its fields","use_case_id":"LA-AUT-UC25"}
 {"id":"LA-AUT-UC26-FL","title":"Expose a command through an endpoint","use_case_id":"LA-AUT-UC26"}
@@ -27,6 +27,9 @@
 {"id":"LA-AUT-UC31-FL","title":"Write a storage requirement with its tests","use_case_id":"LA-AUT-UC31"}
 {"id":"LA-AUT-UC32-FL","title":"Name where a product's data lives","use_case_id":"LA-AUT-UC32"}
 {"id":"LA-AUT-UC33-FL","title":"Write a product's journeys","use_case_id":"LA-AUT-UC33"}
+{"id":"LA-AUT-UC34-FL","title":"Write a record of a product's own kind","use_case_id":"LA-AUT-UC34"}
+{"id":"LA-AUT-UC35-FL","title":"Name a product's roles","use_case_id":"LA-AUT-UC35"}
+{"id":"LA-AUT-UC36-FL","title":"Ask an open question","use_case_id":"LA-AUT-UC36"}
 {"id":"LA-CHK-UC01-FL","title":"Check the workspace","use_case_id":"LA-CHK-UC01"}
 {"id":"LA-CHK-UC02-FL","title":"Add a check","use_case_id":"LA-CHK-UC02"}
 {"id":"LA-CHK-UC05-FL","title":"Add a product's own checks","use_case_id":"LA-CHK-UC05"}
@@ -49,6 +52,7 @@
 {"id":"LA-EXP-UC13-FL","title":"Read a domain's operations and integrations","use_case_id":"LA-EXP-UC13"}
 {"id":"LA-EXP-UC15-FL","title":"Watch the spec change","use_case_id":"LA-EXP-UC15"}
 {"id":"LA-EXP-UC16-FL","title":"Follow a journey step by step","use_case_id":"LA-EXP-UC16"}
+{"id":"LA-EXP-UC17-FL","title":"Choose how the graph is drawn","use_case_id":"LA-EXP-UC17"}
 {"id":"LA-PLT-UC01-FL","title":"Load the workspace","use_case_id":"LA-PLT-UC01"}
 {"id":"LA-PLT-UC02-FL","title":"Set up Lathe in a product repo","use_case_id":"LA-PLT-UC02"}
 {"id":"LA-PLT-UC03-FL","title":"See the current data","use_case_id":"LA-PLT-UC03"}
@@ -71,6 +75,7 @@
 {"id":"LA-PLT-UC20-FL","title":"Talk to Claude","use_case_id":"LA-PLT-UC20"}
 {"id":"LA-PLT-UC21-FL","title":"Review and undo Claude's changes","use_case_id":"LA-PLT-UC21"}
 {"id":"LA-PLT-UC22-FL","title":"Compose a message with more than words","use_case_id":"LA-PLT-UC22"}
+{"id":"LA-PLT-UC23-FL","title":"Serve the spec from a product repo","use_case_id":"LA-PLT-UC23"}
 {"id":"LA-TRC-UC01-FL","title":"See a domain's coverage","use_case_id":"LA-TRC-UC01"}
 {"id":"LA-TRC-UC02-FL","title":"Count coverage by the meta-model","use_case_id":"LA-TRC-UC02"}
 {"id":"LA-TRC-UC03-FL","title":"Record how a test is run","use_case_id":"LA-TRC-UC03"}

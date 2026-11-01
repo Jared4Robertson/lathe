@@ -645,6 +645,7 @@
 {"source_id":"LA-CHK-RM01-PJ","target_id":"LA-STD-MODELING-R06"}
 {"source_id":"LA-CHK-RM01-PJ","target_id":"LA-STD-MODELING-R07"}
 {"source_id":"LA-CHK-RM01-PJ","target_id":"LA-STD-MODELING-R08"}
+{"source_id":"LA-CHK-RM01-PJ","target_id":"LA-STD-MODELING-R15"}
 {"source_id":"LA-CHK-TB01","target_id":"LA-PAT-AGGREGATE-COMMANDS-R07"}
 {"source_id":"LA-EXP-DS12-SV","target_id":"LA-STD-MODELING-R14"}
 {"source_id":"LA-EXP-EP401-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}

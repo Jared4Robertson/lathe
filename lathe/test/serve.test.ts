@@ -85,7 +85,7 @@ async function readEvents(response: Response, wanted: string, timeoutMs: number)
 }
 
 describe.skipIf(!prebuilt && !canBuild)('lathe serve', () => {
-  it('LA-PLT-UC02-R04-T01 Serve serves the app, the spec API and change events for the product repo', async () => {
+  it('LA-PLT-UC23-R01-T01 Serve serves the app, the spec API and change events for the product repo', async () => {
     const page = await fetch(`${BASE}/`);
     expect(page.status).toBe(200);
     expect(page.headers.get('content-type')).toContain('text/html');

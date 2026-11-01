@@ -31,7 +31,7 @@ describe('business outcomes', () => {
     expect(await rules(withTable(withTable(withTable(data, 'serves', []), 'measured_by', []), 'business_outcome', [{ ...outcome, id: 'XX-BO01' }]))).toEqual(['id-prefix']);
   });
 
-  it('LA-AUT-UC22-R02-T01 A capability serves any number of business outcomes, and an outcome is served by any number of capabilities, of its own product', async () => {
+  it('LA-AUT-UC02-R08-T01 A capability serves any number of business outcomes, and an outcome is served by any number of capabilities, of its own product', async () => {
     expect(schema.relations.serves).toMatchObject({ scope: 'product', role: null, forwardLabel: 'Serves', reverseLabel: 'Served by' });
     expect(schema.relations.serves.pairs.map((p) => `${p.source}>${p.target}`)).toEqual(['capability>business_outcome', 'journey>business_outcome']);
     const two = adding(everyKind(), {
