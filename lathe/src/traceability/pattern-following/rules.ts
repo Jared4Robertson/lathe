@@ -5,7 +5,7 @@ import type { Row } from '../../platform/data/rows.ts';
 import type { SettingValueRow } from '../../platform/data/tables.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
-import { PATTERN_FOLLOWING_AGGREGATE, followingOf, followingsFrom, type PatternFollowing } from './model.ts';
+import { PATTERN_FOLLOWING_AGGREGATE, followingOf, patternFollowingsFrom, type PatternFollowing } from './model.ts';
 
 const given = (text: string | null | undefined) => text !== null && text !== undefined;
 
@@ -47,11 +47,12 @@ function ofFollowedSetting(values: readonly SettingValueRow[], view: ReadView, f
 export function patternFollowingProblems(following: PatternFollowing, view: ReadView): RuleProblem[] {
   const problems: RuleProblem[] = [];
   const seen = new Set<string>();
+  const { source_id: follower, target_id: pattern } = following.follows;
   for (const v of following.values) {
-    if (v.follower_id !== following.follower || v.pattern_id !== following.pattern) {
-      problems.push(problem({ rule: 'setting-value-own-pattern' }, v, `the value ${v.follower_id} gives setting ${v.setting} of ${v.pattern_id} cannot answer ${following.pattern} for ${following.follower}: each followed pattern's settings take their own values`));
+    if (v.follower_id !== follower || v.pattern_id !== pattern) {
+      problems.push(problem({ rule: 'setting-value-own-pattern' }, v, `the value ${v.follower_id} gives setting ${v.setting} of ${v.pattern_id} cannot answer ${pattern} for ${follower}: each followed pattern's settings take their own values`));
     } else if (seen.has(v.setting)) {
-      problems.push(problem({ rule: 'setting-value-own-pattern' }, v, `${following.follower} gives setting ${v.setting} of ${following.pattern} a second value: a setting takes one value from each follower`));
+      problems.push(problem({ rule: 'setting-value-own-pattern' }, v, `${follower} gives setting ${v.setting} of ${pattern} a second value: a setting takes one value from each follower`));
     }
     seen.add(v.setting);
   }
@@ -70,7 +71,7 @@ export const patternFollowingRules: AggregateRules = {
   check: (view) => {
     const values = view.rows('setting_value') as unknown as SettingValueRow[];
     return [
-      ...followingsFrom((table) => view.rows(table)).flatMap((following) =>
+      ...patternFollowingsFrom((table) => view.rows(table)).flatMap((following) =>
         patternFollowingProblems(following, view).filter((p) => p.rule === 'setting-value-own-pattern'),
       ),
       ...valueGiven(values),

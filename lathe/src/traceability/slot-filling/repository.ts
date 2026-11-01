@@ -1,24 +1,20 @@
-// SlotFillingRepository (LA-TRC-REPO02): loads and saves the Slot filling aggregate whole (the fills link) in its own
-// table only.
-import { AggregateRepository, type InstanceRows } from '../../platform/data/repository.ts';
+// Generated from data/ by `npm run generate`. Do not edit.
+// SlotFillingRepository (LA-TRC-REPO02): Loads a fill whole from the transaction's draft (its fills link) and saves
+// exactly the rows that changed, in the fills table only.
+import { AggregateRepository as Repository, type InstanceRows } from '../../platform/data/repository.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
-import { fillingOf, fillingRows, fillingsFrom, SLOT_FILLING_TABLES, type SlotFilling } from './model.ts';
+import { SLOT_FILLING_TABLES, slotFillingRows, slotFillingsFrom, type SlotFilling } from './model.ts';
 
-export class SlotFillingRepository extends AggregateRepository<SlotFilling> {
+export class SlotFillingRepository extends Repository<SlotFilling> {
   constructor(tx: Transaction) {
     super(tx, 'SlotFillingRepository', SLOT_FILLING_TABLES);
   }
 
-  protected read(root: string): SlotFilling | undefined {
-    return fillingsFrom((table) => this.files.rows(table), root)[0];
+  protected read(rootId: string): SlotFilling | undefined {
+    return slotFillingsFrom((table) => this.files.rows(table), rootId)[0];
   }
 
-  protected rowsOf(filling: SlotFilling): InstanceRows {
-    return fillingRows(filling);
-  }
-
-  /** Loads the fill of the slot by the record, or undefined when the record does not fill it. */
-  loadFilling(record: string, slot: string): SlotFilling | undefined {
-    return this.load(fillingOf(record, slot));
+  protected rowsOf(slotFilling: SlotFilling): InstanceRows {
+    return slotFillingRows(slotFilling);
   }
 }
