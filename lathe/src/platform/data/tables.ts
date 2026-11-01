@@ -1139,6 +1139,8 @@ export interface ProductSettingRow {
   max_children: number;
   /** The most entities an aggregate should have before aggregate-too-large warns; the default is 7. */
   max_entities_per_aggregate: number;
+  /** The words, besides Lathe's own, that name technology in this product's essential records, which accidental-in-essential warns of, such as the name of a framework the product is built with; none by default. */
+  technology_words: string[];
 }
 
 /** Fills its read model's table and keeps it current, from events or as a view's query. It writes only its own read model's table. */
