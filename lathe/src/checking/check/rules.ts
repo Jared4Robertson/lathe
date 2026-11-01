@@ -1,5 +1,6 @@
 // The Check aggregate's rules, written once: each command's handler runs them on the check before it saves or removes
 // it, and every load and commit runs them over all data (checkRules, listed in AGGREGATE_RULES).
+import type { DuckDBConnection } from '@duckdb/node-api';
 import type { AggregateRules, ReadView, RuleProblem } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import { StoreError } from '../../platform/data/problems.ts';
@@ -47,6 +48,40 @@ export function checkProblems(check: Check, view: ReadView, isLathes: (row: Row)
     }
   }
   return problems;
+}
+
+// What seals the database against everything outside it (LA-CHK-INV06). DuckDB's settings, global to its instance:
+// - enable_external_access off: no file or URL is read or written (COPY, read_text, read_csv, glob, ATTACH or EXPORT
+//   of a file, INSTALL), and no extension is loaded;
+// - the extension settings off, so no extension comes in by any other road (those Lathe uses are linked in);
+// - persistent secrets off, so no secret is read from or written to the home folder;
+// - the HTTP proxy blanked: DuckDB takes it from HTTP_PROXY, with any password in it, and duckdb_settings() shows it;
+// - lock_configuration last, so no SET, RESET or PRAGMA changes any of them again.
+const SEALED = [
+  'SET enable_external_access = false',
+  'SET allow_community_extensions = false',
+  'SET allow_unsigned_extensions = false',
+  'SET autoinstall_known_extensions = false',
+  'SET autoload_known_extensions = false',
+  "SET allow_extension_repositories = 'forbidden'",
+  'SET allow_persistent_secrets = false',
+  "SET http_proxy = ''",
+  "SET http_proxy_username = ''",
+  "SET http_proxy_password = ''",
+  'SET lock_configuration = true',
+].join(';\n');
+
+/**
+ * Seals the database the connection is to (LA-CHK-INV06), before any query of a product's data runs: a database that
+ * cannot be sealed refuses the load or write that asked, with check-query-sealed, so no query runs on an open one.
+ */
+export async function sealDatabase(connection: DuckDBConnection): Promise<void> {
+  try {
+    await connection.run(SEALED);
+  } catch (error) {
+    const reason = error instanceof Error ? error.message.split('\n')[0] : String(error);
+    throw new StoreError([{ rule: 'check-query-sealed', message: `the database cannot be sealed against files, URLs, extensions and its settings, so no query of the data runs: ${reason}` }]);
+  }
 }
 
 /** The rules over all data: every check, Lathe's and the product's. */

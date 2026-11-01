@@ -44,6 +44,7 @@
 {"id":"LA-CHK-INV03-RL","title":"check-documented","invariant_id":"LA-CHK-INV03","file":"lathe/src/checking/check/rules.ts"}
 {"id":"LA-CHK-INV04-RL","title":"check-query-select","invariant_id":"LA-CHK-INV04","file":"lathe/src/checking/check/rules.ts"}
 {"id":"LA-CHK-INV05-RL","title":"product-setting-one","invariant_id":"LA-CHK-INV05","file":"lathe/src/checking/product-setting/rules.ts"}
+{"id":"LA-CHK-INV06-RL","title":"check-query-sealed","invariant_id":"LA-CHK-INV06","file":"lathe/src/checking/check/rules.ts"}
 {"id":"LA-EXP-INV07-RL","title":"tab-set-has-active-tab","invariant_id":"LA-EXP-INV07","file":"app/src/exploring/tab-set/rules.ts"}
 {"id":"LA-EXP-INV08-RL","title":"tab-place-is-its-own","invariant_id":"LA-EXP-INV08","file":"app/src/exploring/tab-set/rules.ts"}
 {"id":"LA-EXP-INV20-RL","title":"space-page-is-a-page","invariant_id":"LA-EXP-INV20","file":"app/src/exploring/space/rules.ts"}

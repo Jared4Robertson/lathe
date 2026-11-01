@@ -209,6 +209,7 @@ async function runChecks(store: Store, checks: Row[], scope: Map<string, string 
     }
   };
   if (checks.length === 0) return [];
+  await store.seal();
   const results: Problem[][] = new Array(checks.length);
   const extra = await Promise.all(Array.from({ length: Math.min(CHECK_CONNECTIONS, checks.length) - 1 }, () => store.connect()));
   const connections = [store.connection, ...extra];
