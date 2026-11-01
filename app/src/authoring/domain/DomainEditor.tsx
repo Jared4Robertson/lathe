@@ -3,7 +3,7 @@ import type { DomainKind } from '../../../../lathe/src/authoring/domain/model';
 import type { DomainPage } from '../../../../lathe/src/authoring/domain/read-model';
 import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
-import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
+import { addInput, addOrChangeFields, changeInput, CommandForm, draftOf, emptyDraft, Fields, formFields, LONG, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
 import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { adderOf, othersAddedUnder } from '../../record/pages';
@@ -12,6 +12,7 @@ import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
+import { DOMAIN_FIELDS } from './fields.generated';
 import { useNextDomainId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -38,75 +39,32 @@ function choices(index: RecordIndex, product: string, kinds: readonly string[], 
     .map((r) => ({ id: r.id, title: r.title }));
 }
 
-/** A technical record's standard rules and packages: the packages a list of names, one part row each. */
-const technical = (index: RecordIndex, product: string): FieldSpec[] => [
-  { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: choices(index, product, ['standard_rule']) },
-  { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files, one per line.', texts: true },
-];
-
-/** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order. */
+/** The fields each kind's Add and Change take, from their inputs (Change leaves out the ID, Add the parent). */
 function fieldsOf(index: RecordIndex, page: DomainPage | null, product: string, kind: DomainKind, adding: boolean): FieldSpec[] {
-  const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
+  const F = DOMAIN_FIELDS;
+  const meets = { choices: choices(index, product, ['standard_rule']) };
   switch (kind) {
     case 'domain':
-      return [
-        ...id('domain'),
-        { field: 'title', column: 'title', table: 'domain' },
-        { field: 'subdomain_type', column: 'subdomain_type', table: 'domain' },
-        { field: 'description', column: 'description', table: 'domain', long: true },
-        { field: 'notes', column: 'notes', table: 'domain', long: true },
-      ];
+      return addOrChangeFields(adding, F['/api/domain/add-domain'], 'product_id', F['/api/domain/change-domain'], { description: LONG, notes: LONG });
     case 'capability':
-      return [
-        ...id('capability'),
-        { field: 'title', column: 'title', table: 'capability' },
-        { field: 'position', column: 'position', table: 'capability' },
-        { field: 'description', column: 'description', table: 'capability', long: true },
-        { field: 'serves', label: 'Serves', description: 'The business outcomes of its product it serves.', many: choices(index, product, ['business_outcome']) },
-      ];
-    case 'term':
-      return [
-        ...id('term'),
-        { field: 'title', column: 'title', table: 'term' },
-        { field: 'meaning', column: 'meaning', table: 'term', long: true },
-        { field: 'group_name', column: 'group_name', table: 'term' },
-        { field: 'builds_on', label: 'Builds on', description: 'The terms its meaning uses, of any domain of the product, each defined without it. The list replaces its links.', many: choices(index, product, ['term']).filter((c) => c.id !== page?.record.id || adding) },
-      ];
-    case 'domain_service':
-      return [...id('domain_service'), { field: 'title', column: 'title', table: 'domain_service' }, { field: 'statement', column: 'statement', table: 'domain_service', long: true }];
-    case 'service':
-      return [...id('service'), { field: 'title', column: 'title', table: 'service' }, { field: 'file', column: 'file', table: 'service' }, ...technical(index, product)];
-    case 'repository':
-      return [
-        ...id('repository'),
-        { field: 'title', column: 'title', table: 'repository' },
-        { field: 'file', column: 'file', table: 'repository' },
-        { field: 'description', column: 'description', table: 'repository', long: true },
-        { field: 'persists', label: 'Persists', description: 'The aggregate of its domain it loads and saves.', one: choices(index, product, ['aggregate'], page?.domain.id) },
-        ...technical(index, product),
-      ];
-    case 'domain_service_test': {
-      const table = 'domain_service_test';
-      return [
-        ...id(table),
-        { field: 'title', column: 'title', table },
-        { field: 'when', column: 'when', table, long: true },
-        { field: 'then', column: 'then', table, long: true },
-        { field: 'level', column: 'level', table },
-        { field: 'state', column: 'state', table },
-        { field: 'file', column: 'file', table },
-        { field: 'manual_reason', column: 'manual_reason', table, long: true },
-        { field: 'size', column: 'size', table },
-        { field: 'smoke', column: 'smoke', table },
-        { field: 'external', column: 'external', table },
-        { field: 'notes', column: 'notes', table, long: true },
-        { field: 'starts_from', label: 'Starts from', description: 'The test data sets it starts from.', many: choices(index, product, ['test_data_set']) },
-      ];
+      return addOrChangeFields(adding, F['/api/domain/add-capability'], 'domain_id', F['/api/domain/change-capability'], { description: LONG, serves: { choices: choices(index, product, ['business_outcome']) } });
+    case 'term': {
+      const builds = { choices: choices(index, product, ['term']).filter((c) => c.id !== page?.record.id || adding) };
+      return addOrChangeFields(adding, F['/api/domain/add-term'], 'domain_id', F['/api/domain/change-term'], { meaning: LONG, builds_on: builds });
     }
+    case 'domain_service':
+      return addOrChangeFields(adding, F['/api/domain/add-domain-service'], 'domain_id', F['/api/domain/change-domain-service'], { statement: LONG });
+    case 'service':
+      return addOrChangeFields(adding, F['/api/domain/add-service'], 'domain_service_id', F['/api/domain/change-service'], { meets });
+    case 'repository': {
+      const hints = { description: LONG, persists: { choices: choices(index, product, ['aggregate'], page?.domain.id) }, meets };
+      // The form has never offered the data store a repository is stored in (stored_in).
+      return adding ? formFields(F['/api/domain/add-repository'], ['domain_id', 'stored_in'], hints) : formFields(F['/api/domain/change-repository'], ['id', 'stored_in'], hints);
+    }
+    case 'domain_service_test':
+      return addOrChangeFields(adding, F['/api/domain/add-domain-service-test'], 'domain_service_id', F['/api/domain/change-domain-service-test'], { when: LONG, then: LONG, manual_reason: LONG, notes: LONG, starts_from: { choices: choices(index, product, ['test_data_set']) } });
   }
 }
-
-/** Packages as the form's part rows. */
 
 /** The record's current values, by its input's field names: its row's columns and the links it starts. */
 function currentOf(page: DomainPage, kind: DomainKind, id: string): Record<string, unknown> {
@@ -138,15 +96,15 @@ function currentOf(page: DomainPage, kind: DomainKind, id: string): Record<strin
   }
 }
 
-/** Each kind's Change command, and the fields it may clear with null. */
-const CHANGE: Record<DomainKind, { route: CommandRoute; clearable: readonly string[] }> = {
-  domain: { route: '/api/domain/change-domain', clearable: ['notes'] },
-  capability: { route: '/api/domain/change-capability', clearable: [] },
-  term: { route: '/api/domain/change-term', clearable: ['group_name'] },
-  domain_service: { route: '/api/domain/change-domain-service', clearable: [] },
-  service: { route: '/api/domain/change-service', clearable: ['file'] },
-  domain_service_test: { route: '/api/domain/change-domain-service-test', clearable: ['file', 'manual_reason', 'size', 'smoke', 'external', 'notes'] },
-  repository: { route: '/api/domain/change-repository', clearable: ['file', 'persists'] },
+/** Each kind's Change command. */
+const CHANGE: Record<DomainKind, CommandRoute> = {
+  domain: '/api/domain/change-domain',
+  capability: '/api/domain/change-capability',
+  term: '/api/domain/change-term',
+  domain_service: '/api/domain/change-domain-service',
+  service: '/api/domain/change-service',
+  domain_service_test: '/api/domain/change-domain-service-test',
+  repository: '/api/domain/change-repository',
 };
 
 /** Each kind's Add command, and the field that names its parent. */
@@ -220,9 +178,9 @@ export function DomainEditor({ index, page, children }: { index: RecordIndex; pa
     const specs = fieldsOf(index, page, product, kind, false);
     const current = currentOf(page, kind, id);
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, specs, draft, current, { id }, CHANGE[kind].clearable);
+      const input = changeInput(index, specs, draft, current, { id });
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
-      const answer = await send(writer, CHANGE[kind].route, input);
+      const answer = await send(writer, CHANGE[kind], input);
       if (answer.ok) { announce(`Saved ${id}`); back(); }
       return answer;
     };

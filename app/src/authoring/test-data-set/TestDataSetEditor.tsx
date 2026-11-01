@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { TestDataSetPage } from '../../../../lathe/src/authoring/test-data-set/read-model';
 import { Button } from '../../components/Button';
-import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
+import { addInput, addOrChangeFields, changeInput, CommandForm, draftOf, emptyDraft, Fields, LONG, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import { useWriter, type CommandInputs } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
+import { TEST_DATA_SET_FIELDS } from './fields.generated';
 import { useNextTestDataSetId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -17,21 +18,10 @@ import { backToActions } from '../../edit/back-to-actions';
 // from its domain's page (AddTestDataSetForm). The aggregate has no Move and nothing sits under a test data set. A
 // refusal shows every reason the command gave, keeps what was entered, and changes nothing.
 
-/** The fields Add and Change take (Change leaves out the ID), in their input's order. */
-function fieldsOf(adding: boolean): FieldSpec[] {
-  const table = 'test_data_set';
-  return [
-    ...(adding ? [{ field: 'id', column: 'id', table }] : []),
-    { field: 'title', column: 'title', table },
-    { field: 'environment', column: 'environment', table, long: true },
-    { field: 'accounts', column: 'accounts', table, long: true },
-    { field: 'records', column: 'records', table, long: true },
-    { field: 'prepare', column: 'prepare', table, long: true },
-    { field: 'reset', column: 'reset', table, long: true },
-    { field: 'file', column: 'file', table },
-    { field: 'description', column: 'description', table, long: true },
-  ];
-}
+/** The fields Add and Change take, from their inputs (Change leaves out the ID, Add the domain). */
+const fieldsOf = (adding: boolean): FieldSpec[] =>
+  addOrChangeFields(adding, TEST_DATA_SET_FIELDS['/api/test-data-set/add-test-data-set'], 'domain_id', TEST_DATA_SET_FIELDS['/api/test-data-set/change-test-data-set'],
+    { environment: LONG, accounts: LONG, records: LONG, prepare: LONG, reset: LONG, description: LONG });
 
 type Mode = 'view' | 'change' | 'remove';
 
@@ -52,7 +42,7 @@ export function TestDataSetEditor({ index, page, children }: { index: RecordInde
     const specs = fieldsOf(false);
     const current = { ...set } as Record<string, unknown>;
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, specs, draft, current, { id: set.id }, ['accounts', 'file']);
+      const input = changeInput(index, specs, draft, current, { id: set.id });
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
       const answer = await writer.command('/api/test-data-set/change-test-data-set', input as unknown as CommandInputs['/api/test-data-set/change-test-data-set']);
       if (answer.ok) { announce(`Saved ${set.id}`); back(); }

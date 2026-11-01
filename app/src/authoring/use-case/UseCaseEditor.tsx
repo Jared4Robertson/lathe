@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import type { UseCaseKind } from '../../../../lathe/src/authoring/use-case/model';
 import type { StepOnPage, TestOnPage, UseCasePage } from '../../../../lathe/src/authoring/use-case/read-model';
 import { Button } from '../../components/Button';
-import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
+import { addInput, addOrChangeFields, changeInput, CommandForm, draftOf, emptyDraft, Fields, formFields, LONG, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import { IdField, type Choice } from '../../edit/fields';
 import { AddMenu } from '../../edit/AddMenu';
 import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
@@ -10,6 +10,7 @@ import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
+import { USE_CASE_FIELDS } from './fields.generated';
 import { stepsOf, useNextId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -86,79 +87,43 @@ function productChoices(index: RecordIndex, useCase: UseCasePage, kinds: readonl
   return [...index.byId.values()].filter((r) => kinds.includes(r.kind) && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 }
 
-/** A use case's actors: the roles that take part, one per line. */
-const ACTORS: FieldSpec = { field: 'actors', label: 'Actors', description: 'The roles that take part in it.', texts: true };
+/** The use case's long text, shared by its Add and Change. */
+const USE_CASE_HINTS = { goal: LONG, notes: LONG };
 
-/** The fields each kind's Add and Change take (Change leaves out the ID and the parent), in their input's order. */
+/** The fields each kind's Add and Change take, from their inputs (Change leaves out the ID, Add the parent). */
 function fieldsOf(context: FormContext, kind: UseCaseKind, adding: boolean, parent: string): FieldSpec[] {
   const { index, useCase } = context;
-  const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
-  const test = (table: string): FieldSpec[] => [
-    { field: 'level', column: 'level', table },
-    { field: 'state', column: 'state', table },
-    { field: 'file', column: 'file', table },
-    { field: 'manual_reason', column: 'manual_reason', table, long: true },
-    { field: 'size', column: 'size', table },
-    { field: 'smoke', column: 'smoke', table },
-    { field: 'external', column: 'external', table },
-  ];
-  const startsFrom: FieldSpec = { field: 'starts_from', label: 'Starts from', description: 'The test data sets it starts from.', many: productChoices(index, useCase, ['test_data_set']) };
+  const F = USE_CASE_FIELDS;
+  const startsFrom = { choices: productChoices(index, useCase, ['test_data_set']) };
   switch (kind) {
     case 'use_case':
-      return [
-        { field: 'title', column: 'title', table: 'use_case' },
-        { field: 'goal', column: 'goal', table: 'use_case', long: true },
-        { field: 'notes', column: 'notes', table: 'use_case', long: true },
-        ACTORS,
-      ];
+      return addOrChangeFields(adding, F['/api/use-case/add-use-case'], 'capability_id', F['/api/use-case/change-use-case'], USE_CASE_HINTS);
     case 'uc_requirement':
-      return [
-        ...id('uc_requirement'),
-        { field: 'title', column: 'title', table: 'uc_requirement' },
-        { field: 'statement', column: 'statement', table: 'uc_requirement', long: true },
-        { field: 'group_name', column: 'group_name', table: 'uc_requirement' },
-      ];
+      return addOrChangeFields(adding, F['/api/use-case/add-uc-requirement'], 'use_case_id', F['/api/use-case/change-uc-requirement'], { statement: LONG });
     case 'flow': {
+      if (!adding) return formFields(F['/api/use-case/change-flow'], ['id']);
+      // The interface is a column the form draws as a choice: one its use case has no flow through yet.
       const through = new Set(useCase.flows.map((f) => f.flow.interface_id));
+      const interfaces = productChoices(index, useCase, ['interface']).filter((c) => !through.has(c.id));
       return [
-        ...id('flow'),
-        { field: 'title', column: 'title', table: 'flow' },
-        ...(adding ? [{ field: 'interface_id', label: 'Interface', description: 'The interface it goes through: one its use case has no flow through yet. The flow\'s ID ends in its number.', one: productChoices(index, useCase, ['interface']).filter((c) => !through.has(c.id)), required: true }] : []),
+        ...formFields(F['/api/use-case/add-flow'], ['use_case_id', 'interface_id']),
+        { field: 'interface_id', label: 'Interface', description: 'The interface it goes through: one its use case has no flow through yet. The flow\'s ID ends in its number.', one: interfaces, required: true },
       ];
     }
     case 'flow_step': {
       const flowId = adding ? parent : stepsOfUseCase(useCase).find((s) => s.step.id === parent)!.step.flow_id;
-      return [
-        ...id('flow_step'),
-        { field: 'title', column: 'title', table: 'flow_step' },
-        { field: 'path', column: 'path', table: 'flow_step' },
-        { field: 'position', column: 'position', table: 'flow_step' },
-        { field: 'fulfills', label: 'Fulfills', description: `The UC requirements of ${useCase.useCase.id} it fulfills.`, many: useCase.requirements.map(({ requirement: r }) => ({ id: r.id, title: r.title })) },
-        { field: 'invokes', label: 'Invokes', description: 'The command or query it invokes, if any.', one: productChoices(index, useCase, ['command', 'query']) },
-        { field: 'happens_in', label: 'Happens in', description: `The view it happens in, if any: only on a web app, desktop or other interface (${flowId} goes through ${useCase.flows.find((f) => f.flow.id === flowId)?.flow.interface_id ?? 'its interface'}).`, one: productChoices(index, useCase, ['view']) },
-        { field: 'exchanges_with', label: 'Exchanges with', description: 'The integrations it exchanges with.', many: productChoices(index, useCase, ['integration']) },
-      ];
+      const hints = {
+        fulfills: { choices: useCase.requirements.map(({ requirement: r }) => ({ id: r.id, title: r.title })), description: `The UC requirements of ${useCase.useCase.id} it fulfills.` },
+        invokes: { choices: productChoices(index, useCase, ['command', 'query']) },
+        happens_in: { choices: productChoices(index, useCase, ['view']), description: `The view it happens in, if any: only on a web app, desktop or other interface (${flowId} goes through ${useCase.flows.find((f) => f.flow.id === flowId)?.flow.interface_id ?? 'its interface'}).` },
+        exchanges_with: { choices: productChoices(index, useCase, ['integration']) },
+      };
+      return addOrChangeFields(adding, F['/api/use-case/add-flow-step'], 'flow_id', F['/api/use-case/change-flow-step'], hints);
     }
     case 'use_case_test':
-      return [
-        ...id('use_case_test'),
-        { field: 'title', column: 'title', table: 'use_case_test' },
-        { field: 'when', column: 'when', table: 'use_case_test', long: true },
-        { field: 'then', column: 'then', table: 'use_case_test', long: true },
-        ...test('use_case_test'),
-        { field: 'notes', column: 'notes', table: 'use_case_test', long: true },
-        startsFrom,
-      ];
+      return addOrChangeFields(adding, F['/api/use-case/add-use-case-test'], 'uc_requirement_id', F['/api/use-case/change-use-case-test'], { manual_reason: LONG, when: LONG, then: LONG, notes: LONG, starts_from: startsFrom });
     case 'flow_test':
-      return [
-        ...id('flow_test'),
-        { field: 'title', column: 'title', table: 'flow_test' },
-        { field: 'steps', column: 'steps', table: 'flow_test' },
-        { field: 'expected_result', column: 'expected_result', table: 'flow_test', long: true },
-        ...test('flow_test'),
-        { field: 'notes', column: 'notes', table: 'flow_test', long: true },
-        startsFrom,
-      ];
+      return addOrChangeFields(adding, F['/api/use-case/add-flow-test'], 'flow_id', F['/api/use-case/change-flow-test'], { manual_reason: LONG, expected_result: LONG, notes: LONG, starts_from: startsFrom });
   }
 }
 
@@ -183,14 +148,14 @@ function currentOf(useCase: UseCasePage, kind: UseCaseKind, id: string): Record<
   }
 }
 
-/** Each kind's Change command, and the fields it may clear with null. */
-const CHANGE: Record<UseCaseKind, { route: CommandRoute; clearable: readonly string[] }> = {
-  use_case: { route: '/api/use-case/change-use-case', clearable: ['notes'] },
-  uc_requirement: { route: '/api/use-case/change-uc-requirement', clearable: ['group_name'] },
-  flow: { route: '/api/use-case/change-flow', clearable: [] },
-  flow_step: { route: '/api/use-case/change-flow-step', clearable: ['invokes', 'happens_in'] },
-  use_case_test: { route: '/api/use-case/change-use-case-test', clearable: ['file', 'manual_reason', 'size', 'smoke', 'external', 'notes'] },
-  flow_test: { route: '/api/use-case/change-flow-test', clearable: ['file', 'manual_reason', 'size', 'smoke', 'external', 'notes'] },
+/** Each kind's Change command. */
+const CHANGE: Record<UseCaseKind, CommandRoute> = {
+  use_case: '/api/use-case/change-use-case',
+  uc_requirement: '/api/use-case/change-uc-requirement',
+  flow: '/api/use-case/change-flow',
+  flow_step: '/api/use-case/change-flow-step',
+  use_case_test: '/api/use-case/change-use-case-test',
+  flow_test: '/api/use-case/change-flow-test',
 };
 
 /** Each kind's Add command, and the field that names its parent. */
@@ -214,9 +179,9 @@ function ChangeForm({ context, id, kind }: { context: FormContext; id: string; k
   const current = currentOf(useCase, kind, id);
   const [draft, setDraft] = useState<Draft>(() => draftOf(specs, current));
   const submit = async () => {
-    const input = changeInput(index, specs, draft, current, { id }, CHANGE[kind].clearable);
+    const input = changeInput(index, specs, draft, current, { id });
     if (Object.keys(input).length === 1) { announce('Nothing changed'); onDone(); return null; }
-    const answer = await send(writer, CHANGE[kind].route, input);
+    const answer = await send(writer, CHANGE[kind], input);
     if (answer.ok) { announce(`Saved ${id}`); onDone(); }
     return answer;
   };
@@ -342,13 +307,7 @@ export function AddUseCaseForm({ index, parent, onDone }: { index: RecordIndex; 
   useEffect(() => {
     if (next.state === 'read') setDraft((d) => (d.text.id ? d : { ...d, text: { ...d.text, id: next.answer } }));
   }, [next]);
-  const specs: FieldSpec[] = [
-    { field: 'id', column: 'id', table: 'use_case' },
-    { field: 'title', column: 'title', table: 'use_case' },
-    { field: 'goal', column: 'goal', table: 'use_case', long: true },
-    { field: 'notes', column: 'notes', table: 'use_case', long: true },
-    ACTORS,
-  ];
+  const specs = formFields(USE_CASE_FIELDS['/api/use-case/add-use-case'], ['capability_id'], USE_CASE_HINTS);
   const submit = async () => {
     const input = addInput(index, specs, draft, { capability_id: parent });
     const answer = await send(writer, '/api/use-case/add-use-case', input);

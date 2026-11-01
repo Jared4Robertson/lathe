@@ -1,8 +1,9 @@
 import { useRef, useState, type ReactNode } from 'react';
 import type { Limits } from '../../../../lathe/src/checking/product-setting/read-model';
 import { Button } from '../../components/Button';
-import { addInput, CommandForm, draftOf, Fields, type Draft, type FieldSpec } from '../../edit/command-form';
+import { addInput, CommandForm, draftOf, Fields, formFields, type Draft, type FieldSpec } from '../../edit/command-form';
 import { useWriter, type CommandInputs } from '../../edit/write';
+import { PRODUCT_SETTING_FIELDS } from './fields.generated';
 import { useAnnounce } from '../../shell/commands';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import '../../edit/edit.css';
@@ -13,11 +14,11 @@ import { backToActions } from '../../edit/back-to-actions';
 // defaults) and sends both; the first time it adds the product's settings row. A refusal shows every reason the
 // command gave, in its own words, keeps what was entered, and changes nothing.
 
-/** Set limits' fields, in its input's order. */
-const FIELDS: FieldSpec[] = [
-  { field: 'max_children', column: 'max_children', table: 'product_setting', label: 'Children of one kind' },
-  { field: 'max_entities_per_aggregate', column: 'max_entities_per_aggregate', table: 'product_setting', label: 'Entities per aggregate' },
-];
+/** Set limits' fields, from its input (the product is sent by the form itself). */
+const FIELDS: FieldSpec[] = formFields(PRODUCT_SETTING_FIELDS['/api/product-setting/set-limits'], ['product_id'], {
+  max_children: { label: 'Children of one kind' },
+  max_entities_per_aggregate: { label: 'Entities per aggregate' },
+});
 
 /** The product's limits with Set limits; the form shows in their place while it is open. */
 export function LimitsEditor({ index, limits, children }: { index: RecordIndex; limits: Limits; children: ReactNode }) {

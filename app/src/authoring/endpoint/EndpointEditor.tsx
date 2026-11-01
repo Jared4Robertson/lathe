@@ -3,7 +3,7 @@ import type { EndpointKind } from '../../../../lathe/src/authoring/endpoint/mode
 import type { EndpointPage } from '../../../../lathe/src/authoring/endpoint/read-model';
 import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
-import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
+import { addInput, addOrChangeFields, changeInput, CommandForm, draftOf, emptyDraft, Fields, formFields, LONG, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import { IdField, type Choice } from '../../edit/fields';
 import { AddMenu } from '../../edit/AddMenu';
 import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
@@ -11,6 +11,7 @@ import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
+import { ENDPOINT_FIELDS } from './fields.generated';
 import { useNextEndpointId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -44,56 +45,23 @@ const MOVE: Partial<Record<EndpointKind, '/api/endpoint/move-endpoint'>> = { end
 const choicesOf = (index: RecordIndex, product: string | undefined, kinds: readonly string[]): Choice[] =>
   [...index.byId.values()].filter((r) => kinds.includes(r.kind) && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
-/** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order; packages are one per line. */
+/** The fields each kind's Add and Change take, from their inputs (Change leaves out the ID, Add the parent). */
 function fieldsOf(index: RecordIndex, product: string | undefined, kind: EndpointKind, adding: boolean): FieldSpec[] {
-  const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
+  const F = ENDPOINT_FIELDS;
   switch (kind) {
-    case 'endpoint':
-      return [
-        ...id('endpoint'),
-        { field: 'title', column: 'title', table: 'endpoint' },
-        { field: 'method', column: 'method', table: 'endpoint' },
-        { field: 'route', column: 'route', table: 'endpoint' },
-        { field: 'description', column: 'description', table: 'endpoint', long: true },
-        { field: 'notes', column: 'notes', table: 'endpoint', long: true },
-      ];
-    case 'api_requirement':
-      return [
-        ...id('api_requirement'),
-        { field: 'title', column: 'title', table: 'api_requirement' },
-        { field: 'statement', column: 'statement', table: 'api_requirement', long: true },
-        { field: 'group_name', column: 'group_name', table: 'api_requirement' },
-      ];
-    case 'endpoint_handler':
-      return [
-        ...id('endpoint_handler'),
-        { field: 'title', column: 'title', table: 'endpoint_handler' },
-        { field: 'file', column: 'file', table: 'endpoint_handler' },
-        { field: 'description', column: 'description', table: 'endpoint_handler', long: true },
-        { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files, one per line.', texts: true },
-        { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: choicesOf(index, product, ['standard_rule']) },
-      ];
-    case 'endpoint_test': {
-      const table = 'endpoint_test';
-      return [
-        ...id(table),
-        { field: 'title', column: 'title', table },
-        { field: 'when', column: 'when', table, long: true },
-        { field: 'then', column: 'then', table, long: true },
-        { field: 'level', column: 'level', table },
-        { field: 'state', column: 'state', table },
-        { field: 'file', column: 'file', table },
-        { field: 'manual_reason', column: 'manual_reason', table, long: true },
-        { field: 'size', column: 'size', table },
-        { field: 'smoke', column: 'smoke', table },
-        { field: 'external', column: 'external', table },
-        { field: 'notes', column: 'notes', table, long: true },
-        { field: 'starts_from', label: 'Starts from', description: 'The test data sets it starts from.', many: choicesOf(index, product, ['test_data_set']) },
-      ];
+    case 'endpoint': {
+      // The command or query it exposes is the parent: the form sends whichever it is.
+      const hints = { description: LONG, notes: LONG };
+      return adding ? formFields(F['/api/endpoint/add-endpoint'], ['command_id', 'query_id'], hints) : formFields(F['/api/endpoint/change-endpoint'], ['id'], hints);
     }
+    case 'api_requirement':
+      return addOrChangeFields(adding, F['/api/endpoint/add-api-requirement'], 'endpoint_id', F['/api/endpoint/change-api-requirement'], { statement: LONG });
+    case 'endpoint_handler':
+      return addOrChangeFields(adding, F['/api/endpoint/add-endpoint-handler'], 'endpoint_id', F['/api/endpoint/change-endpoint-handler'], { description: LONG, meets: { choices: choicesOf(index, product, ['standard_rule']) } });
+    case 'endpoint_test':
+      return addOrChangeFields(adding, F['/api/endpoint/add-endpoint-test'], 'api_requirement_id', F['/api/endpoint/change-endpoint-test'], { when: LONG, then: LONG, manual_reason: LONG, notes: LONG, starts_from: { choices: choicesOf(index, product, ['test_data_set']) } });
   }
 }
-
 
 /** The record's current values, by its input's field names: its row's columns and the links it starts. */
 function currentOf(page: EndpointPage, kind: EndpointKind, id: string): Record<string, unknown> {
@@ -111,12 +79,12 @@ function currentOf(page: EndpointPage, kind: EndpointKind, id: string): Record<s
   }
 }
 
-/** Each kind's Change command, and the fields it may clear with null. */
-const CHANGE: Record<EndpointKind, { route: CommandRoute; clearable: readonly string[] }> = {
-  endpoint: { route: '/api/endpoint/change-endpoint', clearable: ['notes'] },
-  api_requirement: { route: '/api/endpoint/change-api-requirement', clearable: ['group_name'] },
-  endpoint_handler: { route: '/api/endpoint/change-endpoint-handler', clearable: ['file'] },
-  endpoint_test: { route: '/api/endpoint/change-endpoint-test', clearable: ['file', 'manual_reason', 'size', 'smoke', 'external', 'notes'] },
+/** Each kind's Change command. */
+const CHANGE: Record<EndpointKind, CommandRoute> = {
+  endpoint: '/api/endpoint/change-endpoint',
+  api_requirement: '/api/endpoint/change-api-requirement',
+  endpoint_handler: '/api/endpoint/change-endpoint-handler',
+  endpoint_test: '/api/endpoint/change-endpoint-test',
 };
 
 /** Each kind's Add command (an endpoint's names its parent by the parent's kind, in AddEndpointForm), and the field that names its parent. */
@@ -171,9 +139,9 @@ export function EndpointEditor({ index, page, children }: { index: RecordIndex; 
     const specs = fieldsOf(index, product, kind, false);
     const current = currentOf(page, kind, id);
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, specs, draft, current, { id }, CHANGE[kind].clearable);
+      const input = changeInput(index, specs, draft, current, { id });
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
-      const answer = await send(writer, CHANGE[kind].route, input);
+      const answer = await send(writer, CHANGE[kind], input);
       if (answer.ok) { announce(`Saved ${id}`); back(); }
       return answer;
     };
