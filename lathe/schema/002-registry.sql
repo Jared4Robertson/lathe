@@ -28,7 +28,7 @@ COMMENT ON TABLE technical_record IS 'The records of the technical specification
 CREATE TABLE stored_in_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
 COMMENT ON TABLE stored_in_source IS 'The records that are kept in a data store: repositories, readers and tables.';
 CREATE TABLE provided_by_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
-COMMENT ON TABLE provided_by_source IS 'The records something outside the product may provide: data stores, technical records and obligations, Lathe''s kinds and a product''s own of those.';
+COMMENT ON TABLE provided_by_source IS 'The records something outside the product may provide: data stores, standards, technical records and obligations, Lathe''s kinds and a product''s own of those.';
 
 INSERT INTO meta_table VALUES ('record_id', 'registry', NULL);
 INSERT INTO meta_table
@@ -49,4 +49,4 @@ INSERT INTO meta_supertype_member
   UNION ALL SELECT 'stored_in_source', kind FROM (VALUES ('repository'), ('reader'), ('table')) AS t (kind);
 INSERT INTO meta_supertype_member
   SELECT 'provided_by_source', kind FROM meta_supertype_member WHERE supertype IN ('technical_record', 'obligation')
-  UNION ALL SELECT 'provided_by_source', 'data_store';
+  UNION ALL SELECT 'provided_by_source', kind FROM (VALUES ('data_store'), ('standard')) AS t (kind);
