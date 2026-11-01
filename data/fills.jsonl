@@ -328,6 +328,8 @@
 {"source_id":"LA-AUT-RM43-PJ","target_id":"LA-PAT-AGGREGATE-QUERIES-SL02"}
 {"source_id":"LA-AUT-RM43-RD","target_id":"LA-PAT-AGGREGATE-QUERIES-SL03"}
 {"source_id":"LA-AUT-RM43-TB","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL08"}
+{"source_id":"LA-AUT-RM44-PJ","target_id":"LA-PAT-AGGREGATE-QUERIES-SL02"}
+{"source_id":"LA-AUT-RM44-RD","target_id":"LA-PAT-AGGREGATE-QUERIES-SL03"}
 {"source_id":"LA-AUT-RM44-TB","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL08"}
 {"source_id":"LA-AUT-SP09-PR","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL09"}
 {"source_id":"LA-AUT-TB30","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL08"}
