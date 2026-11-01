@@ -126,11 +126,13 @@ describe('moving', () => {
     await store.close();
   });
 
-  it('LA-AUT-UC18-R05-T03 a view, which has no owner, has no move: only a use case, an endpoint, a table and a question move', () => {
+  it('LA-AUT-UC18-R05-T03 a view, which has no owner, has no move: only a use case, a flow step, a journey step, an endpoint, a table and a question move', () => {
     expect(ALL_COMMANDS.filter((c) => c.name.startsWith('move-')).map((c) => `${c.slice.name} ${c.name}`).sort()).toEqual([
       'endpoint move-endpoint',
+      'journey move-journey-step',
       'product move-question',
       'table move-table',
+      'use-case move-flow-step',
       'use-case move-use-case',
     ]);
   });

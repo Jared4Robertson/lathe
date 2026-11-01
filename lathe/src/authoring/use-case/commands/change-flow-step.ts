@@ -3,7 +3,7 @@ import type { FlowStepRow } from '../../../platform/data/tables.ts';
 import { CHANGE_FLOW_STEP_IDENTITY } from './identities.generated.ts';
 import { changeFlowStep } from './handlers.generated.ts';
 
-/** The step's changes: a column given is set, null clears its interface; a list given replaces its links; null clears what it invokes. Its path and position change only by Move a flow step. */
+/** The step's changes: a column given is set, null clears its interface; a list given replaces its links; null clears what it invokes. */
 export type ChangeFlowStep = Pick<FlowStepRow, 'id'> & {
   title?: string;
   interface_id?: string | null;
