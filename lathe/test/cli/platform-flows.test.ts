@@ -175,7 +175,7 @@ describe('Platform flows', () => {
     expect(timings.total).toBeGreaterThan(0);
   }, 120_000);
 
-  it.skipIf(!canServe)('LA-PLT-UC02-FL-T the Owner sets Lathe up in a product repo: init, the merge driver, the first records, serve and stop', async () => {
+  it('LA-PLT-UC02-FL-T the Owner sets Lathe up in a product repo: init, the merge driver, the first records and a check', () => {
     const root = temp('lathe-setup-');
     git(root, 'init', '-q');
 
@@ -191,13 +191,21 @@ describe('Platform flows', () => {
     git(root, 'config', 'merge.lathe-data.driver', `node ${bin} merge-data %O %A %B %P`);
     expect(git(root, 'check-attr', 'merge', 'data/domain.jsonl').trim()).toBe('data/domain.jsonl: merge: lathe-data');
 
-    // The first domain and records, with the aggregates' own commands, in the data folder the config names.
+    // The first records, with the aggregates' own commands, land in the data folder the config names, and lathe check reads them.
     ok(root, 'domain', 'add-domain', '--id', 'TL-LEND', '--title', 'Lending', '--product_id', 'TL', '--subdomain_type', 'core', '--description', 'Lending tools to members and getting them back.');
     ok(root, 'aggregate', 'add-aggregate', '--id', 'TL-LEND-A1', '--title', 'Loan', '--domain_id', 'TL-LEND', '--identity', 'Loan ID', '--description', 'One tool lent to one member.');
     expect(Object.keys(files(root))).toEqual(['aggregate.jsonl', 'domain.jsonl', 'product.jsonl']);
     expect(lathe(root, 'check').status).toBe(0);
+  }, 120_000);
 
-    // lathe serve: the app and its reads, with no build tools in the product repo.
+  it.skipIf(!canServe)('LA-PLT-UC23-FL-T the Owner serves a product repo and stops it', async () => {
+    const root = temp('lathe-serve-');
+    git(root, 'init', '-q');
+    ok(root, 'init', '--name', 'Tool Library', '--prefix', 'TL');
+    ok(root, 'domain', 'add-domain', '--id', 'TL-LEND', '--title', 'Lending', '--product_id', 'TL', '--subdomain_type', 'core', '--description', 'Lending tools to members and getting them back.');
+    ok(root, 'aggregate', 'add-aggregate', '--id', 'TL-LEND-A1', '--title', 'Loan', '--domain_id', 'TL-LEND', '--identity', 'Loan ID', '--description', 'One tool lent to one member.');
+
+    // S01: lathe serve, the app and its reads, with no build tools in the product repo.
     expect(existsSync(path.join(root, 'package.json'))).toBe(false);
     const { child, base } = await serveCli(root);
     const page = await fetch(`${base}/`);
@@ -206,7 +214,7 @@ describe('Platform flows', () => {
     const summaries = (await (await fetch(`${base}/api/record-summaries/list-record-summaries?product_id=TL`)).json()) as RecordSummaries;
     expect(summariesIn(summaries).filter((r) => r.kind === 'aggregate').map((r) => r.id)).toEqual(['TL-LEND-A1']);
 
-    // Stopped from the terminal, it closes the database and ends by the same signal, cleanly.
+    // S02: stopped from the terminal, it closes the database and ends by the same signal, cleanly.
     child.kill('SIGINT');
     expect(await exited(child, 15_000)).toBe(true);
     children.delete(child);

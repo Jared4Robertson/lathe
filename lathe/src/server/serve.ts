@@ -2,7 +2,7 @@
 // When a data file changes, the server reads only the changed files' tables again and tells the pages what changed
 // through server-sent events (GET /api/events, LA-PLT-EP02-H): each `spec:changed` names the tables and read models it
 // changed, so a page reads again only those. Its stop waits for the work in progress and closes the database, so the
-// process that ran it exits cleanly (LA-PLT-UC02-R06).
+// process that ran it exits cleanly (LA-PLT-UC23-R02).
 import { existsSync, watch, type FSWatcher } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';

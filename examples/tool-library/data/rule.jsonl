@@ -4,3 +4,5 @@
 {"id":"TL-LEND-INV04-RL","title":"dueDate","invariant_id":"TL-LEND-INV04","file":"src/model.ts"}
 {"id":"TL-LEND-INV05-RL","title":"already_returned","invariant_id":"TL-LEND-INV05","file":"src/loan.ts"}
 {"id":"TL-LEND-INV06-RL","title":"recordReturn","invariant_id":"TL-LEND-INV06","file":"src/loan.ts"}
+{"id":"TL-LEND-INV07-RL","title":"already_renewed","invariant_id":"TL-LEND-INV07","file":"src/loan.ts"}
+{"id":"TL-LEND-INV08-RL","title":"already_reminded","invariant_id":"TL-LEND-INV08","file":"src/loan.ts"}

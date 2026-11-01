@@ -4,7 +4,7 @@ import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { addressOf, STAGE_LABELS, withStage, type StageName } from '../views/address';
 import type { AppRequest } from './types';
 
-// The page's answers to the app bridge (LA-PLT-UC19-R06), for Lathe's MCP tools run by the chat's
+// The page's answers to the app bridge (LA-PLT-UC29-R01), for Lathe's MCP tools run by the chat's
 // Claude Code: what the Reader is looking at, and opening a record. The focus page tells this module
 // what it shows (useViewState); the shell answers the bridge (useAppRequests). The chat panel shows
 // the same focus as a chip above its message box and sends it with each message (focusContext,

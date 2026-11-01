@@ -42,7 +42,7 @@ describe('capabilities', () => {
     expect(await refusals(elsewhere)).toEqual([expect.objectContaining({ rule: 'id-prefix', key: 'TL-SHOP-UC01', message: expect.stringContaining('in domain TL-LEND, so its ID starts with TL-LEND-') })]);
   });
 
-  it("LA-AUT-UC02-R05-T01 A use case under a capability, and everything under it, belongs to the capability's domain and counts in its coverage", async () => {
+  it("LA-AUT-UC06-R17-T01 A use case under a capability, and everything under it, belongs to the capability's domain and counts in its coverage", async () => {
     for (const id of ['EX-LEND-CAP01', 'EX-LEND-UC01', 'EX-LEND-UC01-R01', 'EX-LEND-UC01-FL', 'EX-LEND-UC01-FL-S01', 'EX-LEND-UC01-R01-T01']) {
       expect(record(good, id).domain, id).toBe('EX-LEND');
     }

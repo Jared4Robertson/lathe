@@ -4,3 +4,5 @@
 {"id":"TL-LEND-UC04","title":"Return a tool","capability_id":"TL-LEND-CAP03","goal":"A member brings a tool back; the librarian checks it and records the return."}
 {"id":"TL-LEND-UC05","title":"Report damage","capability_id":"TL-LEND-CAP02","goal":"A librarian takes a tool out of lending when it is found damaged outside a return (for example on the shelf, or reported by a borrower by phone), with a note saying what is wrong."}
 {"id":"TL-LEND-UC06","title":"Mark a tool repaired","capability_id":"TL-LEND-CAP02","goal":"Once a damaged tool is fixed, a librarian marks it repaired, which puts it back in good condition, clears its damage note and makes it available to borrow again."}
+{"id":"TL-LEND-UC07","title":"See the tools waiting for repair","capability_id":"TL-LEND-CAP02","goal":"A librarian sees every tool that needs repair, the one waiting longest first, with what is wrong with it and since when, to choose what to fix next."}
+{"id":"TL-LEND-UC08","title":"Renew a loan","capability_id":"TL-LEND-CAP03","goal":"A member who needs a tool longer keeps it for another loan period, before the loan is due."}

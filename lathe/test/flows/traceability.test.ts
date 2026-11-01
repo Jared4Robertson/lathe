@@ -282,7 +282,7 @@ describe('Traceability flows from the command line', () => {
     expect(tl.refuse('product declare-product-kind', { name: 'invariant', product_id: 'TL', label: 'Our invariant', description: 'A rule of ours.', parent_kind: 'domain', stage: 'use-cases', obligation: true, complexity: 'essential' })).toContain('invariant');
   });
 
-  it('LA-TRC-UC21-FL-T account for hand-written accidental complexity', async () => {
+  it('LA-TRC-UC21-FL-T LA-TRC-UC23-FL-T fill a slot by hand, and name what provides a record', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
@@ -296,15 +296,15 @@ describe('Traceability flows from the command line', () => {
       add('data_store', { id: 'TL-STORE01', title: 'DATABASE_URL', product_id: 'TL', kind: 'database', description: "The library's database." }),
     ]);
     expect(problemsOf(tl.workspace(), 'accidental-not-accounted-for').filter((p) => p.startsWith('TL-STORE01:'))).toHaveLength(1);
-    // S01: a record written by hand fills a slot of the pattern it is owed to.
+    // LA-TRC-UC21 S01: a record written by hand fills a slot of the pattern it is owed to.
     tl.command('slot-filling fill-slot', { record_id: 'TL-LEND-TOOL03', slot_id: 'TL-PAT-ACT-SL01' });
-    // S02: what provides the data store is named.
+    // LA-TRC-UC23 S01: what provides the data store is named.
     tl.command('provision name-provider', { record_id: 'TL-STORE01', provider_id: 'TL-INT01' });
-    // S03: the provided record is accounted for, and the fill is debt at its slot.
+    // LA-TRC-UC23 S02: the provided record is accounted for; LA-TRC-UC21 S02: the fill is debt at its slot.
     const ws = tl.workspace();
     expect(problemsOf(ws, 'accidental-not-accounted-for').filter((p) => p.startsWith('TL-STORE01:'))).toEqual([]);
     expect(ws.coverage.find((c) => c.domain === 'TL-LEND')?.debt).toContainEqual({ id: 'TL-LEND-TOOL03', slot: 'TL-PAT-ACT-SL01' });
-    // S04: a fill of a record a generator writes is refused.
+    // LA-TRC-UC21 refused: a fill of a record a generator writes is refused.
     expect(tl.refuse('slot-filling fill-slot', { record_id: 'TL-LEND-TOOL02', slot_id: 'TL-PAT-ACT-SL01' })).toContain('a fill is written by hand');
   });
 

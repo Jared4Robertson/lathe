@@ -5,7 +5,7 @@ import { desktopBridgeStub, facts, openApp } from './helpers';
 import { workspace } from './fixtures/workspace';
 import type { LatheDesktop } from '../src/shell/desktop-bridge';
 
-// The desktop app's page hooks (LA-PLT-UC15; the record actions, LA-V92-R74): the record actions in a record's facts and on a
+// The desktop app's page hooks (LA-PLT-UC25 and LA-STD-EXPERIENCE-R12; the record actions, LA-V92-R74): the record actions in a record's facts and on a
 // right-click, the Dock badge's error count, and the title bar's room for the traffic lights, which
 // goes in full screen. In a browser none of them is drawn or listened for.
 
@@ -44,7 +44,7 @@ afterEach(() => {
 const heading = () => screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
 
 describe('desktop record actions', () => {
-  it('LA-V92-R74-T01 A record\'s facts offer Reveal, Open in editor and Copy ID in the desktop app, and nothing in a browser', async () => {
+  it('LA-PLT-UC25-R01-T02 LA-V92-R74-T01 A record\'s facts offer Reveal, Open in editor and Copy ID in the desktop app, and nothing in a browser', async () => {
     await openApp('/DM-SHOP-UC01');
     await heading();
     // In a browser the Data file fact shows with no actions.

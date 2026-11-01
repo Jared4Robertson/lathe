@@ -2,7 +2,7 @@ import type { WriteAnswer } from '../../../lathe/src/server/contract';
 import type { RecordChange } from '../changes/changes';
 import type { ChatItem } from './types';
 
-// Undoing a turn (LA-PLT-UC21-R02): as a turn begins the server keeps the product's rows (POST /api/snapshot), and the
+// Undoing a turn (LA-PLT-UC27-R01): as a turn begins the server keeps the product's rows (POST /api/snapshot), and the
 // Undo button asks it to roll the product back to them (POST /api/undo), through the aggregates' own commands, in
 // reverse, in one write. Nothing is edited by hand and git is not touched; the server refuses, with every reason,
 // what something since depends on.
