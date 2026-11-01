@@ -1,4 +1,4 @@
-import { MAP_SIZE, sizeText, type MapNode, type PlacedMap, type TreeGeometry, type TreeShape } from './map';
+import { MAP_SIZE, nestedText, sizeText, type MapNode, type PlacedMap, type TreeGeometry, type TreeShape } from './map';
 import { BORDER, labelHeight, largestFit, linesIn, type MapLabel, type WrappedLabel } from './text';
 
 // The graph's Nested map (LA-EXP-DS07): the same tree as the Tree map (map.ts), one product's, the
@@ -12,7 +12,7 @@ import { BORDER, labelHeight, largestFit, linesIn, type MapLabel, type WrappedLa
 // - A parent's room under its header band, inside its padding, holds its children as a grid of
 //   equal squares in the tree's order, row by row, a gap apart, with the column count that makes
 //   the squares largest. Room the grid leaves is blank: a busy parent packs its children smaller.
-// - Siblings share one text scale: their side over TEXT_SIZE, or the largest below it at which
+// - Siblings share one text scale: their side over NESTED_TEXT_SIZE, or the largest below it at which
 //   every sibling's whole label fits both ways, centered in its square (as a leaf's is drawn) and in
 //   a header band at most HEADER_SHARE of its square (as a parent's is), whichever it is now.
 // - Siblings share one header band too, as tall as the tallest of their labels at that scale, every
@@ -26,7 +26,7 @@ import { BORDER, labelHeight, largestFit, linesIn, type MapLabel, type WrappedLa
 export const NEST_PAD = 8;
 export const NEST_GAP = 6;
 /** The most of its square a parent's header band takes. */
-export const HEADER_SHARE = 0.25;
+export const HEADER_SHARE = 0.3;
 
 export interface NestedNode extends MapNode {
   /** The header band's height, in map units, its siblings' tallest label at their text scale (every sibling's, a leaf's too): 0 for a box with no children (its label is centered in it). */
@@ -64,7 +64,8 @@ export function placeNested(shape: TreeShape, labelOf: (i: number) => MapLabel):
   const boxes = new Float64Array(shape.ids.length * 5);
   /** Some siblings, each a square `side` across at its place: their shared text and header band, then each one's children inside it. */
   const place = (ids: readonly number[], side: number, at: readonly { x: number; y: number }[]) => {
-    const most = sizeText(side);
+    const most = nestedText(side);
+    const unit = sizeText(side);
     const border = (s: number) => BORDER * Math.max(0.5, s);
     const labels = ids.map((i) => labelOf(i));
     const leaf = ids.map((i) => shape.children[i].length === 0);
@@ -74,8 +75,8 @@ export function placeNested(shape: TreeShape, labelOf: (i: number) => MapLabel):
     const fit = (label: MapLabel, cap: number) => largestFit(label, true, side, side, largestFit(label, false, side, HEADER_SHARE * side, cap, border), border);
     const text = labels.reduce((t, label) => Math.min(t, fit(label, t)), most);
     const header = Math.max(0, ...labels.map((label) => text * labelHeight(linesIn(label, text > 0 ? (side - 2 * border(text)) / text : Infinity, false))));
-    const pad = NEST_PAD * most;
-    const gap = NEST_GAP * most;
+    const pad = NEST_PAD * unit;
+    const gap = NEST_GAP * unit;
     ids.forEach((i, k) => {
       const { x, y } = at[k];
       boxes.set([x, y, side, text, leaf[k] ? 0 : header], i * 5);
