@@ -8,7 +8,7 @@ import type { LatheDesktop } from '../src/shell/desktop-bridge';
 // generic record page showed.
 
 describe('bare-ID addresses', () => {
-  it('LA-V96-R15-T03 Tabs and space pages saved at anything but a page\'s address are dropped, not converted', async () => {
+  it('LA-V103-R06-T03 Tabs and space pages saved at anything but a page\'s address are dropped, not converted', async () => {
     // In the desktop app, whose tabs are the app's.
     (window as unknown as { latheDesktop?: LatheDesktop }).latheDesktop = desktopBridgeStub();
     const tab = (key: string, address: string) => ({ key, place: { history: [{ address, note: {} }], at: 0, view: { depth: 1, hiddenKinds: [], card: { open: true, expanded: true } } } });

@@ -234,7 +234,7 @@ describe('the keymap', () => {
     document.body.innerHTML = '';
   });
 
-  it('LA-V96-R19-T05 The Enter guard leaves a plain Enter with each control that handles it, and gives it to the wiki card everywhere else', () => {
+  it('LA-V102-R02-T05 The Enter guard leaves a plain Enter with each control that handles it, and gives it to the wiki card everywhere else', () => {
     const make = (html: string) => {
       const host = document.createElement('div');
       host.innerHTML = html;

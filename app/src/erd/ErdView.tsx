@@ -655,7 +655,7 @@ function ErdCanvas({ index, map, at, focus, refocus, onNavigate, onPeek, space, 
     if (e.key !== 'Enter' && e.key !== ' ') return;
     const id = (e.target as HTMLElement).closest?.<HTMLElement>('.erd-node')?.dataset.id;
     if (!id) return;
-    // Enter on the focus's own box is left to the commands layer, where it shows or collapses the wiki card (LA-V96-R19).
+    // Enter on the focus's own box is left to the commands layer, where it shows or collapses the wiki card (LA-V102-R02).
     if (id === focus && e.key === 'Enter') return;
     e.preventDefault();
     go(id, true);
