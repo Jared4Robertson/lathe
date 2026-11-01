@@ -2,7 +2,7 @@
 import { holdToRules } from '../rules';
 import { navRowRepository } from '../repository';
 
-export interface FoldOrUnfoldNavRow {
+export interface FoldOrUnfoldNavEntry {
   /** The row's key. */
   key: string;
   /** The keys of the rows that hold the current page, outermost first. */
@@ -10,7 +10,7 @@ export interface FoldOrUnfoldNavRow {
 }
 
 /** Folds an open row, or opens a folded one with the branch below it that holds the current page. */
-export function foldOrUnfoldNavRow(input: FoldOrUnfoldNavRow): void {
+export function foldOrUnfoldNavEntry(input: FoldOrUnfoldNavEntry): void {
   const rows = navRowRepository.load();
   const at = input.branch.indexOf(input.key);
   const change = rows.folders[input.key] === true
