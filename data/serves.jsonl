@@ -9,6 +9,8 @@
 {"source_id":"LA-AUT-CAP06","target_id":"LA-BO06"}
 {"source_id":"LA-AUT-CAP07","target_id":"LA-BO06"}
 {"source_id":"LA-AUT-CAP07","target_id":"LA-BO08"}
+{"source_id":"LA-AUT-CAP08","target_id":"LA-BO08"}
+{"source_id":"LA-AUT-CAP08","target_id":"LA-BO09"}
 {"source_id":"LA-CHK-CAP01","target_id":"LA-BO06"}
 {"source_id":"LA-CHK-CAP01","target_id":"LA-BO08"}
 {"source_id":"LA-EXP-CAP01","target_id":"LA-BO07"}
