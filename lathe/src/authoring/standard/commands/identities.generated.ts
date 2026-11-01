@@ -67,7 +67,7 @@ export const CHANGE_STANDARD_RULE_TEST_IDENTITY = {
   id: 'LA-AUT-CMD207',
   slice: { aggregate: 'LA-AUT-A3', name: 'standard' },
   name: 'change-standard-rule-test',
-  description: 'Changes a standard rule test\'s columns or the test data sets it starts from (the whole list).',
+  description: 'Changes a standard rule test\'s way of running or the test data sets it starts from (the whole list).',
   method: 'POST',
   route: '/api/standard/change-standard-rule-test',
 } as const;

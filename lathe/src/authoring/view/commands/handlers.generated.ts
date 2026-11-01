@@ -14,14 +14,14 @@ import type { AddViewTest } from './add-view-test.ts';
 import type { ChangeViewTest } from './change-view-test.ts';
 import type { RemoveViewTest } from './remove-view-test.ts';
 
-/** Adds a view: a screen or page a person uses, with its route. It has no owner; its product follows from its ID. */
+/** Adds a view: a place in an interface a person uses, with its address. It has no owner; its product follows from its ID. */
 export function addView(tx: Transaction, input: AddView): void {
   const views = new ViewRepository(tx);
   const view = views.create({ root: input.id, view: input, requirements: [], tests: [] });
   views.save(view);
 }
 
-/** Changes a view's title, route, description or notes. */
+/** Changes a view's title, address, description or notes. */
 export function changeView(tx: Transaction, input: ChangeView): void {
   const views = new ViewRepository(tx);
   const view = views.load(input.id) ?? tx.refuse('missing', `there is no view ${input.id}`);
@@ -70,7 +70,7 @@ export function addViewTest(tx: Transaction, input: AddViewTest): void {
   views.save(view);
 }
 
-/** Changes a view test's columns or the test data sets it starts from (the whole list). Its requirement does not change. */
+/** Changes a view test's way of running or the test data sets it starts from (the whole list). Its requirement does not change. */
 export function changeViewTest(tx: Transaction, input: ChangeViewTest): void {
   const views = new ViewRepository(tx);
   const view = views.loadHolding('view_test', input.id) ?? tx.refuse('missing', `there is no view test ${input.id}`);

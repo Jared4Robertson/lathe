@@ -12,10 +12,10 @@
 {"id":"LA-AUT-CMD111","title":"Change a flow step","entity_id":"LA-AUT-EN19","description":"Changes a step's title, path or position, or its links: a list given replaces the list, null clears what it invokes or the view it happens in."}
 {"id":"LA-AUT-CMD112","title":"Remove a flow step","entity_id":"LA-AUT-EN19","description":"Removes a flow step with the links it starts. Refused while anything else references it."}
 {"id":"LA-AUT-CMD113","title":"Add a use case test","entity_id":"LA-AUT-EN69","description":"Adds a use case test under its UC requirement, with the test data sets it starts from."}
-{"id":"LA-AUT-CMD114","title":"Change a use case test","entity_id":"LA-AUT-EN69","description":"Changes a use case test's columns or the test data sets it starts from (the whole list)."}
+{"id":"LA-AUT-CMD114","title":"Change a use case test","entity_id":"LA-AUT-EN69","description":"Changes a use case test's way of running or the test data sets it starts from (the whole list)."}
 {"id":"LA-AUT-CMD115","title":"Remove a use case test","entity_id":"LA-AUT-EN69","description":"Removes a use case test with the links it starts. Refused while anything else references it, such as a business outcome it measures."}
 {"id":"LA-AUT-CMD116","title":"Add a flow test","entity_id":"LA-AUT-EN72","description":"Adds a flow test under its flow, with the test data sets it starts from."}
-{"id":"LA-AUT-CMD117","title":"Change a flow test","entity_id":"LA-AUT-EN72","description":"Changes a flow test's columns or the test data sets it starts from (the whole list)."}
+{"id":"LA-AUT-CMD117","title":"Change a flow test","entity_id":"LA-AUT-EN72","description":"Changes a flow test's way of running or the test data sets it starts from (the whole list)."}
 {"id":"LA-AUT-CMD118","title":"Remove a flow test","entity_id":"LA-AUT-EN72","description":"Removes a flow test with the links it starts. Refused while anything else references it, such as a business outcome it measures."}
 {"id":"LA-AUT-CMD120","title":"Add a product","entity_id":"LA-AUT-EN01","description":"Adds a product, the root of a set of specifications, with its roles."}
 {"id":"LA-AUT-CMD121","title":"Change a product","entity_id":"LA-AUT-EN01","description":"Changes a product's title, description, icon, color or notes, or its roles (the whole list)."}
@@ -29,7 +29,7 @@
 {"id":"LA-AUT-CMD129","title":"Change an open question","entity_id":"LA-AUT-EN23","description":"Changes an open question's title, owner or description, or the records it is about (the whole list). Its product or domain changes only by Move an open question."}
 {"id":"LA-AUT-CMD130","title":"Move an open question","entity_id":"LA-AUT-EN23","description":"Moves an open question between its product and one of the product's domains, or from one domain to another of the same product."}
 {"id":"LA-AUT-CMD131","title":"Remove an open question","entity_id":"LA-AUT-EN23","description":"Removes an open question with what it is about, once it is decided and its answer is written into the records it affects."}
-{"id":"LA-AUT-CMD132","title":"Add an interface","entity_id":"LA-AUT-EN76","description":"Adds an interface of a product: a way it is used, such as its web app, HTTP API or command line."}
+{"id":"LA-AUT-CMD132","title":"Add an interface","entity_id":"LA-AUT-EN76","description":"Adds an interface of a product: a way it is used, such as an app a person works in, calls other programs make, or a command line."}
 {"id":"LA-AUT-CMD133","title":"Change an interface","entity_id":"LA-AUT-EN76","description":"Changes an interface's title, kind or description."}
 {"id":"LA-AUT-CMD134","title":"Remove an interface","entity_id":"LA-AUT-EN76","description":"Removes an interface. Refused while a flow goes through it, or anything else references it."}
 {"id":"LA-AUT-CMD140","title":"Add a business outcome","entity_id":"LA-AUT-EN80","description":"Adds a business outcome under its product, with the tests and records that measure it."}
@@ -63,10 +63,10 @@
 {"id":"LA-AUT-CMD176","title":"Change a service","entity_id":"LA-AUT-EN58","description":"Changes a service's title or file, or the standard rules it meets or packages it uses (each the whole list)."}
 {"id":"LA-AUT-CMD177","title":"Remove a service","entity_id":"LA-AUT-EN58","description":"Removes a service with the links it starts and the packages it uses. Refused while anything references it."}
 {"id":"LA-AUT-CMD178","title":"Add a domain service test","entity_id":"LA-AUT-EN68","description":"Adds a domain service test under its domain service, with the test data sets it starts from."}
-{"id":"LA-AUT-CMD179","title":"Change a domain service test","entity_id":"LA-AUT-EN68","description":"Changes a domain service test's columns or the test data sets it starts from (the whole list)."}
+{"id":"LA-AUT-CMD179","title":"Change a domain service test","entity_id":"LA-AUT-EN68","description":"Changes a domain service test's way of running or the test data sets it starts from (the whole list)."}
 {"id":"LA-AUT-CMD180","title":"Remove a domain service test","entity_id":"LA-AUT-EN68","description":"Removes a domain service test and the links it starts. Refused while anything references it."}
 {"id":"LA-AUT-CMD185","title":"Add a test data set","entity_id":"LA-AUT-EN85","description":"Adds a test data set to the domain whose tests it serves: where it runs, what it starts with, how to prepare and reset it, and the file that builds it."}
-{"id":"LA-AUT-CMD186","title":"Change a test data set","entity_id":"LA-AUT-EN85","description":"Changes a test data set's columns. Its domain never changes."}
+{"id":"LA-AUT-CMD186","title":"Change a test data set","entity_id":"LA-AUT-EN85","description":"Changes a test data set's details. Its domain never changes."}
 {"id":"LA-AUT-CMD187","title":"Remove a test data set","entity_id":"LA-AUT-EN85","description":"Removes a test data set. Refused while a test starts from it or anything else references it."}
 {"id":"LA-AUT-CMD190","title":"Add a pattern","entity_id":"LA-AUT-EN13","description":"Adds a pattern to its product, with its settings in order."}
 {"id":"LA-AUT-CMD191","title":"Change a pattern","entity_id":"LA-AUT-EN13","description":"Changes a pattern's title, description or notes, or its settings (the whole list, in order). Its product never changes."}
@@ -75,7 +75,7 @@
 {"id":"LA-AUT-CMD194","title":"Change a pattern rule","entity_id":"LA-AUT-EN14","description":"Changes a pattern rule's title, statement, group or notes."}
 {"id":"LA-AUT-CMD195","title":"Remove a pattern rule","entity_id":"LA-AUT-EN14","description":"Removes a pattern rule with its tests and the links they start. Refused while anything references it or them."}
 {"id":"LA-AUT-CMD196","title":"Add a pattern rule test","entity_id":"LA-AUT-EN74","description":"Adds a test of a pattern rule in one domain that follows its pattern, with the test data sets it starts from."}
-{"id":"LA-AUT-CMD197","title":"Change a pattern rule test","entity_id":"LA-AUT-EN74","description":"Changes a pattern rule test's columns, the domain it proves the rule in, or the test data sets it starts from (the whole list)."}
+{"id":"LA-AUT-CMD197","title":"Change a pattern rule test","entity_id":"LA-AUT-EN74","description":"Changes a pattern rule test's way of running, the domain it proves the rule in, or the test data sets it starts from (the whole list)."}
 {"id":"LA-AUT-CMD198","title":"Remove a pattern rule test","entity_id":"LA-AUT-EN74","description":"Removes a pattern rule test and the links it starts. Refused while anything references it."}
 {"id":"LA-AUT-CMD200","title":"Add a standard","entity_id":"LA-AUT-EN62","description":"Adds a standard to its product, with no rules yet."}
 {"id":"LA-AUT-CMD201","title":"Change a standard","entity_id":"LA-AUT-EN62","description":"Changes a standard's title or description. Its product never changes."}
@@ -84,7 +84,7 @@
 {"id":"LA-AUT-CMD204","title":"Change a standard rule","entity_id":"LA-AUT-EN63","description":"Changes a standard rule's title, statement or group."}
 {"id":"LA-AUT-CMD205","title":"Remove a standard rule","entity_id":"LA-AUT-EN63","description":"Removes a standard rule with its tests and the links they start. Refused while a technical record meets it or anything else references it or its tests."}
 {"id":"LA-AUT-CMD206","title":"Add a standard rule test","entity_id":"LA-AUT-EN75","description":"Adds a standard rule test under its rule, with the test data sets it starts from."}
-{"id":"LA-AUT-CMD207","title":"Change a standard rule test","entity_id":"LA-AUT-EN75","description":"Changes a standard rule test's columns or the test data sets it starts from (the whole list)."}
+{"id":"LA-AUT-CMD207","title":"Change a standard rule test","entity_id":"LA-AUT-EN75","description":"Changes a standard rule test's way of running or the test data sets it starts from (the whole list)."}
 {"id":"LA-AUT-CMD208","title":"Remove a standard rule test","entity_id":"LA-AUT-EN75","description":"Removes a standard rule test and the links it starts. Refused while anything references it."}
 {"id":"LA-AUT-CMD210","title":"Add an aggregate","entity_id":"LA-AUT-EN06","description":"Adds an aggregate under a domain, with nothing in it yet."}
 {"id":"LA-AUT-CMD211","title":"Change an aggregate","entity_id":"LA-AUT-EN06","description":"Changes an aggregate's title, description, identity or notes. Its domain does not change."}
@@ -112,7 +112,7 @@
 {"id":"LA-AUT-CMD235","title":"Remove an event type","entity_id":"LA-AUT-EN53","description":"Removes an event type with the links it starts and the packages it uses. Refused while anything else references it."}
 {"id":"LA-AUT-CMD240","title":"Add a command","entity_id":"LA-AUT-EN36","description":"Adds a command under the entity it changes, with the events of its aggregate it raises, the specifications it checks and the domain services it calls."}
 {"id":"LA-AUT-CMD241","title":"Change a command","entity_id":"LA-AUT-EN36","description":"Changes a command's title or description, or the events it raises, the specifications it checks or the domain services it calls (each list whole). The entity it changes does not change."}
-{"id":"LA-AUT-CMD242","title":"Remove a command","entity_id":"LA-AUT-EN36","description":"Removes a command whole: its handler, its policies with their event handlers and tests, and the links they start. Refused while anything outside it references what is in it: a step that invokes it, its endpoint or CLI command."}
+{"id":"LA-AUT-CMD242","title":"Remove a command","entity_id":"LA-AUT-EN36","description":"Removes a command whole: its handler, its policies with their event handlers and tests, and the links they start. Refused while anything outside it references what is in it: a step that invokes it, its endpoint or command-line command."}
 {"id":"LA-AUT-CMD243","title":"Add a command handler","entity_id":"LA-AUT-EN55","description":"Adds the handler that carries out a command: its name in code, its file and what it does, with the standard rules it meets and the packages it uses. A command has one handler."}
 {"id":"LA-AUT-CMD244","title":"Change a command handler","entity_id":"LA-AUT-EN55","description":"Changes a command handler's title, file or description, or the standard rules it meets or the packages it uses (each list whole). Its command does not change."}
 {"id":"LA-AUT-CMD245","title":"Remove a command handler","entity_id":"LA-AUT-EN55","description":"Removes a command handler with the links it starts and the packages it uses. Refused while anything else references it."}
@@ -123,7 +123,7 @@
 {"id":"LA-AUT-CMD250","title":"Change an event handler","entity_id":"LA-AUT-EN57","description":"Changes an event handler's title, file or description, or the standard rules it meets or the packages it uses (each list whole). Its policy does not change."}
 {"id":"LA-AUT-CMD251","title":"Remove an event handler","entity_id":"LA-AUT-EN57","description":"Removes an event handler with the links it starts and the packages it uses. Refused while anything else references it."}
 {"id":"LA-AUT-CMD252","title":"Add a policy test","entity_id":"LA-AUT-EN67","description":"Adds the test of a policy, with the test data sets it starts from."}
-{"id":"LA-AUT-CMD253","title":"Change a policy test","entity_id":"LA-AUT-EN67","description":"Changes a policy test's columns or the test data sets it starts from (the whole list)."}
+{"id":"LA-AUT-CMD253","title":"Change a policy test","entity_id":"LA-AUT-EN67","description":"Changes a policy test's way of running or the test data sets it starts from (the whole list)."}
 {"id":"LA-AUT-CMD254","title":"Remove a policy test","entity_id":"LA-AUT-EN67","description":"Removes a policy test with the links it starts. Refused while anything else references it, such as a business outcome it measures."}
 {"id":"LA-AUT-CMD260","title":"Add a specification","entity_id":"LA-AUT-EN34","description":"Adds a specification, in the domain its ID names, with the aggregates it reads."}
 {"id":"LA-AUT-CMD261","title":"Change a specification","entity_id":"LA-AUT-EN34","description":"Changes a specification's title or statement, or the aggregates it reads (the whole list)."}
@@ -132,7 +132,7 @@
 {"id":"LA-AUT-CMD264","title":"Change a predicate","entity_id":"LA-AUT-EN52","description":"Changes a predicate's title or file, or the standard rules it meets or packages it uses (each the whole list)."}
 {"id":"LA-AUT-CMD265","title":"Remove a predicate","entity_id":"LA-AUT-EN52","description":"Removes a specification's predicate with the links it starts and the packages it uses. Refused while anything references it."}
 {"id":"LA-AUT-CMD266","title":"Add a specification test","entity_id":"LA-AUT-EN66","description":"Adds the test of a specification, its one test, with the test data sets it starts from."}
-{"id":"LA-AUT-CMD267","title":"Change a specification test","entity_id":"LA-AUT-EN66","description":"Changes a specification test's columns or the test data sets it starts from (the whole list)."}
+{"id":"LA-AUT-CMD267","title":"Change a specification test","entity_id":"LA-AUT-EN66","description":"Changes a specification test's way of running or the test data sets it starts from (the whole list)."}
 {"id":"LA-AUT-CMD268","title":"Remove a specification test","entity_id":"LA-AUT-EN66","description":"Removes a specification's test with the links it starts. Refused while anything references it, such as a business outcome it measures."}
 {"id":"LA-AUT-CMD270","title":"Add a value object","entity_id":"LA-AUT-EN31","description":"Adds a value object, in the product its ID names, with its fields in order."}
 {"id":"LA-AUT-CMD271","title":"Change a value object","entity_id":"LA-AUT-EN31","description":"Changes a value object's title or description, or its fields (the whole list, in order)."}
@@ -144,7 +144,7 @@
 {"id":"LA-AUT-CMD277","title":"Change a value type","entity_id":"LA-AUT-EN51","description":"Changes a value type's title or file, or the standard rules it meets or packages it uses (each the whole list)."}
 {"id":"LA-AUT-CMD278","title":"Remove a value type","entity_id":"LA-AUT-EN51","description":"Removes a value object's value type with the links it starts and the packages it uses. Refused while anything references it."}
 {"id":"LA-AUT-CMD279","title":"Add a constraint test","entity_id":"LA-AUT-EN64","description":"Adds the test of a constraint, its one test, with the test data sets it starts from."}
-{"id":"LA-AUT-CMD280","title":"Change a constraint test","entity_id":"LA-AUT-EN64","description":"Changes a constraint test's columns or the test data sets it starts from (the whole list)."}
+{"id":"LA-AUT-CMD280","title":"Change a constraint test","entity_id":"LA-AUT-EN64","description":"Changes a constraint test's way of running or the test data sets it starts from (the whole list)."}
 {"id":"LA-AUT-CMD281","title":"Remove a constraint test","entity_id":"LA-AUT-EN64","description":"Removes a constraint's test with the links it starts. Refused while anything references it, such as a business outcome it measures."}
 {"id":"LA-AUT-CMD285","title":"Add a read model","entity_id":"LA-AUT-EN38","description":"Adds a read model to its domain, with its fields in order, the aggregates it reads, the domain services its projection calls and the events that feed it."}
 {"id":"LA-AUT-CMD286","title":"Change a read model","entity_id":"LA-AUT-EN38","description":"Changes a read model's title or description, its fields (the whole list, in order), or the aggregates it reads, the domain services it calls or the events that feed it (each the whole list). Its domain never changes."}
@@ -165,17 +165,17 @@
 {"id":"LA-AUT-CMD301","title":"Change a table","entity_id":"LA-AUT-EN49","description":"Changes a table's title, name, storage or file, its keys (the whole list, in order), the data store it is kept in (null clears it), or the standard rules it meets or packages it uses (each the whole list). Its parent changes only by a move."}
 {"id":"LA-AUT-CMD302","title":"Move a table","entity_id":"LA-AUT-EN49","description":"Moves a table, with its keys, under another entity, read model or domain: exactly one is given, and it replaces the parent it had."}
 {"id":"LA-AUT-CMD303","title":"Remove a table","entity_id":"LA-AUT-EN49","description":"Removes a table whole: its keys, and the links and packages it names. Refused while anything else references it, such as another table's foreign key."}
-{"id":"LA-AUT-CMD310","title":"Add a view","entity_id":"LA-AUT-EN20","description":"Adds a view: a screen or page a person uses, with its route. It has no owner; its product follows from its ID."}
-{"id":"LA-AUT-CMD311","title":"Change a view","entity_id":"LA-AUT-EN20","description":"Changes a view's title, route, description or notes."}
+{"id":"LA-AUT-CMD310","title":"Add a view","entity_id":"LA-AUT-EN20","description":"Adds a view: a place in an interface a person uses, with its address. It has no owner; its product follows from its ID."}
+{"id":"LA-AUT-CMD311","title":"Change a view","entity_id":"LA-AUT-EN20","description":"Changes a view's title, address, description or notes."}
 {"id":"LA-AUT-CMD312","title":"Remove a view","entity_id":"LA-AUT-EN20","description":"Removes a view whole: its view requirements and their view tests and the links they start. Refused while anything outside it references what is in it."}
 {"id":"LA-AUT-CMD313","title":"Add a view requirement","entity_id":"LA-AUT-EN45","description":"Adds a view requirement under its view: one rule the view must follow."}
 {"id":"LA-AUT-CMD314","title":"Change a view requirement","entity_id":"LA-AUT-EN45","description":"Changes a view requirement's title, statement or group. Its view does not change."}
 {"id":"LA-AUT-CMD315","title":"Remove a view requirement","entity_id":"LA-AUT-EN45","description":"Removes a view requirement with its view tests and the links they start. Refused while anything else references them."}
 {"id":"LA-AUT-CMD316","title":"Add a view test","entity_id":"LA-AUT-EN70","description":"Adds a view test under its view requirement, with the test data sets it starts from."}
-{"id":"LA-AUT-CMD317","title":"Change a view test","entity_id":"LA-AUT-EN70","description":"Changes a view test's columns or the test data sets it starts from (the whole list). Its requirement does not change."}
+{"id":"LA-AUT-CMD317","title":"Change a view test","entity_id":"LA-AUT-EN70","description":"Changes a view test's way of running or the test data sets it starts from (the whole list). Its requirement does not change."}
 {"id":"LA-AUT-CMD318","title":"Remove a view test","entity_id":"LA-AUT-EN70","description":"Removes a view test with the links it starts. Refused while anything else references them."}
-{"id":"LA-AUT-CMD320","title":"Add an endpoint","entity_id":"LA-AUT-EN21","description":"Adds an endpoint under the one command or query it exposes (exactly one of command_id and query_id), titled by its method and route."}
-{"id":"LA-AUT-CMD321","title":"Change an endpoint","entity_id":"LA-AUT-EN21","description":"Changes an endpoint's title, method, route, description or notes. The command or query it exposes changes only by Move an endpoint."}
+{"id":"LA-AUT-CMD320","title":"Add an endpoint","entity_id":"LA-AUT-EN21","description":"Adds an endpoint under the one command or query it exposes (exactly one of command_id and query_id), titled by its method and address."}
+{"id":"LA-AUT-CMD321","title":"Change an endpoint","entity_id":"LA-AUT-EN21","description":"Changes an endpoint's title, method, address, description or notes. The command or query it exposes changes only by Move an endpoint."}
 {"id":"LA-AUT-CMD322","title":"Move an endpoint","entity_id":"LA-AUT-EN21","description":"Moves an endpoint, with everything in it, to the command or query of its domain it now exposes: give exactly one of command_id and query_id."}
 {"id":"LA-AUT-CMD323","title":"Remove an endpoint","entity_id":"LA-AUT-EN21","description":"Removes an endpoint whole: its API requirements, its handler, its endpoint tests and the links they start. Refused while anything outside it references what is in it."}
 {"id":"LA-AUT-CMD324","title":"Add an API requirement","entity_id":"LA-AUT-EN46","description":"Adds an API requirement under its endpoint: one rule the endpoint must follow."}
@@ -185,7 +185,7 @@
 {"id":"LA-AUT-CMD328","title":"Change an endpoint handler","entity_id":"LA-AUT-EN60","description":"Changes an endpoint handler's title, file or description, or the standard rules it meets or the packages it uses (each list whole). Its endpoint does not change."}
 {"id":"LA-AUT-CMD329","title":"Remove an endpoint handler","entity_id":"LA-AUT-EN60","description":"Removes an endpoint handler with the links it starts and the packages it uses. Refused while anything else references them."}
 {"id":"LA-AUT-CMD330","title":"Add an endpoint test","entity_id":"LA-AUT-EN71","description":"Adds an endpoint test under its API requirement, with the test data sets it starts from."}
-{"id":"LA-AUT-CMD331","title":"Change an endpoint test","entity_id":"LA-AUT-EN71","description":"Changes an endpoint test's columns or the test data sets it starts from (the whole list). Its requirement does not change."}
+{"id":"LA-AUT-CMD331","title":"Change an endpoint test","entity_id":"LA-AUT-EN71","description":"Changes an endpoint test's way of running or the test data sets it starts from (the whole list). Its requirement does not change."}
 {"id":"LA-AUT-CMD332","title":"Remove an endpoint test","entity_id":"LA-AUT-EN71","description":"Removes an endpoint test with the links it starts. Refused while anything else references them."}
 {"id":"LA-AUT-CMD335","title":"Add an integration","entity_id":"LA-AUT-EN25","description":"Adds an integration: an outside system the product exchanges with. It has no owner; its product follows from its ID."}
 {"id":"LA-AUT-CMD336","title":"Change an integration","entity_id":"LA-AUT-EN25","description":"Changes an integration's title, system or description."}
@@ -194,7 +194,7 @@
 {"id":"LA-AUT-CMD339","title":"Change an adapter","entity_id":"LA-AUT-EN61","description":"Changes an adapter's title, file or description, or the standard rules it meets or the packages it uses (each list whole). Its integration does not change."}
 {"id":"LA-AUT-CMD340","title":"Remove an adapter","entity_id":"LA-AUT-EN61","description":"Removes an adapter with the links it starts and the packages it uses. Refused while anything else references them."}
 {"id":"LA-AUT-CMD341","title":"Add an integration test","entity_id":"LA-AUT-EN73","description":"Adds an integration test under its integration, with the test data sets it starts from."}
-{"id":"LA-AUT-CMD342","title":"Change an integration test","entity_id":"LA-AUT-EN73","description":"Changes an integration test's columns or the test data sets it starts from (the whole list). Its integration does not change."}
+{"id":"LA-AUT-CMD342","title":"Change an integration test","entity_id":"LA-AUT-EN73","description":"Changes an integration test's way of running or the test data sets it starts from (the whole list). Its integration does not change."}
 {"id":"LA-AUT-CMD343","title":"Remove an integration test","entity_id":"LA-AUT-EN73","description":"Removes an integration test with the links it starts. Refused while anything else references them."}
 {"id":"LA-AUT-CMD345","title":"Add a UI component","entity_id":"LA-AUT-EN59","description":"Adds a UI component: its name in code and its file, with the views it renders, the view requirements it builds, the standard rules it meets and the packages it uses. It has no owner; its product follows from its ID."}
 {"id":"LA-AUT-CMD346","title":"Change a UI component","entity_id":"LA-AUT-EN59","description":"Changes a UI component's title, file or description, or the views it renders, the view requirements it builds, the standard rules it meets or the packages it uses (each list whole)."}
@@ -203,7 +203,7 @@
 {"id":"LA-AUT-CMD361","title":"Change a storage requirement","entity_id":"LA-AUT-EN110","description":"Changes a storage requirement's title or statement. The aggregate or read model it is about never changes: remove it and add it again under another."}
 {"id":"LA-AUT-CMD362","title":"Remove a storage requirement","entity_id":"LA-AUT-EN110","description":"Removes a storage requirement whole: its storage requirement tests and the links they start. Refused while anything outside it references what is in it."}
 {"id":"LA-AUT-CMD363","title":"Add a storage requirement test","entity_id":"LA-AUT-EN111","description":"Adds a storage requirement test under its storage requirement, with the test data sets it starts from."}
-{"id":"LA-AUT-CMD364","title":"Change a storage requirement test","entity_id":"LA-AUT-EN111","description":"Changes a storage requirement test's columns or the test data sets it starts from (the whole list)."}
+{"id":"LA-AUT-CMD364","title":"Change a storage requirement test","entity_id":"LA-AUT-EN111","description":"Changes a storage requirement test's way of running or the test data sets it starts from (the whole list)."}
 {"id":"LA-AUT-CMD365","title":"Remove a storage requirement test","entity_id":"LA-AUT-EN111","description":"Removes a storage requirement test with the links it starts. Refused while anything references it, such as a business outcome it measures."}
 {"id":"LA-AUT-CMD370","title":"Add a data store","entity_id":"LA-AUT-EN112","description":"Adds a data store under its product or one of its domains (exactly one of product_id and domain_id). What provides it, when it is a service someone else runs, is named with Name a provider."}
 {"id":"LA-AUT-CMD371","title":"Change a data store","entity_id":"LA-AUT-EN112","description":"Changes a data store's title, kind or description. Its product or domain never changes: remove it and add it again under another."}

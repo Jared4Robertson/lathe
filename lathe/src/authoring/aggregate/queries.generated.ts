@@ -4,7 +4,7 @@ export const GET_AGGREGATE_IDENTITY = {
   id: 'LA-AUT-QRY150',
   slice: { aggregate: 'LA-AUT-A6', name: 'aggregate' },
   name: 'get-aggregate',
-  description: 'Reads an aggregate whole as its page shows it, by its ID or the ID of any record in it: the record asked for and its kind, the aggregate\'s row, its entities (the root first) with their fields, the entities they hold, their data models, commands and tables, its invariants with their rules and tests, and the domain events that happen to it with what raises and hears them.',
+  description: 'Reads an aggregate whole as its readers read it, by its ID or the ID of any record in it: the record asked for and its kind, the aggregate\'s own details, its entities (the root first) with their fields, the entities they hold, their data models, commands and tables, its invariants with their rules and tests, and the domain events that happen to it with what raises and hears them.',
   method: 'GET',
   route: '/api/aggregate/get-aggregate',
 } as const;

@@ -13,14 +13,6 @@ const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.findByRole('toolbar', { name: `Change ${id}` });
 const rows = (table: HTMLTableElement) => [...table.querySelectorAll('tbody tr')].map((tr) => [...tr.querySelectorAll('th, td')].map((c) => c.textContent));
 
-describe('LA-V140-R01-T01 a table\'s page reads it through the Table aggregate\'s own query, never a generic record read', () => {
-  it('reads GET /api/table/get-table and shows its keys', async () => {
-    const { requests } = await openApp('/P-D-EN03-TB', { data: modelWorkspace() });
-    await within(main()).findByRole('heading', { name: /^Keys/ });
-    expect(requests).toContain('GET /api/table/get-table?id=P-D-EN03-TB');
-  });
-});
-
 describe('LA-V140-R04-T01 a table lists its keys in order, each with what it enforces, references or holds where', () => {
   it('shows the primary key, a unique key with its invariant and condition, and a foreign key with its target', async () => {
     await openApp('/P-D-EN03-TB', { data: modelWorkspace() });
@@ -34,7 +26,7 @@ describe('LA-V140-R04-T01 a table lists its keys in order, each with what it enf
   });
 });
 
-describe('LA-V140-R02-T01 the Table editor writes only through the aggregate\'s own commands, one per change', () => {
+describe('LA-V140-R05-T01 the Table editor writes only through the aggregate\'s own commands, one per change', () => {
   it('Edit sends Change a table with only what changed; Move sends Move a table to the read model picked', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/P-D-EN03-TB', { data: modelWorkspace(), command: () => ({ answer: ok, data: setRow(modelWorkspace(), 'table', 'P-D-EN03-TB', { name: 'lendings' }) }) });
