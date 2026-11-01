@@ -14,6 +14,8 @@
 {"entity_id":"TL-LEND-EN04","position":3,"name":"Tool","meaning":"Which tool was borrowed.","type_aggregate_id":"TL-LEND-A2","required":true,"column_name":"tool_id","example":"7"}
 {"entity_id":"TL-LEND-EN04","position":4,"name":"Borrowed at","meaning":"When the loan started.","type":"date and time","required":true,"example":"2026-03-02T10:00:00Z"}
 {"entity_id":"TL-LEND-EN04","position":5,"name":"Due date","meaning":"The last day of the loan, in the library's time zone (TL-LEND-INV04).","type":"date","required":true,"example":"2026-03-16"}
+{"entity_id":"TL-LEND-EN04","position":6,"name":"Renewed at","meaning":"When the member renewed the loan, once (TL-LEND-INV07); none until then.","type":"date and time","required":false,"example":"2026-03-14T18:00:00Z"}
+{"entity_id":"TL-LEND-EN04","position":7,"name":"Reminded at","meaning":"When the library reminded the member the loan is due, once (TL-LEND-INV08); none until then.","type":"date and time","required":false,"example":"2026-03-15T13:00:00Z"}
 {"entity_id":"TL-LEND-EN05","position":1,"name":"Returned at","meaning":"When the tool came back.","type":"date and time","required":true,"example":"2026-03-12T16:30:00Z"}
 {"entity_id":"TL-LEND-EN05","position":2,"name":"Condition","meaning":"The tool's condition as the librarian found it.","type_value_object_id":"TL-VO03","required":true,"column_name":"return_condition","example":"good"}
 {"entity_id":"TL-LEND-EN05","position":3,"name":"Note","meaning":"What the librarian noticed. A blank note is none.","type_value_object_id":"TL-VO04","required":false,"column_name":"return_note","example":"Cleaned and charged"}
