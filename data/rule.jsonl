@@ -25,6 +25,12 @@
 {"id":"LA-AUT-INV184-RL","title":"read-model-field-one-type","invariant_id":"LA-AUT-INV184","file":"lathe/src/authoring/read-model/rules.ts"}
 {"id":"LA-AUT-INV185-RL","title":"read-model-field-name","invariant_id":"LA-AUT-INV185","file":"lathe/src/authoring/read-model/rules.ts"}
 {"id":"LA-AUT-INV186-RL","title":"title-from-field","invariant_id":"LA-AUT-INV186","file":"lathe/src/authoring/extension-record/rules.ts"}
+{"id":"LA-AUT-INV187-RL","title":"journey-step-id","invariant_id":"LA-AUT-INV187","file":"lathe/src/authoring/journey/rules.ts"}
+{"id":"LA-AUT-INV188-RL","title":"journey-test-id","invariant_id":"LA-AUT-INV188","file":"lathe/src/authoring/journey/rules.ts"}
+{"id":"LA-AUT-INV189-RL","title":"journey-step-position","invariant_id":"LA-AUT-INV189","file":"lathe/src/authoring/journey/rules.ts"}
+{"id":"LA-AUT-INV190-RL","title":"journey-one-each","invariant_id":"LA-AUT-INV190","file":"lathe/src/authoring/journey/rules.ts"}
+{"id":"LA-AUT-INV191-RL","title":"journey-in-product","invariant_id":"LA-AUT-INV191","file":"lathe/src/authoring/journey/rules.ts"}
+{"id":"LA-AUT-INV192-RL","title":"journey-carries-out-exists","invariant_id":"LA-AUT-INV192","file":"lathe/src/authoring/journey/rules.ts"}
 {"id":"LA-AUT-INV22-RL","title":"product-kind-declared","invariant_id":"LA-AUT-INV22","file":"lathe/src/authoring/product/rules.ts"}
 {"id":"LA-AUT-INV23-RL","title":"product-relation-own","invariant_id":"LA-AUT-INV23","file":"lathe/src/authoring/product/rules.ts"}
 {"id":"LA-AUT-INV24-RL","title":"product-declaration-described","invariant_id":"LA-AUT-INV24","file":"lathe/src/authoring/product/rules.ts"}
