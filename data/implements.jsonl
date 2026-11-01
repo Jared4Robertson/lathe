@@ -95,3 +95,5 @@
 {"source_id":"LA-PLT-MOD36","target_id":"LA-PLT-UC19-R05"}
 {"source_id":"LA-PLT-MOD36","target_id":"LA-PLT-UC19-R08"}
 {"source_id":"LA-TRC-MOD03","target_id":"LA-TRC-A3-SR01"}
+{"source_id":"LA-TRC-MOD05","target_id":"LA-TRC-UC19-R01"}
+{"source_id":"LA-TRC-MOD05","target_id":"LA-TRC-UC19-R04"}

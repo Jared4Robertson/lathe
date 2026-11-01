@@ -94,3 +94,4 @@
 {"id":"LA-TRC-MOD01","title":"lathe/src/trace/measures.ts","domain_id":"LA-TRC","file":"lathe/src/trace/measures.ts"}
 {"id":"LA-TRC-MOD03","title":"lathe/src/traceability/pattern-following/model.ts","domain_id":"LA-TRC","file":"lathe/src/traceability/pattern-following/model.ts"}
 {"id":"LA-TRC-MOD04","title":"lathe/src/traceability/pattern-following/commands/index.ts","domain_id":"LA-TRC","file":"lathe/src/traceability/pattern-following/commands/index.ts"}
+{"id":"LA-TRC-MOD05","title":"lathe/src/trace/packages.ts","domain_id":"LA-TRC","file":"lathe/src/trace/packages.ts"}
