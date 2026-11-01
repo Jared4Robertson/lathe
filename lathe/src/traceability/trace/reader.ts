@@ -4,12 +4,14 @@
 // implementation of this interface and nothing more. Today's implementation reads the projection's table, kept in
 // memory and built on each read.
 import type { ReadView } from '../../platform/data/rules.ts';
-import { traceTableFrom, type TraceTable, type ProductTrace } from './read-model.ts';
+import { traceTableFrom, type TraceTable, type ProductTrace, type TraceJourney } from './read-model.ts';
 
 /** What the Trace query reads, and all it reads. */
 export interface TraceReader {
   /** The product's trace, or undefined when there is no such product. */
   traceOf(product: string): ProductTrace | undefined;
+  /** A journey's proof, or undefined when there is no such journey. */
+  journeyOf(id: string): TraceJourney | undefined;
 }
 
 /** The reader over the read model's table in memory. */
@@ -22,6 +24,10 @@ export class InMemoryTraceReader implements TraceReader {
 
   traceOf(product: string): ProductTrace | undefined {
     return this.table.products.get(product);
+  }
+
+  journeyOf(id: string): TraceJourney | undefined {
+    return this.table.journeys.get(id);
   }
 }
 
