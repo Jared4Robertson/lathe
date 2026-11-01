@@ -182,6 +182,8 @@
 {"source_id":"LA-CHK-RM10-TB","target_id":"LA-STORE04"}
 {"source_id":"LA-CHK-RM11-RD","target_id":"LA-STORE04"}
 {"source_id":"LA-CHK-RM11-TB","target_id":"LA-STORE04"}
+{"source_id":"LA-CHK-RM12-RD","target_id":"LA-STORE04"}
+{"source_id":"LA-CHK-RM12-TB","target_id":"LA-STORE04"}
 {"source_id":"LA-CHK-TB01","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-EXP-EN02-TB","target_id":"LA-STORE02"}
 {"source_id":"LA-EXP-EN03-TB","target_id":"LA-STORE02"}
