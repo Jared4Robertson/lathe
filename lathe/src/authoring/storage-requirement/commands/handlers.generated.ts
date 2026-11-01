@@ -34,7 +34,7 @@ export function addStorageRequirementTest(tx: Transaction, input: AddStorageRequ
   storageRequirements.save(storageRequirement);
 }
 
-/** Changes a storage requirement test's columns or the test data sets it starts from (the whole list). */
+/** Changes a storage requirement test's way of running or the test data sets it starts from (the whole list). */
 export function changeStorageRequirementTest(tx: Transaction, input: ChangeStorageRequirementTest): void {
   const storageRequirements = new StorageRequirementRepository(tx);
   const storageRequirement = storageRequirements.loadHolding('storage_requirement_test', input.id) ?? tx.refuse('missing', `there is no storage requirement test ${input.id}`);

@@ -291,6 +291,18 @@ describe("LA-AUT-INV23-T a pair Lathe's relation's ends do not accept, a pair na
     expect(on.rows('product_relation')).toContainEqual(expect.objectContaining({ name: 'meets', source_kind: 'cli_command', target_kind: 'standard_rule' }));
   });
 
+  it("gives an accidental own kind Lathe's pairs of provided_by, fills and generates without a declaration, and refuses declaring one", async () => {
+    const on = await store();
+    const pairs = await on.query<{ relation: string; source_kind: string; target_kind: string }>(
+      "SELECT relation, source_kind, target_kind FROM meta_relation_pair WHERE 'cli_command' IN (source_kind, target_kind) AND relation IN ('provided_by', 'fills', 'generates') ORDER BY relation",
+    );
+    expect(pairs.map((p) => `${p.relation} ${p.source_kind} ${p.target_kind}`)).toEqual(['fills cli_command slot', 'generates tooling cli_command', 'provided_by cli_command integration']);
+    const fills = { product_id: 'TL', name: 'fills', source_kind: 'cli_command', target_kind: 'slot', forward_label: 'Fills', reverse_label: 'Filled by', description: 'The CLI command fills the slot.' };
+    expect(await refused(on, DECLARE_PRODUCT_RELATION, fills, 'product_relation')).toEqual([
+      { rule: 'product-relation-own', message: "Every accidental kind has the pair fills from cli_command to slot already, as Lathe's own kinds do; drop the declaration." },
+    ]);
+  });
+
   it('is refused on load without both labels', async () => {
     const [documents] = everyKind().product_relation;
     const { reverse_label: _r, ...noReverse } = documents;

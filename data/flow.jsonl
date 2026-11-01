@@ -44,7 +44,7 @@
 {"id":"LA-EXP-UC10-FL","title":"Explore several places at once in tabs","use_case_id":"LA-EXP-UC10"}
 {"id":"LA-EXP-UC11-FL","title":"Read a domain and its aggregates as an ERD","use_case_id":"LA-EXP-UC11"}
 {"id":"LA-EXP-UC12-FL","title":"Look up a record's history","use_case_id":"LA-EXP-UC12"}
-{"id":"LA-EXP-UC13-FL","title":"Read a domain's endpoints and integrations","use_case_id":"LA-EXP-UC13"}
+{"id":"LA-EXP-UC13-FL","title":"Read a domain's operations and integrations","use_case_id":"LA-EXP-UC13"}
 {"id":"LA-EXP-UC15-FL","title":"Watch the spec change","use_case_id":"LA-EXP-UC15"}
 {"id":"LA-PLT-UC01-FL","title":"Load the workspace","use_case_id":"LA-PLT-UC01"}
 {"id":"LA-PLT-UC02-FL","title":"Set up Lathe in a product repo","use_case_id":"LA-PLT-UC02"}
@@ -55,7 +55,7 @@
 {"id":"LA-PLT-UC07-FL","title":"Set how Lathe looks","use_case_id":"LA-PLT-UC07"}
 {"id":"LA-PLT-UC08-FL","title":"Read the spec on a phone","use_case_id":"LA-PLT-UC08"}
 {"id":"LA-PLT-UC09-FL","title":"Read without anything jumping","use_case_id":"LA-PLT-UC09"}
-{"id":"LA-PLT-UC10-FL","title":"Use Lathe with a keyboard and a screen reader","use_case_id":"LA-PLT-UC10"}
+{"id":"LA-PLT-UC10-FL","title":"Use Lathe with a keyboard and assistive technology","use_case_id":"LA-PLT-UC10"}
 {"id":"LA-PLT-UC11-FL","title":"Open a product in a window","use_case_id":"LA-PLT-UC11"}
 {"id":"LA-PLT-UC12-FL","title":"Iterate on Lathe with hot reload","use_case_id":"LA-PLT-UC12"}
 {"id":"LA-PLT-UC13-FL","title":"Use Lathe from the native menus","use_case_id":"LA-PLT-UC13"}
@@ -82,7 +82,7 @@
 {"id":"LA-TRC-UC12-FL","title":"See a domain's owed pattern rules","use_case_id":"LA-TRC-UC12"}
 {"id":"LA-TRC-UC13-FL","title":"See tests by state with each domain's coverage","use_case_id":"LA-TRC-UC13"}
 {"id":"LA-TRC-UC14-FL","title":"Trace an obligation to its proof","use_case_id":"LA-TRC-UC14"}
-{"id":"LA-TRC-UC15-FL","title":"Check that routes match the code both ways","use_case_id":"LA-TRC-UC15"}
-{"id":"LA-TRC-UC16-FL","title":"Check each table against the file that creates it","use_case_id":"LA-TRC-UC16"}
+{"id":"LA-TRC-UC15-FL","title":"Check that addresses match the code both ways","use_case_id":"LA-TRC-UC15"}
+{"id":"LA-TRC-UC16-FL","title":"Check each stored record kind against the file that creates it","use_case_id":"LA-TRC-UC16"}
 {"id":"LA-TRC-UC19-FL","title":"Account for every package the product depends on","use_case_id":"LA-TRC-UC19"}
 {"id":"LA-TRC-UC20-FL","title":"See the outcomes each record serves","use_case_id":"LA-TRC-UC20"}

@@ -157,7 +157,7 @@ describe('LA-AUT-UC04-R01-T52 each Extension record command changes one record o
     expect((await refusal(store, CHANGE_EXTENSION_RECORD, { id: 'TL-LEND-RP01', values: { domain_id: 'OT-D' } })).problems[0].rule).toBe('field');
     expect((await refusal(store, CHANGE_EXTENSION_RECORD, { id: 'TL-LEND-RP01', links: { measured_by: ['TL-LEND-CMD01'] } })).problems[0]).toMatchObject({
       rule: 'relation',
-      message: 'a report starts no link of measured_by; it starts reports_on',
+      message: 'a report starts no link of measured_by; it starts fills, provided_by, reports_on',
     });
     expect((await refusal(store, ADD_EXTENSION_RECORD, { kind: 'aggregate', id: 'TL-LEND-A9', parent_id: 'TL-LEND', values: { title: 'X' } })).problems[0]).toMatchObject({
       rule: 'kind',

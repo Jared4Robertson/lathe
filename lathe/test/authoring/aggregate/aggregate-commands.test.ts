@@ -28,6 +28,18 @@ import { StoreError } from '../../../src/platform/data/problems.ts';
 import { openStore, type Store } from '../../../src/platform/data/store.ts';
 import { writeData } from '../../helpers.ts';
 import { closeOpenStores, domainModelBase } from '../domain-model-base.ts';
+import { commandCommandCases } from '../command/command-commands.cases.ts';
+import { dataStoreCommandCases } from '../data-store/data-store-commands.cases.ts';
+import { domainEventCommandCases } from '../domain-event/domain-event-commands.cases.ts';
+import { endpointCommandCases } from '../endpoint/endpoint-commands.cases.ts';
+import { integrationCommandCases } from '../integration/integration-commands.cases.ts';
+import { readModelCommandCases } from '../read-model/read-model-commands.cases.ts';
+import { specificationCommandCases } from '../specification/specification-commands.cases.ts';
+import { storageRequirementCommandCases } from '../storage-requirement/storage-requirement-commands.cases.ts';
+import { tableCommandCases } from '../table/table-commands.cases.ts';
+import { uiComponentCommandCases } from '../ui-component/ui-component-commands.cases.ts';
+import { valueObjectCommandCases } from '../value-object/value-object-commands.cases.ts';
+import { viewCommandCases } from '../view/view-commands.cases.ts';
 import { aggregateDataSet } from './data-set.ts';
 
 afterEach(closeOpenStores);
@@ -47,6 +59,19 @@ const fileOf = (store: Store, table: string) => readFileSync(path.join(store.dat
 type Whole = ReturnType<typeof GET_AGGREGATE.run>;
 
 describe('LA-PAT-AGGREGATE-COMMANDS-R10-T01 each Aggregate command (LA-AUT-A6) changes one aggregate through AggregateRepository, held to its rules, and is reached by name from the CLI, the MCP tools and HTTP', () => {
+  commandCommandCases();
+  dataStoreCommandCases();
+  domainEventCommandCases();
+  endpointCommandCases();
+  integrationCommandCases();
+  readModelCommandCases();
+  specificationCommandCases();
+  storageRequirementCommandCases();
+  tableCommandCases();
+  uiComponentCommandCases();
+  valueObjectCommandCases();
+  viewCommandCases();
+
   it('LA-PAT-AGGREGATE-TESTS-R03-T01 builds the data set with its own Add commands, and reads an aggregate whole by any record in it', async () => {
     const store = await aggregateDataSet();
     const whole = runQuery(store, GET_AGGREGATE, { id: 'TL-LEND-INV01-T' }) as Whole;

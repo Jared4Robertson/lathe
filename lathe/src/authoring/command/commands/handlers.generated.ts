@@ -41,7 +41,7 @@ export function changeCommand(tx: Transaction, input: ChangeCommand): void {
   commands.save(command);
 }
 
-/** Removes a command whole: its handler, its policies with their event handlers and tests, and the links they start. Refused while anything outside it references what is in it: a step that invokes it, its endpoint or CLI command. */
+/** Removes a command whole: its handler, its policies with their event handlers and tests, and the links they start. Refused while anything outside it references what is in it: a step that invokes it, its endpoint or command-line command. */
 export function removeCommand(tx: Transaction, input: RemoveCommand): void {
   const commands = new CommandRepository(tx);
   const command = commands.load(input.id) ?? tx.refuse('missing', `there is no command ${input.id}`);
@@ -132,7 +132,7 @@ export function addPolicyTest(tx: Transaction, input: AddPolicyTest): void {
   commands.save(command);
 }
 
-/** Changes a policy test's columns or the test data sets it starts from (the whole list). */
+/** Changes a policy test's way of running or the test data sets it starts from (the whole list). */
 export function changePolicyTest(tx: Transaction, input: ChangePolicyTest): void {
   const commands = new CommandRepository(tx);
   const command = commands.loadHolding('policy_test', input.id) ?? tx.refuse('missing', `there is no policy test ${input.id}`);

@@ -130,7 +130,7 @@ export const CHANGE_USE_CASE_TEST_IDENTITY = {
   id: 'LA-AUT-CMD114',
   slice: { aggregate: 'LA-AUT-A11', name: 'use-case' },
   name: 'change-use-case-test',
-  description: 'Changes a use case test\'s columns or the test data sets it starts from (the whole list).',
+  description: 'Changes a use case test\'s way of running or the test data sets it starts from (the whole list).',
   method: 'POST',
   route: '/api/use-case/change-use-case-test',
 } as const;
@@ -157,7 +157,7 @@ export const CHANGE_FLOW_TEST_IDENTITY = {
   id: 'LA-AUT-CMD117',
   slice: { aggregate: 'LA-AUT-A11', name: 'use-case' },
   name: 'change-flow-test',
-  description: 'Changes a flow test\'s columns or the test data sets it starts from (the whole list).',
+  description: 'Changes a flow test\'s way of running or the test data sets it starts from (the whole list).',
   method: 'POST',
   route: '/api/use-case/change-flow-test',
 } as const;

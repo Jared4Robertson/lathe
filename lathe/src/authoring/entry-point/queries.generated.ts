@@ -4,7 +4,7 @@ export const GET_ENTRY_POINT_IDENTITY = {
   id: 'LA-AUT-QRY120',
   slice: { aggregate: 'LA-AUT-A20', name: 'entry-point' },
   name: 'get-entry-point',
-  description: 'Reads an entry point whole, by its ID: its row, the packages it uses and the standard rules it meets.',
+  description: 'Reads an entry point whole, by its ID: its own details, the packages it uses and the standard rules it meets.',
   method: 'GET',
   route: '/api/entry-point/get-entry-point',
 } as const;

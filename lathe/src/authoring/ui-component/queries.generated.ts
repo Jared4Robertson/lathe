@@ -4,7 +4,7 @@ export const GET_UI_COMPONENT_IDENTITY = {
   id: 'LA-AUT-QRY204',
   slice: { aggregate: 'LA-AUT-A15', name: 'ui-component' },
   name: 'get-ui-component',
-  description: 'Reads a UI component whole as its page shows it: the record asked for and its kind, the component\'s row, and the views it renders, the view requirements it builds, the standard rules it meets and the packages it uses, each list sorted.',
+  description: 'Reads a UI component whole as its readers read it: the record asked for and its kind, the component\'s own details, and the views it renders, the view requirements it builds, the standard rules it meets and the packages it uses, each list sorted.',
   method: 'GET',
   route: '/api/ui-component/get-ui-component',
 } as const;

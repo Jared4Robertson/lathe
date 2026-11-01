@@ -4,7 +4,7 @@ export const GET_TEST_DATA_SET_IDENTITY = {
   id: 'LA-AUT-QRY135',
   slice: { aggregate: 'LA-AUT-A17', name: 'test-data-set' },
   name: 'get-test-data-set',
-  description: 'Reads a test data set whole as its page shows it, by its ID: its environment, accounts and records, how to prepare and reset it, the file that builds it, and the tests that start from it.',
+  description: 'Reads a test data set whole as its readers read it, by its ID: its environment, accounts and records, how to prepare and reset it, the file that builds it, and the tests that start from it.',
   method: 'GET',
   route: '/api/test-data-set/get-test-data-set',
 } as const;

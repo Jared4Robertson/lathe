@@ -396,6 +396,10 @@ check('accidental-not-accounted-for', () => {
     expect(ofCheck(ws, 'accidental-not-accounted-for').find((p) => p.record === 'EX-LEND-REPO02')?.message).toBe(
       'Repository EX-LEND-REPO02 is accidental complexity nothing accounts for: it fills a slot but serves no essential record; put it under the essential record it implements, or remove it.',
     );
+    // A fill sits under an essential record through other accidental ones: the endpoint handler, under its endpoint,
+    // serves the command the endpoint exposes.
+    const endpointFill = await loadData(adding(handWritten('EX-LEND-EP01-H'), fill('EX-LEND-EP01-H')));
+    expect(records(ofCheck(endpointFill, 'accidental-not-accounted-for'))).toEqual([]);
     // An engineering standard is accidental, and its rule with it, until it is provided; the rule's test follows them
     // and is never reported. A quality is essential.
     const unprovided = without(complete(), 'provided_by', (r) => r.source_id === 'EX-STD-CODE');

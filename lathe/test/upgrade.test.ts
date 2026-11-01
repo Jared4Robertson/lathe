@@ -269,7 +269,7 @@ describe('the schema version', () => {
         { id: 'TL-LEND-CMD02', title: 'Close a loan', entity_id: 'TL-LEND-EN01' },
       ],
       data_model: [{ id: 'TL-LEND-EN01-DM', title: 'Loan', entity_id: 'TL-LEND-EN01', description: 'The Loan interface.' }],
-      flow_step: [{ id: 'TL-LEND-UC01-FL-S01', title: 'Borrow', flow_id: 'TL-LEND-UC01-FL', path: 'main', position: 1 }],
+      flow_step: [{ id: 'TL-LEND-UC01-FL01-S01', title: 'Borrow', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 }],
       invariant_test: [
         { id: 'TL-LEND-INV01-T', title: 'A second loan is refused', given: 'A tool on loan.', when: 'Lends it again.', then: 'Expects a refusal.' },
         { id: 'TL-LEND-INV02-T', title: 'A loan has a due date', given: 'An empty library', then: 'Expects a due date.' },
@@ -431,7 +431,26 @@ describe('the schema version', () => {
     ]);
   });
 
-  it("LA-AUT-UC03-R08-T13 3-to-4 merges a use case's flows into one, keeping the union of their steps, marking variants, and reports what it cannot merge", async () => {
+  it('LA-AUT-UC03-R08-T13 3-to-4 drops a product\'s declaration of a provided_by, fills or generates pair its own kind now has, as Lathe\'s kinds have them, and keeps every other', async () => {
+    const tables: Record<string, Record<string, unknown>[]> = {
+      product_kind: [
+        { name: 'report', product_id: 'TL', stage: 'technical-specification', obligation: false, complexity: 'accidental' },
+        { name: 'promise', product_id: 'TL', stage: 'use-cases', obligation: true, complexity: 'essential' },
+      ],
+      product_relation: [
+        { name: 'fills', source_kind: 'report', target_kind: 'slot', product_id: 'TL' },
+        { name: 'generates', source_kind: 'tooling', target_kind: 'report', product_id: 'TL' },
+        { name: 'provided_by', source_kind: 'promise', target_kind: 'integration', product_id: 'TL' },
+        { name: 'provided_by', source_kind: 'view', target_kind: 'report', product_id: 'TL' },
+        { name: 'measured_by', source_kind: 'business_outcome', target_kind: 'report', product_id: 'TL' },
+      ],
+    };
+    const { changes } = await run3to4(tables);
+    expect(tables.product_relation!.map((r) => `${String(r.name)} ${String(r.source_kind)} ${String(r.target_kind)}`)).toEqual(['provided_by view report', 'measured_by business_outcome report']);
+    expect(changes).toEqual([expect.stringContaining('fills from report to slot, generates from tooling to report, provided_by from promise to integration were dropped')]);
+  });
+
+  it("LA-AUT-UC03-R08-T14 3-to-4 merges a use case's flows into one, keeping the union of their steps, marking variants, and reports what it cannot merge", async () => {
     const tables: Record<string, Record<string, unknown>[]> = {
       interface: [
         { id: 'TL-IF01', title: 'Web app', product_id: 'TL', kind: 'web app', description: 'The desk.', public: false },

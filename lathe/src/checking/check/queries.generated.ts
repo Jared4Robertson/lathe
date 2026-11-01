@@ -4,7 +4,7 @@ export const GET_CHECK_IDENTITY = {
   id: 'LA-CHK-QRY10',
   slice: { aggregate: 'LA-CHK-A1', name: 'check' },
   name: 'get-check',
-  description: 'Reads a check row whole, by its name: its product, place in the run order, severity, summary, explanation, query and kinds.',
+  description: 'Reads a check whole, by its name: its product, place in the run order, severity, summary, explanation, query and kinds.',
   method: 'GET',
   route: '/api/check/get-check',
 } as const;
