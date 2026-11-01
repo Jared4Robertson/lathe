@@ -3,7 +3,7 @@ import type { CommandKind } from '../../../../lathe/src/authoring/command/model'
 import type { CommandPage } from '../../../../lathe/src/authoring/command/read-model';
 import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
-import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
+import { addInput, addOrChangeFields, changeInput, CommandForm, draftOf, emptyDraft, Fields, LONG, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
 import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { adderOf, othersAddedUnder } from '../../record/pages';
@@ -12,6 +12,7 @@ import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
+import { COMMAND_FIELDS } from './fields.generated';
 import { useNextCommandId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -50,57 +51,28 @@ function choices(index: RecordIndex, kinds: readonly string[], keep: (r: { paren
   return [...index.byId.values()].filter((r) => kinds.includes(r.kind) && keep(r)).map((r) => ({ id: r.id, title: r.title }));
 }
 
-/** A handler's file, description, standard rules and packages. */
-const handlerFields = (index: RecordIndex, place: Place, table: string): FieldSpec[] => [
-  { field: 'title', column: 'title', table },
-  { field: 'file', column: 'file', table },
-  { field: 'description', column: 'description', table, long: true },
-  { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: choices(index, ['standard_rule'], (r) => r.product === place.product) },
-  { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files, one per line.', texts: true },
-];
-
-/** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order. */
+/** The fields each kind's Add and Change take, from their inputs (Change leaves out the ID, Add the parent). */
 function fieldsOf(index: RecordIndex, place: Place, kind: CommandKind, adding: boolean): FieldSpec[] {
-  const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
+  const F = COMMAND_FIELDS;
+  const meets = { choices: choices(index, ['standard_rule'], (r) => r.product === place.product) };
   switch (kind) {
-    case 'command':
-      return [
-        ...id('command'),
-        { field: 'title', column: 'title', table: 'command' },
-        { field: 'description', column: 'description', table: 'command', long: true },
-        { field: 'raises', label: 'Raises', description: 'The events of its aggregate it raises.', many: choices(index, ['domain_event'], (r) => r.parent === place.aggregate) },
-        { field: 'checks', label: 'Checks', description: 'The specifications of its domain it checks before it acts.', many: choices(index, ['specification'], (r) => r.domain === place.domain) },
-        { field: 'calls', label: 'Calls', description: 'The domain services of its domain it calls.', many: choices(index, ['domain_service'], (r) => r.domain === place.domain) },
-      ];
-    case 'command_handler':
-      return [...id('command_handler'), ...handlerFields(index, place, 'command_handler')];
-    case 'policy':
-      return [
-        ...id('policy'),
-        { field: 'title', column: 'title', table: 'policy' },
-        { field: 'statement', column: 'statement', table: 'policy', long: true },
-        { field: 'hears', label: 'Hears', description: 'The event it hears: one of its own domain, or another domain\'s published one.', one: choices(index, ['domain_event'], (r) => r.product === place.product) },
-      ];
-    case 'event_handler':
-      return [...id('event_handler'), ...handlerFields(index, place, 'event_handler')];
-    case 'policy_test': {
-      const table = 'policy_test';
-      return [
-        ...id(table),
-        { field: 'title', column: 'title', table },
-        { field: 'when', column: 'when', table, long: true },
-        { field: 'then', column: 'then', table, long: true },
-        { field: 'level', column: 'level', table },
-        { field: 'state', column: 'state', table },
-        { field: 'file', column: 'file', table },
-        { field: 'manual_reason', column: 'manual_reason', table, long: true },
-        { field: 'size', column: 'size', table },
-        { field: 'smoke', column: 'smoke', table },
-        { field: 'external', column: 'external', table },
-        { field: 'notes', column: 'notes', table, long: true },
-        { field: 'starts_from', label: 'Starts from', description: 'The test data sets it starts from.', many: choices(index, ['test_data_set'], (r) => r.product === place.product) },
-      ];
+    case 'command': {
+      const hints = {
+        description: LONG,
+        raises: { choices: choices(index, ['domain_event'], (r) => r.parent === place.aggregate) },
+        checks: { choices: choices(index, ['specification'], (r) => r.domain === place.domain) },
+        calls: { choices: choices(index, ['domain_service'], (r) => r.domain === place.domain) },
+      };
+      return addOrChangeFields(adding, F['/api/command/add-command'], 'entity_id', F['/api/command/change-command'], hints);
     }
+    case 'command_handler':
+      return addOrChangeFields(adding, F['/api/command/add-command-handler'], 'command_id', F['/api/command/change-command-handler'], { description: LONG, meets });
+    case 'policy':
+      return addOrChangeFields(adding, F['/api/command/add-policy'], 'command_id', F['/api/command/change-policy'], { statement: LONG, hears: { choices: choices(index, ['domain_event'], (r) => r.product === place.product) } });
+    case 'event_handler':
+      return addOrChangeFields(adding, F['/api/command/add-event-handler'], 'policy_id', F['/api/command/change-event-handler'], { description: LONG, meets });
+    case 'policy_test':
+      return addOrChangeFields(adding, F['/api/command/add-policy-test'], 'policy_id', F['/api/command/change-policy-test'], { when: LONG, then: LONG, manual_reason: LONG, notes: LONG, starts_from: { choices: choices(index, ['test_data_set'], (r) => r.product === place.product) } });
   }
 }
 
@@ -128,13 +100,13 @@ function currentOf(page: CommandPage, kind: CommandKind, id: string): Record<str
   }
 }
 
-/** Each kind's Change command, and the fields it may clear with null. */
-const CHANGE: Record<CommandKind, { route: CommandRoute; clearable: readonly string[] }> = {
-  command: { route: '/api/command/change-command', clearable: [] },
-  command_handler: { route: '/api/command/change-command-handler', clearable: ['file'] },
-  policy: { route: '/api/command/change-policy', clearable: ['hears'] },
-  event_handler: { route: '/api/command/change-event-handler', clearable: ['file'] },
-  policy_test: { route: '/api/command/change-policy-test', clearable: ['file', 'manual_reason', 'size', 'smoke', 'external', 'notes'] },
+/** Each kind's Change command. */
+const CHANGE: Record<CommandKind, CommandRoute> = {
+  command: '/api/command/change-command',
+  command_handler: '/api/command/change-command-handler',
+  policy: '/api/command/change-policy',
+  event_handler: '/api/command/change-event-handler',
+  policy_test: '/api/command/change-policy-test',
 };
 
 /** Each kind's Add command, and the field that names its parent. */
@@ -194,9 +166,9 @@ export function CommandEditor({ index, page, children }: { index: RecordIndex; p
     const specs = fieldsOf(index, place, kind, false);
     const current = currentOf(page, kind, id);
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, specs, draft, current, { id }, CHANGE[kind].clearable);
+      const input = changeInput(index, specs, draft, current, { id });
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
-      const answer = await send(writer, CHANGE[kind].route, input);
+      const answer = await send(writer, CHANGE[kind], input);
       if (answer.ok) { announce(`Saved ${id}`); back(); }
       return answer;
     };
