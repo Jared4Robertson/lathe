@@ -1193,7 +1193,7 @@ A fill is accidental complexity written by hand at a slot, against the slot's co
 
 ### `use-case-changes-many-aggregates`
 
-**Warning** · Lathe's · Kinds: [`use_case`](#kind-use_case), [`flow`](#kind-flow), [`flow_step`](#kind-flow_step), [`command`](#kind-command), [`entity`](#kind-entity), `offers`, `role`
+**Warning** · Lathe's · Kinds: [`use_case`](#kind-use_case), [`flow`](#kind-flow), [`flow_step`](#kind-flow_step), [`command`](#kind-command), [`entity`](#kind-entity)
 
 A use case whose actors' own steps send commands of more than one aggregate.
 
@@ -1573,7 +1573,7 @@ A use case has one flow, the same through every interface that offers it, so the
 
 ### `another-actor-writes-in-a-step`
 
-**Warning** · Lathe's · Kinds: [`flow_step`](#kind-flow_step), [`use_case`](#kind-use_case), `role`, [`command`](#kind-command)
+**Warning** · Lathe's · Kinds: [`flow_step`](#kind-flow_step), [`use_case`](#kind-use_case), [`command`](#kind-command)
 
 A flow step in which a role that is not one of its use case's actors sends a command.
 
