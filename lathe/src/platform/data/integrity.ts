@@ -27,7 +27,8 @@ export interface IntegrityQuery {
  *   (statement, goal, meaning or description), or nulls for a kind with none;
  * - record_complexity (id, kind, complexity): every record but an open question, essential or accidental: by its kind
  *   (meta_kind.complexity), or for an as-parent kind (a test, a standard rule) as the nearest record above it that is
- *   not, and for a standard by its type (quality is essential, engineering accidental).
+ *   not, for a standard by its type (quality is essential, engineering accidental), and for an API requirement by
+ *   its product's interfaces (essential when the product has a public API interface, otherwise accidental).
  */
 export function storeViewsSql(schema: SchemaDescription): string {
   const kinds = Object.values(schema.kinds).sort((a, b) => a.name.localeCompare(b.name));
@@ -63,11 +64,23 @@ WITH RECURSIVE up (id, above) AS (
   UNION ALL
   SELECT up.id, p.parent_id FROM up JOIN record_parent p ON p.id = up.above JOIN meta_kind k ON k.name = p.kind
   WHERE k.complexity = 'as-parent' AND p.parent_id IS NOT NULL
+),
+by_interface (id, above) AS (
+  SELECT r.id, r.parent_id FROM record_parent r JOIN meta_kind k ON k.name = r.kind WHERE k.complexity = 'by-interface'
+  UNION ALL
+  SELECT b.id, p.parent_id FROM by_interface b JOIN record_parent p ON p.id = b.above WHERE p.parent_id IS NOT NULL
+),
+public_api AS (
+  SELECT DISTINCT b.id FROM by_interface b JOIN interface i ON i.product_id = b.above WHERE i.public AND i.kind = 'API'
 )
 SELECT up.id, r.kind,
-  CASE k.complexity WHEN 'by-type' THEN CASE s.type WHEN 'quality' THEN 'essential' ELSE 'accidental' END ELSE k.complexity::VARCHAR END AS complexity
+  CASE k.complexity
+    WHEN 'by-type' THEN CASE s.type WHEN 'quality' THEN 'essential' ELSE 'accidental' END
+    WHEN 'by-interface' THEN CASE WHEN pa.id IS NOT NULL THEN 'essential' ELSE 'accidental' END
+    ELSE k.complexity::VARCHAR END AS complexity
 FROM up JOIN record_parent a ON a.id = up.above JOIN meta_kind k ON k.name = a.kind JOIN record_parent r ON r.id = up.id
 LEFT JOIN standard s ON s.id = a.id
+LEFT JOIN public_api pa ON pa.id = a.id
 WHERE k.complexity IS NOT NULL AND k.complexity <> 'as-parent';
 `;
 }

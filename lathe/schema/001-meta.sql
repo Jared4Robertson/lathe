@@ -20,8 +20,9 @@ CREATE TYPE link_scope AS ENUM ('product', 'domain', 'aggregate');
 CREATE TYPE title_form AS ENUM ('identifier', 'invocation', 'kebab-case');
 -- Whether a kind's records are essential complexity, decided once per product (what any correct solution has to
 -- capture), or accidental complexity (what comes from the means used to build it); or whether that follows from the
--- record they sit under (a test, a standard rule) or from the record's own type (a standard).
-CREATE TYPE complexity AS ENUM ('essential', 'accidental', 'as-parent', 'by-type');
+-- record they sit under (a test, a standard rule), from the record's own type (a standard) or from its product's
+-- interfaces (an API requirement: essential only on a public API).
+CREATE TYPE complexity AS ENUM ('essential', 'accidental', 'as-parent', 'by-type', 'by-interface');
 
 CREATE TABLE meta_table (
   name VARCHAR PRIMARY KEY,
@@ -68,7 +69,7 @@ COMMENT ON COLUMN meta_kind.id_pattern IS 'How its IDs are written, such as <P>-
 COMMENT ON COLUMN meta_kind.id_example IS 'An example ID, such as TL-LEND-UC01.';
 COMMENT ON COLUMN meta_kind.id_scope IS 'What its IDs start with, followed by a hyphen: its product''s ID, its domain''s ID or its parent''s ID. A kind with no owner takes its product, or its domain, from that prefix. None for a kind whose IDs are free.';
 COMMENT ON COLUMN meta_kind.product_id IS 'For a product''s own kind, the product that declares it; none for Lathe''s kinds.';
-COMMENT ON COLUMN meta_kind.complexity IS 'Whether its records are essential or accidental complexity. essential: complexity that comes from the problem itself, decided once per product (discovery, the domain model, use cases and patterns, the what of interaction design, test data sets); accidental: complexity that comes from the means used to build the solution (the technical specification), which is derived, provided or a recorded fill at a slot; as-parent: as the record it sits under (a test, a standard rule); by-type: as its own type says (a standard: quality is essential, engineering accidental). A kind is never mixed: one that holds both is split. None for an open question, a note on the spec rather than part of it.';
+COMMENT ON COLUMN meta_kind.complexity IS 'Whether its records are essential or accidental complexity. essential: complexity that comes from the problem itself, decided once per product (discovery, the domain model, use cases and patterns, the what of interaction design, test data sets); accidental: complexity that comes from the means used to build the solution (the technical specification and endpoints, an HTTP API''s shape), which is derived, provided or a recorded fill at a slot; as-parent: as the record it sits under (a test, a standard rule); by-type: as its own type says (a standard: quality is essential, engineering accidental); by-interface: essential when its product marks an API interface public, its contract with the outside world, and otherwise accidental (an API requirement). A kind is never mixed: one that holds both is split. None for an open question, a note on the spec rather than part of it.';
 
 CREATE TABLE meta_kind_title (
   kind VARCHAR PRIMARY KEY REFERENCES meta_kind (name),

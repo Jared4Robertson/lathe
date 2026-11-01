@@ -27,12 +27,14 @@ COMMENT ON TABLE technical_record IS 'The records of the technical specification
 
 CREATE TABLE stored_in_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
 COMMENT ON TABLE stored_in_source IS 'The records that are kept in a data store: repositories, readers and tables.';
+CREATE TABLE accidental_record (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
+COMMENT ON TABLE accidental_record IS 'The records of an accidental kind, which is derived (generates), provided (provided_by) or a fill at a slot (fills): the technical records and endpoints, Lathe''s kinds and a product''s own accidental kinds.';
 CREATE TABLE provided_by_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
 COMMENT ON TABLE provided_by_source IS 'The records something outside the product may provide: data stores, standards, technical records and obligations, Lathe''s kinds and a product''s own of those.';
 
 INSERT INTO meta_table VALUES ('record_id', 'registry', NULL);
 INSERT INTO meta_table
-  SELECT name, 'supertype', NULL FROM (VALUES ('obligation'), ('operation'), ('reads_source'), ('calls_source'), ('follows_source'), ('technical_record'), ('test'), ('stored_in_source'), ('provided_by_source')) AS t (name);
+  SELECT name, 'supertype', NULL FROM (VALUES ('obligation'), ('operation'), ('reads_source'), ('calls_source'), ('follows_source'), ('technical_record'), ('test'), ('stored_in_source'), ('accidental_record'), ('provided_by_source')) AS t (name);
 INSERT INTO meta_supertype_member
   SELECT 'obligation', kind FROM (VALUES ('constraint'), ('invariant'), ('specification'), ('policy'), ('domain_service'),
     ('storage_requirement'), ('uc_requirement'), ('view_requirement'), ('api_requirement'), ('pattern_rule'), ('standard_rule')) AS t (kind)
@@ -48,5 +50,8 @@ INSERT INTO meta_supertype_member
     ('pattern_rule_test'), ('standard_rule_test')) AS t (kind)
   UNION ALL SELECT 'stored_in_source', kind FROM (VALUES ('repository'), ('reader'), ('table')) AS t (kind);
 INSERT INTO meta_supertype_member
-  SELECT 'provided_by_source', kind FROM meta_supertype_member WHERE supertype IN ('technical_record', 'obligation')
+  SELECT 'accidental_record', kind FROM meta_supertype_member WHERE supertype = 'technical_record'
+  UNION ALL SELECT 'accidental_record', 'endpoint';
+INSERT INTO meta_supertype_member
+  SELECT 'provided_by_source', kind FROM meta_supertype_member WHERE supertype IN ('accidental_record', 'obligation')
   UNION ALL SELECT 'provided_by_source', kind FROM (VALUES ('data_store'), ('standard')) AS t (kind);

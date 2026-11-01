@@ -100,7 +100,7 @@ describe('patterns', () => {
 describe('flows', () => {
   it('LA-AUT-UC06-R01-T01 A use case has one flow per interface, whose steps need a path and a position, fulfill its requirements, invoke a command or query, happen in a view and exchange with integrations', () => {
     expect(parentsOf(schema, 'interface')).toEqual(['product.product_id']);
-    expect(requiredOf(schema, 'interface')).toEqual(['product_id', 'kind', 'description']);
+    expect(requiredOf(schema, 'interface')).toEqual(['product_id', 'kind', 'description', 'public']);
     expect(schema.tables.interface.columns.find((c) => c.name === 'kind')?.values).toEqual(['web app', 'API', 'CLI', 'agent tools', 'desktop', 'other']);
     expect(parentsOf(schema, 'flow')).toEqual(['use_case.use_case_id']);
     expect(requiredOf(schema, 'flow')).toEqual(['use_case_id', 'interface_id']);
@@ -146,7 +146,7 @@ describe('flows', () => {
   it('LA-AUT-UC06-R07-T02 A UC requirement is designed only once a step of every flow of its use case fulfills it', async () => {
     // A second flow of UC01, through a CLI, whose one step fulfills nothing: UC01's requirement is no longer designed.
     const data = adding(complete(), {
-      interface: [{ id: 'EX-IF02', title: 'CLI', product_id: 'EX', kind: 'CLI', description: 'The command line the librarian runs.' }],
+      interface: [{ id: 'EX-IF02', title: 'CLI', product_id: 'EX', kind: 'CLI', description: 'The command line the librarian runs.', public: false }],
       flow: [{ id: 'EX-LEND-UC01-FL02', title: 'Borrow from the terminal', use_case_id: 'EX-LEND-UC01', interface_id: 'EX-IF02' }],
       flow_step: [{ id: 'EX-LEND-UC01-FL02-S01', title: 'Run borrow', flow_id: 'EX-LEND-UC01-FL02', path: 'main', position: 1 }],
       flow_test: [{ id: 'EX-LEND-UC01-FL02-T', title: 'Borrow from the terminal', flow_id: 'EX-LEND-UC01-FL02', level: 'system', state: 'manual', manual_reason: 'Done at the desk.', steps: ['Run borrow with a free tool.'], expected_result: 'The loan is opened.' }],
@@ -163,13 +163,13 @@ describe('flows', () => {
     const flow = data.flow[0];
     expect(await refusals(data)).toEqual([]);
     // TL-IF02 is a second interface of TL; a flow through it ends in FL02, not FL03.
-    const second = adding(data, { interface: [{ id: 'TL-IF02', title: 'CLI', product_id: 'TL', kind: 'CLI', description: 'The command line the librarian runs.' }] });
+    const second = adding(data, { interface: [{ id: 'TL-IF02', title: 'CLI', product_id: 'TL', kind: 'CLI', description: 'The command line the librarian runs.', public: false }] });
     expect(await refusals(adding(second, { flow: [{ ...flow, id: 'TL-LEND-UC01-FL02', title: 'Borrow a tool through the CLI', interface_id: 'TL-IF02' }] }))).toEqual([]);
     expect(await refusals(adding(second, { flow: [{ ...flow, id: 'TL-LEND-UC01-FL03', title: 'Borrow a tool through the CLI', interface_id: 'TL-IF02' }] }))).toEqual([
       expect.objectContaining({ rule: 'flow-id-interface', message: 'TL-LEND-UC01-FL03 goes through TL-IF02, so its ID is TL-LEND-UC01-FL02' }),
     ]);
     // An interface of another product is refused.
-    const other = adding(second, { product: [{ id: 'XX', title: 'Other', description: 'Another product beside the library.' }], interface: [{ id: 'XX-IF02', title: 'CLI', product_id: 'XX', kind: 'CLI', description: 'The other product\'s command line.' }] });
+    const other = adding(second, { product: [{ id: 'XX', title: 'Other', description: 'Another product beside the library.' }], interface: [{ id: 'XX-IF02', title: 'CLI', product_id: 'XX', kind: 'CLI', description: 'The other product\'s command line.', public: false }] });
     expect((await refusals(adding(other, { flow: [{ ...flow, id: 'TL-LEND-UC01-FL02', title: 'Borrow a tool through the CLI', interface_id: 'XX-IF02' }] }))).map((p) => p.rule)).toEqual(['reference-crosses-product']);
   });
 
@@ -188,7 +188,7 @@ describe('flows', () => {
   });
 
   it('LA-AUT-UC06-R11-T01 An interface no flow goes through is a gap', async () => {
-    const ws = await loadData(adding(complete(), { interface: [{ id: 'EX-IF02', title: 'CLI', product_id: 'EX', kind: 'CLI', description: 'The command line the librarian runs.' }] }));
+    const ws = await loadData(adding(complete(), { interface: [{ id: 'EX-IF02', title: 'CLI', product_id: 'EX', kind: 'CLI', description: 'The command line the librarian runs.', public: false }] }));
     expect(ws.coverage.flatMap((c) => c.gaps).filter((g) => g.missing === 'interface-without-flow')).toEqual([
       { id: 'EX-IF02', kind: 'interface', missing: 'interface-without-flow', message: 'Interface EX-IF02 has no flow: no use case happens through it yet.' },
     ]);

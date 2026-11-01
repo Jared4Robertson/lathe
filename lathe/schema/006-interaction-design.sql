@@ -10,7 +10,8 @@ CREATE TABLE interface (
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   product_id VARCHAR NOT NULL REFERENCES product (id),
   kind interface_kind NOT NULL,
-  description VARCHAR NOT NULL CHECK (trim(description) <> '')
+  description VARCHAR NOT NULL CHECK (trim(description) <> ''),
+  public BOOLEAN NOT NULL
 );
 COMMENT ON TABLE interface IS 'A way people or programs use the product, such as its web app, its HTTP API or its command line. A use case happens through one or more interfaces, with one flow for each, and the kind says what that flow''s steps go through.';
 COMMENT ON COLUMN interface.id IS 'The interface''s ID: its product''s ID and IF<nn>, such as TL-IF01. Its number ends the ID of every flow through it.';
@@ -18,6 +19,7 @@ COMMENT ON COLUMN interface.title IS 'The interface''s name, such as Web app, HT
 COMMENT ON COLUMN interface.product_id IS 'The product it belongs to.';
 COMMENT ON COLUMN interface.kind IS 'What it is: web app or desktop (a flow''s steps happen in views), API (they call endpoints, through the command or query each exposes), CLI or agent tools (they run commands and queries), or other. A step of an API, CLI or agent tools flow happens in no view.';
 COMMENT ON COLUMN interface.description IS 'Who uses it and how, in a sentence or two.';
+COMMENT ON COLUMN interface.public IS 'Whether people or programs outside the product build on it, so its contract is the product''s own commitment: a public API''s requirements are essential complexity, an internal one''s (such as the API only the product''s own app calls) accidental.';
 
 CREATE TABLE flow (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
@@ -129,8 +131,8 @@ INSERT INTO meta_kind VALUES
   ('flow_step', 'Flow step', 'interaction-design', 26, false, '<flow>-S<nn>', 'TL-LEND-UC01-FL01-S01', 'parent', NULL, 'essential'),
   ('view', 'View', 'interaction-design', 27, false, '<P>-V<nn>', 'TL-V01', 'product', NULL, 'essential'),
   ('view_requirement', 'View requirement', 'interaction-design', 28, true, '<view>-R<nn>', 'TL-V01-R01', 'parent', NULL, 'essential'),
-  ('endpoint', 'Endpoint', 'interaction-design', 29, false, '<P>-<D>-EP<nn>', 'TL-LEND-EP01', 'domain', NULL, 'essential'),
-  ('api_requirement', 'API requirement', 'interaction-design', 30, true, '<endpoint>-R<nn>', 'TL-LEND-EP01-R01', 'parent', NULL, 'essential'),
+  ('endpoint', 'Endpoint', 'interaction-design', 29, false, '<P>-<D>-EP<nn>', 'TL-LEND-EP01', 'domain', NULL, 'accidental'),
+  ('api_requirement', 'API requirement', 'interaction-design', 30, true, '<endpoint>-R<nn>', 'TL-LEND-EP01-R01', 'parent', NULL, 'by-interface'),
   ('integration', 'Integration', 'interaction-design', 31, false, '<P>-INT<nn>', 'TL-INT01', 'product', NULL, 'essential');
 INSERT INTO meta_kind_parent VALUES
   ('interface', 'product', 1, 'product_id'),

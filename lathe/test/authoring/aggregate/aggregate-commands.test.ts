@@ -46,7 +46,7 @@ async function refusal(store: Store, definition: AnyCommand, input: unknown): Pr
 const fileOf = (store: Store, table: string) => readFileSync(path.join(store.dataDir, `${table}.jsonl`), 'utf8');
 type Whole = ReturnType<typeof GET_AGGREGATE.run>;
 
-describe('LA-AUT-UC10-R50-T01 each Aggregate command (LA-AUT-A6) changes one aggregate through AggregateRepository, held to its rules, and is reached by name from the CLI, the MCP tools and HTTP', () => {
+describe('LA-PAT-AGGREGATE-COMMANDS-R10-T01 each Aggregate command (LA-AUT-A6) changes one aggregate through AggregateRepository, held to its rules, and is reached by name from the CLI, the MCP tools and HTTP', () => {
   it('LA-PAT-AGGREGATE-TESTS-R03-T01 builds the data set with its own Add commands, and reads an aggregate whole by any record in it', async () => {
     const store = await aggregateDataSet();
     const whole = runQuery(store, GET_AGGREGATE, { id: 'TL-LEND-INV01-T' }) as Whole;

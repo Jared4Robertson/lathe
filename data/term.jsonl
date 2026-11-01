@@ -47,6 +47,7 @@
 {"id":"LA-AUT-TM64","title":"Slot","domain_id":"LA-AUT","meaning":"A point in shared behavior where what varies is open-ended, so no setting can choose it: code written by hand against a contract stated in one sentence goes there.","group_name":"Complexity"}
 {"id":"LA-AUT-TM65","title":"Fill","domain_id":"LA-AUT","meaning":"Code written by hand at a slot, against its contract: accidental complexity recorded where it is needed, and debt until what the fills of one slot repeat is stated once and derived.","group_name":"Complexity"}
 {"id":"LA-AUT-TM66","title":"Provided","domain_id":"LA-AUT","meaning":"Decided once outside the product, for everyone who uses it, by a dependency, a platform or a generic subdomain whose essential complexity it is, so the product neither builds nor proves it itself.","group_name":"Complexity"}
+{"id":"LA-AUT-TM67","title":"Data model","domain_id":"LA-AUT","meaning":"An entity in code: its data, its behavior and how its table stores it, one per entity.","group_name":"Build and test"}
 {"id":"LA-CHK-TM01","title":"Check","domain_id":"LA-CHK","meaning":"One rule the engine applies on every load: a row of `check.jsonl` whose SELECT returns a row for each thing it finds wrong or still to do."}
 {"id":"LA-CHK-TM02","title":"Problem","domain_id":"LA-CHK","meaning":"One thing a check found wrong or still to do in the loaded data. Problems are the result of a run, never stored."}
 {"id":"LA-CHK-TM03","title":"Error","domain_id":"LA-CHK","meaning":"A problem that means the data is broken. `lathe check` exits 1 on any error."}

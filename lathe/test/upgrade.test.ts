@@ -159,15 +159,17 @@ describe('the schema version', () => {
     for (const [table, rows] of Object.entries(files)) writeFileSync(path.join(root, 'data', `${table}.jsonl`), rows.map(line).join(''));
     git(root, 'add', '.');
     git(root, 'commit', '-q', '-m', 'A flow before interfaces');
-    const result = await upgradeProduct(root, { converters: (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 1), target: 2 });
+    // The data must load under this Lathe's schema, so every later converter runs too: 3-to-4 makes the interface internal.
+    const result = await upgradeProduct(root, { converters: await readConverters(UPGRADES_DIR) });
     expect(result.done).toBe(true);
     expect(result.todos).toEqual([
       expect.stringMatching(/^1-to-2: TL-IF01 stands for every interface TL's flows went through/),
       expect.stringMatching(/^1-to-2: Rename the flow, step and flow test IDs your code names/),
       expect.stringMatching(/^1-to-2: Write each text that starts "To write:" from the code/),
+      expect.stringMatching(/^3-to-4: An interface that people or programs outside the product build on is public/),
     ]);
     const read = (table: string) => readFileSync(path.join(root, 'data', `${table}.jsonl`), 'utf8');
-    expect(read('interface')).toBe(line({ id: 'TL-IF01', title: 'Interface', product_id: 'TL', kind: 'other', description: 'Every flow written before interfaces were declared goes through this one.' }));
+    expect(read('interface')).toBe(line({ id: 'TL-IF01', title: 'Interface', product_id: 'TL', kind: 'other', description: 'Every flow written before interfaces were declared goes through this one.', public: false }));
     expect(read('flow')).toBe(line({ id: 'TL-LEND-UC01-FL01', title: 'Borrow', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }));
     expect(read('flow_step')).toContain('"id":"TL-LEND-UC01-FL01-S01"');
     expect(read('flow_test')).toContain('"id":"TL-LEND-UC01-FL01-T","title":"Borrow end to end","flow_id":"TL-LEND-UC01-FL01"');
@@ -175,7 +177,7 @@ describe('the schema version', () => {
     expect(read('flow_test')).toContain('"level":"system"');
     expect(read('fulfills')).toBe(line({ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-LEND-UC01-R01' }));
     expect(read('uc_requirement')).toContain('as TL-LEND-UC01-FL01-S01 shows.');
-    expect(readConfig(root).schema).toBe(2);
+    expect(readConfig(root).schema).toBe(SCHEMA_VERSION);
   });
   it('LA-AUT-UC03-R08-T03 1-to-2 gives every test one of the five levels, and a manual test the level that fits its kind', async () => {
     const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 1);
@@ -402,7 +404,7 @@ describe('the schema version', () => {
     return { changes, todos };
   };
 
-  it('LA-AUT-UC03-R08-T11 3-to-4 gives each product kind its complexity from its stage, makes each standard engineering with a to-do to review it, and gives each product setting no technology words', async () => {
+  it('LA-AUT-UC03-R08-T11 3-to-4 gives each product kind its complexity from its stage, makes each standard engineering with a to-do to review it, gives each product setting no technology words, and makes each interface internal with a to-do to mark the public ones', async () => {
     const tables: Record<string, Record<string, unknown>[]> = {
       product_kind: [
         { name: 'report', product_id: 'TL', stage: 'technical-specification' },
@@ -412,13 +414,18 @@ describe('the schema version', () => {
       ],
       standard: [{ id: 'TL-STD-CODE', title: 'Code', product_id: 'TL', description: 'How the code is written.' }],
       product_setting: [{ product_id: 'TL', max_children: 15, max_entities_per_aggregate: 7 }],
+      interface: [{ id: 'TL-IF01', title: 'Lending API', product_id: 'TL', kind: 'API', description: 'Other libraries lend through it.' }],
     };
     const { changes, todos } = await run3to4(tables);
     expect(tables.product_kind!.map((k) => [k.name, k.complexity])).toEqual([['report', 'accidental'], ['drill', 'as-parent'], ['skill', 'essential'], ['note', 'essential']]);
     expect(tables.standard).toEqual([{ id: 'TL-STD-CODE', title: 'Code', product_id: 'TL', description: 'How the code is written.', type: 'engineering' }]);
     expect(tables.product_setting).toEqual([{ product_id: 'TL', max_children: 15, max_entities_per_aggregate: 7, technology_words: [] }]);
-    expect(changes).toHaveLength(3);
-    expect(todos).toEqual([expect.stringContaining('change its type to quality where it is one, among TL-STD-CODE')]);
+    expect(tables.interface).toEqual([{ id: 'TL-IF01', title: 'Lending API', product_id: 'TL', kind: 'API', description: 'Other libraries lend through it.', public: false }]);
+    expect(changes).toHaveLength(4);
+    expect(todos).toEqual([
+      expect.stringContaining('change its type to quality where it is one, among TL-STD-CODE'),
+      expect.stringContaining('change public to true where it is one, among TL-IF01'),
+    ]);
   });
 
   it('LA-AUT-UC03-R08-T12 3-to-4 does nothing to data that is already upgraded', async () => {
@@ -426,6 +433,7 @@ describe('the schema version', () => {
       product_kind: [{ name: 'report', product_id: 'TL', stage: 'technical-specification', complexity: 'essential' }],
       standard: [{ id: 'TL-STD-MONEY', title: 'Money', product_id: 'TL', type: 'quality', description: 'Amounts are exact.' }],
       product_setting: [{ product_id: 'TL', max_children: 15, max_entities_per_aggregate: 7, technology_words: ['Postgres'] }],
+      interface: [{ id: 'TL-IF01', title: 'Lending API', product_id: 'TL', kind: 'API', description: 'Other libraries lend through it.', public: true }],
     };
     const before = structuredClone(tables);
     const { changes, todos } = await run3to4(tables);

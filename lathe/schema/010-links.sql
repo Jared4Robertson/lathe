@@ -43,10 +43,10 @@ CREATE TABLE stored_in (source_id VARCHAR NOT NULL UNIQUE REFERENCES stored_in_s
 COMMENT ON TABLE stored_in IS 'The repository, reader or table is kept in the data store: each names exactly one, where its data actually lives.';
 CREATE TABLE provided_by (source_id VARCHAR NOT NULL UNIQUE REFERENCES provided_by_source (id), target_id VARCHAR NOT NULL REFERENCES record_id (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE provided_by IS 'The record is provided by something outside the product, which decides it once for everyone who uses it: a dependency, a platform or a generic subdomain, reached through an integration or named by a record of a product''s own kind (a component of a design system), once the product adds that pair with a product_relation named provided_by. A data store someone else runs, such as a managed database or a bucket, is provided by the integration that reaches it; a store the product owns outright, such as a local file, has none. A provided record counts as accounted for, and a provided obligation as built and proved, through its provider. One provider per record.';
-CREATE TABLE fills (source_id VARCHAR NOT NULL REFERENCES technical_record (id), target_id VARCHAR NOT NULL REFERENCES slot (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE fills IS 'The technical record, written by hand, fills the pattern''s slot against its contract: it is a fill, accidental complexity recorded where it is owed and counted as debt until the pattern can derive it.';
-CREATE TABLE generates (source_id VARCHAR NOT NULL REFERENCES tooling (id), target_id VARCHAR NOT NULL REFERENCES technical_record (id), PRIMARY KEY (source_id, target_id), CHECK (source_id <> target_id));
-COMMENT ON TABLE generates IS 'The tooling record (a generator) writes the technical record''s code from the spec: the record is derived, never written by hand.';
+CREATE TABLE fills (source_id VARCHAR NOT NULL REFERENCES accidental_record (id), target_id VARCHAR NOT NULL REFERENCES slot (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE fills IS 'The accidental record (a technical record or an endpoint), written by hand, fills the pattern''s slot against its contract: it is a fill, accidental complexity recorded where it is owed and counted as debt until the pattern can derive it.';
+CREATE TABLE generates (source_id VARCHAR NOT NULL REFERENCES tooling (id), target_id VARCHAR NOT NULL REFERENCES accidental_record (id), PRIMARY KEY (source_id, target_id), CHECK (source_id <> target_id));
+COMMENT ON TABLE generates IS 'The tooling record (a generator) writes the accidental record (a technical record''s code, or an endpoint''s route) from the spec: the record is derived, never written by hand.';
 CREATE TABLE serves (source_id VARCHAR NOT NULL REFERENCES capability (id), target_id VARCHAR NOT NULL REFERENCES business_outcome (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE serves IS 'The capability serves the business outcome: what it is for. A capability may serve several outcomes, and an outcome be served by several capabilities.';
 CREATE TABLE measured_by (source_id VARCHAR NOT NULL REFERENCES business_outcome (id), target_id VARCHAR NOT NULL REFERENCES record_id (id), PRIMARY KEY (source_id, target_id));
@@ -168,8 +168,8 @@ INSERT INTO meta_relation_pair
     FROM meta_supertype_member m JOIN meta_kind k ON k.name = m.kind
   )
   SELECT 'provided_by', kind, 'integration', 'The ' || label || ' is provided by what the integration reaches, outside the product.' FROM named WHERE supertype = 'provided_by_source'
-  UNION ALL SELECT 'fills', kind, 'slot', 'The ' || label || ', written by hand, fills the slot.' FROM named WHERE supertype = 'technical_record'
-  UNION ALL SELECT 'generates', 'tooling', kind, 'The tooling record generates the ' || label || '''s code.' FROM named WHERE supertype = 'technical_record';
+  UNION ALL SELECT 'fills', kind, 'slot', 'The ' || label || ', written by hand, fills the slot.' FROM named WHERE supertype = 'accidental_record'
+  UNION ALL SELECT 'generates', 'tooling', kind, 'The tooling record generates the ' || label || '''s code.' FROM named WHERE supertype = 'accidental_record';
 
 INSERT INTO meta_table SELECT name, 'link', NULL FROM meta_relation;
 

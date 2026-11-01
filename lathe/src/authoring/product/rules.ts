@@ -46,9 +46,12 @@ function declarationProblems(product: Product, view: ReadView): RuleProblem[] {
   }
   const relation = (row: object, message: string) => problems.push({ rule: 'product-relation-own', table: 'product_relation', row: row as unknown as Row, message });
   // The supertypes an own kind joins as its tables are built (platform/data/product-kinds.ts): an obligation kind the
-  // obligation supertype, a kind of the technical specification the technical records.
+  // obligation supertype, a kind of the technical specification the technical records, and an accidental kind (one of
+  // the technical specification, or one that says it is accidental) the accidental records.
   const ownMember = (table: string, end: string) =>
-    (table === 'obligation' && own.get(end)?.obligation === true) || (table === 'technical_record' && own.get(end)?.stage === 'technical-specification');
+    (table === 'obligation' && own.get(end)?.obligation === true) ||
+    (table === 'technical_record' && own.get(end)?.stage === 'technical-specification') ||
+    (table === 'accidental_record' && (own.get(end)?.stage === 'technical-specification' || own.get(end)?.complexity === 'accidental'));
   const firstOf = new Map<string, ProductRelationRow>();
   for (const pair of product.relations) {
     if (blank(pair.forward_label) || blank(pair.reverse_label)) relation(pair, `The relation ${pair.name} needs both its labels, forward and reverse.`);

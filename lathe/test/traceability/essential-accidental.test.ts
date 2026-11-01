@@ -2,19 +2,27 @@
 // domain's checks.test.ts): every kind says which it is, a provided obligation is built and proved through its
 // provider, and the store refuses a generated fill. Each starts from the complete product and changes one thing.
 import { afterAll, describe, expect, it } from 'vitest';
-import { adding, complete, loadData, obligation, refusals, removeData, without } from '../helpers.ts';
+import { adding, changing, complete, loadData, obligation, ofCheck, records, refusals, removeData, without } from '../helpers.ts';
 
 afterAll(removeData);
 
 describe('essential and accidental complexity', () => {
-  it('LA-STD-PRINCIPLES-R05-T01 Each kind is essential or accidental by kind, never by record: a test follows what it proves, a standard its type', async () => {
+  it("LA-STD-PRINCIPLES-R05-T01 Each kind is essential or accidental by kind, never by record: a test follows what it proves, a standard its type, an API requirement its product's interfaces", async () => {
     const ws = await loadData(complete());
     const of = (kind: string) => ws.kinds.find((k) => k.kind === kind)?.complexity;
-    for (const kind of ['product', 'business_outcome', 'aggregate', 'use_case', 'pattern', 'slot', 'flow_step', 'view_requirement', 'endpoint', 'test_data_set']) expect(of(kind), kind).toBe('essential');
-    for (const kind of ['command_handler', 'table', 'ui_component', 'data_store', 'tooling']) expect(of(kind), kind).toBe('accidental');
+    for (const kind of ['product', 'business_outcome', 'aggregate', 'use_case', 'pattern', 'slot', 'flow_step', 'view_requirement', 'test_data_set']) expect(of(kind), kind).toBe('essential');
+    for (const kind of ['endpoint', 'endpoint_handler', 'command_handler', 'table', 'ui_component', 'data_store', 'tooling']) expect(of(kind), kind).toBe('accidental');
     for (const kind of ['use_case_test', 'standard_rule', 'standard_rule_test']) expect(of(kind), kind).toBe('as-parent');
     expect(of('standard')).toBe('by-type');
+    expect(of('api_requirement')).toBe('by-interface');
     expect(of('question')).toBeNull();
+    // An API requirement is accidental on an internal API (the complete product's platform provides its one), so it
+    // must be accounted for like any other accidental record; on a public API it is the product's contract with the
+    // outside world, essential, and nothing need account for it.
+    const unprovided = without(complete(), 'provided_by', (r) => r.source_id === 'EX-LEND-EP01-R01');
+    expect(records(ofCheck(await loadData(unprovided), 'accidental-not-accounted-for'))).toEqual(['EX-LEND-EP01-R01']);
+    const publicApi = changing(without(unprovided, 'happens_in', () => true), 'interface', () => true, { kind: 'API', public: true });
+    expect(ofCheck(await loadData(publicApi), 'accidental-not-accounted-for')).toEqual([]);
     // Every kind of a stage says which it is; only the open question, outside the stages, says none.
     expect(ws.kinds.filter((k) => k.complexity === null).map((k) => k.kind)).toEqual(['question']);
   });
