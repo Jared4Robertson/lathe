@@ -26,7 +26,7 @@ export interface GraphDrawn {
 
 /** What each stage's color holds, in its tooltip. */
 const STAGE_KINDS: Readonly<Record<Stage, string>> = {
-  discovery: 'business outcome',
+  discovery: 'business outcome, journey, journey step',
   'domain-model': 'domain, aggregate, entity, value object, constraint, invariant, specification, domain event, command, read model, query, policy, domain service, term',
   'use-cases': 'capability, use case, UC requirement, pattern and its rules',
   'interaction-design': 'flow, flow step, view, view requirement, endpoint, API requirement, integration',
@@ -38,12 +38,12 @@ const STAGE_KINDS: Readonly<Record<Stage, string>> = {
 const SHAPE_WORDS: Readonly<Record<Shape, string>> = {
   product: 'Product', hexagon: 'Domain', folder: 'Folder', double: 'Aggregate', box: 'Entity', octagon: 'Rule', flag: 'Event',
   parallelogram: 'Command', slice: 'Capability', stadium: 'Use case', page: 'Requirement', stack: 'Pattern', 'chevron-bar': 'Flow',
-  chevron: 'Flow step', window: 'View', port: 'Endpoint', component: 'Technical', stripes: 'Table', shield: 'Test', diamond: 'Question',
+  chevron: 'Flow step', tab: 'Journey step', window: 'View', port: 'Endpoint', component: 'Technical', stripes: 'Table', shield: 'Test', diamond: 'Question',
 };
 
 /** A mark's word in the key: what it tells apart. */
 const MARK_WORDS: Readonly<Record<Mark, string>> = {
-  value: 'Value', gear: 'Logic', lens: 'Read', marker: 'Term', ruler: 'Standard', port: 'Integration', target: 'Outcome', data: 'Test data', plug: 'Interface',
+  value: 'Value', gear: 'Logic', lens: 'Read', marker: 'Term', ruler: 'Standard', port: 'Integration', target: 'Outcome', data: 'Test data', plug: 'Interface', route: 'Journey',
 };
 
 const BADGES: Readonly<Record<Badge, { sample: string; words: string; meaning: string }>> = {
@@ -84,7 +84,8 @@ export function graphKeyEntries(drawn: GraphDrawn, stages: readonly MetaStage[] 
   if (drawn.layout === 'nested') out.push({ id: 'nested', group: 'lines', sample: <span className="graph-swatch stage-nested" />, words: 'Box in box', meaning: 'Nested view: a box holding its children below its name, as big as the records under it' });
   if (drawn.layout === 'map') {
     out.push({ id: 'district', group: 'lines', sample: <span className="graph-swatch stage-district" />, words: 'District', meaning: 'Map: a domain (or what the product shares) as an area, its stages left to right in it, their folders one under another, each named with its count of records' });
-    out.push({ id: 'composed', group: 'lines', sample: <span className="graph-swatch stage-nested" />, words: 'Part of', meaning: 'Map: a record inside another is part of it (an aggregate\'s entities, a use case\'s requirements and flows, every record\'s tests); every leaf record is one size' });
+    out.push({ id: 'composed', group: 'lines', sample: <span className="graph-swatch stage-nested" />, words: 'Part of', meaning: 'Map: a record inside another is part of it (an aggregate\'s entities, a journey\'s steps, a use case\'s requirements and flows, every record\'s tests); every leaf record is one size' });
+    out.push({ id: 'then', group: 'lines', sample: <span className="graph-line is-link" />, words: 'Then', meaning: 'Map: inside a journey or a flow, an arrow from each step to the next on its path, the main path and each other one' });
     out.push({ id: 'link', group: 'lines', sample: <span className="graph-line is-link" />, words: 'Link', meaning: 'Map: the focus\'s and the selection\'s links as lines, named by their relation (All links, under Filters, draws every link in view)' });
   }
   if (drawn.layout !== 'map') out.push({ id: 'bar', group: 'lines', sample: <span className="graph-swatch stage-bar" />, words: 'Too small', meaning: 'A bar: children too small to draw at this zoom' });

@@ -3,7 +3,7 @@ import type { Mark, Shape } from './shapes';
 // The small marks for a kind's shape (LA-V93-R06): drawn before a box's kind and ID line in the
 // Nested view, where every box keeps its rectangle (by the canvas, paint.ts,
 // from these same paths), and in the graph's key.
-// A mark (a tag, a gear, a lens, a marker, a ruler, a port, a target, a cylinder, a plug) tells apart two kinds that share a shape, in every
+// A mark (a tag, a gear, a lens, a marker, a ruler, a port, a target, a cylinder, a plug, a route) tells apart two kinds that share a shape, in every
 // view. Each is a line drawing in its box's edge and fill colors.
 
 /** Each shape's drawing in a 16 by 11 box: one path, or layers drawn back to front. */
@@ -22,6 +22,7 @@ export const SHAPE_PATHS: Readonly<Record<Shape, string | readonly string[]>> = 
   stack: ['M3.5 1H15v6.5H3.5z', 'M1 3.5h11.5V10H1z'],
   'chevron-bar': 'M1 1.5h11l3 4-3 4H1l3-4z M8 1.5l3 4-3 4',
   chevron: 'M1 1.5h10l4 4-4 4H1l4-4z',
+  tab: ['M5 1.5h10v8H5a4 4 0 0 1 0-8z', 'M7.5 4 9 3v5'],
   window: 'M1 1h14v9H1z M1 3.5h14',
   port: 'M1 1.5h14v8H1V7h2.5V4H1z',
   stripes: 'M1 1h14v9H1z M1 3h14 M1 8h14',
@@ -40,6 +41,7 @@ export const MARK_PATHS: Readonly<Record<Mark, string>> = {
   marker: 'M3 1h5v9L5.5 7.8 3 10z',
   target: 'M5.5 1a4.5 4.5 0 1 0 0 9 4.5 4.5 0 1 0 0-9z M5.5 3.3a2.2 2.2 0 1 0 0 4.4 2.2 2.2 0 1 0 0-4.4z M5.5 5.5h0.1',
   data: 'M1.5 2.5a4 1.5 0 1 0 8 0 4 1.5 0 1 0-8 0z M1.5 2.5v6a4 1.5 0 0 0 8 0v-6 M1.5 5.5a4 1.5 0 0 0 8 0',
+  route: 'M2 9.5 5.5 5.5 9 3.5 M2 8.3a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 1 0 0-2.4z M5.5 4.3a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 1 0 0-2.4z M9 2.3a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 1 0 0-2.4z',
   plug: 'M3.5 1v2.5 M7.5 1v2.5 M2 3.5h7v2a3.5 3.5 0 0 1-7 0z M5.5 9v1.5',
 };
 
@@ -52,7 +54,7 @@ export function ShapeIcon({ shape }: { shape: Shape }) {
   );
 }
 
-/** A kind's mark (a tag, a gear, a lens, a marker, a ruler, a port, a target, a cylinder, a plug). */
+/** A kind's mark (a tag, a gear, a lens, a marker, a ruler, a port, a target, a cylinder, a plug, a route). */
 export function MarkIcon({ mark }: { mark: Mark }) {
   return (
     <svg className={`graph-mark-icon mark-${mark}`} viewBox="0 0 11 11" aria-hidden="true" focusable="false">

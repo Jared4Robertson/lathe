@@ -10,6 +10,8 @@ import type { RecordIndex } from '../../src/exploring/record-summaries/record-in
 import type { ServedData } from '../read-view';
 import { siblingGroups } from './workspace';
 import { plateOf, type Plate, type PlateSource } from '../../src/graph/plate';
+import { isBlock, labelPlate, READABLE_PX } from '../../src/graph/paint';
+import type { GroundNode } from '../../src/graph/ground';
 import type { NestedNode } from '../../src/graph/nested';
 import { graphMap, groundMap, nestedMap } from './maps';
 
@@ -82,7 +84,10 @@ function nameless(spaces: Map<string, RecordIndex>): { problems: string[]; frame
         const sizes = group.map((n) => layout.size(map, n.id));
         const spread = Math.max(...sizes) / Math.min(...sizes) - 1;
         if (spread > 0) problems.push(`${layout.name} ${product.id}: ${group[0].parent}'s children differ in size by ${(spread * 100).toFixed(1)}%`);
-        if (new Set(group.map((n) => n.text)).size !== 1) problems.push(`${layout.name} ${product.id}: ${group[0].parent}'s children have ${new Set(group.map((n) => n.text)).size} text scales`);
+        // In the Nested map the leaves among them share one scale and the parents another (LA-EXP-DS07).
+        for (const kin of layout.name === 'Nested' ? [group.filter((n) => n.children.length === 0), group.filter((n) => n.children.length > 0)] : [group]) {
+          if (new Set(kin.map((n) => n.text)).size > 1) problems.push(`${layout.name} ${product.id}: ${group[0].parent}'s children have ${new Set(kin.map((n) => n.text)).size} text scales`);
+        }
       }
       for (const focus of foci) {
         if (!map.nodes.has(focus)) continue;
@@ -136,11 +141,19 @@ describe('every drawn box shows its name', () => {
         // whose siblings' labels need less, in boxes much wider than tall) and whose frame its width sets (not a box whose height
         // caps the zoom, which reads smaller): the focus fills the same share of the pane's width (FOCUS_SHARE).
         const sizes = new Map<number, number[]>();
+        const leaves: number[] = [];
         for (const n of map.nodes.values()) {
           const v = layout.frame(map, n.id, 770, 640);
           expect(v.zoom, `${layout.name} ${n.id}`).toBeLessThanOrEqual(maxZoomFor(map));
           expect(v.zoom, `${layout.name} ${n.id}`).toBeGreaterThanOrEqual(MIN_ZOOM);
           if (layout.name === 'Tree' && (n.text < treeText(n.w) * (1 - 1e-9) || v.zoom >= (640 - 2 * FRAME_PADDING) / n.h * (1 - 1e-9))) continue;
+          // A framed Nested leaf has no header: its label, centered, is at most a tenth of its side on screen (LA-EXP-DS07).
+          if (layout.name === 'Nested' && n.children.length === 0) {
+            const px = n.text * v.zoom * TITLE_FONT;
+            expect(px, `${layout.name} ${n.id}`).toBeLessThanOrEqual(n.w * v.zoom / 10 * (1 + 1e-9));
+            leaves.push(px);
+            continue;
+          }
           (sizes.get(n.level) ?? sizes.set(n.level, []).get(n.level)!).push(n.text * v.zoom * TITLE_FONT);
         }
         // The middle size, or the mean of the two middle ones when there is an even number (not the larger of them).
@@ -157,11 +170,41 @@ describe('every drawn box shows its name', () => {
         else expect(hi / lo, `${product} ${layout.name}: ${medians.map((m) => m.toFixed(1)).join(', ')}`).toBeLessThan(1.2);
         // Readable: at least 9 pixels; at most 36, a focus filling FOCUS_SHARE of the pane reading large but not huge.
         for (const m of medians) { expect(m).toBeGreaterThanOrEqual(9); expect(m).toBeLessThanOrEqual(36); }
+        if (leaves.length > 0) expect(median(leaves), `${product} ${layout.name} leaves`).toBeGreaterThanOrEqual(9);
         // The camera frames even the deepest, smallest leaf without reaching its zoom limit.
         const smallest = [...map.nodes.values()].reduce((a, b) => (Math.min(b.w, b.h) < Math.min(a.w, a.h) ? b : a));
         expect(layout.frame(map, smallest.id, 770, 640).zoom, `${layout.name} ${smallest.id}`).toBeLessThan(maxZoomFor(map));
       }
     }
+  }, 120_000);
+
+  it('LA-EXP-DS12-T05 On the Map, a framed group\'s records read at the readable size or more, or are plain blocks, and a group of a dozen records or fewer reads', () => {
+    const unreadable: string[] = [];
+    let small = 0;
+    for (const [product, index] of spaces) {
+      const ground = groundMap(index);
+      for (const n of ground.nodes.values()) {
+        if (n.role === 'record' && n.children.length === 0) continue;
+        for (const [w, h] of PANES) {
+          const v = frameGround(ground, n.id, w, h, maxZoomFor(ground));
+          const leaves: GroundNode[] = [];
+          const walk = (id: string) => { const c = ground.nodes.get(id)!; if (c.role === 'record' && c.children.length === 0) leaves.push(c); else c.children.forEach(walk); };
+          walk(n.id);
+          for (const leaf of leaves) {
+            const p = plateOf(index, leaf.id, { view: 'map', node: leaf });
+            const px = labelPlate(p, v.zoom).text * TITLE_FONT * v.zoom;
+            if (!isBlock(p, v.zoom) && px < READABLE_PX) unreadable.push(`${product} ${n.id} in ${w}x${h}: ${leaf.id} at ${px.toFixed(1)} px`);
+          }
+          // A group of a dozen records or fewer, framed in the smaller pane (as beside an open card), draws every one of them with its title.
+          if (w === 770 && leaves.length > 0 && leaves.length <= 12 && n.role !== 'record') {
+            small++;
+            for (const leaf of leaves) if (isBlock(plateOf(index, leaf.id, { view: 'map', node: leaf }), v.zoom)) unreadable.push(`${product} ${n.id} (${leaves.length} records) in ${w}x${h}: ${leaf.id} drawn as a block at zoom ${v.zoom.toFixed(2)}`);
+          }
+        }
+      }
+    }
+    expect(small).toBeGreaterThan(10);
+    expect(unreadable.length, unreadable.slice(0, 20).join('\n')).toBe(0);
   }, 120_000);
 
   it('LA-EXP-DS09-T16 In the Tree, Nested and Map layouts, every box of every product, framed as the focus in two panes, is whole on screen', () => {
