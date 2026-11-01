@@ -23,8 +23,8 @@ export interface IntegrityQuery {
  * - link (relation, source_id, target_id): every link of every relation;
  * - record_group (id, label): every record that names a group among its siblings, with the group as written: a flow
  *   step's path, and the group_name of every kind that has one, Lathe's and a product's own alike;
- * - record_text (id, kind, title, lead): every record's title and lead text (its statement, goal, meaning or
- *   description), or a null lead for a kind with none;
+ * - record_text (id, kind, title, lead_column, lead): every record's title and lead text, with the lead's column
+ *   (statement, goal, meaning or description), or nulls for a kind with none;
  * - record_complexity (id, kind, complexity): every record but an open question, essential or accidental: by its kind
  *   (meta_kind.complexity), or for an as-parent kind (a test, a standard rule) as the nearest record above it that is
  *   not, and for a standard by its type (quality is essential, engineering accidental).
@@ -46,7 +46,7 @@ export function storeViewsSql(schema: SchemaDescription): string {
   ];
   const texts = kinds.map((k) => {
     const lead = schema.tables[k.name].columns.find((c) => isLeadColumn(c.name));
-    return `SELECT id, ${sqlString(k.name)} AS kind, title, ${lead ? sqlName(lead.name) : 'NULL'}::VARCHAR AS lead FROM ${sqlName(k.name)}`;
+    return `SELECT id, ${sqlString(k.name)} AS kind, title, ${lead ? sqlString(lead.name) : 'NULL'}::VARCHAR AS lead_column, ${lead ? sqlName(lead.name) : 'NULL'}::VARCHAR AS lead FROM ${sqlName(k.name)}`;
   });
   return `
 CREATE OR REPLACE VIEW record_parent AS

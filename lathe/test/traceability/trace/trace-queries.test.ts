@@ -18,7 +18,7 @@ afterEach(async () => { for (const s of open.splice(0)) await s.close(); });
 
 const gap = (id: string, kind: string, missing: string): CoverageGap => ({ id, kind, missing, message: `${id} misses ${missing}.` });
 const chain = (obligation: string, tests: string[]): TraceChain => ({ obligation, design: [], build: [], tests, files: [], links: [] });
-const coverage = (gaps: CoverageGap[]): Coverage => ({ product: 'EX', domain: 'EX-LEND', gaps, obligations: [], tests: { automated: 0, manual: 0, not_automated: 0 }, proved_by: {}, pattern_rules: [] });
+const coverage = (gaps: CoverageGap[]): Coverage => ({ product: 'EX', domain: 'EX-LEND', gaps, obligations: [], tests: { automated: 0, manual: 0, not_automated: 0 }, proved_by: {}, pattern_rules: [], debt: [] });
 
 /** The complete data set with a run of the checks that found these gaps and these tests. */
 async function view(run: Omit<CheckRun, 'problems'>): Promise<ReadView> {

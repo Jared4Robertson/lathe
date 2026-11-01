@@ -18,11 +18,13 @@
 // - proved: a test of it exists, automated or manual, at a level its test kind allows (ALLOWED_LEVELS), and an
 //   automated test's file exists and names the test's ID.
 // A pattern rule asks for proof only: it is owed by each domain that follows its pattern (owed_pattern_rules) and
-// proved there by its pattern rule test naming that domain.
+// proved there by its pattern rule test naming that domain. An obligation something outside the product provides
+// (provided_by) is built and proved through its provider, which stands in its proof list.
 //
 // Besides obligations, coverage reports the records short of a minimum, the "at least one" and "exactly one" rules
 // the schema leaves to the checks because records are written stage by stage (GAP_RULES): a use case with no flow, an
-// aggregate with no root, a command with no handler. The checks read the same views and tables.
+// aggregate with no root, a command with no handler; and the accidental debt, each fill: a hand-written technical
+// record that fills a pattern's slot (COVERAGE_DEBT_SQL). The checks read the same views and tables.
 import { sqlName, sqlString, type SchemaDescription, type Stage } from './platform/data/schema.ts';
 import { PACKAGE_FACTS_SQL, PACKAGE_GAP_SQL } from './trace/packages.ts';
 import { MEASURE_GAPS } from './trace/measures.ts';
@@ -378,11 +380,12 @@ FROM fulfills f JOIN invokes i ON i.source_id = f.source_id
 JOIN (SELECT source_id, target_id FROM checks UNION ALL SELECT source_id, target_id FROM selects_by UNION ALL SELECT source_id, target_id FROM calls) c ON c.source_id = i.target_id;
 
 -- Each obligation's own build: at least one of its specific technical records implements it, and every one names a
--- file that exists (an invariant has one, its rule).
+-- file that exists (an invariant has one, its rule); or something outside the product provides it (provided_by).
 CREATE OR REPLACE TABLE obligation_own_built AS
 SELECT o.id,
-  EXISTS (SELECT 1 FROM obligation_impl i WHERE i.obligation_id = o.id)
-    AND NOT EXISTS (SELECT 1 FROM obligation_impl i LEFT JOIN file_facts f ON f.record = i.impl_id WHERE i.obligation_id = o.id AND NOT coalesce(f.file_exists, false)) AS built
+  EXISTS (SELECT 1 FROM provided_by p WHERE p.source_id = o.id)
+  OR (EXISTS (SELECT 1 FROM obligation_impl i WHERE i.obligation_id = o.id)
+    AND NOT EXISTS (SELECT 1 FROM obligation_impl i LEFT JOIN file_facts f ON f.record = i.impl_id WHERE i.obligation_id = o.id AND NOT coalesce(f.file_exists, false))) AS built
 FROM obligation o;
 
 CREATE OR REPLACE TABLE obligation_proof AS
@@ -426,6 +429,7 @@ SELECT DISTINCT * FROM (
   UNION ALL SELECT obligation_id, coalesce(via_id, obligation_id), impl_id, 'build' FROM obligation_impl
   UNION ALL SELECT i.obligation_id, i.impl_id, d.target_id, 'build' FROM obligation_impl i JOIN storage_requirement s ON s.id = i.obligation_id JOIN stored_in d ON d.source_id = i.impl_id
   UNION ALL SELECT obligation_id, obligation_id, test_id, 'tests' FROM obligation_proof
+  UNION ALL SELECT p.source_id, p.source_id, p.target_id, 'build' FROM provided_by p JOIN obligation o ON o.id = p.source_id
 );
 
 CREATE OR REPLACE VIEW coverage_owed AS
@@ -433,10 +437,13 @@ SELECT s.product_id AS product, s.domain_id AS domain, o.id, o.kind FROM obligat
 UNION ALL
 SELECT s.product_id, p.domain, p.id, 'pattern_rule' FROM owed_pattern_rules p JOIN record_scope s ON s.id = p.domain;
 
--- The tests that count as each owed obligation's proof where it is owed: a pattern rule's only in the owing domain.
+-- The tests that count as each owed obligation's proof where it is owed: a pattern rule's only in the owing domain. A
+-- provided obligation is proved through its provider, which stands in its list.
 CREATE OR REPLACE TABLE coverage_proof AS
 SELECT o.product, o.domain, o.id, p.test_id
-FROM coverage_owed o JOIN obligation_proof p ON p.obligation_id = o.id AND p.counts AND (o.kind <> 'pattern_rule' OR p.domain_id = o.domain);
+FROM coverage_owed o JOIN obligation_proof p ON p.obligation_id = o.id AND p.counts AND (o.kind <> 'pattern_rule' OR p.domain_id = o.domain)
+UNION ALL
+SELECT o.product, o.domain, o.id, p.target_id FROM coverage_owed o JOIN provided_by p ON p.source_id = o.id;
 
 -- Each UC requirement with each flow of its use case, and whether a step of that flow fulfills it.
 CREATE OR REPLACE TABLE uc_requirement_flow AS
@@ -515,6 +522,12 @@ SELECT * FROM missing;`;
 
 /** One row per scope and obligation kind, in scope order then kind order, including empty ones. */
 export const COVERAGE_COUNTS_SQL = `SELECT product, domain, kind, label, proof_only, total, designed, built, proved, not_automated FROM coverage_count ORDER BY product, domain NULLS LAST, ord`;
+
+/**
+ * Every fill, the accidental debt of each scope: (product, domain, id, slot), a hand-written technical record and the
+ * slot it fills, by record then slot.
+ */
+export const COVERAGE_DEBT_SQL = `SELECT s.product_id AS product, s.domain_id AS domain, f.source_id AS id, f.target_id AS slot FROM fills f JOIN record_scope s ON s.id = f.source_id ORDER BY product, domain NULLS LAST, id, slot`;
 
 /** Every gap: (product, domain, id, kind, missing, message), by record. */
 export const COVERAGE_GAPS_SQL = `SELECT product, domain, id, kind, missing, message FROM coverage_gap ORDER BY product, domain NULLS LAST, id, ord, missing, message`;
