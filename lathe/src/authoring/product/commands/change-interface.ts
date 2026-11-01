@@ -1,4 +1,4 @@
-import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
+import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { InterfaceRow } from '../../../platform/data/tables.ts';
 import { changed } from '../../../platform/data/rows.ts';
@@ -6,8 +6,8 @@ import { ProductRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 import { CHANGE_INTERFACE_IDENTITY } from './identities.generated.ts';
 
-/** The interface's changes: a column given is set. */
-export type ChangeInterface = Pick<InterfaceRow, 'id'> & { title?: string; kind?: InterfaceRow['kind']; description?: string; public?: boolean };
+/** The interface's changes: a column given is set; a list given replaces its roles or the use cases it offers. */
+export type ChangeInterface = Pick<InterfaceRow, 'id'> & { title?: string; kind?: InterfaceRow['kind']; description?: string; public?: boolean; actors?: string[]; offers?: string[] };
 
 export const CHANGE_INTERFACE = {
   ...CHANGE_INTERFACE_IDENTITY,
@@ -17,15 +17,21 @@ export const CHANGE_INTERFACE = {
     kind: column('interface', 'kind', 'optional'),
     description: column('interface', 'description', 'optional'),
     public: column('interface', 'public', 'optional'),
+    actors: texts('The roles of the product that use it, in order. Replaces the list.', 'optional'),
+    offers: ids('The use cases of the product it offers. Replaces the list.', 'optional'),
   },
   handler: changeInterface,
 } satisfies CommandDefinition<ChangeInterface>;
 
-/** Changes the interface's columns. */
+/** Changes the interface's columns, roles or offered use cases. */
 export function changeInterface(tx: Transaction, input: ChangeInterface): void {
   const products = new ProductRepository(tx);
   const product = products.loadHolding('interface', input.id) ?? tx.refuse('missing', `there is no interface ${input.id}`);
-  product.interfaces = product.interfaces.map((i) => (i.id === input.id ? changed(i, input, ['title', 'kind', 'description', 'public']) : i));
+  product.interfaces = product.interfaces.map((i) =>
+    i.row.id === input.id
+      ? { row: changed(i.row, input, ['title', 'kind', 'description', 'public']), actors: input.actors ?? i.actors, offers: input.offers ? [...input.offers].sort() : i.offers }
+      : i,
+  );
   holdToRules(tx, product);
   products.save(product);
 }

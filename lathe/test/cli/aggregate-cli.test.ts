@@ -35,10 +35,10 @@ describe('fields as JSON', () => {
     expect((await lathe(root, ['use-case', 'change-use-case', '--json', goal])).status).toBe(0);
     expect(readFileSync(path.join(root, 'data', 'use_case.jsonl'), 'utf8')).toContain(`"goal":${JSON.stringify(text)}`);
     // A list as JSON, and the same command's tool, read by one reader to one result.
-    expect((await lathe(root, ['use-case', 'change-flow-step', '--json', '-'], JSON.stringify({ id: 'TL-LEND-UC01-FL01-S01', fulfills: ['TL-LEND-UC01-R01', 'TL-LEND-UC01-R02'] }))).status).toBe(0);
-    const tool = await callTool(root, 'use_case_change_flow_step', { id: 'TL-LEND-UC01-FL01-S01', fulfills: ['TL-LEND-UC01-R01'] });
+    expect((await lathe(root, ['use-case', 'change-flow-step', '--json', '-'], JSON.stringify({ id: 'TL-LEND-UC01-FL-S01', fulfills: ['TL-LEND-UC01-R01', 'TL-LEND-UC01-R02'] }))).status).toBe(0);
+    const tool = await callTool(root, 'use_case_change_flow_step', { id: 'TL-LEND-UC01-FL-S01', fulfills: ['TL-LEND-UC01-R01'] });
     expect(tool.isError).toBeUndefined();
-    expect(readFileSync(path.join(root, 'data', 'fulfills.jsonl'), 'utf8')).toBe('{"source_id":"TL-LEND-UC01-FL01-S01","target_id":"TL-LEND-UC01-R01"}\n');
+    expect(readFileSync(path.join(root, 'data', 'fulfills.jsonl'), 'utf8')).toBe('{"source_id":"TL-LEND-UC01-FL-S01","target_id":"TL-LEND-UC01-R01"}\n');
     // The same validation as the flags: a parent that does not exist is refused either way.
     const lost = { id: 'TL-LEND-UC09-R01', title: 'Lost', use_case_id: 'TL-LEND-UC09', statement: 'The library MUST find it.' };
     const piped = await lathe(root, ['use-case', 'add-uc-requirement', '--json', '-'], JSON.stringify(lost));
@@ -54,7 +54,7 @@ describe('fields as JSON', () => {
 });
 
 describe('a refusal', () => {
-  it('LA-PAT-AGGREGATE-COMMANDS-R02-T01 a command the aggregate refuses prints every reason with its rule, exits 1, and changes nothing', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R02-T01 LA-PAT-CLI-STEPS-R02-T01 LA-PAT-MCP-STEPS-R02-T01 a command the aggregate refuses prints every reason with its rule, exits 1, and changes nothing', async () => {
     const root = writeData(everyKind());
     const before = files(root);
     const refusals = [
@@ -62,7 +62,7 @@ describe('a refusal', () => {
       ['aggregate', 'add-aggregate', '--id', 'TL-SHOP-A1', '--title', 'Sale', '--domain_id', 'TL-SHOP', '--identity', 'Sale ID', '--description', 'One sale.'],
       ['aggregate', 'add-aggregate', '--id', 'TL-CAT-A9', '--title', 'Shelf', '--domain_id', 'TL-LEND', '--identity', 'Shelf ID', '--description', 'A shelf.'],
       // A link its relation does not allow, and a record still referenced.
-      ['use-case', 'change-flow-step', '--id', 'TL-LEND-UC01-FL01-S01', '--invokes', 'TL-LEND-EV01'],
+      ['use-case', 'change-flow-step', '--id', 'TL-LEND-UC01-FL-S01', '--invokes', 'TL-LEND-EV01'],
       ['value-object', 'remove-value-object', '--id', 'TL-VO01'],
     ];
     for (const args of refusals) {

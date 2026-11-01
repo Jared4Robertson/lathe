@@ -72,17 +72,17 @@ describe('record_scope', () => {
       Object.fromEntries(
         (await sql<{ id: string; domain_id: string | null }>(store, `SELECT id, domain_id FROM record_scope WHERE id IN (${ids.map((id) => `'${id}'`).join(', ')})`)).map((r) => [r.id, r.domain_id]),
       );
-    // Lending's one flow step happens in the view and exchanges with the integration, the view's UI component renders
+    // Lending's one flow step exchanges with the integration, its command is presented in the view with the integration, the view's UI component renders
     // it, and a Lending entity's field is typed by the value object: all four, and what sits under them, are Lending's.
     const lending = ['TL-V01', 'TL-V01-R01', 'TL-V01-R01-T01', 'TL-INT01', 'TL-INT01-AD', 'TL-INT01-T01', 'TL-UI01', 'TL-VO01', 'TL-VO01-C01', 'TL-VO01-C01-T', 'TL-VO01-VT'];
     expect(await domains(lending)).toEqual(Object.fromEntries(lending.map((id) => [id, 'TL-LEND'])));
-    // A second domain's flow step happens in the same view, and its read model has a field typed by a new value
+    // A second domain's query is presented in the same view, and its read model has a field typed by a new value
     // object; a third value object is used by no one.
     await run(store, 'domain add-domain', { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'supporting', description: 'The tools the library holds.' });
     await run(store, 'domain add-capability', { id: 'TL-CAT-CAP01', title: 'Browsing', domain_id: 'TL-CAT', position: 1, description: 'Browsing the tools on the shelf.' });
     await run(store, 'use-case add-use-case', { id: 'TL-CAT-UC01', title: 'Browse the tools', capability_id: 'TL-CAT-CAP01', goal: 'A member finds a tool to borrow.' });
-    await run(store, 'use-case add-flow', { id: 'TL-CAT-UC01-FL01', title: 'Browse', use_case_id: 'TL-CAT-UC01', interface_id: 'TL-IF01' });
-    await run(store, 'use-case add-flow-step', { id: 'TL-CAT-UC01-FL01-S01', title: 'Open the catalog', flow_id: 'TL-CAT-UC01-FL01', path: 'main', position: 1, happens_in: 'TL-V01' });
+    await run(store, 'use-case add-flow', { id: 'TL-CAT-UC01-FL', title: 'Browse', use_case_id: 'TL-CAT-UC01' });
+    await run(store, 'use-case add-flow-step', { id: 'TL-CAT-UC01-FL-S01', title: 'Open the catalog', flow_id: 'TL-CAT-UC01-FL', path: 'main', position: 1 });
     await run(store, 'value-object add-value-object', { id: 'TL-VO02', title: 'Tool size', description: 'How big a tool is.' });
     await run(store, 'value-object add-value-object', { id: 'TL-VO03', title: 'Postcode', description: 'Where a member lives.' });
     await run(store, 'read-model add-read-model', {
@@ -92,6 +92,8 @@ describe('record_scope', () => {
       description: 'The tools, grouped by size.',
       fields: [{ name: 'Size', meaning: 'How big the tool is.', type_value_object_id: 'TL-VO02', required: true }],
     });
+    await run(store, 'read-model add-query', { id: 'TL-CAT-QRY01', title: 'List tools by size', read_model_id: 'TL-CAT-RM01', description: 'The tools, grouped by size.' });
+    await run(store, 'view change-view', { id: 'TL-V01', presents: ['TL-LEND-CMD01', 'TL-CAT-QRY01'] });
     expect(await domains([...lending, 'TL-VO02', 'TL-VO03'])).toEqual({
       'TL-V01': null,
       'TL-V01-R01': null,
@@ -181,14 +183,15 @@ describe('removing', () => {
   it('LA-STD-CODE-R07-T02 removes a record with its parts and the links it starts', async () => {
     const { store, root } = await fresh();
     // The step's links are its own, so they go with it.
-    await run(store, 'use-case remove-flow-step', { id: 'TL-LEND-UC01-FL01-S01' });
-    for (const table of ['fulfills', 'invokes', 'happens_in', 'exchanges_with']) {
+    await run(store, 'use-case remove-flow-step', { id: 'TL-LEND-UC01-FL-S01' });
+    for (const table of ['fulfills', 'invokes', 'exchanges_with']) {
       expect(store.rows(table)).toEqual([]);
       expect(readdirSync(path.join(root, 'data'))).not.toContain(`${table}.jsonl`);
     }
     // A use case goes whole, with its actors, setting values and its own links, once nothing outside it points at it.
     await run(store, 'product change-question', { id: 'TL-LEND-Q01', about: [] });
     await run(store, 'pattern-following stop-following-pattern', { follower_id: 'TL-LEND-UC01', pattern_id: 'TL-PAT-ACT' });
+    await run(store, 'product change-interface', { id: 'TL-IF01', offers: [] });
     await run(store, 'use-case remove-use-case', { id: 'TL-LEND-UC01' });
     for (const table of ['use_case', 'use_case_actor', 'uc_requirement', 'flow', 'setting_value', 'follows']) expect(store.rows(table)).toEqual([]);
     // A table goes with its keys.
@@ -256,9 +259,9 @@ describe('a command', () => {
     });
     await run(store, 'extension-record add-extension-record', { kind: 'house_rule', id: 'TL-LEND-HR01', parent_id: 'TL-LEND', values: { title: 'Quiet', group_name: ' Noise' } });
     await run(store, 'extension-record add-extension-record', { kind: 'house_rule', id: 'TL-LEND-HR02', parent_id: 'TL-LEND', values: { title: 'Tidy' } });
-    expect(await sql(store, "SELECT id, label FROM record_group WHERE id IN ('TL-LEND-HR01', 'TL-LEND-HR02', 'TL-LEND-UC01-FL01-S01') ORDER BY id")).toEqual([
+    expect(await sql(store, "SELECT id, label FROM record_group WHERE id IN ('TL-LEND-HR01', 'TL-LEND-HR02', 'TL-LEND-UC01-FL-S01') ORDER BY id")).toEqual([
       { id: 'TL-LEND-HR01', label: ' Noise' },
-      { id: 'TL-LEND-UC01-FL01-S01', label: 'main' },
+      { id: 'TL-LEND-UC01-FL-S01', label: 'main' },
     ]);
     await store.close();
   });

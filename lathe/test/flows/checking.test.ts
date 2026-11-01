@@ -25,7 +25,7 @@ const NO_COMMAND = {
 };
 
 describe('Checking flows', () => {
-  it('LA-CHK-UC01-FL03-T check the workspace from the command line', async () => {
+  it('LA-CHK-UC01-FL-T check the workspace from the command line', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
@@ -60,7 +60,7 @@ describe('Checking flows', () => {
     expect(refused.stdout).not.toContain('Coverage:');
   });
 
-  it('LA-CHK-UC02-FL03-T add a check', async () => {
+  it('LA-CHK-UC02-FL-T add a check', async () => {
     const tl = product();
     await tl.seed([...LENDING, add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND', identity: 'Tool ID', description: 'A tool the library holds.' })]);
     // S01: the check as one row, with the Check aggregate's own command.
@@ -72,7 +72,7 @@ describe('Checking flows', () => {
     expect(tl.check().stdout).toContain('[aggregate-without-command] TL-LEND-A2: Aggregate TL-LEND-A2 has no command.');
   });
 
-  it('LA-CHK-UC01-FL03-T find structural problems', async () => {
+  it('LA-CHK-UC01-FL-T find structural problems', async () => {
     const tl = product();
     // Stages written at different times: a view nothing uses yet, a use case with no flow, a test at a level its
     // kind does not allow, and a policy hearing an event of a stored aggregate that is delivered in process.
@@ -109,7 +109,7 @@ describe('Checking flows', () => {
     expect(refused.problems[0].message).toMatch(/^data\/use_case_test\.jsonl:2: .*\[[a-z-]+\]$/);
   });
 
-  it('LA-CHK-UC05-FL03-T add a product\'s own checks', async () => {
+  it('LA-CHK-UC05-FL-T add a product\'s own checks', async () => {
     const tl = product();
     await tl.seed([...LENDING, add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND', identity: 'Tool ID', description: 'A tool the library holds.' })]);
     // S01, S02: a house rule, as a check row with the product's product_id, in the product's data.
@@ -139,7 +139,7 @@ describe('Checking flows', () => {
     expect(`${config.stdout}${config.stderr}`).toContain('unknown setting "checks"');
   });
 
-  it('LA-CHK-UC06-FL03-T keep each level of the spec a useful size', async () => {
+  it('LA-CHK-UC06-FL-T keep each level of the spec a useful size', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
@@ -166,7 +166,7 @@ describe('Checking flows', () => {
     expect(fixed.problems.filter((p) => ['too-many-children', 'aggregate-too-large', 'lone-child'].includes(p.check))).toEqual([]);
   });
 
-  it('LA-CHK-UC08-FL04-T keep every change to the spec checked', async () => {
+  it('LA-CHK-UC08-FL-T keep every change to the spec checked', async () => {
     // S01: the plugin declares the guard hook on every tool that edits a file by hand.
     const hooks = JSON.parse(readFileSync(path.join(PLUGIN, 'hooks', 'hooks.json'), 'utf8'));
     const [entry] = hooks.hooks.PreToolUse;

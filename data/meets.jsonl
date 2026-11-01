@@ -237,6 +237,7 @@
 {"source_id":"LA-AUT-CMD373-H","target_id":"LA-STD-CODE-R10"}
 {"source_id":"LA-AUT-CMD374-H","target_id":"LA-STD-CODE-R10"}
 {"source_id":"LA-AUT-CMD375-H","target_id":"LA-STD-CODE-R10"}
+{"source_id":"LA-AUT-EN114-TB","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-AUT-EP100-H","target_id":"LA-STD-CODE-R11"}
 {"source_id":"LA-AUT-EP101-H","target_id":"LA-STD-CODE-R11"}
 {"source_id":"LA-AUT-EP102-H","target_id":"LA-STD-CODE-R11"}
@@ -569,7 +570,6 @@
 {"source_id":"LA-AUT-TB48","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-AUT-TB49","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-AUT-TB80","target_id":"LA-STD-PRINCIPLES-R01"}
-{"source_id":"LA-AUT-TB81","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-AUT-TB82","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-AUT-TB83","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-AUT-TB84","target_id":"LA-STD-PRINCIPLES-R01"}
@@ -580,6 +580,8 @@
 {"source_id":"LA-AUT-TB89","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-AUT-TB90","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-AUT-TB92","target_id":"LA-STD-PRINCIPLES-R01"}
+{"source_id":"LA-AUT-TB93","target_id":"LA-STD-PRINCIPLES-R01"}
+{"source_id":"LA-AUT-TB94","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-AUT-TOOL01","target_id":"LA-STD-PRINCIPLES-R06"}
 {"source_id":"LA-AUT-TOOL02","target_id":"LA-STD-PRINCIPLES-R02"}
 {"source_id":"LA-AUT-TOOL03","target_id":"LA-STD-CODE-R11"}

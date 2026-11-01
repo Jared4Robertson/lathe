@@ -17,10 +17,10 @@ export function listTraceRows(reader: TraceReader, input: { product_id: string }
 }
 
 const all = (k: number, words: string) => (k === 0 ? `all ${words}` : `${k} not ${words}`);
-/** A row's status per stage in words: "2 flows, all designed · 3 handlers, 1 not built · 4 tests, all proved". */
+/** A row's status per stage in words: "2 interfaces, all designed · 3 handlers, 1 not built · 4 tests, all proved". */
 export const statusWords = (r: TraceRow): string => {
   const { design, technical, suite } = r.status;
-  return `${design.flows} flow${design.flows === 1 ? '' : 's'}, ${all(design.notDesigned, 'designed')} · ${technical.handlers} handler${technical.handlers === 1 ? '' : 's'}, ${all(technical.notBuilt, 'built')} · ${suite.tests} test${suite.tests === 1 ? '' : 's'}, ${all(suite.notProved, 'proved')}`;
+  return `${design.interfaces} interface${design.interfaces === 1 ? '' : 's'}, ${all(design.notDesigned, 'designed')} · ${technical.handlers} handler${technical.handlers === 1 ? '' : 's'}, ${all(technical.notBuilt, 'built')} · ${suite.tests} test${suite.tests === 1 ? '' : 's'}, ${all(suite.notProved, 'proved')}`;
 };
 
 /** List a product's trace rows (LA-TRC-QRY18). */

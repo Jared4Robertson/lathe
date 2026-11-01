@@ -17,7 +17,7 @@ const node = (id: string) => boxElement(id);
 const title = () => screen.getByRole('heading', { level: 1 }).textContent;
 /** The address of a record in the test workspace (the product and domain have overview pages). */
 const addressOf = (id: string) => `/${id}`;
-const STEP = 'P-D-UC01-FL01-S01';
+const STEP = 'P-D-UC01-FL-S01';
 
 async function back() {
   await act(async () => {
@@ -37,13 +37,13 @@ describe('graph page', () => {
   it('LA-V93-R10-T03 LA-V93-R11-T02 Clicking a node re-centers the graph and changes the address, Back walks back, and no visited trail is drawn', async () => {
     await showGraph(`/${STEP}`);
     expect(title()).toBe('Librarian lends the thing');
-    await waitFor(() => expect(node('P-D-UC01-FL01')).not.toBeNull());
+    await waitFor(() => expect(node('P-D-UC01-FL')).not.toBeNull());
 
-    fireEvent.click(node('P-D-UC01-FL01')!);
-    expect(window.location.pathname).toBe('/P-D-UC01-FL01');
+    fireEvent.click(node('P-D-UC01-FL')!);
+    expect(window.location.pathname).toBe('/P-D-UC01-FL');
     expect(window.location.search).toBe('?stage=graph');
-    await waitFor(() => expect(title()).toBe('Lend a thing in the web app'));
-    await waitFor(() => expect(isCenter('P-D-UC01-FL01')).toBe(true));
+    await waitFor(() => expect(title()).toBe('Lend a thing'));
+    await waitFor(() => expect(isCenter('P-D-UC01-FL')).toBe(true));
     // The flow's frame draws its steps, their column at reading size.
     await waitFor(() => expect(node(STEP)).not.toBeNull());
     // The graph keeps no trail of its own: the header strip's breadcrumb names where the focus sits, Back walks the path.
@@ -114,7 +114,7 @@ describe('graph page', () => {
     // A record that links to others draws no line to them: what the step fulfills, invokes and happens in are the Trace
     // stage's and the wiki card's, and there is no switch to draw them.
     await showGraph(`/${STEP}`);
-    await waitFor(() => expect(node('P-D-UC01-FL01')).not.toBeNull());
+    await waitFor(() => expect(node('P-D-UC01-FL')).not.toBeNull());
     expect(scene().lines.length).toBeGreaterThan(0);
     expect(scene().lines.every((l) => l.style === 'structure' && !l.link)).toBe(true);
     expect(screen.queryByRole('button', { name: /^Links/ })).toBeNull();
@@ -122,10 +122,10 @@ describe('graph page', () => {
 
   it('LA-V93-R12-T01 Nodes show their stage and kind, records with errors or gaps are marked, parent lines join them, and there is a key', async () => {
     await showGraph(`/${STEP}`);
-    await waitFor(() => expect(node('P-D-UC01-FL01')).not.toBeNull());
+    await waitFor(() => expect(node('P-D-UC01-FL')).not.toBeNull());
     expect(drawnBox(STEP)!.stage).toBe('interaction-design');
     expect(drawnBox(STEP)!.focus).toBe(true);
-    expect(drawnBox('P-D-UC01-FL01')!.stage).toBe('interaction-design');
+    expect(drawnBox('P-D-UC01-FL')!.stage).toBe('interaction-design');
     expect(screen.getByRole('region', { name: 'Key' })).toBeTruthy();
     expect(scene().lines.map((l) => l.style)).toContain('structure');
     // A capability in the use cases' colors, its use case beside it.
@@ -161,15 +161,15 @@ describe('graph page', () => {
     expect(document.activeElement).toBe(center);
     // Left steps out to the parent, and the keyboard follows to its box.
     fireEvent.keyDown(center, { key: 'ArrowLeft' });
-    expect(window.location.pathname).toBe('/P-D-UC01-FL01');
-    await waitFor(() => expect(document.activeElement).toBe(node('P-D-UC01-FL01')));
+    expect(window.location.pathname).toBe('/P-D-UC01-FL');
+    await waitFor(() => expect(document.activeElement).toBe(node('P-D-UC01-FL')));
     // Right steps in to the first child; Down and Up walk the siblings in the tree's order.
     fireEvent.keyDown(document.activeElement!, { key: 'ArrowRight' });
     expect(window.location.pathname).toBe(`/${STEP}`);
     await waitFor(() => expect(document.activeElement).toBe(node(STEP)));
     fireEvent.keyDown(document.activeElement!, { key: 'ArrowDown' });
     const sibling = window.location.pathname;
-    expect(sibling).toMatch(/^\/P-D-UC01-FL01-S0[23]$/);
+    expect(sibling).toMatch(/^\/P-D-UC01-FL-S0[23]$/);
     // From the canvas itself (a click there gives the graph focus) the arrows step too, and focus stays on the canvas.
     const canvas = graphHost()!;
     canvas.focus();
@@ -215,9 +215,9 @@ describe('graph page', () => {
 
   it('LA-EXP-DS05-T02 LA-V93-R15-T04 The page draws the map in columns with a solid parent/child spine, and draws no link between siblings', async () => {
     await showGraph(`/${STEP}`);
-    await waitFor(() => expect(node('P-D-UC01-FL01')).not.toBeNull());
+    await waitFor(() => expect(node('P-D-UC01-FL')).not.toBeNull());
     const left = (id: string) => drawnBox(id)!.map.x;
-    expect(left('P-D-UC01-FL01')).toBeLessThan(left(STEP));
+    expect(left('P-D-UC01-FL')).toBeLessThan(left(STEP));
     expect(scene().lines.some((l) => l.style === 'structure' && !l.link)).toBe(true);
 
     // The Loan and its return and reminder are siblings among the aggregate's entities, in one column; the Loan's links

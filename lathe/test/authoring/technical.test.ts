@@ -52,11 +52,11 @@ describe('the interaction design', () => {
     expect((await refusals(withTable(everyKind(), 'endpoint', [{ ...endpoint, query_id: 'TL-LEND-QRY01' }]))).map((p) => p.rule)).toEqual(['check']);
     // A step invokes a command or a query, never an endpoint.
     expect(pairsOf(schema, 'invokes')).toEqual(['flow_step>command', 'flow_step>query']);
-    const direct = await refusals(withTable(everyKind(), 'invokes', [{ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-LEND-EP01' }]));
+    const direct = await refusals(withTable(everyKind(), 'invokes', [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-EP01' }]));
     expect(direct).toEqual([expect.objectContaining({ table: 'invokes', file: 'data/invokes.jsonl', line: 1 })]);
   });
 
-  it('LA-AUT-UC18-R05-T01 LA-AUT-UC27-R01-T01 A view or an integration has no owner and takes its product from its ID, and one no step uses is an error', async () => {
+  it('LA-AUT-UC18-R05-T01 LA-AUT-UC27-R01-T01 A view or an integration has no owner and takes its product from its ID, and a view that presents nothing, or an integration no step uses, is an error', async () => {
     for (const kind of ['view', 'integration']) {
       expect(parentsOf(schema, kind), kind).toEqual([]);
       expect(schema.kinds[kind].idScope, kind).toBe('product');
@@ -64,7 +64,7 @@ describe('the interaction design', () => {
     expect(record(good, 'EX-V01')).toMatchObject({ parent: null, product: 'EX' });
     expect(record(good, 'EX-INT01')).toMatchObject({ parent: null, product: 'EX' });
     expect([...ofCheck(good, 'view-unused'), ...ofCheck(good, 'integration-unused')]).toEqual([]);
-    const ws = await loadData(without(without(complete(), 'happens_in', () => true), 'exchanges_with', () => true));
+    const ws = await loadData(without(without(complete(), 'presents', () => true), 'exchanges_with', () => true));
     expect(ofCheck(ws, 'view-unused')).toEqual([expect.objectContaining({ severity: 'error', record: 'EX-V01' })]);
     expect(ofCheck(ws, 'integration-unused')).toEqual([expect.objectContaining({ severity: 'error', record: 'EX-INT01' })]);
     // An ID that names no product is refused.

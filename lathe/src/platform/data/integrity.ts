@@ -133,7 +133,7 @@ placed (id, product_id, domain_id, aggregate_id) AS (
 used (id, domain_id) AS (
   ${uses.join('\n  UNION ALL ')}
   UNION ALL
-  SELECT r.source_id, s.domain_id FROM renders r JOIN happens_in h ON h.target_id = r.target_id JOIN placed s ON s.id = h.source_id
+  SELECT r.source_id, s.domain_id FROM renders r JOIN presents h ON h.source_id = r.target_id JOIN placed s ON s.id = h.target_id
 ),
 derived (id, domain_id) AS (
   SELECT id, min(domain_id) FROM used WHERE domain_id IS NOT NULL GROUP BY id HAVING count(DISTINCT domain_id) = 1
@@ -162,17 +162,17 @@ export function recordScopeColumns(schema: SchemaDescription): Map<string, strin
   read('domain', 'product_id');
   for (const u of USED_BY) read(u.table, u.user, u.used);
   read('renders', 'source_id', 'target_id');
-  read('happens_in', 'source_id', 'target_id');
+  read('presents', 'source_id', 'target_id');
   return new Map([...columns].map(([table, set]) => [table, [...set]]));
 }
 
 /**
  * How a domain uses a record with no owner (record_scope): each row of the table names a user, placed in its domain
- * through its parents, and the record it uses. A UI component is used through the views it renders, by the flow
- * steps that happen in them.
+ * through its parents, and the record it uses. A view is used by the commands and queries it presents, and a UI component
+ * through the views it renders.
  */
 const USED_BY: { table: string; user: string; used: string }[] = [
-  { table: 'happens_in', user: 'source_id', used: 'target_id' },
+  { table: 'presents', user: 'target_id', used: 'source_id' },
   { table: 'exchanges_with', user: 'source_id', used: 'target_id' },
   { table: 'entity_field', user: 'entity_id', used: 'type_value_object_id' },
   { table: 'event_field', user: 'domain_event_id', used: 'type_value_object_id' },

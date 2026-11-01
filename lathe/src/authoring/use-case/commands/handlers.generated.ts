@@ -77,7 +77,7 @@ export function removeUcRequirement(tx: Transaction, input: RemoveUcRequirement)
   useCases.save(useCase);
 }
 
-/** Adds a flow to its use case, through one interface of its product: its ID ends in the interface's number. */
+/** Adds its use case's one flow: its ID is the use case's and FL. */
 export function addFlow(tx: Transaction, input: AddFlow): void {
   const useCases = new UseCaseRepository(tx);
   const useCase = useCases.load(input.use_case_id) ?? tx.refuse('missing', `there is no use case ${input.use_case_id}`);
@@ -86,7 +86,7 @@ export function addFlow(tx: Transaction, input: AddFlow): void {
   useCases.save(useCase);
 }
 
-/** Changes a flow's title. Its interface is in its ID, so a flow through another interface is another flow. */
+/** Changes a flow's title, which is its use case's. */
 export function changeFlow(tx: Transaction, input: ChangeFlow): void {
   const useCases = new UseCaseRepository(tx);
   const useCase = useCases.loadHolding('flow', input.id) ?? tx.refuse('missing', `there is no flow ${input.id}`);
@@ -105,21 +105,21 @@ export function removeFlow(tx: Transaction, input: RemoveFlow): void {
   useCases.save(useCase);
 }
 
-/** Adds a step to its flow, on a path at a position, with the requirements it fulfills, what it invokes, the view it happens in and the integrations it exchanges with. */
+/** Adds a step to its flow, on a path at a position, with the interface it is a variant of if only one does it, the requirements it fulfills, what it invokes and the integrations it exchanges with. */
 export function addFlowStep(tx: Transaction, input: AddFlowStep): void {
   const useCases = new UseCaseRepository(tx);
   const useCase = useCases.loadHolding('flow', input.flow_id) ?? tx.refuse('missing', `there is no flow ${input.flow_id}`);
-  const { fulfills = [], invokes, happens_in, exchanges_with = [], ...row } = input;
-  useCase.steps.push({ row, fulfills: fulfills, exchangesWith: exchanges_with, invokes: invokes ?? null, happensIn: happens_in ?? null });
+  const { fulfills = [], invokes, exchanges_with = [], ...row } = input;
+  useCase.steps.push({ row, fulfills: fulfills, exchangesWith: exchanges_with, invokes: invokes ?? null });
   holdToRules(tx, useCase);
   useCases.save(useCase);
 }
 
-/** Changes a step's title, path or position, or its links: a list given replaces the list, null clears what it invokes or the view it happens in. */
+/** Changes a step's title, path, position or the interface it is a variant of (null makes it every interface's), or its links: a list given replaces the list, null clears what it invokes. */
 export function changeFlowStep(tx: Transaction, input: ChangeFlowStep): void {
   const useCases = new UseCaseRepository(tx);
   const useCase = useCases.loadHolding('flow_step', input.id) ?? tx.refuse('missing', `there is no flow step ${input.id}`);
-  useCase.steps = useCase.steps.map((x) => (x.row.id === input.id ? { row: changed(x.row, input, ['title', 'path', 'position']), fulfills: input.fulfills ?? x.fulfills, exchangesWith: input.exchanges_with ?? x.exchangesWith, invokes: input.invokes === undefined ? x.invokes : input.invokes, happensIn: input.happens_in === undefined ? x.happensIn : input.happens_in } : x));
+  useCase.steps = useCase.steps.map((x) => (x.row.id === input.id ? { row: changed(x.row, input, ['title', 'path', 'position', 'interface_id']), fulfills: input.fulfills ?? x.fulfills, exchangesWith: input.exchanges_with ?? x.exchangesWith, invokes: input.invokes === undefined ? x.invokes : input.invokes } : x));
   holdToRules(tx, useCase);
   useCases.save(useCase);
 }

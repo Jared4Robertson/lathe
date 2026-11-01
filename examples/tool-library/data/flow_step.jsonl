@@ -1,19 +1,19 @@
-{"id":"TL-LEND-UC01-FL01-S01","title":"The librarian enters the person's name and email and registers them","flow_id":"TL-LEND-UC01-FL01","path":"main","position":1}
-{"id":"TL-LEND-UC01-FL01-S02","title":"A blank name, a malformed email or an email already registered is refused","flow_id":"TL-LEND-UC01-FL01","path":"refused","position":1}
-{"id":"TL-LEND-UC01-FL01-S03","title":"The library shows the new member with the member ID for their card","flow_id":"TL-LEND-UC01-FL01","path":"main","position":2}
-{"id":"TL-LEND-UC02-FL01-S01","title":"The librarian enters the tool's name and, optionally, a description, and adds it","flow_id":"TL-LEND-UC02-FL01","path":"main","position":1}
-{"id":"TL-LEND-UC02-FL01-S02","title":"A blank name is refused","flow_id":"TL-LEND-UC02-FL01","path":"refused","position":1}
-{"id":"TL-LEND-UC02-FL01-S03","title":"The new tool is in good condition, and the catalog lists it as available","flow_id":"TL-LEND-UC02-FL01","path":"main","position":2}
-{"id":"TL-LEND-UC03-FL01-S01","title":"The member opens the catalog","flow_id":"TL-LEND-UC03-FL01","path":"main","position":1}
-{"id":"TL-LEND-UC03-FL01-S02","title":"The member borrows an available tool","flow_id":"TL-LEND-UC03-FL01","path":"main","position":2}
-{"id":"TL-LEND-UC03-FL01-S03","title":"When a check fails, the borrow is refused with the first failing reason","flow_id":"TL-LEND-UC03-FL01","path":"refused","position":1}
-{"id":"TL-LEND-UC03-FL01-S04","title":"The library answers with the loan and its due date","flow_id":"TL-LEND-UC03-FL01","path":"main","position":3}
-{"id":"TL-LEND-UC04-FL01-S01","title":"The librarian finds the loan and inspects the tool","flow_id":"TL-LEND-UC04-FL01","path":"main","position":1}
-{"id":"TL-LEND-UC04-FL01-S02","title":"The librarian records the condition and, optionally, a note","flow_id":"TL-LEND-UC04-FL01","path":"main","position":2}
-{"id":"TL-LEND-UC04-FL01-S03","title":"A return with no valid condition is refused","flow_id":"TL-LEND-UC04-FL01","path":"refused","position":1}
-{"id":"TL-LEND-UC04-FL01-S04","title":"The library answers with the returned loan and whether it was late","flow_id":"TL-LEND-UC04-FL01","path":"main","position":3}
-{"id":"TL-LEND-UC04-FL01-S05","title":"The catalog shows the tool as available, or as needing repair","flow_id":"TL-LEND-UC04-FL01","path":"main","position":4}
-{"id":"TL-LEND-UC05-FL01-S01","title":"A librarian marks a damaged tool as needing repair, with a note","flow_id":"TL-LEND-UC05-FL01","path":"main","position":1}
-{"id":"TL-LEND-UC05-FL01-S02","title":"The catalog shows the tool needing repair, and borrowing it is refused","flow_id":"TL-LEND-UC05-FL01","path":"main","position":2}
-{"id":"TL-LEND-UC06-FL01-S01","title":"Once fixed, the librarian marks the tool repaired, and it is available again","flow_id":"TL-LEND-UC06-FL01","path":"main","position":1}
-{"id":"TL-LEND-UC06-FL01-S02","title":"The catalog lists the tool as available, as the library showed it","flow_id":"TL-LEND-UC06-FL01","path":"main","position":2}
+{"id":"TL-LEND-UC01-FL-S01","title":"The librarian enters the person's name and email and registers them","flow_id":"TL-LEND-UC01-FL","path":"main","position":1}
+{"id":"TL-LEND-UC01-FL-S02","title":"The library shows the new member with the member ID for their card","flow_id":"TL-LEND-UC01-FL","path":"main","position":2}
+{"id":"TL-LEND-UC01-FL-S03","title":"A blank name, a malformed email or an email already registered is refused","flow_id":"TL-LEND-UC01-FL","path":"refused","position":1}
+{"id":"TL-LEND-UC02-FL-S01","title":"The librarian enters the tool's name and, optionally, a description, and adds it","flow_id":"TL-LEND-UC02-FL","path":"main","position":1}
+{"id":"TL-LEND-UC02-FL-S02","title":"The new tool is in good condition, and the catalog lists it as available","flow_id":"TL-LEND-UC02-FL","path":"main","position":2}
+{"id":"TL-LEND-UC02-FL-S03","title":"A blank name is refused","flow_id":"TL-LEND-UC02-FL","path":"refused","position":1}
+{"id":"TL-LEND-UC03-FL-S01","title":"The member opens the catalog","flow_id":"TL-LEND-UC03-FL","path":"main","position":1}
+{"id":"TL-LEND-UC03-FL-S02","title":"The member borrows an available tool","flow_id":"TL-LEND-UC03-FL","path":"main","position":2}
+{"id":"TL-LEND-UC03-FL-S03","title":"The library answers with the loan and its due date","flow_id":"TL-LEND-UC03-FL","path":"main","position":3}
+{"id":"TL-LEND-UC03-FL-S04","title":"When a check fails, the borrow is refused with the first failing reason","flow_id":"TL-LEND-UC03-FL","path":"refused","position":1}
+{"id":"TL-LEND-UC04-FL-S01","title":"The librarian finds the loan and inspects the tool","flow_id":"TL-LEND-UC04-FL","path":"main","position":1}
+{"id":"TL-LEND-UC04-FL-S02","title":"The librarian records the condition and, optionally, a note","flow_id":"TL-LEND-UC04-FL","path":"main","position":2}
+{"id":"TL-LEND-UC04-FL-S03","title":"The library answers with the returned loan and whether it was late","flow_id":"TL-LEND-UC04-FL","path":"main","position":3}
+{"id":"TL-LEND-UC04-FL-S04","title":"The catalog shows the tool as available, or as needing repair","flow_id":"TL-LEND-UC04-FL","path":"main","position":4}
+{"id":"TL-LEND-UC04-FL-S05","title":"A return with no valid condition is refused","flow_id":"TL-LEND-UC04-FL","path":"refused","position":1}
+{"id":"TL-LEND-UC05-FL-S01","title":"A librarian marks a damaged tool as needing repair, with a note","flow_id":"TL-LEND-UC05-FL","path":"main","position":1}
+{"id":"TL-LEND-UC05-FL-S02","title":"The catalog shows the tool needing repair, and borrowing it is refused","flow_id":"TL-LEND-UC05-FL","path":"main","position":2}
+{"id":"TL-LEND-UC06-FL-S01","title":"Once fixed, the librarian marks the tool repaired, and it is available again","flow_id":"TL-LEND-UC06-FL","path":"main","position":1}
+{"id":"TL-LEND-UC06-FL-S02","title":"The catalog lists the tool as available, as the library showed it","flow_id":"TL-LEND-UC06-FL","path":"main","position":2}

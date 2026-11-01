@@ -1,5 +1,5 @@
-// The View aggregate's read model (LA-AUT-RM32), shaped for its readers: the View page reads a view whole (its
-// requirements by ID, each with its tests and the test data sets they start from) with the record the page is about, a
+// The View aggregate's read model (LA-AUT-RM32), shaped for its readers: the View page reads a view whole (the commands
+// and queries it presents, its requirements by ID, each with its tests and the test data sets they start from) with the record the page is about, a
 // product's list reads each view's ID and title, and the editor's next ID reads the IDs in use. The projection
 // (viewTableFrom) is the only code that reads the source rows and the only code that writes the read model's table;
 // the query handlers read that table only through the reader (reader.ts). Nothing here is the aggregate's own
@@ -22,9 +22,11 @@ export interface ViewRequirementOnPage {
   tests: ViewTestOnPage[];
 }
 
-/** A view whole, as its page shows it: its row and its requirements by ID. */
+/** A view whole, as its page shows it: its row, what it presents and its requirements by ID. */
 export interface ViewTree {
   view: ViewRow;
+  /** The commands and queries it presents, by ID. */
+  presents: string[];
   requirements: ViewRequirementOnPage[];
 }
 
@@ -68,6 +70,7 @@ function linked(view: ReadView, table: string, by: 'source_id' | 'target_id'): (
 /** The projection: the read model's table, built from the rows on each read (in memory; nothing keeps it). */
 export function viewTableFrom(view: ReadView): ViewTable {
   const startsFrom = linked(view, 'starts_from', 'source_id');
+  const presents = linked(view, 'presents', 'source_id');
   const requirements = grouped<ViewRequirementRow>(view.rows('view_requirement'), 'view_id');
   const tests = grouped<ViewTestRow>(view.rows('view_test'), 'view_requirement_id');
   const views = new Map<string, ViewTree>();
@@ -78,6 +81,7 @@ export function viewTableFrom(view: ReadView): ViewTable {
     holding.set(root, { root, kind: 'view' });
     const tree: ViewTree = {
       view: row,
+      presents: presents(root),
       requirements: [...(requirements.get(root) ?? [])].sort(byRecordId).map((requirement) => ({
         requirement,
         tests: [...(tests.get(requirement.id) ?? [])].sort(byRecordId).map((test) => ({ test, startsFrom: startsFrom(test.id) })),

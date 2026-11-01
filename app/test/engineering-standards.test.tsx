@@ -34,11 +34,11 @@ describe('standards in the nav and the wiki', () => {
   it('LA-V90-R75-T01 The product lists its standards under Shared, beside its patterns', async () => {
     await openApp('/DM', served());
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    expect(rows(list('Shared in Demo shop'))).toEqual(['Shared5']);
+    expect(rows(list('Shared in Demo shop'))).toEqual(['Shared4']);
     const user = userEvent.setup();
     await user.click(head(list('Shared in Demo shop'), /^Shared/));
     const own = list('Stages of Demo shop');
-    expect(rows(own)).toEqual(['Domain model1', 'Interaction design2', 'Technical specification1', 'Test plan1']);
+    expect(rows(own)).toEqual(['Domain model1', 'Interaction design1', 'Technical specification1', 'Test plan1']);
     await user.click(head(own, /^Technical specification/));
     const stage = list('Technical specification of Demo shop');
     expect(rows(stage)).toEqual(['Standards1']);

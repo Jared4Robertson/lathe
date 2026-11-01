@@ -5,22 +5,21 @@ import { Icon } from '../../components/icons';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { ProblemBadge, RecordLink, Section } from '../../specs/parts';
 
-// A flow's steps as a table, in order (the Use case page): the step, what happens, the command or query it invokes,
-// the view it happens in, the UC requirements it fulfills and the integrations it exchanges with, path by path as the
-// use case's read model orders them. A flow with several paths shows a table per path, main first, then the others by
+// A flow's steps as a table, in order (the Use case page, the flow as written): the step, what happens (a variant
+// marked with the one interface that does it), the command or query it invokes, the UC requirements it fulfills and
+// the integrations it exchanges with, path by path as the use case's read model orders them. A flow with several paths shows a table per path, main first, then the others by
 // name, each in its own order. Each row shows one level: the step's title and the IDs it links to. What sits a level deeper (the titles and
 // kinds of what it links to) is folded under the row's disclosure triangle, as in every other list.
 
 /** The link columns after "What happens": each a link a step starts, as the use case holds it. */
 const COLUMNS: readonly { heading: string; of: (step: StepOnPage) => string[] }[] = [
   { heading: 'Invokes', of: (s) => (s.invokes ? [s.invokes] : []) },
-  { heading: 'Happens in', of: (s) => (s.happensIn ? [s.happensIn] : []) },
   { heading: 'Fulfills', of: (s) => s.fulfills },
   { heading: 'Exchanges with', of: (s) => s.exchangesWith },
 ];
 
 /** A path's heading: "Main path", "Refused path". */
-const pathLabel = (path: string) => `${path.charAt(0).toUpperCase()}${path.slice(1)} path`;
+export const pathLabel = (path: string) => `${path.charAt(0).toUpperCase()}${path.slice(1)} path`;
 
 function IdLinks({ index, ids, label }: { index: RecordIndex; ids: string[]; label: string }) {
   if (ids.length === 0) return <span className="hint">None</span>;
@@ -31,6 +30,13 @@ function IdLinks({ index, ids, label }: { index: RecordIndex; ids: string[]; lab
       ))}
     </ul>
   );
+}
+
+/** A variant's mark: the one interface that does the step, by its title. */
+export function VariantTag({ index, step }: { index: RecordIndex; step: StepOnPage }) {
+  const only = step.step.interface_id;
+  if (!only) return null;
+  return <small className="meta step-variant" data-meta="variant">Only in {index.byId.get(only)?.title ?? only}</small>;
 }
 
 function TitledLinks({ index, ids, heading }: { index: RecordIndex; ids: string[]; heading: string }) {
@@ -94,7 +100,7 @@ export function FlowSteps({ index, flow, paths }: { index: RecordIndex; flow: st
                     </span>
                   </th>
                   <td className="step-what" role="cell">
-                    {step.step.title} <ProblemBadge problems={index.problemsFor.get(id) ?? []} />
+                    {step.step.title} <VariantTag index={index} step={step} /> <ProblemBadge problems={index.problemsFor.get(id) ?? []} />
                   </td>
                   {linked.map((c) => <td key={c.heading} role="cell" data-label={c.heading}><IdLinks index={index} ids={c.ids} label={`${id} ${c.heading.toLowerCase()}`} /></td>)}
                 </tr>
