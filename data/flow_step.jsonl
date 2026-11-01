@@ -333,7 +333,7 @@
 {"id":"LA-PLT-UC15-FL-S08","title":"They choose the editor Open in editor uses, or a custom command, and the shell keeps it in its settings file","flow_id":"LA-PLT-UC15-FL","path":"main","position":8}
 {"id":"LA-PLT-UC15-FL-S09","title":"They open the settings file in the editor to fill in the custom command or the path to claude","flow_id":"LA-PLT-UC15-FL","path":"main","position":9}
 {"id":"LA-PLT-UC15-FL-S10","title":"Opening Lathe again, or a folder from Finder, goes to the running app","flow_id":"LA-PLT-UC15-FL","path":"main","position":10}
-{"id":"LA-PLT-UC15-FL-S11","title":"A run that was killed leaves macOS nothing to reopen","flow_id":"LA-PLT-UC15-FL","path":"main","position":11}
+{"id":"LA-PLT-UC15-FL-S11","title":"Lathe reopens its own windows, so a run that was killed leaves macOS nothing to reopen","flow_id":"LA-PLT-UC15-FL","path":"main","position":11}
 {"id":"LA-PLT-UC15-FL-S12","title":"When the engine cannot load the folder, the error view says why and offers Retry, another folder and the folder itself","flow_id":"LA-PLT-UC15-FL","path":"refused","position":1}
 {"id":"LA-PLT-UC16-FL-S01","title":"The app sends one command's fields to the server, which runs it in its own transaction","flow_id":"LA-PLT-UC16-FL","path":"main","position":1}
 {"id":"LA-PLT-UC16-FL-S02","title":"The server answers with the records the command changed, Data files changed reloads open views, and git merges the change record by record","flow_id":"LA-PLT-UC16-FL","path":"main","position":2}
