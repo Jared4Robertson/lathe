@@ -139,6 +139,8 @@ describe('the spec data store saves each change whole or not at all, through a c
   ['LA-CHK-A1-SR01-T02', { oneFile: true, steps: [['check', 'add-check', { name: 'kept-check', product_id: 'TL', domain_id: 'LA-CHK', position: 1, severity: 'warning', summary: 'Kept whole.', explanation: 'A check kept whole.', query: "SELECT NULL AS record, 'kept' AS message WHERE false" }]] }],
   ['LA-CHK-A2-SR01-T02', { oneFile: true, steps: [['product-setting', 'set-limits', { product_id: 'TL', max_children: 21, max_entities_per_aggregate: 8 }]] }],
   ['LA-TRC-A3-SR01-T02', { steps: [['pattern-following', 'follow-pattern', { follower_id: 'TL-LEND-UC03', pattern_id: 'TL-PAT-LIBRARIAN-ACTION', setting_values: [{ setting: 'record', value: 'Loan' }, { setting: 'required_input', value: 'The loan to close.' }, { setting: 'result', value: 'The closed loan.' }] }]] }],
+  ['LA-TRC-A4-SR01-T01', { oneFile: true, steps: [['slot-filling', 'stop-filling-slot', { record_id: 'TL-LEND-TOOL01', slot_id: 'TL-PAT-LIBRARIAN-ACTION-SL06' }], ['slot-filling', 'stop-filling-slot', { record_id: 'TL-LEND-TOOL02', slot_id: 'TL-PAT-LIBRARIAN-ACTION-SL06' }]] }],
+  ['LA-TRC-A5-SR01-T01', { setup: [['integration', 'add-integration', { id: 'TL-INT90', title: 'Kept host', description: 'A host kept whole.' }]], oneFile: true, steps: [['provision', 'name-provider', { record_id: 'TL-LEND-STORE01', provider_id: 'TL-INT90' }], ['provision', 'name-provider', { record_id: 'TL-LEND-STORE02', provider_id: 'TL-INT90' }]] }],
 ])('%s a crash in the write leaves the data as it was or as the change meant, never a mix', async (_id, change) => {
     // As the change means it: the same write, uninterrupted, on another copy.
     const meant = copy();

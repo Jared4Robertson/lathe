@@ -713,6 +713,8 @@
 {"source_id":"LA-PLT-RM10-TB","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL08"}
 {"source_id":"LA-PLT-SP01-PR","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL09"}
 {"source_id":"LA-PLT-SP02-PR","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL09"}
+{"source_id":"LA-PLT-STORE01","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL21"}
+{"source_id":"LA-PLT-STORE02","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL21"}
 {"source_id":"LA-PLT-TOOL01","target_id":"LA-PAT-APP-CODE-SL03"}
 {"source_id":"LA-PLT-TOOL02","target_id":"LA-PAT-APP-CODE-SL03"}
 {"source_id":"LA-PLT-TOOL03","target_id":"LA-PAT-APP-CODE-SL03"}
@@ -726,6 +728,9 @@
 {"source_id":"LA-PLT-TOOL15","target_id":"LA-PAT-APP-CODE-SL03"}
 {"source_id":"LA-PLT-TOOL16","target_id":"LA-PAT-APP-CODE-SL03"}
 {"source_id":"LA-PLT-TOOL17","target_id":"LA-PAT-APP-CODE-SL03"}
+{"source_id":"LA-STORE01","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL21"}
+{"source_id":"LA-STORE02","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL21"}
+{"source_id":"LA-STORE04","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL21"}
 {"source_id":"LA-TRC-CMD01-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL01"}
 {"source_id":"LA-TRC-CMD02-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL01"}
 {"source_id":"LA-TRC-CMD10-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL01"}

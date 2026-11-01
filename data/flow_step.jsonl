@@ -454,3 +454,7 @@
 {"id":"LA-TRC-UC20-FL-S04","title":"They run lathe check: a serves-no-outcome warning for each record none reaches, saying how to fix it","flow_id":"LA-TRC-UC20-FL","path":"main","position":4,"interface_id":"LA-IF03"}
 {"id":"LA-TRC-UC20-FL-S05","title":"They follow an outcome to its record","flow_id":"LA-TRC-UC20-FL","path":"main","position":5,"interface_id":"LA-IF01"}
 {"id":"LA-TRC-UC20-FL-S06","title":"They open Tools › Checks and read each serves-no-outcome warning","flow_id":"LA-TRC-UC20-FL","path":"main","position":6,"interface_id":"LA-IF01"}
+{"id":"LA-TRC-UC21-FL-S01","title":"The Owner records that a record written by hand fills a slot of the pattern it is owed to","flow_id":"LA-TRC-UC21-FL","path":"main","position":1}
+{"id":"LA-TRC-UC21-FL-S02","title":"They name what provides a record decided outside the product, in place of any provider it had","flow_id":"LA-TRC-UC21-FL","path":"main","position":2}
+{"id":"LA-TRC-UC21-FL-S03","title":"Coverage counts the provided record as accounted for, and lists the fill as debt at its slot","flow_id":"LA-TRC-UC21-FL","path":"main","position":3}
+{"id":"LA-TRC-UC21-FL-S04","title":"A fill of a record a generator writes is refused with every reason, and nothing changes","flow_id":"LA-TRC-UC21-FL","path":"refused","position":1}

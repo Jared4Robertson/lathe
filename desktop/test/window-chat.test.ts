@@ -81,7 +81,7 @@ describe('LA-PLT-PO04-T A closed window\'s chat ends', () => {
 });
 
 describe('LA-PLT-UC19-R09-T05 A folder\'s chat starts in the mode its last chat had: Accept reads at first', () => {
-  it('keeps the mode in chat-modes.json, by folder, leaving out the default, and a new repository reads it back', () => {
+  it('LA-PLT-A16-SR01-T01 keeps the mode in chat-modes.json, by folder, leaving out the default, and a new repository reads it back', () => {
     const chats = new WindowChatRepository({ modes: file('m3.json') });
     expect(startingMode(chats.load().modes, '/p/c')).toBe('accept-reads');
     expect(chooseChatMode(chats, { folder: '/p/c', mode: 'view-only' })).toBe(true);

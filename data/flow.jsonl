@@ -87,3 +87,4 @@
 {"id":"LA-TRC-UC16-FL","title":"Check each stored record kind against the file that creates it","use_case_id":"LA-TRC-UC16"}
 {"id":"LA-TRC-UC19-FL","title":"Account for every package the product depends on","use_case_id":"LA-TRC-UC19"}
 {"id":"LA-TRC-UC20-FL","title":"See the outcomes each record serves","use_case_id":"LA-TRC-UC20"}
+{"id":"LA-TRC-UC21-FL","title":"Account for hand-written accidental complexity","use_case_id":"LA-TRC-UC21"}

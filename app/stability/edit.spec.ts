@@ -122,7 +122,7 @@ test.describe('editing', () => {
   test('LA-AUT-UC28-FL-T on the UI component page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-UI226', /^description/, 'The Standard page, as the stability suite describes it.'));
   // The Endpoint and Integration pages: each saves one field as its kind's Change command, with nothing jumping. Each is
   // its aggregate's web-app flow test.
-  test('LA-AUT-UC26-FL-T on the Endpoint page, open an API requirement\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-EP01-R01', /^group name/, 'Stability'));
+  test('LA-AUT-UC26-FL-T on the Endpoint page, open an API requirement\'s form and save an edit', ({ page }) => saveAnEdit(page, '/TL-LEND-EP01-R01', /^group name/, 'Stability'));
   test('LA-AUT-UC27-FL-T on the Integration page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-INT04', /^system/, 'git, as the stability suite names it'));
   test('LA-PAT-PAGE-STEPS-R01-T01 on the Storage requirement page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-A22-SR01', /^title/, 'Every change to a storage requirement is saved whole'));
   test('LA-PAT-PAGE-STEPS-R01-T01 on the Data store page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-STORE04', /^description/, 'Each process\'s own memory, as the stability suite describes it.'));
