@@ -170,9 +170,11 @@ describe('standards', () => {
     ]);
     const meets = schema.relations.meets;
     expect(meets).toMatchObject({ role: null, forwardLabel: 'Meets', reverseLabel: 'Met by' });
-    expect(meets.pairs.every((p) => p.target === 'standard_rule')).toBe(true);
-    // Every technical kind meets standard rules but the data store, which names no code (a rule it met could never be built).
-    expect(meets.pairs.map((p) => p.source).sort()).toEqual(technical().filter((k) => k !== 'data_store').sort());
+    // Every technical kind meets standard rules, and the pattern rules it carries out, but the data store, which names
+    // no code (a rule it met could never be built).
+    const sources = technical().filter((k) => k !== 'data_store').sort();
+    for (const target of ['standard_rule', 'pattern_rule']) expect(meets.pairs.filter((p) => p.target === target).map((p) => p.source).sort(), target).toEqual(sources);
+    expect(meets.pairs).toHaveLength(sources.length * 2);
     expect(parentsOf(schema, 'standard_rule_test')).toEqual(['standard_rule.standard_rule_id']);
     expect([schema.kinds.standard_rule_test].map((k) => [k.stage, k.idPattern, k.obligation])).toEqual([['test-plan', '<standard rule>-T<nn>', false]]);
     expect(ALLOWED_LEVELS.standard_rule_test).toEqual(['unit', 'integration', 'service', 'system', 'browser']);
