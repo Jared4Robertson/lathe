@@ -345,4 +345,49 @@ describe('the schema version', () => {
       expect.stringContaining('TL-LEND-UC01 record'),
     ]);
   });
+  const run2to3 = async (tables: Record<string, Record<string, unknown>[]>) => {
+    const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 2);
+    const changes: string[] = [];
+    const todos: string[] = [];
+    await step!.converter.files!(
+      { tables: () => Object.keys(tables), read: (table) => tables[table] ?? [], write: (table, rows) => void (tables[table] = rows) },
+      { changed: (text) => changes.push(text), todo: (text) => todos.push(text) },
+    );
+    return { changes, todos };
+  };
+  const houseCheck = { name: 'tool-without-photo', product_id: 'TL', position: 1, severity: 'warning', summary: 'A tool with no photo.', explanation: 'Add one.', query: 'SELECT 1' };
+
+  it("LA-AUT-UC03-R08-T08 2-to-3 gives each check the domain of its check_row record, removes the check_row records and kind, and leaves a to-do for a check no record names", async () => {
+    const tables: Record<string, Record<string, unknown>[]> = {
+      check: [houseCheck, { ...houseCheck, name: 'loan-without-due-date' }],
+      check_row: [{ id: 'TL-LEND-CK01', title: 'tool-without-photo', domain_id: 'TL-LEND', file: 'data/check.jsonl' }],
+      product_kind: [{ name: 'check_row', product_id: 'TL' }, { name: 'skill', product_id: 'TL' }],
+      product_kind_field: [{ kind: 'check_row', name: 'file' }, { kind: 'skill', name: 'file' }],
+    };
+    const { changes, todos } = await run2to3(tables);
+    expect(tables.check![0]).toEqual({ name: 'tool-without-photo', product_id: 'TL', domain_id: 'TL-LEND', position: 1, severity: 'warning', summary: 'A tool with no photo.', explanation: 'Add one.', query: 'SELECT 1' });
+    expect(tables.check![1]!.domain_id).toBeUndefined();
+    expect(tables.check_row).toEqual([]);
+    expect(tables.product_kind).toEqual([{ name: 'skill', product_id: 'TL' }]);
+    expect(tables.product_kind_field).toEqual([{ kind: 'skill', name: 'file' }]);
+    expect(changes).toHaveLength(3);
+    expect(todos).toEqual([expect.stringContaining('add `domain_id` with the domain that owns the check, to loan-without-due-date')]);
+  });
+
+  it('LA-AUT-UC03-R08-T09 2-to-3 leaves a to-do for every check of a product with no check_row records', async () => {
+    const tables: Record<string, Record<string, unknown>[]> = { check: [houseCheck] };
+    const { changes, todos } = await run2to3(tables);
+    expect(tables.check).toEqual([houseCheck]);
+    expect(changes).toEqual([]);
+    expect(todos).toEqual([expect.stringContaining('tool-without-photo')]);
+  });
+
+  it('LA-AUT-UC03-R08-T10 2-to-3 does nothing to data that is already upgraded', async () => {
+    const upgraded = { ...houseCheck, domain_id: 'TL-LEND' };
+    const tables: Record<string, Record<string, unknown>[]> = { check: [upgraded], product_kind: [{ name: 'skill', product_id: 'TL' }] };
+    const { changes, todos } = await run2to3(tables);
+    expect(tables).toEqual({ check: [upgraded], product_kind: [{ name: 'skill', product_id: 'TL' }] });
+    expect(changes).toEqual([]);
+    expect(todos).toEqual([]);
+  });
 });

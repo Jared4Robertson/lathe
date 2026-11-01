@@ -33,7 +33,7 @@ The source of truth is `data/<table>.jsonl` at the product repo's root: one file
 `lathe.config.json`, at the root, is written by `lathe init`:
 
 ```json
-{ "schema": 2, "data": "data" }
+{ "schema": 3, "data": "data" }
 ```
 
 | Key | Default | Meaning |
