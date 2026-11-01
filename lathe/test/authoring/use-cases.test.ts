@@ -202,7 +202,7 @@ describe('requirements and tests', () => {
       const named = kind.replace(/_test$/, '');
       const grand = schema.kinds[parent].parents.map((p) => p.kind);
       expect(named === parent || grand.includes(named), `${kind} under ${parent}`).toBe(true);
-      expect(schema.kinds[parent].obligation || ['flow', 'integration'].includes(parent), kind).toBe(true);
+      expect(schema.kinds[parent].obligation || ['flow', 'journey', 'integration'].includes(parent), kind).toBe(true);
       expect(schema.tables[kind].columns.find((c) => c.name === parents[0].column)!.required, kind).toBe(true);
     }
     expect(Object.fromEntries(['use_case_test', 'view_test', 'endpoint_test'].map((k) => [k, schema.kinds[k].parents[0].kind]))).toEqual({ use_case_test: 'uc_requirement', view_test: 'view_requirement', endpoint_test: 'api_requirement' });

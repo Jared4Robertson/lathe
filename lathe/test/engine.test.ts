@@ -68,7 +68,7 @@ describe('checks', () => {
     const files = loaded.records.filter((r) => typeof r.fields.file === 'string').length;
     const tests = loaded.records.filter((r) => r.kind.endsWith('_test')).length;
     expect(loaded.problems).toHaveLength(1);
-    expect(loaded.problems[0].message).toBe(`${loaded.records.length} ${loaded.links.length} ${tests} ${files}/${files} 12 13`);
+    expect(loaded.problems[0].message).toBe(`${loaded.records.length} ${loaded.links.length} ${tests} ${files}/${files} 12 14`);
   });
 
   it('LA-CHK-UC02-R03-T01 Every check runs, in position order, even after one fails', async () => {

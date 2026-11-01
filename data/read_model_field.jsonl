@@ -255,7 +255,8 @@
 {"read_model_id":"LA-TRC-RM12","position":1,"name":"Record","meaning":"The record.","type":"text","required":true,"example":"LA-AUT-A11"}
 {"read_model_id":"LA-TRC-RM12","position":2,"name":"Outcomes","meaning":"The business outcomes it serves, in ID order; none when no use case whose capability serves one reaches it.","type":"text","required":true}
 {"read_model_id":"LA-TRC-RM12","position":3,"name":"Use cases","meaning":"The use cases that reach it, through which it serves them.","type":"text","required":true}
-{"read_model_id":"LA-TRC-RM12","position":4,"name":"Serves none","meaning":"For a product: its aggregates, read models and obligations no outcome reaches.","type":"text","required":false}
+{"read_model_id":"LA-TRC-RM12","position":4,"name":"Journeys","meaning":"The journeys through which it serves them: those whose steps carry out a use case or policy that reaches it.","type":"text","required":true}
+{"read_model_id":"LA-TRC-RM12","position":5,"name":"Serves none","meaning":"For a product: its aggregates, read models and obligations no outcome reaches.","type":"text","required":false}
 {"read_model_id":"LA-TRC-RM13","position":1,"name":"Product","meaning":"The product whose space it is: its own use cases and those of no product.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-TRC-RM13","position":2,"name":"Use case","meaning":"A use case of the space: one row each.","type":"text","required":true,"example":"LA-AUT-UC06"}
 {"read_model_id":"LA-TRC-RM13","position":3,"name":"Outcomes","meaning":"The business outcomes its capability serves, in ID order.","type":"text","required":false,"example":"LA-BO06"}
