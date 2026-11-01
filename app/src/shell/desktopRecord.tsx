@@ -7,7 +7,7 @@ import { useProblems } from '../checking/problems/reads';
 import { Button } from '../components/Button';
 import './desktopRecord.css';
 
-// The desktop app's record actions and Dock badge (LA-PLT-UC15). In the desktop shell a record's facts
+// The desktop app's record actions and Dock badge (LA-PLT-UC25 and LA-STD-EXPERIENCE-R12). In the desktop shell a record's facts
 // get Reveal, Open in editor and Copy ID, and a right-click on a record row, a graph node or the page
 // title opens the shell's native menu of the same three. The product's error count goes to the Dock.
 // In a browser none of this is drawn or listened for, so the app is unchanged there.

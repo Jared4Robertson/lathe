@@ -332,7 +332,7 @@ test.describe('Exploring flows', () => {
       await expect(folders.getByRole('button', { name: new RegExp(`^${stage} \\d+$`) })).toBeVisible();
     }
     // Opening a page opens the rows that hold it.
-    await page.goto('/LA-PLT-UC05');
+    await page.goto('/LA-PLT-UC07');
     await expect(n.getByRole('button', { name: 'Fold Platform' })).toHaveAttribute('aria-expanded', 'true');
     const platform = n.getByRole('list', { name: 'Folders of Platform' });
     await expect(platform.getByRole('button', { name: /^Use cases \d+$/ })).toHaveAttribute('aria-expanded', 'true');

@@ -258,20 +258,6 @@
 {"id":"LA-PLT-UC03-FL-S03","title":"An Agent adds an aggregate with its own command while the Reader keeps the record open","flow_id":"LA-PLT-UC03-FL","path":"main","position":3,"interface_id":"LA-IF01"}
 {"id":"LA-PLT-UC03-FL-S04","title":"The file watcher raises Data files changed, the server sends spec:changed and the open view loads the data again at the same address","flow_id":"LA-PLT-UC03-FL","path":"main","position":4,"interface_id":"LA-IF01"}
 {"id":"LA-PLT-UC03-FL-S05","title":"When the data cannot be loaded, the view says what is wrong rather than showing other data","flow_id":"LA-PLT-UC03-FL","path":"refused","position":1}
-{"id":"LA-PLT-UC04-FL-S01","title":"The Reader presses Cmd/Ctrl+Shift+P; the palette lists the commands that apply, from the one keymap, each with its keys for the platform","flow_id":"LA-PLT-UC04-FL","path":"main","position":1}
-{"id":"LA-PLT-UC04-FL-S02","title":"They run commands by their VS Code keys, such as Cmd/Ctrl+B to hide the navigation","flow_id":"LA-PLT-UC04-FL","path":"main","position":2}
-{"id":"LA-PLT-UC04-FL-S03","title":"The app announces to assistive technology what the command changed","flow_id":"LA-PLT-UC04-FL","path":"main","position":3}
-{"id":"LA-PLT-UC04-FL-S05","title":"They press ?; the shortcuts sheet lists every shortcut by group, with a search and each shortcut's keys to change","flow_id":"LA-PLT-UC04-FL","path":"main","position":4}
-{"id":"LA-PLT-UC04-FL-S06","title":"They choose a key in the sheet and press a new one, and the palette, the sheet and every hint show it at once","flow_id":"LA-PLT-UC04-FL","path":"main","position":5}
-{"id":"LA-PLT-UC04-FL-S07","title":"They remove a key they no longer want from a shortcut in the sheet","flow_id":"LA-PLT-UC04-FL","path":"main","position":6}
-{"id":"LA-PLT-UC04-FL-S08","title":"They reset a changed shortcut to its own keys","flow_id":"LA-PLT-UC04-FL","path":"main","position":7}
-{"id":"LA-PLT-UC04-FL-S09","title":"They reset all shortcuts, after the sheet asks first","flow_id":"LA-PLT-UC04-FL","path":"main","position":8}
-{"id":"LA-PLT-UC04-FL-S10","title":"The app fires no single-key shortcut while the Reader types in a search box, and passes keys it doesn't handle to the window","flow_id":"LA-PLT-UC04-FL","path":"typing","position":1}
-{"id":"LA-PLT-UC05-FL-S01","title":"The Reader rests on a control and its tooltip names its keys","flow_id":"LA-PLT-UC05-FL","path":"main","position":1}
-{"id":"LA-PLT-UC05-FL-S02","title":"They open the palette and read each command's keys","flow_id":"LA-PLT-UC05-FL","path":"main","position":2}
-{"id":"LA-PLT-UC05-FL-S03","title":"Assistive technology announces the keys","flow_id":"LA-PLT-UC05-FL","path":"main","position":3}
-{"id":"LA-PLT-UC05-FL-S04","title":"The Reader rebinds a key in the shortcuts sheet, and every hint follows, the menu's key labels with them","flow_id":"LA-PLT-UC05-FL","path":"main","position":4,"interface_id":"LA-IF02"}
-{"id":"LA-PLT-UC05-FL-S05","title":"They rebind a key in the shortcuts sheet and every hint follows, the toolbar and the palette with it","flow_id":"LA-PLT-UC05-FL","path":"main","position":5,"interface_id":"LA-IF01"}
 {"id":"LA-PLT-UC06-FL-S01","title":"The Reader drags the gap between two panels, or focuses it and steps it with the keys","flow_id":"LA-PLT-UC06-FL","path":"main","position":1}
 {"id":"LA-PLT-UC06-FL-S02","title":"Lathe remembers the sizes; a double press on the divider resets one","flow_id":"LA-PLT-UC06-FL","path":"main","position":2}
 {"id":"LA-PLT-UC06-FL-S03","title":"Dragging the navigation small folds it to its rail","flow_id":"LA-PLT-UC06-FL","path":"main","position":3}
@@ -287,30 +273,6 @@
 {"id":"LA-PLT-UC07-FL-S09","title":"They delete their copy, after being asked","flow_id":"LA-PLT-UC07-FL","path":"alternate","position":2}
 {"id":"LA-PLT-UC07-FL-S10","title":"Someone else imports that file as a theme of their own","flow_id":"LA-PLT-UC07-FL","path":"alternate","position":3}
 {"id":"LA-PLT-UC07-FL-S11","title":"They turn Scroll to zoom on in Appearance, or from the palette, and scroll zooms every stage","flow_id":"LA-PLT-UC07-FL","path":"alternate","position":4}
-{"id":"LA-PLT-UC08-FL-S01","title":"On a phone the Reader opens Lathe: a compact top bar, the view filling the display, text they can read","flow_id":"LA-PLT-UC08-FL","path":"main","position":1}
-{"id":"LA-PLT-UC08-FL-S02","title":"They tap search in the top bar, type a use case's ID and tap the result","flow_id":"LA-PLT-UC08-FL","path":"main","position":2}
-{"id":"LA-PLT-UC08-FL-S03","title":"The wiki fills the display; they tap Graph in the view bar","flow_id":"LA-PLT-UC08-FL","path":"main","position":3}
-{"id":"LA-PLT-UC08-FL-S04","title":"They pinch out, tap a node to see its name, and tap Open","flow_id":"LA-PLT-UC08-FL","path":"main","position":4}
-{"id":"LA-PLT-UC08-FL-S05","title":"They pull up the wiki card sheet, drag it to full height, then swipe it away","flow_id":"LA-PLT-UC08-FL","path":"main","position":5}
-{"id":"LA-PLT-UC08-FL-S06","title":"They open the nav sheet from the menu control and choose the domain","flow_id":"LA-PLT-UC08-FL","path":"main","position":6}
-{"id":"LA-PLT-UC08-FL-S07","title":"Back, twice, takes them back to the use case they started from","flow_id":"LA-PLT-UC08-FL","path":"main","position":7}
-{"id":"LA-PLT-UC08-FL-S08","title":"On a tablet in landscape they keep the workbench, with targets sized for a finger","flow_id":"LA-PLT-UC08-FL","path":"tablet","position":1}
-{"id":"LA-PLT-UC09-FL-S01","title":"The Reader opens a record; nothing drawn moves as the specs and fonts arrive","flow_id":"LA-PLT-UC09-FL","path":"main","position":1}
-{"id":"LA-PLT-UC09-FL-S02","title":"The Reader moves between records by the nav, a link, a node in the graph, Back and quick find; the frame stays","flow_id":"LA-PLT-UC09-FL","path":"main","position":2}
-{"id":"LA-PLT-UC09-FL-S04","title":"They collapse, show and resize the wiki card; only it moves, and the stage recenters","flow_id":"LA-PLT-UC09-FL","path":"main","position":3}
-{"id":"LA-PLT-UC09-FL-S05","title":"The Reader folds sections and uses Expand all","flow_id":"LA-PLT-UC09-FL","path":"main","position":4}
-{"id":"LA-PLT-UC09-FL-S07","title":"They resize panels, which follow the pointer","flow_id":"LA-PLT-UC09-FL","path":"main","position":5}
-{"id":"LA-PLT-UC09-FL-S08","title":"The Reader re-centers the graph, changes its depth and moves around the ERD; the canvas and its bars hold still","flow_id":"LA-PLT-UC09-FL","path":"main","position":6}
-{"id":"LA-PLT-UC09-FL-S10","title":"The specs reload while they are scrolled part-way down; what was in view stays","flow_id":"LA-PLT-UC09-FL","path":"main","position":7}
-{"id":"LA-PLT-UC09-FL-S11","title":"The Reader opens a tooltip, quick find, the palette and the sheet, each placed before it shows","flow_id":"LA-PLT-UC09-FL","path":"main","position":8}
-{"id":"LA-PLT-UC09-FL-S13","title":"They switch the theme; only colors change","flow_id":"LA-PLT-UC09-FL","path":"main","position":9}
-{"id":"LA-PLT-UC09-FL-S14","title":"The app answers each move within the performance budgets","flow_id":"LA-PLT-UC09-FL","path":"main","position":10}
-{"id":"LA-PLT-UC09-FL-S16","title":"On a phone they open and close the sheets; the view behind stays","flow_id":"LA-PLT-UC09-FL","path":"phone","position":1,"interface_id":"LA-IF01"}
-{"id":"LA-PLT-UC10-FL-S01","title":"In the desktop app, the Reader tabs round the nav, the tab panel, the wiki card and the stage; every control is reached, named for what it shows, big enough and never inside another, and every box that scrolls takes focus","flow_id":"LA-PLT-UC10-FL","path":"main","position":1,"interface_id":"LA-IF02"}
-{"id":"LA-PLT-UC10-FL-S02","title":"The Reader opens a record from the nav or quick find; focus stays on the record","flow_id":"LA-PLT-UC10-FL","path":"main","position":2}
-{"id":"LA-PLT-UC10-FL-S05","title":"They switch stages and collapse and show the wiki card; each change is announced","flow_id":"LA-PLT-UC10-FL","path":"main","position":3}
-{"id":"LA-PLT-UC10-FL-S06","title":"They pick the High contrast theme by keyboard; every view reads clearly in it, in light and dark","flow_id":"LA-PLT-UC10-FL","path":"main","position":4}
-{"id":"LA-PLT-UC10-FL-S07","title":"The Reader opens a dialog; focus is held inside and comes back to the opener","flow_id":"LA-PLT-UC10-FL","path":"main","position":5}
 {"id":"LA-PLT-UC11-FL-S01","title":"The Reader chooses File › Open Product Folder… and picks a folder","flow_id":"LA-PLT-UC11-FL","path":"main","position":1}
 {"id":"LA-PLT-UC11-FL-S02","title":"It opens in a window of its own, never white, titled with its products and folder, its content reaching the shell only through window.latheDesktop","flow_id":"LA-PLT-UC11-FL","path":"main","position":2}
 {"id":"LA-PLT-UC11-FL-S03","title":"The window serves the product with its own installed Lathe, or the bundled copy, and About says which","flow_id":"LA-PLT-UC11-FL","path":"main","position":3}
@@ -328,27 +290,6 @@
 {"id":"LA-PLT-UC12-FL-S03","title":"A change to a record reloads the view in every mode","flow_id":"LA-PLT-UC12-FL","path":"main","position":3}
 {"id":"LA-PLT-UC12-FL-S04","title":"They build the app as it ships, locally and unsigned","flow_id":"LA-PLT-UC12-FL","path":"main","position":4}
 {"id":"LA-PLT-UC12-FL-S05","title":"Otherwise the shell starts a dev server of its own for the folder","flow_id":"LA-PLT-UC12-FL","path":"alternate","position":1}
-{"id":"LA-PLT-UC13-FL-S01","title":"The Reader opens the menu bar: File, Edit, View, Window and Help","flow_id":"LA-PLT-UC13-FL","path":"main","position":1}
-{"id":"LA-PLT-UC13-FL-S02","title":"They choose a View item; the app runs the command by its ID, as if its key had been pressed","flow_id":"LA-PLT-UC13-FL","path":"main","position":2}
-{"id":"LA-PLT-UC13-FL-S03","title":"The app knows it runs inside its desktop shell","flow_id":"LA-PLT-UC13-FL","path":"main","position":3}
-{"id":"LA-PLT-UC14-FL-S01","title":"The window has no system title bar; Lathe draws its own, with the window's controls over it","flow_id":"LA-PLT-UC14-FL","path":"main","position":1}
-{"id":"LA-PLT-UC14-FL-S02","title":"The Reader goes back and forward from the bar","flow_id":"LA-PLT-UC14-FL","path":"main","position":2}
-{"id":"LA-PLT-UC14-FL-S03","title":"They press the command center to open quick find","flow_id":"LA-PLT-UC14-FL","path":"main","position":3}
-{"id":"LA-PLT-UC14-FL-S04","title":"They show and hide the navigation from the bar","flow_id":"LA-PLT-UC14-FL","path":"main","position":4}
-{"id":"LA-PLT-UC14-FL-S05","title":"They drag the window by the bar and double-press it to zoom","flow_id":"LA-PLT-UC14-FL","path":"main","position":5}
-{"id":"LA-PLT-UC14-FL-S06","title":"They change the theme; the bar and the window's controls follow","flow_id":"LA-PLT-UC14-FL","path":"main","position":6}
-{"id":"LA-PLT-UC15-FL-S01","title":"The Owner keeps Lathe in the Dock; its icon reads at every size, with a DEV band in development","flow_id":"LA-PLT-UC15-FL","path":"main","position":1}
-{"id":"LA-PLT-UC15-FL-S02","title":"They open a folder; the window opens on the shell color with a launch view until the specs answer, and behaves like a native window","flow_id":"LA-PLT-UC15-FL","path":"main","position":2}
-{"id":"LA-PLT-UC15-FL-S03","title":"The app reports its check errors to the shell","flow_id":"LA-PLT-UC15-FL","path":"main","position":3}
-{"id":"LA-PLT-UC15-FL-S04","title":"The Dock badge counts the errors of the window in front","flow_id":"LA-PLT-UC15-FL","path":"main","position":4}
-{"id":"LA-PLT-UC15-FL-S05","title":"The Dock menu opens another folder and lists the recent ones","flow_id":"LA-PLT-UC15-FL","path":"main","position":5}
-{"id":"LA-PLT-UC15-FL-S06","title":"About Lathe shows the versions, and Settings… opens Appearance","flow_id":"LA-PLT-UC15-FL","path":"main","position":6}
-{"id":"LA-PLT-UC15-FL-S07","title":"From a record they reveal its data file in Finder, open it in the editor or copy its ID; the shell takes only the ID and finds the file itself","flow_id":"LA-PLT-UC15-FL","path":"main","position":7}
-{"id":"LA-PLT-UC15-FL-S08","title":"They choose the editor Open in editor uses, or a custom command, and the shell keeps it in its settings file","flow_id":"LA-PLT-UC15-FL","path":"main","position":8}
-{"id":"LA-PLT-UC15-FL-S09","title":"They open the settings file in the editor to fill in the custom command or the path to claude","flow_id":"LA-PLT-UC15-FL","path":"main","position":9}
-{"id":"LA-PLT-UC15-FL-S10","title":"Opening Lathe again, or a folder from Finder, goes to the running app","flow_id":"LA-PLT-UC15-FL","path":"main","position":10}
-{"id":"LA-PLT-UC15-FL-S11","title":"Lathe reopens its own windows, so a run that was killed leaves macOS nothing to reopen","flow_id":"LA-PLT-UC15-FL","path":"main","position":11}
-{"id":"LA-PLT-UC15-FL-S12","title":"When the engine cannot load the folder, the error view says why and offers Retry, another folder and the folder itself","flow_id":"LA-PLT-UC15-FL","path":"refused","position":1}
 {"id":"LA-PLT-UC16-FL-S01","title":"The app sends one command's fields to the server, which runs it in its own transaction","flow_id":"LA-PLT-UC16-FL","path":"main","position":1}
 {"id":"LA-PLT-UC16-FL-S02","title":"The server answers with the records the command changed, Data files changed reloads open views, and git merges the change record by record","flow_id":"LA-PLT-UC16-FL","path":"main","position":2}
 {"id":"LA-PLT-UC16-FL-S03","title":"A command from another site, not sent as a structured request or over 1 MB is refused before it runs","flow_id":"LA-PLT-UC16-FL","path":"refused","position":1}
@@ -390,6 +331,15 @@
 {"id":"LA-PLT-UC23-FL-S01","title":"The Owner runs lathe serve to browse and edit the spec, with no build tools in the repo","flow_id":"LA-PLT-UC23-FL","path":"main","position":1}
 {"id":"LA-PLT-UC23-FL-S02","title":"They stop lathe serve from the terminal, and it closes the store before it ends","flow_id":"LA-PLT-UC23-FL","path":"main","position":2}
 {"id":"LA-PLT-UC23-FL-S03","title":"lathe serve shows each product as a space, and writes each change to its own product's folder","flow_id":"LA-PLT-UC23-FL","path":"workspace","position":1}
+{"id":"LA-PLT-UC24-FL-S01","title":"The Reader presses ?; the shortcuts sheet lists every shortcut by group, with a search and each shortcut's keys to change","flow_id":"LA-PLT-UC24-FL","path":"main","position":1}
+{"id":"LA-PLT-UC24-FL-S02","title":"They choose a key in the sheet and press a new one, and the palette, the sheet and every hint show it at once","flow_id":"LA-PLT-UC24-FL","path":"main","position":2}
+{"id":"LA-PLT-UC24-FL-S03","title":"In a Product window the menus show the new keys beside their commands","flow_id":"LA-PLT-UC24-FL","path":"main","position":3,"interface_id":"LA-IF02"}
+{"id":"LA-PLT-UC24-FL-S04","title":"They remove a key they no longer want from a shortcut in the sheet","flow_id":"LA-PLT-UC24-FL","path":"main","position":4}
+{"id":"LA-PLT-UC24-FL-S05","title":"They reset a changed shortcut to its own keys","flow_id":"LA-PLT-UC24-FL","path":"main","position":5}
+{"id":"LA-PLT-UC24-FL-S06","title":"They reset all shortcuts, after the sheet asks first","flow_id":"LA-PLT-UC24-FL","path":"main","position":6}
+{"id":"LA-PLT-UC25-FL-S01","title":"From a record they reveal its data file in Finder, open it in the editor or copy its ID; the shell takes only the ID and finds the file itself","flow_id":"LA-PLT-UC25-FL","path":"main","position":1}
+{"id":"LA-PLT-UC25-FL-S02","title":"They choose the editor Open in editor uses, or a custom command, and the shell keeps it in its settings file","flow_id":"LA-PLT-UC25-FL","path":"main","position":2}
+{"id":"LA-PLT-UC25-FL-S03","title":"They open the settings file in the editor to fill in the custom command","flow_id":"LA-PLT-UC25-FL","path":"main","position":3}
 {"id":"LA-TRC-UC01-FL-S01","title":"The Owner runs lathe check and reads one coverage line per domain and obligation kind: designed, built, proved and not automated yet","flow_id":"LA-TRC-UC01-FL","path":"main","position":1}
 {"id":"LA-TRC-UC01-FL-S02","title":"Each gap names the obligation and what it lacks: its design, a built file or a test","flow_id":"LA-TRC-UC01-FL","path":"main","position":2}
 {"id":"LA-TRC-UC01-FL-S03","title":"The gaps are warnings, so the check still passes","flow_id":"LA-TRC-UC01-FL","path":"main","position":3}

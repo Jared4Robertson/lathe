@@ -42,7 +42,7 @@ test.describe('navigate', () => {
     const link = page.locator('.wiki-panel .spec-body a.record-link[href^="/LA-"]').first();
     const r = await step(page, 'navigate', 'through a link', { keys: KEYS, allow: CONTENT, resizes: TITLE }, async () => {
       await link.click();
-      await page.waitForURL((u) => !u.pathname.endsWith('LA-PLT-UC05'));
+      await page.waitForURL((u) => !u.pathname.endsWith('LA-PLT-UC07'));
     });
     expectStable(r);
   });
@@ -52,16 +52,16 @@ test.describe('navigate', () => {
     await page.locator('.graph-flow .graph-box').nth(1).waitFor({ state: 'attached' });
     await page.waitForTimeout(500);
     const keys = [...KEYS, GRAPH_CANVAS, GRAPH_TOOLS];
-    const [inView] = await boxesInView(page, 'LA-PLT-UC05');
+    const [inView] = await boxesInView(page, 'LA-PLT-UC07');
     expect(inView, 'a box in view').toBeTruthy();
     const r = await step(page, 'navigate', 'graph click', { keys, allow: CONTENT, resizes: TITLE }, async () => {
       await page.mouse.click(inView.at.x, inView.at.y);
-      await page.waitForURL((u) => !u.pathname.endsWith('LA-PLT-UC05'));
+      await page.waitForURL((u) => !u.pathname.endsWith('LA-PLT-UC07'));
     });
     expectStable(r);
     const back = await step(page, 'navigate', 'Back', { keys, allow: CONTENT, resizes: TITLE }, async () => {
       await page.goBack();
-      await page.waitForURL(/LA-PLT-UC05/);
+      await page.waitForURL(/LA-PLT-UC07/);
     });
     expectStable(back);
   });

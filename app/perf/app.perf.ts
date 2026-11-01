@@ -11,7 +11,7 @@ import { focusDrawn, reachableBoxes, sceneOf } from '../stability/scene';
 // LA-PAT-APP-UX-R11-T01, LA-V96-R21-T01, LA-V96-R24-T03, LA-V96-R29-T02 and LA-V96-R29-T04: the app's performance budgets (LA-PAT-APP-UX-R11), on the production build.
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const RECORD = '/LA-PLT-UC05';
+const RECORD = '/LA-PLT-UC07';
 const DOMAIN = '/LA-EXP';
 const AGGREGATE = '/LA-EXP-A1';
 const TITLE = '.header-strip h1';
