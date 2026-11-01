@@ -7,159 +7,30 @@ description: Write or change Lathe test records and the tests they name - one te
 
 Every test proves exactly its parent: a constraint test its constraint, a use case test its UC requirement, and so on. An obligation is **proved** when its tests exist, at a level its kind allows, automated or manual. Write the test plan last, after the record it proves.
 
-## How you write
+Change the spec only with Lathe's MCP tools (or the `lathe` CLI), never by editing files. The test kinds, what each proves, how many each parent takes, the levels each allows, ID patterns and fields are in `lathe/REFERENCE.md` in the Lathe package (`node_modules/@jaredrob/lathe/REFERENCE.md` in a product repo). A test at a level its kind does not allow is a warning.
 
-The spec is typed data in the repo's `data/` folder, one table per kind. Change it only with Lathe's MCP tools, never by editing files. Every kind belongs to one aggregate of Lathe's own model, and each aggregate has its own tools, named for the aggregate and the command: `<aggregate>_add_<kind>`, `<aggregate>_change_<kind>` and `<aggregate>_remove_<kind>` for each kind it holds; and its reads, `<aggregate>_get_<aggregate>` (it whole, by the ID of any record in it) and `<aggregate>_next_id`. A test sits in the aggregate of what it proves. `check` runs the checks. Each command checks its aggregate's rules and is refused, with every reason, when it breaks them; a refusal changes nothing, so fix the input and try again. Writes never commit: commit per task, the test record with its test.
+## Judgment
 
-- The test data sets a test `starts_from` are a field of its own add and change; on a change the list replaces the list. There are no tools that link or unlink.
-- Each tool's input schema lists its fields, with each column's type and meaning. In a shell the same commands are `lathe <aggregate> <command> --<field> <value>` (`lathe use-case add-use-case-test --help` prints its fields; `npx lathe` in a product repo, `npm --prefix lathe run lathe -- <aggregate> <command> --root ..` in the Lathe repo), or the tool's own JSON with `--json -` (stdin) or `--json <file>`.
-- Take each test's ID from its aggregate's `<aggregate>_next_id`, with the kind and what it proves as `parent`. A kind with exactly one test per parent gives that one ID (`TL-LEND-INV01-T`); the others are numbered (`TL-LEND-UC01-R01-T01`).
+**One test, one behavior.** A test that seems to prove two records is two tests. Technical records have no tests of their own: each is proved by the tests of what it implements. A standard rule is proved by its standard rule tests (a scan of the code for what it forbids); write only rules the code really follows.
 
-## The test kinds
+**Lowest level that can observe the result.** Cheapest first: `unit` (in process, no I/O), `integration` (real storage), `service` (through the product's interface in process), `system` (the running product driven from outside), `browser` (a real browser or the desktop shell). Pick the cheapest level that can see what the test expects: a rule on values is unit; one the database enforces is integration; what an endpoint or tool answers is service; what only the running product shows is system; what only a real browser shows (layout, focus, a native menu) is browser. A higher level is slower and flakier and proves nothing more. Climb only when the one below cannot observe the result, and say why in the notes. A flow test is the exception: a smoke test of the whole main path, run at its interface's level.
 
-| Test kind | Proves (its parent) | How many | ID | Levels it allows | Written with |
-| --- | --- | --- | --- | --- | --- |
-| `constraint_test` | a constraint | exactly one | `<constraint>-T` | unit, integration | `value_object_add_constraint_test` |
-| `invariant_test` | an invariant | exactly one | `<invariant>-T` | unit, integration | `aggregate_add_invariant_test` |
-| `specification_test` | a specification | exactly one | `<specification>-T` | unit, integration | `specification_add_specification_test` |
-| `policy_test` | a policy | exactly one | `<policy>-T` | integration, service, system, browser | `command_add_policy_test` |
-| `domain_service_test` | a domain service | at least one | `<domain service>-T<nn>` | unit | `domain_add_domain_service_test` |
-| `storage_requirement_test` | a storage requirement | at least one | `<storage requirement>-T<nn>` | integration, service, system, browser | `storage_requirement_add_storage_requirement_test` |
-| `use_case_test` | a UC requirement | at least one | `<UC requirement>-T<nn>` | service, system, browser | `use_case_add_use_case_test` |
-| `view_test` | a view requirement | at least one | `<view requirement>-T<nn>` | unit, browser | `view_add_view_test` |
-| `endpoint_test` | an API requirement | at least one | `<API requirement>-T<nn>` | service, system | `endpoint_add_endpoint_test` |
-| `flow_test` | a flow: a smoke test of its main path | exactly one | `<flow>-T` | browser for a web app or desktop flow, system for an API, CLI or agent tools flow | `use_case_add_flow_test` |
-| `integration_test` | an integration | any | `<integration>-T<nn>` | integration, service, system | `integration_add_integration_test` |
-| `pattern_rule_test` | a pattern rule, in one adopting domain (`domain_id`) | one per rule and domain | `<pattern rule>-T<nn>` | any | `pattern_add_pattern_rule_test` |
-| `standard_rule_test` | a standard rule | any | `<standard rule>-T<nn>` | any | `standard_add_standard_rule_test` |
+**Automated, manual or not automated yet.** Write the test with its record when you can. Use "not automated yet" when the code it tests is not written or it needs something not in place, saying in the notes why it waits; it is not proof until automated, and the state and file change together. Use manual only for what code cannot sensibly check (a newcomer's first run of the README's steps), with the reason. Automated needs a file; a manual reason only on a manual test.
 
-Each has its change and remove tools beside its add, such as `use_case_change_use_case_test`.
+**Size and markers.** Leave size out for a small test; volume for many records to show it holds at scale; worst case for the slowest or largest input the product must still handle. Mark smoke only for the few tests run first after a build to show the product works at all, and external only for a test that reaches a system outside the product. Leave a marker out rather than set it false.
 
-Technical records have no tests of their own: each is proved by the tests of what it implements. A standard rule is proved by its standard rule tests, such as a scan of the code for what the rule forbids; the technical records that `meets` it show where it is applied, and prove nothing. A test at a level its kind does not allow is a warning, and so is a flow test at a level its flow's interface does not fit (`flow-test-level-for-interface`).
+**Titles and text.** A test's title is the observable result as a short sentence true when the test passes ("An overdue loan is refused a renewal"), never "Tests that", "Test that" or "Should". `when` is what the test does, with any setup of its own; `then` starts with "Expects" and names what is asserted. There is no Given: shared starting state is a test data set.
 
-Most kinds take `when` and `then`, both required: what the test does, and what it expects (start `then` with "Expects" and name what is asserted). A test's shared starting state is the test data set it `starts_from`; any setup of its own opens its `when`: "With one tool on loan and one needing repair, a member borrows each." There is no Given column. A constraint test takes `accepts` and `refuses`, both required (the values the value object takes and refuses); a flow test takes `steps` (a list, one item per step of the main path, at least one) and `expected_result`, both required. A test data set takes a required `description` (what it is for), `environment`, `records`, `prepare` and `reset`; `accounts` only when it signs in.
-
-## Naming
-
-A test's `title` is the observable result, as one short sentence that is true when the test passes: "An overdue loan is refused a renewal". Never "Tests that…", "Test that…" or "Should…": `lathe check` warns of those. A test data set's title is a noun phrase for its contents, no article: "Complete example library". Every title is in sentence case, with no trailing period, and unique within its kind and product; a duplicate or a trailing period is refused. Detail goes in `when` and `then`.
-
-## Run by
-
-Every test has a run by:
-
-- `level`: how it runs, and only that (the test kind says what it tests, the state who runs it). Cheapest first:
-  - `unit`: in process, with no storage or I/O.
-  - `integration`: in process, with real storage (a database, files, git).
-  - `service`: through the product's interface in process, with real storage: an HTTP handler, a CLI command function, an MCP handler.
-  - `system`: the running product driven from outside through its real interface: HTTP to a running server, the real CLI or MCP process.
-  - `browser`: a real browser, or the desktop shell, against the running app.
-- `state`: `automated` (a file runs it), `manual` (a person follows it) or `not automated yet` (meant to be automated, and not proof until it is).
-- `file`: the test file, from the product root. Required when automated; give it otherwise only when the file exists.
-- `manual_reason`: why a person runs it rather than a file. Required when manual, and only then. A manual test still gives its level, the one the person exercises: `browser` for a person clicking through the app, `system` for one running the real CLI or calling the running server.
-
-- `size`: leave it out for a small test, the usual case (a few records); `volume` for one that runs on many records to show it holds at scale; `worst case` for one that runs on the slowest or largest input the product must still handle.
-- `smoke`: `true` for a smoke test, one of the few run first, after a build or a deploy, to show the product works at all. Leave it out otherwise.
-- `external`: `true` for a test that reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Leave it out otherwise.
-
-An automated test with no file is refused, and so are a manual reason on a test that is not manual, a level other than the five, and a `smoke` or `external` of `false` (leave it out instead).
-
-### A test runs at the lowest level that can observe its result
-
-Pick the cheapest level that can see what the test expects. A rule on values is `unit`; one the database enforces is `integration`; what an endpoint, a command or a tool answers is `service`; what only the running product shows, such as its real entry point or a process starting, is `system`; what only a real browser or the desktop shell shows, such as layout, focus or a native menu, is `browser`. A higher level is slower and flakier, and proves nothing more about the result. Climb a level only when the one below cannot observe the result, and say why in `notes`. A flow test is the exception by design: a smoke test of the whole path, it runs at its interface's level (`browser` for a web app or desktop, `system` otherwise).
-
-## Test data sets
-
-Some tests start from prepared data: an environment, accounts and starting records, built by a seed or fixture file. Describe each such set once, as a `test_data_set` under the domain whose tests use it (`test_data_set_add_test_data_set`, ID `<P>-<D>-TD<nn>`, from `test_data_set_next_id` with the domain as `parent`): its `environment` (where it runs), `accounts` (who it signs in as), `records` (what it starts with), `prepare` and `reset` (how to set it up before a test and clean up after), and `file` (the seed or fixture that builds it, from the product root; a file or a folder). Then name it in the `starts_from` of each test that starts from it (test to data set).
-
-A data set no test starts from is an error (`test-data-set-unused`). A data set whose file does not exist is reported too (`test-data-set-file-missing`): an error when an automated test starts from it, since that test cannot run, and a warning otherwise.
+**Test data sets.** Describe prepared data (an environment, accounts, starting records, built by a seed or fixture) once under the domain whose tests use it, and name it in each test that starts from it. A set no test starts from is an error; one whose file is missing is reported.
 
 ## The test names its ID
 
-An automated test's file names the test record's ID, at the start of the test's name, so a failing test points straight at its record and the check can find it:
+An automated test's name starts with its test record's ID so a failing test points at its record and the check can find it. When one test proves several records, name all their IDs at the start of its name. IDs match whole.
 
-```ts
-it('TL-LEND-INV01-T A second member with the same email is rejected, whatever its case', () => {
-  // ...
-});
-```
-
-When one test in code proves several records, name all their IDs at the start of its name, so its body runs once:
-
-```ts
-it('TL-LEND-UC01-R01-T01 TL-LEND-UC01-R02-T01 A member borrows a free tool, and a second member is refused it', () => {
-  // ...
-});
-```
-
-IDs are matched whole: `TL-LEND-INV01-T` is not found in `TL-LEND-INV01-T2`.
-
-The other way round, every test case in the product's test files names a test record whose `file` is that file, or `lathe check` reports it (`test-case-unnamed`, an error). The test files are those matching the `tests` globs of `lathe.config.json` (by default `**/*.test.{ts,tsx,js,mjs}` and `**/*.spec.{ts,tsx,js}`; never node_modules, dist or another product's folder) and every file a test record names. The check reads code as text: a test case is a call of `it` or `test` (with `.only`, `.skip`, `.todo`, `.fails`, `.concurrent`, `.skipIf(…)`, `.runIf(…)`, `.each(…)` and the like) whose name is a string or template literal, and it inherits the names of the `describe` (or `test.describe`) calls around it. So the IDs sit in the test's own name (all of them, for a test that proves several records), or in a describe around several tests that prove one record. A name that is not a literal, and a test made by a helper function, are not recognized; tests inside strings and comments are not test cases.
-
-For a test case the check reports: link it to the record it proves (add that test record, with this file and the level the test runs at, when the spec lacks it, and the requirement when the test proves something real the spec does not say), or delete it when it proves nothing. Shared setup and helper files with no test cases are fine.
-
-## Automated, manual or not automated yet
-
-Write the test with its record when you can. Use `not automated yet` (no `file`) when the code it tests is not written, or the test needs something not in place yet, such as a browser runner; say in `when` and `then` what it will check, and in `notes` why it waits. When it is written, change its `state` to `automated` and its `file` in one command. Use `manual` only for what code cannot sensibly check, such as a smoke test of the README's steps, with the reason.
-
-## Examples: the Tool Library
-
-An invariant test, a constraint test and a use case test:
-
-```
-aggregate_add_invariant_test { "id": "TL-LEND-INV01-T", "title": "A second member with the same email is rejected, whatever its case",
-       "invariant_id": "TL-LEND-INV01", "level": "integration", "state": "automated", "file": "test/domain-rules.test.ts",
-       "when": "Registers a member, then another with the same email in a different case and with spaces.",
-       "then": "Refused as email_taken; inserting the duplicate straight into the store also fails." }
-value_object_add_constraint_test { "id": "TL-VO02-C02-T", "title": "An email address is kept trimmed and in lower case", "constraint_id": "TL-VO02-C02",
-       "level": "unit", "state": "automated", "file": "test/domain-rules.test.ts",
-       "accepts": "' Ada@Example.org ' as ada@example.org", "refuses": "an address with a space inside" }
-use_case_add_use_case_test { "id": "TL-LEND-UC03-R04-T01", "title": "Borrowing a tool on loan or needing repair is refused with the reason",
-       "uc_requirement_id": "TL-LEND-UC03-R04", "level": "service", "state": "automated", "file": "test/api.test.ts",
-       "when": "With one tool on loan and one needing repair, a member borrows each.", "then": "Expects each refused, saying which." }
-```
-
-A test data set built by a fixture, and a test that starts from it:
-
-```
-test_data_set_add_test_data_set { "id": "TL-LEND-TD01", "title": "Empty library with a test clock", "domain_id": "TL-LEND",
-       "environment": "A fresh in-memory store.", "records": "No members, tools or loans; a clock the test sets.",
-       "prepare": "Each test calls services() for a new store and clock.", "reset": "Nothing: each test has its own store.",
-       "file": "test/helpers.ts", "description": "What the domain-rule and API tests start from: a fresh store per test and a clock it moves." }
-aggregate_change_invariant_test { "id": "TL-LEND-INV01-T", "starts_from": ["TL-LEND-TD01"] }
-```
-
-An endpoint test not automated yet, then automated:
-
-```
-endpoint_add_endpoint_test { "id": "TL-LEND-EP05-R02-T01", "title": "Returning an unknown loan gives 404 loan_not_found",
-       "api_requirement_id": "TL-LEND-EP05-R02", "level": "service", "state": "not automated yet",
-       "when": "POST /loans/999/return", "then": "404 loan_not_found, and nothing changes",
-       "notes": "Waits for the HTTP test harness." }
-```
-
-Once it is written: `endpoint_change_endpoint_test { "id": "TL-LEND-EP05-R02-T01", "state": "automated", "file": "test/api.test.ts" }`.
-
-A manual flow test, a pattern rule test in the domain that adopts the pattern, and a standard rule test:
-
-```
-use_case_add_flow_test { "id": "TL-LEND-UC04-FL01-T", "title": "The README returns a tool against a running server", "flow_id": "TL-LEND-UC04-FL01",
-       "level": "system", "state": "manual",
-       "manual_reason": "It checks what a newcomer meets: the real entry point, the documented port and the README's commands as written.",
-       "steps": ["Start the server with npm start", "Borrow a tool with the README's command", "Return it with the README's command"],
-       "expected_result": "The loan is returned, not late." }
-pattern_add_pattern_rule_test { "id": "TL-PAT-LIBRARIAN-ACTION-R01-T01", "title": "Each librarian action missing its required input is refused",
-       "pattern_rule_id": "TL-PAT-LIBRARIAN-ACTION-R01", "domain_id": "TL-LEND", "level": "service", "state": "automated", "file": "test/api.test.ts",
-       "when": "Registers a member with no name, adds a tool with no name and returns a loan with no condition.",
-       "then": "Expects each answered 400, naming what is missing, and nothing saved." }
-standard_add_standard_rule_test { "id": "TL-STD-CODE-R01-T01", "title": "Every error the API answers with carries a code and a sentence",
-       "standard_rule_id": "TL-STD-CODE-R01", "level": "service", "state": "automated", "file": "test/api.test.ts",
-       "when": "Each request the API refuses is sent.", "then": "Each answer carries an error code and a sentence." }
-```
+Every test case in the product's test files must name a test record whose file is that file, or the check reports it as unnamed. For each one, link it to the record it proves (add the record, and the requirement when the test proves something real the spec does not say), or delete it when it proves nothing. The check reads code as text: a test case is a call of `it` or `test` whose name is a string or template literal, inheriting the names of the `describe` calls around it. A non-literal name and a test made by a helper are not recognized.
 
 ## Rules
 
-- One test proves one behavior: its parent. A test that seems to prove two records is two tests.
-- Run each test at the lowest level that can observe its result.
-- Write an automated test record and its test together, and never mark a test automated before its file names its ID.
-- Aim for every obligation to be proved; each one that is not is a gap in coverage, and a test not automated yet does not close it.
-- Finish with the `check-and-fix` skill.
+- Write an automated test record and its test together; never mark a test automated before its file names its ID.
+- Aim for every obligation proved; a test not automated yet does not close the gap.
+- Finish with `check-and-fix`.
