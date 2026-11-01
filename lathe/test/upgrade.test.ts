@@ -169,8 +169,9 @@ describe('the schema version', () => {
       expect.stringMatching(/^1-to-2: Write each text that starts "To write:" from the code/),
       expect.stringMatching(/^3-to-4: An interface that people or programs outside the product build on is public/),
       expect.stringMatching(/^3-to-4: List the roles that use each interface/),
+      expect.stringMatching(/^4-to-5: Journeys arrive in Discovery/),
     ]);
-    const read = (table: string) => readFileSync(path.join(root, 'data', `${table}.jsonl`), 'utf8');
+    const read =(table: string) => readFileSync(path.join(root, 'data', `${table}.jsonl`), 'utf8');
     expect(read('interface')).toBe(line({ id: 'TL-IF01', title: 'Interface', product_id: 'TL', kind: 'other', description: 'Every flow written before interfaces were declared goes through this one.', public: false }));
     expect(read('flow')).toBe(line({ id: 'TL-LEND-UC01-FL', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01' }));
     expect(read('offers')).toBe(line({ source_id: 'TL-IF01', target_id: 'TL-LEND-UC01' }));
@@ -522,6 +523,52 @@ describe('the schema version', () => {
     const before = structuredClone(tables);
     const { changes, todos } = await run3to4(tables);
     expect(tables).toEqual(before);
+    expect(changes).toEqual([]);
+    expect(todos).toEqual([]);
+  });
+
+  const run4to5 = async (tables: Record<string, Record<string, unknown>[]>) => {
+    const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 4);
+    const changes: string[] = [];
+    const todos: string[] = [];
+    await step!.converter.files!(
+      { tables: () => Object.keys(tables), read: (table) => tables[table] ?? [], write: (table, rows) => void (tables[table] = rows) },
+      { changed: (text) => changes.push(text), todo: (text) => todos.push(text) },
+    );
+    return { changes, todos };
+  };
+
+  it("LA-AUT-UC03-R08-T15 4-to-5 changes no row, asks to rename a product's own kind or relation that clashes with a new table, and to write the journey each duration outcome times", async () => {
+    const tables: Record<string, Record<string, unknown>[]> = {
+      product_kind: [{ name: 'journey', product_id: 'TL' }, { name: 'report', product_id: 'TL' }],
+      product_relation: [
+        { name: 'carries_out', source_kind: 'report', target_kind: 'use_case', product_id: 'TL' },
+        { name: 'carries_out', source_kind: 'report', target_kind: 'policy', product_id: 'TL' },
+        { name: 'measured_by', source_kind: 'business_outcome', target_kind: 'report', product_id: 'TL' },
+      ],
+      business_outcome: [
+        { id: 'TL-BO01', measure: 'Share of members with a loan in the last 90 days.' },
+        { id: 'TL-BO05', measure: 'Median days from a damage report to its repair.' },
+        { id: 'TL-BO06', measure: 'How long a new member waits for a first loan.' },
+      ],
+    };
+    const before = structuredClone(tables);
+    const { changes, todos } = await run4to5(tables);
+    expect(tables).toEqual(before);
+    expect(changes).toEqual([]);
+    expect(todos).toEqual([
+      expect.stringContaining('rename your own kind journey, relation carries_out'),
+      expect.stringContaining('link it to the outcome (serves): TL-BO05, TL-BO06.'),
+    ]);
+  });
+
+  it('LA-AUT-UC03-R08-T16 4-to-5 tells a product with no journeys where they go, and says nothing to one that has them', async () => {
+    const none: Record<string, Record<string, unknown>[]> = { business_outcome: [{ id: 'TL-BO01', measure: 'Share of members with a loan.' }] };
+    expect((await run4to5(none)).todos).toEqual([expect.stringContaining('Journeys arrive in Discovery')]);
+    const some: Record<string, Record<string, unknown>[]> = { ...none, journey: [{ id: 'TL-JR01', product_id: 'TL' }] };
+    const before = structuredClone(some);
+    const { changes, todos } = await run4to5(some);
+    expect(some).toEqual(before);
     expect(changes).toEqual([]);
     expect(todos).toEqual([]);
   });
