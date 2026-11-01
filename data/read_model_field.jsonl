@@ -118,6 +118,9 @@
 {"read_model_id":"LA-CHK-RM10","position":3,"name":"Check","meaning":"Its place in the run order, severity, summary, explanation, query and kinds.","type":"text","required":true}
 {"read_model_id":"LA-CHK-RM11","position":1,"name":"Product","meaning":"The product.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-CHK-RM11","position":2,"name":"Limits","meaning":"Its children limit and entities limit, and whether it set them or takes the defaults.","type":"text","required":true}
+{"read_model_id":"LA-CHK-RM12","position":1,"name":"Product","meaning":"The product whose records it lists.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-CHK-RM12","position":2,"name":"Count","meaning":"How many essential records it lists.","type":"whole number","required":true,"example":"412"}
+{"read_model_id":"LA-CHK-RM12","position":3,"name":"Domains","meaning":"Each domain with its essential records in ID order, then the records in no domain: each with its ID, kind, title and lead text.","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM01","position":1,"name":"Product","meaning":"The product whose space it is.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-EXP-RM01","position":2,"name":"Record","meaning":"A record's ID, kind, title and parent.","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM01","position":3,"name":"Place","meaning":"The product and domain it sits in, as the records' scope places it.","type":"text","required":true}

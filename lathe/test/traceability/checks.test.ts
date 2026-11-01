@@ -426,3 +426,26 @@ check('pattern-candidate', () => {
     ]);
   });
 });
+
+check('essential-repeated', () => {
+  it('LA-STD-PRINCIPLES-R05-T04 The same requirement or step statement in three or more use cases or views is a pattern in disguise, read with the names of the aggregates and entities alike', async () => {
+    expect(ofCheck(clean, 'essential-repeated')).toEqual([]);
+    // Lathe's own views said this of each aggregate's commands (LA-V03-R04 and its kin), the aggregate's name aside.
+    const refused = (name: string) => `When a ${name} command is refused, its form MUST stay open with what the Librarian entered, show every reason the command gave, and take focus to them; nothing changes.`;
+    let data = changing(complete(), 'uc_requirement', (r) => r.id === 'EX-LEND-UC01-R01', { statement: refused('Loan') });
+    data = changing(data, 'uc_requirement', (r) => r.id === 'EX-LEND-UC02-R01', { statement: refused('Tool') });
+    // Twice in one use case, or in two use cases, is not yet a pattern.
+    data = adding(data, { uc_requirement: [{ id: 'EX-LEND-UC02-R02', title: 'Refused, again', use_case_id: 'EX-LEND-UC02', statement: refused('Return') }] });
+    expect(ofCheck(await loadData(data), 'essential-repeated')).toEqual([]);
+    // A third, in the catalog view, makes it one.
+    data = changing(data, 'view_requirement', (r) => r.id === 'EX-V01-R01', { statement: refused('Loan').replace('When a Loan', 'When an  Loan') });
+    expect(ofCheck(await loadData(data), 'essential-repeated')).toEqual([
+      {
+        severity: 'warning',
+        check: 'essential-repeated',
+        record: 'EX-LEND-UC01-R01',
+        message: `The same statement, "${refused('Loan')}", is said in 3 use cases or views (EX-LEND-UC01-R01, EX-LEND-UC02-R01, EX-LEND-UC02-R02, EX-V01-R01): a pattern in disguise; write it once as a rule of a pattern they follow, and drop the repeats.`,
+      },
+    ]);
+  });
+});

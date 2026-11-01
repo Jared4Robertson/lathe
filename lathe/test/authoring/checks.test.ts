@@ -317,3 +317,37 @@ check('accidental-in-essential', () => {
     expect(ofCheck(own, 'accidental-in-essential').find((p) => p.record === 'EX-LEND-TM01')?.message).toContain('its meaning says "postgres"');
   });
 });
+
+check('essential-restates-technical', () => {
+  it('LA-STD-PRINCIPLES-R05-T03 An essential record that names the shape of a technical record, a table written as storage, a file or folder, a route or a command line, is a warning; words that only sound technical are not', async () => {
+    expect(ofCheck(clean, 'essential-restates-technical')).toEqual([]);
+    // Lathe's own requirements before they were converted (01c6a47e), over a product that keeps an entity_field table
+    // in lathe/schema/ and routes its commands under /api/.
+    let data = changing(complete(), 'table', (r) => r.id === 'EX-LEND-EN01-TB', { title: 'entity_field', name: 'entity_field', file: 'lathe/schema/004-domain-model.sql' });
+    data = adding(data, {
+      endpoint: [{ id: 'EX-LEND-EP02', title: 'POST /api/loans/open', command_id: 'EX-LEND-CMD02', method: 'POST', route: '/api/loans/open', description: 'Opens a loan.' }],
+    });
+    data = changing(data, 'uc_requirement', (r) => r.id === 'EX-LEND-UC01-R01', {
+      statement: 'The engine MUST give each entity its entity_field rows as its fields, in position order, each with a name, a meaning, exactly one type, whether it is required, and a column name and example when they help.',
+    });
+    data = changing(data, 'uc_requirement', (r) => r.id === 'EX-LEND-UC02-R01', {
+      statement: 'The CLI (lathe use-case <command>), the MCP tools (one per command and query) and HTTP (POST /api/use-case/<command>) MUST each name the one command they run.',
+    });
+    data = changing(data, 'use_case', (r) => r.id === 'EX-LEND-UC01', { goal: 'The merge driver MUST run as `lathe merge-data %O %A %B %P` for every file `.gitattributes` names with `merge=lathe-data`.' });
+    data = changing(data, 'domain_service', () => true, { statement: 'Every kind MUST be defined by the numbered migrations in `lathe/schema/`; a loan is due after /api/loans/open answers.' });
+    // Words that only sound technical, an interface's own mechanism and a view's route are not restatements.
+    data = changing(data, 'use_case', (r) => r.id === 'EX-LEND-UC02', { goal: 'The librarian keeps the free_tools list and the `free tools` shelf, and/or the entity fields, in order.' });
+    data = changing(data, 'interface', () => true, { description: 'The desk app, which calls POST /api/loans/open.' });
+    data = changing(data, 'view', () => true, { description: 'Every tool, at /catalog/all.' });
+    const ws = await loadData(data);
+    expect(ofCheck(ws, 'essential-restates-technical').map((p) => [p.record, p.message.replace(/^.* names /, '').replace(/, the shape of .*$/, '')])).toEqual([
+      ['EX-LEND-DS01', 'the file lathe/schema/, the route /api/loans/open'],
+      ['EX-LEND-UC01', 'the command line lathe merge-data %O %A %B %P'],
+      ['EX-LEND-UC01-R01', 'the table entity_field'],
+      ['EX-LEND-UC02-R01', 'the route POST /api/use-case/<command>'],
+    ]);
+    // A table's name that is the title of one of the product's terms is its language.
+    const termed = adding(data, { term: [{ id: 'EX-LEND-TM02', title: 'entity_field', domain_id: 'EX-LEND', meaning: 'A field of an entity, as the library lists them.' }] });
+    expect(records(ofCheck(await loadData(termed), 'essential-restates-technical'))).toEqual(['EX-LEND-DS01', 'EX-LEND-UC01', 'EX-LEND-UC02-R01']);
+  });
+});
