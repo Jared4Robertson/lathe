@@ -131,14 +131,14 @@ describe('LA-V51-R08-T01 a refused Product command shows every reason, keeps wha
 
   it('Remove sends Remove an interface and shows the refusal naming what still references it', async () => {
     const user = userEvent.setup();
-    const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'referenced', table: 'interface', key: 'DM-IF01', message: 'Interface DM-IF01 is referenced, so it stays: flow DM-SHOP-UC01-FL01 goes through it' }] };
+    const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'referenced', table: 'interface', key: 'DM-IF01', message: 'Interface DM-IF01 is referenced, so it stays: flow DM-SHOP-UC01-FL goes through it' }] };
     const { commands } = await openApp('/DM-IF01', { command: () => ({ answer: refusal }) });
     await screen.findByRole('toolbar', { name: 'Change DM-IF01' });
     expect(within(toolbar('DM-IF01')).queryByRole('button', { name: 'Move' })).toBeNull();
     await user.click(within(toolbar('DM-IF01')).getByRole('button', { name: 'Remove' }));
     const panel = screen.getByRole('region', { name: 'Remove DM-IF01?' });
     await user.click(within(panel).getByRole('button', { name: 'Remove DM-IF01' }));
-    expect(await within(panel).findByRole('alert')).toHaveTextContent('flow DM-SHOP-UC01-FL01 goes through it');
+    expect(await within(panel).findByRole('alert')).toHaveTextContent('flow DM-SHOP-UC01-FL goes through it');
     expect(commands).toEqual([{ route: '/api/product/remove-interface', input: { id: 'DM-IF01' } }]);
     expect(window.location.pathname).toBe('/DM-IF01');
   });

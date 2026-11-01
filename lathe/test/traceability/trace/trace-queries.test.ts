@@ -44,24 +44,30 @@ describe('LA-TRC-UC10-R06-T01 A product\'s trace rows read gives each use case o
       changes: ['EX-LEND-A1', 'EX-LEND-A2'],
       reads: ['EX-LEND-RM01'],
     });
-    // Its flow's steps in path order, each with its design and its technical chain, and the flow's test.
-    const [flow] = uc1.flows;
-    expect(flow).toMatchObject({ id: 'EX-LEND-UC01-FL01', interface: 'EX-IF01', test: 'EX-LEND-UC01-FL01-T', proved: true });
-    expect(flow.steps.map((s) => s.id)).toEqual(['EX-LEND-UC01-FL01-S01', 'EX-LEND-UC01-FL01-S02']);
+    // Its flow's steps in path order, each with its operation and its technical chain, and the flow's test; each interface's version is derived.
+    const flow = uc1.flow!;
+    expect(flow).toMatchObject({ id: 'EX-LEND-UC01-FL', test: 'EX-LEND-UC01-FL-T', proved: true });
+    expect(flow.steps.map((s) => s.id)).toEqual(['EX-LEND-UC01-FL-S01', 'EX-LEND-UC01-FL-S02']);
     expect(flow.steps[0]).toEqual({
-      id: 'EX-LEND-UC01-FL01-S01', path: 'main', position: 1, fulfills: ['EX-LEND-UC01-R01'], operation: 'EX-LEND-CMD01', view: 'EX-V01',
-      viewRequirements: [{ id: 'EX-V01-R01', gaps: ['built', 'proved'], tests: [] }],
-      endpoints: [{ id: 'EX-LEND-EP01', apiRequirements: [{ id: 'EX-LEND-EP01-R01', gaps: [], tests: [] }] }],
+      id: 'EX-LEND-UC01-FL-S01', path: 'main', position: 1, variantOf: null, fulfills: ['EX-LEND-UC01-R01'], operation: 'EX-LEND-CMD01',
       integrations: [],
       chain: { components: ['EX-UI01'], entries: ['EX-LEND-EP01'], handlers: ['EX-LEND-CMD01-H'], stores: ['EX-LEND-REPO01'], dataStores: ['EX-STORE01'], adapters: [] },
     });
+    // The web app's version of the flow: the step is carried out in the view that presents its command, with the view's requirements.
+    expect(flow.through).toHaveLength(1);
+    expect(flow.through[0]).toMatchObject({ interface: 'EX-IF01', kind: 'web app', actor: 'Member' });
+    expect(flow.through[0].steps[0]).toEqual({
+      id: 'EX-LEND-UC01-FL-S01',
+      views: [{ id: 'EX-V01', requirements: [{ id: 'EX-V01-R01', gaps: ['built', 'proved'], tests: [] }] }],
+      endpoints: [], entries: [], unreached: false,
+    });
     // A query's reader stands where a command's repository would, and an integration's adapter beside it.
-    expect(flow.steps[1].chain).toEqual({ components: [], entries: [], handlers: ['EX-LEND-QRY01-H'], stores: ['EX-LEND-RM01-RD'], dataStores: ['EX-STORE01'], adapters: ['EX-INT01-AD'] });
-    // What its tests rest on: its steps' view and API requirements, its aggregates' invariants and storage requirements.
-    expect(uc1.lower.map((o) => o.id)).toEqual(['EX-LEND-A1-SR01', 'EX-LEND-EP01-R01', 'EX-LEND-INV01', 'EX-V01-R01']);
+    expect(flow.steps[1].chain).toEqual({ components: ['EX-UI01'], entries: [], handlers: ['EX-LEND-QRY01-H'], stores: ['EX-LEND-RM01-RD'], dataStores: ['EX-STORE01'], adapters: ['EX-INT01-AD'] });
+    // What its tests rest on: the view and API requirements of the interfaces that carry its steps (the fixture's only interface is a web app, so no API requirement), its aggregates' invariants and storage requirements.
+    expect(uc1.lower.map((o) => o.id)).toEqual(['EX-LEND-A1-SR01', 'EX-LEND-INV01', 'EX-V01-R01']);
     expect(uc1.lower.find((o) => o.id === 'EX-LEND-INV01')!.tests).toEqual(['EX-LEND-INV01-T01']);
-    expect(uc1.status).toEqual({ design: { flows: 1, notDesigned: 0 }, technical: { handlers: 2, notBuilt: 1 }, suite: { tests: 2, owed: 2, notProved: 0 } });
-    expect(LIST_TRACE_ROWS.text(ex).split('\n')[1]).toBe('  EX-LEND-UC01 (EX-BO01): 1 flow, all designed · 2 handlers, 1 not built · 2 tests, all proved');
+    expect(uc1.status).toEqual({ design: { interfaces: 1, notDesigned: 0 }, technical: { handlers: 2, notBuilt: 1 }, suite: { tests: 2, owed: 2, notProved: 0 } });
+    expect(LIST_TRACE_ROWS.text(ex).split('\n')[1]).toBe('  EX-LEND-UC01 (EX-BO01): 1 interface, all designed · 2 handlers, 1 not built · 2 tests, all proved');
   });
 
   it('counts a requirement no step designs and one not proved, and refuses an unknown product and data without the checks\' run', async () => {
@@ -79,6 +85,6 @@ describe('LA-TRC-UC10-R06-T01 A product\'s trace rows read gives each use case o
     const root = writeData(complete());
     const out: string[] = [];
     expect(await runAggregateCommand(['trace', 'list-trace-rows', '--product_id', 'EX', '--root', root.replace(/\/data$/, '')], { out: (t) => out.push(t), err: (t) => out.push(t) })).toBe(0);
-    expect(out[0]).toMatch(/^EX: 2 use cases, 1 outcome\n {2}EX-LEND-UC01 \(EX-BO01\): 1 flow/);
+    expect(out[0]).toMatch(/^EX: 2 use cases, 1 outcome\n {2}EX-LEND-UC01 \(EX-BO01\): 1 interface/);
   });
 });

@@ -30,6 +30,9 @@
 {"table_id":"LA-AUT-EN112-TB","position":1,"type":"primary","columns":["id"]}
 {"table_id":"LA-AUT-EN113-TB","position":1,"type":"primary","columns":["id"]}
 {"table_id":"LA-AUT-EN113-TB","position":2,"type":"foreign","columns":["pattern_id"],"target_table_id":"LA-AUT-EN13-TB"}
+{"table_id":"LA-AUT-EN114-TB","position":1,"type":"primary","columns":["interface_id","position"]}
+{"table_id":"LA-AUT-EN114-TB","position":2,"type":"unique","columns":["interface_id","role_name"]}
+{"table_id":"LA-AUT-EN114-TB","position":3,"type":"foreign","columns":["interface_id"],"target_table_id":"LA-AUT-EN76-TB"}
 {"table_id":"LA-AUT-EN12-TB","position":1,"type":"primary","columns":["id"]}
 {"table_id":"LA-AUT-EN12-TB","position":2,"type":"foreign","columns":["use_case_id"],"target_table_id":"LA-AUT-EN11-TB"}
 {"table_id":"LA-AUT-EN13-TB","position":1,"type":"primary","columns":["id"]}
@@ -40,13 +43,13 @@
 {"table_id":"LA-AUT-EN15-TB","position":2,"type":"unique","columns":["pattern_id","name"]}
 {"table_id":"LA-AUT-EN15-TB","position":3,"type":"foreign","columns":["pattern_id"],"target_table_id":"LA-AUT-EN13-TB"}
 {"table_id":"LA-AUT-EN18-TB","position":1,"type":"primary","columns":["id"]}
-{"table_id":"LA-AUT-EN18-TB","position":2,"type":"unique","columns":["use_case_id","interface_id"],"invariant_id":"LA-AUT-INV100"}
-{"table_id":"LA-AUT-EN18-TB","position":3,"type":"foreign","columns":["use_case_id"],"target_table_id":"LA-AUT-EN11-TB"}
-{"table_id":"LA-AUT-EN18-TB","position":4,"type":"foreign","columns":["interface_id"],"target_table_id":"LA-AUT-EN76-TB"}
+{"table_id":"LA-AUT-EN18-TB","position":2,"type":"foreign","columns":["use_case_id"],"target_table_id":"LA-AUT-EN11-TB"}
 {"table_id":"LA-AUT-EN19-TB","position":1,"type":"primary","columns":["id"]}
 {"table_id":"LA-AUT-EN19-TB","position":2,"type":"unique","columns":["flow_id","path","position"],"invariant_id":"LA-AUT-INV18"}
 {"table_id":"LA-AUT-EN19-TB","position":3,"type":"foreign","columns":["flow_id"],"target_table_id":"LA-AUT-EN18-TB"}
+{"table_id":"LA-AUT-EN19-TB","position":4,"type":"foreign","columns":["interface_id"],"target_table_id":"LA-AUT-EN76-TB"}
 {"table_id":"LA-AUT-EN20-TB","position":1,"type":"primary","columns":["id"]}
+{"table_id":"LA-AUT-EN20-TB","position":2,"type":"foreign","columns":["interface_id"],"target_table_id":"LA-AUT-EN76-TB"}
 {"table_id":"LA-AUT-EN21-TB","position":1,"type":"primary","columns":["id"]}
 {"table_id":"LA-AUT-EN21-TB","position":2,"type":"foreign","columns":["command_id"],"target_table_id":"LA-AUT-EN36-TB"}
 {"table_id":"LA-AUT-EN21-TB","position":3,"type":"foreign","columns":["query_id"],"target_table_id":"LA-AUT-EN40-TB"}
@@ -203,8 +206,6 @@
 {"table_id":"LA-AUT-TB49","position":1,"type":"primary","columns":["source_id","target_id"]}
 {"table_id":"LA-AUT-TB80","position":1,"type":"primary","columns":["source_id","target_id"]}
 {"table_id":"LA-AUT-TB80","position":2,"type":"unique","columns":["source_id"]}
-{"table_id":"LA-AUT-TB81","position":1,"type":"primary","columns":["source_id","target_id"]}
-{"table_id":"LA-AUT-TB81","position":2,"type":"unique","columns":["source_id"]}
 {"table_id":"LA-AUT-TB82","position":1,"type":"primary","columns":["source_id","target_id"]}
 {"table_id":"LA-AUT-TB83","position":1,"type":"primary","columns":["source_id","target_id"]}
 {"table_id":"LA-AUT-TB84","position":1,"type":"primary","columns":["source_id","target_id"]}
@@ -215,6 +216,8 @@
 {"table_id":"LA-AUT-TB89","position":1,"type":"primary","columns":["source_id","target_id"]}
 {"table_id":"LA-AUT-TB90","position":1,"type":"primary","columns":["source_id","target_id"]}
 {"table_id":"LA-AUT-TB92","position":1,"type":"primary","columns":["source_id","target_id"]}
+{"table_id":"LA-AUT-TB93","position":1,"type":"primary","columns":["source_id","target_id"]}
+{"table_id":"LA-AUT-TB94","position":1,"type":"primary","columns":["source_id","target_id"]}
 {"table_id":"LA-CHK-EN01-TB","position":1,"type":"primary","columns":["name"]}
 {"table_id":"LA-CHK-EN03-TB","position":1,"type":"primary","columns":["product_id"]}
 {"table_id":"LA-TRC-EN05-TB","position":1,"type":"primary","columns":["source_id","target_id"]}

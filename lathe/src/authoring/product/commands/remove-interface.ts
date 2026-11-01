@@ -18,6 +18,6 @@ export const REMOVE_INTERFACE = {
 export function removeInterface(tx: Transaction, input: RemoveInterface): void {
   const products = new ProductRepository(tx);
   const product = products.loadHolding('interface', input.id) ?? tx.refuse('missing', `there is no interface ${input.id}`);
-  product.interfaces = product.interfaces.filter((i) => i.id !== input.id);
+  product.interfaces = product.interfaces.filter((i) => i.row.id !== input.id);
   products.save(product);
 }

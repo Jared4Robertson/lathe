@@ -31,8 +31,7 @@
 {"id":"LA-AUT-INV25-RL","title":"has-crosses-aggregate","invariant_id":"LA-AUT-INV25","file":"lathe/src/authoring/aggregate/rules.ts"}
 {"id":"LA-AUT-INV40-RL","title":"repository-persists-one","invariant_id":"LA-AUT-INV40","file":"lathe/src/authoring/domain/rules.ts"}
 {"id":"LA-AUT-INV41-RL","title":"one-repository","invariant_id":"LA-AUT-INV41","file":"lathe/src/authoring/domain/rules.ts"}
-{"id":"LA-AUT-INV42-RL","title":"flow-id-interface","invariant_id":"LA-AUT-INV42","file":"lathe/src/authoring/use-case/rules.ts"}
-{"id":"LA-AUT-INV43-RL","title":"step-fits-interface","invariant_id":"LA-AUT-INV43","file":"lathe/src/authoring/use-case/rules.ts"}
+{"id":"LA-AUT-INV42-RL","title":"flow-id","invariant_id":"LA-AUT-INV42","file":"lathe/src/authoring/use-case/rules.ts"}
 {"id":"LA-AUT-INV50-RL","title":"question-owner-role","invariant_id":"LA-AUT-INV50","file":"lathe/src/authoring/product/rules.ts"}
 {"id":"LA-AUT-INV55-RL","title":"product-kind-product","invariant_id":"LA-AUT-INV55","file":"lathe/src/authoring/extension-record/rules.ts"}
 {"id":"LA-AUT-INV60-RL","title":"term-builds-on-itself","invariant_id":"LA-AUT-INV60","file":"lathe/src/authoring/domain/rules.ts"}

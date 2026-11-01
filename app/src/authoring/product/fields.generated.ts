@@ -106,6 +106,8 @@ export const PRODUCT_FIELDS = {
     kind: { kind: 'column', table: 'interface', column: 'kind', required: true, clearable: false },
     description: { kind: 'column', table: 'interface', column: 'description', required: true, clearable: false },
     public: { kind: 'column', table: 'interface', column: 'public', required: true, clearable: false },
+    actors: { kind: 'texts', description: 'The roles of the product that use it, in order.', required: false, clearable: false },
+    offers: { kind: 'ids', description: 'The use cases of the product it offers.', required: false, clearable: false },
   },
   '/api/product/change-interface': {
     id: { kind: 'column', table: 'interface', column: 'id', required: true, clearable: false },
@@ -113,6 +115,8 @@ export const PRODUCT_FIELDS = {
     kind: { kind: 'column', table: 'interface', column: 'kind', required: false, clearable: false },
     description: { kind: 'column', table: 'interface', column: 'description', required: false, clearable: false },
     public: { kind: 'column', table: 'interface', column: 'public', required: false, clearable: false },
+    actors: { kind: 'texts', description: 'The roles of the product that use it, in order.', required: false, clearable: false },
+    offers: { kind: 'ids', description: 'The use cases of the product it offers.', required: false, clearable: false },
   },
   '/api/product/remove-interface': {
     id: { kind: 'column', table: 'interface', column: 'id', required: true, clearable: false },

@@ -14,35 +14,30 @@ interface StepLink {
 }
 
 /**
- * Every row that breaks LA-AUT-INV100: a use case has at most one flow per interface and a flow at most one flow test;
- * a flow step invokes at most one command or query and happens in at most one view. Each after the first is refused.
+ * Every row that breaks LA-AUT-INV100: a use case has at most one flow and a flow at most one flow test; a flow step
+ * invokes at most one command or query. Each after the first is refused.
  */
-export function useCaseOneEach(flows: readonly FlowRow[], flowTests: readonly FlowTestRow[], invokes: readonly StepLink[], happensIn: readonly StepLink[]): RuleProblem[] {
+export function useCaseOneEach(flows: readonly FlowRow[], flowTests: readonly FlowTestRow[], invokes: readonly StepLink[]): RuleProblem[] {
   const problem = (table: string, row: object, message: string): RuleProblem => ({ rule: 'use-case-one-each', table, row: row as unknown as Row, message });
   return [
-    ...beyondFirst(flows, (r) => `${r.use_case_id} ${r.interface_id}`).map((r) => problem('flow', r, `use case ${r.use_case_id} already has its flow through ${r.interface_id}, so ${r.id} cannot be a second: a use case has one flow per interface`)),
+    ...beyondFirst(flows, (r) => r.use_case_id).map((r) => problem('flow', r, `use case ${r.use_case_id} already has its flow, so ${r.id} cannot be a second: a use case has one flow, the same through every interface`)),
     ...beyondFirst(flowTests, (r) => r.flow_id).map((r) => problem('flow_test', r, `flow ${r.flow_id} already has its test, so ${r.id} cannot be a second: a flow has one`)),
     ...beyondFirst(invokes, (r) => r.source_id).map((r) => problem('invokes', r, `step ${r.source_id} already invokes a command or query, so it cannot also invoke ${r.target_id}: a step invokes one`)),
-    ...beyondFirst(happensIn, (r) => r.source_id).map((r) => problem('happens_in', r, `step ${r.source_id} already happens in a view, so it cannot also happen in ${r.target_id}: a step happens in one`)),
   ];
 }
 
-/** The interface kinds whose flows' steps happen in no view: an API's, a CLI's and agent tools'. */
-const VIEWLESS_INTERFACES = ['API', 'CLI', 'agent tools'];
-
 /**
  * Every rule the use case breaks (LA-AUT-INV100 one each, as useCaseOneEach says; LA-AUT-INV08 a step fulfills only
- * its own use case's requirements; LA-AUT-INV42 a flow's ID names its interface; LA-AUT-INV43 a step of an API, CLI or
- * agent tools flow happens in no view; LA-AUT-INV18 each step on a path has its own position). The view gives what the use case names outside itself: its flows' interfaces and the requirements its steps fulfill.
+ * its own use case's requirements; LA-AUT-INV42 a flow's ID is its use case's and FL; LA-AUT-INV18 each step on a path
+ * has its own position). The view gives what the use case names outside itself: the requirements its steps fulfill.
  */
 export function useCaseProblems(useCase: UseCase, view: ReadView): RuleProblem[] {
   const problems: RuleProblem[] = [];
   const flows = new Map(useCase.flows.map((f) => [f.id, f]));
   for (const flow of useCase.flows) {
-    const number = /-IF([0-9]+)$/.exec(flow.interface_id)?.[1] ?? '';
-    const expected = `${flow.use_case_id}-FL${number}`;
+    const expected = `${flow.use_case_id}-FL`;
     if (flow.id !== expected) {
-      problems.push({ rule: 'flow-id-interface', table: 'flow', row: flow as unknown as Row, message: `${flow.id} goes through ${flow.interface_id}, so its ID is ${expected}` });
+      problems.push({ rule: 'flow-id', table: 'flow', row: flow as unknown as Row, message: `${flow.id} is the flow of ${flow.use_case_id}, so its ID is ${expected}` });
     }
   }
   for (const step of useCase.steps) {
@@ -56,15 +51,6 @@ export function useCaseProblems(useCase: UseCase, view: ReadView): RuleProblem[]
         table: 'fulfills',
         row: { source_id: step.row.id, target_id: target },
         message: `${step.row.id} is a step of the flow of ${useCase.root}, so it cannot fulfill ${target}, a requirement of ${requirement.row.use_case_id}`,
-      });
-    }
-    const face = view.record(flow.interface_id);
-    if (step.happensIn !== null && face?.kind === 'interface' && VIEWLESS_INTERFACES.includes(String(face.row.kind))) {
-      problems.push({
-        rule: 'step-fits-interface',
-        table: 'happens_in',
-        row: { source_id: step.row.id, target_id: step.happensIn },
-        message: `${step.row.id} is a step of ${flow.id}, which goes through ${flow.interface_id}, an interface of kind ${face.row.kind}, so it cannot happen in view ${step.happensIn}`,
       });
     }
   }
@@ -89,7 +75,6 @@ export function useCaseProblems(useCase: UseCase, view: ReadView): RuleProblem[]
       useCase.flows,
       useCase.flowTests.map((t) => t.row),
       useCase.steps.flatMap((s) => (s.invokes === null ? [] : [{ source_id: s.row.id, target_id: s.invokes }])),
-      useCase.steps.flatMap((s) => (s.happensIn === null ? [] : [{ source_id: s.row.id, target_id: s.happensIn }])),
     ),
   );
   return problems;
@@ -104,7 +89,6 @@ export const useCaseRules: AggregateRules = {
       view.rows('flow') as unknown as FlowRow[],
       view.rows('flow_test') as unknown as FlowTestRow[],
       view.rows('invokes') as unknown as StepLink[],
-      view.rows('happens_in') as unknown as StepLink[],
     ),
   ],
 };

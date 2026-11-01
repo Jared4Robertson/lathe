@@ -59,7 +59,7 @@ describe("LA-PAT-AGGREGATE-COMMANDS-R10-T02 each Check command (LA-CHK-A1) chang
     expect(checkFile(store)).not.toContain('tool-without-photo');
   });
 
-  it("LA-PAT-AGGREGATE-COMMANDS-R02-T02 refuses a check named like one of Lathe's (LA-CHK-INV01) and any change or removal of Lathe's own (LA-CHK-INV02), naming lathe/data/check.jsonl and changing nothing", async () => {
+  it("LA-PAT-AGGREGATE-COMMANDS-R02-T02 LA-PAT-CLI-STEPS-R02-T02 LA-PAT-MCP-STEPS-R02-T02 refuses a check named like one of Lathe's (LA-CHK-INV01) and any change or removal of Lathe's own (LA-CHK-INV02), naming lathe/data/check.jsonl and changing nothing", async () => {
     const store = await checkDataSet();
     const before = checkFile(store);
     const query = 'SELECT NULL AS record, NULL AS message WHERE false';
@@ -72,7 +72,7 @@ describe("LA-PAT-AGGREGATE-COMMANDS-R10-T02 each Check command (LA-CHK-A1) chang
     expect(checkFile(store)).toBe(before);
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R01-T02 runs `lathe check <command>`, the check_ tools and POST /api/check/<command>', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R01-T02 LA-PAT-CLI-STEPS-R01-T02 runs `lathe check <command>`, the check_ tools and POST /api/check/<command>', async () => {
     const store = await checkDataSet();
     const root = path.dirname(store.dataDir);
     await closeCheckingStores();

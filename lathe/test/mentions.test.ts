@@ -67,28 +67,27 @@ describe('IDs in text', () => {
     expect(await refusals({ ...base, ...command, checks: [{ source_id: 'MX-D-CMD01', target_id: 'MX-D-SP99' }] })).toEqual([expect.objectContaining({ rule: 'foreign-key', table: 'checks' })]);
   });
 
-  /** The complete product with a step that happens in another product's view. */
+  /** The complete product with a view of another product that presents one of its commands. */
   const crossing = () => {
     const both = adding(complete(), {
       product: [{ id: 'NX', title: 'Next product', description: 'A second product beside the first.' }],
       view: [{ id: 'NX-V01', title: 'Elsewhere', description: 'A page of the second product.' }],
-      happens_in: [],
     });
-    both.happens_in = [...both.happens_in.filter((l) => l.source_id !== 'EX-LEND-UC02-FL01-S01'), { source_id: 'EX-LEND-UC02-FL01-S01', target_id: 'NX-V01' }];
+    both.presents = [...both.presents.filter((l) => !(l.source_id === 'EX-V01' && l.target_id === 'EX-LEND-CMD02')), { source_id: 'NX-V01', target_id: 'EX-LEND-CMD02' }];
     return both;
   };
 
   it('LA-PLT-UC01-R14-T01 A link from a record of one product to a record of another is refused, whatever the relation', async () => {
     expect(await refusals(crossing())).toEqual([
-      expect.objectContaining({ rule: 'link-crosses-product', table: 'happens_in', message: expect.stringContaining('EX-LEND-UC02-FL01-S01 is in product EX') }),
+      expect.objectContaining({ rule: 'link-crosses-product', table: 'presents', message: expect.stringContaining('NX-V01 is in product NX') }),
     ]);
   });
 
   it('LA-CHK-UC01-R04-T02 A link into another product in a data file is a data-refused error', async () => {
     const root = await build(adding(complete(), { product: [{ id: 'NX', title: 'Next product', description: 'A second product beside the first.' }], view: [{ id: 'NX-V01', title: 'Elsewhere', description: 'A page of the second product.' }] }));
-    const file = path.join(root, 'data', 'happens_in.jsonl');
-    writeFileSync(file, readFileSync(file, 'utf8').replace(/("source_id":"EX-LEND-UC02-FL01-S01","target_id":")[^"]+/, '$1NX-V01'));
+    const file = path.join(root, 'data', 'presents.jsonl');
+    writeFileSync(file, readFileSync(file, 'utf8').replace(/"source_id":"EX-V01"(,"target_id":"EX-LEND-CMD02")/, '"source_id":"NX-V01"$1'));
     const loaded = await loadWorkspace(root);
-    expect(loaded.problems).toEqual([expect.objectContaining({ severity: 'error', check: 'data-refused', message: expect.stringContaining('EX-LEND-UC02-FL01-S01 is in product EX') })]);
+    expect(loaded.problems).toEqual([expect.objectContaining({ severity: 'error', check: 'data-refused', message: expect.stringContaining('NX-V01 is in product NX') })]);
   });
 });

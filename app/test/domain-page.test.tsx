@@ -30,7 +30,7 @@ describe('domain page', () => {
       ['Domain model', ['Aggregates', 'Specifications', 'Read models', 'Terms']],
       // Use cases holds only capabilities, so it lists them itself, with no folder heading.
       ['Use cases', []],
-      ['Interaction design', ['Flows', 'Endpoints']],
+      ['Interaction design', ['Flows', 'Views', 'Endpoints']],
       ['Technical specification', ['Tables', 'Command handlers']],
       ['Test plan', ['Invariant tests', 'Use case tests']],
     ]);
@@ -59,7 +59,8 @@ describe('domain page', () => {
 
     // Interaction design, technical specification and test plan list what starts a branch of their stage; a technical
     // record with what it names in code, a test with its level and file.
-    expect(ids(section(/^Flows/))).toEqual(['DM-SHOP-UC01-FL01']);
+    expect(ids(section(/^Flows/))).toEqual(['DM-SHOP-UC01-FL']);
+    expect(ids(section(/^Views/))).toEqual(['DM-V01']);
     expect(ids(section(/^Endpoints/))).toEqual(['DM-SHOP-EP01']);
     expect(section(/^Tables/)).toHaveTextContent('baskets');
     expect(ids(section(/^Command handlers/))).toEqual(['DM-SHOP-CMD01-H']);
@@ -68,9 +69,9 @@ describe('domain page', () => {
     expect(section(/^Use case tests/)).toHaveTextContent('service · test/basket.test.ts');
     // A test not automated yet is marked so.
     expect(within(section(/^Invariant tests/)).getByText('not automated yet')).toHaveClass('test-state', 'not-automated');
-    // Both domains use the value object and the view, so the product shares them: the domain lists neither.
+    // Both domains use the value object, so the product shares it: the domain does not list it. The view presents only
+    // Shopping's command, so it sits here.
     expect(main()).not.toHaveTextContent('DM-VO01');
-    expect(main()).not.toHaveTextContent('DM-V01 ');
   });
 
   it('LA-V91-R03-T01 The search box filters records by ID or title as you type', async () => {

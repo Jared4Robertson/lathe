@@ -6,7 +6,7 @@
 // Essential records keep accidental complexity out (LA-STD-PRINCIPLES-R05, LA-CHK-UC08):
 // - essential-names-technology: an essential record the write adds, or whose title or lead it changes, that names a
 //   word its kind's group has no business with (essential.ts: Lathe's words, a term of its own domain excused; the
-//   titles of its product's interfaces, a flow's and its steps' own excused; the product's technology words), as
+//   titles of its product's interfaces, a variant step's own excused; the product's technology words), as
 //   accidental-in-essential warns of a record already in the data;
 // - essential-links-accidental: a link the write adds from an essential record to an accidental one, or a product
 //   relation it declares from an essential kind to an accidental kind. Only measured_by may: what measures an
@@ -27,10 +27,9 @@ export interface WriteRule {
 /** The one relation whose links may run from an essential record to an accidental one. */
 const MEASURED_BY = 'measured_by';
 
-/** The title of the interface a flow or a flow step goes through, which is theirs to name; undefined for any other record. */
+/** The title of the interface a variant step names, which is the step's to name; undefined for any other record. */
 function ownInterfaceOf(view: ReadView, kind: string, row: Row): string | undefined {
-  const flow = kind === 'flow' ? row : kind === 'flow_step' ? view.record(String(row.flow_id))?.row : undefined;
-  const at = flow ? view.record(String(flow.interface_id)) : undefined;
+  const at = kind === 'flow_step' && row.interface_id ? view.record(String(row.interface_id)) : undefined;
   return at ? String(at.row.title) : undefined;
 }
 

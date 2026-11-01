@@ -43,8 +43,8 @@ const CAPABILITY = { id: 'TL-LEND-CAP01', title: 'Lending', domain_id: 'TL-LEND'
 const USE_CASE = { id: 'TL-LEND-UC01', title: 'Borrow a tool', capability_id: 'TL-LEND-CAP01', goal: 'Take a tool home for the loan period.' };
 const REQUIREMENT = { id: 'TL-LEND-UC01-R01', title: 'A tool on loan is refused', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse to lend a tool that is on loan.' };
 const INTERFACE = { id: 'TL-IF01', title: 'HTTP API', product_id: 'TL', kind: 'API', description: 'The API the desk app calls.', public: false };
-const FLOW = { id: 'TL-LEND-UC01-FL01', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' };
-const STEP = { id: 'TL-LEND-UC01-FL01-S01', title: 'The member borrows a free tool', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 };
+const FLOW = { id: 'TL-LEND-UC01-FL', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01' };
+const STEP = { id: 'TL-LEND-UC01-FL-S01', title: 'The member borrows a free tool', flow_id: 'TL-LEND-UC01-FL', path: 'main', position: 1 };
 const TEST = { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'not automated yet', when: 'With a tool on loan, a member borrows it', then: 'It is refused' };
 
 const line = (row: object) => `${JSON.stringify(row)}\n`;
@@ -59,8 +59,8 @@ const EXPECTED = {
   'flow.jsonl': line(FLOW),
   'interface.jsonl': line(INTERFACE),
   'flow_step.jsonl': line(STEP),
-  'fulfills.jsonl': line({ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-LEND-UC01-R01' }),
-  'invokes.jsonl': line({ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-LEND-CMD01' }),
+  'fulfills.jsonl': line({ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-UC01-R01' }),
+  'invokes.jsonl': line({ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-CMD01' }),
   'product.jsonl': line({ id: 'TL', title: 'Tool Library', description: 'A neighborhood tool library.' }),
   'raises.jsonl': line({ source_id: 'TL-LEND-CMD01', target_id: 'TL-LEND-EV01' }),
   'uc_requirement.jsonl': line(REQUIREMENT),
@@ -72,7 +72,7 @@ async function loads(root: string) {
   const store = await openStore(root);
   try {
     return {
-      records: ['TL', 'TL-LEND', 'TL-LEND-A1', 'TL-LEND-EN01', 'TL-LEND-CMD01', 'TL-LEND-EV01', 'TL-LEND-UC01', 'TL-LEND-UC01-R01', 'TL-LEND-UC01-FL01', 'TL-LEND-UC01-FL01-S01', 'TL-LEND-UC01-R01-T01'].map(
+      records: ['TL', 'TL-LEND', 'TL-LEND-A1', 'TL-LEND-EN01', 'TL-LEND-CMD01', 'TL-LEND-EV01', 'TL-LEND-UC01', 'TL-LEND-UC01-R01', 'TL-LEND-UC01-FL', 'TL-LEND-UC01-FL-S01', 'TL-LEND-UC01-R01-T01'].map(
         (id) => store.record(id)?.kind,
       ),
       obligations: await store.query('SELECT id FROM obligation ORDER BY id'),
@@ -138,7 +138,7 @@ describe('writing a spec end to end', () => {
       await call('use_case_add_use_case_test', TEST);
       // A step invokes a command or query, not an event: refused, and no file changes.
       const before = data(root);
-      const refused = await request('tools/call', { name: 'use_case_change_flow_step', arguments: { id: 'TL-LEND-UC01-FL01-S01', invokes: 'TL-LEND-EV01' } });
+      const refused = await request('tools/call', { name: 'use_case_change_flow_step', arguments: { id: 'TL-LEND-UC01-FL-S01', invokes: 'TL-LEND-EV01' } });
       expect(data(root)).toEqual(before);
       expect(refused.result!.isError).toBe(true);
     } finally {

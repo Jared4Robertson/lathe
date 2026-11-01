@@ -39,7 +39,7 @@ describe('the graph tree, its depth and its camera', () => {
     expect(two).toEqual(expect.arrayContaining(['P-D/domain-model/aggregate', 'P-D-CAP01', 'P-D/technical-specification/table', 'P-D/test-plan/use_case_test']));
     expect(two).not.toContain('P-D-A1');
     const three = ids(neighborhood(index, 'P-D', 3));
-    expect(three).toEqual(expect.arrayContaining(['P-D-A1', 'P-D-UC01', 'P-D-UC01-FL01', 'P-D-EP01', 'P-D-EN03-TB', 'P-D-INV01-T']));
+    expect(three).toEqual(expect.arrayContaining(['P-D-A1', 'P-D-UC01', 'P-D-UC01-FL', 'P-D-EP01', 'P-D-EN03-TB', 'P-D-INV01-T']));
     expect(three).not.toContain('P-D-UC01-R01');
     // From a use case in a capability: its capability is the parent at every depth; nothing further up.
     for (const depth of [1, 2, 3]) {
@@ -61,8 +61,8 @@ describe('the graph tree, its depth and its camera', () => {
     // Interaction design and its tests in the Test plan.
     expect(treeChildren(index, 'P-D-CAP01')).toEqual(['P-D-UC01']);
     expect(treeChildren(index, 'P-D-UC01')).toEqual(['P-D-UC01-R01', 'P-D-UC01-R02']);
-    expect(treeParent(index, 'P-D-UC01-FL01')).toBe('P-D/interaction-design/flow');
-    expect(treeParent(index, 'P-D-UC01-FL01-T')).toBe('P-D/test-plan/flow_test');
+    expect(treeParent(index, 'P-D-UC01-FL')).toBe('P-D/interaction-design/flow');
+    expect(treeParent(index, 'P-D-UC01-FL-T')).toBe('P-D/test-plan/flow_test');
     // One folder per kind, in the schema's kind order; an endpoint sits in Interaction design, under neither its command nor its query.
     // The view and the integration have no owner, but P-D is the one domain whose steps use them, so they sit in it.
     expect(treeChildren(index, 'P-D/interaction-design')).toEqual(['P-D/interaction-design/flow', 'P-D/interaction-design/view', 'P-D/interaction-design/endpoint', 'P-D/interaction-design/integration']);
@@ -261,17 +261,17 @@ describe('the graph tree, its depth and its camera', () => {
   }
 
   it('LA-V93-R17-T01 Hovering or focusing a box spotlights it, its lines and the boxes it joins, and leaving restores the picture', async () => {
-    await showGraph('/P-D-UC01-FL01');
-    await waitFor(() => expect(node('P-D-UC01-FL01-S02')).not.toBeNull());
+    await showGraph('/P-D-UC01-FL');
+    await waitFor(() => expect(node('P-D-UC01-FL-S02')).not.toBeNull());
     const flow = graphHost()!;
-    node('P-D-UC01-FL01-S01')!.focus();
+    node('P-D-UC01-FL-S01')!.focus();
     await waitFor(() => expect(flow.className).toContain('has-spotlight'));
-    expect(drawnBox('P-D-UC01-FL01-S01')!.lit).toBe(true);
-    expect(drawnBox('P-D-UC01-FL01')!.lit).toBe(true);
-    expect(drawnBox('P-D-UC01-FL01-S02')!.lit).toBe(false);
-    expect(scene().lines.find((l) => l.source === 'P-D-UC01-FL01' && l.target === 'P-D-UC01-FL01-S01')!.lit).toBe(true);
-    expect(scene().lines.find((l) => l.source === 'P-D-UC01-FL01' && l.target === 'P-D-UC01-FL01-S02')!.lit).toBe(false);
-    fireEvent.blur(node('P-D-UC01-FL01-S01')!);
+    expect(drawnBox('P-D-UC01-FL-S01')!.lit).toBe(true);
+    expect(drawnBox('P-D-UC01-FL')!.lit).toBe(true);
+    expect(drawnBox('P-D-UC01-FL-S02')!.lit).toBe(false);
+    expect(scene().lines.find((l) => l.source === 'P-D-UC01-FL' && l.target === 'P-D-UC01-FL-S01')!.lit).toBe(true);
+    expect(scene().lines.find((l) => l.source === 'P-D-UC01-FL' && l.target === 'P-D-UC01-FL-S02')!.lit).toBe(false);
+    fireEvent.blur(node('P-D-UC01-FL-S01')!);
     expect(flow.className).not.toContain('has-spotlight');
     expect(scene().spotlight).toBe(false);
     expect(scene().boxes.every((b) => b.lit === null)).toBe(true);
