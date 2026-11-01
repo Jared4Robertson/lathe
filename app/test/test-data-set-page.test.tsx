@@ -71,10 +71,10 @@ describe('LA-V121-R04-T01 a test data set shows its setup and the tests that sta
     await openApp('/DM-SHOP-TD01', { data: withDataSet() });
     await within(main()).findByText('A shopper part-way through shopping.');
     for (const [title, text] of [['Environment', 'A fresh in-memory store.'], ['Starting records', 'One shopper and a basket of two items.'], ['Prepare', 'Run the basket seed.'], ['Reset', 'Drop the store.']]) {
-      expect(within(main()).getByRole('heading', { name: title }).closest('section')).toHaveTextContent(text);
+      expect((await within(main()).findByRole('heading', { name: title })).closest('section')).toHaveTextContent(text);
     }
-    const trace = within(main()).getByRole('heading', { level: 2, name: 'Traceability' }).closest('section') as HTMLElement;
-    expect(within(trace).getByRole('heading', { level: 3, name: /^Starting point of/ })).toBeInTheDocument();
-    expect(within(trace).getByRole('link', { name: /DM-SHOP-UC01-R01-T01/ })).toBeInTheDocument();
+    const trace = (await within(main()).findByRole('heading', { level: 2, name: 'Traceability' })).closest('section') as HTMLElement;
+    expect(await within(trace).findByRole('heading', { level: 3, name: /^Starting point of/ })).toBeInTheDocument();
+    expect(await within(trace).findByRole('link', { name: /DM-SHOP-UC01-R01-T01/ })).toBeInTheDocument();
   });
 });

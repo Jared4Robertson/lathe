@@ -98,12 +98,12 @@ describe('long lists', () => {
     await screen.findByRole('heading', { level: 1, name: 'Domain 1' });
     // Use cases holds only capabilities, so it lists them itself.
     const useCases = stageOf('use-cases');
-    const search = within(useCases).getByRole('searchbox', { name: 'Filter capabilities' });
-    await user.click(within(useCases).getByRole('button', { name: 'Expand BG-D01-CAP01' }));
-    expect(within(useCases).getByRole('searchbox', { name: 'Filter use cases of BG-D01-CAP01' })).toBeInTheDocument();
+    const search = await within(useCases).findByRole('searchbox', { name: 'Filter capabilities' });
+    await user.click(await within(useCases).findByRole('button', { name: 'Expand BG-D01-CAP01' }));
+    expect(await within(useCases).findByRole('searchbox', { name: 'Filter use cases of BG-D01-CAP01' })).toBeInTheDocument();
     await user.type(search, 'close the month');
     const region = within(useCases).getByRole('region', { name: 'Capabilities (scrolls)' });
-    expect(within(useCases).getByText('1 of 12')).toBeInTheDocument();
+    expect(await within(useCases).findByText('1 of 12')).toBeInTheDocument();
     expect(within(region).getAllByRole('listitem').map((li) => li.textContent)).toEqual([expect.stringMatching(/^BG-D01-CAP09\s*Close the month/)]);
     expect(within(section(/^Coverage/)).getByRole('searchbox', { name: 'Filter coverage gaps' })).toBeInTheDocument();
     expect(within(section(/^Problems in this domain/)).getByRole('searchbox', { name: 'Filter problems' })).toBeInTheDocument();
@@ -111,9 +111,9 @@ describe('long lists', () => {
     // A record's Traceability, in the wiki card.
     await openApp('/BG-D01-SP01', served);
     await screen.findByRole('heading', { level: 1, name: 'A ledger balances' });
-    const linksIn = within(main()).getByRole('searchbox', { name: /^Filter checked by$/i });
+    const linksIn = await within(main()).findByRole('searchbox', { name: /^Filter checked by$/i });
     await user.type(linksIn, 'CMD09');
-    expect(within(main()).getByText('1 of 12')).toBeInTheDocument();
+    expect(await within(main()).findByText('1 of 12')).toBeInTheDocument();
 
     // The Checks panel.
     await openApp('/BG?panel=checks', served);
