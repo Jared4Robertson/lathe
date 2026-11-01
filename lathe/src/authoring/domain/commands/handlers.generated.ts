@@ -197,7 +197,7 @@ export function addDomainServiceTest(tx: Transaction, input: AddDomainServiceTes
   domains.save(domain);
 }
 
-/** Changes a domain service test's columns or the test data sets it starts from (the whole list). */
+/** Changes a domain service test's way of running or the test data sets it starts from (the whole list). */
 export function changeDomainServiceTest(tx: Transaction, input: ChangeDomainServiceTest): void {
   const domains = new DomainRepository(tx);
   const domain = domains.loadHolding('domain_service_test', input.id) ?? tx.refuse('missing', `there is no domain service test ${input.id}`);

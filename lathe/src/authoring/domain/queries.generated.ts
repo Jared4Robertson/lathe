@@ -4,7 +4,7 @@ export const GET_DOMAIN_IDENTITY = {
   id: 'LA-AUT-QRY130',
   slice: { aggregate: 'LA-AUT-A4', name: 'domain' },
   name: 'get-domain',
-  description: 'Reads a domain whole as its page shows it, by its ID or the ID of any record in it: the record asked for and its kind, the domain\'s row, its capabilities in order with the outcomes they serve and their use cases, its terms bottom-up with the terms they build on, its domain services with their services and tests, and its repositories with the aggregates they persist.',
+  description: 'Reads a domain whole as its readers read it, by its ID or the ID of any record in it: the record asked for and its kind, the domain\'s own details, its capabilities in order with the outcomes they serve and their use cases, its terms bottom-up with the terms they build on, its domain services with their services and tests, and its repositories with the aggregates they persist.',
   method: 'GET',
   route: '/api/domain/get-domain',
 } as const;

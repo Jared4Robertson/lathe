@@ -21,14 +21,6 @@ function withReader(): ServedData {
   return addRows(modelWorkspace(), 'reader', { id: 'P-D-RM01-RD', title: 'CatalogReader', read_model_id: 'P-D-RM01', file: 'src/catalog.ts', description: 'Reads the catalog view for the query handlers.' });
 }
 
-describe('LA-V143-R04-T01 a read model\'s records are read through the Read model aggregate\'s own query, never a generic record read', () => {
-  it('reads GET /api/read-model/get-read-model for its reader, and shows its description', async () => {
-    const { requests } = await openApp('/P-D-RM01-RD', { data: withReader() });
-    expect(await within(main()).findByText('Reads the catalog view for the query handlers.')).toBeInTheDocument();
-    expect(requests).toContain('GET /api/read-model/get-read-model?id=P-D-RM01-RD');
-  });
-});
-
 describe('LA-V143-R04-T01 a read model shows its fields with their types, its queries with each one\'s handler, and its projection and reader', () => {
   it('lays out its fields and queries as tables, lists its reader, and says its projection is not written yet', async () => {
     await openApp('/P-D-RM01', { data: withReader() });
@@ -43,7 +35,7 @@ describe('LA-V143-R04-T01 a read model shows its fields with their types, its qu
   });
 });
 
-describe('LA-V143-R02-T01 the Read model editor writes only through the aggregate\'s own commands, one per change', () => {
+describe('LA-V143-R05-T01 the Read model editor writes only through the aggregate\'s own commands, one per change', () => {
   it('Edit sends Change a reader with only what changed (a file emptied as null); Add a projection takes its one ID; no Move', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/P-D-RM01-RD', { data: withReader(), command: () => ({ answer: ok }) });

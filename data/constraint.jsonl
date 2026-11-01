@@ -10,7 +10,7 @@
 {"id":"LA-VO09-C01","title":"A basic type is one of seven","value_object_id":"LA-VO09","statement":"A basic type MUST be text, whole number, decimal, date, time, date and time, or yes/no."}
 {"id":"LA-VO10-C01","title":"A table's storage is one of six","value_object_id":"LA-VO10","statement":"A table's storage MUST be `table`, `view`, `materialized view`, `browser storage`, `file` or `in memory`."}
 {"id":"LA-VO11-C01","title":"A key is primary, unique, foreign or an index","value_object_id":"LA-VO11","statement":"A table key's type MUST be `primary`, `unique`, `foreign` or `index`."}
-{"id":"LA-VO12-C01","title":"A method is one of the standard request methods","value_object_id":"LA-VO12","statement":"An endpoint's method MUST be GET, POST, PUT, PATCH, DELETE, HEAD or OPTIONS."}
+{"id":"LA-VO12-C01","title":"A method is one of the standard call methods","value_object_id":"LA-VO12","statement":"An endpoint's method MUST be GET, POST, PUT, PATCH, DELETE, HEAD or OPTIONS."}
 {"id":"LA-VO13-C01","title":"An event is delivered in process or by outbox","value_object_id":"LA-VO13","statement":"An event type's delivery MUST be `in process` or `outbox`."}
 {"id":"LA-VO14-C01","title":"A level is one of five","value_object_id":"LA-VO14","statement":"A run by's level MUST be unit, integration, service, system or browser."}
 {"id":"LA-VO14-C02","title":"A state is automated, manual or not automated yet","value_object_id":"LA-VO14","statement":"A run by's state MUST be `automated`, `manual` or `not automated yet`."}

@@ -142,7 +142,7 @@ export function addUseCaseTest(tx: Transaction, input: AddUseCaseTest): void {
   useCases.save(useCase);
 }
 
-/** Changes a use case test's columns or the test data sets it starts from (the whole list). */
+/** Changes a use case test's way of running or the test data sets it starts from (the whole list). */
 export function changeUseCaseTest(tx: Transaction, input: ChangeUseCaseTest): void {
   const useCases = new UseCaseRepository(tx);
   const useCase = useCases.loadHolding('use_case_test', input.id) ?? tx.refuse('missing', `there is no use case test ${input.id}`);
@@ -169,7 +169,7 @@ export function addFlowTest(tx: Transaction, input: AddFlowTest): void {
   useCases.save(useCase);
 }
 
-/** Changes a flow test's columns or the test data sets it starts from (the whole list). */
+/** Changes a flow test's way of running or the test data sets it starts from (the whole list). */
 export function changeFlowTest(tx: Transaction, input: ChangeFlowTest): void {
   const useCases = new UseCaseRepository(tx);
   const useCase = useCases.loadHolding('flow_test', input.id) ?? tx.refuse('missing', `there is no flow test ${input.id}`);

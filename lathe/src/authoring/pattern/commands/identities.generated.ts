@@ -67,7 +67,7 @@ export const CHANGE_PATTERN_RULE_TEST_IDENTITY = {
   id: 'LA-AUT-CMD197',
   slice: { aggregate: 'LA-AUT-A2', name: 'pattern' },
   name: 'change-pattern-rule-test',
-  description: 'Changes a pattern rule test\'s columns, the domain it proves the rule in, or the test data sets it starts from (the whole list).',
+  description: 'Changes a pattern rule test\'s way of running, the domain it proves the rule in, or the test data sets it starts from (the whole list).',
   method: 'POST',
   route: '/api/pattern/change-pattern-rule-test',
 } as const;

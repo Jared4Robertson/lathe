@@ -61,7 +61,7 @@ export function addIntegrationTest(tx: Transaction, input: AddIntegrationTest): 
   integrations.save(integration);
 }
 
-/** Changes an integration test's columns or the test data sets it starts from (the whole list). Its integration does not change. */
+/** Changes an integration test's way of running or the test data sets it starts from (the whole list). Its integration does not change. */
 export function changeIntegrationTest(tx: Transaction, input: ChangeIntegrationTest): void {
   const integrations = new IntegrationRepository(tx);
   const integration = integrations.loadHolding('integration_test', input.id) ?? tx.refuse('missing', `there is no integration test ${input.id}`);
