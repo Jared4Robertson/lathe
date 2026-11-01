@@ -25,7 +25,7 @@ function withRequirement(): ServedData {
 }
 
 describe('the Storage requirement page reads it through its own query, and its editor sends only the aggregate\'s commands', () => {
-  it('LA-V154-R01-T01 reads GET /api/storage-requirement/get-storage-requirement and shows its statement, what it is about and its tests', async () => {
+  it('LA-V154-R04-T01 reads GET /api/storage-requirement/get-storage-requirement and shows its statement, what it is about and its tests', async () => {
     const { requests } = await openApp('/DM-SHOP-A1-SR01', { data: withRequirement() });
     expect(await within(main()).findByText('A basket MUST be saved whole, with its lines.')).toBeInTheDocument();
     expect(requests).toContain('GET /api/storage-requirement/get-storage-requirement?id=DM-SHOP-A1-SR01');
