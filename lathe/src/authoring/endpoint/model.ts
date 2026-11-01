@@ -41,7 +41,7 @@ export const ENDPOINT_TABLES = ['endpoint', 'api_requirement', 'endpoint_handler
 export const ENDPOINT_SHAPE = {
   endpoint: { at: 'endpoint' },
   api_requirement: { at: 'requirements' },
-  endpoint_handler: { at: 'handler', one: true, lists: { meets: 'meets', packages: 'packages' } },
+  endpoint_handler: { at: 'handler', one: true, refusedBy: 'oneEndpointHandler', lists: { meets: 'meets', packages: 'packages' } },
   endpoint_test: { at: 'tests', lists: { starts_from: 'startsFrom' } },
 } as const satisfies AggregateShape;
 

@@ -1,10 +1,7 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EventTypeRow } from '../../../platform/data/tables.ts';
-import { DomainEventRepository } from '../repository.ts';
-import { refuseBroken } from '../../../platform/data/rules.ts';
-import { oneEventType } from '../rules.ts';
 import { ADD_EVENT_TYPE_IDENTITY } from './identities.generated.ts';
+import { addEventType } from './handlers.generated.ts';
 
 export type AddEventType = Pick<EventTypeRow, 'id' | 'title' | 'domain_event_id' | 'delivery' | 'file'> & { meets?: string[]; packages?: string[] };
 
@@ -21,13 +18,3 @@ export const ADD_EVENT_TYPE = {
   },
   handler: addEventType,
 } satisfies CommandDefinition<AddEventType>;
-
-/** Adds the event type to its event, refused when the event has one. */
-export function addEventType(tx: Transaction, input: AddEventType): void {
-  const events = new DomainEventRepository(tx);
-  const event = events.loadHolding('domain_event', input.domain_event_id) ?? tx.refuse('missing', `there is no domain event ${input.domain_event_id}`);
-  const { meets = [], packages = [], ...row } = input;
-  refuseBroken(oneEventType([...(event.eventType ? [event.eventType.row] : []), row]));
-  event.eventType = { row, meets, packages };
-  events.save(event);
-}

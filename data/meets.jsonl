@@ -590,6 +590,7 @@
 {"source_id":"LA-AUT-TOOL02","target_id":"LA-STD-PRINCIPLES-R02"}
 {"source_id":"LA-AUT-TOOL03","target_id":"LA-STD-CODE-R11"}
 {"source_id":"LA-AUT-TOOL03","target_id":"LA-STD-CODE-R12"}
+{"source_id":"LA-AUT-TOOL03","target_id":"LA-STD-CODE-R13"}
 {"source_id":"LA-AUT-TOOL03","target_id":"LA-STD-PRINCIPLES-R06"}
 {"source_id":"LA-CHK-CMD01-H","target_id":"LA-STD-CODE-R10"}
 {"source_id":"LA-CHK-CMD02-H","target_id":"LA-STD-CODE-R10"}

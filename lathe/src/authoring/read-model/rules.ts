@@ -19,18 +19,8 @@ function domainOfAggregate(view: ReadView, aggregateId: unknown): string | undef
  */
 export function readModelOneEach(projections: readonly ProjectionRow[], readers: readonly ReaderRow[], queryHandlers: readonly QueryHandlerRow[]): RuleProblem[] {
   return [
-    ...beyondFirst(projections, (r) => r.read_model_id).map((r) => ({
-      rule: 'read-model-one-each',
-      table: 'projection',
-      row: r as unknown as Row,
-      message: `read model ${r.read_model_id} already has its projection, so ${r.id} cannot be a second: a read model has one`,
-    })),
-    ...beyondFirst(readers, (r) => r.read_model_id).map((r) => ({
-      rule: 'read-model-one-each',
-      table: 'reader',
-      row: r as unknown as Row,
-      message: `read model ${r.read_model_id} already has its reader, so ${r.id} cannot be a second: a read model has one`,
-    })),
+    ...oneProjection(projections),
+    ...oneReader(readers),
     ...beyondFirst(queryHandlers, (r) => r.query_id).map((r) => ({
       rule: 'read-model-one-each',
       table: 'query_handler',
@@ -38,6 +28,26 @@ export function readModelOneEach(projections: readonly ProjectionRow[], readers:
       message: `query ${r.query_id} already has its query handler, so ${r.id} cannot be a second: a query has one`,
     })),
   ];
+}
+
+/** Every projection after the first of its read model (LA-AUT-INV107). */
+export function oneProjection(projections: readonly ProjectionRow[]): RuleProblem[] {
+  return beyondFirst(projections, (r) => r.read_model_id).map((r) => ({
+    rule: 'read-model-one-each',
+    table: 'projection',
+    row: r as unknown as Row,
+    message: `read model ${r.read_model_id} already has its projection, so ${r.id} cannot be a second: a read model has one`,
+  }));
+}
+
+/** Every reader after the first of its read model (LA-AUT-INV107). */
+export function oneReader(readers: readonly ReaderRow[]): RuleProblem[] {
+  return beyondFirst(readers, (r) => r.read_model_id).map((r) => ({
+    rule: 'read-model-one-each',
+    table: 'reader',
+    row: r as unknown as Row,
+    message: `read model ${r.read_model_id} already has its reader, so ${r.id} cannot be a second: a read model has one`,
+  }));
 }
 
 /** A field's name as people read it: trimmed, and in any letter case. */
