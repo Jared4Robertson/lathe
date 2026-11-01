@@ -54,7 +54,7 @@ describe('fields as JSON', () => {
 });
 
 describe('a refusal', () => {
-  it('LA-PAT-AGGREGATE-COMMANDS-R02-T01 a command the aggregate refuses prints every reason with its rule, exits 1, and changes nothing', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R02-T01 LA-PAT-CLI-STEPS-R02-T01 LA-PAT-MCP-STEPS-R02-T01 a command the aggregate refuses prints every reason with its rule, exits 1, and changes nothing', async () => {
     const root = writeData(everyKind());
     const before = files(root);
     const refusals = [

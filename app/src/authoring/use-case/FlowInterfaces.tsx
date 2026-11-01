@@ -12,8 +12,8 @@ import { FlowSteps, pathLabel } from './FlowSteps';
 // interface's version of it, derived by the use case's read model (through.ts) and never stored: the role who carries
 // it out there, the patterns it follows, and its steps (the other interfaces' variants left out), each with where it is
 // carried out (the views that present what it invokes, the endpoints that expose it or the product's own records), a
-// step the interface cannot reach shown as a gap, and on each path other than main the patterns' rules that say how a
-// refusal is shown there. The tabs are a tablist: the arrow keys, Home and End move between them.
+// step the interface cannot reach shown as a gap, and the rules of its patterns, which say how it reaches a step and
+// shows a refusal. The tabs are a tablist: the arrow keys, Home and End move between them.
 
 /** An interface's tab label: its title, from the space's index. */
 const titleOf = (index: RecordIndex, id: string) => index.byId.get(id)?.title ?? id;
@@ -35,19 +35,13 @@ function Version({ index, flow, through }: { index: RecordIndex; flow: FlowOnPag
         <div><dt>Interface</dt><dd><RecordLink index={index} id={through.interface} />{saysKind({ title: face, kind: through.kind }) ? null : <> <small className="meta">{through.kind}</small></>}</dd></div>
         <div><dt>Actor</dt><dd>{through.actor ?? <span className="hint">None named</span>}</dd></div>
         {through.patterns.length > 0 && <div><dt>Follows</dt><dd><Links index={index} ids={through.patterns} label={`Patterns ${through.interface} follows`} none="" /></dd></div>}
+        <div><dt>Carried out as</dt><dd>{through.rules.length === 0 ? <span className="hint">No pattern {face} follows says how it reaches a step or shows a refusal.</span> : <Links index={index} ids={through.rules} label={`Rules of the patterns ${through.interface} follows`} none="" />}</dd></div>
       </dl>
       <Section title="Steps" count={steps}>
         {steps === 0 && <p className="hint">No step of the flow is carried out through {face}.</p>}
         {through.paths.map((path) => (
           <section key={path.name} className="flow-path" aria-label={`${pathLabel(path.name)} through ${face}`}>
             <h3>{pathLabel(path.name)}<span className="section-count">{path.steps.length}</span></h3>
-            {path.name !== 'main' && (
-              <p className="flow-refusal">
-                {through.refusal.length === 0 ? <span className="hint">No pattern {face} follows says how it shows a refusal.</span> : (
-                  <>Shown as its patterns' refusal rules say: <Links index={index} ids={through.refusal} label={`Refusal rules of ${through.interface}`} none="" /></>
-                )}
-              </p>
-            )}
             <div className="table-scroll table-stack">
               <table className="data-table flow-steps" role="table">
                 <caption className="sr-only">Steps of the {path.name} path of {flow.flow.id} through {face}, in order</caption>

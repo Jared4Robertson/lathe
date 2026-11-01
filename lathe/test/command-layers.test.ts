@@ -68,7 +68,7 @@ describe('LA-AUT-UC06-R12-T02 only repositories write data files, each handler l
     expect(drafting).toEqual(['lathe/src/platform/data/data-files.ts']);
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R01-T01 LA-STD-PRINCIPLES-R02-T01 reaches each definition by its one CLI command, MCP tool and route, and gives every command of an aggregate with a slice its definition', () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R01-T01 LA-STD-PRINCIPLES-R02-T01 LA-PAT-CLI-STEPS-R01-T01 reaches each definition by its one CLI command, MCP tool and route, and gives every command of an aggregate with a slice its definition', () => {
     // Each identity is generated from the records (generated.test.ts); here, no two definitions share a name on any interface.
     const all = [...ALL_COMMANDS, ...ALL_QUERIES];
     for (const key of [(d: (typeof all)[number]) => d.id, (d: (typeof all)[number]) => `lathe ${d.slice.name} ${d.name}`, toolName, (d: (typeof all)[number]) => d.route]) {

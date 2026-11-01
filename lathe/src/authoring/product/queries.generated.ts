@@ -4,7 +4,7 @@ export const GET_PRODUCT_IDENTITY = {
   id: 'LA-AUT-QRY110',
   slice: { aggregate: 'LA-AUT-A1', name: 'product' },
   name: 'get-product',
-  description: 'Reads a product whole, by its ID, the ID of an open question or interface in it, or the name of a kind it declares: its row, roles, business outcomes and domains, declared kinds with their fields, relations, open questions with what they are about, and interfaces with the flows through each.',
+  description: 'Reads a product whole, by its ID, the ID of an open question or interface in it, or the name of a kind it declares: its row, roles, business outcomes and domains, declared kinds with their fields, relations, open questions with what they are about, and interfaces, each with the roles that use it, the patterns it follows and the use cases it offers and does not, by capability.',
   method: 'GET',
   route: '/api/product/get-product',
 } as const;

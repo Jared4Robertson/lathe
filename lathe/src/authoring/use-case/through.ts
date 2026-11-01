@@ -5,13 +5,10 @@
 // endpoints that expose it (an API), or the records of the product's own interaction design kinds under it (a CLI or
 // agent tools, such as Lathe's CLI commands). An interface of kind other reaches its operations in a way no record
 // says. Its actor is the first of the use case's actors the interface lists (the use case's main actor when it lists
-// none), and how it shows a refusal is its patterns' rules in the group Refusal. The Use case read model, the Trace
-// read model and the step-unreached check read the same answer.
+// none), and how it reaches a step's command or query and shows a refusal is what the rules of the patterns it follows
+// say. The Use case read model and the Trace read model read the same answer; the step-unreached check says it in SQL.
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
-
-/** The pattern rule group that says how an interface shows a refusal. */
-export const REFUSAL_GROUP = 'Refusal';
 
 /** A step as it reaches the interface's version: its place, whether it is another interface's variant, and what it invokes. */
 export interface StepToCarry {
@@ -41,8 +38,8 @@ export interface FlowThrough {
   actor: string | null;
   /** The patterns the interface follows. */
   patterns: string[];
-  /** The rules of those patterns, in the group Refusal, that say how a refusal is shown: what each step off the main path does there. */
-  refusal: string[];
+  /** The rules of those patterns, which say how it reaches a step's command or query and shows a refusal. */
+  rules: string[];
   /** Its steps, path by path (main first, then the others by name), each by position, with the other interfaces' variants left out. */
   paths: { name: string; steps: StepThrough[] }[];
 }
@@ -74,11 +71,7 @@ export function interfaceVersions(view: Pick<ReadView, 'rows' | 'schema'>): (use
     actorsOf.set(String(a.interface_id), [...(actorsOf.get(String(a.interface_id)) ?? []), String(a.role_name)]);
   }
   const follows = grouped(rows('follows'), 'source_id', 'target_id');
-  const refusalOf = new Map<string, string[]>();
-  for (const r of rows('pattern_rule')) {
-    if (String(r.group_name ?? '').trim().toLowerCase() !== REFUSAL_GROUP.toLowerCase()) continue;
-    refusalOf.set(String(r.pattern_id), [...(refusalOf.get(String(r.pattern_id)) ?? []), String(r.id)]);
-  }
+  const rulesOf = grouped(rows('pattern_rule'), 'pattern_id', 'id');
   const viewInterface = new Map(rows('view').map((v) => [String(v.id), typeof v.interface_id === 'string' ? v.interface_id : null]));
   const presentedIn = grouped(rows('presents'), 'target_id', 'source_id');
   const endpointsOf = new Map<string, string[]>();
@@ -123,7 +116,7 @@ export function interfaceVersions(view: Pick<ReadView, 'rows' | 'schema'>): (use
           kind,
           actor: (uses.length ? actors.find((a) => uses.includes(a)) : actors[0]) ?? null,
           patterns,
-          refusal: patterns.flatMap((p) => refusalOf.get(p) ?? []).sort(),
+          rules: patterns.flatMap((p) => rulesOf.get(p) ?? []).sort(),
           paths: [...byPath].sort(([a], [b]) => (a === 'main' ? -1 : b === 'main' ? 1 : a.localeCompare(b))).map(([name, list]) => ({ name, steps: list })),
         },
       ];

@@ -57,7 +57,7 @@ async function drag(page: Page, from: { x: number; y: number }, to: { x: number;
 }
 
 test.describe('Platform flows in the app', () => {
-  test('LA-PLT-UC03-FL-T the page shows the files on disk: an Agent\'s write reloads it in place, and data that cannot load is said so', async ({ page }) => {
+  test('LA-PLT-UC03-FL-T LA-PAT-PAGE-STEPS-R01-T04 the page shows the files on disk: an Agent\'s write reloads it in place, and data that cannot load is said so', async ({ page }) => {
     const restore = keepData();
     try {
       await openPage(page, '/LA-EXP-UC03');

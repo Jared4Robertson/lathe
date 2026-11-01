@@ -3,22 +3,21 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { addressOf } from '../src/views/address';
 import { main, openApp, section } from './helpers';
-import { addRows, setRow } from './fixtures/load';
+import { addRows } from './fixtures/load';
 import { patternWorkspace } from './fixtures/patterns';
 
 // A use case has one flow, the same through every interface that offers it; a step only one interface does is a
 // variant. Its page lists its flow and the interfaces that offer it; the flow's page has a tab per offering interface
 // with that interface's derived version; an interface lists its roles, its patterns, the use cases it offers and the
 // rest. The Demo shop offers both use cases through its web app (DM-IF01), whose basket page (DM-V01) presents Add
-// item; here it gains a CLI (DM-IF02) used by the Clerk and the Shopper, following the audit pattern (whose rule R03
-// says how a refusal is shown), that offers only the basket use case, and a step only the web app does.
+// item; here it gains a CLI (DM-IF02) used by the Clerk and the Shopper, following the audit pattern (whose rules say
+// how it carries out a step), that offers only the basket use case, and a step only the web app does.
 const served = () => {
   const data = patternWorkspace();
   addRows(data, 'interface', { id: 'DM-IF02', title: 'Terminal', product_id: 'DM', kind: 'CLI', description: 'A terminal.', public: false });
   addRows(data, 'offers', { source_id: 'DM-IF02', target_id: 'DM-SHOP-UC01' });
   addRows(data, 'interface_actor', { interface_id: 'DM-IF02', position: 1, role_name: 'Clerk' }, { interface_id: 'DM-IF02', position: 2, role_name: 'Shopper' });
   addRows(data, 'follows', { source_id: 'DM-IF02', target_id: 'DM-PAT-AUDIT' });
-  setRow(data, 'pattern_rule', 'DM-PAT-AUDIT-R03', { group_name: 'Refusal' });
   addRows(data, 'flow_step', { id: 'DM-SHOP-UC01-FL-S04', title: 'Shopper drags the item onto the basket', flow_id: 'DM-SHOP-UC01-FL', path: 'main', position: 3, interface_id: 'DM-IF01' });
   return { data };
 };
@@ -66,10 +65,10 @@ describe('a flow through its interfaces', () => {
     expect(rowsOf(mainPath)[1]).toHaveClass('is-gap');
     expect(rowsOf(mainPath)[1]).toHaveTextContent('Gap · Web app cannot reach DM-SHOP-QRY01');
     expect(rowsOf(refused).map((r) => r.dataset.step)).toEqual(['DM-SHOP-UC01-FL-S03']);
-    expect(within(panel).getByText(/No pattern Web app follows says how it shows a refusal/)).toBeInTheDocument();
+    expect(within(panel).getByText(/No pattern Web app follows says how it reaches a step or shows a refusal/)).toBeInTheDocument();
 
     // The arrow keys move between the tabs: the terminal's version leaves out the web app's variant, has the first of
-    // the use case's actors it lists, and on the refused path its pattern's refusal rule.
+    // the use case's actors it lists, and the rules of the pattern it follows.
     await user.keyboard('{ArrowRight}');
     expect(tabs[2]).toHaveFocus();
     expect(tabs[2]).toHaveAttribute('aria-selected', 'true');
@@ -78,7 +77,7 @@ describe('a flow through its interfaces', () => {
     [mainPath, refused] = within(panel).getAllByRole('table');
     expect(rowsOf(mainPath).map((r) => r.dataset.step)).toEqual(['DM-SHOP-UC01-FL-S01', 'DM-SHOP-UC01-FL-S02']);
     expect(rowsOf(mainPath)[0]).toHaveTextContent('Gap · Terminal cannot reach DM-SHOP-CMD01');
-    expect(within(panel).getByRole('list', { name: 'Refusal rules of DM-IF02' })).toHaveTextContent('DM-PAT-AUDIT-R03');
+    expect(within(panel).getByRole('list', { name: 'Rules of the patterns DM-IF02 follows' })).toHaveTextContent('DM-PAT-AUDIT-R03');
     // The interface tabs are read only: the flow is edited as written.
     expect(within(panel).queryByRole('button', { name: /Expand/ })).toBeNull();
     await user.keyboard('{Home}');

@@ -214,7 +214,7 @@ test.describe('Traceability flows', () => {
     }
   });
 
-  test('LA-TRC-UC20-FL-T see the outcomes a record serves', async ({ page }) => {
+  test('LA-PAT-PAGE-STEPS-R01-T05 see the outcomes a record serves', async ({ page }) => {
     const spec = await servedWorkspace();
     // What each record serves, as the Serves reach works it out over Lathe's own data.
     const store = await openStore(path.resolve(import.meta.dirname, '../..'));

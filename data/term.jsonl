@@ -15,7 +15,7 @@
 {"id":"LA-AUT-TM26","title":"Specification","domain_id":"LA-AUT","meaning":"A named yes-or-no rule over aggregates of one domain, which commands test before they act and queries select by.","group_name":"Domain model"}
 {"id":"LA-AUT-TM27","title":"Read model","domain_id":"LA-AUT","meaning":"Data kept in the shape someone needs to read it, copied from aggregates or worked out from domain events, and never changed directly.","group_name":"Domain model"}
 {"id":"LA-AUT-TM28","title":"Use case","domain_id":"LA-AUT","meaning":"One goal of an actor, with the requirements it must keep and the tests that show it is met.","group_name":"Use cases and design"}
-{"id":"LA-AUT-TM29","title":"View","domain_id":"LA-AUT","meaning":"A page or panel a flow's steps happen in, with its route and its view requirements.","group_name":"Use cases and design"}
+{"id":"LA-AUT-TM29","title":"View","domain_id":"LA-AUT","meaning":"A page or panel a person uses, which presents commands and queries, with its route and its view requirements.","group_name":"Use cases and design"}
 {"id":"LA-AUT-TM30","title":"Endpoint","domain_id":"LA-AUT","meaning":"The route that exposes one command or query, with its API requirements and handler.","group_name":"Use cases and design"}
 {"id":"LA-AUT-TM31","title":"Integration","domain_id":"LA-AUT","meaning":"An outside system the product exchanges with, through its adapter.","group_name":"Use cases and design"}
 {"id":"LA-AUT-TM32","title":"UI component","domain_id":"LA-AUT","meaning":"The code that draws the views it renders, and does what the view requirements it is linked to say.","group_name":"Use cases and design"}
@@ -31,8 +31,8 @@
 {"id":"LA-AUT-TM42","title":"Capability","domain_id":"LA-AUT","meaning":"A lasting ability of the business that groups a domain's use cases, in order, and names the business outcomes it is for.","group_name":"Domain model"}
 {"id":"LA-AUT-TM43","title":"Policy","domain_id":"LA-AUT","meaning":"A reaction under the command it runs, which hears one event: when that happens, run this command.","group_name":"Domain model"}
 {"id":"LA-AUT-TM44","title":"Query","domain_id":"LA-AUT","meaning":"A question asked of one read model; it changes nothing.","group_name":"Domain model"}
-{"id":"LA-AUT-TM45","title":"UC requirement","domain_id":"LA-AUT","meaning":"One rule a use case must keep, stated with MUST, SHOULD or MAY, fulfilled by its flows' steps and shown to hold by its tests.","group_name":"Use cases and design"}
-{"id":"LA-AUT-TM46","title":"Flow","domain_id":"LA-AUT","meaning":"How a use case happens through one interface, as ordered steps on their paths, each invoking at most one command or query.","group_name":"Use cases and design"}
+{"id":"LA-AUT-TM45","title":"UC requirement","domain_id":"LA-AUT","meaning":"One rule a use case must keep, stated with MUST, SHOULD or MAY, fulfilled by its flow's steps and shown to hold by its tests.","group_name":"Use cases and design"}
+{"id":"LA-AUT-TM46","title":"Flow","domain_id":"LA-AUT","meaning":"How a use case is carried out, whatever the interface, as ordered steps on their paths, each invoking at most one command or query; each interface that offers the use case has its own version of it, derived.","group_name":"Use cases and design"}
 {"id":"LA-AUT-TM47","title":"Interface","domain_id":"LA-AUT","meaning":"A way the product is used, such as the web app, the CLI or the MCP tools.","group_name":"Use cases and design"}
 {"id":"LA-AUT-TM48","title":"Role","domain_id":"LA-AUT","meaning":"Who acts in the product's use cases, such as the Owner or an Agent.","group_name":"Use cases and design"}
 {"id":"LA-AUT-TM49","title":"Reader","domain_id":"LA-AUT","meaning":"How a query reaches its read model's stored data: the one code that knows where it is stored.","group_name":"Build and test"}

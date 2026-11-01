@@ -2,7 +2,7 @@
 {"id":"LA-AUT-UC03-FL","title":"Change Lathe's schema with a migration","use_case_id":"LA-AUT-UC03"}
 {"id":"LA-AUT-UC04-FL","title":"Declare a product's own kinds and relations","use_case_id":"LA-AUT-UC04"}
 {"id":"LA-AUT-UC05-FL","title":"Write a pattern with its rules","use_case_id":"LA-AUT-UC05"}
-{"id":"LA-AUT-UC06-FL","title":"Write a use case with its flows and tests","use_case_id":"LA-AUT-UC06"}
+{"id":"LA-AUT-UC06-FL","title":"Write a use case with its flow and tests","use_case_id":"LA-AUT-UC06"}
 {"id":"LA-AUT-UC08-FL","title":"Read each kind's stage and order from the schema","use_case_id":"LA-AUT-UC08"}
 {"id":"LA-AUT-UC10-FL","title":"Model an aggregate with its entities and invariants","use_case_id":"LA-AUT-UC10"}
 {"id":"LA-AUT-UC11-FL","title":"Read the reference generated from the schema","use_case_id":"LA-AUT-UC11"}

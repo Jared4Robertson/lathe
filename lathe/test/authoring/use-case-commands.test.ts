@@ -95,7 +95,7 @@ describe('LA-AUT-UC06-R12-T01 each Use case command (LA-AUT-A11) changes one use
     expect(() => runQuery(store, NEXT_USE_CASE_ID, { kind: 'flow', parent: 'TL-LEND-UC02' })).toThrow(/TL-LEND-UC02 already has its flow, TL-LEND-UC02-FL/);
   });
 
-  it('reads the use case with each offering interface\'s version of its flow, derived: where each step is carried out, the actor and the variants left out', async () => {
+  it('LA-AUT-UC06-R10-T01 reads the use case with each offering interface\'s version of its flow, derived: where each step is carried out, the actor and the variants left out', async () => {
     const data = everyKind();
     data.interface = [...data.interface, { id: 'TL-IF02', title: 'CLI', product_id: 'TL', kind: 'API', description: 'The HTTP API.', public: false }];
     data.interface_actor = [...data.interface_actor, { interface_id: 'TL-IF02', position: 1, role_name: 'Librarian' }, { interface_id: 'TL-IF02', position: 2, role_name: 'Member' }];

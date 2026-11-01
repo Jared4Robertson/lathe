@@ -54,11 +54,10 @@ function fieldsOf(index: RecordIndex, product: string, kind: ViewKind, adding: b
 }
 
 /** The record's current values, by its input's field names: its row's columns and the links it starts. */
-function currentOf(index: RecordIndex, page: ViewPage, kind: ViewKind, id: string): Record<string, unknown> {
+function currentOf(page: ViewPage, kind: ViewKind, id: string): Record<string, unknown> {
   switch (kind) {
     case 'view':
-      // What it presents comes from the space's links until the View read model gives it.
-      return { ...page.view, presents: (index.outgoing.get(id) ?? []).filter((l) => l.relation === 'presents').map((l) => l.target) };
+      return { ...page.view, presents: page.presents };
     case 'view_requirement':
       return { ...page.requirements.find((r) => r.requirement.id === id)!.requirement };
     case 'view_test': {
@@ -124,7 +123,7 @@ export function ViewEditor({ index, page, children }: { index: RecordIndex; page
   const product = index.byId.get(page.view.id)?.product ?? '';
   if (mode.mode === 'change') {
     const specs = fieldsOf(index, product, kind, false);
-    const current = currentOf(index, page, kind, id);
+    const current = currentOf(page, kind, id);
     const submit = async (draft: Draft) => {
       const input = changeInput(index, specs, draft, current, { id });
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
