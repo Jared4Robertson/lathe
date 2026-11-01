@@ -1,8 +1,8 @@
 import { recordIndexOf } from '../read-view';
 import { describe, expect, it } from 'vitest';
-import { MAP_SIZE, nestedText, sizeText } from '../../src/graph/map';
+import { MAP_SIZE, nestedLeafText, nestedText, sizeText } from '../../src/graph/map';
 import { BORDER, LABEL_PAD, labelHeight, largestFit, linesIn, mapLabel, metaWidth, narrowestWidth, titleWidth, type MapLabel } from '../../src/graph/text';
-import { gridOf, HEADER_SHARE, NEST_GAP, NEST_PAD, type NestedMap, type NestedNode } from '../../src/graph/nested';
+import { gridOf, HEADER_SHARE, leafLabel, NEST_GAP, NEST_PAD, type NestedMap, type NestedNode } from '../../src/graph/nested';
 import type { RecordIndex } from '../../src/exploring/record-summaries/record-index';
 import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } from './workspace';
 import { graphMap, layoutNested, nestedMap } from './maps';
@@ -111,19 +111,19 @@ describe('the Nested map', () => {
     }
   });
 
-  it('LA-EXP-DS06-T09 LA-EXP-DS07-T03 Siblings share one text scale, their side over NESTED_TEXT_SIZE or the largest at which every sibling\'s whole label fits, and one header band', () => {
+  it('LA-EXP-DS06-T09 LA-EXP-DS07-T03 Siblings share a leaf\'s text scale and a parent\'s, each their side\'s share or the largest at which every sibling\'s whole label fits, and one header band', () => {
     for (const map of all()) {
       for (const group of siblingGroups(map)) {
-        const most = nestedText(group[0].w);
-        const text = group[0].text;
-        for (const n of group) expect(n.text, n.id).toBe(text);
-        expect(text).toBeLessThanOrEqual(most);
-        expect(text).toBeGreaterThan(0);
-        // The largest that fits: the size's share, or one sibling's label fills its room, as a leaf's (centered in its
-        // square) or as a parent's (in a header band), whichever it is now, so what a sibling holds sizes nothing of the others.
+        const side = group[0].w;
         const border = (s: number) => BORDER * Math.max(0.5, s);
-        const fits = group.flatMap((n) => [largestFit(labelOf(map, n), true, n.w, n.w, most, border), largestFit(labelOf(map, n), false, n.w, HEADER_SHARE * n.w, most, border)]);
-        expect(text).toBeCloseTo(Math.min(...fits), 9);
+        // Each scale the largest that fits, worked out over every sibling's label whatever it holds now, so what a sibling
+        // holds sizes nothing of the others: as a leaf's (centered in its square, its title at most a tenth of the side),
+        // and as a parent's (in a header band).
+        const leafText = Math.min(nestedLeafText(side), ...group.map((n) => largestFit(leafLabel(labelOf(map, n)), true, side, side, nestedLeafText(side), border)));
+        const text = Math.min(nestedText(side), ...group.map((n) => largestFit(labelOf(map, n), false, side, HEADER_SHARE * side, nestedText(side), border)));
+        expect(leafText).toBeLessThanOrEqual(side / 125 * (1 + eps));
+        expect(text).toBeGreaterThan(0);
+        for (const n of group) expect(n.text, n.id).toBeCloseTo(n.children.length === 0 ? leafText : text, 9);
         // One header band for the parents among them: the tallest of every sibling's label as a parent's, a leaf's too.
         const band = Math.max(...group.map((n) => text * labelHeight(linesIn(labelOf(map, n), (n.w - 2 * border(text)) / text, false))));
         for (const n of group.filter((n) => n.children.length > 0)) expect(n.header).toBeCloseTo(band, 6);
@@ -132,7 +132,7 @@ describe('the Nested map', () => {
     // A long title in a busy part lowers its siblings' text with its own, never its cousins'.
     const map = busyAndQuiet();
     const leaf = map.nodes.get('b0.0')!;
-    expect(leaf.text).toBeLessThan(nestedText(leaf.w));
+    expect(leaf.text).toBeLessThan(nestedLeafText(leaf.w));
     expect(map.nodes.get('b1.0')!.text).toBe(leaf.text);
     expect(map.nodes.get('b0')!.text).toBe(nestedText(map.nodes.get('b0')!.w));
     // Built once per index: the same map object, whatever the focus.
@@ -143,7 +143,7 @@ describe('the Nested map', () => {
   it('LA-EXP-DS06-T09 Every label fits its box: no word broken, a leaf\'s lines inside its square, a parent\'s inside its header band', () => {
     for (const map of all()) {
       for (const n of map.nodes.values()) {
-        const label = labelOf(map, n);
+        const label = n.centered ? leafLabel(labelOf(map, n)) : labelOf(map, n);
         const across = (n.w - 2 * borderOf(n)) / n.text;
         expect(across).toBeGreaterThanOrEqual(narrowestWidth(label, n.centered) - eps);
         for (const line of n.lines.title) expect(titleWidth(line.trimEnd()), n.id).toBeLessThanOrEqual(across - 2 * LABEL_PAD + eps);

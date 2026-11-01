@@ -21,6 +21,12 @@ export const BORDER = 1.5;
 /** The padding on each side of a label, and the room kept beside the kind and ID line for the problem badge. */
 export const LABEL_PAD = 14;
 export const BADGE_ROOM = 30;
+/**
+ * The height a label kept clear of the badge above it keeps above and below its lines (so it stays centered), at text
+ * scale 1: the badge's top and height (plate.ts) past the label's own padding, and a small gap. A Nested leaf's label,
+ * centered in its square, keeps its badge's room so, rather than beside its kind and ID line (LA-EXP-DS07).
+ */
+export const BADGE_CLEAR = 14;
 /** The room a small mark takes before the kind and ID line (a shape's in the Nested view, a gear or a ruler), its gap included (LA-V93-R06). */
 export const MARK_ROOM = 18;
 /** The faces the graph draws text in: a title (the body face at 600), a kind and ID line (the mono face), a problem badge (mono at 700). */
@@ -127,7 +133,7 @@ const TITLE_BREAKS = '-._:/(';
 export interface WrappedLabel {
   title: string[];
   meta: string[];
-  /** The height its shape keeps clear above and below it, at text scale 1 (LA-V93-R06): none for a box. */
+  /** The height its shape keeps clear above and below it, at text scale 1 (LA-V93-R06), and a label kept clear of the badge above it its room: none for a box. */
   pad?: number;
 }
 
@@ -136,12 +142,12 @@ export interface WrappedLabel {
  * The problem badge's room is always kept, whether the box has the badge now or not, so a badge appearing changes no
  * label's text or size, nor its siblings' (LA-PAT-APP-UX-R22).
  */
-interface LabelRoom { shape?: Shape; marks?: number; badge?: boolean; centered?: boolean }
+interface LabelRoom { shape?: Shape; marks?: number; badge?: boolean | 'above'; centered?: boolean }
 
 const NO_ROOM: Room = { l: 0, r: 0, t: 0, b: 0 };
 
-/** How much less a kind and ID line holds than a title: the marks before it, and the badge's room beside it (on both sides once centered), kept always. */
-const metaRoom = ({ marks = 0, badge = true, centered = false }: LabelRoom) => marks * MARK_ROOM + (badge ? (centered ? 2 : 1) * BADGE_ROOM : 0);
+/** How much less a kind and ID line holds than a title: the marks before it, and the badge's room beside it (on both sides once centered), kept always unless it is kept above the label. */
+const metaRoom = ({ marks = 0, badge = true, centered = false }: LabelRoom) => marks * MARK_ROOM + (badge === true ? (centered ? 2 : 1) * BADGE_ROOM : 0);
 
 /**
  * A label broken into lines for a box `width` wide at text scale 1 (LA-EXP-DS06), less the padding,
@@ -156,7 +162,7 @@ export function wrapLabel(lines: { title: string; meta: string }, { shape, marks
     // none (a cut label laid out by its title alone, sticky.ts) has no line for it.
     meta: lines.meta === '' ? [] : wrapText(lines.meta, inner - metaRoom({ marks, badge, centered }), (s) => metaWidth(s), '', false, true),
   };
-  const pad = room.t + room.b;
+  const pad = room.t + room.b + (badge === 'above' ? 2 * BADGE_CLEAR : 0);
   return pad > 0 ? { ...label, pad } : label;
 }
 
@@ -171,9 +177,10 @@ export const labelHeight = (label: WrappedLabel) => 2 * (LABEL_PAD_BLOCK + BORDE
 /**
  * What a box's label says, and what it keeps room for: its shape's room (the Tree view) and the marks before its kind and
  * ID line. A map's label always keeps the badge's room; only a label drawn where no badge sits beside it (a sticky label,
- * laid out anew in a box's visible part: sticky.ts) is `badge: false`.
+ * laid out anew in a box's visible part: sticky.ts) is `badge: false`; a Nested leaf's, centered, keeps it above its
+ * lines rather than beside its kind and ID line (`badge: 'above'`, BADGE_CLEAR).
  */
-export interface MapLabel { title: string; meta: string; shape?: Shape; marks?: number; badge?: false }
+export interface MapLabel { title: string; meta: string; shape?: Shape; marks?: number; badge?: false | 'above' }
 
 /** A node's label in the Tree map: its kind's shape is its outline, so the label keeps its shape's room, and its kind's mark comes before its kind and ID line (LA-V93-R06). */
 export function treeLabel(index: RecordIndex, id: string): MapLabel {
