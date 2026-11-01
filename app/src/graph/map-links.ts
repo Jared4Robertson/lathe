@@ -6,7 +6,15 @@ import type { Line } from './paint';
 
 // The Map's links as lines (LA-EXP-DS12): what a record is joined to beyond its composition (its links both ways, and
 // its parent when it does not nest in it) is drawn only when it is relevant: the focus's and the selection's links,
-// labeled by their relation; with All links on, every link between the records drawn, up to MOST_LINKS.
+// labeled by their relation; with All links on, every link between the records drawn, up to MOST_LINKS. Framing a
+// journey draws its steps' lines to what each carries out too, and inside a journey or a flow a "then" arrow joins each
+// step to the next on its path (sequence.ts).
+
+/** The derived relation of a "then" arrow, from a journey's or flow's step to the next on its path (sequence.ts): no stored link. */
+export const THEN = 'then';
+
+/** What a journey step carries out (a use case, or a policy as a handoff): framing a journey draws each of its steps' (LA-V93-R75). */
+export const CARRIES_OUT = 'carries_out';
 
 /** The most lines All links draws at once: past it, zoom in to see a smaller area's. */
 export const MOST_LINKS = 400;
