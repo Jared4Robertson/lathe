@@ -1,4 +1,4 @@
-// LA-STD-CODE-R05: every check of Lathe's names one domain, tested in that domain's test folder
+// LA-PAT-AGGREGATE-TESTS-R04: every check of Lathe's names one domain, tested in that domain's test folder
 // (lathe/test/<domain>/checks.test.ts), from a complete product that breaks none of them.
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -17,7 +17,7 @@ const data = (table: string): Record<string, unknown>[] =>
     .filter(Boolean)
     .map((line) => JSON.parse(line) as Record<string, unknown>);
 
-describe("LA-STD-CODE-R05-T01 every check of Lathe's has a test in its domain's folder that breaks it, from a product that breaks none", () => {
+describe("LA-PAT-AGGREGATE-TESTS-R04-T01 LA-PAT-AGGREGATE-TESTS-R04-T02 LA-PAT-AGGREGATE-TESTS-R04-T03 every check of Lathe's has a test in its domain's folder that breaks it, from a product that breaks none", () => {
   it('the complete product breaks none of them', async () => {
     expect((await loadData(complete())).problems).toEqual([]);
   });

@@ -3,6 +3,7 @@
 // One instance is one interface, whole; it holds only the links its own records start. The patterns it follows, and
 // the values it gives their settings, are Pattern following's (LA-TRC-A3).
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
+import type { AggregateShape } from '../../platform/data/repository.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { InterfaceRow } from '../../platform/data/tables.ts';
 
@@ -19,6 +20,11 @@ export interface Interface {
 
 /** The tables the Interface aggregate keeps its rows in: its kinds, and the relation it starts. */
 export const INTERFACE_TABLES = ['interface', 'interface_actor', 'offers'] as const;
+
+/** How the aggregate's kind sits in an instance: the interface's row, its roles in order and the use cases it offers. Its repository is generated from it. @public (read by `npm run generate`) */
+export const INTERFACE_SHAPE = {
+  interface: { at: 'row', lists: { actors: 'actors', offers: 'offers' } },
+} as const satisfies AggregateShape;
 
 /** The interfaces in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function interfacesFrom(rows: (table: string) => Row[], only?: string): Interface[] {

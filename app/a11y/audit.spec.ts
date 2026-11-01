@@ -82,7 +82,7 @@ const PAGES: State[] = [
   { name: 'capability page', url: '/LA-AUT-CAP02', ready: '[data-aggregate="domain"] .capability-use-cases' },
   { name: 'test data set page', url: '/LA-AUT-TD30', ready: '[data-aggregate="test-data-set"] .record-lead' },
   { name: 'pattern page', url: '/LA-PAT-RECORD-PAGE', ready: '[data-aggregate="pattern"] .pattern-rules' },
-  { name: 'standard page', url: '/LA-STD-CODE', ready: '[data-aggregate="standard"] .standard-rules' },
+  { name: 'standard page', url: '/LA-STD-MODELING', ready: '[data-aggregate="standard"] .standard-rules' },
   // The View and UI component aggregates' own pages.
   { name: 'view page', url: '/LA-V150', ready: '[data-aggregate="view"] .view-requirements' },
   { name: 'UI component page', url: '/LA-UI280', ready: '[data-aggregate="ui-component"] .traceability' },

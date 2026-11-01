@@ -2,15 +2,18 @@
 // The pattern commands whose handler is the pattern: load the pattern, add, change or remove one record with the
 // input's columns and lists, hold it to its rules, and save. Each definition takes its handler from here.
 import { changed } from '../../../platform/data/rows.ts';
+import { refuseBroken } from '../../../platform/data/rules.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { PatternRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
+import { holdToRules, patternRuleTestPerDomain } from '../rules.ts';
 import type { AddPattern } from './add-pattern.ts';
 import type { ChangePattern } from './change-pattern.ts';
 import type { RemovePattern } from './remove-pattern.ts';
 import type { AddPatternRule } from './add-pattern-rule.ts';
 import type { ChangePatternRule } from './change-pattern-rule.ts';
 import type { RemovePatternRule } from './remove-pattern-rule.ts';
+import type { AddPatternRuleTest } from './add-pattern-rule-test.ts';
+import type { ChangePatternRuleTest } from './change-pattern-rule-test.ts';
 import type { RemovePatternRuleTest } from './remove-pattern-rule-test.ts';
 import type { AddSlot } from './add-slot.ts';
 import type { ChangeSlot } from './change-slot.ts';
@@ -66,6 +69,27 @@ export function removePatternRule(tx: Transaction, input: RemovePatternRule): vo
   const pattern = patterns.loadHolding('pattern_rule', input.id) ?? tx.refuse('missing', `there is no pattern rule ${input.id}`);
   pattern.rules = pattern.rules.filter((x) => x.id !== input.id);
   pattern.ruleTests = pattern.ruleTests.filter((x) => x.row.pattern_rule_id !== input.id);
+  patterns.save(pattern);
+}
+
+/** Adds a test of a pattern rule in one domain that follows its pattern, with the test data sets it starts from. */
+export function addPatternRuleTest(tx: Transaction, input: AddPatternRuleTest): void {
+  const patterns = new PatternRepository(tx);
+  const pattern = patterns.loadHolding('pattern_rule', input.pattern_rule_id) ?? tx.refuse('missing', `there is no pattern rule ${input.pattern_rule_id}`);
+  const { starts_from = [], ...row } = input;
+  pattern.ruleTests.push({ row, startsFrom: starts_from });
+  refuseBroken(patternRuleTestPerDomain(pattern.ruleTests.map((x) => x.row)));
+  holdToRules(tx, pattern);
+  patterns.save(pattern);
+}
+
+/** Changes a pattern rule test's way of running, the domain it proves the rule in, or the test data sets it starts from (the whole list). */
+export function changePatternRuleTest(tx: Transaction, input: ChangePatternRuleTest): void {
+  const patterns = new PatternRepository(tx);
+  const pattern = patterns.loadHolding('pattern_rule_test', input.id) ?? tx.refuse('missing', `there is no pattern rule test ${input.id}`);
+  pattern.ruleTests = pattern.ruleTests.map((x) => (x.row.id === input.id ? { row: changed(x.row, input, ['title', 'domain_id', 'level', 'state', 'file', 'manual_reason', 'size', 'smoke', 'external', 'when', 'then', 'notes']), startsFrom: input.starts_from ?? x.startsFrom } : x));
+  refuseBroken(patternRuleTestPerDomain(pattern.ruleTests.map((x) => x.row)));
+  holdToRules(tx, pattern);
   patterns.save(pattern);
 }
 

@@ -1,24 +1,21 @@
-// PatternFollowingRepository (LA-TRC-REPO01): loads and saves the Pattern following aggregate whole (the follows link
-// and its setting values) in its own tables only.
-import { AggregateRepository, type InstanceRows } from '../../platform/data/repository.ts';
+// Generated from data/ by `npm run generate`. Do not edit.
+// PatternFollowingRepository (LA-TRC-REPO01): Loads a following whole from the transaction's draft (the follows link
+// and the setting values it gives) and saves exactly the rows that changed, in the follows and setting_value tables
+// only.
+import { AggregateRepository as Repository, type InstanceRows } from '../../platform/data/repository.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
-import { followingOf, followingRows, followingsFrom, PATTERN_FOLLOWING_TABLES, type PatternFollowing } from './model.ts';
+import { PATTERN_FOLLOWING_TABLES, patternFollowingRows, patternFollowingsFrom, type PatternFollowing } from './model.ts';
 
-export class PatternFollowingRepository extends AggregateRepository<PatternFollowing> {
+export class PatternFollowingRepository extends Repository<PatternFollowing> {
   constructor(tx: Transaction) {
     super(tx, 'PatternFollowingRepository', PATTERN_FOLLOWING_TABLES);
   }
 
-  protected read(root: string): PatternFollowing | undefined {
-    return followingsFrom((table) => this.files.rows(table), root)[0];
+  protected read(rootId: string): PatternFollowing | undefined {
+    return patternFollowingsFrom((table) => this.files.rows(table), rootId)[0];
   }
 
-  protected rowsOf(following: PatternFollowing): InstanceRows {
-    return followingRows(following);
-  }
-
-  /** Loads the following of the pattern by the follower, or undefined when it does not follow it. */
-  loadFollowing(follower: string, pattern: string): PatternFollowing | undefined {
-    return this.load(followingOf(follower, pattern));
+  protected rowsOf(patternFollowing: PatternFollowing): InstanceRows {
+    return patternFollowingRows(patternFollowing);
   }
 }

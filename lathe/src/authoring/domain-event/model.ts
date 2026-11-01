@@ -35,7 +35,7 @@ export const DOMAIN_EVENT_TABLES = ['domain_event', 'event_field', 'event_type',
 /** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
 export const DOMAIN_EVENT_SHAPE = {
   domain_event: { at: 'event', lists: { fields: 'fields' } },
-  event_type: { at: 'eventType', one: true, lists: { meets: 'meets', packages: 'packages' } },
+  event_type: { at: 'eventType', one: true, refusedBy: 'oneEventType', lists: { meets: 'meets', packages: 'packages' } },
 } as const satisfies AggregateShape;
 
 export type DomainEventKind = keyof typeof DOMAIN_EVENT_SHAPE;
