@@ -1,10 +1,7 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { SpecificationTestRow } from '../../../platform/data/tables.ts';
-import { SpecificationRepository } from '../repository.ts';
-import { refuseBroken } from '../../../platform/data/rules.ts';
-import { specificationOneEach } from '../rules.ts';
 import { ADD_SPECIFICATION_TEST_IDENTITY } from './identities.generated.ts';
+import { addSpecificationTest } from './handlers.generated.ts';
 
 export type AddSpecificationTest = Pick<SpecificationTestRow, 'id' | 'title' | 'specification_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'when' | 'then' | 'notes'> & { starts_from?: string[] };
 
@@ -28,13 +25,3 @@ export const ADD_SPECIFICATION_TEST = {
   },
   handler: addSpecificationTest,
 } satisfies CommandDefinition<AddSpecificationTest>;
-
-/** Adds the test to its specification, which has none yet. */
-export function addSpecificationTest(tx: Transaction, input: AddSpecificationTest): void {
-  const specifications = new SpecificationRepository(tx);
-  const specification = specifications.load(input.specification_id) ?? tx.refuse('missing', `there is no specification ${input.specification_id}`);
-  const { starts_from = [], ...row } = input;
-  refuseBroken(specificationOneEach([], [...(specification.test ? [specification.test.row] : []), row]));
-  specification.test = { row, startsFrom: starts_from };
-  specifications.save(specification);
-}

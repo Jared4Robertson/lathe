@@ -1,5 +1,5 @@
 // Lathe's checks of the Checking domain, one at a time: each starts from the complete product, which gives no
-// problem, and changes one thing to break the rule. LA-STD-CODE-R05: each of the domain's check rows is tested here.
+// problem, and changes one thing to break the rule. LA-PAT-AGGREGATE-TESTS-R04: each of the domain's check rows is tested here.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Workspace } from '../../src/index.ts';
 import { adding, changing, complete, loadData, ofCheck, removeData, without } from '../helpers.ts';

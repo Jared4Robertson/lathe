@@ -141,7 +141,7 @@ describe.skipIf(!hasGit)('record history', () => {
     expect([400, 404]).toContain((await get(repo, '/api/history?id=../data/use_case.jsonl')).status);
   });
 
-  describe('LA-STD-CODE-R02-T01 reading a record\'s history changes nothing in the repo', () => {
+  describe('reading a record\'s history changes nothing in the repo', () => {
     it('LA-PAT-HTTP-STEPS-R05-T01 GET /api/history changes nothing in the repo', async () => {
       const status = git(repo, 'status', '--porcelain');
       const config = git(repo, 'config', '--local', '--list');

@@ -15,7 +15,9 @@ export type InstanceRows = Map<string, Row[]>;
  * each (`lists`: the links it starts, and its parts as rows, owned and numbered), its parts held as the input gives
  * them (`given`: owned and numbered only as its rows are written) and its single links (`links`: the one record it
  * names, or null). A kind with any of them is held as its `row` beside them; the root's sit on the instance. Its parent
- * inside the aggregate is the schema's.
+ * inside the aggregate is the schema's. `refusedBy` names the rule, exported by the aggregate's rules.ts, that a
+ * command adding or changing one of the kind's records refuses with, over the kind's rows as it would save them: the
+ * one each rule of a kind held at most once (a second is refused), or a rule over a kind's list (one test per domain).
  */
 export interface KindShape {
   at: string;
@@ -23,6 +25,7 @@ export interface KindShape {
   lists?: Readonly<Record<string, string>>;
   given?: Readonly<Record<string, string>>;
   links?: Readonly<Record<string, string>>;
+  refusedBy?: string;
 }
 
 /**

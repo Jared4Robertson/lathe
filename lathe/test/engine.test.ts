@@ -83,7 +83,7 @@ describe('checks', () => {
     expect(loaded.problems[1]).toMatchObject({ severity: 'error', record: null, message: expect.stringContaining('The check broken could not run') });
   });
 
-  describe('LA-STD-CODE-R01-T01 a check is one row with one SELECT', () => {
+  describe('a check is one row with one SELECT', () => {
     it("LA-CHK-INV04-T Each check is one SELECT query in its row, and Lathe's checks are named and placed in order", async () => {
       const store = await openStore(path.dirname(LATHE_DATA_DIR), { latheDataDir: null });
       const rows = store.rows('check');

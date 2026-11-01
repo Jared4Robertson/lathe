@@ -19,20 +19,27 @@ interface HearsRow {
   target_id: string;
 }
 
+// One row past the first of its parent, refused as LA-AUT-INV104's.
+const second = (table: string, what: string, parent: string) => (row: object, id: string, of: string): RuleProblem => ({
+  rule: 'command-one-each',
+  table,
+  row: row as unknown as Row,
+  message: `${parent} ${of} already has its ${what}, so ${id} cannot be a second: a ${parent} has one`,
+});
+
+/** Every command handler after the first of its command (LA-AUT-INV104). */
+export function oneCommandHandler(handlers: readonly CommandHandlerRow[]): RuleProblem[] {
+  return beyondFirst(handlers, (r) => r.command_id).map((r) => second('command_handler', 'command handler', 'command')(r, r.id, r.command_id));
+}
+
 /**
  * Every row that breaks LA-AUT-INV104: a command has at most one command handler, and a policy hears at most one event
  * and has at most one event handler and one policy test. Each after the first of its parent is refused; a policy that
  * hears nothing is a gap (policy-hears-nothing), not a refusal.
  */
 export function commandOneEach(handlers: readonly CommandHandlerRow[], hears: readonly HearsRow[], eventHandlers: readonly EventHandlerRow[], policyTests: readonly PolicyTestRow[]): RuleProblem[] {
-  const second = (table: string, what: string, parent: string) => (row: object, id: string, of: string): RuleProblem => ({
-    rule: 'command-one-each',
-    table,
-    row: row as unknown as Row,
-    message: `${parent} ${of} already has its ${what}, so ${id} cannot be a second: a ${parent} has one`,
-  });
   return [
-    ...beyondFirst(handlers, (r) => r.command_id).map((r) => second('command_handler', 'command handler', 'command')(r, r.id, r.command_id)),
+    ...oneCommandHandler(handlers),
     ...beyondFirst(hears, (r) => r.source_id).map((r) => second('hears', 'event', 'policy')(r, r.target_id, r.source_id)),
     ...beyondFirst(eventHandlers, (r) => r.policy_id).map((r) => second('event_handler', 'event handler', 'policy')(r, r.id, r.policy_id)),
     ...beyondFirst(policyTests, (r) => r.policy_id).map((r) => second('policy_test', 'test', 'policy')(r, r.id, r.policy_id)),

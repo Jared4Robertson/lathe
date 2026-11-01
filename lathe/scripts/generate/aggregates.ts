@@ -6,8 +6,10 @@
 // A repository loads and saves its aggregate whole through the model's <aggregates>From and <aggregate>Rows, and loads
 // the instance holding any record of its kinds up the kinds' parents (loadHolding). A pattern command's handler loads
 // the instance, adds, changes or removes one record of one kind with the input's columns and lists, holds the
-// aggregate to its rules, and saves: an Add of a part pushes it under its parent, a Change applies the columns given and
-// replaces each list given, a Remove takes the record out with every record under it. A command whose input says more
+// aggregate to its rules, and saves: an Add of a part pushes it under its parent (or sets it, for a kind held at most
+// once), a Change applies the columns given and replaces each list given, a Remove takes the record out with every
+// record under it. A kind's rule over its rows (its shape's refusedBy: one each, one per domain) refuses an Add or a
+// Change that breaks it before the instance is saved. A command whose input says more
 // than its kind's columns and lists (a move, a link with checks, a refusal no rule states) is written by hand, and the
 // generator refuses to generate it, naming what it cannot derive.
 import { existsSync, readFileSync } from 'node:fs';
@@ -29,6 +31,9 @@ const pascal = (name: string) => name.replace(/(^|[-_])([a-z0-9])/g, (_, __, c: 
 const camel = (name: string) => pascal(name).replace(/^./, (c) => c.toLowerCase());
 const snake = (name: string) => name.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toUpperCase();
 const plural = (name: string) => (/[^aeiou]y$/.test(name) ? `${name.slice(0, -1)}ies` : `${name}s`);
+/** Words a module may not name a variable: an instance named by one (an interface) takes "the" before it. */
+const RESERVED = new Set(['implements', 'interface', 'package', 'private', 'protected', 'public', 'static', 'yield', 'let', 'enum', 'await']);
+const variable = (name: string) => (RESERVED.has(name) ? `the${pascal(name)}` : name);
 const relative = (from: string, to: string) => {
   const rel = path.relative(path.dirname(from), to);
   return rel.startsWith('.') ? rel : `./${rel}`;
@@ -151,7 +156,7 @@ const rowOf = (shape: KindShape, item: string) => (wraps(shape) ? `${item}.row` 
 function repositoryText(a: Aggregate, schema: SchemaDescription): string {
   const file = `${a.dir}/repository.ts`;
   const kinds = Object.keys(a.shape);
-  const instance = camel(a.type);
+  const instance = variable(camel(a.type));
   const nested = kinds.length > 1;
   const kindType = `${a.type}Kind`;
   const lines = [
@@ -221,8 +226,8 @@ const VERBS = { Add: 'add', Change: 'change', Remove: 'remove' } as const;
 function handlerText(a: Aggregate, schema: SchemaDescription, d: Identity, kind: string, verb: 'add' | 'change' | 'remove', input: { type: string; fields: InputField[] }): string {
   const shape = a.shape[kind];
   if (!shape) throw new Error(`${d.id}'s handler cannot be generated: ${a.shapeName} holds no ${kind}. Write it by hand, in ${d.file}`);
-  const instance = camel(a.type);
-  const repository = plural(instance);
+  const instance = variable(camel(a.type));
+  const repository = plural(camel(a.type));
   const label = (k: string) => lower(schema.kinds[k]?.label ?? k);
   const isRoot = kind === a.root;
   const parent = a.parents.get(kind);
@@ -245,7 +250,7 @@ function handlerText(a: Aggregate, schema: SchemaDescription, d: Identity, kind:
     ...(columns.some((f) => f.column === 'id') ? [] : ['it names no ID']),
     ...(verb === 'remove' && input.fields.length !== 1 ? ['a Remove takes the ID alone'] : []),
     ...(verb === 'add' && !isRoot && !columns.some((f) => f.column === parent?.column) ? [`it names no ${parent?.column}`] : []),
-    ...(verb === 'add' && shape.one ? ['an Add of a kind held at most once refuses a second one, which its rules state'] : []),
+    ...(verb === 'add' && shape.one && !shape.refusedBy ? [`an Add of a kind held at most once refuses a second one: name the rule that does in ${a.shapeName}.${kind}.refusedBy`] : []),
   ];
   if (problems.length) throw new Error(`${d.id}'s handler cannot be generated: ${problems.join('; ')}. Write it by hand, in ${d.file}`);
 
@@ -279,6 +284,9 @@ function handlerText(a: Aggregate, schema: SchemaDescription, d: Identity, kind:
   };
   const body: string[] = [`  const ${repository} = new ${a.repository.title}(tx);`];
   const hold = () => (a.rules ? [`  holdToRules(tx, ${instance});`] : []);
+  // The kind's rule over its rows as they would be saved, when its shape names one.
+  const refuseBroken = (rows: string) => (shape.refusedBy ? [`  refuseBroken(${shape.refusedBy}(${rows}));`] : []);
+  const listRows = `${instance}.${shape.at}.map((x) => ${rowOf(shape, 'x')})`;
 
   if (verb === 'add') {
     const destructure = given.size ? `  const { ${[...given.values()].map((f) => (f.kind === 'id' ? f.name : `${f.name} = []`)).join(', ')}, ...row } = input;` : null;
@@ -291,7 +299,10 @@ function handlerText(a: Aggregate, schema: SchemaDescription, d: Identity, kind:
       body.push(loading(parent!.kind, `input.${parent!.column}`));
       if (destructure) body.push(destructure);
       const item = wrapped ? `{ ${['row', ...members.map((m) => `${m.prop}: ${added(m, 'row.id')}`)].join(', ')} }` : row;
-      body.push(`  ${instance}.${shape.at}.push(${item});`);
+      if (shape.one) {
+        const held = `${instance}.${shape.at}`;
+        body.push(...refuseBroken(`[...(${held} ? [${rowOf(shape, held)}] : []), ${row}]`), `  ${held} = ${item};`);
+      } else body.push(`  ${instance}.${shape.at}.push(${item});`, ...refuseBroken(listRows));
     }
     body.push(...hold(), `  ${repository}.save(${instance});`);
   } else if (verb === 'change') {
@@ -303,7 +314,7 @@ function handlerText(a: Aggregate, schema: SchemaDescription, d: Identity, kind:
     } else if (shape.one) {
       body.push(`  const held = ${instance}.${shape.at}!;`, `  ${instance}.${shape.at} = ${changes('held')};`);
     } else {
-      body.push(`  ${instance}.${shape.at} = ${instance}.${shape.at}.map((x) => (${idOf(shape, 'x')} === input.id ? ${changes('x')} : x));`);
+      body.push(`  ${instance}.${shape.at} = ${instance}.${shape.at}.map((x) => (${idOf(shape, 'x')} === input.id ? ${changes('x')} : x));`, ...refuseBroken(listRows));
     }
     body.push(...hold(), `  ${repository}.save(${instance});`);
   } else {
@@ -377,15 +388,19 @@ export function aggregateFiles(repo: string, schema: SchemaDescription): Generat
       return handlerText(a, schema, d, kind, verb, inputs.get(d.id)!);
     });
     const body = texts.join('\n');
+    // What the handlers take from the aggregate's rules.ts: holdToRules and the kinds' rules they refuse with.
+    const refusers = Object.values(a.shape).flatMap((s) => (s.refusedBy ? [s.refusedBy] : []));
+    const rules = [...new Set(['holdToRules', ...refusers])].filter((name) => body.includes(`${name}(`)).sort((x, y) => x.localeCompare(y));
     const types = own.map((d) => ({ type: inputs.get(d.id)!.type, from: relative(file, d.file) }));
     files.set(file, [
       GENERATED_HEADER,
       `// The ${own[0].slice.name} commands whose handler is the pattern: load the ${lower(schema.kinds[a.root]?.label ?? a.type)}, add, change or remove one record with the`,
       '// input\'s columns and lists, hold it to its rules, and save. Each definition takes its handler from here.',
       ...(body.includes('changed(') ? [`import { changed } from '${relative(file, 'lathe/src/platform/data/rows.ts')}';`] : []),
+      ...(body.includes('refuseBroken(') ? [`import { refuseBroken } from '${relative(file, 'lathe/src/platform/data/rules.ts')}';`] : []),
       `import type { Transaction } from '${relative(file, 'lathe/src/platform/data/transaction.ts')}';`,
       `import { ${a.repository.title} } from '../repository.ts';`,
-      ...(body.includes('holdToRules(') ? ['import { holdToRules } from \'../rules.ts\';'] : []),
+      ...(rules.length ? [`import { ${rules.join(', ')} } from '../rules.ts';`] : []),
       ...types.map((t) => `import type { ${t.type} } from '${t.from}';`),
       '',
       body,
