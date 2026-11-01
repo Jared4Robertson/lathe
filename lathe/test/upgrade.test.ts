@@ -428,6 +428,25 @@ describe('the schema version', () => {
     ]);
   });
 
+  it('LA-AUT-UC03-R08-T13 3-to-4 drops a product\'s declaration of a provided_by, fills or generates pair its own kind now has, as Lathe\'s kinds have them, and keeps every other', async () => {
+    const tables: Record<string, Record<string, unknown>[]> = {
+      product_kind: [
+        { name: 'report', product_id: 'TL', stage: 'technical-specification', obligation: false, complexity: 'accidental' },
+        { name: 'promise', product_id: 'TL', stage: 'use-cases', obligation: true, complexity: 'essential' },
+      ],
+      product_relation: [
+        { name: 'fills', source_kind: 'report', target_kind: 'slot', product_id: 'TL' },
+        { name: 'generates', source_kind: 'tooling', target_kind: 'report', product_id: 'TL' },
+        { name: 'provided_by', source_kind: 'promise', target_kind: 'integration', product_id: 'TL' },
+        { name: 'provided_by', source_kind: 'view', target_kind: 'report', product_id: 'TL' },
+        { name: 'measured_by', source_kind: 'business_outcome', target_kind: 'report', product_id: 'TL' },
+      ],
+    };
+    const { changes } = await run3to4(tables);
+    expect(tables.product_relation!.map((r) => `${String(r.name)} ${String(r.source_kind)} ${String(r.target_kind)}`)).toEqual(['provided_by view report', 'measured_by business_outcome report']);
+    expect(changes).toEqual([expect.stringContaining('fills from report to slot, generates from tooling to report, provided_by from promise to integration were dropped')]);
+  });
+
   it('LA-AUT-UC03-R08-T12 3-to-4 does nothing to data that is already upgraded', async () => {
     const tables: Record<string, Record<string, unknown>[]> = {
       product_kind: [{ name: 'report', product_id: 'TL', stage: 'technical-specification', complexity: 'essential' }],
