@@ -152,7 +152,7 @@ describe('loading', () => {
     expect(Object.keys(ws.coverage[0].obligations[0]).sort()).toEqual(['built', 'designed', 'kind', 'label', 'not_automated', 'proof_only', 'proved', 'total']);
     expect(Object.keys(ws.coverage[0].tests).sort()).toEqual(['automated', 'manual', 'not_automated']);
     // Kinds come in kind order, stage by stage, with product and question outside the stages.
-    expect(ws.kinds.slice(0, 3).map((k) => k.kind)).toEqual(['product', 'business_outcome', 'domain']);
+    expect(ws.kinds.slice(0, 5).map((k) => k.kind)).toEqual(['product', 'business_outcome', 'journey', 'journey_step', 'domain']);
     expect(ws.kinds.find((k) => k.kind === 'question')).toMatchObject({ stage: null, parent_kinds: ['product', 'domain'] });
     expect(ws.kinds.find((k) => k.kind === 'view')).toMatchObject({ stage: 'interaction-design', parent_kinds: [], id_scope: 'product', obligation: false });
     expect(ws.kinds.find((k) => k.kind === 'invariant')).toMatchObject({ stage: 'domain-model', obligation: true, required_fields: ['statement'] });

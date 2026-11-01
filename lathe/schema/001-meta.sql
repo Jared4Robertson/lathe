@@ -137,7 +137,7 @@ INSERT INTO meta_table VALUES
   ('meta_relation_pair', 'meta', NULL), ('meta_supertype_member', 'meta', NULL);
 
 INSERT INTO meta_stage VALUES
-  ('discovery', 1, 'Discovery', 'The business outcomes the product exists to achieve, each a measurable statement with its measure and target, which its capabilities serve.'),
+  ('discovery', 1, 'Discovery', 'The business outcomes the product exists to achieve, each a measurable statement with its measure and target, which its capabilities serve, and the journeys that reach them: the use cases and handoffs, in order, from a trigger to a result.'),
   ('domain-model', 2, 'Domain model', 'Domains and their aggregates, entities, value objects, rules (constraints, invariants, specifications and policies), events, commands, read models, queries, domain services and glossary terms.'),
   ('use-cases', 3, 'Use cases', 'Capabilities, the use cases in them with their actors and UC requirements, and the patterns use cases and domains follow.'),
   ('interaction-design', 4, 'Interaction design', 'The product''s interfaces and the use cases each offers, each use case''s flow and its steps, and the views, endpoints and integrations the steps reach, with their requirements.'),

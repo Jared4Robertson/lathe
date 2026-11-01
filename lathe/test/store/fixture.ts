@@ -53,6 +53,8 @@ export function everyKind(): Data {
 
     // Use cases.
     business_outcome: [{ id: 'TL-BO01', title: 'More tools in use', product_id: 'TL', statement: 'Members borrow more of the tools the library holds.', measure: 'Loans opened per tool per month.', target: 'Two loans per tool per month within a year.' }],
+    journey: [{ id: 'TL-JR01', title: 'Borrow a tool and bring it back', product_id: 'TL', trigger: 'A member wants a tool.', result: 'The tool is back on the shelf.' }],
+    journey_step: [{ id: 'TL-JR01-S01', title: 'The library reminds the borrower', journey_id: 'TL-JR01', path: 'main', position: 1 }],
     capability: [{ id: 'TL-LEND-CAP01', title: 'Lending', domain_id: 'TL-LEND', position: 1, description: 'Lending tools and taking them back.' }],
     use_case: [{ id: 'TL-LEND-UC01', title: 'Borrow a tool', capability_id: 'TL-LEND-CAP01', goal: 'Take a tool home.' }],
     use_case_actor: [{ use_case_id: 'TL-LEND-UC01', position: 1, role_name: 'Member' }],
@@ -129,6 +131,7 @@ export function everyKind(): Data {
     view_test: [{ id: 'TL-V01-R01-T01', title: 'Free tools come first', view_requirement_id: 'TL-V01-R01', level: 'browser', state: 'automated', file: 'e2e/catalog.spec.ts', when: 'Opens the catalog', then: 'Expects the free tools first' }],
     endpoint_test: [{ id: 'TL-LEND-EP01-R01-T01', title: 'Unknown tool gives 404', api_requirement_id: 'TL-LEND-EP01-R01', level: 'service', state: 'automated', file: 'test/api.test.ts', when: 'Posts a loan for an unknown tool', then: 'Expects 404' }],
     flow_test: [{ id: 'TL-LEND-UC01-FL-T', title: 'Borrow end to end', flow_id: 'TL-LEND-UC01-FL', level: 'browser', state: 'automated', file: 'e2e/borrow.spec.ts', steps: ['Open the catalog', 'Borrow a tool'], expected_result: 'The loan is listed.' }],
+    journey_test: [{ id: 'TL-JR01-T', title: 'A tool is borrowed and brought back', journey_id: 'TL-JR01', level: 'service', state: 'not automated yet', steps: ['Borrow a tool', 'Bring it back'], expected_result: 'The tool is back on the shelf.' }],
     test_data_set: [{ id: 'TL-LEND-TD01', title: 'One tool on loan', domain_id: 'TL-LEND', environment: 'A fresh database.', accounts: 'One member.', records: 'One tool, on loan to the member.', prepare: 'Run the seed.', reset: 'Drop the database.', file: 'test/seed.ts', description: 'What the lending tests start from.' }],
     integration_test: [{ id: 'TL-INT01-T01', title: 'A mail is sent', integration_id: 'TL-INT01', level: 'system', state: 'manual', manual_reason: 'The mail service has no test mode.', size: 'volume', smoke: true, external: true, when: 'Sends a reminder', then: 'Expects the mail to arrive' }],
     pattern_rule_test: [{ id: 'TL-PAT-ACT-R01-T01', title: 'A saved tool reads the same', pattern_rule_id: 'TL-PAT-ACT-R01', domain_id: 'TL-LEND', ...automated('test/catalog.test.ts'), when: 'Saves a tool', then: 'Expects the catalog to read the same' }],
@@ -162,6 +165,7 @@ export function everyKind(): Data {
     meets: [{ source_id: 'TL-LEND-CMD01-H', target_id: 'TL-STD-CODE-R01' }],
     about: [{ source_id: 'TL-LEND-Q01', target_id: 'TL-LEND-UC01' }],
     serves: [{ source_id: 'TL-LEND-CAP01', target_id: 'TL-BO01' }],
+    carries_out: [{ source_id: 'TL-JR01-S01', target_id: 'TL-LEND-PO01' }],
     measured_by: [{ source_id: 'TL-BO01', target_id: 'TL-LEND-DS01-T01' }],
     starts_from: [{ source_id: 'TL-INT01-T01', target_id: 'TL-LEND-TD01' }],
 
