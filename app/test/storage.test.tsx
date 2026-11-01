@@ -5,6 +5,9 @@ import { SessionSettingsRepository, SETTINGS_KEY } from '../src/exploring/sessio
 import { KeyBindingsRepository } from '../src/platform/key-bindings/repository';
 import { AppearanceRepository, APPEARANCE_KEYS } from '../src/platform/appearance/repository';
 import { PanelRepository } from '../src/platform/panel/repository';
+import { VoiceSettingsRepository } from '../src/platform/voice-settings/repository';
+import { DEFAULT_VOICE_SETTINGS } from '../src/platform/voice-settings/model';
+import { SpaceRepository } from '../src/exploring/space/repository';
 import { desktopBridgeStub, openApp } from './helpers';
 import type { LatheDesktop } from '../src/shell/desktop-bridge';
 
@@ -86,5 +89,31 @@ describe('LA-EXP-A5-SR01 the desktop app\'s tabs are kept for the window\'s sess
     } finally {
       delete (window as unknown as { latheDesktop?: LatheDesktop }).latheDesktop;
     }
+  });
+});
+
+describe('LA-PLT-A15-SR01 the person\'s voice settings are kept in this browser', () => {
+  it('LA-PLT-A15-SR01-T01 the voice settings saved read back from local storage, and a malformed or blocked storage gives the defaults', () => {
+    const settings = { ...DEFAULT_VOICE_SETTINGS, activation: true, wake: 'Hey Lathe' };
+    new VoiceSettingsRepository().save(settings);
+    expect(window.sessionStorage.getItem('lathe:voice')).toBeNull();
+    expect(new VoiceSettingsRepository().load()).toEqual(settings);
+    window.localStorage.setItem('lathe:voice', '{"activation":"yes"}');
+    expect(new VoiceSettingsRepository().load()).toEqual(DEFAULT_VOICE_SETTINGS);
+    vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => { throw new Error('blocked'); });
+    expect(() => new VoiceSettingsRepository().save(settings)).not.toThrow();
+    expect(new VoiceSettingsRepository().load()).toEqual(DEFAULT_VOICE_SETTINGS);
+  });
+});
+
+describe('LA-EXP-A2-SR01 the space chosen last is kept in this browser, and each space\'s last page for the session alone', () => {
+  it('LA-EXP-A2-SR01-T01 the chosen space reads back from local storage and its last page from session storage', () => {
+    const memory = new SpaceRepository().load();
+    new SpaceRepository().save({ ...memory, chosen: 'TL', pages: { TL: '/TL-LEND' } });
+    expect(JSON.parse(window.localStorage.getItem('lathe:space') ?? 'null')).toBe('TL');
+    expect(window.localStorage.getItem('lathe:space-pages')).toBeNull();
+    expect(new SpaceRepository().load()).toMatchObject({ chosen: 'TL', pages: { TL: '/TL-LEND' } });
+    window.sessionStorage.clear();
+    expect(new SpaceRepository().load()).toMatchObject({ chosen: 'TL', pages: {} });
   });
 });

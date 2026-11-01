@@ -1,5 +1,3 @@
-{"source_id":"LA-AUT-EP01-R01-T01","target_id":"LA-AUT-TD01"}
-{"source_id":"LA-AUT-EP01-R01-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-AUT-INV08-T","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-INV104-T","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-INV12-T","target_id":"LA-AUT-TD40"}
@@ -425,6 +423,8 @@
 {"source_id":"LA-PAT-APP-UX-R16-T02","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-PAT-APP-UX-R17-T01","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-PAT-APP-UX-R19-T02","target_id":"LA-EXP-TD01"}
+{"source_id":"LA-PAT-HTTP-STEPS-R03-T01","target_id":"LA-AUT-TD01"}
+{"source_id":"LA-PAT-HTTP-STEPS-R03-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-PAT-RECORD-PAGE-R19-T01","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-PAT-RECORD-PAGE-R20-T01","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-PLT-DS01-T01","target_id":"LA-EXP-TD01"}
