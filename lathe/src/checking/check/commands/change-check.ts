@@ -8,6 +8,7 @@ import { CHANGE_CHECK_IDENTITY } from './identities.generated.ts';
 
 /** The check's changes: a column given is set, null clears an optional one. */
 export type ChangeCheck = Pick<CheckRow, 'name'> & {
+  domain_id?: CheckRow['domain_id'];
   position?: CheckRow['position'];
   severity?: CheckRow['severity'];
   summary?: CheckRow['summary'];
@@ -20,6 +21,7 @@ export const CHANGE_CHECK: CommandDefinition<ChangeCheck> = {
   ...CHANGE_CHECK_IDENTITY,
   input: {
     name: column('check', 'name', 'required'),
+    domain_id: column('check', 'domain_id', 'optional'),
     position: column('check', 'position', 'optional'),
     severity: column('check', 'severity', 'optional'),
     summary: column('check', 'summary', 'optional'),
@@ -34,7 +36,7 @@ export const CHANGE_CHECK: CommandDefinition<ChangeCheck> = {
 export function changeCheck(tx: Transaction, input: ChangeCheck): void {
   const checks = new CheckRepository(tx);
   const check = checks.load(input.name) ?? tx.refuse('missing', `there is no check ${input.name}`);
-  check.check = changed(check.check, input, ['position', 'severity', 'summary', 'explanation', 'query', 'kinds']);
+  check.check = changed(check.check, input, ['domain_id', 'position', 'severity', 'summary', 'explanation', 'query', 'kinds']);
   holdToRules(tx, check);
   checks.save(check);
 }

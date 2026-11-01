@@ -2965,6 +2965,7 @@ A check: a query over the tables that returns a row (severity, check, record, me
 | --- | --- | --- | --- |
 | `name` | VARCHAR | yes | The check's name, in lower case with hyphens, such as value-object-unused. |
 | `product_id` | VARCHAR → [`product`](#table-product) | no | For a product's own check, the product; none for Lathe's checks. |
+| `domain_id` | VARCHAR | yes | The domain whose rules it reports: a domain of Lathe's own spec for Lathe's checks, of the product for its own. Not a foreign key, because Lathe's checks load into every product. |
 | `position` | INTEGER | yes | Its place in the run order, from 1: Lathe's checks run first, then the product's own. |
 | `severity` | ENUM('error', 'warning', 'error_or_warning') | yes | What its rows report: error, warning, or error_or_warning when its rows say which. |
 | `summary` | VARCHAR | yes | What it reports, in one sentence. |
@@ -2974,6 +2975,7 @@ A check: a query over the tables that returns a row (severity, check, record, me
 
 - **Key:** `name`
 - **Rule:** `regexp_full_match("name", '[a-z0-9]+(-[a-z0-9]+)*')`
+- **Rule:** `("trim"(domain_id) != '')`
 - **Rule:** `("position" >= 1)`
 - **Rule:** `("trim"(summary) != '')`
 - **Rule:** `("trim"(explanation) != '')`

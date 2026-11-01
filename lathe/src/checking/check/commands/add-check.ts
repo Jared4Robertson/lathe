@@ -6,13 +6,14 @@ import { holdToRules } from '../rules.ts';
 import { ADD_CHECK_IDENTITY } from './identities.generated.ts';
 
 /** A new check row. */
-export type AddCheck = Pick<CheckRow, 'name' | 'product_id' | 'position' | 'severity' | 'summary' | 'explanation' | 'query' | 'kinds'>;
+export type AddCheck = Pick<CheckRow, 'name' | 'product_id' | 'domain_id' | 'position' | 'severity' | 'summary' | 'explanation' | 'query' | 'kinds'>;
 
 export const ADD_CHECK: CommandDefinition<AddCheck> = {
   ...ADD_CHECK_IDENTITY,
   input: {
     name: column('check', 'name', 'required'),
     product_id: column('check', 'product_id', 'optional'),
+    domain_id: column('check', 'domain_id', 'required'),
     position: column('check', 'position', 'required'),
     severity: column('check', 'severity', 'required'),
     summary: column('check', 'summary', 'required'),

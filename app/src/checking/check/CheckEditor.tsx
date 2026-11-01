@@ -24,6 +24,7 @@ function fieldsOf(adding: boolean): FieldSpec[] {
   const table = 'check';
   return [
     ...(adding ? [{ field: 'name', column: 'name', table }] : []),
+    { field: 'domain_id', column: 'domain_id', table },
     { field: 'position', column: 'position', table },
     { field: 'severity', column: 'severity', table },
     { field: 'summary', column: 'summary', table },
@@ -35,7 +36,7 @@ function fieldsOf(adding: boolean): FieldSpec[] {
 
 /** The check's current values, by its Change's field names. */
 const currentOf = (page: CheckPage): Record<string, unknown> => ({
-  position: page.position, severity: page.severity, summary: page.summary, explanation: page.explanation, query: page.query, kinds: page.kinds.length ? page.kinds : undefined,
+  domain_id: page.domain, position: page.position, severity: page.severity, summary: page.summary, explanation: page.explanation, query: page.query, kinds: page.kinds.length ? page.kinds : undefined,
 });
 
 /** The fields Change a check may clear with null. */
