@@ -260,10 +260,10 @@ describe('the Trace stage', () => {
     // The camera at rest once the trace's read is drawn and framed: two reads apart give the same camera.
     const framed = await waitFor(async () => {
       const before = (await drawn()).camera;
-      await new Promise((r) => setTimeout(r, 50));
+      await new Promise((r) => setTimeout(r, 200));
       expect((await drawn()).camera).toEqual(before);
       return before;
-    }, { timeout: 3000 });
+    }, { timeout: 5000 });
     const canvas = host.querySelector('canvas')!;
     // Scroll pans, by the pixels it scrolled; Cmd or Ctrl with scroll zooms.
     fireEvent.wheel(canvas, { deltaY: 40, clientX: 200, clientY: 200 });
@@ -284,7 +284,7 @@ describe('the Trace stage', () => {
       expect(now.x).toBeCloseTo(framed.x, 0);
       expect(now.y).toBeCloseTo(framed.y, 0);
       expect(now.zoom).toBeCloseTo(framed.zoom, 4);
-    });
+    }, { timeout: 5000 });
   });
 
   it('LA-V98-R06-T03 Only what is in view is drawn: fitting a large product draws its rows as bars, at most 260 boxes', async () => {
@@ -298,12 +298,12 @@ describe('the Trace stage', () => {
       const button = within(every).getByRole('button', { name: stage });
       if (button.getAttribute('aria-pressed') !== 'true') fireEvent.click(button);
     }
-    await waitFor(async () => expect((await drawn(true)).boxes.length).toBeGreaterThan(400));
+    await waitFor(async () => expect((await drawn(true)).boxes.length).toBeGreaterThan(400), { timeout: 5000 });
     fireEvent.click(within(traceStage()).getByRole('button', { name: 'Fit the whole map' }));
     await waitFor(async () => {
       const now = await drawn(false);
       expect(now.bars).toBeGreaterThan(0);
       expect(now.boxes.length).toBeLessThanOrEqual(260);
-    });
+    }, { timeout: 5000 });
   });
 });

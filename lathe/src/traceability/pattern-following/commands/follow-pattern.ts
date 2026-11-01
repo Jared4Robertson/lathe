@@ -21,11 +21,10 @@ export const FOLLOW_PATTERN = {
 /** Adds the following, new and whole. */
 export function followPattern(tx: Transaction, input: FollowPattern): void {
   const followings = new PatternFollowingRepository(tx);
-  if (followings.loadFollowing(input.follower_id, input.pattern_id)) tx.refuse('exists', `${input.follower_id} already follows ${input.pattern_id}`);
+  if (followings.load(followingOf(input.follower_id, input.pattern_id))) tx.refuse('exists', `${input.follower_id} already follows ${input.pattern_id}`);
   const following = followings.create({
     root: followingOf(input.follower_id, input.pattern_id),
-    follower: input.follower_id,
-    pattern: input.pattern_id,
+    follows: { source_id: input.follower_id, target_id: input.pattern_id },
     values: valueRows(input.follower_id, input.pattern_id, input.setting_values ?? []),
   });
   holdToRules(tx, following);

@@ -38,7 +38,7 @@ export const PATTERN_TABLES = ['pattern', 'pattern_setting', 'pattern_rule', 'pa
 export const PATTERN_SHAPE = {
   pattern: { at: 'pattern', given: { settings: 'settings' } },
   pattern_rule: { at: 'rules' },
-  pattern_rule_test: { at: 'ruleTests', lists: { starts_from: 'startsFrom' } },
+  pattern_rule_test: { at: 'ruleTests', refusedBy: 'patternRuleTestPerDomain', lists: { starts_from: 'startsFrom' } },
   slot: { at: 'slots' },
 } as const satisfies AggregateShape;
 

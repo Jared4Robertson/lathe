@@ -1,10 +1,7 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EndpointHandlerRow } from '../../../platform/data/tables.ts';
-import { EndpointRepository } from '../repository.ts';
-import { refuseBroken } from '../../../platform/data/rules.ts';
-import { oneEndpointHandler } from '../rules.ts';
 import { ADD_ENDPOINT_HANDLER_IDENTITY } from './identities.generated.ts';
+import { addEndpointHandler } from './handlers.generated.ts';
 
 export type AddEndpointHandler = Pick<EndpointHandlerRow, 'id' | 'title' | 'endpoint_id' | 'description' | 'file'> & { meets?: string[]; packages?: string[] };
 
@@ -21,12 +18,3 @@ export const ADD_ENDPOINT_HANDLER = {
   },
   handler: addEndpointHandler,
 } satisfies CommandDefinition<AddEndpointHandler>;
-
-export function addEndpointHandler(tx: Transaction, input: AddEndpointHandler): void {
-  const endpoints = new EndpointRepository(tx);
-  const endpoint = endpoints.loadHolding('endpoint', input.endpoint_id) ?? tx.refuse('missing', `there is no endpoint ${input.endpoint_id}`);
-  const { meets = [], packages = [], ...row } = input;
-  refuseBroken(oneEndpointHandler([...(endpoint.handler ? [endpoint.handler.row] : []), row]));
-  endpoint.handler = { row, meets, packages };
-  endpoints.save(endpoint);
-}

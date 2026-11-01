@@ -2,12 +2,14 @@
 // The command commands whose handler is the pattern: load the command, add, change or remove one record with the
 // input's columns and lists, hold it to its rules, and save. Each definition takes its handler from here.
 import { changed } from '../../../platform/data/rows.ts';
+import { refuseBroken } from '../../../platform/data/rules.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { CommandRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
+import { holdToRules, oneCommandHandler } from '../rules.ts';
 import type { AddCommand } from './add-command.ts';
 import type { ChangeCommand } from './change-command.ts';
 import type { RemoveCommand } from './remove-command.ts';
+import type { AddCommandHandler } from './add-command-handler.ts';
 import type { ChangeCommandHandler } from './change-command-handler.ts';
 import type { RemoveCommandHandler } from './remove-command-handler.ts';
 import type { AddPolicy } from './add-policy.ts';
@@ -46,6 +48,17 @@ export function removeCommand(tx: Transaction, input: RemoveCommand): void {
   const commands = new CommandRepository(tx);
   const command = commands.load(input.id) ?? tx.refuse('missing', `there is no command ${input.id}`);
   commands.remove(command);
+}
+
+/** Adds the handler that carries out a command: its name in code, its file and what it does, with the standard rules it meets and the packages it uses. A command has one handler. */
+export function addCommandHandler(tx: Transaction, input: AddCommandHandler): void {
+  const commands = new CommandRepository(tx);
+  const command = commands.load(input.command_id) ?? tx.refuse('missing', `there is no command ${input.command_id}`);
+  const { meets = [], packages = [], ...row } = input;
+  refuseBroken(oneCommandHandler([...(command.handler ? [command.handler.row] : []), row]));
+  command.handler = { row, meets: meets, packages: packages };
+  holdToRules(tx, command);
+  commands.save(command);
 }
 
 /** Changes a command handler's title, file or description, or the standard rules it meets or the packages it uses (each list whole). Its command does not change. */

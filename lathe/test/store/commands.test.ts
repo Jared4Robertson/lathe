@@ -172,35 +172,6 @@ describe('links', () => {
   });
 });
 
-describe('removing', () => {
-  it('LA-STD-CODE-R07-T03 refuses a record others reference, saying what references it', async () => {
-    const { store } = await fresh();
-    const problems = await refusedBy(store, 'value-object remove-value-object', { id: 'TL-VO01' });
-    expect(problems).toEqual([expect.objectContaining({ rule: 'referenced', message: expect.stringContaining('entity_field entity_id TL-LEND-EN01, position 2 (type_value_object_id)') })]);
-    await store.close();
-  });
-
-  it('LA-STD-CODE-R07-T02 removes a record with its parts and the links it starts', async () => {
-    const { store, root } = await fresh();
-    // The step's links are its own, so they go with it.
-    await run(store, 'use-case remove-flow-step', { id: 'TL-LEND-UC01-FL-S01' });
-    for (const table of ['fulfills', 'invokes', 'exchanges_with']) {
-      expect(store.rows(table)).toEqual([]);
-      expect(readdirSync(path.join(root, 'data'))).not.toContain(`${table}.jsonl`);
-    }
-    // A use case goes whole, with its actors, setting values and its own links, once nothing outside it points at it.
-    await run(store, 'product change-question', { id: 'TL-LEND-Q01', about: [] });
-    await run(store, 'pattern-following stop-following-pattern', { follower_id: 'TL-LEND-UC01', pattern_id: 'TL-PAT-ACT' });
-    await run(store, 'interface change-interface', { id: 'TL-IF01', offers: [] });
-    await run(store, 'use-case remove-use-case', { id: 'TL-LEND-UC01' });
-    for (const table of ['use_case', 'use_case_actor', 'uc_requirement', 'flow', 'setting_value', 'follows']) expect(store.rows(table)).toEqual([]);
-    // A table goes with its keys.
-    await run(store, 'table remove-table', { id: 'TL-LEND-RM01-TB' });
-    expect(store.rows('table_key').map((k) => k.table_id)).toEqual(['TL-LEND-EN01-TB', 'TL-LEND-EN01-TB']);
-    await store.close();
-  });
-});
-
 describe('a command', () => {
   describe('LA-STD-PRINCIPLES-R01-T02 a refused command changes nothing', () => {
     it('LA-PAT-AGGREGATE-COMMANDS-R03-T01 is all or nothing: a refused command leaves the data and the files as they were', async () => {

@@ -96,7 +96,7 @@ describe('LA-PAT-AGGREGATE-COMMANDS-R10-T03 each Pattern following command (LA-T
   });
 });
 
-describe('LA-STD-CODE-R07-T54 a following is removed whole, with the setting values it gave', () => {
+describe('LA-PAT-AGGREGATE-COMMANDS-R13-T03 a following is removed whole, with the setting values it gave', () => {
   it('stops following a pattern, taking its setting values with it', async () => {
     const store = await patternFollowingDataSet();
     const removed = await runCommand(store, STOP_FOLLOWING_PATTERN, { follower_id: 'TL-LEND-UC01', pattern_id: 'TL-PAT-ACT' });

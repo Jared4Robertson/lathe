@@ -2,13 +2,17 @@
 // The specification commands whose handler is the pattern: load the specification, add, change or remove one record with the
 // input's columns and lists, hold it to its rules, and save. Each definition takes its handler from here.
 import { changed } from '../../../platform/data/rows.ts';
+import { refuseBroken } from '../../../platform/data/rules.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { SpecificationRepository } from '../repository.ts';
+import { onePredicate, oneSpecificationTest } from '../rules.ts';
 import type { AddSpecification } from './add-specification.ts';
 import type { ChangeSpecification } from './change-specification.ts';
 import type { RemoveSpecification } from './remove-specification.ts';
+import type { AddPredicate } from './add-predicate.ts';
 import type { ChangePredicate } from './change-predicate.ts';
 import type { RemovePredicate } from './remove-predicate.ts';
+import type { AddSpecificationTest } from './add-specification-test.ts';
 import type { ChangeSpecificationTest } from './change-specification-test.ts';
 import type { RemoveSpecificationTest } from './remove-specification-test.ts';
 
@@ -36,6 +40,16 @@ export function removeSpecification(tx: Transaction, input: RemoveSpecification)
   specifications.remove(specification);
 }
 
+/** Adds the predicate of a specification, its one piece of code, with the standard rules it meets and the packages it uses. */
+export function addPredicate(tx: Transaction, input: AddPredicate): void {
+  const specifications = new SpecificationRepository(tx);
+  const specification = specifications.load(input.specification_id) ?? tx.refuse('missing', `there is no specification ${input.specification_id}`);
+  const { meets = [], packages = [], ...row } = input;
+  refuseBroken(onePredicate([...(specification.predicate ? [specification.predicate.row] : []), row]));
+  specification.predicate = { row, meets: meets, packages: packages };
+  specifications.save(specification);
+}
+
 /** Changes a predicate's title or file, or the standard rules it meets or packages it uses (each the whole list). */
 export function changePredicate(tx: Transaction, input: ChangePredicate): void {
   const specifications = new SpecificationRepository(tx);
@@ -50,6 +64,16 @@ export function removePredicate(tx: Transaction, input: RemovePredicate): void {
   const specifications = new SpecificationRepository(tx);
   const specification = specifications.loadHolding('predicate', input.id) ?? tx.refuse('missing', `there is no predicate ${input.id}`);
   specification.predicate = null;
+  specifications.save(specification);
+}
+
+/** Adds the test of a specification, its one test, with the test data sets it starts from. */
+export function addSpecificationTest(tx: Transaction, input: AddSpecificationTest): void {
+  const specifications = new SpecificationRepository(tx);
+  const specification = specifications.load(input.specification_id) ?? tx.refuse('missing', `there is no specification ${input.specification_id}`);
+  const { starts_from = [], ...row } = input;
+  refuseBroken(oneSpecificationTest([...(specification.test ? [specification.test.row] : []), row]));
+  specification.test = { row, startsFrom: starts_from };
   specifications.save(specification);
 }
 
