@@ -340,10 +340,14 @@
 {"id":"LA-PLT-UC28-FL-S02","title":"They clear the recent folders from File › Open Recent","flow_id":"LA-PLT-UC28-FL","path":"main","position":2}
 {"id":"LA-PLT-UC29-FL-S01","title":"The Agent asks what the Owner is looking at","flow_id":"LA-PLT-UC29-FL","path":"main","position":1}
 {"id":"LA-PLT-UC29-FL-S02","title":"The Agent opens a record in the window, on the stage it names","flow_id":"LA-PLT-UC29-FL","path":"main","position":2}
-{"id":"LA-TRC-UC01-FL-S01","title":"The Owner runs lathe check and reads one coverage line per domain and obligation kind: designed, built, proved and not automated yet","flow_id":"LA-TRC-UC01-FL","path":"main","position":1}
-{"id":"LA-TRC-UC01-FL-S02","title":"Each gap names the obligation and what it lacks: its design, a built file or a test","flow_id":"LA-TRC-UC01-FL","path":"main","position":2}
-{"id":"LA-TRC-UC01-FL-S03","title":"The gaps are warnings, so the check still passes","flow_id":"LA-TRC-UC01-FL","path":"main","position":3}
-{"id":"LA-TRC-UC01-FL-S04","title":"An Agent closes each gap in that domain, and the next check counts it","flow_id":"LA-TRC-UC01-FL","path":"main","position":4}
+{"id":"LA-TRC-UC01-FL-S01","title":"The Owner runs lathe check and reads one coverage line per domain and obligation kind: designed, built, proved and not automated yet","flow_id":"LA-TRC-UC01-FL","path":"main","position":1,"interface_id":"LA-IF03"}
+{"id":"LA-TRC-UC01-FL-S02","title":"Each gap names the obligation and what it lacks: its design, a built file or a test","flow_id":"LA-TRC-UC01-FL","path":"main","position":2,"interface_id":"LA-IF03"}
+{"id":"LA-TRC-UC01-FL-S03","title":"The gaps are warnings, so the check still passes","flow_id":"LA-TRC-UC01-FL","path":"main","position":3,"interface_id":"LA-IF03"}
+{"id":"LA-TRC-UC01-FL-S04","title":"An Agent closes each gap in that domain, and the next check counts it","flow_id":"LA-TRC-UC01-FL","path":"main","position":4,"interface_id":"LA-IF03"}
+{"id":"LA-TRC-UC01-FL-S05","title":"The Reader opens a product and reads each domain card's coverage bars","flow_id":"LA-TRC-UC01-FL","path":"main","position":5,"interface_id":"LA-IF01"}
+{"id":"LA-TRC-UC01-FL-S06","title":"They read the product's Summary: coverage, tests by state, open questions, errors and warnings","flow_id":"LA-TRC-UC01-FL","path":"main","position":6,"interface_id":"LA-IF01"}
+{"id":"LA-TRC-UC01-FL-S07","title":"They read the product's open questions and problems","flow_id":"LA-TRC-UC01-FL","path":"main","position":7,"interface_id":"LA-IF01"}
+{"id":"LA-TRC-UC01-FL-S08","title":"The Reader opens a domain card to its domain","flow_id":"LA-TRC-UC01-FL","path":"main","position":8,"interface_id":"LA-IF01"}
 {"id":"LA-TRC-UC02-FL-S01","title":"The Owner runs lathe check on a product with every obligation kind, its own kinds among them","flow_id":"LA-TRC-UC02-FL","path":"main","position":1}
 {"id":"LA-TRC-UC02-FL-S02","title":"Coverage decides designed, built and proved from the tree, counting only tests at levels their kind allows","flow_id":"LA-TRC-UC02-FL","path":"main","position":2}
 {"id":"LA-TRC-UC02-FL-S03","title":"An obligation with only a test not automated yet counts as not automated yet, not proved","flow_id":"LA-TRC-UC02-FL","path":"main","position":3}
@@ -368,8 +372,11 @@
 {"id":"LA-TRC-UC05-FL-S06","title":"The check reads each test case in the product's test files for the ID of a test whose file it is in","flow_id":"LA-TRC-UC05-FL","path":"main","position":4}
 {"id":"LA-TRC-UC05-FL-S08","title":"The check reports a file that does not name its test as an error naming the test and the file, and the Agent names it","flow_id":"LA-TRC-UC05-FL","path":"refused","position":1}
 {"id":"LA-TRC-UC05-FL-S09","title":"The check reports a test case that names no such test as an error naming its file and line, and the Agent names it or removes it","flow_id":"LA-TRC-UC05-FL","path":"refused","position":2}
-{"id":"LA-TRC-UC06-FL-S01","title":"The Owner runs lathe check and, after each domain's obligation lines, reads its tests by state","flow_id":"LA-TRC-UC06-FL","path":"main","position":1}
-{"id":"LA-TRC-UC06-FL-S02","title":"An Agent reads the same counts from the machine-readable output of lathe check, on each domain's coverage","flow_id":"LA-TRC-UC06-FL","path":"json","position":1}
+{"id":"LA-TRC-UC06-FL-S01","title":"The Owner runs lathe check and, after each domain's obligation lines, reads its tests by state","flow_id":"LA-TRC-UC06-FL","path":"main","position":1,"interface_id":"LA-IF03"}
+{"id":"LA-TRC-UC06-FL-S02","title":"An Agent reads the same counts from the machine-readable output of lathe check, on each domain's coverage","flow_id":"LA-TRC-UC06-FL","path":"json","position":1,"interface_id":"LA-IF03"}
+{"id":"LA-TRC-UC06-FL-S03","title":"The Reader reads each domain card's tests by state","flow_id":"LA-TRC-UC06-FL","path":"main","position":2,"interface_id":"LA-IF01"}
+{"id":"LA-TRC-UC06-FL-S04","title":"In the product's Summary they read the tests by state in total","flow_id":"LA-TRC-UC06-FL","path":"main","position":3,"interface_id":"LA-IF01"}
+{"id":"LA-TRC-UC06-FL-S05","title":"They open a domain and read the same in its Coverage section","flow_id":"LA-TRC-UC06-FL","path":"main","position":4,"interface_id":"LA-IF01"}
 {"id":"LA-TRC-UC07-FL-S01","title":"The Owner makes a domain follow a pattern with lathe pattern-following follow-pattern","flow_id":"LA-TRC-UC07-FL","path":"main","position":1}
 {"id":"LA-TRC-UC07-FL-S02","title":"They give the pattern's settings their values with lathe pattern-following change-setting-values, or none where the pattern has none","flow_id":"LA-TRC-UC07-FL","path":"main","position":2}
 {"id":"LA-TRC-UC07-FL-S03","title":"They read which domains and use cases follow a pattern, with lathe pattern-following list-followers","flow_id":"LA-TRC-UC07-FL","path":"main","position":3}
@@ -381,10 +388,6 @@
 {"id":"LA-TRC-UC08-FL-S02","title":"A pattern rule test in a domain that does not owe its rule is reported, with the reason","flow_id":"LA-TRC-UC08-FL","path":"main","position":2}
 {"id":"LA-TRC-UC08-FL-S03","title":"A manual test whose file does not name it is a warning","flow_id":"LA-TRC-UC08-FL","path":"main","position":3}
 {"id":"LA-TRC-UC08-FL-S04","title":"The check tool warns about a manual test whose file does not name it","flow_id":"LA-TRC-UC08-FL","path":"main","position":4}
-{"id":"LA-TRC-UC09-FL-S01","title":"The Reader opens a product and reads each domain card's coverage bars","flow_id":"LA-TRC-UC09-FL","path":"main","position":1}
-{"id":"LA-TRC-UC09-FL-S02","title":"They read the product's Summary: coverage, tests by state, open questions, errors and warnings","flow_id":"LA-TRC-UC09-FL","path":"main","position":2}
-{"id":"LA-TRC-UC09-FL-S03","title":"They read the product's open questions and problems","flow_id":"LA-TRC-UC09-FL","path":"main","position":3}
-{"id":"LA-TRC-UC09-FL-S04","title":"The Reader opens a domain card to its domain","flow_id":"LA-TRC-UC09-FL","path":"main","position":4}
 {"id":"LA-TRC-UC10-FL-S01","title":"The Reader opens the Trace stage on a use case","flow_id":"LA-TRC-UC10-FL","path":"main","position":1}
 {"id":"LA-TRC-UC10-FL-S02","title":"They read its line from its outcomes to its acceptance tests, with each stage's status","flow_id":"LA-TRC-UC10-FL","path":"main","position":2}
 {"id":"LA-TRC-UC10-FL-S03","title":"They open its stages down to its flows, their steps and their technical chain","flow_id":"LA-TRC-UC10-FL","path":"main","position":3}
@@ -395,9 +398,6 @@
 {"id":"LA-TRC-UC12-FL-S01","title":"The Reader opens a domain and unfolds Patterns we follow: each pattern, its rules, and whether this domain proves each","flow_id":"LA-TRC-UC12-FL","path":"main","position":1}
 {"id":"LA-TRC-UC12-FL-S02","title":"They open a pattern: its settings, its rules, and the domains and use cases that follow it, with each domain's standing per rule","flow_id":"LA-TRC-UC12-FL","path":"main","position":2}
 {"id":"LA-TRC-UC12-FL-S03","title":"The graph sets the pattern's rules under the pattern","flow_id":"LA-TRC-UC12-FL","path":"main","position":3}
-{"id":"LA-TRC-UC13-FL-S01","title":"The Reader reads each domain card's tests by state","flow_id":"LA-TRC-UC13-FL","path":"main","position":1}
-{"id":"LA-TRC-UC13-FL-S02","title":"In the product's Summary they read the tests by state in total","flow_id":"LA-TRC-UC13-FL","path":"main","position":2}
-{"id":"LA-TRC-UC13-FL-S03","title":"They open a domain and read the same in its Coverage section","flow_id":"LA-TRC-UC13-FL","path":"main","position":3}
 {"id":"LA-TRC-UC14-FL-S01","title":"In the app window, the Reader opens a domain, searches for a requirement and opens it","flow_id":"LA-TRC-UC14-FL","path":"main","position":1}
 {"id":"LA-TRC-UC14-FL-S03","title":"Below its text, its Traceability lists what designs, builds and proves it, with a callout for each gap","flow_id":"LA-TRC-UC14-FL","path":"main","position":2}
 {"id":"LA-TRC-UC14-FL-S04","title":"They follow a test to its record: what it proves and its run by","flow_id":"LA-TRC-UC14-FL","path":"main","position":3}

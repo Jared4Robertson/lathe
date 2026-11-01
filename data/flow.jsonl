@@ -74,7 +74,7 @@
 {"id":"LA-PLT-UC27-FL","title":"Undo Claude's turn","use_case_id":"LA-PLT-UC27"}
 {"id":"LA-PLT-UC28-FL","title":"Clear the recent folders","use_case_id":"LA-PLT-UC28"}
 {"id":"LA-PLT-UC29-FL","title":"Show the Owner a record","use_case_id":"LA-PLT-UC29"}
-{"id":"LA-TRC-UC01-FL","title":"See a domain's coverage","use_case_id":"LA-TRC-UC01"}
+{"id":"LA-TRC-UC01-FL","title":"See how complete each domain is","use_case_id":"LA-TRC-UC01"}
 {"id":"LA-TRC-UC02-FL","title":"Count coverage by the meta-model","use_case_id":"LA-TRC-UC02"}
 {"id":"LA-TRC-UC03-FL","title":"Record how a test is run","use_case_id":"LA-TRC-UC03"}
 {"id":"LA-TRC-UC04-FL","title":"Prove the rules of the patterns a domain follows","use_case_id":"LA-TRC-UC04"}
@@ -82,11 +82,9 @@
 {"id":"LA-TRC-UC06-FL","title":"See each domain's tests by state","use_case_id":"LA-TRC-UC06"}
 {"id":"LA-TRC-UC07-FL","title":"Follow a pattern per domain","use_case_id":"LA-TRC-UC07"}
 {"id":"LA-TRC-UC08-FL","title":"Report tests that count for nothing","use_case_id":"LA-TRC-UC08"}
-{"id":"LA-TRC-UC09-FL","title":"See a product's coverage","use_case_id":"LA-TRC-UC09"}
 {"id":"LA-TRC-UC10-FL","title":"Trace obligations from design to tests","use_case_id":"LA-TRC-UC10"}
 {"id":"LA-TRC-UC11-FL","title":"See coverage of every obligation kind","use_case_id":"LA-TRC-UC11"}
 {"id":"LA-TRC-UC12-FL","title":"See a domain's owed pattern rules","use_case_id":"LA-TRC-UC12"}
-{"id":"LA-TRC-UC13-FL","title":"See tests by state with each domain's coverage","use_case_id":"LA-TRC-UC13"}
 {"id":"LA-TRC-UC14-FL","title":"Trace an obligation to its proof","use_case_id":"LA-TRC-UC14"}
 {"id":"LA-TRC-UC15-FL","title":"Check that addresses match the code both ways","use_case_id":"LA-TRC-UC15"}
 {"id":"LA-TRC-UC16-FL","title":"Check each stored record kind against the file that creates it","use_case_id":"LA-TRC-UC16"}

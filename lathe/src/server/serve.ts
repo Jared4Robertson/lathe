@@ -115,7 +115,7 @@ export function serve({ root, port, host = '127.0.0.1', appDir = APP_DIR }: Serv
         }
         return;
       }
-      // Static files, falling back to index.html so client-side routes such as a record at its ID (/LA-TRC-UC09) or a group (/LA-EXP/use_case) load.
+      // Static files, falling back to index.html so client-side routes such as a record at its ID (/LA-TRC-UC01) or a group (/LA-EXP/use_case) load.
       const file = path.join(appDir, pathname);
       const insideApp = path.relative(appDir, file).startsWith('..') === false;
       if (insideApp && existsSync(file) && (await stat(file)).isFile()) return await sendFile(res, file);
