@@ -717,7 +717,7 @@ export interface SlotRow {
   statement: string;
 }
 
-/** The accidental record (a technical record or an endpoint), written by hand, fills the pattern's slot against its contract: it is a fill, accidental complexity recorded where it is owed and counted as debt until the pattern can derive it. */
+/** The accidental record (a technical record or an endpoint), written by hand, fills the pattern's slot against its contract: it is a fill, accidental complexity recorded where it is owed and counted as debt until the pattern can derive it. A record of a product's own accidental kind, such as a shared module, fills a slot the same way, with no declaration. */
 export interface FillsRow {
   source_id: string;
   target_id: string;
@@ -791,7 +791,7 @@ export interface ToolingRow {
   file?: string;
 }
 
-/** The tooling record (a generator) writes the accidental record (a technical record's code, or an endpoint's route) from the spec: the record is derived, never written by hand. */
+/** The tooling record (a generator) writes the accidental record (a technical record's code, or an endpoint's route) from the spec: the record is derived, never written by hand. A record of a product's own accidental kind, such as a shared module, is generated the same way, with no declaration. */
 export interface GeneratesRow {
   source_id: string;
   target_id: string;
