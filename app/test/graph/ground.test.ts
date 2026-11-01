@@ -16,7 +16,7 @@ const eps = 1e-9;
 describe('the composition rule', () => {
   it('LA-STD-MODELING-R14-T01 A record nests in its parent only when it is the parent\'s composition; every other parent is a link', () => {
     for (const [parent, child] of [
-      ['aggregate', 'entity'], ['entity', 'command'], ['use_case', 'uc_requirement'], ['use_case', 'flow'], ['flow', 'flow_step'],
+      ['aggregate', 'entity'], ['entity', 'command'], ['use_case', 'uc_requirement'], ['use_case', 'flow'], ['flow', 'flow_step'], ['journey', 'journey_step'],
       ['pattern', 'pattern_rule'], ['standard', 'standard_rule'], ['value_object', 'constraint'], ['read_model', 'query'], ['read_model', 'projection'],
       ['read_model', 'reader'], ['endpoint', 'api_requirement'], ['view', 'view_requirement'],
       ['uc_requirement', 'use_case_test'], ['constraint', 'constraint_test'], ['flow', 'flow_test'], ['standard_rule', 'standard_rule_test'],

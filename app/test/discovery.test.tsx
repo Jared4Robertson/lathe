@@ -61,9 +61,11 @@ describe('discovery', () => {
     expect(within(items[0]).getByRole('link', { name: /DM-SHOP-CAP01/ })).toHaveAttribute('href', '/DM-SHOP-CAP01');
     // An outcome no capability serves says so.
     expect(items[1]).toHaveTextContent(/Served by\s*No capability yet\./);
-    // They come before the domains, and Shared does not list them again.
+    // Under Discovery, which comes before the domains, and Shared does not list them again.
     const headings = within(main()).getAllByRole('heading', { level: 2 }).map((h) => h.firstChild?.textContent);
-    expect(headings.indexOf('Business outcomes')).toBeLessThan(headings.indexOf('Domains'));
+    expect(headings.indexOf('Discovery')).toBeGreaterThanOrEqual(0);
+    expect(headings.indexOf('Discovery')).toBeLessThan(headings.indexOf('Domains'));
+    expect(within(section(/^Discovery/)).getByRole('heading', { level: 3, name: /^Business outcomes/ })).toBeInTheDocument();
     expect(main().querySelector('.product-shared .stage-discovery')).toBeNull();
   });
 

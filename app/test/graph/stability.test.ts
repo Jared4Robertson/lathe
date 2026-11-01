@@ -46,7 +46,11 @@ function region(map: PlacedMap, id: string): Set<string> {
   return out;
 }
 
-/** The boxes outside the changed parents' regions (each parent's own box counts as outside) that moved, resized or changed text. */
+/**
+ * The boxes outside the changed parents' regions (each parent's own box counts as outside) that moved, resized or changed
+ * text; a changed parent's own text may change only where it becomes a parent or a leaf (a Nested leaf's label is
+ * centered at its leaves' scale, a parent's in its header band at its parents', LA-EXP-DS07).
+ */
 function movedOutside(before: PlacedMap, after: PlacedMap, parents: readonly string[]): string[] {
   const inside = new Set<string>();
   for (const map of [before, after]) for (const p of parents) for (const id of region(map, p)) if (id !== p) inside.add(id);
@@ -54,7 +58,8 @@ function movedOutside(before: PlacedMap, after: PlacedMap, parents: readonly str
   for (const [id, b] of before.nodes) {
     if (inside.has(id)) continue;
     const a = after.nodes.get(id);
-    if (!a || a.x !== b.x || a.y !== b.y || a.w !== b.w || a.h !== b.h || a.text !== b.text) moved.push(id);
+    const becameOther = parents.includes(id) && (a?.children.length === 0) !== (b.children.length === 0);
+    if (!a || a.x !== b.x || a.y !== b.y || a.w !== b.w || a.h !== b.h || (a.text !== b.text && !becameOther)) moved.push(id);
   }
   return moved;
 }
