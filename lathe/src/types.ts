@@ -20,8 +20,9 @@ export interface Kind {
   obligation: boolean;
   /**
    * Whether its records are essential complexity (decided once per product), accidental (from the means used to build
-   * it: derived, provided or a fill), as the record they sit under (as-parent: a test, a standard rule) or as their own
-   * type says (by-type: a standard); null for an open question.
+   * it: derived, provided or a fill), as the record they sit under (as-parent: a test, a standard rule), as their own
+   * type says (by-type: a standard) or as their product's interfaces say (by-interface: an API requirement, essential
+   * only on a public API); null for an open question.
    */
   complexity: Complexity | null;
   /** What its IDs start with: its product's, its domain's or its parent's ID; null when its IDs are free. */

@@ -82,20 +82,12 @@ describe('entities and value objects', () => {
     expect((await refusals(withTable(data, 'has_one', [{ source_id: 'TL-LEND-EN01', target_id: 'TL-LEND-EN01' }]))).length).toBeGreaterThan(0);
   });
 
-  it("LA-AUT-UC10-R02-T01 An entity's fields are its entity_field rows in position order, each with a name, a meaning, exactly one type and whether it is required", async () => {
-    // Written out of order, read back by position.
-    const shuffled = complete();
-    shuffled.entity_field = [shuffled.entity_field[2], shuffled.entity_field[0], shuffled.entity_field[1], ...shuffled.entity_field.slice(3)];
-    shuffled.entity_field[1] = { ...shuffled.entity_field[1], example: '31' };
-    const ws = await loadData(shuffled);
-    const fields = fieldsOf(ws, 'EX-LEND-EN01', 'entity_field');
+  it("LA-AUT-UC10-R02-T01 An entity has its fields in order, each with a name, a meaning, exactly one type and whether it is required", async () => {
+    const fields = fieldsOf(good, 'EX-LEND-EN01', 'entity_field');
     expect(fields.map((f) => [f.position, f.name])).toEqual([[1, 'Loan ID'], [2, 'Borrower email'], [3, 'Tool']]);
-    expect(fields[0]).toMatchObject({ meaning: 'The loan number.', type: 'whole number', required: true, column_name: 'id', example: '31' });
+    expect(fields[0]).toMatchObject({ meaning: 'The loan number.', type: 'whole number', required: true });
     expect(fields[1]).toMatchObject({ type_value_object_id: 'EX-VO01', required: true });
-    expect(fields[1].column_name ?? null).toBeNull();
-    expect(fields[2]).toMatchObject({ type_aggregate_id: 'EX-LEND-A2', column_name: 'tool_id' });
-    // Only entities carry entity_field rows.
-    for (const r of ws.records.filter((x) => x.kind !== 'entity')) expect(r.parts.entity_field, r.id).toBeUndefined();
+    expect(fields[2]).toMatchObject({ type_aggregate_id: 'EX-LEND-A2' });
     expect(requiredOf(schema, 'entity_field')).toEqual(['entity_id', 'position', 'name', 'meaning', 'required']);
     // Exactly one type: none, or two, is refused.
     const first = (f: Row) => f.entity_id === 'TL-LEND-EN01' && f.position === 1;
@@ -104,6 +96,21 @@ describe('entities and value objects', () => {
         expect.objectContaining({ rule: 'check', file: 'data/entity_field.jsonl', line: 1 }),
       ]);
     }
+  });
+
+  it("LA-PAT-AGGREGATE-COMMANDS-R09-T01 An entity's fields are rows of their own table under it, read back in position order, each naming its column when it has one", async () => {
+    // Written out of order, read back by position.
+    const shuffled = complete();
+    shuffled.entity_field = [shuffled.entity_field[2], shuffled.entity_field[0], shuffled.entity_field[1], ...shuffled.entity_field.slice(3)];
+    shuffled.entity_field[1] = { ...shuffled.entity_field[1], example: '31' };
+    const ws = await loadData(shuffled);
+    const fields = fieldsOf(ws, 'EX-LEND-EN01', 'entity_field');
+    expect(fields.map((f) => [f.position, f.name])).toEqual([[1, 'Loan ID'], [2, 'Borrower email'], [3, 'Tool']]);
+    expect(fields[0]).toMatchObject({ column_name: 'id', example: '31' });
+    expect(fields[1].column_name ?? null).toBeNull();
+    expect(fields[2]).toMatchObject({ column_name: 'tool_id' });
+    // Only entities carry entity_field rows.
+    for (const r of ws.records.filter((x) => x.kind !== 'entity')) expect(r.parts.entity_field, r.id).toBeUndefined();
   });
 
   it('LA-AUT-UC10-R02-T02 An entity, event or read model with no fields is a coverage gap', async () => {

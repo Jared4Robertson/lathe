@@ -14,7 +14,7 @@ CREATE TABLE product_kind (
   id_pattern VARCHAR,
   id_example VARCHAR,
   title_form title_form,
-  complexity complexity NOT NULL CHECK (complexity <> 'by-type')
+  complexity complexity NOT NULL CHECK (complexity NOT IN ('by-type', 'by-interface'))
 );
 COMMENT ON TABLE product_kind IS 'A kind a product adds to Lathe''s, such as a report or a CLI command. Its records sit under one parent kind, and its fields are product_kind_field rows.';
 COMMENT ON COLUMN product_kind.name IS 'The kind''s name, in lower case with underscores, which is also its table''s name; it must not be a table Lathe already has.';

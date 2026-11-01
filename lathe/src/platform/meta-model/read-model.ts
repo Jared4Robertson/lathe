@@ -19,7 +19,7 @@ export interface MetaKind {
   /** Its parent columns, one per parent kind. */
   parent_columns: string[];
   obligation: boolean;
-  /** essential, accidental, as-parent (as the record above it: a test, a standard rule) or by-type (a standard); null for an open question. */
+  /** essential, accidental, as-parent (as the record above it: a test, a standard rule) by-type (a standard) or by-interface (an API requirement); null for an open question. */
   complexity: Complexity | null;
   id_scope: IdScope | null;
   /** The product that declares it, or null for Lathe's own. */

@@ -121,7 +121,7 @@ export const CHANGE_INVARIANT_TEST_IDENTITY = {
   id: 'LA-AUT-CMD223',
   slice: { aggregate: 'LA-AUT-A6', name: 'aggregate' },
   name: 'change-invariant-test',
-  description: 'Changes an invariant test\'s columns or the test data sets it starts from (the whole list).',
+  description: 'Changes what an invariant test says, or the test data sets it starts from (the whole list).',
   method: 'POST',
   route: '/api/aggregate/change-invariant-test',
 } as const;

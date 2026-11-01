@@ -6,7 +6,7 @@ import { holdToRules } from '../rules.ts';
 import { ADD_INTERFACE_IDENTITY } from './identities.generated.ts';
 
 /** A new interface. */
-export type AddInterface = Pick<InterfaceRow, 'id' | 'title' | 'product_id' | 'kind' | 'description'>;
+export type AddInterface = Pick<InterfaceRow, 'id' | 'title' | 'product_id' | 'kind' | 'description' | 'public'>;
 
 export const ADD_INTERFACE = {
   ...ADD_INTERFACE_IDENTITY,
@@ -16,6 +16,7 @@ export const ADD_INTERFACE = {
     product_id: column('interface', 'product_id', 'required'),
     kind: column('interface', 'kind', 'required'),
     description: column('interface', 'description', 'required'),
+    public: column('interface', 'public', 'required'),
   },
   handler: addInterface,
 } satisfies CommandDefinition<AddInterface>;
