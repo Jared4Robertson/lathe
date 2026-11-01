@@ -33,6 +33,14 @@
 {"table_id":"LA-AUT-EN114-TB","position":1,"type":"primary","columns":["interface_id","position"]}
 {"table_id":"LA-AUT-EN114-TB","position":2,"type":"unique","columns":["interface_id","role_name"]}
 {"table_id":"LA-AUT-EN114-TB","position":3,"type":"foreign","columns":["interface_id"],"target_table_id":"LA-AUT-EN76-TB"}
+{"table_id":"LA-AUT-EN115-TB","position":1,"type":"primary","columns":["id"]}
+{"table_id":"LA-AUT-EN115-TB","position":2,"type":"foreign","columns":["product_id"],"target_table_id":"LA-AUT-EN01-TB"}
+{"table_id":"LA-AUT-EN116-TB","position":1,"type":"primary","columns":["id"]}
+{"table_id":"LA-AUT-EN116-TB","position":2,"type":"unique","columns":["journey_id","path","position"],"invariant_id":"LA-AUT-INV189"}
+{"table_id":"LA-AUT-EN116-TB","position":3,"type":"foreign","columns":["journey_id"],"target_table_id":"LA-AUT-EN115-TB"}
+{"table_id":"LA-AUT-EN117-TB","position":1,"type":"primary","columns":["id"]}
+{"table_id":"LA-AUT-EN117-TB","position":2,"type":"unique","columns":["journey_id"],"invariant_id":"LA-AUT-INV190"}
+{"table_id":"LA-AUT-EN117-TB","position":3,"type":"foreign","columns":["journey_id"],"target_table_id":"LA-AUT-EN115-TB"}
 {"table_id":"LA-AUT-EN12-TB","position":1,"type":"primary","columns":["id"]}
 {"table_id":"LA-AUT-EN12-TB","position":2,"type":"foreign","columns":["use_case_id"],"target_table_id":"LA-AUT-EN11-TB"}
 {"table_id":"LA-AUT-EN13-TB","position":1,"type":"primary","columns":["id"]}
@@ -218,6 +226,8 @@
 {"table_id":"LA-AUT-TB92","position":1,"type":"primary","columns":["source_id","target_id"]}
 {"table_id":"LA-AUT-TB93","position":1,"type":"primary","columns":["source_id","target_id"]}
 {"table_id":"LA-AUT-TB94","position":1,"type":"primary","columns":["source_id","target_id"]}
+{"table_id":"LA-AUT-TB95","position":1,"type":"primary","columns":["source_id","target_id"]}
+{"table_id":"LA-AUT-TB95","position":2,"type":"unique","columns":["source_id"],"invariant_id":"LA-AUT-INV190"}
 {"table_id":"LA-CHK-EN01-TB","position":1,"type":"primary","columns":["name"]}
 {"table_id":"LA-CHK-EN03-TB","position":1,"type":"primary","columns":["product_id"]}
 {"table_id":"LA-TRC-EN05-TB","position":1,"type":"primary","columns":["source_id","target_id"]}
