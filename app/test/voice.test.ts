@@ -25,7 +25,7 @@ function said(text: string, from = 0): HeardWord[] {
 const tokens = (text: string, after: HeardWord | null = { text: 'before', start: -2, end: -1.5 }) => withPauses(said(text), [], after);
 const read = (text: string, dictating: boolean, phrases = PHRASES) => readTokens(tokens(text), dictating, phrases);
 
-describe('LA-PLT-UC20-R02-T01 The voice grammar: a pause before the wake phrase wakes, a pause, the wake phrase and a command word is a command, anything else is text', () => {
+describe('LA-PLT-UC26-R01-T01 The voice grammar: a pause before the wake phrase wakes, a pause, the wake phrase and a command word is a command, anything else is text', () => {
   it('marks a pause before a word after a long enough quiet, or one the voice activity heard', () => {
     const marks = (t: Token[]) => t.map((x) => (x.kind === 'pause' ? '|' : x.text)).join(' ');
     expect(marks(withPauses(said('zoom into | this'), [], null))).toBe('| zoom into | this');
@@ -236,7 +236,7 @@ describe('LA-PLT-UC20-R01-T01 Dictation shows the words as they are heard, settl
   });
 });
 
-describe('LA-PLT-UC20-R04-T01 Quick mode sends after the pause end-of-turn detection judges: short when finished, long mid-thought, between when unsure', () => {
+describe('LA-PLT-UC26-R03-T01 Quick mode sends after the pause end-of-turn detection judges: short when finished, long mid-thought, between when unsure', () => {
   it('judges the words: a complete thought, one cut off, or no telling', () => {
     expect(completeness('zoom into this')).toBe('finished');
     expect(completeness('zoom into the')).toBe('unfinished');

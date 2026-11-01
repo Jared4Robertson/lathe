@@ -137,7 +137,7 @@ describe('a workspace of several products', () => {
     expect(() => loadConfig(root)).toThrow(/examples\/shop is another product's folder/);
   });
 
-  it('LA-PLT-UC02-R11-T01 The API serves every product of the workspace, writes to each product\'s folder and watches each', async () => {
+  it('LA-PLT-UC23-R03-T01 The API serves every product of the workspace, writes to each product\'s folder and watches each', async () => {
     const root = workspace();
     opened.push(root);
     // A product's reads come from its own folder.
@@ -160,7 +160,7 @@ describe('a workspace of several products', () => {
     expect(watchTargets(root)).toEqual(expect.arrayContaining([path.join(root, 'data'), path.join(root, SHOP, 'data')]));
   });
 
-  it('LA-PLT-UC02-R11-T02 A read of the whole workspace joins every product\'s schema and refuses one product in two folders', async () => {
+  it('LA-PLT-UC23-R03-T02 A read of the whole workspace joins every product\'s schema and refuses one product in two folders', async () => {
     const shopKind: Data = {
       ...shop,
       product_kind: [{ name: 'shelf', product_id: 'SH', label: 'Shelf', description: 'A shelf in the shop.', parent_kind: 'domain', obligation: false, complexity: 'essential' }],

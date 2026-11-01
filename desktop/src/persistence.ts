@@ -1,4 +1,4 @@
-// macOS window restoration, turned off (LA-PLT-UC15-R15). Lathe reopens its own windows from its own saved
+// macOS window restoration, turned off (LA-STD-EXPERIENCE-R11). Lathe reopens its own windows from its own saved
 // state (the last folder, window-state.json), so the system's restoration has nothing to add, and an
 // Electron that was killed while macOS restored its windows (a smoke run cut short, say) makes macOS ask
 // "it unexpectedly quit while reopening windows. Do you want to try to reopen its windows again?" at the

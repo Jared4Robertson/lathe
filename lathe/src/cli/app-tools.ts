@@ -1,9 +1,9 @@
-// The MCP server's two app tools (LA-PLT-UC19-R06), for Claude Code run by the desktop app's chat panel:
+// The MCP server's two app tools (LA-PLT-UC29-R01), for Claude Code run by the desktop app's chat panel:
 // app_focus says what the Reader is looking at in the window (the focused record, the stage, the
 // selection), and app_open opens a record there. The desktop app gives the chat's CLI the window's
 // bridge address and its token (LATHE_APP_BRIDGE, LATHE_APP_TOKEN, desktop/src/bridge.ts), which the
 // CLI's MCP servers and shell commands inherit; the tools are listed only then, and refuse once the window
-// has closed. `lathe app focus` and `lathe app open` (LA-PLT-UC19-R07) run the same calls from the shell.
+// has closed. `lathe app focus` and `lathe app open` (LA-PLT-UC29-R02) run the same calls from the shell.
 import { parseArgs } from 'node:util';
 
 export interface AppBridge {

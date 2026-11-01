@@ -1,5 +1,5 @@
 // The Lending domain's events and the outbox that delivers them.
-// Spec: the event types TL-LEND-EV01-ET to EV06-ET (examples/tool-library/data/), each delivered by outbox.
+// Spec: the event types TL-LEND-EV01-ET to EV08-ET (examples/tool-library/data/), each delivered by outbox.
 // A command handler saves its events to the outbox table in the same transaction as its aggregate's change,
 // then, once that transaction commits, runs the relay. The relay hands each undelivered event, oldest first,
 // to the event handlers subscribed to it and marks it delivered when every one succeeds. A handler that fails
@@ -67,7 +67,36 @@ export interface ToolReturned {
   late: boolean;
 }
 
-export type DomainEvent = MemberRegistered | ToolAdded | DamageReported | ToolRepaired | LoanOpened | ToolReturned;
+/** TL-LEND-EV07-ET: a member renewed a loan, which moved its due date on. */
+export interface LoanRenewed {
+  type: 'LoanRenewed';
+  loanId: number;
+  memberId: number;
+  toolId: number;
+  renewedAt: string;
+  /** The new due date, YYYY-MM-DD, in the library's time zone. */
+  dueDate: string;
+}
+
+/** TL-LEND-EV08-ET: the library reminded a member that their loan is due. */
+export interface MemberReminded {
+  type: 'MemberReminded';
+  loanId: number;
+  memberId: number;
+  /** YYYY-MM-DD, in the library's time zone. */
+  dueDate: string;
+  remindedAt: string;
+}
+
+export type DomainEvent =
+  | MemberRegistered
+  | ToolAdded
+  | DamageReported
+  | ToolRepaired
+  | LoanOpened
+  | ToolReturned
+  | LoanRenewed
+  | MemberReminded;
 export type EventName = DomainEvent['type'];
 export type EventHandler<N extends EventName> = (event: Extract<DomainEvent, { type: N }>) => void;
 

@@ -12,7 +12,7 @@ import { textMeasure, treeLabel } from '../../src/graph/text';
 import type { RecordIndex } from '../../src/exploring/record-summaries/record-index';
 import { layoutTree } from './maps';
 
-// Every map is laid out off the main thread, and again only when what it reads changes (LA-EXP-DS05, LA-PLT-UC09-R13, layout.ts): its
+// Every map is laid out off the main thread, and again only when what it reads changes (LA-EXP-DS05, LA-STD-EXPERIENCE-R02, layout.ts): its
 // packed input is its key and what the layout's worker is sent; the map shown stays until the new one arrives.
 
 const MEASURE = () => textMeasure().key;

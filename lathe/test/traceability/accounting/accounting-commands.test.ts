@@ -101,7 +101,7 @@ describe('LA-TRC-UC21-R50-T01 each Slot filling command changes one fill through
   });
 });
 
-describe('LA-TRC-UC21-R51-T01 each Provision command changes one record\'s provider through ProvisionRepository, and is reached by name from the CLI, the MCP tools and HTTP', () => {
+describe('LA-TRC-UC23-R01-T01 each Provision command changes one record\'s provider through ProvisionRepository, and is reached by name from the CLI, the MCP tools and HTTP', () => {
   it('names a provider, replaces it, and removes it, writing only the provided_by table', async () => {
     const store = await storeOf();
     expect((await runCommand(store, NAME_PROVIDER, { record_id: 'TL-STORE01', provider_id: 'TL-INT01' })).tables).toEqual(['provided_by']);

@@ -21,16 +21,21 @@ Every use case sits in a capability: an ordered slice of its domain. Add the dom
 
 ## Use cases
 
-**A use case is one goal of one actor, reached in one sitting, verb first**, two to six words. One sitting is one session with no waiting on someone else. A goal that waits on another actor, or reads "... and later ...", is a journey (`discover-outcomes`): split it into use cases, and write a journey that carries them out in order. Use the domain's own verb (Borrow, Approve, Refund) over Create, Read, Update or Delete unless that really is the goal. Names no interface or mechanism: "Approve an invoice", not "Approve an invoice from the web app".
+**A use case is one goal one actor sets out to finish in one sitting, which leaves something the business cares about true** (LA-STD-MODELING-R15): not a step of a bigger goal (a journey's step), nor a journey of several. Its title names the goal verb first, two to six words, in the domain's own verb (Borrow, Approve, Refund) over Create, Read, Update or Delete unless that really is the goal, and names no interface or mechanism: "Approve an invoice", not "Approve an invoice from the web app".
 
-**When to split.** Split when:
+**The line.** Every use case is drawn at the same level, so "should this be two, or is this part of another?" has one answer. Test each against:
 
-- the title needs "and" or a list ("Register a member and send a welcome"): two goals;
-- different actors want different things from the same operation, or the same actor starts from a different situation;
-- the rules diverge: requirements that apply to only some paths are a sign of two use cases;
-- the flows would share nothing beyond the command.
+- **Done**: when it ends, something the business cares about is true (a tool is lent, an outcome is written), or the actor has the answer they came for.
+- **One sitting**: one session, no waiting on another actor or on time. A goal that waits, or reads "... and later ...", is a journey (`discover-outcomes`): split it into use cases and write the journey that strings them.
+- **One change**: its actors' own steps change at most one aggregate; reading changes none (`use-case-changes-many-aggregates`). A second change is a second goal, a policy hearing the first's event, another actor's write that is the trigger rather than a step, or a link written from the wrong record.
+- **No "and", no list** in the title (`use-case-title-joins-goals`). Parts of one thing go after "with": "Write a use case with its flow and tests".
+- **Shared rules**: requirements that hold only on some paths are two use cases; two use cases that differ only by an interface or a value are one (an interface offers it; a value is a rule of it).
+- **A goal, not a quality**: "Read without anything jumping" or "Work by keyboard" are properties every use case keeps. Write them as rules of a quality standard (`write-the-technical-spec`), not as use cases.
+- **On its own**: a goal nobody ever starts alone is a step of the use case it sits in; the same steps in three or more use cases are a pattern.
 
-Merge when two use cases differ only by an interface (that is one use case offered through both) or by a value (that is a rule of one).
+Another actor's write is what starts a use case, never a step of it (`another-actor-writes-in-a-step`): a Reader's use case starts when an Agent's change lands; the Agent's write is the Agent's own use case.
+
+When a use case fails a test, split it, fold it into the use case it is a step of, make it a journey, a policy or a quality standard's rule, and move its requirements, tests and flow steps with what they prove, in one change.
 
 **Actors are roles, never people.** A role is a part of the product (Member, Librarian; Owner, Reader, Agent in Lathe's own specs). Add a new role to the product with a description of what it does; write the same roles in prose.
 

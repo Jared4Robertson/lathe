@@ -5,7 +5,7 @@ import { crowdedLabel } from '../src/views/openSpace';
 import type { Chrome } from '../src/shell/desktopChrome';
 import type { LatheDesktop } from '../src/shell/desktop-bridge';
 
-// The desktop app's own title bar (LA-PLT-UC14): drawn only in the desktop shell, with back and
+// The desktop app's own title bar (LA-STD-EXPERIENCE-R07): drawn only in the desktop shell, with back and
 // forward, a command center that opens quick find, the layout toggles, and the theme's colors sent
 // to the window's chrome.
 

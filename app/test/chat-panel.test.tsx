@@ -283,7 +283,7 @@ describe('LA-PLT-UC19-R05-T02 The picker resumes, forks or starts a session, and
   });
 });
 
-describe('LA-PLT-UC19-R06-T03 The page answers the app bridge: what the Reader is looking at, and opening a record', () => {
+describe('LA-PLT-UC29-R01-T03 The page answers the app bridge: what the Reader is looking at, and opening a record', () => {
   it('names the focused record and stage, and opens a record by its address', async () => {
     fakeChat();
     await openApp('/DM-SHOP-UC01?stage=erd');
@@ -601,7 +601,7 @@ describe('LA-PLT-UC21-R01-T01 After a turn that writes, its records can be put u
   });
 });
 
-describe('LA-PLT-UC21-R02-T01 A turn is undone in one click through the server, which refuses with its reasons what something since depends on', () => {
+describe('LA-PLT-UC27-R01-T01 A turn is undone in one click through the server, which refuses with its reasons what something since depends on', () => {
   it('asks the server to roll back to the turn\'s snapshot, naming the records Claude touched in order, and says it is undone', async () => {
     const { push } = fakeChat();
     await openApp('/DM-SHOP-UC01');

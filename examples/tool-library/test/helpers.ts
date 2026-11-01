@@ -5,7 +5,7 @@ import { Database } from '../src/database.ts';
 import { subscribePolicies } from '../src/event-handlers.ts';
 import type { DomainEvent, HandlerFailure } from '../src/events.ts';
 import { DEFAULT_TIME_ZONE } from '../src/model.ts';
-import { createRouter, openLending } from '../src/router.ts';
+import { createRouter, openLending, openLibrary } from '../src/router.ts';
 
 export const DAY_MS = 24 * 60 * 60 * 1000;
 /** 05:00 on Monday 2 March 2026 in New York (EST), the library's default time zone. */
@@ -49,7 +49,16 @@ export function lending(options: LendingOptions = {}) {
   const clock = new TestClock();
   const ctx = openLending(db, clock.now, options.timeZone ?? DEFAULT_TIME_ZONE, options.onFailure);
   const delivered: DomainEvent[] = [];
-  for (const name of ['MemberRegistered', 'ToolAdded', 'DamageReported', 'ToolRepaired', 'LoanOpened', 'ToolReturned'] as const) {
+  for (const name of [
+    'MemberRegistered',
+    'ToolAdded',
+    'DamageReported',
+    'ToolRepaired',
+    'LoanOpened',
+    'ToolReturned',
+    'LoanRenewed',
+    'MemberReminded',
+  ] as const) {
     ctx.outbox.subscribe(name, (event) => delivered.push(event));
   }
   if (options.policies ?? true) subscribePolicies(ctx.outbox, ctx);
@@ -68,7 +77,7 @@ export interface Api {
 export async function startApi(): Promise<Api> {
   const db = new Database();
   const clock = new TestClock();
-  const server: Server = createServer(createRouter(db, clock.now, { timeZone: DEFAULT_TIME_ZONE }));
+  const server: Server = createServer(createRouter(openLibrary(db, clock.now, { timeZone: DEFAULT_TIME_ZONE })));
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   const { port } = server.address() as AddressInfo;
   return {

@@ -23,3 +23,12 @@
 {"domain_event_id":"TL-LEND-EV06","position":5,"name":"Condition","meaning":"The tool's condition as the librarian found it.","type_value_object_id":"TL-VO03","required":true,"example":"good"}
 {"domain_event_id":"TL-LEND-EV06","position":6,"name":"Note","meaning":"What the librarian noticed.","type_value_object_id":"TL-VO04","required":false,"example":"Cleaned and charged"}
 {"domain_event_id":"TL-LEND-EV06","position":7,"name":"Late","meaning":"Whether the return came on a day after the due date, in the library's time zone (TL-LEND-SP01).","type":"yes/no","required":true,"example":"No"}
+{"domain_event_id":"TL-LEND-EV07","position":1,"name":"Loan ID","meaning":"Which loan was renewed.","type_aggregate_id":"TL-LEND-A3","required":true,"example":"Loan 31"}
+{"domain_event_id":"TL-LEND-EV07","position":2,"name":"Member","meaning":"Who holds the loan.","type_aggregate_id":"TL-LEND-A1","required":true,"example":"Member 12"}
+{"domain_event_id":"TL-LEND-EV07","position":3,"name":"Tool","meaning":"Which tool the loan is of.","type_aggregate_id":"TL-LEND-A2","required":true,"example":"Tool 7"}
+{"domain_event_id":"TL-LEND-EV07","position":4,"name":"Renewed at","meaning":"When the member renewed the loan.","type":"date and time","required":true,"example":"2026-03-14T18:00:00Z"}
+{"domain_event_id":"TL-LEND-EV07","position":5,"name":"Due date","meaning":"The loan's new last day, in the library's time zone.","type":"date","required":true,"example":"2026-03-30"}
+{"domain_event_id":"TL-LEND-EV08","position":1,"name":"Loan ID","meaning":"Which loan the reminder is about.","type_aggregate_id":"TL-LEND-A3","required":true,"example":"Loan 31"}
+{"domain_event_id":"TL-LEND-EV08","position":2,"name":"Member","meaning":"Who was reminded.","type_aggregate_id":"TL-LEND-A1","required":true,"example":"Member 12"}
+{"domain_event_id":"TL-LEND-EV08","position":3,"name":"Due date","meaning":"The loan's last day, in the library's time zone.","type":"date","required":true,"example":"2026-03-16"}
+{"domain_event_id":"TL-LEND-EV08","position":4,"name":"Reminded at","meaning":"When the library reminded the member.","type":"date and time","required":true,"example":"2026-03-15T13:00:00Z"}

@@ -37,7 +37,7 @@ function fakeHelper() {
 
 const tick = () => new Promise((resolve) => setImmediate(resolve));
 
-describe('LA-PLT-UC20-R03-T01 The chat listens only while its window is in front, and only when the Owner asked', () => {
+describe('LA-PLT-UC26-R02-T01 The chat listens only while its window is in front, and only when the Owner asked', () => {
   it('holds the rule: wanted and in front', () => {
     expect(shouldListen(true, true)).toBe(true);
     expect(shouldListen(true, false)).toBe(false);

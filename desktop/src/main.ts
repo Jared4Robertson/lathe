@@ -446,7 +446,7 @@ async function openFolder(input: string) {
     refreshMenu();
     chatOf(folder)?.voice?.front(true);
   });
-  // The chat listens only while its window is in front (LA-PLT-UC20-R03).
+  // The chat listens only while its window is in front (LA-PLT-UC26-R02).
   win.on('blur', () => chatOf(folder)?.voice?.front(false));
   win.on('close', () => {
     clearTimeout(saveTimer);

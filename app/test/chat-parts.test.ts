@@ -25,7 +25,7 @@ describe('LA-PLT-UC22-R01-T03 the chips say the record and its title, and the co
   });
 });
 
-describe('LA-PLT-UC21-R02-T02 undo names the records Claude\'s Lathe commands touched, in the order it ran them', () => {
+describe('LA-PLT-UC27-R01-T02 undo names the records Claude\'s Lathe commands touched, in the order it ran them', () => {
   it('takes the ID of each finished Lathe command, and none from other tools, failed calls or clipped input', () => {
     const items = [
       tool('mcp__plugin_lathe_lathe__use_case_add_flow', '{"id":"X-UC01-F01"}'),

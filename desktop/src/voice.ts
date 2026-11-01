@@ -77,7 +77,7 @@ export function parseHelperLine(line: string): HelperLine | null {
   }
 }
 
-/** The front-only rule (LA-PLT-UC20-R03): a window listens only while its page wants it to and it is in front. */
+/** The front-only rule (LA-PLT-UC26-R02): a window listens only while its page wants it to and it is in front. */
 export const shouldListen = (wanted: boolean, front: boolean) => wanted && front;
 
 /** How long the helper has to stop after "stop" before it is terminated. */
