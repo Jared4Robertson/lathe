@@ -3,25 +3,12 @@
 // and its invariants with the rule that enforces each (built the same way) and their tests. One instance is one aggregate, whole; it holds only the links its own records
 // start.
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
-import type { Row, Value } from '../../platform/data/rows.ts';
+import type { AggregateShape } from '../../platform/data/repository.ts';
+import type { Row } from '../../platform/data/rows.ts';
 import type { AggregateRow, DataModelRow, EntityFieldRow, EntityRow, InvariantRow, InvariantTestRow, RuleRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const AGGREGATE_AGGREGATE = 'LA-AUT-A6';
-
-/**
- * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.
- * Only the columns named in `columns` are taken from the changes.
- */
-export function changed<R extends object>(row: R, changes: object, columns: readonly string[]): R {
-  const next = { ...row } as Record<string, unknown>;
-  for (const [column, value] of Object.entries(changes)) {
-    if (!columns.includes(column) || value === undefined) continue;
-    if (value === null) delete next[column];
-    else next[column] = value as Value;
-  }
-  return next as R;
-}
 
 /** An entity field as a command gives it: its entity and position come from the entity and its place in the list. */
 export type EntityFieldInput = Omit<EntityFieldRow, 'entity_id' | 'position'>;
@@ -78,27 +65,17 @@ export const AGGREGATE_TABLES = [
   'starts_from',
 ] as const;
 
-/** The kinds of the aggregate's records, each with the column that names its parent inside the aggregate. */
-export const AGGREGATE_KINDS = {
-  aggregate: null,
-  entity: 'aggregate_id',
-  invariant: 'aggregate_id',
-  data_model: 'entity_id',
-  rule: 'invariant_id',
-  invariant_test: 'invariant_id',
-} as const;
+/** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
+export const AGGREGATE_SHAPE = {
+  aggregate: { at: 'aggregate' },
+  entity: { at: 'entities', lists: { fields: 'fields', has_one: 'hasOne', has_many: 'hasMany' } },
+  invariant: { at: 'invariants' },
+  data_model: { at: 'dataModels', lists: { meets: 'meets', packages: 'packages' } },
+  rule: { at: 'rules', lists: { meets: 'meets', packages: 'packages' } },
+  invariant_test: { at: 'invariantTests', lists: { starts_from: 'startsFrom' } },
+} as const satisfies AggregateShape;
 
-export type AggregateKind = keyof typeof AGGREGATE_KINDS;
-
-/** A new aggregate, with nothing under it yet. */
-export function newAggregate(aggregate: AggregateRow): Aggregate {
-  return { root: aggregate.id, aggregate, entities: [], invariants: [], dataModels: [], rules: [], invariantTests: [] };
-}
-
-/** The entity's fields as rows, in the order given. */
-export function fieldRows(entityId: string, fields: EntityFieldInput[]): EntityFieldRow[] {
-  return fields.map((field, at) => ({ entity_id: entityId, position: at + 1, ...field }));
-}
+export type AggregateKind = keyof typeof AGGREGATE_SHAPE;
 
 /** The aggregates in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function aggregatesFrom(rows: (table: string) => Row[], only?: string): Aggregate[] {
@@ -156,13 +133,3 @@ export function aggregateRows(aggregate: Aggregate): Map<string, Row[]> {
   ]);
 }
 
-/** The kind of the record with this ID inside the aggregate, or undefined. */
-export function kindInside(aggregate: Aggregate, id: string): AggregateKind | undefined {
-  if (aggregate.root === id) return 'aggregate';
-  if (aggregate.entities.some((e) => e.row.id === id)) return 'entity';
-  if (aggregate.invariants.some((i) => i.id === id)) return 'invariant';
-  if (aggregate.dataModels.some((d) => d.row.id === id)) return 'data_model';
-  if (aggregate.rules.some((r) => r.row.id === id)) return 'rule';
-  if (aggregate.invariantTests.some((t) => t.row.id === id)) return 'invariant_test';
-  return undefined;
-}

@@ -1,9 +1,7 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PatternRuleRow } from '../../../platform/data/tables.ts';
-import { PatternRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
 import { ADD_PATTERN_RULE_IDENTITY } from './identities.generated.ts';
+import { addPatternRule } from './handlers.generated.ts';
 
 /** A new pattern rule. */
 export type AddPatternRule = Pick<PatternRuleRow, 'id' | 'title' | 'pattern_id' | 'statement' | 'group_name' | 'notes'>;
@@ -20,12 +18,3 @@ export const ADD_PATTERN_RULE = {
   },
   handler: addPatternRule,
 } satisfies CommandDefinition<AddPatternRule>;
-
-/** Adds the rule to its pattern. */
-export function addPatternRule(tx: Transaction, input: AddPatternRule): void {
-  const patterns = new PatternRepository(tx);
-  const pattern = patterns.load(input.pattern_id) ?? tx.refuse('missing', `there is no pattern ${input.pattern_id}`);
-  pattern.rules.push(input);
-  holdToRules(tx, pattern);
-  patterns.save(pattern);
-}

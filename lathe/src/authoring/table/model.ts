@@ -2,26 +2,13 @@
 // link table or an outbox, are stored, with its keys in order, the data store it is kept in, the standard rules it
 // meets and the packages it uses.
 // One instance is one table, whole; it holds only the links its own record starts.
+import type { AggregateShape } from '../../platform/data/repository.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
-import type { Row, Value } from '../../platform/data/rows.ts';
+import type { Row } from '../../platform/data/rows.ts';
 import type { TableKeyRow, TableRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const TABLE_AGGREGATE = 'LA-AUT-A18';
-
-/**
- * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.
- * Only the columns named in `columns` are taken from the changes.
- */
-export function changed<R extends object>(row: R, changes: object, columns: readonly string[]): R {
-  const next = { ...row } as Record<string, unknown>;
-  for (const [column, value] of Object.entries(changes)) {
-    if (!columns.includes(column) || value === undefined) continue;
-    if (value === null) delete next[column];
-    else next[column] = value as Value;
-  }
-  return next as R;
-}
 
 /** The columns of a key a command gives: its table and its position follow from the list it is in. */
 export const KEY_COLUMNS = ['type', 'columns', 'name', 'invariant_id', 'target_table_id', 'condition'] as const;
@@ -48,10 +35,10 @@ export interface Table {
 /** The tables the Table aggregate keeps its rows in: its kind, its part, and the relation and part its record starts. */
 export const TABLE_TABLES = ['table', 'table_key', 'stored_in', 'meets', 'package_use'] as const;
 
-/** A new table with its keys and links. */
-export function newTable(table: TableRow, parts: Pick<Table, 'keys' | 'storedIn' | 'meets' | 'packages'>): Table {
-  return { root: table.id, table, ...parts };
-}
+/** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
+export const TABLE_SHAPE = {
+  table: { at: 'table', lists: { meets: 'meets', packages: 'packages' }, given: { keys: 'keys' }, links: { stored_in: 'storedIn' } },
+} as const satisfies AggregateShape;
 
 /** The tables in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function tablesFrom(rows: (table: string) => Row[], only?: string): Table[] {

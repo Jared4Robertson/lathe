@@ -1,9 +1,7 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { BusinessOutcomeRow } from '../../../platform/data/tables.ts';
-import { changed } from '../model.ts';
-import { BusinessOutcomeRepository } from '../repository.ts';
 import { CHANGE_BUSINESS_OUTCOME_IDENTITY } from './identities.generated.ts';
+import { changeBusinessOutcome } from './handlers.generated.ts';
 
 /** The outcome's changes: a column given is set, null clears an optional one; measured_by, when given, replaces the list. */
 export type ChangeBusinessOutcome = Pick<BusinessOutcomeRow, 'id'> & {
@@ -30,12 +28,3 @@ export const CHANGE_BUSINESS_OUTCOME = {
   },
   handler: changeBusinessOutcome,
 } satisfies CommandDefinition<ChangeBusinessOutcome>;
-
-/** Changes the outcome's own columns and what measures it. */
-export function changeBusinessOutcome(tx: Transaction, input: ChangeBusinessOutcome): void {
-  const outcomes = new BusinessOutcomeRepository(tx);
-  const outcome = outcomes.load(input.id) ?? tx.refuse('missing', `there is no business outcome ${input.id}`);
-  outcome.outcome = changed(outcome.outcome, input, ['title', 'statement', 'measure', 'target', 'measured_outside', 'notes']);
-  if (input.measured_by) outcome.measuredBy = [...input.measured_by].sort();
-  outcomes.save(outcome);
-}

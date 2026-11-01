@@ -4,7 +4,7 @@
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { GENERATED_HEADER, GENERATED_ROOTS } from '../scripts/generate/output.ts';
 import { generatedFiles, scaffoldFiles } from '../scripts/generate/outputs.ts';
 import { COMMAND_ONLY, formDescription } from '../scripts/generate/fields.ts';
@@ -25,7 +25,10 @@ function generatedOnDisk(dir: string): string[] {
 }
 
 describe('LA-STD-CODE-R11-T01 the generated files are a fresh generation from the records, and each definition spreads its generated identity', () => {
-  const files = generatedFiles(REPO);
+  let files: Map<string, string>;
+  beforeAll(async () => {
+    files = await generatedFiles(REPO);
+  });
 
   it('writes each generated file as a fresh generation would (npm --prefix lathe run generate)', () => {
     expect(files.size).toBeGreaterThan(50);
@@ -95,8 +98,8 @@ describe('LA-STD-CODE-R11-T02 a command or query with records and no definition 
   for (const [name, rows] of Object.entries(tables)) writeFileSync(path.join(repo, 'data', `${name}.jsonl`), lines(rows));
   afterAll(() => rmSync(repo, { recursive: true, force: true }));
 
-  it('generates its identity, with the slice\'s aggregate, and scaffolds its definition spreading it, with an empty input and handler', () => {
-    const files = generatedFiles(repo);
+  it('generates its identity, with the slice\'s aggregate, and scaffolds its definition spreading it, with an empty input and handler', async () => {
+    const files = await generatedFiles(repo);
     expect(files.get('lathe/src/demo/widget/commands/identities.generated.ts')).toContain(`export const ADD_WIDGET_IDENTITY = {
   id: 'XX-CMD1',
   slice: { aggregate: 'XX-A1', name: 'widget' },
@@ -113,8 +116,8 @@ describe('LA-STD-CODE-R11-T02 a command or query with records and no definition 
     expect(scaffolds.get('lathe/src/demo/widget/queries.ts')).toContain('export const GET_WIDGET: QueryDefinition<Record<string, never>, never, unknown> = {\n  ...GET_WIDGET_IDENTITY,');
   });
 
-  it('refuses records that disagree, naming each', () => {
+  it('refuses records that disagree, naming each', async () => {
     writeFileSync(path.join(repo, 'data', 'endpoint.jsonl'), lines([{ ...tables.endpoint[0], route: '/api/widget/add' }, tables.endpoint[1]]));
-    expect(() => generatedFiles(repo)).toThrow('XX-EP1 is POST /api/widget/add; lathe widget add-widget is POST /api/widget/add-widget');
+    await expect(generatedFiles(repo)).rejects.toThrow('XX-EP1 is POST /api/widget/add; lathe widget add-widget is POST /api/widget/add-widget');
   });
 });

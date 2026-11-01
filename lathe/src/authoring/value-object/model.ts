@@ -2,26 +2,13 @@
 // constraints with their tests (and the test data sets they start from), and its value type in code (with the standard
 // rules it meets and the packages it uses). One instance is one value object, whole; it holds only the links its own
 // records start.
+import type { AggregateShape } from '../../platform/data/repository.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
-import type { Row, Value } from '../../platform/data/rows.ts';
+import type { Row } from '../../platform/data/rows.ts';
 import type { ConstraintRow, ConstraintTestRow, ValueObjectFieldRow, ValueObjectRow, ValueTypeRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const VALUE_OBJECT_AGGREGATE = 'LA-AUT-A9';
-
-/**
- * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.
- * Only the columns named in `columns` are taken from the changes.
- */
-export function changed<R extends object>(row: R, changes: object, columns: readonly string[]): R {
-  const next = { ...row } as Record<string, unknown>;
-  for (const [column, value] of Object.entries(changes)) {
-    if (!columns.includes(column) || value === undefined) continue;
-    if (value === null) delete next[column];
-    else next[column] = value as Value;
-  }
-  return next as R;
-}
 
 /** The columns of a field a command gives: its value object and its position follow from the list it is in. */
 export const FIELD_COLUMNS = ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'] as const;
@@ -58,20 +45,15 @@ export interface ValueObject {
 /** The tables the Value object aggregate keeps its rows in: its kinds, its part, and the relations and parts its records start. */
 export const VALUE_OBJECT_TABLES = ['value_object', 'value_object_field', 'constraint', 'value_type', 'constraint_test', 'meets', 'package_use', 'starts_from'] as const;
 
-/** The kinds of the aggregate's records, each with the column that names its parent inside the aggregate. */
-export const VALUE_OBJECT_KINDS = {
-  value_object: null,
-  constraint: 'value_object_id',
-  value_type: 'value_object_id',
-  constraint_test: 'constraint_id',
-} as const;
+/** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
+export const VALUE_OBJECT_SHAPE = {
+  value_object: { at: 'valueObject', given: { fields: 'fields' } },
+  constraint: { at: 'constraints' },
+  value_type: { at: 'valueType', one: true, lists: { meets: 'meets', packages: 'packages' } },
+  constraint_test: { at: 'constraintTests', lists: { starts_from: 'startsFrom' } },
+} as const satisfies AggregateShape;
 
-export type ValueObjectKind = keyof typeof VALUE_OBJECT_KINDS;
-
-/** A new value object with its fields, and no constraints or value type yet. */
-export function newValueObject(valueObject: ValueObjectRow, fields: ValueObjectField[]): ValueObject {
-  return { root: valueObject.id, valueObject, fields, constraints: [], valueType: null, constraintTests: [] };
-}
+export type ValueObjectKind = keyof typeof VALUE_OBJECT_SHAPE;
 
 /** The value objects in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function valueObjectsFrom(rows: (table: string) => Row[], only?: string): ValueObject[] {
@@ -120,11 +102,3 @@ export function valueObjectRows(valueObject: ValueObject): Map<string, Row[]> {
   ]);
 }
 
-/** The kind of the record with this ID inside the value object, or undefined. */
-export function kindInside(valueObject: ValueObject, id: string): ValueObjectKind | undefined {
-  if (valueObject.root === id) return 'value_object';
-  if (valueObject.constraints.some((c) => c.id === id)) return 'constraint';
-  if (valueObject.valueType?.row.id === id) return 'value_type';
-  if (valueObject.constraintTests.some((t) => t.row.id === id)) return 'constraint_test';
-  return undefined;
-}

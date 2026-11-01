@@ -1,10 +1,8 @@
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PatternRow } from '../../../platform/data/tables.ts';
-import { newPattern, type PatternSetting } from '../model.ts';
-import { PatternRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
+import type { PatternSetting } from '../model.ts';
 import { ADD_PATTERN_IDENTITY } from './identities.generated.ts';
+import { addPattern } from './handlers.generated.ts';
 
 export type AddPattern = Pick<PatternRow, 'id' | 'title' | 'product_id' | 'description' | 'notes'> & { settings?: PatternSetting[] };
 
@@ -20,11 +18,3 @@ export const ADD_PATTERN = {
   },
   handler: addPattern,
 } satisfies CommandDefinition<AddPattern>;
-
-export function addPattern(tx: Transaction, input: AddPattern): void {
-  const patterns = new PatternRepository(tx);
-  const { settings = [], ...row } = input;
-  const pattern = patterns.create(newPattern(row, settings));
-  holdToRules(tx, pattern);
-  patterns.save(pattern);
-}

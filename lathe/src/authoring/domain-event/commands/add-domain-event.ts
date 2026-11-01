@@ -1,10 +1,8 @@
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { DomainEventRow } from '../../../platform/data/tables.ts';
-import { newDomainEvent, type EventFieldInput } from '../model.ts';
-import { DomainEventRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
+import type { EventFieldInput } from '../model.ts';
 import { ADD_DOMAIN_EVENT_IDENTITY } from './identities.generated.ts';
+import { addDomainEvent } from './handlers.generated.ts';
 
 export type AddDomainEvent = Pick<DomainEventRow, 'id' | 'title' | 'aggregate_id' | 'published' | 'description'> & { fields?: EventFieldInput[] };
 
@@ -20,11 +18,3 @@ export const ADD_DOMAIN_EVENT = {
   },
   handler: addDomainEvent,
 } satisfies CommandDefinition<AddDomainEvent>;
-
-export function addDomainEvent(tx: Transaction, input: AddDomainEvent): void {
-  const events = new DomainEventRepository(tx);
-  const { fields = [], ...row } = input;
-  const event = events.create(newDomainEvent(row, fields));
-  holdToRules(tx, event);
-  events.save(event);
-}

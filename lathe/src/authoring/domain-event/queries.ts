@@ -5,7 +5,7 @@
 import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { type DomainEventKind } from './model.ts';
+import type { DomainEventKind } from './model.ts';
 import type { DomainEventPage, DomainEventSummary } from './read-model.ts';
 import { domainEventReader, type DomainEventReader } from './reader.ts';
 import { GET_DOMAIN_EVENT_IDENTITY, LIST_DOMAIN_EVENTS_IDENTITY, NEXT_DOMAIN_EVENT_ID_IDENTITY } from './queries.generated.ts';

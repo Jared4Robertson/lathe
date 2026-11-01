@@ -1,9 +1,7 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
-import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ConstraintTestRow } from '../../../platform/data/tables.ts';
-import { changed } from '../model.ts';
-import { ValueObjectRepository } from '../repository.ts';
 import { CHANGE_CONSTRAINT_TEST_IDENTITY } from './identities.generated.ts';
+import { changeConstraintTest } from './handlers.generated.ts';
 
 /** The test's changes: a column given is set, null clears an optional one; starts_from, when given, replaces the list. */
 export type ChangeConstraintTest = Pick<ConstraintTestRow, 'id'> & { title?: ConstraintTestRow['title']; level?: ConstraintTestRow['level']; state?: ConstraintTestRow['state']; file?: ConstraintTestRow['file'] | null; manual_reason?: ConstraintTestRow['manual_reason'] | null; size?: ConstraintTestRow['size'] | null; smoke?: ConstraintTestRow['smoke'] | null; external?: ConstraintTestRow['external'] | null; accepts?: ConstraintTestRow['accepts']; refuses?: ConstraintTestRow['refuses']; notes?: ConstraintTestRow['notes'] | null; starts_from?: string[] };
@@ -27,11 +25,3 @@ export const CHANGE_CONSTRAINT_TEST = {
   },
   handler: changeConstraintTest,
 } satisfies CommandDefinition<ChangeConstraintTest>;
-
-/** Changes the test's columns and the data sets it starts from. */
-export function changeConstraintTest(tx: Transaction, input: ChangeConstraintTest): void {
-  const valueObjects = new ValueObjectRepository(tx);
-  const valueObject = valueObjects.loadHolding('constraint_test', input.id) ?? tx.refuse('missing', `there is no constraint test ${input.id}`);
-  valueObject.constraintTests = valueObject.constraintTests.map((t) => (t.row.id === input.id ? { row: changed(t.row, input, ['title', 'level', 'state', 'file', 'manual_reason', 'size', 'smoke', 'external', 'accepts', 'refuses', 'notes']), startsFrom: input.starts_from ?? t.startsFrom } : t));
-  valueObjects.save(valueObject);
-}

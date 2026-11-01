@@ -1,26 +1,13 @@
 // The Use case aggregate (LA-AUT-A11): a use case with its actors, its UC requirements and their use case tests, and
 // its flows with their steps (and the links each step starts) and their flow tests. One instance is one use case,
 // whole; nothing in it belongs to another aggregate, and it holds only the links its own records start.
+import type { AggregateShape } from '../../platform/data/repository.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
-import type { Row, Value } from '../../platform/data/rows.ts';
+import type { Row } from '../../platform/data/rows.ts';
 import type { FlowRow, FlowStepRow, FlowTestRow, UcRequirementRow, UseCaseRow, UseCaseTestRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const USE_CASE_AGGREGATE = 'LA-AUT-A11';
-
-/**
- * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.
- * Only the columns named in `columns` are taken from the changes.
- */
-export function changed<R extends object>(row: R, changes: object, columns: readonly string[]): R {
-  const next = { ...row } as Record<string, unknown>;
-  for (const [column, value] of Object.entries(changes)) {
-    if (!columns.includes(column) || value === undefined) continue;
-    if (value === null) delete next[column];
-    else next[column] = value as Value;
-  }
-  return next as R;
-}
 
 /** A flow step with the links it starts. */
 export interface FlowStep {
@@ -71,22 +58,17 @@ export const USE_CASE_TABLES = [
   'starts_from',
 ] as const;
 
-/** The kinds of the aggregate's records, each with the column that names its parent inside the aggregate. */
-export const USE_CASE_KINDS = {
-  use_case: null,
-  uc_requirement: 'use_case_id',
-  use_case_test: 'uc_requirement_id',
-  flow: 'use_case_id',
-  flow_step: 'flow_id',
-  flow_test: 'flow_id',
-} as const;
+/** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
+export const USE_CASE_SHAPE = {
+  use_case: { at: 'useCase', lists: { actors: 'actors' } },
+  uc_requirement: { at: 'requirements' },
+  use_case_test: { at: 'useCaseTests', lists: { starts_from: 'startsFrom' } },
+  flow: { at: 'flows' },
+  flow_step: { at: 'steps', lists: { fulfills: 'fulfills', exchanges_with: 'exchangesWith' }, links: { invokes: 'invokes', happens_in: 'happensIn' } },
+  flow_test: { at: 'flowTests', lists: { starts_from: 'startsFrom' } },
+} as const satisfies AggregateShape;
 
-export type UseCaseKind = keyof typeof USE_CASE_KINDS;
-
-/** A new use case, with nothing under it yet. */
-export function newUseCase(useCase: UseCaseRow, actors: string[]): UseCase {
-  return { root: useCase.id, useCase, actors, requirements: [], useCaseTests: [], flows: [], steps: [], flowTests: [] };
-}
+export type UseCaseKind = keyof typeof USE_CASE_SHAPE;
 
 /** The use cases in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function useCasesFrom(rows: (table: string) => Row[], only?: string): UseCase[] {
@@ -147,13 +129,3 @@ export function useCaseRows(useCase: UseCase): Map<string, Row[]> {
   ]);
 }
 
-/** The kind of the record with this ID inside the use case, or undefined. */
-export function kindInside(useCase: UseCase, id: string): UseCaseKind | undefined {
-  if (useCase.root === id) return 'use_case';
-  if (useCase.requirements.some((r) => r.id === id)) return 'uc_requirement';
-  if (useCase.useCaseTests.some((t) => t.row.id === id)) return 'use_case_test';
-  if (useCase.flows.some((f) => f.id === id)) return 'flow';
-  if (useCase.steps.some((s) => s.row.id === id)) return 'flow_step';
-  if (useCase.flowTests.some((t) => t.row.id === id)) return 'flow_test';
-  return undefined;
-}
