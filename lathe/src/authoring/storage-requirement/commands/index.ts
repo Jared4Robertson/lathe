@@ -1,4 +1,4 @@
-// The Storage requirement aggregate's commands (LA-AUT-A22), as the CLI, the MCP server and the HTTP API register them.
+// Generated from data/ by `npm run generate`. Do not edit.
 import type { AnyCommand } from '../../../platform/commands/definition.ts';
 import { ADD_STORAGE_REQUIREMENT } from './add-storage-requirement.ts';
 import { CHANGE_STORAGE_REQUIREMENT } from './change-storage-requirement.ts';

@@ -1,18 +1,13 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { AGGREGATE_SLICE } from '../model.ts';
 import { AggregateRepository } from '../repository.ts';
+import { REMOVE_INVARIANT_IDENTITY } from './identities.generated.ts';
 
 /** The invariant to remove. */
 export type RemoveInvariant = { id: string };
 
 export const REMOVE_INVARIANT: CommandDefinition<RemoveInvariant> = {
-  id: 'LA-AUT-CMD218',
-  slice: AGGREGATE_SLICE,
-  name: 'remove-invariant',
-  description: 'Removes an invariant with its rule and its test, and the links they start. Refused while anything else references them, such as a table key it names.',
-  method: 'POST',
-  route: '/api/aggregate/remove-invariant',
+  ...REMOVE_INVARIANT_IDENTITY,
   input: {
     id: column('invariant', 'id', 'required'),
   },

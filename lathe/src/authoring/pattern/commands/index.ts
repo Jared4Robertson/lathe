@@ -1,4 +1,4 @@
-// The Pattern aggregate's commands, as the CLI, the MCP server and the HTTP API register them.
+// Generated from data/ by `npm run generate`. Do not edit.
 import type { AnyCommand } from '../../../platform/commands/definition.ts';
 import { ADD_PATTERN } from './add-pattern.ts';
 import { CHANGE_PATTERN } from './change-pattern.ts';

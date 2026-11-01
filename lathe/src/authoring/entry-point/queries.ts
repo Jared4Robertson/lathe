@@ -1,12 +1,12 @@
 // The Entry point aggregate's own reads (read model LA-AUT-RM40): an entry point's page, the entry points of a domain,
 // and the next free ID for one. Each reads only the read model, through its reader (reader.ts), and changes
 // nothing.
-import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { ENTRY_POINT_SLICE } from './model.ts';
 import type { EntryPointPage, EntryPointSummary } from './read-model.ts';
 import { entryPointReader, type EntryPointReader } from './reader.ts';
+import { GET_ENTRY_POINT_IDENTITY, LIST_ENTRY_POINTS_IDENTITY, NEXT_ENTRY_POINT_ID_IDENTITY } from './queries.generated.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
@@ -21,12 +21,7 @@ export function getEntryPoint(reader: EntryPointReader, input: { id: string }): 
 
 /** Get an entry point whole (LA-AUT-QRY120). */
 export const GET_ENTRY_POINT: QueryDefinition<{ id: string }, EntryPointPage, EntryPointReader> = {
-  id: 'LA-AUT-QRY120',
-  slice: ENTRY_POINT_SLICE,
-  name: 'get-entry-point',
-  description: 'Reads an entry point whole, by its ID: its row, the packages it uses and the standard rules it meets.',
-  method: 'GET',
-  route: '/api/entry-point/get-entry-point',
+  ...GET_ENTRY_POINT_IDENTITY,
   input: { id: id('The entry point.', 'required') },
   reader: entryPointReader,
   run: getEntryPoint,
@@ -41,12 +36,7 @@ export function listEntryPoints(reader: EntryPointReader, input: { domain_id: st
 
 /** List the entry points of a domain (LA-AUT-QRY121). */
 export const LIST_ENTRY_POINTS: QueryDefinition<{ domain_id: string }, EntryPointSummary[], EntryPointReader> = {
-  id: 'LA-AUT-QRY121',
-  slice: ENTRY_POINT_SLICE,
-  name: 'list-entry-points',
-  description: 'Lists the entry points of a domain, by ID, with their titles.',
-  method: 'GET',
-  route: '/api/entry-point/list-entry-points',
+  ...LIST_ENTRY_POINTS_IDENTITY,
   input: { domain_id: id('The domain.', 'required') },
   reader: entryPointReader,
   run: listEntryPoints,
@@ -62,12 +52,7 @@ export function nextEntryPointId(reader: EntryPointReader, input: { domain_id: s
 
 /** Get the next ID for an entry point (LA-AUT-QRY122). */
 export const NEXT_ENTRY_POINT_ID: QueryDefinition<{ domain_id: string }, string, EntryPointReader> = {
-  id: 'LA-AUT-QRY122',
-  slice: ENTRY_POINT_SLICE,
-  name: 'next-id',
-  description: 'The next free ID for an entry point of a domain: one past the highest in use.',
-  method: 'GET',
-  route: '/api/entry-point/next-id',
+  ...NEXT_ENTRY_POINT_ID_IDENTITY,
   input: { domain_id: id('The domain it will sit under.', 'required') },
   reader: entryPointReader,
   run: nextEntryPointId,
@@ -83,6 +68,3 @@ function entryPointText(record: EntryPointPage): string {
   if (record.meets.length) lines.push(`  meets: ${record.meets.join(', ')}`);
   return lines.join('\n');
 }
-
-/** The Entry point aggregate's queries, as the CLI and the MCP server register them. */
-export const ENTRY_POINT_QUERIES: readonly AnyQuery[] = [GET_ENTRY_POINT, LIST_ENTRY_POINTS, NEXT_ENTRY_POINT_ID];

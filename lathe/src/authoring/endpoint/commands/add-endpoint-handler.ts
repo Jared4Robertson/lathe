@@ -1,20 +1,15 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EndpointHandlerRow } from '../../../platform/data/tables.ts';
-import { ENDPOINT_SLICE } from '../model.ts';
 import { EndpointRepository } from '../repository.ts';
 import { refuseBroken } from '../../../platform/data/rules.ts';
 import { oneEndpointHandler } from '../rules.ts';
+import { ADD_ENDPOINT_HANDLER_IDENTITY } from './identities.generated.ts';
 
 export type AddEndpointHandler = Pick<EndpointHandlerRow, 'id' | 'title' | 'endpoint_id' | 'description' | 'file'> & { meets?: string[]; packages?: string[] };
 
 export const ADD_ENDPOINT_HANDLER: CommandDefinition<AddEndpointHandler> = {
-  id: 'LA-AUT-CMD327',
-  slice: ENDPOINT_SLICE,
-  name: 'add-endpoint-handler',
-  description: "Adds an endpoint's handler, its one piece of code that serves it: its name in code and its file, with the standard rules it meets and the packages it uses.",
-  method: 'POST',
-  route: '/api/endpoint/add-endpoint-handler',
+  ...ADD_ENDPOINT_HANDLER_IDENTITY,
   input: {
     id: column('endpoint_handler', 'id', 'required'),
     title: column('endpoint_handler', 'title', 'required'),

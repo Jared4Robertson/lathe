@@ -1,20 +1,16 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { CommandHandlerRow } from '../../../platform/data/tables.ts';
-import { changed, COMMAND_SLICE } from '../model.ts';
+import { changed } from '../model.ts';
 import { CommandRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_COMMAND_HANDLER_IDENTITY } from './identities.generated.ts';
 
 /** The handler's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeCommandHandler = Pick<CommandHandlerRow, 'id'> & { title?: string; file?: string | null; description?: string; meets?: string[]; packages?: string[] };
 
 export const CHANGE_COMMAND_HANDLER: CommandDefinition<ChangeCommandHandler> = {
-  id: 'LA-AUT-CMD244',
-  slice: COMMAND_SLICE,
-  name: 'change-command-handler',
-  description: "Changes a command handler's title, file or description, or the standard rules it meets or the packages it uses (each list whole). Its command does not change.",
-  method: 'POST',
-  route: '/api/command/change-command-handler',
+  ...CHANGE_COMMAND_HANDLER_IDENTITY,
   input: {
     id: column('command_handler', 'id', 'required'),
     title: column('command_handler', 'title', 'optional'),

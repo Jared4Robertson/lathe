@@ -1,15 +1,8 @@
 // The Business outcome aggregate (LA-AUT-A16): a measurable change a product exists to bring about, with the tests and
 // records that measure it. One instance is one outcome, whole: its row and the measured_by links it starts.
-import type { Slice } from '../../platform/commands/definition.ts';
 import { bySource, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { BusinessOutcomeRow } from '../../platform/data/tables.ts';
-
-/** The aggregate's record ID in Lathe's own spec. */
-export const BUSINESS_OUTCOME_AGGREGATE = 'LA-AUT-A16';
-
-/** How the interfaces reach the aggregate's commands: `lathe business-outcome`, the business_outcome_ tools, /api/business-outcome/. */
-export const BUSINESS_OUTCOME_SLICE: Slice = { aggregate: BUSINESS_OUTCOME_AGGREGATE, name: 'business-outcome' };
 
 /**
  * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.

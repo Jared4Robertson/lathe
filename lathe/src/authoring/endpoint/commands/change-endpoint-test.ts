@@ -1,19 +1,15 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EndpointTestRow } from '../../../platform/data/tables.ts';
-import { changed, ENDPOINT_SLICE } from '../model.ts';
+import { changed } from '../model.ts';
 import { EndpointRepository } from '../repository.ts';
+import { CHANGE_ENDPOINT_TEST_IDENTITY } from './identities.generated.ts';
 
 /** The endpoint test's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeEndpointTest = Pick<EndpointTestRow, 'id'> & { title?: EndpointTestRow['title']; level?: EndpointTestRow['level']; state?: EndpointTestRow['state']; when?: EndpointTestRow['when']; then?: EndpointTestRow['then']; file?: EndpointTestRow['file'] | null; manual_reason?: EndpointTestRow['manual_reason'] | null; size?: EndpointTestRow['size'] | null; smoke?: EndpointTestRow['smoke'] | null; external?: EndpointTestRow['external'] | null; notes?: EndpointTestRow['notes'] | null; starts_from?: string[] };
 
 export const CHANGE_ENDPOINT_TEST: CommandDefinition<ChangeEndpointTest> = {
-  id: 'LA-AUT-CMD331',
-  slice: ENDPOINT_SLICE,
-  name: 'change-endpoint-test',
-  description: "Changes an endpoint test's columns or the test data sets it starts from (the whole list). Its requirement does not change.",
-  method: 'POST',
-  route: '/api/endpoint/change-endpoint-test',
+  ...CHANGE_ENDPOINT_TEST_IDENTITY,
   input: {
     id: column('endpoint_test', 'id', 'required'),
     title: column('endpoint_test', 'title', 'optional'),

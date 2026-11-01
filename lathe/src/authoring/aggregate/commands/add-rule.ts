@@ -1,19 +1,14 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { RuleRow } from '../../../platform/data/tables.ts';
-import { AGGREGATE_SLICE } from '../model.ts';
 import { AggregateRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_RULE_IDENTITY } from './identities.generated.ts';
 
 export type AddRule = Pick<RuleRow, 'id' | 'title' | 'invariant_id' | 'file'> & { meets?: string[]; packages?: string[] };
 
 export const ADD_RULE: CommandDefinition<AddRule> = {
-  id: 'LA-AUT-CMD225',
-  slice: AGGREGATE_SLICE,
-  name: 'add-rule',
-  description: 'Adds the rule that enforces an invariant of the aggregate: its name in code, the name its refusal carries, and its file, with the standard rules it meets and the packages it uses.',
-  method: 'POST',
-  route: '/api/aggregate/add-rule',
+  ...ADD_RULE_IDENTITY,
   input: {
     id: column('rule', 'id', 'required'),
     title: column('rule', 'title', 'required'),

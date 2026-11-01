@@ -1,19 +1,15 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PredicateRow } from '../../../platform/data/tables.ts';
-import { SPECIFICATION_SLICE, changed } from '../model.ts';
+import { changed } from '../model.ts';
 import { SpecificationRepository } from '../repository.ts';
+import { CHANGE_PREDICATE_IDENTITY } from './identities.generated.ts';
 
 /** The predicate's changes: a column given is set, null clears an optional one; a list given replaces the list. */
 export type ChangePredicate = Pick<PredicateRow, 'id'> & { title?: PredicateRow['title']; file?: PredicateRow['file'] | null; meets?: string[]; packages?: string[] };
 
 export const CHANGE_PREDICATE: CommandDefinition<ChangePredicate> = {
-  id: 'LA-AUT-CMD264',
-  slice: SPECIFICATION_SLICE,
-  name: 'change-predicate',
-  description: "Changes a predicate's title or file, or the standard rules it meets or packages it uses (each the whole list).",
-  method: 'POST',
-  route: '/api/specification/change-predicate',
+  ...CHANGE_PREDICATE_IDENTITY,
   input: {
     id: column('predicate', 'id', 'required'),
     title: column('predicate', 'title', 'optional'),

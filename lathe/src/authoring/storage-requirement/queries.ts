@@ -2,12 +2,13 @@
 // (reader.ts), which the query runner gives each handler: a storage requirement whole as its page reads it, the
 // storage requirements of an aggregate or read model, and the next free ID for a record of one of its kinds. A handler
 // never sees the data, a repository or the aggregate's model; each changes nothing.
-import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { STORAGE_REQUIREMENT_SLICE, type StorageRequirementKind } from './model.ts';
+import { type StorageRequirementKind } from './model.ts';
 import type { StorageRequirementPage, StorageRequirementSummary } from './read-model.ts';
 import { storageRequirementReader, type StorageRequirementReader } from './reader.ts';
+import { GET_STORAGE_REQUIREMENT_IDENTITY, LIST_STORAGE_REQUIREMENTS_IDENTITY, NEXT_STORAGE_REQUIREMENT_ID_IDENTITY } from './queries.generated.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
@@ -23,12 +24,7 @@ export function getStorageRequirement(reader: StorageRequirementReader, input: {
 
 /** GET a storage requirement whole (LA-AUT-QRY220). */
 export const GET_STORAGE_REQUIREMENT: QueryDefinition<{ id: string }, StorageRequirementPage, StorageRequirementReader> = {
-  id: 'LA-AUT-QRY220',
-  slice: STORAGE_REQUIREMENT_SLICE,
-  name: 'get-storage-requirement',
-  description: "Reads a storage requirement whole as its page shows it, by its ID or the ID of one of its storage requirement tests: the record asked for and its kind, the requirement's row, the aggregate or read model it is about, the repository or reader that builds it with the data store that names, and its storage requirement tests with the test data sets each starts from.",
-  method: 'GET',
-  route: '/api/storage-requirement/get-storage-requirement',
+  ...GET_STORAGE_REQUIREMENT_IDENTITY,
   input: { id: id('The storage requirement, or one of its storage requirement tests.', 'required') },
   reader: storageRequirementReader,
   run: getStorageRequirement,
@@ -42,18 +38,12 @@ export function listStorageRequirements(reader: StorageRequirementReader, input:
 
 /** List the storage requirements of an aggregate or read model (LA-AUT-QRY221). */
 export const LIST_STORAGE_REQUIREMENTS: QueryDefinition<{ parent: string }, StorageRequirementSummary[], StorageRequirementReader> = {
-  id: 'LA-AUT-QRY221',
-  slice: STORAGE_REQUIREMENT_SLICE,
-  name: 'list-storage-requirements',
-  description: 'Lists the storage requirements of an aggregate or read model, by ID, with their titles.',
-  method: 'GET',
-  route: '/api/storage-requirement/list-storage-requirements',
+  ...LIST_STORAGE_REQUIREMENTS_IDENTITY,
   input: { parent: id('The aggregate or read model.', 'required') },
   reader: storageRequirementReader,
   run: listStorageRequirements,
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No storage requirements.'),
 };
-
 
 /** The kinds of the aggregate with an ID under a parent; how each is written the schema says (`idShape`). */
 const KINDS: readonly string[] = ['storage_requirement', 'storage_requirement_test'];
@@ -76,12 +66,7 @@ export function nextStorageRequirementId(reader: StorageRequirementReader, input
 
 /** Get the next ID for a record of the Storage requirement aggregate (LA-AUT-QRY222). */
 export const NEXT_STORAGE_REQUIREMENT_ID: QueryDefinition<{ kind: string; parent: string }, string, StorageRequirementReader> = {
-  id: 'LA-AUT-QRY222',
-  slice: STORAGE_REQUIREMENT_SLICE,
-  name: 'next-id',
-  description: 'The next free ID for a storage requirement (under its aggregate or read model) or a storage requirement test (under its storage requirement): one past the highest in use.',
-  method: 'GET',
-  route: '/api/storage-requirement/next-id',
+  ...NEXT_STORAGE_REQUIREMENT_ID_IDENTITY,
   input: {
     kind: id('The kind: storage_requirement or storage_requirement_test.', 'required'),
     parent: id('The record it will sit under: an aggregate or read model for a storage requirement, else the storage requirement.', 'required'),
@@ -100,6 +85,3 @@ function storageRequirementText(page: StorageRequirementPage): string {
   for (const { test, startsFrom } of page.tests) lines.push(`Storage requirement test ${test.id}: ${test.title} (${test.level}, ${test.state})${listed(startsFrom)}`);
   return lines.join('\n');
 }
-
-/** The Storage requirement aggregate's queries, as the CLI and the MCP server register them. */
-export const STORAGE_REQUIREMENT_QUERIES: readonly AnyQuery[] = [GET_STORAGE_REQUIREMENT, LIST_STORAGE_REQUIREMENTS, NEXT_STORAGE_REQUIREMENT_ID];

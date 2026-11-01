@@ -1,16 +1,12 @@
 // The Pattern aggregate (LA-AUT-A2): behavior several use cases share, written once: a pattern with its settings in
 // order, its rules, and each rule's tests per following domain (with the test data sets they start from). One
 // instance is one pattern, whole; who follows it, and the values they give its settings, are Pattern following's.
-import type { Slice } from '../../platform/commands/definition.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { PatternRow, PatternRuleRow, PatternRuleTestRow, PatternSettingRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const PATTERN_AGGREGATE = 'LA-AUT-A2';
-
-/** How the interfaces reach the aggregate's commands: `lathe pattern`, the pattern_ tools, /api/pattern/. */
-export const PATTERN_SLICE: Slice = { aggregate: PATTERN_AGGREGATE, name: 'pattern' };
 
 /**
  * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.

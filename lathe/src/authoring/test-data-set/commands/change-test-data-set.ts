@@ -1,19 +1,15 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { TestDataSetRow } from '../../../platform/data/tables.ts';
-import { TEST_DATA_SET_SLICE, changed } from '../model.ts';
+import { changed } from '../model.ts';
 import { TestDataSetRepository } from '../repository.ts';
+import { CHANGE_TEST_DATA_SET_IDENTITY } from './identities.generated.ts';
 
 /** The test data set's changes: a column given is set, null clears an optional one. */
 export type ChangeTestDataSet = Pick<TestDataSetRow, 'id'> & { title?: TestDataSetRow['title']; environment?: TestDataSetRow['environment']; accounts?: TestDataSetRow['accounts'] | null; records?: TestDataSetRow['records']; prepare?: TestDataSetRow['prepare']; reset?: TestDataSetRow['reset']; file?: TestDataSetRow['file'] | null; description?: TestDataSetRow['description'] };
 
 export const CHANGE_TEST_DATA_SET: CommandDefinition<ChangeTestDataSet> = {
-  id: 'LA-AUT-CMD186',
-  slice: TEST_DATA_SET_SLICE,
-  name: 'change-test-data-set',
-  description: "Changes a test data set's columns. Its domain never changes.",
-  method: 'POST',
-  route: '/api/test-data-set/change-test-data-set',
+  ...CHANGE_TEST_DATA_SET_IDENTITY,
   input: {
     id: column('test_data_set', 'id', 'required'),
     title: column('test_data_set', 'title', 'optional'),

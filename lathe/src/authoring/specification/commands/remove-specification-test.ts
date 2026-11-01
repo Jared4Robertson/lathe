@@ -1,18 +1,13 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { SPECIFICATION_SLICE } from '../model.ts';
 import { SpecificationRepository } from '../repository.ts';
+import { REMOVE_SPECIFICATION_TEST_IDENTITY } from './identities.generated.ts';
 
 /** The specification test to remove. */
 export type RemoveSpecificationTest = { id: string };
 
 export const REMOVE_SPECIFICATION_TEST: CommandDefinition<RemoveSpecificationTest> = {
-  id: 'LA-AUT-CMD268',
-  slice: SPECIFICATION_SLICE,
-  name: 'remove-specification-test',
-  description: "Removes a specification's test with the links it starts. Refused while anything references it, such as a business outcome it measures.",
-  method: 'POST',
-  route: '/api/specification/remove-specification-test',
+  ...REMOVE_SPECIFICATION_TEST_IDENTITY,
   input: {
     id: column('specification_test', 'id', 'required'),
   },

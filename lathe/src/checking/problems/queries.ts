@@ -3,13 +3,11 @@
 // the server gives it the run it keeps for the data, the CLI and the MCP tool run the checks first. Its handler never
 // sees the data and changes nothing. The checks themselves are the Check aggregate's (checking/check); this slice holds
 // only the read, so it names its read model where an aggregate's slice names its aggregate.
-import { id, type AnyQuery, type QueryDefinition, type Slice } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import type { CheckProblems, ProductProblems } from './read-model.ts';
 import { problemsReader, type ProblemsReader } from './reader.ts';
-
-/** How the interfaces reach the Problems read: `lathe problems`, the problems_ tools, /api/problems/. */
-const PROBLEMS_SLICE: Slice = { aggregate: 'LA-CHK-RM01', name: 'problems' };
+import { LIST_PROBLEMS_IDENTITY } from './queries.generated.ts';
 
 /** The product's problems by check, errors first, then the workspace's by check, with the counts. */
 export function listProblems(reader: ProblemsReader, input: { product_id: string }): ProductProblems {
@@ -26,12 +24,7 @@ const checkText = (group: CheckProblems, indent: string) => [
 
 /** List a product's problems (LA-CHK-QRY02). */
 export const LIST_PROBLEMS: QueryDefinition<{ product_id: string }, ProductProblems, ProblemsReader> = {
-  id: 'LA-CHK-QRY02',
-  slice: PROBLEMS_SLICE,
-  name: 'list-problems',
-  method: 'GET',
-  route: '/api/problems/list-problems',
-  description: "Lists a product's problems, errors before warnings, grouped by check, then the problems that belong to no product under Workspace, with the errors and warnings counted. Runs the checks first.",
+  ...LIST_PROBLEMS_IDENTITY,
   input: { product_id: id('The product.', 'required') },
   checked: true,
   reader: problemsReader,
@@ -43,6 +36,3 @@ export const LIST_PROBLEMS: QueryDefinition<{ product_id: string }, ProductProbl
       ...(p.workspace.length ? ['  Workspace', ...p.workspace.flatMap((g) => checkText(g, '    '))] : []),
     ].join('\n'),
 };
-
-/** The Problems read's queries, as the CLI and the MCP server register them. */
-export const PROBLEMS_QUERIES: readonly AnyQuery[] = [LIST_PROBLEMS];

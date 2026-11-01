@@ -1,16 +1,12 @@
 // The Pattern following aggregate (LA-TRC-A3): a domain or use case that follows one pattern (a follows link), with
 // the value it gives each of the pattern's settings. One instance is one following, whole, named by its follower and
 // its pattern.
-import type { Slice } from '../../platform/commands/definition.ts';
 import { groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { SettingValueRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const PATTERN_FOLLOWING_AGGREGATE = 'LA-TRC-A3';
-
-/** How the interfaces reach the aggregate's commands: `lathe pattern-following`, the pattern_following_ tools, /api/pattern-following/. */
-export const PATTERN_FOLLOWING_SLICE: Slice = { aggregate: PATTERN_FOLLOWING_AGGREGATE, name: 'pattern-following' };
 
 /** A setting value as a command gives it: its follower and pattern come from the following. */
 export type SettingValueInput = Omit<SettingValueRow, 'follower_id' | 'pattern_id'>;

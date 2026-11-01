@@ -1,8 +1,9 @@
 import { id, links, texts, values, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { EXTENSION_RECORD_SLICE, undeclared, withLinks, withValues } from '../model.ts';
+import { undeclared, withLinks, withValues } from '../model.ts';
 import { ExtensionRecordRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_EXTENSION_RECORD_IDENTITY } from './identities.generated.ts';
 
 /** The record's changes: a value given sets its column and null clears an optional one; each links list replaces that relation's. */
 export type ChangeExtensionRecord = {
@@ -13,12 +14,7 @@ export type ChangeExtensionRecord = {
 };
 
 export const CHANGE_EXTENSION_RECORD: CommandDefinition<ChangeExtensionRecord> = {
-  id: 'LA-AUT-CMD146',
-  slice: EXTENSION_RECORD_SLICE,
-  name: 'change-extension-record',
-  description: "Changes a record of a product's own kind: its title or declared fields, the links it starts by relation, or the packages it uses. Its kind and parent never change.",
-  method: 'POST',
-  route: '/api/extension-record/change-extension-record',
+  ...CHANGE_EXTENSION_RECORD_IDENTITY,
   input: {
     id: id('The record.', 'required'),
     values: values('Its title or declared fields to change, by column name; null clears an optional field.', 'optional'),

@@ -2,7 +2,6 @@
 // starts and the packages it uses. Its shape is its kind's declaration (product_kind and product_kind_field rows): its
 // table, its parent column and its fields come from the schema the declaration builds, not from code. One instance is
 // one record, whole; a record of another product kind under it is an instance of its own.
-import type { Slice } from '../../platform/commands/definition.ts';
 import { bySource, groupOf } from '../../platform/data/grouped.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { KindDescription, SchemaDescription } from '../../platform/data/schema.ts';
@@ -10,9 +9,6 @@ import { productKinds, startedRelations, valueColumns } from './declaration.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const EXTENSION_RECORD_AGGREGATE = 'LA-AUT-A19';
-
-/** How the interfaces reach the aggregate's commands: `lathe extension-record`, the extension_record_ tools, /api/extension-record/. */
-export const EXTENSION_RECORD_SLICE: Slice = { aggregate: EXTENSION_RECORD_AGGREGATE, name: 'extension-record' };
 
 /** One record of a product's own kind, whole. */
 export interface ExtensionRecord {

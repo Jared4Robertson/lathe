@@ -1,20 +1,15 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { CommandHandlerRow } from '../../../platform/data/tables.ts';
-import { COMMAND_SLICE } from '../model.ts';
 import { CommandRepository } from '../repository.ts';
 import { commandOneEach, holdToRules } from '../rules.ts';
 import { refuseBroken } from '../../../platform/data/rules.ts';
+import { ADD_COMMAND_HANDLER_IDENTITY } from './identities.generated.ts';
 
 export type AddCommandHandler = Pick<CommandHandlerRow, 'id' | 'title' | 'command_id' | 'file' | 'description'> & { meets?: string[]; packages?: string[] };
 
 export const ADD_COMMAND_HANDLER: CommandDefinition<AddCommandHandler> = {
-  id: 'LA-AUT-CMD243',
-  slice: COMMAND_SLICE,
-  name: 'add-command-handler',
-  description: 'Adds the handler that carries out a command: its name in code, its file and what it does, with the standard rules it meets and the packages it uses. A command has one handler.',
-  method: 'POST',
-  route: '/api/command/add-command-handler',
+  ...ADD_COMMAND_HANDLER_IDENTITY,
   input: {
     id: column('command_handler', 'id', 'required'),
     title: column('command_handler', 'title', 'required'),

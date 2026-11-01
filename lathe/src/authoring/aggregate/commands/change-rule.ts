@@ -1,20 +1,16 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { RuleRow } from '../../../platform/data/tables.ts';
-import { AGGREGATE_SLICE, changed } from '../model.ts';
+import { changed } from '../model.ts';
 import { AggregateRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_RULE_IDENTITY } from './identities.generated.ts';
 
 /** The rule's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeRule = Pick<RuleRow, 'id'> & { title?: string; file?: string | null; meets?: string[]; packages?: string[] };
 
 export const CHANGE_RULE: CommandDefinition<ChangeRule> = {
-  id: 'LA-AUT-CMD226',
-  slice: AGGREGATE_SLICE,
-  name: 'change-rule',
-  description: "Changes a rule's title or file, or the standard rules it meets or the packages it uses (each list whole). Its invariant does not change.",
-  method: 'POST',
-  route: '/api/aggregate/change-rule',
+  ...CHANGE_RULE_IDENTITY,
   input: {
     id: column('rule', 'id', 'required'),
     title: column('rule', 'title', 'optional'),

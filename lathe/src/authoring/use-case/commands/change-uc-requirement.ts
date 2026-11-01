@@ -1,20 +1,16 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { UcRequirementRow } from '../../../platform/data/tables.ts';
-import { changed, USE_CASE_SLICE } from '../model.ts';
+import { changed } from '../model.ts';
 import { UseCaseRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_UC_REQUIREMENT_IDENTITY } from './identities.generated.ts';
 
 /** The requirement's changes: a column given is set, null clears an optional one. */
 export type ChangeUcRequirement = Pick<UcRequirementRow, 'id'> & { title?: string; statement?: string; group_name?: string | null };
 
 export const CHANGE_UC_REQUIREMENT: CommandDefinition<ChangeUcRequirement> = {
-  id: 'LA-AUT-CMD105',
-  slice: USE_CASE_SLICE,
-  name: 'change-uc-requirement',
-  description: "Changes a UC requirement's title, statement or group.",
-  method: 'POST',
-  route: '/api/use-case/change-uc-requirement',
+  ...CHANGE_UC_REQUIREMENT_IDENTITY,
   input: {
     id: column('uc_requirement', 'id', 'required'),
     title: column('uc_requirement', 'title', 'optional'),

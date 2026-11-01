@@ -2,7 +2,6 @@
 // as its own, its open questions (under the product or one of its domains, with what each is about) and its
 // interfaces. One instance is one product, whole; nothing in it belongs to another aggregate, and it holds only the
 // links its own records start.
-import type { Slice } from '../../platform/commands/definition.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
@@ -10,9 +9,6 @@ import type { InterfaceRow, ProductKindFieldRow, ProductKindRow, ProductRelation
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const PRODUCT_AGGREGATE = 'LA-AUT-A1';
-
-/** How the interfaces reach the aggregate's commands: `lathe product`, the product_ tools, /api/product/. */
-export const PRODUCT_SLICE: Slice = { aggregate: PRODUCT_AGGREGATE, name: 'product' };
 
 /**
  * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.

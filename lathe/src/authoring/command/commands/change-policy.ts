@@ -1,20 +1,16 @@
 import { column, id, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PolicyRow } from '../../../platform/data/tables.ts';
-import { changed, COMMAND_SLICE } from '../model.ts';
+import { changed } from '../model.ts';
 import { CommandRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_POLICY_IDENTITY } from './identities.generated.ts';
 
 /** The policy's changes: a column given is set; null clears the event it hears. */
 export type ChangePolicy = Pick<PolicyRow, 'id'> & { title?: string; statement?: string; hears?: string | null };
 
 export const CHANGE_POLICY: CommandDefinition<ChangePolicy> = {
-  id: 'LA-AUT-CMD247',
-  slice: COMMAND_SLICE,
-  name: 'change-policy',
-  description: "Changes a policy's title or statement, or the event it hears; null clears the event. The command it sends does not change.",
-  method: 'POST',
-  route: '/api/command/change-policy',
+  ...CHANGE_POLICY_IDENTITY,
   input: {
     id: column('policy', 'id', 'required'),
     title: column('policy', 'title', 'optional'),

@@ -1,19 +1,15 @@
 import { column, id, ids, parts, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { TableRow } from '../../../platform/data/tables.ts';
-import { KEY_COLUMNS, TABLE_SLICE, newTable, type TableKey } from '../model.ts';
+import { KEY_COLUMNS, newTable, type TableKey } from '../model.ts';
 import { TableRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_TABLE_IDENTITY } from './identities.generated.ts';
 
 export type AddTable = Pick<TableRow, 'id' | 'title' | 'entity_id' | 'read_model_id' | 'domain_id' | 'name' | 'storage' | 'file'> & { keys?: TableKey[]; stored_in?: string; meets?: string[]; packages?: string[] };
 
 export const ADD_TABLE: CommandDefinition<AddTable> = {
-  id: 'LA-AUT-CMD300',
-  slice: TABLE_SLICE,
-  name: 'add-table',
-  description: 'Adds a table under the one entity, read model or domain it stores, with its keys in order, the data store it is kept in, the standard rules it meets and the packages it uses.',
-  method: 'POST',
-  route: '/api/table/add-table',
+  ...ADD_TABLE_IDENTITY,
   input: {
     id: column('table', 'id', 'required'),
     title: column('table', 'title', 'required'),

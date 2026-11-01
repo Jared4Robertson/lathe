@@ -1,4 +1,4 @@
-// The Command aggregate's commands (LA-AUT-A8), as the CLI, the MCP server and the HTTP API register them.
+// Generated from data/ by `npm run generate`. Do not edit.
 import type { AnyCommand } from '../../../platform/commands/definition.ts';
 import { ADD_COMMAND } from './add-command.ts';
 import { CHANGE_COMMAND } from './change-command.ts';

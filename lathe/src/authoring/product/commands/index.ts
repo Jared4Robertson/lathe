@@ -1,4 +1,4 @@
-// The Product aggregate's commands (LA-AUT-A1), as the CLI, the MCP server and the HTTP API register them.
+// Generated from data/ by `npm run generate`. Do not edit.
 import type { AnyCommand } from '../../../platform/commands/definition.ts';
 import { ADD_PRODUCT } from './add-product.ts';
 import { CHANGE_PRODUCT } from './change-product.ts';

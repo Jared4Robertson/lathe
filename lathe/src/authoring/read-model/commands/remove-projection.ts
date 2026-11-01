@@ -1,18 +1,13 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { READ_MODEL_SLICE } from '../model.ts';
 import { ReadModelRepository } from '../repository.ts';
+import { REMOVE_PROJECTION_IDENTITY } from './identities.generated.ts';
 
 /** The projection to remove. */
 export type RemoveProjection = { id: string };
 
 export const REMOVE_PROJECTION: CommandDefinition<RemoveProjection> = {
-  id: 'LA-AUT-CMD293',
-  slice: READ_MODEL_SLICE,
-  name: 'remove-projection',
-  description: "Removes a read model's projection with the links it starts and the packages it uses. Refused while anything references it.",
-  method: 'POST',
-  route: '/api/read-model/remove-projection',
+  ...REMOVE_PROJECTION_IDENTITY,
   input: {
     id: column('projection', 'id', 'required'),
   },

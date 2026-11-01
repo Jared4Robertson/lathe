@@ -1,19 +1,15 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ViewRequirementRow } from '../../../platform/data/tables.ts';
-import { changed, VIEW_SLICE } from '../model.ts';
+import { changed } from '../model.ts';
 import { ViewRepository } from '../repository.ts';
+import { CHANGE_VIEW_REQUIREMENT_IDENTITY } from './identities.generated.ts';
 
 /** The view requirement's changes: a column given is set, null clears an optional one. */
 export type ChangeViewRequirement = Pick<ViewRequirementRow, 'id'> & { title?: ViewRequirementRow['title']; statement?: ViewRequirementRow['statement']; group_name?: ViewRequirementRow['group_name'] | null };
 
 export const CHANGE_VIEW_REQUIREMENT: CommandDefinition<ChangeViewRequirement> = {
-  id: 'LA-AUT-CMD314',
-  slice: VIEW_SLICE,
-  name: 'change-view-requirement',
-  description: "Changes a view requirement's title, statement or group. Its view does not change.",
-  method: 'POST',
-  route: '/api/view/change-view-requirement',
+  ...CHANGE_VIEW_REQUIREMENT_IDENTITY,
   input: {
     id: column('view_requirement', 'id', 'required'),
     title: column('view_requirement', 'title', 'optional'),

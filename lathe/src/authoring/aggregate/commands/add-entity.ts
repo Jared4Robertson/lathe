@@ -1,9 +1,10 @@
 import { column, ids, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EntityRow } from '../../../platform/data/tables.ts';
-import { AGGREGATE_SLICE, fieldRows, type EntityFieldInput } from '../model.ts';
+import { fieldRows, type EntityFieldInput } from '../model.ts';
 import { AggregateRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_ENTITY_IDENTITY } from './identities.generated.ts';
 
 export type AddEntity = Pick<EntityRow, 'id' | 'title' | 'aggregate_id' | 'role' | 'in_root_table' | 'description'> & {
   fields?: EntityFieldInput[];
@@ -12,12 +13,7 @@ export type AddEntity = Pick<EntityRow, 'id' | 'title' | 'aggregate_id' | 'role'
 };
 
 export const ADD_ENTITY: CommandDefinition<AddEntity> = {
-  id: 'LA-AUT-CMD213',
-  slice: AGGREGATE_SLICE,
-  name: 'add-entity',
-  description: 'Adds an entity to its aggregate, as its root or a child, with its fields in order and the entities of its aggregate it holds.',
-  method: 'POST',
-  route: '/api/aggregate/add-entity',
+  ...ADD_ENTITY_IDENTITY,
   input: {
     id: column('entity', 'id', 'required'),
     title: column('entity', 'title', 'required'),

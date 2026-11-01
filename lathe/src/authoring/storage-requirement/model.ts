@@ -2,17 +2,10 @@
 // well, with its storage requirement tests (each with the test data sets it starts from). A storage requirement sits under the one
 // aggregate or read model whose data it is about, outside the aggregate. One instance is one storage requirement,
 // whole; it holds only the links its own records start.
-import type { Slice } from '../../platform/commands/definition.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { StorageRequirementRow, StorageRequirementTestRow } from '../../platform/data/tables.ts';
 import { compareIds } from '../../platform/data/ids.ts';
-
-/** The aggregate's record ID in Lathe's own spec. */
-export const STORAGE_REQUIREMENT_AGGREGATE = 'LA-AUT-A22';
-
-/** How the interfaces reach the aggregate's commands: `lathe storage-requirement`, the storage_requirement_ tools, /api/storage-requirement/. */
-export const STORAGE_REQUIREMENT_SLICE: Slice = { aggregate: STORAGE_REQUIREMENT_AGGREGATE, name: 'storage-requirement' };
 
 /**
  * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.

@@ -1,20 +1,16 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { QueryHandlerRow } from '../../../platform/data/tables.ts';
-import { READ_MODEL_SLICE, changed } from '../model.ts';
+import { changed } from '../model.ts';
 import { ReadModelRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_QUERY_HANDLER_IDENTITY } from './identities.generated.ts';
 
 /** The query handler's changes: a column given is set, null clears an optional one; a list given replaces the list. */
 export type ChangeQueryHandler = Pick<QueryHandlerRow, 'id'> & { title?: QueryHandlerRow['title']; file?: QueryHandlerRow['file'] | null; description?: QueryHandlerRow['description']; meets?: string[]; packages?: string[] };
 
 export const CHANGE_QUERY_HANDLER: CommandDefinition<ChangeQueryHandler> = {
-  id: 'LA-AUT-CMD295',
-  slice: READ_MODEL_SLICE,
-  name: 'change-query-handler',
-  description: "Changes a query handler's title, file or description, or the standard rules it meets or packages it uses (each the whole list).",
-  method: 'POST',
-  route: '/api/read-model/change-query-handler',
+  ...CHANGE_QUERY_HANDLER_IDENTITY,
   input: {
     id: column('query_handler', 'id', 'required'),
     title: column('query_handler', 'title', 'optional'),

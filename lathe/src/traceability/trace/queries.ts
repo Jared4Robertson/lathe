@@ -3,13 +3,11 @@
 // tests are the checks' run's, so the query says it reads the run (`checked`): the server gives it the run it keeps for
 // the data, the CLI and the MCP tool run the checks first. Its handler never sees the data and changes nothing. This
 // slice holds only the read, so it names its read model where an aggregate's slice names its aggregate.
-import { id, type AnyQuery, type QueryDefinition, type Slice } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import type { TraceRow, ProductTrace } from './read-model.ts';
 import { traceReader, type TraceReader } from './reader.ts';
-
-/** How the interfaces reach the Trace read: `lathe trace`, the trace_ tools, /api/trace/. */
-const TRACE_SLICE: Slice = { aggregate: 'LA-TRC-RM13', name: 'trace' };
+import { LIST_TRACE_ROWS_IDENTITY } from './queries.generated.ts';
 
 /** Each use case of the product's space with its outcomes, requirements, flows, technical chains and acceptance tests. */
 export function listTraceRows(reader: TraceReader, input: { product_id: string }): ProductTrace {
@@ -27,12 +25,7 @@ export const statusWords = (r: TraceRow): string => {
 
 /** List a product's trace rows (LA-TRC-QRY18). */
 export const LIST_TRACE_ROWS: QueryDefinition<{ product_id: string }, ProductTrace, TraceReader> = {
-  id: 'LA-TRC-QRY18',
-  slice: TRACE_SLICE,
-  name: 'list-trace-rows',
-  method: 'GET',
-  route: '/api/trace/list-trace-rows',
-  description: "Lists each use case of a product's space once, from the business outcomes its capability serves to its acceptance tests: its UC requirements with their gaps and tests, the aggregates and read models its steps change and read, its flows with each step's design (what it fulfills, its view and view requirements, its endpoints and API requirements, its integrations) and technical chain (UI components, endpoints or channels, handler, repository or reader, data store, adapters), its flow tests, the lower obligations its tests rest on, and its status per stage. Runs the checks first.",
+  ...LIST_TRACE_ROWS_IDENTITY,
   input: { product_id: id('The product.', 'required') },
   checked: true,
   reader: traceReader,
@@ -43,6 +36,3 @@ export const LIST_TRACE_ROWS: QueryDefinition<{ product_id: string }, ProductTra
       ...p.rows.map((r) => `  ${r.useCase} (${r.outcomes.length ? r.outcomes.join(', ') : 'no outcome'}): ${statusWords(r)}`),
     ].join('\n'),
 };
-
-/** The Trace read's queries, as the CLI and the MCP server register them. */
-export const TRACE_QUERIES: readonly AnyQuery[] = [LIST_TRACE_ROWS];

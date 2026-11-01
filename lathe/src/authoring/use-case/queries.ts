@@ -2,12 +2,13 @@
 // which the query runner gives each handler: a use case whole as its page reads it, the use cases of a capability, and
 // the next free ID for a record of one of its kinds. A handler never sees the data, a repository or the aggregate's
 // model; each changes nothing.
-import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { USE_CASE_SLICE, type UseCaseKind } from './model.ts';
+import { type UseCaseKind } from './model.ts';
 import type { UseCasePage, UseCaseSummary } from './read-model.ts';
 import { useCaseReader, type UseCaseReader } from './reader.ts';
+import { GET_USE_CASE_IDENTITY, LIST_USE_CASES_IDENTITY, NEXT_USE_CASE_ID_IDENTITY } from './queries.generated.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
@@ -21,12 +22,7 @@ export function getUseCase(reader: UseCaseReader, input: { id: string }): UseCas
 
 /** GET a use case whole (LA-AUT-QRY100). */
 export const GET_USE_CASE: QueryDefinition<{ id: string }, UseCasePage, UseCaseReader> = {
-  id: 'LA-AUT-QRY100',
-  slice: USE_CASE_SLICE,
-  name: 'get-use-case',
-  description: 'Reads a use case whole as its page shows it, by its ID or the ID of any record in it: the record asked for and its kind, the use case\'s row and actors, its UC requirements each with its tests and the steps that fulfill it, and its flows by interface, each with its steps path by path in order (with the links each starts) and its flow test.',
-  method: 'GET',
-  route: '/api/use-case/get-use-case',
+  ...GET_USE_CASE_IDENTITY,
   input: { id: id('The use case, or a requirement, flow, step or test in it.', 'required') },
   reader: useCaseReader,
   run: getUseCase,
@@ -40,18 +36,12 @@ export function listUseCases(reader: UseCaseReader, input: { capability_id: stri
 
 /** List the use cases of a capability (LA-AUT-QRY101). */
 export const LIST_USE_CASES: QueryDefinition<{ capability_id: string }, UseCaseSummary[], UseCaseReader> = {
-  id: 'LA-AUT-QRY101',
-  slice: USE_CASE_SLICE,
-  name: 'list-use-cases',
-  description: 'Lists the use cases of a capability, by ID, with their titles.',
-  method: 'GET',
-  route: '/api/use-case/list-use-cases',
+  ...LIST_USE_CASES_IDENTITY,
   input: { capability_id: id('The capability.', 'required') },
   reader: useCaseReader,
   run: listUseCases,
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No use cases.'),
 };
-
 
 /** The kinds of the aggregate with an ID under a parent; how each is written the schema says (`idShape`). */
 const KINDS: readonly string[] = ['use_case', 'uc_requirement', 'use_case_test', 'flow', 'flow_step', 'flow_test'];
@@ -94,12 +84,7 @@ export function nextUseCaseId(reader: UseCaseReader, input: { kind: string; pare
 
 /** Get the next ID for a record of the Use case aggregate (LA-AUT-QRY102). */
 export const NEXT_USE_CASE_ID: QueryDefinition<{ kind: string; parent: string }, string, UseCaseReader> = {
-  id: 'LA-AUT-QRY102',
-  slice: USE_CASE_SLICE,
-  name: 'next-id',
-  description: 'The next free ID for a use case (under a capability), UC requirement or flow (under a use case), use case test (under a requirement), or flow step or flow test (under a flow): one past the highest in use.',
-  method: 'GET',
-  route: '/api/use-case/next-id',
+  ...NEXT_USE_CASE_ID_IDENTITY,
   input: {
     kind: id('The kind: use_case, uc_requirement, use_case_test, flow, flow_step or flow_test.', 'required'),
     parent: id('The record it will sit under.', 'required'),
@@ -129,6 +114,3 @@ function useCaseText(page: UseCasePage): string {
   }
   return lines.join('\n');
 }
-
-/** The Use case aggregate's queries, as the CLI and the MCP server register them. */
-export const USE_CASE_QUERIES: readonly AnyQuery[] = [GET_USE_CASE, LIST_USE_CASES, NEXT_USE_CASE_ID];
