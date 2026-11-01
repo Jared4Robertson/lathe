@@ -22,6 +22,7 @@ import {
   isSingleKey,
   isTyping,
   match,
+  menuBindings,
   normalizeBinding,
   resolveCommands,
   usesArrows,
@@ -228,7 +229,7 @@ export function CommandsProvider({ children }: { children: ReactNode }) {
   // menu shows the person's keys (LA-V66-R03), sent as they change; the shell keeps each window's own.
   useEffect(() => window.latheDesktop?.onCommand((id: string) => { run(id); }), [run]);
   useEffect(() => {
-    window.latheDesktop?.setMenuKeys(Object.fromEntries(commands.map((c) => [c.id, c.keys.map((k) => normalizeBinding(k, mac))])));
+    window.latheDesktop?.setMenuKeys(menuBindings(commands, mac));
   }, [commands, mac]);
 
   useEffect(() => {
