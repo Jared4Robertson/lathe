@@ -2,7 +2,7 @@
 // problem, and changes one thing to break the rule. LA-PAT-AGGREGATE-TESTS-R04: each of the domain's check rows is tested here.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Workspace } from '../../src/index.ts';
-import { adding, changing, complete, gaps, loadData, ofCheck, records, refusals, removeData, without } from '../helpers.ts';
+import { adding, changing, complete, gaps, loadData, ofCheck, records, refusals, removeData, withJourney, without } from '../helpers.ts';
 
 afterAll(removeData);
 
@@ -447,5 +447,25 @@ check('essential-repeated', () => {
         message: `The same statement, "${refused('Loan')}", is said in 3 use cases or views (EX-LEND-UC01-R01, EX-LEND-UC02-R01, EX-LEND-UC02-R02, EX-V01-R01): a pattern in disguise; write it once as a rule of a pattern they follow, and drop the repeats.`,
       },
     ]);
+  });
+});
+
+check('outcome-duration-without-journey', () => {
+  it('LA-AUT-UC33-R09-T01 an outcome whose measure reads as a duration is a warning while no journey serves it, saying to write the journey it times', async () => {
+    expect(ofCheck(await loadData(withJourney()), 'outcome-duration-without-journey')).toEqual([]);
+    const unserved = without(withJourney(), 'serves', (r) => r.source_id === 'EX-JR01');
+    expect(ofCheck(await loadData(unserved), 'outcome-duration-without-journey')).toEqual([
+      {
+        severity: 'warning', check: 'outcome-duration-without-journey', record: 'EX-BO02',
+        message: 'Business outcome EX-BO02 measures a duration ("Median days from adding a tool to its first loan.") that no journey serves: write the journey it times, from its trigger to its result, and link it to the outcome, or restate the measure if it is not a duration.',
+      },
+    ]);
+    // The upgrade's words, in any letter case: a count or a share is no duration.
+    const measures = ['Hours from a report to a repair.', 'TIME FROM sign-up to a first loan.', 'How long a loan stays out.', 'Weeks from order to shelf.', 'Loans from members to neighbors.', 'Loans opened per tool per month.', 'Share of tools fromage-free.'];
+    const outcomes = adding(complete(), {
+      business_outcome: measures.map((measure, i) => ({ id: `EX-BO${String(i + 2).padStart(2, '0')}`, title: `Outcome ${i + 2}`, product_id: 'EX', statement: 'Members get tools.', measure, target: 'Better by 2027.', measured_outside: 'Counted by hand.' })),
+      serves: measures.map((_, i) => ({ source_id: 'EX-LEND-CAP01', target_id: `EX-BO${String(i + 2).padStart(2, '0')}` })),
+    });
+    expect(records(ofCheck(await loadData(outcomes), 'outcome-duration-without-journey'))).toEqual(['EX-BO02', 'EX-BO03', 'EX-BO04', 'EX-BO05', 'EX-BO06']);
   });
 });

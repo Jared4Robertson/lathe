@@ -1,8 +1,9 @@
 // The Serves read model (LA-TRC-RM12): the business outcomes each record serves, as a record page's Serves line and the
 // Trace's branches read them. A record serves an outcome when a use case whose capability serves that outcome reaches
-// it (the Serves reach, LA-TRC-DS06, in trace/serves.ts): worked out from the rows on every read, never stored, so
-// there is no link to keep in step. A product's list holds each record of its space that serves an outcome, with the
-// use cases it serves them through, and the aggregates, read models and obligations of its space no outcome reaches
+// it, or a use case or policy a step of a journey serving it carries out (the Serves reach, LA-TRC-DS06, in
+// trace/serves.ts): worked out from the rows on every read, never stored, so there is no link to keep in step. A
+// product's list holds each record of its space that serves an outcome, with the use cases and journeys it serves them
+// through, and the aggregates, read models and obligations of its space no outcome reaches
 // (the serves-no-outcome check reports the same). The projection is the only code that reads the rows for the queries
 // and the only code that writes the read model's table; the query handlers read it only through the reader.
 import type { ReadView } from '../../platform/data/rules.ts';
@@ -17,6 +18,8 @@ export interface RecordServes {
   outcomes: string[];
   /** The use cases that reach it, through which it serves them, in ID order. */
   useCases: string[];
+  /** The journeys through which it serves them, in ID order: those whose steps carry out a use case or policy reaching it. */
+  journeys: string[];
 }
 
 /** A product's records as the Trace's branches read them. */
@@ -41,7 +44,7 @@ export function servesTableFrom(view: ReadView): ServesTable {
   const records = new Map<string, RecordServes>();
   for (const id of placed.keys()) {
     const s = served.get(id);
-    records.set(id, { id, outcomes: s ? [...s.outcomes] : [], useCases: s ? [...s.useCases] : [] });
+    records.set(id, { id, outcomes: s ? [...s.outcomes] : [], useCases: s ? [...s.useCases] : [], journeys: s ? [...s.journeys] : [] });
   }
   const owes = (kind: string) => !!view.schema.kinds[kind]?.obligation || kind === 'aggregate' || kind === 'read_model';
   const products = new Map<string, ProductServes>();

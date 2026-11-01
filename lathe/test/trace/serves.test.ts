@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { servesOf } from '../../src/trace/serves.ts';
 import { openStore } from '../../src/platform/data/store.ts';
-import { adding, changing, complete, without, writeData, type Data } from '../helpers.ts';
+import { adding, changing, complete, withJourney, without, writeData, type Data } from '../helpers.ts';
 
 /** What the reach finds over the data: each record with its outcomes and use cases. */
 async function reach(data: Data) {
@@ -19,7 +19,7 @@ describe('LA-TRC-DS06-T01 a record serves the outcomes of the capabilities of th
   it('reaches from each use case through its steps to the design, technical records, rules and tests behind them', async () => {
     const served = await reach(complete());
     const through = (id: string) => served.get(id)?.useCases;
-    expect(served.get('EX-LEND-A1')).toEqual({ outcomes: ['EX-BO01'], useCases: ['EX-LEND-UC01'] });
+    expect(served.get('EX-LEND-A1')).toEqual({ outcomes: ['EX-BO01'], useCases: ['EX-LEND-UC01'], journeys: [] });
     // A command's aggregate, its invariants and storage requirements, and the value objects its fields hold with their constraints.
     for (const id of ['EX-LEND-INV01', 'EX-LEND-A1-SR01', 'EX-LEND-EN02', 'EX-VO01', 'EX-VO01-C01']) expect(through(id), id).toEqual(['EX-LEND-UC01']);
     // What the command checks and calls, the event it raises, the policy that hears it and that policy's command.
@@ -35,7 +35,7 @@ describe('LA-TRC-DS06-T01 a record serves the outcomes of the capabilities of th
     // The rules of a pattern the use case follows.
     expect(through('EX-PAT-ACT-R01')).toEqual(['EX-LEND-UC02']);
     // The capability serves its own outcomes; the outcome, the product, the domain and the interface serve none.
-    expect(served.get('EX-LEND-CAP01')).toEqual({ outcomes: ['EX-BO01'], useCases: [] });
+    expect(served.get('EX-LEND-CAP01')).toEqual({ outcomes: ['EX-BO01'], useCases: [], journeys: [] });
     for (const id of ['EX-BO01', 'EX', 'EX-LEND', 'EX-IF01']) expect(served.has(id), id).toBe(false);
   });
 
@@ -49,12 +49,31 @@ describe('LA-TRC-DS06-T01 a record serves the outcomes of the capabilities of th
     });
     data = changing(data, 'use_case', (r) => r.id === 'EX-LEND-UC02', { capability_id: 'EX-LEND-CAP02' });
     const served = await reach(data);
-    expect(served.get('EX-LEND-A2')).toEqual({ outcomes: ['EX-BO01', 'EX-BO02'], useCases: ['EX-LEND-UC01', 'EX-LEND-UC02'] });
-    expect(served.get('EX-LEND-CMD02')).toEqual({ outcomes: ['EX-BO02'], useCases: ['EX-LEND-UC02'] });
+    expect(served.get('EX-LEND-A2')).toEqual({ outcomes: ['EX-BO01', 'EX-BO02'], useCases: ['EX-LEND-UC01', 'EX-LEND-UC02'], journeys: [] });
+    expect(served.get('EX-LEND-CMD02')).toEqual({ outcomes: ['EX-BO02'], useCases: ['EX-LEND-UC02'], journeys: [] });
     // The domain follows the pattern, so each of its use cases reaches the pattern's rules.
     expect(served.get('EX-PAT-ACT-R01')?.useCases).toEqual(['EX-LEND-UC01', 'EX-LEND-UC02']);
     // With no outcome served, nothing is reached at all.
     expect((await reach(without(complete(), 'serves', () => true))).size).toBe(0);
+  });
+
+  it('serves a journey\'s outcomes through its steps: each use case one carries out with all it reaches, and a handoff\'s policy with its command\'s chain', async () => {
+    // EX-BO02 is served by the journey alone: Add a tool, then Borrow a tool, then the reminder policy as a handoff.
+    const data = without(withJourney(), 'serves', (r) => r.source_id === 'EX-LEND-CAP01' && r.target_id === 'EX-BO02');
+    const served = await reach(data);
+    expect(served.get('EX-JR01')).toEqual({ outcomes: ['EX-BO02'], useCases: [], journeys: [] });
+    for (const id of ['EX-JR01-S01', 'EX-JR01-S03', 'EX-JR01-T']) expect(served.get(id), id).toEqual({ outcomes: ['EX-BO02'], useCases: [], journeys: ['EX-JR01'] });
+    // A use case a step carries out serves the journey's outcomes beside its capability's, with all it reaches.
+    expect(served.get('EX-LEND-UC02')).toEqual({ outcomes: ['EX-BO01', 'EX-BO02'], useCases: ['EX-LEND-UC02'], journeys: ['EX-JR01'] });
+    expect(served.get('EX-LEND-CMD02')).toEqual({ outcomes: ['EX-BO01', 'EX-BO02'], useCases: ['EX-LEND-UC02'], journeys: ['EX-JR01'] });
+    expect(served.get('EX-PAT-ACT-R01')?.journeys).toEqual(['EX-JR01']);
+    // The handoff's policy, its command and that command's handler and tests serve through the journey.
+    for (const id of ['EX-LEND-PO01', 'EX-LEND-PO01-H', 'EX-LEND-PO01-T', 'EX-LEND-CMD03', 'EX-LEND-CMD03-H']) expect(served.get(id)?.journeys, id).toEqual(['EX-JR01']);
+    // With no capability serving any outcome, the journey alone reaches what its steps carry out.
+    const alone = await reach(without(withJourney(), 'serves', (r) => r.source_id === 'EX-LEND-CAP01'));
+    expect(alone.get('EX-LEND-A2')).toEqual({ outcomes: ['EX-BO02'], useCases: ['EX-LEND-UC01', 'EX-LEND-UC02'], journeys: ['EX-JR01'] });
+    expect(alone.get('EX-LEND-CMD03')).toEqual({ outcomes: ['EX-BO02'], useCases: ['EX-LEND-UC01'], journeys: ['EX-JR01'] });
+    expect(alone.has('EX-LEND-CAP01')).toBe(false);
   });
 });
 

@@ -397,6 +397,30 @@ export function complete(): Data {
   };
 }
 
+/**
+ * complete() with a journey that gives no problem and no gap: EX-JR01 takes a new tool to its first borrower (the
+ * librarian adds it, a member borrows it, the library reminds the borrower as a handoff), serving a second outcome
+ * timed in days, with its journey test.
+ */
+export function withJourney(): Data {
+  return adding(complete(), {
+    business_outcome: [{ id: 'EX-BO02', title: 'New tools lent soon', product_id: 'EX', statement: 'A new tool goes out on its first loan soon after it arrives.', measure: 'Median days from adding a tool to its first loan.', target: 'Under a week by 2027.', measured_outside: 'The librarian reads the catalog dates.' }],
+    serves: [{ source_id: 'EX-LEND-CAP01', target_id: 'EX-BO02' }, { source_id: 'EX-JR01', target_id: 'EX-BO02' }],
+    journey: [{ id: 'EX-JR01', title: 'Get a new tool to its first borrower', product_id: 'EX', trigger: 'A new tool arrives at the library.', result: 'A member has borrowed it and knows when it is due.' }],
+    journey_step: [
+      { id: 'EX-JR01-S01', title: 'The librarian adds the tool', journey_id: 'EX-JR01', path: 'main', position: 1 },
+      { id: 'EX-JR01-S02', title: 'A member borrows it', journey_id: 'EX-JR01', path: 'main', position: 2 },
+      { id: 'EX-JR01-S03', title: 'The library reminds the borrower', journey_id: 'EX-JR01', path: 'main', position: 3 },
+    ],
+    carries_out: [
+      { source_id: 'EX-JR01-S01', target_id: 'EX-LEND-UC02' },
+      { source_id: 'EX-JR01-S02', target_id: 'EX-LEND-UC01' },
+      { source_id: 'EX-JR01-S03', target_id: 'EX-LEND-PO01' },
+    ],
+    journey_test: [{ id: 'EX-JR01-T', title: 'A new tool reaches its first borrower', journey_id: 'EX-JR01', ...automated('service', 'test/journeys.test.ts'), steps: ['Add a tool', 'Borrow it'], expected_result: 'The loan is open and its reminder sent.' }],
+  });
+}
+
 /** The code of sparse(): its router serves a route no endpoint has (route-without-record). */
 export const SPARSE_FILES: BuildOptions = {
   files: { 'src/router.ts': "// SP-D-EP02-H\napp.get('/loans', listLoans);\napp.post('/members', register);\n" },
@@ -455,5 +479,8 @@ export function sparse(): Data {
     presents: [{ source_id: 'SP-V01', target_id: 'SP-D-CMD01' }],
     offers: [{ source_id: 'SP-IF01', target_id: 'SP-D-UC02' }],
     exchanges_with: [{ source_id: 'SP-D-UC02-FL-S01', target_id: 'SP-INT01' }],
+    // A journey serving nothing, with no test, whose one step is on no main path and carries out nothing yet.
+    journey: [{ id: 'SP-JR01', title: 'Bring a tool back late', product_id: 'SP', trigger: 'A loan is overdue.', result: 'The tool is back.' }],
+    journey_step: [{ id: 'SP-JR01-S01', title: 'A member brings the tool back', journey_id: 'SP-JR01', path: 'late', position: 1 }],
   };
 }
