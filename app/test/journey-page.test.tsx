@@ -102,7 +102,7 @@ describe('LA-V156-R04-T01 a journey\'s steps show in order a list per path, with
     expect(lanes).toHaveAttribute('aria-hidden', 'true');
     expect(lanes).toHaveTextContent('The product');
     // On a phone the strip is not drawn at all: only the list shows (the stylesheet hides it below 600px).
-    expect(readFileSync(new URL('../src/authoring/journey/journey.css', import.meta.url), 'utf8')).toMatch(/@media \(max-width: 600px\) \{ \.journey-lanes \{ display: none; \} \}/);
+    expect(readFileSync('src/authoring/journey/journey.css', 'utf8')).toMatch(/@media \(max-width: 600px\) \{ \.journey-lanes \{ display: none; \} \}/);
   });
 });
 
@@ -286,7 +286,7 @@ describe('LA-V51-R13-T01 the product page\'s Discovery lists its journeys after 
   });
 });
 
-describe('a record a journey reaches names the journey its outcome is served through', () => {
+describe('LA-V92-R78-T02 a record a journey reaches names the journey its outcome is served through', () => {
   it('marks the outcome via the journey on the Serves line', async () => {
     await openApp('/DM-PAY-UC01', { data: withJourneys() });
     const serves = await waitFor(() => {
@@ -306,7 +306,7 @@ describe('a record a journey reaches names the journey its outcome is served thr
   });
 });
 
-describe('a flow\'s steps move up and down through the aggregate\'s own Move', () => {
+describe('LA-V101-R04-T03 a flow\'s steps move up and down through the aggregate\'s own Move', () => {
   it('Move down on the first step of the main path sends Move a flow step with its neighbor\'s position', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/DM-SHOP-UC01-FL', { data: setRow(workspace(), 'flow_step', 'DM-SHOP-UC01-FL-S01', {}), command: () => ({ answer: ok }) });
