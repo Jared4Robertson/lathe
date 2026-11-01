@@ -21,7 +21,7 @@ Every use case sits in a capability: an ordered slice of its domain. Add the dom
 
 ## Use cases
 
-**A use case is one goal of one actor, verb first**, two to six words. Use the domain's own verb (Borrow, Approve, Refund) over Create, Read, Update or Delete unless that really is the goal. Names no interface or mechanism: "Approve an invoice", not "Approve an invoice from the web app".
+**A use case is one goal of one actor, reached in one sitting, verb first**, two to six words. One sitting is one session with no waiting on someone else. A goal that waits on another actor, or reads "... and later ...", is a journey (`discover-outcomes`): split it into use cases, and write a journey that carries them out in order. Use the domain's own verb (Borrow, Approve, Refund) over Create, Read, Update or Delete unless that really is the goal. Names no interface or mechanism: "Approve an invoice", not "Approve an invoice from the web app".
 
 **When to split.** Split when:
 
@@ -33,6 +33,8 @@ Every use case sits in a capability: an ordered slice of its domain. Add the dom
 Merge when two use cases differ only by an interface (that is one use case offered through both) or by a value (that is a rule of one).
 
 **Actors are roles, never people.** A role is a part of the product (Member, Librarian; Owner, Reader, Agent in Lathe's own specs). Add a new role to the product with a description of what it does; write the same roles in prose.
+
+**Journey steps.** When a journey has an unlinked step (`journey-step-unlinked`), it is a use case to write: write it, then link the step to it. A use case's "why" is its capability's outcomes and the journeys it is in (its page lists them as "In journeys"). A use case in no journey is fine; many stand alone.
 
 ## UC requirements
 

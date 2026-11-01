@@ -27,7 +27,7 @@ A candidate that fails these is a layer or a platform concern, not a domain. Giv
 
 Write a product stage by stage, so each record's links point at records written before it. Each stage has its skill.
 
-1. **Discovery** (`discover-outcomes`): business outcomes, each measurable.
+1. **Discovery** (`discover-outcomes`): business outcomes, each measurable, and the journeys that reach them.
 2. **Domain model** (this skill), in event storming order: aggregates with entities and fields; commands and the events they raise; then invariants, value objects and constraints, specifications, policies, read models and queries, domain services, storage requirements, terms.
 3. **Use cases** (`write-use-cases`): capabilities, use cases with actors and UC requirements, shared patterns.
 4. **Interaction design** (`design-interactions`): interfaces, flows and steps, views, endpoints, integrations.
@@ -49,7 +49,7 @@ Finish each stage with `check-and-fix`. Gaps a later stage owes are reported, no
 - A value's own format, checked when the value is created: a *constraint* of a value object (make the value object if the field has none).
 - Something true of one aggregate after every change, including uniqueness across its records: an *invariant*.
 - A named yes-or-no predicate over aggregates of one domain that commands check or queries select by: a *specification*.
-- "Whenever this happened, then do that", often in another aggregate: a *policy*.
+- "Whenever this happened, then do that", often in another aggregate: a *policy*. A journey's handoff step carries out a policy; a handoff the journey needs with no policy to carry it out is how missing policies are found (`discover-outcomes`).
 - Logic that belongs to no single entity and is not a yes-or-no check, such as a due date: a *domain service* (it uses no storage and no outside system).
 - A rule that needs an actor or a screen is not a domain rule: it is a UC requirement, view requirement or API requirement.
 

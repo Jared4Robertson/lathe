@@ -58,7 +58,7 @@ const firstTab = async (at = '/P-D-UC01?stage=graph') => {
 };
 
 describe('the desktop app\'s tabs', () => {
-  it('LA-V96-R16-T01 Each tab shows its record\'s ID and title, a group\'s tab its label, never in italics', async () => {
+  it('LA-V103-R07-T01 Each tab shows its record\'s ID and title, a group\'s tab its label, never in italics', async () => {
     await firstTab();
     const first = tab('Lend a thing');
     expect(first).toHaveAccessibleName('P-D-UC01 Lend a thing');
@@ -72,7 +72,7 @@ describe('the desktop app\'s tabs', () => {
     expect(tab('Terms (1)')).toHaveAccessibleName('Terms (1)');
   });
 
-  it('LA-V96-R10-T02 Walking onto a record open in another tab stays in the current tab', async () => {
+  it('LA-V103-R01-T02 Walking onto a record open in another tab stays in the current tab', async () => {
     await firstTab();
     await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
     // Out from the use case: where the walk leads.
@@ -99,7 +99,7 @@ describe('the desktop app\'s tabs', () => {
     expect(tabs()).toEqual(['Loan desk<', parent]);
   });
 
-  it('LA-V96-R11-T02 Cmd or Ctrl+click and middle-click on a box or link, Cmd+Enter in quick open and the new tab command open a tab after the active one', async () => {
+  it('LA-V103-R02-T02 Cmd or Ctrl+click and middle-click on a box or link, Cmd+Enter in quick open and the new tab command open a tab after the active one', async () => {
     await firstTab('/P-D-UC01?stage=erd');
     // The new tab command: at the product, on the active tab's stage.
     newTabKey();
@@ -146,7 +146,7 @@ describe('the desktop app\'s tabs', () => {
     await settled('/P-V01?stage=graph');
   });
 
-  it('LA-V96-R11-T03 Duplicate tab copies the active tab with its history', async () => {
+  it('LA-V103-R02-T03 Duplicate tab copies the active tab with its history', async () => {
     await firstTab();
     await go('/P-V01?stage=erd', 'Loan desk');
     key({ key: 'D', code: 'KeyD', altKey: true, shiftKey: true });
@@ -158,7 +158,7 @@ describe('the desktop app\'s tabs', () => {
     expect(tabs()).toEqual(['Loan desk', 'Lend a thing<']);
   });
 
-  it('LA-V96-R12-T02 Closing by button, middle-click or the close command activates the right neighbor or else the left, and the last tab leaves one on the product', async () => {
+  it('LA-V103-R03-T02 Closing by button, middle-click or the close command activates the right neighbor or else the left, and the last tab leaves one on the product', async () => {
     await firstTab();
     newTabKey();
     await waitFor(() => expect(tabs()).toHaveLength(2));
@@ -187,7 +187,7 @@ describe('the desktop app\'s tabs', () => {
     expect(tabs()[0].endsWith('<')).toBe(true);
   });
 
-  it('LA-V96-R13-T01 Ctrl+Tab and Ctrl+Shift+Tab cycle, and on the focused strip the arrow keys move and Delete closes', async () => {
+  it('LA-V103-R04-T01 Ctrl+Tab and Ctrl+Shift+Tab cycle, and on the focused strip the arrow keys move and Delete closes', async () => {
     for (const id of ['newTab', 'closeTab', 'duplicateTab', 'nextTab', 'previousTab']) expect(COMMANDS.find((c) => c.id === id)?.group).toBe('Navigate');
     expect(COMMANDS.some((c) => c.id === 'keepTab')).toBe(false);
     await firstTab();
@@ -217,7 +217,7 @@ describe('the desktop app\'s tabs', () => {
     await waitFor(() => expect(tab('Lend a thing')).toHaveFocus());
   });
 
-  it('LA-V96-R13-T02 The address follows the active tab, clicked or cycled', async () => {
+  it('LA-V103-R04-T02 The address follows the active tab, clicked or cycled', async () => {
     await firstTab();
     newTabKey();
     await waitFor(() => expect(tabs()).toHaveLength(2));
@@ -230,7 +230,7 @@ describe('the desktop app\'s tabs', () => {
     await settled('/P-V01?stage=graph');
   });
 
-  it('LA-V96-R14-T01 Each tab keeps its own stage, depth, filters, wiki card and scroll; the layout is the window\'s', async () => {
+  it('LA-V103-R05-T01 Each tab keeps its own stage, depth, filters, wiki card and scroll; the layout is the window\'s', async () => {
     await firstTab();
     await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
     const cardScroll = () => document.querySelector<HTMLElement>('.wiki-panel-scroll')!;
@@ -281,7 +281,7 @@ describe('the desktop app\'s tabs', () => {
     expect(Object.keys(settings)).not.toContain('cardExpanded');
   });
 
-  it('LA-V96-R14-T02 Each tab keeps its own camera on the Graph and the Trace, taken back at once when it is active again', async () => {
+  it('LA-V103-R05-T02 Each tab keeps its own camera on the Graph and the Trace, taken back at once when it is active again', async () => {
     const traceCamera = () => JSON.stringify((document.querySelector('.trace-flow') as TraceHost).traceScene!().camera);
     /** The camera, once it has stopped moving. */
     const still = async (read: () => string) => {
@@ -333,7 +333,7 @@ describe('the desktop app\'s tabs', () => {
     expect(await still(traceCamera)).toBe(trace);
   });
 
-  it('LA-V96-R15-T04 Reloading brings back every tab with its place and history', async () => {
+  it('LA-V103-R06-T04 Reloading brings back every tab with its place and history', async () => {
     await firstTab('/P-D-UC01?stage=trace');
     await go('/P-V01?stage=erd', 'Loan desk');
     newTabKey();
@@ -377,7 +377,7 @@ describe('the desktop app\'s tabs', () => {
     expect(screen.getByRole('region', { name: 'Trace stage' })).toBeInTheDocument();
   });
 
-  it('LA-V96-R31-T02 Back and Forward step through the active tab\'s history, and switching tabs gives the window the new tab\'s history', async () => {
+  it('LA-V103-R09-T02 Back and Forward step through the active tab\'s history, and switching tabs gives the window the new tab\'s history', async () => {
     await firstTab();
     await go('/P-V01', 'Loan desk');
     newTabKey();
@@ -401,7 +401,7 @@ describe('the desktop app\'s tabs', () => {
     expect(tabs()).toEqual(['Loan desk', 'Product<']);
   });
 
-  it('LA-V96-R15-T01 Each space keeps its own tabs: switching spaces swaps the tab set', async () => {
+  it('LA-V103-R06-T01 Each space keeps its own tabs: switching spaces swaps the tab set', async () => {
     await openApp('/DM-SHOP-UC01', { data: workspace() });
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     newTabKey();
