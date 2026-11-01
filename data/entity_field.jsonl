@@ -89,6 +89,24 @@
 {"entity_id":"LA-AUT-EN114","position":1,"name":"Interface","meaning":"The interface.","type_value_object_id":"LA-VO01","required":true,"column_name":"interface_id"}
 {"entity_id":"LA-AUT-EN114","position":2,"name":"Position","meaning":"The role's place among the interface's roles, from 1.","type_value_object_id":"LA-VO04","required":true}
 {"entity_id":"LA-AUT-EN114","position":3,"name":"Role name","meaning":"The role, which the product names in its role rows.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN115","position":1,"name":"ID","meaning":"The journey's ID: its product's ID and JR<nn>, such as TL-JR01.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-AUT-EN115","position":2,"name":"Title","meaning":"The journey, verb first, as a summary goal, such as Get a damaged tool back in lending.","type_value_object_id":"LA-VO02","required":true}
+{"entity_id":"LA-AUT-EN115","position":3,"name":"Product","meaning":"The product it belongs to.","type_value_object_id":"LA-VO01","required":true,"column_name":"product_id"}
+{"entity_id":"LA-AUT-EN115","position":4,"name":"Trigger","meaning":"What starts it, in the world, such as A tool is found damaged.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN115","position":5,"name":"Result","meaning":"What it ends in, which an outcome measures, such as The tool is available to borrow again.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN115","position":6,"name":"Notes","meaning":"Longer notes on the journey.","type":"text","required":false}
+{"entity_id":"LA-AUT-EN116","position":1,"name":"ID","meaning":"The step's ID: its journey's ID and S<nn>, such as TL-JR01-S01.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-AUT-EN116","position":2,"name":"Title","meaning":"What happens, in the journey's words.","type_value_object_id":"LA-VO02","required":true}
+{"entity_id":"LA-AUT-EN116","position":3,"name":"Journey","meaning":"The journey it belongs to.","type_value_object_id":"LA-VO01","required":true,"column_name":"journey_id"}
+{"entity_id":"LA-AUT-EN116","position":4,"name":"Path","meaning":"The path through the journey the step is on: main, or an alternate such as found outside a return.","type_value_object_id":"LA-VO05","required":true}
+{"entity_id":"LA-AUT-EN116","position":5,"name":"Position","meaning":"The step's place on its path, from 1.","type_value_object_id":"LA-VO04","required":true}
+{"entity_id":"LA-AUT-EN117","position":1,"name":"ID","meaning":"The test's ID: its journey's ID and T, such as TL-JR01-T.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-AUT-EN117","position":2,"name":"Title","meaning":"What the test shows, in a sentence.","type_value_object_id":"LA-VO02","required":true}
+{"entity_id":"LA-AUT-EN117","position":3,"name":"Journey","meaning":"The journey it proves; it has at most one test.","type_value_object_id":"LA-VO01","required":true,"column_name":"journey_id"}
+{"entity_id":"LA-AUT-EN117","position":4,"name":"Run by","meaning":"How the test runs: its level, its state, and its file or why it is manual.","type_value_object_id":"LA-VO14","required":true}
+{"entity_id":"LA-AUT-EN117","position":5,"name":"Steps","meaning":"What the test does along the main path, step by step.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN117","position":6,"name":"Expected result","meaning":"What it expects at the end: the result the journey ends in.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN117","position":7,"name":"Notes","meaning":"Longer notes on the test, such as when to run it.","type":"text","required":false}
 {"entity_id":"LA-AUT-EN12","position":1,"name":"ID","meaning":"The requirement's ID: its use case's ID and R<nn>, such as TL-LEND-UC01-R01.","type_value_object_id":"LA-VO01","required":true}
 {"entity_id":"LA-AUT-EN12","position":2,"name":"Title","meaning":"The requirement in a few words.","type_value_object_id":"LA-VO02","required":true}
 {"entity_id":"LA-AUT-EN12","position":3,"name":"Use case","meaning":"The use case it belongs to.","type_value_object_id":"LA-VO01","required":true,"column_name":"use_case_id"}

@@ -451,6 +451,16 @@
 {"source_id":"LA-AUT-EP373-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
 {"source_id":"LA-AUT-EP374-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
 {"source_id":"LA-AUT-EP375-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
+{"source_id":"LA-AUT-EP376-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
+{"source_id":"LA-AUT-EP377-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
+{"source_id":"LA-AUT-EP378-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
+{"source_id":"LA-AUT-EP379-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
+{"source_id":"LA-AUT-EP380-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
+{"source_id":"LA-AUT-EP381-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
+{"source_id":"LA-AUT-EP382-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
+{"source_id":"LA-AUT-EP383-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
+{"source_id":"LA-AUT-EP384-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
+{"source_id":"LA-AUT-EP385-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
 {"source_id":"LA-AUT-EP500-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
 {"source_id":"LA-AUT-EP501-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
 {"source_id":"LA-AUT-EP502-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
@@ -521,6 +531,9 @@
 {"source_id":"LA-AUT-EP625-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
 {"source_id":"LA-AUT-EP626-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
 {"source_id":"LA-AUT-EP627-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
+{"source_id":"LA-AUT-EP628-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
+{"source_id":"LA-AUT-EP629-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
+{"source_id":"LA-AUT-EP630-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
 {"source_id":"LA-AUT-INV41-RL","target_id":"LA-STD-PRINCIPLES-R03"}
 {"source_id":"LA-AUT-MOD11","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-AUT-MOD20","target_id":"LA-STD-PRINCIPLES-R01"}
@@ -585,6 +598,7 @@
 {"source_id":"LA-AUT-TB92","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-AUT-TB93","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-AUT-TB94","target_id":"LA-STD-PRINCIPLES-R01"}
+{"source_id":"LA-AUT-TB95","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-AUT-TOOL01","target_id":"LA-STD-PRINCIPLES-R06"}
 {"source_id":"LA-AUT-TOOL02","target_id":"LA-STD-PRINCIPLES-R02"}
 {"source_id":"LA-AUT-TOOL03","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}

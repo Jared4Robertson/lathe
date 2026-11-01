@@ -129,6 +129,12 @@
 {"source_id":"LA-AUT-UC31","target_id":"LA-PAT-AGGREGATE-TESTS"}
 {"source_id":"LA-AUT-UC32","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
 {"source_id":"LA-AUT-UC32","target_id":"LA-PAT-AGGREGATE-TESTS"}
+{"source_id":"LA-AUT-UC33","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
+{"source_id":"LA-AUT-UC33","target_id":"LA-PAT-AGGREGATE-TESTS"}
+{"source_id":"LA-AUT-UC33","target_id":"LA-PAT-FIELD-INPUTS"}
+{"source_id":"LA-AUT-UC33","target_id":"LA-PAT-RECORD-DATA-FILE"}
+{"source_id":"LA-AUT-UC33","target_id":"LA-PAT-RECORD-PAGE"}
+{"source_id":"LA-AUT-UC33","target_id":"LA-PAT-SHELL-ACTIONS"}
 {"source_id":"LA-CHK","target_id":"LA-PAT-AGGREGATE-QUERIES"}
 {"source_id":"LA-CHK-UC02","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
 {"source_id":"LA-CHK-UC02","target_id":"LA-PAT-AGGREGATE-TESTS"}
