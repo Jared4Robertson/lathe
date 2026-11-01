@@ -2,13 +2,14 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import type { TablePage } from '../../../../lathe/src/authoring/table/read-model';
 import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
-import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
+import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, formFields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import { IdField, type Choice } from '../../edit/fields';
 import { useWriter, type CommandInputs } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
+import { TABLE_FIELDS } from './fields.generated';
 import { useNextTableId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -19,9 +20,6 @@ import { backToActions } from '../../edit/back-to-actions';
 // keys and the links it starts and sends Remove a table. A table is added from the page of what it stores
 // (AddTableForm). A refusal shows every reason the command gave, keeps what was entered, and changes nothing.
 
-/** The columns of a key the form takes, in the command's order. */
-const KEY_COLUMNS = ['type', 'columns', 'name', 'invariant_id', 'target_table_id', 'condition'];
-
 /** The parent column of a table for each kind it sits under. */
 const PARENT_COLUMN: Record<string, 'entity_id' | 'read_model_id' | 'domain_id'> = { entity: 'entity_id', read_model: 'read_model_id', domain: 'domain_id' };
 
@@ -29,18 +27,14 @@ const PARENT_COLUMN: Record<string, 'entity_id' | 'read_model_id' | 'domain_id'>
 const choices = (index: RecordIndex, product: string, kinds: readonly string[]): Choice[] =>
   [...index.byId.values()].filter((r) => kinds.includes(r.kind) && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
-/** The fields Add and Change take (Change leaves out the ID), in their input's order. */
+/** The fields Add and Change take, from their inputs; the hints add the choices. */
 function fieldsOf(index: RecordIndex, product: string, adding: boolean): FieldSpec[] {
-  return [
-    ...(adding ? [{ field: 'id', column: 'id', table: 'table' }] : []),
-    { field: 'title', column: 'title', table: 'table' },
-    { field: 'name', column: 'name', table: 'table' },
-    { field: 'storage', column: 'storage', table: 'table' },
-    { field: 'file', column: 'file', table: 'table' },
-    { field: 'keys', label: 'Keys', description: 'Its keys and indexes, in order. The list replaces its keys.', table: 'table_key', columns: KEY_COLUMNS },
-    { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: choices(index, product, ['standard_rule']) },
-    { field: 'packages', label: 'Packages', description: 'The packages it uses.', texts: true },
-  ];
+  const F = TABLE_FIELDS;
+  // The form has never offered the data store (stored_in), and Add names its one parent in the column the form picks.
+  const hints = { meets: { choices: choices(index, product, ['standard_rule']) } };
+  return adding
+    ? formFields(F['/api/table/add-table'], ['entity_id', 'read_model_id', 'domain_id', 'stored_in'], hints)
+    : formFields(F['/api/table/change-table'], ['id', 'stored_in'], hints);
 }
 
 /** The table's current values, by its input's field names. */
@@ -71,7 +65,7 @@ export function TableEditor({ index, page, children }: { index: RecordIndex; pag
     const specs = fieldsOf(index, product, false);
     const current = currentOf(page);
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, specs, draft, current, { id: table.id }, ['file']);
+      const input = changeInput(index, specs, draft, current, { id: table.id });
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
       const answer = await writer.command('/api/table/change-table', input as unknown as CommandInputs['/api/table/change-table']);
       if (answer.ok) { announce(`Saved ${table.id}`); back(); }

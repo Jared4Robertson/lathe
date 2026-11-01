@@ -2,13 +2,14 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { UiComponentPage } from '../../../../lathe/src/authoring/ui-component/read-model';
 import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
-import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
+import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, formFields, LONG, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
 import { useWriter, type CommandInputs } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
+import { UI_COMPONENT_FIELDS } from './fields.generated';
 import { useNextUiComponentId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -23,20 +24,17 @@ import { backToActions } from '../../edit/back-to-actions';
 const choicesOf = (index: RecordIndex, product: string, kind: string): Choice[] =>
   [...index.byId.values()].filter((r) => r.kind === kind && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
-/** The fields Add and Change take (Change leaves out the ID), in their input's order; packages are one per line. */
+/** The fields Add and Change take, from their inputs (a UI component has no parent column: its product follows from its ID); the hints add long text and the choices. */
 function fieldsOf(index: RecordIndex, product: string, adding: boolean): FieldSpec[] {
-  return [
-    ...(adding ? [{ field: 'id', column: 'id', table: 'ui_component' }] : []),
-    { field: 'title', column: 'title', table: 'ui_component' },
-    { field: 'file', column: 'file', table: 'ui_component' },
-    { field: 'description', column: 'description', table: 'ui_component', long: true },
-    { field: 'renders', label: 'Renders', description: 'The views it renders, or part of.', many: choicesOf(index, product, 'view') },
-    { field: 'builds', label: 'Builds', description: 'The view requirements its code builds.', many: choicesOf(index, product, 'view_requirement') },
-    { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: choicesOf(index, product, 'standard_rule') },
-    { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files, one per line.', texts: true },
-  ];
+  const F = UI_COMPONENT_FIELDS;
+  const hints = {
+    description: LONG,
+    renders: { choices: choicesOf(index, product, 'view') },
+    builds: { choices: choicesOf(index, product, 'view_requirement') },
+    meets: { choices: choicesOf(index, product, 'standard_rule') },
+  };
+  return adding ? formFields(F['/api/ui-component/add-ui-component'], [], hints) : formFields(F['/api/ui-component/change-ui-component'], ['id'], hints);
 }
-
 
 type Mode = 'view' | 'change' | 'remove';
 
@@ -58,7 +56,7 @@ export function UiComponentEditor({ index, page, children }: { index: RecordInde
     const specs = fieldsOf(index, product, false);
     const current = { ...page.component, renders: page.renders, builds: page.builds, meets: page.meets, packages: page.packages } as Record<string, unknown>;
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, specs, draft, current, { id }, ['file']);
+      const input = changeInput(index, specs, draft, current, { id });
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
       const answer = await writer.command('/api/ui-component/change-ui-component', input as unknown as CommandInputs['/api/ui-component/change-ui-component']);
       if (answer.ok) { announce(`Saved ${id}`); back(); }
