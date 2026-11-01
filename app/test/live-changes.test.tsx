@@ -66,10 +66,23 @@ async function openAt(path: string, asked?: string[]) {
   return opened;
 }
 
+/**
+ * The camera framing the aggregate fills most of the pane with it (LA-EXP-DS09), its commands three levels to the right:
+ * zoomed out until they are in view too.
+ */
+async function seeTheCommands() {
+  await waitFor(() => expect(drawnBox('DM-SHOP-A1')).toBeDefined());
+  // Cmd or Ctrl with scroll zooms about the pointer, at once: out, about the aggregate's left part.
+  const canvas = screen.getByRole('region', { name: 'Graph stage' }).querySelector('canvas')!;
+  fireEvent(canvas, new WheelEvent('wheel', { bubbles: true, cancelable: true, ctrlKey: true, deltaY: 300, clientX: 300, clientY: 400 }));
+  await waitFor(() => expect(drawnBox('DM-SHOP-CMD01')).toBeDefined());
+}
+
 describe('LA-EXP-UC15 the Reader watches the spec change', () => {
   it('LA-EXP-UC15-R02-T01 Live marks on every stage as the data reloads: new and changed boxes marked, a removed one\'s ghost, dots only under reduced motion', async () => {
     startAtDepth(3);
     await openAt('/DM-SHOP-A1');
+    await seeTheCommands();
     await waitFor(() => expect(drawnBox('DM-SHOP-CMD01')).toBeDefined());
     expect(drawnBox('DM-SHOP-CMD01')!.change).toBeNull();
     await land(agentEdits());
@@ -116,6 +129,7 @@ describe('LA-EXP-UC15 the Reader watches the spec change', () => {
   it('LA-EXP-UC15-R07-T02 With Highlight changes on, the Graph\'s boxes carry their pill and each container its roll-up, and the nav shows the counts', async () => {
     startAtDepth(3);
     await openAt('/DM-SHOP-A1');
+    await seeTheCommands();
     await land(agentEdits());
     await waitFor(() => expect(count()).toHaveTextContent('2'));
     // Off: no pills and no roll-ups.
@@ -138,6 +152,7 @@ describe('LA-EXP-UC15 the Reader watches the spec change', () => {
   it('LA-V96-R36-T01 The Graph\'s containers show their roll-ups, the nav its counts, and the minimap and the edge hints point to changes out of view', async () => {
     startAtDepth(3);
     await openAt('/DM-SHOP-A1');
+    await seeTheCommands();
     await land(agentEdits());
     await waitFor(() => expect(count()).toHaveTextContent('2'));
     fireEvent.click(within(tools()).getByRole('button', { name: 'Highlight changes' }));
@@ -166,6 +181,7 @@ describe('LA-EXP-UC15 the Reader watches the spec change', () => {
     const opened = await openApp('/DM-SHOP-A1', { data: agentEdits(), baseline: baselines() });
     expect(opened).toBeDefined();
     await screen.findByRole('group', { name: 'Changes' });
+    await seeTheCommands();
     await waitFor(() => expect(drawnBox('DM-SHOP-CMD09')).toBeDefined());
     fireEvent.click(within(tools()).getByRole('button', { name: 'Highlight changes' }));
     await waitFor(() => expect(drawnBox('DM-SHOP-CMD09')?.pill).toBe('added'));
