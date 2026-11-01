@@ -62,7 +62,7 @@ test.describe('the stage and its panels', () => {
 
   // The panels never crowd the page (LA-PAT-APP-UX-R18): as the window narrows the wiki card collapses for space first, then
   // the nav; the card never gets narrower than its minimum, the stage keeps its own, and no title breaks mid-word.
-  test('LA-V96-R19-T02 panels collapse for space in order, the card never under 360 px, and come back as the window widens', async ({ page }) => {
+  test('LA-V102-R02-T02 panels collapse for space in order, the card never under 360 px, and come back as the window widens', async ({ page }) => {
     const crowded = () => page.locator('.app').getAttribute('data-crowded');
     await page.setViewportSize({ width: 1920, height: 900 });
     await openPage(page, `${RECORD}?stage=graph`, STRIP);
@@ -173,8 +173,8 @@ test.describe('the stage and its panels', () => {
     }
   });
 
-  // The card sits in one spot under the stage's toolbar row (LA-V96-R19), a steady share of the stage high: a new focus or a pan never moves it.
-  test('LA-V96-R19-T04 the wiki card holds one spot under the toolbar, about 60% of the stage high as a summary and 85% expanded, whatever the focus', async ({ page }) => {
+  // The card sits in one spot under the stage's toolbar row (LA-V102-R02), a steady share of the stage high: a new focus or a pan never moves it.
+  test('LA-V102-R02-T04 the wiki card holds one spot under the toolbar, about 60% of the stage high as a summary and 85% expanded, whatever the focus', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await openPage(page, `${AGGREGATE}?stage=graph`, STRIP);
     await stageReady(page);

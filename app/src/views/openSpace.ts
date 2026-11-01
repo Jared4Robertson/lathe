@@ -14,7 +14,7 @@ import { CARD_MIN } from '../exploring/session-settings/model';
 // panel comes or goes (a MutationObserver on the panels' parents, children only), and on a window
 // resize. It writes the insets as CSS variables on the stage (`--open-left` … and `--frame-left`
 // …), and the foot of the stage's tools at its top on the stage's parent (`--tools-foot`), where the
-// wiki card reads it to sit just under that row (LA-V96-R19), all with no React render, and tells
+// wiki card reads it to sit just under that row (LA-V102-R02), all with no React render, and tells
 // the stages through a small store, so a camera moves only when the open space really changed.
 
 export interface Insets { left: number; top: number; right: number; bottom: number }

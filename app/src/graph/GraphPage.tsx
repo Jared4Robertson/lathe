@@ -956,7 +956,7 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
   }, []);
   useGraphWalk(pageIndex, focus, layout, onNavigate, followFromBox);
   // Enter focuses the box with keyboard focus; on the focus's own box it is left to the commands layer, where it shows or
-  // collapses the wiki card (LA-V96-R19). Tab and Shift+Tab step through the boxes, as the page's own focus order.
+  // collapses the wiki card (LA-V102-R02). Tab and Shift+Tab step through the boxes, as the page's own focus order.
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
     if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;

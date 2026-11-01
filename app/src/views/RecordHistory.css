@@ -1,4 +1,4 @@
-/* A record's History at the end of its page in the wiki card (RecordHistory.tsx, LA-V96-R26). */
+/* A record's History at the end of its page in the wiki card (RecordHistory.tsx, LA-V102-R05). */
 
 .history-files { margin: 0; overflow-wrap: anywhere; font-size: 0.82rem; }
 .history-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }

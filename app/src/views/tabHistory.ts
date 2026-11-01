@@ -1,7 +1,7 @@
 import { browserHistory, rewriteHistory } from '../router';
 import type { Tab } from '../exploring/tab-set/model';
 
-// The window's history in the desktop app follows the active tab (LA-V96-R31). Each tab keeps its own history
+// The window's history in the desktop app follows the active tab (LA-V103-R09). Each tab keeps its own history
 // (place.ts); the window's entries are the active tab's, from its first entry (the base) up, each entry tagged with
 // its space, tab and index. So the window's Back and Forward (the title bar's buttons, Ctrl+- and Ctrl+Shift+-,
 // Cmd+[ and Cmd+]) step through the active tab's history only:
