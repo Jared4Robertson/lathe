@@ -41,13 +41,9 @@ function fieldsOf(index: RecordIndex, product: string, kind: PatternKind, adding
     case 'pattern_rule':
       return addOrChangeFields(adding, F['/api/pattern/add-pattern-rule'], 'pattern_id', F['/api/pattern/change-pattern-rule'], { statement: LONG, notes: LONG });
     case 'pattern_rule_test': {
-      const specs = addOrChangeFields(adding, F['/api/pattern/add-pattern-rule-test'], 'pattern_rule_id', F['/api/pattern/change-pattern-rule-test'], {
-        when: LONG, then: LONG, manual_reason: LONG, notes: LONG, starts_from: { choices: dataSets(index, product) },
+      return addOrChangeFields(adding, F['/api/pattern/add-pattern-rule-test'], 'pattern_rule_id', F['/api/pattern/change-pattern-rule-test'], {
+        domain_id: { label: 'Domain', choices: domains(index, product) }, when: LONG, then: LONG, manual_reason: LONG, notes: LONG, starts_from: { choices: dataSets(index, product) },
       });
-      // The domain is chosen from the product's domains, in place of its column's text box.
-      return specs.map((spec) => (spec.field === 'domain_id'
-        ? { field: 'domain_id', label: 'Domain', description: 'The following domain it proves the rule in.', one: domains(index, product), required: true }
-        : spec));
     }
   }
 }

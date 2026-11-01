@@ -540,6 +540,7 @@
 {"source_id":"LA-AUT-RM11-RD","target_id":"LA-STD-MODELING-R11"}
 {"source_id":"LA-AUT-RM24-PJ","target_id":"LA-STD-MODELING-R12"}
 {"source_id":"LA-AUT-TOOL03","target_id":"LA-STD-CODE-R11"}
+{"source_id":"LA-AUT-TOOL03","target_id":"LA-STD-CODE-R12"}
 {"source_id":"LA-CHK-CMD01-H","target_id":"LA-STD-CODE-R10"}
 {"source_id":"LA-CHK-CMD02-H","target_id":"LA-STD-CODE-R10"}
 {"source_id":"LA-CHK-CMD03-H","target_id":"LA-STD-CODE-R10"}

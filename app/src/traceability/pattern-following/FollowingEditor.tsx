@@ -105,11 +105,8 @@ function FollowForm({ index, page, followers, onDone }: { index: RecordIndex; pa
     .filter((r) => (r.kind === 'domain' || r.kind === 'use_case') && r.product === page.pattern.product_id && !following.has(r.id))
     .sort(byIdOrder)
     .map((r) => ({ id: r.id, title: r.title }));
-  const specs: FieldSpec[] = [
-    // The input names the follower as a column; the form picks it from the domains and use cases that do not follow yet.
-    { field: 'follower_id', label: 'Follower', description: 'The domain or use case that follows the pattern.', one: choices, required: true },
-    ...formFields(PATTERN_FOLLOWING_FIELDS['/api/pattern-following/follow-pattern'], ['follower_id', 'pattern_id']),
-  ];
+  // The follower is one of the domains and use cases that do not follow yet.
+  const specs = formFields(PATTERN_FOLLOWING_FIELDS['/api/pattern-following/follow-pattern'], ['pattern_id'], { follower_id: { label: 'Follower', choices } });
   const [draft, setDraft] = useState<Draft>(() => ({ ...emptyDraft(), parts: { setting_values: page.settings.map((s) => ({ setting: s.name, value: '' })) } }));
   const submit = async () => {
     const input = addInput(index, specs, draft, { pattern_id: pattern });
