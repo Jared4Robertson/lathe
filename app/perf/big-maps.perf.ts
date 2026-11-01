@@ -7,7 +7,7 @@ import { BUDGETS } from './budgets';
 import { installProbes, quiet, record, work } from './measure';
 import { GRAPH, sceneOf } from '../stability/scene';
 
-// LA-PLT-UC09-R13-T01: big maps stay smooth (LA-PLT-UC09-R13), on the large product (LA-PLT-TD04, lathe/perf/large-product.ts),
+// LA-STD-EXPERIENCE-R02-T01: big maps stay smooth (LA-STD-EXPERIENCE-R02), on the large product (LA-PLT-TD04, lathe/perf/large-product.ts),
 // served by the perf server on its own port. The Graph, the ERD and the Trace are panned and zoomed at 60 Hz; the arrow
 // walk frames a new focus within its budget; the Graph's map is laid out off the main thread within its budget; and
 // panning goes on at 60 Hz through a data change that lays the map out again.
@@ -52,7 +52,7 @@ const slow = (name: string, r: Awaited<ReturnType<typeof work>>) => record({
 });
 
 test.describe('big maps', () => {
-  test('LA-PLT-UC09-R13-T01 the Graph pans and zooms at 60 Hz on the large product, frames a walked focus within 200 ms, and lays its map out off the main thread', async ({ page }) => {
+  test('LA-STD-EXPERIENCE-R02-T01 the Graph pans and zooms at 60 Hz on the large product, frames a walked focus within 200 ms, and lays its map out off the main thread', async ({ page }) => {
     await open(page, `${DOMAIN}?stage=graph`, `${GRAPH} .graph-box`);
     const laid = (await sceneOf(page)).laidOut!;
     expect(laid.thread, 'the map is laid out in the worker').toBe('worker');
@@ -80,7 +80,7 @@ test.describe('big maps', () => {
     await record({ name: 'big map: a walked focus framed', value: Math.max(...times), unit: 'ms', budget: BUDGETS.bigMapFocusMs, detail: `worst of ${times.length}: ${times.map(Math.round).join(', ')} ms` });
   });
 
-  test('LA-PLT-UC09-R13-T01 the Graph pans at 60 Hz through a data change that lays its map out again', async ({ page }) => {
+  test('LA-STD-EXPERIENCE-R02-T01 the Graph pans at 60 Hz through a data change that lays its map out again', async ({ page }) => {
     await open(page, `/${USE_CASE}?stage=graph`, `${GRAPH} .graph-box`);
     const before = (await sceneOf(page)).laidOut!;
     const canvas = (await page.locator(`${GRAPH} canvas`).boundingBox())!;
@@ -103,7 +103,7 @@ test.describe('big maps', () => {
     await slow('big map: panning the Graph through a reload and its layout', r);
   });
 
-  test('LA-PLT-UC09-R13-T01 the Graph\'s Map pans and zooms at 60 Hz on the large product, frames a walked focus within 200 ms, and lays its map out off the main thread', async ({ page }) => {
+  test('LA-STD-EXPERIENCE-R02-T01 the Graph\'s Map pans and zooms at 60 Hz on the large product, frames a walked focus within 200 ms, and lays its map out off the main thread', async ({ page }) => {
     await open(page, `/${USE_CASE}?stage=graph`, `${GRAPH} .graph-box`);
     await page.locator('.graph-layout button', { hasText: 'Map' }).click();
     await page.locator(`${GRAPH}[data-layout="map"] .graph-box`).first().waitFor({ state: 'attached', timeout: 120_000 });
@@ -128,14 +128,14 @@ test.describe('big maps', () => {
     await record({ name: 'big map: a walked focus framed on the Map', value: Math.max(...times), unit: 'ms', budget: BUDGETS.bigMapFocusMs, detail: `worst of ${times.length}: ${times.map(Math.round).join(', ')} ms` });
   });
 
-  test('LA-PLT-UC09-R13-T01 the ERD pans and zooms at 60 Hz on the large product', async ({ page }) => {
+  test('LA-STD-EXPERIENCE-R02-T01 the ERD pans and zooms at 60 Hz on the large product', async ({ page }) => {
     await open(page, `${DOMAIN}?stage=erd`, '.focus-stage .erd-flow[data-framed][data-ready]');
     const { pan, zoom } = await panAndZoom(page, '.focus-stage .erd-flow canvas');
     await slow('big map: panning the ERD', pan);
     await slow('big map: zooming the ERD', zoom);
   });
 
-  test('LA-PLT-UC09-R13-T01 the Trace pans and zooms at 60 Hz on the large product, every row\'s Technical flow open', async ({ page }) => {
+  test('LA-STD-EXPERIENCE-R02-T01 the Trace pans and zooms at 60 Hz on the large product, every row\'s Technical flow open', async ({ page }) => {
     await open(page, `${DOMAIN}?stage=trace`, '.focus-stage .trace-flow[data-ready]');
     await page.getByRole('group', { name: 'Expand all' }).getByRole('button', { name: 'Technical' }).click();
     await quiet(page, 1500);

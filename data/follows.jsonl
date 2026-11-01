@@ -154,7 +154,7 @@
 {"source_id":"LA-PLT","target_id":"LA-PAT-AGGREGATE-QUERIES"}
 {"source_id":"LA-PLT","target_id":"LA-PAT-APP-CODE"}
 {"source_id":"LA-PLT","target_id":"LA-PAT-APP-UX"}
-{"source_id":"LA-PLT-UC15","target_id":"LA-PAT-SHELL-ACTIONS"}
+{"source_id":"LA-PLT-UC25","target_id":"LA-PAT-SHELL-ACTIONS"}
 {"source_id":"LA-TRC","target_id":"LA-PAT-AGGREGATE-QUERIES"}
 {"source_id":"LA-TRC-UC07","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
 {"source_id":"LA-TRC-UC07","target_id":"LA-PAT-AGGREGATE-TESTS"}
