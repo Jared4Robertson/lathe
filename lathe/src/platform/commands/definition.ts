@@ -103,7 +103,7 @@ export interface Slice {
   name: string;
 }
 
-/** One command: what it is in the model, how each interface names it, its input and its handler. */
+/** One command: what it is in the model, how each interface names it, its input and its handler. Each is written `satisfies CommandDefinition<T>`, keeping its literal route for the app (InputsByRoute). */
 export interface CommandDefinition<T = never> {
   /** The command's record ID, such as LA-AUT-CMD112. */
   id: string;
@@ -151,6 +151,14 @@ export interface QueryDefinition<T = never, R = unknown, D = unknown> {
   /** The answer as text, as the CLI prints it and the tool returns it. */
   text: (answer: R) => string;
 }
+
+/**
+ * Each command's route, with its input, from the definitions themselves: a definition is written `satisfies
+ * CommandDefinition<T>`, so its route keeps its literal and its handler its input's type.
+ */
+export type InputsByRoute<D extends { route: string; handler: (tx: Transaction, input: never) => unknown }> = {
+  [C in D as C['route']]: C['handler'] extends (tx: Transaction, input: infer T) => unknown ? T : never;
+};
 
 /** Any command, as the interfaces register it: its input's type is known only to its own handler. */
 export type AnyCommand = Omit<CommandDefinition, 'input' | 'handler'> & { input: Record<string, Field>; handler: (tx: Transaction, input: never) => void | Promise<void> };

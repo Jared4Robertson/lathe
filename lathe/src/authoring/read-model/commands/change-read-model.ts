@@ -9,7 +9,7 @@ import { CHANGE_READ_MODEL_IDENTITY } from './identities.generated.ts';
 /** The read model's changes: a column given is set; a list given replaces the list. */
 export type ChangeReadModel = Pick<ReadModelRow, 'id'> & { title?: ReadModelRow['title']; description?: ReadModelRow['description']; fields?: ReadModelField[]; reads?: string[]; calls?: string[]; fed_by?: string[] };
 
-export const CHANGE_READ_MODEL: CommandDefinition<ChangeReadModel> = {
+export const CHANGE_READ_MODEL = {
   ...CHANGE_READ_MODEL_IDENTITY,
   input: {
     id: column('read_model', 'id', 'required'),
@@ -21,7 +21,7 @@ export const CHANGE_READ_MODEL: CommandDefinition<ChangeReadModel> = {
     fed_by: ids("The events that keep it current: its own domain's, or another domain's published ones. Replaces the list.", 'optional'),
   },
   handler: changeReadModel,
-};
+} satisfies CommandDefinition<ChangeReadModel>;
 
 /** Changes the read model's columns, fields and links. */
 export function changeReadModel(tx: Transaction, input: ChangeReadModel): void {

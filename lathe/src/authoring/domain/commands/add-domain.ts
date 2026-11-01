@@ -9,7 +9,7 @@ import { ADD_DOMAIN_IDENTITY } from './identities.generated.ts';
 /** A new domain: its row. */
 export type AddDomain = Pick<DomainRow, 'id' | 'title' | 'product_id' | 'subdomain_type' | 'description' | 'notes'>;
 
-export const ADD_DOMAIN: CommandDefinition<AddDomain> = {
+export const ADD_DOMAIN = {
   ...ADD_DOMAIN_IDENTITY,
   input: {
     id: column('domain', 'id', 'required'),
@@ -20,7 +20,7 @@ export const ADD_DOMAIN: CommandDefinition<AddDomain> = {
     notes: column('domain', 'notes', 'optional'),
   },
   handler: addDomain,
-};
+} satisfies CommandDefinition<AddDomain>;
 
 /** Adds the domain, whole and new. */
 export function addDomain(tx: Transaction, input: AddDomain): void {

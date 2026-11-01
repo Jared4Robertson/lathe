@@ -9,7 +9,7 @@ import { DECLARE_PRODUCT_KIND_IDENTITY } from './identities.generated.ts';
 /** A new product kind: its declaration, and its fields in order. */
 export type DeclareProductKind = Pick<ProductKindRow, 'name' | 'product_id' | 'label' | 'description' | 'parent_kind' | 'stage' | 'obligation' | 'id_pattern' | 'id_example' | 'title_form'> & { fields?: FieldInput[] };
 
-export const DECLARE_PRODUCT_KIND: CommandDefinition<DeclareProductKind> = {
+export const DECLARE_PRODUCT_KIND = {
   ...DECLARE_PRODUCT_KIND_IDENTITY,
   input: {
     name: column('product_kind', 'name', 'required'),
@@ -25,7 +25,7 @@ export const DECLARE_PRODUCT_KIND: CommandDefinition<DeclareProductKind> = {
     fields: parts('product_kind_field', ['name', 'type', 'required', 'description', 'titles'], 'The columns its table adds after id, title and the parent column, in order: each a name, type, whether it is required, a description, and whether it titles the records.', 'optional'),
   },
   handler: declareProductKind,
-};
+} satisfies CommandDefinition<DeclareProductKind>;
 
 /** Adds the kind and its fields to the product that declares it. */
 export function declareProductKind(tx: Transaction, input: DeclareProductKind): void {

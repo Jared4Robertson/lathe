@@ -9,7 +9,7 @@ import { CHANGE_POLICY_IDENTITY } from './identities.generated.ts';
 /** The policy's changes: a column given is set; null clears the event it hears. */
 export type ChangePolicy = Pick<PolicyRow, 'id'> & { title?: string; statement?: string; hears?: string | null };
 
-export const CHANGE_POLICY: CommandDefinition<ChangePolicy> = {
+export const CHANGE_POLICY = {
   ...CHANGE_POLICY_IDENTITY,
   input: {
     id: column('policy', 'id', 'required'),
@@ -18,7 +18,7 @@ export const CHANGE_POLICY: CommandDefinition<ChangePolicy> = {
     hears: id('The event it hears: of its own domain, or another domain\'s published one.', 'clearable'),
   },
   handler: changePolicy,
-};
+} satisfies CommandDefinition<ChangePolicy>;
 
 /** Changes the policy's columns and the event it hears. */
 export function changePolicy(tx: Transaction, input: ChangePolicy): void {

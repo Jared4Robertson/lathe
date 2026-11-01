@@ -6,13 +6,13 @@ import { REMOVE_VIEW_IDENTITY } from './identities.generated.ts';
 /** The view to remove. */
 export type RemoveView = { id: string };
 
-export const REMOVE_VIEW: CommandDefinition<RemoveView> = {
+export const REMOVE_VIEW = {
   ...REMOVE_VIEW_IDENTITY,
   input: {
     id: column('view', 'id', 'required'),
   },
   handler: removeView,
-};
+} satisfies CommandDefinition<RemoveView>;
 
 /** Removes the view whole. */
 export function removeView(tx: Transaction, input: RemoveView): void {

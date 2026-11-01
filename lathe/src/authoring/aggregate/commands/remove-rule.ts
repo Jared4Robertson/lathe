@@ -6,13 +6,13 @@ import { REMOVE_RULE_IDENTITY } from './identities.generated.ts';
 /** The rule to remove. */
 export type RemoveRule = { id: string };
 
-export const REMOVE_RULE: CommandDefinition<RemoveRule> = {
+export const REMOVE_RULE = {
   ...REMOVE_RULE_IDENTITY,
   input: {
     id: column('rule', 'id', 'required'),
   },
   handler: removeRule,
-};
+} satisfies CommandDefinition<RemoveRule>;
 
 /** Removes the rule from its invariant. */
 export function removeRule(tx: Transaction, input: RemoveRule): void {

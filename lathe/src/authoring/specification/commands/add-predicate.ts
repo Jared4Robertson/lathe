@@ -8,7 +8,7 @@ import { ADD_PREDICATE_IDENTITY } from './identities.generated.ts';
 
 export type AddPredicate = Pick<PredicateRow, 'id' | 'title' | 'specification_id' | 'file'> & { meets?: string[]; packages?: string[] };
 
-export const ADD_PREDICATE: CommandDefinition<AddPredicate> = {
+export const ADD_PREDICATE = {
   ...ADD_PREDICATE_IDENTITY,
   input: {
     id: column('predicate', 'id', 'required'),
@@ -19,7 +19,7 @@ export const ADD_PREDICATE: CommandDefinition<AddPredicate> = {
     packages: texts("The packages it uses, by their names in the product's package.json files.", 'optional'),
   },
   handler: addPredicate,
-};
+} satisfies CommandDefinition<AddPredicate>;
 
 /** Adds the predicate to its specification, which has none yet. */
 export function addPredicate(tx: Transaction, input: AddPredicate): void {

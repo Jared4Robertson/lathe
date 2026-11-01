@@ -6,13 +6,13 @@ import { REMOVE_PRODUCT_KIND_IDENTITY } from './identities.generated.ts';
 /** The product kind to remove. */
 export type RemoveProductKind = { name: string };
 
-export const REMOVE_PRODUCT_KIND: CommandDefinition<RemoveProductKind> = {
+export const REMOVE_PRODUCT_KIND = {
   ...REMOVE_PRODUCT_KIND_IDENTITY,
   input: {
     name: column('product_kind', 'name', 'required'),
   },
   handler: removeProductKind,
-};
+} satisfies CommandDefinition<RemoveProductKind>;
 
 /** Removes the kind and its fields from the product that declares it. */
 export function removeProductKind(tx: Transaction, input: RemoveProductKind): void {

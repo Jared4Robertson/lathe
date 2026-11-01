@@ -8,7 +8,7 @@ import { ADD_PROJECTION_IDENTITY } from './identities.generated.ts';
 
 export type AddProjection = Pick<ProjectionRow, 'id' | 'title' | 'read_model_id' | 'file' | 'description'> & { meets?: string[]; packages?: string[] };
 
-export const ADD_PROJECTION: CommandDefinition<AddProjection> = {
+export const ADD_PROJECTION = {
   ...ADD_PROJECTION_IDENTITY,
   input: {
     id: column('projection', 'id', 'required'),
@@ -20,7 +20,7 @@ export const ADD_PROJECTION: CommandDefinition<AddProjection> = {
     packages: texts("The packages it uses, by their names in the product's package.json files.", 'optional'),
   },
   handler: addProjection,
-};
+} satisfies CommandDefinition<AddProjection>;
 
 /** Adds the projection to its read model, which has none yet. */
 export function addProjection(tx: Transaction, input: AddProjection): void {

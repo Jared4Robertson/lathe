@@ -6,13 +6,13 @@ import { REMOVE_INTEGRATION_IDENTITY } from './identities.generated.ts';
 /** The integration to remove. */
 export type RemoveIntegration = { id: string };
 
-export const REMOVE_INTEGRATION: CommandDefinition<RemoveIntegration> = {
+export const REMOVE_INTEGRATION = {
   ...REMOVE_INTEGRATION_IDENTITY,
   input: {
     id: column('integration', 'id', 'required'),
   },
   handler: removeIntegration,
-};
+} satisfies CommandDefinition<RemoveIntegration>;
 
 /** Removes the integration whole. */
 export function removeIntegration(tx: Transaction, input: RemoveIntegration): void {

@@ -4,13 +4,12 @@ import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
-import { useWriter } from '../../edit/write';
+import { useWriter, type CommandInputs } from '../../edit/write';
 import { lowerLabel } from '../../plural';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendExtensionRecord, type ExtensionRecordCommands } from './commands';
 import { useNextExtensionRecordId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -89,7 +88,7 @@ export function ExtensionRecordEditor({ index, page, children }: { index: Record
       if (Object.keys(values).length > 0) input.values = values;
       if (Object.keys(links).length > 0) input.links = links;
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
-      const answer = await sendExtensionRecord(writer, '/api/extension-record/change-extension-record', input as unknown as ExtensionRecordCommands['/api/extension-record/change-extension-record']);
+      const answer = await writer.command('/api/extension-record/change-extension-record', input as unknown as CommandInputs['/api/extension-record/change-extension-record']);
       if (answer.ok) { announce(`Saved ${page.id}`); back(); }
       return answer;
     };
@@ -103,7 +102,7 @@ export function ExtensionRecordEditor({ index, page, children }: { index: Record
       </div>
       {mode === 'remove' && (
         <RemoveQuestion index={index} id={page.id} label={lowerLabel(page.label)} goes={[]} then={addressOf(page.parent)} onCancel={back}
-          remove={() => sendExtensionRecord(writer, '/api/extension-record/remove-extension-record', { id: page.id })} />
+          remove={() => writer.command('/api/extension-record/remove-extension-record', { id: page.id })} />
       )}
       {children}
     </>
@@ -147,7 +146,7 @@ export function AddExtensionRecordForm({ index, parent, kind, onDone }: { index:
     for (const s of specs.filter(isLink)) if ((draft.ids[s.field] ?? []).length > 0) links[s.field.slice(LINK.length)] = draft.ids[s.field];
     const input: Record<string, unknown> = { kind, id, parent_id: parent, values, ...addInput(index, specs.filter(isPackages), draft, {}) };
     if (Object.keys(links).length > 0) input.links = links;
-    const answer = await sendExtensionRecord(writer, '/api/extension-record/add-extension-record', input as unknown as ExtensionRecordCommands['/api/extension-record/add-extension-record']);
+    const answer = await writer.command('/api/extension-record/add-extension-record', input as unknown as CommandInputs['/api/extension-record/add-extension-record']);
     if (answer.ok) { announce(`Added ${String(id)}`); navigate(addressOf(String(id))); }
     return answer;
   };

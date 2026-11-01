@@ -9,7 +9,7 @@ import { CHANGE_SERVICE_IDENTITY } from './identities.generated.ts';
 /** The service's changes: a column given is set, null clears an optional one; a list given replaces the list. */
 export type ChangeService = Pick<ServiceRow, 'id'> & { title?: ServiceRow['title']; file?: ServiceRow['file'] | null; meets?: string[]; packages?: string[] };
 
-export const CHANGE_SERVICE: CommandDefinition<ChangeService> = {
+export const CHANGE_SERVICE = {
   ...CHANGE_SERVICE_IDENTITY,
   input: {
     id: column('service', 'id', 'required'),
@@ -19,7 +19,7 @@ export const CHANGE_SERVICE: CommandDefinition<ChangeService> = {
     packages: texts("The packages it uses, by their names in the product's package.json files. Replaces the list.", 'optional'),
   },
   handler: changeService,
-};
+} satisfies CommandDefinition<ChangeService>;
 
 /** Changes the service's columns, links and packages. */
 export function changeService(tx: Transaction, input: ChangeService): void {

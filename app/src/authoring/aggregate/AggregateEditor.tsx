@@ -3,16 +3,16 @@ import type { AggregateKind } from '../../../../lathe/src/authoring/aggregate/mo
 import type { AggregatePage } from '../../../../lathe/src/authoring/aggregate/read-model';
 import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
-import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
+import { addInput, addOrChangeFields, changeInput, CommandForm, draftOf, emptyDraft, Fields, LONG, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
-import { useWriter, type Writer } from '../../edit/write';
+import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { adderOf, othersAddedUnder } from '../../record/pages';
 import { AddMenu } from '../../edit/AddMenu';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendAggregate, type AggregateCommands, type AggregateRoute } from './commands';
+import { AGGREGATE_FIELDS } from './fields.generated';
 import { useNextAggregateId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -38,68 +38,28 @@ function choices(index: RecordIndex, product: string, kinds: readonly string[]):
   return [...index.byId.values()].filter((r) => kinds.includes(r.kind) && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 }
 
-/** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order. */
+/** The fields each kind's Add and Change take, from their inputs; the hints add labels, long text and the choices. */
 function fieldsOf(index: RecordIndex, page: AggregatePage | null, product: string, kind: AggregateKind, adding: boolean, self?: string): FieldSpec[] {
-  const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
+  const F = AGGREGATE_FIELDS;
+  const meets = { choices: choices(index, product, ['standard_rule']) };
   switch (kind) {
     case 'aggregate':
-      return [
-        ...id('aggregate'),
-        { field: 'title', column: 'title', table: 'aggregate' },
-        { field: 'description', column: 'description', table: 'aggregate', long: true },
-        { field: 'identity', column: 'identity', table: 'aggregate', long: true },
-        { field: 'notes', column: 'notes', table: 'aggregate', long: true },
-      ];
+      return addOrChangeFields(adding, F['/api/aggregate/add-aggregate'], 'domain_id', F['/api/aggregate/change-aggregate'], { description: LONG, identity: LONG, notes: LONG });
     case 'entity': {
       // The entities it may hold: the others of its own aggregate.
       const siblings: Choice[] = (page?.entities ?? []).filter((e) => e.entity.id !== self).map((e) => ({ id: e.entity.id, title: e.entity.title }));
-      return [
-        ...id('entity'),
-        { field: 'title', column: 'title', table: 'entity' },
-        { field: 'role', column: 'role', table: 'entity' },
-        { field: 'in_root_table', column: 'in_root_table', table: 'entity' },
-        { field: 'description', column: 'description', table: 'entity', long: true },
-        { field: 'fields', label: 'Fields', description: 'Its fields in order, each a name, what it means, exactly one type (a basic type, a value object or an aggregate), whether it is required, and its column and an example when they help. The list replaces its fields.', table: 'entity_field', columns: ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'] },
-        { field: 'has_one', label: 'Has one', description: 'The entities of its aggregate it holds exactly one of.', many: siblings },
-        { field: 'has_many', label: 'Has many', description: 'The entities of its aggregate it holds any number of.', many: siblings },
-      ];
+      return addOrChangeFields(adding, F['/api/aggregate/add-entity'], 'aggregate_id', F['/api/aggregate/change-entity'], { description: LONG, has_one: { choices: siblings }, has_many: { choices: siblings } });
     }
     case 'invariant':
-      return [...id('invariant'), { field: 'title', column: 'title', table: 'invariant' }, { field: 'statement', column: 'statement', table: 'invariant', long: true }];
+      return addOrChangeFields(adding, F['/api/aggregate/add-invariant'], 'aggregate_id', F['/api/aggregate/change-invariant'], { statement: LONG });
     case 'data_model':
-      return [
-        ...id('data_model'),
-        { field: 'title', column: 'title', table: 'data_model' },
-        { field: 'file', column: 'file', table: 'data_model' },
-        { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: choices(index, product, ['standard_rule']) },
-        { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files, one per line.', texts: true },
-      ];
+      return addOrChangeFields(adding, F['/api/aggregate/add-data-model'], 'entity_id', F['/api/aggregate/change-data-model'], { meets });
     case 'rule':
-      return [
-        ...id('rule'),
-        { field: 'title', column: 'title', table: 'rule' },
-        { field: 'file', column: 'file', table: 'rule' },
-        { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: choices(index, product, ['standard_rule']) },
-        { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files, one per line.', texts: true },
-      ];
-    case 'invariant_test': {
-      const table = 'invariant_test';
-      return [
-        ...id(table),
-        { field: 'title', column: 'title', table },
-        { field: 'when', column: 'when', table, long: true },
-        { field: 'then', column: 'then', table, long: true },
-        { field: 'level', column: 'level', table },
-        { field: 'state', column: 'state', table },
-        { field: 'file', column: 'file', table },
-        { field: 'manual_reason', column: 'manual_reason', table, long: true },
-        { field: 'size', column: 'size', table },
-        { field: 'smoke', column: 'smoke', table },
-        { field: 'external', column: 'external', table },
-        { field: 'notes', column: 'notes', table, long: true },
-        { field: 'starts_from', label: 'Starts from', description: 'The test data sets it starts from.', many: choices(index, product, ['test_data_set']) },
-      ];
-    }
+      return addOrChangeFields(adding, F['/api/aggregate/add-rule'], 'invariant_id', F['/api/aggregate/change-rule'], { meets });
+    case 'invariant_test':
+      return addOrChangeFields(adding, F['/api/aggregate/add-invariant-test'], 'invariant_id', F['/api/aggregate/change-invariant-test'], {
+        when: LONG, then: LONG, manual_reason: LONG, notes: LONG, starts_from: { choices: choices(index, product, ['test_data_set']) },
+      });
   }
 }
 
@@ -129,18 +89,18 @@ function currentOf(page: AggregatePage, kind: AggregateKind, id: string): Record
   }
 }
 
-/** Each kind's Change command, and the fields it may clear with null. */
-const CHANGE: Record<AggregateKind, { route: AggregateRoute; clearable: readonly string[] }> = {
-  aggregate: { route: '/api/aggregate/change-aggregate', clearable: ['notes'] },
-  entity: { route: '/api/aggregate/change-entity', clearable: ['in_root_table'] },
-  invariant: { route: '/api/aggregate/change-invariant', clearable: [] },
-  data_model: { route: '/api/aggregate/change-data-model', clearable: ['file'] },
-  rule: { route: '/api/aggregate/change-rule', clearable: ['file'] },
-  invariant_test: { route: '/api/aggregate/change-invariant-test', clearable: ['file', 'manual_reason', 'size', 'smoke', 'external', 'notes'] },
+/** Each kind's Change command. */
+const CHANGE: Record<AggregateKind, CommandRoute> = {
+  aggregate: '/api/aggregate/change-aggregate',
+  entity: '/api/aggregate/change-entity',
+  invariant: '/api/aggregate/change-invariant',
+  data_model: '/api/aggregate/change-data-model',
+  rule: '/api/aggregate/change-rule',
+  invariant_test: '/api/aggregate/change-invariant-test',
 };
 
 /** Each kind's Add command, and the field that names its parent. */
-const ADD: Record<AggregateKind, { route: AggregateRoute; parent: string }> = {
+const ADD: Record<AggregateKind, { route: CommandRoute; parent: string }> = {
   aggregate: { route: '/api/aggregate/add-aggregate', parent: 'domain_id' },
   entity: { route: '/api/aggregate/add-entity', parent: 'aggregate_id' },
   invariant: { route: '/api/aggregate/add-invariant', parent: 'aggregate_id' },
@@ -150,7 +110,7 @@ const ADD: Record<AggregateKind, { route: AggregateRoute; parent: string }> = {
 };
 
 /** Each kind's Remove command. */
-const REMOVE: Record<AggregateKind, AggregateRoute> = {
+const REMOVE: Record<AggregateKind, CommandRoute> = {
   aggregate: '/api/aggregate/remove-aggregate',
   entity: '/api/aggregate/remove-entity',
   invariant: '/api/aggregate/remove-invariant',
@@ -160,7 +120,7 @@ const REMOVE: Record<AggregateKind, AggregateRoute> = {
 };
 
 /** Sends a command whose input this form has built to its kind's shape: the route names the type it takes. */
-const send = (writer: Writer, route: AggregateRoute, input: Record<string, unknown>): Promise<WriteAnswer> => sendAggregate(writer, route, input as unknown as AggregateCommands[typeof route]);
+const send = (writer: Writer, route: CommandRoute, input: Record<string, unknown>): Promise<WriteAnswer> => writer.command(route, input as unknown as CommandInputs[typeof route]);
 
 /** What goes with a record when it is removed, inside the aggregate: what sits under it. */
 function goesWith(page: AggregatePage, kind: AggregateKind, id: string): string[] {
@@ -204,9 +164,9 @@ export function AggregateEditor({ index, page, children }: { index: RecordIndex;
     const specs = fieldsOf(index, page, product, kind, false, id);
     const current = currentOf(page, kind, id);
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, specs, draft, current, { id }, CHANGE[kind].clearable);
+      const input = changeInput(index, specs, draft, current, { id });
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
-      const answer = await send(writer, CHANGE[kind].route, input);
+      const answer = await send(writer, CHANGE[kind], input);
       if (answer.ok) { announce(`Saved ${id}`); back(); }
       return answer;
     };
@@ -233,7 +193,7 @@ export function AggregateEditor({ index, page, children }: { index: RecordIndex;
       </div>
       {mode.mode === 'remove' && (
         <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={goesWith(page, kind, id)} then={addressOf(parentOf(page, kind, id))} onCancel={back}
-          remove={() => sendAggregate(writer, REMOVE[kind], { id })} />
+          remove={() => writer.command(REMOVE[kind], { id })} />
       )}
       {children}
     </>

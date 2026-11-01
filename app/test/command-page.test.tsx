@@ -3,9 +3,7 @@ import { addChoices, chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { COMMAND_COMMANDS } from '../../lathe/src/authoring/command/commands/index';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
-import type { CommandCommands } from '../src/authoring/command/commands';
 import { addRows } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp, section } from './helpers';
@@ -32,15 +30,6 @@ describe('LA-V132-R01-T01 a command\'s records are read through the Command aggr
     expect(await within(main()).findByText('Whenever an item is added, it is added again.')).toBeInTheDocument();
     expect(requests).toContain('GET /api/command/get-command?id=DM-SHOP-PO01');
     expect(section(/^Policy test/)).toHaveTextContent('No test proves it yet.');
-  });
-
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof CommandCommands)[] = [
-      '/api/command/add-command', '/api/command/add-command-handler', '/api/command/add-event-handler', '/api/command/add-policy', '/api/command/add-policy-test',
-      '/api/command/change-command', '/api/command/change-command-handler', '/api/command/change-event-handler', '/api/command/change-policy', '/api/command/change-policy-test',
-      '/api/command/remove-command', '/api/command/remove-command-handler', '/api/command/remove-event-handler', '/api/command/remove-policy', '/api/command/remove-policy-test',
-    ];
-    expect([...routes].sort()).toEqual(COMMAND_COMMANDS.map((c) => c.route).sort());
   });
 });
 

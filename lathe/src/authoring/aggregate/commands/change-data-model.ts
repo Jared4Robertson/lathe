@@ -9,7 +9,7 @@ import { CHANGE_DATA_MODEL_IDENTITY } from './identities.generated.ts';
 /** The data model's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeDataModel = Pick<DataModelRow, 'id'> & { title?: string; file?: string | null; meets?: string[]; packages?: string[] };
 
-export const CHANGE_DATA_MODEL: CommandDefinition<ChangeDataModel> = {
+export const CHANGE_DATA_MODEL = {
   ...CHANGE_DATA_MODEL_IDENTITY,
   input: {
     id: column('data_model', 'id', 'required'),
@@ -19,7 +19,7 @@ export const CHANGE_DATA_MODEL: CommandDefinition<ChangeDataModel> = {
     packages: texts('The packages it uses. Replaces the list.', 'optional'),
   },
   handler: changeDataModel,
-};
+} satisfies CommandDefinition<ChangeDataModel>;
 
 /** Changes the data model's columns and links. */
 export function changeDataModel(tx: Transaction, input: ChangeDataModel): void {

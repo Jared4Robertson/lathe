@@ -4,12 +4,11 @@ import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import { IdField, type Choice } from '../../edit/fields';
-import { useWriter } from '../../edit/write';
+import { useWriter, type CommandInputs } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendTable, type TableCommands } from './commands';
 import { useNextTableId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -74,7 +73,7 @@ export function TableEditor({ index, page, children }: { index: RecordIndex; pag
     const submit = async (draft: Draft) => {
       const input = changeInput(index, specs, draft, current, { id: table.id }, ['file']);
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
-      const answer = await sendTable(writer, '/api/table/change-table', input as unknown as TableCommands['/api/table/change-table']);
+      const answer = await writer.command('/api/table/change-table', input as unknown as CommandInputs['/api/table/change-table']);
       if (answer.ok) { announce(`Saved ${table.id}`); back(); }
       return answer;
     };
@@ -90,7 +89,7 @@ export function TableEditor({ index, page, children }: { index: RecordIndex; pag
       </div>
       {mode === 'remove' && (
         <RemoveQuestion index={index} id={table.id} label="table" goes={[]} then={addressOf(page.parent.id)} onCancel={back}
-          remove={() => sendTable(writer, '/api/table/remove-table', { id: table.id })} />
+          remove={() => writer.command('/api/table/remove-table', { id: table.id })} />
       )}
       {children}
     </>
@@ -125,7 +124,7 @@ function MoveForm({ index, page, product, onDone }: { index: RecordIndex; page: 
     // The picked record's kind names the one parent column the command takes; one of no such kind is sent as a
     // domain, and the command refuses it with its reason.
     const column = PARENT_COLUMN[index.byId.get(parent.trim())?.kind ?? ''] ?? 'domain_id';
-    const answer = await sendTable(writer, '/api/table/move-table', { id: page.table.id, [column]: parent.trim() });
+    const answer = await writer.command('/api/table/move-table', { id: page.table.id, [column]: parent.trim() });
     if (answer.ok) { announce(`Moved ${page.table.id}`); onDone(); }
     return answer;
   };
@@ -151,7 +150,7 @@ export function AddTableForm({ index, parent, onDone }: { index: RecordIndex; pa
   const specs = fieldsOf(index, index.byId.get(parent)?.product ?? '', true);
   const submit = async () => {
     const input = addInput(index, specs, draft, { [PARENT_COLUMN[index.byId.get(parent)?.kind ?? ''] ?? 'domain_id']: parent });
-    const answer = await sendTable(writer, '/api/table/add-table', input as unknown as TableCommands['/api/table/add-table']);
+    const answer = await writer.command('/api/table/add-table', input as unknown as CommandInputs['/api/table/add-table']);
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;
   };

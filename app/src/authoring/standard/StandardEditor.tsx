@@ -5,12 +5,11 @@ import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
-import { useWriter, type Writer } from '../../edit/write';
+import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendStandard, type StandardCommands, type StandardRoute } from './commands';
 import { useNextStandardId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -77,28 +76,28 @@ function currentOf(page: StandardPage, kind: StandardKind, id: string): Record<s
 }
 
 /** Each kind's Change command, and the fields it may clear with null. */
-const CHANGE: Record<StandardKind, { route: StandardRoute; clearable: readonly string[] }> = {
+const CHANGE: Record<StandardKind, { route: CommandRoute; clearable: readonly string[] }> = {
   standard: { route: '/api/standard/change-standard', clearable: [] },
   standard_rule: { route: '/api/standard/change-standard-rule', clearable: ['group_name'] },
   standard_rule_test: { route: '/api/standard/change-standard-rule-test', clearable: ['file', 'manual_reason', 'size', 'smoke', 'external', 'notes'] },
 };
 
 /** Each kind's Add command, and the field that names its parent. */
-const ADD: Record<StandardKind, { route: StandardRoute; parent: string }> = {
+const ADD: Record<StandardKind, { route: CommandRoute; parent: string }> = {
   standard: { route: '/api/standard/add-standard', parent: 'product_id' },
   standard_rule: { route: '/api/standard/add-standard-rule', parent: 'standard_id' },
   standard_rule_test: { route: '/api/standard/add-standard-rule-test', parent: 'standard_rule_id' },
 };
 
 /** Each kind's Remove command. */
-const REMOVE: Record<StandardKind, StandardRoute> = {
+const REMOVE: Record<StandardKind, CommandRoute> = {
   standard: '/api/standard/remove-standard',
   standard_rule: '/api/standard/remove-standard-rule',
   standard_rule_test: '/api/standard/remove-standard-rule-test',
 };
 
 /** Sends a command whose input this form has built to its kind's shape: the route names the type it takes. */
-const send = (writer: Writer, route: StandardRoute, input: Record<string, unknown>): Promise<WriteAnswer> => sendStandard(writer, route, input as unknown as StandardCommands[typeof route]);
+const send = (writer: Writer, route: CommandRoute, input: Record<string, unknown>): Promise<WriteAnswer> => writer.command(route, input as unknown as CommandInputs[typeof route]);
 
 /** What goes with a record when it is removed, inside the standard: what sits under it. */
 function goesWith(page: StandardPage, kind: StandardKind, id: string): string[] {
@@ -153,7 +152,7 @@ export function StandardEditor({ index, page, children }: { index: RecordIndex; 
       </div>
       {mode.mode === 'remove' && (
         <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={goesWith(page, kind, id)} then={addressOf(parentOf(page, kind, id))} onCancel={back}
-          remove={() => sendStandard(writer, REMOVE[kind], { id })} />
+          remove={() => writer.command(REMOVE[kind], { id })} />
       )}
       {children}
     </>

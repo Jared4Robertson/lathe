@@ -2,8 +2,6 @@ import type { ServedData } from './read-view';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { DATA_STORE_COMMANDS } from '../../lathe/src/authoring/data-store/commands/index';
-import type { DataStoreCommands } from '../src/authoring/data-store/commands';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { chooseAdd } from './add-menu';
 import { addRows } from './fixtures/load';
@@ -41,11 +39,6 @@ describe('the Data store page reads it through its own query, and its editor sen
     expect(await within(main()).findByText('A PostgreSQL database the shop runs.')).toBeInTheDocument();
     expect(requests).toContain('GET /api/data-store/get-data-store?id=DM-STORE01');
     expect(main()).toHaveTextContent('database');
-  });
-
-  it('LA-V155-R01-T01 holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof DataStoreCommands)[] = ['/api/data-store/add-data-store', '/api/data-store/change-data-store', '/api/data-store/remove-data-store'];
-    expect([...routes].sort()).toEqual(DATA_STORE_COMMANDS.map((c) => c.route).sort());
   });
 
   it('LA-V155-R02-T01 adds a data store from its domain\'s page through the aggregate\'s own Add, and Edit sends only what changed', async () => {

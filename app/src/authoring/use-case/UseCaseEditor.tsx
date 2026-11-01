@@ -5,12 +5,11 @@ import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import { IdField, type Choice } from '../../edit/fields';
 import { AddMenu } from '../../edit/AddMenu';
-import { useWriter, type Writer } from '../../edit/write';
+import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendUseCase, type UseCaseCommands, type UseCaseRoute } from './commands';
 import { stepsOf, useNextId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -65,7 +64,7 @@ export function UseCaseEditor({ index, useCase, id, kind, children }: { index: R
       </div>
       {mode.mode === 'remove' && (
         <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={goesWith(useCase, kind, id)} then={addressOf(parentOf(useCase, kind, id))} onCancel={back}
-          remove={() => sendUseCase(writer, REMOVE[kind], { id })} />
+          remove={() => writer.command(REMOVE[kind], { id })} />
       )}
       {children}
     </>
@@ -185,7 +184,7 @@ function currentOf(useCase: UseCasePage, kind: UseCaseKind, id: string): Record<
 }
 
 /** Each kind's Change command, and the fields it may clear with null. */
-const CHANGE: Record<UseCaseKind, { route: UseCaseRoute; clearable: readonly string[] }> = {
+const CHANGE: Record<UseCaseKind, { route: CommandRoute; clearable: readonly string[] }> = {
   use_case: { route: '/api/use-case/change-use-case', clearable: ['notes'] },
   uc_requirement: { route: '/api/use-case/change-uc-requirement', clearable: ['group_name'] },
   flow: { route: '/api/use-case/change-flow', clearable: [] },
@@ -195,7 +194,7 @@ const CHANGE: Record<UseCaseKind, { route: UseCaseRoute; clearable: readonly str
 };
 
 /** Each kind's Add command, and the field that names its parent. */
-const ADD: Record<UseCaseKind, { route: UseCaseRoute; parent: string }> = {
+const ADD: Record<UseCaseKind, { route: CommandRoute; parent: string }> = {
   use_case: { route: '/api/use-case/add-use-case', parent: 'capability_id' },
   uc_requirement: { route: '/api/use-case/add-uc-requirement', parent: 'use_case_id' },
   flow: { route: '/api/use-case/add-flow', parent: 'use_case_id' },
@@ -205,7 +204,7 @@ const ADD: Record<UseCaseKind, { route: UseCaseRoute; parent: string }> = {
 };
 
 /** Sends a command whose input this form has built to its kind's shape: the route names the type it takes. */
-const send = (writer: Writer, route: UseCaseRoute, input: Record<string, unknown>) => sendUseCase(writer, route, input as unknown as UseCaseCommands[typeof route]);
+const send = (writer: Writer, route: CommandRoute, input: Record<string, unknown>) => writer.command(route, input as unknown as CommandInputs[typeof route]);
 
 /** Edit: the record's Change, with only what changed (a field emptied is cleared where it may be). */
 function ChangeForm({ context, id, kind }: { context: FormContext; id: string; kind: UseCaseKind }) {
@@ -279,7 +278,7 @@ function MoveForm({ context }: { context: FormContext }) {
   const choices = productChoices(index, useCase, ['capability']);
   const submit = async () => {
     if (capability === useCase.useCase.capability_id) { announce('Nothing changed'); onDone(); return null; }
-    const answer = await sendUseCase(writer, MOVE.use_case!, { id: useCase.useCase.id, capability_id: capability });
+    const answer = await writer.command(MOVE.use_case!, { id: useCase.useCase.id, capability_id: capability });
     if (answer.ok) { announce(`Moved ${useCase.useCase.id}`); onDone(); }
     return answer;
   };
@@ -313,7 +312,7 @@ function goesWith(useCase: UseCasePage, kind: UseCaseKind, id: string): string[]
 }
 
 /** Each kind's Remove command. */
-const REMOVE: Record<UseCaseKind, UseCaseRoute> = {
+const REMOVE: Record<UseCaseKind, CommandRoute> = {
   use_case: '/api/use-case/remove-use-case',
   uc_requirement: '/api/use-case/remove-uc-requirement',
   flow: '/api/use-case/remove-flow',

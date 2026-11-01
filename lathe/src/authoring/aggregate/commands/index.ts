@@ -19,7 +19,7 @@ import { ADD_RULE } from './add-rule.ts';
 import { CHANGE_RULE } from './change-rule.ts';
 import { REMOVE_RULE } from './remove-rule.ts';
 
-export const AGGREGATE_COMMANDS: readonly AnyCommand[] = [
+export const AGGREGATE_COMMANDS = [
   ADD_AGGREGATE,
   CHANGE_AGGREGATE,
   REMOVE_AGGREGATE,
@@ -38,4 +38,4 @@ export const AGGREGATE_COMMANDS: readonly AnyCommand[] = [
   ADD_RULE,
   CHANGE_RULE,
   REMOVE_RULE,
-];
+] as const satisfies readonly AnyCommand[];

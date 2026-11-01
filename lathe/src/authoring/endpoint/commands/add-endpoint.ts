@@ -8,7 +8,7 @@ import { ADD_ENDPOINT_IDENTITY } from './identities.generated.ts';
 /** A new endpoint. */
 export type AddEndpoint = Pick<EndpointRow, 'id' | 'title' | 'method' | 'route' | 'description' | 'command_id' | 'query_id' | 'notes'>;
 
-export const ADD_ENDPOINT: CommandDefinition<AddEndpoint> = {
+export const ADD_ENDPOINT = {
   ...ADD_ENDPOINT_IDENTITY,
   input: {
     id: column('endpoint', 'id', 'required'),
@@ -21,7 +21,7 @@ export const ADD_ENDPOINT: CommandDefinition<AddEndpoint> = {
     notes: column('endpoint', 'notes', 'optional'),
   },
   handler: addEndpoint,
-};
+} satisfies CommandDefinition<AddEndpoint>;
 
 /** Adds the endpoint, new and whole. */
 export function addEndpoint(tx: Transaction, input: AddEndpoint): void {

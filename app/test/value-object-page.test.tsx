@@ -2,8 +2,6 @@ import { chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { VALUE_OBJECT_COMMANDS } from '../../lathe/src/authoring/value-object/commands/index';
-import type { ValueObjectCommands } from '../src/authoring/value-object/commands';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { modelWorkspace } from './fixtures/model';
 import { main, openApp, section } from './helpers';
@@ -22,16 +20,6 @@ describe('LA-V142-R01-T01 a value object\'s records are read through the Value o
     await waitFor(() => expect(main().querySelector('[data-field="refuses"]')).toHaveTextContent('(blank)'));
     expect(main().querySelector('[data-field="accepts"]')).toHaveTextContent('Ada');
     expect(requests).toContain('GET /api/value-object/get-value-object?id=P-VO01-C01-T');
-  });
-
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof ValueObjectCommands)[] = [
-      '/api/value-object/add-value-object', '/api/value-object/change-value-object', '/api/value-object/remove-value-object',
-      '/api/value-object/add-constraint', '/api/value-object/change-constraint', '/api/value-object/remove-constraint',
-      '/api/value-object/add-value-type', '/api/value-object/change-value-type', '/api/value-object/remove-value-type',
-      '/api/value-object/add-constraint-test', '/api/value-object/change-constraint-test', '/api/value-object/remove-constraint-test',
-    ];
-    expect([...routes].sort()).toEqual(VALUE_OBJECT_COMMANDS.map((c) => c.route).sort());
   });
 });
 

@@ -9,7 +9,7 @@ import { CHANGE_INTERFACE_IDENTITY } from './identities.generated.ts';
 /** The interface's changes: a column given is set. */
 export type ChangeInterface = Pick<InterfaceRow, 'id'> & { title?: string; kind?: InterfaceRow['kind']; description?: string };
 
-export const CHANGE_INTERFACE: CommandDefinition<ChangeInterface> = {
+export const CHANGE_INTERFACE = {
   ...CHANGE_INTERFACE_IDENTITY,
   input: {
     id: column('interface', 'id', 'required'),
@@ -18,7 +18,7 @@ export const CHANGE_INTERFACE: CommandDefinition<ChangeInterface> = {
     description: column('interface', 'description', 'optional'),
   },
   handler: changeInterface,
-};
+} satisfies CommandDefinition<ChangeInterface>;
 
 /** Changes the interface's columns. */
 export function changeInterface(tx: Transaction, input: ChangeInterface): void {

@@ -9,7 +9,7 @@ import { CHANGE_PRODUCT_KIND_IDENTITY } from './identities.generated.ts';
 /** The kind's changes: a column given is set, null clears an optional one; fields, when given, replace the list. */
 export type ChangeProductKind = Pick<ProductKindRow, 'name'> & { label?: string; description?: string; parent_kind?: string; stage?: ProductKindRow['stage'] | null; obligation?: boolean; id_pattern?: string | null; id_example?: string | null; title_form?: ProductKindRow['title_form'] | null; fields?: FieldInput[] };
 
-export const CHANGE_PRODUCT_KIND: CommandDefinition<ChangeProductKind> = {
+export const CHANGE_PRODUCT_KIND = {
   ...CHANGE_PRODUCT_KIND_IDENTITY,
   input: {
     name: column('product_kind', 'name', 'required'),
@@ -24,7 +24,7 @@ export const CHANGE_PRODUCT_KIND: CommandDefinition<ChangeProductKind> = {
     fields: parts('product_kind_field', ['name', 'type', 'required', 'description', 'titles'], 'The columns its table adds, in order. Replaces the list.', 'optional'),
   },
   handler: changeProductKind,
-};
+} satisfies CommandDefinition<ChangeProductKind>;
 
 /** Changes the kind's declaration and fields. */
 export function changeProductKind(tx: Transaction, input: ChangeProductKind): void {

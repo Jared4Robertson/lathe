@@ -8,7 +8,7 @@ import { CHANGE_ENDPOINT_IDENTITY } from './identities.generated.ts';
 /** The endpoint's changes: a column given is set, null clears an optional one. */
 export type ChangeEndpoint = Pick<EndpointRow, 'id'> & { title?: EndpointRow['title']; method?: EndpointRow['method']; route?: EndpointRow['route']; description?: EndpointRow['description']; notes?: EndpointRow['notes'] | null };
 
-export const CHANGE_ENDPOINT: CommandDefinition<ChangeEndpoint> = {
+export const CHANGE_ENDPOINT = {
   ...CHANGE_ENDPOINT_IDENTITY,
   input: {
     id: column('endpoint', 'id', 'required'),
@@ -19,7 +19,7 @@ export const CHANGE_ENDPOINT: CommandDefinition<ChangeEndpoint> = {
     notes: column('endpoint', 'notes', 'clearable'),
   },
   handler: changeEndpoint,
-};
+} satisfies CommandDefinition<ChangeEndpoint>;
 
 /** Changes the endpoint's columns. */
 export function changeEndpoint(tx: Transaction, input: ChangeEndpoint): void {

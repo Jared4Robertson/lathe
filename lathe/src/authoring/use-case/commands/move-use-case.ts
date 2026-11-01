@@ -8,14 +8,14 @@ import { MOVE_USE_CASE_IDENTITY } from './identities.generated.ts';
 /** The use case and the capability it moves to. */
 export type MoveUseCase = Pick<UseCaseRow, 'id' | 'capability_id'>;
 
-export const MOVE_USE_CASE: CommandDefinition<MoveUseCase> = {
+export const MOVE_USE_CASE = {
   ...MOVE_USE_CASE_IDENTITY,
   input: {
     id: column('use_case', 'id', 'required'),
     capability_id: column('use_case', 'capability_id', 'required'),
   },
   handler: moveUseCase,
-};
+} satisfies CommandDefinition<MoveUseCase>;
 
 /** Puts the use case under the other capability; what is in it keeps its IDs. */
 export function moveUseCase(tx: Transaction, input: MoveUseCase): void {

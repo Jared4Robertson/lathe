@@ -9,7 +9,7 @@ import { CHANGE_QUERY_HANDLER_IDENTITY } from './identities.generated.ts';
 /** The query handler's changes: a column given is set, null clears an optional one; a list given replaces the list. */
 export type ChangeQueryHandler = Pick<QueryHandlerRow, 'id'> & { title?: QueryHandlerRow['title']; file?: QueryHandlerRow['file'] | null; description?: QueryHandlerRow['description']; meets?: string[]; packages?: string[] };
 
-export const CHANGE_QUERY_HANDLER: CommandDefinition<ChangeQueryHandler> = {
+export const CHANGE_QUERY_HANDLER = {
   ...CHANGE_QUERY_HANDLER_IDENTITY,
   input: {
     id: column('query_handler', 'id', 'required'),
@@ -20,7 +20,7 @@ export const CHANGE_QUERY_HANDLER: CommandDefinition<ChangeQueryHandler> = {
     packages: texts("The packages it uses, by their names in the product's package.json files. Replaces the list.", 'optional'),
   },
   handler: changeQueryHandler,
-};
+} satisfies CommandDefinition<ChangeQueryHandler>;
 
 /** Changes the query handler's columns, links and packages. */
 export function changeQueryHandler(tx: Transaction, input: ChangeQueryHandler): void {

@@ -4,10 +4,9 @@ import type { FollowingPage } from '../../../../lathe/src/traceability/pattern-f
 import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
-import { useWriter } from '../../edit/write';
+import { useWriter, type CommandInputs } from '../../edit/write';
 import { useAnnounce } from '../../shell/commands';
 import { byIdOrder, type RecordIndex } from '../../exploring/record-summaries/record-index';
-import { sendPatternFollowing, type PatternFollowingCommands } from './commands';
 import '../../edit/edit.css';
 
 // The following's editor (LA-TRC-A3): the actions on a pattern's followers, each sending one of the Pattern following
@@ -73,7 +72,7 @@ function ChangeValuesForm({ index, following, onDone }: { index: RecordIndex; fo
     const input = changeInput(index, [VALUES], draft, current, { follower_id: following.follower, pattern_id: following.pattern }, []);
     if (Object.keys(input).length === 2) { announce('Nothing changed'); onDone(); return null; }
     const route = '/api/pattern-following/change-setting-values';
-    const answer = await sendPatternFollowing(writer, route, input as unknown as PatternFollowingCommands[typeof route]);
+    const answer = await writer.command(route, input as unknown as CommandInputs[typeof route]);
     if (answer.ok) { announce(`Saved the values ${following.follower} gives`); onDone(); }
     return answer;
   };
@@ -90,7 +89,7 @@ function StopFollowingForm({ following, onDone }: { following: FollowingPage; on
   const announce = useAnnounce();
   const { follower, pattern } = following;
   const submit = async () => {
-    const answer = await sendPatternFollowing(writer, '/api/pattern-following/stop-following-pattern', { follower_id: follower, pattern_id: pattern });
+    const answer = await writer.command('/api/pattern-following/stop-following-pattern', { follower_id: follower, pattern_id: pattern });
     if (answer.ok) { announce(`${follower} no longer follows ${pattern}`); onDone(); }
     return answer;
   };
@@ -119,7 +118,7 @@ function FollowForm({ index, page, followers, onDone }: { index: RecordIndex; pa
   const submit = async () => {
     const input = addInput(index, specs, draft, { pattern_id: pattern });
     const route = '/api/pattern-following/follow-pattern';
-    const answer = await sendPatternFollowing(writer, route, input as unknown as PatternFollowingCommands[typeof route]);
+    const answer = await writer.command(route, input as unknown as CommandInputs[typeof route]);
     if (answer.ok) { announce(`${String(input.follower_id)} follows ${pattern}`); onDone(); }
     return answer;
   };

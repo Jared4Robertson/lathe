@@ -5,14 +5,13 @@ import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import { IdField, Refusal, problemText, type Choice } from '../../edit/fields';
-import { useWriter, type Writer } from '../../edit/write';
+import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { AddUnder, othersAddedUnder } from '../../record/pages';
 import { AddMenu } from '../../edit/AddMenu';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { addressOf } from '../../views/address';
-import { sendProduct, type ProductCommands, type ProductRoute } from './commands';
 import { useNextProductId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -63,7 +62,7 @@ export interface DeclarationActions {
 }
 
 /** Sends a command whose input a form has built to its route's shape. */
-const send = (writer: Writer, route: ProductRoute, input: Record<string, unknown>) => sendProduct(writer, route, input as unknown as ProductCommands[typeof route]);
+const send = (writer: Writer, route: CommandRoute, input: Record<string, unknown>) => writer.command(route, input as unknown as CommandInputs[typeof route]);
 
 // ---------- Fields ----------
 
@@ -188,15 +187,15 @@ export function ProductEditor({ index, page, id, kind, children }: {
       {mode.mode === 'remove' && (
         <RemoveQuestion index={index} id={id} label={kind === 'question' ? 'open question' : 'interface'} goes={[]} onCancel={back}
           then={addressOf(kind === 'question' ? page.questions.find((q) => q.id === id)?.domain_id ?? product : product)}
-          remove={() => sendProduct(writer, kind === 'question' ? '/api/product/remove-question' : '/api/product/remove-interface', { id })} />
+          remove={() => writer.command(kind === 'question' ? '/api/product/remove-question' : '/api/product/remove-interface', { id })} />
       )}
       {mode.mode === 'remove-kind' && (
         <RemoveDeclaration title={`Remove the product kind ${mode.name}?`} what={`the product kind ${mode.name} with its fields`} onCancel={back}
-          remove={() => sendProduct(writer, '/api/product/remove-product-kind', { name: mode.name })} />
+          remove={() => writer.command('/api/product/remove-product-kind', { name: mode.name })} />
       )}
       {mode.mode === 'remove-relation' && (
         <RemoveDeclaration title={`Remove the product relation ${relationName(mode.relation)}?`} what={`the product relation ${relationName(mode.relation)}`} onCancel={back}
-          remove={() => sendProduct(writer, '/api/product/remove-product-relation', relationKey(mode.relation))} />
+          remove={() => writer.command('/api/product/remove-product-relation', relationKey(mode.relation))} />
       )}
       {children(actions)}
     </>
@@ -343,7 +342,7 @@ function MoveForm({ context, id }: { context: FormContext; id: string }) {
   const choices: Choice[] = [{ id: page.product.id, title: page.product.title }, ...page.domains];
   const submit = async () => {
     if (under === here) { announce('Nothing changed'); onDone(); return null; }
-    const answer = await sendProduct(writer, '/api/product/move-question', under === page.product.id ? { id, product_id: under } : { id, domain_id: under });
+    const answer = await writer.command('/api/product/move-question', under === page.product.id ? { id, product_id: under } : { id, domain_id: under });
     if (answer.ok) { announce(`Moved ${id}`); onDone(); }
     return answer;
   };

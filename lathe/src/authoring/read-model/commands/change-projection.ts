@@ -9,7 +9,7 @@ import { CHANGE_PROJECTION_IDENTITY } from './identities.generated.ts';
 /** The projection's changes: a column given is set, null clears an optional one; a list given replaces the list. */
 export type ChangeProjection = Pick<ProjectionRow, 'id'> & { title?: ProjectionRow['title']; file?: ProjectionRow['file'] | null; description?: ProjectionRow['description']; meets?: string[]; packages?: string[] };
 
-export const CHANGE_PROJECTION: CommandDefinition<ChangeProjection> = {
+export const CHANGE_PROJECTION = {
   ...CHANGE_PROJECTION_IDENTITY,
   input: {
     id: column('projection', 'id', 'required'),
@@ -20,7 +20,7 @@ export const CHANGE_PROJECTION: CommandDefinition<ChangeProjection> = {
     packages: texts("The packages it uses, by their names in the product's package.json files. Replaces the list.", 'optional'),
   },
   handler: changeProjection,
-};
+} satisfies CommandDefinition<ChangeProjection>;
 
 /** Changes the projection's columns, links and packages. */
 export function changeProjection(tx: Transaction, input: ChangeProjection): void {

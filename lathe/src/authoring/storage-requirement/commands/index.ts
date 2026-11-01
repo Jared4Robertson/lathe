@@ -7,11 +7,11 @@ import { ADD_STORAGE_REQUIREMENT_TEST } from './add-storage-requirement-test.ts'
 import { CHANGE_STORAGE_REQUIREMENT_TEST } from './change-storage-requirement-test.ts';
 import { REMOVE_STORAGE_REQUIREMENT_TEST } from './remove-storage-requirement-test.ts';
 
-export const STORAGE_REQUIREMENT_COMMANDS: readonly AnyCommand[] = [
+export const STORAGE_REQUIREMENT_COMMANDS = [
   ADD_STORAGE_REQUIREMENT,
   CHANGE_STORAGE_REQUIREMENT,
   REMOVE_STORAGE_REQUIREMENT,
   ADD_STORAGE_REQUIREMENT_TEST,
   CHANGE_STORAGE_REQUIREMENT_TEST,
   REMOVE_STORAGE_REQUIREMENT_TEST,
-];
+] as const satisfies readonly AnyCommand[];

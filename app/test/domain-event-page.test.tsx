@@ -3,9 +3,7 @@ import { chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { DOMAIN_EVENT_COMMANDS } from '../../lathe/src/authoring/domain-event/commands/index';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
-import type { DomainEventCommands } from '../src/authoring/domain-event/commands';
 import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp, section } from './helpers';
@@ -32,14 +30,6 @@ describe('LA-V131-R01-T01 a domain event is read through the Domain event aggreg
     expect(requests).toContain('GET /api/domain-event/get-domain-event?id=DM-SHOP-EV01');
     expect(section(/^Fields/)).toHaveTextContent('The basket.');
     expect(section(/^Event type/)).toHaveTextContent('No event type yet');
-  });
-
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof DomainEventCommands)[] = [
-      '/api/domain-event/add-domain-event', '/api/domain-event/add-event-type', '/api/domain-event/change-domain-event', '/api/domain-event/change-event-type',
-      '/api/domain-event/remove-domain-event', '/api/domain-event/remove-event-type',
-    ];
-    expect([...routes].sort()).toEqual(DOMAIN_EVENT_COMMANDS.map((c) => c.route).sort());
   });
 });
 

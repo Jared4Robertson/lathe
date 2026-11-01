@@ -8,7 +8,7 @@ import { CHANGE_ENDPOINT_HANDLER_IDENTITY } from './identities.generated.ts';
 /** The endpoint handler's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeEndpointHandler = Pick<EndpointHandlerRow, 'id'> & { title?: EndpointHandlerRow['title']; description?: EndpointHandlerRow['description']; file?: EndpointHandlerRow['file'] | null; meets?: string[]; packages?: string[] };
 
-export const CHANGE_ENDPOINT_HANDLER: CommandDefinition<ChangeEndpointHandler> = {
+export const CHANGE_ENDPOINT_HANDLER = {
   ...CHANGE_ENDPOINT_HANDLER_IDENTITY,
   input: {
     id: column('endpoint_handler', 'id', 'required'),
@@ -19,7 +19,7 @@ export const CHANGE_ENDPOINT_HANDLER: CommandDefinition<ChangeEndpointHandler> =
     packages: texts('The packages it uses. Replaces the list.', 'optional'),
   },
   handler: changeEndpointHandler,
-};
+} satisfies CommandDefinition<ChangeEndpointHandler>;
 
 /** Changes the endpoint handler's columns and links. */
 export function changeEndpointHandler(tx: Transaction, input: ChangeEndpointHandler): void {

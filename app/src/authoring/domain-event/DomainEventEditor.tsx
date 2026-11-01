@@ -5,12 +5,11 @@ import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
-import { useWriter, type Writer } from '../../edit/write';
+import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendDomainEvent, type DomainEventCommands, type DomainEventRoute } from './commands';
 import { useNextDomainEventId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -58,25 +57,25 @@ function currentOf(page: DomainEventPage, kind: DomainEventKind): Record<string,
 }
 
 /** Each kind's Change command, and the fields it may clear with null. */
-const CHANGE: Record<DomainEventKind, { route: DomainEventRoute; clearable: readonly string[] }> = {
+const CHANGE: Record<DomainEventKind, { route: CommandRoute; clearable: readonly string[] }> = {
   domain_event: { route: '/api/domain-event/change-domain-event', clearable: [] },
   event_type: { route: '/api/domain-event/change-event-type', clearable: ['delivery', 'file'] },
 };
 
 /** Each kind's Add command, and the field that names its parent. */
-const ADD: Record<DomainEventKind, { route: DomainEventRoute; parent: string }> = {
+const ADD: Record<DomainEventKind, { route: CommandRoute; parent: string }> = {
   domain_event: { route: '/api/domain-event/add-domain-event', parent: 'aggregate_id' },
   event_type: { route: '/api/domain-event/add-event-type', parent: 'domain_event_id' },
 };
 
 /** Each kind's Remove command. */
-const REMOVE: Record<DomainEventKind, DomainEventRoute> = {
+const REMOVE: Record<DomainEventKind, CommandRoute> = {
   domain_event: '/api/domain-event/remove-domain-event',
   event_type: '/api/domain-event/remove-event-type',
 };
 
 /** Sends a command whose input this form has built to its kind's shape: the route names the type it takes. */
-const send = (writer: Writer, route: DomainEventRoute, input: Record<string, unknown>): Promise<WriteAnswer> => sendDomainEvent(writer, route, input as unknown as DomainEventCommands[typeof route]);
+const send = (writer: Writer, route: CommandRoute, input: Record<string, unknown>): Promise<WriteAnswer> => writer.command(route, input as unknown as CommandInputs[typeof route]);
 
 type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add' } | { mode: 'remove' };
 
@@ -119,7 +118,7 @@ export function DomainEventEditor({ index, page, children }: { index: RecordInde
       {mode.mode === 'remove' && (
         <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={kind === 'domain_event' && page.eventType ? [page.eventType.eventType.id] : []}
           then={addressOf(kind === 'domain_event' ? page.event.aggregate_id : page.event.id)} onCancel={back}
-          remove={() => sendDomainEvent(writer, REMOVE[kind], { id })} />
+          remove={() => writer.command(REMOVE[kind], { id })} />
       )}
       {children}
     </>

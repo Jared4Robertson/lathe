@@ -9,7 +9,7 @@ import { CHANGE_PRODUCT_RELATION_IDENTITY } from './identities.generated.ts';
 /** The pair's changes: a column given is set, null clears its role. */
 export type ChangeProductRelation = Pick<ProductRelationRow, 'name' | 'source_kind' | 'target_kind'> & { role?: ProductRelationRow['role'] | null; forward_label?: string; reverse_label?: string; description?: string };
 
-export const CHANGE_PRODUCT_RELATION: CommandDefinition<ChangeProductRelation> = {
+export const CHANGE_PRODUCT_RELATION = {
   ...CHANGE_PRODUCT_RELATION_IDENTITY,
   input: {
     name: column('product_relation', 'name', 'required'),
@@ -21,7 +21,7 @@ export const CHANGE_PRODUCT_RELATION: CommandDefinition<ChangeProductRelation> =
     description: column('product_relation', 'description', 'optional'),
   },
   handler: changeProductRelation,
-};
+} satisfies CommandDefinition<ChangeProductRelation>;
 
 /** Changes the pair's role, labels and description. */
 export function changeProductRelation(tx: Transaction, input: ChangeProductRelation): void {

@@ -6,13 +6,13 @@ import { REMOVE_INVARIANT_TEST_IDENTITY } from './identities.generated.ts';
 /** The test to remove. */
 export type RemoveInvariantTest = { id: string };
 
-export const REMOVE_INVARIANT_TEST: CommandDefinition<RemoveInvariantTest> = {
+export const REMOVE_INVARIANT_TEST = {
   ...REMOVE_INVARIANT_TEST_IDENTITY,
   input: {
     id: column('invariant_test', 'id', 'required'),
   },
   handler: removeInvariantTest,
-};
+} satisfies CommandDefinition<RemoveInvariantTest>;
 
 /** Removes the test from its invariant. */
 export function removeInvariantTest(tx: Transaction, input: RemoveInvariantTest): void {

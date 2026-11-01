@@ -7,7 +7,7 @@ import { ADD_DATA_STORE_IDENTITY } from './identities.generated.ts';
 
 export type AddDataStore = Pick<DataStoreRow, 'id' | 'title' | 'product_id' | 'domain_id' | 'kind' | 'description'> & { provided_by?: string };
 
-export const ADD_DATA_STORE: CommandDefinition<AddDataStore> = {
+export const ADD_DATA_STORE = {
   ...ADD_DATA_STORE_IDENTITY,
   input: {
     id: column('data_store', 'id', 'required'),
@@ -19,7 +19,7 @@ export const ADD_DATA_STORE: CommandDefinition<AddDataStore> = {
     provided_by: id('The integration that reaches it, when it is a service someone else runs that the user must provide.', 'optional'),
   },
   handler: addDataStore,
-};
+} satisfies CommandDefinition<AddDataStore>;
 
 export function addDataStore(tx: Transaction, input: AddDataStore): void {
   const stores = new DataStoreRepository(tx);

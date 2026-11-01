@@ -17,7 +17,7 @@ export type ChangeFlowStep = Pick<FlowStepRow, 'id'> & {
   exchanges_with?: string[];
 };
 
-export const CHANGE_FLOW_STEP: CommandDefinition<ChangeFlowStep> = {
+export const CHANGE_FLOW_STEP = {
   ...CHANGE_FLOW_STEP_IDENTITY,
   input: {
     id: column('flow_step', 'id', 'required'),
@@ -30,7 +30,7 @@ export const CHANGE_FLOW_STEP: CommandDefinition<ChangeFlowStep> = {
     exchanges_with: ids('The integrations it exchanges with. Replaces the list.', 'optional'),
   },
   handler: changeFlowStep,
-};
+} satisfies CommandDefinition<ChangeFlowStep>;
 
 /** Changes the step's columns and links. */
 export function changeFlowStep(tx: Transaction, input: ChangeFlowStep): void {

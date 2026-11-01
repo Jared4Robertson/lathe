@@ -7,7 +7,7 @@ import { ADD_REPOSITORY_IDENTITY } from './identities.generated.ts';
 
 export type AddRepository = Pick<RepositoryRow, 'id' | 'title' | 'domain_id' | 'file' | 'description'> & { persists?: string; stored_in?: string; meets?: string[]; packages?: string[] };
 
-export const ADD_REPOSITORY: CommandDefinition<AddRepository> = {
+export const ADD_REPOSITORY = {
   ...ADD_REPOSITORY_IDENTITY,
   input: {
     id: column('repository', 'id', 'required'),
@@ -21,7 +21,7 @@ export const ADD_REPOSITORY: CommandDefinition<AddRepository> = {
     packages: texts("The packages it uses, by their names in the product's package.json files.", 'optional'),
   },
   handler: addRepository,
-};
+} satisfies CommandDefinition<AddRepository>;
 
 export function addRepository(tx: Transaction, input: AddRepository): void {
   const domains = new DomainRepository(tx);

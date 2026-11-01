@@ -8,7 +8,7 @@ import { CHANGE_VALUE_TYPE_IDENTITY } from './identities.generated.ts';
 /** The value type's changes: a column given is set, null clears an optional one; a list given replaces the list. */
 export type ChangeValueType = Pick<ValueTypeRow, 'id'> & { title?: ValueTypeRow['title']; file?: ValueTypeRow['file'] | null; meets?: string[]; packages?: string[] };
 
-export const CHANGE_VALUE_TYPE: CommandDefinition<ChangeValueType> = {
+export const CHANGE_VALUE_TYPE = {
   ...CHANGE_VALUE_TYPE_IDENTITY,
   input: {
     id: column('value_type', 'id', 'required'),
@@ -18,7 +18,7 @@ export const CHANGE_VALUE_TYPE: CommandDefinition<ChangeValueType> = {
     packages: texts("The packages it uses, by their names in the product's package.json files. Replaces the list.", 'optional'),
   },
   handler: changeValueType,
-};
+} satisfies CommandDefinition<ChangeValueType>;
 
 /** Changes the value type's columns, links and packages. */
 export function changeValueType(tx: Transaction, input: ChangeValueType): void {

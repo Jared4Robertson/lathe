@@ -2,8 +2,6 @@ import type { ServedData } from './read-view';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { STORAGE_REQUIREMENT_COMMANDS } from '../../lathe/src/authoring/storage-requirement/commands/index';
-import type { StorageRequirementCommands } from '../src/authoring/storage-requirement/commands';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { chooseAdd } from './add-menu';
 import { addRows } from './fixtures/load';
@@ -32,14 +30,6 @@ describe('the Storage requirement page reads it through its own query, and its e
     expect(await within(main()).findByText('A basket MUST be saved whole, with its lines.')).toBeInTheDocument();
     expect(requests).toContain('GET /api/storage-requirement/get-storage-requirement?id=DM-SHOP-A1-SR01');
     expect(within(main()).getByRole('link', { name: /DM-SHOP-A1-SR01-T01/ })).toHaveAttribute('href', '/DM-SHOP-A1-SR01-T01');
-  });
-
-  it('LA-V154-R01-T01 holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof StorageRequirementCommands)[] = [
-      '/api/storage-requirement/add-storage-requirement', '/api/storage-requirement/change-storage-requirement', '/api/storage-requirement/remove-storage-requirement',
-      '/api/storage-requirement/add-storage-requirement-test', '/api/storage-requirement/change-storage-requirement-test', '/api/storage-requirement/remove-storage-requirement-test',
-    ];
-    expect([...routes].sort()).toEqual(STORAGE_REQUIREMENT_COMMANDS.map((c) => c.route).sort());
   });
 
   it('LA-V154-R02-T01 adds a storage requirement from its aggregate\'s page through the aggregate\'s own Add', async () => {

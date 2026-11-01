@@ -6,13 +6,13 @@ import { REMOVE_EVENT_TYPE_IDENTITY } from './identities.generated.ts';
 /** The event type to remove. */
 export type RemoveEventType = { id: string };
 
-export const REMOVE_EVENT_TYPE: CommandDefinition<RemoveEventType> = {
+export const REMOVE_EVENT_TYPE = {
   ...REMOVE_EVENT_TYPE_IDENTITY,
   input: {
     id: column('event_type', 'id', 'required'),
   },
   handler: removeEventType,
-};
+} satisfies CommandDefinition<RemoveEventType>;
 
 /** Removes the event type from its event. */
 export function removeEventType(tx: Transaction, input: RemoveEventType): void {

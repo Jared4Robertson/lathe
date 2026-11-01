@@ -7,7 +7,7 @@ import { ADD_POLICY_TEST_IDENTITY } from './identities.generated.ts';
 
 export type AddPolicyTest = Pick<PolicyTestRow, 'id' | 'title' | 'policy_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'when' | 'then' | 'notes'> & { starts_from?: string[] };
 
-export const ADD_POLICY_TEST: CommandDefinition<AddPolicyTest> = {
+export const ADD_POLICY_TEST = {
   ...ADD_POLICY_TEST_IDENTITY,
   input: {
     id: column('policy_test', 'id', 'required'),
@@ -26,7 +26,7 @@ export const ADD_POLICY_TEST: CommandDefinition<AddPolicyTest> = {
     starts_from: ids('The test data sets it starts from.', 'optional'),
   },
   handler: addPolicyTest,
-};
+} satisfies CommandDefinition<AddPolicyTest>;
 
 export function addPolicyTest(tx: Transaction, input: AddPolicyTest): void {
   const commands = new CommandRepository(tx);

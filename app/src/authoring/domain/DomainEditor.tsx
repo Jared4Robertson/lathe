@@ -5,14 +5,13 @@ import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
-import { useWriter, type Writer } from '../../edit/write';
+import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { adderOf, othersAddedUnder } from '../../record/pages';
 import { AddMenu } from '../../edit/AddMenu';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendDomain, type DomainCommands, type DomainRoute } from './commands';
 import { useNextDomainId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -140,7 +139,7 @@ function currentOf(page: DomainPage, kind: DomainKind, id: string): Record<strin
 }
 
 /** Each kind's Change command, and the fields it may clear with null. */
-const CHANGE: Record<DomainKind, { route: DomainRoute; clearable: readonly string[] }> = {
+const CHANGE: Record<DomainKind, { route: CommandRoute; clearable: readonly string[] }> = {
   domain: { route: '/api/domain/change-domain', clearable: ['notes'] },
   capability: { route: '/api/domain/change-capability', clearable: [] },
   term: { route: '/api/domain/change-term', clearable: ['group_name'] },
@@ -151,7 +150,7 @@ const CHANGE: Record<DomainKind, { route: DomainRoute; clearable: readonly strin
 };
 
 /** Each kind's Add command, and the field that names its parent. */
-const ADD: Record<DomainKind, { route: DomainRoute; parent: string }> = {
+const ADD: Record<DomainKind, { route: CommandRoute; parent: string }> = {
   domain: { route: '/api/domain/add-domain', parent: 'product_id' },
   capability: { route: '/api/domain/add-capability', parent: 'domain_id' },
   term: { route: '/api/domain/add-term', parent: 'domain_id' },
@@ -162,7 +161,7 @@ const ADD: Record<DomainKind, { route: DomainRoute; parent: string }> = {
 };
 
 /** Each kind's Remove command. */
-const REMOVE: Record<DomainKind, DomainRoute> = {
+const REMOVE: Record<DomainKind, CommandRoute> = {
   domain: '/api/domain/remove-domain',
   capability: '/api/domain/remove-capability',
   term: '/api/domain/remove-term',
@@ -173,7 +172,7 @@ const REMOVE: Record<DomainKind, DomainRoute> = {
 };
 
 /** Sends a command whose input this form has built to its kind's shape: the route names the type it takes. */
-const send = (writer: Writer, route: DomainRoute, input: Record<string, unknown>): Promise<WriteAnswer> => sendDomain(writer, route, input as unknown as DomainCommands[typeof route]);
+const send = (writer: Writer, route: CommandRoute, input: Record<string, unknown>): Promise<WriteAnswer> => writer.command(route, input as unknown as CommandInputs[typeof route]);
 
 /** The domain service that holds a service or a domain service test. */
 const serviceHolding = (page: DomainPage, id: string) => page.domainServices.find((s) => s.service?.service.id === id || s.tests.some((t) => t.test.id === id))!;
@@ -247,7 +246,7 @@ export function DomainEditor({ index, page, children }: { index: RecordIndex; pa
       </div>
       {mode.mode === 'remove' && (
         <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={goesWith(page, kind, id)} then={addressOf(parentOf(page, kind, id))} onCancel={back}
-          remove={() => sendDomain(writer, REMOVE[kind], { id })} />
+          remove={() => writer.command(REMOVE[kind], { id })} />
       )}
       {children}
     </>

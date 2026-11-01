@@ -5,12 +5,11 @@ import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
-import { useWriter, type Writer } from '../../edit/write';
+import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendPattern, type PatternCommands, type PatternRoute } from './commands';
 import { useNextPatternId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -90,28 +89,28 @@ function currentOf(page: PatternPage, kind: PatternKind, id: string): Record<str
 }
 
 /** Each kind's Change command, and the fields it may clear with null. */
-const CHANGE: Record<PatternKind, { route: PatternRoute; clearable: readonly string[] }> = {
+const CHANGE: Record<PatternKind, { route: CommandRoute; clearable: readonly string[] }> = {
   pattern: { route: '/api/pattern/change-pattern', clearable: ['notes'] },
   pattern_rule: { route: '/api/pattern/change-pattern-rule', clearable: ['group_name', 'setting', 'notes'] },
   pattern_rule_test: { route: '/api/pattern/change-pattern-rule-test', clearable: ['file', 'manual_reason', 'size', 'smoke', 'external', 'notes'] },
 };
 
 /** Each kind's Add command, and the field that names its parent. */
-const ADD: Record<PatternKind, { route: PatternRoute; parent: string }> = {
+const ADD: Record<PatternKind, { route: CommandRoute; parent: string }> = {
   pattern: { route: '/api/pattern/add-pattern', parent: 'product_id' },
   pattern_rule: { route: '/api/pattern/add-pattern-rule', parent: 'pattern_id' },
   pattern_rule_test: { route: '/api/pattern/add-pattern-rule-test', parent: 'pattern_rule_id' },
 };
 
 /** Each kind's Remove command. */
-const REMOVE: Record<PatternKind, PatternRoute> = {
+const REMOVE: Record<PatternKind, CommandRoute> = {
   pattern: '/api/pattern/remove-pattern',
   pattern_rule: '/api/pattern/remove-pattern-rule',
   pattern_rule_test: '/api/pattern/remove-pattern-rule-test',
 };
 
 /** Sends a command whose input this form has built to its kind's shape: the route names the type it takes. */
-const send = (writer: Writer, route: PatternRoute, input: Record<string, unknown>): Promise<WriteAnswer> => sendPattern(writer, route, input as unknown as PatternCommands[typeof route]);
+const send = (writer: Writer, route: CommandRoute, input: Record<string, unknown>): Promise<WriteAnswer> => writer.command(route, input as unknown as CommandInputs[typeof route]);
 
 /** What goes with a record when it is removed, inside the pattern: what sits under it. */
 function goesWith(page: PatternPage, kind: PatternKind, id: string): string[] {
@@ -166,7 +165,7 @@ export function PatternEditor({ index, page, children }: { index: RecordIndex; p
       </div>
       {mode.mode === 'remove' && (
         <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={goesWith(page, kind, id)} then={addressOf(parentOf(page, kind, id))} onCancel={back}
-          remove={() => sendPattern(writer, REMOVE[kind], { id })} />
+          remove={() => writer.command(REMOVE[kind], { id })} />
       )}
       {children}
     </>

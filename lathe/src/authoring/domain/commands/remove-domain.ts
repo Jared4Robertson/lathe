@@ -6,13 +6,13 @@ import { REMOVE_DOMAIN_IDENTITY } from './identities.generated.ts';
 /** The domain to remove. */
 export type RemoveDomain = { id: string };
 
-export const REMOVE_DOMAIN: CommandDefinition<RemoveDomain> = {
+export const REMOVE_DOMAIN = {
   ...REMOVE_DOMAIN_IDENTITY,
   input: {
     id: column('domain', 'id', 'required'),
   },
   handler: removeDomain,
-};
+} satisfies CommandDefinition<RemoveDomain>;
 
 /** Removes the domain whole. */
 export function removeDomain(tx: Transaction, input: RemoveDomain): void {

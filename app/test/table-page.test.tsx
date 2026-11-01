@@ -1,8 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { TABLE_COMMANDS } from '../../lathe/src/authoring/table/commands/index';
-import type { TableCommands } from '../src/authoring/table/commands';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows, setRow } from './fixtures/load';
 import { modelWorkspace } from './fixtures/model';
@@ -20,11 +18,6 @@ describe('LA-V140-R01-T01 a table\'s page reads it through the Table aggregate\'
     const { requests } = await openApp('/P-D-EN03-TB', { data: modelWorkspace() });
     await within(main()).findByRole('heading', { name: /^Keys/ });
     expect(requests).toContain('GET /api/table/get-table?id=P-D-EN03-TB');
-  });
-
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof TableCommands)[] = ['/api/table/add-table', '/api/table/change-table', '/api/table/move-table', '/api/table/remove-table'];
-    expect([...routes].sort()).toEqual(TABLE_COMMANDS.map((c) => c.route).sort());
   });
 });
 

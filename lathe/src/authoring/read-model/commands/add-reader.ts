@@ -8,7 +8,7 @@ import { ADD_READER_IDENTITY } from './identities.generated.ts';
 
 export type AddReader = Pick<ReaderRow, 'id' | 'title' | 'read_model_id' | 'file' | 'description'> & { stored_in?: string; meets?: string[]; packages?: string[] };
 
-export const ADD_READER: CommandDefinition<AddReader> = {
+export const ADD_READER = {
   ...ADD_READER_IDENTITY,
   input: {
     id: column('reader', 'id', 'required'),
@@ -21,7 +21,7 @@ export const ADD_READER: CommandDefinition<AddReader> = {
     packages: texts("The packages it uses, by their names in the product's package.json files.", 'optional'),
   },
   handler: addReader,
-};
+} satisfies CommandDefinition<AddReader>;
 
 /** Adds the reader to its read model, which has none yet (LA-AUT-INV107). */
 export function addReader(tx: Transaction, input: AddReader): void {

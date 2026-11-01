@@ -6,13 +6,13 @@ import { REMOVE_CONSTRAINT_TEST_IDENTITY } from './identities.generated.ts';
 /** The constraint test to remove. */
 export type RemoveConstraintTest = { id: string };
 
-export const REMOVE_CONSTRAINT_TEST: CommandDefinition<RemoveConstraintTest> = {
+export const REMOVE_CONSTRAINT_TEST = {
   ...REMOVE_CONSTRAINT_TEST_IDENTITY,
   input: {
     id: column('constraint_test', 'id', 'required'),
   },
   handler: removeConstraintTest,
-};
+} satisfies CommandDefinition<RemoveConstraintTest>;
 
 /** Removes the test from its value object. */
 export function removeConstraintTest(tx: Transaction, input: RemoveConstraintTest): void {

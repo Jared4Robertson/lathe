@@ -9,7 +9,7 @@ import { CHANGE_AGGREGATE_IDENTITY } from './identities.generated.ts';
 /** The aggregate's changes: a column given is set, null clears an optional one. */
 export type ChangeAggregate = Pick<AggregateRow, 'id'> & { title?: string; description?: string; identity?: string; notes?: string | null };
 
-export const CHANGE_AGGREGATE: CommandDefinition<ChangeAggregate> = {
+export const CHANGE_AGGREGATE = {
   ...CHANGE_AGGREGATE_IDENTITY,
   input: {
     id: column('aggregate', 'id', 'required'),
@@ -19,7 +19,7 @@ export const CHANGE_AGGREGATE: CommandDefinition<ChangeAggregate> = {
     notes: column('aggregate', 'notes', 'clearable'),
   },
   handler: changeAggregate,
-};
+} satisfies CommandDefinition<ChangeAggregate>;
 
 /** Changes the aggregate's own columns. */
 export function changeAggregate(tx: Transaction, input: ChangeAggregate): void {

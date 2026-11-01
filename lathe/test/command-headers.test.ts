@@ -16,7 +16,7 @@ function commandFiles(dir: string): string[] {
     for (const name of readdirSync(at)) {
       const full = path.join(at, name);
       if (statSync(full).isDirectory()) walk(full);
-      else if (/\/commands\/[^/]+\.ts$/.test(full) && !full.endsWith('/index.ts') && readFileSync(full, 'utf8').includes(': CommandDefinition<')) found.push(full);
+      else if (/\/commands\/[^/]+\.ts$/.test(full) && !full.endsWith('/index.ts') && /^\} satisfies CommandDefinition</m.test(readFileSync(full, 'utf8'))) found.push(full);
     }
   };
   walk(dir);

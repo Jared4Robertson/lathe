@@ -8,7 +8,7 @@ import { ADD_PATTERN_RULE_IDENTITY } from './identities.generated.ts';
 /** A new pattern rule. */
 export type AddPatternRule = Pick<PatternRuleRow, 'id' | 'title' | 'pattern_id' | 'statement' | 'group_name' | 'notes'>;
 
-export const ADD_PATTERN_RULE: CommandDefinition<AddPatternRule> = {
+export const ADD_PATTERN_RULE = {
   ...ADD_PATTERN_RULE_IDENTITY,
   input: {
     id: column('pattern_rule', 'id', 'required'),
@@ -19,7 +19,7 @@ export const ADD_PATTERN_RULE: CommandDefinition<AddPatternRule> = {
     notes: column('pattern_rule', 'notes', 'optional'),
   },
   handler: addPatternRule,
-};
+} satisfies CommandDefinition<AddPatternRule>;
 
 /** Adds the rule to its pattern. */
 export function addPatternRule(tx: Transaction, input: AddPatternRule): void {

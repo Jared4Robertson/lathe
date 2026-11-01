@@ -22,7 +22,7 @@ export type ChangeInvariantTest = Pick<InvariantTestRow, 'id'> & {
   starts_from?: string[];
 };
 
-export const CHANGE_INVARIANT_TEST: CommandDefinition<ChangeInvariantTest> = {
+export const CHANGE_INVARIANT_TEST = {
   ...CHANGE_INVARIANT_TEST_IDENTITY,
   input: {
     id: column('invariant_test', 'id', 'required'),
@@ -40,7 +40,7 @@ export const CHANGE_INVARIANT_TEST: CommandDefinition<ChangeInvariantTest> = {
     starts_from: ids('The test data sets it starts from. Replaces the list.', 'optional'),
   },
   handler: changeInvariantTest,
-};
+} satisfies CommandDefinition<ChangeInvariantTest>;
 
 /** Changes the test's columns and the data sets it starts from. */
 export function changeInvariantTest(tx: Transaction, input: ChangeInvariantTest): void {

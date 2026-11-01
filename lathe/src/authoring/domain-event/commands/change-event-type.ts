@@ -8,7 +8,7 @@ import { CHANGE_EVENT_TYPE_IDENTITY } from './identities.generated.ts';
 /** The event type's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeEventType = Pick<EventTypeRow, 'id'> & { title?: string; delivery?: EventTypeRow['delivery'] | null; file?: string | null; meets?: string[]; packages?: string[] };
 
-export const CHANGE_EVENT_TYPE: CommandDefinition<ChangeEventType> = {
+export const CHANGE_EVENT_TYPE = {
   ...CHANGE_EVENT_TYPE_IDENTITY,
   input: {
     id: column('event_type', 'id', 'required'),
@@ -19,7 +19,7 @@ export const CHANGE_EVENT_TYPE: CommandDefinition<ChangeEventType> = {
     packages: texts('The packages it uses. Replaces the list.', 'optional'),
   },
   handler: changeEventType,
-};
+} satisfies CommandDefinition<ChangeEventType>;
 
 /** Changes the event type's columns and links. */
 export function changeEventType(tx: Transaction, input: ChangeEventType): void {

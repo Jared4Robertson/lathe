@@ -8,7 +8,7 @@ import { ADD_READ_MODEL_IDENTITY } from './identities.generated.ts';
 
 export type AddReadModel = Pick<ReadModelRow, 'id' | 'title' | 'domain_id' | 'description'> & { fields?: ReadModelField[]; reads?: string[]; calls?: string[]; fed_by?: string[] };
 
-export const ADD_READ_MODEL: CommandDefinition<AddReadModel> = {
+export const ADD_READ_MODEL = {
   ...ADD_READ_MODEL_IDENTITY,
   input: {
     id: column('read_model', 'id', 'required'),
@@ -21,7 +21,7 @@ export const ADD_READ_MODEL: CommandDefinition<AddReadModel> = {
     fed_by: ids("The events that keep it current: its own domain's, or another domain's published ones.", 'optional'),
   },
   handler: addReadModel,
-};
+} satisfies CommandDefinition<AddReadModel>;
 
 export function addReadModel(tx: Transaction, input: AddReadModel): void {
   const readModels = new ReadModelRepository(tx);

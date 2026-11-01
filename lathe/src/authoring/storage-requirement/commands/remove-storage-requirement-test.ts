@@ -6,13 +6,13 @@ import { REMOVE_STORAGE_REQUIREMENT_TEST_IDENTITY } from './identities.generated
 /** The storage requirement test to remove. */
 export type RemoveStorageRequirementTest = { id: string };
 
-export const REMOVE_STORAGE_REQUIREMENT_TEST: CommandDefinition<RemoveStorageRequirementTest> = {
+export const REMOVE_STORAGE_REQUIREMENT_TEST = {
   ...REMOVE_STORAGE_REQUIREMENT_TEST_IDENTITY,
   input: {
     id: column('storage_requirement_test', 'id', 'required'),
   },
   handler: removeStorageRequirementTest,
-};
+} satisfies CommandDefinition<RemoveStorageRequirementTest>;
 
 /** Removes the test from its storage requirement. */
 export function removeStorageRequirementTest(tx: Transaction, input: RemoveStorageRequirementTest): void {

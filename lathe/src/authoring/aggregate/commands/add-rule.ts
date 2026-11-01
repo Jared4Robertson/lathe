@@ -7,7 +7,7 @@ import { ADD_RULE_IDENTITY } from './identities.generated.ts';
 
 export type AddRule = Pick<RuleRow, 'id' | 'title' | 'invariant_id' | 'file'> & { meets?: string[]; packages?: string[] };
 
-export const ADD_RULE: CommandDefinition<AddRule> = {
+export const ADD_RULE = {
   ...ADD_RULE_IDENTITY,
   input: {
     id: column('rule', 'id', 'required'),
@@ -18,7 +18,7 @@ export const ADD_RULE: CommandDefinition<AddRule> = {
     packages: texts('The packages it uses, each listed in one of the product\'s package.json files.', 'optional'),
   },
   handler: addRule,
-};
+} satisfies CommandDefinition<AddRule>;
 
 export function addRule(tx: Transaction, input: AddRule): void {
   const aggregates = new AggregateRepository(tx);

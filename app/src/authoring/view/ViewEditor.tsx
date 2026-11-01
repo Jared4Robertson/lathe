@@ -5,12 +5,11 @@ import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
-import { useWriter, type Writer } from '../../edit/write';
+import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
-import { sendView, type ViewCommands, type ViewRoute } from './commands';
 import { useNextViewId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -83,28 +82,28 @@ function currentOf(page: ViewPage, kind: ViewKind, id: string): Record<string, u
 }
 
 /** Each kind's Change command, and the fields it may clear with null. */
-const CHANGE: Record<ViewKind, { route: ViewRoute; clearable: readonly string[] }> = {
+const CHANGE: Record<ViewKind, { route: CommandRoute; clearable: readonly string[] }> = {
   view: { route: '/api/view/change-view', clearable: ['route', 'notes'] },
   view_requirement: { route: '/api/view/change-view-requirement', clearable: ['group_name'] },
   view_test: { route: '/api/view/change-view-test', clearable: ['file', 'manual_reason', 'size', 'smoke', 'external', 'notes'] },
 };
 
 /** Each kind's Add command, and the field that names its parent (a view has none: its product follows from its ID). */
-const ADD: Record<ViewKind, { route: ViewRoute; parent: string | null }> = {
+const ADD: Record<ViewKind, { route: CommandRoute; parent: string | null }> = {
   view: { route: '/api/view/add-view', parent: null },
   view_requirement: { route: '/api/view/add-view-requirement', parent: 'view_id' },
   view_test: { route: '/api/view/add-view-test', parent: 'view_requirement_id' },
 };
 
 /** Each kind's Remove command. */
-const REMOVE: Record<ViewKind, ViewRoute> = {
+const REMOVE: Record<ViewKind, CommandRoute> = {
   view: '/api/view/remove-view',
   view_requirement: '/api/view/remove-view-requirement',
   view_test: '/api/view/remove-view-test',
 };
 
 /** Sends a command whose input this form has built to its kind's shape: the route names the type it takes. */
-const send = (writer: Writer, route: ViewRoute, input: Record<string, unknown>): Promise<WriteAnswer> => sendView(writer, route, input as unknown as ViewCommands[typeof route]);
+const send = (writer: Writer, route: CommandRoute, input: Record<string, unknown>): Promise<WriteAnswer> => writer.command(route, input as unknown as CommandInputs[typeof route]);
 
 /** What goes with a record when it is removed, inside the view: what sits under it. */
 function goesWith(page: ViewPage, kind: ViewKind, id: string): string[] {
@@ -159,7 +158,7 @@ export function ViewEditor({ index, page, children }: { index: RecordIndex; page
       </div>
       {mode.mode === 'remove' && (
         <RemoveQuestion index={index} id={id} label={kindWord(index.meta, kind)} goes={goesWith(page, kind, id)} then={addressOf(parentOf(index, page, kind, id))} onCancel={back}
-          remove={() => sendView(writer, REMOVE[kind], { id })} />
+          remove={() => writer.command(REMOVE[kind], { id })} />
       )}
       {children}
     </>

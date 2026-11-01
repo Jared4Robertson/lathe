@@ -8,7 +8,7 @@ import { CHANGE_TEST_DATA_SET_IDENTITY } from './identities.generated.ts';
 /** The test data set's changes: a column given is set, null clears an optional one. */
 export type ChangeTestDataSet = Pick<TestDataSetRow, 'id'> & { title?: TestDataSetRow['title']; environment?: TestDataSetRow['environment']; accounts?: TestDataSetRow['accounts'] | null; records?: TestDataSetRow['records']; prepare?: TestDataSetRow['prepare']; reset?: TestDataSetRow['reset']; file?: TestDataSetRow['file'] | null; description?: TestDataSetRow['description'] };
 
-export const CHANGE_TEST_DATA_SET: CommandDefinition<ChangeTestDataSet> = {
+export const CHANGE_TEST_DATA_SET = {
   ...CHANGE_TEST_DATA_SET_IDENTITY,
   input: {
     id: column('test_data_set', 'id', 'required'),
@@ -22,7 +22,7 @@ export const CHANGE_TEST_DATA_SET: CommandDefinition<ChangeTestDataSet> = {
     description: column('test_data_set', 'description', 'optional'),
   },
   handler: changeTestDataSet,
-};
+} satisfies CommandDefinition<ChangeTestDataSet>;
 
 /** Changes the test data set's columns. */
 export function changeTestDataSet(tx: Transaction, input: ChangeTestDataSet): void {

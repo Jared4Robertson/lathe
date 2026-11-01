@@ -17,7 +17,7 @@ export type ChangeCheck = Pick<CheckRow, 'name'> & {
   kinds?: CheckRow['kinds'] | null;
 };
 
-export const CHANGE_CHECK: CommandDefinition<ChangeCheck> = {
+export const CHANGE_CHECK = {
   ...CHANGE_CHECK_IDENTITY,
   input: {
     name: column('check', 'name', 'required'),
@@ -30,7 +30,7 @@ export const CHANGE_CHECK: CommandDefinition<ChangeCheck> = {
     kinds: column('check', 'kinds', 'clearable'),
   },
   handler: changeCheck,
-};
+} satisfies CommandDefinition<ChangeCheck>;
 
 /** Changes the check's columns; one of Lathe's own is refused by its rules (LA-CHK-INV02). */
 export function changeCheck(tx: Transaction, input: ChangeCheck): void {

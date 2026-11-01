@@ -6,13 +6,13 @@ import { REMOVE_READER_IDENTITY } from './identities.generated.ts';
 /** The reader to remove. */
 export type RemoveReader = { id: string };
 
-export const REMOVE_READER: CommandDefinition<RemoveReader> = {
+export const REMOVE_READER = {
   ...REMOVE_READER_IDENTITY,
   input: {
     id: column('reader', 'id', 'required'),
   },
   handler: removeReader,
-};
+} satisfies CommandDefinition<RemoveReader>;
 
 /** Removes the reader from its read model. */
 export function removeReader(tx: Transaction, input: RemoveReader): void {
