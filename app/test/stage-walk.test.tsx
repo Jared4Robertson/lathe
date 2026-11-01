@@ -193,7 +193,7 @@ describe('out and in', () => {
 });
 
 describe('Enter and Escape on the stage', () => {
-  it('LA-V96-R19-T06 Enter toggles the wiki card from the page and the focused box, focuses another box, stays with a button; Escape collapses it after what is above it', async () => {
+  it('LA-V102-R02-T06 Enter toggles the wiki card from the page and the focused box, focuses another box, stays with a button; Escape collapses it after what is above it', async () => {
     await openApp('/P-D-UC01?stage=graph', { data: modelWorkspace() });
     await waitFor(() => expect(document.querySelector('.focus-stage .graph-box')).not.toBeNull());
     expect(card()).not.toBeNull();

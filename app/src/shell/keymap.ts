@@ -80,7 +80,7 @@ export const COMMANDS: readonly Command[] = [
   { id: 'goChecks', title: 'Go to Checks', group: 'Navigate', keys: ['g c'], when: 'global' },
   { id: 'goFormat', title: 'Record format', group: 'Navigate', keys: ['g f'], menu: 0, when: 'global' },
   { id: 'goHome', title: 'Go home (all products)', group: 'Navigate', keys: ['g h'], when: 'global' },
-  // The desktop app's tabs, as a browser's (LA-V96-R10..R17), handled only there (on the web the browser's tabs are the
+  // The desktop app's tabs, as a browser's (LA-V103-R01..R17), handled only there (on the web the browser's tabs are the
   // places): its menu owns Cmd/Ctrl+T and Cmd/Ctrl+W, which a page never gets in a browser; Alt+Shift+T and Alt+Shift+W
   // are the keys of the same commands, as Ctrl+W toggles the wiki card on a Mac.
   { id: 'newTab', title: 'New tab at the product', group: 'Navigate', keys: ['Alt+Shift+T'], when: 'page', dynamic: true },
@@ -108,7 +108,7 @@ export const COMMANDS: readonly Command[] = [
   // Elsewhere Ctrl+T opens a browser tab, so Alt.
   { id: 'stageTrace', title: 'Trace stage', group: 'View', keys: ['Ctrl+T', 'Ctrl+3'], otherKeys: ['Alt+T', 'Ctrl+3'], menu: 1, when: 'page' },
   // Enter from anywhere but a control that handles Enter itself (usesEnter), a focused graph box included; Escape only
-  // collapses, once nothing above the card is open (each overlay takes its own Escape first, LA-V96-R19).
+  // collapses, once nothing above the card is open (each overlay takes its own Escape first, LA-V102-R02).
   { id: 'toggleWikiCard', title: 'Show or collapse the wiki card', group: 'View', keys: ['Enter', 'Ctrl+W'], otherKeys: ['Enter', 'Alt+W'], menu: 1, when: 'page' },
   { id: 'collapseWikiCard', title: 'Collapse the wiki card', group: 'View', keys: ['Escape'], when: 'page' },
   // Highlight changes and Follow (LA-EXP-UC15), the same on every stage.
@@ -279,7 +279,7 @@ export function usesArrows(target: EventTarget | null): boolean {
 }
 
 /**
- * Controls that handle a plain Enter themselves, so Enter there is theirs and never toggles the wiki card (LA-V96-R19): a
+ * Controls that handle a plain Enter themselves, so Enter there is theirs and never toggles the wiki card (LA-V102-R02): a
  * link, a button, a summary, every field (a text field submits, a checkbox or radio is its own), editable text (the chat
  * box), the widgets that act on Enter (a menu and its items, a listbox and its options, a combobox, a tab, a tree and its
  * rows, a grid) and a modal dialog. A graph box is none of these: Enter on one is

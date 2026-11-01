@@ -5,7 +5,7 @@ import { Section } from '../specs/parts';
 import './RecordHistory.css';
 import { changeSummary, fetchHistory, shortDate, valueText, type HistoryAnswer, type HistoryChange, type HistoryCommit } from './history';
 
-// A record's History, at the end of its whole page in the wiki card (LA-V96-R26): the commits that
+// A record's History, at the end of its whole page in the wiki card (LA-V102-R05): the commits that
 // changed the record's rows (its own row, the part rows it owns and the links it starts) in their
 // data files, newest first, with "Load more", and the changes not committed yet first, labeled so.
 // Each says what it changed; choosing one shows each changed field before and after. Git is read
