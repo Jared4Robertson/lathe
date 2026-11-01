@@ -186,7 +186,8 @@ describe('Authoring flows through the MCP tools', () => {
       expect(found(checked, 'step-unreached')).toEqual([expect.stringMatching(/^TL-LEND-UC01-FL-S02: .*TL-IF02/)]);
       expect(gaps(checked, 'interface-offers-nothing')).toEqual(['interface-offers-nothing TL-IF03']);
       // The Agent fixes each and checks again.
-      await a.ok('use_case_change_flow_step', { id: 'TL-LEND-UC01-FL-S02', position: 2, fulfills: ['TL-LEND-UC01-R01', 'TL-LEND-UC01-R02'] });
+      await a.ok('use_case_move_flow_step', { id: 'TL-LEND-UC01-FL-S02', position: 2 });
+      await a.ok('use_case_change_flow_step', { id: 'TL-LEND-UC01-FL-S02', fulfills: ['TL-LEND-UC01-R01', 'TL-LEND-UC01-R02'] });
       await a.ok('endpoint_add_endpoint', { id: 'TL-LEND-EP01', title: 'POST /loans', command_id: 'TL-LEND-CMD01', method: 'POST', route: '/loans', description: 'Opens a loan.' });
       await a.ok('interface_change_interface', { id: 'TL-IF03', offers: ['TL-LEND-UC02'] });
       const fixed = await a.check();
