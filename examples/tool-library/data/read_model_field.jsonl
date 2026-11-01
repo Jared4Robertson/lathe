@@ -7,7 +7,7 @@
 {"read_model_id":"TL-LEND-RM01","position":7,"name":"Status","meaning":"What a borrower sees: `on_loan` while the tool has an active loan, else `needs_repair` when it needs repair (TL-LEND-SP04), else `available`.","type":"text","required":true,"example":"available"}
 {"read_model_id":"TL-LEND-RM02","position":1,"name":"Month","meaning":"The month measured, as YYYY-MM.","type":"text","required":true,"example":"2026-03"}
 {"read_model_id":"TL-LEND-RM02","position":2,"name":"Loans per tool","meaning":"Loans opened in the month over the tools in the catalog at its end (TL-BO01).","type":"decimal","required":true,"example":"1.33"}
-{"read_model_id":"TL-LEND-RM02","position":3,"name":"Share of loans late","meaning":"Of the loans due in the month, the share returned late or still out and overdue (TL-BO02).","type":"decimal","required":true,"example":"0.25"}
+{"read_model_id":"TL-LEND-RM02","position":3,"name":"Share of loans late","meaning":"Of the loans due in the month, by their due date as renewed, the share returned late or still out and overdue (TL-BO02).","type":"decimal","required":true,"example":"0.25"}
 {"read_model_id":"TL-LEND-RM02","position":4,"name":"Median days to repair","meaning":"Of the repairs made in the month, the median days from the tool's damage report to its repair, none when there was no repair (TL-BO05).","type":"decimal","required":false,"example":"2"}
 {"read_model_id":"TL-LEND-RM02","position":5,"name":"Active members","meaning":"Members who opened a loan in the 90 days up to the month's end (TL-BO04).","type":"whole number","required":true,"example":"2"}
 {"read_model_id":"TL-LEND-RM03","position":1,"name":"Loan ID","meaning":"The loan.","type_aggregate_id":"TL-LEND-A3","required":true,"column_name":"id","example":"31"}

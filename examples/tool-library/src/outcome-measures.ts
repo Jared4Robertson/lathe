@@ -60,7 +60,7 @@ function measureToolsInUse(records: LibraryRecords, inMonth: (d: string) => bool
   return { loans, tools, loansPerTool: tools === 0 ? 0 : loans / tools };
 }
 
-/** TL-BO02, TL-LEND-SP01: of the loans due in the month, those returned late or still out and overdue now. */
+/** TL-BO02, TL-LEND-SP01: of the loans due in the month, by their due date as renewed, those returned late or still out and overdue now. */
 function measureBackOnTime(records: LibraryRecords, inMonth: (d: string) => boolean, now: Date, timeZone: string): OutcomeMeasures['backOnTime'] {
   const due = records.loans.filter((l) => inMonth(l.dueDate));
   const late = due.filter((l) => (l.return === null ? isOverdue(l, now, timeZone) : isLate(l, new Date(l.return.returnedAt), timeZone)));
