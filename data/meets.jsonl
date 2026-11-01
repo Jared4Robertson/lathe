@@ -629,14 +629,17 @@
 {"source_id":"LA-PLT-RM08-PJ","target_id":"LA-STD-MODELING-R06"}
 {"source_id":"LA-PLT-RM08-PJ","target_id":"LA-STD-MODELING-R07"}
 {"source_id":"LA-PLT-RM08-PJ","target_id":"LA-STD-MODELING-R08"}
+{"source_id":"LA-PLT-RM08-PJ","target_id":"LA-STD-PRINCIPLES-R05"}
 {"source_id":"LA-PLT-SP02-PR","target_id":"LA-STD-CODE-R03"}
 {"source_id":"LA-PLT-SP02-PR","target_id":"LA-STD-CODE-R04"}
 {"source_id":"LA-TRC-CMD01-H","target_id":"LA-STD-CODE-R10"}
 {"source_id":"LA-TRC-CMD02-H","target_id":"LA-STD-CODE-R10"}
 {"source_id":"LA-TRC-CMD10-H","target_id":"LA-STD-CODE-R10"}
 {"source_id":"LA-TRC-CMD11-H","target_id":"LA-STD-CODE-R10"}
+{"source_id":"LA-TRC-CMD11-H","target_id":"LA-STD-PRINCIPLES-R06"}
 {"source_id":"LA-TRC-CMD12-H","target_id":"LA-STD-CODE-R10"}
 {"source_id":"LA-TRC-CMD13-H","target_id":"LA-STD-CODE-R10"}
+{"source_id":"LA-TRC-CMD13-H","target_id":"LA-STD-PRINCIPLES-R06"}
 {"source_id":"LA-TRC-CMD14-H","target_id":"LA-STD-CODE-R10"}
 {"source_id":"LA-TRC-DS02-SV","target_id":"LA-STD-CODE-R06"}
 {"source_id":"LA-TRC-DS06-SV","target_id":"LA-STD-MODELING-R13"}

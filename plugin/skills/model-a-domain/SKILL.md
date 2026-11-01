@@ -53,6 +53,8 @@ Finish each stage with `check-and-fix`. Gaps a later stage owes are reported, no
 - Logic that belongs to no single entity and is not a yes-or-no check, such as a due date: a *domain service* (it uses no storage and no outside system).
 - A rule that needs an actor or a screen is not a domain rule: it is a UC requirement, view requirement or API requirement.
 
+**Essential, in the domain's words.** A domain model is essential complexity: what any correct solution has to capture, however it is built. It names no table, row, column, page, endpoint, JSON or technical kind (`accidental-in-essential` warns of one); a generic subdomain someone else owns, such as logging in, is provided rather than modeled (`name-provider`). Record-level test: would a domain expert recognize it and care?
+
 **Worked-out values** (a count of active loans, an overdue flag) are not fields of an entity; they are specifications or read model fields.
 
 **Terms.** Each word of the domain's language is a term with its meaning here; use it exactly in titles, statements and code. Definitions build up and never in a circle: define a term only with plain words and terms below it, and link the terms its meaning uses. When two terms would name each other, say the lower one in plain words.

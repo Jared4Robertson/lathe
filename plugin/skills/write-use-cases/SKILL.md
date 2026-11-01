@@ -44,7 +44,7 @@ Every use case has at least one actor and one requirement, unless all its rules 
 
 ## Patterns
 
-When two or more use cases would state the same rules, write those rules once as a pattern and let each follow it. A setting is what each follower decides differently, such as the record it saves; a pattern every follower applies the same way has no settings.
+When two or more use cases would state the same rules, write those rules once as a pattern and let each follow it. A pattern is a fixed part, its settings and its slots. A setting is what each follower decides differently from a known set of ways, such as the record it saves; a pattern every follower applies the same way has no settings. A slot is where the variation is open-ended, so code written by hand fills it against a contract stated in one sentence (its statement); each such fill is accidental debt until the pattern can express it. Settings that grow conditions and loops are a language: add a slot or split the pattern instead. Wait for the third example before drawing a pattern; one drawn from fewer overfits.
 
 - When a pattern applies to a whole domain, the domain follows it rather than each use case.
 - A follower's requirements do not restate the pattern's rules.
