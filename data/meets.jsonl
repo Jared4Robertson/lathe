@@ -624,7 +624,6 @@
 {"source_id":"LA-EXP-EP413-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
 {"source_id":"LA-EXP-QRY11-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R12"}
 {"source_id":"LA-EXP-RM01-IX","target_id":"LA-PAT-APP-CODE-R27"}
-{"source_id":"LA-EXP-RM01-IX","target_id":"LA-STD-CODE-R09"}
 {"source_id":"LA-EXP-RM01-PJ","target_id":"LA-PAT-AGGREGATE-COMMANDS-R12"}
 {"source_id":"LA-EXP-RM01-PJ","target_id":"LA-PAT-APP-CODE-R27"}
 {"source_id":"LA-EXP-RM01-PJ","target_id":"LA-STD-MODELING-R01"}
@@ -634,7 +633,6 @@
 {"source_id":"LA-EXP-RM01-PJ","target_id":"LA-STD-MODELING-R06"}
 {"source_id":"LA-EXP-RM01-PJ","target_id":"LA-STD-MODELING-R07"}
 {"source_id":"LA-EXP-RM01-PJ","target_id":"LA-STD-MODELING-R08"}
-{"source_id":"LA-EXP-RM02-IX","target_id":"LA-STD-CODE-R09"}
 {"source_id":"LA-EXP-RM02-PJ","target_id":"LA-PAT-AGGREGATE-COMMANDS-R12"}
 {"source_id":"LA-EXP-RM02-PJ","target_id":"LA-PAT-APP-CODE-R27"}
 {"source_id":"LA-EXP-RM02-PJ","target_id":"LA-STD-MODELING-R01"}
@@ -689,7 +687,7 @@
 {"source_id":"LA-PLT-RM08-PJ","target_id":"LA-STD-MODELING-R08"}
 {"source_id":"LA-PLT-RM08-PJ","target_id":"LA-STD-PRINCIPLES-R05"}
 {"source_id":"LA-PLT-SP02-PR","target_id":"LA-PAT-AGGREGATE-COMMANDS-R12"}
-{"source_id":"LA-PLT-SP02-PR","target_id":"LA-STD-CODE-R04"}
+{"source_id":"LA-PLT-SP02-PR","target_id":"LA-STD-PRINCIPLES-R07"}
 {"source_id":"LA-PLT-TOOL01","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-PLT-TOOL02","target_id":"LA-PAT-PAGE-STEPS-R01"}
 {"source_id":"LA-PLT-TOOL03","target_id":"LA-PAT-PAGE-STEPS-R01"}
@@ -778,4 +776,4 @@
 {"source_id":"LA-UI149","target_id":"LA-PAT-APP-UX-R20"}
 {"source_id":"LA-UI69","target_id":"LA-PAT-APP-CODE-R06"}
 {"source_id":"LA-UI69","target_id":"LA-PAT-APP-UX-R09"}
-{"source_id":"LA-UI79","target_id":"LA-STD-CODE-R04"}
+{"source_id":"LA-UI79","target_id":"LA-STD-PRINCIPLES-R07"}
