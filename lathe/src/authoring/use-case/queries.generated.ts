@@ -22,7 +22,7 @@ export const NEXT_USE_CASE_ID_IDENTITY = {
   id: 'LA-AUT-QRY102',
   slice: { aggregate: 'LA-AUT-A11', name: 'use-case' },
   name: 'next-id',
-  description: 'The next free ID for a use case (under a capability), UC requirement or flow (under a use case), use case test (under a requirement), or flow step or flow test (under a flow): one past the highest in use.',
+  description: 'The next free ID for a use case (under a capability), UC requirement or flow (under a use case), use case test (under a requirement), or flow step or flow test (under a flow): one past the highest in use, a flow\'s ending in the number of the first interface it has no flow through yet.',
   method: 'GET',
   route: '/api/use-case/next-id',
 } as const;
