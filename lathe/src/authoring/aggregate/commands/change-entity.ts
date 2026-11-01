@@ -25,7 +25,7 @@ export const CHANGE_ENTITY = {
     role: column('entity', 'role', 'optional'),
     in_root_table: column('entity', 'in_root_table', 'clearable'),
     description: column('entity', 'description', 'optional'),
-    fields: parts('entity_field', ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'], 'Its fields, in order. Replaces the list.', 'optional'),
+    fields: parts('entity_field', ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'], 'Its fields, in order: each its name, meaning, one type (a basic type, a value object or an aggregate), whether it is required, and its column name and an example when it has them. Replaces the list.', 'optional'),
     has_one: ids('The entities of its aggregate it holds exactly one of. Replaces the list.', 'optional'),
     has_many: ids('The entities of its aggregate it holds any number of. Replaces the list.', 'optional'),
   },
