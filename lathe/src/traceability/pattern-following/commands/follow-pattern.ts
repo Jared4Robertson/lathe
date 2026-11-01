@@ -1,26 +1,22 @@
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { followingOf, PATTERN_FOLLOWING_SLICE, valueRows, type SettingValueInput } from '../model.ts';
+import { followingOf, valueRows, type SettingValueInput } from '../model.ts';
 import { PatternFollowingRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { FOLLOW_PATTERN_IDENTITY } from './identities.generated.ts';
 
 /** The follower, the pattern and the setting values it gives. */
 export type FollowPattern = { follower_id: string; pattern_id: string; setting_values?: SettingValueInput[] };
 
-export const FOLLOW_PATTERN: CommandDefinition<FollowPattern> = {
-  id: 'LA-TRC-CMD01',
-  slice: PATTERN_FOLLOWING_SLICE,
-  name: 'follow-pattern',
-  description: "Makes a domain or use case follow a pattern, with the value it gives each of the pattern's settings.",
-  method: 'POST',
-  route: '/api/pattern-following/follow-pattern',
+export const FOLLOW_PATTERN = {
+  ...FOLLOW_PATTERN_IDENTITY,
   input: {
     follower_id: column('setting_value', 'follower_id', 'required'),
     pattern_id: column('setting_value', 'pattern_id', 'required'),
     setting_values: parts('setting_value', ['setting', 'value'], "Each of the pattern's settings with its value.", 'optional'),
   },
   handler: followPattern,
-};
+} satisfies CommandDefinition<FollowPattern>;
 
 /** Adds the following, new and whole. */
 export function followPattern(tx: Transaction, input: FollowPattern): void {

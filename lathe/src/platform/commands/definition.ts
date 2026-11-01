@@ -13,14 +13,14 @@ type Mode = 'required' | 'optional' | 'clearable';
 type Flags<M extends Mode> = M extends 'required' ? { required: true; clearable: false } : M extends 'optional' ? { required: false; clearable: false } : { required: false; clearable: true };
 
 /** A field that is a column of one of the schema's tables: its type and meaning are the column's. */
-interface ColumnField {
+export interface ColumnField {
   kind: 'column';
   table: TableName;
   column: string;
 }
 
 /** A field that names one record by its ID (such as the view a step happens in), or a list of them, or of texts. */
-interface IdField {
+export interface IdField {
   kind: 'id' | 'ids' | 'texts';
   description: string;
 }
@@ -29,7 +29,7 @@ interface IdField {
  * A field that is a list of a part table's rows, such as a pattern's settings: each item an object of the named
  * columns. The record they belong to and their position follow from the command and the list's order.
  */
-interface PartsField {
+export interface PartsField {
   kind: 'parts';
   table: TableName;
   columns: readonly string[];
@@ -40,7 +40,7 @@ interface PartsField {
  * A field whose shape a product's own declaration gives, not Lathe's schema: an object of a declared kind's column
  * values (values), or of the IDs a record links to by relation (links). The handler checks it against the declaration.
  */
-interface DeclaredField {
+export interface DeclaredField {
   kind: 'values' | 'links';
   description: string;
 }
@@ -103,7 +103,7 @@ export interface Slice {
   name: string;
 }
 
-/** One command: what it is in the model, how each interface names it, its input and its handler. */
+/** One command: what it is in the model, how each interface names it, its input and its handler. Each is written `satisfies CommandDefinition<T>`, keeping its literal route for the app (InputsByRoute). */
 export interface CommandDefinition<T = never> {
   /** The command's record ID, such as LA-AUT-CMD112. */
   id: string;
@@ -151,6 +151,14 @@ export interface QueryDefinition<T = never, R = unknown, D = unknown> {
   /** The answer as text, as the CLI prints it and the tool returns it. */
   text: (answer: R) => string;
 }
+
+/**
+ * Each command's route, with its input, from the definitions themselves: a definition is written `satisfies
+ * CommandDefinition<T>`, so its route keeps its literal and its handler its input's type.
+ */
+export type InputsByRoute<D extends { route: string; handler: (tx: Transaction, input: never) => unknown }> = {
+  [C in D as C['route']]: C['handler'] extends (tx: Transaction, input: infer T) => unknown ? T : never;
+};
 
 /** Any command, as the interfaces register it: its input's type is known only to its own handler. */
 export type AnyCommand = Omit<CommandDefinition, 'input' | 'handler'> & { input: Record<string, Field>; handler: (tx: Transaction, input: never) => void | Promise<void> };

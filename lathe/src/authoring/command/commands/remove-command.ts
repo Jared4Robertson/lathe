@@ -1,23 +1,18 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { COMMAND_SLICE } from '../model.ts';
 import { CommandRepository } from '../repository.ts';
+import { REMOVE_COMMAND_IDENTITY } from './identities.generated.ts';
 
 /** The command to remove. */
 export type RemoveCommand = { id: string };
 
-export const REMOVE_COMMAND: CommandDefinition<RemoveCommand> = {
-  id: 'LA-AUT-CMD242',
-  slice: COMMAND_SLICE,
-  name: 'remove-command',
-  description: 'Removes a command whole: its handler, its policies with their event handlers and tests, and the links they start. Refused while anything outside it references what is in it: a step that invokes it, its endpoint or CLI command.',
-  method: 'POST',
-  route: '/api/command/remove-command',
+export const REMOVE_COMMAND = {
+  ...REMOVE_COMMAND_IDENTITY,
   input: {
     id: column('command', 'id', 'required'),
   },
   handler: removeCommand,
-};
+} satisfies CommandDefinition<RemoveCommand>;
 
 /** Removes the command whole. */
 export function removeCommand(tx: Transaction, input: RemoveCommand): void {

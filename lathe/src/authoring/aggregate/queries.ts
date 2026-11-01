@@ -2,12 +2,13 @@
 // which the query runner gives each handler: an aggregate whole as its page reads it, the aggregates of a domain, and
 // the next free ID for a record of one of its kinds. A handler never sees the data, a repository or the aggregate's
 // model; each changes nothing.
-import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { AGGREGATE_SLICE, type AggregateKind } from './model.ts';
+import { type AggregateKind } from './model.ts';
 import type { AggregatePage, AggregateSummary } from './read-model.ts';
 import { aggregateReader, type AggregateReader } from './reader.ts';
+import { GET_AGGREGATE_IDENTITY, LIST_AGGREGATES_IDENTITY, NEXT_AGGREGATE_ID_IDENTITY } from './queries.generated.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
@@ -23,12 +24,7 @@ export function getAggregate(reader: AggregateReader, input: { id: string }): Ag
 
 /** GET an aggregate whole (LA-AUT-QRY150). */
 export const GET_AGGREGATE: QueryDefinition<{ id: string }, AggregatePage, AggregateReader> = {
-  id: 'LA-AUT-QRY150',
-  slice: AGGREGATE_SLICE,
-  name: 'get-aggregate',
-  description: 'Reads an aggregate whole as its page shows it, by its ID or the ID of any record in it: the record asked for and its kind, the aggregate\'s row, its entities (the root first) with their fields, the entities they hold, their data models, commands and tables, its invariants with their rules and tests, and the domain events that happen to it with what raises and hears them.',
-  method: 'GET',
-  route: '/api/aggregate/get-aggregate',
+  ...GET_AGGREGATE_IDENTITY,
   input: { id: id('The aggregate, or an entity, invariant, data model, rule or invariant test in it.', 'required') },
   reader: aggregateReader,
   run: getAggregate,
@@ -42,12 +38,7 @@ export function listAggregates(reader: AggregateReader, input: { domain_id: stri
 
 /** List the aggregates of a domain (LA-AUT-QRY151). */
 export const LIST_AGGREGATES: QueryDefinition<{ domain_id: string }, AggregateSummary[], AggregateReader> = {
-  id: 'LA-AUT-QRY151',
-  slice: AGGREGATE_SLICE,
-  name: 'list-aggregates',
-  description: 'Lists the aggregates of a domain, by ID, with their titles.',
-  method: 'GET',
-  route: '/api/aggregate/list-aggregates',
+  ...LIST_AGGREGATES_IDENTITY,
   input: { domain_id: id('The domain.', 'required') },
   reader: aggregateReader,
   run: listAggregates,
@@ -90,12 +81,7 @@ export function nextAggregateId(reader: AggregateReader, input: { kind: string; 
 
 /** Get the next ID for a record of the Aggregate aggregate (LA-AUT-QRY152). */
 export const NEXT_AGGREGATE_ID: QueryDefinition<{ kind: string; parent: string }, string, AggregateReader> = {
-  id: 'LA-AUT-QRY152',
-  slice: AGGREGATE_SLICE,
-  name: 'next-id',
-  description: 'The next free ID for an aggregate (under a domain), an entity or invariant (under an aggregate), a data model (under an entity), or a rule or invariant test (under an invariant): one past the highest in use.',
-  method: 'GET',
-  route: '/api/aggregate/next-id',
+  ...NEXT_AGGREGATE_ID_IDENTITY,
   input: {
     kind: id('The kind: aggregate, entity, invariant, data_model, rule or invariant_test.', 'required'),
     parent: id('The record it will sit under.', 'required'),
@@ -135,6 +121,3 @@ function aggregateText(page: AggregatePage): string {
   for (const e of page.domainEvents) lines.push(`Domain event ${e.event.id}: ${e.event.title}${e.raisedBy.length ? ` [raised by ${e.raisedBy.join(', ')}]` : ''}`);
   return lines.join('\n');
 }
-
-/** The Aggregate aggregate's queries, as the CLI and the MCP server register them. */
-export const AGGREGATE_QUERIES: readonly AnyQuery[] = [GET_AGGREGATE, LIST_AGGREGATES, NEXT_AGGREGATE_ID];

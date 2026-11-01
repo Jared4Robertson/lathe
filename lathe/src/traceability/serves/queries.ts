@@ -2,13 +2,11 @@
 // serve, answered from the read model through its reader (reader.ts). They read the rows alone, not the checks' run:
 // the Serves reach is worked out from the data on every read. Their handlers never see the data and change nothing.
 // This slice holds only the reads, so it names its read model where an aggregate's slice names its aggregate.
-import { id, type AnyQuery, type QueryDefinition, type Slice } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import type { ProductServes, RecordServes } from './read-model.ts';
 import { servesReader, type ServesReader } from './reader.ts';
-
-/** How the interfaces reach the Serves reads: `lathe serves`, the serves_ tools, /api/serves/. */
-const SERVES_SLICE: Slice = { aggregate: 'LA-TRC-RM12', name: 'serves' };
+import { GET_SERVES_IDENTITY, LIST_SERVES_IDENTITY } from './queries.generated.ts';
 
 /** The outcomes the record serves, and the use cases it serves them through. */
 export function getServes(reader: ServesReader, input: { id: string }): RecordServes {
@@ -19,12 +17,7 @@ export function getServes(reader: ServesReader, input: { id: string }): RecordSe
 
 /** Get the outcomes a record serves (LA-TRC-QRY16). */
 export const GET_SERVES: QueryDefinition<{ id: string }, RecordServes, ServesReader> = {
-  id: 'LA-TRC-QRY16',
-  slice: SERVES_SLICE,
-  name: 'get-serves',
-  method: 'GET',
-  route: '/api/serves/get-serves',
-  description: 'Gets the business outcomes a record serves, and the use cases it serves them through: those of each use case whose capability serves an outcome and that reaches the record. Worked out from the data on every read; none when nothing reaches it.',
+  ...GET_SERVES_IDENTITY,
   input: { id: id('The record.', 'required') },
   reader: servesReader,
   run: getServes,
@@ -40,12 +33,7 @@ export function listServes(reader: ServesReader, input: { product_id: string }):
 
 /** List what serves a product's outcomes (LA-TRC-QRY17). */
 export const LIST_SERVES: QueryDefinition<{ product_id: string }, ProductServes, ServesReader> = {
-  id: 'LA-TRC-QRY17',
-  slice: SERVES_SLICE,
-  name: 'list-serves',
-  method: 'GET',
-  route: '/api/serves/list-serves',
-  description: "Lists each record of a product's space that serves a business outcome, with its outcomes and the use cases it serves them through, and the aggregates, read models and obligations of its space no outcome reaches. Worked out from the data on every read.",
+  ...LIST_SERVES_IDENTITY,
   input: { product_id: id('The product.', 'required') },
   reader: servesReader,
   run: listServes,
@@ -56,6 +44,3 @@ export const LIST_SERVES: QueryDefinition<{ product_id: string }, ProductServes,
       ...(p.unserved.length ? [`  Serves no outcome: ${p.unserved.join(', ')}`] : []),
     ].join('\n'),
 };
-
-/** The Serves read's queries, as the CLI and the MCP server register them. */
-export const SERVES_QUERIES: readonly AnyQuery[] = [GET_SERVES, LIST_SERVES];

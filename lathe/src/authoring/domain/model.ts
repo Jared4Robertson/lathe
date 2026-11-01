@@ -3,16 +3,12 @@
 // its repositories (each with the aggregate it persists). Its technical records, the repositories and services, carry
 // the standard rules they meet and the packages they use. One instance is one domain, whole; it holds only the links
 // its own records start.
-import type { Slice } from '../../platform/commands/definition.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { CapabilityRow, DomainRow, DomainServiceRow, DomainServiceTestRow, RepositoryRow, ServiceRow, TermRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const DOMAIN_AGGREGATE = 'LA-AUT-A4';
-
-/** How the interfaces reach the aggregate's commands: `lathe domain`, the domain_ tools, /api/domain/. */
-export const DOMAIN_SLICE: Slice = { aggregate: DOMAIN_AGGREGATE, name: 'domain' };
 
 /**
  * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.

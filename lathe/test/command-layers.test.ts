@@ -1,7 +1,8 @@
 // The guards that keep the data plumbing from becoming a generic command again, over every aggregate that has a slice:
 // only a repository writes data files, only a command handler loads a repository and then only its own aggregate's,
-// only the command runner starts a transaction, Lathe's command and rule records match the code one to one, and a
-// query reads only its read model.
+// only the command runner starts a transaction, every command of an aggregate with a slice has its definition, Lathe's
+// rule records match the code one to one, and a query reads only its read model. Each definition's identity is
+// generated from its records (generated.test.ts).
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -41,7 +42,7 @@ const data = (table: string): Record<string, unknown>[] =>
     .filter(Boolean)
     .map((line) => JSON.parse(line) as Record<string, unknown>);
 
-describe('LA-AUT-UC06-R12-T02 only repositories write data files, each handler loads only its own aggregate, and the command records match the code', () => {
+describe('LA-AUT-UC06-R12-T02 only repositories write data files, each handler loads only its own aggregate, and every command has its definition', () => {
   const files = sources();
 
   it('lets only a repository import data-files.ts, and only command handlers import an aggregate\'s repository', () => {
@@ -67,58 +68,17 @@ describe('LA-AUT-UC06-R12-T02 only repositories write data files, each handler l
     expect(drafting).toEqual(['lathe/src/platform/data/data-files.ts']);
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R01-T01 LA-STD-PRINCIPLES-R02-T01 matches each command definition to its command, handler, endpoint and CLI records, one to one', () => {
-    const handlerFiles = files.filter((f) => isHandler(f.file));
-    const commands = new Map(data('command').map((r) => [r.id, r]));
-    const handlers = new Map(data('command_handler').map((r) => [r.command_id, r]));
-    const endpoints = new Map(data('endpoint').filter((r) => r.command_id).map((r) => [r.command_id, r]));
-    const clis = new Map(data('cli_command').map((r) => [r.id, r]));
-    const aggregateOf = new Map(data('entity').map((e) => [e.id, e.aggregate_id]));
-    for (const definition of ALL_COMMANDS) {
-      const own = handlerFiles.filter((f) => f.text.includes(`id: '${definition.id}'`));
-      expect(own.map((f) => f.file), definition.id).toHaveLength(1);
-      expect(aggregateOf.get(commands.get(definition.id)?.entity_id), definition.id).toBe(definition.slice.aggregate);
-      expect(handlers.get(definition.id), definition.id).toMatchObject({ id: `${definition.id}-H`, title: definition.handler.name, file: own[0].file });
-      expect(definition.route).toBe(`/api/${definition.slice.name}/${definition.name}`);
-      expect(endpoints.get(definition.id), definition.id).toMatchObject({ method: definition.method, route: definition.route });
-      expect(clis.get(`${definition.id}-CLI`), definition.id).toMatchObject({ command_id: definition.id, title: `lathe ${definition.slice.name} ${definition.name}`, mcp_tool: toolName(definition) });
+  it('LA-PAT-AGGREGATE-COMMANDS-R01-T01 LA-STD-PRINCIPLES-R02-T01 reaches each definition by its one CLI command, MCP tool and route, and gives every command of an aggregate with a slice its definition', () => {
+    // Each identity is generated from the records (generated.test.ts); here, no two definitions share a name on any interface.
+    const all = [...ALL_COMMANDS, ...ALL_QUERIES];
+    for (const key of [(d: (typeof all)[number]) => d.id, (d: (typeof all)[number]) => `lathe ${d.slice.name} ${d.name}`, toolName, (d: (typeof all)[number]) => d.route]) {
+      const names = all.map(key);
+      expect(names.filter((n, at) => names.indexOf(n) !== at)).toEqual([]);
     }
-    // And back: every handler file defines one command, every handler record in a slice is a definition's, and every
-    // command of an aggregate with a slice has its definition.
-    for (const f of handlerFiles) expect(f.text.match(/: CommandDefinition</g), f.file).toHaveLength(1);
     const defined = new Set(ALL_COMMANDS.map((d) => d.id));
-    const sliced = [...handlers.values()].filter((h) => typeof h.file === 'string' && /\/commands\/[^/]+\.ts$/.test(h.file) && h.file.startsWith('lathe/src/'));
-    expect(sliced.filter((h) => !defined.has(String(h.command_id))).map((h) => h.id)).toEqual([]);
+    const aggregateOf = new Map(data('entity').map((e) => [e.id, e.aggregate_id]));
     const aggregates = new Set(ALL_COMMANDS.map((d) => d.slice.aggregate));
-    expect([...commands.values()].filter((c) => aggregates.has(String(aggregateOf.get(c.entity_id))) && !defined.has(String(c.id))).map((c) => c.id)).toEqual([]);
-  });
-
-  it('matches each query definition to its query, handler, CLI, endpoint and endpoint handler records, one to one', () => {
-    const queries = new Map(data('query').map((r) => [r.id, r]));
-    const handlers = new Map(data('query_handler').map((r) => [r.query_id, r]));
-    const clis = new Map(data('cli_query').map((r) => [r.id, r]));
-    const endpoints = new Map(data('endpoint').filter((r) => r.query_id).map((r) => [r.query_id, r]));
-    const endpointHandlers = new Map(data('endpoint_handler').map((r) => [r.endpoint_id, r]));
-    for (const definition of ALL_QUERIES) {
-      expect(queries.has(definition.id), definition.id).toBe(true);
-      expect(handlers.get(definition.id), definition.id).toMatchObject({ title: definition.run.name });
-      const file = String(handlers.get(definition.id)!.file);
-      const text = readFileSync(path.join(REPO, file), 'utf8');
-      expect(text).toContain(`id: '${definition.id}'`);
-      expect(clis.get(`${definition.id}-CLI`), definition.id).toMatchObject({ query_id: definition.id, title: `lathe ${definition.slice.name} ${definition.name}`, mcp_tool: toolName(definition) });
-      // Its endpoint takes its number plus 400 (166-id-ranges.md), and is served from the route written whole beside it.
-      expect(definition.route).toBe(`/api/${definition.slice.name}/${definition.name}`);
-      const endpoint = endpoints.get(definition.id);
-      expect(endpoint, definition.id).toMatchObject({ id: definition.id.replace(/QRY(\d+)$/, (_, n: string) => `EP${Number(n) + 400}`), method: definition.method, route: definition.route, title: `${definition.method} ${definition.route}` });
-      const served = endpointHandlers.get(endpoint!.id);
-      expect(served, String(endpoint!.id)).toMatchObject({ id: `${endpoint!.id}-H`, file });
-      expect(text, String(served!.id)).toMatch(new RegExp(`export const ${String(served!.title)}: QueryDefinition<[^\\n]*\\n  id: '${definition.id}'`));
-    }
-    // And back: every query whose handler is an aggregate's queries.ts has its definition, and so does every endpoint of one.
-    const defined = new Set(ALL_QUERIES.map((d) => d.id));
-    const sliced = [...handlers.values()].filter((h) => typeof h.file === 'string' && h.file.startsWith('lathe/src/') && h.file.endsWith('/queries.ts'));
-    expect(sliced.filter((h) => !defined.has(String(h.query_id))).map((h) => h.query_id)).toEqual([]);
-    expect([...endpoints.values()].filter((e) => sliced.some((h) => h.query_id === e.query_id) && !defined.has(String(e.query_id))).map((e) => e.id)).toEqual([]);
+    expect(data('command').filter((c) => aggregates.has(String(aggregateOf.get(c.entity_id))) && !defined.has(String(c.id))).map((c) => c.id)).toEqual([]);
   });
 });
 
@@ -188,6 +148,7 @@ describe('LA-STD-MODELING-R11-T01 a query reads only its read model: no query ha
   });
 
   it('lets a slice\'s query handlers read only through its reader, the reader only its read model\'s table, and only the projection the source rows', () => {
+    const handlerFile = new Map(data('query_handler').map((h) => [h.query_id, h.file]));
     const crossing = SLICES.flatMap((slice) => {
       const queries = file(`${slice}/queries.ts`)!;
       const reader = file(`${slice}/reader.ts`)!;
@@ -198,7 +159,7 @@ describe('LA-STD-MODELING-R11-T01 a query reads only its read model: no query ha
         ...importsFrom(queries.text, './read-model.ts').values.map((n) => `${queries.file} imports ${n} from read-model.ts, not through its reader`),
         ...(readsData(reader.text) ? [`${reader.file} reads the source rows itself`] : []),
         // Each of the slice's queries is given its reader by the runner.
-        ...ALL_QUERIES.filter((q) => queries.text.includes(`id: '${q.id}'`) && !q.reader).map((q) => `${q.id} names no reader`),
+        ...ALL_QUERIES.filter((q) => handlerFile.get(q.id) === queries.file && !q.reader).map((q) => `${q.id} names no reader`),
       ];
     });
     expect(crossing).toEqual([]);

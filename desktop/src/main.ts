@@ -63,15 +63,15 @@ import { appPluginDir, chatLatheFor, countLatheTools, sourceLathe, withLatheCli,
 import { ChatSession } from './chatSession.ts';
 import { claudeSignedIn, findClaude, listSessions, processAlive, runningSessions, transcriptFile } from './claudeSessions.ts';
 import { chromeWindowOptions, startChrome, type Chrome } from './chrome.ts';
-import { commandKeys, keyPresses, MENU_COMMANDS, type KeyPress } from './commands.ts';
+import { keyPresses, type KeyPress } from './commands.ts';
 import { badgeFor, dockMenuTemplate } from './dock.ts';
 import { editorLaunch, editorName } from './editor.ts';
-import { checkFolder, productNames, windowTitle } from './folders.ts';
+import { checkFolder, latheConfigModulePath, loadLatheConfig, productNames, windowTitle, type LatheConfigReads } from './folders.ts';
 import { routeOpenFile, routeSecondInstance, folderArgument } from './instance.ts';
 import { aboutLink, aboutModel, errorModel, launchModel, launchStep, modelQuery, parseLocalAction, serverErrorMessage, type AboutModel, type LaunchModel, type LocalAction } from './launch.ts';
 import { menuTemplate } from './menu.ts';
 import { optOutOfWindowRestoration } from './persistence.ts';
-import { DataFiles, recordMenuTemplate } from './records.ts';
+import { recordDataFile, recordMenuTemplate } from './records.ts';
 import { latheFor, latheLabel, packageVersion, serveModulePath, settleWithin, startDev, startServe } from './servers.ts';
 import { reloadInProgress, runSmoke, smokeFile, writeSmoke, type SmokeResult } from './smoke.ts';
 import { helperBuilt, parseHelperLine, speechHelperPath, voicePlatform, VoiceListener, type Microphone, type VoiceSupport } from './voice.ts';
@@ -180,10 +180,10 @@ function focusedProductWindow(): BrowserWindow | null {
   return isProduct(last) ? last : null;
 }
 
-/** Sends a menu choice to a window's page as a command ID, with the keys that run it by default. */
+/** Sends a menu choice to a window's page as a command ID, with the key the page last sent for it (the keymap's menu key), which runs it before the app listens. */
 function sendCommand(win: BrowserWindow | null, id: string) {
-  const command = MENU_COMMANDS.find((c) => c.id === id);
-  if (command) sendCommandId(win, id, keyPresses(commandKeys(command, MAC), MAC));
+  const key = menuKeysWindow()?.menuKeys?.[id]?.[0];
+  sendCommandId(win, id, key ? keyPresses(key, MAC) : []);
 }
 
 function sendCommandId(win: BrowserWindow | null, id: string, presses: KeyPress[]) {
@@ -368,8 +368,18 @@ const windowClosedReactions: WindowClosedReactions = {
 
 // --- Windows -------------------------------------------------------------------------------------
 
+/** The app's own Lathe's config module, loaded once: the folder check and the products' names read with it. */
+let latheConfig: Promise<LatheConfigReads> | undefined;
+const latheConfigReads = () => (latheConfig ??= loadLatheConfig(latheConfigModulePath(REPO_ROOT, app.isPackaged ? { resourcesPath: process.resourcesPath } : null)));
+
 async function openFolder(input: string) {
   const folder = path.resolve(input);
+  let lathe: LatheConfigReads;
+  try {
+    lathe = await latheConfigReads();
+  } catch (error) {
+    return fail(`Lathe could not be loaded: ${error instanceof Error ? error.message : String(error)}`);
+  }
   const existing = openWindows().get(folder);
   if (existing) {
     if (existing.win.isMinimized()) existing.win.restore();
@@ -377,10 +387,10 @@ async function openFolder(input: string) {
     existing.win.focus();
     return;
   }
-  const check = checkFolder(folder);
+  const check = checkFolder(folder, lathe);
   if (!check.ok) return fail(check.message);
 
-  const names = productNames(check.dataDirs);
+  const names = productNames(check.dataDirs, lathe);
   const { places, chrome: savedChrome } = productWindows.load();
   const placed = windowFor(places, folder, screen.getAllDisplays().map((d) => d.workArea));
   // No system title bar: the app draws its own, in the shell's color, so the window never flashes white.
@@ -401,7 +411,7 @@ async function openFolder(input: string) {
     },
   });
   if (MAC) win.setRepresentedFilename(folder);
-  const entry: OpenWindow = { folder, product: names.length === 1 ? names[0] : path.basename(folder), win, errors: 0, dataFiles: new DataFiles(check.dataDirs), launchRun: 0, key: randomUUID() };
+  const entry: OpenWindow = { folder, product: names.length === 1 ? names[0] : path.basename(folder), win, errors: 0, launchRun: 0, key: randomUUID() };
 
   // The window keeps the product's name and folder, whatever the page calls itself.
   win.on('page-title-updated', (event) => event.preventDefault());
@@ -700,14 +710,20 @@ const fileManager = {
   copy: (text: string) => clipboard.writeText(text),
 };
 
+/** The data file that holds a record, as the folder's engine names it (its Record's data file read), or null while the folder has no server. */
+async function dataFileOf(folder: string, id: string): Promise<string | null> {
+  const running = appServers.load().running.get(folder);
+  return running ? recordDataFile(running.server.url, id) : null;
+}
+
 /** A record's native menu, over its window: each item runs that record action's own command. */
 function popupRecordMenu(window: OpenWindow, id: string, file: string | null) {
   const input = { folder: window.folder, request: { id } };
   const actions = {
     openInNewTab: () => sendCommandId(window.win, 'openRecordInNewTab', []),
     askClaude: () => sendCommandId(window.win, 'askClaudeAboutRecord', []),
-    reveal: () => revealRecordDataFile(productWindows, input, fileManager.reveal),
-    openInEditor: () => openRecordDataFile(productWindows, input, openInEditor),
+    reveal: () => void revealRecordDataFile(productWindows, input, dataFileOf, fileManager.reveal),
+    openInEditor: () => void openRecordDataFile(productWindows, input, dataFileOf, openInEditor),
     copyId: () => copyRecordId(productWindows, input, fileManager.copy),
   };
   Menu.buildFromTemplate(recordMenuTemplate(id, !!file, editorName(shellSettings.load()), actions, process.platform)).popup({ window: window.win });
@@ -778,7 +794,8 @@ async function openOnLaunch() {
   const named = dropped ?? folderArgument(process.argv, app.isPackaged);
   dropped = undefined;
   if (named) return openFolder(named);
-  const last = recentList().find((item) => checkFolder(item.folder).ok);
+  const lathe = await latheConfigReads().catch(() => null);
+  const last = lathe && recentList().find((item) => checkFolder(item.folder, lathe).ok);
   if (last) return openFolder(last.folder);
   if (!app.isPackaged) return openFolder(REPO_ROOT);
   return chooseFolder();
@@ -857,11 +874,11 @@ if (!SMOKE && !app.requestSingleInstanceLock()) {
   // The record actions, each on its own channel, by record ID only (LA-PAT-SHELL-ACTIONS-R01).
   ipcMain.on('lathe:reveal-record', (event, input: unknown) => {
     const entry = fromPage(event);
-    if (entry) revealRecordDataFile(productWindows, { folder: entry.folder, request: input }, fileManager.reveal);
+    if (entry) void revealRecordDataFile(productWindows, { folder: entry.folder, request: input }, dataFileOf, fileManager.reveal);
   });
   ipcMain.on('lathe:open-record-in-editor', (event, input: unknown) => {
     const entry = fromPage(event);
-    if (entry) openRecordDataFile(productWindows, { folder: entry.folder, request: input }, openInEditor);
+    if (entry) void openRecordDataFile(productWindows, { folder: entry.folder, request: input }, dataFileOf, openInEditor);
   });
   ipcMain.on('lathe:copy-record-id', (event, input: unknown) => {
     const entry = fromPage(event);
@@ -869,7 +886,7 @@ if (!SMOKE && !app.requestSingleInstanceLock()) {
   });
   ipcMain.on('lathe:show-record-menu', (event, input: unknown) => {
     const entry = fromPage(event);
-    if (entry) showRecordMenu(productWindows, { folder: entry.folder, request: input }, popupRecordMenu);
+    if (entry) void showRecordMenu(productWindows, { folder: entry.folder, request: input }, dataFileOf, popupRecordMenu);
   });
   // The chat panel (the preload's chat): each call from a product window's own page, about that window's chat.
   const fromPageCall = (event: Electron.IpcMainInvokeEvent) => {

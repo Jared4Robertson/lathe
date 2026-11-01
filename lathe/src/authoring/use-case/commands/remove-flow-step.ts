@@ -1,23 +1,18 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { USE_CASE_SLICE } from '../model.ts';
 import { UseCaseRepository } from '../repository.ts';
+import { REMOVE_FLOW_STEP_IDENTITY } from './identities.generated.ts';
 
 /** The step to remove. */
 export type RemoveFlowStep = { id: string };
 
-export const REMOVE_FLOW_STEP: CommandDefinition<RemoveFlowStep> = {
-  id: 'LA-AUT-CMD112',
-  slice: USE_CASE_SLICE,
-  name: 'remove-flow-step',
-  description: 'Removes a flow step with the links it starts. Refused while anything else references it.',
-  method: 'POST',
-  route: '/api/use-case/remove-flow-step',
+export const REMOVE_FLOW_STEP = {
+  ...REMOVE_FLOW_STEP_IDENTITY,
   input: {
     id: column('flow_step', 'id', 'required'),
   },
   handler: removeFlowStep,
-};
+} satisfies CommandDefinition<RemoveFlowStep>;
 
 /** Removes the step from its flow. */
 export function removeFlowStep(tx: Transaction, input: RemoveFlowStep): void {

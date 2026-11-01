@@ -1,4 +1,4 @@
-// The Standard aggregate's commands, as the CLI, the MCP server and the HTTP API register them.
+// Generated from data/ by `npm run generate`. Do not edit.
 import type { AnyCommand } from '../../../platform/commands/definition.ts';
 import { ADD_STANDARD } from './add-standard.ts';
 import { CHANGE_STANDARD } from './change-standard.ts';
@@ -10,7 +10,7 @@ import { ADD_STANDARD_RULE_TEST } from './add-standard-rule-test.ts';
 import { CHANGE_STANDARD_RULE_TEST } from './change-standard-rule-test.ts';
 import { REMOVE_STANDARD_RULE_TEST } from './remove-standard-rule-test.ts';
 
-export const STANDARD_COMMANDS: readonly AnyCommand[] = [
+export const STANDARD_COMMANDS = [
   ADD_STANDARD,
   CHANGE_STANDARD,
   REMOVE_STANDARD,
@@ -20,4 +20,4 @@ export const STANDARD_COMMANDS: readonly AnyCommand[] = [
   ADD_STANDARD_RULE_TEST,
   CHANGE_STANDARD_RULE_TEST,
   REMOVE_STANDARD_RULE_TEST,
-];
+] as const satisfies readonly AnyCommand[];

@@ -1,19 +1,14 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { UseCaseTestRow } from '../../../platform/data/tables.ts';
-import { USE_CASE_SLICE } from '../model.ts';
 import { UseCaseRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_USE_CASE_TEST_IDENTITY } from './identities.generated.ts';
 
 export type AddUseCaseTest = Pick<UseCaseTestRow, 'id' | 'title' | 'uc_requirement_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'when' | 'then' | 'notes'> & { starts_from?: string[] };
 
-export const ADD_USE_CASE_TEST: CommandDefinition<AddUseCaseTest> = {
-  id: 'LA-AUT-CMD113',
-  slice: USE_CASE_SLICE,
-  name: 'add-use-case-test',
-  description: 'Adds a use case test under its UC requirement, with the test data sets it starts from.',
-  method: 'POST',
-  route: '/api/use-case/add-use-case-test',
+export const ADD_USE_CASE_TEST = {
+  ...ADD_USE_CASE_TEST_IDENTITY,
   input: {
     id: column('use_case_test', 'id', 'required'),
     title: column('use_case_test', 'title', 'required'),
@@ -31,7 +26,7 @@ export const ADD_USE_CASE_TEST: CommandDefinition<AddUseCaseTest> = {
     starts_from: ids('The test data sets it starts from.', 'optional'),
   },
   handler: addUseCaseTest,
-};
+} satisfies CommandDefinition<AddUseCaseTest>;
 
 export function addUseCaseTest(tx: Transaction, input: AddUseCaseTest): void {
   const useCases = new UseCaseRepository(tx);

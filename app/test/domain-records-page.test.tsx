@@ -3,8 +3,6 @@ import { addChoices, chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { DOMAIN_COMMANDS } from '../../lathe/src/authoring/domain/commands/index';
-import type { DomainCommands } from '../src/authoring/domain/commands';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
@@ -52,15 +50,6 @@ describe('LA-V120-R01-T01 a domain\'s records are read through the Domain aggreg
     await openApp('/DM-SHOP-REPO01', { data: withDomain() });
     expect(await within(main()).findByText('Loads and saves baskets.')).toBeInTheDocument();
     expect(within(main()).queryByRole('heading', { name: /^Also persists/ })).toBeNull();
-  });
-
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof DomainCommands)[] = [
-      '/api/domain/add-capability', '/api/domain/add-domain-service-test', '/api/domain/add-domain-service', '/api/domain/add-domain', '/api/domain/add-repository', '/api/domain/add-service', '/api/domain/add-term',
-      '/api/domain/change-capability', '/api/domain/change-domain-service-test', '/api/domain/change-domain-service', '/api/domain/change-domain', '/api/domain/change-repository', '/api/domain/change-service', '/api/domain/change-term',
-      '/api/domain/remove-capability', '/api/domain/remove-domain-service-test', '/api/domain/remove-domain-service', '/api/domain/remove-domain', '/api/domain/remove-repository', '/api/domain/remove-service', '/api/domain/remove-term',
-    ];
-    expect([...routes].sort()).toEqual(DOMAIN_COMMANDS.map((c) => c.route).sort());
   });
 });
 

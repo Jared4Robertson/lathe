@@ -1,19 +1,15 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { QuestionRow } from '../../../platform/data/tables.ts';
-import { PRODUCT_SLICE, productUnder } from '../model.ts';
+import { productUnder } from '../model.ts';
 import { ProductRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_QUESTION_IDENTITY } from './identities.generated.ts';
 
 export type AddQuestion = Pick<QuestionRow, 'id' | 'title' | 'product_id' | 'domain_id' | 'owner' | 'description'> & { about?: string[] };
 
-export const ADD_QUESTION: CommandDefinition<AddQuestion> = {
-  id: 'LA-AUT-CMD128',
-  slice: PRODUCT_SLICE,
-  name: 'add-question',
-  description: 'Adds an open question under its product or one of its domains, with the role that decides it and the records it is about.',
-  method: 'POST',
-  route: '/api/product/add-question',
+export const ADD_QUESTION = {
+  ...ADD_QUESTION_IDENTITY,
   input: {
     id: column('question', 'id', 'required'),
     title: column('question', 'title', 'required'),
@@ -24,7 +20,7 @@ export const ADD_QUESTION: CommandDefinition<AddQuestion> = {
     about: ids('The records it is about, of its own product.', 'optional'),
   },
   handler: addQuestion,
-};
+} satisfies CommandDefinition<AddQuestion>;
 
 /** Adds the question to the product it sits in. */
 export function addQuestion(tx: Transaction, input: AddQuestion): void {

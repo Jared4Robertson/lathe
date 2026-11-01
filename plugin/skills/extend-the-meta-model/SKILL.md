@@ -1,118 +1,58 @@
 ---
 name: extend-the-meta-model
-description: Add a product's own kinds to Lathe's schema in any of the six stages (discovery, domain model, use cases, interaction design, technical specification, test plan), with their fields and relations, mark an obligation kind and a relation's role, or add a product's own checks. Use when a product needs a record kind or link Lathe does not have, such as a technical kind for code no Lathe kind fits, when a house rule needs a check of its own, or when a write of a product kind or relation is refused, in a repo with lathe.config.json.
+description: Add a product's own kinds to Lathe's schema in any of the six stages (discovery, domain model, use cases, interaction design, technical specification, test plan), with their fields and relations, mark an obligation kind and a relation's role, add a product's own checks, or model a code generator and the code it emits. Use when a product needs a record kind or link Lathe does not have, such as a technical kind for code no Lathe kind fits, when the product is built on a code generator, when a house rule needs a check of its own, or when a write of a product kind or relation is refused, in a repo with lathe.config.json.
 ---
 
 # Extend the meta-model
 
-Lathe's schema is its meta-model: a table per kind with typed columns, a link table per relation, and the keys that hold them together. A product adds to it, for itself only, by declaring its own kinds and relations as data. Lathe then makes a table for each new kind, with the same keys and enforcement as its own.
+Lathe's schema is its meta-model: a table per kind with typed columns, a link table per relation, and the keys that hold them together. A product adds to it, for itself only, by declaring its own kinds and relations as data. Lathe then makes a table for each new kind with the same keys and enforcement as its own.
 
-Extend only when the user asks for it, or a real need keeps recurring. Never extend to make a check error or a refused write go away. Lathe is opinionated: before declaring a kind, make sure none of Lathe's fits (`REFERENCE.md` lists them, stage by stage; an entry point and tooling are Lathe's own kinds). The most common need is a technical kind for code that implements no design record, such as a report script, a CLI command or a migration.
+Change the spec only with Lathe's MCP tools (or the `lathe` CLI), never by editing files. Kinds, relations and checks the product declares, and the fields of every declaration, are in the tools' schemas; Lathe's own kinds, and how coverage reads a product's obligation kinds, are in `lathe/REFERENCE.md` in the Lathe package (`node_modules/@jaredrob/lathe/REFERENCE.md` in a product repo). A record of a declared kind is an extension record.
 
-## How you write
+## When to extend
 
-Change the spec only with Lathe's MCP tools, never by editing files. A product's kinds and relations are declarations of the Product aggregate, written with its own tools; a record of a declared kind is an extension record, written with the Extension record aggregate's tools; a product's own check is a record of the Check aggregate. Each command checks its aggregate's rules and is refused, with every reason, when it breaks them; a refusal changes nothing. Writes never commit: commit per task.
+Extend only when the Owner asks, or a real need keeps recurring. Never extend to make a check error or a refused write go away. Lathe is opinionated: before declaring a kind, read the kinds near it in the reference and make sure none fits (an entry point and tooling are Lathe's own kinds for code that starts the product or configures a tool). The most common honest need is a technical kind for code that implements no design record, such as a report script, a migration or a graph layout.
 
-| Aggregate | Its tools |
-| --- | --- |
-| Product | `product_declare_product_kind` (with its `fields`), `product_change_product_kind`, `product_remove_product_kind`; `product_declare_product_relation`, `product_change_product_relation`, `product_remove_product_relation`; `product_get_product` |
-| Extension record | `extension_record_add_extension_record`, `extension_record_change_extension_record`, `extension_record_remove_extension_record`; `extension_record_get_extension_record`, `extension_record_list_extension_records`, `extension_record_next_id` |
-| Check | `check_add_check`, `check_change_check`, `check_remove_check`; `check_get_check`, `check_list_checks` |
+Lathe's own kinds cannot be given another parent or more required fields by a product: that is a change to Lathe's schema. Ask the Owner.
 
-An extension record names its `kind` and its parent (`parent_id`), and gives its title and its kind's fields in `values`; its kind's declaration is its rules: its parent kind, its fields with their types, which are required, and its ID pattern. The links a record starts are its `links` (by relation, Lathe's or the product's) and the packages it uses its `packages`, in its own add and change. In a shell the same commands are `lathe <aggregate> <command> --<field> <value>` (`lathe product declare-product-kind --help` prints its fields), or the tool's own JSON with `--json -` (stdin) or `--json <file>`.
+## Judgment
 
-## Before you write
+**Stage.** A product kind sits in one of the six stages (or none) and shows there. Discovery: why the product exists beyond an outcome, such as a persona. Domain model: a concept DDD's kinds leave out, such as a saga. Use cases: something a use case owns. Interaction design: a design record of a channel Lathe has no kind for. Technical specification: code that implements no design record. Test plan: a test kind of the product's own.
 
-1. `product_get_product` for the kinds and relations the product declares already, and `check_list_checks` for its checks.
-2. Read the kinds near the one you need in `REFERENCE.md` in the Lathe package (`node_modules/@jaredrob/lathe/REFERENCE.md` in a product repo, `lathe/REFERENCE.md` in the Lathe repo), so a new kind fits beside them.
+**Parent and ID.** Its one parent is a Lathe kind or another product kind; start its ID pattern with the parent's name in angle brackets so IDs number under the parent.
 
-## What a declaration does
+**Obligation or not.** Mark a kind an obligation only when each record is something that must be built and proved; Lathe then counts it in coverage and reports the gaps. A new relation's role says whether its links count as design (the source designs the target), build (the source builds it once its file exists), proof (it proves), or none of these.
 
-| You declare | Effect |
-| --- | --- |
-| A product kind | Adds the kind and its table, named after it: `id`, `title`, `<parent_kind>_id` (required: its one parent, of one of Lathe's kinds or another product kind), then its fields. `label` is how people read it, `description` what a record of it is, `stage` the stage it belongs to, `obligation` whether its records are obligations, `id_pattern` and `id_example` how its IDs are written. |
-| A field, in the kind's `fields` | Adds a column to that kind's table: `name` (lower case with underscores; not `id`, `title` or the parent column), `type` (`text`, `integer`, `boolean` or `date`), `required`, `description`, in order. A field named `statement`, `goal`, `meaning` or `description` is the kind's lead text, shown first on its records' pages: a kind has at most one, and it must be required (an optional lead or a second one is refused). |
-| A product relation with a new `name` | Adds the relation and its link table, from `source_kind` to `target_kind` (or `*` for any record), read as `forward_label` from its source and `reverse_label` from its target, each in sentence case. Its links stay inside one product. |
-| A product relation with a name Lathe has | Lets that relation join one more pair of kinds, when its link table's ends accept the two kinds. Most of Lathe's link tables accept only the kinds they name, so this is rare; a new relation is the usual way. Reuse Lathe's labels for it. |
+**Text.** A kind's text is required or absent: give it a lead field (statement, goal, meaning or description) only when its records need words the title, parent, links and other fields cannot say, and then it is required and the only one. A code-bound kind whose title and file say what it is has none. Give every kind, field and relation a plain description; the app shows it.
 
-A product kind may not take a table name Lathe has, and Lathe's own kinds cannot be given another parent or more required fields: that is a change to Lathe's schema, in the Lathe package, not a product's declaration. Ask the Owner when you need one.
+**Adding a required field to a kind with records.** Add it optional, fill it on each record, then make it required.
 
-## The six stages
+**Naming records.** Code-bound kinds take the identifier or file name exactly as in code, with no spaces; a check row, the kebab-case name of the mistake. Other kinds: a singular noun phrase for a thing, an imperative verb and object for a goal, a sentence true when the rule holds. Sentence case, no trailing period, unique within kind and product.
 
-A product kind sits in any of the six stages, or in none, and the app shows it there, in that stage's color:
+**Removing a kind.** Remove its records first, then the declaration.
 
-- `discovery`: something about why the product exists that a business outcome leaves out, such as a persona or a market, under the product.
-- `domain-model`: a domain concept Lathe's DDD kinds leave out, such as a saga, under the domain.
-- `use-cases`: something a use case owns, such as an acceptance criterion's example, under the use case.
-- `interaction-design`: a design record of a channel Lathe has no kind for, such as an email template, under the command it serves or the domain.
-- `technical-specification`: code that implements no design record, such as a report script, a migration or a graph layout, under the domain or the design record it serves.
-- `test-plan`: a test kind of the product's own, under what it proves, or what tests need besides a test data set.
+## Modeling a code generator
 
-Its `id_pattern` is its own, such as `<domain>-RP<nn>` or `<command>-CLI`: start it with the parent kind's name in angle brackets, so `extension_record_next_id` numbers it under the parent and every ID starts with its parent's.
+When a product's code is produced by a generator (from a schema, a service declaration, or the product's own records), keep one rule in view: the records own the essential complexity (why and what); the generator owns the accidental complexity (how it is wired). Hand-written code that is only wiring is a candidate for the generator, not for more records.
 
-## Obligations and roles
+Declare the generator's side as kinds of the product's own, in the technical specification:
 
-- `obligation: true` makes the kind's records obligations: Lathe counts them in coverage, designed, built and proved, and reports the gaps, as it does for invariants and UC requirements. `REFERENCE.md` says how coverage reads a product's obligation kinds.
-- A new relation's `role` says what its links count toward: `design` (the source designs the target) or `proof` (the source proves it). Leave it out for a link that only connects records.
+- **The generator** (one record per generator, with its file and the command that runs it). It implements the design records it reads; link the records it reads to it, so a change to a record shows which generator emits from it.
+- **An output contract**: one rule about the shape of the code the generator emits ("every emitted handler returns a result and never throws"). It is an obligation, proved by a contract test that runs the generator and checks the emitted code, not by testing each emitted file. This is the rule the generator's users depend on, so it is written once, at the generator.
+- **A runtime package**: the library the emitted code imports. Its contract is likewise an obligation with a test, and the emitted code is only correct against a pinned version of it. Account for it as a package of the technical record that uses it.
 
-## Example: the Tool Library's report
+Rules for the emitted files themselves:
 
-No technical kind fits `src/outcomes.ts`, the script that measures the library's business outcomes: it implements no design record. The Tool Library declares a report, in the technical specification, under the domain:
-
-```
-product_declare_product_kind { "name": "report", "product_id": "TL", "label": "Report",
-       "description": "A script that measures the library's business outcomes from its own records, for the Owner to run each month.",
-       "parent_kind": "domain", "stage": "technical-specification", "obligation": false,
-       "id_pattern": "<domain>-RP<nn>", "id_example": "TL-LEND-RP01",
-       "fields": [ { "name": "file", "type": "text", "required": true, "description": "The script, from the product root." },
-                   { "name": "usage", "type": "text", "required": true, "description": "How it is run." },
-                   { "name": "description", "type": "text", "required": true, "description": "What it counts." } ] }
-```
-
-A record of the new kind is then an extension record, with its ID from `extension_record_next_id` (`kind`: `report`, `parent`: the domain):
-
-```
-extension_record_add_extension_record { "kind": "report", "id": "TL-LEND-RP01", "parent_id": "TL-LEND",
-       "values": { "title": "printOutcomeReport", "file": "src/outcomes.ts", "usage": "DB=library.db npm run outcomes -- 2026-03",
-                   "description": "Counts each business outcome's measure for one month from the library's records and the outbox's events." } }
-```
-
-A relation of the product's own, from one of Lathe's kinds to the new one; the outcome names the report in its own `measured_by`:
-
-```
-product_declare_product_relation { "name": "measured_by", "source_kind": "business_outcome", "target_kind": "report", "product_id": "TL",
-       "forward_label": "Measured by", "reverse_label": "Measures",
-       "description": "The report measures the business outcome: it counts the measure from the library's records." }
-business_outcome_change_business_outcome { "id": "TL-BO01", "measured_by": ["TL-LEND-RP01"] }
-```
-
-Give every kind, field and relation a plain `description`; the app shows it.
-
-Every kind's text is required or absent (`LA-STD-MODELING-R10`). Give a kind a lead field only when its records need text the title, parent, links and other fields cannot say, such as what an entry point does at start-up; then it is required. A code-bound kind whose title and file say what it is, such as a shared module, has none.
-
-## Naming a product kind's records
-
-A product kind's records follow the same title convention as Lathe's: sentence case, no trailing period, unique within the kind and product (a duplicate or a trailing period is refused). Name them as the family they belong to, and say which in the kind's `description`:
-
-- Code-bound kinds (a report script, a shared module, an API client, an IPC channel, a plugin hook): the identifier or file name exactly as in code, with no spaces, such as `printOutcomeReport`; whitespace is refused. A CLI command is its invocation (lathe use-case add-flow); a check row the kebab-case name of the mistake (event-tense).
-- Other kinds: a singular noun phrase for a thing (Persona, Report), an imperative verb and its object for a goal (Send a reminder), a sentence that is true for a rule.
+- Emitted code is not a record. Do not write a technical record per emitted file; the generator and its contracts account for them. Leave generated output out of the `source` globs in `lathe.config.json`, so the untraced-file gaps do not list it.
+- The first line of every emitted file says it is generated and by what, so nobody edits it by hand. A check or test regenerates and compares (a drift check), so a stale or hand-edited file fails.
+- A declaration the generator reads from the records (a versioned query over them) is the one input; do not keep a second hand-written copy.
+- A mistake the generator would only find when it runs ("an archetype that does not exist") is refused when the record is written: declare the generator's input kinds with required fields and relations so the write fails, rather than checking afterward.
+- A record the generator needs that is provided by a dependency (a component the product uses but does not own) is a different thing from code the product owns. Mark which is which, so a check can flag hand-written accidental code that a dependency could provide.
 
 ## A product's own checks
 
-A house rule the schema cannot express, such as "every command has an endpoint", is a product check, not a new kind. Add it with `check_add_check`, with the product's `product_id`:
-
-- `name`: the mistake it finds, in kebab case (lower case with hyphens), such as `event-tense`. Do not reuse one of Lathe's check names (`check_list_checks` lists them).
-- `position`: its place in the run order; the product's checks run after Lathe's.
-- `severity`: `warning` for work still to do, `error` only for a broken workspace, as Lathe does, or `error_or_warning` when its rows say which.
-- `summary`: what it reports, in one sentence; `explanation`: why it matters, ending with how to fix what it reports. `REFERENCE.md` and the app show both.
-- `query`: one `SELECT` over the typed tables that returns a row for each problem it finds, with the columns Lathe's own checks return; read one of theirs with `check_get_check` and write yours the same way. The views `record_parent`, `record_scope`, `link` and `record_group` help: a record's parent, its product, domain and aggregate, every link of every relation, and a record's group (a flow step's path, or the `group_name` of any kind that has one, yours included).
-- `kinds`: the kinds it concerns.
-
-Run the `check` tool after adding one and fix what it finds; a check whose query fails is an error naming the check.
+A house rule the schema cannot express ("every command has an endpoint") is a product check, not a new kind. Name it for the mistake in kebab case (never one of Lathe's names); give it a severity (a warning for work still to do, an error only for a broken workspace), a one-sentence summary, an explanation that ends with how to fix what it reports, the kinds it concerns, and one query over the typed tables returning a row for each problem, written as Lathe's own checks are. Run the check after adding one and fix what it finds.
 
 ## Rules
 
-- Keep each `description` a plain sentence; the app shows it.
-- A required field must be given by every record of the kind, so a change that makes a field required while a record lacks it is refused. On a kind that has records, add the field with `required: false` (`product_change_product_kind`, whose `fields` replace the list), give it on each record with `extension_record_change_extension_record`, then change the field to `required: true`. A lead field is required from the start: declare it before the kind has records.
-- To remove a kind, first remove its records, then the declaration; a declaration still in use is refused.
-- Finish with the `check-and-fix` skill, and report the new coverage lines for a new obligation kind.
+- Finish with `check-and-fix`, and report the new coverage lines for a new obligation kind.

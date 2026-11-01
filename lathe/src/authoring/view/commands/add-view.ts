@@ -1,19 +1,15 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ViewRow } from '../../../platform/data/tables.ts';
-import { newView, VIEW_SLICE } from '../model.ts';
+import { newView } from '../model.ts';
 import { ViewRepository } from '../repository.ts';
+import { ADD_VIEW_IDENTITY } from './identities.generated.ts';
 
 /** A new view. */
 export type AddView = Pick<ViewRow, 'id' | 'title' | 'description' | 'route' | 'notes'>;
 
-export const ADD_VIEW: CommandDefinition<AddView> = {
-  id: 'LA-AUT-CMD310',
-  slice: VIEW_SLICE,
-  name: 'add-view',
-  description: 'Adds a view: a screen or page a person uses, with its route. It has no owner; its product follows from its ID.',
-  method: 'POST',
-  route: '/api/view/add-view',
+export const ADD_VIEW = {
+  ...ADD_VIEW_IDENTITY,
   input: {
     id: column('view', 'id', 'required'),
     title: column('view', 'title', 'required'),
@@ -22,7 +18,7 @@ export const ADD_VIEW: CommandDefinition<AddView> = {
     notes: column('view', 'notes', 'optional'),
   },
   handler: addView,
-};
+} satisfies CommandDefinition<AddView>;
 
 /** Adds the view, new and whole. */
 export function addView(tx: Transaction, input: AddView): void {

@@ -3,16 +3,16 @@ import type { KindEntry, ProductPage } from '../../../../lathe/src/authoring/pro
 import type { ProductRelationRow } from '../../../../lathe/src/platform/data/tables';
 import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
-import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
+import { addInput, addOrChangeFields, changeInput, CommandForm, draftOf, emptyDraft, Fields, formFields, LONG, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import { IdField, Refusal, problemText, type Choice } from '../../edit/fields';
-import { useWriter, type Writer } from '../../edit/write';
+import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { AddUnder, othersAddedUnder } from '../../record/pages';
 import { AddMenu } from '../../edit/AddMenu';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { addressOf } from '../../views/address';
-import { sendProduct, type ProductCommands, type ProductRoute } from './commands';
+import { PRODUCT_FIELDS } from './fields.generated';
 import { useNextProductId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
@@ -63,7 +63,7 @@ export interface DeclarationActions {
 }
 
 /** Sends a command whose input a form has built to its route's shape. */
-const send = (writer: Writer, route: ProductRoute, input: Record<string, unknown>) => sendProduct(writer, route, input as unknown as ProductCommands[typeof route]);
+const send = (writer: Writer, route: CommandRoute, input: Record<string, unknown>) => writer.command(route, input as unknown as CommandInputs[typeof route]);
 
 // ---------- Fields ----------
 
@@ -71,54 +71,24 @@ const send = (writer: Writer, route: ProductRoute, input: Record<string, unknown
 const productRecords = (index: RecordIndex, product: string): Choice[] =>
   [...index.byId.values()].filter((r) => r.product === product && r.id !== product).map((r) => ({ id: r.id, title: r.title }));
 
-const PRODUCT_FIELDS: FieldSpec[] = [
-  { field: 'title', column: 'title', table: 'product' },
-  { field: 'description', column: 'description', table: 'product', long: true },
-  { field: 'icon', column: 'icon', table: 'product' },
-  { field: 'color', column: 'color', table: 'product' },
-  { field: 'notes', column: 'notes', table: 'product', long: true },
-  { field: 'roles', label: 'Roles', description: 'The roles people and agents take in the product, each with what they do. The list replaces the roles.', table: 'role', columns: ['name', 'description'] },
-];
+const productFields = (): FieldSpec[] => formFields(PRODUCT_FIELDS['/api/product/change-product'], ['id'], { description: LONG, notes: LONG });
 
-const questionFields = (index: RecordIndex, product: string, adding: boolean): FieldSpec[] => [
-  ...(adding ? [{ field: 'id', column: 'id', table: 'question' }] : []),
-  { field: 'title', column: 'title', table: 'question' },
-  { field: 'owner', column: 'owner', table: 'question' },
-  { field: 'description', column: 'description', table: 'question', long: true },
-  { field: 'about', label: 'About', description: 'The records of the product it is about.', many: productRecords(index, product) },
-];
+// An open question is added under the product or one of its domains: the form sends whichever it is added under.
+const questionFields = (index: RecordIndex, product: string, adding: boolean): FieldSpec[] => {
+  const hints = { description: LONG, about: { choices: productRecords(index, product) } };
+  return adding ? formFields(PRODUCT_FIELDS['/api/product/add-question'], ['product_id', 'domain_id'], hints) : formFields(PRODUCT_FIELDS['/api/product/change-question'], ['id'], hints);
+};
 
-const interfaceFields = (adding: boolean): FieldSpec[] => [
-  ...(adding ? [{ field: 'id', column: 'id', table: 'interface' }] : []),
-  { field: 'title', column: 'title', table: 'interface' },
-  { field: 'kind', column: 'kind', table: 'interface' },
-  { field: 'description', column: 'description', table: 'interface', long: true },
-];
+const interfaceFields = (adding: boolean): FieldSpec[] =>
+  addOrChangeFields(adding, PRODUCT_FIELDS['/api/product/add-interface'], 'product_id', PRODUCT_FIELDS['/api/product/change-interface'], { description: LONG });
 
-const kindFields = (adding: boolean): FieldSpec[] => [
-  ...(adding ? [{ field: 'name', column: 'name', table: 'product_kind' }] : []),
-  { field: 'label', column: 'label', table: 'product_kind' },
-  { field: 'description', column: 'description', table: 'product_kind', long: true },
-  { field: 'parent_kind', column: 'parent_kind', table: 'product_kind' },
-  { field: 'stage', column: 'stage', table: 'product_kind' },
-  { field: 'obligation', column: 'obligation', table: 'product_kind' },
-  { field: 'id_pattern', column: 'id_pattern', table: 'product_kind' },
-  { field: 'id_example', column: 'id_example', table: 'product_kind' },
-  { field: 'title_form', column: 'title_form', table: 'product_kind' },
-  { field: 'fields', label: 'Fields', description: 'The kind\'s own columns, in order. The list replaces its fields.', table: 'product_kind_field', columns: ['name', 'type', 'required', 'description'] },
-];
+const kindFields = (adding: boolean): FieldSpec[] =>
+  addOrChangeFields(adding, PRODUCT_FIELDS['/api/product/declare-product-kind'], 'product_id', PRODUCT_FIELDS['/api/product/change-product-kind'], { description: LONG }, 'name');
 
-const relationFields = (adding: boolean): FieldSpec[] => [
-  ...(adding ? [
-    { field: 'name', column: 'name', table: 'product_relation' },
-    { field: 'source_kind', column: 'source_kind', table: 'product_relation' },
-    { field: 'target_kind', column: 'target_kind', table: 'product_relation' },
-  ] : []),
-  { field: 'role', column: 'role', table: 'product_relation' },
-  { field: 'forward_label', column: 'forward_label', table: 'product_relation' },
-  { field: 'reverse_label', column: 'reverse_label', table: 'product_relation' },
-  { field: 'description', column: 'description', table: 'product_relation', long: true },
-];
+// A relation's key is its name and the pair of kinds it links, which Change sends itself.
+const relationFields = (adding: boolean): FieldSpec[] => adding
+  ? formFields(PRODUCT_FIELDS['/api/product/declare-product-relation'], ['product_id'], { description: LONG })
+  : formFields(PRODUCT_FIELDS['/api/product/change-product-relation'], ['name', 'source_kind', 'target_kind'], { description: LONG });
 
 // ---------- The editor ----------
 
@@ -188,15 +158,15 @@ export function ProductEditor({ index, page, id, kind, children }: {
       {mode.mode === 'remove' && (
         <RemoveQuestion index={index} id={id} label={kind === 'question' ? 'open question' : 'interface'} goes={[]} onCancel={back}
           then={addressOf(kind === 'question' ? page.questions.find((q) => q.id === id)?.domain_id ?? product : product)}
-          remove={() => sendProduct(writer, kind === 'question' ? '/api/product/remove-question' : '/api/product/remove-interface', { id })} />
+          remove={() => writer.command(kind === 'question' ? '/api/product/remove-question' : '/api/product/remove-interface', { id })} />
       )}
       {mode.mode === 'remove-kind' && (
         <RemoveDeclaration title={`Remove the product kind ${mode.name}?`} what={`the product kind ${mode.name} with its fields`} onCancel={back}
-          remove={() => sendProduct(writer, '/api/product/remove-product-kind', { name: mode.name })} />
+          remove={() => writer.command('/api/product/remove-product-kind', { name: mode.name })} />
       )}
       {mode.mode === 'remove-relation' && (
         <RemoveDeclaration title={`Remove the product relation ${relationName(mode.relation)}?`} what={`the product relation ${relationName(mode.relation)}`} onCancel={back}
-          remove={() => sendProduct(writer, '/api/product/remove-product-relation', relationKey(mode.relation))} />
+          remove={() => writer.command('/api/product/remove-product-relation', relationKey(mode.relation))} />
       )}
       {children(actions)}
     </>
@@ -236,18 +206,18 @@ function DraftForm({ index, specs, initial, eyebrow, title, saveLabel, submit, o
 function ChangeForm({ context, id, kind }: { context: FormContext; id: string; kind: ProductRecordKind }) {
   const { index, page, writer, onDone } = context;
   const announce = useAnnounce();
-  const { specs, current, route, clearable, label } = (() => {
+  const { specs, current, route, label } = (() => {
     switch (kind) {
       case 'product':
-        return { specs: PRODUCT_FIELDS, current: { ...page.product, roles: page.roles } as Record<string, unknown>, route: '/api/product/change-product' as const, clearable: ['icon', 'color', 'notes'], label: 'Product' };
+        return { specs: productFields(), current: { ...page.product, roles: page.roles } as Record<string, unknown>, route: '/api/product/change-product' as const, label: 'Product' };
       case 'question':
-        return { specs: questionFields(index, page.product.id, false), current: page.questions.find((q) => q.id === id)! as unknown as Record<string, unknown>, route: '/api/product/change-question' as const, clearable: [], label: 'Open question' };
+        return { specs: questionFields(index, page.product.id, false), current: page.questions.find((q) => q.id === id)! as unknown as Record<string, unknown>, route: '/api/product/change-question' as const, label: 'Open question' };
       case 'interface':
-        return { specs: interfaceFields(false), current: page.interfaces.find((i) => i.id === id)! as unknown as Record<string, unknown>, route: '/api/product/change-interface' as const, clearable: [], label: 'Interface' };
+        return { specs: interfaceFields(false), current: page.interfaces.find((i) => i.id === id)! as unknown as Record<string, unknown>, route: '/api/product/change-interface' as const, label: 'Interface' };
     }
   })();
   const submit = async (draft: Draft) => {
-    const input = changeInput(index, specs, draft, current, { id }, clearable);
+    const input = changeInput(index, specs, draft, current, { id });
     if (Object.keys(input).length === 1) { announce('Nothing changed'); onDone(); return null; }
     const answer = await send(writer, route, input);
     if (answer.ok) { announce(`Saved ${id}`); onDone(); }
@@ -295,7 +265,7 @@ function KindForm({ context, kind }: { context: FormContext; kind: KindEntry | n
       if (answer.ok) { announce(`Declared ${String(input.name)}`); onDone(); }
       return answer;
     }
-    const input = changeInput(index, specs, draft, current, { name: kind.name }, ['stage', 'id_pattern', 'id_example', 'title_form']);
+    const input = changeInput(index, specs, draft, current, { name: kind.name });
     if (Object.keys(input).length === 1) { announce('Nothing changed'); onDone(); return null; }
     const answer = await send(writer, '/api/product/change-product-kind', input);
     if (answer.ok) { announce(`Saved ${kind.name}`); onDone(); }
@@ -321,7 +291,7 @@ function RelationForm({ context, relation }: { context: FormContext; relation: P
       if (answer.ok) { announce(`Declared ${String(input.name)}`); onDone(); }
       return answer;
     }
-    const input = changeInput(index, specs, draft, current, relationKey(relation), ['role']);
+    const input = changeInput(index, specs, draft, current, relationKey(relation));
     if (Object.keys(input).length === 3) { announce('Nothing changed'); onDone(); return null; }
     const answer = await send(writer, '/api/product/change-product-relation', input);
     if (answer.ok) { announce(`Saved ${relation.name}`); onDone(); }
@@ -343,7 +313,7 @@ function MoveForm({ context, id }: { context: FormContext; id: string }) {
   const choices: Choice[] = [{ id: page.product.id, title: page.product.title }, ...page.domains];
   const submit = async () => {
     if (under === here) { announce('Nothing changed'); onDone(); return null; }
-    const answer = await sendProduct(writer, '/api/product/move-question', under === page.product.id ? { id, product_id: under } : { id, domain_id: under });
+    const answer = await writer.command('/api/product/move-question', under === page.product.id ? { id, product_id: under } : { id, domain_id: under });
     if (answer.ok) { announce(`Moved ${id}`); onDone(); }
     return answer;
   };

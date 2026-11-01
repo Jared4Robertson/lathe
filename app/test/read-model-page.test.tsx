@@ -3,8 +3,6 @@ import { addChoices, chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { READ_MODEL_COMMANDS } from '../../lathe/src/authoring/read-model/commands/index';
-import type { ReadModelCommands } from '../src/authoring/read-model/commands';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows } from './fixtures/load';
 import { modelWorkspace } from './fixtures/model';
@@ -28,17 +26,6 @@ describe('LA-V143-R01-T01 a read model\'s records are read through the Read mode
     const { requests } = await openApp('/P-D-RM01-RD', { data: withReader() });
     expect(await within(main()).findByText('Reads the catalog view for the query handlers.')).toBeInTheDocument();
     expect(requests).toContain('GET /api/read-model/get-read-model?id=P-D-RM01-RD');
-  });
-
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof ReadModelCommands)[] = [
-      '/api/read-model/add-read-model', '/api/read-model/change-read-model', '/api/read-model/remove-read-model',
-      '/api/read-model/add-query', '/api/read-model/change-query', '/api/read-model/remove-query',
-      '/api/read-model/add-projection', '/api/read-model/change-projection', '/api/read-model/remove-projection',
-      '/api/read-model/add-reader', '/api/read-model/change-reader', '/api/read-model/remove-reader',
-      '/api/read-model/add-query-handler', '/api/read-model/change-query-handler', '/api/read-model/remove-query-handler',
-    ];
-    expect([...routes].sort()).toEqual(READ_MODEL_COMMANDS.map((c) => c.route).sort());
   });
 });
 

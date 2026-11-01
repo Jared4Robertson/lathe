@@ -307,6 +307,8 @@ export interface CheckRow {
   name: string;
   /** For a product's own check, the product; none for Lathe's checks. */
   product_id?: string;
+  /** The domain whose rules it reports: a domain of Lathe's own spec for Lathe's checks, of the product for its own. Not a foreign key, because Lathe's checks load into every product. */
+  domain_id: string;
   /** Its place in the run order, from 1: Lathe's checks run first, then the product's own. */
   position: number;
   /** What its rows report: error, warning, or error_or_warning when its rows say which. */
@@ -1065,6 +1067,8 @@ export interface ProductKindFieldRow {
   required: boolean;
   /** What the field holds. */
   description: string;
+  /** Whether the field's value is also the record's title, such as a module's file: every write sets the title from it, and a title that differs is refused. Only a required text field titles its kind, and at most one does. */
+  titles?: boolean;
 }
 
 /** A pair of kinds a product lets a relation link. A new relation name gets its own link table; a name Lathe already has adds the pair to that relation, when its link table's ends accept the two kinds. */

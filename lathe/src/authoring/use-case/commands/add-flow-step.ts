@@ -1,9 +1,9 @@
 import { column, id, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { FlowStepRow } from '../../../platform/data/tables.ts';
-import { USE_CASE_SLICE } from '../model.ts';
 import { UseCaseRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_FLOW_STEP_IDENTITY } from './identities.generated.ts';
 
 export type AddFlowStep = Pick<FlowStepRow, 'id' | 'title' | 'flow_id' | 'path' | 'position'> & {
   fulfills?: string[];
@@ -12,13 +12,8 @@ export type AddFlowStep = Pick<FlowStepRow, 'id' | 'title' | 'flow_id' | 'path' 
   exchanges_with?: string[];
 };
 
-export const ADD_FLOW_STEP: CommandDefinition<AddFlowStep> = {
-  id: 'LA-AUT-CMD110',
-  slice: USE_CASE_SLICE,
-  name: 'add-flow-step',
-  description: 'Adds a step to its flow, on a path at a position, with the requirements it fulfills, what it invokes, the view it happens in and the integrations it exchanges with.',
-  method: 'POST',
-  route: '/api/use-case/add-flow-step',
+export const ADD_FLOW_STEP = {
+  ...ADD_FLOW_STEP_IDENTITY,
   input: {
     id: column('flow_step', 'id', 'required'),
     title: column('flow_step', 'title', 'required'),
@@ -31,7 +26,7 @@ export const ADD_FLOW_STEP: CommandDefinition<AddFlowStep> = {
     exchanges_with: ids('The integrations it exchanges with.', 'optional'),
   },
   handler: addFlowStep,
-};
+} satisfies CommandDefinition<AddFlowStep>;
 
 export function addFlowStep(tx: Transaction, input: AddFlowStep): void {
   const useCases = new UseCaseRepository(tx);

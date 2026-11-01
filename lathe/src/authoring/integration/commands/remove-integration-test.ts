@@ -1,23 +1,18 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { INTEGRATION_SLICE } from '../model.ts';
 import { IntegrationRepository } from '../repository.ts';
+import { REMOVE_INTEGRATION_TEST_IDENTITY } from './identities.generated.ts';
 
 /** The integration test to remove. */
 export type RemoveIntegrationTest = { id: string };
 
-export const REMOVE_INTEGRATION_TEST: CommandDefinition<RemoveIntegrationTest> = {
-  id: 'LA-AUT-CMD343',
-  slice: INTEGRATION_SLICE,
-  name: 'remove-integration-test',
-  description: 'Removes an integration test with the links it starts. Refused while anything else references them.',
-  method: 'POST',
-  route: '/api/integration/remove-integration-test',
+export const REMOVE_INTEGRATION_TEST = {
+  ...REMOVE_INTEGRATION_TEST_IDENTITY,
   input: {
     id: column('integration_test', 'id', 'required'),
   },
   handler: removeIntegrationTest,
-};
+} satisfies CommandDefinition<RemoveIntegrationTest>;
 
 /** Removes the integration test from its integration. */
 export function removeIntegrationTest(tx: Transaction, input: RemoveIntegrationTest): void {

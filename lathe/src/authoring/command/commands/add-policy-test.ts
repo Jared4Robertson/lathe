@@ -1,19 +1,14 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PolicyTestRow } from '../../../platform/data/tables.ts';
-import { COMMAND_SLICE } from '../model.ts';
 import { CommandRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_POLICY_TEST_IDENTITY } from './identities.generated.ts';
 
 export type AddPolicyTest = Pick<PolicyTestRow, 'id' | 'title' | 'policy_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'when' | 'then' | 'notes'> & { starts_from?: string[] };
 
-export const ADD_POLICY_TEST: CommandDefinition<AddPolicyTest> = {
-  id: 'LA-AUT-CMD252',
-  slice: COMMAND_SLICE,
-  name: 'add-policy-test',
-  description: 'Adds the test of a policy, with the test data sets it starts from.',
-  method: 'POST',
-  route: '/api/command/add-policy-test',
+export const ADD_POLICY_TEST = {
+  ...ADD_POLICY_TEST_IDENTITY,
   input: {
     id: column('policy_test', 'id', 'required'),
     title: column('policy_test', 'title', 'required'),
@@ -31,7 +26,7 @@ export const ADD_POLICY_TEST: CommandDefinition<AddPolicyTest> = {
     starts_from: ids('The test data sets it starts from.', 'optional'),
   },
   handler: addPolicyTest,
-};
+} satisfies CommandDefinition<AddPolicyTest>;
 
 export function addPolicyTest(tx: Transaction, input: AddPolicyTest): void {
   const commands = new CommandRepository(tx);

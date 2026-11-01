@@ -1,19 +1,15 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { IntegrationTestRow } from '../../../platform/data/tables.ts';
-import { changed, INTEGRATION_SLICE } from '../model.ts';
+import { changed } from '../model.ts';
 import { IntegrationRepository } from '../repository.ts';
+import { CHANGE_INTEGRATION_TEST_IDENTITY } from './identities.generated.ts';
 
 /** The integration test's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeIntegrationTest = Pick<IntegrationTestRow, 'id'> & { title?: IntegrationTestRow['title']; level?: IntegrationTestRow['level']; state?: IntegrationTestRow['state']; when?: IntegrationTestRow['when']; then?: IntegrationTestRow['then']; file?: IntegrationTestRow['file'] | null; manual_reason?: IntegrationTestRow['manual_reason'] | null; size?: IntegrationTestRow['size'] | null; smoke?: IntegrationTestRow['smoke'] | null; external?: IntegrationTestRow['external'] | null; notes?: IntegrationTestRow['notes'] | null; starts_from?: string[] };
 
-export const CHANGE_INTEGRATION_TEST: CommandDefinition<ChangeIntegrationTest> = {
-  id: 'LA-AUT-CMD342',
-  slice: INTEGRATION_SLICE,
-  name: 'change-integration-test',
-  description: "Changes an integration test's columns or the test data sets it starts from (the whole list). Its integration does not change.",
-  method: 'POST',
-  route: '/api/integration/change-integration-test',
+export const CHANGE_INTEGRATION_TEST = {
+  ...CHANGE_INTEGRATION_TEST_IDENTITY,
   input: {
     id: column('integration_test', 'id', 'required'),
     title: column('integration_test', 'title', 'optional'),
@@ -30,7 +26,7 @@ export const CHANGE_INTEGRATION_TEST: CommandDefinition<ChangeIntegrationTest> =
     starts_from: ids('The test data sets it starts from. Replaces the list.', 'optional'),
   },
   handler: changeIntegrationTest,
-};
+} satisfies CommandDefinition<ChangeIntegrationTest>;
 
 /** Changes the integration test's columns and links. */
 export function changeIntegrationTest(tx: Transaction, input: ChangeIntegrationTest): void {

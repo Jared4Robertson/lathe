@@ -1,20 +1,16 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { InterfaceRow } from '../../../platform/data/tables.ts';
-import { PRODUCT_SLICE, changed } from '../model.ts';
+import { changed } from '../model.ts';
 import { ProductRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_INTERFACE_IDENTITY } from './identities.generated.ts';
 
 /** The interface's changes: a column given is set. */
 export type ChangeInterface = Pick<InterfaceRow, 'id'> & { title?: string; kind?: InterfaceRow['kind']; description?: string };
 
-export const CHANGE_INTERFACE: CommandDefinition<ChangeInterface> = {
-  id: 'LA-AUT-CMD133',
-  slice: PRODUCT_SLICE,
-  name: 'change-interface',
-  description: "Changes an interface's title, kind or description.",
-  method: 'POST',
-  route: '/api/product/change-interface',
+export const CHANGE_INTERFACE = {
+  ...CHANGE_INTERFACE_IDENTITY,
   input: {
     id: column('interface', 'id', 'required'),
     title: column('interface', 'title', 'optional'),
@@ -22,7 +18,7 @@ export const CHANGE_INTERFACE: CommandDefinition<ChangeInterface> = {
     description: column('interface', 'description', 'optional'),
   },
   handler: changeInterface,
-};
+} satisfies CommandDefinition<ChangeInterface>;
 
 /** Changes the interface's columns. */
 export function changeInterface(tx: Transaction, input: ChangeInterface): void {

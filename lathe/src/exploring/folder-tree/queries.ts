@@ -1,13 +1,11 @@
 // The Folder tree read (LA-EXP-RM02): a product's nav tree, which the nav, Quick open and the graph's tree read,
 // answered from the read model through its reader (reader.ts). Its handler never sees the data and changes nothing.
 // This slice holds only the read, so it names its read model where an aggregate's slice names its aggregate.
-import { id, type AnyQuery, type QueryDefinition, type Slice } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import type { FolderEntry, FolderTree, OwnerFolders } from './read-model.ts';
 import { folderTreeReader, type FolderTreeReader } from './reader.ts';
-
-/** How the interfaces reach the Folder tree read: `lathe folder-tree`, the folder_tree_ tools, /api/folder-tree/. */
-const FOLDER_TREE_SLICE: Slice = { aggregate: 'LA-EXP-RM02', name: 'folder-tree' };
+import { GET_FOLDER_TREE_IDENTITY } from './queries.generated.ts';
 
 /** The product's folder tree: Shared, then each domain's stages and folders. */
 export function getFolderTree(reader: FolderTreeReader, input: { product_id: string }): FolderTree {
@@ -24,17 +22,9 @@ const ownerLines = (o: OwnerFolders, indent: string): string[] => [
 
 /** Get a product's nav (LA-EXP-QRY05). */
 export const GET_FOLDER_TREE: QueryDefinition<{ product_id: string }, FolderTree, FolderTreeReader> = {
-  id: 'LA-EXP-QRY05',
-  slice: FOLDER_TREE_SLICE,
-  name: 'get-folder-tree',
-  method: 'GET',
-  route: '/api/folder-tree/get-folder-tree',
-  description: "Gets a product's nav tree: Shared with what the product shares, then each domain in ID order; in each its stages, in each stage one folder per kind in kind order with the records that start a branch there and what folds under each, then the kinds outside the stages.",
+  ...GET_FOLDER_TREE_IDENTITY,
   input: { product_id: id('The product.', 'required') },
   reader: folderTreeReader,
   run: getFolderTree,
   text: (t) => [`${t.product} Shared`, ...ownerLines(t.shared, '  '), ...t.domains.flatMap((d) => [`${d.owner} ${d.title}`, ...ownerLines(d, '  ')])].join('\n'),
 };
-
-/** The Folder tree read's queries, as the CLI and the MCP server register them. */
-export const FOLDER_TREE_QUERIES: readonly AnyQuery[] = [GET_FOLDER_TREE];

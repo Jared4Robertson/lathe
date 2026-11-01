@@ -1,23 +1,18 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { VALUE_OBJECT_SLICE } from '../model.ts';
 import { ValueObjectRepository } from '../repository.ts';
+import { REMOVE_CONSTRAINT_IDENTITY } from './identities.generated.ts';
 
 /** The constraint to remove. */
 export type RemoveConstraint = { id: string };
 
-export const REMOVE_CONSTRAINT: CommandDefinition<RemoveConstraint> = {
-  id: 'LA-AUT-CMD275',
-  slice: VALUE_OBJECT_SLICE,
-  name: 'remove-constraint',
-  description: 'Removes a constraint with its test and the links it starts. Refused while anything else references them.',
-  method: 'POST',
-  route: '/api/value-object/remove-constraint',
+export const REMOVE_CONSTRAINT = {
+  ...REMOVE_CONSTRAINT_IDENTITY,
   input: {
     id: column('constraint', 'id', 'required'),
   },
   handler: removeConstraint,
-};
+} satisfies CommandDefinition<RemoveConstraint>;
 
 /** Removes the constraint and its test from its value object. */
 export function removeConstraint(tx: Transaction, input: RemoveConstraint): void {

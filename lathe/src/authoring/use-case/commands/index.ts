@@ -1,4 +1,4 @@
-// The Use case aggregate's commands (LA-AUT-A11), as the CLI, the MCP server and the HTTP API register them.
+// Generated from data/ by `npm run generate`. Do not edit.
 import type { AnyCommand } from '../../../platform/commands/definition.ts';
 import { ADD_USE_CASE } from './add-use-case.ts';
 import { CHANGE_USE_CASE } from './change-use-case.ts';
@@ -20,7 +20,7 @@ import { ADD_FLOW_TEST } from './add-flow-test.ts';
 import { CHANGE_FLOW_TEST } from './change-flow-test.ts';
 import { REMOVE_FLOW_TEST } from './remove-flow-test.ts';
 
-export const USE_CASE_COMMANDS: readonly AnyCommand[] = [
+export const USE_CASE_COMMANDS = [
   ADD_USE_CASE,
   CHANGE_USE_CASE,
   MOVE_USE_CASE,
@@ -40,4 +40,4 @@ export const USE_CASE_COMMANDS: readonly AnyCommand[] = [
   ADD_FLOW_TEST,
   CHANGE_FLOW_TEST,
   REMOVE_FLOW_TEST,
-];
+] as const satisfies readonly AnyCommand[];

@@ -1,9 +1,10 @@
 import { column, ids, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EntityRow } from '../../../platform/data/tables.ts';
-import { AGGREGATE_SLICE, changed, fieldRows, type EntityFieldInput } from '../model.ts';
+import { changed, fieldRows, type EntityFieldInput } from '../model.ts';
 import { AggregateRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_ENTITY_IDENTITY } from './identities.generated.ts';
 
 /** The entity's changes: a column given is set, null clears an optional one; a list given replaces its list. */
 export type ChangeEntity = Pick<EntityRow, 'id'> & {
@@ -16,25 +17,20 @@ export type ChangeEntity = Pick<EntityRow, 'id'> & {
   has_many?: string[];
 };
 
-export const CHANGE_ENTITY: CommandDefinition<ChangeEntity> = {
-  id: 'LA-AUT-CMD214',
-  slice: AGGREGATE_SLICE,
-  name: 'change-entity',
-  description: "Changes an entity's title, role, description or whether it is stored in its root's table, or its fields (the whole list, in order) or the entities it holds (each list whole). Its aggregate does not change.",
-  method: 'POST',
-  route: '/api/aggregate/change-entity',
+export const CHANGE_ENTITY = {
+  ...CHANGE_ENTITY_IDENTITY,
   input: {
     id: column('entity', 'id', 'required'),
     title: column('entity', 'title', 'optional'),
     role: column('entity', 'role', 'optional'),
     in_root_table: column('entity', 'in_root_table', 'clearable'),
     description: column('entity', 'description', 'optional'),
-    fields: parts('entity_field', ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'], 'Its fields, in order. Replaces the list.', 'optional'),
+    fields: parts('entity_field', ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'], 'Its fields, in order: each its name, meaning, one type (a basic type, a value object or an aggregate), whether it is required, and its column name and an example when it has them. Replaces the list.', 'optional'),
     has_one: ids('The entities of its aggregate it holds exactly one of. Replaces the list.', 'optional'),
     has_many: ids('The entities of its aggregate it holds any number of. Replaces the list.', 'optional'),
   },
   handler: changeEntity,
-};
+} satisfies CommandDefinition<ChangeEntity>;
 
 /** Changes the entity's columns, fields and links. */
 export function changeEntity(tx: Transaction, input: ChangeEntity): void {

@@ -1,4 +1,4 @@
-// The Pattern aggregate's commands, as the CLI, the MCP server and the HTTP API register them.
+// Generated from data/ by `npm run generate`. Do not edit.
 import type { AnyCommand } from '../../../platform/commands/definition.ts';
 import { ADD_PATTERN } from './add-pattern.ts';
 import { CHANGE_PATTERN } from './change-pattern.ts';
@@ -10,7 +10,7 @@ import { ADD_PATTERN_RULE_TEST } from './add-pattern-rule-test.ts';
 import { CHANGE_PATTERN_RULE_TEST } from './change-pattern-rule-test.ts';
 import { REMOVE_PATTERN_RULE_TEST } from './remove-pattern-rule-test.ts';
 
-export const PATTERN_COMMANDS: readonly AnyCommand[] = [
+export const PATTERN_COMMANDS = [
   ADD_PATTERN,
   CHANGE_PATTERN,
   REMOVE_PATTERN,
@@ -20,4 +20,4 @@ export const PATTERN_COMMANDS: readonly AnyCommand[] = [
   ADD_PATTERN_RULE_TEST,
   CHANGE_PATTERN_RULE_TEST,
   REMOVE_PATTERN_RULE_TEST,
-];
+] as const satisfies readonly AnyCommand[];

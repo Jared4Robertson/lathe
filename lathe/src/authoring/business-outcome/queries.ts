@@ -1,12 +1,12 @@
 // The Business outcome aggregate's own reads (read model LA-AUT-RM36): an outcome's page, the outcomes of a product,
 // and the next free ID for one. Each reads only the read model, through its reader (reader.ts), and changes
 // nothing.
-import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { BUSINESS_OUTCOME_SLICE } from './model.ts';
 import type { BusinessOutcomePage, BusinessOutcomeSummary } from './read-model.ts';
 import { businessOutcomeReader, type BusinessOutcomeReader } from './reader.ts';
+import { GET_BUSINESS_OUTCOME_IDENTITY, LIST_BUSINESS_OUTCOMES_IDENTITY, NEXT_BUSINESS_OUTCOME_ID_IDENTITY } from './queries.generated.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
@@ -21,12 +21,7 @@ export function getBusinessOutcome(reader: BusinessOutcomeReader, input: { id: s
 
 /** Get a business outcome whole (LA-AUT-QRY115). */
 export const GET_BUSINESS_OUTCOME: QueryDefinition<{ id: string }, BusinessOutcomePage, BusinessOutcomeReader> = {
-  id: 'LA-AUT-QRY115',
-  slice: BUSINESS_OUTCOME_SLICE,
-  name: 'get-business-outcome',
-  description: 'Reads a business outcome whole, by its ID: its statement, measure and target, the tests and records that measure it, and the capabilities that serve it.',
-  method: 'GET',
-  route: '/api/business-outcome/get-business-outcome',
+  ...GET_BUSINESS_OUTCOME_IDENTITY,
   input: { id: id('The business outcome.', 'required') },
   reader: businessOutcomeReader,
   run: getBusinessOutcome,
@@ -41,12 +36,7 @@ export function listBusinessOutcomes(reader: BusinessOutcomeReader, input: { pro
 
 /** List the business outcomes of a product (LA-AUT-QRY116). */
 export const LIST_BUSINESS_OUTCOMES: QueryDefinition<{ product_id: string }, BusinessOutcomeSummary[], BusinessOutcomeReader> = {
-  id: 'LA-AUT-QRY116',
-  slice: BUSINESS_OUTCOME_SLICE,
-  name: 'list-business-outcomes',
-  description: 'Lists the business outcomes of a product, by ID, with their titles.',
-  method: 'GET',
-  route: '/api/business-outcome/list-business-outcomes',
+  ...LIST_BUSINESS_OUTCOMES_IDENTITY,
   input: { product_id: id('The product.', 'required') },
   reader: businessOutcomeReader,
   run: listBusinessOutcomes,
@@ -62,12 +52,7 @@ export function nextBusinessOutcomeId(reader: BusinessOutcomeReader, input: { pr
 
 /** Get the next ID for a business outcome (LA-AUT-QRY117). */
 export const NEXT_BUSINESS_OUTCOME_ID: QueryDefinition<{ product_id: string }, string, BusinessOutcomeReader> = {
-  id: 'LA-AUT-QRY117',
-  slice: BUSINESS_OUTCOME_SLICE,
-  name: 'next-id',
-  description: 'The next free ID for a business outcome of a product: one past the highest in use.',
-  method: 'GET',
-  route: '/api/business-outcome/next-id',
+  ...NEXT_BUSINESS_OUTCOME_ID_IDENTITY,
   input: { product_id: id('The product it will sit under.', 'required') },
   reader: businessOutcomeReader,
   run: nextBusinessOutcomeId,
@@ -84,6 +69,3 @@ function outcomeText(outcome: BusinessOutcomePage): string {
   if (outcome.servedBy.length) lines.push(`  served by: ${outcome.servedBy.join(', ')}`);
   return lines.join('\n');
 }
-
-/** The Business outcome aggregate's queries, as the CLI and the MCP server register them. */
-export const BUSINESS_OUTCOME_QUERIES: readonly AnyQuery[] = [GET_BUSINESS_OUTCOME, LIST_BUSINESS_OUTCOMES, NEXT_BUSINESS_OUTCOME_ID];

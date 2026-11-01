@@ -1,12 +1,13 @@
 // The View aggregate's own reads, each answered from its read model (LA-AUT-RM32) through its reader (reader.ts), which
 // the query runner gives each handler: a view whole, the views of a product, and the next free ID for a record of one
 // of its kinds. A handler never sees the data, a repository or the aggregate's model; each changes nothing.
-import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { VIEW_SLICE, type ViewKind } from './model.ts';
+import { type ViewKind } from './model.ts';
 import type { ViewPage, ViewSummary } from './read-model.ts';
 import { viewReader, type ViewReader } from './reader.ts';
+import { GET_VIEW_IDENTITY, LIST_VIEWS_IDENTITY, NEXT_VIEW_ID_IDENTITY } from './queries.generated.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
@@ -21,12 +22,7 @@ export function getView(reader: ViewReader, input: { id: string }): ViewPage {
 
 /** GET a view whole (LA-AUT-QRY190). */
 export const GET_VIEW: QueryDefinition<{ id: string }, ViewPage, ViewReader> = {
-  id: 'LA-AUT-QRY190',
-  slice: VIEW_SLICE,
-  name: 'get-view',
-  method: 'GET',
-  route: '/api/view/get-view',
-  description: "Reads a view whole as its page shows it, by its ID or the ID of any requirement or test in it: the record asked for and its kind, the view's row, and its requirements by ID, each with its tests (with the test data sets they start from).",
+  ...GET_VIEW_IDENTITY,
   input: { id: id('The view, or a view requirement or view test in it.', 'required') },
   reader: viewReader,
   run: getView,
@@ -40,12 +36,7 @@ export function listViews(reader: ViewReader, input: { product_id: string }): Vi
 
 /** List the views of a product (LA-AUT-QRY191). */
 export const LIST_VIEWS: QueryDefinition<{ product_id: string }, ViewSummary[], ViewReader> = {
-  id: 'LA-AUT-QRY191',
-  slice: VIEW_SLICE,
-  name: 'list-views',
-  method: 'GET',
-  route: '/api/view/list-views',
-  description: 'Lists the views of a product, by ID, with their titles.',
+  ...LIST_VIEWS_IDENTITY,
   input: { product_id: id('The product.', 'required') },
   reader: viewReader,
   run: listViews,
@@ -67,12 +58,7 @@ export function nextViewId(reader: ViewReader, input: { kind: string; parent: st
 
 /** Get the next ID in a view (LA-AUT-QRY192). */
 export const NEXT_VIEW_ID: QueryDefinition<{ kind: string; parent: string }, string, ViewReader> = {
-  id: 'LA-AUT-QRY192',
-  slice: VIEW_SLICE,
-  name: 'next-id',
-  method: 'GET',
-  route: '/api/view/next-id',
-  description: 'The next free ID for a view (under a product), a view requirement (under a view) or a view test (under a view requirement): one past the highest in use.',
+  ...NEXT_VIEW_ID_IDENTITY,
   input: {
     kind: id('The kind: view, view_requirement or view_test.', 'required'),
     parent: id('The record it will sit under: for a view, its product.', 'required'),
@@ -93,6 +79,3 @@ function viewText(page: ViewPage): string {
   }
   return lines.join('\n');
 }
-
-/** The View aggregate's queries, as the CLI and the MCP server register them. */
-export const VIEW_QUERIES: readonly AnyQuery[] = [GET_VIEW, LIST_VIEWS, NEXT_VIEW_ID];

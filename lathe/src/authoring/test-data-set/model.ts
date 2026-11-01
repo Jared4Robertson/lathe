@@ -1,15 +1,8 @@
 // The Test data set aggregate (LA-AUT-A17): what some tests start from, in one domain: its environment, accounts and
 // records, how to prepare and reset it, and the file that builds it. One instance is one test data set; tests link to
 // it with starts_from, a link their own aggregates start.
-import type { Slice } from '../../platform/commands/definition.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { TestDataSetRow } from '../../platform/data/tables.ts';
-
-/** The aggregate's record ID in Lathe's own spec. */
-export const TEST_DATA_SET_AGGREGATE = 'LA-AUT-A17';
-
-/** How the interfaces reach the aggregate's commands: `lathe test-data-set`, the test_data_set_ tools, /api/test-data-set/. */
-export const TEST_DATA_SET_SLICE: Slice = { aggregate: TEST_DATA_SET_AGGREGATE, name: 'test-data-set' };
 
 /**
  * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.

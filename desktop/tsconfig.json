@@ -13,7 +13,7 @@
     "skipLibCheck": true,
     "noEmit": true,
     "types": ["node"],
-    "paths": { "lathe-desktop-bridge": ["../app/src/shell/desktop-bridge.ts"] }
+    "paths": { "lathe-desktop-bridge": ["../app/src/shell/desktop-bridge.ts"], "lathe-config": ["../lathe/src/config.ts"] }
   },
   "include": ["src", "test", "scripts", "vitest.config.ts"]
 }

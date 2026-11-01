@@ -1,20 +1,15 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ValueTypeRow } from '../../../platform/data/tables.ts';
-import { VALUE_OBJECT_SLICE } from '../model.ts';
 import { ValueObjectRepository } from '../repository.ts';
 import { refuseBroken } from '../../../platform/data/rules.ts';
 import { valueObjectOneEach } from '../rules.ts';
+import { ADD_VALUE_TYPE_IDENTITY } from './identities.generated.ts';
 
 export type AddValueType = Pick<ValueTypeRow, 'id' | 'title' | 'value_object_id' | 'file'> & { meets?: string[]; packages?: string[] };
 
-export const ADD_VALUE_TYPE: CommandDefinition<AddValueType> = {
-  id: 'LA-AUT-CMD276',
-  slice: VALUE_OBJECT_SLICE,
-  name: 'add-value-type',
-  description: 'Adds the value type of a value object, its one piece of code, with the standard rules it meets and the packages it uses.',
-  method: 'POST',
-  route: '/api/value-object/add-value-type',
+export const ADD_VALUE_TYPE = {
+  ...ADD_VALUE_TYPE_IDENTITY,
   input: {
     id: column('value_type', 'id', 'required'),
     title: column('value_type', 'title', 'required'),
@@ -24,7 +19,7 @@ export const ADD_VALUE_TYPE: CommandDefinition<AddValueType> = {
     packages: texts("The packages it uses, by their names in the product's package.json files.", 'optional'),
   },
   handler: addValueType,
-};
+} satisfies CommandDefinition<AddValueType>;
 
 /** Adds the value type to its value object, which has none yet. */
 export function addValueType(tx: Transaction, input: AddValueType): void {

@@ -2,8 +2,6 @@ import type { ServedData } from './read-view';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { TEST_DATA_SET_COMMANDS } from '../../lathe/src/authoring/test-data-set/commands/index';
-import type { TestDataSetCommands } from '../src/authoring/test-data-set/commands';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
@@ -30,11 +28,6 @@ describe('LA-V121-R01-T01 a test data set\'s page reads it through its own query
     const { requests } = await openApp('/DM-SHOP-TD01', { data: withDataSet() });
     expect(await within(main()).findByText('A shopper part-way through shopping.')).toBeInTheDocument();
     expect(requests).toContain('GET /api/test-data-set/get-test-data-set?id=DM-SHOP-TD01');
-  });
-
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof TestDataSetCommands)[] = ['/api/test-data-set/add-test-data-set', '/api/test-data-set/change-test-data-set', '/api/test-data-set/remove-test-data-set'];
-    expect([...routes].sort()).toEqual(TEST_DATA_SET_COMMANDS.map((c) => c.route).sort());
   });
 });
 

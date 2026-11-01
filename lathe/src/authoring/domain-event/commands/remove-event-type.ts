@@ -1,23 +1,18 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { DOMAIN_EVENT_SLICE } from '../model.ts';
 import { DomainEventRepository } from '../repository.ts';
+import { REMOVE_EVENT_TYPE_IDENTITY } from './identities.generated.ts';
 
 /** The event type to remove. */
 export type RemoveEventType = { id: string };
 
-export const REMOVE_EVENT_TYPE: CommandDefinition<RemoveEventType> = {
-  id: 'LA-AUT-CMD235',
-  slice: DOMAIN_EVENT_SLICE,
-  name: 'remove-event-type',
-  description: 'Removes an event type with the links it starts and the packages it uses. Refused while anything else references it.',
-  method: 'POST',
-  route: '/api/domain-event/remove-event-type',
+export const REMOVE_EVENT_TYPE = {
+  ...REMOVE_EVENT_TYPE_IDENTITY,
   input: {
     id: column('event_type', 'id', 'required'),
   },
   handler: removeEventType,
-};
+} satisfies CommandDefinition<RemoveEventType>;
 
 /** Removes the event type from its event. */
 export function removeEventType(tx: Transaction, input: RemoveEventType): void {

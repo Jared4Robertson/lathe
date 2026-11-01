@@ -29,7 +29,7 @@ const test = (changes: Record<string, string | undefined>) => changing(complete(
 
 /** A product check row, valid unless changed. */
 const check = (changes: Record<string, string | number> = {}): Data => ({
-  check: [{ name: 'house-rule', product_id: 'EX', position: 1, severity: 'warning', summary: 'A house rule.', explanation: 'Made for this test. Fix what it reports.', query: "SELECT 'EX' AS record, 'Seen.' AS message", ...changes }],
+  check: [{ name: 'house-rule', product_id: 'EX', domain_id: 'LA-CHK', position: 1, severity: 'warning', summary: 'A house rule.', explanation: 'Made for this test. Fix what it reports.', query: "SELECT 'EX' AS record, 'Seen.' AS message", ...changes }],
 });
 
 describe('one problem per mistake', () => {

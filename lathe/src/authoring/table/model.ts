@@ -2,16 +2,12 @@
 // link table or an outbox, are stored, with its keys in order, the data store it is kept in, the standard rules it
 // meets and the packages it uses.
 // One instance is one table, whole; it holds only the links its own record starts.
-import type { Slice } from '../../platform/commands/definition.ts';
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { TableKeyRow, TableRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const TABLE_AGGREGATE = 'LA-AUT-A18';
-
-/** How the interfaces reach the aggregate's commands: `lathe table`, the table_ tools, /api/table/. */
-export const TABLE_SLICE: Slice = { aggregate: TABLE_AGGREGATE, name: 'table' };
 
 /**
  * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.

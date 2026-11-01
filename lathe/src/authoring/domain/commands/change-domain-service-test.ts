@@ -1,20 +1,16 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { DomainServiceTestRow } from '../../../platform/data/tables.ts';
-import { DOMAIN_SLICE, changed } from '../model.ts';
+import { changed } from '../model.ts';
 import { DomainRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_DOMAIN_SERVICE_TEST_IDENTITY } from './identities.generated.ts';
 
 /** The test's changes: a column given is set, null clears an optional one; starts_from, when given, replaces the list. */
 export type ChangeDomainServiceTest = Pick<DomainServiceTestRow, 'id'> & { title?: DomainServiceTestRow['title']; level?: DomainServiceTestRow['level']; state?: DomainServiceTestRow['state']; file?: DomainServiceTestRow['file'] | null; manual_reason?: DomainServiceTestRow['manual_reason'] | null; size?: DomainServiceTestRow['size'] | null; smoke?: DomainServiceTestRow['smoke'] | null; external?: DomainServiceTestRow['external'] | null; when?: DomainServiceTestRow['when']; then?: DomainServiceTestRow['then']; notes?: DomainServiceTestRow['notes'] | null; starts_from?: string[] };
 
-export const CHANGE_DOMAIN_SERVICE_TEST: CommandDefinition<ChangeDomainServiceTest> = {
-  id: 'LA-AUT-CMD179',
-  slice: DOMAIN_SLICE,
-  name: 'change-domain-service-test',
-  description: "Changes a domain service test's columns or the test data sets it starts from (the whole list).",
-  method: 'POST',
-  route: '/api/domain/change-domain-service-test',
+export const CHANGE_DOMAIN_SERVICE_TEST = {
+  ...CHANGE_DOMAIN_SERVICE_TEST_IDENTITY,
   input: {
     id: column('domain_service_test', 'id', 'required'),
     title: column('domain_service_test', 'title', 'optional'),
@@ -31,7 +27,7 @@ export const CHANGE_DOMAIN_SERVICE_TEST: CommandDefinition<ChangeDomainServiceTe
     starts_from: ids('The test data sets it starts from. Replaces the list.', 'optional'),
   },
   handler: changeDomainServiceTest,
-};
+} satisfies CommandDefinition<ChangeDomainServiceTest>;
 
 /** Changes the test's columns and the data sets it starts from. */
 export function changeDomainServiceTest(tx: Transaction, input: ChangeDomainServiceTest): void {

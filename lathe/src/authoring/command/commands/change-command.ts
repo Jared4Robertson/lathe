@@ -1,20 +1,16 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { CommandRow } from '../../../platform/data/tables.ts';
-import { changed, COMMAND_SLICE } from '../model.ts';
+import { changed } from '../model.ts';
 import { CommandRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_COMMAND_IDENTITY } from './identities.generated.ts';
 
 /** The command's changes: a column given is set; a list given replaces its list. */
 export type ChangeCommand = Pick<CommandRow, 'id'> & { title?: string; description?: string; raises?: string[]; checks?: string[]; calls?: string[] };
 
-export const CHANGE_COMMAND: CommandDefinition<ChangeCommand> = {
-  id: 'LA-AUT-CMD241',
-  slice: COMMAND_SLICE,
-  name: 'change-command',
-  description: "Changes a command's title or description, or the events it raises, the specifications it checks or the domain services it calls (each list whole). The entity it changes does not change.",
-  method: 'POST',
-  route: '/api/command/change-command',
+export const CHANGE_COMMAND = {
+  ...CHANGE_COMMAND_IDENTITY,
   input: {
     id: column('command', 'id', 'required'),
     title: column('command', 'title', 'optional'),
@@ -24,7 +20,7 @@ export const CHANGE_COMMAND: CommandDefinition<ChangeCommand> = {
     calls: ids('The domain services of its domain it calls. Replaces the list.', 'optional'),
   },
   handler: changeCommand,
-};
+} satisfies CommandDefinition<ChangeCommand>;
 
 /** Changes the command's columns and links. */
 export function changeCommand(tx: Transaction, input: ChangeCommand): void {

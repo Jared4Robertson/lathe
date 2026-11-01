@@ -1,19 +1,14 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { QueryRow } from '../../../platform/data/tables.ts';
-import { READ_MODEL_SLICE } from '../model.ts';
 import { ReadModelRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_QUERY_IDENTITY } from './identities.generated.ts';
 
 export type AddQuery = Pick<QueryRow, 'id' | 'title' | 'read_model_id' | 'description'> & { selects_by?: string[]; calls?: string[] };
 
-export const ADD_QUERY: CommandDefinition<AddQuery> = {
-  id: 'LA-AUT-CMD288',
-  slice: READ_MODEL_SLICE,
-  name: 'add-query',
-  description: 'Adds a query to the read model it reads, with the specifications it selects by and the domain services it calls.',
-  method: 'POST',
-  route: '/api/read-model/add-query',
+export const ADD_QUERY = {
+  ...ADD_QUERY_IDENTITY,
   input: {
     id: column('query', 'id', 'required'),
     title: column('query', 'title', 'required'),
@@ -23,7 +18,7 @@ export const ADD_QUERY: CommandDefinition<AddQuery> = {
     calls: ids('The domain services it calls, of its own domain.', 'optional'),
   },
   handler: addQuery,
-};
+} satisfies CommandDefinition<AddQuery>;
 
 /** Adds the query to its read model. */
 export function addQuery(tx: Transaction, input: AddQuery): void {

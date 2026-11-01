@@ -1,20 +1,16 @@
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ProductKindRow } from '../../../platform/data/tables.ts';
-import { PRODUCT_SLICE, fieldsOf, type FieldInput } from '../model.ts';
+import { fieldsOf, type FieldInput } from '../model.ts';
 import { ProductRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { DECLARE_PRODUCT_KIND_IDENTITY } from './identities.generated.ts';
 
 /** A new product kind: its declaration, and its fields in order. */
 export type DeclareProductKind = Pick<ProductKindRow, 'name' | 'product_id' | 'label' | 'description' | 'parent_kind' | 'stage' | 'obligation' | 'id_pattern' | 'id_example' | 'title_form'> & { fields?: FieldInput[] };
 
-export const DECLARE_PRODUCT_KIND: CommandDefinition<DeclareProductKind> = {
-  id: 'LA-AUT-CMD122',
-  slice: PRODUCT_SLICE,
-  name: 'declare-product-kind',
-  description: "Declares a kind of the product's own, with its fields in order: the next load gives it a table of its own.",
-  method: 'POST',
-  route: '/api/product/declare-product-kind',
+export const DECLARE_PRODUCT_KIND = {
+  ...DECLARE_PRODUCT_KIND_IDENTITY,
   input: {
     name: column('product_kind', 'name', 'required'),
     product_id: column('product_kind', 'product_id', 'required'),
@@ -26,10 +22,10 @@ export const DECLARE_PRODUCT_KIND: CommandDefinition<DeclareProductKind> = {
     id_pattern: column('product_kind', 'id_pattern', 'optional'),
     id_example: column('product_kind', 'id_example', 'optional'),
     title_form: column('product_kind', 'title_form', 'optional'),
-    fields: parts('product_kind_field', ['name', 'type', 'required', 'description'], 'The columns its table adds after id, title and the parent column, in order: each a name, type, whether it is required, and a description.', 'optional'),
+    fields: parts('product_kind_field', ['name', 'type', 'required', 'description', 'titles'], 'The columns its table adds after id, title and the parent column, in order: each a name, type, whether it is required, a description, and whether it titles the records.', 'optional'),
   },
   handler: declareProductKind,
-};
+} satisfies CommandDefinition<DeclareProductKind>;
 
 /** Adds the kind and its fields to the product that declares it. */
 export function declareProductKind(tx: Transaction, input: DeclareProductKind): void {

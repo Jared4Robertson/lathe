@@ -1,20 +1,16 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { DomainRow } from '../../../platform/data/tables.ts';
-import { DOMAIN_SLICE, newDomain } from '../model.ts';
+import { newDomain } from '../model.ts';
 import { DomainRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { ADD_DOMAIN_IDENTITY } from './identities.generated.ts';
 
 /** A new domain: its row. */
 export type AddDomain = Pick<DomainRow, 'id' | 'title' | 'product_id' | 'subdomain_type' | 'description' | 'notes'>;
 
-export const ADD_DOMAIN: CommandDefinition<AddDomain> = {
-  id: 'LA-AUT-CMD160',
-  slice: DOMAIN_SLICE,
-  name: 'add-domain',
-  description: 'Adds a domain to its product, with nothing in it yet.',
-  method: 'POST',
-  route: '/api/domain/add-domain',
+export const ADD_DOMAIN = {
+  ...ADD_DOMAIN_IDENTITY,
   input: {
     id: column('domain', 'id', 'required'),
     title: column('domain', 'title', 'required'),
@@ -24,7 +20,7 @@ export const ADD_DOMAIN: CommandDefinition<AddDomain> = {
     notes: column('domain', 'notes', 'optional'),
   },
   handler: addDomain,
-};
+} satisfies CommandDefinition<AddDomain>;
 
 /** Adds the domain, whole and new. */
 export function addDomain(tx: Transaction, input: AddDomain): void {

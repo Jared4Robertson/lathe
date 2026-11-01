@@ -76,7 +76,7 @@
 {"id":"LA-AUT-EN90-TB","title":"reader","entity_id":"LA-AUT-EN90","name":"reader","storage":"table","file":"lathe/schema/007-technical-specification.sql"}
 {"id":"LA-AUT-EN96-TB","title":"rule","entity_id":"LA-AUT-EN96","name":"rule","storage":"table","file":"lathe/schema/007-technical-specification.sql"}
 {"id":"LA-AUT-RM01-TB","title":"Reference","read_model_id":"LA-AUT-RM01","name":"Reference","storage":"in memory","file":"lathe/src/index.ts"}
-{"id":"LA-AUT-RM02-TB","title":"DataFiles","read_model_id":"LA-AUT-RM02","name":"DataFiles","storage":"in memory","file":"desktop/src/records.ts"}
+{"id":"LA-AUT-RM02-TB","title":"RecordDataFileTable","read_model_id":"LA-AUT-RM02","name":"RecordDataFileTable","storage":"in memory","file":"lathe/src/authoring/record-data-file/read-model.ts"}
 {"id":"LA-AUT-RM11-TB","title":"UseCaseTable","read_model_id":"LA-AUT-RM11","name":"UseCaseTable","storage":"in memory","file":"lathe/src/authoring/use-case/read-model.ts"}
 {"id":"LA-AUT-RM21-TB","title":"Product","read_model_id":"LA-AUT-RM21","name":"Product","storage":"in memory","file":"lathe/src/authoring/product/model.ts"}
 {"id":"LA-AUT-RM22-TB","title":"PatternTable","read_model_id":"LA-AUT-RM22","name":"PatternTable","storage":"in memory","file":"lathe/src/authoring/pattern/read-model.ts"}

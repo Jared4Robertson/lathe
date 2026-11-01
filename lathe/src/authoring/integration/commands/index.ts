@@ -1,4 +1,4 @@
-// The Integration aggregate's commands (LA-AUT-A14), as the CLI, the MCP server and the HTTP API register them.
+// Generated from data/ by `npm run generate`. Do not edit.
 import type { AnyCommand } from '../../../platform/commands/definition.ts';
 import { ADD_INTEGRATION } from './add-integration.ts';
 import { CHANGE_INTEGRATION } from './change-integration.ts';
@@ -10,7 +10,7 @@ import { ADD_INTEGRATION_TEST } from './add-integration-test.ts';
 import { CHANGE_INTEGRATION_TEST } from './change-integration-test.ts';
 import { REMOVE_INTEGRATION_TEST } from './remove-integration-test.ts';
 
-export const INTEGRATION_COMMANDS: readonly AnyCommand[] = [
+export const INTEGRATION_COMMANDS = [
   ADD_INTEGRATION,
   CHANGE_INTEGRATION,
   REMOVE_INTEGRATION,
@@ -20,4 +20,4 @@ export const INTEGRATION_COMMANDS: readonly AnyCommand[] = [
   ADD_INTEGRATION_TEST,
   CHANGE_INTEGRATION_TEST,
   REMOVE_INTEGRATION_TEST,
-];
+] as const satisfies readonly AnyCommand[];

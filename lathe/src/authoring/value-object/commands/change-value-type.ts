@@ -1,19 +1,15 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ValueTypeRow } from '../../../platform/data/tables.ts';
-import { VALUE_OBJECT_SLICE, changed } from '../model.ts';
+import { changed } from '../model.ts';
 import { ValueObjectRepository } from '../repository.ts';
+import { CHANGE_VALUE_TYPE_IDENTITY } from './identities.generated.ts';
 
 /** The value type's changes: a column given is set, null clears an optional one; a list given replaces the list. */
 export type ChangeValueType = Pick<ValueTypeRow, 'id'> & { title?: ValueTypeRow['title']; file?: ValueTypeRow['file'] | null; meets?: string[]; packages?: string[] };
 
-export const CHANGE_VALUE_TYPE: CommandDefinition<ChangeValueType> = {
-  id: 'LA-AUT-CMD277',
-  slice: VALUE_OBJECT_SLICE,
-  name: 'change-value-type',
-  description: "Changes a value type's title or file, or the standard rules it meets or packages it uses (each the whole list).",
-  method: 'POST',
-  route: '/api/value-object/change-value-type',
+export const CHANGE_VALUE_TYPE = {
+  ...CHANGE_VALUE_TYPE_IDENTITY,
   input: {
     id: column('value_type', 'id', 'required'),
     title: column('value_type', 'title', 'optional'),
@@ -22,7 +18,7 @@ export const CHANGE_VALUE_TYPE: CommandDefinition<ChangeValueType> = {
     packages: texts("The packages it uses, by their names in the product's package.json files. Replaces the list.", 'optional'),
   },
   handler: changeValueType,
-};
+} satisfies CommandDefinition<ChangeValueType>;
 
 /** Changes the value type's columns, links and packages. */
 export function changeValueType(tx: Transaction, input: ChangeValueType): void {

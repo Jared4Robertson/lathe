@@ -3,9 +3,7 @@ import { addChoices, chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { AGGREGATE_COMMANDS } from '../../lathe/src/authoring/aggregate/commands/index';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
-import type { AggregateCommands } from '../src/authoring/aggregate/commands';
 import { addressOf } from '../src/views/address';
 import { addRows, setRow } from './fixtures/load';
 import { modelWorkspace } from './fixtures/model';
@@ -42,15 +40,6 @@ describe('LA-V130-R01-T01 an aggregate\'s records are read through the Aggregate
     expect(requests).toContain('GET /api/aggregate/get-aggregate?id=DM-SHOP-EN01');
     expect(within(section(/^Data model/)).getByRole('link', { name: /DM-SHOP-EN01-DM/ })).toBeInTheDocument();
     expect(within(section(/^Commands/)).getByRole('link', { name: /DM-SHOP-CMD01/ })).toBeInTheDocument();
-  });
-
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
-    const routes: (keyof AggregateCommands)[] = [
-      '/api/aggregate/add-aggregate', '/api/aggregate/add-data-model', '/api/aggregate/add-entity', '/api/aggregate/add-invariant', '/api/aggregate/add-invariant-test', '/api/aggregate/add-rule',
-      '/api/aggregate/change-aggregate', '/api/aggregate/change-data-model', '/api/aggregate/change-entity', '/api/aggregate/change-invariant', '/api/aggregate/change-invariant-test', '/api/aggregate/change-rule',
-      '/api/aggregate/remove-aggregate', '/api/aggregate/remove-data-model', '/api/aggregate/remove-entity', '/api/aggregate/remove-invariant', '/api/aggregate/remove-invariant-test', '/api/aggregate/remove-rule',
-    ];
-    expect([...routes].sort()).toEqual(AGGREGATE_COMMANDS.map((c) => c.route).sort());
   });
 });
 

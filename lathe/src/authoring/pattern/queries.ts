@@ -2,12 +2,12 @@
 // which the query runner gives each handler: a pattern whole as its page reads it, the patterns of a product, and the
 // next free ID for a rule or rule test. A handler never sees the data, a repository or the aggregate's model; each
 // changes nothing.
-import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
+import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import { PATTERN_SLICE } from './model.ts';
 import type { PatternPage, PatternSummary } from './read-model.ts';
 import { patternReader, type PatternReader } from './reader.ts';
+import { GET_PATTERN_IDENTITY, LIST_PATTERNS_IDENTITY, NEXT_PATTERN_ID_IDENTITY } from './queries.generated.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
@@ -23,12 +23,7 @@ export function getPattern(reader: PatternReader, input: { id: string }): Patter
 
 /** GET a pattern whole (LA-AUT-QRY138). */
 export const GET_PATTERN: QueryDefinition<{ id: string }, PatternPage, PatternReader> = {
-  id: 'LA-AUT-QRY138',
-  slice: PATTERN_SLICE,
-  name: 'get-pattern',
-  description: 'Reads a pattern whole as its page shows it, by its ID or the ID of any rule or rule test in it: the record asked for and its kind, the pattern\'s row, its settings in order, and its rules by ID, each with its tests (with the test data sets they start from).',
-  method: 'GET',
-  route: '/api/pattern/get-pattern',
+  ...GET_PATTERN_IDENTITY,
   input: { id: id('The pattern, or a rule or rule test in it.', 'required') },
   reader: patternReader,
   run: getPattern,
@@ -42,18 +37,12 @@ export function listPatterns(reader: PatternReader, input: { product_id: string 
 
 /** List the patterns of a product (LA-AUT-QRY139). */
 export const LIST_PATTERNS: QueryDefinition<{ product_id: string }, PatternSummary[], PatternReader> = {
-  id: 'LA-AUT-QRY139',
-  slice: PATTERN_SLICE,
-  name: 'list-patterns',
-  description: 'Lists the patterns of a product, by ID, with their titles.',
-  method: 'GET',
-  route: '/api/pattern/list-patterns',
+  ...LIST_PATTERNS_IDENTITY,
   input: { product_id: id('The product.', 'required') },
   reader: patternReader,
   run: listPatterns,
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No patterns.'),
 };
-
 
 /** The kinds of the aggregate with an ID under a parent; how each is written the schema says (`idShape`). */
 const KINDS: readonly string[] = ['pattern_rule', 'pattern_rule_test'];
@@ -74,12 +63,7 @@ export function nextPatternId(reader: PatternReader, input: { kind: string; pare
 
 /** Get the next ID for a record of the Pattern aggregate (LA-AUT-QRY140). */
 export const NEXT_PATTERN_ID: QueryDefinition<{ kind: string; parent: string }, string, PatternReader> = {
-  id: 'LA-AUT-QRY140',
-  slice: PATTERN_SLICE,
-  name: 'next-id',
-  description: 'The next free ID for a pattern rule (under a pattern) or a pattern rule test (under a rule): one past the highest in use.',
-  method: 'GET',
-  route: '/api/pattern/next-id',
+  ...NEXT_PATTERN_ID_IDENTITY,
   input: {
     kind: id('The kind: pattern_rule or pattern_rule_test.', 'required'),
     parent: id('The record it will sit under.', 'required'),
@@ -101,6 +85,3 @@ function patternText(page: PatternPage): string {
   }
   return lines.join('\n');
 }
-
-/** The Pattern aggregate's queries, as the CLI and the MCP server register them. */
-export const PATTERN_QUERIES: readonly AnyQuery[] = [GET_PATTERN, LIST_PATTERNS, NEXT_PATTERN_ID];

@@ -21,6 +21,11 @@ export interface Command {
   keys: string[];
   /** The bindings off a Mac, when they differ (Ctrl+W closes the tab there, so Alt+W instead). */
   otherKeys?: string[];
+  /**
+   * Which of the bindings (as this platform has them) the desktop app's menu shows beside the command, when the menu has
+   * it: an index into `keys`, so the menu never restates a key. A person's own bindings show their first instead.
+   */
+  menu?: number;
   when: CommandContext;
   /** Never matched from this table: handled by the control it belongs to by the keys the ARIA practices give it (a tree's arrows, Enter on a graph box), listed here so the sheet shows it; its keys are fixed. */
   local?: boolean;
@@ -59,8 +64,8 @@ const walk = (move: Move, title: string): Command => ({ id: WALK_COMMANDS[move],
 
 export const COMMANDS: readonly Command[] = [
   // Navigate
-  { id: 'quickOpen', title: 'Quick open: go to a record, domain or product', group: 'Navigate', keys: ['Mod+P', 'Mod+K'], when: 'global' },
-  { id: 'commandPalette', title: 'Command palette', group: 'Navigate', keys: ['Mod+Shift+P'], when: 'global' },
+  { id: 'quickOpen', title: 'Quick open: go to a record, domain or product', group: 'Navigate', keys: ['Mod+P', 'Mod+K'], menu: 0, when: 'global' },
+  { id: 'commandPalette', title: 'Command palette', group: 'Navigate', keys: ['Mod+Shift+P'], menu: 0, when: 'global' },
   { id: 'goBack', title: 'Go back', group: 'Navigate', keys: ['Ctrl+-'], when: 'global' },
   { id: 'goForward', title: 'Go forward', group: 'Navigate', keys: ['Ctrl+Shift+-'], when: 'global' },
   { id: 'browserBack', title: 'Go back (browser)', group: 'Navigate', keys: ['Alt+ArrowLeft'], when: 'global', browser: true },
@@ -73,24 +78,24 @@ export const COMMANDS: readonly Command[] = [
   { id: 'previousProblem', title: 'Previous problem on this page', group: 'Navigate', keys: ['Shift+F8'], when: 'global' },
   { id: 'focusNav', title: 'Move focus to the navigation', group: 'Navigate', keys: ['Mod+Shift+E'], when: 'global' },
   { id: 'goChecks', title: 'Go to Checks', group: 'Navigate', keys: ['g c'], when: 'global' },
-  { id: 'goFormat', title: 'Record format', group: 'Navigate', keys: ['g f'], when: 'global' },
+  { id: 'goFormat', title: 'Record format', group: 'Navigate', keys: ['g f'], menu: 0, when: 'global' },
   { id: 'goHome', title: 'Go home (all products)', group: 'Navigate', keys: ['g h'], when: 'global' },
   // The desktop app's tabs, as a browser's (LA-V96-R10..R17), handled only there (on the web the browser's tabs are the
   // places): its menu owns Cmd/Ctrl+T and Cmd/Ctrl+W, which a page never gets in a browser; Alt+Shift+T and Alt+Shift+W
   // are the keys of the same commands, as Ctrl+W toggles the wiki card on a Mac.
   { id: 'newTab', title: 'New tab at the product', group: 'Navigate', keys: ['Alt+Shift+T'], when: 'page', dynamic: true },
   { id: 'closeTab', title: 'Close the tab', group: 'Navigate', keys: ['Alt+Shift+W'], when: 'page', dynamic: true },
-  { id: 'duplicateTab', title: 'Duplicate the tab, with its history', group: 'Navigate', keys: ['Alt+Shift+D'], when: 'page', dynamic: true },
+  { id: 'duplicateTab', title: 'Duplicate the tab, with its history', group: 'Navigate', keys: ['Alt+Shift+D'], menu: 0, when: 'page', dynamic: true },
   { id: 'openRecordInNewTab', title: 'Open the record in a new tab', group: 'Navigate', keys: [], when: 'page', dynamic: true },
   { id: 'nextTab', title: 'Next tab', group: 'Navigate', keys: ['Ctrl+Tab'], when: 'page', dynamic: true },
   { id: 'previousTab', title: 'Previous tab', group: 'Navigate', keys: ['Ctrl+Shift+Tab'], when: 'page', dynamic: true },
-  { id: 'showShortcuts', title: 'Keyboard shortcuts', group: 'Navigate', keys: ['?', 'Mod+/'], when: 'global' },
+  { id: 'showShortcuts', title: 'Keyboard shortcuts', group: 'Navigate', keys: ['?', 'Mod+/'], menu: 1, when: 'global' },
   // Spaces: one per product, in rail order. Each is titled "Switch to <product>" by whoever handles it.
   ...Array.from({ length: SPACE_KEYS }, (_, i): Command => ({ id: spaceCommandId(i + 1), title: `Switch to space ${i + 1}`, group: 'Navigate', keys: [`Alt+${i + 1}`], when: 'global', dynamic: true })),
   // View
-  { id: 'toggleNav', title: 'Show or hide the navigation', group: 'View', keys: ['Mod+B'], when: 'global' },
+  { id: 'toggleNav', title: 'Show or hide the navigation', group: 'View', keys: ['Mod+B'], menu: 0, when: 'global' },
   // The desktop app's chat (LA-PLT-UC19), as VS Code's: Ctrl+Cmd+I on a Mac; Ctrl+Alt+C elsewhere. It shows the chat and focuses its message box.
-  { id: 'toggleChat', title: 'Show the chat with Claude, or hide it', group: 'View', keys: ['Ctrl+Meta+I'], otherKeys: ['Ctrl+Alt+C'], when: 'global' },
+  { id: 'toggleChat', title: 'Show the chat with Claude, or hide it', group: 'View', keys: ['Ctrl+Meta+I'], otherKeys: ['Ctrl+Alt+C'], menu: 0, when: 'global' },
   // Dictation in the chat (LA-PLT-UC20-R01), as VS Code's Start Dictation: listed only where the Mac recognizes speech on-device.
   { id: 'dictate', title: 'Dictate a message to Claude, or stop dictating', group: 'View', keys: ['Mod+Alt+V'], when: 'global', dynamic: true },
   // Point and ask, and Claude's changes (LA-PLT-UC22-R01, LA-PLT-UC21-R01): attach the box pointed at to the message; walk the last turn's changes on the stage.
@@ -98,13 +103,13 @@ export const COMMANDS: readonly Command[] = [
   { id: 'askClaudeAboutRecord', title: 'Ask Claude about the record', group: 'View', keys: [], when: 'global', dynamic: true },
   { id: 'reviewClaudeChanges', title: "Review Claude's changes: light the last turn's records on the stage and walk through them", group: 'View', keys: ['g r'], when: 'global', dynamic: true },
   // Ctrl is the Control key on a Mac too, where Cmd+W stays the browser's; elsewhere Ctrl+W closes the tab and Ctrl+G finds the next match, so Alt.
-  { id: 'stageGraph', title: 'Graph stage', group: 'View', keys: ['Ctrl+G', 'Ctrl+1'], otherKeys: ['Alt+G', 'Ctrl+1'], when: 'page' },
-  { id: 'stageErd', title: 'ERD stage', group: 'View', keys: ['Ctrl+E', 'Ctrl+2'], otherKeys: ['Alt+E', 'Ctrl+2'], when: 'page' },
+  { id: 'stageGraph', title: 'Graph stage', group: 'View', keys: ['Ctrl+G', 'Ctrl+1'], otherKeys: ['Alt+G', 'Ctrl+1'], menu: 1, when: 'page' },
+  { id: 'stageErd', title: 'ERD stage', group: 'View', keys: ['Ctrl+E', 'Ctrl+2'], otherKeys: ['Alt+E', 'Ctrl+2'], menu: 1, when: 'page' },
   // Elsewhere Ctrl+T opens a browser tab, so Alt.
-  { id: 'stageTrace', title: 'Trace stage', group: 'View', keys: ['Ctrl+T', 'Ctrl+3'], otherKeys: ['Alt+T', 'Ctrl+3'], when: 'page' },
+  { id: 'stageTrace', title: 'Trace stage', group: 'View', keys: ['Ctrl+T', 'Ctrl+3'], otherKeys: ['Alt+T', 'Ctrl+3'], menu: 1, when: 'page' },
   // Enter from anywhere but a control that handles Enter itself (usesEnter), a focused graph box included; Escape only
   // collapses, once nothing above the card is open (each overlay takes its own Escape first, LA-V96-R19).
-  { id: 'toggleWikiCard', title: 'Show or collapse the wiki card', group: 'View', keys: ['Enter', 'Ctrl+W'], otherKeys: ['Enter', 'Alt+W'], when: 'page' },
+  { id: 'toggleWikiCard', title: 'Show or collapse the wiki card', group: 'View', keys: ['Enter', 'Ctrl+W'], otherKeys: ['Enter', 'Alt+W'], menu: 1, when: 'page' },
   { id: 'collapseWikiCard', title: 'Collapse the wiki card', group: 'View', keys: ['Escape'], when: 'page' },
   // Highlight changes and Follow (LA-EXP-UC15), the same on every stage.
   { id: 'toggleHighlightChanges', title: 'Highlight changes: mark what is new, changed or removed and dim the rest, or show everything again', group: 'View', keys: ['g l'], when: 'page' },
@@ -158,6 +163,20 @@ export const RESERVED = [
 
 /** A command's own bindings on this platform, before a person's. */
 export const platformKeys = (c: Command, mac: boolean): string[] => (mac ? c.keys : c.otherKeys ?? c.keys);
+
+/**
+ * The key the menu shows for each command that has one, by command ID, in the normal form: the command's `menu` binding,
+ * or the first of a person's own when they rebound it. What the page sends the desktop app (setMenuKeys).
+ */
+export function menuBindings(commands: readonly Command[], mac: boolean): Record<string, string[]> {
+  return Object.fromEntries(commands.flatMap((c) => {
+    if (c.menu === undefined) return [];
+    const own = COMMANDS.find((d) => d.id === c.id);
+    const rebound = !own || c.keys.join(' ') !== platformKeys(own, mac).join(' ');
+    const key = rebound ? c.keys[0] : c.keys[c.menu];
+    return key ? [[c.id, [normalizeBinding(key, mac)]]] : [];
+  }));
+}
 
 /** Whether a person may bind a command's keys: every command but those whose keys the browser (Alt+Left) or an ARIA control (a tree's arrows) owns. */
 export const customizable = (c: Command): boolean => !c.local && !c.browser;

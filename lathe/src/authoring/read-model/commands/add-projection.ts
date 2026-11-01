@@ -1,20 +1,15 @@
 import { column, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ProjectionRow } from '../../../platform/data/tables.ts';
-import { READ_MODEL_SLICE } from '../model.ts';
 import { ReadModelRepository } from '../repository.ts';
 import { readModelOneEach, holdToRules } from '../rules.ts';
 import { refuseBroken } from '../../../platform/data/rules.ts';
+import { ADD_PROJECTION_IDENTITY } from './identities.generated.ts';
 
 export type AddProjection = Pick<ProjectionRow, 'id' | 'title' | 'read_model_id' | 'file' | 'description'> & { meets?: string[]; packages?: string[] };
 
-export const ADD_PROJECTION: CommandDefinition<AddProjection> = {
-  id: 'LA-AUT-CMD291',
-  slice: READ_MODEL_SLICE,
-  name: 'add-projection',
-  description: 'Adds the projection that fills a read model, its one piece of code, with the standard rules it meets and the packages it uses.',
-  method: 'POST',
-  route: '/api/read-model/add-projection',
+export const ADD_PROJECTION = {
+  ...ADD_PROJECTION_IDENTITY,
   input: {
     id: column('projection', 'id', 'required'),
     title: column('projection', 'title', 'required'),
@@ -25,7 +20,7 @@ export const ADD_PROJECTION: CommandDefinition<AddProjection> = {
     packages: texts("The packages it uses, by their names in the product's package.json files.", 'optional'),
   },
   handler: addProjection,
-};
+} satisfies CommandDefinition<AddProjection>;
 
 /** Adds the projection to its read model, which has none yet. */
 export function addProjection(tx: Transaction, input: AddProjection): void {

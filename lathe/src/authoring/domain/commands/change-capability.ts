@@ -1,20 +1,16 @@
 import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { CapabilityRow } from '../../../platform/data/tables.ts';
-import { DOMAIN_SLICE, changed } from '../model.ts';
+import { changed } from '../model.ts';
 import { DomainRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { CHANGE_CAPABILITY_IDENTITY } from './identities.generated.ts';
 
 /** The capability's changes: a column given is set; serves, when given, replaces the list. */
 export type ChangeCapability = Pick<CapabilityRow, 'id'> & { title?: CapabilityRow['title']; position?: CapabilityRow['position']; description?: CapabilityRow['description']; serves?: string[] };
 
-export const CHANGE_CAPABILITY: CommandDefinition<ChangeCapability> = {
-  id: 'LA-AUT-CMD164',
-  slice: DOMAIN_SLICE,
-  name: 'change-capability',
-  description: "Changes a capability's title, position or description, or the business outcomes it serves (the whole list).",
-  method: 'POST',
-  route: '/api/domain/change-capability',
+export const CHANGE_CAPABILITY = {
+  ...CHANGE_CAPABILITY_IDENTITY,
   input: {
     id: column('capability', 'id', 'required'),
     title: column('capability', 'title', 'optional'),
@@ -23,7 +19,7 @@ export const CHANGE_CAPABILITY: CommandDefinition<ChangeCapability> = {
     serves: ids('The business outcomes it serves. Replaces the list.', 'optional'),
   },
   handler: changeCapability,
-};
+} satisfies CommandDefinition<ChangeCapability>;
 
 /** Changes the capability's columns and links. */
 export function changeCapability(tx: Transaction, input: ChangeCapability): void {

@@ -1,15 +1,11 @@
 // The Check aggregate (LA-CHK-A1): one check row, Lathe's or a product's own, named by its name. One instance is one
 // check, whole. Lathe's own checks are loaded beside a product's data as read-only rows, so a product's write never
 // changes or removes them, and a product's check takes a name none of them has.
-import type { Slice } from '../../platform/commands/definition.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { CheckRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const CHECK_AGGREGATE = 'LA-CHK-A1';
-
-/** How the interfaces reach the aggregate's commands: `lathe check <command>`, the check_ tools, /api/check/. */
-export const CHECK_SLICE: Slice = { aggregate: CHECK_AGGREGATE, name: 'check' };
 
 /**
  * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.
