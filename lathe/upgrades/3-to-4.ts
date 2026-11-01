@@ -5,10 +5,24 @@
 // engineering, and the Owner is asked to make a quality of any whose rules say what the product's people need. A
 // product's settings gain the words its checks read as technology, none at first. Every interface says whether it is
 // public, which makes its API requirements essential: none is at first, and the Owner is asked to mark the ones
-// people or programs outside the product build on.
+// people or programs outside the product build on. An accidental product kind gains Lathe's pairs of provided_by,
+// fills and generates, and an obligation kind the pair of provided_by, as Lathe's own kinds have them, so a product's
+// declaration of one of those pairs is dropped.
 import type { Converter } from '../src/upgrade.ts';
 
 const COMPLEXITY_BY_STAGE: Record<string, string> = { 'technical-specification': 'accidental', 'test-plan': 'as-parent' };
+
+/** Each pair of provided_by, fills and generates a product kind now has without a declaration, as "<relation> <source> <target>". */
+function accountingPairs(kinds: Record<string, unknown>[]): Set<string> {
+  const pairs = new Set<string>();
+  for (const k of kinds) {
+    const name = String(k.name);
+    const accidental = k.stage === 'technical-specification' || k.complexity === 'accidental';
+    if (k.obligation === true || accidental) pairs.add(`provided_by ${name} integration`);
+    if (accidental) pairs.add(`fills ${name} slot`).add(`generates tooling ${name}`);
+  }
+  return pairs;
+}
 
 const converter: Converter = {
   files(data, notes) {
@@ -20,6 +34,16 @@ const converter: Converter = {
         kinds.map((k) => (k.complexity === undefined ? { ...k, complexity: COMPLEXITY_BY_STAGE[String(k.stage)] ?? 'essential' } : k)),
       );
       notes.changed(`Each product kind says its complexity, given from its stage: ${given.map((k) => `${String(k.name)} ${COMPLEXITY_BY_STAGE[String(k.stage)] ?? 'essential'}`).join(', ')}.`);
+    }
+
+    const automatic = accountingPairs(data.read('product_kind'));
+    const relations = data.read('product_relation');
+    const dropped = relations.filter((r) => automatic.has(`${String(r.name)} ${String(r.source_kind)} ${String(r.target_kind)}`));
+    if (dropped.length) {
+      data.write('product_relation', relations.filter((r) => !dropped.includes(r)));
+      notes.changed(
+        `Each product kind has Lathe's pairs of provided_by, fills and generates as Lathe's own kinds have them, so the declarations of ${dropped.map((r) => `${String(r.name)} from ${String(r.source_kind)} to ${String(r.target_kind)}`).join(', ')} were dropped.`,
+      );
     }
 
     const standards = data.read('standard');
