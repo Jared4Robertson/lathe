@@ -156,7 +156,7 @@ describe('traceability', () => {
     expect(traceOf(model, 'P-D-UC01-FL-T').runBy).toMatchObject({ level: 'browser', state: 'manual', file: null });
   });
 
-  it('LA-PAT-RECORD-PAGE-R07-T01 No page shows a relation code as a heading or label: wiki, record facts, graph and ERD view read the labels', async () => {
+  it('LA-PAT-RECORD-PAGE-R07-T01 LA-PAT-RECORD-PAGE-R07-T02 LA-PAT-RECORD-PAGE-R07-T03 LA-PAT-RECORD-PAGE-R07-T04 LA-PAT-RECORD-PAGE-R07-T05 LA-PAT-RECORD-PAGE-R07-T06 No page shows a relation code as a heading or label: wiki, record facts, graph and ERD view read the labels', async () => {
     const w = modelWorkspace();
     const index = recordIndexOf(w);
     const codes = new Set(Object.keys(w.schema.relations));
@@ -182,7 +182,7 @@ describe('traceability', () => {
     expect(linkLabel(index, { source: 'P-D-CMD01', relation: 'checks', target: 'P-D-SP01' }, 'target')).toBe('Checked by');
   }, 120_000);
 
-  it('LA-PAT-RECORD-PAGE-R07-T01 A record\'s links out show under their forward label and its links in under their reverse label; what its chain holds is not repeated beside it', async () => {
+  it('LA-PAT-RECORD-PAGE-R07-T01 LA-PAT-RECORD-PAGE-R07-T02 LA-PAT-RECORD-PAGE-R07-T03 LA-PAT-RECORD-PAGE-R07-T04 LA-PAT-RECORD-PAGE-R07-T05 LA-PAT-RECORD-PAGE-R07-T06 A record\'s links out show under their forward label and its links in under their reverse label; what its chain holds is not repeated beside it', async () => {
     const data = modelWorkspace();
     // A policy: its command, what proves it, then the event it hears.
     let trace = await show(data, 'P-D-PO02');

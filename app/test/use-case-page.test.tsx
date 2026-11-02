@@ -8,7 +8,7 @@ import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp } from './helpers';
 
-// The Use case page and its editor (LA-AUT-A11): a record of a use case is read whole through the aggregate's own
+// The Use case page and its editor (LA-UCS-A11): a record of a use case is read whole through the aggregate's own
 // query, and changed only through the aggregate's own commands, one per change, each refusal shown with its reasons.
 
 const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };

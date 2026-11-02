@@ -101,7 +101,7 @@ const SEVERITIES: Record<Reference['checks'][number]['severity'], Severity[]> = 
 /**
  * The format reference for a space: its kinds, relations and stages from the meta model (each kind's columns as its
  * fields' inputs take them), and each kind's ID convention and part tables and every check from the Reference read
- * (LA-AUT-RM01, GET /api/reference), which the schema and the check rows generate. A kind the Reference does not
+ * (LA-PRD-RM01, GET /api/reference), which the schema and the check rows generate. A kind the Reference does not
  * describe (another product folder's own kind) has no ID convention or part tables there.
  */
 export function referenceOf(index: RecordIndex, reference: Reference, problems: readonly { check: string; severity: Severity }[]): FormatReference {

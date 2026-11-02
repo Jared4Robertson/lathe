@@ -205,7 +205,7 @@ describe('LA-PLT-UC03-R03-T02 a reload reads only the changed tables, reruns onl
       expect(store.record('TL-LEND-Q01')?.row.title).toMatch(/^Still: /);
       // Only the Product aggregate's rules (which read questions), and the rules that look records up by ID, ran again.
       const reran = Object.keys(steps).filter((s) => s.startsWith('reload rules of ')).map((s) => s.slice('reload rules of '.length));
-      expect(reran).toContain('LA-AUT-A1');
+      expect(reran).toContain('LA-PRD-A1');
       expect(reran.length).toBeLessThan(AGGREGATE_RULES.length);
       // The meta model reads no question, so its reader stands; the use case's reads every kind's IDs, so it is made again.
       expect(store.readerTouched(meta, new Set(['question']))).toBe(false);

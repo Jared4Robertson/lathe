@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { PatternPage } from '../../../../lathe/src/authoring/pattern/read-model';
+import type { PatternPage } from '../../../../lathe/src/use-cases/pattern/read-model';
 import type { FollowingDomain, FollowingPage, SettingLine } from '../../../../lathe/src/traceability/pattern-following/read-model';
 import { Refusal, problemText } from '../../edit/fields';
 import type { Read } from '../../record/read';

@@ -233,7 +233,7 @@ test.describe('graph', () => {
 
   test('LA-V93-R10-T08 in each layout, focusing each of Lathe\'s domains at depth 2, framed and zoomed in, every drawn box shows its title text and its whole label inside it', async ({ page }) => {
     for (const layout of ['Tree', 'Nested'] as const) {
-      for (const domain of ['LA-AUT', 'LA-CHK', 'LA-EXP', 'LA-PLT', 'LA-TRC']) {
+      for (const domain of ['LA-PRD', 'LA-MOD', 'LA-UCS', 'LA-IXD', 'LA-TEC', 'LA-TST', 'LA-CHK', 'LA-EXP', 'LA-PLT', 'LA-TRC']) {
         await openPage(page, `/${domain}?stage=graph`);
         await nodes(page);
         if (layout === 'Tree') await page.locator('.graph-depth button', { hasText: '2' }).click();

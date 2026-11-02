@@ -58,6 +58,13 @@ describe('a write of an essential record keeps accidental complexity out', () =>
     // A term of the record's own domain is its language: the library lends reading tables.
     await run(store, 'domain add-term', { id: 'EX-LEND-TM02', domain_id: 'EX-LEND', title: 'Table', meaning: 'A reading table members borrow by the hour.' });
     await run(store, 'use-case change-use-case', { id: 'EX-LEND-UC02', goal: 'The librarian adds a tool or a table to the catalog.' });
+    // A product has one language: a term of another of its domains excuses its word, and one no term defines is refused.
+    await run(store, 'domain add-domain', { id: 'EX-SHELF', title: 'Shelving', product_id: 'EX', subdomain_type: 'supporting', description: 'Where the tools stand.' });
+    await run(store, 'domain add-term', { id: 'EX-SHELF-TM01', domain_id: 'EX-SHELF', title: 'Column', meaning: 'An upright of the shelf, its bays stacked in it.' });
+    await run(store, 'use-case change-uc-requirement', { id: 'EX-LEND-UC02-R01', statement: 'The librarian MUST put a returned tool back in its column.' });
+    expect(await reasons(store, 'use-case change-uc-requirement', { id: 'EX-LEND-UC02-R01', statement: 'The librarian MUST put a returned tool back in its column of the database.' })).toEqual([
+      ['essential-names-technology', 'EX-LEND-UC02-R01', 'UC requirement EX-LEND-UC02-R01 is essential, and its statement says "database"'],
+    ]);
     // A pattern decides the means, so it is not read.
     await run(store, 'pattern change-pattern-rule', { id: 'EX-PAT-ACT-R01', statement: 'A saved record MUST answer the same JSON over HTTP.' });
     // The product's technology words count in every group, and no term excuses them.

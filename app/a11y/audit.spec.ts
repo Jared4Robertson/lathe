@@ -75,29 +75,29 @@ const PAGES: State[] = [
   { name: 'record page', url: RECORD, ready: '.header-strip h1' },
   { name: 'interface page', url: '/LA-IF03', ready: '.interface-offers' },
   { name: 'business outcome page', url: '/LA-BO05', ready: '[data-aggregate="business-outcome"]' },
-  { name: 'extension record page', url: '/LA-AUT-MOD10', ready: '[data-aggregate="extension-record"]' },
+  { name: 'extension record page', url: '/LA-UCS-MOD10', ready: '[data-aggregate="extension-record"]' },
   { name: 'entry point page', url: '/LA-PLT-ENTRY01', ready: '[data-aggregate="entry-point"]' },
-  { name: 'tooling page', url: '/LA-AUT-TOOL01', ready: '[data-aggregate="tooling"]' },
+  { name: 'tooling page', url: '/LA-PRD-TOOL01', ready: '[data-aggregate="tooling"]' },
   // The Domain, Test data set, Pattern and Standard aggregates' own pages.
-  { name: 'capability page', url: '/LA-AUT-CAP02', ready: '[data-aggregate="domain"] .capability-use-cases' },
-  { name: 'test data set page', url: '/LA-AUT-TD30', ready: '[data-aggregate="test-data-set"] .record-lead' },
+  { name: 'capability page', url: '/LA-PRD-CAP02', ready: '[data-aggregate="domain"] .capability-use-cases' },
+  { name: 'test data set page', url: '/LA-MOD-TD30', ready: '[data-aggregate="test-data-set"] .record-lead' },
   { name: 'pattern page', url: '/LA-PAT-RECORD-PAGE', ready: '[data-aggregate="pattern"] .pattern-rules' },
   { name: 'standard page', url: '/LA-STD-MODELING', ready: '[data-aggregate="standard"] .standard-rules' },
   // The View and UI component aggregates' own pages.
   { name: 'view page', url: '/LA-V150', ready: '[data-aggregate="view"] .view-requirements' },
   { name: 'UI component page', url: '/LA-UI280', ready: '[data-aggregate="ui-component"] .traceability' },
   // The Endpoint and Integration aggregates' own pages.
-  { name: 'endpoint page', url: '/LA-AUT-EP01', ready: '[data-aggregate="endpoint"] .endpoint-requirements' },
+  { name: 'endpoint page', url: '/LA-PRD-EP01', ready: '[data-aggregate="endpoint"] .endpoint-requirements' },
   { name: 'integration page', url: '/LA-INT04', ready: '[data-aggregate="integration"] .integration-tests' },
   // The Aggregate, Domain event and Command aggregates' own pages.
-  { name: 'aggregate page', url: '/LA-AUT-A6', ready: '[data-aggregate="aggregate"] .aggregate-entities' },
-  { name: 'domain event page', url: '/LA-AUT-EV03', ready: '[data-aggregate="domain-event"] .record-lead' },
-  { name: 'command page', url: '/LA-AUT-CMD210', ready: '[data-aggregate="command"] .command-endpoints' },
+  { name: 'aggregate page', url: '/LA-MOD-A6', ready: '[data-aggregate="aggregate"] .aggregate-entities' },
+  { name: 'domain event page', url: '/LA-PRD-EV03', ready: '[data-aggregate="domain-event"] .record-lead' },
+  { name: 'command page', url: '/LA-MOD-CMD210', ready: '[data-aggregate="command"] .command-endpoints' },
   // The Table, Specification, Value object and Read model aggregates' own pages.
-  { name: 'table page', url: '/LA-AUT-EN54-TB', ready: '[data-aggregate="table"] .table-keys' },
-  { name: 'specification page', url: '/LA-AUT-SP09', ready: '[data-aggregate="specification"] .record-lead' },
+  { name: 'table page', url: '/LA-MOD-EN54-TB', ready: '[data-aggregate="table"] .table-keys' },
+  { name: 'specification page', url: '/LA-MOD-SP09', ready: '[data-aggregate="specification"] .record-lead' },
   { name: 'value object page', url: '/LA-VO01', ready: '[data-aggregate="value-object"] .entity-fields' },
-  { name: 'read model page', url: '/LA-AUT-RM25', ready: '[data-aggregate="read-model"] .read-model-queries' },
+  { name: 'read model page', url: '/LA-MOD-RM25', ready: '[data-aggregate="read-model"] .read-model-queries' },
   // A journey (its lane strip and ordered steps, with Move up and Move down), and a use case's In journeys.
   { name: 'journey page', url: JOURNEY, ready: '[data-aggregate="journey"] .journey-steps' },
   { name: 'use case page in journeys', url: JOURNEY_USE_CASE, ready: '[data-aggregate="use-case"] .in-journeys' },
@@ -129,7 +129,7 @@ PAGES.push({ name: 'Trace stage, a row opened', run: async (page: Page) => {
 } });
 // A flow's page on an interface's tab: that interface's derived version of the flow, its gaps and refusal rules.
 PAGES.push({ name: 'flow page, on an interface\'s tab', run: async (page: Page) => {
-  await open(page, '/LA-AUT-UC06-FL', '[data-aggregate="use-case"] .flow-tabs');
+  await open(page, '/LA-UCS-UC06-FL', '[data-aggregate="use-case"] .flow-tabs');
   await page.locator('[data-aggregate="use-case"] .flow-tabs').getByRole('tab').nth(1).click();
   await page.waitForTimeout(400);
 } });
@@ -166,8 +166,8 @@ PAGES.push(
     await page.getByRole('form', { name: 'Follow LA-PAT-RECORD-PAGE' }).waitFor();
   } },
   { name: 'the entity form, its fields as rows', run: async (page: Page) => {
-    await open(page, '/LA-AUT-EN11', '[data-aggregate="aggregate"] .entity-commands');
-    await page.getByRole('toolbar', { name: 'Change LA-AUT-EN11' }).getByRole('button', { name: 'Edit' }).click();
+    await open(page, '/LA-UCS-EN11', '[data-aggregate="aggregate"] .entity-commands');
+    await page.getByRole('toolbar', { name: 'Change LA-UCS-EN11' }).getByRole('button', { name: 'Edit' }).click();
     await page.getByRole('form').locator('.form-parts').waitFor();
   } },
   { name: 'the remove question and its refusal', run: async (page: Page) => {

@@ -30,7 +30,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildReference, loadWorkspace, openStore, type LoadTimings } from '../src/index.ts';
 import { closeEngine } from '../src/platform/data/store.ts';
-import { CHANGE_USE_CASE } from '../src/authoring/use-case/commands/change-use-case.ts';
+import { CHANGE_USE_CASE } from '../src/use-cases/use-case/commands/change-use-case.ts';
 import { runCommand } from '../src/platform/commands/run.ts';
 import { closeStores, dataFilesChanged, handleApi, onDataChange } from '../src/server/api.ts';
 import type { DataChange } from '../src/server/events.ts';

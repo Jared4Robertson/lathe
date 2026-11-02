@@ -7,7 +7,7 @@ import { setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp } from './helpers';
 
-// The Product page and its editor (LA-AUT-A1): a product, an open question or an interface is read through the
+// The Product page and its editor (LA-PRD-A1): a product, an open question or an interface is read through the
 // aggregate's own query, and changed only through the aggregate's own commands, one per change, each refusal shown
 // with its reasons; the nav lists the products through the aggregate's own list.
 

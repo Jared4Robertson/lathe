@@ -23,7 +23,7 @@ const KEPT = { id: 'TL-LEND-A1-SR01', title: 'A loan is saved with its outbox ev
 const KEPT_TEST = { id: 'TL-LEND-A1-SR01-T01', title: 'A failed save leaves nothing behind', storage_requirement_id: 'TL-LEND-A1-SR01', level: 'integration', state: 'automated', file: 'test/loans.test.ts', when: 'Opens a loan whose event cannot be written.', then: 'Expects neither saved.' };
 
 describe('Storage flows through the CLI', () => {
-  it('LA-AUT-UC32-FL-T name where a product\'s data lives', async () => {
+  it('LA-TEC-UC32-FL-T name where a product\'s data lives', async () => {
     const tl = product();
     await tl.seed(STORED);
     const missing = gapsOf(tl.workspace(), 'TL-LEND');
@@ -46,7 +46,7 @@ describe('Storage flows through the CLI', () => {
     expect(tl.refused('data-store', 'remove-data-store', '--id', 'TL-STORE01')).toContain('TL-LEND-REPO01 stored in TL-STORE01');
   });
 
-  it('LA-AUT-UC31-FL-T write what the business needs kept of an aggregate', async () => {
+  it('LA-MOD-UC31-FL-T write what the business needs kept of an aggregate', async () => {
     const tl = product();
     await tl.seed([...STORED, add('data_store', DATABASE)]);
     // S01: the requirement under its aggregate; designed by construction, not built while its repository names no store.
@@ -73,7 +73,7 @@ describe('Storage flows through the CLI', () => {
 });
 
 describe('Storage flows through the MCP tools', () => {
-  it('LA-AUT-UC32-FL-T name where a product\'s data lives through the MCP tools', async () => {
+  it('LA-TEC-UC32-FL-T name where a product\'s data lives through the MCP tools', async () => {
     const tl = product();
     await tl.seed(STORED);
     const server = mcp(tl.root);
@@ -96,7 +96,7 @@ describe('Storage flows through the MCP tools', () => {
     }
   });
 
-  it('LA-AUT-UC31-FL-T write what the business needs kept of an aggregate through the MCP tools', async () => {
+  it('LA-MOD-UC31-FL-T write what the business needs kept of an aggregate through the MCP tools', async () => {
     const tl = product();
     await tl.seed([...STORED, add('data_store', DATABASE), link('TL-LEND-REPO01', 'stored_in', 'TL-STORE01')]);
     const server = mcp(tl.root);

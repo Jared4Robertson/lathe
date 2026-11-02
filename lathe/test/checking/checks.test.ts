@@ -75,13 +75,13 @@ describe('nothing uses it', () => {
   ];
   for (const [name, record, message] of unused) {
     check(name, () => {
-      it(`LA-AUT-UC24-R02-T01 LA-AUT-UC20-R03-T01 LA-AUT-UC28-R01-T01 a record that nothing uses is a ${name} error`, () => {
+      it(`LA-MOD-UC24-R02-T01 LA-MOD-UC20-R03-T01 LA-IXD-UC28-R01-T01 a record that nothing uses is a ${name} error`, () => {
         expect(ofCheck(ws, name)).toEqual([{ severity: 'error', check: name, record, message }]);
       });
     });
   }
 
-  it('LA-AUT-UC24-R02-T02 a value object used by a read model is used; a query selecting by a specification uses it', async () => {
+  it('LA-MOD-UC24-R02-T02 a value object used by a read model is used; a query selecting by a specification uses it', async () => {
     let data = changing(complete(), 'entity_field', (r) => r.type_value_object_id === 'EX-VO01', { type_value_object_id: undefined, type: 'text' });
     data = adding(data, { read_model_field: [{ read_model_id: 'EX-LEND-RM01', position: 2, name: 'Email', meaning: 'Whom to tell.', type_value_object_id: 'EX-VO01', required: false }] });
     data = without(data, 'checks', () => true);
@@ -92,7 +92,7 @@ describe('nothing uses it', () => {
 });
 
 check('event-not-by-outbox', () => {
-  it('LA-AUT-UC25-R03-T01 an event a policy hears not delivered by outbox is a warning; one that only feeds read models, published or not, may go in process', async () => {
+  it('LA-MOD-UC25-R03-T01 an event a policy hears not delivered by outbox is a warning; one that only feeds read models, published or not, may go in process', async () => {
     let data = changing(complete(), 'event_type', (r) => r.id === 'EX-LEND-EV01-ET', { delivery: 'in process' });
     data = changing(data, 'domain_event', (r) => r.id === 'EX-LEND-EV02', { published: true });
     data = adding(data, { fed_by: [{ source_id: 'EX-LEND-RM01', target_id: 'EX-LEND-EV02' }] });
@@ -102,7 +102,7 @@ check('event-not-by-outbox', () => {
     ]);
   });
 
-  it('LA-AUT-UC25-R03-T01 an event a policy hears with no event type, or whose event type gives no delivery, is reported too', async () => {
+  it('LA-MOD-UC25-R03-T01 an event a policy hears with no event type, or whose event type gives no delivery, is reported too', async () => {
     const untyped = without(complete(), 'event_type', (r) => r.id === 'EX-LEND-EV01-ET');
     expect(ofCheck(await loadData(untyped), 'event-not-by-outbox').map((p) => p.message)).toEqual([
       'Domain event EX-LEND-EV01 is heard by policy EX-LEND-PO01, but has no event type; give it one delivered by outbox.',
@@ -113,7 +113,7 @@ check('event-not-by-outbox', () => {
     ]);
   });
 
-  it('LA-AUT-UC25-R03-T01 the rule reads an event a policy hears only when its aggregate is stored in a database table, not in browser storage, a file or memory', async () => {
+  it('LA-MOD-UC25-R03-T01 the rule reads an event a policy hears only when its aggregate is stored in a database table, not in browser storage, a file or memory', async () => {
     let data = changing(complete(), 'event_type', (r) => r.id === 'EX-LEND-EV01-ET', { delivery: 'in process' });
     data = without(data, 'table_key', (r) => r.table_id === 'EX-LEND-EN01-TB' || r.target_table_id === 'EX-LEND-EN01-TB');
     expect(ofCheck(await loadData(without(without(data, 'stored_in', (r) => r.source_id === 'EX-LEND-EN01-TB'), 'table', (r) => r.id === 'EX-LEND-EN01-TB')), 'event-not-by-outbox')).toEqual([]);

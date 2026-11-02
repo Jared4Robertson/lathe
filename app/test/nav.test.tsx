@@ -98,7 +98,7 @@ describe('side navigation', () => {
     expect(checks.querySelector('.nav-badge.error')).toHaveTextContent(String(workspace().problems.filter((p) => p.severity === 'error' && !p.record?.startsWith('NF')).length));
     expect(checks.querySelector('.nav-badge.warning')).not.toBeNull();
     const foot = nav().querySelector('footer')!;
-    // The record format left the footer (LA-AUT-UC14): it is a command and a link in the shortcuts sheet.
+    // The record format left the footer (LA-PRD-UC14): it is a command and a link in the shortcuts sheet.
     expect(within(foot).queryByRole('link', { name: 'Record format' })).toBeNull();
     expect(foot).toHaveTextContent(/\d+ records in DM/);
   });

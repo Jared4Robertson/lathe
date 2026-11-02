@@ -13,7 +13,7 @@ describe('record IDs are links', () => {
   const ids = new Set(recordIds(workspace()));
   let checked = 0;
   afterAll(() => expect(checked).toBeGreaterThan(50));
-  it.each(PAGES)('LA-PAT-RECORD-PAGE-R01-T01 Every record ID %s shows is a real link to that record', async (page) => {
+  it.each(PAGES)('LA-PAT-RECORD-PAGE-R01-T01 LA-PAT-RECORD-PAGE-R01-T02 LA-PAT-RECORD-PAGE-R01-T03 LA-PAT-RECORD-PAGE-R01-T04 LA-PAT-RECORD-PAGE-R01-T05 LA-PAT-RECORD-PAGE-R01-T06 Every record ID %s shows is a real link to that record', async (page) => {
     await openApp(page);
     await screen.findByRole('heading', { level: 1 });
     // The page, and the Checks panel over its stage.

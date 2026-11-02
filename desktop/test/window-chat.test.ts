@@ -119,8 +119,8 @@ describe('LA-PLT-UC22-R03-T04 The chat\'s commands take only what the page may s
     expect(sendMessageToClaude(chats, { folder: '/p/f', message: { text: 'hi' } })).toBe(false);
     const { session, fake } = fakeSession();
     await openChatSession(chats, { folder: '/p/f', request: { mode: 'new' }, create: async () => ({ session, history: [] }) });
-    expect(sendMessageToClaude(chats, { folder: '/p/f', message: { text: 'hi', focus: 'LA-AUT-UC01' } })).toBe(true);
-    expect(fake.send).toHaveBeenLastCalledWith('hi', 'LA-AUT-UC01', []);
+    expect(sendMessageToClaude(chats, { folder: '/p/f', message: { text: 'hi', focus: 'LA-MOD-UC02' } })).toBe(true);
+    expect(fake.send).toHaveBeenLastCalledWith('hi', 'LA-MOD-UC02', []);
     expect(sendMessageToClaude(chats, { folder: '/p/f', message: { text: 3 } })).toBe(false);
     expect(chooseChatModel(chats, { folder: '/p/f', choice: { model: 'sonnet', effort: null } })).toBe(true);
     expect(chooseChatModel(chats, { folder: '/p/f', choice: { model: 'gpt', effort: null } })).toBe(false);

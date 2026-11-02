@@ -8,7 +8,7 @@ import { addRows } from './fixtures/load';
 import { modelWorkspace } from './fixtures/model';
 import { main, openApp, section } from './helpers';
 
-// The Specification page and its editor (LA-AUT-A5, LA-V141): a specification and its predicate and test are read
+// The Specification page and its editor (LA-MOD-A5, LA-V141): a specification and its predicate and test are read
 // through the aggregate's own query, and changed only through the aggregate's own commands, one per change, each
 // refusal shown with its reasons.
 

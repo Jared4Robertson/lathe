@@ -107,16 +107,20 @@ describe('folders by stage', () => {
     expect(within(panel()).queryByRole('list', { name: 'Interaction design of Shopping' })).toBeNull();
   });
 
-  it("LA-V90-R18-T01 The current page's branch opens itself: a record's domain, stage and folder, and a domain page its domain", async () => {
+  it("LA-V90-R18-T01 The current page's branch opens itself; a domain page opens none", async () => {
     await openApp('/DM-SHOP-CMD01-H');
     await screen.findByRole('heading', { level: 1, name: 'addToBasket' });
     expect(within(await findList('Command handlers of Shopping')).getByRole('link', { name: 'addToBasket' })).toHaveAttribute('aria-current', 'page');
 
-    // The domain page opens its domain.
+    // The domain page opens no row: its own row is current and in view, and its chevron still opens it.
     await openApp('/DM-PAY');
     await screen.findByRole('heading', { level: 1, name: 'Paying' });
+    expect(within(panel()).getByRole('link', { name: 'Paying' })).toHaveAttribute('aria-current', 'page');
+    const unfold = within(panel()).getByRole('button', { name: 'Unfold Paying' });
+    expect(unfold).toHaveAttribute('aria-expanded', 'false');
+    expect(window.sessionStorage.getItem('lathe:nav-folders') ?? '').not.toContain('domain:DM-PAY');
+    await userEvent.click(unfold);
     expect(await within(panel()).findByRole('button', { name: 'Fold Paying' })).toHaveAttribute('aria-expanded', 'true');
-    expect(window.sessionStorage.getItem('lathe:nav-folders')).toContain('domain:DM-PAY');
   });
 
   it('LA-V91-R05-T01 A group page opens the folder of its kind, and names its stage as the nav does', async () => {
@@ -138,6 +142,8 @@ describe('folders by stage', () => {
 
   it('LA-EXP-DS03-T02 Stage names and order come from the schema, in the nav', async () => {
     await renamedStage();
+    // The domain page opens no row; its chevron shows the domain's folders.
+    await userEvent.click(within(panel()).getByRole('button', { name: 'Unfold Shopping' }));
     expect(rows(await findList('Folders of Shopping'))).toEqual(['Tests and checks2', 'Domain model4', 'Use cases1', 'Interaction design3', 'Technical specification2', 'Open questions1']);
   });
 

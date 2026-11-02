@@ -1,9 +1,11 @@
 // An aggregate's rows in a transaction's draft, scoped to the tables its repository owns: it reads and writes those
-// tables and no other, and a write to any other is refused when it is made. Only a repository (*/repository.ts)
+// tables and no other, and a write to any other is refused when it is made; only the new IDs a move gives are carried
+// into every table (carryRenames). Only a repository (*/repository.ts)
 // imports this module; a test holds every other file to that.
 import { normalizeRow, rowKey, describeKey, type Row } from './rows.ts';
 import type { TableDescription } from './schema.ts';
 import { referrers, referrersText, type Located } from './references.ts';
+import { renamedRow, type Renames } from './renames.ts';
 import { draftOf, editableTable, type Transaction } from './transaction.ts';
 
 /** A repository's tables in a transaction: rows read, put and deleted only there. */
@@ -54,6 +56,37 @@ export class DataFiles {
     const key = rowKey(description, row);
     if (!draftOf(this.tx).tables.get(table)?.has(key)) return;
     editableTable(this.tx, table).delete(key);
+  }
+
+  /**
+   * Carries the new IDs a move gave the repository's records into every stored row of every table, its own and every
+   * other: a key, a foreign key, an item of a list or a mention in text that names an old ID names the new one, as a
+   * foreign key with ON UPDATE CASCADE would (renames.ts). The one write outside the repository's own tables, and it
+   * changes only IDs. A new ID another record already has is refused.
+   */
+  carryRenames(renames: Renames): void {
+    if (!renames.size) return;
+    for (const [from, to] of renames) {
+      const taken = this.tx.record(to);
+      if (taken && !renames.has(to)) this.tx.refuse('id-taken', `${from} cannot become ${to}: ${this.tx.schema.kinds[taken.kind].label} ${to} already has that ID`);
+    }
+    const { tables, renamed: renamedRows } = draftOf(this.tx);
+    for (const [name, rows] of [...tables]) {
+      const description = this.tx.schema.tables[name];
+      if (!description?.stored) continue;
+      const changed = [...rows].flatMap(([key, row]) => {
+        if (this.tx.isBuiltIn(row)) return [];
+        const renamed = renamedRow(row, renames);
+        return renamed === row ? [] : [{ key, renamed }];
+      });
+      if (!changed.length) continue;
+      const editable = editableTable(this.tx, name);
+      for (const { key } of changed) editable.delete(key);
+      for (const { renamed } of changed) {
+        editable.set(rowKey(description, renamed), renamed);
+        renamedRows.add(renamed);
+      }
+    }
   }
 
   /**

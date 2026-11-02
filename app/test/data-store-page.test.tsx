@@ -8,7 +8,7 @@ import { addRows } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp, section } from './helpers';
 
-// The Data store page and its editor (LA-AUT-A23): a data store is read through the aggregate's own query, and changed
+// The Data store page and its editor (LA-TEC-A23): a data store is read through the aggregate's own query, and changed
 // only through the aggregate's own commands, one per change.
 
 const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };

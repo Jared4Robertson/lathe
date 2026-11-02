@@ -387,7 +387,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(problems).toBeGreaterThan(0);
   });
 
-  it('LA-PAT-RECORD-PAGE-R06-T01 Every record row on the domain and record pages has exactly one row link, a real link to a record', async () => {
+  it('LA-PAT-RECORD-PAGE-R06-T01 LA-PAT-RECORD-PAGE-R06-T02 LA-PAT-RECORD-PAGE-R06-T03 LA-PAT-RECORD-PAGE-R06-T04 LA-PAT-RECORD-PAGE-R06-T05 LA-PAT-RECORD-PAGE-R06-T06 Every record row on the domain and record pages has exactly one row link, a real link to a record', async () => {
     for (const path of ['/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-CMD01']) {
       await openApp(path);
       await screen.findByRole('heading', { level: 1 });
