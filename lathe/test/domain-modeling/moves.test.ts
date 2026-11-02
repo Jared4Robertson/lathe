@@ -21,8 +21,8 @@ const command = (name: string) => ALL_COMMANDS.find((c) => `${c.slice.name} ${c.
 const data = (): Data =>
   adding(everyKind(), {
     domain: [
-      { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'supporting', description: 'The tools the library holds.' },
-      { id: 'NX-E', title: 'Elsewhere', product_id: 'NX', subdomain_type: 'generic', description: 'Work done in the second product.' },
+      { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', position: 2, subdomain_type: 'supporting', description: 'The tools the library holds.' },
+      { id: 'NX-E', title: 'Elsewhere', product_id: 'NX', position: 1, subdomain_type: 'generic', description: 'Work done in the second product.' },
     ],
     product: [{ id: 'NX', title: 'Next product', description: 'A second product beside the first.' }],
     capability: [{ id: 'TL-CAT-CAP02', title: 'Listing', domain_id: 'TL-CAT', position: 2, description: 'Listing the tools on the shelf.' }],

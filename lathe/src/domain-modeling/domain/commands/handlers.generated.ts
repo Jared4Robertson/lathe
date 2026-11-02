@@ -27,7 +27,7 @@ import type { AddDomainServiceTest } from './add-domain-service-test.ts';
 import type { ChangeDomainServiceTest } from './change-domain-service-test.ts';
 import type { RemoveDomainServiceTest } from './remove-domain-service-test.ts';
 
-/** Adds a domain to its product, with nothing in it yet. */
+/** Adds a domain to its product at a position, with nothing in it yet. */
 export function addDomain(tx: Transaction, input: AddDomain): void {
   const domains = new DomainRepository(tx);
   const domain = domains.create({ root: input.id, domain: input, capabilities: [], terms: [], domainServices: [], services: [], domainServiceTests: [], repositories: [] });
@@ -35,11 +35,11 @@ export function addDomain(tx: Transaction, input: AddDomain): void {
   domains.save(domain);
 }
 
-/** Changes a domain's title, subdomain type, description or notes. Its product never changes. */
+/** Changes a domain's title, position, subdomain type, description or notes. Its product never changes. */
 export function changeDomain(tx: Transaction, input: ChangeDomain): void {
   const domains = new DomainRepository(tx);
   const domain = domains.load(input.id) ?? tx.refuse('missing', `there is no domain ${input.id}`);
-  domain.domain = changed(domain.domain, input, ['title', 'subdomain_type', 'description', 'notes']);
+  domain.domain = changed(domain.domain, input, ['title', 'position', 'subdomain_type', 'description', 'notes']);
   holdToRules(tx, domain);
   domains.save(domain);
 }

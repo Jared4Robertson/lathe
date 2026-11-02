@@ -22,7 +22,7 @@ export const LIST_FOLLOWERS_IDENTITY = {
   id: 'LA-TRC-QRY14',
   slice: { aggregate: 'LA-TRC-A3', name: 'pattern-following' },
   name: 'list-followers',
-  description: 'Lists a pattern\'s followers by domain, in ID order: whether the domain itself follows it, and each of its use cases that does, each with the value it gives each of the pattern\'s settings.',
+  description: 'Lists a pattern\'s followers by domain, in position order: whether the domain itself follows it, and each of its use cases that does, each with the value it gives each of the pattern\'s settings.',
   method: 'GET',
   route: '/api/pattern-following/list-followers',
 } as const;

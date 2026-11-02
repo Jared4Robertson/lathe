@@ -65,8 +65,8 @@
 {"id":"LA-IXD-CMD345","title":"Add a UI component","entity_id":"LA-IXD-EN59","description":"Adds a UI component: its name in code and its file, with the views it renders, the view requirements it builds, the standard rules it meets and the packages it uses. It has no owner; its product follows from its ID."}
 {"id":"LA-IXD-CMD346","title":"Change a UI component","entity_id":"LA-IXD-EN59","description":"Changes a UI component's title, file or description, or the views it renders, the view requirements it builds, the standard rules it meets or the packages it uses (each list whole)."}
 {"id":"LA-IXD-CMD347","title":"Remove a UI component","entity_id":"LA-IXD-EN59","description":"Removes a UI component whole: the links it starts and the packages it uses. Refused while anything outside it references what is in it."}
-{"id":"LA-MOD-CMD160","title":"Add a domain","entity_id":"LA-MOD-EN04","description":"Adds a domain to its product, with nothing in it yet."}
-{"id":"LA-MOD-CMD161","title":"Change a domain","entity_id":"LA-MOD-EN04","description":"Changes a domain's title, subdomain type, description or notes. Its product never changes."}
+{"id":"LA-MOD-CMD160","title":"Add a domain","entity_id":"LA-MOD-EN04","description":"Adds a domain to its product at a position, with nothing in it yet."}
+{"id":"LA-MOD-CMD161","title":"Change a domain","entity_id":"LA-MOD-EN04","description":"Changes a domain's title, position, subdomain type, description or notes. Its product never changes."}
 {"id":"LA-MOD-CMD162","title":"Remove a domain","entity_id":"LA-MOD-EN04","description":"Removes a domain whole: its capabilities, terms, domain services with their services and tests, repositories, and the links they start. Refused while anything outside it references what is in it."}
 {"id":"LA-MOD-CMD163","title":"Add a capability","entity_id":"LA-MOD-EN05","description":"Adds a capability to its domain, at a position, with the business outcomes it serves."}
 {"id":"LA-MOD-CMD164","title":"Change a capability","entity_id":"LA-MOD-EN05","description":"Changes a capability's title, position or description, or the business outcomes it serves (the whole list)."}

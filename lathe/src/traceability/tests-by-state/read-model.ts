@@ -1,10 +1,10 @@
 // The Tests by state read model (LA-TRC-RM03), shaped for its read: each product's tests by state, scope by scope, its
-// own scope first then each domain in ID order. The counts are worked out once, on the load, from the coverage_tests
+// own scope first then each domain by position. The counts are worked out once, on the load, from the coverage_tests
 // view (coverage.ts) onto each scope's Coverage.tests in the checks' run; the projection reads them from the run the
 // query runner was given (`ReadView.checked`) and counts nothing of its own. It is the only code that reads the run for
 // the query and the only code that writes the table.
 import type { ReadView } from '../../platform/data/rules.ts';
-import { compareIds } from '../../platform/data/ids.ts';
+import { domainOrder } from '../../platform/data/domain-order.ts';
 
 /** One scope's tests by state. */
 export interface ScopeTestCounts {
@@ -24,6 +24,7 @@ export interface TestsByStateTable {
 export function testsByStateTableFrom(view: ReadView): TestsByStateTable {
   const products = new Map<string, ScopeTestCounts[]>(view.rows('product').map((p) => [String(p.id), []]));
   for (const c of view.checked?.coverage ?? []) products.get(c.product)?.push({ domain: c.domain, automated: c.tests.automated, manual: c.tests.manual, notAutomated: c.tests.not_automated });
-  for (const scopes of products.values()) scopes.sort((a, b) => (a.domain === null ? -1 : b.domain === null ? 1 : compareIds(a.domain, b.domain)));
+  const rank = domainOrder(view.rows('domain'));
+  for (const scopes of products.values()) scopes.sort((a, b) => (a.domain === null ? -1 : b.domain === null ? 1 : rank.get(a.domain)! - rank.get(b.domain)!));
   return { products };
 }

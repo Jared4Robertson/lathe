@@ -4,7 +4,7 @@
 // a minimum). Coverage is the checks' run's, not rows': the projection reads the run the query runner was given
 // (`ReadView.checked`). It is the only code that reads it for the query and the only code that writes the table.
 import type { ReadView } from '../../platform/data/rules.ts';
-import { compareIds } from '../../platform/data/ids.ts';
+import { domainOrder } from '../../platform/data/domain-order.ts';
 
 /** One obligation kind's figures in one scope. */
 export interface ObligationFigures {
@@ -39,7 +39,7 @@ export interface ScopeCoverage {
 /** A product's coverage, scope by scope. */
 export interface ProductCoverage {
   product: string;
-  /** The product's own scope (domain null) first, then each domain in ID order. */
+  /** The product's own scope (domain null) first, then each domain by position. */
   scopes: ScopeCoverage[];
 }
 
@@ -62,6 +62,7 @@ export function coverageTableFrom(view: ReadView): CoverageTable {
       gaps: c.gaps.map((g) => ({ id: g.id, kind: g.kind, missing: g.missing, message: g.message })),
     });
   }
-  for (const p of products.values()) p.scopes.sort((a, b) => (a.domain === null ? -1 : b.domain === null ? 1 : compareIds(a.domain, b.domain)));
+  const rank = domainOrder(view.rows('domain'));
+  for (const p of products.values()) p.scopes.sort((a, b) => (a.domain === null ? -1 : b.domain === null ? 1 : rank.get(a.domain)! - rank.get(b.domain)!));
   return { products };
 }

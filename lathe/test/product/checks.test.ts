@@ -118,7 +118,7 @@ check('accidental-in-essential', () => {
     ]);
     // A product has one language: a term of another of its domains excuses its word too, and a word no term defines is still read.
     const shelved = adding(data, {
-      domain: [{ id: 'EX-SHELF', title: 'Shelving', product_id: 'EX', subdomain_type: 'supporting', description: 'Where the tools stand.' }],
+      domain: [{ id: 'EX-SHELF', title: 'Shelving', product_id: 'EX', position: 2, subdomain_type: 'supporting', description: 'Where the tools stand.' }],
       term: [{ id: 'EX-SHELF-TM01', title: 'Column', domain_id: 'EX-SHELF', meaning: 'An upright of the shelf, its bays stacked in it.' }],
     });
     const across = await loadData(changing(shelved, 'uc_requirement', (r) => r.id === 'EX-LEND-UC02-R01', { statement: 'The librarian MUST put a returned tool back in its column, not in a database.' }));

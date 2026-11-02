@@ -128,7 +128,7 @@
 {"id":"LA-IXD-UC28-FL-S03","title":"The Owner changes the views a UI component renders","flow_id":"LA-IXD-UC28-FL","path":"main","position":3}
 {"id":"LA-IXD-UC28-FL-S04","title":"The Owner removes a UI component that renders no view","flow_id":"LA-IXD-UC28-FL","path":"main","position":4}
 {"id":"LA-MOD-UC02-FL-S01","title":"The Owner reads the domain whole, with what it holds, before changing it","flow_id":"LA-MOD-UC02-FL","path":"main","position":1}
-{"id":"LA-MOD-UC02-FL-S02","title":"The Owner adds a domain for each business capability, with its subdomain type","flow_id":"LA-MOD-UC02-FL","path":"main","position":2}
+{"id":"LA-MOD-UC02-FL-S02","title":"The Owner adds a domain for each business capability, at its position and with its subdomain type","flow_id":"LA-MOD-UC02-FL","path":"main","position":2}
 {"id":"LA-MOD-UC02-FL-S03","title":"The Owner adds the domain's capabilities in order and its glossary terms","flow_id":"LA-MOD-UC02-FL","path":"main","position":3}
 {"id":"LA-MOD-UC02-FL-S05","title":"The Owner adds the domain's services and its repositories, each persisting one aggregate and naming the data store it is kept in","flow_id":"LA-MOD-UC02-FL","path":"main","position":5}
 {"id":"LA-MOD-UC02-FL-S06","title":"The Owner renames a domain the check finds named for a technology","flow_id":"LA-MOD-UC02-FL","path":"main","position":6}
@@ -137,6 +137,7 @@
 {"id":"LA-MOD-UC02-FL-S09","title":"The Owner moves a glossary term to the domain whose language it is","flow_id":"LA-MOD-UC02-FL","path":"main","position":8,"interface_id":"LA-IF03"}
 {"id":"LA-MOD-UC02-FL-S10","title":"The Owner moves a repository to the domain of the aggregate it persists","flow_id":"LA-MOD-UC02-FL","path":"main","position":9,"interface_id":"LA-IF03"}
 {"id":"LA-MOD-UC02-FL-S11","title":"The Owner moves a domain service, with its service and tests, to another domain","flow_id":"LA-MOD-UC02-FL","path":"main","position":10,"interface_id":"LA-IF03"}
+{"id":"LA-MOD-UC02-FL-S12","title":"The Owner puts the domains in the order the product is read, by position","flow_id":"LA-MOD-UC02-FL","path":"main","position":11}
 {"id":"LA-MOD-UC10-FL-S01","title":"The Owner reads the aggregate whole, with its entities and invariants, before changing it","flow_id":"LA-MOD-UC10-FL","path":"main","position":1}
 {"id":"LA-MOD-UC10-FL-S02","title":"The Owner adds an aggregate with its root entity and the root's fields","flow_id":"LA-MOD-UC10-FL","path":"main","position":2}
 {"id":"LA-MOD-UC10-FL-S03","title":"The Owner adds a child entity with its fields, linked from the root by has_one or has_many, another aggregate referenced by a typed field","flow_id":"LA-MOD-UC10-FL","path":"main","position":3}

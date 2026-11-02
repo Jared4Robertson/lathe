@@ -28,7 +28,7 @@ export interface RecordIndex {
   gapsFor: Map<string, string[]>;
   /** The product's coverage, by scope: its own (the product's ID) and each domain's. */
   coverage: Map<string, ScopeCoverage>;
-  /** The space's domains, in ID order. */
+  /** The space's domains, by position. */
   domains: RecordSummary[];
   /** The space's folder tree (LA-EXP-RM02, get-folder-tree): what the nav, Quick open and the graph's tree read. */
   folders: FolderTree;
@@ -56,6 +56,7 @@ export interface Records {
   children: Map<string, RecordSummary[]>;
   outgoing: Map<string, SummaryLink[]>;
   incoming: Map<string, SummaryLink[]>;
+  /** The space's domains in ID order; the index lists them by position. */
   domains: RecordSummary[];
   /** The answer's links, kept to tell a later answer's links are the same. */
   links: readonly SummaryLink[];
@@ -152,6 +153,13 @@ export function coverageOf(product: string, coverage: ProductCoverage | null): {
   return { scopes, gapsFor };
 }
 
+/** The domains in the folder tree's order (the position the Owner gives them), keeping the array it was given when that is already the order. */
+function domainsByPosition(domains: RecordSummary[], folders: FolderTree): RecordSummary[] {
+  const place = new Map(folders.domains.map((d, at) => [d.owner, at]));
+  const ordered = [...domains].sort((a, b) => (place.get(a.id) ?? Infinity) - (place.get(b.id) ?? Infinity));
+  return ordered.every((d, at) => d === domains[at]) ? domains : ordered;
+}
+
 /** The space's index from its layers: the records, the folder tree and the meta model, the problems and the coverage (empty until read). */
 export function indexOf(meta: MetaIndex, records: Records, folders: FolderTree, problemsFor: RecordIndex['problemsFor'], coverage: ReturnType<typeof coverageOf>): RecordIndex {
   return {
@@ -164,7 +172,7 @@ export function indexOf(meta: MetaIndex, records: Records, folders: FolderTree, 
     problemsFor,
     gapsFor: coverage.gapsFor,
     coverage: coverage.scopes,
-    domains: records.domains,
+    domains: domainsByPosition(records.domains, folders),
     folders,
   };
 }

@@ -30,7 +30,7 @@ function productRepo(): string {
 const data = (root: string) => Object.fromEntries(readdirSync(path.join(root, 'data')).sort().map((f) => [f, readFileSync(path.join(root, 'data', f), 'utf8')]));
 
 // The records and rows the Agent writes, in the order they are written.
-const DOMAIN = { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' };
+const DOMAIN = { id: 'TL-LEND', title: 'Lending', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'Lending tools to members and getting them back.' };
 const AGGREGATE = { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', description: 'One tool lent to one member, with its due date.', identity: 'Loan ID' };
 const ENTITY = { id: 'TL-LEND-EN01', title: 'Loan', aggregate_id: 'TL-LEND-A1', role: 'root', description: 'The loan itself.' };
 const FIELDS: Record<string, string | number | boolean>[] = [

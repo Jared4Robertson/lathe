@@ -38,7 +38,7 @@ function adding(rows: Data): Data {
 
 // A second domain of the same product, with an aggregate, an unpublished event and a specification.
 const catalog: Data = {
-  domain: [{ id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'supporting', description: 'The tools the library holds.' }],
+  domain: [{ id: 'TL-CAT', title: 'Catalog', product_id: 'TL', position: 2, subdomain_type: 'supporting', description: 'The tools the library holds.' }],
   aggregate: [{ id: 'TL-CAT-A1', title: 'Listing', domain_id: 'TL-CAT', identity: 'Listing ID', description: 'How one tool is listed.' }],
   domain_event: [{ id: 'TL-CAT-EV01', title: 'Listing changed', aggregate_id: 'TL-CAT-A1', published: false, description: 'A listing was changed.' }],
   specification: [{ id: 'TL-CAT-SP01', title: 'Listed', statement: 'A tool is listed when it has a listing.' }],
@@ -157,7 +157,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
   it('refuses a link, or a field reference, across products', async () => {
     const other: Data = {
       product: [{ id: 'LA', title: 'Lathe', description: 'A tool for writing specs.' }],
-      domain: [{ id: 'LA-PRD', title: 'Product', product_id: 'LA', subdomain_type: 'core', description: 'Writing the records of a spec.' }],
+      domain: [{ id: 'LA-PRD', title: 'Product', product_id: 'LA', position: 1, subdomain_type: 'core', description: 'Writing the records of a spec.' }],
       aggregate: [{ id: 'LA-PRD-A1', title: 'Record', domain_id: 'LA-PRD', identity: 'Record ID', description: 'One record of a spec.' }],
       value_object: [{ id: 'LA-VO01', title: 'Record ID', description: 'The ID a record is known by.' }],
     };

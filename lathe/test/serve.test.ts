@@ -47,7 +47,7 @@ beforeAll(async () => {
   temps.push(root);
   const store = await openStore(root);
   await run(store, 'product add-product', { id: 'EX', title: 'Example', description: 'A small product for writing notes.' });
-  await run(store, 'domain add-domain', { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', subdomain_type: 'core', description: 'Writing and keeping notes.' });
+  await run(store, 'domain add-domain', { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', position: 2, subdomain_type: 'core', description: 'Writing and keeping notes.' });
   await run(store, 'domain add-capability', { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1, description: 'Writing notes down.' });
   await run(store, 'use-case add-use-case', { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a note.' });
   await store.close();

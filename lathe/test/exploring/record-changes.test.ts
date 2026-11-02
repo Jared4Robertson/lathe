@@ -26,7 +26,7 @@ describe('LA-EXP-UC15-R01-T02 What changed since a baseline is read per product,
     const tables = tablesOf(store, (t) => {
       t.invariant = [];
       t.aggregate[0].title = 'Lending';
-      t.domain.push({ id: 'EX-GONE', title: 'Gone', product_id: 'EX', subdomain_type: 'core', description: 'Removed since.' });
+      t.domain.push({ id: 'EX-GONE', title: 'Gone', product_id: 'EX', position: 2, subdomain_type: 'core', description: 'Removed since.' });
       t.domain = t.domain.filter((d) => d.id !== 'NF-NOTE');
     });
     const view = withBaseline(store, { state: 'ok', commit: 'abc123', short: 'abc123', subject: 'Before', date: '2026-10-01', base: null, tables });

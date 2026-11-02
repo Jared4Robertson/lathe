@@ -8,6 +8,7 @@
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import { byRecordId } from '../../platform/data/ids.ts';
+import { domainOrder } from '../../platform/data/domain-order.ts';
 
 /** A line end: exactly one (two bars), many (a crow's foot), none (a plain end) or an arrowhead (the aggregate a reference points at). */
 export type ErdEnd = 'one' | 'many' | 'none' | 'arrow';
@@ -88,12 +89,13 @@ export function erdTableFrom(view: ReadView): ErdTable {
   };
   const sortedRows = (rows: Row[]) => [...rows].sort((a, b) => byRecordId({ id: String(a.id) }, { id: String(b.id) }));
 
+  const domainRank = domainOrder(view.rows('domain'));
   const products = new Map<string, ErdMap>();
   for (const p of view.rows('product')) {
     const product = String(p.id);
     const boxes = new Map<string, ErdBox>();
     const lines = new Map<string, ErdLine>();
-    const domains = sortedRows(view.rows('domain').filter((d) => str(d, 'product_id') === product));
+    const domains = view.rows('domain').filter((d) => str(d, 'product_id') === product).sort((a, b) => domainRank.get(String(a.id))! - domainRank.get(String(b.id))!);
     for (const d of domains) {
       const aggregates = sortedRows(aggregatesOf.get(String(d.id)) ?? []);
       boxes.set(String(d.id), { id: String(d.id), kind: 'domain', title: str(d, 'title'), root: false, fields: [], empty: aggregates.length === 0 });

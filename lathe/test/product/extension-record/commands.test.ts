@@ -32,8 +32,8 @@ function declared(): Data {
       { id: 'OT', title: 'Other', description: 'Another product.' },
     ],
     domain: [
-      { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members.' },
-      { id: 'OT-D', title: 'Other', product_id: 'OT', subdomain_type: 'generic', description: "The other product's one domain." },
+      { id: 'TL-LEND', title: 'Lending', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'Lending tools to members.' },
+      { id: 'OT-D', title: 'Other', product_id: 'OT', position: 1, subdomain_type: 'generic', description: "The other product's one domain." },
     ],
     aggregate: [{ id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', identity: 'Loan ID', description: 'One tool lent to one member.' }],
     entity: [{ id: 'TL-LEND-EN01', title: 'Loan', aggregate_id: 'TL-LEND-A1', role: 'root', description: 'The loan itself.' }],
