@@ -1,13 +1,16 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { Link } from '../router';
 import { Button } from '../components/Button';
+import { useNarrow } from './useNarrow';
 
 // The one breadcrumb (LA-PAT-APP-UX-R16): every trail of places above a page, in the header
 // strip, the wiki card and the phone's top bar, is this component. A trail of up to three items
 // shows in full; a longer one shows its first item (the product), a "…" button and its last item
-// (the immediate parent). The button opens a menu of the hidden levels, each a link, reached by
-// Tab and the arrow keys, labeled, and closed by Escape (focus back on the button) or a click
-// elsewhere. Each item is one line, cut with an ellipsis, its whole name in its tooltip.
+// (the immediate parent). On a phone (LA-V61-R57) a trail of two or more shows only the "…" button
+// and its last item, so that one keeps a readable name rather than every item shrinking to a letter.
+// The button opens a menu of the hidden levels, each a link, reached by Tab and the arrow keys,
+// labeled, and closed by Escape (focus back on the button) or a click elsewhere. Each item is one
+// line, cut with an ellipsis, its whole name in its tooltip.
 
 export interface Crumb {
   /** The place's address. */
@@ -20,11 +23,14 @@ export interface Crumb {
 
 /** The most items a trail shows in full; a longer trail collapses its middle. */
 export const CRUMBS_SHOWN = 3;
+/** On a phone: a trail of more than one item shows only its last, after the "…" button. */
+export const CRUMBS_SHOWN_ON_A_PHONE = 1;
 
-/** What a trail shows: every item, or the first, the hidden middle and the last. */
-export function collapseCrumbs<T>(items: readonly T[]): { first: T[]; hidden: T[]; last: T[] } {
-  if (items.length <= CRUMBS_SHOWN) return { first: [...items], hidden: [], last: [] };
-  return { first: [items[0]], hidden: items.slice(1, -1), last: [items[items.length - 1]] };
+/** What a trail shows: every item, or the first (unless on a phone), the hidden middle and the last. */
+export function collapseCrumbs<T>(items: readonly T[], shown = CRUMBS_SHOWN): { first: T[]; hidden: T[]; last: T[] } {
+  if (items.length <= shown) return { first: [...items], hidden: [], last: [] };
+  const first = shown >= CRUMBS_SHOWN ? 1 : 0;
+  return { first: items.slice(0, first), hidden: items.slice(first, -1), last: [items[items.length - 1]] };
 }
 
 export interface BreadcrumbProps {
@@ -37,7 +43,7 @@ export interface BreadcrumbProps {
 }
 
 export function Breadcrumb({ items, label = 'Breadcrumb', className, onFollow }: BreadcrumbProps) {
-  const { first, hidden, last } = collapseCrumbs(items);
+  const { first, hidden, last } = collapseCrumbs(items, useNarrow() ? CRUMBS_SHOWN_ON_A_PHONE : CRUMBS_SHOWN);
   const item = (c: Crumb, key: string) => (
     <li key={key} className="crumb">
       <Link

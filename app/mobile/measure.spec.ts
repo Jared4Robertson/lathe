@@ -47,6 +47,18 @@ test.describe('LA-STD-EXPERIENCE-R13-T02 the phone checks', () => {
     expect(names(await smallTargets(page))).toEqual(['x', 'alone']);
   });
 
+  test('small targets: a hit box stretched past a small target counts, unless it is too small or a neighbor takes the tap', async ({ page }) => {
+    await fixture(page, `<style>
+        .hit { position: relative; width: 24px; height: 24px; margin: 30px; border: 0; }
+        .hit::before { content: ""; position: absolute; inset: -10px; }
+        .short::before { inset: -4px; }
+      </style>
+      <button class="hit" aria-label="stretched">a</button>
+      <button class="hit short" aria-label="short">b</button>
+      <div style="margin-top: 60px"><button class="hit" aria-label="covered" style="margin: 0">c</button><button style="position: relative; margin-left: -8px; width: 48px; height: 48px">over</button></div>`);
+    expect(names(await smallTargets(page))).toEqual(['short', 'covered']);
+  });
+
   test('overlaps: targets over each other and a fixed bar over the last target are found; neighbors, wrapped links and a scrolling region are not', async ({ page }) => {
     await fixture(page, `
       <div style="position: relative; height: 60px">
@@ -78,7 +90,9 @@ test.describe('LA-STD-EXPERIENCE-R13-T02 the phone checks', () => {
 
   test('a pannable map\'s contents are left to the map', async ({ page }) => {
     await fixture(page, `<div class="map" style="width: 200px; height: 200px; overflow: hidden; position: relative">
-      <button style="position: absolute; left: 400px; width: 10px; height: 10px">node</button></div>`);
+      <button style="position: absolute; left: 400px; width: 10px; height: 10px">node</button>
+      <span style="position: absolute; left: 150px; white-space: nowrap">A label running past the map's edge</span></div>`);
+    expect(await clippedText(page, { pannable: '.map' })).toEqual([]);
     expect(await unreachable(page, { pannable: '.map' })).toEqual([]);
     expect(await smallTargets(page, { pannable: '.map' })).toEqual([]);
     expect(names(await unreachable(page))).toEqual(['node']);

@@ -278,7 +278,7 @@ describe('Lathe on a phone', () => {
     await waitFor(() => expect(within(topbar()).getByRole('button', { name: 'Quick find' })).toHaveFocus());
   });
 
-  it('LA-V61-R19-T01 The nav is a full-screen sheet that keeps Tab inside it', async () => {
+  it('LA-V61-R19-T01 The nav is a full-screen modal sheet: Tab stays inside, the page behind is inert, and Escape or its backdrop closes it', async () => {
     phone();
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
@@ -291,6 +291,33 @@ describe('Lathe on a phone', () => {
     expect(focusable[0]).toHaveFocus();
     fireEvent.keyDown(focusable[0], { key: 'Tab', shiftKey: true });
     expect(focusable[focusable.length - 1]).toHaveFocus();
+    // It is modal: the page behind is inert while it is open, and only the drawer and its backdrop are not.
+    const behind = [topbar(), document.querySelector<HTMLElement>('#main')!];
+    for (const el of behind) expect(el.closest('[inert]')).not.toBeNull();
+    expect(nav.closest('[inert]')).toBeNull();
+    expect(document.querySelector('.drawer-backdrop')!.closest('[inert]')).toBeNull();
+    // Escape closes it and wakes the page; so does a tap on the backdrop.
+    fireEvent.keyDown(focusable[0], { key: 'Escape' });
+    expect(screen.queryByRole('navigation', { name: 'Main' })).toBeNull();
+    for (const el of behind) expect(el.closest('[inert]')).toBeNull();
+    fireEvent.click(within(topbar()).getByRole('button', { name: 'Open the navigation' }));
+    expect(topbar().closest('[inert]')).not.toBeNull();
+    fireEvent.mouseDown(document.querySelector('.drawer-backdrop')!);
+    expect(screen.queryByRole('navigation', { name: 'Main' })).toBeNull();
+    expect(topbar().closest('[inert]')).toBeNull();
+  });
+
+  it('LA-V61-R57-T01 On a phone a trail shows the … button and its parent, the button opening every place above it', async () => {
+    phone();
+    await openApp('/P-D-UC01-R01', served());
+    await screen.findByRole('heading', { level: 1 });
+    const trail = within(document.querySelector<HTMLElement>('.header-strip-trail')!);
+    expect(trail.getAllByRole('link').map((a) => a.textContent)).toEqual(['Lend a thing']);
+    const more = trail.getByRole('button', { name: /hidden levels?$/ });
+    fireEvent.click(more);
+    const hidden = within(screen.getByRole('list', { name: 'Hidden levels' })).getAllByRole('link').map((a) => a.getAttribute('href'));
+    expect(hidden[0]).toBe('/P');
+    expect(hidden.length).toBeGreaterThan(1);
   });
 
   const proveLaV61R23T01 = async () => {

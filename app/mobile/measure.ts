@@ -147,6 +147,23 @@ function install() {
     if (before && before !== document.body) before.focus({ preventScroll: true }); else el.blur();
     return shown;
   };
+  /**
+   * How far a tap lands on a target along the lines through its center, scrolled to the middle of the screen: its own
+   * box, and a ::before or ::after hit box stretched past it. Covered at its center, it is judged by its box alone.
+   */
+  const hitSize = (el: Element) => {
+    el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });
+    const r = el.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const lands = (x: number, y: number) => {
+      if (x < 0 || y < 0 || x >= vw() || y >= vh()) return false;
+      const at = document.elementFromPoint(x, y);
+      return Boolean(at && el.contains(at));
+    };
+    if (!lands(cx, cy)) return { width: r.width, height: r.height };
+    const reach = (dx: number, dy: number) => { let n = 0; while (n < TARGET_SIZE && lands(cx + dx * (n + 1), cy + dy * (n + 1))) n++; return n; };
+    return { width: Math.max(r.width, reach(-1, 0) + reach(1, 0) + 1), height: Math.max(r.height, reach(0, -1) + reach(0, 1) + 1) };
+  };
   const roleOf = (el: Element) => {
     const r = el.getAttribute('role');
     if (r) return r;
@@ -231,7 +248,7 @@ function install() {
     clippedText(pannable) {
       const found: Finding[] = [];
       for (const el of document.querySelectorAll('body *')) {
-        if (el.closest('svg, input, textarea, select') || !shown(el)) continue;
+        if (el.closest('svg, input, textarea, select') || !shown(el) || inPannable(el, pannable)) continue;
         const nodes = [...el.childNodes].filter((n) => n.nodeType === Node.TEXT_NODE && n.textContent!.trim());
         if (!nodes.length) continue;
         let t: Box | null = null;
@@ -271,16 +288,31 @@ function install() {
       return found;
     },
 
-    /** A target smaller than 44 x 44 px, but for a link inside a sentence. */
+    /**
+     * A target whose hit area is smaller than 44 x 44 px, but for a link inside a sentence. The hit area is where a tap
+     * lands on it: its box, or wider where a ::before or ::after hit box reaches past it. A target smaller than 44 px is
+     * scrolled to the middle of the screen and hit-tested along the lines through its center; every scroll position is
+     * put back.
+     */
     smallTargets(pannable) {
       const found: Finding[] = [];
-      for (const el of interactive(pannable)) {
-        const r = el.getBoundingClientRect();
-        if (r.width >= TARGET_SIZE && r.height >= TARGET_SIZE) continue;
-        if (roleOf(el) === 'link' && style(el).display === 'inline' && text(el.parentElement).length > text(el).length + 3) continue;
-        const labels = (el as HTMLInputElement).labels;
-        if (labels?.length && [...labels].some((l) => { const b = l.getBoundingClientRect(); return b.width >= TARGET_SIZE && b.height >= TARGET_SIZE; })) continue;
-        found.push(finding('small-target', el, `${px(r.width)} x ${px(r.height)} px`));
+      const scrolled = [...document.querySelectorAll('*')].filter((e) => e.scrollLeft || e.scrollTop).map((e) => [e, e.scrollLeft, e.scrollTop] as const);
+      const page = { x: scrollX, y: scrollY };
+      try {
+        for (const el of interactive(pannable)) {
+          const r = el.getBoundingClientRect();
+          if (r.width >= TARGET_SIZE && r.height >= TARGET_SIZE) continue;
+          if (roleOf(el) === 'link' && style(el).display === 'inline' && text(el.parentElement).length > text(el).length + 3) continue;
+          const labels = (el as HTMLInputElement).labels;
+          if (labels?.length && [...labels].some((l) => { const b = l.getBoundingClientRect(); return b.width >= TARGET_SIZE && b.height >= TARGET_SIZE; })) continue;
+          const hit = hitSize(el);
+          if (hit.width >= TARGET_SIZE && hit.height >= TARGET_SIZE) continue;
+          found.push(finding('small-target', el, `${px(Math.max(r.width, hit.width))} x ${px(Math.max(r.height, hit.height))} px`, boxOf(el.getBoundingClientRect())));
+        }
+      } finally {
+        for (const e of document.querySelectorAll('*')) if (e.scrollLeft || e.scrollTop) e.scrollTo({ left: 0, top: 0, behavior: 'instant' });
+        for (const [e, left, top] of scrolled) e.scrollTo({ left, top, behavior: 'instant' });
+        document.scrollingElement?.scrollTo({ left: page.x, top: page.y, behavior: 'instant' });
       }
       return found;
     },
@@ -367,7 +399,7 @@ async function run(page: Page, check: 'widePage' | 'clippedText' | 'smallTargets
 export const widePage = (page: Page, options: Options = {}) => run(page, 'widePage', options);
 /** Text clipped by its box without an ellipsis and its whole text as a title or name. */
 export const clippedText = (page: Page, options: Options = {}) => run(page, 'clippedText', options);
-/** A visible target smaller than 44 x 44 px, but for a link inside a sentence. */
+/** A visible target whose hit area is smaller than 44 x 44 px, but for a link inside a sentence. */
 export const smallTargets = (page: Page, options: Options = {}) => run(page, 'smallTargets', options);
 /** Two targets over each other, or a fixed or sticky layer covering a target. */
 export const overlaps = (page: Page, options: Options = {}) => run(page, 'overlaps', options);

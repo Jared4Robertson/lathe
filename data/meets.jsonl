@@ -833,6 +833,7 @@
 {"source_id":"LA-UCS-TB80","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-UCS-TB82","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-UI04","target_id":"LA-STD-EXPERIENCE-R12"}
+{"source_id":"LA-UI100","target_id":"LA-STD-EXPERIENCE-R13"}
 {"source_id":"LA-UI120","target_id":"LA-PAT-APP-CODE-R15"}
 {"source_id":"LA-UI126","target_id":"LA-PAT-APP-CODE-R03"}
 {"source_id":"LA-UI127","target_id":"LA-PAT-APP-CODE-R01"}
@@ -840,6 +841,9 @@
 {"source_id":"LA-UI129","target_id":"LA-PAT-APP-CODE-R03"}
 {"source_id":"LA-UI136","target_id":"LA-PAT-APP-CODE-R04"}
 {"source_id":"LA-UI136","target_id":"LA-PAT-APP-UX-R14"}
+{"source_id":"LA-UI137","target_id":"LA-STD-EXPERIENCE-R13"}
+{"source_id":"LA-UI138","target_id":"LA-STD-EXPERIENCE-R13"}
+{"source_id":"LA-UI140","target_id":"LA-STD-EXPERIENCE-R13"}
 {"source_id":"LA-UI145","target_id":"LA-PAT-APP-CODE-R25"}
 {"source_id":"LA-UI149","target_id":"LA-PAT-APP-CODE-R01"}
 {"source_id":"LA-UI149","target_id":"LA-PAT-APP-UX-R20"}
@@ -850,9 +854,11 @@
 {"source_id":"LA-UI63","target_id":"LA-STD-EXPERIENCE-R06"}
 {"source_id":"LA-UI66","target_id":"LA-STD-EXPERIENCE-R03"}
 {"source_id":"LA-UI67","target_id":"LA-STD-EXPERIENCE-R03"}
+{"source_id":"LA-UI67","target_id":"LA-STD-EXPERIENCE-R13"}
 {"source_id":"LA-UI69","target_id":"LA-PAT-APP-CODE-R06"}
 {"source_id":"LA-UI69","target_id":"LA-PAT-APP-UX-R09"}
 {"source_id":"LA-UI75","target_id":"LA-STD-EXPERIENCE-R07"}
 {"source_id":"LA-UI78","target_id":"LA-STD-EXPERIENCE-R08"}
 {"source_id":"LA-UI79","target_id":"LA-STD-PRINCIPLES-R07"}
 {"source_id":"LA-UI92","target_id":"LA-STD-EXPERIENCE-R02"}
+{"source_id":"LA-UI97","target_id":"LA-STD-EXPERIENCE-R13"}

@@ -71,7 +71,7 @@ describe('LA-V156-R01-T01 a journey\'s page reads it through its own query', () 
     const { requests } = await openApp('/DM-JR01', { data: withJourneys() });
     expect(await within(main()).findByText('The shopper has paid for the basket.')).toBeInTheDocument();
     expect(requests).toContain('GET /api/journey/get-journey?id=DM-JR01');
-    expect(within(main()).getByText('From').parentElement).toHaveTextContent('From A shopper wants an item. to The shopper has paid for the basket.');
+    expect(within(main()).getByText('From').parentElement).toHaveTextContent('From A shopper wants an item to The shopper has paid for the basket.');
     expect(within(main()).getByRole('list', { name: 'Outcomes DM-JR01 serves' })).toHaveTextContent('DM-BO01');
     await openApp('/DM-JR01-S03', { data: withJourneys() });
     expect((await within(main()).findAllByRole('link', { name: /DM-PAY-UC01/ })).length).toBeGreaterThan(0);

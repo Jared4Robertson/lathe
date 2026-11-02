@@ -3,7 +3,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { Breadcrumb, collapseCrumbs, type Crumb } from '../src/shell/Breadcrumb';
+import { Breadcrumb, collapseCrumbs, CRUMBS_SHOWN_ON_A_PHONE, type Crumb } from '../src/shell/Breadcrumb';
 import { openApp } from './helpers';
 import { testWorkspace } from './graph/workspace';
 
@@ -20,6 +20,9 @@ describe('the one breadcrumb', () => {
   it('LA-PAT-APP-UX-R16-T01 A trail of up to three shows in full; a longer one the first, a labeled "…" menu of the hidden levels, and the last', async () => {
     expect(collapseCrumbs([1, 2, 3])).toEqual({ first: [1, 2, 3], hidden: [], last: [] });
     expect(collapseCrumbs([1, 2, 3, 4, 5])).toEqual({ first: [1], hidden: [2, 3, 4], last: [5] });
+    // On a phone (LA-V61-R57) every place but the last folds into the button.
+    expect(collapseCrumbs([1, 2, 3], CRUMBS_SHOWN_ON_A_PHONE)).toEqual({ first: [], hidden: [1, 2], last: [3] });
+    expect(collapseCrumbs([1], CRUMBS_SHOWN_ON_A_PHONE)).toEqual({ first: [1], hidden: [], last: [] });
 
     const { unmount } = render(<Breadcrumb items={crumbs(3)} />);
     const short = within(screen.getByRole('navigation', { name: 'Breadcrumb' }));

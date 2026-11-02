@@ -27,6 +27,8 @@ import './journey.css';
 // problems, facts and links) is the Record page's (RecordFrame).
 
 const PRODUCT_LANE = 'The product';
+/** A trigger or result as a clause of "From … to …": its closing full stop dropped, so the sentence reads on. */
+const clause = (text: string): string => text.trim().replace(/\.$/, '');
 const UNWRITTEN_LANE = 'Not written yet';
 
 /** How far one step's use case or policy is proved, in words. */
@@ -143,7 +145,7 @@ function Header({ index, journey, proof }: { index: RecordIndex; journey: Journe
   return (
     <>
       <div className="journey-route record-lead" data-field="route">
-        <span className="journey-route-word">From</span> <Prose index={index} source={trigger} self={id} /> <span className="journey-route-word">to</span> <Prose index={index} source={result} self={id} />
+        <span className="journey-route-word">From</span> <Prose index={index} source={clause(trigger)} self={id} /> <span className="journey-route-word">to</span> <Prose index={index} source={result} self={id} />
       </div>
       <div className="journey-serves" data-fact="serves">
         <span className="journey-serves-label">Serves</span>
@@ -220,7 +222,7 @@ function summaryOf(index: RecordIndex, journey: JourneyRead, id: string, kind: J
     case 'journey': {
       const main = mainPathLine(journey);
       return {
-        lead: `From ${journey.journey.trigger} to ${journey.journey.result}`,
+        lead: `From ${clause(journey.journey.trigger)} to ${journey.journey.result}`,
         facts: [
           { label: 'Serves', value: journey.serves.length ? <ul className="plain">{journey.serves.map((o) => <li key={o}><RecordLink index={index} id={o} /></li>)}</ul> : 'no outcome yet' },
           ...(main ? [{ label: 'Main path', value: main }] : []),
