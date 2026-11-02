@@ -110,8 +110,8 @@ describe("Lathe's value objects", () => {
       await refusals(
         adding({
           domain: [
-            { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'supporting', description: 'The tools the library holds.' },
-            { id: 'TL-MAIL', title: 'Mail', product_id: 'TL', subdomain_type: 'generic', description: 'Mail sent to members.' },
+            { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', position: 2, subdomain_type: 'supporting', description: 'The tools the library holds.' },
+            { id: 'TL-MAIL', title: 'Mail', product_id: 'TL', position: 3, subdomain_type: 'generic', description: 'Mail sent to members.' },
           ],
         }),
       ),

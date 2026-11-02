@@ -18,7 +18,7 @@ const field = (entity_id: string, position: number, name: string, more: Record<s
 /** Members, loans and tools in one domain, each with a table in db/schema.sql, and a view of members in db/views.sql. */
 const LIBRARY: Data = {
   product: [{ id: 'PX', title: 'Product X', description: 'A library that lends tools to members.' }],
-  domain: [{ id: 'PX-LEND', title: 'Lending', product_id: 'PX', subdomain_type: 'core', description: 'Lending tools to members.' }],
+  domain: [{ id: 'PX-LEND', title: 'Lending', product_id: 'PX', position: 1, subdomain_type: 'core', description: 'Lending tools to members.' }],
   aggregate: [
     { id: 'PX-LEND-A1', title: 'Member', domain_id: 'PX-LEND', identity: 'Member ID', description: 'Someone who may borrow.' },
     { id: 'PX-LEND-A2', title: 'Loan', domain_id: 'PX-LEND', identity: 'Loan ID', description: 'One tool lent to one member.' },

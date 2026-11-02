@@ -29,7 +29,7 @@ afterEach(async () => {
 const base = (): Data => ({
   product: [{ id: 'TL', title: 'Tool Library', description: 'A neighborhood tool library.' }],
   role: [{ product_id: 'TL', name: 'Librarian', description: 'Lends and repairs tools.' }],
-  domain: [{ id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools.' }],
+  domain: [{ id: 'TL-LEND', title: 'Lending', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'Lending tools.' }],
   standard: [{ id: 'TL-STD-CODE', title: 'Code', product_id: 'TL', type: 'engineering', description: 'How the code is written.' }],
   standard_rule: [{ id: 'TL-STD-CODE-R01', title: 'Node prefix', standard_id: 'TL-STD-CODE', statement: 'Code MUST import node: modules.' }],
 });

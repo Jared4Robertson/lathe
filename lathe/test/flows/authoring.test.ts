@@ -37,7 +37,7 @@ const section = (markdown: string, heading: string) => {
 /** A product's own technical kind several flows declare. */
 const HOUSE_KIND = { name: 'launcher', product_id: 'TL', label: 'Launcher', description: 'A file the product starts from.', parent_kind: 'domain', stage: 'technical-specification', obligation: false, complexity: 'accidental' };
 /** The lending domain, as the flows that start from nothing add it. */
-const LENDING_DOMAIN = { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' };
+const LENDING_DOMAIN = { id: 'TL-LEND', title: 'Lending', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'Lending tools to members and getting them back.' };
 /** A record of the workspace, by ID. */
 const recordOf = (tl: Product, id: string) => tl.workspace().records.find((r) => r.id === id);
 /** The links of the workspace that start at the record, as `relation target`. */
@@ -53,7 +53,7 @@ describe('The stage domains\' flows', () => {
     expect(section(reference(tl), '### Domain (`domain`)')).toContain('for one business capability');
     // S03: one domain per capability, with its subdomain type; one is named for a layer.
     tl.command('domain add-domain', LENDING_DOMAIN);
-    tl.command('domain add-domain', { id: 'TL-CAT', title: 'Web app', product_id: 'TL', subdomain_type: 'supporting', description: 'The tools the library holds and how members find them.' });
+    tl.command('domain add-domain', { id: 'TL-CAT', title: 'Web app', product_id: 'TL', position: 2, subdomain_type: 'supporting', description: 'The tools the library holds and how members find them.' });
     // S04: the check warns of the domain named for a technology; they rename it for its capability.
     expect(problemsOf(tl.workspace(), 'domain-named-for-technology')).toEqual([expect.stringMatching(/^TL-CAT: .*"web app"/)]);
     tl.command('domain change-domain', { id: 'TL-CAT', title: 'Catalog' });

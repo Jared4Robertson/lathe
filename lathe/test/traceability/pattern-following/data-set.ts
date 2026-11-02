@@ -14,7 +14,7 @@ export async function patternFollowingDataSet(): Promise<Store> {
   const store = await openStore(
     writeData({
       product: [{ id: 'TL', title: 'Tool Library', description: 'A neighborhood tool library.' }],
-      domain: [{ id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }],
+      domain: [{ id: 'TL-LEND', title: 'Lending', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }],
       capability: [{ id: 'TL-LEND-CAP01', title: 'Loans', domain_id: 'TL-LEND', position: 1, description: 'Lending a tool and taking it back.' }],
       use_case: [{ id: 'TL-LEND-UC01', title: 'Lend a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member takes a tool home.' }],
       pattern: [

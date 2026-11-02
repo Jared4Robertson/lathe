@@ -78,7 +78,7 @@ beforeAll(async () => {
   await writeFile(path.join(root, 'lathe.config.json'), `${JSON.stringify({ schema: SCHEMA_VERSION })}\n`);
   const store = await openStore(root);
   await runCommand(store, commandAt('/api/product/add-product'), { id: 'EX', title: 'Example', description: 'A small product for keeping notes.' });
-  await runCommand(store, commandAt('/api/domain/add-domain'), { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', subdomain_type: 'core', description: 'Notes a writer keeps.' });
+  await runCommand(store, commandAt('/api/domain/add-domain'), { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', position: 2, subdomain_type: 'core', description: 'Notes a writer keeps.' });
   await runCommand(store, commandAt('/api/domain/add-capability'), { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1, description: 'Writing and keeping notes.' });
   await runCommand(store, commandAt('/api/use-case/add-use-case'), { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer writes a note.' });
   await store.close();

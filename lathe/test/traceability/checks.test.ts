@@ -241,7 +241,7 @@ describe('coverage gaps as warnings', () => {
 
 check('pattern-rule-test-outside-followers', () => {
   it('LA-TRC-UC08-R02-T01 a pattern rule test naming a domain that does not follow the pattern is an error', async () => {
-    let data = adding(complete(), { domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'supporting', description: 'Selling spare parts.' }] });
+    let data = adding(complete(), { domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', position: 2, subdomain_type: 'supporting', description: 'Selling spare parts.' }] });
     data = adding(data, { pattern_rule_test: [{ id: 'EX-PAT-ACT-R01-T02', title: 'In the shop', pattern_rule_id: 'EX-PAT-ACT-R01', domain_id: 'EX-SHOP', level: 'service', state: 'not automated yet', when: 'The clerk saves a sale.', then: 'The sale reads the same everywhere.' }] });
     const ws = await loadData(data);
     expect(ofCheck(ws, 'pattern-rule-test-outside-followers')).toEqual([

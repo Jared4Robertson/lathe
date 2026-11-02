@@ -40,7 +40,7 @@ const EXTRA = HISTORY_PAGE - 2;
 async function seed(root: string) {
   const s = await openStore(root);
   await run(s, 'product add-product', { id: 'EX', title: 'Example', description: 'A small product for writing notes.', roles: [{ name: 'Writer', description: 'Someone who writes notes.' }] });
-  await run(s, 'domain add-domain', { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', subdomain_type: 'core', description: 'Writing and keeping notes.' });
+  await run(s, 'domain add-domain', { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', position: 2, subdomain_type: 'core', description: 'Writing and keeping notes.' });
   await run(s, 'domain add-capability', { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1, description: 'Writing notes down.' });
   await run(s, 'pattern add-pattern', { id: 'EX-PAT-NOTE', title: 'A note action', product_id: 'EX', description: 'An action on one note.', settings: [{ name: 'record', meaning: 'The record the action changes.' }] });
   await run(s, 'use-case add-use-case', { id: UC, title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a note.' });

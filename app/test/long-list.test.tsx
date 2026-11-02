@@ -23,7 +23,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
 function bigWorkspace(): ServedData {
   const ws = baseWorkspace();
   addRows(ws, 'product', { id: 'BG', title: 'Big product' });
-  for (let d = 1; d <= 12; d++) addRows(ws, 'domain', { id: `BG-D${pad(d)}`, title: `Domain ${d}`, product_id: 'BG', subdomain_type: 'core' });
+  for (let d = 1; d <= 12; d++) addRows(ws, 'domain', { id: `BG-D${pad(d)}`, title: `Domain ${d}`, product_id: 'BG', position: d, subdomain_type: 'core' });
   addRows(ws, 'aggregate', { id: 'BG-D01-A1', title: 'Ledger', domain_id: 'BG-D01' });
   addRows(ws, 'specification', { id: 'BG-D01-SP01', title: 'A ledger balances', statement: 'A ledger balances when its debits equal its credits.' });
   for (let u = 1; u <= 12; u++) {

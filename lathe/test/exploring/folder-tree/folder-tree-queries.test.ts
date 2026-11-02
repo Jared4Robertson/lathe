@@ -29,8 +29,8 @@ const DATA: Data = {
   ],
 };
 
-async function tree(): Promise<FolderTree> {
-  const store = await openStore(writeData(DATA));
+async function tree(data: Data = DATA): Promise<FolderTree> {
+  const store = await openStore(writeData(data));
   open.push(store);
   return runQuery({ schema: store.schema, rows: (t) => store.rows(t), record: (id) => store.record(id) }, GET_FOLDER_TREE, { product_id: 'EX' }) as FolderTree;
 }
@@ -43,6 +43,14 @@ describe('LA-EXP-UC08-R06-T02 The folder tree read gives Shared and each domain 
     expect(t.product).toBe('EX');
     expect(t.shared.owner).toBe('EX');
     expect(t.domains.map((d) => `${d.owner} ${d.title}`)).toEqual(['EX-LEND Lending']);
+  });
+
+  it('lists the domains by their position, not by ID', async () => {
+    const accounts = { id: 'EX-ACCT', title: 'Accounts', product_id: 'EX', position: 2, subdomain_type: 'generic', description: 'Who may borrow.' };
+    const t = await tree({ ...DATA, domain: [...DATA.domain, accounts] });
+    expect(t.domains.map((d) => d.owner)).toEqual(['EX-LEND', 'EX-ACCT']);
+    const first = await tree({ ...DATA, domain: [{ ...DATA.domain[0], position: 2 }, { ...accounts, position: 1 }, ...DATA.domain.slice(1)] });
+    expect(first.domains.map((d) => d.owner)).toEqual(['EX-ACCT', 'EX-LEND']);
   });
 
   it('folds an aggregate\'s entities and invariants under it, and keeps empty folders only where a kind can start a branch', async () => {

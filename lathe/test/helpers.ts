@@ -176,7 +176,7 @@ export function complete(): Data {
     role: [{ product_id: 'EX', name: 'Member', description: 'Someone who borrows tools.' }, { product_id: 'EX', name: 'Librarian', description: 'Someone who lends tools at the desk.' }],
     business_outcome: [{ id: 'EX-BO01', title: 'More tools in use', product_id: 'EX', statement: 'Members borrow more of the tools the library holds.', measure: 'Loans opened per tool per month.', target: 'Two loans per tool per month within a year.' }],
 
-    domain: [{ id: 'EX-LEND', title: 'Lending', product_id: 'EX', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }],
+    domain: [{ id: 'EX-LEND', title: 'Lending', product_id: 'EX', position: 1, subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }],
     aggregate: [
       { id: 'EX-LEND-A1', title: 'Loan', domain_id: 'EX-LEND', identity: 'Loan ID', description: 'One tool lent to one member, with its return.' },
       { id: 'EX-LEND-A2', title: 'Tool', domain_id: 'EX-LEND', identity: 'Tool ID', description: 'A tool the library holds.' },
@@ -432,8 +432,8 @@ export function sparse(): Data {
     product: [{ id: 'SP', title: 'Sparse', description: 'A product short of every minimum.' }],
     business_outcome: [{ id: 'SP-BO01', title: 'Unserved', product_id: 'SP', statement: 'Members return tools on time.', measure: 'Loans returned late per month.', target: 'None.' }],
     domain: [
-      { id: 'SP-D', title: 'Lending', product_id: 'SP', subdomain_type: 'core', description: 'Lending tools.' },
-      { id: 'SP-E', title: 'Empty', product_id: 'SP', subdomain_type: 'generic', description: 'Nothing yet.' },
+      { id: 'SP-D', title: 'Lending', product_id: 'SP', position: 1, subdomain_type: 'core', description: 'Lending tools.' },
+      { id: 'SP-E', title: 'Empty', product_id: 'SP', position: 2, subdomain_type: 'generic', description: 'Nothing yet.' },
     ],
     aggregate: [
       { id: 'SP-D-A1', title: 'Loan', domain_id: 'SP-D', identity: 'Loan ID', description: 'One tool lent to one member.' },

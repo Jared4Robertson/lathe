@@ -17,7 +17,7 @@ beforeAll(async () => {
   root = configuredRoot('lathe-changes-');
   store = await openStore(root);
   await run(store, 'product add-product', { id: 'EX', title: 'Example', description: 'A small product for writing notes.', roles: [{ name: 'Writer', description: 'Someone who writes notes.' }] });
-  await run(store, 'domain add-domain', { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', subdomain_type: 'core', description: 'Writing and keeping notes.' });
+  await run(store, 'domain add-domain', { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', position: 2, subdomain_type: 'core', description: 'Writing and keeping notes.' });
   await run(store, 'domain add-capability', { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1, description: 'Writing notes down.' });
   await run(store, 'pattern add-pattern', { id: 'EX-PAT-NOTE', title: 'A note action', product_id: 'EX', description: 'An action on one note.' });
   await run(store, 'use-case add-use-case', { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a thought.' });

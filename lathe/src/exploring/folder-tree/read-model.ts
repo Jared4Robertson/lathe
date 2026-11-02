@@ -13,7 +13,8 @@ import type { ReadView } from '../../platform/data/rules.ts';
 import type { Stage } from '../../platform/data/schema.ts';
 import { inSpace, placementOf, type Placed } from '../placement.ts';
 import { groupBy, groupOf } from '../../platform/data/grouped.ts';
-import { byRecordId, idOrder } from '../../platform/data/ids.ts';
+import { idOrder } from '../../platform/data/ids.ts';
+import { domainOrder } from '../../platform/data/domain-order.ts';
 import type { Row } from '../../platform/data/rows.ts';
 
 /** One record in its folder, with the records that fold under it. */
@@ -63,7 +64,7 @@ export interface FolderTree {
   product: string;
   /** What the product shares. */
   shared: OwnerFolders;
-  /** Each domain, in ID order, with its title. */
+  /** Each domain, by position, with its title. */
   domains: (OwnerFolders & { title: string })[];
 }
 
@@ -146,9 +147,10 @@ export function folderTreeTableFrom(view: ReadView): FolderTreeTable {
 
   const products = new Map<string, FolderTree>();
   const all = [...placed.values()];
+  const domainRank = domainOrder(view.rows('domain'));
   for (const product of all.filter((r) => r.kind === 'product')) {
     const space = all.filter((r) => inSpace(r, product.id));
-    const domains = space.filter((r) => r.kind === 'domain' && r.product === product.id).sort(byRecordId);
+    const domains = space.filter((r) => r.kind === 'domain' && r.product === product.id).sort((a, b) => domainRank.get(a.id)! - domainRank.get(b.id)!);
     // The space's records by the domain they sit in, grouped once.
     const inDomain = groupBy(space.filter((r) => r.domain !== null), (r) => r.domain);
     products.set(product.id, {

@@ -78,7 +78,7 @@ describe('record_scope', () => {
     expect(await domains(lending)).toEqual(Object.fromEntries(lending.map((id) => [id, 'TL-LEND'])));
     // A second domain's query is presented in the same view, and its read model has a field typed by a new value
     // object; a third value object is used by no one.
-    await run(store, 'domain add-domain', { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'supporting', description: 'The tools the library holds.' });
+    await run(store, 'domain add-domain', { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', position: 2, subdomain_type: 'supporting', description: 'The tools the library holds.' });
     await run(store, 'domain add-capability', { id: 'TL-CAT-CAP01', title: 'Browsing', domain_id: 'TL-CAT', position: 1, description: 'Browsing the tools on the shelf.' });
     await run(store, 'use-case add-use-case', { id: 'TL-CAT-UC01', title: 'Browse the tools', capability_id: 'TL-CAT-CAP01', goal: 'A member finds a tool to borrow.' });
     await run(store, 'use-case add-flow', { id: 'TL-CAT-UC01-FL', title: 'Browse', use_case_id: 'TL-CAT-UC01' });
@@ -170,7 +170,7 @@ describe('links', () => {
   it('LA-PAT-AGGREGATE-COMMANDS-R07-T01 LA-PAT-AGGREGATE-COMMANDS-R07-T04 LA-PAT-AGGREGATE-COMMANDS-R07-T05 LA-PAT-AGGREGATE-COMMANDS-R07-T06 LA-PAT-AGGREGATE-COMMANDS-R07-T07 LA-PAT-AGGREGATE-COMMANDS-R07-T08 refuses a link to another product', async () => {
     const { store } = await fresh();
     await run(store, 'product add-product', { id: 'LA', title: 'Lathe', description: 'A tool for writing specs.' });
-    await run(store, 'domain add-domain', { id: 'LA-PRD', title: 'Product', product_id: 'LA', subdomain_type: 'core', description: 'Writing the records of a spec.' });
+    await run(store, 'domain add-domain', { id: 'LA-PRD', title: 'Product', product_id: 'LA', position: 1, subdomain_type: 'core', description: 'Writing the records of a spec.' });
     await run(store, 'aggregate add-aggregate', { id: 'LA-PRD-A1', title: 'Record', domain_id: 'LA-PRD', identity: 'Record ID', description: 'One record of a spec.' });
     expect(await refusedBy(store, 'read-model change-read-model', { id: 'TL-LEND-RM01', reads: ['TL-LEND-A1', 'LA-PRD-A1'] })).toEqual([expect.objectContaining({ rule: 'link-crosses-product' })]);
     await store.close();

@@ -14,7 +14,7 @@ const goal = 'It follows EX-LEND-UC02, then\nEX-LEND-UC01-R01, then EX-LEND-UC02
 const data = () =>
   adding(changing(complete(), 'use_case', (r) => r.id === 'EX-LEND-UC01', { goal }), {
     product: [{ id: 'NX', title: 'Next product', description: 'A second product beside the first.' }],
-    domain: [{ id: 'NX-E', title: 'Elsewhere', product_id: 'NX', subdomain_type: 'generic', description: 'Work done in the second product.' }],
+    domain: [{ id: 'NX-E', title: 'Elsewhere', product_id: 'NX', position: 1, subdomain_type: 'generic', description: 'Work done in the second product.' }],
   });
 
 let ws: Workspace;
@@ -61,7 +61,7 @@ describe('IDs in text', () => {
   });
 
   it('LA-PRD-UC38-R03-T01 Only link tables link records: a link to a record that does not exist is refused, while text naming it is not', async () => {
-    const base = { product: [{ id: 'MX', title: 'Mentions', description: 'A product whose text names IDs.' }], domain: [{ id: 'MX-D', title: 'Domain', product_id: 'MX', subdomain_type: 'core', description: 'It reads MX-D-SP99.' }] };
+    const base = { product: [{ id: 'MX', title: 'Mentions', description: 'A product whose text names IDs.' }], domain: [{ id: 'MX-D', title: 'Domain', product_id: 'MX', position: 1, subdomain_type: 'core', description: 'It reads MX-D-SP99.' }] };
     expect(await refusals(base)).toEqual([]);
     const command = { aggregate: [{ id: 'MX-D-A1', title: 'Loan', domain_id: 'MX-D', identity: 'Loan ID', description: 'One loan.' }], entity: [{ id: 'MX-D-EN01', title: 'Loan', aggregate_id: 'MX-D-A1', role: 'root', description: 'The loan itself.' }], command: [{ id: 'MX-D-CMD01', title: 'Open', entity_id: 'MX-D-EN01', description: 'Opens a loan.' }] };
     expect(await refusals({ ...base, ...command, checks: [{ source_id: 'MX-D-CMD01', target_id: 'MX-D-SP99' }] })).toEqual([expect.objectContaining({ rule: 'foreign-key', table: 'checks' })]);

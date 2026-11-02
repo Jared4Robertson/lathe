@@ -84,6 +84,7 @@ function summaryOf(index: RecordIndex, page: Domain): { lead?: string; facts: Fa
         lead: page.domain.description,
         facts: [
           { label: 'Product', value: <RecordLink index={index} id={page.domain.product_id} /> },
+          { label: 'Position', value: page.domain.position },
           { label: 'Subdomain', value: page.domain.subdomain_type },
           { label: 'Holds', value: `${count(page.capabilities.length, 'capability', 'capabilities')}, ${count(page.terms.length, 'term', 'terms')}` },
         ],

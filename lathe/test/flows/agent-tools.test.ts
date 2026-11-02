@@ -96,15 +96,15 @@ describe('The stage domains\' flows through the MCP tools', () => {
       expect(addDomain).toContain('subdomain_type');
       expect(addDomain).toContain('supporting');
       // S03: one domain per capability, with its subdomain type; one is named for a layer.
-      await a.ok('domain_add_domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' });
-      await a.ok('domain_add_domain', { id: 'TL-CAT', title: 'Web app', product_id: 'TL', subdomain_type: 'supporting', description: 'The tools the library holds and how members find them.' });
+      await a.ok('domain_add_domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'Lending tools to members and getting them back.' });
+      await a.ok('domain_add_domain', { id: 'TL-CAT', title: 'Web app', product_id: 'TL', position: 2, subdomain_type: 'supporting', description: 'The tools the library holds and how members find them.' });
       // S04: the check warns of the domain named for a technology; the Agent renames it.
       expect(found(await a.check(), 'domain-named-for-technology')).toEqual([expect.stringMatching(/^TL-CAT: .*"web app"/)]);
       await a.ok('domain_change_domain', { id: 'TL-CAT', title: 'Catalog' });
       expect(found(await a.check(), 'domain-named-for-technology')).toEqual([]);
       // A refused command returns every reason and changes no file.
       const before = a.tl.read('data/domain.jsonl');
-      expect(await a.refused('domain_add_domain', { id: 'TL-SHOP', title: 'Shop', product_id: 'TL', subdomain_type: 'central', description: 'Selling tools to members.' })).toContain('subdomain_type');
+      expect(await a.refused('domain_add_domain', { id: 'TL-SHOP', title: 'Shop', product_id: 'TL', position: 3, subdomain_type: 'central', description: 'Selling tools to members.' })).toContain('subdomain_type');
       expect(a.tl.read('data/domain.jsonl')).toBe(before);
     });
   });
@@ -199,7 +199,7 @@ describe('The stage domains\' flows through the MCP tools', () => {
 
   it('LA-PAT-MCP-STEPS-R01-T01 LA-PAT-MCP-STEPS-R01-T05 LA-PAT-MCP-STEPS-R01-T06 LA-PAT-MCP-STEPS-R01-T07 LA-PAT-MCP-STEPS-R01-T08 LA-PAT-MCP-STEPS-R01-T09 model each aggregate\'s entities and value objects through the MCP tools', async () => {
     await walk([
-      add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }),
+      add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }),
       add('aggregate', { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', identity: 'Loan ID', description: 'One tool lent to one member, with its return.' }),
       add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND', identity: 'Tool ID', description: 'A tool the library holds.' }),
     ], async (a) => {
@@ -233,7 +233,7 @@ describe('The stage domains\' flows through the MCP tools', () => {
 
   it('LA-PAT-MCP-STEPS-R01-T01 LA-PAT-MCP-STEPS-R01-T05 LA-PAT-MCP-STEPS-R01-T06 LA-PAT-MCP-STEPS-R01-T07 LA-PAT-MCP-STEPS-R01-T08 LA-PAT-MCP-STEPS-R01-T09 model commands, the events they raise and the policies that hear them through the MCP tools', async () => {
     await walk([
-      add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }),
+      add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }),
       add('aggregate', { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', identity: 'Loan ID', description: 'One tool lent to one member, with its return.' }),
       add('entity', { id: 'TL-LEND-EN01', title: 'Loan', aggregate_id: 'TL-LEND-A1', role: 'root', description: 'The loan itself.' }),
       add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND', identity: 'Tool ID', description: 'A tool the library holds.' }),

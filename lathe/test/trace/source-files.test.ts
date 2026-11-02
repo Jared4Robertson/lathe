@@ -59,7 +59,7 @@ describe('source file tracing', () => {
   it('LA-TRC-UC02-R12-T01 a source file no technical record names is a gap; tests, configs, generated files and build output are left out', async () => {
     const data = {
       product: [{ id: 'EX', title: 'Example', description: 'A small library that lends tools.' }],
-      domain: [{ id: 'EX-LEND', title: 'Lending', product_id: 'EX', subdomain_type: 'core', description: 'Lending tools to members.' }],
+      domain: [{ id: 'EX-LEND', title: 'Lending', product_id: 'EX', position: 1, subdomain_type: 'core', description: 'Lending tools to members.' }],
       aggregate: [{ id: 'EX-LEND-A1', title: 'Loan', domain_id: 'EX-LEND', identity: 'Loan ID', description: 'One tool lent to one member.' }],
       entity: [{ id: 'EX-LEND-EN01', title: 'Loan', aggregate_id: 'EX-LEND-A1', role: 'root', description: 'The loan itself.' }],
       repository: [{ id: 'EX-LEND-REPO01', title: 'Loans', domain_id: 'EX-LEND', file: 'src/lending', description: 'Keeps loans in the loans table.' }],

@@ -55,10 +55,10 @@ check('domain-named-for-technology', () => {
   it('LA-STD-MODELING-R05-T02 a domain whose title or code names a technology is a warning; one only described so is not', async () => {
     const data = adding(complete(), {
       domain: [
-        { id: 'EX-WEB', title: 'Web app', product_id: 'EX', subdomain_type: 'generic', description: 'Pages members see.' },
-        { id: 'EX-DB', title: 'Records', product_id: 'EX', subdomain_type: 'generic', description: 'Records the library keeps.' },
-        { id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'generic', description: 'Served by its own server.' },
-        { id: 'EX-TOUR', title: 'Guided tours', product_id: 'EX', subdomain_type: 'generic', description: 'Tours of the workshop.' },
+        { id: 'EX-WEB', title: 'Web app', product_id: 'EX', position: 2, subdomain_type: 'generic', description: 'Pages members see.' },
+        { id: 'EX-DB', title: 'Records', product_id: 'EX', position: 3, subdomain_type: 'generic', description: 'Records the library keeps.' },
+        { id: 'EX-SHOP', title: 'Shop', product_id: 'EX', position: 4, subdomain_type: 'generic', description: 'Served by its own server.' },
+        { id: 'EX-TOUR', title: 'Guided tours', product_id: 'EX', position: 5, subdomain_type: 'generic', description: 'Tours of the workshop.' },
       ],
     });
     const found = ofCheck(await loadData(data), 'domain-named-for-technology');

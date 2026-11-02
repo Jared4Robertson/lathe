@@ -177,6 +177,7 @@
 {"source_id":"LA-MOD-INV183-T","target_id":"LA-TST-TD01"}
 {"source_id":"LA-MOD-INV184-T","target_id":"LA-TST-TD01"}
 {"source_id":"LA-MOD-INV185-T","target_id":"LA-TST-TD01"}
+{"source_id":"LA-MOD-INV186-T","target_id":"LA-TST-TD01"}
 {"source_id":"LA-MOD-INV25-T","target_id":"LA-TST-TD02"}
 {"source_id":"LA-MOD-INV70-T","target_id":"LA-MOD-TD42"}
 {"source_id":"LA-MOD-INV80-T","target_id":"LA-MOD-TD52"}
@@ -194,6 +195,8 @@
 {"source_id":"LA-MOD-UC02-R08-T01","target_id":"LA-TST-TD01"}
 {"source_id":"LA-MOD-UC02-R08-T01","target_id":"LA-TST-TD02"}
 {"source_id":"LA-MOD-UC02-R09-T01","target_id":"LA-TST-TD01"}
+{"source_id":"LA-MOD-UC02-R10-T01","target_id":"LA-TST-TD01"}
+{"source_id":"LA-MOD-UC02-R10-T02","target_id":"LA-TST-TD01"}
 {"source_id":"LA-MOD-UC10-FL-T","target_id":"LA-TST-TD03"}
 {"source_id":"LA-MOD-UC10-R01-T01","target_id":"LA-TST-TD01"}
 {"source_id":"LA-MOD-UC10-R01-T01","target_id":"LA-TST-TD02"}
