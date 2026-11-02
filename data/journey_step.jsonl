@@ -19,3 +19,6 @@
 {"id":"LA-JR04-S04","title":"The Owner reviews the change and keeps it","journey_id":"LA-JR04","path":"main","position":4}
 {"id":"LA-JR04-S05","title":"The Owner reviews the change and undoes it","journey_id":"LA-JR04","path":"sent back","position":1}
 {"id":"LA-JR04-S06","title":"The Owner sends the change back with its reason","journey_id":"LA-JR04","path":"sent back","position":2}
+{"id":"LA-JR05-S01","title":"The Reader finds the requirement's record in its domain","journey_id":"LA-JR05","path":"main","position":1}
+{"id":"LA-JR05-S02","title":"The Reader opens the record and follows its links to what designs and builds it","journey_id":"LA-JR05","path":"main","position":2}
+{"id":"LA-JR05-S03","title":"The Reader reads its Traceability to name the code and the tests behind it","journey_id":"LA-JR05","path":"main","position":3}
