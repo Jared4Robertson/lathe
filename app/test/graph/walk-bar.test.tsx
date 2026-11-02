@@ -16,12 +16,12 @@ const toolbar = () => document.querySelector<HTMLElement>('.focus-stage .stage-t
 
 // From a stage, which has a parent, a first child and a sibling either side.
 const FROM = 'P-D/use-cases';
-const TARGETS = { Out: 'P-D', Previous: 'P-D/domain-model', Next: 'P-D/interaction-design', In: 'P-D-CAP01' };
-const NAMES = ['Out to the parent', 'Step to the previous sibling', 'Step to the next sibling', 'In to the first child'];
+const TARGETS = { Previous: 'P-D/domain-model', Out: 'P-D', In: 'P-D-CAP01', Next: 'P-D/interaction-design' };
+const NAMES = ['Step to the previous sibling', 'Out to the parent', 'In to the first child', 'Step to the next sibling'];
 
 describe('the walk on a phone', () => {
   for (const layout of ['tree', 'nested', 'map'] as const) {
-    it(`LA-V93-R76-T01 In the ${layout} view on a phone, Out, Previous, Next and In are buttons in a bar, one tap each, never in More`, async () => {
+    it(`LA-V93-R76-T01 In the ${layout} view on a phone, Previous, Out, In and Next are buttons in a bar, one tap each, never in More`, async () => {
       phone();
       startAtDepth(1, layout);
       await openApp(`/${FROM}?stage=graph`, { data: testWorkspace() });
@@ -29,7 +29,7 @@ describe('the walk on a phone', () => {
       expect(graphHost()).toHaveAttribute('data-layout', layout);
       // The bar: four buttons in order, each its icon and word, named by the step it takes in this view.
       const buttons = within(bar()).getAllByRole('button');
-      expect(buttons.map((b) => b.textContent)).toEqual(['Out', 'Previous', 'Next', 'In']);
+      expect(buttons.map((b) => b.textContent)).toEqual(['Previous', 'Out', 'In', 'Next']);
       expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual(NAMES);
       for (const b of buttons) expect(b.querySelector('svg.icon')).not.toBeNull();
       expect(bar()).toHaveAttribute('data-floating', 'bottom');
@@ -55,9 +55,9 @@ describe('the walk on a phone', () => {
     await openApp('/P?stage=graph', { data: testWorkspace() });
     await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
     const buttons = within(bar()).getAllByRole('button');
-    expect(buttons.map((b) => b.textContent)).toEqual(['Out', 'Previous', 'Next', 'In']);
+    expect(buttons.map((b) => b.textContent)).toEqual(['Previous', 'Out', 'In', 'Next']);
     // The product is the root: nothing to step out to.
-    expect(buttons[0]).toBeDisabled();
+    expect(buttons[1]).toBeDisabled();
     expect(buttons[3]).toBeEnabled();
   });
 
@@ -65,7 +65,7 @@ describe('the walk on a phone', () => {
     phone();
     await openApp('/P-D-UC01?stage=erd', { data: testWorkspace() });
     await waitFor(() => expect(document.querySelector('.focus-stage .erd-node')).not.toBeNull());
-    expect(within(bar()).getAllByRole('button').map((b) => b.textContent)).toEqual(['Out', 'Previous', 'Next', 'In']);
+    expect(within(bar()).getAllByRole('button').map((b) => b.textContent)).toEqual(['Previous', 'Out', 'In', 'Next']);
     const more = toolbar().querySelector<HTMLElement>('.stage-more-body')!;
     expect(within(more).getByRole('group', { name: 'More steps' })).toBeInTheDocument();
     expect([...more.querySelectorAll('.stage-step')].map((b) => b.className.match(/is-(\w+)/)![1])).toEqual(['up', 'down']);
