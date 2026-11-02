@@ -38,7 +38,7 @@
 {"value_object_id":"LA-VO64","position":6,"name":"Full screen","meaning":"Whether it was full screen.","type":"yes/no","required":true}
 {"value_object_id":"LA-VO65","position":1,"name":"Background","meaning":"An opaque hex color for the window's background.","type":"text","required":true}
 {"value_object_id":"LA-VO65","position":2,"name":"Foreground","meaning":"An opaque hex color for the window's controls.","type":"text","required":true}
-{"value_object_id":"LA-VO90","position":1,"name":"Path","meaning":"The page's path: a record's bare ID, a group's place in the graph's tree, or one of the app's own pages.","type":"text","required":true,"example":"/LA-AUT-A1"}
+{"value_object_id":"LA-VO90","position":1,"name":"Path","meaning":"The page's path: a record's bare ID, a group's place in the graph's tree, or one of the app's own pages.","type":"text","required":true,"example":"/LA-PRD-A1"}
 {"value_object_id":"LA-VO90","position":2,"name":"Stage","meaning":"The stage shown, named only in the `stage` query parameter.","type_value_object_id":"LA-VO91","required":false,"example":"erd"}
 {"value_object_id":"LA-VO91","position":1,"name":"Stage","meaning":"graph, erd or trace.","type":"text","required":true,"example":"graph"}
 {"value_object_id":"LA-VO92","position":1,"name":"Layout","meaning":"tree, nested or map.","type":"text","required":true}

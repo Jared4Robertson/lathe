@@ -1,9 +1,6 @@
-{"domain_event_id":"LA-AUT-EV03","position":1,"name":"File","meaning":"The migration or declaration file that changed.","type":"text","required":true,"example":"lathe/schema/004-domain-model.sql"}
-{"domain_event_id":"LA-AUT-EV03","position":2,"name":"Product","meaning":"The product whose declaration changed, or none for Lathe's schema.","type_value_object_id":"LA-VO01","required":false,"example":"none"}
-{"domain_event_id":"LA-AUT-EV03","position":3,"name":"Changed at","meaning":"When the change was seen.","type":"date and time","required":true,"example":"2026-10-24T23:24:05Z"}
-{"domain_event_id":"LA-EXP-EV01","position":1,"name":"Address","meaning":"The page's path and query.","type_value_object_id":"LA-VO90","required":true,"example":"/LA-AUT-A1?stage=graph"}
-{"domain_event_id":"LA-EXP-EV01","position":2,"name":"Product","meaning":"The product the page belongs to, which makes it the current space.","type_aggregate_id":"LA-AUT-A1","required":false,"example":"LA"}
-{"domain_event_id":"LA-EXP-EV01","position":3,"name":"Focus","meaning":"The record or group the page shows.","type":"text","required":false,"example":"LA-AUT-A1"}
+{"domain_event_id":"LA-EXP-EV01","position":1,"name":"Address","meaning":"The page's path and query.","type_value_object_id":"LA-VO90","required":true,"example":"/LA-PRD-A1?stage=graph"}
+{"domain_event_id":"LA-EXP-EV01","position":2,"name":"Product","meaning":"The product the page belongs to, which makes it the current space.","type_aggregate_id":"LA-PRD-A1","required":false,"example":"LA"}
+{"domain_event_id":"LA-EXP-EV01","position":3,"name":"Focus","meaning":"The record or group the page shows.","type":"text","required":false,"example":"LA-PRD-A1"}
 {"domain_event_id":"LA-EXP-EV01","position":4,"name":"Stage","meaning":"The stage the page shows.","type_value_object_id":"LA-VO91","required":true,"example":"Graph"}
 {"domain_event_id":"LA-EXP-EV01","position":5,"name":"Opened at","meaning":"When the page opened.","type":"date and time","required":true,"example":"2026-10-24T14:05:00Z"}
 {"domain_event_id":"LA-EXP-EV02","position":1,"name":"Space","meaning":"The space whose tab is now active.","type_aggregate_id":"LA-EXP-A2","required":true}
@@ -26,3 +23,6 @@
 {"domain_event_id":"LA-PLT-EV05","position":3,"name":"Closed at","meaning":"When the window closed.","type":"date and time","required":true,"example":"2026-10-24T18:00:00Z"}
 {"domain_event_id":"LA-PLT-EV06","position":1,"name":"Tables","meaning":"The tables whose rows changed; none when only the checks' run is new.","type":"text","required":true,"example":"use_case, flow_step"}
 {"domain_event_id":"LA-PLT-EV06","position":2,"name":"Read models","meaning":"The read models whose answers may have changed, each by the slice of its queries' routes; or every read model, when the data loaded afresh or was refused.","type":"text","required":true,"example":"use-case, record-summaries, folder-tree"}
+{"domain_event_id":"LA-PRD-EV03","position":1,"name":"File","meaning":"The migration or declaration file that changed.","type":"text","required":true,"example":"lathe/schema/004-domain-model.sql"}
+{"domain_event_id":"LA-PRD-EV03","position":2,"name":"Product","meaning":"The product whose declaration changed, or none for Lathe's schema.","type_value_object_id":"LA-VO01","required":false,"example":"none"}
+{"domain_event_id":"LA-PRD-EV03","position":3,"name":"Changed at","meaning":"When the change was seen.","type":"date and time","required":true,"example":"2026-10-24T23:24:05Z"}
