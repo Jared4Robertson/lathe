@@ -5,7 +5,7 @@ import type { WriteAnswer } from '../../lathe/src/server/contract';
 import type { BaselineAnswer } from '../../lathe/src/server/contract';
 import { workspace as fixtureWorkspace } from './fixtures/workspace';
 import { desktopStandIn } from './desktop-bridge';
-import { SETTINGS_KEY } from '../src/exploring/session-settings/repository';
+import { SESSION_SETTINGS_STORAGE } from '../src/exploring/session-settings/model';
 import { ALL_COMMANDS, ALL_QUERIES } from '../../lathe/src/commands';
 import { InputError } from '../../lathe/src/platform/commands/definition';
 import { answerQuery } from '../../lathe/src/platform/commands/run';
@@ -120,7 +120,7 @@ export async function findSection(name: string | RegExp) {
 
 /** Starts the place at a depth and the window at a layout, as if the person had chosen them (the default is 1, Tree). */
 export function startAtDepth(depth: number, layout: 'tree' | 'nested' | 'map' = 'tree') {
-  window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout, minimap: false, allLinks: false, cardWidth: null, chat: false, chatWidth: null, highlight: false, since: 'commit', follow: false, looked: {} }));
+  window.sessionStorage.setItem(SESSION_SETTINGS_STORAGE.key, JSON.stringify({ layout, minimap: false, allLinks: false, cardWidth: null, chat: false, chatWidth: null, highlight: false, since: 'commit', follow: false, looked: {} }));
   window.sessionStorage.setItem('lathe:place', JSON.stringify({ depth, hiddenKinds: [], card: { open: true, expanded: true } }));
 }
 

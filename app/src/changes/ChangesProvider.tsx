@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useSessionSettings } from '../exploring/session-settings/use-session-settings';
-import { turnHighlightChangesOnOrOff } from '../exploring/session-settings/commands/turn-highlight-changes-on-or-off';
-import { chooseChangesBaseline } from '../exploring/session-settings/commands/choose-changes-baseline';
-import { turnFollowOnOrOff } from '../exploring/session-settings/commands/turn-follow-on-or-off';
+import { chooseChangesBaseline, turnFollowOnOrOff, turnHighlightChangesOnOrOff } from '../exploring/session-settings/commands/handlers.generated';
 import { markProductLookedAt } from '../exploring/session-settings/commands/mark-product-looked-at';
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { ChangesContext, createLiveStore, type RecordChange, loadBaseline, markNow, reloadChanges, type Baseline, type ChangesApi, type Review, type Since } from './changes';

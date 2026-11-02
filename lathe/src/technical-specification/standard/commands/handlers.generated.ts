@@ -17,6 +17,7 @@ import type { RemoveStandardRuleTest } from './remove-standard-rule-test.ts';
 /** Adds a standard to its product, with no rules yet. */
 export function addStandard(tx: Transaction, input: AddStandard): void {
   const standards = new StandardRepository(tx);
+  if (tx.record(input.product_id)?.kind !== 'product') tx.refuse('missing', `there is no product ${input.product_id}`);
   const standard = standards.create({ root: input.id, standard: input, rules: [], ruleTests: [] });
   standards.save(standard);
 }

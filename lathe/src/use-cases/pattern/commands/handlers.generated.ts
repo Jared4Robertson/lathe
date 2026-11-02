@@ -22,6 +22,7 @@ import type { RemoveSlot } from './remove-slot.ts';
 /** Adds a pattern to its product, with its settings in order. */
 export function addPattern(tx: Transaction, input: AddPattern): void {
   const patterns = new PatternRepository(tx);
+  if (tx.record(input.product_id)?.kind !== 'product') tx.refuse('missing', `there is no product ${input.product_id}`);
   const { settings = [], ...row } = input;
   const pattern = patterns.create({ root: row.id, pattern: row, settings: settings, rules: [], ruleTests: [], slots: [] });
   holdToRules(tx, pattern);

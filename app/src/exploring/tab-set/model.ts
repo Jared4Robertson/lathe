@@ -1,5 +1,6 @@
-import { DEFAULT_STAGE, type StageName } from '../../views/address';
-import { DEFAULT_VIEW, readPlace, type Place, type PlaceView } from '../../views/place';
+import type { BrowserStorage, StoredParts } from '../../shell/storage';
+import { DEFAULT_STAGE, isFocusPath, parseStage, type StageName } from '../../views/address';
+import { DEFAULT_VIEW, readPlace, readView, type Place, type PlaceView } from '../../views/place';
 
 // The Tab set aggregate (LA-EXP-A5): the places open in the window, as a browser's tabs. In the desktop app each space
 // has its tab set: each tab is one place (views/place.ts) where the Reader explores, with its own focus, stage,
@@ -109,4 +110,36 @@ export function parseTabSet(value: unknown, isAddress: (address: string) => bool
   if (tabs.length === 0) return null;
   const active = typeof raw.active === 'string' && tabs.some((t) => t.key === raw.active) ? raw.active : tabs[0].key;
   return { tabs, active };
+}
+
+/**
+ * Where the Tab sets are kept, each part where it lasts as long as it should: every space's tab set and the view last
+ * set in session storage (the window's session), the stage last chosen in local storage (from one launch to the next),
+ * and the places' cameras in memory, kept while the window is open and not through a reload. Its repository is
+ * generated from it.
+ */
+export const TAB_SET_STORAGE = {
+  sets: { key: 'lathe:tabs', store: 'session' },
+  view: { key: 'lathe:place', store: 'session' },
+  stage: { key: 'lathe:stage', store: 'local' },
+  cameras: { store: 'memory' },
+} as const satisfies BrowserStorage;
+
+const isAddress = (address: string) => isFocusPath(address.split(/[?#]/)[0]);
+
+/** The Tab sets from their stored parts: a set, a view or a stage of another form is dropped. */
+export function tabSetFrom(stored: StoredParts<typeof TAB_SET_STORAGE>): TabSets {
+  const sets: Record<string, TabSet> = {};
+  if (stored.sets && typeof stored.sets === 'object' && !Array.isArray(stored.sets)) {
+    for (const [space, value] of Object.entries(stored.sets)) {
+      const set = parseTabSet(value, isAddress);
+      if (set) sets[space] = set;
+    }
+  }
+  return {
+    sets,
+    view: readView(stored.view),
+    stage: (typeof stored.stage === 'string' ? parseStage(stored.stage) : null) ?? DEFAULT_STAGE,
+    cameras: stored.cameras instanceof Map ? (stored.cameras as TabSets['cameras']) : NO_TABS.cameras,
+  };
 }

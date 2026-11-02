@@ -109,7 +109,7 @@ export abstract class AggregateRepository<M extends { readonly root: string }> {
         if (was && JSON.stringify(was) === JSON.stringify(row)) continue;
         if (!was) {
           const taken = this.files.find(table, row);
-          if (taken) this.tx.refuse('primary-key', `${table} ${describeKey(this.tx.schema.tables[table], row)} already exists`);
+          if (taken) this.tx.refuse('primary-key', `${this.named(table)} ${describeKey(this.tx.schema.tables[table], row)} already exists`);
         }
         this.files.put(table, row);
       }
@@ -140,6 +140,14 @@ export abstract class AggregateRepository<M extends { readonly root: string }> {
     this.loaded.delete(instance);
   }
 
+  // A table as a refusal names it: its kind's label, lower case unless an initialism (business outcome, UC requirement);
+  // a table that is no kind by its name.
+  private named(table: string): string {
+    const label = this.tx.schema.kinds[table]?.label;
+    if (!label) return table;
+    return /^[A-Z]{2}/.test(label) ? label : label.toLowerCase();
+  }
+
   // The rows by table and key. Saving, an instance holding two rows with one key is refused: an Add that reuses a key
   // its own instance already holds is a duplicate, never a change.
   private keyed(rows: InstanceRows, saving = false): Map<string, Map<string, Row>> {
@@ -149,7 +157,7 @@ export abstract class AggregateRepository<M extends { readonly root: string }> {
       const byKey = new Map<string, Row>();
       for (const row of list) {
         const key = rowKey(description, row);
-        if (saving && byKey.has(key)) this.tx.refuse('primary-key', `${table} ${describeKey(description, row)} already exists`);
+        if (saving && byKey.has(key)) this.tx.refuse('primary-key', `${this.named(table)} ${describeKey(description, row)} already exists`);
         byKey.set(key, row);
       }
       keyed.set(table, byKey);

@@ -1,3 +1,4 @@
+import type { BrowserStorage } from '../../shell/storage';
 import { COMMANDS, customizable, normalizeBinding, platformKeys, resolveCommands, type Command } from '../../shell/keymap';
 
 // Key bindings (LA-PLT-A14): the keys a person gave the shortcuts in place of the defaults, which stay in code
@@ -19,6 +20,9 @@ export interface ShortcutBinding {
 export interface KeyBindings { changed: readonly ShortcutBinding[] }
 
 export const NO_BINDINGS: KeyBindings = { changed: [] };
+
+/** Where the Key bindings are kept: whole, as JSON in local storage. Its repository is generated from it. */
+export const KEY_BINDINGS_STORAGE = { key: 'lathe:keybindings', store: 'local' } as const satisfies BrowserStorage;
 
 /** The keymap's command for a shortcut, or none. */
 export const commandOf = (shortcut: string): Command | undefined => COMMANDS.find((c) => c.id === shortcut);
@@ -74,5 +78,5 @@ export function keyBindingsFrom(value: unknown): KeyBindings {
 }
 
 /** The bindings as stored. */
-export const storedKeyBindings = (bindings: KeyBindings): Record<string, string[] | null> =>
+export const keyBindingsStored = (bindings: KeyBindings): Record<string, string[] | null> =>
   Object.fromEntries(bindings.changed.map((b) => [b.shortcut, b.unbound ? null : [...b.keys]]));

@@ -4,8 +4,18 @@
 import { changed } from '../../../platform/data/rows.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { EntryPointRepository } from '../repository.ts';
+import type { AddEntryPoint } from './add-entry-point.ts';
 import type { ChangeEntryPoint } from './change-entry-point.ts';
 import type { RemoveEntryPoint } from './remove-entry-point.ts';
+
+/** Adds an entry point under its domain, with the packages it uses and the standard rules it meets. */
+export function addEntryPoint(tx: Transaction, input: AddEntryPoint): void {
+  const entryPoints = new EntryPointRepository(tx);
+  if (tx.record(input.domain_id)?.kind !== 'domain') tx.refuse('missing', `there is no domain ${input.domain_id}`);
+  const { packages = [], meets = [], ...row } = input;
+  const entryPoint = entryPoints.create({ root: row.id, entryPoint: row, meets: meets, packages: packages });
+  entryPoints.save(entryPoint);
+}
 
 /** Changes an entry point's title, file, description, packages or standard rules met. Its domain stays. */
 export function changeEntryPoint(tx: Transaction, input: ChangeEntryPoint): void {

@@ -1,17 +1,19 @@
 // Each aggregate's repository and the handlers of its pattern commands, generated from Lathe's records, its schema and
 // the aggregate's shape (its model.ts's <AGGREGATE>_SHAPE: how each of its kinds sits in an instance). What is generated
-// is what the generator's tooling record (LA-MOD-TOOL03, scripts/generate/) generates: a repository (its repository.ts) and a
-// command handler (written into its slice's commands/handlers.generated.ts). Everything else stays written by hand.
+// is what the generator's tooling record (LA-MOD-TOOL03, scripts/generate/) generates under lathe/src: a repository (its
+// repository.ts) and a command handler (written into its slice's commands/handlers.generated.ts); the app's
+// browser-kept aggregates are browser-kept.ts's. Everything else stays written by hand.
 //
 // A repository loads and saves its aggregate whole through the model's <aggregates>From and <aggregate>Rows, and loads
 // the instance holding any record of its kinds up the kinds' parents (loadHolding). A pattern command's handler loads
 // the instance, adds, changes or removes one record of one kind with the input's columns and lists, holds the
-// aggregate to its rules, and saves: an Add of a part pushes it under its parent (or sets it, for a kind held at most
-// once), a Change applies the columns given and replaces each list given, a Remove takes the record out with every
-// record under it. A kind's rule over its rows (its shape's refusedBy: one each, one per domain) refuses an Add or a
-// Change that breaks it before the instance is saved. A command whose input says more
-// than its kind's columns and lists (a move, a link with checks, a refusal no rule states) is written by hand, and the
-// generator refuses to generate it, naming what it cannot derive.
+// aggregate to its rules, and saves: an Add of a root refuses a missing parent outside the aggregate in the words an
+// Add of a part does ("there is no <its kind> <ID>"), an Add of a part pushes it under its parent (or sets it, for a
+// kind held at most once), a Change applies the columns given and replaces each list given, a Remove takes the record
+// out with every record under it. A taken ID is refused as the repository words it, by the kind's label. A kind's rule
+// over its rows (its shape's refusedBy: one each, one per domain) refuses an Add or a Change that breaks it before the
+// instance is saved. A command whose input says more than its kind's columns and lists (a move, a link with checks, a
+// refusal no rule states) is written by hand, and the generator refuses to generate it, naming what it cannot derive.
 import { existsSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
@@ -292,6 +294,10 @@ function handlerText(a: Aggregate, schema: SchemaDescription, d: Identity, kind:
     const destructure = given.size ? `  const { ${[...given.values()].map((f) => (f.kind === 'id' ? f.name : `${f.name} = []`)).join(', ')}, ...row } = input;` : null;
     const row = given.size ? 'row' : 'input';
     if (isRoot) {
+      // A root's one parent sits outside its aggregate: read, never loaded, and refused in the words a part's missing parent is.
+      const outside = schema.kinds[kind]?.parents ?? [];
+      const column = outside.length === 1 ? schema.tables[kind]?.columns.find((c) => c.name === outside[0].column) : undefined;
+      if (column?.required) body.push(`  if (tx.record(input.${column.name})?.kind !== '${outside[0].kind}') tx.refuse('missing', \`there is no ${label(outside[0].kind)} \${input.${column.name}}\`);`);
       if (destructure) body.push(destructure);
       const under = Object.values(a.shape).slice(1).map((s) => `${s.at}: ${s.one ? 'null' : '[]'}`);
       body.push(`  const ${instance} = ${repository}.create({ ${[`root: ${row}.id`, `${shape.at}: ${row}`, ...members.map((m) => `${m.prop}: ${added(m, `${row}.id`)}`), ...under].join(', ')} });`);
@@ -349,8 +355,9 @@ function handlerText(a: Aggregate, schema: SchemaDescription, d: Identity, kind:
 /** Every generated repository and each slice's generated handlers, from what the generator's tooling record generates. */
 export function aggregateFiles(repo: string, schema: SchemaDescription): Generated {
   const generated = new Set(table(repo, 'generates').filter((g) => g.source_id === GENERATOR).map((g) => String(g.target_id)));
-  const repositories = table(repo, 'repository').filter((r) => generated.has(String(r.id)));
-  const handlers = table(repo, 'command_handler').filter((h) => generated.has(String(h.id)));
+  // The app's browser-kept aggregates are browser-kept.ts's.
+  const repositories = table(repo, 'repository').filter((r) => generated.has(String(r.id)) && !String(r.file).startsWith('app/'));
+  const handlers = table(repo, 'command_handler').filter((h) => generated.has(String(h.id)) && !String(h.file).startsWith('app/'));
   if (!repositories.length && !handlers.length) return new Map();
   const identities = new Map(readIdentities(repo).map((d) => [d.id, d]));
   const commands = new Map(table(repo, 'command').map((c) => [String(c.id), c]));

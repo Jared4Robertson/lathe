@@ -2,7 +2,7 @@ import { useEffect, useId, useState, type CSSProperties, type ChangeEvent } from
 import { Button, buttonClass } from '../components/Button';
 import { Link, navigate } from '../router';
 import { ToolPanelFrame } from '../views/ToolPanel';
-import { turnScrollToZoomOnOrOff } from '../platform/appearance/commands/turn-scroll-to-zoom-on-or-off';
+import { turnScrollToZoomOnOrOff } from '../platform/appearance/commands/handlers.generated';
 import { useScrollToZoom } from '../platform/appearance/use-scroll-to-zoom';
 import { panelHref } from '../views/overlays';
 import { shownMode } from './apply';
