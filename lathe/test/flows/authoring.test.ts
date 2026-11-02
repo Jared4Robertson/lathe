@@ -2,7 +2,7 @@
 // product: deciding domains, changing the schema, declaring a product's own kinds, organizing use cases, writing flows,
 // models, rules, tests, technical records and standards, reading the reference and merging two branches' data. Each
 // step runs the one aggregate command or query it names (`lathe <aggregate> <command>`). The Reader's flow in the app is
-// in app/stability/authoring.spec.ts; the flows through the MCP tools are in agent-tools.test.ts.
+// in app/stability/product.spec.ts; the flows through the MCP tools are in agent-tools.test.ts.
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, cpSync, existsSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
