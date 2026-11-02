@@ -1,4 +1,3 @@
-{"id":"LA-AUT-EV03-ET","title":"tools/list_changed","domain_event_id":"LA-AUT-EV03","delivery":"in process","file":"lathe/src/cli/mcp.ts"}
 {"id":"LA-EXP-EV01-ET","title":"lathe:navigate","domain_event_id":"LA-EXP-EV01","delivery":"in process","file":"app/src/router.tsx"}
 {"id":"LA-EXP-EV02-ET","title":"usePageTabs","domain_event_id":"LA-EXP-EV02","delivery":"in process","file":"app/src/views/useTabs.ts"}
 {"id":"LA-PLT-EV01-ET","title":"Appearance.chosen","domain_event_id":"LA-PLT-EV01","delivery":"in process","file":"app/src/platform/appearance/model.ts"}
@@ -7,3 +6,4 @@
 {"id":"LA-PLT-EV04-ET","title":"raiseProductWindowOpened","domain_event_id":"LA-PLT-EV04","delivery":"in process","file":"desktop/src/product-window/events.ts"}
 {"id":"LA-PLT-EV05-ET","title":"raiseProductWindowClosed","domain_event_id":"LA-PLT-EV05","delivery":"in process","file":"desktop/src/product-window/events.ts"}
 {"id":"LA-PLT-EV06-ET","title":"spec:changed","domain_event_id":"LA-PLT-EV06","delivery":"in process","file":"lathe/src/server/api.ts"}
+{"id":"LA-PRD-EV03-ET","title":"tools/list_changed","domain_event_id":"LA-PRD-EV03","delivery":"in process","file":"lathe/src/cli/mcp.ts"}

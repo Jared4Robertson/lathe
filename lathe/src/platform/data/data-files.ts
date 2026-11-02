@@ -70,7 +70,7 @@ export class DataFiles {
       const taken = this.tx.record(to);
       if (taken && !renames.has(to)) this.tx.refuse('id-taken', `${from} cannot become ${to}: ${this.tx.schema.kinds[taken.kind].label} ${to} already has that ID`);
     }
-    const { tables } = draftOf(this.tx);
+    const { tables, renamed: renamedRows } = draftOf(this.tx);
     for (const [name, rows] of [...tables]) {
       const description = this.tx.schema.tables[name];
       if (!description?.stored) continue;
@@ -82,7 +82,10 @@ export class DataFiles {
       if (!changed.length) continue;
       const editable = editableTable(this.tx, name);
       for (const { key } of changed) editable.delete(key);
-      for (const { renamed } of changed) editable.set(rowKey(description, renamed), renamed);
+      for (const { renamed } of changed) {
+        editable.set(rowKey(description, renamed), renamed);
+        renamedRows.add(renamed);
+      }
     }
   }
 

@@ -1,6 +1,4 @@
-{"id":"LA-AUT-TOOL01","title":"schema-types.ts","domain_id":"LA-AUT","file":"lathe/scripts/schema-types.ts"}
-{"id":"LA-AUT-TOOL02","title":"reference.ts","domain_id":"LA-AUT","file":"lathe/scripts/reference.ts"}
-{"id":"LA-AUT-TOOL03","title":"generate","domain_id":"LA-AUT","file":"lathe/scripts/generate"}
+{"id":"LA-MOD-TOOL03","title":"generate","domain_id":"LA-MOD","file":"lathe/scripts/generate"}
 {"id":"LA-PLT-TOOL01","title":".gitattributes","domain_id":"LA-PLT","file":".gitattributes"}
 {"id":"LA-PLT-TOOL02","title":"dev.ts","domain_id":"LA-PLT","file":"desktop/scripts/dev.ts"}
 {"id":"LA-PLT-TOOL03","title":"stage-lathe.ts","domain_id":"LA-PLT","file":"desktop/scripts/stage-lathe.ts"}
@@ -14,3 +12,5 @@
 {"id":"LA-PLT-TOOL15","title":"axe.ts","domain_id":"LA-PLT","file":"app/a11y/axe.ts"}
 {"id":"LA-PLT-TOOL16","title":"knip.json","domain_id":"LA-PLT","file":"lathe/knip.json"}
 {"id":"LA-PLT-TOOL17","title":"upgrades","domain_id":"LA-PLT","file":"lathe/upgrades"}
+{"id":"LA-PRD-TOOL01","title":"schema-types.ts","domain_id":"LA-PRD","file":"lathe/scripts/schema-types.ts"}
+{"id":"LA-PRD-TOOL02","title":"reference.ts","domain_id":"LA-PRD","file":"lathe/scripts/reference.ts"}
