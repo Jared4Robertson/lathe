@@ -1,6 +1,7 @@
 // Exploring's and Platform's app aggregates match their records one to one: each is reached only through its
-// repository, each slice has one repository with a load and a save, a command imports no other slice, each code-bound
-// record names an identifier declared in its file, and each command and policy function has its record.
+// repository (its keys named only in its model's storage setting), each slice has one repository with a load and a
+// save, a command imports no other slice, each code-bound record names an identifier declared in its file, and each
+// command and policy function has its record.
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,10 +25,10 @@ const declares = (text: string, title: string) => {
   return new RegExp(`\\b(function|class|interface|type|const|let)\\s+${escape(name)}\\b`).test(text);
 };
 
-/** The storage keys each repository names ('lathe:…' in its file), by key: the repositories that may name it. */
-const keysOf = (repositories: string[]): Map<string, string[]> => {
+/** The storage keys each model's storage setting names ('lathe:…' in its file), by key: the models that may name it. */
+const keysOf = (models: string[]): Map<string, string[]> => {
   const keys = new Map<string, string[]>();
-  for (const file of repositories) {
+  for (const file of models) {
     for (const [, key] of readFileSync(file, 'utf8').matchAll(/'(lathe:[^']+)'/g)) keys.set(key, [...new Set([...(keys.get(key) ?? []), relative(file)])]);
   }
   return keys;
@@ -39,8 +40,8 @@ describe('LA-STD-PRINCIPLES-R02-T03 Each app aggregate of Exploring and Platform
   const slices = SLICE_ROOTS.flatMap((root) => readdirSync(root, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => path.join(root, e.name)));
   const sliceOf = (file: string) => slices.find((s) => file.startsWith(s + path.sep));
 
-  it('lets only an aggregate\'s repository name its storage keys, each key in one repository', () => {
-    const keys = keysOf(all.filter((f) => path.basename(f) === 'repository.ts'));
+  it('lets only an aggregate\'s model name its storage keys, in its storage setting, each key in one model', () => {
+    const keys = keysOf(all.filter((f) => path.basename(f) === 'model.ts' && sliceOf(f)));
     expect(keys.size).toBeGreaterThan(0);
     expect([...keys].filter(([, owners]) => owners.length > 1).map(([key, owners]) => `${key} is named by ${owners.join(', ')}`)).toEqual([]);
     const wrong = all.flatMap((file) => {
@@ -82,13 +83,14 @@ describe('LA-STD-PRINCIPLES-R02-T03 Each app aggregate of Exploring and Platform
     expect(wrong).toEqual([]);
   });
 
-  it('gives each command file one handler, named by a command record, and each policy a handler record', () => {
+  it('gives each command file one handler (a slice\'s generated set handlers several), each named by a command record, and each policy a handler record', () => {
     const handlers = new Set(rows('command_handler').map((r) => `${String(r.file)} ${String(r.title)}`));
     const missing: string[] = [];
     for (const file of all.filter((f) => f.includes(`${path.sep}commands${path.sep}`) && sliceOf(f))) {
       const exported = [...readFileSync(file, 'utf8').matchAll(/^export function (\w+)/gm)].map((m) => m[1]);
-      expect(exported, relative(file)).toHaveLength(1);
-      if (!handlers.has(`${relative(file)} ${exported[0]}`)) missing.push(`${relative(file)} ${exported[0]}`);
+      if (path.basename(file) === 'handlers.generated.ts') expect(exported.length, relative(file)).toBeGreaterThan(0);
+      else expect(exported, relative(file)).toHaveLength(1);
+      for (const name of exported) if (!handlers.has(`${relative(file)} ${name}`)) missing.push(`${relative(file)} ${name}`);
     }
     const reactions = new Set(rows('event_handler').map((r) => `${String(r.file)} ${String(r.title)}`));
     for (const file of all.filter((f) => f.endsWith(`${path.sep}policies.ts`) && sliceOf(f))) {

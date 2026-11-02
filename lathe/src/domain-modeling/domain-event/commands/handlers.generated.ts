@@ -16,6 +16,7 @@ import type { RemoveEventType } from './remove-event-type.ts';
 /** Adds a domain event to the aggregate it happens to, with the fields it carries, in order. */
 export function addDomainEvent(tx: Transaction, input: AddDomainEvent): void {
   const domainEvents = new DomainEventRepository(tx);
+  if (tx.record(input.aggregate_id)?.kind !== 'aggregate') tx.refuse('missing', `there is no aggregate ${input.aggregate_id}`);
   const { fields = [], ...row } = input;
   const domainEvent = domainEvents.create({ root: row.id, event: row, fields: fields.map((item, at) => ({ domain_event_id: row.id, position: at + 1, ...item })), eventType: null });
   holdToRules(tx, domainEvent);

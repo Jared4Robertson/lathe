@@ -11,6 +11,7 @@ import type { RemoveTestDataSet } from './remove-test-data-set.ts';
 /** Adds a test data set to the domain whose tests it serves: where it runs, what it starts with, how to prepare and reset it, and the file that builds it. */
 export function addTestDataSet(tx: Transaction, input: AddTestDataSet): void {
   const testDataSets = new TestDataSetRepository(tx);
+  if (tx.record(input.domain_id)?.kind !== 'domain') tx.refuse('missing', `there is no domain ${input.domain_id}`);
   const testDataSet = testDataSets.create({ root: input.id, testDataSet: input });
   testDataSets.save(testDataSet);
 }

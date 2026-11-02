@@ -1,35 +1,35 @@
-import { BrowserRepository, readPref, storedText, writePref } from '../../shell/prefs';
-import { themeCss } from '../../theme/css';
-import { appearanceFrom, chosenTheme, type Appearance } from './model';
+// Generated from data/ by `npm run generate`. Do not edit.
+// AppearanceRepository (LA-PLT-REPO03): Keeps the person's themes, the chosen theme, the color mode, Scroll to zoom and
+// the chosen theme's stylesheet as JSON in local storage (`lathe:themes`, `lathe:theme`, `lathe:color-mode`,
+// `lathe:scroll-to-zoom`, `lathe:theme-css`); the stylesheet is written with each save for index.html's early script.
+import { BrowserRepository } from '../../shell/prefs';
+import { putStored, readStored, storedText } from '../../shell/storage';
+import { APPEARANCE_STORAGE, appearanceFrom, appearanceStored, type Appearance } from './model';
 
-// The early script in app/index.html reads two of these keys itself, before first paint: the chosen theme's stylesheet
-// and the mode. Keep the keys and their JSON in step with it.
-
-export const APPEARANCE_KEYS = {
-  themes: 'lathe:themes',
-  chosen: 'lathe:theme',
-  mode: 'lathe:color-mode',
-  scrollToZoom: 'lathe:scroll-to-zoom',
-  /** The chosen theme written as its stylesheet, so index.html can apply it before first paint. */
-  css: 'lathe:theme-css',
-} as const;
-
-const isAny = (_v: unknown): _v is unknown => true;
-const read = (key: string) => readPref<unknown>(key, undefined, isAny);
-
-/**
- * Loads and saves the Appearance whole, as JSON in local storage: the person's own themes, the chosen theme's ID, the
- * mode and Scroll to zoom, and with each save the chosen theme's stylesheet for the early script.
- */
 export class AppearanceRepository extends BrowserRepository<Appearance> {
-  protected stored() { return [APPEARANCE_KEYS.themes, APPEARANCE_KEYS.chosen, APPEARANCE_KEYS.mode, APPEARANCE_KEYS.scrollToZoom].map((k) => storedText(k)).join('\n'); }
-  protected read() { return appearanceFrom(read(APPEARANCE_KEYS.themes), read(APPEARANCE_KEYS.chosen), read(APPEARANCE_KEYS.mode), read(APPEARANCE_KEYS.scrollToZoom)); }
+  protected stored() {
+    return [storedText(APPEARANCE_STORAGE.themes), storedText(APPEARANCE_STORAGE.chosen), storedText(APPEARANCE_STORAGE.mode), storedText(APPEARANCE_STORAGE.scrollToZoom), storedText(APPEARANCE_STORAGE.css)].join('\n');
+  }
+
+  protected read(): Appearance {
+    const appearance = appearanceFrom({ themes: readStored(APPEARANCE_STORAGE.themes), chosen: readStored(APPEARANCE_STORAGE.chosen), mode: readStored(APPEARANCE_STORAGE.mode), scrollToZoom: readStored(APPEARANCE_STORAGE.scrollToZoom), css: readStored(APPEARANCE_STORAGE.css) });
+    this.#put(appearance, true);
+    return appearance;
+  }
+
   protected write(appearance: Appearance) {
-    writePref(APPEARANCE_KEYS.themes, appearance.custom.map(({ builtIn: _builtIn, ...rest }) => rest));
-    writePref(APPEARANCE_KEYS.chosen, appearance.chosen);
-    writePref(APPEARANCE_KEYS.mode, appearance.mode);
-    writePref(APPEARANCE_KEYS.scrollToZoom, appearance.scrollToZoom);
-    try { window.localStorage.setItem(APPEARANCE_KEYS.css, themeCss(chosenTheme(appearance))); } catch { /* storage full or blocked: the choice lasts until reload */ }
+    this.#put(appearance, false);
+  }
+
+  // Keeps each part whose stored text changed; held, only a part already stored, so one read in another form is
+  // rewritten in today's.
+  #put(appearance: Appearance, held: boolean) {
+    const stored = appearanceStored(appearance);
+    putStored(APPEARANCE_STORAGE.themes, stored.themes, held);
+    putStored(APPEARANCE_STORAGE.chosen, stored.chosen, held);
+    putStored(APPEARANCE_STORAGE.mode, stored.mode, held);
+    putStored(APPEARANCE_STORAGE.scrollToZoom, stored.scrollToZoom, held);
+    putStored(APPEARANCE_STORAGE.css, stored.css, held);
   }
 }
 

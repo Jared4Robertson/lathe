@@ -33,7 +33,7 @@ import { chatChips } from './chat/chips';
 import { takeMenuRecord } from './shell/desktopRecord';
 import { CARD_MIN, CHAT_DEFAULT } from './exploring/session-settings/model';
 import { useSessionSettings } from './exploring/session-settings/use-session-settings';
-import { showOrHideChat } from './exploring/session-settings/commands/show-or-hide-chat';
+import { showOrHideChat } from './exploring/session-settings/commands/handlers.generated';
 import { resizeChat } from './exploring/session-settings/commands/resize-chat';
 import { CARD_GAP, CARD_GAP_Y, crowdedLabel, RoomContext, STAGE_MIN, useRoomState } from './views/openSpace';
 import { desktopBridge } from './shell/desktopChrome';

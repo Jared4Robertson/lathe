@@ -5,10 +5,10 @@
 {"id":"LA-CHK-RM11-TB","title":"LimitsTable","read_model_id":"LA-CHK-RM11","name":"LimitsTable","storage":"in memory","file":"lathe/src/checking/product-setting/read-model.ts"}
 {"id":"LA-CHK-RM12-TB","title":"EssentialReviewTable","read_model_id":"LA-CHK-RM12","name":"EssentialReviewTable","storage":"in memory","file":"lathe/src/checking/essential-review/read-model.ts"}
 {"id":"LA-CHK-TB01","title":"problem","domain_id":"LA-CHK","name":"problem","storage":"table","file":"lathe/schema/011-checking.sql"}
-{"id":"LA-EXP-EN02-TB","title":"lathe:space-pages","entity_id":"LA-EXP-EN02","name":"lathe:space-pages","storage":"browser storage","file":"app/src/exploring/space/repository.ts"}
-{"id":"LA-EXP-EN03-TB","title":"lathe:nav-folders","entity_id":"LA-EXP-EN03","name":"lathe:nav-folders","storage":"browser storage","file":"app/src/exploring/nav-row/repository.ts"}
-{"id":"LA-EXP-EN09-TB","title":"lathe:tabs","entity_id":"LA-EXP-EN09","name":"lathe:tabs","storage":"browser storage","file":"app/src/exploring/tab-set/repository.ts"}
-{"id":"LA-EXP-EN11-TB","title":"lathe:session-settings","entity_id":"LA-EXP-EN11","name":"lathe:session-settings","storage":"browser storage","file":"app/src/exploring/session-settings/repository.ts"}
+{"id":"LA-EXP-EN02-TB","title":"lathe:space-pages","entity_id":"LA-EXP-EN02","name":"lathe:space-pages","storage":"browser storage","file":"app/src/exploring/space/model.ts"}
+{"id":"LA-EXP-EN03-TB","title":"lathe:nav-folders","entity_id":"LA-EXP-EN03","name":"lathe:nav-folders","storage":"browser storage","file":"app/src/exploring/nav-row/model.ts"}
+{"id":"LA-EXP-EN09-TB","title":"lathe:tabs","entity_id":"LA-EXP-EN09","name":"lathe:tabs","storage":"browser storage","file":"app/src/exploring/tab-set/model.ts"}
+{"id":"LA-EXP-EN11-TB","title":"lathe:session-settings","entity_id":"LA-EXP-EN11","name":"lathe:session-settings","storage":"browser storage","file":"app/src/exploring/session-settings/model.ts"}
 {"id":"LA-EXP-RM01-TB","title":"RecordSummariesTable","read_model_id":"LA-EXP-RM01","name":"RecordSummariesTable","storage":"in memory","file":"lathe/src/exploring/record-summaries/read-model.ts"}
 {"id":"LA-EXP-RM02-TB","title":"FolderTreeTable","read_model_id":"LA-EXP-RM02","name":"FolderTreeTable","storage":"in memory","file":"lathe/src/exploring/folder-tree/read-model.ts"}
 {"id":"LA-EXP-RM03-TB","title":"GraphMap","read_model_id":"LA-EXP-RM03","name":"GraphMap","storage":"in memory","file":"app/src/graph/map.ts"}
@@ -92,16 +92,16 @@
 {"id":"LA-MOD-TB47","title":"calls","domain_id":"LA-MOD","name":"calls","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-MOD-TB48","title":"fed_by","domain_id":"LA-MOD","name":"fed_by","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-MOD-TB88","title":"builds_on","domain_id":"LA-MOD","name":"builds_on","storage":"table","file":"lathe/schema/010-links.sql"}
-{"id":"LA-PLT-EN02-TB","title":"lathe:nav-*","entity_id":"LA-PLT-EN02","name":"lathe:nav-*","storage":"browser storage","file":"app/src/platform/panel/repository.ts"}
-{"id":"LA-PLT-EN06-TB","title":"lathe:themes","entity_id":"LA-PLT-EN06","name":"lathe:themes","storage":"browser storage","file":"app/src/platform/appearance/repository.ts"}
+{"id":"LA-PLT-EN02-TB","title":"lathe:nav-*","entity_id":"LA-PLT-EN02","name":"lathe:nav-*","storage":"browser storage","file":"app/src/platform/panel/model.ts"}
+{"id":"LA-PLT-EN06-TB","title":"lathe:themes","entity_id":"LA-PLT-EN06","name":"lathe:themes","storage":"browser storage","file":"app/src/platform/appearance/model.ts"}
 {"id":"LA-PLT-EN08-TB","title":"window-state.json","entity_id":"LA-PLT-EN08","name":"window-state.json","storage":"file","file":"desktop/src/product-window/repository.ts"}
 {"id":"LA-PLT-EN10-TB","title":"running","entity_id":"LA-PLT-EN10","name":"running","storage":"in memory","file":"desktop/src/app-server/repository.ts"}
-{"id":"LA-PLT-EN14-TB","title":"lathe:theme","entity_id":"LA-PLT-EN14","name":"lathe:theme","storage":"browser storage","file":"app/src/platform/appearance/repository.ts"}
+{"id":"LA-PLT-EN14-TB","title":"lathe:theme","entity_id":"LA-PLT-EN14","name":"lathe:theme","storage":"browser storage","file":"app/src/platform/appearance/model.ts"}
 {"id":"LA-PLT-EN15-TB","title":"recent-folders.json","entity_id":"LA-PLT-EN15","name":"recent-folders.json","storage":"file","file":"desktop/src/recent-folders/repository.ts"}
 {"id":"LA-PLT-EN16-TB","title":"lathe.config.json","entity_id":"LA-PLT-EN16","name":"lathe.config.json","storage":"file","file":"lathe/src/platform/product-repo/repository.ts"}
 {"id":"LA-PLT-EN20-TB","title":"settings.json","entity_id":"LA-PLT-EN20","name":"settings.json","storage":"file","file":"desktop/src/shell-settings/repository.ts"}
-{"id":"LA-PLT-EN24-TB","title":"lathe:keybindings","entity_id":"LA-PLT-EN24","name":"lathe:keybindings","storage":"browser storage","file":"app/src/platform/key-bindings/repository.ts"}
-{"id":"LA-PLT-EN26-TB","title":"lathe:voice","entity_id":"LA-PLT-EN26","name":"lathe:voice","storage":"browser storage","file":"app/src/platform/voice-settings/repository.ts"}
+{"id":"LA-PLT-EN24-TB","title":"lathe:keybindings","entity_id":"LA-PLT-EN24","name":"lathe:keybindings","storage":"browser storage","file":"app/src/platform/key-bindings/model.ts"}
+{"id":"LA-PLT-EN26-TB","title":"lathe:voice","entity_id":"LA-PLT-EN26","name":"lathe:voice","storage":"browser storage","file":"app/src/platform/voice-settings/model.ts"}
 {"id":"LA-PLT-EN27-TB","title":"chat-modes.json","entity_id":"LA-PLT-EN27","name":"chat-modes.json","storage":"file","file":"desktop/src/window-chat/repository.ts"}
 {"id":"LA-PLT-RM01-TB","title":"Workspace","read_model_id":"LA-PLT-RM01","name":"Workspace","storage":"in memory","file":"lathe/src/types.ts"}
 {"id":"LA-PLT-RM02-TB","title":"KeymapTable","read_model_id":"LA-PLT-RM02","name":"KeymapTable","storage":"in memory","file":"app/src/platform/key-bindings/read-model.ts"}

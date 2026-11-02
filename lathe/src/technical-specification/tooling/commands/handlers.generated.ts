@@ -4,8 +4,18 @@
 import { changed } from '../../../platform/data/rows.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { ToolingRepository } from '../repository.ts';
+import type { AddTooling } from './add-tooling.ts';
 import type { ChangeTooling } from './change-tooling.ts';
 import type { RemoveTooling } from './remove-tooling.ts';
+
+/** Adds a tooling record under its domain, with the packages it uses, the standard rules it meets and the technical records it generates. */
+export function addTooling(tx: Transaction, input: AddTooling): void {
+  const toolings = new ToolingRepository(tx);
+  if (tx.record(input.domain_id)?.kind !== 'domain') tx.refuse('missing', `there is no domain ${input.domain_id}`);
+  const { packages = [], meets = [], generates = [], ...row } = input;
+  const tooling = toolings.create({ root: row.id, tooling: row, packages: packages, meets: meets, generates: generates });
+  toolings.save(tooling);
+}
 
 /** Changes a tooling record's title, file, packages, standard rules met or technical records generated. Its domain stays. */
 export function changeTooling(tx: Transaction, input: ChangeTooling): void {

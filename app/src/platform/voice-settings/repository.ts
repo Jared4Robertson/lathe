@@ -1,15 +1,30 @@
-import { BrowserRepository, readPref, storedText, writePref } from '../../shell/prefs';
-import { voiceSettingsFrom, type VoiceSettings } from './model';
+// Generated from data/ by `npm run generate`. Do not edit.
+// VoiceSettingsRepository (LA-PLT-REPO25): Keeps the Voice settings as JSON in local storage under `lathe:voice`,
+// loaded and saved whole; a malformed value is dropped for the defaults (both modes off, "Lathe").
+import { BrowserRepository } from '../../shell/prefs';
+import { putStored, readStored, storedText } from '../../shell/storage';
+import { VOICE_SETTINGS_STORAGE, voiceSettingsFrom, type VoiceSettings } from './model';
 
-/** The key the Voice settings are kept under, in local storage. */
-const VOICE_KEY = 'lathe:voice';
-const isAny = (_v: unknown): _v is unknown => true;
-
-/** Loads and saves the Voice settings whole, as JSON under `lathe:voice` in local storage, from one launch to the next. */
 export class VoiceSettingsRepository extends BrowserRepository<VoiceSettings> {
-  protected stored() { return storedText(VOICE_KEY) ?? ''; }
-  protected read() { return voiceSettingsFrom(readPref<unknown>(VOICE_KEY, null, isAny)); }
-  protected write(settings: VoiceSettings) { writePref(VOICE_KEY, settings); }
+  protected stored() {
+    return storedText(VOICE_SETTINGS_STORAGE) ?? '';
+  }
+
+  protected read(): VoiceSettings {
+    const voiceSettings = voiceSettingsFrom(readStored(VOICE_SETTINGS_STORAGE));
+    this.#put(voiceSettings, true);
+    return voiceSettings;
+  }
+
+  protected write(voiceSettings: VoiceSettings) {
+    this.#put(voiceSettings, false);
+  }
+
+  // Keeps each part whose stored text changed; held, only a part already stored, so one read in another form is
+  // rewritten in today's.
+  #put(voiceSettings: VoiceSettings, held: boolean) {
+    putStored(VOICE_SETTINGS_STORAGE, voiceSettings, held);
+  }
 }
 
 export const voiceSettingsRepository = new VoiceSettingsRepository();
