@@ -298,11 +298,14 @@ function SpaceRail({ spaces, current, lastPage, loaded, top, bottom }: SpaceRail
 }
 
 
-/** The nav rows open on the current page: the page's record's domain, stage and folder (or the product's folder). */
+/**
+ * The nav rows open on the current page: the page's record's domain, stage and folder (or the product's folder). A
+ * domain page opens none: its own row is always in view, so nothing in the nav moves (LA-V61-R28); its chevron opens it.
+ */
 function currentBranch(index: RecordIndex, path: string): string[] {
   const route = parseSpecRoute(path.split('?')[0], index);
   if (!route) return [];
-  if (route.page === 'domain') return [`domain:${route.domain}`];
+  if (route.page === 'domain') return [];
   if (route.page === 'record') return branchOf(index, route.id);
   if (route.page === 'group') {
     // The group's place in the tree: its stage and folder rows (and itself, where it is one), up to its domain.
