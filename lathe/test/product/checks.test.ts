@@ -116,6 +116,15 @@ check('accidental-in-essential', () => {
       ['EX-LEND-UC01-R01', 'its statement says "web app"'],
       ['EX-V01', 'its description says "json"'],
     ]);
+    // A product has one language: a term of another of its domains excuses its word too, and a word no term defines is still read.
+    const shelved = adding(data, {
+      domain: [{ id: 'EX-SHELF', title: 'Shelving', product_id: 'EX', subdomain_type: 'supporting', description: 'Where the tools stand.' }],
+      term: [{ id: 'EX-SHELF-TM01', title: 'Column', domain_id: 'EX-SHELF', meaning: 'An upright of the shelf, its bays stacked in it.' }],
+    });
+    const across = await loadData(changing(shelved, 'uc_requirement', (r) => r.id === 'EX-LEND-UC02-R01', { statement: 'The librarian MUST put a returned tool back in its column, not in a database.' }));
+    expect(ofCheck(across, 'accidental-in-essential').find((p) => p.record === 'EX-LEND-UC02-R01')?.message).toContain('its statement says "database"');
+    const termed = await loadData(changing(shelved, 'uc_requirement', (r) => r.id === 'EX-LEND-UC02-R01', { statement: 'The librarian MUST put a returned tool back in its column.' }));
+    expect(records(ofCheck(termed, 'accidental-in-essential'))).not.toContain('EX-LEND-UC02-R01');
     // The product's own technology words count in every group, and no term excuses them.
     const own = await loadData(adding(data, { product_setting: [{ product_id: 'EX', max_children: 15, max_entities_per_aggregate: 7, technology_words: ['Postgres', 'Table'] }] }));
     expect(records(ofCheck(own, 'accidental-in-essential'))).toEqual(['EX-LEND-TM01', 'EX-LEND-TM02', 'EX-LEND-UC01', 'EX-LEND-UC01-FL-S01', 'EX-LEND-UC01-FL-S04', 'EX-LEND-UC01-R01', 'EX-LEND-UC02', 'EX-V01']);
