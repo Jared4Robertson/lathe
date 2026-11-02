@@ -100,7 +100,8 @@ function Shell() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
-  useEffect(() => { setDrawerOpen(false); }, [path, narrow]);
+  // Choosing a page or a tool (Checks, Changes, Appearance: a tool opens under the drawer) closes the drawer.
+  useEffect(() => { setDrawerOpen(false); }, [path, narrow, tool]);
   const closeDrawer = useCallback(() => { setDrawerOpen(false); setTimeout(() => menuButton.current?.focus(), 0); }, []);
   // An opened drawer takes focus (its Go to button); closing it gives focus back to the menu button.
   useEffect(() => { if (narrow && drawerOpen) setTimeout(() => navRef.current?.querySelector<HTMLElement>('.quick-find-button')?.focus(), 0); }, [narrow, drawerOpen]);

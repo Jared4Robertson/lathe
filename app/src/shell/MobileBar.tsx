@@ -52,7 +52,8 @@ export interface TopBarProps {
 /** The phone's top bar: the menu, the breadcrumb and title, and quick find. */
 export const TopBar = forwardRef<HTMLButtonElement, TopBarProps>(function TopBar({ heading, navOpen, onMenu, onFind }, menuRef) {
   return (
-    <header className="topbar">
+    // A full bottom sheet stops under it (BottomSheet.tsx), so it stays in reach.
+    <header className="topbar" data-top-bar>
       <Button
         variant="icon"
         ref={menuRef}

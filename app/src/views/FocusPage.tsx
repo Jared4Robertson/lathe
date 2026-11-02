@@ -12,6 +12,7 @@ import { isGroup } from '../graph/model';
 import { Link, navigate, onLeaveEntry } from '../router';
 import { useAnnounce, useCommand } from '../shell/commands';
 import { BottomSheet } from '../shell/BottomSheet';
+import { onCardSheetAsked } from './ToolPanel';
 import { useNarrow } from '../shell/useNarrow';
 import { parseSpecRoute } from './spec-route';
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
@@ -201,7 +202,7 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
   const [sheet, setSheet] = useState(false);
   const cardButton = useRef<HTMLButtonElement>(null);
   // A format page opened over the focus (`?page=format/…`) shows in the card, open whatever the card's setting.
-  const formatPage = overlaysOf(search).page;
+  const { page: formatPage, panel: toolOpen } = overlaysOf(search);
   const format = useMemo(() => parseFormatPage(formatPage), [formatPage]);
   const cardOpen = view.card.open || format !== null;
   useEffect(() => { if (format && !narrow) hold('card', true); }, [format, narrow, hold]);
@@ -227,6 +228,10 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
     <CardHandle width={card.width} onWidth={(width) => resizeWikiCard({ width })} onReset={() => resizeWikiCard({ width: null })} onCollapse={collapseCard} />
   ), [card.width, collapseCard]);
   useEffect(() => { setSheet(false); }, [narrow]);
+  // On a phone one sheet shows at a time: a tool opening (Checks, Changes, Appearance) closes the card's.
+  useEffect(() => { if (narrow && toolOpen) setSheet(false); }, [narrow, toolOpen]);
+  // A page opened from a tool's sheet shows in the wiki card's sheet (ToolPanel.tsx).
+  useEffect(() => (narrow ? onCardSheetAsked(() => setSheet(true)) : undefined), [narrow]);
 
   // What the page shows, for Claude's app_focus tool in the desktop chat (LA-PLT-UC29-R01).
   const selectedNow = useCallback(() => peek.get().selected, [peek]);
@@ -362,6 +367,8 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
         stageBox={stageBox}
         strip={<HeaderStrip index={index} focus={focus} counts={counts} />}
         card={cardShown ? <WikiCard ref={cardScroll} index={index} route={cardRoute} onScroll={onCardScroll} onCollapse={collapseCard} expanded={cardExpanded} onExpanded={expandCard} format={format} sheet /> : null}
+        cardFull={cardExpanded}
+        onCardFull={expandCard}
         onCard={setCardShown}
         cardButton={cardButton}
         layout={layout}
@@ -520,6 +527,9 @@ interface PhoneLayoutProps {
   strip: ReactNode;
   /** The wiki card, while its sheet is open. */
   card: ReactNode;
+  /** Whether the card shows its whole page (More), which its sheet shows at full height; Less is half. */
+  cardFull: boolean;
+  onCardFull: (full: boolean) => void;
   onCard: (show: boolean) => void;
   cardButton: RefObject<HTMLButtonElement | null>;
   layout: RefObject<HTMLDivElement | null>;
@@ -530,7 +540,7 @@ interface PhoneLayoutProps {
  * compact page bar: the stage switch and the wiki card as a bottom sheet, and in the desktop app the open tabs as a sheet.
  */
 function PhoneLayout(props: PhoneLayoutProps) {
-  const { index, tabs, stage, onStage, stageBox, strip, card, onCard, cardButton, layout } = props;
+  const { index, tabs, stage, onStage, stageBox, strip, card, cardFull, onCardFull, onCard, cardButton, layout } = props;
   const [pagesOpen, setPagesOpen] = useState(false);
   const pagesButton = useRef<HTMLButtonElement>(null);
   const pagesSheet = useRef<HTMLUListElement>(null);
@@ -563,7 +573,7 @@ function PhoneLayout(props: PhoneLayoutProps) {
       {strip}
       {stageBox}
       {card && (
-        <BottomSheet label="Wiki card" className="wiki-panel-sheet" onClose={() => onCard(false)}>
+        <BottomSheet label="Wiki card" className="wiki-panel-sheet" size={cardFull ? 'full' : 'half'} onSize={(size) => onCardFull(size === 'full')} onClose={() => onCard(false)}>
           {card}
         </BottomSheet>
       )}

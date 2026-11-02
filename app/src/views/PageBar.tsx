@@ -71,7 +71,7 @@ export function PageBar(props: PageBarProps) {
   }
 
   return (
-    <div className={`page-bar${compact ? ' is-compact' : ''}`} data-floating={compact ? undefined : 'top'}>
+    <div className={`page-bar${compact ? ' is-compact' : ''}`} data-floating={compact ? undefined : 'top'} data-top-bar={compact || undefined}>
       <div className="page-bar-start">{start}</div>
       <PageActions stage={stage} onStage={onStage} compact={compact} cardShown={cardShown} cardCrowded={cardCrowded} onCard={onCard} cardButton={cardButton} />
     </div>

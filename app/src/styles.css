@@ -246,9 +246,9 @@ code { font: 0.86em var(--mono); }
 .record-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; align-items: baseline; }
 .row-tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
 .meta { color: var(--muted); font-size: 0.8rem; }
-.spec-body a.record-link { display: inline-flex; gap: 8px; align-items: baseline; color: var(--ink); text-decoration: none; }
-.spec-body a.record-link code { color: var(--steel); white-space: nowrap; }
-.spec-body a.record-link:hover span { text-decoration: underline; }
+.spec-body a.record-link, .wiki-panel-kind a.record-link { display: inline-flex; gap: 8px; align-items: baseline; color: var(--ink); text-decoration: none; }
+.spec-body a.record-link code, .wiki-panel-kind a.record-link code { color: var(--steel); white-space: nowrap; }
+.spec-body a.record-link:hover span, .wiki-panel-kind a.record-link:hover code { text-decoration: underline; }
 .record-link.missing code { color: var(--error); text-decoration: line-through; }
 /* A row's link may shrink, and its title moves below its ID when both don't fit, so a long title never runs into the row's count. */
 .record-row > .record-link { min-width: 0; flex-wrap: wrap; row-gap: 0; }
@@ -1154,10 +1154,18 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* The nav sheet: the whole screen, the rail (with two or more products) kept at its left, sliding in from the left edge. */
 .menu.is-drawer { inset: 0; width: auto; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); border: 0; border-radius: 0; box-shadow: none; }
 
-/* Bottom sheets (the wiki card, the open pages): half the screen, or all of it below the top safe area. */
-.sheet-backdrop { position: fixed; inset: 0; z-index: 70; background: var(--backdrop); }
-.bottom-sheet { position: fixed; z-index: 80; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; height: 55dvh; max-height: calc(100dvh - env(safe-area-inset-top) - 8px); box-sizing: border-box; padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); background: var(--sheet); color: var(--ink); border-radius: var(--sheet-radius) var(--sheet-radius) 0 0; box-shadow: 0 -8px 32px var(--shadow-strong); }
-.bottom-sheet.is-full { height: calc(100dvh - env(safe-area-inset-top) - 8px); }
+/* Bottom sheets (the wiki card, the open pages, the tools): half the screen, or all of it below the top bar. */
+/* The backdrop starts under the top bar (--sheet-top, BottomSheet.tsx), which stays in reach; a full sheet leaves a
+   band of it a touch target high, so a tap above the sheet still reaches it. The nav drawer opens over them. */
+.sheet-backdrop { position: fixed; inset: var(--sheet-top, 0px) 0 0; z-index: 60; background: var(--backdrop); }
+.bottom-sheet { --sheet-full: calc(100dvh - max(var(--sheet-top, 0px) + var(--touch-target), env(safe-area-inset-top) + 8px)); position: fixed; z-index: 65; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; height: 55dvh; max-height: var(--sheet-full); box-sizing: border-box; padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); background: var(--sheet); color: var(--ink); border-radius: var(--sheet-radius) var(--sheet-radius) 0 0; box-shadow: 0 -8px 32px var(--shadow-strong); }
+.bottom-sheet.is-full { height: var(--sheet-full); }
+/* On a phone on its side every line counts: a full sheet reaches right up to the top bar, and its handle, only a grip
+   there (BottomSheet.tsx), is a slim one, so the record's text starts on the first screen. */
+@media (orientation: landscape) {
+  .bottom-sheet { --sheet-full: calc(100dvh - max(var(--sheet-top, 0px), env(safe-area-inset-top) + 8px)); }
+  .sheet-grab > span.sheet-handle { min-height: 20px; }
+}
 .sheet-grab { flex: none; display: flex; justify-content: center; touch-action: none; }
 .sheet-handle { display: grid; place-items: center; width: 96px; min-height: 28px; padding: 0; border: 0; background: none; cursor: grab; }
 .sheet-handle:hover .sheet-handle-bar { background: var(--steel); }
