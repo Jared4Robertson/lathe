@@ -15,7 +15,7 @@ import { writeData } from '../../helpers.ts';
 /** A store on a fresh folder holding the lending domain, built with the Domain aggregate's own commands. */
 export async function lendingDomain(): Promise<Store> {
   const store = await openStore(writeData({ product: [{ id: 'TL', title: 'Tool Library', description: 'A neighborhood tool library.' }] }), { latheDataDir: null });
-  await runCommand(store, ADD_DOMAIN, { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' });
+  await runCommand(store, ADD_DOMAIN, { id: 'TL-LEND', title: 'Lending', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'Lending tools to members and getting them back.' });
   await runCommand(store, ADD_CAPABILITY, { id: 'TL-LEND-CAP01', title: 'Lending', domain_id: 'TL-LEND', position: 1, description: 'Lending tools and taking them back.' });
   await runCommand(store, ADD_TERM, { id: 'TL-LEND-TM01', title: 'Loan', domain_id: 'TL-LEND', meaning: 'One tool lent to one member until it is returned.' });
   await runCommand(store, ADD_DOMAIN_SERVICE, { id: 'TL-LEND-DS01', title: 'Late fee', domain_id: 'TL-LEND', statement: 'The fee MUST be a day rate times the days late.' });

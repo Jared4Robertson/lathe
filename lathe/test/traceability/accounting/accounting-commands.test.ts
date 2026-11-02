@@ -28,7 +28,7 @@ afterEach(async () => {
  */
 const rows = () => ({
   product: [{ id: 'TL', title: 'Tool Library', description: 'A neighborhood tool library.' }],
-  domain: [{ id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }],
+  domain: [{ id: 'TL-LEND', title: 'Lending', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }],
   pattern: [{ id: 'TL-PAT-ACT', title: 'Librarian action', product_id: 'TL', description: 'An action the librarian takes at the desk.' }],
   slot: [{ id: 'TL-PAT-ACT-SL01', title: 'Refusal message', pattern_id: 'TL-PAT-ACT', statement: 'A fill MUST word the refusal for the librarian.' }],
   tooling: [

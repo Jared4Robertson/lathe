@@ -75,7 +75,7 @@ function domainSteps(d: number, useCases: string[]): Step[] {
   const pick = <T,>(items: readonly T[]) => items[Math.floor(next() * items.length)];
   const domain = `${LARGE_PRODUCT}-${domainCode(d)}`;
   const noun = NOUNS[d % NOUNS.length];
-  const steps: Step[] = [[ADD_DOMAIN, { id: domain, title: `${noun[0].toUpperCase()}${noun.slice(1)} handling ${d + 1}`, product_id: LARGE_PRODUCT, subdomain_type: d % 3 ? 'supporting' : 'core', description: `Everything about the ${noun}s of area ${d + 1}.` }]];
+  const steps: Step[] = [[ADD_DOMAIN, { id: domain, title: `${noun[0].toUpperCase()}${noun.slice(1)} handling ${d + 1}`, product_id: LARGE_PRODUCT, position: d + 1, subdomain_type: d % 3 ? 'supporting' : 'core', description: `Everything about the ${noun}s of area ${d + 1}.` }]];
   for (let t = 1; t <= 10; t++) {
     steps.push([ADD_TERM, { id: `${domain}-TM${pad(t)}`, title: `${pick(NOUNS)} ${pick(NOUNS)} ${d + 1}-${t}`, domain_id: domain, meaning: `A thing area ${d + 1} keeps, number ${t}.` }]);
   }

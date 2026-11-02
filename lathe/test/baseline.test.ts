@@ -39,7 +39,7 @@ const UC = 'EX-NOTE-UC01';
 async function seed(root: string) {
   const s = await openStore(root);
   await run(s, 'product add-product', { id: 'EX', title: 'Example', description: 'A small product for writing notes.' });
-  await run(s, 'domain add-domain', { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', subdomain_type: 'core', description: 'Writing and keeping notes.' });
+  await run(s, 'domain add-domain', { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', position: 2, subdomain_type: 'core', description: 'Writing and keeping notes.' });
   await run(s, 'domain add-capability', { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1, description: 'Writing notes down.' });
   await run(s, 'use-case add-use-case', { id: UC, title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a note.' });
   return s;

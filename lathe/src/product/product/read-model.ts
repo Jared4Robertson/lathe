@@ -6,6 +6,7 @@ import type { Row } from '../../platform/data/rows.ts';
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { InterfaceRow, ProductKindFieldRow, ProductKindRow, ProductRelationRow, ProductRow, QuestionRow, RoleRow } from '../../platform/data/tables.ts';
 import { byRecordId } from '../../platform/data/ids.ts';
+import { domainOrder } from '../../platform/data/domain-order.ts';
 
 /** A record the page names: its ID and title. */
 export interface Named {
@@ -63,6 +64,7 @@ function productPagesFrom(view: ReadView): ProductPage[] {
   const products = view.rows('product') as unknown as ProductRow[];
   const domains = view.rows('domain');
   const productOfDomain = new Map(domains.map((d) => [String(d.id), String(d.product_id)]));
+  const domainRank = domainOrder(domains);
   const about = bySource(view.rows('about'));
   const serves = new Map<string, string[]>();
   for (const l of view.rows('serves')) serves.set(String(l.target_id), [...(serves.get(String(l.target_id)) ?? []), String(l.source_id)].sort());
@@ -78,7 +80,7 @@ function productPagesFrom(view: ReadView): ProductPage[] {
     const ownDomains = new Set(domains.filter(own).map((d) => String(d.id)));
     const ownCapabilities = capabilities
       .filter((c) => ownDomains.has(String(c.domain_id)))
-      .sort((a, b) => String(a.domain_id).localeCompare(String(b.domain_id)) || Number(a.position) - Number(b.position))
+      .sort((a, b) => domainRank.get(String(a.domain_id))! - domainRank.get(String(b.domain_id))! || Number(a.position) - Number(b.position))
       .map((c) => ({
         capability: { id: String(c.id), title: String(c.title) },
         useCases: useCases.filter((u) => u.capability_id === c.id).map((u) => ({ id: String(u.id), title: String(u.title) })).sort(byRecordId),
@@ -101,7 +103,7 @@ function productPagesFrom(view: ReadView): ProductPage[] {
         .filter(own)
         .map((o) => ({ id: String(o.id), title: String(o.title), statement: String(o.statement), measure: String(o.measure), target: String(o.target), servedBy: serves.get(String(o.id)) ?? [] }))
         .sort(byRecordId),
-      domains: domains.filter(own).map((d) => ({ id: String(d.id), title: String(d.title) })).sort(byRecordId),
+      domains: domains.filter(own).sort((a, b) => domainRank.get(String(a.id))! - domainRank.get(String(b.id))!).map((d) => ({ id: String(d.id), title: String(d.title) })),
       kinds: (view.rows('product_kind') as unknown as ProductKindRow[])
         .filter((k) => k.product_id === product.id)
         .map((k) => ({ ...k, fields: fields.filter((f) => f.kind === k.name).sort((a, b) => a.position - b.position) })),

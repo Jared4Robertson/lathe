@@ -17,7 +17,7 @@ afterEach(async () => {
 /** A product with a pattern, its setting and slot, three tooling records (TOOL01 generates TOOL02), an integration and a data store. */
 const rows = () => ({
   product: [{ id: 'TL', title: 'Tool Library', description: 'A neighborhood tool library.' }],
-  domain: [{ id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }],
+  domain: [{ id: 'TL-LEND', title: 'Lending', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }],
   pattern: [{ id: 'TL-PAT-ACT', title: 'Librarian action', product_id: 'TL', description: 'An action the librarian takes at the desk.' }],
   pattern_setting: [
     { pattern_id: 'TL-PAT-ACT', position: 1, name: 'record', meaning: 'The record the action saves.' },

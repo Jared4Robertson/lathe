@@ -194,7 +194,7 @@ describe('LA-UCS-UC06-R12-T01 each Use case command (LA-UCS-A11) changes one use
     const refused = await store
       .transact((tx) => {
         new UseCaseRepository(tx).load('TL-LEND-UC01');
-        new DataFiles(tx, 'UseCaseRepository', ['use_case']).put('domain', { id: 'TL-X', title: 'X', product_id: 'TL', subdomain_type: 'core', description: 'X.' });
+        new DataFiles(tx, 'UseCaseRepository', ['use_case']).put('domain', { id: 'TL-X', title: 'X', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'X.' });
       })
       .catch((error: unknown) => error);
     expect(refused).toBeInstanceOf(StoreError);

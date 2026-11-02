@@ -192,7 +192,7 @@ describe('Platform flows', () => {
     expect(git(root, 'check-attr', 'merge', 'data/domain.jsonl').trim()).toBe('data/domain.jsonl: merge: lathe-data');
 
     // The first records, with the aggregates' own commands, land in the data folder the config names, and lathe check reads them.
-    ok(root, 'domain', 'add-domain', '--id', 'TL-LEND', '--title', 'Lending', '--product_id', 'TL', '--subdomain_type', 'core', '--description', 'Lending tools to members and getting them back.');
+    ok(root, 'domain', 'add-domain', '--id', 'TL-LEND', '--title', 'Lending', '--product_id', 'TL', '--position', '1', '--subdomain_type', 'core', '--description', 'Lending tools to members and getting them back.');
     ok(root, 'aggregate', 'add-aggregate', '--id', 'TL-LEND-A1', '--title', 'Loan', '--domain_id', 'TL-LEND', '--identity', 'Loan ID', '--description', 'One tool lent to one member.');
     expect(Object.keys(files(root))).toEqual(['aggregate.jsonl', 'domain.jsonl', 'product.jsonl']);
     expect(lathe(root, 'check').status).toBe(0);
@@ -202,7 +202,7 @@ describe('Platform flows', () => {
     const root = temp('lathe-serve-');
     git(root, 'init', '-q');
     ok(root, 'init', '--name', 'Tool Library', '--prefix', 'TL');
-    ok(root, 'domain', 'add-domain', '--id', 'TL-LEND', '--title', 'Lending', '--product_id', 'TL', '--subdomain_type', 'core', '--description', 'Lending tools to members and getting them back.');
+    ok(root, 'domain', 'add-domain', '--id', 'TL-LEND', '--title', 'Lending', '--product_id', 'TL', '--position', '1', '--subdomain_type', 'core', '--description', 'Lending tools to members and getting them back.');
     ok(root, 'aggregate', 'add-aggregate', '--id', 'TL-LEND-A1', '--title', 'Loan', '--domain_id', 'TL-LEND', '--identity', 'Loan ID', '--description', 'One tool lent to one member.');
 
     // S01: lathe serve, the app and its reads, with no build tools in the product repo.
@@ -230,7 +230,7 @@ describe('Platform flows', () => {
     ok(root, 'init', '--name', 'Tool Library', '--prefix', 'TL');
 
     // The Owner runs Add a domain from the command line.
-    ok(root, 'domain', 'add-domain', '--id', 'TL-LEND', '--title', 'Lending', '--product_id', 'TL', '--subdomain_type', 'core', '--description', 'Lending tools to members and getting them back.');
+    ok(root, 'domain', 'add-domain', '--id', 'TL-LEND', '--title', 'Lending', '--product_id', 'TL', '--position', '1', '--subdomain_type', 'core', '--description', 'Lending tools to members and getting them back.');
 
     // An Agent calls the plugin's MCP tools.
     const mcp = spawn(process.execPath, [bin, 'mcp', '--root', root], { stdio: ['pipe', 'pipe', 'pipe'] });

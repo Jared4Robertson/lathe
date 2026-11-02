@@ -133,7 +133,7 @@ describe('entities and value objects', () => {
     // A field typed by another aggregate of its domain, held by a foreign key to that aggregate's table.
     expect(fieldsOf(good, 'EX-LEND-EN01', 'entity_field').find((f) => f.name === 'Tool')).toMatchObject({ type_aggregate_id: 'EX-LEND-A2' });
     const data = adding(everyKind(), {
-      domain: [{ id: 'TL-SHOP', title: 'Shop', product_id: 'TL', subdomain_type: 'supporting', description: 'Selling spare parts.' }],
+      domain: [{ id: 'TL-SHOP', title: 'Shop', product_id: 'TL', position: 2, subdomain_type: 'supporting', description: 'Selling spare parts.' }],
       aggregate: [{ id: 'TL-SHOP-A1', title: 'Sale', domain_id: 'TL-SHOP', identity: 'Sale ID', description: 'One sale of parts.' }],
       entity: [{ id: 'TL-SHOP-EN01', title: 'Sale', aggregate_id: 'TL-SHOP-A1', role: 'root', description: 'The sale itself.' }],
       entity_field: [{ entity_id: 'TL-SHOP-EN01', position: 1, name: 'Loan', meaning: 'The loan the sale ends.', type_aggregate_id: 'TL-LEND-A1', required: true, column_name: 'loan_id' }],
@@ -231,7 +231,7 @@ describe('rules', () => {
     expect(good.records.find((r) => r.id === 'EX-LEND-SP01')).toMatchObject({ parent: null, domain: 'EX-LEND' });
     // A specification reading another domain's aggregate is refused.
     const crossing = adding(everyKind(), {
-      domain: [{ id: 'TL-SHOP', title: 'Shop', product_id: 'TL', subdomain_type: 'supporting', description: 'Selling spare parts.' }],
+      domain: [{ id: 'TL-SHOP', title: 'Shop', product_id: 'TL', position: 2, subdomain_type: 'supporting', description: 'Selling spare parts.' }],
       aggregate: [{ id: 'TL-SHOP-A1', title: 'Sale', domain_id: 'TL-SHOP', identity: 'Sale ID', description: 'One sale of parts.' }],
       reads: [{ source_id: 'TL-LEND-SP01', target_id: 'TL-SHOP-A1' }],
     });

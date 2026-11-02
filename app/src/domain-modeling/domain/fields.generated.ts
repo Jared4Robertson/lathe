@@ -7,6 +7,7 @@ export const DOMAIN_FIELDS = {
     id: { kind: 'column', table: 'domain', column: 'id', required: true, clearable: false },
     title: { kind: 'column', table: 'domain', column: 'title', required: true, clearable: false },
     product_id: { kind: 'column', table: 'domain', column: 'product_id', required: true, clearable: false },
+    position: { kind: 'column', table: 'domain', column: 'position', required: true, clearable: false },
     subdomain_type: { kind: 'column', table: 'domain', column: 'subdomain_type', required: true, clearable: false },
     description: { kind: 'column', table: 'domain', column: 'description', required: true, clearable: false },
     notes: { kind: 'column', table: 'domain', column: 'notes', required: false, clearable: false },
@@ -14,6 +15,7 @@ export const DOMAIN_FIELDS = {
   '/api/domain/change-domain': {
     id: { kind: 'column', table: 'domain', column: 'id', required: true, clearable: false },
     title: { kind: 'column', table: 'domain', column: 'title', required: false, clearable: false },
+    position: { kind: 'column', table: 'domain', column: 'position', required: false, clearable: false },
     subdomain_type: { kind: 'column', table: 'domain', column: 'subdomain_type', required: false, clearable: false },
     description: { kind: 'column', table: 'domain', column: 'description', required: false, clearable: false },
     notes: { kind: 'column', table: 'domain', column: 'notes', required: false, clearable: true },

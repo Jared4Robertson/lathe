@@ -84,7 +84,7 @@ describe('validated builds', () => {
     const text = readFileSync(file, 'utf8');
 
     // A domain whose product is not there: refused with exactly the problems an uncached load gives, and stamped never.
-    appendFileSync(file, `${JSON.stringify({ id: 'TL-SHIP', title: 'Shipping', product_id: 'XX', subdomain_type: 'supporting', description: 'Sending tools.' })}\n`);
+    appendFileSync(file, `${JSON.stringify({ id: 'TL-SHIP', title: 'Shipping', product_id: 'XX', position: 1, subdomain_type: 'supporting', description: 'Sending tools.' })}\n`);
     const refused = await load(root, dir);
     expect(refused.refused?.length).toBeGreaterThan(0);
     expect(refused).toEqual(await load(root, cacheFolder()));

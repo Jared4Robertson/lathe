@@ -1,3 +1,3 @@
-{"id":"DM-PAY","title":"Paying","product_id":"DM","subdomain_type":"generic","description":"People pay for a basket."}
-{"id":"DM-SHOP","title":"Shopping","product_id":"DM","subdomain_type":"core","description":"People pick goods and pay."}
-{"id":"NF-NOTE","title":"Notes","product_id":"NF","subdomain_type":"core","description":"People write notes."}
+{"id":"DM-PAY","title":"Paying","product_id":"DM","position":1,"subdomain_type":"generic","description":"People pay for a basket."}
+{"id":"DM-SHOP","title":"Shopping","product_id":"DM","position":2,"subdomain_type":"core","description":"People pick goods and pay."}
+{"id":"NF-NOTE","title":"Notes","product_id":"NF","position":1,"subdomain_type":"core","description":"People write notes."}

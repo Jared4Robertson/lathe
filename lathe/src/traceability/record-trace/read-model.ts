@@ -9,6 +9,7 @@ import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import { placementOf, type Placed } from '../../exploring/placement.ts';
 import { compareIds } from '../../platform/data/ids.ts';
+import { domainOrder } from '../../platform/data/domain-order.ts';
 
 export type GapKind = 'not-designed' | 'not-built' | 'not-proved' | 'not-automated';
 
@@ -98,6 +99,7 @@ export function recordTraceTableFrom(view: ReadView): RecordTraceTable {
     for (const r of placed.values()) if (r.parent) children.set(r.parent, [...(children.get(r.parent) ?? []), r]);
     links = Object.values(schema.tables).filter((t) => t.role === 'link').flatMap((t) => view.rows(t.name).map((row) => ({ source: String(row.source_id), relation: t.name, target: String(row.target_id) })));
   };
+  const domainRank = domainOrder(view.rows('domain'));
   const chains = new Map((run?.chains ?? []).map((c) => [c.obligation, c]));
   const coverage = new Map((run?.coverage ?? []).map((c) => [c.domain ?? c.product, c]));
   const problems = new Map<string, Set<string>>();
@@ -121,7 +123,7 @@ export function recordTraceTableFrom(view: ReadView): RecordTraceTable {
   const owingDomains = (record: Placed): string[] => {
     if (record.domain) return [record.domain];
     if (record.kind !== 'pattern_rule') return record.product ? [record.product] : [];
-    return sortIds((run?.coverage ?? []).filter((c) => c.domain !== null && c.product === record.product && c.pattern_rules.includes(record.id)).map((c) => c.domain as string));
+    return [...new Set((run?.coverage ?? []).filter((c) => c.domain !== null && c.product === record.product && c.pattern_rules.includes(record.id)).map((c) => c.domain as string))].sort((a, b) => domainRank.get(a)! - domainRank.get(b)!);
   };
   const judge = (record: Placed, domain: string): Judgment => {
     const needsDesign = record.kind !== 'pattern_rule';

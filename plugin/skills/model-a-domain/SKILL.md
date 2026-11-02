@@ -21,7 +21,7 @@ Ask of each candidate domain:
 - Can one use case be specified, built and proved inside it, from command to screen to test, without another domain designing the same thing again?
 - Is it named for what it does for someone, rather than where its code runs (web app, API, server, database, desktop, mobile, engine)?
 
-A candidate that fails these is a layer or a platform concern, not a domain. Give each domain its subdomain type: core for the product's edge, supporting for what the core needs, generic for what is solved the same way everywhere. It guides how much modeling the domain deserves.
+A candidate that fails these is a layer or a platform concern, not a domain. Give each domain its subdomain type: core for the product's edge, supporting for what the core needs, generic for what is solved the same way everywhere. It guides how much modeling the domain deserves. Give each domain its position among the product's domains, from 1: the order the nav, the product page and the graph list them in. Put them in the order the Owner reads the product (for a stage-by-stage product, the stages in order), and change a position with `change-domain`.
 
 ## The order of the whole spec
 

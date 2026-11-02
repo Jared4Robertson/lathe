@@ -138,7 +138,7 @@ describe('LA-MOD-UC02-R06-T02 each Domain command (LA-MOD-A4) changes one domain
 /** The lending domain with a second domain, Catalog, beside it, and terms added with the Domain commands. */
 async function withTerms(terms: { id: string; title: string; builds_on?: string[] }[]): Promise<Store> {
   const store = await storeOf();
-  await runCommand(store, ADD_DOMAIN, { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'supporting', description: 'The tools the library has.' });
+  await runCommand(store, ADD_DOMAIN, { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', position: 2, subdomain_type: 'supporting', description: 'The tools the library has.' });
   for (const term of terms) await runCommand(store, ADD_TERM, { domain_id: term.id.startsWith('TL-CAT') ? 'TL-CAT' : 'TL-LEND', meaning: `What ${term.title} means.`, ...term });
   return store;
 }

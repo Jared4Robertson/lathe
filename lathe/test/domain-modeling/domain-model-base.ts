@@ -9,8 +9,8 @@ export function domainModelBase(extra: Data = {}): Data {
   const base: Data = {
     product: [{ id: 'TL', title: 'Tool Library', description: 'A neighborhood tool library.' }],
     domain: [
-      { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' },
-      { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'supporting', description: 'The tools the library holds.' },
+      { id: 'TL-LEND', title: 'Lending', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'Lending tools to members and getting them back.' },
+      { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', position: 2, subdomain_type: 'supporting', description: 'The tools the library holds.' },
     ],
     standard: [{ id: 'TL-STD-CODE', title: 'Code', product_id: 'TL', type: 'engineering', description: 'How the code is written.' }],
     standard_rule: [{ id: 'TL-STD-CODE-R01', title: 'Node prefix', standard_id: 'TL-STD-CODE', statement: 'Code MUST import node: modules.' }],

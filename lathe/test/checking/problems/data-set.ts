@@ -11,8 +11,8 @@ export const TWO_PRODUCTS: Data = {
     { id: 'NF', title: 'Notebook', description: 'Notes kept by members.' },
   ],
   domain: [
-    { id: 'EX-LEND', title: 'Lending', product_id: 'EX', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' },
-    { id: 'NF-NOTE', title: 'Notes', product_id: 'NF', subdomain_type: 'core', description: 'Writing notes.' },
+    { id: 'EX-LEND', title: 'Lending', product_id: 'EX', position: 1, subdomain_type: 'core', description: 'Lending tools to members and getting them back.' },
+    { id: 'NF-NOTE', title: 'Notes', product_id: 'NF', position: 1, subdomain_type: 'core', description: 'Writing notes.' },
   ],
   aggregate: [{ id: 'EX-LEND-A1', title: 'Loan', domain_id: 'EX-LEND', identity: 'Loan ID', description: 'One tool lent to one member, with its return.' }],
   entity: [{ id: 'EX-LEND-EN01', title: 'Loan', aggregate_id: 'EX-LEND-A1', role: 'root', description: 'The loan itself.' }],

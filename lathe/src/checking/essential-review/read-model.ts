@@ -6,6 +6,7 @@
 import { placementOf, wordGroupOf } from '../../essential.ts';
 import { isLeadColumn } from '../../lead.ts';
 import { compareIds } from '../../platform/data/ids.ts';
+import { domainOrder } from '../../platform/data/domain-order.ts';
 import type { ReadView } from '../../platform/data/rules.ts';
 
 /** One essential record, as a reviewer reads it: its kind, title and lead text. */
@@ -26,7 +27,7 @@ export interface EssentialDomain {
   records: EssentialRecord[];
 }
 
-/** A product's essential records by domain, in ID order, then those in no domain, with how many there are. */
+/** A product's essential records by domain, by position, then those in no domain, with how many there are. */
 export interface EssentialReview {
   product: string;
   count: number;
@@ -41,6 +42,7 @@ export interface EssentialReviewTable {
 /** The projection: the read model's table, built from the rows on each read (in memory; nothing keeps it). */
 export function essentialReviewTableFrom(view: ReadView): EssentialReviewTable {
   const placement = placementOf(view);
+  const domainRank = domainOrder(view.rows('domain'));
   const domainTitles = new Map(view.rows('domain').map((d) => [String(d.id), String(d.title)]));
   const byProduct = new Map<string, Map<string | null, EssentialRecord[]>>();
   for (const kind of Object.values(view.schema.kinds)) {
@@ -62,7 +64,7 @@ export function essentialReviewTableFrom(view: ReadView): EssentialReviewTable {
     const product = String(p.id);
     const domains = [...(byProduct.get(product) ?? new Map<string | null, EssentialRecord[]>())]
       .map(([domain, records]) => ({ domain, title: domain === null ? 'In no domain' : (domainTitles.get(domain) ?? domain), records: records.sort((a, b) => compareIds(a.id, b.id)) }))
-      .sort((a, b) => (a.domain === null ? 1 : b.domain === null ? -1 : compareIds(a.domain, b.domain)));
+      .sort((a, b) => (a.domain === null ? 1 : b.domain === null ? -1 : domainRank.get(a.domain)! - domainRank.get(b.domain)!));
     reviews.set(product, { product, count: domains.reduce((n, d) => n + d.records.length, 0), domains });
   }
   return { reviews };

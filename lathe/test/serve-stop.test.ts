@@ -66,7 +66,7 @@ describe('A server stops cleanly, even while a reload is in progress', () => {
     writeFileSync(path.join(root, 'lathe.config.json'), `${JSON.stringify({ schema: SCHEMA_VERSION })}\n`);
     writeFileSync(path.join(root, 'data', 'product.jsonl'), '{"id":"STP","title":"Stop Shop","description":"A product for the stop test."}\n');
     const dataFile = path.join(root, 'data', 'domain.jsonl');
-    writeFileSync(dataFile, '{"id":"STP-ORD","title":"Orders","product_id":"STP","subdomain_type":"core","description":"Orders."}\n');
+    writeFileSync(dataFile, '{"id":"STP-ORD","title":"Orders","product_id":"STP","position":1,"subdomain_type":"core","description":"Orders."}\n');
 
     // From a stop as the reload begins to one after it has answered, when only the close itself is left.
     const delays = [0, 5, 10, 20, 40, 80, null];

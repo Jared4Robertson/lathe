@@ -51,7 +51,7 @@ describe('Checking flows', () => {
     expect(fixed.status).toBe(0);
     expect(fixed.stdout).toMatch(/\n0 errors, \d+ warnings?\.\n$/);
     // S02: data the store refuses is a data-refused error naming the file, the line and the rule; nothing else is checked.
-    appendFileSync(path.join(tl.root, 'data', 'domain.jsonl'), '{"id":"TL-SHOP","title":"Shop","product_id":"TL","subdomain_type":"central","description":"Selling tools to members."}\n');
+    appendFileSync(path.join(tl.root, 'data', 'domain.jsonl'), '{"id":"TL-SHOP","title":"Shop","product_id":"TL","position":1,"subdomain_type":"central","description":"Selling tools to members."}\n');
     const refused = tl.check();
     expect(refused.status).toBe(1);
     expect(refused.stdout).toContain('Errors (1):\n  [data-refused]');
@@ -182,8 +182,8 @@ describe('Checking flows', () => {
     const server = mcp(tl.root);
     try {
       await server.initialize();
-      expect((await server.call('domain_add_domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' })).result!.isError).toBeUndefined();
-      const refused = await server.call('domain_add_domain', { id: 'TL-SHOP', title: 'Shop', product_id: 'TL', subdomain_type: 'central', description: 'Selling tools to members.' });
+      expect((await server.call('domain_add_domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'Lending tools to members and getting them back.' })).result!.isError).toBeUndefined();
+      const refused = await server.call('domain_add_domain', { id: 'TL-SHOP', title: 'Shop', product_id: 'TL', position: 3, subdomain_type: 'central', description: 'Selling tools to members.' });
       expect(refused.result!.isError).toBe(true);
       expect(refused.result!.content[0].text).toContain('subdomain_type');
     } finally {

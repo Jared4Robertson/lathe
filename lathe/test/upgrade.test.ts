@@ -538,6 +538,17 @@ describe('the schema version', () => {
     return { changes, todos };
   };
 
+  const run5to6 = async (tables: Record<string, Record<string, unknown>[]>) => {
+    const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 5);
+    const changes: string[] = [];
+    const todos: string[] = [];
+    await step!.converter.files!(
+      { tables: () => Object.keys(tables), read: (table) => tables[table] ?? [], write: (table, rows) => void (tables[table] = rows) },
+      { changed: (text) => changes.push(text), todo: (text) => todos.push(text) },
+    );
+    return { changes, todos };
+  };
+
   it("LA-PRD-UC03-R08-T15 4-to-5 changes no row, asks to rename a product's own kind or relation that clashes with a new table, and to write the journey each duration outcome times", async () => {
     const tables: Record<string, Record<string, unknown>[]> = {
       product_kind: [{ name: 'journey', product_id: 'TL' }, { name: 'report', product_id: 'TL' }],
@@ -571,5 +582,24 @@ describe('the schema version', () => {
     expect(some).toEqual(before);
     expect(changes).toEqual([]);
     expect(todos).toEqual([]);
+  });
+
+  it("LA-PRD-UC03-R08-T17 5-to-6 numbers each product's domains from 1 in ID order, with the numbers inside IDs compared by value, and changes nothing else", async () => {
+    const tables: Record<string, Record<string, unknown>[]> = {
+      domain: [
+        { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core' },
+        { id: 'XX-D10', title: 'Tenth', product_id: 'XX', subdomain_type: 'core' },
+        { id: 'XX-D2', title: 'Second', product_id: 'XX', subdomain_type: 'core' },
+        { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'supporting', notes: 'Kept.' },
+      ],
+      capability: [{ id: 'TL-LEND-CAP01', domain_id: 'TL-LEND', position: 1 }],
+    };
+    const { changes, todos } = await run5to6(tables);
+    expect(tables.domain.map((d) => `${d.id} ${d.position}`)).toEqual(['TL-LEND 2', 'XX-D10 2', 'XX-D2 1', 'TL-CAT 1']);
+    expect(Object.keys(tables.domain[3])).toEqual(['id', 'title', 'product_id', 'position', 'subdomain_type', 'notes']);
+    expect(tables.capability).toEqual([{ id: 'TL-LEND-CAP01', domain_id: 'TL-LEND', position: 1 }]);
+    expect(changes).toEqual(['Each domain has a position: 4 numbered from 1 within their product, in ID order.']);
+    expect(todos).toEqual([]);
+    expect((await run5to6({})).changes).toEqual([]);
   });
 });

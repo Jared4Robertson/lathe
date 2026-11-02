@@ -19,6 +19,7 @@ import { MOVE_QUESTION } from '../../../src/product/product/commands/move-questi
 import { REMOVE_PRODUCT_KIND } from '../../../src/product/product/commands/remove-product-kind.ts';
 import { REMOVE_PRODUCT_RELATION } from '../../../src/product/product/commands/remove-product-relation.ts';
 import { REMOVE_QUESTION } from '../../../src/product/product/commands/remove-question.ts';
+import { CHANGE_DOMAIN } from '../../../src/domain-modeling/domain/commands/change-domain.ts';
 import { GET_PRODUCT, LIST_PRODUCTS, NEXT_PRODUCT_ID } from '../../../src/product/product/queries.ts';
 import { runAggregateCommand } from '../../../src/cli/aggregates.ts';
 import { callTool, tools } from '../../../src/cli/mcp.ts';
@@ -29,7 +30,7 @@ import { runCommand, runQuery } from '../../../src/platform/commands/run.ts';
 import { StoreError } from '../../../src/platform/data/problems.ts';
 import { openStore, type Store } from '../../../src/platform/data/store.ts';
 import { everyKind } from '../../store/fixture.ts';
-import { writeData } from '../../helpers.ts';
+import { adding, writeData } from '../../helpers.ts';
 
 const open: Store[] = [];
 afterEach(async () => {
@@ -242,5 +243,16 @@ describe('LA-PRD-UC35-R01-T53 each Product command and query is reached by name 
       await closeStores(root);
       await new Promise((resolve) => server.close(resolve));
     }
+  });
+});
+
+describe('LA-MOD-UC02-R10-T01 a product page lists its domains by position, not by ID', () => {
+  it('lists them in the order the Owner gave them', async () => {
+    const accounts = { id: 'TL-ACCT', title: 'Accounts', product_id: 'TL', position: 2, subdomain_type: 'generic', description: 'Who may borrow.' };
+    const store = await storeAt(writeData(adding(everyKind(), { domain: [accounts] })));
+    const page = () => (runQuery(store, GET_PRODUCT, { id: 'TL' }) as ReturnType<typeof GET_PRODUCT.run>).domains.map((d) => d.id);
+    expect(page()).toEqual(['TL-LEND', 'TL-ACCT']);
+    await runCommand(store, CHANGE_DOMAIN, { id: 'TL-LEND', position: 3 });
+    expect(page()).toEqual(['TL-ACCT', 'TL-LEND']);
   });
 });

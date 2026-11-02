@@ -7,7 +7,7 @@ Lathe keeps a product's lifecycle (discovery, domain model, use cases, interacti
 ```sh
 npm install --save-dev /path/to/jaredrob-lathe-1.0.0.tgz   # until it is published
 npx lathe init --name "Tool Library" --prefix TL
-npx lathe domain add-domain --id TL-LEND --title Lending --product_id TL --subdomain_type core \
+npx lathe domain add-domain --id TL-LEND --title Lending --product_id TL --position 1 --subdomain_type core \
   --description "Lending tools to members and taking them back."
 npx lathe check
 npx lathe serve            # http://127.0.0.1:5330

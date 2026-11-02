@@ -24,6 +24,7 @@
 {"table_id":"LA-IXD-TB89","position":1,"type":"primary","columns":["source_id","target_id"]}
 {"table_id":"LA-IXD-TB93","position":1,"type":"primary","columns":["source_id","target_id"]}
 {"table_id":"LA-MOD-EN04-TB","position":1,"type":"primary","columns":["id"]}
+{"table_id":"LA-MOD-EN04-TB","position":2,"type":"unique","columns":["product_id","position"],"invariant_id":"LA-MOD-INV186"}
 {"table_id":"LA-MOD-EN05-TB","position":1,"type":"primary","columns":["id"]}
 {"table_id":"LA-MOD-EN05-TB","position":2,"type":"unique","columns":["domain_id","position"],"invariant_id":"LA-MOD-INV17"}
 {"table_id":"LA-MOD-EN05-TB","position":3,"type":"foreign","columns":["domain_id"],"target_table_id":"LA-MOD-EN04-TB"}

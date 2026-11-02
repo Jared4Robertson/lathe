@@ -39,7 +39,7 @@ const base = (): Data => {
     ...data,
     product: [...data.product, { id: 'XX', title: 'Other', description: 'Another product.' }],
     role: [...(data.role ?? []), { product_id: 'XX', name: 'Member', description: 'Someone of the other product.' }],
-    domain: [...data.domain, { id: 'XX-DOM', title: 'Other domain', product_id: 'XX', subdomain_type: 'core', description: 'Another domain.' }],
+    domain: [...data.domain, { id: 'XX-DOM', title: 'Other domain', product_id: 'XX', position: 1, subdomain_type: 'core', description: 'Another domain.' }],
     business_outcome: [...data.business_outcome, { id: 'XX-BO01', title: 'Elsewhere', product_id: 'XX', statement: 'Something elsewhere.', measure: 'A count.', target: 'Ten.' }],
     capability: [...data.capability, { id: 'XX-DOM-CAP01', title: 'Other capability', domain_id: 'XX-DOM', position: 1, description: 'Another capability.' }],
     use_case: [...data.use_case, { id: 'XX-DOM-UC01', title: 'Do something', capability_id: 'XX-DOM-CAP01', goal: 'Do it.' }],
@@ -190,7 +190,7 @@ describe('LA-PRD-UC33-R02-T01 a step carries out a use case of another domain, a
     const data = base();
     const store = await storeOf({
       ...data,
-      domain: [...data.domain, { id: 'TL-OTH', title: 'Other', product_id: 'TL', subdomain_type: 'core', description: 'Another domain of the product.' }],
+      domain: [...data.domain, { id: 'TL-OTH', title: 'Other', product_id: 'TL', position: 2, subdomain_type: 'core', description: 'Another domain of the product.' }],
       capability: [...data.capability, { id: 'TL-OTH-CAP01', title: 'Other capability', domain_id: 'TL-OTH', position: 1, description: 'A capability of the other domain.' }],
       use_case: [...data.use_case, { id: 'TL-OTH-UC01', title: 'Do something else', capability_id: 'TL-OTH-CAP01', goal: 'Do it.' }],
       use_case_actor: [...data.use_case_actor, { use_case_id: 'TL-OTH-UC01', position: 1, role_name: 'Member' }],

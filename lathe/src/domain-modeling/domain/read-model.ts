@@ -10,6 +10,7 @@ import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { CapabilityRow, DomainRow, DomainServiceRow, DomainServiceTestRow, RepositoryRow, ServiceRow, TermRow } from '../../platform/data/tables.ts';
 import type { DomainKind } from './model.ts';
+import { domainOrder } from '../../platform/data/domain-order.ts';
 import { byRecordId } from '../../platform/data/ids.ts';
 
 /** A capability as the page shows it: its row, the business outcomes it serves, and its use cases by ID. */
@@ -83,7 +84,7 @@ export interface DomainTable {
   domains: Map<string, DomainTree>;
   /** Each record inside a domain: the domain that holds it and its kind there. */
   holding: Map<string, { root: string; kind: DomainKind }>;
-  /** Each product's domains, by ID; a product with none has an empty list. */
+  /** Each product's domains, by position; a product with none has an empty list. */
   products: Map<string, DomainSummary[]>;
   /** Every record ID in use, with its kind: what a next ID is one past, and what a refusal names. */
   kinds: Map<string, string>;
@@ -187,7 +188,8 @@ export function domainTableFrom(view: ReadView): DomainTable {
     domains.set(root, tree);
     products.get(domain.product_id)?.push({ id: domain.id, title: domain.title });
   }
-  for (const list of products.values()) list.sort(byRecordId);
+  const place = domainOrder(view.rows('domain'));
+  for (const list of products.values()) list.sort((a, b) => place.get(a.id)! - place.get(b.id)!);
   const kinds = new Map<string, string>();
   for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
   return { domains, holding, products, kinds };
