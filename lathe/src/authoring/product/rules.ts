@@ -141,15 +141,15 @@ function roleNamesOf(view: ReadView, product: string): string[] {
 }
 
 /**
- * A problem for each role a record names that is not one of its product's roles: `rows` are the record's role rows,
- * each naming its role in `role_name`, and `what` says what the record calls them, such as "as its actor".
+ * Each role a record names that is not one of its product's roles, as a problem its own rule names: `rows` are the
+ * record's role rows, each naming its role in `role_name`, and `what` says what the record calls them, such as "as its
+ * actor".
  */
-export function rolesNotOfProduct(view: ReadView, rule: string, table: string, record: string, product: string, rows: readonly Row[], what: string): RuleProblem[] {
+export function rolesNotOfProduct(view: ReadView, table: string, record: string, product: string, rows: readonly Row[], what: string): Omit<RuleProblem, 'rule'>[] {
   const roles = roleNamesOf(view, product);
   return rows
     .filter((row) => !roles.includes(String(row.role_name)))
     .map((row) => ({
-      rule,
       table,
       row,
       message: `${record} names ${String(row.role_name)} ${what}, which is not a role of ${product}; its roles are ${roles.join(', ') || 'none'}: name one of them, or add the role to ${product}`,

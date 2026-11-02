@@ -38,6 +38,7 @@ const base = (): Data => {
   return {
     ...data,
     product: [...data.product, { id: 'XX', title: 'Other', description: 'Another product.' }],
+    role: [...(data.role ?? []), { product_id: 'XX', name: 'Member', description: 'Someone of the other product.' }],
     domain: [...data.domain, { id: 'XX-DOM', title: 'Other domain', product_id: 'XX', subdomain_type: 'core', description: 'Another domain.' }],
     business_outcome: [...data.business_outcome, { id: 'XX-BO01', title: 'Elsewhere', product_id: 'XX', statement: 'Something elsewhere.', measure: 'A count.', target: 'Ten.' }],
     capability: [...data.capability, { id: 'XX-DOM-CAP01', title: 'Other capability', domain_id: 'XX-DOM', position: 1, description: 'Another capability.' }],
