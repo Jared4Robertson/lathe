@@ -63,6 +63,7 @@ async function load(root: string, dir: string) {
   }
 }
 
+// Each test builds a store whole, as a cold CLI does: seconds alone, longer on a busy machine, so past vitest's 5 s.
 describe('validated builds', () => {
   it('LA-PLT-UC01-R17-T01 Files a whole build passed load without building again, and answer exactly as the whole build does', async () => {
     const root = writeData(everyKind());
@@ -140,4 +141,4 @@ describe('validated builds', () => {
     expect(refused.code).not.toBe(0);
     expect(refused).toEqual(await cli(cacheFolder()));
   }, 30_000);
-});
+}, 30_000);

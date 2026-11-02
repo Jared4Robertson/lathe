@@ -110,6 +110,7 @@ async function crashAt(root: string, at: Crash, steps: Step[]) {
   }
 }
 
+// Each test writes and loads a store whole after a crash: seconds alone, longer on a busy machine, so past vitest's 5 s.
 describe('the spec data store saves each change whole or not at all, through a crash at any point of its write', () => {
   it.each<[string, Change]>([
   ['LA-PRD-A1-SR01-T02', { steps: [['product', 'change-product', { id: 'TL', title: 'Kept whole' }], ['product', 'add-question', { ...product('TL-Q90'), owner: 'Librarian', description: 'A question kept whole.' }]] }],
@@ -159,7 +160,7 @@ describe('the spec data store saves each change whole or not at all, through a c
     expect(await crashAt(root, 'journal half written', change.steps)).toEqual({ settled: ['rolled back'], files: before });
     expect(await crashAt(root, 'after the first rename', change.steps)).toEqual({ settled: ['finished'], files: after });
   });
-});
+}, 30_000);
 
 describe('a write a crash left is settled before anything reads the data, and says what it did', () => {
   it('LA-MOD-A22-SR01-T02 a reload in the same process finishes the write, and its rows are the store\'s', async () => {
