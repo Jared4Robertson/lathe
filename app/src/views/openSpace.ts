@@ -72,6 +72,20 @@ export function openInsets(stage: Rect, panels: readonly Panel[], gap = OPEN_GAP
   return out;
 }
 
+/**
+ * The least frame, in px each way, a stage frames its focus in: room for one readable box. A phone on its side leaves
+ * about a hundred px between the toolbar and the walk's bar, and the camera frames there, never under them; only a
+ * frame smaller than this frames on the whole stage.
+ */
+export const MIN_FRAME = 64;
+
+/** Where a stage `size` frames its focus, in the stage's pixels: the frame its insets leave, or the whole stage when that is under MIN_FRAME. */
+export function frameIn(size: { w: number; h: number }, inset: Insets): { x: number; y: number; w: number; h: number } {
+  const w = size.w - inset.left - inset.right;
+  const h = size.h - inset.top - inset.bottom;
+  return w < MIN_FRAME || h < MIN_FRAME ? { x: 0, y: 0, w: size.w, h: size.h } : { x: inset.left, y: inset.top, w, h };
+}
+
 /** The frame: the open space less the stage's tools on each side. */
 export function frameInsets(open: Insets, tools: readonly Panel[], gap = OPEN_GAP): Insets {
   const out = { ...open };

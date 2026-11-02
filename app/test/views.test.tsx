@@ -6,7 +6,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { parseSpecRoute } from '../src/views/spec-route';
 import { addressOf, parseStage, stageFromSearch, withStage } from '../src/views/address';
-import { CARD_GAP, CARD_GAP_Y, frameInsets, openInsets, OPEN_GAP } from '../src/views/openSpace';
+import { CARD_GAP, CARD_GAP_Y, frameIn, frameInsets, openInsets, OPEN_GAP } from '../src/views/openSpace';
 import { settleWhenHidden } from '../src/views/WikiCard';
 import { NARROW_QUERY } from '../src/shell/useNarrow';
 import { SESSION_SETTINGS_STORAGE } from '../src/exploring/session-settings/model';
@@ -128,6 +128,10 @@ describe('one address, one stage', () => {
     expect(open).toEqual({ left: 344 + OPEN_GAP, top: 76 + OPEN_GAP, right: 1440 - 732 + OPEN_GAP, bottom: 0 });
     // The stage's own tools take room from the frame only, never from the open space.
     expect(frameInsets(open, [{ side: 'top', rect: rect(360, 84, 700, 120) }])).toEqual({ ...open, top: open.top + 36 + OPEN_GAP });
+    // However short the frame (a phone on its side: under the toolbar, over the walk's bar), the camera frames there;
+    // only a frame too small for one readable box frames on the whole stage.
+    expect(frameIn({ w: 812, h: 241 }, { left: 0, top: 74, right: 0, bottom: 65 })).toEqual({ x: 0, y: 74, w: 812, h: 102 });
+    expect(frameIn({ w: 812, h: 241 }, { left: 0, top: 74, right: 0, bottom: 117 })).toEqual({ x: 0, y: 0, w: 812, h: 241 });
 
     // On the page the measure is written on the stage as CSS variables, which the stage's tools follow.
     await openApp('/P-D-UC01?stage=graph', served());
@@ -145,7 +149,8 @@ describe('one address, one stage', () => {
     expect(css).toMatch(/\.stage-tools-room \{[^}]*top: var\(--open-top, 0px\); left: var\(--open-left, 0px\); right: var\(--chat-space, 0px\);[^}]*container-type: inline-size/);
     // Centered on the whole stage while it fits there, whatever panels are open; wider, it stays inside its room.
     expect(css).toMatch(/\.stage-tools\[data-stage-tools="top"\] \{[^}]*max-width: 100cqw; translate: clamp\(0px, 50cqw \+ \(var\(--chat-space, 0px\) - var\(--open-left, 0px\)\) \/ 2 - 50%, 100cqw - 100%\) 0/);
-    expect(css).toMatch(/\.trace-scroll \{[^}]*padding: calc\(var\(--frame-top/);
+    // On a phone on its side the camera and the Key chip sit in the walk's bar, never over the open space (LA-V93-R76).
+    expect(css).toMatch(/@media \(orientation: landscape\) \{[^@]*\.stage-walk-bar \{ padding-right: calc\([^;]*var\(--camera-row\) \+ var\(--key-slot\)/);
   });
 
   it('LA-V96-R05-T03 The measure follows the stage the page makes anew when it changes between the phone and the wide layout', async () => {

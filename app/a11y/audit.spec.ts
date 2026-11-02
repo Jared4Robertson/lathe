@@ -36,8 +36,8 @@ const STEP = '/LA-EXP-UC12-FL-S01';
 const ENTITY = '/LA-EXP-EN01';
 const SHARED = '/LA-PAT-APP-UX';
 
-/** The Trace drawn: its canvas (attached, as stability's traceDrawn), or on a phone its list, one use case at a time. */
-const TRACE = '.focus-stage :is(.trace-flow[data-ready], .trace-list)';
+/** The Trace drawn: its canvas (attached, as stability's traceDrawn), on every width. */
+const TRACE = '.focus-stage .trace-flow[data-ready]';
 
 /** Each stage, with every panel open. */
 const STAGES = [
@@ -119,12 +119,12 @@ const PAGES: State[] = [
   { name: 'Appearance popover', url: `${PRODUCT}?panel=appearance`, ready: '.appearance-popover .theme-rows' },
   { name: 'Products picker', url: '/', ready: '.dialog.products-picker h1' },
 ].map((p) => ({ name: p.name, run: (page: Page) => open(page, p.url, p.ready, 'state' in p ? p.state : 'visible') }));
-// The Trace stage with a row opened: on a wide screen Expand row on the canvas, on a phone the list's first box.
+// The Trace stage with a row opened by Expand row (on a phone, in the toolbar's More when it does not fit the row).
 PAGES.push({ name: 'Trace stage, a row opened', run: async (page: Page) => {
   await open(page, `${EDITED}?stage=trace`, TRACE, 'attached');
   const expandRow = page.locator('.focus-stage .stage-toolbar').getByRole('button', { name: 'Expand row' });
-  if (await expandRow.count()) await expandRow.click();
-  else await page.locator('.focus-stage .trace-list').getByRole('button', { name: /^Open/ }).first().click();
+  if (!(await expandRow.isVisible())) await page.locator('.focus-stage .stage-more > summary').click();
+  await expandRow.click();
   await page.waitForTimeout(400);
 } });
 // A flow's page on an interface's tab: that interface's derived version of the flow, its gaps and refusal rules.

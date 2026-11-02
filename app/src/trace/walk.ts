@@ -1,6 +1,7 @@
 import { stepName } from '../graph/steps';
 import type { RecordIndex } from '../exploring/record-summaries/record-index';
 import type { Move } from '../views/levels';
+import type { WalkBar } from '../views/StageChrome';
 import { journeyBox, JOURNEY_COLUMN, OUTCOME_COLUMN, STAGE_COLUMN, TRACE_COLUMN_LABELS, TRACE_COLUMNS, isOpen, shownChildren, type TraceGraph, type Openness } from './trace';
 import type { TraceLaid } from './layout';
 
@@ -13,6 +14,12 @@ import type { TraceLaid } from './layout';
 // of its steps to that step's row; from there Down and Up go to the next and previous step's row in the journey's order,
 // main path first, and Left back to the step. From no box (the product, or a record the view does not draw) any move goes
 // to the first row's use case. TraceView.tsx moves the focus or the ring, and keeps the journey the walk is along.
+
+/**
+ * On a phone, the walk's bar (LA-V93-R76): Previous and Next along the row, Left and Right, through its stages from its
+ * outcomes to its acceptance tests; Up and Down, which step to the box above or below in a column (the next row's), stay in More.
+ */
+export const TRACE_WALK_BAR: WalkBar = { previous: 'left', next: 'right', more: ['up', 'down'] };
 
 /** What each step button does, for its name and tooltip. */
 export const TRACE_WALK_LABELS: Record<Move, string> = {

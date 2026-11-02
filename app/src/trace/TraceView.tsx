@@ -2,8 +2,9 @@
 // outcomes it serves and the journeys carrying it out to its acceptance tests (trace.ts), read from the Trace read model (list-traced-use-cases, LA-TRC-RM13)
 // again after every reload. It works on every focus (LA-PAT-APP-UX-R17), and the stage stays mounted while the focus
 // moves within its product. Its toolbar is every stage's (views/StageChrome.tsx), with Expand row (the focus's row,
-// every stage), Expand all (one stage, every row) and Tidy up; its key; the canvas (TraceCanvas.tsx) with its
-// accessible layer under it (TraceList.tsx, visually hidden); and on a phone the list alone, one use case at a time.
+// every stage), Expand all (one stage, every row) and Tidy up; its key; and the canvas (TraceCanvas.tsx) with its
+// accessible layer under it (TraceList.tsx, visually hidden), on every width. On a phone the canvas pans and
+// pinch-zooms under the shared camera, the walk is the stage's bar (TRACE_WALK_BAR) and the key a chip.
 // What each place opens is its own (open.ts). What it holds is told to the header strip.
 import './trace.css';
 import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
@@ -14,7 +15,6 @@ import { mapRootOf } from '../graph/map';
 import { readState } from '../record/page-parts';
 import { useCommand, useStageWalk } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
-import { useNarrow } from '../shell/useNarrow';
 import { useChangesKey } from '../changes/ChangesKey';
 import { useTraceRows } from '../traceability/trace/reads';
 import type { Move } from '../views/levels';
@@ -24,7 +24,7 @@ import { cellKey, TRACE_COLUMN_LABELS, TRACE_STAGES, traceGraph, everyStepKey, r
 import { useTraceOrder } from './order';
 import { layOutTrace, outcomesBeside } from './layout';
 import { useOpenness } from './open';
-import { TRACE_WALK_LABELS, traceTarget, traceWords, type Along } from './walk';
+import { TRACE_WALK_BAR, TRACE_WALK_LABELS, traceTarget, traceWords, type Along } from './walk';
 import { traceKeyEntries } from './TraceKey';
 import { TraceList } from './TraceList';
 import { TraceCanvas } from './TraceCanvas';
@@ -68,7 +68,6 @@ const everyOpen = (graph: TraceGraph, open: ReadonlySet<string>, stage: TraceSta
 
 function ProductTraceStage(props: TraceViewProps & { product: string; trace: ProductTrace }) {
   const { index, focus, trace, onCounts } = props;
-  const narrow = useNarrow();
   const graph = useMemo(() => traceGraph(index, trace), [index, trace]);
   const [open, setOpen] = useOpenness(props.cameraKey);
   // The step whose chain the Technical flow column shows: the last step selected. A journey step focused shows its
@@ -81,7 +80,7 @@ function ProductTraceStage(props: TraceViewProps & { product: string; trace: Pro
   const openness = useMemo<Openness>(() => ({ open, step: focusIsStep ? focus : step, journey }), [open, step, focus, focusIsStep, journey]);
   // Tidy up (LA-PAT-APP-UX-R22): the rows ordered afresh, gaps closed, by the stage's shared command and button.
   const [tidy, setTidy] = useState(0);
-  useCommand('stageTidy', () => setTidy((t) => t + 1), !narrow);
+  useCommand('stageTidy', () => setTidy((t) => t + 1));
   // The rows' order, here and not in the canvas: the walk, the toolbar's buttons and the list read the same order the canvas draws, and all re-render when it arrives.
   const ordered = useTraceOrder(graph, tidy);
   // The box the walk or a click stands on, for the focus it left there (a record may show in several boxes), and the
@@ -144,7 +143,7 @@ function ProductTraceStage(props: TraceViewProps & { product: string; trace: Pro
     if (id && id !== focus) props.onNavigate(id);
     return traceWords(index, graph, to.to);
   }, [targetOf, toggle, graph, focus, index, props.onNavigate]);
-  useStageWalk(walkMap, !narrow);
+  useStageWalk(walkMap);
   const onBox = useCallback((key: string) => {
     const item = graph.items.get(key)!;
     const id = item.id && (item.role === 'record' || item.role === 'heading') ? item.id : null;
@@ -157,8 +156,8 @@ function ProductTraceStage(props: TraceViewProps & { product: string; trace: Pro
 
   const changesKey = useChangesKey();
   const faded = rowsOf(graph, focus).length > 0 || graph.items.has(`outcome/${focus}`) || graph.journeyOf.has(focus);
-  const keyEntries = useMemo(() => (narrow ? [] : [...traceKeyEntries(index, graph, faded), ...changesKey]), [narrow, index, graph, faded, changesKey]);
-  const secondary = narrow ? null : (
+  const keyEntries = useMemo(() => [...traceKeyEntries(index, graph, faded), ...changesKey], [index, graph, faded, changesKey]);
+  const secondary = (
     <>
       <Tooltip label={row ? `${rowOpen ? 'Close' : 'Open'} every stage of ${index.byId.get(row)?.title ?? row}` : 'Select a use case or a box in its row first'}>
         <Button aria-pressed={rowOpen} disabled={!row} onClick={expandRow}>Expand row</Button>
@@ -175,23 +174,15 @@ function ProductTraceStage(props: TraceViewProps & { product: string; trace: Pro
   );
   const toolbar = (
     <StageToolbar
-      can={(move) => !narrow && targetOf(move) !== null}
+      can={(move) => targetOf(move) !== null}
       walkLabels={TRACE_WALK_LABELS}
-      own={() => ({ primary: narrow ? null : <TidyUp />, secondary })}
+      own={() => ({ primary: <TidyUp />, secondary })}
+      bar={TRACE_WALK_BAR}
     />
   );
   const order = ordered?.order.rows ?? graph.rows.map((r) => r.useCase);
-  const list = (access: boolean) => <TraceList index={index} graph={graph} order={order} open={openness} focus={focus} hrefFor={props.hrefFor} onNavigate={props.onNavigate} onToggle={toggle} access={access} />;
-  if (narrow) {
-    return (
-      <section className="trace-page" aria-label="Trace">
-        {toolbar}
-        {list(false)}
-      </section>
-    );
-  }
   return (
-    <section className="trace-page is-drawn" aria-label="Trace">
+    <section className="trace-page" aria-label="Trace">
       {toolbar}
       <StageKey entries={keyEntries} />
       <TraceCanvas
@@ -199,7 +190,9 @@ function ProductTraceStage(props: TraceViewProps & { product: string; trace: Pro
         onToggle={toggle} onEvery={setEvery} onBox={onBox} onNavigate={props.onNavigate} onPeek={props.onPeek}
         space={props.space} ring={ring} cameraKey={props.cameraKey} onOpenNew={props.onOpenNew}
       />
-      <div className="trace-access" data-arrows="own">{list(true)}</div>
+      <div className="trace-access" data-arrows="own">
+        <TraceList index={index} graph={graph} order={order} open={openness} focus={focus} hrefFor={props.hrefFor} onNavigate={props.onNavigate} onToggle={toggle} />
+      </div>
     </section>
   );
 }
