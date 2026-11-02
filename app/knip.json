@@ -10,17 +10,21 @@
     "test/**/*.{ts,tsx}",
     "stability/**/*.ts",
     "a11y/**/*.ts",
+    "mobile/**/*.ts",
     "perf/**/*.ts"
   ],
   "playwright": {
     "config": [
       "stability/playwright.config.ts",
       "a11y/playwright.config.ts",
+      "mobile/playwright.config.ts",
+      "mobile/measure.config.ts",
       "perf/playwright.config.ts"
     ],
     "entry": [
       "stability/**/*.spec.ts",
       "a11y/**/*.spec.ts",
+      "mobile/**/*.spec.ts",
       "perf/**/*.perf.ts"
     ]
   },

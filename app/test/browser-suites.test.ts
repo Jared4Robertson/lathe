@@ -3,12 +3,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-// The browser suites (stability, a11y, perf) take `test` and `expect` from stability/test.ts only, so every test fails
+// The browser suites (stability, a11y, mobile, perf) take `test` and `expect` from stability/test.ts only, so every test fails
 // when its page logs an error, and stand in for the desktop shell only through stability/desktop.ts, whose stand-in is
 // typed by the bridge itself (test/desktop-bridge.ts).
 
 const app = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const files = ['stability', 'a11y', 'perf'].flatMap((dir) =>
+const files = ['stability', 'a11y', 'mobile', 'perf'].flatMap((dir) =>
   readdirSync(path.join(app, dir)).filter((f) => f.endsWith('.ts')).map((f) => `${dir}/${f}`));
 
 describe('LA-PAT-APP-CODE-R26-T01 LA-PAT-APP-CODE-R26-T02 the browser suites', () => {

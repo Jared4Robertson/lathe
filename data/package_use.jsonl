@@ -18,6 +18,7 @@
 {"record_id":"LA-PLT-TOOL14","package":"@playwright/test"}
 {"record_id":"LA-PLT-TOOL15","package":"@axe-core/playwright"}
 {"record_id":"LA-PLT-TOOL16","package":"knip"}
+{"record_id":"LA-PLT-TOOL19","package":"@playwright/test"}
 {"record_id":"LA-UI107","package":"elkjs"}
 {"record_id":"LA-UI61","package":"react"}
 {"record_id":"LA-UI63","package":"react-dom"}

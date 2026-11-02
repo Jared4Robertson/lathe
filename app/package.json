@@ -11,6 +11,8 @@
     "test": "vitest run --maxWorkers=2",
     "test:stability": "playwright test -c stability/playwright.config.ts",
     "test:a11y": "playwright test -c a11y/playwright.config.ts",
+    "test:mobile": "playwright test -c mobile/playwright.config.ts",
+    "test:mobile-measure": "playwright test -c mobile/measure.config.ts",
     "test:perf": "playwright test -c perf/playwright.config.ts && npm --prefix ../lathe run test:perf"
   },
   "dependencies": {
