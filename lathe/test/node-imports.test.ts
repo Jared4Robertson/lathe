@@ -1,4 +1,4 @@
-// LA-PAT-AGGREGATE-COMMANDS-R12, proved in Authoring, Checking and Traceability (T01 to T03): the engine, the server,
+// LA-PAT-AGGREGATE-COMMANDS-R12, proved in each domain that follows the pattern: the engine, the server,
 // the CLI, the desktop app and their tests import Node's built-in modules by their node: name, never by the bare name.
 // A scan of every source and test file.
 import { readdirSync, readFileSync } from 'node:fs';
@@ -41,7 +41,7 @@ function namedModules(text: string): string[] {
 /** The built-in modules a file imports by their bare name. */
 const bareBuiltins = (text: string): string[] => namedModules(text).filter((name) => BARE.has(name));
 
-describe('LA-PAT-AGGREGATE-COMMANDS-R12-T01 LA-PAT-AGGREGATE-COMMANDS-R12-T02 LA-PAT-AGGREGATE-COMMANDS-R12-T03 built-in modules are imported with the node: prefix', () => {
+describe('LA-PAT-AGGREGATE-COMMANDS-R12-T01 LA-PAT-AGGREGATE-COMMANDS-R12-T04 LA-PAT-AGGREGATE-COMMANDS-R12-T05 LA-PAT-AGGREGATE-COMMANDS-R12-T06 LA-PAT-AGGREGATE-COMMANDS-R12-T07 LA-PAT-AGGREGATE-COMMANDS-R12-T08 LA-PAT-AGGREGATE-COMMANDS-R12-T02 LA-PAT-AGGREGATE-COMMANDS-R12-T03 built-in modules are imported with the node: prefix', () => {
   it('finds a bare built-in import in any of the shapes it may take, and lets a node: one or a package pass', () => {
     // The samples quote through q, so this file's own text names no module it does not import.
     const q = "'";

@@ -8,7 +8,7 @@ import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp } from './helpers';
 
-// The Domain event page and its editor (LA-AUT-A7, LA-V131): a domain event and its event type are read through the
+// The Domain event page and its editor (LA-MOD-A7, LA-V131): a domain event and its event type are read through the
 // aggregate's own query, and changed only through the aggregate's own commands, one per change, each refusal shown with
 // its reasons; an event shows the fields it carries and what raises and hears it.
 

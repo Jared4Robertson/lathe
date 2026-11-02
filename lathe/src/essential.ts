@@ -4,7 +4,7 @@
 // essential_word, platform/data/integrity.ts) give the same groups and words to the checks' SQL, so the check that
 // warns of a record already in the data (accidental-in-essential) and the refusal of a write (write-rules.ts) read
 // one list. The review of the essential records (checking/essential-review) reads the same records.
-import { domainOf, placeIn, productOf } from './authoring/extension-record/declaration.ts';
+import { domainOf, placeIn, productOf } from './product/extension-record/declaration.ts';
 import type { ReadView } from './platform/data/rules.ts';
 import type { KindDescription } from './platform/data/schema.ts';
 

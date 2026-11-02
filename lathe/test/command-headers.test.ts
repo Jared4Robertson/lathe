@@ -40,7 +40,7 @@ function runsOf(text: string): Set<string> {
   return runs;
 }
 
-describe('LA-PAT-AGGREGATE-COMMANDS-R14-T01 LA-PAT-AGGREGATE-COMMANDS-R14-T02 LA-PAT-AGGREGATE-COMMANDS-R14-T03 command files restate nothing of their definitions', () => {
+describe('LA-PAT-AGGREGATE-COMMANDS-R14-T01 LA-PAT-AGGREGATE-COMMANDS-R14-T04 LA-PAT-AGGREGATE-COMMANDS-R14-T05 LA-PAT-AGGREGATE-COMMANDS-R14-T06 LA-PAT-AGGREGATE-COMMANDS-R14-T07 LA-PAT-AGGREGATE-COMMANDS-R14-T08 LA-PAT-AGGREGATE-COMMANDS-R14-T02 LA-PAT-AGGREGATE-COMMANDS-R14-T03 command files restate nothing of their definitions', () => {
   const files = commandFiles(path.join(REPO, 'lathe/src'));
 
   it('finds every command file', () => {

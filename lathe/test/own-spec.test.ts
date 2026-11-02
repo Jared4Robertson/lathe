@@ -65,7 +65,7 @@ describe("Lathe's own spec", () => {
     }
   });
 
-  it("LA-AUT-UC02-R02-T01 The modeling skill's first step finds the business capabilities and makes each a slice, with the questions that tell one from a layer", () => {
+  it("LA-MOD-UC02-R02-T01 The modeling skill's first step finds the business capabilities and makes each a slice, with the questions that tell one from a layer", () => {
     const skill = readFileSync(path.join(REPO, 'plugin', 'skills', 'model-a-domain', 'SKILL.md'), 'utf8');
     const headings = [...skill.matchAll(/^## (.+)$/gm)].map((m) => m[1]);
     expect(headings[0]).toBe('Step one: find the slices');

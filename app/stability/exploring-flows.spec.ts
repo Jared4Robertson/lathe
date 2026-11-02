@@ -477,15 +477,15 @@ test.describe('Exploring flows', () => {
   });
 
   test('LA-EXP-UC13-FL-T read a domain\'s endpoints and integrations: the domain\'s Interaction design, a command\'s endpoint, an integration\'s steps', async ({ page }) => {
-    await openPage(page, '/LA-AUT');
+    await openPage(page, '/LA-PRD');
     const wiki = page.locator(WIKI);
-    await expect(wiki.getByRole('list', { name: 'Endpoints' }).getByRole('link', { name: 'LA-AUT-EP101 POST /api/use-case/change-use-case' })).toBeVisible();
+    await expect(wiki.getByRole('list', { name: 'Endpoints' }).getByRole('link', { name: 'LA-PRD-EP121 POST /api/product/change-product' })).toBeVisible();
     await expect(wiki.getByRole('list', { name: 'Integrations' }).getByRole('listitem').first()).toBeVisible();
     // The command and its endpoint, method and route.
-    await page.goto('/LA-AUT-CMD101');
-    await expect(wiki.getByRole('link', { name: 'LA-AUT-EP101 POST /api/use-case/change-use-case' })).toBeVisible();
-    await wiki.getByRole('link', { name: 'LA-AUT-EP101 POST /api/use-case/change-use-case' }).click();
-    await page.waitForURL((u) => u.pathname === '/LA-AUT-EP101');
+    await page.goto('/LA-PRD-CMD121');
+    await expect(wiki.getByRole('link', { name: 'LA-PRD-EP121 POST /api/product/change-product' })).toBeVisible();
+    await wiki.getByRole('link', { name: 'LA-PRD-EP121 POST /api/product/change-product' }).click();
+    await page.waitForURL((u) => u.pathname === '/LA-PRD-EP121');
     // An integration lists the steps that exchange with its system.
     await page.goto('/LA-INT04');
     await expect(wiki.getByRole('list', { name: 'Exchanged with by' }).getByRole('link').first()).toBeVisible();

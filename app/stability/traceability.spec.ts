@@ -228,7 +228,7 @@ test.describe('Traceability flows', () => {
     /** The card's whole page (More), where a record's facts are. */
     const whole = () => showCard(page, 'whole');
     // S01, S02: an aggregate, a storage requirement and a view requirement each name the outcomes they serve, each a link.
-    const aggregate = 'LA-AUT-A11';
+    const aggregate = 'LA-UCS-A11';
     const storage = String(rowsOf(spec, 'storage_requirement').find((r) => r.aggregate_id === aggregate)?.id ?? rowsOf(spec, 'storage_requirement').find((r) => served.has(String(r.id)))!.id);
     const viewRequirement = 'LA-V92-R78';
     for (const id of [aggregate, storage, viewRequirement]) {

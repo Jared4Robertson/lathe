@@ -80,7 +80,7 @@
 {"id":"LA-PRD-EN29-DM","title":"ProductRelationRow","entity_id":"LA-PRD-EN29","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-PRD-EN76-DM","title":"InterfaceRow","entity_id":"LA-PRD-EN76","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-PRD-EN80-DM","title":"BusinessOutcomeRow","entity_id":"LA-PRD-EN80","file":"lathe/src/platform/data/tables.ts"}
-{"id":"LA-PRD-EN81-DM","title":"ExtensionRecord","entity_id":"LA-PRD-EN81","file":"lathe/src/authoring/extension-record/model.ts"}
+{"id":"LA-PRD-EN81-DM","title":"ExtensionRecord","entity_id":"LA-PRD-EN81","file":"lathe/src/product/extension-record/model.ts"}
 {"id":"LA-TEC-EN112-DM","title":"DataStoreRow","entity_id":"LA-TEC-EN112","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-TEC-EN49-DM","title":"TableRow","entity_id":"LA-TEC-EN49","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-TEC-EN50-DM","title":"TableKeyRow","entity_id":"LA-TEC-EN50","file":"lathe/src/platform/data/tables.ts"}

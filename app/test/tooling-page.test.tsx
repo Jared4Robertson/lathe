@@ -7,7 +7,7 @@ import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp } from './helpers';
 
-// The Tooling page and its editor (LA-AUT-A21): a tooling record is read through the aggregate's own query, and changed
+// The Tooling page and its editor (LA-TEC-A21): a tooling record is read through the aggregate's own query, and changed
 // only through the aggregate's own commands, one per change, each refusal shown with its reasons.
 
 const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };

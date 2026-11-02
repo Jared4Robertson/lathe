@@ -8,7 +8,7 @@ import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp } from './helpers';
 
-// The View page and its editor (LA-AUT-A12, LA-V150): a view and its requirements and tests are read through the
+// The View page and its editor (LA-IXD-A12, LA-V150): a view and its requirements and tests are read through the
 // aggregate's own query, and changed only through the aggregate's own commands, one per change, each refusal shown
 // with its reasons.
 

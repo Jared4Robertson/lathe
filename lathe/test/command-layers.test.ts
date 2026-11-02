@@ -43,7 +43,7 @@ const data = (table: string): Record<string, unknown>[] =>
     .filter(Boolean)
     .map((line) => JSON.parse(line) as Record<string, unknown>);
 
-describe('LA-AUT-UC06-R12-T02 only repositories write data files, each handler loads only its own aggregate, and every command has its definition', () => {
+describe('LA-UCS-UC06-R12-T02 only repositories write data files, each handler loads only its own aggregate, and every command has its definition', () => {
   const files = sources();
 
   it('lets only a repository import data-files.ts, and only command handlers import an aggregate\'s repository', () => {
@@ -69,7 +69,7 @@ describe('LA-AUT-UC06-R12-T02 only repositories write data files, each handler l
     expect(drafting).toEqual(['lathe/src/platform/data/data-files.ts']);
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R01-T01 LA-STD-PRINCIPLES-R02-T01 LA-PAT-CLI-STEPS-R01-T01 reaches each definition by its one CLI command, MCP tool and route, and gives every command of an aggregate with a slice its definition', () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R01-T01 LA-PAT-AGGREGATE-COMMANDS-R01-T04 LA-PAT-AGGREGATE-COMMANDS-R01-T05 LA-PAT-AGGREGATE-COMMANDS-R01-T06 LA-PAT-AGGREGATE-COMMANDS-R01-T07 LA-PAT-AGGREGATE-COMMANDS-R01-T08 LA-STD-PRINCIPLES-R02-T01 LA-PAT-CLI-STEPS-R01-T01 LA-PAT-CLI-STEPS-R01-T05 LA-PAT-CLI-STEPS-R01-T06 LA-PAT-CLI-STEPS-R01-T07 LA-PAT-CLI-STEPS-R01-T08 LA-PAT-CLI-STEPS-R01-T09 reaches each definition by its one CLI command, MCP tool and route, and gives every command of an aggregate with a slice its definition', () => {
     // Each identity is generated from the records (generated.test.ts); here, no two definitions share a name on any interface.
     const all = [...ALL_COMMANDS, ...ALL_QUERIES];
     for (const key of [(d: (typeof all)[number]) => d.id, (d: (typeof all)[number]) => `lathe ${d.slice.name} ${d.name}`, toolName, (d: (typeof all)[number]) => d.route]) {
@@ -115,7 +115,7 @@ describe('LA-STD-MODELING-R09-T02 each rule record is a rule in its aggregate\'s
   });
 });
 
-describe('LA-STD-MODELING-R11-T01 LA-PAT-AGGREGATE-QUERIES-R02-T01 LA-PAT-AGGREGATE-QUERIES-R02-T02 LA-PAT-AGGREGATE-QUERIES-R02-T03 LA-PAT-AGGREGATE-QUERIES-R02-T04 LA-PAT-AGGREGATE-QUERIES-R02-T05 a query reads only its read model: no query handler or projection imports a repository or an aggregate\'s model, and a query handler reads only through its own read model\'s reader', () => {
+describe('LA-STD-MODELING-R11-T01 LA-PAT-AGGREGATE-QUERIES-R02-T01 LA-PAT-AGGREGATE-QUERIES-R02-T06 LA-PAT-AGGREGATE-QUERIES-R02-T07 LA-PAT-AGGREGATE-QUERIES-R02-T08 LA-PAT-AGGREGATE-QUERIES-R02-T09 LA-PAT-AGGREGATE-QUERIES-R02-T10 LA-PAT-AGGREGATE-QUERIES-R02-T02 LA-PAT-AGGREGATE-QUERIES-R02-T03 LA-PAT-AGGREGATE-QUERIES-R02-T04 LA-PAT-AGGREGATE-QUERIES-R02-T05 a query reads only its read model: no query handler or projection imports a repository or an aggregate\'s model, and a query handler reads only through its own read model\'s reader', () => {
   const files = sources();
   const file = (name: string) => files.find((f) => f.file === name);
   /** Every slice with queries: each folder under lathe/src that has a queries.ts. */
@@ -185,6 +185,6 @@ describe('LA-STD-MODELING-R11-T01 LA-PAT-AGGREGATE-QUERIES-R02-T01 LA-PAT-AGGREG
   });
 });
 
-describe('LA-PAT-AGGREGATE-COMMANDS-R01-T01 the Use case aggregate\'s commands are reached by name from the CLI, the MCP tools and HTTP, and its queries are read by name over HTTP', () => {
+describe('LA-PAT-AGGREGATE-COMMANDS-R01-T01 LA-PAT-AGGREGATE-COMMANDS-R01-T04 LA-PAT-AGGREGATE-COMMANDS-R01-T05 LA-PAT-AGGREGATE-COMMANDS-R01-T06 LA-PAT-AGGREGATE-COMMANDS-R01-T07 LA-PAT-AGGREGATE-COMMANDS-R01-T08 the Use case aggregate\'s commands are reached by name from the CLI, the MCP tools and HTTP, and its queries are read by name over HTTP', () => {
   useCaseLayerCases();
 });

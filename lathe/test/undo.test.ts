@@ -2,9 +2,9 @@
 // touched the records in rolls the data back through the aggregates' own commands, in one write; what something since
 // depends on is refused with the reason, and nothing changes.
 import { afterEach, describe, expect, it } from 'vitest';
-import { ADD_BUSINESS_OUTCOME } from '../src/authoring/business-outcome/commands/add-business-outcome.ts';
-import { CHANGE_BUSINESS_OUTCOME } from '../src/authoring/business-outcome/commands/change-business-outcome.ts';
-import { REMOVE_BUSINESS_OUTCOME } from '../src/authoring/business-outcome/commands/remove-business-outcome.ts';
+import { ADD_BUSINESS_OUTCOME } from '../src/product/business-outcome/commands/add-business-outcome.ts';
+import { CHANGE_BUSINESS_OUTCOME } from '../src/product/business-outcome/commands/change-business-outcome.ts';
+import { REMOVE_BUSINESS_OUTCOME } from '../src/product/business-outcome/commands/remove-business-outcome.ts';
 import { ALL_COMMANDS } from '../src/commands.ts';
 import { runCommand, runConditionally } from '../src/platform/commands/run.ts';
 import { StoreError } from '../src/platform/data/problems.ts';

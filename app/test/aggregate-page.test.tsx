@@ -10,7 +10,7 @@ import { modelWorkspace } from './fixtures/model';
 import { workspace } from './fixtures/workspace';
 import { main, openApp, section } from './helpers';
 
-// The Aggregate page and its editor (LA-AUT-A6, LA-V130): what each record shows of its aggregate and the changes it
+// The Aggregate page and its editor (LA-MOD-A6, LA-V130): what each record shows of its aggregate and the changes it
 // offers, each refusal shown with its reasons, and the domain events that happen to it with what raises and hears them;
 // and, as every aggregate's page does (LA-PAT-RECORD-PAGE), its reads through the aggregate's own query and its writes
 // through the aggregate's own commands, one per change.
@@ -42,7 +42,7 @@ describe('LA-V130-R05-T01 an aggregate\'s page shows its identity, entities and 
   });
 });
 
-describe('LA-PAT-RECORD-PAGE-R19-T01 the Aggregate page reads its records through the Aggregate aggregate\'s own query, never a generic record read', () => {
+describe('LA-PAT-RECORD-PAGE-R19-T01 LA-PAT-RECORD-PAGE-R19-T02 LA-PAT-RECORD-PAGE-R19-T03 LA-PAT-RECORD-PAGE-R19-T04 LA-PAT-RECORD-PAGE-R19-T05 LA-PAT-RECORD-PAGE-R19-T06 the Aggregate page reads its records through the Aggregate aggregate\'s own query, never a generic record read', () => {
   it('reads GET /api/aggregate/get-aggregate for the aggregate', async () => {
     const { requests } = await openApp('/DM-SHOP-A1', { data: withModel() });
     expect(await within(main()).findByText('Basket ID')).toBeInTheDocument();
@@ -56,7 +56,7 @@ describe('LA-PAT-RECORD-PAGE-R19-T01 the Aggregate page reads its records throug
   });
 });
 
-describe('LA-PAT-RECORD-PAGE-R20-T01 the Aggregate page writes only through the Aggregate aggregate\'s own commands, one per change', () => {
+describe('LA-PAT-RECORD-PAGE-R20-T01 LA-PAT-RECORD-PAGE-R20-T02 LA-PAT-RECORD-PAGE-R20-T03 LA-PAT-RECORD-PAGE-R20-T04 LA-PAT-RECORD-PAGE-R20-T05 LA-PAT-RECORD-PAGE-R20-T06 the Aggregate page writes only through the Aggregate aggregate\'s own commands, one per change', () => {
   it('Edit sends Change an invariant with only what changed, and offers no Move', async () => {
     const user = userEvent.setup();
     const changed = () => setRow(withModel(), 'invariant', 'DM-SHOP-INV01', { statement: 'A basket MUST NOT hold more than 40 items.' });

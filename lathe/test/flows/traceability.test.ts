@@ -121,7 +121,7 @@ describe('Traceability flows from the command line', () => {
     expect(tl.check().stdout).not.toContain('outcome-not-measured');
   });
 
-  it('LA-TRC-UC03-FL-T record how a test is run', async () => {
+  it('LA-TST-UC03-FL-T record how a test is run', async () => {
     const tl = product();
     await tl.seed([...LENDING, add('uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'A member in debt is refused', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse a member who owes a fee.' }), add('uc_requirement', { id: 'TL-LEND-UC01-R03', title: 'The due date is set', use_case_id: 'TL-LEND-UC01', statement: 'The loan MUST be due two weeks after it opens.' })]);
     const addTest = (requirement: string, run: Record<string, string>) =>

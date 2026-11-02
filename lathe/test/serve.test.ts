@@ -149,7 +149,7 @@ describe.skipIf(!prebuilt && !canBuild)('lathe serve', () => {
     expect(await readEvents(events, ': connected', 5000)).toMatch(/^: connected\n\n/);
   });
 
-  it('LA-AUT-UC03-R05-T01 The server has no way to change the meta-model', async () => {
+  it('LA-PRD-UC03-R05-T01 The server has no way to change the meta-model', async () => {
     const schemaFiles = readdirSync(SCHEMA_DIR).map((name) => path.join(SCHEMA_DIR, name));
     const before = schemaFiles.map((file) => readFileSync(file, 'utf8'));
     const send = async (method: string, url: string, body = '{"kind":"memo"}') =>

@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { formFields, type InputFields } from '../src/edit/command-form';
 
 const SRC = path.join(import.meta.dirname, '..', 'src');
-const DECLARED = ['authoring/extension-record/ExtensionRecordEditor.tsx'];
+const DECLARED = ['product/extension-record/ExtensionRecordEditor.tsx'];
 
 function editors(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
@@ -16,7 +16,7 @@ function editors(dir: string): string[] {
   });
 }
 
-describe('LA-PAT-FIELD-INPUTS-R03-T01 an editor\'s form fields come from its command\'s generated input', () => {
+describe('LA-PAT-FIELD-INPUTS-R03-T01 LA-PAT-FIELD-INPUTS-R03-T02 LA-PAT-FIELD-INPUTS-R03-T03 LA-PAT-FIELD-INPUTS-R03-T04 LA-PAT-FIELD-INPUTS-R03-T05 LA-PAT-FIELD-INPUTS-R03-T06 an editor\'s form fields come from its command\'s generated input', () => {
   it('finds no field spec or clearable list written by hand in an editor, but for a product\'s own kind', () => {
     const found = editors(SRC);
     expect(found.length).toBeGreaterThan(20);

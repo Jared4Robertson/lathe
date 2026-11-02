@@ -130,7 +130,7 @@ describe('lathe upgrade', () => {
 });
 
 describe('the schema version', () => {
-  it('LA-AUT-UC03-R08-T01 is one whole number in schema/version.json, and each converter moves the data forward one version', async () => {
+  it('LA-PRD-UC03-R08-T01 is one whole number in schema/version.json, and each converter moves the data forward one version', async () => {
     expect(JSON.parse(readFileSync(path.join(PACKAGE_DIR, 'schema', 'version.json'), 'utf8'))).toEqual({ schema: SCHEMA_VERSION });
     // Lathe's own converters chain from schema 1 to this one, one version each.
     const own = await readConverters(UPGRADES_DIR);
@@ -143,7 +143,7 @@ describe('the schema version', () => {
     writeFileSync(path.join(dir, '2-to-4.ts'), 'export default { files: () => {} };\n');
     await expect(readConverters(dir)).rejects.toThrow('a converter moves the data forward one version, such as 1-to-2.ts.');
   });
-  it("LA-AUT-UC03-R08-T02 1-to-2 puts every flow through its product's one new interface, renaming its flows, steps and tests wherever they are named", async () => {
+  it("LA-PRD-UC03-R08-T02 1-to-2 puts every flow through its product's one new interface, renaming its flows, steps and tests wherever they are named", async () => {
     const line = (row: object) => `${JSON.stringify(row)}\n`;
     const root = committedProduct({ id: 'TL', title: 'Tool Library' });
     const files: Record<string, object[]> = {
@@ -183,7 +183,7 @@ describe('the schema version', () => {
     expect(read('uc_requirement')).toContain('as TL-LEND-UC01-FL-S01 shows.');
     expect(readConfig(root).schema).toBe(SCHEMA_VERSION);
   });
-  it('LA-AUT-UC03-R08-T03 1-to-2 gives every test one of the five levels, and a manual test the level that fits its kind', async () => {
+  it('LA-PRD-UC03-R08-T03 1-to-2 gives every test one of the five levels, and a manual test the level that fits its kind', async () => {
     const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 1);
     const manual = { state: 'manual', manual_reason: 'By hand.' };
     const tables: Record<string, Record<string, unknown>[]> = {
@@ -214,7 +214,7 @@ describe('the schema version', () => {
     ]);
     expect(todos).toEqual([expect.stringMatching(/^Each manual test now names the level a person exercises/), expect.stringMatching(/^Write each text that starts "To write:"/)]);
   });
-  it("LA-AUT-UC03-R08-T04 1-to-2 puts every repository under its aggregate's domain, persisting that aggregate, renamed wherever it is named", async () => {
+  it("LA-PRD-UC03-R08-T04 1-to-2 puts every repository under its aggregate's domain, persisting that aggregate, renamed wherever it is named", async () => {
     const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 1);
     const tables: Record<string, Record<string, unknown>[]> = {
       aggregate: [
@@ -262,7 +262,7 @@ describe('the schema version', () => {
       expect.stringMatching(/^Write each text that starts "To write:"/),
     ]);
   });
-  it('LA-AUT-UC03-R08-T05 1-to-2 drops the descriptions that are gone, opens each When with its Given, and stands in for each required text a record lacks', async () => {
+  it('LA-PRD-UC03-R08-T05 1-to-2 drops the descriptions that are gone, opens each When with its Given, and stands in for each required text a record lacks', async () => {
     const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 1);
     const tables: Record<string, Record<string, unknown>[]> = {
       command: [
@@ -297,7 +297,7 @@ describe('the schema version', () => {
     ]);
     expect(todos).toEqual(['Write each text that starts "To write:" from the code, saying what the title, parent and links cannot (1: TL-LEND-CMD02 description).']);
   });
-  it('LA-AUT-UC03-R08-T06 1-to-2 puts each command under its aggregate\'s root entity, and leaves a to-do for an aggregate with none', async () => {
+  it('LA-PRD-UC03-R08-T06 1-to-2 puts each command under its aggregate\'s root entity, and leaves a to-do for an aggregate with none', async () => {
     const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 1);
     const tables: Record<string, Record<string, unknown>[]> = {
       entity: [
@@ -326,7 +326,7 @@ describe('the schema version', () => {
     ]);
   });
 
-  it('LA-AUT-UC03-R08-T07 1-to-2 drops every recorded exception and waiver, and leaves a to-do to change the model', async () => {
+  it('LA-PRD-UC03-R08-T07 1-to-2 drops every recorded exception and waiver, and leaves a to-do to change the model', async () => {
     const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 1);
     const tables: Record<string, Record<string, unknown>[]> = {
       command_change: [{ command_id: 'TL-LEND-CMD01', aggregate_id: 'TL-LEND-A2', reason: 'Both at once.' }],
@@ -363,7 +363,7 @@ describe('the schema version', () => {
   };
   const houseCheck = { name: 'tool-without-photo', product_id: 'TL', position: 1, severity: 'warning', summary: 'A tool with no photo.', explanation: 'Add one.', query: 'SELECT 1' };
 
-  it("LA-AUT-UC03-R08-T08 2-to-3 gives each check the domain of its check_row record, removes the check_row records and kind, and leaves a to-do for a check no record names", async () => {
+  it("LA-PRD-UC03-R08-T08 2-to-3 gives each check the domain of its check_row record, removes the check_row records and kind, and leaves a to-do for a check no record names", async () => {
     const tables: Record<string, Record<string, unknown>[]> = {
       check: [houseCheck, { ...houseCheck, name: 'loan-without-due-date' }],
       check_row: [{ id: 'TL-LEND-CK01', title: 'tool-without-photo', domain_id: 'TL-LEND', file: 'data/check.jsonl' }],
@@ -380,7 +380,7 @@ describe('the schema version', () => {
     expect(todos).toEqual([expect.stringContaining('add `domain_id` with the domain that owns the check, to loan-without-due-date')]);
   });
 
-  it('LA-AUT-UC03-R08-T09 2-to-3 leaves a to-do for every check of a product with no check_row records', async () => {
+  it('LA-PRD-UC03-R08-T09 2-to-3 leaves a to-do for every check of a product with no check_row records', async () => {
     const tables: Record<string, Record<string, unknown>[]> = { check: [houseCheck] };
     const { changes, todos } = await run2to3(tables);
     expect(tables.check).toEqual([houseCheck]);
@@ -388,7 +388,7 @@ describe('the schema version', () => {
     expect(todos).toEqual([expect.stringContaining('tool-without-photo')]);
   });
 
-  it('LA-AUT-UC03-R08-T10 2-to-3 does nothing to data that is already upgraded', async () => {
+  it('LA-PRD-UC03-R08-T10 2-to-3 does nothing to data that is already upgraded', async () => {
     const upgraded = { ...houseCheck, domain_id: 'TL-LEND' };
     const tables: Record<string, Record<string, unknown>[]> = { check: [upgraded], product_kind: [{ name: 'skill', product_id: 'TL' }] };
     const { changes, todos } = await run2to3(tables);
@@ -408,7 +408,7 @@ describe('the schema version', () => {
     return { changes, todos };
   };
 
-  it('LA-AUT-UC03-R08-T11 3-to-4 gives each product kind its complexity from its stage, makes each standard engineering with a to-do to review it, gives each product setting no technology words, and makes each interface internal with a to-do to mark the public ones', async () => {
+  it('LA-PRD-UC03-R08-T11 3-to-4 gives each product kind its complexity from its stage, makes each standard engineering with a to-do to review it, gives each product setting no technology words, and makes each interface internal with a to-do to mark the public ones', async () => {
     const tables: Record<string, Record<string, unknown>[]> = {
       product_kind: [
         { name: 'report', product_id: 'TL', stage: 'technical-specification' },
@@ -432,7 +432,7 @@ describe('the schema version', () => {
     ]);
   });
 
-  it('LA-AUT-UC03-R08-T13 3-to-4 drops a product\'s declaration of a provided_by, fills or generates pair its own kind now has, as Lathe\'s kinds have them, and keeps every other', async () => {
+  it('LA-PRD-UC03-R08-T13 3-to-4 drops a product\'s declaration of a provided_by, fills or generates pair its own kind now has, as Lathe\'s kinds have them, and keeps every other', async () => {
     const tables: Record<string, Record<string, unknown>[]> = {
       product_kind: [
         { name: 'report', product_id: 'TL', stage: 'technical-specification', obligation: false, complexity: 'accidental' },
@@ -451,7 +451,7 @@ describe('the schema version', () => {
     expect(changes).toEqual([expect.stringContaining('fills from report to slot, generates from tooling to report, provided_by from promise to integration were dropped')]);
   });
 
-  it("LA-AUT-UC03-R08-T14 3-to-4 merges a use case's flows into one, keeping the union of their steps, marking variants, and reports what it cannot merge", async () => {
+  it("LA-PRD-UC03-R08-T14 3-to-4 merges a use case's flows into one, keeping the union of their steps, marking variants, and reports what it cannot merge", async () => {
     const tables: Record<string, Record<string, unknown>[]> = {
       interface: [
         { id: 'TL-IF01', title: 'Web app', product_id: 'TL', kind: 'web app', description: 'The desk.', public: false },
@@ -513,7 +513,7 @@ describe('the schema version', () => {
     ]);
   });
 
-  it('LA-AUT-UC03-R08-T12 3-to-4 does nothing to data that is already upgraded', async () => {
+  it('LA-PRD-UC03-R08-T12 3-to-4 does nothing to data that is already upgraded', async () => {
     const tables: Record<string, Record<string, unknown>[]> = {
       product_kind: [{ name: 'report', product_id: 'TL', stage: 'technical-specification', complexity: 'essential' }],
       standard: [{ id: 'TL-STD-MONEY', title: 'Money', product_id: 'TL', type: 'quality', description: 'Amounts are exact.' }],
@@ -538,7 +538,7 @@ describe('the schema version', () => {
     return { changes, todos };
   };
 
-  it("LA-AUT-UC03-R08-T15 4-to-5 changes no row, asks to rename a product's own kind or relation that clashes with a new table, and to write the journey each duration outcome times", async () => {
+  it("LA-PRD-UC03-R08-T15 4-to-5 changes no row, asks to rename a product's own kind or relation that clashes with a new table, and to write the journey each duration outcome times", async () => {
     const tables: Record<string, Record<string, unknown>[]> = {
       product_kind: [{ name: 'journey', product_id: 'TL' }, { name: 'report', product_id: 'TL' }],
       product_relation: [
@@ -562,7 +562,7 @@ describe('the schema version', () => {
     ]);
   });
 
-  it('LA-AUT-UC03-R08-T16 4-to-5 tells a product with no journeys where they go, and says nothing to one that has them', async () => {
+  it('LA-PRD-UC03-R08-T16 4-to-5 tells a product with no journeys where they go, and says nothing to one that has them', async () => {
     const none: Record<string, Record<string, unknown>[]> = { business_outcome: [{ id: 'TL-BO01', measure: 'Share of members with a loan.' }] };
     expect((await run4to5(none)).todos).toEqual([expect.stringContaining('Journeys arrive in Discovery')]);
     const some: Record<string, Record<string, unknown>[]> = { ...none, journey: [{ id: 'TL-JR01', product_id: 'TL' }] };

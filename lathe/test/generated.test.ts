@@ -24,7 +24,7 @@ function generatedOnDisk(dir: string): string[] {
   });
 }
 
-describe('LA-PAT-AGGREGATE-COMMANDS-R15-T01 LA-PAT-AGGREGATE-COMMANDS-R15-T02 LA-PAT-AGGREGATE-COMMANDS-R15-T03 the generated files are a fresh generation from the records, and each definition spreads its generated identity', () => {
+describe('LA-PAT-AGGREGATE-COMMANDS-R15-T01 LA-PAT-AGGREGATE-COMMANDS-R15-T04 LA-PAT-AGGREGATE-COMMANDS-R15-T05 LA-PAT-AGGREGATE-COMMANDS-R15-T06 LA-PAT-AGGREGATE-COMMANDS-R15-T07 LA-PAT-AGGREGATE-COMMANDS-R15-T08 LA-PAT-AGGREGATE-COMMANDS-R15-T02 LA-PAT-AGGREGATE-COMMANDS-R15-T03 the generated files are a fresh generation from the records, and each definition spreads its generated identity', () => {
   let files: Map<string, string>;
   beforeAll(async () => {
     files = await generatedFiles(REPO);
@@ -74,7 +74,7 @@ describe('LA-PAT-AGGREGATE-COMMANDS-R15-T01 LA-PAT-AGGREGATE-COMMANDS-R15-T02 LA
   });
 });
 
-describe('LA-PAT-AGGREGATE-COMMANDS-R15-T01 a command or query with records and no definition yet is scaffolded to spread its identity', () => {
+describe('LA-PAT-AGGREGATE-COMMANDS-R15-T01 LA-PAT-AGGREGATE-COMMANDS-R15-T04 LA-PAT-AGGREGATE-COMMANDS-R15-T05 LA-PAT-AGGREGATE-COMMANDS-R15-T06 LA-PAT-AGGREGATE-COMMANDS-R15-T07 LA-PAT-AGGREGATE-COMMANDS-R15-T08 a command or query with records and no definition yet is scaffolded to spread its identity', () => {
   const lines = (rows: object[]) => `${rows.map((r) => JSON.stringify(r)).join('\n')}\n`;
   const repo = mkdtempSync(path.join(tmpdir(), 'lathe-generate-'));
   const tables: Record<string, object[]> = {

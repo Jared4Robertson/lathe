@@ -19,7 +19,7 @@ import type { Row } from '../../platform/data/rows.ts';
 import { compareIds } from '../../platform/data/ids.ts';
 import { inSpace, placementOf } from '../../exploring/placement.ts';
 import { useCaseReaches } from '../../trace/serves.ts';
-import { interfaceVersions } from '../../authoring/use-case/through.ts';
+import { interfaceVersions } from '../../use-cases/use-case/through.ts';
 
 /** What an obligation misses, as coverage names it. */
 export type TraceGap = 'designed' | 'built' | 'proved';

@@ -169,7 +169,7 @@ An outcome is a change someone would miss, with a measure and a target by a date
 
 A journey whose steps carry out fewer than two use cases.
 
-A use case is one actor's goal reached in one sitting; a journey strings several of them, with the handoffs between, from a trigger to a result (LA-AUT-UC33-R07). A journey whose steps carry out fewer than two use cases, counting each use case once and each step that carries out nothing yet as a use case still to write, is a use case: its handoffs are that use case's policies. A journey with no step is left to the journey-without-main-path gap. Remove the journey and let its use case serve the outcome through its capability, or add the steps it is missing.
+A use case is one actor's goal reached in one sitting; a journey strings several of them, with the handoffs between, from a trigger to a result (LA-PRD-UC33-R07). A journey whose steps carry out fewer than two use cases, counting each use case once and each step that carries out nothing yet as a use case still to write, is a use case: its handoffs are that use case's policies. A journey with no step is left to the journey-without-main-path gap. Remove the journey and let its use case serve the outcome through its capability, or add the steps it is missing.
 
 <a id="check-handoff-not-connected"></a>
 
@@ -179,7 +179,7 @@ A use case is one actor's goal reached in one sitting; a journey strings several
 
 A handoff step whose policy hears no event the step before it leads to.
 
-A handoff step carries out a policy: whenever an event, then a command, with the product itself acting (LA-AUT-UC33-R08). It follows the step before it on its path only when its policy hears an event that step leads to: an event raised by a command the flow of the use case before it invokes, or by the command of the policy before it. Steps are compared by path (trimmed, in any letter case) and position. A handoff first on its path, or after a step that carries out nothing yet, is not read; nor is one after a use case with no flow yet, since records are written stage by stage. Link the step to the policy that follows, or have its policy hear the event the step before leads to.
+A handoff step carries out a policy: whenever an event, then a command, with the product itself acting (LA-PRD-UC33-R08). It follows the step before it on its path only when its policy hears an event that step leads to: an event raised by a command the flow of the use case before it invokes, or by the command of the policy before it. Steps are compared by path (trimmed, in any letter case) and position. A handoff first on its path, or after a step that carries out nothing yet, is not read; nor is one after a use case with no flow yet, since records are written stage by stage. Link the step to the policy that follows, or have its policy hear the event the step before leads to.
 
 <a id="check-outcome-duration-without-journey"></a>
 
@@ -189,7 +189,7 @@ A handoff step carries out a policy: whenever an event, then a command, with the
 
 A business outcome whose measure reads as a duration that no journey serves.
 
-A duration measure, the time from one moment to another, times a journey: the use cases and handoffs, in order, from the trigger its clock starts at to the result it stops at (LA-AUT-UC33-R09). The check reads the measure's words, in any letter case: time, days, hours, minutes or weeks followed by from; how long; median and later from; or from and later to (the words the schema 5 upgrade reads). An outcome so measured that no journey serves is reported. Write the journey it times, its trigger and result first, and link it to the outcome; a duration inside one sitting of one actor is a use case's instead, and a measure that is not a duration is restated.
+A duration measure, the time from one moment to another, times a journey: the use cases and handoffs, in order, from the trigger its clock starts at to the result it stops at (LA-PRD-UC33-R09). The check reads the measure's words, in any letter case: time, days, hours, minutes or weeks followed by from; how long; median and later from; or from and later to (the words the schema 5 upgrade reads). An outcome so measured that no journey serves is reported. Write the journey it times, its trigger and result first, and link it to the outcome; a duration inside one sitting of one actor is a use case's instead, and a measure that is not a duration is restated.
 
 ### Coverage gaps: discovery
 

@@ -8,7 +8,7 @@ import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp } from './helpers';
 
-// The Domain records page and its editor (LA-AUT-A4, LA-V120): a domain and every record in it are read through the
+// The Domain records page and its editor (LA-MOD-A4, LA-V120): a domain and every record in it are read through the
 // aggregate's own query, and changed only through the aggregate's own commands, one per change, each refusal shown
 // with its reasons.
 
