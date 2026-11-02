@@ -214,4 +214,30 @@ describe('dev API plugin', () => {
       await rm(product, { recursive: true, force: true });
     }
   });
+
+  it('LA-PLT-UC03-R01-T01 reloads the engine when closing the old one fails on a new schema version, and tries once more when the fresh one still refuses the data', async () => {
+    const product = await mkdtemp(path.join(tmpdir(), 'lathe-app-engine-'));
+    try {
+      await writeFile(path.join(product, 'lathe.config.json'), `${JSON.stringify({ schema: SCHEMA_VERSION })}\n`);
+      // The old engine cannot read the product's config once a merge has moved the data to a new schema version; the
+      // fresh engine refuses it until the merge's files have settled.
+      let refusing = false;
+      const refusal = () => { throw new Error('This product\'s data is for schema 99; this Lathe uses schema 98.'); };
+      const stale = { ...realApi, closeStores: async (root?: string) => { if (refusing && root) refusal(); }, watchTargets: (root: string) => { if (refusing) refusal(); return realApi.watchTargets(root); } };
+      const closeEngine = vi.fn(async () => undefined);
+      const fake = await start(async (id: string) => (id.endsWith('store.ts') ? { closeEngine } : stale), product);
+      fake.server.moduleGraph.invalidateAll.mockImplementation(() => { setTimeout(() => { refusing = false; }, 300); });
+      fake.sent.length = 0;
+      refusing = true;
+      for (const listener of fake.listeners) listener('change', path.join(engineDir, 'schema', 'version.json'));
+      await vi.waitFor(() => expect(fake.server.config.logger.info).toHaveBeenCalledTimes(1), { timeout: 5000 });
+      expect(fake.server.moduleGraph.invalidateAll).toHaveBeenCalledTimes(2);
+      expect(fake.sent).toEqual([{ type: 'custom', event: 'spec:changed', data: { tables: [], readModels: null } }]);
+      expect(fake.server.config.logger.error).toHaveBeenCalledTimes(1);
+      expect(fake.server.config.logger.info).toHaveBeenCalledTimes(1);
+    } finally {
+      await realApi.closeStores(product);
+      await rm(product, { recursive: true, force: true });
+    }
+  });
 });
