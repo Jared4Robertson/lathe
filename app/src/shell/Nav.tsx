@@ -12,7 +12,7 @@ import type { Stage } from '../../../lathe/src/platform/data/schema';
 import { branchOf, ownerFolders, sharedKey, type Folder, type StageFolders } from '../exploring/folder-tree/folders';
 import { StageMark } from '../specs/parts';
 import { useProblems } from '../checking/problems/reads';
-import { useChanges } from '../changes/changes';
+import { changeCounts, useChanges } from '../changes/changes';
 import { navChanges, rollupText, type ChangeCounts } from '../changes/rollup';
 import { useRunCommand, useShortcutHint } from './commands';
 import { SPACE_KEYS, spaceCommandId } from './keymap';
@@ -39,7 +39,8 @@ import { overlaysOf, panelHref } from '../views/overlays';
 // own, and a footer with Appearance and where the specs come from (the record format is a command and a
 // link in the shortcuts sheet). The nav
 // collapses to the rail alone (remembered; with one product it holds no spaces), and on a narrow
-// screen it is a drawer that keeps the rail.
+// screen it is a drawer that keeps the rail, with Checks and Changes in its footer, always in sight above Appearance
+// (on a phone the stage's toolbar has no room for Changes, LA-V90-R76).
 //
 // Nothing in it jumps (LA-PAT-APP-UX-R08): its lists are drawn once the specs have loaded, never
 // drawn and then pushed down; and only a move made in the nav reshapes it.
@@ -89,6 +90,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
   const { search } = useLocation();
   const { panel } = overlaysOf(search);
   const checksOpen = panel === 'checks';
+  const changesOpen = panel === 'changes';
   const appearanceOpen = panel === 'appearance' || panel === 'theme';
   const current = sectionOf(panel);
   useEffect(() => {
@@ -146,6 +148,24 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
       {warnings > 0 && <span className="nav-badge warning" title={`${warnings} warning${warnings === 1 ? '' : 's'}`}>{warnings}{' '}<span className="sr-only">warning{warnings === 1 ? '' : 's'}</span></span>}
       {counted && errors + warnings === 0 && <span className="nav-badge">0{' '}<span className="sr-only">problems</span></span>}
     </span>
+  );
+  const changes = useChanges();
+  const changed = changeCounts(changes.changes);
+  const changedTotal = changed.added + changed.changed + changed.removed;
+  const checksRow = (
+    <NavRow depth={0} selected={checksOpen}>
+      <Link to={panelHref(checksOpen ? null : 'checks')} aria-expanded={checksOpen} aria-keyshortcuts={checksKeys.aria}>
+        <Icon name="checks" size={16} /> <span className="nav-label">Checks</span> {checkBadges}
+      </Link>
+    </NavRow>
+  );
+  const changesRow = (
+    <NavRow depth={0} selected={changesOpen}>
+      <Link to={panelHref(changesOpen ? null : 'changes')} aria-expanded={changesOpen}>
+        <Icon name="history" size={16} /> <span className="nav-label">Changes</span>{' '}
+        <span className="nav-badges"><span className="nav-badge">{changedTotal}{' '}<span className="sr-only">{changedTotal === 1 ? 'record' : 'records'} changed</span></span></span>
+      </Link>
+    </NavRow>
   );
   const sourceNote = index ? <span>{index.byId.size} records in <code>{index.product}</code></span> : <span>Loading the data…</span>;
 
@@ -226,22 +246,18 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
             {index && space && <SpaceItems index={index} space={space} path={path} reveal={fromNav} />}
             {index && !space && <p className="hint">No products yet.</p>}
           </div>
-          {space && (
+          {space && !drawer && (
             <NavSection id="tools" icon="checks" title="Tools" open={isOpen('tools')} onToggle={() => toggle('tools')}>
               <ul>
-                <li>
-                  <NavRow depth={0} selected={checksOpen}>
-                    <Link to={panelHref(checksOpen ? null : 'checks')} aria-expanded={checksOpen} aria-keyshortcuts={checksKeys.aria}>
-                      <Icon name="checks" size={16} /> <span className="nav-label">Checks</span> {checkBadges}
-                    </Link>
-                  </NavRow>
-                </li>
+                <li>{checksRow}</li>
               </ul>
             </NavSection>
           )}
           </>}
         </div>
         <footer className="nav-foot">
+          {/* In the drawer the tools stay in sight, never scrolled away below the space's rows. */}
+          {space && drawer && <>{checksRow}{changesRow}</>}
           <NavRow depth={0} selected={appearanceOpen}>
             <Link to={panelHref(appearanceOpen ? null : 'appearance')} className="appearance-button" aria-expanded={appearanceOpen}><PaletteIcon size={16} /> <span className="nav-label">Appearance</span></Link>
           </NavRow>

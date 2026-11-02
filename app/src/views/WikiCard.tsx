@@ -33,7 +33,7 @@ import { CardChanges } from '../changes/CardChanges';
 // (FocusPage.tsx), cross-fading to the new page, so arrowing through the stage never draws a page per
 // step, and it is memoized, so nothing but a new page or a new index draws it again. A link in it
 // moves the focus, as a click on the stage does. It is resizable and collapsible by its button and
-// the w key. On a phone it is a bottom sheet.
+// the w key. On a phone it is a bottom sheet, at half height with Less and full height with More (LA-V61-R20).
 //
 // A format page (the record format, a kind's or a check's page) opens in it too, over the focus
 // (`?page=format/kinds/use_case`, overlays.ts): the whole page, with a link back to the focus, the

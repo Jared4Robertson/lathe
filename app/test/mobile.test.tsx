@@ -2,10 +2,13 @@ import './graph/setup';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { useRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { settle } from '../src/shell/BottomSheet';
+import { LANDSCAPE_QUERY } from '../src/shell/useNarrow';
 import { useThemeColor } from '../src/shell/themeColor';
 import { isTap } from '../src/graph/touch';
-import { desktopBridgeStub, openApp } from './helpers';
+import { checksPanel, desktopBridgeStub, openApp } from './helpers';
 import { navigate } from '../src/router';
 import { testWorkspace } from './graph/workspace';
 import { boxElement, drawnBox, pointOn, tapAt, tapEmpty } from './graph/scene';
@@ -18,9 +21,11 @@ import type { LatheDesktop } from '../src/shell/desktop-bridge';
 
 const served = () => ({ data: testWorkspace() });
 
-/** A phone: narrow, with a finger for a pointer (every media query matches, reduced motion included). */
-function phone() {
-  vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
+/** A phone: narrow, with a finger for a pointer (every media query matches, reduced motion included), upright unless on its side. */
+function phone({ landscape = false } = {}) {
+  vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === LANDSCAPE_QUERY ? landscape : true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
+  // The place starts as the app's does, its card a summary (Less), so its sheet opens at half height (test/setup.ts expands it).
+  window.sessionStorage.setItem('lathe:place', JSON.stringify({ depth: 1, hiddenKinds: [], card: { open: true, expanded: false } }));
 }
 
 const topbar = () => document.querySelector<HTMLElement>('.topbar')!;
@@ -102,6 +107,107 @@ describe('Lathe on a phone', () => {
     expect(settle('full', 30, 0.1)).toBe('full');
     expect(settle('full', 100, 0.1)).toBe('half');
     expect(settle('full', 300, 0.1)).toBeNull();
+  });
+
+  it('LA-V61-R20-T03 More takes the wiki card\'s sheet to full height under the top bar and Less back to half; a tap on the backdrop goes to half, then closes it', async () => {
+    phone();
+    await openApp('/P-D-UC01', served());
+    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+    // The top bar and the compact page bar mark where a full sheet stops, so they stay in reach.
+    expect(topbar()).toHaveAttribute('data-top-bar');
+    expect(pageBar()).toHaveAttribute('data-top-bar');
+    fireEvent.click(within(pageBar()).getByRole('button', { name: 'Show the wiki card' }));
+    const sheet = screen.getByRole('dialog', { name: 'Wiki card' });
+    expect(sheet).toHaveClass('is-half');
+    expect(sheet.style.getPropertyValue('--sheet-top')).toMatch(/^\d+px$/);
+    const backdrop = document.querySelector<HTMLElement>('.sheet-backdrop')!;
+    expect(backdrop.style.getPropertyValue('--sheet-top')).toBe(sheet.style.getPropertyValue('--sheet-top'));
+    // More: the whole page, at full height; Less: the summary, at half.
+    fireEvent.click(within(sheet).getByRole('button', { name: 'More' }));
+    expect(sheet).toHaveClass('is-full');
+    expect(within(sheet).getByRole('button', { name: 'Less' })).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Less' }));
+    expect(sheet).toHaveClass('is-half');
+    // The handle moves between the two, and More and Less follow it.
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Expand the wiki card to full height' }));
+    expect(sheet).toHaveClass('is-full');
+    expect(within(sheet).getByRole('button', { name: 'Less' })).toBeInTheDocument();
+    // A tap on the backdrop: back to half, then away.
+    fireEvent.click(backdrop);
+    expect(sheet).toHaveClass('is-half');
+    expect(within(sheet).getByRole('button', { name: 'More' })).toBeInTheDocument();
+    fireEvent.click(document.querySelector('.sheet-backdrop')!);
+    expect(screen.queryByRole('dialog', { name: 'Wiki card' })).toBeNull();
+    // The backdrop starts at the top bar's foot, a full sheet a touch target below it, so a tap above the sheet still reaches the backdrop; both sit under the nav drawer.
+    const css = readFileSync(join(__dirname, '..', 'src', 'styles.css'), 'utf8');
+    expect(css).toMatch(/\.sheet-backdrop \{[^}]*inset: var\(--sheet-top, 0px\) 0 0;[^}]*z-index: 60;/);
+    expect(css).toMatch(/\.bottom-sheet \{ --sheet-full: calc\(100dvh - max\(var\(--sheet-top, 0px\) \+ var\(--touch-target\)[^}]*z-index: 65;/);
+    expect(css).toMatch(/\.bottom-sheet\.is-full \{ height: var\(--sheet-full\); \}/);
+    expect(css).toMatch(/\.menu\.is-drawer \{[^}]*z-index: 80;/);
+  });
+
+  it('LA-V61-R20-T04 On a phone on its side the wiki card\'s sheet opens at full height, and a tap on the backdrop closes it', async () => {
+    phone({ landscape: true });
+    await openApp('/P-D-UC01', served());
+    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+    fireEvent.click(within(pageBar()).getByRole('button', { name: 'Show the wiki card' }));
+    const sheet = screen.getByRole('dialog', { name: 'Wiki card' });
+    expect(sheet).toHaveClass('is-full');
+    // Its summary still opens first, at full height; the handle has nothing to toggle, so it is no button.
+    expect(within(sheet).getByRole('button', { name: 'More' })).toBeInTheDocument();
+    expect(within(sheet).queryByRole('button', { name: /to (full|half) height$/ })).toBeNull();
+    // On its side the full sheet reaches right up to the top bar, its grip slim, so the text starts on the first screen.
+    const css = readFileSync(join(__dirname, '..', 'src', 'styles.css'), 'utf8');
+    expect(css).toMatch(/@media \(orientation: landscape\) \{\s*\.bottom-sheet \{ --sheet-full: calc\(100dvh - max\(var\(--sheet-top, 0px\), env\(safe-area-inset-top\) \+ 8px\)\); \}\s*\.sheet-grab > span\.sheet-handle \{ min-height: 20px; \}/);
+    // A tap on the backdrop closes it at once: it has no half.
+    fireEvent.click(document.querySelector('.sheet-backdrop')!);
+    expect(screen.queryByRole('dialog', { name: 'Wiki card' })).toBeNull();
+  });
+
+  it('LA-V90-R76-T01 On a phone the nav sheet shows Checks and Changes in its footer, each opening its tool and closing the drawer', async () => {
+    phone();
+    await openApp('/P-D-UC01', served());
+    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+    // The card's sheet is open; a tool opened from the nav takes its place, one sheet at a time.
+    fireEvent.click(within(pageBar()).getByRole('button', { name: 'Show the wiki card' }));
+    expect(screen.getByRole('dialog', { name: 'Wiki card' })).toBeInTheDocument();
+    fireEvent.click(within(topbar()).getByRole('button', { name: 'Open the navigation' }));
+    const nav = screen.getByRole('navigation', { name: 'Main' });
+    const foot = nav.querySelector<HTMLElement>('.nav-foot')!;
+    // In the footer, always in sight, before Appearance; not in a Tools section scrolled away below the rows.
+    expect(within(foot).getAllByRole('link').map((a) => a.querySelector('.nav-label')?.textContent)).toEqual(['Checks', 'Changes', 'Appearance']);
+    expect(within(nav).queryByRole('button', { name: /^Tools/ })).toBeNull();
+    expect(within(foot).getByRole('link', { name: /^Changes \d+ records? changed$/ })).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(within(foot).getByRole('link', { name: /^Changes/ }));
+    expect(window.location.search).toBe('?panel=changes');
+    expect(await screen.findByRole('dialog', { name: 'Changes' })).toBeInTheDocument();
+    // The tool opens under where the drawer was, so choosing it closes the drawer.
+    await waitFor(() => expect(screen.queryByRole('navigation', { name: 'Main' })).toBeNull());
+    expect(screen.queryByRole('dialog', { name: 'Wiki card' })).toBeNull();
+  });
+
+  it('LA-V61-R56-T01 On a phone a problem chosen in the Checks sheet shows its record in the wiki card\'s sheet, the Checks sheet closed; Back brings it back', async () => {
+    phone();
+    await openApp('/DM?panel=checks');
+    await waitFor(() => expect(checksPanel()).toBeInTheDocument());
+    expect(screen.getByRole('dialog', { name: 'Checks' })).toBeInTheDocument();
+    fireEvent.click(await within(checksPanel()).findByRole('link', { name: 'DM-SHOP-INV01' }));
+    expect(window.location.pathname + window.location.search).toBe('/DM-SHOP-INV01');
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Checks' })).toBeNull());
+    const sheet = await screen.findByRole('dialog', { name: 'Wiki card' });
+    await waitFor(() => expect(within(sheet).getByRole('region', { name: 'Wiki card' })).toHaveAttribute('data-page', 'DM-SHOP-INV01'));
+    // Back: the Checks sheet again, on the record.
+    act(() => window.history.back());
+    await waitFor(() => expect(window.location.search).toBe('?panel=checks'));
+    expect(await screen.findByRole('dialog', { name: 'Checks' })).toBeInTheDocument();
+  });
+
+  it('LA-V102-R07-T01 The ID in the wiki card\'s kind line is styled as the app\'s record links, not the browser\'s default link', () => {
+    const css = readFileSync(join(__dirname, '..', 'src', 'styles.css'), 'utf8');
+    expect(css).toMatch(/\.spec-body a\.record-link, \.wiki-panel-kind a\.record-link \{[^}]*color: var\(--ink\); text-decoration: none; \}/);
+    expect(css).toMatch(/\.spec-body a\.record-link code, \.wiki-panel-kind a\.record-link code \{ color: var\(--steel\);/);
+    expect(css).toMatch(/\.wiki-panel-kind a\.record-link:hover code \{ text-decoration: underline; \}/);
+    expect(readFileSync(join(__dirname, '..', 'src', 'views', 'WikiCard.tsx'), 'utf8')).toMatch(/<p className="wiki-panel-kind">[\s\S]*?<Link to=\{addressOf\(focus\)\} className="record-link"><code>/);
   });
 
   it('LA-V61-R21-T01 In the desktop app, the open pages are a sheet from the page bar: each tab a row, the active one marked; choosing one goes there, and a row\'s close button closes its tab', async () => {
