@@ -30,7 +30,7 @@ export const GET_DOMAIN: QueryDefinition<{ id: string }, DomainPage, DomainReade
   text: domainText,
 };
 
-/** The domains of a product, by ID. */
+/** The domains of a product, by position. */
 export function listDomains(reader: DomainReader, input: { product_id: string }): DomainSummary[] {
   return reader.domainsOf(input.product_id) ?? refuse('missing', `there is no product ${input.product_id}`);
 }
