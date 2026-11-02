@@ -100,9 +100,10 @@ describe('the graph tree, its depth and its camera', () => {
     for (let i = 3; i <= 60; i++) addRows(w, 'uc_requirement', { id: `P-D-UC01-R${String(i).padStart(2, '0')}`, title: `Rule ${i}`, use_case_id: 'P-D-UC01', statement: `Rule ${i} MUST hold.` });
     await showGraph('/P-D', w, 3);
     await waitFor(() => expect(boxElements().length).toBeGreaterThan(5));
-    // Each drawn box draws its kind and ID line and its title, and is a keyboard stop with its name.
+    // Each drawn box draws its kind and ID line and its title (a focus's child read at the page's size its title alone,
+    // LA-V93-R77), and is a keyboard stop with its name.
     for (const box of scene().boxes) {
-      expect(box.lines.some((l) => l.face === 'meta' && l.text !== ''), box.id).toBe(true);
+      if (!box.child) expect(box.lines.some((l) => l.face === 'meta' && l.text !== ''), box.id).toBe(true);
       expect(box.lines.filter((l) => l.face === 'title').map((l) => l.text).join(''), box.id).toBeTruthy();
     }
     for (const el of boxElements()) {

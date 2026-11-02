@@ -1,6 +1,8 @@
 import type { ServedData } from '../read-view';
 import { fireResize } from './setup';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { CHILD_TITLE_PX } from '../../src/graph/camera';
+import { graphMap, groundMap, nestedMap } from './maps';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { GraphView } from '../../src/graph/GraphPage';
 import { DEFAULT_GRAPH_SETTINGS } from '../../src/exploring/session-settings/model';
@@ -363,6 +365,29 @@ describe('graph groups on the page', () => {
     const framed = cameraOf();
     act(() => space.set({ open: none, frame: none }));
     await waitFor(() => expect(cameraOf()).not.toBe(framed));
+  });
+});
+
+describe('a focus\'s children on the page', () => {
+  it('LA-V93-R77-T02 In the Tree, Nested and Map layouts, each of the focus\'s direct children is drawn as its own box with a readable label', async () => {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ x: 0, y: 0, top: 0, left: 0, width: 1000, height: 800, right: 1000, bottom: 800, toJSON: () => ({}) } as DOMRect);
+    for (const [layout, map] of [['tree', graphMap(testIndex(), 'P')], ['nested', nestedMap(testIndex(), 'P')], ['map', groundMap(testIndex())]] as const) {
+      startAtDepth(1, layout);
+      const { unmount } = await openApp('/P-D-UC01?stage=graph', { data: testWorkspace() });
+      await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
+      const children = map.nodes.get('P-D-UC01')!.children;
+      expect(children.length, layout).toBeGreaterThan(1);
+      await waitFor(() => {
+        for (const id of children) {
+          const b = drawnBox(id);
+          expect(b, `${layout} ${id}`).toBeDefined();
+          // Its own box, never a block or a bar: a title line at CHILD_TITLE_PX or more.
+          expect(b!.block, `${layout} ${id}`).toBe(false);
+          expect(b!.lines.some((l) => l.face === 'title' && l.text.trim() !== '' && l.fontPx >= CHILD_TITLE_PX - 1e-6), `${layout} ${id}`).toBe(true);
+        }
+      }, { timeout: 3000 });
+      unmount();
+    }
   });
 });
 

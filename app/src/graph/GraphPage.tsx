@@ -32,7 +32,7 @@ import { treeParent } from './tree';
 import { CARRIES_OUT, linkLine, linksOf, MOST_LINKS, THEN } from './map-links';
 import { thenPairs } from './sequence';
 import { setTextMeasure, type TextMeasure } from './text';
-import { BLOCK_BELOW_PX, drawnFor, drawnKey, drawnNested, frameGround, frameNested, frameOnMap, frameRect, maxZoomFor, mergeDrawn, MIN_ZOOM, wholeIn, type Drawn, type Viewport } from './camera';
+import { BLOCK_BELOW_PX, drawnFor, drawnKey, drawnNested, frameGround, frameNested, frameOnMap, frameRect, keptBox, maxZoomFor, mergeDrawn, MIN_ZOOM, wholeIn, type Drawn, type Viewport } from './camera';
 import { useCameraGestures } from './gestures';
 import { readMotion } from './motion';
 import { followBox, useMorph } from './morph';
@@ -43,7 +43,7 @@ import { PLAIN_LOOK, readLook, useThemeVersion, type Look } from './look';
 import { plateName, plateOf, plateTip, type Plate, type PlateSource } from './plate';
 import { keepLabel } from './sticky';
 import { focusStrength } from './fade';
-import { boxColors, isBlock, labelPlate, paint, type Bar, type Camera, type Line, type PaintState } from './paint';
+import { boxColors, drawnLabel, paint, type WholePlace, type Bar, type Camera, type Line, type PaintState } from './paint';
 import { hitPlate } from './hit';
 import { frameIn, useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
 import { drawLeaderLine, openIn, useLeaderFollow } from '../views/leaderLine';
@@ -383,6 +383,8 @@ export interface SceneBox {
   shape: string;
   view: string;
   focus: boolean;
+  /** Whether it is one of the focus's direct children, drawn whole with a readable label (LA-V93-R77). */
+  child: boolean;
   group: boolean;
   /** Its states as drawn: under the pointer, ringed by the keyboard, selected by a tap, lit by the spotlight (null without one). */
   hover: boolean;
@@ -515,8 +517,13 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
   const hidden = useMemo(() => hiddenNodes(index, map, filters, focus), [index, map, filters, focus]);
   /** The most the camera zooms in on this map: enough to read its smallest box (maxZoomFor). */
   const maxZoom = useMemo(() => maxZoomFor(map), [map]);
-  /** The focus: drawn whatever its size. */
-  const always = useMemo(() => [focus], [focus]);
+  /** The box the camera frames for the focus: the focus, or on the Map the nearest box above it the Map draws (onGround). */
+  const framed = map.view === 'map' ? onGround(index, map, focus) : focus;
+  /** The focus's direct children: each drawn whole, its own box with a readable label, whatever its size (LA-V93-R77). */
+  /** Each child's label sits at its top where it holds others in Nested and the Map (over them), else in its middle. */
+  const whole = useMemo(() => new Map<string, WholePlace>((map.nodes.get(framed)?.children ?? []).map((c) => [c, map.view !== 'tree' && (map.nodes.get(c)?.children.length ?? 0) > 0 ? 'top' : 'middle'])), [map, framed]);
+  /** The focus and its direct children: drawn whatever their size. */
+  const always = useMemo(() => [focus, ...whole.keys()], [focus, whole]);
   /** What a new layout moved glides from where it was (morph.ts, LA-PAT-APP-UX-R22). */
   const morph = useMorph(map);
   /** The box a first tap selected: the Map draws its links too. */
@@ -599,16 +606,17 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
     // With a host that floats panels, never before their first measure: the first picture is framed once, in place.
     // A focus the map shown does not hold yet (its new layout is still being made) leaves the camera where it is.
     // The Map draws no kind group of the Tree's: a focus on one frames the nearest box above it that the Map has.
-    const framed = map.view === 'map' ? onGround(index, map, focus) : focus;
     if (!size || (space && !open) || !map.nodes.has(framed)) return null;
     const box = frameBox(size);
     // The focus is never left without its label: where its visible part cannot hold it, the camera moves to where it can;
-    // and the focused box is always whole in the frame (LA-PAT-APP-UX-R23).
+    // and the focused box is always whole in the frame, with its children's column in the Tree, or where its children
+    // cannot read with it whole, the part of it the framing chose (keptBox, LA-PAT-APP-UX-R23).
     const plate = plateFor(framed);
     const v = map.view === 'map' ? frameGround(map, framed, box.w, box.h, maxZoom) : map.view === 'nested' ? frameNested(map, framed, box.w, box.h, maxZoom) : frameOnMap(map, framed, box.w, box.h, maxZoom);
     const at = { x: v.x + box.x, y: v.y + box.y, zoom: v.zoom };
-    return wholeIn(plate ? keepLabel(plate, at, { left: box.x, top: box.y, right: box.x + box.w, bottom: box.y + box.h }) : at, map.nodes.get(framed)!, box);
-  }, [size, map, focus, frameBox, space, open, plateFor, index]);
+    const kept = keptBox(map, framed, v, box.w, box.h)!;
+    return wholeIn(plate ? keepLabel(plate, at, { left: box.x, top: box.y, right: box.x + box.w, bottom: box.y + box.h }) : at, kept, box);
+  }, [size, map, framed, frameBox, space, open, plateFor]);
 
   // Frame the focus whenever it, the stage's size or the open space changes: a glide,
   // except the first picture, a resize of the stage and a map that has just been laid out, which
@@ -658,8 +666,11 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
     if (!kept && was && node && was.key === framedKey) {
       const follow = followBox(view.current, was.box, node, { min: MIN_ZOOM, max: maxZoom });
       rememberFraming();
-      // Following the focus keeps it whole too (LA-PAT-APP-UX-R23).
-      if (follow && size) moveTo(wholeIn(follow, node, frameBox(size)), true);
+      // Following the focus keeps it whole too, with what its framing keeps (keptBox, LA-PAT-APP-UX-R23).
+      if (follow && size) {
+        const box = frameBox(size);
+        moveTo(wholeIn(follow, keptBox(map, focus, { x: follow.x - box.x, y: follow.y - box.y, zoom: follow.zoom }, box.w, box.h) ?? node, box), true);
+      }
       return;
     }
     const target = kept ?? framing();
@@ -854,7 +865,7 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
     const sp = spotlight.current;
     const fade = strengthNow();
     const live = marks.at(performance.now());
-    const state: PaintState = { focus, hover: hover.current, ring: ring.current, armed: tap.current?.armed ?? null, lit: sp.lit, litLines: sp.litLines, spot: spot.value, strength: fade.at, marks: live, open: openIn(wrapper.current, space, s.w, s.h) };
+    const state: PaintState = { focus, hover: hover.current, ring: ring.current, armed: tap.current?.armed ?? null, lit: sp.lit, litLines: sp.litLines, spot: spot.value, strength: fade.at, marks: live, open: openIn(wrapper.current, space, s.w, s.h), whole };
     paint(ctx.current, dpr, camOf(view.current, s), frame, look.current, fonts, state);
     // The leader line to the wiki card (LA-V96-R24), under this camera, from the focus's box in its outline's color.
     const v = view.current;
@@ -1032,8 +1043,8 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
         ghosts: ((live) => live.reduced && !live.highlight ? [] : live.ghosts.filter((g) => live.highlight || live.now - g.t < GHOST_MS).map((g) => g.id))(marks.at(performance.now())),
         bars: frame.bars.map((b) => rect(b.x, b.y, b.w, b.h)),
         lines: frame.lines.map((l) => ({ id: l.id, source: l.source, target: l.target, style: l.style, link: l.link, lit: sp.id !== null && sp.litLines ? sp.litLines.has(l.id) : null, points: l.points.map((p) => [X(p.x), Y(p.y)] as [number, number]) })),
-        boxes: frame.plates.map((p) => ({
-          id: p.id, kind: p.kind, stage: p.stage, shape: p.shape, view: p.view, focus: p.id === focus, group: p.group,
+        boxes: frame.plates.map((p) => ({ p, label: drawnLabel(p, v.zoom, whole.get(p.id)) })).map(({ p, label }) => ({
+          id: p.id, kind: p.kind, stage: p.stage, shape: p.shape, view: p.view, focus: p.id === focus, child: whole.has(p.id), group: p.group,
           hover: hover.current === p.id, ring: ring.current === p.id, armed: tapToOpen.armed === p.id, lit: sp.id !== null && sp.lit ? sp.lit.has(p.id) : null, strength: strength(p.id),
           change: ((m) => (m && m.change !== 'removed' ? m.change : null))(changes.live.get(p.id)),
           pill: ((c) => (c === 'added' || c === 'changed' ? c : null))(marks.highlight?.change(p.id)),
@@ -1041,16 +1052,16 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
           map: { x: p.x, y: p.y, w: p.w, h: p.h }, textScale: p.text, boxScale: p.scale,
           rect: rect(p.x, p.y, p.w, p.h),
           polygon: p.outline.kind === 'polygon' ? p.outline.points.map(([x, y]) => [X(x), Y(y)] as [number, number]) : null,
-          label: ((l) => rect(l.x, l.y, l.w, l.h))(labelPlate(p, v.zoom).label),
-          block: isBlock(p, v.zoom),
-          lines: labelPlate(p, v.zoom).lines.map((l) => {
+          label: ((l) => rect(l.x, l.y, l.w, l.h))(label.plate.label),
+          block: label.block,
+          lines: label.plate.lines.map((l) => {
             const fontPx = l.size * v.zoom;
             const font = fontFor(fonts, l.face, fontPx);
             let drawnWidth = l.width * v.zoom;
-            if (measureCtx && !isBlock(p, v.zoom)) { measureCtx.font = font; drawnWidth = measureCtx.measureText(l.text.trimEnd()).width; }
+            if (measureCtx && !label.block) { measureCtx.font = font; drawnWidth = measureCtx.measureText(l.text.trimEnd()).width; }
             return { text: l.text, face: l.face, mapPx: l.size, fontPx, font, rect: rect(l.x, l.top, l.width, l.height), drawnWidth };
           }),
-          icons: labelPlate(p, v.zoom).icons.map((i) => ({ draw: i.draw, name: i.name, rect: rect(i.x, i.y, i.w, i.h) })),
+          icons: label.plate.icons.map((i) => ({ draw: i.draw, name: i.name, rect: rect(i.x, i.y, i.w, i.h) })),
           badges: p.badges.map((b) => ({ label: b.label, tone: b.tone, rect: rect(b.x, b.y, b.w, b.h) })),
           tip: plateTip(p),
           name: plateName(p, p.id === focus),
