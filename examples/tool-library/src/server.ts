@@ -1,5 +1,5 @@
 // Starts the Tool Library API and the library's daily clock.
-// Spec: the entry point TL-LEND-ENTRY01 (examples/tool-library/data/).
+// Spec: the entry point TL-LEND-ENTRY01, and the mail integration's adapter TL-INT01-AD (examples/tool-library/data/).
 // Usage: node src/server.ts
 //   PORT defaults to 5310, DB to an in-memory database, TIME_ZONE to America/New_York.
 // The clock runs the policy TL-LEND-PO02's event handler at start and once a day. The example has no mail server,
@@ -22,6 +22,7 @@ const db = new Database(process.env.DB ?? ':memory:');
 const lending = openLibrary(db, () => new Date(), { timeZone });
 const server = createServer(createRouter(lending));
 
+/** TL-INT01-AD: the example's mail sender, which writes each reminder to the log in place of mailing it. */
 const logReminder: ReminderSender = (reminder) => {
   console.log(`Reminder to ${reminder.to}: ${reminder.subject}`);
 };

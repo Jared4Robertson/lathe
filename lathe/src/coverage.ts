@@ -359,6 +359,8 @@ SELECT c.id AS obligation_id, v.id AS impl_id, c.value_object_id AS via_id FROM 
 UNION ALL SELECT invariant_id, id, NULL FROM rule
 UNION ALL SELECT specification_id, id, NULL FROM predicate
 UNION ALL SELECT policy_id, id, NULL FROM event_handler
+-- A policy: also the adapter of each integration it exchanges with as it acts.
+UNION ALL SELECT x.source_id, a.id, x.target_id FROM exchanges_with x JOIN policy p ON p.id = x.source_id JOIN adapter a ON a.integration_id = x.target_id
 UNION ALL SELECT domain_service_id, id, NULL FROM service
 -- A storage requirement: its aggregate's repository, or its read model's reader, once it names its data store.
 UNION ALL SELECT s.id, p.source_id, s.aggregate_id FROM storage_requirement s JOIN persists p ON p.target_id = s.aggregate_id JOIN stored_in d ON d.source_id = p.source_id
@@ -429,7 +431,7 @@ SELECT *, state IN ('automated', 'manual') AND valid AS counts FROM proofs;
 -- Each obligation's chain, link by link, each from the record nearer the obligation to the one it leads to (part: the
 -- column of its target). Design: a UC requirement's fulfilling steps, their flows, what they invoke and the
 -- integrations they exchange with; a constraint's value object, an invariant's aggregate, a policy's
--- command, a storage requirement's aggregate or read model; the commands and queries that call a domain service; the
+-- command and the integrations it exchanges with, a storage requirement's aggregate or read model; the commands and queries that call a domain service; the
 -- commands that check a specification and the queries that select by it. Build: what implements it (obligation_impl),
 -- and for a storage requirement the data store its repository or reader is stored in. Tests: its tests
 -- (obligation_proof), counting or not.
@@ -443,6 +445,7 @@ SELECT DISTINCT * FROM (
   UNION ALL SELECT id, id, aggregate_id, 'design' FROM invariant
   UNION ALL SELECT id, id, coalesce(aggregate_id, read_model_id), 'design' FROM storage_requirement
   UNION ALL SELECT id, id, command_id, 'design' FROM policy
+  UNION ALL SELECT x.source_id, x.source_id, x.target_id, 'design' FROM exchanges_with x JOIN policy p ON p.id = x.source_id
   UNION ALL SELECT target_id, target_id, source_id, 'design' FROM calls
   UNION ALL SELECT target_id, target_id, source_id, 'design' FROM checks
   UNION ALL SELECT target_id, target_id, source_id, 'design' FROM selects_by

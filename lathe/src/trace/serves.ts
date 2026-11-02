@@ -240,8 +240,9 @@ function reachOf(view: Pick<ReadView, 'schema' | 'rows'>): { reach: (from: reado
         reach(raises.get(id));
         for (const event of raises.get(id) ?? []) reach(heardBy.get(event));
       }
-      // A policy reaches its command.
+      // A policy reaches its command and the integrations it exchanges with.
       reach([commandOfPolicy.get(id)]);
+      if (commandOfPolicy.has(id)) reach(exchangesWith.get(id));
       const readModel = readModelOfQuery.get(id);
       if (readModel !== undefined) {
         reach([readModel]);

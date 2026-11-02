@@ -37,7 +37,7 @@
 {"id":"LA-AUT-UC12-FL-S01","title":"The Owner reads the command whole, with its policies and the events it raises, before changing it","flow_id":"LA-AUT-UC12-FL","path":"main","position":1}
 {"id":"LA-AUT-UC12-FL-S02","title":"The Owner adds a command under its aggregate, with the events it raises and the specifications it checks","flow_id":"LA-AUT-UC12-FL","path":"main","position":2}
 {"id":"LA-AUT-UC12-FL-S03","title":"The Owner adds the command's handler, naming its file","flow_id":"LA-AUT-UC12-FL","path":"main","position":3}
-{"id":"LA-AUT-UC12-FL-S04","title":"The Owner adds a policy under the command it invokes, hearing one event, with its test","flow_id":"LA-AUT-UC12-FL","path":"main","position":4}
+{"id":"LA-AUT-UC12-FL-S04","title":"The Owner adds a policy under the command it invokes, hearing one event and naming the integrations it exchanges with, with its test","flow_id":"LA-AUT-UC12-FL","path":"main","position":4}
 {"id":"LA-AUT-UC13-FL-S01","title":"The Owner reads the test data set whole, with the tests that start from it, before changing it","flow_id":"LA-AUT-UC13-FL","path":"main","position":1}
 {"id":"LA-AUT-UC13-FL-S02","title":"The Owner adds a test data set under its domain, with the file that builds it","flow_id":"LA-AUT-UC13-FL","path":"main","position":2}
 {"id":"LA-AUT-UC13-FL-S03","title":"The Owner changes a data set's preparation and reset","flow_id":"LA-AUT-UC13-FL","path":"main","position":3}

@@ -40,7 +40,7 @@ export interface Reminder {
   text: string;
 }
 
-/** Sends a reminder to a member: by mail, or, in the example's server, to the log. Throws when it cannot. */
+/** Sends a reminder to a member through the mail integration TL-INT01: by mail, or, in the example's server, to the log. Throws when it cannot. */
 export type ReminderSender = (reminder: Reminder) => void;
 
 /** How often the library's clock runs TL-LEND-PO02-H. */

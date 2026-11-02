@@ -100,7 +100,8 @@ function commandText(page: CommandPage): string {
   };
   if (page.handler) lines.push(`Command handler ${page.handler.handler.id}: ${page.handler.handler.title}${built(page.handler)}`);
   for (const p of page.policies) {
-    lines.push(`Policy ${p.policy.id}: ${p.policy.title}${p.hears ? ` [hears ${p.hears}]` : ''}`);
+    const policyLinks = [...(p.hears ? [`hears ${p.hears}`] : []), ...p.exchangesWith.map((x) => `exchanges with ${x}`)];
+    lines.push(`Policy ${p.policy.id}: ${p.policy.title}${policyLinks.length ? ` [${policyLinks.join('; ')}]` : ''}`);
     if (p.eventHandler) lines.push(`  event handler ${p.eventHandler.handler.id}: ${p.eventHandler.handler.title}${built(p.eventHandler)}`);
     if (p.test) lines.push(`  policy test ${p.test.test.id}: ${p.test.test.title} (${p.test.test.state})`);
   }

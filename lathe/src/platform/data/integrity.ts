@@ -104,7 +104,7 @@ WHERE k.complexity IS NOT NULL AND k.complexity <> 'as-parent';
  * kind with no owner takes its product, or for a specification its domain, from the longest product or domain ID its
  * own ID starts with (followed by a hyphen). The other kinds with no owner take the domain that uses them, worked out
  * from the links and fields and never stored (USED_BY): a view the domains of the flow steps that happen in it, an
- * integration those of the flow steps that exchange with it, a value object those of the entities, events and read
+ * integration those of the flow steps and policies that exchange with it, a value object those of the entities, events and read
  * models whose fields it types, and a UI component the domains that use the views it renders. Exactly one using
  * domain is its domain; two or more, or none, leave it in no domain (shared). What sits under such a record follows
  * it. A data database never changes after its load (a write builds a new one), so this is worked out once and shared

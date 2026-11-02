@@ -67,7 +67,7 @@ describe('nothing uses it', () => {
   });
   const unused: [string, string, string][] = [
     ['view-unused', 'EX-V01', 'View EX-V01 presents no command or query; link what a person sends or asks in it with presents, or remove it.'],
-    ['integration-unused', 'EX-INT01', 'Integration EX-INT01 is used by nothing: no flow step exchanges with it and it provides nothing; link the steps that exchange with it with exchanges_with, name it the provider of what it provides, or remove it.'],
+    ['integration-unused', 'EX-INT01', 'Integration EX-INT01 is used by nothing: no flow step or policy exchanges with it and it provides nothing; link the steps or policies that exchange with it with exchanges_with, name it the provider of what it provides, or remove it.'],
     ['value-object-unused', 'EX-VO01', 'Value object EX-VO01 is used by nothing: fields of entities, value objects, events or read models are typed with it; type the fields that hold it with it, or remove it.'],
     ['specification-unused', 'EX-LEND-SP01', 'Specification EX-LEND-SP01 is used by nothing: commands check it and queries select by it; link the commands that check it or the queries that select by it, or remove it.'],
     ['test-data-set-unused', 'EX-LEND-TD01', 'Test data set EX-LEND-TD01 is used by nothing: tests start from it; link the tests that start from it with starts_from, or remove it.'],

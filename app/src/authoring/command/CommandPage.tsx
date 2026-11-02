@@ -86,7 +86,10 @@ function summaryOf(index: RecordIndex, page: Command): { lead?: string; facts: F
       return { lead: page.handler!.handler.description, facts: [ofCommand, ...technicalFacts(page.handler!.handler.file, page.handler!.packages)] };
     case 'policy': {
       const p = policyOf(page, id);
-      return { lead: p.policy.statement, facts: [ofCommand, { label: 'Hears', value: p.hears ? <RecordLink index={index} id={p.hears} /> : 'nothing yet' }, ...inJourneys(index, p)] };
+      const exchanges: Fact[] = p.exchangesWith.length
+        ? [{ label: 'Exchanges with', value: <span className="trace-cell">{p.exchangesWith.map((x) => <RecordLink key={x} index={index} id={x} showTitle={false} />)}</span> }]
+        : [];
+      return { lead: p.policy.statement, facts: [ofCommand, { label: 'Hears', value: p.hears ? <RecordLink index={index} id={p.hears} /> : 'nothing yet' }, ...exchanges, ...inJourneys(index, p)] };
     }
     case 'event_handler': {
       const p = policyOf(page, id);

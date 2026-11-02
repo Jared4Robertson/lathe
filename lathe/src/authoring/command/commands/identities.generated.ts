@@ -58,7 +58,7 @@ export const ADD_POLICY_IDENTITY = {
   id: 'LA-AUT-CMD246',
   slice: { aggregate: 'LA-AUT-A8', name: 'command' },
   name: 'add-policy',
-  description: 'Adds a policy under the command it sends, with the one event it hears: its own domain\'s, or another domain\'s published one.',
+  description: 'Adds a policy under the command it sends, with the one event it hears (its own domain\'s, or another domain\'s published one) and the integrations it exchanges with as it acts.',
   method: 'POST',
   route: '/api/command/add-policy',
 } as const;
@@ -67,7 +67,7 @@ export const CHANGE_POLICY_IDENTITY = {
   id: 'LA-AUT-CMD247',
   slice: { aggregate: 'LA-AUT-A8', name: 'command' },
   name: 'change-policy',
-  description: 'Changes a policy\'s title or statement, or the event it hears; null clears the event. The command it sends does not change.',
+  description: 'Changes a policy\'s title or statement, the event it hears or the integrations it exchanges with (the whole list); null clears the event. The command it sends does not change.',
   method: 'POST',
   route: '/api/command/change-policy',
 } as const;
