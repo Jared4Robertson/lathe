@@ -2,7 +2,7 @@
 # The checks, one definition of each: run them here, in a cloud session, or on any CI runner.
 #   scripts/ci.sh            the merge gate: types, knip, every package's unit tests and lathe check.
 #   scripts/ci.sh --title "feat(server): ..."  also checks the planned squash commit's title carries a type.
-#   scripts/ci.sh --browser  the browser batch: the stability and accessibility suites, run in batches on
+#   scripts/ci.sh --browser  the browser batch: the stability, accessibility and phone suites, run in batches on
 #                            main, never as a merge gate.
 # It installs what it needs, records each step's real exit code (never through a pipe) and writes a summary
 # to $CI_RESULT (default: ci-result.md in the repo root). It exits non-zero if any step failed. The
@@ -42,6 +42,7 @@ if [ "$mode" = "--browser" ]; then
 step "Install Chromium" 'cd app && npx playwright install --with-deps chromium'
 step "Stability suite" 'npm --prefix app run test:stability'
 step "Accessibility suite" 'npm --prefix app run test:a11y'
+step "Phone suite" 'npm --prefix app run test:mobile'
 
 else
 if [ -n "$title" ]; then

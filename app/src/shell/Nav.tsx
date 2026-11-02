@@ -26,7 +26,7 @@ import { noteSpacesListed } from '../exploring/space/commands/note-spaces-listed
 import { spaceRepository } from '../exploring/space/repository';
 import { SpaceMark, useSpaces, type Space } from './spaces';
 import { Tooltip } from './Tooltip';
-import { trapTab } from './useNarrow';
+import { inertBehind, trapTab } from './useNarrow';
 import { addressOf, HOME_PATH } from '../views/address';
 import { overlaysOf, panelHref } from '../views/overlays';
 
@@ -84,6 +84,10 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
   const checksKeys = useShortcutHint('openChecks');
   // Whether the nav is used from the keyboard: then the selected row also shows a focus outline, as in VS Code.
   const [keyboard, setKeyboard] = useState(false);
+
+  // On a narrow screen the open drawer is modal (LA-STD-EXPERIENCE-R13): the page behind it is inert, so only the
+  // drawer and its backdrop (a tap there closes it) can be reached; Tab stays in it and Escape closes it (below).
+  useEffect(() => (drawer && drawerOpen ? inertBehind(document.getElementById('nav'), '.drawer-backdrop') : undefined), [drawer, drawerOpen]);
 
   // The section holding the current page opens itself.
   // The tools open over the stage (views/overlays.ts): their nav rows open and close them, and say whether they are open.

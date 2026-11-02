@@ -35,3 +35,7 @@
 .journey-line-proof { margin: 0; font-size: 0.82rem; color: var(--warn); }
 .journey-line-proof.is-proved { color: var(--g-use-cases); }
 /* ---------- End of the Journey page ---------- */
+/* Where a record is a step: each line a sentence ("Step 2 of LA-JR01 Take a new use case to proof · next: …"), its
+   links inline in it, as a mention is. */
+.in-journeys a.record-link { display: inline; }
+.in-journeys a.record-link > span { margin-left: 0.4em; }

@@ -57,3 +57,20 @@ export function trapTab(e: KeyboardEvent<HTMLElement>, sheet: HTMLElement | null
   if (e.shiftKey && (active === first || active === sheet)) { e.preventDefault(); last.focus(); }
   else if (!e.shiftKey && active === last) { e.preventDefault(); first.focus(); }
 }
+
+/**
+ * Makes everything but a modal sheet (and what `keep` matches, such as its backdrop) inert while it is open: each
+ * sibling on the way from the sheet up to the body, so the page behind can be neither tapped, focused nor read.
+ * Returns the cleanup, which wakes only what it made inert.
+ */
+export function inertBehind(sheet: HTMLElement | null, keep = ''): () => void {
+  const made: Element[] = [];
+  for (let at: HTMLElement | null = sheet; at && at !== document.body; at = at.parentElement) {
+    for (const sibling of at.parentElement?.children ?? []) {
+      if (sibling === at || sibling.hasAttribute('inert') || (keep && sibling.matches(keep))) continue;
+      sibling.setAttribute('inert', '');
+      made.push(sibling);
+    }
+  }
+  return () => { for (const el of made) el.removeAttribute('inert'); };
+}
