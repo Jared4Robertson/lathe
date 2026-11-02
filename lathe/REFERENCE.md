@@ -665,7 +665,7 @@ Whenever an event, then a command (event storming). It belongs to the command it
   - **Built:** Its event handler names a file that exists.
   - **Proved:** Its policy test.
 - **ID:** `<P>-<D>-PO<nn>`, such as `TL-LEND-PO01`; it starts with its domain's ID
-- **Links out:** Hears ([`hears`](#relation-hears)), Provided by ([`provided_by`](#relation-provided_by))
+- **Links out:** Exchanges with ([`exchanges_with`](#relation-exchanges_with)), Hears ([`hears`](#relation-hears)), Provided by ([`provided_by`](#relation-provided_by))
 - **Links in:** Questions about this ([`about`](#relation-about)), Carried out in ([`carries_out`](#relation-carries_out))
 - **Checks:** [`event-not-by-outbox`](#check-event-not-by-outbox), [`serves-no-outcome`](#check-serves-no-outcome), [`handoff-not-connected`](#check-handoff-not-connected)
 - **Gaps:** [`policy-hears-nothing`](#gap-policy-hears-nothing)
@@ -1515,9 +1515,9 @@ A view has no owner: it exists because a person sends commands or asks queries i
 
 **Error** · Lathe's · Kinds: [`integration`](#kind-integration)
 
-An integration that nothing uses: no flow step exchanges with it, and it provides nothing.
+An integration that nothing uses: no flow step or policy exchanges with it, and it provides nothing.
 
-An integration has no owner: it exists because flow steps exchange with it, or because it provides records of the product from outside it (provided_by), such as a platform or a dependency. One that nothing uses is a leftover, or a link is missing. Link the steps that exchange with it with exchanges_with, name it the provider of what it provides, or remove it.
+An integration has no owner: it exists because flow steps or policies exchange with it, or because it provides records of the product from outside it (provided_by), such as a platform or a dependency. One that nothing uses is a leftover, or a link is missing. Link the steps or policies that exchange with it with exchanges_with, name it the provider of what it provides, or remove it.
 
 <a id="check-step-order"></a>
 
@@ -3416,7 +3416,7 @@ The command checks the specification, of its own domain, before it acts.
 
 ### `exchanges_with`
 
-The flow step exchanges with the integration's outside system.
+The flow step or policy exchanges with the integration's outside system: a step as its actor carries it out, a policy as the product acts on the event it hears.
 
 - **Reads:** Exchanges with / Exchanged with by
 - **Role:** none
@@ -3424,6 +3424,7 @@ The flow step exchanges with the integration's outside system.
 | From | To | Meaning |
 | --- | --- | --- |
 | [`flow_step`](#kind-flow_step) | [`integration`](#kind-integration) | The step exchanges with the outside system. |
+| [`policy`](#kind-policy) | [`integration`](#kind-integration) | The policy exchanges with the outside system as it acts. |
 
 <a id="relation-fed_by"></a>
 

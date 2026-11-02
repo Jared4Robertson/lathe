@@ -68,7 +68,11 @@ function fieldsOf(index: RecordIndex, place: Place, kind: CommandKind, adding: b
     case 'command_handler':
       return addOrChangeFields(adding, F['/api/command/add-command-handler'], 'command_id', F['/api/command/change-command-handler'], { description: LONG, meets });
     case 'policy':
-      return addOrChangeFields(adding, F['/api/command/add-policy'], 'command_id', F['/api/command/change-policy'], { statement: LONG, hears: { choices: choices(index, ['domain_event'], (r) => r.product === place.product) } });
+      return addOrChangeFields(adding, F['/api/command/add-policy'], 'command_id', F['/api/command/change-policy'], {
+        statement: LONG,
+        hears: { choices: choices(index, ['domain_event'], (r) => r.product === place.product) },
+        exchanges_with: { choices: choices(index, ['integration'], (r) => r.product === place.product) },
+      });
     case 'event_handler':
       return addOrChangeFields(adding, F['/api/command/add-event-handler'], 'policy_id', F['/api/command/change-event-handler'], { description: LONG, meets });
     case 'policy_test':
@@ -87,7 +91,7 @@ function currentOf(page: CommandPage, kind: CommandKind, id: string): Record<str
       return { ...page.handler!.handler, meets: page.handler!.meets, packages: page.handler!.packages };
     case 'policy': {
       const p = policyOf(page, id);
-      return { ...p.policy, hears: p.hears ?? undefined };
+      return { ...p.policy, hears: p.hears ?? undefined, exchanges_with: p.exchangesWith };
     }
     case 'event_handler': {
       const h = policyOf(page, id).eventHandler!;

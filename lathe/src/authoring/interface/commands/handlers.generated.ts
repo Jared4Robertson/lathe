@@ -4,6 +4,7 @@
 import { changed } from '../../../platform/data/rows.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { InterfaceRepository } from '../repository.ts';
+import { holdToRules } from '../rules.ts';
 import type { ChangeInterface } from './change-interface.ts';
 import type { RemoveInterface } from './remove-interface.ts';
 
@@ -14,6 +15,7 @@ export function changeInterface(tx: Transaction, input: ChangeInterface): void {
   theInterface.row = changed(theInterface.row, input, ['title', 'kind', 'description', 'public']);
   theInterface.actors = input.actors ?? theInterface.actors;
   theInterface.offers = input.offers ?? theInterface.offers;
+  holdToRules(tx, theInterface);
   interfaces.save(theInterface);
 }
 

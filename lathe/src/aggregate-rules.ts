@@ -15,6 +15,7 @@ import { patternRules } from './authoring/pattern/rules.ts';
 import { domainEventRules } from './authoring/domain-event/rules.ts';
 import { endpointRules } from './authoring/endpoint/rules.ts';
 import { integrationRules } from './authoring/integration/rules.ts';
+import { interfaceRules } from './authoring/interface/rules.ts';
 import { checkRules } from './checking/check/rules.ts';
 import { productSettingRules } from './checking/product-setting/rules.ts';
 import { patternFollowingRules } from './traceability/pattern-following/rules.ts';
@@ -22,6 +23,6 @@ import type { AggregateRules } from './platform/data/rules.ts';
 
 export const AGGREGATE_RULES: readonly AggregateRules[] = [
   useCaseRules, journeyRules, domainRules, aggregateRules, commandRules, productRules, extensionRecordRules, readModelRules, tableRules,
-  valueObjectRules, specificationRules, patternRules, domainEventRules, endpointRules, integrationRules,
+  valueObjectRules, specificationRules, patternRules, domainEventRules, endpointRules, integrationRules, interfaceRules,
   checkRules, productSettingRules, patternFollowingRules,
 ];

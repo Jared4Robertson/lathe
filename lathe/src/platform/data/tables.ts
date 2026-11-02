@@ -677,47 +677,7 @@ export interface EventTypeRow {
   file?: string;
 }
 
-/** An actor's goal: its actors (use_case_actor rows), its UC requirements and its flow, the same through every interface that offers it. It changes nothing itself; its flow's steps invoke commands and queries. */
-export interface UseCaseRow {
-  /** The use case's ID, such as TL-LEND-UC01. */
-  id: string;
-  /** What the actor does, such as Borrow a tool. */
-  title: string;
-  /** The capability it sits in. */
-  capability_id: string;
-  /** What the actor wants to reach and from where they start, in a sentence or a short paragraph. */
-  goal: string;
-  /** Longer notes, such as the order in which refusals are reported. */
-  notes?: string;
-}
-
-/** How its use case is carried out, whatever the interface: the steps on its main path and its alternate paths. A use case has one flow, and each interface that offers the use case has its own version of it, derived from the steps' commands and queries by the interface's pattern. */
-export interface FlowRow {
-  /** The flow's ID: its use case's ID and FL, such as TL-LEND-UC01-FL. */
-  id: string;
-  /** The flow's name: its use case's title, such as Borrow a tool. */
-  title: string;
-  /** The use case it carries out, which has no other flow. */
-  use_case_id: string;
-}
-
-/** One step of a flow, in order on its path, in the words of the people who take it. It fulfills UC requirements of its own use case, invokes at most one command or query and may exchange with integrations; where it happens is its interface's, derived. A step only one interface can do is a variant: it names that interface. */
-export interface FlowStepRow {
-  /** The step's ID: its flow's ID and S<nn>, such as TL-LEND-UC01-FL-S01. */
-  id: string;
-  /** What happens, in a few words. */
-  title: string;
-  /** The flow it belongs to. */
-  flow_id: string;
-  /** The path through the flow the step is on, such as main or refused. */
-  path: string;
-  /** The step's place on its path, from 1, among every interface's steps; each interface's version skips the other interfaces' variants. */
-  position: number;
-  /** The one interface that does this step, which makes it a variant, such as opening the app from the Dock; none when every interface that offers the use case does it. The interface offers the step's use case. */
-  interface_id?: string;
-}
-
-/** The flow step exchanges with the integration's outside system. */
+/** The flow step or policy exchanges with the integration's outside system: a step as its actor carries it out, a policy as the product acts on the event it hears. */
 export interface ExchangesWithRow {
   source_id: string;
   target_id: string;
@@ -759,6 +719,46 @@ export interface SlotRow {
 export interface FillsRow {
   source_id: string;
   target_id: string;
+}
+
+/** An actor's goal: its actors (use_case_actor rows), its UC requirements and its flow, the same through every interface that offers it. It changes nothing itself; its flow's steps invoke commands and queries. */
+export interface UseCaseRow {
+  /** The use case's ID, such as TL-LEND-UC01. */
+  id: string;
+  /** What the actor does, such as Borrow a tool. */
+  title: string;
+  /** The capability it sits in. */
+  capability_id: string;
+  /** What the actor wants to reach and from where they start, in a sentence or a short paragraph. */
+  goal: string;
+  /** Longer notes, such as the order in which refusals are reported. */
+  notes?: string;
+}
+
+/** How its use case is carried out, whatever the interface: the steps on its main path and its alternate paths. A use case has one flow, and each interface that offers the use case has its own version of it, derived from the steps' commands and queries by the interface's pattern. */
+export interface FlowRow {
+  /** The flow's ID: its use case's ID and FL, such as TL-LEND-UC01-FL. */
+  id: string;
+  /** The flow's name: its use case's title, such as Borrow a tool. */
+  title: string;
+  /** The use case it carries out, which has no other flow. */
+  use_case_id: string;
+}
+
+/** One step of a flow, in order on its path, in the words of the people who take it. It fulfills UC requirements of its own use case, invokes at most one command or query and may exchange with integrations; where it happens is its interface's, derived. A step only one interface can do is a variant: it names that interface. */
+export interface FlowStepRow {
+  /** The step's ID: its flow's ID and S<nn>, such as TL-LEND-UC01-FL-S01. */
+  id: string;
+  /** What happens, in a few words. */
+  title: string;
+  /** The flow it belongs to. */
+  flow_id: string;
+  /** The path through the flow the step is on, such as main or refused. */
+  path: string;
+  /** The step's place on its path, from 1, among every interface's steps; each interface's version skips the other interfaces' variants. */
+  position: number;
+  /** The one interface that does this step, which makes it a variant, such as opening the app from the Dock; none when every interface that offers the use case does it. The interface offers the step's use case. */
+  interface_id?: string;
 }
 
 /** The use case's acceptance test: its flow's main path, end to end, through any one interface that offers the use case, at the level that fits that interface (browser for a web app or desktop, system for an API, a CLI or agent tools). How each other interface carries a step out is proved once per rule and domain by its pattern's rule tests, never per use case. */
@@ -1711,14 +1711,14 @@ export interface TableRows {
   policy: PolicyRow;
   event_handler: EventHandlerRow;
   event_type: EventTypeRow;
-  use_case: UseCaseRow;
-  flow: FlowRow;
-  flow_step: FlowStepRow;
   exchanges_with: ExchangesWithRow;
   fed_by: FedByRow;
   pattern: PatternRow;
   slot: SlotRow;
   fills: FillsRow;
+  use_case: UseCaseRow;
+  flow: FlowRow;
+  flow_step: FlowStepRow;
   flow_test: FlowTestRow;
   follows: FollowsRow;
   uc_requirement: UcRequirementRow;

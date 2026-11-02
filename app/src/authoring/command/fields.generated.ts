@@ -49,12 +49,14 @@ export const COMMAND_FIELDS = {
     command_id: { kind: 'column', table: 'policy', column: 'command_id', required: true, clearable: false },
     statement: { kind: 'column', table: 'policy', column: 'statement', required: true, clearable: false },
     hears: { kind: 'id', description: 'The event it hears: of its own domain, or another domain\'s published one.', required: false, clearable: false },
+    exchanges_with: { kind: 'ids', description: 'The integrations it exchanges with as it acts, such as the mail service it sends a reminder through.', required: false, clearable: false },
   },
   '/api/command/change-policy': {
     id: { kind: 'column', table: 'policy', column: 'id', required: true, clearable: false },
     title: { kind: 'column', table: 'policy', column: 'title', required: false, clearable: false },
     statement: { kind: 'column', table: 'policy', column: 'statement', required: false, clearable: false },
     hears: { kind: 'id', description: 'The event it hears: of its own domain, or another domain\'s published one.', required: false, clearable: true },
+    exchanges_with: { kind: 'ids', description: 'The integrations it exchanges with as it acts.', required: false, clearable: false },
   },
   '/api/command/remove-policy': {
     id: { kind: 'column', table: 'policy', column: 'id', required: true, clearable: false },

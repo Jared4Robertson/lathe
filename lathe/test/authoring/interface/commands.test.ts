@@ -8,6 +8,7 @@ import { ADD_USE_CASE } from '../../../src/authoring/use-case/commands/add-use-c
 import { ADD_INTERFACE } from '../../../src/authoring/interface/commands/add-interface.ts';
 import { CHANGE_INTERFACE } from '../../../src/authoring/interface/commands/change-interface.ts';
 import { REMOVE_INTERFACE } from '../../../src/authoring/interface/commands/remove-interface.ts';
+import { CHANGE_PRODUCT } from '../../../src/authoring/product/commands/change-product.ts';
 import { GET_PRODUCT, LIST_INTERFACES, NEXT_PRODUCT_ID } from '../../../src/authoring/product/queries.ts';
 import { runAggregateCommand } from '../../../src/cli/aggregates.ts';
 import { callTool, tools } from '../../../src/cli/mcp.ts';
@@ -95,6 +96,19 @@ describe('LA-AUT-UC23-R01-T55 an interface goes with the roles it lists and the 
     expect(store.rows('offers')).toContainEqual({ source_id: 'TL-IF02', target_id: 'TL-LEND-UC01' });
     expect((await runCommand(store, REMOVE_INTERFACE, { id: 'TL-IF02' })).tables).toEqual(['interface', 'interface_actor', 'offers']);
     expect((await refusal(store, REMOVE_INTERFACE, { id: 'TL-IF02' })).problems[0]).toMatchObject({ rule: 'missing', message: 'there is no interface TL-IF02' });
+  });
+});
+
+describe('LA-AUT-INV194-T each role that uses an interface is one of its product\'s roles', () => {
+  it('refuses an interface listing a role its product lacks, from Add and Change, and dropping a role an interface lists', async () => {
+    const store = await everyKindStore();
+    expect((await refusal(store, ADD_INTERFACE, { ...CLI, actors: ['Librarian', 'Mayor'] })).problems).toEqual([
+      expect.objectContaining({ rule: 'interface-actor-role', message: 'Interface TL-IF02 names Mayor as a role that uses it, which is not a role of TL; its roles are Librarian, Member: name one of them, or add the role to TL' }),
+    ]);
+    expect((await refusal(store, CHANGE_INTERFACE, { id: 'TL-IF01', actors: ['Mayor'] })).problems.map((p) => p.rule)).toEqual(['interface-actor-role']);
+    expect(store.rows('interface_actor')).toEqual([{ interface_id: 'TL-IF01', position: 1, role_name: 'Member' }]);
+    // Dropping the role the interface lists, through the product, is refused the same way.
+    expect((await refusal(store, CHANGE_PRODUCT, { id: 'TL', roles: [{ name: 'Librarian', description: 'Lends tools.' }] })).problems.map((p) => p.rule)).toContain('interface-actor-role');
   });
 });
 

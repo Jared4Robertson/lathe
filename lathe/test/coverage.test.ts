@@ -156,6 +156,21 @@ describe('designed and built', () => {
     expect(gaps(await loadData(hooked))).toContain('built EX-LEND-UC01-R01');
     expect(gaps(await loadData(alone))).toContain('built EX-LEND-UC01-R01');
   });
+
+  it('LA-TRC-UC02-R15-T01 a policy that exchanges with an integration is built by its event handler and that integration\'s adapter', async () => {
+    const exchanging = adding(complete(), { exchanges_with: [{ source_id: 'EX-LEND-PO01', target_id: 'EX-INT01' }] });
+    const ws = await loadData(exchanging);
+    expect(obligation(ws, 'EX-LEND', 'policy')).toMatchObject(covered(1));
+    expect(ws.chains.find((c) => c.obligation === 'EX-LEND-PO01')).toMatchObject({
+      design: expect.arrayContaining(['EX-LEND-CMD03', 'EX-INT01']),
+      build: expect.arrayContaining(['EX-LEND-PO01-H', 'EX-INT01-AD']),
+      links: expect.arrayContaining([['EX-LEND-PO01', 'EX-INT01'], ['EX-INT01', 'EX-INT01-AD']]),
+    });
+    // The adapter's file missing, the policy is not built, though its event handler's file exists.
+    expect(gaps(await loadData(exchanging, { missing: ['src/mail.ts'] }))).toContain('built EX-LEND-PO01');
+    // Without the exchange, the adapter builds nothing of the policy.
+    expect(gaps(await loadData(complete(), { missing: ['src/mail.ts'] }))).not.toContain('built EX-LEND-PO01');
+  });
 });
 
 describe('chains', () => {

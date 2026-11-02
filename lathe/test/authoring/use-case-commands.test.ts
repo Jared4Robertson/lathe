@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { ADD_FLOW } from '../../src/authoring/use-case/commands/add-flow.ts';
 import { ADD_FLOW_STEP } from '../../src/authoring/use-case/commands/add-flow-step.ts';
 import { ADD_UC_REQUIREMENT } from '../../src/authoring/use-case/commands/add-uc-requirement.ts';
+import { CHANGE_PRODUCT } from '../../src/authoring/product/commands/change-product.ts';
 import { ADD_USE_CASE } from '../../src/authoring/use-case/commands/add-use-case.ts';
 import { CHANGE_FLOW_STEP } from '../../src/authoring/use-case/commands/change-flow-step.ts';
 import { CHANGE_USE_CASE } from '../../src/authoring/use-case/commands/change-use-case.ts';
@@ -149,6 +150,18 @@ describe('LA-AUT-UC06-R12-T01 each Use case command (LA-AUT-A11) changes one use
       expect.objectContaining({ rule: 'step-fulfills-own-use-case', message: 'TL-LEND-UC01-FL-S01 is a step of the flow of TL-LEND-UC01, so it cannot fulfill TL-LEND-UC02-R01, a requirement of TL-LEND-UC02' }),
     ]);
     expect(fileOf(store, 'fulfills')).toBe(before);
+  });
+
+  it('LA-AUT-INV193-T refuses an actor that is not a role of the use case\'s product, and dropping a role an actor names, changing no file', async () => {
+    const store = await storeOf();
+    const before = fileOf(store, 'use_case_actor');
+    expect((await refusal(store, CHANGE_USE_CASE, { id: 'TL-LEND-UC02', actors: ['Member', 'Mayor'] })).problems).toEqual([
+      expect.objectContaining({ rule: 'use-case-actor-role', message: 'Use case TL-LEND-UC02 names Mayor as its actor, which is not a role of TL; its roles are Librarian, Member: name one of them, or add the role to TL' }),
+    ]);
+    expect((await refusal(store, ADD_USE_CASE, { id: 'TL-LEND-UC03', title: 'Repair a tool', capability_id: 'TL-LEND-CAP01', goal: 'Mend a damaged tool.', actors: ['Repairer'] })).problems.map((p) => p.rule)).toEqual(['use-case-actor-role']);
+    expect(fileOf(store, 'use_case_actor')).toBe(before);
+    // Dropping the role the use cases name, through the product, is refused the same way.
+    expect((await refusal(store, CHANGE_PRODUCT, { id: 'TL', roles: [{ name: 'Librarian', description: 'Lends tools.' }] })).problems.map((p) => p.rule)).toContain('use-case-actor-role');
   });
 
   it('LA-AUT-INV42-T refuses a flow whose ID is not its use case\'s and FL', async () => {

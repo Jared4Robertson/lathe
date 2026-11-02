@@ -6,8 +6,10 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { ADD_POLICY } from '../../../src/authoring/command/commands/add-policy.ts';
 import { CHANGE_POLICY } from '../../../src/authoring/command/commands/change-policy.ts';
+import { GET_COMMAND } from '../../../src/authoring/command/queries.ts';
+import { ADD_INTEGRATION } from '../../../src/authoring/integration/commands/add-integration.ts';
 import type { AnyCommand } from '../../../src/platform/commands/definition.ts';
-import { runCommand } from '../../../src/platform/commands/run.ts';
+import { runCommand, runQuery } from '../../../src/platform/commands/run.ts';
 import { StoreError } from '../../../src/platform/data/problems.ts';
 import { openStore, type Store } from '../../../src/platform/data/store.ts';
 import { writeData } from '../../helpers.ts';
@@ -49,5 +51,20 @@ describe('LA-AUT-INV70-T a policy hearing another domain\'s unpublished event is
     expect((refused as StoreError).problems).toEqual([expect.objectContaining({ rule: 'policy-hears-published', file: 'data/hears.jsonl', line: 1 })]);
     data.domain_event = data.domain_event.map((e) => (e.id === 'TL-CAT-EV01' ? { ...e, published: true } : e));
     await (await openStore(writeData(data), { latheDataDir: null })).close();
+  });
+});
+
+describe('LA-AUT-UC12-R07-T01 a policy names the integrations it exchanges with', () => {
+  it('adds and changes a policy\'s exchanges, writing only that link, and reads them with its command', async () => {
+    const store = await commandDataSet();
+    await runCommand(store, ADD_INTEGRATION, { id: 'TL-INT01', title: 'Mail', system: 'The library\'s mail service', description: 'Reminders sent to members.' });
+    expect((await runCommand(store, CHANGE_POLICY, { id: 'TL-LEND-PO01', exchanges_with: ['TL-INT01'] })).tables).toEqual(['exchanges_with']);
+    expect(store.rows('exchanges_with')).toEqual([{ source_id: 'TL-LEND-PO01', target_id: 'TL-INT01' }]);
+    const whole = runQuery(store, GET_COMMAND, { id: 'TL-LEND-PO01' }) as ReturnType<typeof GET_COMMAND.run>;
+    expect(whole.policies[0]).toMatchObject({ hears: 'TL-LEND-EV01', exchangesWith: ['TL-INT01'] });
+    await runCommand(store, ADD_POLICY, { id: 'TL-LEND-PO02', title: 'Mail on loan', command_id: 'TL-LEND-CMD01', statement: 'Whenever a loan is opened, the library MUST mail the member.', hears: 'TL-LEND-EV01', exchanges_with: ['TL-INT01'] });
+    expect(store.rows('exchanges_with')).toContainEqual({ source_id: 'TL-LEND-PO02', target_id: 'TL-INT01' });
+    // An integration that is not there is refused.
+    expect((await refusal(store, CHANGE_POLICY, { id: 'TL-LEND-PO01', exchanges_with: ['TL-INT09'] })).problems[0].rule).toBe('foreign-key');
   });
 });
