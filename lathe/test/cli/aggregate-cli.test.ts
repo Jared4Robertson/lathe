@@ -19,6 +19,7 @@ async function lathe(root: string, args: string[], stdin = '') {
 
 const files = (root: string) => Object.fromEntries(readdirSync(path.join(root, 'data')).sort().map((f) => [f, readFileSync(path.join(root, 'data', f), 'utf8')]));
 
+// Each test runs the CLI in its own process on a fresh store: past vitest's 5 s on a busy machine.
 describe('fields as JSON', () => {
   it('LA-PLT-UC18-R03-T01 text with quotes, newlines and backticks given as JSON is written exactly, from stdin or a file, in the tool\'s shape', async () => {
     const root = writeData(everyKind());
@@ -51,7 +52,7 @@ describe('fields as JSON', () => {
     expect((await lathe(root, ['use-case', 'add-uc-requirement', '--json', '-', '--title', 'x'], '{}')).status).toBe(2);
     expect((await lathe(root, ['use-case', 'add-uc-requirement', '--json', '-'], '[1]')).status).toBe(1);
   });
-});
+}, 30_000);
 
 describe('a refusal', () => {
   it('LA-PAT-AGGREGATE-COMMANDS-R02-T01 LA-PAT-AGGREGATE-COMMANDS-R02-T04 LA-PAT-AGGREGATE-COMMANDS-R02-T05 LA-PAT-AGGREGATE-COMMANDS-R02-T06 LA-PAT-AGGREGATE-COMMANDS-R02-T07 LA-PAT-AGGREGATE-COMMANDS-R02-T08 LA-PAT-CLI-STEPS-R02-T01 LA-PAT-CLI-STEPS-R02-T05 LA-PAT-CLI-STEPS-R02-T06 LA-PAT-CLI-STEPS-R02-T07 LA-PAT-CLI-STEPS-R02-T08 LA-PAT-CLI-STEPS-R02-T09 LA-PAT-MCP-STEPS-R02-T01 LA-PAT-MCP-STEPS-R02-T05 LA-PAT-MCP-STEPS-R02-T06 LA-PAT-MCP-STEPS-R02-T07 LA-PAT-MCP-STEPS-R02-T08 LA-PAT-MCP-STEPS-R02-T09 a command the aggregate refuses prints every reason with its rule, exits 1, and changes nothing', async () => {
