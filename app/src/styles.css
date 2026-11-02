@@ -439,8 +439,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 /* On a phone: a Key chip at the foot of the stage, opening the entries with their meanings as a sheet. */
 .stage-key-chip { position: absolute; z-index: 6; bottom: var(--stage-foot); left: 50%; translate: -50% 0; padding: 4px 12px; border: 1px solid var(--float-border); border-radius: 999px; background: var(--sheet); box-shadow: var(--float-shadow); font-size: 0.8rem; }
 /* On a phone, the walk's bar (StageWalkBar, LA-V93-R76): Previous, Out, In and Next along the foot of the stage, each a
-   touch target with its icon and word, clear of the safe area. On a phone every stage's foot rises above it (the Trace,
-   a list there, draws nothing at its foot), so the camera, the minimap, the key chip and the touch card sit over the
+   touch target with its icon and word, clear of the safe area. On a phone every stage's foot rises above it, so the camera, the minimap, the key chip and the touch card sit over the
    bar, never on it, and the read-only note rises with them. */
 :root { --walk-bar-height: calc(var(--touch-target) + 13px); }
 .stage-walk-bar { position: absolute; z-index: 9; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; box-sizing: border-box; height: calc(var(--walk-bar-height) + env(safe-area-inset-bottom)); padding: 6px max(8px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); border-top: 1px solid var(--rule); background: var(--sheet); }
@@ -872,27 +871,8 @@ a.row-link.row-link:focus-visible { outline: none; }
 
 /* ---------- The Trace stage: one row per use case, from its outcomes to its acceptance tests (app/src/trace) ---------- */
 .trace-page { min-height: 0; }
-/* On a phone the list scrolls under the floating panels: its content padded to the frame, so it sits in the open space. */
-.trace-scroll { box-sizing: border-box; overflow: auto; scrollbar-gutter: stable; padding: calc(var(--frame-top, 0px) + 12px) calc(var(--frame-right, 0px) + 20px) calc(var(--frame-bottom, 0px) + 20px) calc(var(--frame-left, 0px) + 20px); scroll-padding: var(--frame-top, 0px) var(--frame-right, 0px) var(--frame-bottom, 0px) var(--frame-left, 0px); }
-.trace-page > .trace-scroll { position: absolute; inset: 0; }
-.trace-scroll:focus-visible { outline: 2px solid var(--steel); outline-offset: -2px; }
-/* On a wide screen the trace is drawn on the canvas (TraceCanvas.tsx) and the list is its accessible layer, visually hidden. */
+/* The trace is drawn on the canvas (TraceCanvas.tsx) on every width; the list (TraceList.tsx) is its accessible layer, visually hidden. */
 .trace-access { position: absolute; top: 0; left: 0; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-/* The list (TraceList.tsx): one use case at a time, its outcomes and its stages stacked down, each box a row. */
-.trace-col-head { margin: 4px 0 8px; font-size: 1rem; }
-.trace-col-rows { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
-.trace-col-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; min-block-size: 44px; padding: 8px 12px; border: 1.5px solid var(--g-structural); border-radius: 6px; background: var(--g-structural-bg); color: var(--ink); text-decoration: none; }
-.trace-col-row.stage-discovery { border-color: var(--g-discovery); background: var(--g-discovery-bg); }
-.trace-col-row.stage-domain-model { border-color: var(--g-domain-model); background: var(--g-domain-model-bg); }
-.trace-col-row.stage-use-cases { border-color: var(--g-use-cases); background: var(--g-use-cases-bg); }
-.trace-col-row.stage-interaction-design { border-color: var(--g-interaction-design); background: var(--g-interaction-design-bg); }
-.trace-col-row.stage-technical-specification { border-color: var(--g-technical-specification); background: var(--g-technical-specification-bg); }
-.trace-col-row.stage-test-plan { border-color: var(--g-test-plan); background: var(--g-test-plan-bg); }
-.trace-col-row.is-gap { border-style: dashed; border-color: var(--warn); background: var(--sheet); }
-.trace-col-row[aria-current="page"] { box-shadow: 0 0 0 2px var(--steel); }
-.trace-col-row.is-faded { opacity: var(--focus-fade); }
-.trace-col-meta { font: 0.72rem var(--mono); color: var(--muted); overflow-wrap: anywhere; }
-.trace-col-title { font-size: 0.92rem; font-weight: 600; }
 
 /* ---------- Themes and Appearance (app/src/theme, LA-PAT-APP-CODE-R15) ---------- */
 /* A theme's chip in the picker and its preview on the page take the theme's tokens inline, so they draw with its colors. */
@@ -1041,6 +1021,14 @@ a.row-link.row-link:focus-visible { outline: none; }
 .focus-stage .stage-camera { left: calc(var(--frame-left, 0px) + 4px); bottom: var(--stage-foot); }
 .focus-stage .graph-minimap { right: calc(var(--frame-right, 0px) + 4px); bottom: var(--stage-foot); }
 .focus-stage .graph-edge-hints { inset: var(--frame-top, 0px) var(--frame-right, 0px) var(--frame-bottom, 0px) var(--frame-left, 0px); }
+/* A phone on its side (LA-V93-R76): nothing floats over the stage's open space. The camera, as one row, and the Key
+   chip sit in the walk's bar, at its end, so the frame runs from under the toolbar down to the bar. */
+@media (orientation: landscape) {
+  .stage-layout.is-phone > .focus-stage { --camera-row: calc(3 * var(--touch-target) + 10px); --key-slot: 88px; }
+  .stage-layout.is-phone > .focus-stage .stage-walk-bar { padding-right: calc(max(8px, env(safe-area-inset-right)) + var(--camera-row) + var(--key-slot) + 12px); }
+  .stage-layout.is-phone > .focus-stage .stage-camera { z-index: 10; grid-template-columns: none; grid-auto-flow: column; left: auto; right: calc(max(8px, env(safe-area-inset-right)) + var(--key-slot) + 6px); bottom: calc(5px + env(safe-area-inset-bottom)); border: 0; box-shadow: none; }
+  .stage-layout.is-phone > .focus-stage .stage-key-chip { z-index: 10; left: auto; right: max(8px, env(safe-area-inset-right)); translate: none; bottom: calc(6px + env(safe-area-inset-bottom)); width: var(--key-slot); min-height: var(--touch-target); justify-content: center; box-shadow: none; }
+}
 .stage-page > .focus-missing { position: absolute; top: var(--float-inset); right: var(--chat-space); bottom: var(--float-inset); left: var(--nav-space); background: var(--paper); }
 .stage-page > .error { position: absolute; z-index: 5; bottom: var(--float-inset); left: var(--nav-space); margin: 0; }
 /* On a phone the stage fills what the bars leave. */

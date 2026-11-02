@@ -8,7 +8,7 @@ import { openApp } from '../helpers';
 
 // The Trace stage (LA-V98) in the app: one row per use case on the canvas, from its outcomes to its acceptance tests,
 // read from the Trace read (list-traced-use-cases); its toolbar's Expand row and Expand all, the path a selection lights, its
-// camera, its accessible layer, and on a phone one use case at a time. It works on every focus (LA-PAT-APP-UX-R17) and
+// camera, its accessible layer, and on a phone its walk's bar. It works on every focus (LA-PAT-APP-UX-R17) and
 // is ordered once (LA-PAT-APP-UX-R19).
 
 /** The model product with an outcome its capability serves, and a second use case of no flow. */
@@ -156,17 +156,15 @@ describe('the Trace stage', () => {
     await screen.findByRole('heading', { level: 1, name: 'Librarian lends the thing' });
   });
 
-  it('LA-V98-R21-T01 Under the canvas, the list is its accessible layer; on a phone it is the view, one use case at a time, each stage opening', async () => {
-    await openTrace('/P-D-UC01?stage=trace');
-    await canvasHost();
-    expect(traceStage().querySelector('canvas')).toHaveAttribute('aria-hidden', 'true');
-    const access = traceStage().querySelector<HTMLElement>('.trace-access')!;
-    expect(within(access).getByRole('combobox', { name: 'Use case' })).toHaveValue('P-D-UC01');
-    vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
-    try {
+  it('LA-V98-R21-T01 On every width the canvas is drawn and the list is its accessible layer: one use case at a time, each stage opening', async () => {
+    const proveOn = async (phone: boolean) => {
+      if (phone) vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
       await openTrace('/P-D-UC01?stage=trace');
-      const list = await within(traceStage()).findByRole('region', { name: 'Trace rows' });
-      expect(traceStage().querySelector('.trace-flow')).toBeNull();
+      await canvasHost();
+      expect(traceStage().querySelector('canvas')).toHaveAttribute('aria-hidden', 'true');
+      const access = traceStage().querySelector<HTMLElement>('.trace-access')!;
+      const list = within(access).getByRole('region', { name: 'Trace rows' });
+      expect(within(list).getByRole('combobox', { name: 'Use case' })).toHaveValue('P-D-UC01');
       expect(within(list).getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual(['Outcome', 'Journey', 'Use case', 'Design flow', 'Technical flow', 'Acceptance test suite']);
       const design = within(list).getByRole('region', { name: 'Design flow' });
       // Open (the place may keep it open from before).
@@ -175,7 +173,38 @@ describe('the Trace stage', () => {
       expect(within(design).getByRole('link', { name: /^Flow · P-D-UC01-FL(?!-)/ })).toBeInTheDocument();
       // Another use case.
       fireEvent.change(within(list).getByRole('combobox', { name: 'Use case' }), { target: { value: 'P-D-UC02' } });
-      expect(within(within(list).getByRole('region', { name: 'Design flow' })).getByText('No flow', { selector: '.trace-col-title' })).toBeInTheDocument();
+      expect(within(within(list).getByRole('region', { name: 'Design flow' })).getByText('No flow', { selector: 'small + span' })).toBeInTheDocument();
+    };
+    await proveOn(false);
+    try {
+      await proveOn(true);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('LA-V93-R76-T02 On a phone the Trace walks by the bar, Previous and Next along the row, Up and Down in More, its key a chip', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
+    try {
+      await openTrace('/P-D-UC01?stage=trace');
+      await canvasHost();
+      const bar = within(traceStage()).getByRole('group', { name: 'Walk the stage' });
+      const buttons = within(bar).getAllByRole('button');
+      expect(buttons.map((b) => b.textContent)).toEqual(['Previous', 'Out', 'In', 'Next']);
+      expect(buttons[3]).toHaveAccessibleName(/^Next: step along the row to the nearest linked box on the right/);
+      const toolbar = traceStage().querySelector<HTMLElement>('.stage-toolbar')!;
+      expect(toolbar.querySelector(':scope > .stage-steps')).toBeNull();
+      expect([...toolbar.querySelectorAll('.stage-more-body .stage-step')].map((b) => b.className.match(/is-(\w+)/)![1])).toEqual(['up', 'down']);
+      expect(within(toolbar).getByRole('button', { name: 'Tidy up' })).toBeInTheDocument();
+      expect(within(traceStage()).getByRole('button', { name: 'Key' })).toBeInTheDocument();
+      expect(traceStage().querySelector('.stage-key')).toBeNull();
+      // Next steps along the row from the use case into the Design flow column; Previous back to the use case.
+      await waitFor(() => expect(buttons[3]).toBeEnabled());
+      fireEvent.click(buttons[3]);
+      await waitFor(async () => expect((await drawn(false)).boxes.filter((b) => b.ring || b.focus).map((b) => b.column)).toEqual([3]));
+      fireEvent.click(buttons[0]);
+      await waitFor(async () => expect((await drawn(false)).boxes.filter((b) => b.ring || b.focus).map((b) => b.key)).toEqual(['P-D-UC01|use-case']));
+      expect(window.location.pathname).toBe('/P-D-UC01');
     } finally {
       vi.unstubAllGlobals();
     }

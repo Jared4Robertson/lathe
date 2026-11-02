@@ -19,9 +19,9 @@ import { useScrollToZoom } from '../platform/appearance/use-scroll-to-zoom';
 //   stage's own. Each step runs the stage's walk (views/levels.ts) through the commands layer, as
 //   its keys do. It is one row at every width (LA-PAT-APP-UX-R08): while it does not fit it steps down a tier before
 //   paint (TOOLBAR_FORMS), and the walk, Frame and the stage's primary controls are the last to give way.
-// - On a phone, a stage that walks there (the Graph and the ERD) shows its walk as a bar of four buttons along the foot
+// - On a phone, every stage (the Graph, the ERD and the Trace) shows its walk as a bar of four buttons along the foot
 //   of the stage instead (StageWalkBar, LA-V93-R76): Previous, Out, In and Next, each one tap, never in More. The
-//   arrows the bar does not carry, which step somewhere Out, In, Previous and Next do not (the ERD's Up and Down), stay
+//   arrows the bar does not carry, which step somewhere Out, In, Previous and Next do not (the ERD's and the Trace's Up and Down), stay
 //   in More. The camera, the key chip and the read-only note sit above the bar.
 // - StageCamera sits in the bottom left corner of the frame: zoom in, zoom out and fit the whole map, the same buttons,
 //   look and tooltips on every stage. A minimap (the Graph's) sits in the bottom right corner and the edge hints (the
@@ -59,8 +59,8 @@ interface ToolbarForm {
  * What each tier changes, in the fold order: the names and the baseline picker give way first, then the Changes group
  * folds into More, then the stage's secondary controls, then the step letters drop and the stage's own
  * controls narrow. The walk (the steps, Out and In), Frame and the stage's primary controls stay in the row on every
- * desktop width; only the last tier, for a room narrower than that, folds the steps too. On a phone a stage that walks
- * there shows its steps in the walk's bar instead (StageWalkBar), whatever the tier.
+ * desktop width; only the last tier, for a room narrower than that, folds the steps too. On a phone every stage shows
+ * its steps in the walk's bar instead (StageWalkBar), whatever the tier.
  */
 export const TOOLBAR_FORMS: Readonly<Record<ToolbarTier, ToolbarForm>> = {
   full: { names: true, picker: true, letters: true, narrow: false, folded: [] },
@@ -94,12 +94,12 @@ export interface StageToolbarProps {
   own?: (narrow: boolean) => { primary?: ReactNode; secondary?: ReactNode };
   /** Changes when the stage's own controls change width (a filter count shown), so the toolbar finds its tier again. */
   measureKey?: string | number;
-  /** On a phone, the walk's bar; a stage that does not walk on a phone (the Trace, a list there) gives none. */
-  bar?: WalkBar;
+  /** On a phone, the walk's bar. */
+  bar: WalkBar;
 }
 
 export function StageToolbar({ can, walkLabels = {}, own, measureKey, bar }: StageToolbarProps) {
-  const phone = useNarrow() && bar !== undefined;
+  const phone = useNarrow();
   const runWalk = useRunWalk();
   const keymap = useKeymap();
   const titleOf = (move: Move) => keymap.commands.find((c) => c.id === WALK_COMMANDS[move])!.title;

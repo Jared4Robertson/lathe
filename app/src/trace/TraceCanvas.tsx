@@ -23,7 +23,7 @@ import { useCommand } from '../shell/commands';
 import { keepCamera } from '../exploring/tab-set/commands/keep-camera';
 import { keptCamera } from '../exploring/tab-set/reads';
 import { runTabSetCommand } from '../exploring/tab-set/run';
-import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
+import { frameIn, useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
 import { drawLeaderLine, openIn, useLeaderFollow } from '../views/leaderLine';
 import { StageCamera, ZOOM_STEP } from '../views/StageChrome';
 import { useChanges } from '../changes/changes';
@@ -41,14 +41,14 @@ import { litBy, type Lit } from './path';
 // BLOCK_BELOW_PX). The serves links are drawn as curves from each outcome to the use cases and journeys it is served by,
 // and the journeys' from each journey (or its step's box while open) to the rows it carries out, labeled with the steps'
 // numbers, under the boxes; the selection's path in its row is drawn the same way, from each record on it to the next across the columns,
-// and lit, the rest of the view faded. The columns' names stay at the top of the frame, a ▸ beside each stage's name
+// and lit, the rest of the view faded. The columns' names stay at the top of the frame on a band opaque up to the stage's top, the boxes scrolling under it, a ▸ beside each stage's name
 // opening it in every row (Expand all). While a row is focused, the outcomes it serves slide beside it and glide home
-// when none is (layout.ts outcomesBeside, LA-V98-R22). The camera frames the focus's row; opening a box, a new order (Tidy up) or a
+// when none is (layout.ts outcomesBeside, LA-V98-R22). The camera frames the focus's row (in a frame narrower than two
+// columns, a phone's, the focus's box centered across); opening a box, a new order (Tidy up) or a
 // data change moves no camera, and what moved glides from its old place to its new one. The canvas is hidden from
 // assistive technology: the stage's list (TraceList.tsx) is its accessible layer.
 
 const NO_INSETS: Insets = { left: 0, top: 0, right: 0, bottom: 0 };
-const MIN_FRAME = 120;
 const MAX_ZOOM = 4;
 /** A box drawn under this many CSS pixels tall is a bar with its run; past this many boxes in view, every column is bars. */
 const BAR_BELOW_PX = 3;
@@ -62,7 +62,7 @@ const LEAST_TEXT = 1;
 /** The height of the columns' names at the top of the frame, in CSS pixels. */
 const HEAD_PX = 30;
 /** The frame below the columns' names: where the camera frames a box. */
-const belowHead = (box: { x: number; y: number; w: number; h: number }) => ({ ...box, y: box.y + HEAD_PX, h: Math.max(MIN_FRAME, box.h - HEAD_PX) });
+const belowHead = (box: { x: number; y: number; w: number; h: number }) => ({ ...box, y: box.y + HEAD_PX, h: Math.max(1, box.h - HEAD_PX) });
 const HEAD_FONT = 12;
 /** The toggle at a box's right, in map units: its size, and the room its box's text leaves for it. */
 const TOGGLE = 18;
@@ -233,11 +233,7 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
   const openSpace = useOpenSpace(space);
   const inset: Insets = openSpace?.frame ?? NO_INSETS;
   const insetKey = `${inset.left} ${inset.top} ${inset.right} ${inset.bottom}`;
-  const frameBox = useCallback((s: { w: number; h: number }) => {
-    const w = s.w - inset.left - inset.right;
-    const h = s.h - inset.top - inset.bottom;
-    return w < MIN_FRAME || h < MIN_FRAME ? { x: 0, y: 0, w: s.w, h: s.h } : { x: inset.left, y: inset.top, w, h };
-  }, [insetKey]);
+  const frameBox = useCallback((s: { w: number; h: number }) => frameIn(s, inset), [insetKey]);
 
   /**
    * The camera for the focus: its row's height (each row it shows in, for a record several use cases share) at a zoom
@@ -277,8 +273,12 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
     // Across: every column when they fit; else from the Outcome column when the row's outcomes are beside it and the
     // focus's box still fits, or for a journey's box, else from the column before the focus's (the Journey column for a
     // row's use case).
+    // A frame narrower than two columns (a phone): the focus's column alone, its box centered across.
+    const lone = 2 * columnLeft(1) * zoom > across;
     const first = outcomes.length > 0 && (own.x + own.w) * zoom <= across ? 0 : column <= JOURNEY_COLUMN ? 0 : Math.max(1, column - 1);
-    const x = laid.width * zoom <= across ? head.x + (head.w - laid.width * zoom) / 2 : head.x + 24 - columnLeft(first) * zoom;
+    const x = laid.width * zoom <= across ? head.x + (head.w - laid.width * zoom) / 2
+      : lone ? head.x + head.w / 2 - (own.x + own.w / 2) * zoom
+      : head.x + 24 - columnLeft(first) * zoom;
     // The focused box always whole in the frame (LA-PAT-APP-UX-R23).
     return wholeIn({ x, y, zoom }, own, head);
   }, [size, laid, lit, focusKey, frameBox, space, openSpace, graph, beside]);
@@ -646,9 +646,11 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
     const v = view.current;
     const s = sizeRef.current;
     if (!s) return null;
+    // Nothing is hit above the columns' names: the band covers it.
+    if (y < frameBox(s).y + HEAD_PX) return null;
     const frame = lastFrame.current ?? frameAt(v, s, performance.now());
     return hitPlate(frame.plates, { x: (x - v.x) / v.zoom, y: (y - v.y) / v.zoom });
-  }, [frameAt]);
+  }, [frameAt, frameBox]);
   /** A tap or click: a column's name opens its stage in every row; a box's toggle opens it; a record opens; another box is stood on (a status opens). */
   const tapAt = (x: number, y: number, e: Parameters<typeof tapToOpen.onNodeClick>[0]) => {
     const s = sizeRef.current;
@@ -856,18 +858,23 @@ function paintToggles(g: CanvasRenderingContext2D, plates: readonly Plate[], gra
   g.restore();
 }
 
-/** The columns' names and counts, kept at the top of the frame over each column; a stage's with its Expand all toggle. */
+/**
+ * The columns' names and counts, kept at the top of the frame over each column; a stage's with its Expand all toggle.
+ * Their band is opaque from the stage's top edge down, across the whole stage, so no box is drawn above or under it:
+ * the boxes scroll under the band, never around it.
+ */
 function paintHeads(g: CanvasRenderingContext2D, counts: readonly number[], rolls: readonly (ChangeCounts | undefined)[], every: Readonly<Record<TraceStage, boolean>>, look: Look, fonts: GraphFonts, v: Viewport, box: { x: number; y: number; w: number; h: number }, dpr: number) {
   g.save();
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
   g.globalAlpha = 1;
+  const wide = g.canvas.width / dpr;
   g.fillStyle = look.paper;
-  g.fillRect(box.x, box.y, box.w, HEAD_PX);
+  g.fillRect(0, 0, wide, box.y + HEAD_PX);
   g.strokeStyle = look.rule;
   g.lineWidth = 1;
   g.beginPath();
-  g.moveTo(box.x, box.y + HEAD_PX - 0.5);
-  g.lineTo(box.x + box.w, box.y + HEAD_PX - 0.5);
+  g.moveTo(0, box.y + HEAD_PX - 0.5);
+  g.lineTo(wide, box.y + HEAD_PX - 0.5);
   g.stroke();
   g.beginPath();
   g.rect(box.x, box.y, box.w, HEAD_PX);

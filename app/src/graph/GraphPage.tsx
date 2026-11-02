@@ -45,7 +45,7 @@ import { keepLabel } from './sticky';
 import { focusStrength } from './fade';
 import { boxColors, isBlock, labelPlate, paint, type Bar, type Camera, type Line, type PaintState } from './paint';
 import { hitPlate } from './hit';
-import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
+import { frameIn, useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
 import { drawLeaderLine, openIn, useLeaderFollow } from '../views/leaderLine';
 import { useChanges } from '../changes/changes';
 import { useChangesKey } from '../changes/ChangesKey';
@@ -373,8 +373,6 @@ function MinimapChanges({ map, pad }: { map: PlacedMap; pad: number }) {
 
 /** No floating panels: the frame is the whole stage. */
 const NO_INSETS: Insets = { left: 0, top: 0, right: 0, bottom: 0 };
-/** The least open space, in px, the camera frames the focus in; less frames on the whole stage. */
-const MIN_FRAME = 120;
 /** How far the pointer moves before a press is a drag, in CSS pixels. */
 
 /** One drawn box in the scene the test hook reports, in the page's pixels. */
@@ -581,12 +579,7 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
   const open = useOpenSpace(space);
   const inset: Insets = open?.frame ?? NO_INSETS;
   const insetKey = `${inset.left} ${inset.top} ${inset.right} ${inset.bottom}`;
-  const frameBox = useCallback((s: { w: number; h: number }) => {
-    const w = s.w - inset.left - inset.right;
-    const h = s.h - inset.top - inset.bottom;
-    // An open space too small to frame anything in frames on the whole stage.
-    return w < MIN_FRAME || h < MIN_FRAME ? { x: 0, y: 0, w: s.w, h: s.h } : { x: inset.left, y: inset.top, w, h };
-  }, [insetKey]);
+  const frameBox = useCallback((s: { w: number; h: number }) => frameIn(s, inset), [insetKey]);
 
   // ---- The plates (plate.ts): each box's outline and label, made once per map ----
   const plates = useMemo(() => new Map<string, Plate>(), [map, index, measure]);

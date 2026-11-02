@@ -16,7 +16,7 @@ import { ERD_EMPTY, erdFocus, erdStrength, LINE_WORDS, lineEnds, lineGeometry, l
 import { erdLayout, readyErdLayout, tidyErdLayout } from './layout';
 import { BLOCK_BELOW_ZOOM, boxEdge, boxText, lineOnCanvas, measureAgain, paintErd, readErdFonts, readErdLook, REGION_LABEL_BELOW, regionFits, type DrawnBox, type DrawnLine, type ErdFonts, type ErdFrame, type ErdLook, type RegionLabel } from './paint';
 import { TapCard, useTapToOpen } from '../graph/touch';
-import { useOpenSpace, type OpenSpaceStore } from '../views/openSpace';
+import { MIN_FRAME, OPEN_GAP, useOpenSpace, type OpenSpaceStore } from '../views/openSpace';
 import { drawLeaderLine, useLeaderFollow } from '../views/leaderLine';
 import { keepCamera } from '../exploring/tab-set/commands/keep-camera';
 import { keptCamera } from '../exploring/tab-set/reads';
@@ -173,8 +173,6 @@ export function erdKeyEntries(map: ErdMap, at: ErdFocus, relations: readonly Met
 
 /** The margin a frame keeps around what it frames: wider at the left, clear of the zoom controls in the bottom left corner. */
 export const FIT_MARGIN = { left: 60, right: 24, top: 24, bottom: 24 };
-/** The least room, in px, a frame keeps; less frames on the whole stage. */
-const MIN_FIT = 120;
 
 /**
  * The viewport that shows the given boxes inside the margin, centered, never zoomed in past 1: the
@@ -483,15 +481,20 @@ function ErdCanvas({ index, map, at, focus, refocus, onNavigate, onPeek, space, 
   // Frame the focus in the open space the floating panels and the key leave over the stage (openSpace.ts).
   const open = useOpenSpace(space);
   const frame = open?.frame;
-  const margin = useMemo(() => (frame
-    ? { left: FIT_MARGIN.left + frame.left, right: FIT_MARGIN.right + frame.right, top: FIT_MARGIN.top + frame.top, bottom: FIT_MARGIN.bottom + frame.bottom }
-    : FIT_MARGIN), [frame]);
+  // A short frame (a phone on its side) keeps only the panels' gap above and below what it frames.
+  const margin = useMemo(() => {
+    if (!frame) return FIT_MARGIN;
+    const short = !!size && size.h - frame.top - frame.bottom < 3 * MIN_FRAME;
+    const y = short ? OPEN_GAP : FIT_MARGIN.top;
+    return { left: FIT_MARGIN.left + frame.left, right: FIT_MARGIN.right + frame.right, top: y + frame.top, bottom: y + frame.bottom };
+  }, [frame, size]);
   const fitted = useRef(false);
   const frameFocus = useCallback((animate: boolean): boolean => {
     const s = sizeRef.current;
     if (!placed || placed.rects.size === 0 || !s || (space && !open)) return false;
-    // An open space too small to frame anything in frames on the whole stage.
-    const room = s.w - margin.left - margin.right >= MIN_FIT && s.h - margin.top - margin.bottom >= MIN_FIT;
+    // An open space too small to frame anything in (openSpace.ts MIN_FRAME) frames on the whole stage.
+    const inset = frame ?? { left: 0, top: 0, right: 0, bottom: 0 };
+    const room = s.w - inset.left - inset.right >= MIN_FRAME && s.h - inset.top - inset.bottom >= MIN_FRAME;
     const m = room ? margin : FIT_MARGIN;
     // The focused box always whole in the frame (LA-PAT-APP-UX-R23).
     const fit = fitRects(framedRects(placed.rects, placed.map, at), s.w, s.h, m);
@@ -501,7 +504,7 @@ function ErdCanvas({ index, map, at, focus, refocus, onNavigate, onPeek, space, 
     // Marks the map framed, for the browser suites and the perf budget of its first frame.
     wrapper.current?.setAttribute('data-framed', '');
     return true;
-  }, [placed, at, margin, space, open, gestures]);
+  }, [placed, at, margin, frame, space, open, gestures]);
   // Before paint (LA-PAT-APP-UX-R08): the first picture appears already framed, never drawn at the default viewport and
   // then moved; each focus after it, and each change of the open space, glides there from the view before.
   // Each place keeps its camera (the Tab set's cameras, exploring/tab-set): as the place shown changes (another tab), the

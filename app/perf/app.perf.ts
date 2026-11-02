@@ -189,7 +189,7 @@ test.describe('performance', () => {
   test("LA-V98-R06-T02 the Trace stage's first frame orders the product's rows within its budget; every switch after it within the stage switch budget, and a drag within the frame budget", async ({ page }) => {
     // The Trace stage's rows, ordered in their worker and drawn, with the list under them.
     const drawnTrace = '.focus-stage .trace-flow[data-ready]';
-    const list = '.focus-stage .trace-access .trace-list';
+    const list = '.focus-stage .trace-access [role="region"]';
     // A use case's page, as the other stage switches are measured: the Trace stage switched to once, which loads its code and orders the
     // product's rows (the first frame of the product's trace), then again, which reuses the order.
     await open(page, RECORD);
