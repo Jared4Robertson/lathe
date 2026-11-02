@@ -12,14 +12,17 @@ CREATE TABLE domain (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   product_id VARCHAR NOT NULL REFERENCES product (id),
+  position INTEGER NOT NULL CHECK (position >= 1),
   subdomain_type subdomain_type NOT NULL,
   description VARCHAR NOT NULL CHECK (trim(description) <> ''),
-  notes VARCHAR
+  notes VARCHAR,
+  UNIQUE (product_id, position)
 );
 COMMENT ON TABLE domain IS 'A part of the product with its own model, language and owner, for one business capability: what DDD calls a bounded context. Domains meet only through published events.';
 COMMENT ON COLUMN domain.id IS 'The domain''s ID: the product prefix and the domain code, such as TL-LEND.';
 COMMENT ON COLUMN domain.title IS 'The domain''s name, such as Lending.';
 COMMENT ON COLUMN domain.product_id IS 'The product it belongs to.';
+COMMENT ON COLUMN domain.position IS 'Its place among the product''s domains, from 1: the order the nav, the product page and the graph list them in.';
 COMMENT ON COLUMN domain.subdomain_type IS 'core: the product''s edge; supporting: needed for the core but not its edge; generic: solved the same way everywhere. It guides how much modeling the domain deserves.';
 COMMENT ON COLUMN domain.description IS 'What the domain covers, in a paragraph.';
 COMMENT ON COLUMN domain.notes IS 'Longer notes on the domain.';

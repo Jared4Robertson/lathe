@@ -25,6 +25,8 @@ export interface DomainRow {
   title: string;
   /** The product it belongs to. */
   product_id: string;
+  /** Its place among the product's domains, from 1: the order the nav, the product page and the graph list them in. */
+  position: number;
   /** core: the product's edge; supporting: needed for the core but not its edge; generic: solved the same way everywhere. It guides how much modeling the domain deserves. */
   subdomain_type: "core" | "supporting" | "generic";
   /** What the domain covers, in a paragraph. */
