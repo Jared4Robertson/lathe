@@ -1,22 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { RuleBroken } from '../../src/shell/prefs';
 import { CARD_MAX, CHAT_MIN, DEFAULT_SESSION_SETTINGS } from '../../src/exploring/session-settings/model';
-import { SETTINGS_KEY, sessionSettingsRepository } from '../../src/exploring/session-settings/repository';
+import { SESSION_SETTINGS_STORAGE } from '../../src/exploring/session-settings/model';
+import { sessionSettingsRepository } from '../../src/exploring/session-settings/repository';
 import { holdToRules } from '../../src/exploring/session-settings/rules';
-import { chooseGraphLayout } from '../../src/exploring/session-settings/commands/choose-graph-layout';
-import { showOrHideMinimap } from '../../src/exploring/session-settings/commands/show-or-hide-minimap';
-import { showOrHideAllLinks } from '../../src/exploring/session-settings/commands/show-or-hide-all-links';
+import { chooseChangesBaseline, chooseGraphLayout, showOrHideAllLinks, showOrHideChat, showOrHideMinimap, turnFollowOnOrOff, turnHighlightChangesOnOrOff } from '../../src/exploring/session-settings/commands/handlers.generated';
 import { resizeWikiCard } from '../../src/exploring/session-settings/commands/resize-wiki-card';
-import { showOrHideChat } from '../../src/exploring/session-settings/commands/show-or-hide-chat';
 import { resizeChat } from '../../src/exploring/session-settings/commands/resize-chat';
-import { turnHighlightChangesOnOrOff } from '../../src/exploring/session-settings/commands/turn-highlight-changes-on-or-off';
-import { chooseChangesBaseline } from '../../src/exploring/session-settings/commands/choose-changes-baseline';
-import { turnFollowOnOrOff } from '../../src/exploring/session-settings/commands/turn-follow-on-or-off';
 import { markProductLookedAt } from '../../src/exploring/session-settings/commands/mark-product-looked-at';
 
 // The Session settings' commands (LA-EXP-CMD09, CMD40–47): one per intent, each saved through SessionSettingsRepository.
 
-const stored = () => JSON.parse(window.sessionStorage.getItem(SETTINGS_KEY) ?? 'null');
+const stored = () => JSON.parse(window.sessionStorage.getItem(SESSION_SETTINGS_STORAGE.key) ?? 'null');
 
 describe('LA-EXP-INV30-T the Session settings commands each keep one setting, in session storage', () => {
   it('keeps the graph\'s look, the card\'s and the chat\'s widths and the chat\'s open state', () => {
@@ -42,7 +37,7 @@ describe('LA-EXP-INV30-T the Session settings commands each keep one setting, in
 
   it('saves nothing for a change that changes nothing', () => {
     chooseGraphLayout({ layout: 'tree' });
-    expect(window.sessionStorage.getItem(SETTINGS_KEY)).toBeNull();
+    expect(window.sessionStorage.getItem(SESSION_SETTINGS_STORAGE.key)).toBeNull();
   });
 });
 
@@ -53,6 +48,6 @@ describe('LA-EXP-INV30-T The Session settings refuse a width outside its limits 
     expect(() => holdToRules({ ...DEFAULT_SESSION_SETTINGS, chat: { open: true, width: 2000 } })).toThrow("The chat's width 2000 is outside 320–760 px.");
     expect(() => holdToRules({ ...DEFAULT_SESSION_SETTINGS, graph: { layout: 'radial' as 'tree', minimap: false, allLinks: false } })).toThrow('The graph has no layout "radial".');
     expect(() => holdToRules({ ...DEFAULT_SESSION_SETTINGS, changes: { ...DEFAULT_SESSION_SETTINGS.changes, since: 'ever' as 'commit' } })).toThrow('Highlight changes has no baseline "ever".');
-    expect(window.sessionStorage.getItem(SETTINGS_KEY)).toBeNull();
+    expect(window.sessionStorage.getItem(SESSION_SETTINGS_STORAGE.key)).toBeNull();
   });
 });

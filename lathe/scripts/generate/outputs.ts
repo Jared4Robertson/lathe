@@ -2,6 +2,7 @@
 import { DuckDBInstance } from '@duckdb/node-api';
 import { applyMigrations, describeSchema, type SchemaDescription } from '../../src/platform/data/schema.ts';
 import { aggregateFiles } from './aggregates.ts';
+import { browserKeptFiles } from './browser-kept.ts';
 import { fieldFiles } from './fields.ts';
 import { identityFiles, identityScaffolds } from './identities.ts';
 import type { Generated, Output } from './output.ts';
@@ -10,6 +11,7 @@ export const OUTPUTS: readonly Output[] = [
   { name: 'command and query identities', files: identityFiles, scaffolds: identityScaffolds },
   { name: 'the app\'s form fields', files: fieldFiles },
   { name: 'aggregates\' repositories and pattern commands\' handlers', files: aggregateFiles },
+  { name: 'the app\'s browser-kept repositories and set commands\' handlers', files: browserKeptFiles },
 ];
 
 /** Lathe's schema, described from its migrations. */

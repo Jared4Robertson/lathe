@@ -30,6 +30,7 @@ import type { RemoveDomainServiceTest } from './remove-domain-service-test.ts';
 /** Adds a domain to its product at a position, with nothing in it yet. */
 export function addDomain(tx: Transaction, input: AddDomain): void {
   const domains = new DomainRepository(tx);
+  if (tx.record(input.product_id)?.kind !== 'product') tx.refuse('missing', `there is no product ${input.product_id}`);
   const domain = domains.create({ root: input.id, domain: input, capabilities: [], terms: [], domainServices: [], services: [], domainServiceTests: [], repositories: [] });
   holdToRules(tx, domain);
   domains.save(domain);

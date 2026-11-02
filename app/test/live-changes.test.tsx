@@ -2,7 +2,7 @@ import type { ServedData } from './read-view';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { BaselineAnswer } from '../../lathe/src/server/contract';
-import { SETTINGS_KEY } from '../src/exploring/session-settings/repository';
+import { SESSION_SETTINGS_STORAGE } from '../src/exploring/session-settings/model';
 import { setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { openApp, serve, startAtDepth, type Served } from './helpers';
@@ -57,7 +57,7 @@ async function land(data: ServedData, asked?: string[]) {
 const tools = () => screen.getByRole('group', { name: 'Changes' });
 const panel = () => screen.getByRole('region', { name: 'Changes' });
 const card = () => screen.getByRole('region', { name: 'Wiki card' });
-const settings = () => JSON.parse(window.sessionStorage.getItem(SETTINGS_KEY) ?? '{}');
+const settings = () => JSON.parse(window.sessionStorage.getItem(SESSION_SETTINGS_STORAGE.key) ?? '{}');
 const count = () => within(tools()).getByRole('button', { name: /^Changes \d/ });
 
 async function openAt(path: string, asked?: string[]) {

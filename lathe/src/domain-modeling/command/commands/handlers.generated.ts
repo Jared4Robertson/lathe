@@ -25,6 +25,7 @@ import type { RemovePolicyTest } from './remove-policy-test.ts';
 /** Adds a command under the entity it changes, with the events of its aggregate it raises, the specifications it checks and the domain services it calls. */
 export function addCommand(tx: Transaction, input: AddCommand): void {
   const commands = new CommandRepository(tx);
+  if (tx.record(input.entity_id)?.kind !== 'entity') tx.refuse('missing', `there is no entity ${input.entity_id}`);
   const { raises = [], checks = [], calls = [], ...row } = input;
   const command = commands.create({ root: row.id, command: row, raises: raises, checks: checks, calls: calls, handler: null, policies: [], eventHandlers: [], policyTests: [] });
   holdToRules(tx, command);

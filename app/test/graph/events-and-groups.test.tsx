@@ -5,7 +5,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { groupLabel, neighborhood } from '../../src/graph/model';
 import { shapeOf } from '../../src/graph/shapes';
 import { treeChildren, treeParent } from '../../src/graph/tree';
-import { SETTINGS_KEY, sessionSettingsRepository } from '../../src/exploring/session-settings/repository';
+import { SESSION_SETTINGS_STORAGE } from '../../src/exploring/session-settings/model';
+import { sessionSettingsRepository } from '../../src/exploring/session-settings/repository';
 import { readView } from '../../src/views/place';
 import { openApp } from '../helpers';
 import { manyOfOneKindWorkspace, testIndex } from './workspace';
@@ -72,7 +73,7 @@ describe('the rules the graph keeps', () => {
 
   it('LA-VO92-C01-T A graph\'s depth is a whole number from 1 to 3, and its layout one of tree, nested and map', () => {
     // The layout is the window's (exploring/session-settings); the depth is the place's (views/place.ts).
-    const stored = (layout: string) => window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout, minimap: false, allLinks: false, cardWidth: null, chat: false, chatWidth: null, highlight: false, since: 'commit', follow: false, looked: {} }));
+    const stored = (layout: string) => window.sessionStorage.setItem(SESSION_SETTINGS_STORAGE.key, JSON.stringify({ layout, minimap: false, allLinks: false, cardWidth: null, chat: false, chatWidth: null, highlight: false, since: 'commit', follow: false, looked: {} }));
     for (const layout of ['tree', 'nested', 'map'] as const) {
       stored(layout);
       expect(sessionSettingsRepository.load().graph).toEqual({ layout, minimap: false, allLinks: false });

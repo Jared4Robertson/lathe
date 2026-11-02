@@ -6,14 +6,14 @@ import { describe, expect, it } from 'vitest';
 import { openApp } from './helpers';
 import { auditContrast } from '../src/theme/audit';
 import { themeCss } from '../src/theme/css';
-import { APPEARANCE_KEYS as STORAGE_KEYS, appearanceRepository } from '../src/platform/appearance/repository';
+import { APPEARANCE_STORAGE } from '../src/platform/appearance/model';
+import { appearanceRepository } from '../src/platform/appearance/repository';
 import { BUILT_IN_THEMES, LATHE, parseTheme, toFile } from '../src/theme/theme';
 import { RuleBroken } from '../src/shell/prefs';
 import { holdToRules } from '../src/platform/appearance/rules';
 import { themesReader } from '../src/platform/appearance/reader';
 import { getThemeFile, listThemes } from '../src/platform/appearance/queries';
-import { chooseTheme } from '../src/platform/appearance/commands/choose-theme';
-import { chooseColorMode } from '../src/platform/appearance/commands/choose-color-mode';
+import { chooseColorMode, chooseTheme } from '../src/platform/appearance/commands/handlers.generated';
 import { duplicateTheme } from '../src/platform/appearance/commands/duplicate-theme';
 import { importThemeFile } from '../src/platform/appearance/commands/import-theme-file';
 import { editTheme } from '../src/platform/appearance/commands/edit-theme';
@@ -36,7 +36,7 @@ describe('themes', () => {
     // Lathe and System at first, already written as the stylesheet the early script reads.
     expect(root().getAttribute('data-theme')).toBe('lathe');
     expect(root().hasAttribute('data-mode')).toBe(false);
-    expect(stored(STORAGE_KEYS.css)).toBe(themeCss(BUILT_IN_THEMES[0]));
+    expect(JSON.parse(stored(APPEARANCE_STORAGE.css.key)!)).toBe(themeCss(BUILT_IN_THEMES[0]));
 
     press('g', 'KeyG');
     press('t', 'KeyT');
@@ -51,7 +51,7 @@ describe('themes', () => {
     fireEvent.keyDown(input, { key: 'ArrowDown' });
     expect(root().getAttribute('data-theme')).toBe('workshop');
     expect(themeStyle()).toBe(themeCss(BUILT_IN_THEMES[2]));
-    expect(JSON.parse(stored(STORAGE_KEYS.chosen)!)).toBe('lathe');
+    expect(JSON.parse(stored(APPEARANCE_STORAGE.chosen.key)!)).toBe('lathe');
     fireEvent.keyDown(input, { key: 'Escape' });
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(root().getAttribute('data-theme')).toBe('lathe');
@@ -70,8 +70,8 @@ describe('themes', () => {
     fireEvent.keyDown(again, { key: 'Enter' });
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(root().getAttribute('data-theme')).toBe('midnight');
-    expect(JSON.parse(stored(STORAGE_KEYS.chosen)!)).toBe('midnight');
-    expect(stored(STORAGE_KEYS.css)).toBe(themeCss(BUILT_IN_THEMES[3]));
+    expect(JSON.parse(stored(APPEARANCE_STORAGE.chosen.key)!)).toBe('midnight');
+    expect(JSON.parse(stored(APPEARANCE_STORAGE.css.key)!)).toBe(themeCss(BUILT_IN_THEMES[3]));
     await waitFor(() => expect(screen.getByTestId('announcer')).toHaveTextContent('Color theme: Midnight'));
   });
 
@@ -91,7 +91,7 @@ describe('themes', () => {
     expect(root().getAttribute('data-mode')).toBe('dark');
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(root().getAttribute('data-mode')).toBe('dark');
-    expect(JSON.parse(stored(STORAGE_KEYS.mode)!)).toBe('dark');
+    expect(JSON.parse(stored(APPEARANCE_STORAGE.mode.key)!)).toBe('dark');
 
     // The dark set applies under data-mode="dark" whatever the system says, and the light set never wins it back.
     expect(themeStyle()).toContain(':root[data-theme][data-mode="dark"] { --shell: #0A0F12;');
@@ -99,7 +99,7 @@ describe('themes', () => {
   });
 
   it('LA-V62-R01-T01 The Appearance page, linked from the nav, offers light, dark or system too', async () => {
-    window.localStorage.setItem(STORAGE_KEYS.mode, JSON.stringify('dark'));
+    window.localStorage.setItem(APPEARANCE_STORAGE.mode.key, JSON.stringify('dark'));
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     // The same choice in Appearance, a popover over the stage from its button at the foot of the nav.
@@ -111,7 +111,7 @@ describe('themes', () => {
     expect(within(modes).getByRole('radio', { name: 'Dark' })).toBeChecked();
     fireEvent.click(within(modes).getByRole('radio', { name: 'System' }));
     expect(root().hasAttribute('data-mode')).toBe(false);
-    expect(JSON.parse(stored(STORAGE_KEYS.mode)!)).toBe('system');
+    expect(JSON.parse(stored(APPEARANCE_STORAGE.mode.key)!)).toBe('system');
     fireEvent.click(within(modes).getByRole('radio', { name: 'Light' }));
     expect(root().getAttribute('data-mode')).toBe('light');
   });
@@ -197,7 +197,7 @@ describe('themes', () => {
     fireEvent.change(name, { target: { value: 'Shop floor' } });
     fireEvent.blur(name);
     await screen.findByRole('region', { name: 'Edit “Shop floor”' });
-    expect(stored(STORAGE_KEYS.themes)).toContain('"name":"Shop floor"');
+    expect(stored(APPEARANCE_STORAGE.themes.key)).toContain('"name":"Shop floor"');
 
     // Reset goes back to Workshop's values, keeping the name.
     fireEvent.click(screen.getByRole('button', { name: 'Reset to Workshop' }));
@@ -279,7 +279,7 @@ describe('themes', () => {
     fireEvent.change(upload, { target: { files: [new File([JSON.stringify({ ...file, name: 'Shared' })], 'shared.lathe-theme.json')] } });
     expect(await screen.findByText('Added “Shared”.')).toHaveAttribute('role', 'status');
     expect(within(screen.getByRole('list', { name: 'Themes' })).getAllByRole('listitem')).toHaveLength(6);
-    expect(JSON.parse(stored(STORAGE_KEYS.themes)!)[0]).toMatchObject({ id: 'custom-shared', name: 'Shared', light: file.light });
+    expect(JSON.parse(stored(APPEARANCE_STORAGE.themes.key)!)[0]).toMatchObject({ id: 'custom-shared', name: 'Shared', light: file.light });
   });
 
   it('LA-V61-R06-T02 The early script in index.html puts the chosen theme and mode on the page before the app runs', () => {
@@ -289,9 +289,9 @@ describe('themes', () => {
     // It runs before the app's module script.
     expect(html.indexOf('<script>')).toBeLessThan(html.indexOf('<script type="module"'));
     const css = themeCss(BUILT_IN_THEMES[4]);
-    window.localStorage.setItem(STORAGE_KEYS.css, css);
-    window.localStorage.setItem(STORAGE_KEYS.chosen, JSON.stringify('graphite'));
-    window.localStorage.setItem(STORAGE_KEYS.mode, JSON.stringify('dark'));
+    window.localStorage.setItem(APPEARANCE_STORAGE.css.key, JSON.stringify(css));
+    window.localStorage.setItem(APPEARANCE_STORAGE.chosen.key, JSON.stringify('graphite'));
+    window.localStorage.setItem(APPEARANCE_STORAGE.mode.key, JSON.stringify('dark'));
     document.getElementById('lathe-theme')?.remove();
     root().removeAttribute('data-theme');
     root().removeAttribute('data-mode');
@@ -340,16 +340,16 @@ describe('LA-PLT-INV03-T the Appearance commands keep each change whole through 
   it('chooses a theme and a mode, writing the chosen theme\'s stylesheet for the early script', () => {
     chooseTheme({ id: 'midnight' });
     chooseColorMode({ mode: 'dark' });
-    expect(storedJson(STORAGE_KEYS.chosen)).toBe('midnight');
-    expect(storedJson(STORAGE_KEYS.mode)).toBe('dark');
-    expect(window.localStorage.getItem(STORAGE_KEYS.css)).toBe(themeCss(BUILT_IN_THEMES[3]));
+    expect(storedJson(APPEARANCE_STORAGE.chosen.key)).toBe('midnight');
+    expect(storedJson(APPEARANCE_STORAGE.mode.key)).toBe('dark');
+    expect(JSON.parse(window.localStorage.getItem(APPEARANCE_STORAGE.css.key)!)).toBe(themeCss(BUILT_IN_THEMES[3]));
   });
 
   it('duplicates, edits, resets and deletes a theme of the person\'s own, and imports a file', () => {
     const id = duplicateTheme({ id: 'workshop' });
     expect(appearanceRepository.load().chosen).toBe(id);
     editTheme({ id, change: (file) => ({ ...file, name: 'Mine', light: { ...file.light, background: '#ffffff' } }) });
-    expect(storedJson(STORAGE_KEYS.themes)[0]).toMatchObject({ id, name: 'Mine', basedOn: 'workshop' });
+    expect(storedJson(APPEARANCE_STORAGE.themes.key)[0]).toMatchObject({ id, name: 'Mine', basedOn: 'workshop' });
     resetTheme({ id });
     const reset = appearanceRepository.load().custom[0];
     expect(reset.name).toBe('Mine');
@@ -386,9 +386,9 @@ describe('LA-PLT-INV03-T The Appearance refuses a built-in kept as the person\'s
 
 describe('LA-PLT-INV04-T The Appearance refuses a chosen theme that does not exist', () => {
   it('refuses it with its reason, and nothing is saved', () => {
-    const before = window.localStorage.getItem(STORAGE_KEYS.chosen);
+    const before = window.localStorage.getItem(APPEARANCE_STORAGE.chosen.key);
     expect(() => chooseTheme({ id: 'gone' })).toThrow(RuleBroken);
     expect(() => chooseTheme({ id: 'gone' })).toThrow('The chosen theme gone does not exist.');
-    expect(window.localStorage.getItem(STORAGE_KEYS.chosen)).toBe(before);
+    expect(window.localStorage.getItem(APPEARANCE_STORAGE.chosen.key)).toBe(before);
   });
 });

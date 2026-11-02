@@ -111,7 +111,7 @@ describe('LA-UCS-UC06-R12-T01 each Use case command (LA-UCS-A11) changes one use
     await runCommand(store, ADD_UC_REQUIREMENT, requirement);
     const before = fileOf(store, 'uc_requirement');
     const refused = await refusal(store, ADD_UC_REQUIREMENT, requirement);
-    expect(refused.problems).toEqual([expect.objectContaining({ rule: 'primary-key', message: 'uc_requirement TL-LEND-UC02-R01 already exists' })]);
+    expect(refused.problems).toEqual([expect.objectContaining({ rule: 'primary-key', message: 'UC requirement TL-LEND-UC02-R01 already exists' })]);
     expect(fileOf(store, 'uc_requirement')).toBe(before);
   });
 

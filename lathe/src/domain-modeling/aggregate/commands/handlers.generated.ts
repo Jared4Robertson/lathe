@@ -27,6 +27,7 @@ import type { RemoveRule } from './remove-rule.ts';
 /** Adds an aggregate under a domain, with nothing in it yet. */
 export function addAggregate(tx: Transaction, input: AddAggregate): void {
   const aggregates = new AggregateRepository(tx);
+  if (tx.record(input.domain_id)?.kind !== 'domain') tx.refuse('missing', `there is no domain ${input.domain_id}`);
   const aggregate = aggregates.create({ root: input.id, aggregate: input, entities: [], invariants: [], dataModels: [], rules: [], invariantTests: [] });
   holdToRules(tx, aggregate);
   aggregates.save(aggregate);

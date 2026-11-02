@@ -7,7 +7,7 @@ import { QuickPick } from './QuickPick';
 import { useThemes } from './ThemeProvider';
 import { MODE_CHOICES, MODE_LABELS, type ModeChoice, type Theme } from './theme';
 import { panelHref } from '../views/overlays';
-import { turnScrollToZoomOnOrOff } from '../platform/appearance/commands/turn-scroll-to-zoom-on-or-off';
+import { turnScrollToZoomOnOrOff } from '../platform/appearance/commands/handlers.generated';
 import { useScrollToZoom } from '../platform/appearance/use-scroll-to-zoom';
 
 /** A palette, drawn like the shared icons (app/src/components/icons.tsx): 24 x 24 lines, 2 px stroke. */
