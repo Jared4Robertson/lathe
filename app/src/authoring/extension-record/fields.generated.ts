@@ -20,4 +20,8 @@ export const EXTENSION_RECORD_FIELDS = {
   '/api/extension-record/remove-extension-record': {
     id: { kind: 'id', description: 'The record.', required: true, clearable: false },
   },
+  '/api/extension-record/move-extension-record': {
+    id: { kind: 'id', description: 'The record of a product\'s own kind, under a domain, to move.', required: true, clearable: false },
+    domain_id: { kind: 'id', description: 'The domain of its product it moves to.', required: true, clearable: false },
+  },
 } as const satisfies Record<string, InputFields>;

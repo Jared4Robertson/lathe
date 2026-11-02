@@ -22,7 +22,7 @@ export const MOVE_TABLE_IDENTITY = {
   id: 'LA-AUT-CMD302',
   slice: { aggregate: 'LA-AUT-A18', name: 'table' },
   name: 'move-table',
-  description: 'Moves a table, with its keys, under another entity, read model or domain: exactly one is given, and it replaces the parent it had.',
+  description: 'Moves a table, with its keys, under another entity, read model or domain: exactly one is given, and it replaces the parent it had. A table moved under another domain takes that domain\'s ID in place of the old one\'s, and every record that names it names the new ID; one under an entity or read model moves with it.',
   method: 'POST',
   route: '/api/table/move-table',
 } as const;

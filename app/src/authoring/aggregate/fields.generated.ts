@@ -129,4 +129,8 @@ export const AGGREGATE_FIELDS = {
   '/api/aggregate/remove-rule': {
     id: { kind: 'column', table: 'rule', column: 'id', required: true, clearable: false },
   },
+  '/api/aggregate/move-aggregate': {
+    id: { kind: 'column', table: 'aggregate', column: 'id', required: true, clearable: false },
+    domain_id: { kind: 'column', table: 'aggregate', column: 'domain_id', required: true, clearable: false },
+  },
 } as const satisfies Record<string, InputFields>;

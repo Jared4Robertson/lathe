@@ -134,3 +134,12 @@ export const REMOVE_READER_IDENTITY = {
   method: 'POST',
   route: '/api/read-model/remove-reader',
 } as const;
+
+export const MOVE_READ_MODEL_IDENTITY = {
+  id: 'LA-AUT-CMD391',
+  slice: { aggregate: 'LA-AUT-A10', name: 'read-model' },
+  name: 'move-read-model',
+  description: 'Moves a read model, with its queries, projection, reader and tables, to another domain of its product: each takes the new domain\'s ID in place of the old one\'s, and every record that names one of them names the new ID. Refused for a domain of another product, or a new ID another record has.',
+  method: 'POST',
+  route: '/api/read-model/move-read-model',
+} as const;

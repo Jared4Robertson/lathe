@@ -23,4 +23,8 @@ export const TOOLING_FIELDS = {
   '/api/tooling/remove-tooling': {
     id: { kind: 'column', table: 'tooling', column: 'id', required: true, clearable: false },
   },
+  '/api/tooling/move-tooling': {
+    id: { kind: 'column', table: 'tooling', column: 'id', required: true, clearable: false },
+    domain_id: { kind: 'column', table: 'tooling', column: 'domain_id', required: true, clearable: false },
+  },
 } as const satisfies Record<string, InputFields>;

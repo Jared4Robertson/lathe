@@ -20,6 +20,7 @@ import { ADD_FLOW_TEST } from './add-flow-test.ts';
 import { CHANGE_FLOW_TEST } from './change-flow-test.ts';
 import { REMOVE_FLOW_TEST } from './remove-flow-test.ts';
 import { MOVE_FLOW_STEP } from './move-flow-step.ts';
+import { MOVE_UC_REQUIREMENT } from './move-uc-requirement.ts';
 
 export const USE_CASE_COMMANDS = [
   ADD_USE_CASE,
@@ -42,4 +43,5 @@ export const USE_CASE_COMMANDS = [
   CHANGE_FLOW_TEST,
   REMOVE_FLOW_TEST,
   MOVE_FLOW_STEP,
+  MOVE_UC_REQUIREMENT,
 ] as const satisfies readonly AnyCommand[];

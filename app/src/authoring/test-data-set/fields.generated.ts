@@ -29,4 +29,8 @@ export const TEST_DATA_SET_FIELDS = {
   '/api/test-data-set/remove-test-data-set': {
     id: { kind: 'column', table: 'test_data_set', column: 'id', required: true, clearable: false },
   },
+  '/api/test-data-set/move-test-data-set': {
+    id: { kind: 'column', table: 'test_data_set', column: 'id', required: true, clearable: false },
+    domain_id: { kind: 'column', table: 'test_data_set', column: 'domain_id', required: true, clearable: false },
+  },
 } as const satisfies Record<string, InputFields>;

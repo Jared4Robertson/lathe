@@ -26,3 +26,12 @@ export const REMOVE_TEST_DATA_SET_IDENTITY = {
   method: 'POST',
   route: '/api/test-data-set/remove-test-data-set',
 } as const;
+
+export const MOVE_TEST_DATA_SET_IDENTITY = {
+  id: 'LA-AUT-CMD393',
+  slice: { aggregate: 'LA-AUT-A17', name: 'test-data-set' },
+  name: 'move-test-data-set',
+  description: 'Moves a test data set to another domain of its product: it takes the new domain\'s ID in place of the old one\'s, and every record that names it names the new ID. Refused for a domain of another product, or a new ID another record has.',
+  method: 'POST',
+  route: '/api/test-data-set/move-test-data-set',
+} as const;

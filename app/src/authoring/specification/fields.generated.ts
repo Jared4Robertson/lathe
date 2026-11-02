@@ -70,4 +70,8 @@ export const SPECIFICATION_FIELDS = {
   '/api/specification/remove-specification-test': {
     id: { kind: 'column', table: 'specification_test', column: 'id', required: true, clearable: false },
   },
+  '/api/specification/move-specification': {
+    id: { kind: 'column', table: 'specification', column: 'id', required: true, clearable: false },
+    domain_id: { kind: 'id', description: 'The domain of its product the specification moves to.', required: true, clearable: false },
+  },
 } as const satisfies Record<string, InputFields>;

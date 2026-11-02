@@ -188,3 +188,39 @@ export const REMOVE_DOMAIN_SERVICE_TEST_IDENTITY = {
   method: 'POST',
   route: '/api/domain/remove-domain-service-test',
 } as const;
+
+export const MOVE_CAPABILITY_IDENTITY = {
+  id: 'LA-AUT-CMD388',
+  slice: { aggregate: 'LA-AUT-A4', name: 'domain' },
+  name: 'move-capability',
+  description: 'Moves a capability, with its use cases and everything in them, to another domain of its product: each takes the new domain\'s ID in place of the old one\'s, and every record that names one of them names the new ID. Refused for a domain of another product, or a new ID another record has.',
+  method: 'POST',
+  route: '/api/domain/move-capability',
+} as const;
+
+export const MOVE_TERM_IDENTITY = {
+  id: 'LA-AUT-CMD389',
+  slice: { aggregate: 'LA-AUT-A4', name: 'domain' },
+  name: 'move-term',
+  description: 'Moves a glossary term to another domain of its product: it takes the new domain\'s ID in place of the old one\'s, and every record that names it names the new ID. Refused for a domain of another product, or a new ID another record has.',
+  method: 'POST',
+  route: '/api/domain/move-term',
+} as const;
+
+export const MOVE_REPOSITORY_IDENTITY = {
+  id: 'LA-AUT-CMD390',
+  slice: { aggregate: 'LA-AUT-A4', name: 'domain' },
+  name: 'move-repository',
+  description: 'Moves a repository to another domain of its product, beside the aggregate it persists: it takes the new domain\'s ID in place of the old one\'s, and every record that names it names the new ID. Refused for a domain of another product, or a new ID another record has.',
+  method: 'POST',
+  route: '/api/domain/move-repository',
+} as const;
+
+export const MOVE_DOMAIN_SERVICE_IDENTITY = {
+  id: 'LA-AUT-CMD397',
+  slice: { aggregate: 'LA-AUT-A4', name: 'domain' },
+  name: 'move-domain-service',
+  description: 'Moves a domain service, with its service and tests, to another domain of its product: each takes the new domain\'s ID in place of the old one\'s, and every record that names one of them names the new ID. Refused for a domain of another product, or a new ID another record has.',
+  method: 'POST',
+  route: '/api/domain/move-domain-service',
+} as const;

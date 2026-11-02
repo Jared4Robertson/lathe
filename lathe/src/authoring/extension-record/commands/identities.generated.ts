@@ -26,3 +26,12 @@ export const REMOVE_EXTENSION_RECORD_IDENTITY = {
   method: 'POST',
   route: '/api/extension-record/remove-extension-record',
 } as const;
+
+export const MOVE_EXTENSION_RECORD_IDENTITY = {
+  id: 'LA-AUT-CMD395',
+  slice: { aggregate: 'LA-AUT-A19', name: 'extension-record' },
+  name: 'move-extension-record',
+  description: 'Moves a record of a product\'s own kind that sits under a domain, with the records under it, to another domain of its product: each takes the new domain\'s ID in place of the old one\'s, and every record that names one of them names the new ID. Refused for a kind that does not sit under a domain, a domain of another product, or a new ID another record has.',
+  method: 'POST',
+  route: '/api/extension-record/move-extension-record',
+} as const;

@@ -147,4 +147,20 @@ export const DOMAIN_FIELDS = {
   '/api/domain/remove-domain-service-test': {
     id: { kind: 'column', table: 'domain_service_test', column: 'id', required: true, clearable: false },
   },
+  '/api/domain/move-capability': {
+    id: { kind: 'column', table: 'capability', column: 'id', required: true, clearable: false },
+    domain_id: { kind: 'column', table: 'capability', column: 'domain_id', required: true, clearable: false },
+  },
+  '/api/domain/move-term': {
+    id: { kind: 'column', table: 'term', column: 'id', required: true, clearable: false },
+    domain_id: { kind: 'column', table: 'term', column: 'domain_id', required: true, clearable: false },
+  },
+  '/api/domain/move-repository': {
+    id: { kind: 'column', table: 'repository', column: 'id', required: true, clearable: false },
+    domain_id: { kind: 'column', table: 'repository', column: 'domain_id', required: true, clearable: false },
+  },
+  '/api/domain/move-domain-service': {
+    id: { kind: 'column', table: 'domain_service', column: 'id', required: true, clearable: false },
+    domain_id: { kind: 'column', table: 'domain_service', column: 'domain_id', required: true, clearable: false },
+  },
 } as const satisfies Record<string, InputFields>;

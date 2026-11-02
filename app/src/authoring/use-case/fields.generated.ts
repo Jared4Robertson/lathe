@@ -148,4 +148,8 @@ export const USE_CASE_FIELDS = {
     path: { kind: 'column', table: 'flow_step', column: 'path', required: false, clearable: false },
     position: { kind: 'column', table: 'flow_step', column: 'position', required: true, clearable: false },
   },
+  '/api/use-case/move-uc-requirement': {
+    id: { kind: 'column', table: 'uc_requirement', column: 'id', required: true, clearable: false },
+    use_case_id: { kind: 'column', table: 'uc_requirement', column: 'use_case_id', required: true, clearable: false },
+  },
 } as const satisfies Record<string, InputFields>;

@@ -18,6 +18,7 @@ import { REMOVE_INVARIANT_TEST } from './remove-invariant-test.ts';
 import { ADD_RULE } from './add-rule.ts';
 import { CHANGE_RULE } from './change-rule.ts';
 import { REMOVE_RULE } from './remove-rule.ts';
+import { MOVE_AGGREGATE } from './move-aggregate.ts';
 
 export const AGGREGATE_COMMANDS = [
   ADD_AGGREGATE,
@@ -38,4 +39,5 @@ export const AGGREGATE_COMMANDS = [
   ADD_RULE,
   CHANGE_RULE,
   REMOVE_RULE,
+  MOVE_AGGREGATE,
 ] as const satisfies readonly AnyCommand[];

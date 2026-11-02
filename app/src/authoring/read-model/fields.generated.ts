@@ -105,4 +105,8 @@ export const READ_MODEL_FIELDS = {
   '/api/read-model/remove-reader': {
     id: { kind: 'column', table: 'reader', column: 'id', required: true, clearable: false },
   },
+  '/api/read-model/move-read-model': {
+    id: { kind: 'column', table: 'read_model', column: 'id', required: true, clearable: false },
+    domain_id: { kind: 'column', table: 'read_model', column: 'domain_id', required: true, clearable: false },
+  },
 } as const satisfies Record<string, InputFields>;

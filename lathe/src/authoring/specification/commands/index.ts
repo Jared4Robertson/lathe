@@ -9,6 +9,7 @@ import { REMOVE_PREDICATE } from './remove-predicate.ts';
 import { ADD_SPECIFICATION_TEST } from './add-specification-test.ts';
 import { CHANGE_SPECIFICATION_TEST } from './change-specification-test.ts';
 import { REMOVE_SPECIFICATION_TEST } from './remove-specification-test.ts';
+import { MOVE_SPECIFICATION } from './move-specification.ts';
 
 export const SPECIFICATION_COMMANDS = [
   ADD_SPECIFICATION,
@@ -20,4 +21,5 @@ export const SPECIFICATION_COMMANDS = [
   ADD_SPECIFICATION_TEST,
   CHANGE_SPECIFICATION_TEST,
   REMOVE_SPECIFICATION_TEST,
+  MOVE_SPECIFICATION,
 ] as const satisfies readonly AnyCommand[];
