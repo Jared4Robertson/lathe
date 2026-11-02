@@ -438,6 +438,16 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 @media (pointer: coarse) { :root { --tools-row: calc(var(--touch-target) + 14px); } .focus-stage { --key-clear-left: calc(4px + var(--touch-target) + 6px + 8px); } }
 /* On a phone: a Key chip at the foot of the stage, opening the entries with their meanings as a sheet. */
 .stage-key-chip { position: absolute; z-index: 6; bottom: var(--stage-foot); left: 50%; translate: -50% 0; padding: 4px 12px; border: 1px solid var(--float-border); border-radius: 999px; background: var(--sheet); box-shadow: var(--float-shadow); font-size: 0.8rem; }
+/* On a phone, the walk's bar (StageWalkBar, LA-V93-R76): Out, Previous, Next and In along the foot of the stage, each a
+   touch target with its icon and word, clear of the safe area. On a phone every stage's foot rises above it (the Trace,
+   a list there, draws nothing at its foot), so the camera, the minimap, the key chip and the touch card sit over the
+   bar, never on it, and the read-only note rises with them. */
+:root { --walk-bar-height: calc(var(--touch-target) + 13px); }
+.stage-walk-bar { position: absolute; z-index: 9; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; box-sizing: border-box; height: calc(var(--walk-bar-height) + env(safe-area-inset-bottom)); padding: 6px max(8px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); border-top: 1px solid var(--rule); background: var(--sheet); }
+.stage-walk-step { min-width: var(--touch-target); min-height: var(--touch-target); justify-content: center; }
+.stage-walk-step:focus-visible { outline: 2px solid var(--steel); outline-offset: -2px; }
+.stage-layout.is-phone > .focus-stage { --stage-foot: calc(var(--walk-bar-height) + env(safe-area-inset-bottom) + var(--float-inset)); }
+.stage-layout.is-phone > .focus-stage .card.card-bar { bottom: var(--stage-foot); }
 .stage-key-sheet-list { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 4px 16px 16px; list-style: none; overflow-y: auto; scrollbar-gutter: stable; font-size: 0.85rem; }
 .stage-key-sheet-list .stage-key-entry { flex: none; display: grid; grid-template-columns: 40px minmax(0, 1fr); column-gap: 8px; row-gap: 2px; align-items: start; white-space: normal; }
 .stage-key-sheet-list .stage-key-entry[data-group-start] { padding: 10px 0 0; border-left: 0; border-top: 1px solid var(--rule); }
@@ -488,8 +498,8 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .skip-link:focus { top: 8px; }
 /* Another device on the network only reads (LA-V61-R55): a small note that stays at the bottom right of the window. */
 .read-only-note { position: fixed; right: 12px; bottom: 12px; z-index: 90; margin: 0; padding: 4px 12px; border: 1px solid var(--rule); border-radius: 999px; background: var(--sheet); color: var(--muted); font-size: 0.8125rem; pointer-events: none; }
-/* On a phone the stage's key chip sits at the foot of the screen: the note stays clear above it. */
-.app.is-narrow .read-only-note { bottom: 60px; }
+/* On a phone the stage's walk bar and key chip sit at the foot of the screen: the note stays clear above both. */
+.app.is-narrow .read-only-note { bottom: calc(var(--walk-bar-height) + env(safe-area-inset-bottom) + 60px); }
 .icon-button { display: inline-grid; place-items: center; min-width: 32px; min-height: 32px; padding: 0; border: 1px solid transparent; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; font: inherit; }
 .icon-button:hover { color: var(--ink); background: var(--paper); border-color: var(--rule); }
 /* A toggle that is on (the pressed view, a shown panel): one look for every such icon button. */

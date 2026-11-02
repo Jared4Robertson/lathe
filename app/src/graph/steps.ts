@@ -8,7 +8,8 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { kindLabel, type RecordIndex } from '../exploring/record-summaries/record-index';
 import { useStageWalk } from '../shell/commands';
-import { levelMove, type Move, type StageLevels } from '../views/levels';
+import { forward, levelMove, type Direction, type Move, type StageLevels } from '../views/levels';
+import type { WalkBar } from '../views/StageChrome';
 import { groupKindLabel, groupName, groupOwner, isGraphNode, isGroup, nodeChildren, nodeParent } from './model';
 import { mapRootOf } from './map';
 import { groundChildren, groundParent, groundTree } from './ground';
@@ -32,6 +33,12 @@ export function graphWalkLabels(layout: GraphLayout): Record<Move, string> {
     return to === 'left' || to === 'up' ? 'Step to the previous sibling' : 'Step to the next sibling';
   };
   return { left: says('left'), right: says('right'), up: says('up'), down: says('down'), out: 'Out to the parent', in: 'In to the first child' };
+}
+
+/** On a phone, the walk's bar (LA-V93-R76): Previous and Next are the view's two arrows that step across; the other two step out and in, as Out and In do. */
+export function graphWalkBar(layout: GraphLayout): WalkBar {
+  const across = (['left', 'right', 'up', 'down'] as const).filter((d) => graphMove(layout, d) === d);
+  return { previous: across.find((d: Direction) => !forward(d))!, next: across.find(forward)!, more: [] };
 }
 
 const levelsCache = new WeakMap<RecordIndex, Map<string, StageLevels>>();

@@ -1,4 +1,5 @@
 import { levelMove, nearestBox, readingOrder, type Move, type StageLevels } from '../views/levels';
+import type { WalkBar } from '../views/StageChrome';
 import type { ErdFocus, ErdMap, Rect } from './erd';
 
 // The ERD stage's walk (LA-V61-R49): the stage walk's levels (views/levels.ts) over the map as the picture shows it,
@@ -9,6 +10,9 @@ import type { ErdFocus, ErdMap, Rect } from './erd';
 // goes on to the next area's first box at that level in reading order (Right and Down), or the previous area's last
 // (Left and Up), so repeated presses visit every entity, aggregate and region. Faded boxes count: a step into a faded
 // area brings it into focus. Pure geometry over the map's one layout (layout.ts), tested directly.
+
+/** On a phone, the walk's bar (LA-V93-R76): Previous and Next along a row, Left and Right; Up and Down, which step by column, stay in More. */
+export const ERD_WALK_BAR: WalkBar = { previous: 'left', next: 'right', more: ['up', 'down'] };
 
 const levelsCache = new WeakMap<ErdMap, WeakMap<ReadonlyMap<string, Rect>, StageLevels>>();
 

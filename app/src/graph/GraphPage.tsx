@@ -17,7 +17,7 @@ import {
   type Filters,
   type Neighborhood,
 } from './model';
-import { graphTarget, graphWalkLabels, useGraphWalk } from './steps';
+import { graphTarget, graphWalkBar, graphWalkLabels, useGraphWalk } from './steps';
 import { StageCamera, StageKey, StageToolbar, TidyUp, ZOOM_STEP } from '../views/StageChrome';
 import { DEFAULT_GRAPH_SETTINGS } from '../exploring/session-settings/model';
 import { keepCamera } from '../exploring/tab-set/commands/keep-camera';
@@ -202,6 +202,7 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
       <StageToolbar
         can={(move) => graphTarget(index, focus, layout, move) !== null}
         walkLabels={graphWalkLabels(layout)}
+        bar={graphWalkBar(layout)}
         own={tools}
         measureKey={`${layout}|${filters.hiddenKinds.size}`}
       />
