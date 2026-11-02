@@ -380,14 +380,15 @@ test.describe('graph', () => {
       await expect(page).toHaveURL(/\/LA-EXP(\?|$)/);
     });
     expectStable(back);
-    // The arrows walk the map by the picture (LA-V61-R49): Right from the Checking region's rightmost entity crosses
-    // the region's edge into the entity beside it in the next domain's region (where the regions sit is the layout's).
-    await openPage(page, '/LA-CHK-EN01?stage=erd');
+    // The arrows walk the map by the picture (LA-V61-R49): Right from the Test planning region's rightmost entity
+    // crosses the region's edge into the entity beside it in the next domain's region (where the regions sit is the
+    // layout's, by the domains' order: the Checking region, last, has none beside it).
+    await openPage(page, '/LA-TST-EN85?stage=erd');
     await page.locator('.erd-flow[data-framed]').waitFor();
     const across = await step(page, 'graph', 'ERD: Right across a region edge', { keys, allow: ['.wiki-panel-scroll'] }, async () => {
       await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
       await page.keyboard.press('ArrowRight');
-      await page.waitForURL((u) => /^\/LA-(?!CHK-)[A-Z]+-EN\d+$/.test(u.pathname));
+      await page.waitForURL((u) => /^\/LA-(?!TST-)[A-Z]+-EN\d+$/.test(u.pathname));
     });
     expectStable(across);
   });
