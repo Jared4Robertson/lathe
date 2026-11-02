@@ -27,6 +27,7 @@ import type { RemoveFlowTest } from './remove-flow-test.ts';
 /** Adds a use case under a capability, with its actors in order, the main actor first. */
 export function addUseCase(tx: Transaction, input: AddUseCase): void {
   const useCases = new UseCaseRepository(tx);
+  if (tx.record(input.capability_id)?.kind !== 'capability') tx.refuse('missing', `there is no capability ${input.capability_id}`);
   const { actors = [], ...row } = input;
   const useCase = useCases.create({ root: row.id, useCase: row, actors: actors, requirements: [], useCaseTests: [], flows: [], steps: [], flowTests: [] });
   holdToRules(tx, useCase);

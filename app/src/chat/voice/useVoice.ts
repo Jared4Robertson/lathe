@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { turnVoiceActivationOnOrOff } from '../../platform/voice-settings/commands/turn-voice-activation-on-or-off';
+import { turnVoiceActivationOnOrOff } from '../../platform/voice-settings/commands/handlers.generated';
 import { DEFAULT_VOICE_SETTINGS, phrasesOf, type VoiceSettings } from '../../platform/voice-settings/model';
 import { useVoiceSettings } from '../../platform/voice-settings/use-voice-settings';
 import { chatDraft } from '../draft';

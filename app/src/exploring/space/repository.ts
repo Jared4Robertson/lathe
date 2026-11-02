@@ -1,34 +1,32 @@
-import { BrowserRepository, isBool, readPref, storedText, writePref } from '../../shell/prefs';
-import { NO_SPACE_MEMORY, readPages, type SpaceMemory } from './model';
-
-// Keeps the Space aggregate: the space chosen last under `lathe:space` in local storage (kept from one launch to the
-// next), each space's last page under `lathe:space-pages` in session storage, and whether two or more spaces were
-// listed last time under `lathe:space-rail` in local storage. Only this module reads or writes those keys.
-
-const CHOSEN_KEY = 'lathe:space';
-const PAGES_KEY = 'lathe:space-pages';
-const RAIL_KEY = 'lathe:space-rail';
-const isString = (v: unknown): v is string => typeof v === 'string';
-const isAny = (_v: unknown): _v is unknown => true;
+// Generated from data/ by `npm run generate`. Do not edit.
+// SpaceRepository (LA-EXP-REPO02): Keeps the spaces as JSON in browser storage: `lathe:space` (local, the space chosen
+// last), `lathe:space-pages` (session, each space's last page) and `lathe:space-rail` (local, whether two or more
+// spaces were listed last time), loaded and saved whole.
+import { BrowserRepository } from '../../shell/prefs';
+import { putStored, readStored, storedText } from '../../shell/storage';
+import { SPACE_STORAGE, spaceFrom, type SpaceMemory } from './model';
 
 export class SpaceRepository extends BrowserRepository<SpaceMemory> {
   protected stored() {
-    return [storedText(CHOSEN_KEY), storedText(PAGES_KEY, 'session'), storedText(RAIL_KEY)].join('\n');
+    return [storedText(SPACE_STORAGE.chosen), storedText(SPACE_STORAGE.pages), storedText(SPACE_STORAGE.several)].join('\n');
   }
 
   protected read(): SpaceMemory {
-    return {
-      chosen: readPref(CHOSEN_KEY, NO_SPACE_MEMORY.chosen, isString),
-      pages: readPages(readPref<unknown>(PAGES_KEY, null, isAny, 'session')),
-      several: readPref(RAIL_KEY, NO_SPACE_MEMORY.several, isBool),
-    };
+    const space = spaceFrom({ chosen: readStored(SPACE_STORAGE.chosen), pages: readStored(SPACE_STORAGE.pages), several: readStored(SPACE_STORAGE.several) });
+    this.#put(space, true);
+    return space;
   }
 
-  protected write(memory: SpaceMemory) {
-    const was = this.load();
-    if (memory.chosen !== was.chosen) writePref(CHOSEN_KEY, memory.chosen);
-    if (memory.pages !== was.pages) writePref(PAGES_KEY, memory.pages, 'session');
-    if (memory.several !== was.several) writePref(RAIL_KEY, memory.several);
+  protected write(space: SpaceMemory) {
+    this.#put(space, false);
+  }
+
+  // Keeps each part whose stored text changed; held, only a part already stored, so one read in another form is
+  // rewritten in today's.
+  #put(space: SpaceMemory, held: boolean) {
+    putStored(SPACE_STORAGE.chosen, space.chosen, held);
+    putStored(SPACE_STORAGE.pages, space.pages, held);
+    putStored(SPACE_STORAGE.several, space.several, held);
   }
 }
 

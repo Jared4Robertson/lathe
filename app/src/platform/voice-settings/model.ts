@@ -1,3 +1,4 @@
+import type { BrowserStorage } from '../../shell/storage.ts';
 import { VOICE_COMMANDS, type Phrases, type VoiceCommand } from '../../chat/voice/grammar.ts';
 
 // Voice settings (LA-PLT-A15): how the Owner talks to the desktop chat, kept from one launch to the next: voice
@@ -20,6 +21,9 @@ export const STRICT_WAKE = 'Hey Lathe';
 export const DEFAULT_COMMANDS: Record<VoiceCommand, string> = { send: 'send', cancel: 'cancel', scratch: 'scratch that', newLine: 'new line' };
 export const DEFAULT_VOICE_SETTINGS: VoiceSettings = { activation: false, quick: false, wake: DEFAULT_WAKE, commands: DEFAULT_COMMANDS };
 
+/** Where the Voice settings are kept: whole, as JSON in local storage, from one launch to the next. Its repository is generated from it. */
+export const VOICE_SETTINGS_STORAGE = { key: 'lathe:voice', store: 'local' } as const satisfies BrowserStorage;
+
 /** What each command does, as the settings name it. */
 export const COMMAND_LABEL: Record<VoiceCommand, string> = { send: 'Send', cancel: 'Clear the message', scratch: 'Remove the last sentence', newLine: 'New paragraph' };
 
@@ -34,3 +38,12 @@ export function voiceSettingsFrom(stored: unknown): VoiceSettings {
   if (typeof s.activation !== 'boolean' || typeof s.quick !== 'boolean' || typeof s.wake !== 'string' || !commands || !VOICE_COMMANDS.every((c) => typeof commands[c] === 'string')) return DEFAULT_VOICE_SETTINGS;
   return { activation: s.activation, quick: s.quick, wake: s.wake, commands: Object.fromEntries(VOICE_COMMANDS.map((c) => [c, commands[c]])) as Record<VoiceCommand, string> };
 }
+
+/**
+ * What each command that sets one setting keeps, by its handler: its input's one field and the setting's place in the
+ * Voice settings. Its handlers are generated from it. @public (read by `npm run generate`)
+ */
+export const VOICE_SETTINGS_SETS = {
+  turnQuickModeOnOrOff: { on: 'quick' },
+  turnVoiceActivationOnOrOff: { on: 'activation' },
+} as const;

@@ -18,6 +18,7 @@ import type { RemoveJourneyTest } from './remove-journey-test.ts';
 /** Adds a journey under its product, with its trigger, its result and the business outcomes it serves. */
 export function addJourney(tx: Transaction, input: AddJourney): void {
   const journeys = new JourneyRepository(tx);
+  if (tx.record(input.product_id)?.kind !== 'product') tx.refuse('missing', `there is no product ${input.product_id}`);
   const { serves = [], ...row } = input;
   const journey = journeys.create({ root: row.id, journey: row, serves: serves, steps: [], tests: [] });
   holdToRules(tx, journey);

@@ -2,9 +2,11 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import { createElement } from 'react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { SessionSettingsRepository, SETTINGS_KEY } from '../src/exploring/session-settings/repository';
+import { SESSION_SETTINGS_STORAGE } from '../src/exploring/session-settings/model';
+import { SessionSettingsRepository } from '../src/exploring/session-settings/repository';
 import { KeyBindingsRepository } from '../src/platform/key-bindings/repository';
-import { AppearanceRepository, APPEARANCE_KEYS } from '../src/platform/appearance/repository';
+import { APPEARANCE_STORAGE } from '../src/platform/appearance/model';
+import { AppearanceRepository } from '../src/platform/appearance/repository';
 import { PanelRepository } from '../src/platform/panel/repository';
 import { VoiceSettingsRepository, voiceSettingsRepository } from '../src/platform/voice-settings/repository';
 import { useVoiceSettings } from '../src/platform/voice-settings/use-voice-settings';
@@ -38,8 +40,8 @@ describe('LA-PLT-A4-SR01 the person\'s themes, chosen theme, color mode and Scro
     const appearance = new AppearanceRepository().load();
     expect(appearance.scrollToZoom).toBe(false);
     new AppearanceRepository().save({ ...appearance, mode: 'dark', scrollToZoom: true });
-    expect(window.localStorage.getItem(APPEARANCE_KEYS.mode)).toBe(JSON.stringify('dark'));
-    expect(window.localStorage.getItem(APPEARANCE_KEYS.scrollToZoom)).toBe('true');
+    expect(window.localStorage.getItem(APPEARANCE_STORAGE.mode.key)).toBe(JSON.stringify('dark'));
+    expect(window.localStorage.getItem(APPEARANCE_STORAGE.scrollToZoom.key)).toBe('true');
     expect(new AppearanceRepository().load()).toMatchObject({ mode: 'dark', scrollToZoom: true });
     vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => { throw new Error('blocked'); });
     expect(() => new AppearanceRepository().save({ ...appearance, mode: 'light' })).not.toThrow();
@@ -61,8 +63,8 @@ describe('LA-EXP-A6-SR01 the session\'s settings are kept for the browser sessio
   it('LA-EXP-A6-SR01-T01 the settings saved read back from session storage, and none is written to local storage', () => {
     const settings = new SessionSettingsRepository().load();
     new SessionSettingsRepository().save({ ...settings, graph: { ...settings.graph, layout: 'nested', minimap: true, allLinks: false } });
-    expect(window.localStorage.getItem(SETTINGS_KEY)).toBeNull();
-    expect(JSON.parse(window.sessionStorage.getItem(SETTINGS_KEY)!)).toMatchObject({ layout: 'nested', minimap: true });
+    expect(window.localStorage.getItem(SESSION_SETTINGS_STORAGE.key)).toBeNull();
+    expect(JSON.parse(window.sessionStorage.getItem(SESSION_SETTINGS_STORAGE.key)!)).toMatchObject({ layout: 'nested', minimap: true });
     expect(new SessionSettingsRepository().load().graph).toEqual({ layout: 'nested', minimap: true, allLinks: false });
   });
 });

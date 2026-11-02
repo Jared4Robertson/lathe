@@ -2,7 +2,7 @@ import './setup';
 import { describe, expect, it } from 'vitest';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { APPEARANCE_KEYS } from '../../src/platform/appearance/repository';
+import { APPEARANCE_STORAGE } from '../../src/platform/appearance/model';
 import { openApp } from '../helpers';
 import { canvasOf, scene } from './scene';
 import { testWorkspace } from './workspace';
@@ -17,7 +17,7 @@ const wheelOn = (target: Element, init: WheelEventInit) =>
 /** A new scroll: past the pause that ends the one before (wheelLatch), so a change of move is not dropped as its momentum. */
 const pause = () => new Promise((r) => setTimeout(r, 200));
 const scrollWords = () => document.querySelector('[data-key-entry="scroll"]')?.textContent;
-const stored = () => window.localStorage.getItem(APPEARANCE_KEYS.scrollToZoom);
+const stored = () => window.localStorage.getItem(APPEARANCE_STORAGE.scrollToZoom.key);
 /** The ERD's camera, as its canvas draws it. */
 const erdView = () => erdScene().camera;
 

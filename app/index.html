@@ -17,12 +17,12 @@
     <link rel="preload" href="/fonts/jetbrains-mono/jetbrains-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin />
     <script>
       // The chosen theme and mode, before first paint, so the page never flashes another theme
-      // (app/src/platform/appearance/repository.ts writes these keys; app/src/theme/apply.ts does the same once the app runs).
+      // (app/src/platform/appearance/model.ts names these keys, as JSON; app/src/theme/apply.ts does the same once the app runs).
       try {
         var root = document.documentElement;
         var mode = JSON.parse(localStorage.getItem('lathe:color-mode') || '"system"');
         if (mode === 'light' || mode === 'dark') root.setAttribute('data-mode', mode);
-        var css = localStorage.getItem('lathe:theme-css');
+        var css = JSON.parse(localStorage.getItem('lathe:theme-css') || 'null');
         var chosen = JSON.parse(localStorage.getItem('lathe:theme') || '"lathe"');
         if (css) {
           var style = document.createElement('style');

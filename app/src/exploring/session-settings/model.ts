@@ -1,4 +1,5 @@
 import type { GraphLayout, GraphSettings } from '../../graph/GraphPage';
+import type { BrowserStorage } from '../../shell/storage';
 import { NO_FILTERS } from '../../graph/model';
 import type { LookMark, Since } from '../../changes/changes';
 
@@ -44,6 +45,9 @@ export const DEFAULT_CHANGES: ChangeSettings = { highlight: false, since: 'commi
 export interface SessionSettings { graph: GraphLook; card: CardSettings; chat: ChatSettings; changes: ChangeSettings }
 export const DEFAULT_SESSION_SETTINGS: SessionSettings = { graph: DEFAULT_GRAPH_LOOK, card: DEFAULT_CARD, chat: DEFAULT_CHAT, changes: DEFAULT_CHANGES };
 
+/** Where the Session settings are kept: whole, as JSON in session storage. Its repository is generated from it. */
+export const SESSION_SETTINGS_STORAGE = { key: 'lathe:session-settings', store: 'session' } as const satisfies BrowserStorage;
+
 /** The settings as they are stored, flat. */
 export interface StoredSettings {
   layout: GraphLayout; minimap: boolean; allLinks: boolean;
@@ -85,8 +89,22 @@ export function sessionSettingsFrom(stored: unknown): SessionSettings {
 }
 
 /** The settings in their stored form. */
-export const storedSettings = ({ graph, card, chat, changes }: SessionSettings): StoredSettings => ({
+export const sessionSettingsStored = ({ graph, card, chat, changes }: SessionSettings): StoredSettings => ({
   layout: graph.layout, minimap: graph.minimap, allLinks: graph.allLinks,
   cardWidth: card.width, chat: chat.open, chatWidth: chat.width,
   highlight: changes.highlight, since: changes.since, follow: changes.follow, looked: changes.looked,
 });
+
+/**
+ * What each command that sets one setting keeps, by its handler: its input's one field and the setting's place in the
+ * Session settings. Its handlers are generated from it. @public (read by `npm run generate`)
+ */
+export const SESSION_SETTINGS_SETS = {
+  chooseChangesBaseline: { since: 'changes.since' },
+  chooseGraphLayout: { layout: 'graph.layout' },
+  showOrHideAllLinks: { shown: 'graph.allLinks' },
+  showOrHideChat: { shown: 'chat.open' },
+  showOrHideMinimap: { shown: 'graph.minimap' },
+  turnFollowOnOrOff: { on: 'changes.follow' },
+  turnHighlightChangesOnOrOff: { on: 'changes.highlight' },
+} as const;

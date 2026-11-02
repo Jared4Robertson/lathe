@@ -9,7 +9,7 @@ import { addressOf, parseStage, stageFromSearch, withStage } from '../src/views/
 import { CARD_GAP, CARD_GAP_Y, frameInsets, openInsets, OPEN_GAP } from '../src/views/openSpace';
 import { settleWhenHidden } from '../src/views/WikiCard';
 import { NARROW_QUERY } from '../src/shell/useNarrow';
-import { SETTINGS_KEY } from '../src/exploring/session-settings/repository';
+import { SESSION_SETTINGS_STORAGE } from '../src/exploring/session-settings/model';
 import { colorOf } from '../src/theme/audit';
 import { contrast, over } from '../src/theme/contrast';
 import { BUILT_IN_THEMES } from '../src/theme/theme';
@@ -33,7 +33,7 @@ const stageButton = (name: 'Graph' | 'ERD' | 'Trace') => within(screen.getByRole
 const card = () => screen.getByRole('region', { name: 'Wiki card' });
 const stageRegion = (name: string) => screen.getByRole('region', { name: `${name} stage` });
 const graphShown = () => waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
-const settings = () => JSON.parse(window.sessionStorage.getItem(SETTINGS_KEY) ?? 'null');
+const settings = () => JSON.parse(window.sessionStorage.getItem(SESSION_SETTINGS_STORAGE.key) ?? 'null');
 /** The web's one place: the browser tab's depth, filters and wiki card. */
 const place = () => JSON.parse(window.sessionStorage.getItem('lathe:place') ?? 'null');
 

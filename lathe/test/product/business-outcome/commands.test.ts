@@ -74,7 +74,7 @@ describe('LA-PRD-UC22-R01-T51 each Business outcome command changes one outcome 
     const before = fileOf(store, 'business_outcome');
     const outcome = { title: 'X', statement: 'X.', measure: 'X.', target: 'X.' };
     expect((await refusal(store, ADD_BUSINESS_OUTCOME, { id: 'TL-BO03', product_id: 'XX', ...outcome })).problems[0]).toMatchObject({ rule: 'missing', message: 'there is no product XX' });
-    expect((await refusal(store, ADD_BUSINESS_OUTCOME, { id: 'TL-BO01', product_id: 'TL', ...outcome })).problems[0].rule).toBe('primary-key');
+    expect((await refusal(store, ADD_BUSINESS_OUTCOME, { id: 'TL-BO01', product_id: 'TL', ...outcome })).problems[0]).toMatchObject({ rule: 'primary-key', message: 'business outcome TL-BO01 already exists' });
     await expect(runCommand(store, CHANGE_BUSINESS_OUTCOME, { id: 'TL-BO01', product_id: 'TL' })).rejects.toThrow(/change-business-outcome takes no product_id/);
     await expect(runCommand(store, CHANGE_BUSINESS_OUTCOME, { id: 'TL-BO01', statement: null })).rejects.toThrow(InputError);
     expect(fileOf(store, 'business_outcome')).toBe(before);
