@@ -25,10 +25,11 @@ export interface PolicyTestOnPage {
   startsFrom: string[];
 }
 
-/** A policy as the page shows it: its row, the event it hears, its event handler and its test, and the journeys it is a handoff in. */
+/** A policy as the page shows it: its row, the event it hears, the integrations it exchanges with, its event handler and its test, and the journeys it is a handoff in. */
 export interface PolicyOnPage {
   policy: PolicyRow;
   hears: string | null;
+  exchangesWith: string[];
   eventHandler: HandlerOnPage<EventHandlerRow> | null;
   test: PolicyTestOnPage | null;
   journeys: JourneyAppearance[];
@@ -88,7 +89,7 @@ function linked(view: ReadView, table: string, by = 'source_id', to = 'target_id
 
 /** The projection: the read model's table, built from the rows on each read (in memory; nothing keeps it). */
 export function commandTableFrom(view: ReadView): CommandTable {
-  const [raises, checks, calls, hears, meets, startsFrom] = ['raises', 'checks', 'calls', 'hears', 'meets', 'starts_from'].map((t) => linked(view, t));
+  const [raises, checks, calls, hears, exchangesWith, meets, startsFrom] = ['raises', 'checks', 'calls', 'hears', 'exchanges_with', 'meets', 'starts_from'].map((t) => linked(view, t));
   const packages = linked(view, 'package_use', 'record_id', 'package');
   const handlers = grouped<CommandHandlerRow>(view.rows('command_handler'), 'command_id');
   const policies = grouped<PolicyRow>(view.rows('policy'), 'command_id');
@@ -116,7 +117,7 @@ export function commandTableFrom(view: ReadView): CommandTable {
       handler: built((handlers.get(root) ?? [])[0]),
       policies: [...(policies.get(root) ?? [])].sort((a, b) => compareIds(a.id, b.id)).map((policy) => {
         const test = (tests.get(policy.id) ?? [])[0];
-        return { policy, hears: hears(policy.id)[0] ?? null, eventHandler: built((eventHandlers.get(policy.id) ?? [])[0]), test: test ? { test, startsFrom: startsFrom(test.id) } : null, journeys: journeysOf(policy.id) };
+        return { policy, hears: hears(policy.id)[0] ?? null, exchangesWith: exchangesWith(policy.id), eventHandler: built((eventHandlers.get(policy.id) ?? [])[0]), test: test ? { test, startsFrom: startsFrom(test.id) } : null, journeys: journeysOf(policy.id) };
       }),
       endpoints: (endpoints.get(root) ?? []).map((e) => e.id).sort(compareIds),
     };

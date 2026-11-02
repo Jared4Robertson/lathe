@@ -27,7 +27,7 @@ Change the spec only with Lathe's MCP tools (or the `lathe` CLI), never by editi
 
 **Endpoints** expose exactly one command or query. Keep the description to the request and responses in brief; state every rule that must be built and tested as an API requirement (a body's shape, each refusal's status and error code, what success returns, a size limit). A rule shared by every endpoint, such as the shape of an error, is a pattern their use cases follow or a standard rule their handlers meet.
 
-**Integrations** are outside systems the product exchanges with, named once and shared. One no step exchanges with is an error; its adapter is a technical record.
+**Integrations** are outside systems the product exchanges with, named once and shared. One no step or policy exchanges with is an error; its adapter is a technical record. A policy that reaches an outside system as it acts, such as mailing a reminder, names that integration too (`exchanges_with` on Add or Change a policy), and the adapter builds the policy with its event handler.
 
 ## Naming
 

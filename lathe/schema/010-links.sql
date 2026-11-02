@@ -25,8 +25,8 @@ CREATE TABLE fulfills (source_id VARCHAR NOT NULL REFERENCES flow_step (id), tar
 COMMENT ON TABLE fulfills IS 'The flow step fulfills the UC requirement, of its own use case; this designs the requirement.';
 CREATE TABLE invokes (source_id VARCHAR NOT NULL UNIQUE REFERENCES flow_step (id), target_id VARCHAR NOT NULL REFERENCES operation (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE invokes IS 'The flow step invokes the command or query: at most one per step.';
-CREATE TABLE exchanges_with (source_id VARCHAR NOT NULL REFERENCES flow_step (id), target_id VARCHAR NOT NULL REFERENCES integration (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE exchanges_with IS 'The flow step exchanges with the integration''s outside system.';
+CREATE TABLE exchanges_with (source_id VARCHAR NOT NULL REFERENCES exchanges_with_source (id), target_id VARCHAR NOT NULL REFERENCES integration (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE exchanges_with IS 'The flow step or policy exchanges with the integration''s outside system: a step as its actor carries it out, a policy as the product acts on the event it hears.';
 CREATE TABLE presents (source_id VARCHAR NOT NULL REFERENCES view (id), target_id VARCHAR NOT NULL REFERENCES operation (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE presents IS 'The view presents the command or query: a person sends the command or asks the query there, so a step that invokes it is carried out in the view on a web app or desktop interface.';
 CREATE TABLE offers (source_id VARCHAR NOT NULL REFERENCES interface (id), target_id VARCHAR NOT NULL REFERENCES use_case (id), PRIMARY KEY (source_id, target_id));
@@ -113,6 +113,7 @@ INSERT INTO meta_relation_pair VALUES
   ('presents', 'view', 'query', 'A person asks the query in the view.'),
   ('offers', 'interface', 'use_case', 'The use case is carried out through the interface.'),
   ('exchanges_with', 'flow_step', 'integration', 'The step exchanges with the outside system.'),
+  ('exchanges_with', 'policy', 'integration', 'The policy exchanges with the outside system as it acts.'),
   ('renders', 'ui_component', 'view', 'The UI component renders the view, or part of it.'),
   ('builds', 'ui_component', 'view_requirement', 'The UI component''s code does what the view requirement says.'),
   ('follows', 'domain', 'pattern', 'The whole domain follows the pattern, and so owes each of its rules.'),
