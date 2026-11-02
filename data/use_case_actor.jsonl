@@ -113,6 +113,7 @@
 {"use_case_id":"LA-PLT-UC28","position":1,"role_name":"Reader"}
 {"use_case_id":"LA-PLT-UC29","position":1,"role_name":"Agent"}
 {"use_case_id":"LA-TRC-UC01","position":1,"role_name":"Owner"}
+{"use_case_id":"LA-TRC-UC01","position":2,"role_name":"Reader"}
 {"use_case_id":"LA-TRC-UC02","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-TRC-UC03","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-TRC-UC03","position":2,"role_name":"Agent"}
@@ -122,15 +123,14 @@
 {"use_case_id":"LA-TRC-UC05","position":2,"role_name":"Agent"}
 {"use_case_id":"LA-TRC-UC06","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-TRC-UC06","position":2,"role_name":"Agent"}
+{"use_case_id":"LA-TRC-UC06","position":3,"role_name":"Reader"}
 {"use_case_id":"LA-TRC-UC07","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-TRC-UC07","position":2,"role_name":"Agent"}
 {"use_case_id":"LA-TRC-UC08","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-TRC-UC08","position":2,"role_name":"Agent"}
-{"use_case_id":"LA-TRC-UC09","position":1,"role_name":"Reader"}
 {"use_case_id":"LA-TRC-UC10","position":1,"role_name":"Reader"}
 {"use_case_id":"LA-TRC-UC11","position":1,"role_name":"Reader"}
 {"use_case_id":"LA-TRC-UC12","position":1,"role_name":"Reader"}
-{"use_case_id":"LA-TRC-UC13","position":1,"role_name":"Reader"}
 {"use_case_id":"LA-TRC-UC14","position":1,"role_name":"Reader"}
 {"use_case_id":"LA-TRC-UC15","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-TRC-UC15","position":2,"role_name":"Agent"}

@@ -1,14 +1,14 @@
 // The outcome report TL-LEND-RP01 (examples/tool-library/data/): it measures TL-BO01, TL-BO02, TL-BO04 and TL-BO05 for a month from the
 // library's records, through the command handlers as the API runs them. Each test name starts with the report's ID.
 import { describe, expect, it } from 'vitest';
-import { borrowTool, returnTool } from '../src/loan-commands.ts';
+import { borrowTool, renewLoan, returnTool } from '../src/loan-commands.ts';
 import { registerMember } from '../src/member-commands.ts';
 import { DEFAULT_TIME_ZONE } from '../src/model.ts';
 import { OutcomeMeasuresReader, getOutcomeMeasures } from '../src/outcomes.ts';
 import { addTool, markToolRepaired, reportDamage } from '../src/tool-commands.ts';
 import { lending } from './helpers.ts';
 
-/** March 2026 in the library: four loans, one returned late, one on a tool that needed repair and still out, and one repair. */
+/** March 2026 in the library: five loans, one returned late, one on a tool that needed repair and still out, one renewed into April, and one repair. */
 function march() {
   const l = lending();
   const { clock } = l;
@@ -18,6 +18,7 @@ function march() {
   const drill = addTool(l, { name: 'Drill' });
   const saw = addTool(l, { name: 'Saw' });
   const ladder = addTool(l, { name: 'Ladder' });
+  const clamp = addTool(l, { name: 'Clamp' });
   // 2 March: Ada borrows the drill and Ben the saw, both due 16 March.
   const adaDrill = borrowTool(l, { memberId: ada.id, toolId: drill.id });
   const benSaw = borrowTool(l, { memberId: ben.id, toolId: saw.id });
@@ -33,14 +34,16 @@ function march() {
   returnTool(l, benSaw.id, { condition: 'good' });
   clock.advanceDays(1);
   markToolRepaired(l, saw.id);
-  // 12 March: Ada borrows the repaired saw, due 26 March.
+  // 12 March: Ada borrows the repaired saw and Ben the clamp, both due 26 March.
   clock.advanceDays(1);
   const adaSaw = borrowTool(l, { memberId: ada.id, toolId: saw.id });
-  // 20 March: Ada returns the drill late and the saw on time.
+  const benClamp = borrowTool(l, { memberId: ben.id, toolId: clamp.id });
+  // 20 March: Ada returns the drill late and the saw on time; Ben renews the clamp, now due 9 April.
   clock.advanceDays(8);
   returnTool(l, adaDrill.id, { condition: 'good' });
   returnTool(l, adaSaw.id, { condition: 'good' });
-  // 1 April: a fourth tool joins the catalog.
+  renewLoan(l, benClamp.id);
+  // 1 April: a fifth tool joins the catalog.
   clock.set('2026-04-01T14:00:00.000Z');
   addTool(l, { name: 'Sander' });
   return l;
@@ -52,20 +55,21 @@ describe('TL-LEND-DS02-T01 Outcome report', () => {
     const now = new Date('2026-04-02T14:00:00.000Z');
     expect(getOutcomeMeasures(new OutcomeMeasuresReader(l), '2026-03', now, DEFAULT_TIME_ZONE)).toEqual({
       month: '2026-03',
-      // Four loans opened over the three tools in the catalog by 31 March.
-      toolsInUse: { loans: 4, tools: 3, loansPerTool: 4 / 3 },
-      // Of the four due in March, the drill came back late and the ladder is still out and overdue.
+      // Five loans opened over the four tools in the catalog by 31 March.
+      toolsInUse: { loans: 5, tools: 4, loansPerTool: 5 / 4 },
+      // Of the four due in March, the drill came back late and the ladder is still out and overdue; the clamp's
+      // renewal moved its due date into April, so it is not due, and not late, in March.
       backOnTime: { due: 4, late: 2, shareLate: 0.5 },
       // The saw, damaged on 9 March, was repaired on 11 March; the ladder is not repaired yet.
       backInService: { repaired: 1, medianDays: 2 },
       // Ada, Ben and Cy each opened a loan in the 90 days to 31 March.
       activeMembers: 3,
     });
-    // April: no loans opened or due, four tools, and the same three members still within 90 days.
+    // April: no loans opened, five tools, the renewed clamp due and not late yet, and the same three members still within 90 days.
     expect(getOutcomeMeasures(new OutcomeMeasuresReader(l), '2026-04', now, DEFAULT_TIME_ZONE)).toEqual({
       month: '2026-04',
-      toolsInUse: { loans: 0, tools: 4, loansPerTool: 0 },
-      backOnTime: { due: 0, late: 0, shareLate: 0 },
+      toolsInUse: { loans: 0, tools: 5, loansPerTool: 0 },
+      backOnTime: { due: 1, late: 0, shareLate: 0 },
       backInService: { repaired: 0, medianDays: null },
       activeMembers: 3,
     });

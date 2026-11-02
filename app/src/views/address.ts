@@ -1,7 +1,7 @@
 import { type SpecRoute } from './spec-route';
 
 // One address per thing, whichever stage shows it (LA-PAT-APP-CODE-R19). A record is at its bare
-// ID (`/LA-TRC-UC09`), a product and a domain included, whose one page is their overview (`/LA`,
+// ID (`/LA-TRC-UC01`), a product and a domain included, whose one page is their overview (`/LA`,
 // `/LA-EXP`). A group is at its place in the graph's tree (a stage or folder, `/LA-EXP/define/use-cases`, or a record's
 // group of one kind of child, `/<parent-id>/<kind>`), and a group within one adds its parts
 // (`/DM-SHOP/design/test-plan/acceptance/…`).

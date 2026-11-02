@@ -158,7 +158,7 @@ describe('entities and value objects', () => {
 });
 
 describe('commands, events and policies', () => {
-  it('LA-AUT-UC12-R01-T01 LA-AUT-UC25-R01-T01 A domain event sits under an aggregate, a command under the entity it changes raises and checks, and a policy under a command hears one event', () => {
+  it('LA-AUT-UC12-R01-T01 LA-AUT-UC25-R01-T01 A domain event sits under an aggregate, a command under the entity it changes raises and checks, and a policy under a command hears one event and exchanges with integrations', () => {
     expect(parentsOf(schema, 'domain_event')).toEqual(['aggregate.aggregate_id']);
     expect(requiredOf(schema, 'domain_event')).toEqual(['aggregate_id', 'published', 'description']);
     expect(parentsOf(schema, 'command')).toEqual(['entity.entity_id']);
@@ -168,7 +168,9 @@ describe('commands, events and policies', () => {
     expect(pairsOf(schema, 'checks')).toEqual(['command>specification']);
     expect(pairsOf(schema, 'hears')).toEqual(['policy>domain_event']);
     expect(schema.tables.hears.unique).toContainEqual(['source_id']);
-    described(reference, ['domain_event', 'command', 'policy'], ['raises', 'checks', 'hears']);
+    // A policy, like a flow step, exchanges with the integrations it reaches as it acts.
+    expect(pairsOf(schema, 'exchanges_with')).toEqual(['flow_step>integration', 'policy>integration']);
+    described(reference, ['domain_event', 'command', 'policy'], ['raises', 'checks', 'hears', 'exchanges_with']);
     expect(reference.relations.find((r) => r.relation === 'raises')).toMatchObject({ forward_label: 'Raises', reverse_label: 'Raised by' });
     expect(reference.relations.find((r) => r.relation === 'hears')).toMatchObject({ forward_label: 'Hears', reverse_label: 'Heard by' });
   });

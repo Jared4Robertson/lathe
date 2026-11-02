@@ -79,21 +79,21 @@ export function removeCommandHandler(tx: Transaction, input: RemoveCommandHandle
   commands.save(command);
 }
 
-/** Adds a policy under the command it sends, with the one event it hears: its own domain's, or another domain's published one. */
+/** Adds a policy under the command it sends, with the one event it hears (its own domain's, or another domain's published one) and the integrations it exchanges with as it acts. */
 export function addPolicy(tx: Transaction, input: AddPolicy): void {
   const commands = new CommandRepository(tx);
   const command = commands.load(input.command_id) ?? tx.refuse('missing', `there is no command ${input.command_id}`);
-  const { hears, ...row } = input;
-  command.policies.push({ row, hears: hears ?? null });
+  const { hears, exchanges_with = [], ...row } = input;
+  command.policies.push({ row, exchangesWith: exchanges_with, hears: hears ?? null });
   holdToRules(tx, command);
   commands.save(command);
 }
 
-/** Changes a policy's title or statement, or the event it hears; null clears the event. The command it sends does not change. */
+/** Changes a policy's title or statement, the event it hears or the integrations it exchanges with (the whole list); null clears the event. The command it sends does not change. */
 export function changePolicy(tx: Transaction, input: ChangePolicy): void {
   const commands = new CommandRepository(tx);
   const command = commands.loadHolding('policy', input.id) ?? tx.refuse('missing', `there is no policy ${input.id}`);
-  command.policies = command.policies.map((x) => (x.row.id === input.id ? { row: changed(x.row, input, ['title', 'statement']), hears: input.hears === undefined ? x.hears : input.hears } : x));
+  command.policies = command.policies.map((x) => (x.row.id === input.id ? { row: changed(x.row, input, ['title', 'statement']), exchangesWith: input.exchanges_with ?? x.exchangesWith, hears: input.hears === undefined ? x.hears : input.hears } : x));
   holdToRules(tx, command);
   commands.save(command);
 }

@@ -22,10 +22,11 @@ export interface Tested<T> {
   startsFrom: string[];
 }
 
-/** A policy with the one event it hears, once it hears one. */
+/** A policy with the one event it hears, once it hears one, and the integrations it exchanges with as it acts. */
 export interface Policy {
   row: PolicyRow;
   hears: string | null;
+  exchangesWith: string[];
 }
 
 /** One command, whole. */
@@ -57,6 +58,7 @@ export const COMMAND_TABLES = [
   'checks',
   'calls',
   'hears',
+  'exchanges_with',
   'meets',
   'package_use',
   'starts_from',
@@ -66,7 +68,7 @@ export const COMMAND_TABLES = [
 export const COMMAND_SHAPE = {
   command: { at: 'command', lists: { raises: 'raises', checks: 'checks', calls: 'calls' } },
   command_handler: { at: 'handler', one: true, refusedBy: 'oneCommandHandler', lists: { meets: 'meets', packages: 'packages' } },
-  policy: { at: 'policies', links: { hears: 'hears' } },
+  policy: { at: 'policies', links: { hears: 'hears' }, lists: { exchanges_with: 'exchangesWith' } },
   event_handler: { at: 'eventHandlers', lists: { meets: 'meets', packages: 'packages' } },
   policy_test: { at: 'policyTests', lists: { starts_from: 'startsFrom' } },
 } as const satisfies AggregateShape;
@@ -86,7 +88,7 @@ export function commandsFrom(rows: (table: string) => Row[], only?: string): Com
   const policiesOf = groupBy(policies, (p) => p.command_id);
   const eventHandlersOf = groupBy((rows('event_handler') as unknown as EventHandlerRow[]).filter((h) => policyIds.has(h.policy_id)), (h) => commandOf.get(h.policy_id));
   const policyTestsOf = groupBy((rows('policy_test') as unknown as PolicyTestRow[]).filter((t) => policyIds.has(t.policy_id)), (t) => commandOf.get(t.policy_id));
-  const [raises, checks, calls, hears, meets, startsFrom] = ['raises', 'checks', 'calls', 'hears', 'meets', 'starts_from'].map((table) => bySource(rows(table)));
+  const [raises, checks, calls, hears, exchangesWith, meets, startsFrom] = ['raises', 'checks', 'calls', 'hears', 'exchanges_with', 'meets', 'starts_from'].map((table) => bySource(rows(table)));
   const packages = bySource(rows('package_use'), 'record_id', 'package');
   const built = <T extends { id: string }>(row: T): Built<T> => ({ row, meets: groupOf(meets, row.id), packages: groupOf(packages, row.id) });
   return commands.map((command) => {
@@ -98,7 +100,7 @@ export function commandsFrom(rows: (table: string) => Row[], only?: string): Com
       checks: groupOf(checks, command.id),
       calls: groupOf(calls, command.id),
       handler: handler ? built(handler) : null,
-      policies: groupOf(policiesOf, command.id).map((row) => ({ row, hears: groupOf(hears, row.id)[0] ?? null })),
+      policies: groupOf(policiesOf, command.id).map((row) => ({ row, hears: groupOf(hears, row.id)[0] ?? null, exchangesWith: groupOf(exchangesWith, row.id) })),
       eventHandlers: groupOf(eventHandlersOf, command.id).map(built),
       policyTests: groupOf(policyTestsOf, command.id).map((row) => ({ row, startsFrom: groupOf(startsFrom, row.id) })),
     };
@@ -121,6 +123,7 @@ export function commandRows(command: Command): Map<string, Row[]> {
     ['checks', links(command.root, command.checks)],
     ['calls', links(command.root, command.calls)],
     ['hears', command.policies.flatMap((p) => links(p.row.id, [p.hears]))],
+    ['exchanges_with', command.policies.flatMap((p) => links(p.row.id, p.exchangesWith))],
     ['meets', built.flatMap((b) => links(b.row.id, b.meets))],
     ['package_use', built.flatMap((b) => b.packages.map((p) => ({ record_id: b.row.id, package: p })))],
     ['starts_from', command.policyTests.flatMap((t) => links(t.row.id, t.startsFrom))],

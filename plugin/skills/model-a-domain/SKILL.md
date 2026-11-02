@@ -49,7 +49,7 @@ Finish each stage with `check-and-fix`. Gaps a later stage owes are reported, no
 - A value's own format, checked when the value is created: a *constraint* of a value object (make the value object if the field has none).
 - Something true of one aggregate after every change, including uniqueness across its records: an *invariant*.
 - A named yes-or-no predicate over aggregates of one domain that commands check or queries select by: a *specification*.
-- "Whenever this happened, then do that", often in another aggregate: a *policy*. A journey's handoff step carries out a policy; a handoff the journey needs with no policy to carry it out is how missing policies are found (`discover-outcomes`).
+- "Whenever this happened, then do that", often in another aggregate: a *policy*. A policy that reaches an outside system as it acts, such as a mail service, names the integration it exchanges with. A journey's handoff step carries out a policy; a handoff the journey needs with no policy to carry it out is how missing policies are found (`discover-outcomes`).
 - Logic that belongs to no single entity and is not a yes-or-no check, such as a due date: a *domain service* (it uses no storage and no outside system).
 - A rule that needs an actor or a screen is not a domain rule: it is a UC requirement, view requirement or API requirement.
 
