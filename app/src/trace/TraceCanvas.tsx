@@ -31,7 +31,7 @@ import { highlightFade, marksMoving, useStageMarks, type MarkTree } from '../cha
 import { anchorOf, rollupText, totalChanges, type ChangeCounts } from '../changes/rollup';
 import { JOURNEY_COLUMN, STAGE_COLUMN, TRACE_COLUMN_LABELS, TRACE_COLUMNS, TRACE_STAGES, isOpen, stageOfColumn, type TraceGraph, type TraceStage, type Item, type Openness } from './trace';
 import { lastTraceOrder, type Ordered } from './order';
-import { columnLeft, ITEM_HEIGHT, ITEM_WIDTH, layOutTrace, outcomesBeside, OUTSIDE_GAP, type BoxPlace, type TraceLaid } from './layout';
+import { columnLeft, ITEM_HEIGHT, ITEM_WIDTH, layOutTrace, besideRow, OUTSIDE_GAP, type BoxPlace, type TraceLaid } from './layout';
 import { litBy, type Lit } from './path';
 
 // Every box is one height, its kind and ID line and its title at a readable size; a box with children carries a ▸ at
@@ -42,8 +42,8 @@ import { litBy, type Lit } from './path';
 // and the journeys' from each journey (or its step's box while open) to the rows it carries out, labeled with the steps'
 // numbers, under the boxes; the selection's path in its row is drawn the same way, from each record on it to the next across the columns,
 // and lit, the rest of the view faded. The columns' names stay at the top of the frame on a band opaque up to the stage's top, the boxes scrolling under it, a ▸ beside each stage's name
-// opening it in every row (Expand all). While a row is focused, the outcomes it serves slide beside it and glide home
-// when none is (layout.ts outcomesBeside, LA-V98-R22). The camera frames the focus's row (in a frame narrower than two
+// opening it in every row (Expand all). While a row is focused, the outcomes it serves and the journeys carrying it out
+// slide beside it and glide home when none is (layout.ts besideRow, LA-V98-R22). The camera frames the focus's row (in a frame narrower than two
 // columns, a phone's, the focus's box centered across); opening a box, a new order (Tidy up) or a
 // data change moves no camera, and what moved glides from its old place to its new one. The canvas is hidden from
 // assistive technology: the stage's list (TraceList.tsx) is its accessible layer.
@@ -109,7 +109,7 @@ export interface TraceCanvasProps {
   every: Readonly<Record<TraceStage, boolean>>;
   /** The rows' order and the graph it was made for (useTraceOrder, called by the view); null before the first. */
   ordered: Ordered | null;
-  /** The row whose outcomes sit beside it (LA-V98-R22, layout.ts outcomesBeside); null keeps each at its own place. */
+  /** The row whose outcomes and journeys sit beside it (LA-V98-R22, layout.ts besideRow); null keeps each at its own place. */
   beside: string | null;
   /** Opens or closes a box's children. */
   onToggle: (opens: string) => void;
@@ -138,7 +138,7 @@ export function TraceCanvas(props: TraceCanvasProps) {
   }, [fonts.body, fonts.mono]);
   const { ordered } = props;
   const home = useMemo(() => (ordered ? layOutTrace(ordered.graph, ordered.order, props.open) : null), [ordered, props.open]);
-  const laid = useMemo(() => (ordered && home ? outcomesBeside(home, ordered.graph.serves, props.beside) : null), [ordered, home, props.beside]);
+  const laid = useMemo(() => (ordered && home ? besideRow(home, ordered.graph.serves, props.beside) : null), [ordered, home, props.beside]);
   if (!measure || !ordered || !laid) return <div className="graph-flow trace-flow" aria-busy="true" />;
   setTextMeasure(measure);
   return <TraceScene {...props} graph={ordered.graph} laid={laid} fonts={fonts} theme={theme} />;
@@ -238,8 +238,8 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
   /**
    * The camera for the focus: its row's height (each row it shows in, for a record several use cases share) at a zoom
    * its boxes read at, every column across when they fit, else from the column before the focus's on; the focus's box
-   * always in the frame. The outcomes beside its row (LA-V98-R22) are framed with it when they fit: their height with
-   * the row's, and from the Outcome column on when that reaches the focus's box. With no box, the top of the view.
+   * always in the frame. The outcomes and journeys beside its row (LA-V98-R22) are framed with it when they fit: their
+   * height with the row's, and from the Outcome column on when that reaches the focus's box. With no box, the top of the view.
    */
   const framing = useCallback((): Viewport | null => {
     if (!size || (space && !openSpace)) return null;
@@ -260,11 +260,14 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
     // when there is room).
     const fromUseCase = laid.width - columnLeft(STAGE_COLUMN['use-case']);
     const zoom = Math.max(ROW_ZOOM, Math.min(1, Math.max(fits, across / fromUseCase), tall));
-    // The outcomes beside the row, in the frame with it when they fit at that zoom.
+    // The outcomes and journeys beside the row (a journey by its box carrying the row out), in the frame with it when
+    // they fit at that zoom.
     const column = graph.items.get(focusKey!)?.column ?? 0;
-    const outcomes = beside && column > 0 ? graph.serves.filter(([, u]) => u === beside).map(([o]) => laid.places.get(`outcome/${o}`)).filter((p): p is BoxPlace => !!p) : [];
-    const withTop = Math.min(top, ...outcomes.map((p) => p.y));
-    const withBottom = Math.max(bottom, ...outcomes.map((p) => p.y + p.h));
+    const placed = (keys: string[]) => keys.map((k) => laid.places.get(k)).filter((p): p is BoxPlace => !!p);
+    const outcomes = beside && column > 0 ? placed(graph.serves.filter(([, u]) => u === beside).map(([o]) => `outcome/${o}`)) : [];
+    const near = [...outcomes, ...(beside && column > JOURNEY_COLUMN ? placed(laid.carries.filter((c) => c.useCase === beside).map((c) => c.from)) : [])];
+    const withTop = Math.min(top, ...near.map((p) => p.y));
+    const withBottom = Math.max(bottom, ...near.map((p) => p.y + p.h));
     if ((withBottom - withTop) * zoom <= head.h - 48) { top = withTop; bottom = withBottom; }
     // Down: the row's top near the frame's top, the focus's box kept in the frame.
     let y = head.y + 24 - top * zoom;

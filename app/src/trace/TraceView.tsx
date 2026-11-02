@@ -20,9 +20,9 @@ import { useTraceRows } from '../traceability/trace/reads';
 import type { Move } from '../views/levels';
 import type { OpenSpaceStore } from '../views/openSpace';
 import { StageKey, StageToolbar, TidyUp } from '../views/StageChrome';
-import { cellKey, TRACE_COLUMN_LABELS, TRACE_STAGES, traceGraph, everyStepKey, rowsOf, type TraceGraph, type TraceStage, type Openness } from './trace';
+import { cellKey, JOURNEY_COLUMN, OUTCOME_COLUMN, TRACE_COLUMN_LABELS, TRACE_STAGES, traceGraph, everyStepKey, rowsOf, type TraceGraph, type TraceStage, type Openness } from './trace';
 import { useTraceOrder } from './order';
-import { layOutTrace, outcomesBeside } from './layout';
+import { layOutTrace, besideRow } from './layout';
 import { useOpenness } from './open';
 import { TRACE_WALK_BAR, TRACE_WALK_LABELS, traceTarget, traceWords, type Along } from './walk';
 import { traceKeyEntries } from './TraceKey';
@@ -121,16 +121,20 @@ function ProductTraceStage(props: TraceViewProps & { product: string; trace: Pro
     setOpen(next);
   }, [row, rowOpen, open, setOpen]);
 
-  // The row whose outcomes slide beside it (LA-V98-R22): the focused row; on an outcome, the row it is beside while that
-  // row serves it, so stepping Left onto it leaves it there; else none, and every outcome glides home.
+  // The row whose outcomes and journeys slide beside it (LA-V98-R22): the focused row; on an outcome or a journey (its
+  // box, a step or its test), the row it is beside while that row is served or carried out by it, so stepping Left onto
+  // it leaves it there; else none, and every outcome and journey glides home.
   const [beside, setBeside] = useState<string | null>(null);
-  const onOutcome = (atItem ? atItem.column === 0 : true) && graph.items.has(`outcome/${focus}`);
-  const besideNow = !onOutcome ? row : beside && graph.serves.some(([o, u]) => o === focus && u === beside) ? beside : null;
+  const onOutcome = (atItem ? atItem.column === OUTCOME_COLUMN : true) && graph.items.has(`outcome/${focus}`);
+  const onJourney = (atItem ? atItem.column === JOURNEY_COLUMN : true) ? graph.journeyOf.get(focus)?.id ?? null : null;
+  const besideNow = onOutcome ? (beside && graph.serves.some(([o, u]) => o === focus && u === beside) ? beside : null)
+    : onJourney ? (beside && graph.carries.some((c) => c.journey === onJourney && c.useCase === beside) ? beside : null)
+    : row;
   if (besideNow !== beside) setBeside(besideNow);
 
   // The stage walk (walk.ts, LA-V61-R49): on a record the focus moves there, as a click does, and the camera
   // follows; on another box the ring does. In and Out open and close on the way. Each step is announced.
-  const laidNow = useCallback(() => (ordered ? outcomesBeside(layOutTrace(ordered.graph, ordered.order, openness), ordered.graph.serves, besideNow) : null), [ordered, openness, besideNow]);
+  const laidNow = useCallback(() => (ordered ? besideRow(layOutTrace(ordered.graph, ordered.order, openness), ordered.graph.serves, besideNow) : null), [ordered, openness, besideNow]);
   const fromBox = at ?? graph.boxesOf.get(focus)?.[0] ?? (graph.items.has(`outcome/${focus}`) ? `outcome/${focus}` : null);
   const targetOf = useCallback((move: Move) => { const laid = laidNow(); return laid ? traceTarget(graph, laid, openness, fromBox, move, along) : null; }, [laidNow, graph, openness, fromBox, along]);
   const walkMap = useCallback((move: Move) => {

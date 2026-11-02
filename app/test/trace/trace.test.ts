@@ -3,7 +3,7 @@ import { addRows, removeRows } from '../fixtures/load';
 import { modelWorkspace } from '../fixtures/model';
 import { cellKey, everyStepKey, innerKey, journeyBox, journeyKey, rowPath, statusOf, visible, type Openness } from '../../src/trace/trace';
 import { orderGraph } from '../../src/trace/order';
-import { ITEM_GAP, ITEM_HEIGHT, layOutTrace, outcomesBeside, ROW_GAP, type BoxPlace, type TraceLaid } from '../../src/trace/layout';
+import { ITEM_GAP, ITEM_HEIGHT, layOutTrace, besideRow, ROW_GAP, type BoxPlace, type TraceLaid } from '../../src/trace/layout';
 import { litBy } from '../../src/trace/path';
 import { traceTarget } from '../../src/trace/walk';
 import { traced } from './rows';
@@ -264,7 +264,7 @@ describe('LA-V98-R22-T01 The focused row\'s outcomes slide beside it, the others
 
   it('slides the one outcome a row serves to the row\'s height, and one in the way steps aside just enough', () => {
     const before = home();
-    const laid = outcomesBeside(before, serves, 'U6');
+    const laid = besideRow(before, serves, 'U6');
     const row = before.rows.get('U6')!.y;
     // O1 level with U6; O4, under it at 400, steps up just clear of it; O2 and O3, far above, stay.
     expect(tops(laid)).toEqual({ O2: PITCH, O3: 2 * PITCH, O4: row - PITCH, O1: row });
@@ -274,7 +274,7 @@ describe('LA-V98-R22-T01 The focused row\'s outcomes slide beside it, the others
 
   it('stacks several outcomes centered on the row, in their column\'s order, never above the top; one covered steps down', () => {
     const before = home();
-    const laid = outcomesBeside(before, serves, 'U2');
+    const laid = besideRow(before, serves, 'U2');
     const row = before.rows.get('U2')!.y;
     const top = row + ITEM_HEIGHT / 2 - (3 * PITCH - ITEM_GAP) / 2;
     expect(tops(laid)).toEqual({ O2: top, O3: top + PITCH, O4: top + 2 * PITCH, O1: top + 3 * PITCH });
@@ -282,22 +282,80 @@ describe('LA-V98-R22-T01 The focused row\'s outcomes slide beside it, the others
     expect(laid.columns[0]).toEqual(['outcome/O2', 'outcome/O3', 'outcome/O4', 'outcome/O1']);
     othersStay(laid, before);
     // Near the top the stack starts at the top.
-    const first = outcomesBeside(before, [['O2', 'U1'], ['O3', 'U1'], ['O4', 'U1']], 'U1');
+    const first = besideRow(before, [['O2', 'U1'], ['O3', 'U1'], ['O4', 'U1']], 'U1');
     expect(Math.min(...Object.values(tops(first)))).toBe(0);
   });
 
   it('moves nothing for a row serving no outcome, follows the focus from row to row, and returns every outcome home with no row', () => {
     const before = home();
-    expect(outcomesBeside(before, serves, 'U8')).toBe(before);
-    expect(outcomesBeside(before, serves, null)).toBe(before);
+    expect(besideRow(before, serves, 'U8')).toBe(before);
+    expect(besideRow(before, serves, null)).toBe(before);
     // Walking from U6 to U2: O1, which U2 does not serve, leaves U6 for where U2's stack puts it; nothing else moves.
-    const at6 = outcomesBeside(before, serves, 'U6');
-    const at2 = outcomesBeside(before, serves, 'U2');
+    const at6 = besideRow(before, serves, 'U6');
+    const at2 = besideRow(before, serves, 'U2');
     expect(tops(at6).O1).toBe(before.rows.get('U6')!.y);
     expect(tops(at2).O2).toBeLessThan(before.rows.get('U2')!.y);
     othersStay(at2, before);
     // No row focused: each outcome at its own place, as Tidy up last left it.
-    expect(tops(outcomesBeside(before, serves, null))).toEqual({ O1: 0, O2: PITCH, O3: 2 * PITCH, O4: 400 });
+    expect(tops(besideRow(before, serves, null))).toEqual({ O1: 0, O2: PITCH, O3: 2 * PITCH, O4: 400 });
+  });
+});
+
+describe('LA-V98-R22-T04 The journeys carrying out the focused row slide beside it, an open one by its step, and go home when no row is focused', () => {
+  const PITCH = ITEM_HEIGHT + ITEM_GAP;
+  const BAND = ITEM_HEIGHT + ROW_GAP;
+  /**
+   * Eight closed rows U1..U8 and three journeys at their own places: J1 closed at the top, carrying out U6; J2 open to
+   * two steps and its test under it, its second step carrying out U5 and its first U1; J3 closed lower, carrying out U8.
+   * O1 serves U6.
+   */
+  const home = (): TraceLaid => {
+    const rows = new Map(Array.from({ length: 8 }, (_, i) => [`U${i + 1}`, { y: i * BAND, h: ITEM_HEIGHT }] as const));
+    const places = new Map<string, BoxPlace>();
+    const columns: string[][] = [[], [], [], [], [], []];
+    for (const [u, band] of rows) { places.set(`${u}|use-case`, { x: 704, y: band.y, w: 264, h: ITEM_HEIGHT }); columns[2].push(`${u}|use-case`); }
+    places.set('outcome/O1', { x: 0, y: 0, w: 264, h: ITEM_HEIGHT }); columns[0].push('outcome/O1');
+    const journey = [['journey/J1', 0], ['journey/J2', PITCH], ['journey/J2/P1', 2 * PITCH], ['journey/J2/P2', 3 * PITCH], ['journey/J2/T', 4 * PITCH], ['journey/J3', 400]] as const;
+    for (const [k, y] of journey) { places.set(k, { x: 352, y, w: 264, h: ITEM_HEIGHT }); columns[1].push(k); }
+    const carries = [['journey/J1', 'U6'], ['journey/J2/P2', 'U5'], ['journey/J2/P1', 'U1'], ['journey/J3', 'U8']]
+      .map(([from, to]) => ({ from, to: `${to}|use-case`, journey: from.split('/')[1], useCase: to, label: '1' }));
+    return { order: {} as TraceLaid['order'], rows, columns, places, carries, outsideTop: null, width: 2024, height: 8 * BAND - ROW_GAP };
+  };
+  const serves = [['O1', 'U6']] as const;
+  const tops = (laid: TraceLaid) => Object.fromEntries(laid.columns[1].map((k) => [k.slice('journey/'.length), laid.places.get(k)!.y]));
+
+  it('slides a closed journey to the row\'s height with the outcome beside it, and the ones in the way step aside just enough, kept whole', () => {
+    const before = home();
+    const laid = besideRow(before, serves, 'U6');
+    const row = before.rows.get('U6')!.y;
+    // J1 level with U6, as O1 is; J3, under it at 400, steps up just clear; J2, far above, stays whole.
+    expect(laid.places.get('outcome/O1')!.y).toBe(row);
+    expect(tops(laid)).toEqual({ J2: PITCH, 'J2/P1': 2 * PITCH, 'J2/P2': 3 * PITCH, 'J2/T': 4 * PITCH, J3: row - PITCH, J1: row });
+    expect(laid.columns[1]).toEqual(['journey/J2', 'journey/J2/P1', 'journey/J2/P2', 'journey/J2/T', 'journey/J3', 'journey/J1']);
+    for (const [k, p] of before.places) if (!k.startsWith('journey/') && !k.startsWith('outcome/')) expect(laid.places.get(k)).toEqual(p);
+  });
+
+  it('slides an open journey by the step carrying the row out, its box and other steps in order around it, and one below steps down', () => {
+    const before = home();
+    const laid = besideRow(before, serves, 'U5');
+    const row = before.rows.get('U5')!.y;
+    expect(tops(laid)).toEqual({ J1: 0, J2: row - 2 * PITCH, 'J2/P1': row - PITCH, 'J2/P2': row, 'J2/T': row + PITCH, J3: row + 2 * PITCH });
+    // No outcome serves U5: the Outcome column stays.
+    expect(laid.places.get('outcome/O1')).toEqual(before.places.get('outcome/O1'));
+    // Near the top the block starts at the top.
+    expect(tops(besideRow(before, serves, 'U1')).J2).toBe(0);
+  });
+
+  it('places the journey of a real trace level with each row it carries out in turn, and home with no row', () => {
+    const { graph } = traced(withJourney());
+    const laid = layOutTrace(graph, orderGraph(graph, null), NOTHING);
+    for (const u of ['P-D-UC01', 'P-D-UC02']) {
+      const beside = besideRow(laid, graph.serves, u);
+      expect(beside.places.get('journey/P-JR01')!.y).toBe(laid.rows.get(u)!.y);
+      // Its outcomes stacked on the row too.
+      for (const [o] of graph.serves.filter(([, r]) => r === u)) expect(Math.abs(beside.places.get(`outcome/${o}`)!.y - laid.rows.get(u)!.y)).toBeLessThanOrEqual(ITEM_HEIGHT + ITEM_GAP);
+    }
+    expect(besideRow(laid, graph.serves, null)).toBe(laid);
   });
 });
 

@@ -112,20 +112,34 @@ describe('the Trace stage', () => {
     await waitFor(async () => expect(box(await drawn(), 'P-D-UC01|use-case/P-D-UC01-R01')).toBeDefined());
   });
 
-  it('LA-V98-R22-T02 The outcomes a focused row serves are drawn beside it, and follow the focus as it walks to another row', async () => {
-    await openTrace('/P-D-UC02?stage=trace');
+  it('LA-V98-R22-T02 The outcomes a focused row serves and the journeys carrying it out are drawn beside it, follow the focus as it walks to another row, and stay as the journey is focused', async () => {
+    await openTrace('/P-D-UC02?stage=trace', withJourney());
     await canvasHost();
     const level = async (u: string) => {
       const scene = await drawn();
-      expect(box(scene, 'outcome/P-BO01')!.rect.top).toBeCloseTo(box(scene, `${u}|use-case`)!.rect.top, 3);
+      const row = box(scene, `${u}|use-case`)!.rect.top;
+      expect(box(scene, 'outcome/P-BO01')!.rect.top).toBeCloseTo(row, 3);
+      // The journey beside it by the box carrying the row out: its step's while it is open (the place may keep it open
+      // from before), unless that would put its box above the top, as on the first row; else its own.
+      const step = box(scene, `journey/P-JR01/${u === 'P-D-UC01' ? 'P-JR01-S01' : 'P-JR01-S02'}`);
+      const journey = box(scene, 'journey/P-JR01')!.rect.top;
+      expect([step?.rect.top, journey].some((y) => y !== undefined && Math.abs(y - row) < 1e-3)).toBe(true);
     };
     await waitFor(() => level('P-D-UC02'));
-    // The walk to the other row's use case: the outcome glides with it.
+    // The walk to the other row's use case: the outcome and the journey glide with it.
     const above = (await drawn()).rows.indexOf('P-D-UC01') < (await drawn()).rows.indexOf('P-D-UC02');
     fireEvent.click(toolbarButton(above ? 'Step to the box above in its column' : 'Step to the box below in its column'));
     await waitFor(() => expect(window.location.pathname).not.toBe('/P-D-UC02'));
-    // A box of the other row (its last when it is open): the outcome level with that row's use case.
+    // A box of the other row (its last when it is open): the outcome and the journey level with that row's use case.
     await waitFor(() => level('P-D-UC01'));
+    // Back to the first row, then focusing the journey beside it leaves it, and the outcome, there (its own place is by
+    // the other row).
+    window.history.pushState(null, '', '/P-D-UC02?stage=trace');
+    fireEvent.popState(window);
+    await waitFor(() => level('P-D-UC02'));
+    fireEvent.click(traceStage().querySelector<HTMLElement>('.trace-access a[data-trace-id="P-JR01"]')!);
+    await waitFor(() => expect(window.location.pathname).toBe('/P-JR01'));
+    await waitFor(() => level('P-D-UC02'));
   });
 
   it('LA-V98-R18-T02 Clicking a box opens its record and lights its path across its row, fading the rest; the chain shows for the selected step', async () => {
