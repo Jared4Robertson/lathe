@@ -1,0 +1,27 @@
+# A pull request's title is the squash commit it lands on main as, so it must carry a Conventional Commits type
+# (lathe/scripts/check-commits.ts, the same check as the commit-msg hook and scripts/ci.sh --title).
+name: pr-title
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  pr-title:
+    runs-on: ubuntu-latest
+    steps:
+      # actions/checkout v7.0.1, pinned by commit.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      # actions/setup-node v7.1.0, pinned by commit.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: 26
+      # The title goes through the environment, never into the script's text.
+      - run: node lathe/scripts/check-commits.ts --title "$PR_TITLE"
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}

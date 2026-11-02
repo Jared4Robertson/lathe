@@ -1,0 +1,6 @@
+#!/bin/sh
+# On main, refuses a commit whose title carries no Conventional Commits type (lathe/scripts/check-commits.ts): each change
+# lands there as one squash commit with a typed title. On any other branch commits are free-form, so it passes.
+# Enable once per clone: git config core.hooksPath .githooks
+[ "$(git symbolic-ref --quiet --short HEAD)" = main ] || exit 0
+exec node "$(git rev-parse --show-toplevel)/lathe/scripts/check-commits.ts" --message-file "$1"

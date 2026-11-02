@@ -12,5 +12,6 @@
 {"id":"LA-PLT-TOOL15","title":"axe.ts","domain_id":"LA-PLT","file":"app/a11y/axe.ts"}
 {"id":"LA-PLT-TOOL16","title":"knip.json","domain_id":"LA-PLT","file":"lathe/knip.json"}
 {"id":"LA-PLT-TOOL17","title":"upgrades","domain_id":"LA-PLT","file":"lathe/upgrades"}
+{"id":"LA-PLT-TOOL18","title":"check-commits.ts","domain_id":"LA-PLT","file":"lathe/scripts/check-commits.ts"}
 {"id":"LA-PRD-TOOL01","title":"schema-types.ts","domain_id":"LA-PRD","file":"lathe/scripts/schema-types.ts"}
 {"id":"LA-PRD-TOOL02","title":"reference.ts","domain_id":"LA-PRD","file":"lathe/scripts/reference.ts"}
