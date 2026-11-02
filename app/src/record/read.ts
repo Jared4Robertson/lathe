@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReadRefusal, StoreProblem } from '../../../lathe/src/server/contract';
+import { noteAccess } from '../edit/access';
 
 // An aggregate page's read: one of its aggregate's queries, GET /api/<aggregate>/<query>?<field>=<value>
 // (lathe/src/server/api.ts), whose answer is that query's own typed answer, such as a use case whole. The page reads it
@@ -39,6 +40,7 @@ const queryAddress = (route: string, input: Record<string, string>) => { const q
 async function readQuery<R>(address: string): Promise<Read<R>> {
   try {
     const res = await fetch(address, { headers: { accept: 'application/json' } });
+    noteAccess(res);
     const body: unknown = await res.json().catch(() => null);
     if (res.ok) return { state: 'read', answer: body as R };
     const refusal = (body ?? {}) as Partial<ReadRefusal>;

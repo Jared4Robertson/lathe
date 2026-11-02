@@ -146,7 +146,7 @@
 {"id":"LA-MOD-CMD391-CLI","title":"lathe read-model move-read-model","command_id":"LA-MOD-CMD391","usage":"lathe read-model move-read-model --<field> <value>… | lathe read-model move-read-model --json <file|->","mcp_tool":"read_model_move_read_model","file":"lathe/src/cli/aggregates.ts"}
 {"id":"LA-MOD-CMD392-CLI","title":"lathe specification move-specification","command_id":"LA-MOD-CMD392","usage":"lathe specification move-specification --<field> <value>… | lathe specification move-specification --json <file|->","mcp_tool":"specification_move_specification","file":"lathe/src/cli/aggregates.ts"}
 {"id":"LA-MOD-CMD397-CLI","title":"lathe domain move-domain-service","command_id":"LA-MOD-CMD397","usage":"lathe domain move-domain-service --<field> <value>… | lathe domain move-domain-service --json <file|->","mcp_tool":"domain_move_domain_service","file":"lathe/src/cli/aggregates.ts"}
-{"id":"LA-PLT-CMD17-CLI","title":"lathe serve","command_id":"LA-PLT-CMD17","usage":"lathe serve [--port <port>]","file":"lathe/src/cli/main.ts"}
+{"id":"LA-PLT-CMD17-CLI","title":"lathe serve","command_id":"LA-PLT-CMD17","usage":"lathe serve [--port <port>] [--network]","file":"lathe/src/cli/main.ts"}
 {"id":"LA-PLT-CMD21-CLI","title":"lathe init","command_id":"LA-PLT-CMD21","usage":"lathe init --name <name> --prefix <prefix>","file":"lathe/src/cli/main.ts"}
 {"id":"LA-PLT-CMD24-CLI","title":"lathe upgrade","command_id":"LA-PLT-CMD24","usage":"lathe upgrade","file":"lathe/src/cli/main.ts"}
 {"id":"LA-PLT-CMD25-CLI","title":"lathe mcp","command_id":"LA-PLT-CMD25","usage":"lathe mcp (the plugin's launcher, plugin/scripts/mcp-server.mjs, starts the installed Lathe's)","file":"lathe/src/cli/main.ts"}

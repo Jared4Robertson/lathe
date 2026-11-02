@@ -1,4 +1,5 @@
 // The Lathe command line, loaded by bin/lathe.ts once its packages are found. Run `lathe help` for usage.
+import { networkInterfaces } from 'node:os';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { CONFIG_FILE, loadProducts, mergeDataFiles, SCHEMA_VERSION, SchemaVersionError, upgradeProduct, type Problem, type Workspace } from '../index.ts';
@@ -22,6 +23,8 @@ Commands:
            and obligation kind) per product; exits 1 on any error.
            --json prints { products: [{ root, workspace }] } instead.
   serve    Serve the web app for the product repo and each product it lists.  --port 5330 (default)
+           --network also listens on the local network and prints its addresses: other devices on it
+           can read, and only this machine can change the spec.
   merge-data <base> <ours> <theirs> <path>
            Git's merge driver for data/*.jsonl files (%O %A %B %P): merges the three versions row by row,
            writes the result over <ours>, and exits 1 on a real clash or a row that breaks its table's rules.
@@ -50,6 +53,7 @@ const { positionals, values } = parseArgs({
     name: { type: 'string' },
     prefix: { type: 'string' },
     port: { type: 'string' },
+    network: { type: 'boolean' },
     help: { type: 'boolean' },
   },
 });
@@ -108,14 +112,22 @@ async function init() {
 async function startServer() {
   const port = Number(values.port ?? 5330);
   if (!Number.isInteger(port) || port <= 0) fail('--port must be a port number.');
-  const { serve } = await import('../server/serve.ts');
+  const { LOOPBACK_HOST, NETWORK_HOST, networkUrls, serve } = await import('../server/serve.ts');
+  const network = values.network === true;
   let running: ReturnType<typeof serve>;
   try {
-    running = serve({ root, port });
+    running = serve({ root, port, host: network ? NETWORK_HOST : LOOPBACK_HOST });
   } catch (error) {
     fail(error instanceof Error ? error.message : String(error));
   }
-  running.server.on('listening', () => console.log(`Lathe is serving ${root} at http://127.0.0.1:${port}`));
+  running.server.on('listening', () => {
+    console.log(`Lathe is serving ${root} at http://${LOOPBACK_HOST}:${port}`);
+    if (!network) return;
+    // Opt-in only (LA-PLT-UC23-R04): each address other devices on the network open, read-only for them.
+    const urls = networkUrls(networkInterfaces(), port);
+    if (!urls.length) console.log('No network address was found: other devices cannot reach it yet.');
+    for (const url of urls) console.log(`On the network (read only): ${url}`);
+  });
   running.server.on('error', (error) => fail(`Could not start the server: ${error.message}`));
   // Stopped from a terminal: stop cleanly (LA-PLT-UC23-R02), then end by the same signal, as before. A second signal,
   // or a stop that takes longer than STOP_TIMEOUT, ends it at once.

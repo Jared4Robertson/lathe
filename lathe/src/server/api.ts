@@ -10,6 +10,9 @@
 //   GET  /api/history?id=<ID>     HistoryAnswer: the commits that changed the record's rows (&skip=<n> for older ones)
 //   GET  /api/reference           the workspace's own product's Reference (reference.ts): kinds, tables, relations, folders, checks
 //
+// Every write (each POST) is refused with 403 when it comes from another site's page or from another device: a server
+// opened to the network lets other devices read, and only this machine write (access.ts, LA-PLT-UC23-R05).
+//
 // The root is a workspace: its own product, and each other product its lathe.config.json lists under products, each
 // read from and written to its own folder. The store of each product root is opened once and kept (on globalThis, so
 // it outlives a reload of this module in the dev server). When a data file changes, by a command or by anything else
@@ -34,6 +37,7 @@ import { recordChanges } from '../changes.ts';
 import { planUndo, UndoRefusal } from './undo.ts';
 import type { CheckRun, ReadView } from '../platform/data/rules.ts';
 import { recordHistory } from './history.ts';
+import { ACCESS_HEADER, READ_ONLY } from './access.ts';
 
 /** The most a command's body may hold. */
 export const WRITE_BODY_LIMIT = 1024 * 1024;
@@ -320,6 +324,24 @@ function crossSite(req: IncomingMessage): boolean {
   }
 }
 
+/** The socket addresses of this machine's own loopback: the only ones a write is taken from. */
+const LOOPBACK = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+
+/**
+ * Whether a socket's remote address is this machine. A server opened to the network serves other devices too, and
+ * the network has no sign-in, so only this machine writes (LA-PLT-UC23-R05).
+ */
+export function fromThisMachine(address: string | undefined): boolean {
+  return address !== undefined && LOOPBACK.has(address);
+}
+
+/** Why a write is refused before it is read, or null when it may go on: another site's page, or another device. */
+function writeRefusal(req: IncomingMessage): string | null {
+  if (crossSite(req)) return 'Writes come only from this server\'s own pages.';
+  if (!fromThisMachine(req.socket.remoteAddress)) return 'Changes come only from the machine Lathe runs on; other devices on the network can read.';
+  return null;
+}
+
 class BodyTooLarge extends Error {}
 
 function readBody(req: IncomingMessage, limit: number): Promise<string> {
@@ -536,10 +558,13 @@ async function runUndo(workspace: string, token: string, order: string[]): Promi
  * else. `pathname` is the full path, such as /api/use-case/get-use-case.
  */
 export async function handleApi(root: string, req: IncomingMessage, res: ServerResponse, pathname: string): Promise<boolean> {
+  // Another device reads only: every answer tells its app so (access.ts).
+  if (!fromThisMachine(req.socket.remoteAddress)) res.setHeader(ACCESS_HEADER, READ_ONLY);
   const routed = COMMAND_ROUTES.get(pathname);
   if (routed) {
     if (req.method !== routed.method) return (send(res, 405, { error: 'Method not allowed' }), true);
-    if (crossSite(req)) return (send(res, 403, { error: 'Writes come only from this server\'s own pages.' }), true);
+    const refused = writeRefusal(req);
+    if (refused) return (send(res, 403, { error: refused }), true);
     if (!(req.headers['content-type'] ?? '').toLowerCase().startsWith('application/json')) {
       return (send(res, 415, { error: 'A command is sent as application/json.' }), true);
     }
@@ -572,7 +597,8 @@ export async function handleApi(root: string, req: IncomingMessage, res: ServerR
   }
   if (pathname === '/api/snapshot' || pathname === '/api/undo' || pathname === '/api/turn-changes') {
     if (req.method !== 'POST') return (send(res, 405, { error: 'Method not allowed' }), true);
-    if (crossSite(req)) return (send(res, 403, { error: 'Writes come only from this server\'s own pages.' }), true);
+    const refused = writeRefusal(req);
+    if (refused) return (send(res, 403, { error: refused }), true);
     let body: Record<string, unknown>;
     try {
       body = JSON.parse(await readBody(req, WRITE_BODY_LIMIT)) as Record<string, unknown>;

@@ -31,7 +31,7 @@ async function store(): Promise<Store> {
 /** GET the route from the workspace's API: its status and answer. */
 async function get(root: string, url: string): Promise<{ status: number; answer: unknown }> {
   let text = '';
-  const req = Object.assign(Readable.from([]), { url, method: 'GET', headers: { host: '127.0.0.1:5300' } }) as unknown as IncomingMessage;
+  const req = Object.assign(Readable.from([]), { url, method: 'GET', headers: { host: '127.0.0.1:5300' }, socket: { remoteAddress: '127.0.0.1' } }) as unknown as IncomingMessage;
   const res = { statusCode: 200, setHeader: () => {}, end: (chunk?: string) => { text = chunk ?? ''; } } as unknown as ServerResponse & { statusCode: number };
   await handleApi(root, req, res, url.split('?')[0]);
   return { status: res.statusCode, answer: JSON.parse(text) as unknown };

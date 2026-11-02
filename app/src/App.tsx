@@ -6,6 +6,7 @@ import { useDataState, useDataVersion } from './exploring/record-summaries/reads
 import { formatPath } from './format/reference';
 import { SpecView } from './specs/SpecPages';
 import { postCommand, WriterProvider, type Writer } from './edit/write';
+import { useReadOnly } from './edit/access';
 import { CommandsProvider, useAnnounce, useCommand, useShortcutHint } from './shell/commands';
 import { SPACE_KEYS, spaceCommandId } from './shell/keymap';
 import { Nav } from './shell/Nav';
@@ -80,6 +81,8 @@ function Shell() {
       return answer;
     },
   }), [reload, mark]);
+  // Another device on the network only reads (LA-PLT-UC23-R05): it gets no writer, so no editor shows its actions.
+  const readOnly = useReadOnly();
   const spaces = useSpaceState(dataVersion.version, path, search);
   // Every page inside a space, and the nav, read the current space's own reads, never another product's.
   const spec = useDataState(spaces.current?.id ?? null, dataVersion);
@@ -235,7 +238,7 @@ function Shell() {
   }
 
   return (
-    <WriterProvider value={writer}>
+    <WriterProvider value={readOnly ? null : writer}>
     <SpacesProvider value={spaces}>
     <ChangesProvider index={spec.index} product={spaces.current?.id ?? null}>
     <RoomContext.Provider value={room}>
@@ -292,6 +295,7 @@ function Shell() {
           onCollapse={() => { if (!navCollapsed) setNavOpen(false); }}
         />
       )}
+      {readOnly && <p className="read-only-note" role="status">Read only on this device</p>}
       {page}
       {isHome && <ProductsPicker version={spec.version} onClose={leaveHome} />}
       {toolPanel}

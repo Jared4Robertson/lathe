@@ -45,7 +45,7 @@ async function request(middleware: Middleware, url: string, { method = 'GET', bo
   const req = Object.assign(Readable.from(body === undefined ? [] : [Buffer.from(body)]), {
     url,
     method,
-    headers: { host: '127.0.0.1:5300', ...headers } }) as unknown as IncomingMessage;
+    headers: { host: '127.0.0.1:5300', ...headers }, socket: { remoteAddress: '127.0.0.1' } }) as unknown as IncomingMessage;
   const res = {
     statusCode: 200,
     setHeader: (name: string, value: string) => { answer[name.toLowerCase()] = value; },
