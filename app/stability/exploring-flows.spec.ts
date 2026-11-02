@@ -363,6 +363,8 @@ test.describe('Exploring flows', () => {
     const wiki = page.locator(WIKI);
     await expect(wiki.getByRole('heading', { level: 3, name: /^Repositories \d+/ })).toBeVisible();
     await expect(wiki.getByRole('heading', { level: 3, name: /^Constraint tests \d+/ })).toBeVisible();
+    // A domain page opens no nav row (LA-V90-R18): its chevron shows the domain's folders.
+    await nav(page).getByRole('button', { name: 'Unfold Exploring' }).click();
     const folders = nav(page).getByRole('list', { name: 'Folders of Exploring' });
     await folders.getByRole('button', { name: /^Technical specification \d+/ }).click();
     await expect(nav(page).getByRole('list', { name: 'Technical specification of Exploring' }).getByRole('button', { name: /^Repositories \d+$/ })).toBeVisible();
