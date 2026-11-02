@@ -6,6 +6,7 @@
 import { existsSync, watch, type FSWatcher } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
+import type { NetworkInterfaceInfo } from 'node:os';
 import path from 'node:path';
 import { PACKAGE_DIR } from '../config.ts';
 import { closeEngine } from '../platform/data/store.ts';
@@ -36,6 +37,23 @@ async function sendFile(res: ServerResponse, file: string) {
 /** How long the server waits after a data file's change for the next, so one write's files make one reload. */
 export const RELOAD_DELAY_MS = 50;
 
+/** The address `lathe serve` listens on by default: this machine only. */
+export const LOOPBACK_HOST = '127.0.0.1';
+
+/** The address `lathe serve --network` listens on: every interface, so other devices on the network can read. */
+export const NETWORK_HOST = '0.0.0.0';
+
+/**
+ * The addresses other devices open a server listening on every interface at: one http://<IPv4>:<port> per
+ * non-internal IPv4 interface (as os.networkInterfaces() lists them), in the order listed (LA-PLT-UC23-R04).
+ */
+export function networkUrls(interfaces: NodeJS.Dict<NetworkInterfaceInfo[]>, port: number): string[] {
+  return Object.values(interfaces)
+    .flatMap((infos) => infos ?? [])
+    .filter((info) => info.family === 'IPv4' && !info.internal)
+    .map((info) => `http://${info.address}:${port}`);
+}
+
 export interface ServeOptions {
   root: string;
   port: number;
@@ -56,7 +74,7 @@ export interface LatheServer {
   stop(): Promise<void>;
 }
 
-export function serve({ root, port, host = '127.0.0.1', appDir = APP_DIR }: ServeOptions): LatheServer {
+export function serve({ root, port, host = LOOPBACK_HOST, appDir = APP_DIR }: ServeOptions): LatheServer {
   if (!existsSync(path.join(appDir, 'index.html'))) {
     throw new Error(`The web app is not built (${appDir} is missing). In the Lathe repo, run: npm --prefix lathe run build`);
   }

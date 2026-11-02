@@ -223,7 +223,7 @@ describe('the reference script and GET /api/reference', () => {
       setHeader: (name: string, value: string) => (headers[name] = value),
       end: (text: string) => (body = text),
     } as unknown as ServerResponse;
-    const handled = await handleApi(own, { method: 'GET' } as IncomingMessage, res, '/api/reference');
+    const handled = await handleApi(own, { method: 'GET', socket: { remoteAddress: '127.0.0.1' } } as unknown as IncomingMessage, res, '/api/reference');
     expect(handled).toBe(true);
     expect(status).toBe(200);
     expect(headers['content-type']).toBe('application/json');

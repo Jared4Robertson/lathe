@@ -252,6 +252,8 @@
 {"id":"LA-PLT-UC23-FL-S01","title":"The Owner runs lathe serve to browse and edit the spec, with no build tools in the repo","flow_id":"LA-PLT-UC23-FL","path":"main","position":1}
 {"id":"LA-PLT-UC23-FL-S02","title":"They stop lathe serve from the terminal, and it closes the store before it ends","flow_id":"LA-PLT-UC23-FL","path":"main","position":2}
 {"id":"LA-PLT-UC23-FL-S03","title":"lathe serve shows each product as a space, and writes each change to its own product's folder","flow_id":"LA-PLT-UC23-FL","path":"workspace","position":1}
+{"id":"LA-PLT-UC23-FL-S04","title":"The Owner runs lathe serve --network and opens one of the addresses it prints on a phone on the same Wi-Fi","flow_id":"LA-PLT-UC23-FL","path":"network","position":1}
+{"id":"LA-PLT-UC23-FL-S05","title":"The phone reads the spec and shows it reads only; a change from it is refused, and the Owner changes the spec from the machine Lathe runs on","flow_id":"LA-PLT-UC23-FL","path":"network","position":2}
 {"id":"LA-PLT-UC24-FL-S01","title":"The Reader presses ?; the shortcuts sheet lists every shortcut by group, with a search and each shortcut's keys to change","flow_id":"LA-PLT-UC24-FL","path":"main","position":1}
 {"id":"LA-PLT-UC24-FL-S02","title":"They choose a key in the sheet and press a new one, and the palette, the sheet and every hint show it at once","flow_id":"LA-PLT-UC24-FL","path":"main","position":2}
 {"id":"LA-PLT-UC24-FL-S03","title":"In a Product window the menus show the new keys beside their commands","flow_id":"LA-PLT-UC24-FL","path":"main","position":3,"interface_id":"LA-IF02"}

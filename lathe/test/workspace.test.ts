@@ -52,6 +52,7 @@ async function request(root: string, url: string, body?: unknown) {
     url,
     method: body === undefined ? 'GET' : 'POST',
     headers: { host: '127.0.0.1:5300', 'content-type': 'application/json' },
+    socket: { remoteAddress: '127.0.0.1' },
   }) as unknown as IncomingMessage;
   const res = {
     statusCode: 200,

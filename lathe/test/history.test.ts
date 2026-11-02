@@ -82,7 +82,7 @@ afterAll(async () => {
 async function get(root: string, url: string) {
   let body = '';
   const res = { statusCode: 200, setHeader: () => {}, end: (chunk?: string) => { body = chunk ?? ''; } } as unknown as ServerResponse;
-  const handled = await handleApi(root, { method: 'GET', url, headers: {} } as IncomingMessage, res, url.split('?')[0]);
+  const handled = await handleApi(root, { method: 'GET', url, headers: {}, socket: { remoteAddress: '127.0.0.1' } } as unknown as IncomingMessage, res, url.split('?')[0]);
   return { handled, status: res.statusCode, body: JSON.parse(body) };
 }
 

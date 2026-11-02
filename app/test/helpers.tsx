@@ -15,6 +15,7 @@ import { readViewOf, type ServedData } from './read-view';
 import { referenceOf } from '../../lathe/src/reference';
 import { LIST_RECORD_CHANGES } from '../../lathe/src/exploring/record-changes/queries';
 import type { LatheDesktop } from '../src/shell/desktop-bridge';
+import { ACCESS_HEADER, READ_ONLY } from '../../lathe/src/server/access';
 
 /** One aggregate command the page sent: its route and its input. */
 export interface SentCommand {
@@ -32,6 +33,8 @@ export interface Served {
    * goes through and changes nothing. A function that returns new data serves it from then on.
    */
   command?: (sent: SentCommand) => { answer: WriteAnswer; data?: ServedData };
+  /** True to answer as a server answers another device on the network: every answer marked read-only. */
+  readOnly?: boolean;
 }
 
 /** Every request the page made, as "METHOD /path". */
@@ -46,7 +49,8 @@ export function serve(served: Served = {}): { requests: Requests; commands: Sent
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.pathname : input.url;
     requests.push(`${init?.method ?? 'GET'} ${url}`);
-    const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
+    const json = (body: unknown, status = 200) =>
+      new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', ...(served.readOnly ? { [ACCESS_HEADER]: READ_ONLY } : {}) } });
     // The Reference read: the schema's kinds, tables and relations, with the check rows.
     if (url === '/api/reference') {
       const { schema } = data;

@@ -11,6 +11,7 @@ npx lathe domain add-domain --id TL-LEND --title Lending --product_id TL --posit
   --description "Lending tools to members and taking them back."
 npx lathe check
 npx lathe serve            # http://127.0.0.1:5330
+npx lathe serve --network  # also on the local network, read only for other devices
 ```
 
 ## The data model
@@ -91,7 +92,7 @@ A driver that cannot start, because this checkout's `lathe` is not installed, st
 | `init --name <name> --prefix <P>` | Writes `lathe.config.json` (if there is none) with this Lathe's schema version, and adds the product to `data/product.jsonl` with Add a product. Both options are required; the prefix is capital letters and digits, starting with a letter. It stops if that product already exists. |
 | `check [--json]` | Loads the data and checks it: the product's, then each product `products` lists, each from its own folder and reported on its own, with the counts of them all at the end. For each it prints the errors, then the warnings, then the coverage: for each domain, and for the product outside the domains, one line per obligation kind (designed, built and proved out of the total, and how many wait on a test not automated yet, with each gap), a line of test counts, and the records short of a minimum. Exits 1 on any error, data the store refuses included; warnings alone do not fail it. `--json` prints `{ products: [{ root, workspace }] }` instead, each product's folder and its whole `Workspace`. |
 | `upgrade` | Moves the data forward to this Lathe's schema version (see [Upgrading](#upgrading)). |
-| `serve [--port <n>]` | Serves the web app and its API at `http://127.0.0.1:<port>` (default 5330), for the product and each product `products` lists. Open pages reload when any of their data changes. |
+| `serve [--port <n>] [--network]` | Serves the web app and its API at `http://127.0.0.1:<port>` (default 5330), for the product and each product `products` lists. Open pages reload when any of their data changes. `--network` also listens on the local network and prints an `http://<address>:<port>` line for each of this machine's network addresses: another device on the network, such as a phone on the same Wi-Fi, opens one and reads; only this machine changes the spec. |
 | `merge-data <base> <ours> <theirs> <path>` | Git's merge driver for the data files (see [The merge driver](#the-merge-driver)). |
 | `mcp` | Serves every aggregate's commands and queries, and the check, as MCP tools over stdio, for the Claude Code plugin. |
 | `<aggregate> <command>` | An aggregate's command or query, such as `use-case add-flow-step` (see [Changing the data](#changing-the-data)). |
@@ -175,6 +176,8 @@ The types are in [src/types.ts](src/types.ts) (`Workspace` and its parts: each r
 | `GET /api/reference` | The `Reference`: stages, kinds, tables, relations, checks and coverage gaps. |
 | `GET /api/history?id=<ID>` | The commits that changed the record's row, newest first (`&commit=<hash>` for one commit's change of the row). |
 | `GET /api/events` | Server-sent events: `spec:changed` when a data file changes. |
+
+Every write is refused with 403 when it comes from another site's page, or from any address but this machine's loopback (`127.0.0.1`, `::1`): a server opened to the network has no sign-in, so other devices read only. Every API answer to another device carries `x-lathe-access: read-only`, and the app then shows "Read only on this device" and no editing actions.
 
 ## Checks
 
