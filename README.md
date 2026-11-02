@@ -49,7 +49,7 @@ Each change lands on main as one squash commit (`git merge --squash <branch>`, o
 git config core.hooksPath .githooks
 ```
 
-On main, [release-please](.github/workflows/release-please.yml) keeps a release PR open with the next version and `lathe/CHANGELOG.md`; merging it tags the release and publishes it on GitHub.
+On main, [release-please](.github/workflows/release-please.yml) keeps a release PR open with the next version and `CHANGELOG.md` (from every commit in the repo, not only lathe/; the version is kept in version.txt and lathe/package.json); merging it tags the release and publishes it on GitHub.
 
 The npm scripts run in `lathe/`, so `--root ..` names this repo. In a product repo, the same commands are `npx lathe check`, `npx lathe <aggregate> <command> ...` and `npx lathe serve`; the [package README](lathe/README.md) has every option.
 
