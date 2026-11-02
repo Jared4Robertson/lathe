@@ -94,7 +94,7 @@ export const MOVE_QUESTION_IDENTITY = {
   id: 'LA-PRD-CMD130',
   slice: { aggregate: 'LA-PRD-A1', name: 'product' },
   name: 'move-question',
-  description: 'Moves an open question under its product or another of its domains; its ID takes the new parent\'s in place of the old one\'s, and every record that names it names the new ID. What it is about stays.',
+  description: 'Moves an open question under its product or another of its domains. An ID that no longer starts with its new parent\'s takes the new parent\'s in place of the old one\'s, and every record that names it names the new ID. What it is about stays.',
   method: 'POST',
   route: '/api/product/move-question',
 } as const;
