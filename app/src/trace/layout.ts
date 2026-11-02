@@ -159,37 +159,76 @@ export function layOutTrace(graph: TraceGraph, order: TraceOrder, open: Openness
 }
 
 /**
- * The places with the outcomes a row serves beside it (LA-V98-R22), pure: those shown slide to the row's height,
- * stacked a box apart in their column's order, centered on the row's first line (its use case), never above the top;
- * every other outcome keeps its place unless the stack covers it, when it steps aside just enough, up or down,
- * whichever is nearer, pushing on the ones beyond it. No other box moves. With no row, or one serving no outcome shown,
- * the laid view itself: each outcome at its own place.
+ * The places with what belongs beside a row slid to its height (LA-V98-R22), pure: in the Outcome column the outcomes
+ * its use case serves, in the Journey column the journeys carrying it out (a journey open to its steps by the step box
+ * carrying it out, the journey's other boxes kept with it as one block). Each column on its own (besideIn): what is
+ * beside the row is stacked in the column's order and centered on the row's first line (its use case), never above the
+ * top; every other block keeps its place unless the stack covers it, when it steps aside just enough, up or down,
+ * whichever is nearer, pushing on the ones beyond it. No other box moves; the lines follow their boxes. With no row,
+ * or one with nothing beside it shown, the laid view itself: each box at its own place.
  */
-export function outcomesBeside(laid: TraceLaid, serves: readonly (readonly [string, string])[], row: string | null): TraceLaid {
+export function besideRow(laid: TraceLaid, serves: readonly (readonly [string, string])[], row: string | null): TraceLaid {
   const band = row ? laid.rows.get(row) : undefined;
   if (!band) return laid;
-  const home = (key: string) => laid.places.get(key)!.y;
-  const served = new Set(serves.filter(([, u]) => u === row).map(([o]) => `outcome/${o}`));
-  const stack = laid.columns[0].filter((k) => served.has(k));
-  if (stack.length === 0) return laid;
-  const top = Math.max(0, band.y + ITEM_HEIGHT / 2 - (stack.length * PITCH - ITEM_GAP) / 2);
-  const end = top + stack.length * PITCH;
-  const tops = new Map<string, number>(stack.map((k, i) => [k, top + i * PITCH]));
-  // The others: those whose middle is above the stack's step up, the rest down, each just clear of the one before.
-  const others = laid.columns[0].filter((k) => !served.has(k));
-  const middle = (top + end - ITEM_GAP) / 2;
-  const up = others.filter((k) => home(k) + ITEM_HEIGHT / 2 < middle).reverse();
-  const down = others.filter((k) => home(k) + ITEM_HEIGHT / 2 >= middle);
-  // Up never goes above the top: what has no room there steps down instead, the farthest up first.
-  const packUp = () => { let ceiling = top; return up.map((k) => (ceiling = Math.min(home(k), ceiling - PITCH))); };
-  while (up.length > 0 && Math.min(...packUp()) < 0) down.unshift(up.pop()!);
-  packUp().forEach((y, i) => tops.set(up[i], y));
-  down.sort((a, b) => home(a) - home(b));
-  let floor = end;
-  for (const k of down) { const y = Math.max(home(k), floor); tops.set(k, y); floor = y + PITCH; }
+  const outcomes = new Set(serves.filter(([, u]) => u === row).map(([o]) => `outcome/${o}`));
+  const journeys = new Set(laid.carries.filter((c) => c.useCase === row).map((c) => c.from));
+  const tops = new Map<string, number>([
+    ...besideIn(laid, laid.columns[OUTCOME_COLUMN].map((k) => [k]), outcomes, band.y),
+    // A journey's block: its box and every box under it that shows, top to bottom.
+    ...besideIn(laid, blocksOf(laid.columns[JOURNEY_COLUMN]), journeys, band.y),
+  ]);
+  if (tops.size === 0) return laid;
   const places = new Map(laid.places);
   for (const [k, y] of tops) places.set(k, { ...laid.places.get(k)!, y });
-  const columns = [[...laid.columns[0]].sort((a, b) => tops.get(a)! - tops.get(b)!), ...laid.columns.slice(1)];
+  const sorted = (keys: readonly string[]) => [...keys].sort((a, b) => places.get(a)!.y - places.get(b)!.y);
+  const columns = laid.columns.map((keys, c) => (c === OUTCOME_COLUMN || c === JOURNEY_COLUMN ? sorted(keys) : keys));
   const bottom = Math.max(...[...tops.values()].map((y) => y + ITEM_HEIGHT));
   return { ...laid, columns, places, height: Math.max(laid.height, bottom) };
+}
+
+/** A Journey column's boxes as blocks, one per journey: its box, then its boxes under it. */
+function blocksOf(keys: readonly string[]): string[][] {
+  const blocks: string[][] = [];
+  for (const k of keys) {
+    const journey = k.split('/').slice(0, 2).join('/');
+    const last = blocks.at(-1);
+    if (last && last[0] === journey) last.push(k); else blocks.push([k]);
+  }
+  return blocks;
+}
+
+/**
+ * One column's new tops with the blocks holding a key of `beside` slid to a row whose top is `row`: each such block
+ * by its first key there (its anchor), stacked a box apart in the column's order, the first and last anchors centered
+ * on the row's first line, never above the top; the other blocks step aside just enough (those whose middle is above
+ * the stack's up, the rest down), each kept whole. Empty when no block is beside the row.
+ */
+function besideIn(laid: TraceLaid, blocks: readonly (readonly string[])[], beside: ReadonlySet<string>, row: number): Map<string, number> {
+  const tops = new Map<string, number>();
+  const stack = blocks.filter((b) => b.some((k) => beside.has(k)));
+  if (stack.length === 0) return tops;
+  const home = (b: readonly string[]) => laid.places.get(b[0])!.y;
+  const tall = (b: readonly string[]) => b.length * PITCH;
+  const anchor = (b: readonly string[]) => b.findIndex((k) => beside.has(k)) * PITCH;
+  // The stack's anchors, from its top: the first block's and the last's, whose middle sits on the row's.
+  const heights = stack.map(tall);
+  const lastStart = heights.slice(0, -1).reduce((s, h) => s + h, 0);
+  const top = Math.max(0, row - (anchor(stack[0]) + lastStart + anchor(stack.at(-1)!)) / 2);
+  const end = top + heights.reduce((s, h) => s + h, 0);
+  let at = top;
+  for (const b of stack) { b.forEach((k, i) => tops.set(k, at + i * PITCH)); at += tall(b); }
+  // The others: those whose middle is above the stack's step up, the rest down, each just clear of the one before.
+  const others = blocks.filter((b) => !stack.includes(b));
+  const middle = (top + end - ITEM_GAP) / 2;
+  const mid = (b: readonly string[]) => home(b) + (tall(b) - ITEM_GAP) / 2;
+  const up = others.filter((b) => mid(b) < middle).reverse();
+  const down = others.filter((b) => mid(b) >= middle);
+  // Up never goes above the top: what has no room there steps down instead, the farthest up first.
+  const packUp = () => { let ceiling = top; return up.map((b) => (ceiling = Math.min(home(b), ceiling - tall(b)))); };
+  while (up.length > 0 && Math.min(...packUp()) < 0) down.unshift(up.pop()!);
+  packUp().forEach((y, i) => up[i].forEach((k, j) => tops.set(k, y + j * PITCH)));
+  down.sort((a, b) => home(a) - home(b));
+  let floor = end;
+  for (const b of down) { const y = Math.max(home(b), floor); b.forEach((k, j) => tops.set(k, y + j * PITCH)); floor = y + tall(b); }
+  return tops;
 }
