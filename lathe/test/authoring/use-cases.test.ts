@@ -115,7 +115,7 @@ describe('flows', () => {
     expect(schema.relations.happens_in).toBeUndefined();
     expect(pairsOf(schema, 'presents')).toEqual(['view>command', 'view>query']);
     expect(pairsOf(schema, 'offers')).toEqual(['interface>use_case']);
-    expect(pairsOf(schema, 'exchanges_with')).toEqual(['flow_step>integration']);
+    expect(pairsOf(schema, 'exchanges_with')).toEqual(['flow_step>integration', 'policy>integration']);
     expect(record(good, 'EX-LEND-UC01-FL-S02')).toMatchObject({ parent: 'EX-LEND-UC01-FL', fields: { path: 'main', position: 2 } });
     const from = (id: string) => good.links.filter((l) => l.source === id).map((l) => `${l.relation} ${l.target}`).sort();
     expect(from('EX-LEND-UC01-FL-S01')).toEqual(['fulfills EX-LEND-UC01-R01', 'invokes EX-LEND-CMD01']);

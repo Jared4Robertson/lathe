@@ -9,7 +9,7 @@ import { INTERFACE_AGGREGATE, interfacesFrom, type Interface } from './model.ts'
 /** Every rule the interface breaks (LA-AUT-INV194 each role that uses it is one of its product's roles). */
 export function interfaceProblems(iface: Interface, view: ReadView): RuleProblem[] {
   const actors = iface.actors.map((role, at) => ({ interface_id: iface.root, position: at + 1, role_name: role }));
-  return rolesNotOfProduct(view, 'interface-actor-role', 'interface_actor', `Interface ${iface.root}`, iface.row.product_id, actors, 'as a role that uses it');
+  return rolesNotOfProduct(view, 'interface_actor', `Interface ${iface.root}`, iface.row.product_id, actors, 'as a role that uses it').map((p) => ({ rule: 'interface-actor-role', ...p }));
 }
 
 /** The rules over all data: every interface, whole. */

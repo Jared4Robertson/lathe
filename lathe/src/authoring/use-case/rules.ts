@@ -45,7 +45,7 @@ export function useCaseProblems(useCase: UseCase, view: ReadView): RuleProblem[]
   const product = productOf(useCase, view);
   if (product !== undefined) {
     const actors = useCase.actors.map((role, at) => ({ use_case_id: useCase.root, position: at + 1, role_name: role }));
-    problems.push(...rolesNotOfProduct(view, 'use-case-actor-role', 'use_case_actor', `Use case ${useCase.root}`, product, actors, 'as its actor'));
+    problems.push(...rolesNotOfProduct(view, 'use_case_actor', `Use case ${useCase.root}`, product, actors, 'as its actor').map((p) => ({ rule: 'use-case-actor-role', ...p })));
   }
   const flows = new Map(useCase.flows.map((f) => [f.id, f]));
   for (const flow of useCase.flows) {
