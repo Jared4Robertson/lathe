@@ -43,10 +43,12 @@ function productChoices(index: RecordIndex, product: string, kinds: readonly str
   return [...index.byId.values()].filter((r) => kinds.includes(r.kind) && r.product === product).map((r) => ({ id: r.id, title: titled(r) }));
 }
 
-/** The use cases and policies of the product that a step may carry out, each with its domain: the choices stand in domain order. */
+/** The use cases and policies of the product that a step may carry out, each with its domain: the choices stand in domain order (by position). */
 function carryOutChoices(index: RecordIndex, product: string): Choice[] {
   const domainOf = (r: { domain?: string | null }) => index.byId.get(r.domain ?? '')?.title ?? '';
-  return productChoices(index, product, ['use_case', 'policy'], (r) => `${r.title} (${domainOf(r)})`).sort((a, b) => (index.byId.get(a.id)?.domain ?? '').localeCompare(index.byId.get(b.id)?.domain ?? '') || compareIds(a.id, b.id));
+  const place = new Map(index.domains.map((d, at) => [d.id, at]));
+  const placeOf = (id: string) => place.get(index.byId.get(id)?.domain ?? '') ?? Infinity;
+  return productChoices(index, product, ['use_case', 'policy'], (r) => `${r.title} (${domainOf(r)})`).sort((a, b) => placeOf(a.id) - placeOf(b.id) || compareIds(a.id, b.id));
 }
 
 /** The fields each kind's Add and Change take, from their inputs (Change leaves out the ID, Add the parent). */

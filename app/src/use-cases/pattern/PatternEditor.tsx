@@ -30,9 +30,9 @@ import { kindWord, addedUnder } from '../../platform/meta-model/reads';
 const dataSets = (index: RecordIndex, product: string): Choice[] =>
   [...index.byId.values()].filter((r) => r.kind === 'test_data_set' && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
-/** The domains of the product, as where a rule test proves its rule. */
+/** The domains of the product, by position, as where a rule test proves its rule. */
 const domains = (index: RecordIndex, product: string): Choice[] =>
-  [...index.byId.values()].filter((r) => r.kind === 'domain' && r.product === product).map((r) => ({ id: r.id, title: r.title }));
+  index.domains.filter((r) => r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
 /** The fields each kind's Add and Change take, from their inputs; the hints add long text and the choices. */
 function fieldsOf(index: RecordIndex, product: string, kind: PatternKind, adding: boolean): FieldSpec[] {

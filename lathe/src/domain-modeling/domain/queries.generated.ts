@@ -13,7 +13,7 @@ export const LIST_DOMAINS_IDENTITY = {
   id: 'LA-MOD-QRY131',
   slice: { aggregate: 'LA-MOD-A4', name: 'domain' },
   name: 'list-domains',
-  description: 'Lists the domains of a product, by ID, with their titles.',
+  description: 'Lists the domains of a product, by position, with their titles.',
   method: 'GET',
   route: '/api/domain/list-domains',
 } as const;
