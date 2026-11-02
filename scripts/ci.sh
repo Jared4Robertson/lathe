@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # The checks, one definition of each: run them here, in a cloud session, or on any CI runner.
 #   scripts/ci.sh            the merge gate: types, knip, every package's unit tests and lathe check.
+#   scripts/ci.sh --title "feat(server): ..."  also checks the planned squash commit's title carries a type.
 #   scripts/ci.sh --browser  the browser batch: the stability and accessibility suites, run in batches on
 #                            main, never as a merge gate.
 # It installs what it needs, records each step's real exit code (never through a pipe) and writes a summary
@@ -25,15 +26,30 @@ step() {
   if [ $code -ne 0 ]; then failed=1; echo "FAIL $name (exit $code), last lines of $log:"; tail -20 "$log"; else echo "ok   $name"; fi
 }
 
+mode=gate
+title=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --browser) mode=--browser; shift ;;
+    --title) title="${2:?--title needs the title}"; shift 2 ;;
+    *) echo "Unknown option $1: scripts/ci.sh [--browser] [--title \"type(scope): summary\"]"; exit 2 ;;
+  esac
+done
+
 step "Node 26" 'node --version | grep -q "^v26\."'
 step "Install" 'npm ci --prefix lathe && npm ci --prefix app && npm ci --prefix desktop && npm ci --prefix examples/tool-library'
-mode="${1:-gate}"
 if [ "$mode" = "--browser" ]; then
 step "Install Chromium" 'cd app && npx playwright install --with-deps chromium'
 step "Stability suite" 'npm --prefix app run test:stability'
 step "Accessibility suite" 'npm --prefix app run test:a11y'
 
 else
+if [ -n "$title" ]; then
+  export SQUASH_TITLE="$title"
+  step "Squash title" 'node lathe/scripts/check-commits.ts --title "$SQUASH_TITLE"'
+else
+  echo "note Squash title not checked: pass --title \"type(scope): summary\" to check the title the change lands on main with."
+fi
 step "Lathe types" 'npm --prefix lathe run typecheck'
 step "App types" 'cd app && npx tsc --noEmit'
 step "Desktop types" 'npm --prefix desktop run typecheck'

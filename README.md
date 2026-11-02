@@ -43,6 +43,14 @@ git config merge.lathe-data.driver "node lathe/bin/lathe.ts merge-data %O %A %B 
 
 Git runs the driver from each worktree's own `lathe`, so install it there first (`npm ci --prefix lathe`). A driver that cannot start stops the merge and says the file was not merged; install, then run `git checkout -m <file>` to merge it row by row again. Never resolve such a file by taking a side or by git's line merge: that brings back rows the other side removed.
 
+Each change lands on main as one squash commit (`git merge --squash <branch>`, or a squash merge on GitHub with the PR's title) whose title carries a [Conventional Commits](https://www.conventionalcommits.org) type, `type(scope)!: summary`, so each release's notes group themselves: `feat`, `fix`, `perf`, `refactor`, `docs`, `test`, `build`, `ci`, `chore`, `revert`, and `spec` for a change to the spec's records alone (`data/*.jsonl`). The scope is optional, the domain or area in lowercase (`journeys`, `graph`, `server`), and `!` marks a breaking change; the body lists the branch's commit subjects. Commits on a branch are free-form (typed ones are welcome). [lathe/scripts/check-commits.ts](lathe/scripts/check-commits.ts) checks the title three ways: `scripts/ci.sh --title "<title>"` before the merge, the [PR title check](.github/workflows/pr-title.yml) on GitHub, and the commit-msg hook as the squash commit is made on main, once enabled per clone:
+
+```sh
+git config core.hooksPath .githooks
+```
+
+On main, [release-please](.github/workflows/release-please.yml) keeps a release PR open with the next version and `lathe/CHANGELOG.md`; merging it tags the release and publishes it on GitHub.
+
 The npm scripts run in `lathe/`, so `--root ..` names this repo. In a product repo, the same commands are `npx lathe check`, `npx lathe <aggregate> <command> ...` and `npx lathe serve`; the [package README](lathe/README.md) has every option.
 
 ## Upgrading
