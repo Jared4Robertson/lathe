@@ -19,3 +19,6 @@
 {"source_id":"LA-JR04-S04","target_id":"LA-PLT-UC21"}
 {"source_id":"LA-JR04-S05","target_id":"LA-PLT-UC27"}
 {"source_id":"LA-JR04-S06","target_id":"LA-PLT-UC19"}
+{"source_id":"LA-JR05-S01","target_id":"LA-EXP-UC01"}
+{"source_id":"LA-JR05-S02","target_id":"LA-EXP-UC02"}
+{"source_id":"LA-JR05-S03","target_id":"LA-TRC-UC14"}
