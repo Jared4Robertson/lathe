@@ -205,27 +205,34 @@ test.describe('graph', () => {
         id: b.id,
         rect: b.rect,
         full: b.tip,
-        title: title.length > 0 ? title.map((l) => l.text).join('') : null,
+        child: b.child,
+        // A focus's child drawn at the readable size wraps its own lines on whole words (LA-V93-R77), joined by spaces.
+        title: title.length > 0 ? title.map((l) => l.text).join(b.child ? ' ' : '') : null,
+        px: Math.min(...title.map((l) => l.fontPx)),
         // Each line the map broke it into fits, and every line but the last ends after a space or a hyphen.
-        wrapped: title.length > 0 && title.every((l) => l.drawnWidth <= l.rect.width + 0.5 * s.camera.zoom + 0.5) && title.slice(0, -1).every((l) => /[\s-]$/.test(l.text)),
+        wrapped: title.length > 0 && title.every((l) => l.drawnWidth <= l.rect.width + 0.5 * s.camera.zoom + 0.5) && (b.child || title.slice(0, -1).every((l) => /[\s-]$/.test(l.text))),
       };
     });
-    await test.step('LA-V93-R10-T08 the domain fills most of the open space\'s width, whole, its product at the left edge and its stages starting on the right', () => {
+    await test.step('LA-V93-R10-T08 the domain is framed with its stages\' level on the right, each stage\'s title read at the page\'s size, and the domain whole with its product at the left edge where they fit', () => {
       const d = boxes.find((b) => b.id === domain)!.rect;
-      expect(d.left >= open.left - 1 && d.left + d.width <= open.right + 1 && d.top >= open.top - 1 && d.top + d.height <= open.bottom + 1, 'the domain is whole in the open space').toBe(true);
-      expect(d.width / width, 'the domain fills about three quarters of the open space\'s width').toBeGreaterThan(0.7);
-      const product = boxes.find((b) => b.id === 'LA')!.rect;
-      expect(product.left + product.width, 'the product shows at the left edge').toBeGreaterThan(open.left);
-      expect(product.left + product.width).toBeLessThan(d.left);
       const stages = boxes.filter((b) => b.id.startsWith(`${domain}/`));
       expect(stages.length, 'its stages are drawn').toBeGreaterThanOrEqual(2);
-      expect(Math.min(...stages.map((b) => b.rect.left)), 'its stages\' column starts in the open space').toBeLessThan(open.right);
+      for (const st of stages) expect(st.px, `${st.id} reads at 12.5 px or more`).toBeGreaterThanOrEqual(12.5 - 1e-6);
+      expect(Math.min(...stages.map((b) => b.rect.left)), 'its stages\' level is in the open space').toBeGreaterThanOrEqual(open.left - 1);
+      expect(d.left + d.width, 'the domain shows beside its stages').toBeGreaterThan(open.left);
+      if (d.left >= open.left - 1) {
+        expect(d.width / width, 'a whole domain fills most of the open space\'s width beside its stages').toBeGreaterThan(0.5);
+        const product = boxes.find((b) => b.id === 'LA')!.rect;
+        expect(product.left + product.width).toBeLessThan(d.left);
+      }
     });
     await test.step('LA-V93-R29-T03 every drawn box shows its label, its full title wrapped on whole words', () => {
       for (const b of boxes) {
         expect(b.title, `${b.id} is labeled`).not.toBeNull();
-        // The tooltip is "title (ID)" or, for a group, "title (in owner)": the label shows the whole title.
-        expect(b.full.startsWith(`${b.title} (`), `${b.id} shows its full title`).toBe(true);
+        // The tooltip is "title (ID)" or, for a group, "title (in owner)": the label shows the whole title, or a focus's
+        // child read at the readable size its start, cut with an ellipsis (LA-V93-R77).
+        if (b.child && b.title!.endsWith('…')) expect(b.full.startsWith(b.title!.slice(0, -1).trimEnd()), `${b.id} shows the start of its title on two lines`).toBe(true);
+        else expect(b.full.startsWith(`${b.title} (`), `${b.id} shows its full title`).toBe(true);
         expect(b.wrapped, `${b.id} fits its title, wrapped on whole words`).toBe(true);
       }
     });
@@ -278,7 +285,7 @@ test.describe('graph', () => {
     }
   });
 
-  test('LA-V93-R29-T05 a label keeps its size in the map when the focus changes and the camera zooms', async ({ page }) => {
+  test('LA-V93-R29-T05 a label keeps its size in the map when the focus changes and the camera zooms, or as the focus\'s child reads at the readable size', async ({ page }) => {
     await openPage(page, `${DOMAIN}?stage=graph`);
     await nodes(page);
     const target = `${DOMAIN.slice(1)}/interaction-design`;
@@ -286,11 +293,18 @@ test.describe('graph', () => {
       const s = await sceneOf(page);
       const b = s.boxes.find((x) => x.id === target)!;
       const title = b.lines.filter((l) => l.face === 'title');
-      return { font: title[0].mapPx, screen: title.reduce((h, l) => h + l.rect.height, 0), lines: title.map((l) => l.text), zoom: s.camera.zoom };
+      return { font: title[0].mapPx, px: title[0].fontPx, screen: title.reduce((h, l) => h + l.rect.height, 0), lines: title.map((l) => l.text), zoom: s.camera.zoom };
     };
-    const before = await size();
-    // Focusing it moves the camera only: its font size in map units stays, and its size on screen follows the zoom.
+    // A child of the focus: its title reads at 12.5 px or more (its own, or its title alone at it, LA-V93-R77).
+    expect((await size()).px).toBeGreaterThanOrEqual(12.5 - 1e-6);
+    // Focused, then walked out and in again: its font size in map units stays, and its size on screen follows the zoom.
     await clickBox(page, target);
+    await page.waitForURL(/\/interaction-design(\?|$)/);
+    await page.waitForTimeout(1300);
+    const before = await size();
+    await page.goBack();
+    await page.waitForTimeout(1300);
+    await page.goForward();
     await page.waitForURL(/\/interaction-design(\?|$)/);
     await page.waitForTimeout(1300);
     const focused = await size();

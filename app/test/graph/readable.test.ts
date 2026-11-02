@@ -2,7 +2,7 @@ import { recordIndexOf } from '../read-view';
 // @vitest-environment node
 import { beforeAll, describe, expect, it } from 'vitest';
 import { repoData } from '../fixtures/repo';
-import { drawnFor, drawnNested, FRAME_PADDING, frameGround, frameNested, frameOnMap, maxZoomFor, MIN_ZOOM, type Drawn, type Viewport } from '../../src/graph/camera';
+import { CHILD_MIN_H, CHILD_MIN_W, childZoom, drawnFor, drawnNested, FRAME_PADDING, frameGround, frameNested, frameOnMap, maxZoomFor, MIN_ZOOM, type Drawn, type Viewport } from '../../src/graph/camera';
 import { treeText, type GraphMap, type PlacedMap } from '../../src/graph/map';
 import { BORDER, labelHeight, labelLines, TITLE_FONT } from '../../src/graph/text';
 import { treeOf } from '../../src/graph/tree';
@@ -139,14 +139,14 @@ describe('every drawn box shows its name', () => {
         const map = layout.map(index, product);
         // The title's size on screen, framed in a 770 by 640 pane. In the Tree, of each box whose text its column sets (not one
         // whose siblings' labels need less, in boxes much wider than tall) and whose frame its width sets (not a box whose height
-        // caps the zoom, which reads smaller): the focus fills the same share of the pane's width (FOCUS_SHARE).
+        // caps the zoom, which reads smaller, nor one whose children set it, LA-V93-R77, which reads larger).
         const sizes = new Map<number, number[]>();
         const leaves: number[] = [];
         for (const n of map.nodes.values()) {
           const v = layout.frame(map, n.id, 770, 640);
           expect(v.zoom, `${layout.name} ${n.id}`).toBeLessThanOrEqual(maxZoomFor(map));
           expect(v.zoom, `${layout.name} ${n.id}`).toBeGreaterThanOrEqual(MIN_ZOOM);
-          if (layout.name === 'Tree' && (n.text < treeText(n.w) * (1 - 1e-9) || v.zoom >= (640 - 2 * FRAME_PADDING) / n.h * (1 - 1e-9))) continue;
+          if (layout.name === 'Tree' && (n.text < treeText(n.w) * (1 - 1e-9) || v.zoom >= (640 - 2 * FRAME_PADDING) / n.h * (1 - 1e-9) || v.zoom <= childZoom(map, n.id) * (1 + 1e-9))) continue;
           // A framed Nested leaf has no header: its label, centered, is at most a tenth of its side on screen (LA-EXP-DS07).
           if (layout.name === 'Nested' && n.children.length === 0) {
             const px = n.text * v.zoom * TITLE_FONT;
@@ -163,11 +163,10 @@ describe('every drawn box shows its name', () => {
           return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
         };
         const medians = [...sizes.values()].map(median);
-        // Tree (whose columns narrow with how many children share them) within a tenth or so; Nested, whose headers a
-        // long title fits to its band, within a half.
+        // Within a half: the Tree, whose focus shares the width with its children's column (wider the fewer they are) and
+        // a leaf fills FOCUS_SHARE; Nested, whose headers a long title fits to its band.
         const [lo, hi] = [Math.min(...medians), Math.max(...medians)];
-        if (layout.name === 'Nested') expect(hi / lo, `${product} ${layout.name}: ${medians.map((m) => m.toFixed(1)).join(', ')}`).toBeLessThan(1.5);
-        else expect(hi / lo, `${product} ${layout.name}: ${medians.map((m) => m.toFixed(1)).join(', ')}`).toBeLessThan(1.2);
+        expect(hi / lo, `${product} ${layout.name}: ${medians.map((m) => m.toFixed(1)).join(', ')}`).toBeLessThan(1.5);
         // Readable: at least 9 pixels; at most 36, a focus filling FOCUS_SHARE of the pane reading large but not huge.
         for (const m of medians) { expect(m).toBeGreaterThanOrEqual(9); expect(m).toBeLessThanOrEqual(36 * (1 + 1e-9)); }
         if (leaves.length > 0) expect(median(leaves), `${product} ${layout.name} leaves`).toBeGreaterThanOrEqual(9);
@@ -207,23 +206,38 @@ describe('every drawn box shows its name', () => {
     expect(unreadable.length, unreadable.slice(0, 20).join('\n')).toBe(0);
   }, 120_000);
 
-  it('LA-EXP-DS09-T16 In the Tree, Nested and Map layouts, every box of every product, framed as the focus in two panes, is whole on screen', () => {
+  it('LA-EXP-DS09-T16 LA-V93-R77-T03 In the Tree, Nested and Map layouts, every box of every product, framed as the focus in two panes, is whole on screen, or its children read and the first of them is whole', () => {
     const cut: string[] = [];
     let frames = 0;
-    const check = (name: string, n: { id: string; x: number; y: number; w: number; h: number }, v: Viewport, w: number, h: number) => {
+    let shown = 0;
+    const check = (name: string, map: PlacedMap, n: { id: string; x: number; y: number; w: number; h: number; children: readonly string[] }, v: Viewport, w: number, h: number) => {
       frames++;
-      const [x0, y0, x1, y1] = [n.x * v.zoom + v.x, n.y * v.zoom + v.y, (n.x + n.w) * v.zoom + v.x, (n.y + n.h) * v.zoom + v.y];
-      if (x0 < -0.5 || y0 < -0.5 || x1 > w + 0.5 || y1 > h + 0.5) cut.push(`${name} ${n.id} in ${w}x${h}: ${[x0, y0, x1, y1].map(Math.round).join(', ')}`);
+      const box = (b: { x: number; y: number; w: number; h: number }) => [b.x * v.zoom + v.x, b.y * v.zoom + v.y, (b.x + b.w) * v.zoom + v.x, (b.y + b.h) * v.zoom + v.y];
+      const inside = ([x0, y0, x1, y1]: number[]) => x0 >= -0.5 && y0 >= -0.5 && x1 <= w + 0.5 && y1 <= h + 0.5;
+      // Every child reads (LA-V93-R77): at least CHILD_MIN_W by CHILD_MIN_H on screen, unless the camera's zoom limit stops it.
+      for (const c of n.children) {
+        const child = map.nodes.get(c)!;
+        if ((child.w * v.zoom < CHILD_MIN_W - 1e-6 || child.h * v.zoom < CHILD_MIN_H - 1e-6) && v.zoom < maxZoomFor(map) * (1 - 1e-9)) cut.push(`${name} ${n.id} in ${w}x${h}: its child ${c} is ${Math.round(child.w * v.zoom)} x ${Math.round(child.h * v.zoom)} px`);
+      }
+      if (inside(box(n))) return;
+      // Cut only where its children could not read with it whole: then zoomed in no further than they need, the first of
+      // them on screen from its top left corner, whole unless it is bigger than the pane (a Map's district or area).
+      shown++;
+      const first = n.children.length > 0 ? map.nodes.get(n.children[0])! : null;
+      const [x0, y0, x1, y1] = first ? box(first) : [];
+      const onScreen = first && x0 >= -0.5 && y0 >= -0.5 && (x1 <= w + 0.5 || x1 - x0 > w - 2 * FRAME_PADDING) && (y1 <= h + 0.5 || y1 - y0 > h - 2 * FRAME_PADDING);
+      if (!onScreen || v.zoom > childZoom(map, n.id) * (1 + 1e-9)) cut.push(`${name} ${n.id} in ${w}x${h}: ${box(n).map(Math.round).join(', ')}, its first child ${first ? box(first).map(Math.round).join(', ') : 'none'}`);
     };
     for (const [product, index] of spaces) {
       for (const layout of LAYOUTS) {
         const map = layout.map(index, product);
-        for (const n of map.nodes.values()) for (const [w, h] of PANES) check(layout.name, n, layout.frame(map, n.id, w, h), w, h);
+        for (const n of map.nodes.values()) for (const [w, h] of PANES) check(layout.name, map, n, layout.frame(map, n.id, w, h), w, h);
       }
       const ground = groundMap(index);
-      for (const n of ground.nodes.values()) for (const [w, h] of PANES) check('Map', n, frameGround(ground, n.id, w, h, maxZoomFor(ground)), w, h);
+      for (const n of ground.nodes.values()) for (const [w, h] of PANES) check('Map', ground, n, frameGround(ground, n.id, w, h, maxZoomFor(ground)), w, h);
     }
     expect(frames).toBeGreaterThan(1000);
+    expect(shown).toBeGreaterThan(0);
     expect(cut.length, cut.slice(0, 20).join('\n')).toBe(0);
   }, 120_000);
 });

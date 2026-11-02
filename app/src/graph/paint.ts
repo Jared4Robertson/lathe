@@ -3,8 +3,8 @@ import type { Plate } from './plate';
 import { notchOf, type Mark, type Outline, type Shape } from './shapes';
 import { MARK_PATHS, SHAPE_PATHS } from './shape-icons';
 import { fontFor, type GraphFonts } from './fonts';
-import { TITLE_FONT } from './text';
-import { BLOCK_BELOW_PX } from './camera';
+import { LINE_HEIGHT, textMeasure, TITLE_FONT } from './text';
+import { BLOCK_BELOW_PX, CHILD_PAD_PX, CHILD_TITLE_PX } from './camera';
 import { stickyLabel, type ScreenBox } from './sticky';
 import { GHOST_MS, markPhase, type StageMarks } from '../changes/marks';
 import { rollupText, totalChanges, type Change } from '../changes/rollup';
@@ -35,6 +35,67 @@ export const labelPlate = <P extends Pick<Plate, 'text' | 'far'>>(p: P, zoom: nu
  * label from afar, once even that would read under READABLE_PX, so its text is readable or not drawn (LA-EXP-DS12).
  */
 export const isBlock = (p: Pick<Plate, 'text' | 'far'>, zoom: number) => (p.far ? p.far.text * TITLE_FONT * zoom < READABLE_PX : p.text * TITLE_FONT * zoom < BLOCK_BELOW_PX);
+/** The longest start of a text, ending in an ellipsis, as wide as `room` at most in a face's `size`; the text itself when it fits, '' when not even the ellipsis does. */
+function cutToWidth(text: string, size: number, room: number): string {
+  const m = textMeasure();
+  if (m.em(text, 'title') * size <= room) return text;
+  let low = 0;
+  let high = text.length;
+  while (low < high) {
+    const mid = Math.ceil((low + high) / 2);
+    if (m.em(`${text.slice(0, mid).trimEnd()}…`, 'title') * size <= room) low = mid; else high = mid - 1;
+  }
+  return low === 0 ? (m.em('…', 'title') * size <= room ? '…' : '') : `${text.slice(0, low).trimEnd()}…`;
+}
+/** A title wrapped on whole words to at most `most` lines `room` wide at `size`, the last cut with an ellipsis where more is left (cutToWidth). */
+function wrapCut(title: string, size: number, room: number, most: number): string[] {
+  const m = textMeasure();
+  const fits = (t: string) => m.em(t, 'title') * size <= room;
+  const words = title.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let i = 0;
+  while (i < words.length && lines.length < most - 1) {
+    let line = words[i];
+    if (!fits(line)) break;
+    i++;
+    while (i < words.length && fits(`${line} ${words[i]}`)) line = `${line} ${words[i++]}`;
+    lines.push(line);
+  }
+  if (i < words.length) lines.push(cutToWidth(words.slice(i).join(' '), size, room));
+  return lines.filter((l) => l !== '');
+}
+/** Where a focus's child's whole label sits: centered in its box, or at its top (a Nested or Map box that holds others, over them). */
+export type WholePlace = 'middle' | 'top';
+/**
+ * The label a focus's direct child draws at a zoom (LA-V93-R77): its own (labelPlate) where its title reads at
+ * CHILD_TITLE_PX or more there; else its title alone at CHILD_TITLE_PX on screen, wrapped on whole words to two lines
+ * (one where its box holds no more) and cut with an ellipsis only past them, centered in its box or, for a box that
+ * holds others, at its top, drawn over them on a band of its fill (paint, wholeLabels). Its full title stays its
+ * accessible name and tooltip. Never a block. `floor` says it is the title alone.
+ */
+function wholeLabel(p: Plate, zoom: number, place: WholePlace): { plate: Plate; floor: boolean } {
+  const shown = labelPlate(p, zoom);
+  if (shown.text * TITLE_FONT * zoom >= CHILD_TITLE_PX - 1e-9) return { plate: shown, floor: false };
+  const size = CHILD_TITLE_PX / zoom;
+  const pad = p.border + CHILD_PAD_PX / zoom;
+  const lh = size * LINE_HEIGHT;
+  const texts = wrapCut(p.title, size, p.w - 2 * pad, p.h - 2 * pad >= 2 * lh ? 2 : 1);
+  const { ascent, descent } = textMeasure().metrics('title');
+  const height = texts.length * lh;
+  const top = place === 'top' ? p.y + pad : p.y + (p.h - height) / 2;
+  const lines = texts.map((text, i) => {
+    const width = textMeasure().em(text, 'title') * size;
+    const y = top + i * lh;
+    return { text, face: 'title' as const, size, x: p.x + (p.w - width) / 2, baseline: y + (lh - (ascent + descent) * size) / 2 + ascent * size, top: y, height: lh, width, tone: 'ink' as const };
+  });
+  return { plate: { ...p, text: size / TITLE_FONT, label: { x: p.x + pad, y: top, w: Math.max(0, p.w - 2 * pad), h: height }, lines, icons: [], far: null }, floor: true };
+}
+/**
+ * The label a box draws at a zoom, whether it is a plain block, and whether it is a focus's child's title alone (drawn
+ * over everything, wholeLabels): a focus's direct child (`whole`, where its label sits) is never a block (wholeLabel).
+ */
+export const drawnLabel = (p: Plate, zoom: number, whole: WholePlace | undefined): { plate: Plate; block: boolean; floor: boolean } =>
+  whole ? { ...wholeLabel(p, zoom, whole), block: false } : { plate: labelPlate(p, zoom), block: isBlock(p, zoom), floor: false };
 /** How far past the canvas's edges, in CSS pixels, a box, bar or line still counts as on screen: its stroke and ring reach that far. */
 const CULL_PX = 16;
 /** Whether a box, a bar or a line's bounds in the map is on the canvas through a camera, with the margin: what a frame draws. */
@@ -119,6 +180,8 @@ export interface PaintState {
   marks: StageMarks | null;
   /** The part of the canvas no floating panel covers, in CSS pixels: a box cut by its edge draws a sticky label (sticky.ts). */
   open: ScreenBox;
+  /** The boxes drawn whole whatever the zoom, never as blocks, and where each one's label sits (drawnLabel): the Graph's focus's direct children. */
+  whole?: ReadonlyMap<string, WholePlace>;
 }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -243,13 +306,15 @@ export function paint(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, f
   for (const line of frame.lines) if (!line.label && !line.over) drawLine(line);
 
   const areas: Plate[] = [];
+  const bands = state.whole ? wholeBands(frame.plates, zoom, state.whole) : [];
   for (const p of frame.plates) {
     if (!onCanvas(p, cam)) continue;
     const lit = !!state.lit?.has(p.place);
     ctx.globalAlpha = dim(lit) * strength(p.place, lit);
-    if (p.area) { paintArea(ctx, p, cam, look, state, X, Y); areas.push(p); } else paintBox(ctx, p, cam, look, fonts, state, X, Y);
+    if (p.area) { paintArea(ctx, p, cam, look, state, X, Y); areas.push(p); } else paintBox(ctx, p, cam, look, fonts, state, X, Y, bands);
     if (state.marks) paintMark(ctx, p, cam, look, fonts, state.marks, state.open, X, Y);
   }
+  if (state.whole) paintWholeLabels(ctx, frame.plates, cam, look, fonts, state, X, Y, (p) => { const lit = !!state.lit?.has(p.place); return dim(lit) * strength(p.place, lit); });
   for (const line of frame.lines) if (line.over) drawLine(line);
   const named = frame.lines.filter((line) => line.label);
   const words = named.length > 0 ? textBoxes(frame.plates, cam, X, Y) : [];
@@ -371,7 +436,23 @@ function outlinePath(ctx: CanvasRenderingContext2D, p: Plate, outline: Outline, 
   ctx.roundRect(x, y, w, h, [{ x: Math.min(rx, w / 2), y: Math.min(ry, h / 2) }]);
 }
 
-function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Look, fonts: GraphFonts, state: PaintState, X: (x: number) => number, Y: (y: number) => number) {
+/** A band across the top of a focus's child that holds others, under its title drawn alone (wholeLabels): its box and the band's bottom, in map units. */
+interface Band { x: number; y: number; w: number; h: number; bottom: number }
+/** The bands the focus's children that hold others draw their titles on, at a zoom: what they hold under a band is a plain block. */
+function wholeBands(plates: readonly Plate[], zoom: number, whole: ReadonlyMap<string, WholePlace>): Band[] {
+  const bands: Band[] = [];
+  for (const p of plates) {
+    if (whole.get(p.id) !== 'top' || p.area) continue;
+    const { plate: shown, floor } = drawnLabel(p, zoom, 'top');
+    if (floor && shown.lines.length > 0) bands.push({ x: p.x, y: p.y, w: p.w, h: p.h, bottom: shown.label.y + shown.label.h + CHILD_PAD_PX / zoom });
+  }
+  return bands;
+}
+/** Whether a box lies inside a band's child, with its top under the band. */
+const underBand = (p: Plate, bands: readonly Band[]) =>
+  bands.some((b) => p.x >= b.x && p.x + p.w <= b.x + b.w && p.y >= b.y && p.y + p.h <= b.y + b.h && !(p.x === b.x && p.y === b.y && p.w === b.w && p.h === b.h) && p.y < b.bottom);
+
+function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Look, fonts: GraphFonts, state: PaintState, X: (x: number) => number, Y: (y: number) => number, bands: readonly Band[]) {
   const { zoom } = cam;
   const colors = boxColors(look, p);
   const isFocus = p.id === state.focus;
@@ -404,7 +485,10 @@ function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Lo
   outlinePath(ctx, p, p.outline, X, Y, zoom);
   ctx.fillStyle = colors.fill;
   ctx.fill();
-  if (isBlock(p, zoom)) {
+  const { plate: shown, block: own, floor } = drawnLabel(p, zoom, state.whole?.get(p.id));
+  // What a focus's child holds under the band its title sits on is a plain block: no text is drawn under another's.
+  const block = own || underBand(p, bands);
+  if (block) {
     // A plain block: its fill and its edge, no clip, label, marks or decoration.
     ctx.lineWidth = Math.min(edgeWidth, 1);
     ctx.strokeStyle = edge;
@@ -434,8 +518,9 @@ function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Lo
 
   // The label: its icons, its lines, its badges; a label the open space's edge cuts drawn in the box's visible part
   // (sticky.ts), its icons and badges left out; one that cannot fit there drawn where the map placed it, cut by the edge.
-  // A Map's leaf seen from afar draws its title alone, larger (labelPlate).
-  const shown = labelPlate(p, zoom);
+  // A Map's leaf seen from afar draws its title alone, larger (labelPlate). A focus's child too small to read draws its
+  // title alone at the readable size over everything, after every box (wholeLabels).
+  if (floor) return;
   const sticky = stickyLabel(shown, zoom, X, Y, state.open);
   let font = '';
   if (sticky.kind === 'moved') {
@@ -477,6 +562,32 @@ function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Lo
     ctx.fillText(b.label, x + w / 2, y + h / 2);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
+  }
+}
+
+/**
+ * The focus's children's titles drawn alone at the readable size (LA-V93-R77, wholeLabel), after every box so nothing is
+ * drawn over them: a box that holds others first gets a band of its own fill across its top, under its title and over
+ * what it holds, which shows below the band.
+ */
+function paintWholeLabels(ctx: CanvasRenderingContext2D, plates: readonly Plate[], cam: Camera, look: Look, fonts: GraphFonts, state: PaintState, X: (x: number) => number, Y: (y: number) => number, alphaOf: (p: Plate) => number) {
+  const { zoom } = cam;
+  for (const p of plates) {
+    const place = state.whole!.get(p.id);
+    if (!place || p.area || !onCanvas(p, cam)) continue;
+    const { plate: shown, floor } = drawnLabel(p, zoom, place);
+    if (!floor || shown.lines.length === 0) continue;
+    ctx.globalAlpha = alphaOf(p);
+    if (place === 'top') {
+      const inset = p.border * zoom;
+      ctx.fillStyle = boxColors(look, p).fill;
+      ctx.fillRect(X(p.x) + inset, Y(p.y) + inset, p.w * zoom - 2 * inset, (shown.label.y + shown.label.h - p.y) * zoom + CHILD_PAD_PX - inset);
+    }
+    ctx.fillStyle = look.ink;
+    for (const line of shown.lines) {
+      ctx.font = fontFor(fonts, line.face, line.size * zoom);
+      ctx.fillText(line.text, X(line.x), Y(line.baseline));
+    }
   }
 }
 

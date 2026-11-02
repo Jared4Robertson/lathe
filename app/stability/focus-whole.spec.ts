@@ -5,9 +5,10 @@ import { erdDrawn, erdSceneOf, GRAPH, graphDrawn, sceneOf, traceDrawn, traceScen
 
 // The focused box is always whole on screen (LA-PAT-APP-UX-R23): on every stage, framing a focus puts its whole box in
 // the frame, never cut at the canvas's edge and never under a floating panel (the nav, the wiki card, the key, the
-// minimap) or the stage's tools. A pattern with many rules on the Graph's Tree (the frame once cut it to read its
-// children), its box in the Nested view and the Map, a use case with its flows on the Map and on the Trace stage, and
-// a domain on the ERD.
+// minimap) or the stage's tools; on the Graph, unless its direct children cannot read with it whole (LA-V93-R77): then
+// each of them is drawn with a readable title and the first of them is clear of every panel. A domain and a pattern
+// with many rules on the Graph's Tree, the pattern in the Nested view and the Map, a use case with its flows on the Map
+// and on the Trace stage, and a domain on the ERD.
 
 const MANY = 'LA-PAT-APP-UX';
 const USE_CASE = 'LA-UCS-UC06';
@@ -36,10 +37,21 @@ async function graphFocus(page: Page): Promise<Rect> {
   return f!.rect;
 }
 
+/** What is wrong with the Graph's framing: the focus whole and clear, or else its children read and the first of them is clear. */
+async function graphFraming(page: Page): Promise<string[]> {
+  const covered = await coveredBy(page, await graphFocus(page), GRAPH);
+  if (covered.length === 0) return [];
+  const children = (await sceneOf(page)).boxes.filter((b) => b.child);
+  if (children.length === 0) return covered;
+  const unread = children.filter((b) => b.block || !b.lines.some((l) => l.face === 'title' && l.text.trim() !== '' && l.fontPx >= 12.5 - 1e-6)).map((b) => `${b.id} unread`);
+  const first = children.reduce((a, b) => (b.rect.top < a.rect.top || (b.rect.top === a.rect.top && b.rect.left < a.rect.left) ? b : a));
+  return [...unread, ...(await coveredBy(page, first.rect, GRAPH)).map((c) => `its first child under ${c}`)];
+}
+
 test.describe('the focused box is always whole on screen', () => {
   test('LA-PAT-APP-UX-R23-T02 On the Graph (Tree with the minimap, Nested, Map), the Trace and the ERD, the framed focus is whole and clear of every panel', async ({ page }) => {
-    // The Graph's Tree: a focus with many children, at depths 1 to 3, with the minimap on.
-    await openPage(page, `/${MANY}?stage=graph`, `${GRAPH} .graph-box`);
+    // The Graph's Tree: a domain with its stages, at depths 1 to 3, with the minimap on.
+    await openPage(page, `/${DOMAIN}?stage=graph`, `${GRAPH} .graph-box`);
     await graphDrawn(page, 'tree', 900);
     await page.locator('.focus-stage .graph-filters summary').click();
     await page.locator('.focus-stage .graph-filters').getByRole('switch', { name: 'Minimap' }).check();
@@ -47,17 +59,21 @@ test.describe('the focused box is always whole on screen', () => {
     for (const depth of ['1', '2', '3']) {
       await page.locator('.focus-stage .graph-depth:not(.graph-layout) button', { hasText: depth }).click();
       await page.waitForTimeout(900);
-      expect(await coveredBy(page, await graphFocus(page), GRAPH), `Tree depth ${depth}`).toEqual([]);
+      expect(await graphFraming(page), `Tree depth ${depth}`).toEqual([]);
     }
-    // Nested and the Map: the same focus, then a use case too big for the pane at street level.
+    // A focus with many children: on the Tree, in Nested and on the Map, whole, or its children read beside it.
+    await openPage(page, `/${MANY}?stage=graph`, `${GRAPH} .graph-box`);
+    await graphDrawn(page, 'tree', 900);
+    expect(await graphFraming(page), 'Tree, many children').toEqual([]);
     for (const layout of ['Nested', 'Map']) {
       await page.locator('.focus-stage .graph-layout button', { hasText: layout }).click();
       await page.waitForTimeout(900);
-      expect(await coveredBy(page, await graphFocus(page), GRAPH), layout).toEqual([]);
+      expect(await graphFraming(page), layout).toEqual([]);
     }
+    // Then, on the Map, a use case too big for the pane at street level.
     await openPage(page, `/${USE_CASE}?stage=graph`, `${GRAPH} .graph-box`);
     await graphDrawn(page, 'map', 900);
-    expect(await coveredBy(page, await graphFocus(page), GRAPH), 'Map, a use case').toEqual([]);
+    expect(await graphFraming(page), 'Map, a use case').toEqual([]);
 
     // The Trace: the use case's box in its row.
     await openPage(page, `/${USE_CASE}?stage=trace`);

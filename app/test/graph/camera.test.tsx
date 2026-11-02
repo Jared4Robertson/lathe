@@ -1,13 +1,16 @@
 import './setup';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, waitFor } from '@testing-library/react';
-import { drawnNested, FOCUS_CLEAR, FOCUS_SHARE, frameGround, frameMap, frameNested, frameOnMap, FRAME_PADDING, glideDuration, MAX_DRAWN, MAX_ZOOM, MIN_DRAWN, PARENT_STRIP, PARENT_STRIP_MAX, STREET_ZOOM, viewRect, wholeIn, zoomPath } from '../../src/graph/camera';
+import { CHILD_MIN_H, CHILD_MIN_W, childZoom, drawnFor, drawnNested, FOCUS_CLEAR, keptBox, FOCUS_SHARE, frameGround, frameMap, frameNested, frameOnMap, FRAME_PADDING, glideDuration, MAX_DRAWN, MAX_ZOOM, MIN_DRAWN, PARENT_STRIP, CHILD_PAD_PX, CHILD_TITLE_PX, PARENT_STRIP_MAX, STREET_ZOOM, viewRect, wholeIn, zoomPath } from '../../src/graph/camera';
 import { MOTION_SPEED_MS } from '../../src/graph/motion';
 import { roundCamera } from '../../src/graph/GraphPage';
 import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
 import { boxElement, isCenter, scene } from './scene';
-import { graphMap, layoutTree, nestedMap } from './maps';
+import { graphMap, layoutNested, layoutTree, nestedMap } from './maps';
+import { drawnLabel, isBlock } from '../../src/graph/paint';
+import { plateOf } from '../../src/graph/plate';
+import type { NestedNode } from '../../src/graph/nested';
 
 // Focusing moves the camera, never the map (LA-EXP-DS09): the camera frames the focus to most of
 // the pane's width, the parent kept at the left edge, in one smooth zoom and pan on the shared
@@ -27,7 +30,7 @@ const reducedMotion = () =>
 describe('graph camera', () => {
   const map = graphMap(testIndex(), 'P');
 
-  it('LA-EXP-DS09-T03 LA-EXP-DS10-T01 The camera frames the focus to most of the pane\'s width, its parent in a strip at the left edge and its children\'s column starting on the right', () => {
+  it('LA-EXP-DS09-T03 LA-EXP-DS10-T01 The camera frames the focus with its children\'s column, its parent in a strip at the left edge, and a leaf to most of the pane\'s width', () => {
     const w = 1000;
     const h = 800;
     for (const focus of ['P-D', 'P-D/use-cases', 'P-D-UC01', 'P-D/question', 'P-D-UC01-R01']) {
@@ -43,18 +46,27 @@ describe('graph camera', () => {
       expect(y1, focus).toBeLessThanOrEqual(h + 0.5);
       expect(v.zoom).toBeLessThanOrEqual(MAX_ZOOM);
       expect((y0 + y1) / 2, focus).toBeCloseTo(h / 2, 6);
-      // Its width fills FOCUS_SHARE of the pane's, unless its height caps the zoom.
       const capped = (y1 - y0) >= h - 2 * FRAME_PADDING - 1e-6;
-      if (!capped) expect((x1 - x0) / w, focus).toBeCloseTo(FOCUS_SHARE, 6);
-      else expect((x1 - x0) / w, focus).toBeLessThanOrEqual(FOCUS_SHARE + 1e-9);
+      if (f.children.length === 0) {
+        // A leaf's width fills FOCUS_SHARE of the pane's, unless its height caps the zoom.
+        if (!capped) expect((x1 - x0) / w, focus).toBeCloseTo(FOCUS_SHARE, 6);
+        else expect((x1 - x0) / w, focus).toBeLessThanOrEqual(FOCUS_SHARE + 1e-9);
+      } else {
+        // A parent's children's column is whole on the right, its right edge at the padding unless the height caps the zoom,
+        // and every child at least CHILD_MIN_W by CHILD_MIN_H.
+        const first = map.nodes.get(f.children[0])!;
+        const right = screen(first.x + first.w, 0).x;
+        expect(right, focus).toBeLessThanOrEqual(w - FRAME_PADDING + 1e-6);
+        if (!capped) expect(right, focus).toBeCloseTo(w - FRAME_PADDING, 6);
+        expect(first.w * v.zoom, focus).toBeGreaterThanOrEqual(CHILD_MIN_W - 1e-6);
+        expect(first.h * v.zoom, focus).toBeGreaterThanOrEqual(CHILD_MIN_H - 1e-6);
+      }
       // The parent shows at the left edge: its right edge in view, no further in than the strip.
       const p = map.nodes.get(f.parent!)!;
       const edge = screen(p.x + p.w, 0).x;
       expect(edge, focus).toBeGreaterThan(0);
       expect(edge, focus).toBeLessThanOrEqual(Math.min(PARENT_STRIP_MAX, w * PARENT_STRIP) + 0.5);
       expect(x0, focus).toBeGreaterThan(edge);
-      // The children's column starts in view on the right, as a cue.
-      if (f.children.length > 0) expect(screen(map.nodes.get(f.children[0])!.x, 0).x, focus).toBeLessThan(w);
     }
     // A leaf framed short of the limit: a deep leaf is small against the product's box, and the camera reaches it.
     expect(frameOnMap(map, 'P-D-UC01-R01', w, h).zoom).toBeLessThan(MAX_ZOOM);
@@ -63,8 +75,8 @@ describe('graph camera', () => {
     expect(map.height * all.zoom).toBeLessThanOrEqual(h);
   });
 
-  it('LA-EXP-DS09-T14 LA-V93-R07-T07 LA-PAT-APP-UX-R23-T01 A focus with many children is framed whole, its children\'s column starting beside it', () => {
-    // A 6:1 tree: the product holds six parents; one has eight children (each with two of its own), one forty.
+  it('LA-EXP-DS09-T14 LA-V93-R07-T07 LA-PAT-APP-UX-R23-T01 A focus is framed with its children readable: whole with their column where they read so, else their column whole at the right and the first of them at the top', () => {
+    // A 6:1 tree: the product holds six parents; one has two children, one eight (each with two of its own), one forty.
     const kids: Record<string, string[]> = {
       P: ['few', 'many', 'most', 'other 1', 'other 2', 'other 3'],
       few: ['few-a', 'few-b'],
@@ -72,19 +84,37 @@ describe('graph camera', () => {
       most: Array.from({ length: 40 }, (_, i) => `rule ${i + 1}`) };
     for (const k of kids.many) kids[k] = [`${k} step 1`, `${k} step 2`];
     const tree = layoutTree(['P'], (id) => kids[id] ?? [], (id) => ({ title: `The record called ${id}`, meta: `Use case · ${id}` }));
-    for (const [w, h] of [[1000, 800], [547, 600], [1400, 1000]] as const) for (const id of ['few', 'many', 'most']) {
+    const wholes = new Set<string>();
+    for (const [w, h] of [[1000, 800], [547, 600], [1400, 1000], [343, 560]] as const) for (const id of ['few', 'many', 'most']) {
       const v = frameOnMap(tree, id, w, h);
       const f = tree.nodes.get(id)!;
       const at = `${id} in ${w}x${h}`;
-      // The focus whole, clear of the parent's strip at the left.
-      expect(f.x * v.zoom + v.x, at).toBeGreaterThanOrEqual(0);
-      expect((f.x + f.w) * v.zoom + v.x, at).toBeLessThanOrEqual(w + 0.5);
-      expect(f.y * v.zoom + v.y, at).toBeGreaterThanOrEqual(-0.5);
-      expect((f.y + f.h) * v.zoom + v.y, at).toBeLessThanOrEqual(h + 0.5);
-      // Its first child shows beside it.
+      const [x0, y0, x1, y1] = [f.x * v.zoom + v.x, f.y * v.zoom + v.y, (f.x + f.w) * v.zoom + v.x, (f.y + f.h) * v.zoom + v.y];
+      const whole = x0 >= -0.5 && y0 >= -0.5 && x1 <= w + 0.5 && y1 <= h + 0.5;
+      if (whole) wholes.add(at);
+      // Every child reads: at least CHILD_MIN_W by CHILD_MIN_H on screen.
       const first = tree.nodes.get(f.children[0])!;
-      expect(first.x * v.zoom + v.x, at).toBeLessThan(w);
+      expect(first.w * v.zoom, at).toBeGreaterThanOrEqual(CHILD_MIN_W - 1e-6);
+      expect(first.h * v.zoom, at).toBeGreaterThanOrEqual(CHILD_MIN_H - 1e-6);
+      expect(v.zoom, at).toBeCloseTo(Math.max(v.zoom, childZoom(tree, id)), 9);
+      // Their column on screen across, at least CHILD_MIN_W of it, its first child at the top; the focus's right edge in view beside it.
+      expect(first.x * v.zoom + v.x, at).toBeGreaterThanOrEqual(0);
+      expect(Math.min(w, (first.x + first.w) * v.zoom + v.x) - (first.x * v.zoom + v.x), at).toBeGreaterThanOrEqual(CHILD_MIN_W);
+      expect(first.y * v.zoom + v.y, at).toBeGreaterThanOrEqual(-0.5);
+      expect((first.y + first.h) * v.zoom + v.y, at).toBeLessThanOrEqual(h);
+      expect(x1, at).toBeGreaterThan(0);
+      expect(x1, at).toBeLessThan(first.x * v.zoom + v.x);
+      // Cut only where its children could not read with it whole; then from its top, the rest a pan away.
+      if (!whole && y0 < -0.5) expect(y0, at).toBeCloseTo(FRAME_PADDING, 6);
+      // What the camera keeps whole as it follows: the focus with its column when whole, else the part framed, inside the frame.
+      const kept = keptBox(tree, id, v, w, h)!;
+      expect(kept.x * v.zoom + v.x, at).toBeGreaterThanOrEqual(FOCUS_CLEAR - 1e-6);
+      expect((kept.x + kept.w) * v.zoom + v.x, at).toBeLessThanOrEqual(w - FOCUS_CLEAR + 1e-6);
+      expect(wholeIn(v, kept, { x: 0, y: 0, w, h }).zoom / v.zoom, at).toBeCloseTo(1, 9);
     }
+    // Two children read beside a whole focus in a desktop pane; forty never do in a phone's.
+    expect(wholes).toContain('few in 1000x800');
+    expect(wholes).not.toContain('most in 343x560');
   });
 
   it('LA-PAT-APP-UX-R23-T01 The focused box is always whole in the frame: kept as it is when whole, moved in at an edge, zoomed out when too big, clear of the panels', () => {
@@ -117,7 +147,7 @@ describe('graph camera', () => {
   });
 
   it('LA-PAT-APP-UX-R23-T01 The Map and the Nested view frame a focus whole: a record too big for the pane at street level is zoomed out until it fits', () => {
-    const ground = { nodes: new Map([['big', { id: 'big', x: 100, y: 200, w: 3000, h: 2000, role: 'record' }], ['small', { id: 'small', x: 50, y: 60, w: 200, h: 80, role: 'record' }]]) } as unknown as Parameters<typeof frameGround>[0];
+    const ground = { nodes: new Map([['big', { id: 'big', x: 100, y: 200, w: 3000, h: 2000, role: 'record', children: [] }], ['small', { id: 'small', x: 50, y: 60, w: 200, h: 80, role: 'record', children: [] }]]) } as unknown as Parameters<typeof frameGround>[0];
     const [w, h] = [900, 700];
     for (const id of ['big', 'small']) {
       const v = frameGround(ground, id, w, h);
@@ -263,5 +293,64 @@ describe('graph camera in the Nested layout', () => {
     window.history.back();
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
     await waitFor(() => expect(camera()).toEqual(roundCamera(frameNested(nestedMap(testIndex(), 'P'), 'P-D-UC01', 1000, 800))), { timeout: 3000 });
+  });
+});
+
+describe('a focus\'s children drawn whole', () => {
+  // A parent with thirty children, each with three of its own: at a zoom where its children are too small to see.
+  const kids: Record<string, string[]> = { P: ['parent', 'other'], parent: Array.from({ length: 30 }, (_, i) => `child ${i + 1}`) };
+  for (const k of kids.parent) kids[k] = [`${k} a`, `${k} b`, `${k} c`];
+  const label = (id: string) => ({ title: `The record called ${id} with a long title`, meta: `Use case · ${id}` });
+  const tree = layoutTree(['P'], (id) => kids[id] ?? [], label);
+  const nested = layoutNested(['P'], (id) => kids[id] ?? [], label);
+
+  it('LA-V93-R77-T01 Each of the focus\'s children is its own box with a readable label at any zoom, never a bar or a block, in the Tree and Nested maps; grandchildren keep their level of detail', () => {
+    for (const [name, map] of [['Tree', tree], ['Nested', nested]] as const) {
+      const parent = map.nodes.get('parent')!;
+      const children = parent.children;
+      // Zoomed out until the children are under MIN_DRAWN, the parent still in view.
+      const zoom = (MIN_DRAWN / 2) / Math.max(...children.map((c) => map.nodes.get(c)!.h));
+      const v = { x: 500 - (parent.x + parent.w / 2) * zoom, y: 400 - (parent.y + parent.h / 2) * zoom, zoom };
+      const always = ['parent', ...children];
+      const d = name === 'Tree' ? drawnFor(map, v, 1000, 800, always, parent.level + 2) : drawnNested(map, v, 1000, 800, always);
+      const boxes = new Set(d.boxes.map((b) => b.id));
+      for (const c of children) expect(boxes.has(c), `${name} ${c}`).toBe(true);
+      // No bar stands for any of them; the grandchildren, too small, are left out or barred as before.
+      for (const bar of d.bars) expect(bar.parent, name).not.toBe('parent');
+      for (const c of children) for (const g of map.nodes.get(c)!.children) expect(boxes.has(g), `${name} ${g}`).toBe(false);
+      // Without them in `always`, the children are a bar (Tree) or not drawn (Nested): what the rule changes.
+      const before = name === 'Tree' ? drawnFor(map, v, 1000, 800, ['parent'], parent.level + 2) : drawnNested(map, v, 1000, 800, ['parent']);
+      expect(before.boxes.some((b) => children.includes(b.id)), name).toBe(false);
+      // Each child's label: never a block, its title at CHILD_TITLE_PX or more, on two lines at most, cut with an ellipsis
+      // only past them; in Nested, where each child holds others, at its top.
+      const place = name === 'Nested' ? 'top' : 'middle';
+      for (const c of children) {
+        const plate = plateOf(testIndex(), c, name === 'Tree' ? { view: 'tree', node: map.nodes.get(c)! } : { view: 'nested', node: map.nodes.get(c)! as NestedNode });
+        const framed = (name === 'Tree' ? frameOnMap(tree, 'parent', 343, 560) : frameNested(nested, 'parent', 343, 560)).zoom;
+        for (const z of [zoom, framed]) {
+          // Under the zoom the children would be blocks, as any other box.
+          if (z === zoom) expect(isBlock(plate, z), `${name} ${c}`).toBe(true);
+          const { plate: shown, block, floor } = drawnLabel(plate, z, place);
+          expect(block, `${name} ${c}`).toBe(false);
+          expect(shown.lines.length, `${name} ${c}`).toBeLessThanOrEqual(2);
+          for (const line of shown.lines) expect(line.size * z, `${name} ${c}`).toBeGreaterThanOrEqual(CHILD_TITLE_PX - 1e-9);
+          for (const line of shown.lines) expect(line.width, `${name} ${c}`).toBeLessThanOrEqual(plate.w);
+          if (floor && place === 'top' && shown.lines.length > 0) expect((shown.lines[0].top - plate.y) * z, `${name} ${c}`).toBeLessThanOrEqual(CHILD_PAD_PX + plate.border * z + 1e-6);
+          // Framed, the title shows, cut with an ellipsis where it is longer than its box; zoomed out past that by the
+          // person, the box keeps what of it fits, an ellipsis or nothing where not even that does.
+          const title = shown.lines.filter((l) => l.face === 'title').map((l) => l.text).join('');
+          if (z === framed) expect(shown.lines.map((l) => l.text).join(' '), `${name} ${c}`).toBe(plate.title);
+          else expect(title === '' || title.endsWith('…'), `${name} ${c}: ${title}`).toBe(true);
+        }
+        // Not a focus's child: a block, as before.
+        expect(drawnLabel(plate, zoom, undefined).block).toBe(true);
+        // A long title wraps on whole words to two lines, the second cut with an ellipsis only past them.
+        const long = { ...plate, title: 'A title far longer than any box of a focus\'s child can hold on two lines at the readable size, so its end is cut' };
+        const lines = drawnLabel(long, framed, place).plate.lines.map((l) => l.text);
+        expect(lines.length, `${name} ${c}`).toBe(2);
+        expect(long.title.startsWith(lines[0]), `${name} ${c}`).toBe(true);
+        expect(lines[1].endsWith('…'), `${name} ${c}: ${lines[1]}`).toBe(true);
+      }
+    }
   });
 });
