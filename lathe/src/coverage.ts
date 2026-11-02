@@ -556,8 +556,8 @@ export const COVERAGE_DEBT_SQL = `SELECT s.product_id AS product, s.domain_id AS
 /** Every gap: (product, domain, id, kind, missing, message), by record. */
 export const COVERAGE_GAPS_SQL = `SELECT product, domain, id, kind, missing, message FROM coverage_gap ORDER BY product, domain NULLS LAST, id, ord, missing, message`;
 
-/** One row per scope: its tests by state. */
-export const COVERAGE_TESTS_SQL = `SELECT product, domain, automated, manual, not_automated FROM coverage_tests ORDER BY product, domain NULLS LAST`;
+/** One row per scope: its tests by state. The scopes come in the order of the answer: a product's domains by position, then the product itself. */
+export const COVERAGE_TESTS_SQL = `SELECT t.product, t.domain, t.automated, t.manual, t.not_automated FROM coverage_tests t LEFT JOIN domain d ON d.id = t.domain ORDER BY t.product, d.position NULLS LAST`;
 
 /** One row per test that counts as an owed obligation's proof: (product, domain, id, test_id). */
 export const COVERAGE_PROOFS_SQL = `SELECT product, domain, id, test_id FROM coverage_proof ORDER BY product, domain NULLS LAST, id, test_id`;

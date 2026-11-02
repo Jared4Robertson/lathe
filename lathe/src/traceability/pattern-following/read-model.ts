@@ -8,6 +8,7 @@ import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { CapabilityRow, SettingValueRow, UseCaseRow } from '../../platform/data/tables.ts';
 import { compareIds } from '../../platform/data/ids.ts';
+import { domainOrder } from '../../platform/data/domain-order.ts';
 
 /** The value a follower gives one setting. */
 export interface SettingLine {
@@ -31,7 +32,7 @@ export interface FollowingDomain {
   useCases: FollowingPage[];
 }
 
-/** A pattern's followers, by domain in ID order. */
+/** A pattern's followers, by domain in position order. */
 export interface PatternFollowers {
   pattern: string;
   domains: FollowingDomain[];
@@ -43,7 +44,7 @@ export interface FollowingTable {
   followings: Map<string, Map<string, FollowingPage>>;
   /** Every domain's and use case's ID: who may follow a pattern. */
   followers: Set<string>;
-  /** Each pattern's followers by domain, in ID order; a pattern nobody follows has an empty list. */
+  /** Each pattern's followers by domain, in position order; a pattern nobody follows has an empty list. */
   patterns: Map<string, FollowingDomain[]>;
 }
 
@@ -65,6 +66,7 @@ export function followingTableFrom(view: ReadView): FollowingTable {
   const capabilityDomain = new Map((view.rows('capability') as unknown as CapabilityRow[]).map((c) => [c.id, c.domain_id]));
   // The domain each follower sits in: a domain is its own, a use case its capability's.
   const domainOf = new Map<string, string>(view.rows('domain').map((d) => [String(d.id), String(d.id)]));
+  const domainRank = domainOrder(view.rows('domain'));
   const domains = new Set(domainOf.keys());
   const followers = new Set(domains);
   for (const uc of view.rows('use_case') as unknown as UseCaseRow[]) {
@@ -94,7 +96,7 @@ export function followingTableFrom(view: ReadView): FollowingTable {
     patterns: new Map(
       [...patterns].map(([pattern, byDomain]) => [
         pattern,
-        [...byDomain.values()].sort((a, b) => compareIds(a.domain, b.domain)).map((d) => ({ ...d, useCases: d.useCases.sort((a, b) => compareIds(a.follower, b.follower)) })),
+        [...byDomain.values()].sort((a, b) => domainRank.get(a.domain)! - domainRank.get(b.domain)!).map((d) => ({ ...d, useCases: d.useCases.sort((a, b) => compareIds(a.follower, b.follower)) })),
       ]),
     ),
   };

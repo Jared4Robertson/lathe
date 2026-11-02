@@ -9,11 +9,29 @@ import { compareIds } from '../../platform/data/ids.ts';
 
 /**
  * Every rule the domain breaks (LA-MOD-INV112 a domain service has at most one service; LA-MOD-INV41 an aggregate has
- * one repository; LA-MOD-INV60 a term never builds on itself; LA-MOD-INV17 each capability has its own position). The
- * view gives the persists links of the other domains' repositories and the builds_on links of the other domains' terms.
+ * one repository; LA-MOD-INV60 a term never builds on itself; LA-MOD-INV17 each capability has its own position;
+ * LA-MOD-INV186 each domain has its own position). The view gives the persists links of the other domains'
+ * repositories, the builds_on links of the other domains' terms and the other domains of the product.
  */
 export function domainProblems(domain: Domain, view: ReadView): RuleProblem[] {
-  return [...oneEach(domain, view), ...buildsOnLoops(domain, view), ...capabilityPositions(domain)];
+  return [...oneEach(domain, view), ...buildsOnLoops(domain, view), ...capabilityPositions(domain), ...domainPosition(domain, view)];
+}
+
+/** LA-MOD-INV186: no other domain of the product has the domain's position. Both domains are named, in ID order, so a run over all data names the pair once. */
+function domainPosition(domain: Domain, view: ReadView): RuleProblem[] {
+  const { id, product_id: product, position } = domain.domain;
+  return view
+    .rows('domain')
+    .filter((d) => d.id !== id && d.product_id === product && d.position === position)
+    .map((other) => {
+      const [first, second] = [id, String(other.id)].sort(compareIds);
+      return {
+        rule: 'domain-position',
+        table: 'domain',
+        row: domain.domain as unknown as Row,
+        message: `domains ${first} and ${second} are both at position ${position} of product ${product}: each domain of a product has its own position`,
+      };
+    });
 }
 
 /** LA-MOD-INV17: no two capabilities of the domain have the same position; each after the first at one is refused. */
@@ -175,13 +193,13 @@ function wayBack(start: string, next: Map<string, string[]>): string[] | undefin
   return undefined;
 }
 
-/** The rules over all data: every domain, whole. A loop through several domains' terms is named once. */
+/** The rules over all data: every domain, whole. A loop through several domains' terms, or two domains at one position, is named once. */
 export const domainRules: AggregateRules = {
   aggregate: DOMAIN_AGGREGATE,
   check: (view) => {
     const named = new Set<string>();
     const once = (p: RuleProblem) => {
-      if (p.rule !== 'term-builds-on-itself') return true;
+      if (p.rule !== 'term-builds-on-itself' && p.rule !== 'domain-position') return true;
       if (named.has(p.message)) return false;
       named.add(p.message);
       return true;

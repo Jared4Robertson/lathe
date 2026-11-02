@@ -20,8 +20,8 @@ import { removeData, writeData, type Data } from './helpers.ts';
 afterAll(removeData);
 
 const SHOP = 'examples/shop';
-const own: Data = { product: [{ id: 'WS', title: 'Workspace', description: 'The product the workspace holds itself.' }], domain: [{ id: 'WS-CORE', title: 'Core', product_id: 'WS', subdomain_type: 'core', description: 'The heart of the workspace product.' }] };
-const shop: Data = { product: [{ id: 'SH', title: 'Shop', description: 'A shop that sells spare parts.' }], domain: [{ id: 'SH-SELL', title: 'Selling', product_id: 'SH', subdomain_type: 'core', description: 'Selling parts to customers.' }] };
+const own: Data = { product: [{ id: 'WS', title: 'Workspace', description: 'The product the workspace holds itself.' }], domain: [{ id: 'WS-CORE', title: 'Core', product_id: 'WS', position: 1, subdomain_type: 'core', description: 'The heart of the workspace product.' }] };
+const shop: Data = { product: [{ id: 'SH', title: 'Shop', description: 'A shop that sells spare parts.' }], domain: [{ id: 'SH-SELL', title: 'Selling', product_id: 'SH', position: 1, subdomain_type: 'core', description: 'Selling parts to customers.' }] };
 
 function write(root: string, files: Record<string, string>) {
   for (const [file, text] of Object.entries(files)) {

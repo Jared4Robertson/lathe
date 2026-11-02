@@ -231,12 +231,15 @@ A part of the product with its own model, language and owner, for one business c
 | `id` | VARCHAR → `record_id` | yes | The domain's ID: the product prefix and the domain code, such as TL-LEND. |
 | `title` | VARCHAR | yes | The domain's name, such as Lending. |
 | `product_id` | VARCHAR → [`product`](#table-product) | yes | The product it belongs to. |
+| `position` | INTEGER | yes | Its place among the product's domains, from 1: the order the nav, the product page and the graph list them in. |
 | `subdomain_type` | ENUM('core', 'supporting', 'generic') | yes | core: the product's edge; supporting: needed for the core but not its edge; generic: solved the same way everywhere. It guides how much modeling the domain deserves. |
 | `description` | VARCHAR | yes | What the domain covers, in a paragraph. |
 | `notes` | VARCHAR | no | Longer notes on the domain. |
 
 - **Key:** `id`
+- **Unique:** `product_id`, `position`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `("position" >= 1)`
 - **Rule:** `("trim"(description) != '')`
 
 <a id="kind-aggregate"></a>

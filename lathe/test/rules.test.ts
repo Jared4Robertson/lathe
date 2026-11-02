@@ -1,4 +1,4 @@
-// The stage domains' invariants each aggregate's own rules.ts enforces (INV15–19, INV22–25, INV40, INV180–185):
+// The stage domains' invariants each aggregate's own rules.ts enforces (INV15–19, INV22–25, INV40, INV180–185, INV186):
 // the command that would break one is refused with the rule's name and its own message, before the schema's keys and
 // checks underneath are reached, and nothing changes. A rule no command can break (the schema's shape already stops
 // it at the command layer) is run on its own, over data that breaks it.
@@ -8,6 +8,8 @@ import { CHANGE_VALUE_OBJECT } from '../src/domain-modeling/value-object/command
 import { CHANGE_DOMAIN_EVENT } from '../src/domain-modeling/domain-event/commands/change-domain-event.ts';
 import { CHANGE_READ_MODEL } from '../src/domain-modeling/read-model/commands/change-read-model.ts';
 import { ADD_CAPABILITY } from '../src/domain-modeling/domain/commands/add-capability.ts';
+import { ADD_DOMAIN } from '../src/domain-modeling/domain/commands/add-domain.ts';
+import { CHANGE_DOMAIN } from '../src/domain-modeling/domain/commands/change-domain.ts';
 import { ADD_FLOW_STEP } from '../src/use-cases/use-case/commands/add-flow-step.ts';
 import { DECLARE_PRODUCT_KIND } from '../src/product/product/commands/declare-product-kind.ts';
 import { DECLARE_PRODUCT_RELATION } from '../src/product/product/commands/declare-product-relation.ts';
@@ -204,11 +206,31 @@ describe('LA-MOD-INV17-T a second capability at a position of its domain is refu
     const problems = await refusals(adding(everyKind(), { capability: [second] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'unique', table: 'capability', key: 'TL-LEND-CAP02', file: 'data/capability.jsonl', line: 2 })]);
     expect(problems[0].message).toBe('capability TL-LEND-CAP02 has the same domain_id, position as capability TL-LEND-CAP01: TL-LEND, 1');
-    const catalog = { domain: [{ id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'supporting', description: 'The tools the library holds.' }] };
+    const catalog = { domain: [{ id: 'TL-CAT', title: 'Catalog', product_id: 'TL', position: 2, subdomain_type: 'supporting', description: 'The tools the library holds.' }] };
     expect(await refusals(adding(everyKind(), {
       ...catalog,
       capability: [{ id: 'TL-CAT-CAP01', title: 'Listing', domain_id: 'TL-CAT', position: 1, description: 'Listing the tools on the shelf.' }, { ...second, position: 2 }],
     }))).toEqual([]);
+  });
+});
+
+describe('LA-MOD-INV186-T a second domain at a position of its product is refused by domain-position; another product may use it', () => {
+  const second = { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', position: 1, subdomain_type: 'supporting', description: 'The tools the library holds.' };
+
+  it('refuses an added domain and a changed one, naming both, and adds one at the next position', async () => {
+    const on = await store();
+    const message = 'domains TL-CAT and TL-LEND are both at position 1 of product TL: each domain of a product has its own position';
+    expect(await refused(on, ADD_DOMAIN, second, 'domain')).toEqual([{ rule: 'domain-position', message }]);
+    await runCommand(on, ADD_DOMAIN, { ...second, position: 2 });
+    expect(await refused(on, CHANGE_DOMAIN, { id: 'TL-CAT', position: 1 }, 'domain')).toEqual([{ rule: 'domain-position', message }]);
+    await runCommand(on, CHANGE_DOMAIN, { id: 'TL-CAT', position: 3 });
+    expect(on.rows('domain').map((d) => `${d.id} ${d.position}`).sort()).toEqual(['TL-CAT 3', 'TL-LEND 1']);
+  });
+
+  it('is refused on load by the unique key under it; another product may use the position', async () => {
+    const problems = await refusals(adding(everyKind(), { domain: [second] }));
+    expect(problems).toEqual([expect.objectContaining({ rule: 'unique', table: 'domain', key: 'TL-CAT', file: 'data/domain.jsonl', line: 2 })]);
+    expect(await refusals(adding(everyKind(), { product: [{ id: 'XX', title: 'Other', description: 'Another product.' }], domain: [{ ...second, id: 'XX-CAT', product_id: 'XX' }] }))).toEqual([]);
   });
 });
 

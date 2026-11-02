@@ -19,7 +19,7 @@ beforeAll(async () => {
 afterAll(removeData);
 
 const record = (ws: Workspace, id: string) => ws.records.find((r) => r.id === id)!;
-const shop = { id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'supporting', description: 'Selling spare parts.' };
+const shop = { id: 'EX-SHOP', title: 'Shop', product_id: 'EX', position: 2, subdomain_type: 'supporting', description: 'Selling spare parts.' };
 
 describe('capabilities', () => {
   it("LA-MOD-UC02-R04-T01 A capability sits under a domain with a required whole-number position, and every use case sits under one of its domain's capabilities", async () => {
@@ -38,7 +38,7 @@ describe('capabilities', () => {
     // A use case with no capability is refused, and so is one whose ID names another domain than its capability's.
     const { capability_id: _, ...loose } = data.use_case[0];
     expect((await refusals(withTable(data, 'use_case', [loose]))).map((p) => p.message)).toEqual(['use_case.capability_id is required']);
-    const elsewhere = adding(data, { domain: [{ id: 'TL-SHOP', title: 'Shop', product_id: 'TL', subdomain_type: 'supporting', description: 'Selling spare parts.' }], use_case: [{ id: 'TL-SHOP-UC01', title: 'Sell a tool', capability_id: 'TL-LEND-CAP01', goal: 'A customer buys a used tool.' }] });
+    const elsewhere = adding(data, { domain: [{ id: 'TL-SHOP', title: 'Shop', product_id: 'TL', position: 2, subdomain_type: 'supporting', description: 'Selling spare parts.' }], use_case: [{ id: 'TL-SHOP-UC01', title: 'Sell a tool', capability_id: 'TL-LEND-CAP01', goal: 'A customer buys a used tool.' }] });
     expect(await refusals(elsewhere)).toEqual([expect.objectContaining({ rule: 'id-prefix', key: 'TL-SHOP-UC01', message: expect.stringContaining('in domain TL-LEND, so its ID starts with TL-LEND-') })]);
   });
 

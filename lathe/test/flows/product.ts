@@ -159,7 +159,7 @@ export const link = (source: string, relation: string, target: string): Seed => 
  * event, and a capability with a use case and one requirement.
  */
 export const LENDING: Seed[] = [
-  add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }),
+  add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }),
   add('aggregate', { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', identity: 'Loan ID', description: 'One tool lent to one member, with its return.' }),
   add('entity', { id: 'TL-LEND-EN01', title: 'Loan', aggregate_id: 'TL-LEND-A1', role: 'root', description: 'The loan itself.' }),
   add('entity_field', { entity_id: 'TL-LEND-EN01', position: 1, name: 'Loan ID', meaning: 'The loan number.', type: 'whole number', required: true, column_name: 'id' }),

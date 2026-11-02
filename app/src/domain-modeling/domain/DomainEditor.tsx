@@ -257,12 +257,13 @@ function AddForm({ index, page, kind, parent, onDone }: { index: RecordIndex; pa
 
 /**
  * Add a domain to a product (from the product's page): the aggregate's own Add. A domain's ID is its product's and a
- * code chosen for it, so the form starts it with the product's prefix and leaves the code to the person.
+ * code chosen for it, so the form starts it with the product's prefix and leaves the code to the person. A new domain
+ * goes last: its position is one past the domains the product has.
  */
 export function AddDomainForm({ index, parent, onDone }: { index: RecordIndex; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
-  const [draft, setDraft] = useState<Draft>(() => ({ ...emptyDraft(), text: { id: `${parent}-` } }));
+  const [draft, setDraft] = useState<Draft>(() => ({ ...emptyDraft(), text: { id: `${parent}-`, position: String(index.domains.length + 1) } }));
   const specs = fieldsOf(index, null, parent, 'domain', true);
   const submit = async () => {
     const input = addInput(index, specs, draft, { product_id: parent });

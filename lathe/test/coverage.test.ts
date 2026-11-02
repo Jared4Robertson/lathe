@@ -39,7 +39,7 @@ describe('coverage of the complete product', () => {
     // A second domain's entity has a field typed by the value object: the product shares it, with its constraint.
     const shared = await loadData(
       adding(complete(), {
-        domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'supporting', description: 'Selling spare parts.' }],
+        domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', position: 2, subdomain_type: 'supporting', description: 'Selling spare parts.' }],
         aggregate: [{ id: 'EX-SHOP-A1', title: 'Order', domain_id: 'EX-SHOP', identity: 'Order ID', description: 'One order of parts.' }],
         entity: [{ id: 'EX-SHOP-EN01', title: 'Order', aggregate_id: 'EX-SHOP-A1', role: 'root', description: 'The order itself.' }],
         entity_field: [{ entity_id: 'EX-SHOP-EN01', position: 1, name: 'Buyer email', meaning: 'Where the receipt goes.', type_value_object_id: 'EX-VO01', required: true }],
@@ -264,7 +264,7 @@ describe('proved', () => {
 describe('pattern rules', () => {
   const shop = (data = complete()) =>
     adding(data, {
-      domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'supporting', description: 'Selling spare parts.' }],
+      domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', position: 2, subdomain_type: 'supporting', description: 'Selling spare parts.' }],
       capability: [{ id: 'EX-SHOP-CAP01', title: 'Selling', domain_id: 'EX-SHOP', position: 1, description: 'Selling tools.' }],
       use_case: [{ id: 'EX-SHOP-UC01', title: 'Sell a tool', capability_id: 'EX-SHOP-CAP01', goal: 'A customer buys a used tool.' }],
     });
@@ -451,7 +451,7 @@ describe("a product's relations with a role, on Lathe's own obligation kinds", (
 describe('pattern rules, domain by domain', () => {
   const shop = (data = complete()) =>
     adding(data, {
-      domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'supporting', description: 'Selling spare parts.' }],
+      domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', position: 2, subdomain_type: 'supporting', description: 'Selling spare parts.' }],
       capability: [{ id: 'EX-SHOP-CAP01', title: 'Selling', domain_id: 'EX-SHOP', position: 1, description: 'Selling tools.' }],
       use_case: [
         { id: 'EX-SHOP-UC01', title: 'Sell a tool', capability_id: 'EX-SHOP-CAP01', goal: 'A customer buys a used tool.' },

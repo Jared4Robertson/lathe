@@ -13,7 +13,7 @@ export async function librarianAction(): Promise<Store> {
   const store = await openStore(
     writeData({
       product: [{ id: 'TL', title: 'Tool Library', description: 'A neighborhood tool library.' }],
-      domain: [{ id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }],
+      domain: [{ id: 'TL-LEND', title: 'Lending', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }],
     }),
     { latheDataDir: null },
   );
