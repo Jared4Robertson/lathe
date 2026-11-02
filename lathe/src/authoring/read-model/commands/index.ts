@@ -15,6 +15,7 @@ import { REMOVE_QUERY_HANDLER } from './remove-query-handler.ts';
 import { ADD_READER } from './add-reader.ts';
 import { CHANGE_READER } from './change-reader.ts';
 import { REMOVE_READER } from './remove-reader.ts';
+import { MOVE_READ_MODEL } from './move-read-model.ts';
 
 export const READ_MODEL_COMMANDS = [
   ADD_READ_MODEL,
@@ -32,4 +33,5 @@ export const READ_MODEL_COMMANDS = [
   ADD_READER,
   CHANGE_READER,
   REMOVE_READER,
+  MOVE_READ_MODEL,
 ] as const satisfies readonly AnyCommand[];

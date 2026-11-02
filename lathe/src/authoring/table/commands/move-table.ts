@@ -1,4 +1,5 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
+import { toDomain } from '../../../platform/data/renames.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { TableRow } from '../../../platform/data/tables.ts';
 import { PARENT_COLUMNS } from '../model.ts';
@@ -28,8 +29,11 @@ export function moveTable(tx: Transaction, input: MoveTable): void {
   if (given.length !== 1) tx.refuse('parent', `table ${input.id} moves under exactly one entity, read model or domain; ${given.length} are given`);
   const column = given[0];
   if (table.table[column] === input[column]) tx.refuse('parent', `${input.id} is already under ${input[column]}`);
+  // A table under a domain has an ID of its domain's, so one moved under another domain takes that domain's.
+  const renames = column === 'domain_id' && table.table.domain_id ? toDomain(tx, { id: input.id, label: 'table', domainId: table.table.domain_id }, input.domain_id!) : new Map<string, string>();
   const { entity_id: _entity, read_model_id: _readModel, domain_id: _domain, ...rest } = table.table;
   table.table = { ...rest, [column]: input[column] };
   holdToRules(tx, table);
   tables.save(table);
+  tables.carryRenames(renames);
 }

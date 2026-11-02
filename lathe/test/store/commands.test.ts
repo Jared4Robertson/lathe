@@ -116,23 +116,26 @@ describe('record_scope', () => {
 });
 
 describe('moving', () => {
-  it('LA-PAT-AGGREGATE-COMMANDS-R07-T01 refuses a move that leaves an ID outside its domain', async () => {
-    const { store } = await fresh();
-    await run(store, 'domain add-domain', { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'generic', description: 'The tools the library holds.' });
-    await run(store, 'domain add-capability', { id: 'TL-CAT-CAP01', title: 'Listing', domain_id: 'TL-CAT', position: 1, description: 'Listing the tools on the shelf.' });
-    expect(await refusedBy(store, 'use-case move-use-case', { id: 'TL-LEND-UC01', capability_id: 'TL-CAT-CAP01' })).toEqual([
-      expect.objectContaining({ rule: 'id-prefix', key: 'TL-LEND-UC01', message: 'TL-LEND-UC01 is a Use case in domain TL-CAT, so its ID starts with TL-CAT-' }),
-    ]);
-    await store.close();
-  });
-
-  it('LA-AUT-UC18-R05-T03 a view, which has no owner, has no move: only a use case, a flow step, a journey step, an endpoint, a table and a question move', () => {
+  it('LA-AUT-UC18-R05-T03 a view, which has no owner, has no move: only records with a parent, or a domain their ID names, move', () => {
     expect(ALL_COMMANDS.filter((c) => c.name.startsWith('move-')).map((c) => `${c.slice.name} ${c.name}`).sort()).toEqual([
+      'aggregate move-aggregate',
+      'data-store move-data-store',
+      'domain move-capability',
+      'domain move-domain-service',
+      'domain move-repository',
+      'domain move-term',
       'endpoint move-endpoint',
+      'entry-point move-entry-point',
+      'extension-record move-extension-record',
       'journey move-journey-step',
       'product move-question',
+      'read-model move-read-model',
+      'specification move-specification',
       'table move-table',
+      'test-data-set move-test-data-set',
+      'tooling move-tooling',
       'use-case move-flow-step',
+      'use-case move-uc-requirement',
       'use-case move-use-case',
     ]);
   });

@@ -161,3 +161,12 @@ export const REMOVE_RULE_IDENTITY = {
   method: 'POST',
   route: '/api/aggregate/remove-rule',
 } as const;
+
+export const MOVE_AGGREGATE_IDENTITY = {
+  id: 'LA-AUT-CMD387',
+  slice: { aggregate: 'LA-AUT-A6', name: 'aggregate' },
+  name: 'move-aggregate',
+  description: 'Moves an aggregate, with everything under it, to another domain of its product: it and each record under it take the new domain\'s ID in place of the old one\'s, and every record that names one of them names the new ID. Refused for a domain of another product, or a new ID another record has.',
+  method: 'POST',
+  route: '/api/aggregate/move-aggregate',
+} as const;

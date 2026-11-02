@@ -26,3 +26,12 @@ export const REMOVE_DATA_STORE_IDENTITY = {
   method: 'POST',
   route: '/api/data-store/remove-data-store',
 } as const;
+
+export const MOVE_DATA_STORE_IDENTITY = {
+  id: 'LA-AUT-CMD399',
+  slice: { aggregate: 'LA-AUT-A23', name: 'data-store' },
+  name: 'move-data-store',
+  description: 'Moves a data store that sits under a domain to another domain of its product: it takes the new domain\'s ID in place of the old one\'s, and every record that names it names the new ID. Refused for a data store of the product as a whole, a domain of another product, or a new ID another record has.',
+  method: 'POST',
+  route: '/api/data-store/move-data-store',
+} as const;

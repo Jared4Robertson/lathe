@@ -80,3 +80,12 @@ export const REMOVE_SPECIFICATION_TEST_IDENTITY = {
   method: 'POST',
   route: '/api/specification/remove-specification-test',
 } as const;
+
+export const MOVE_SPECIFICATION_IDENTITY = {
+  id: 'LA-AUT-CMD392',
+  slice: { aggregate: 'LA-AUT-A5', name: 'specification' },
+  name: 'move-specification',
+  description: 'Moves a specification, with its predicate and test, to another domain of its product: each takes the new domain\'s ID in place of the old one\'s, and every record that names one of them names the new ID. Refused for a domain of another product, or a new ID another record has.',
+  method: 'POST',
+  route: '/api/specification/move-specification',
+} as const;

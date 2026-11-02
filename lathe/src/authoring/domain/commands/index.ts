@@ -21,6 +21,10 @@ import { REMOVE_SERVICE } from './remove-service.ts';
 import { ADD_DOMAIN_SERVICE_TEST } from './add-domain-service-test.ts';
 import { CHANGE_DOMAIN_SERVICE_TEST } from './change-domain-service-test.ts';
 import { REMOVE_DOMAIN_SERVICE_TEST } from './remove-domain-service-test.ts';
+import { MOVE_CAPABILITY } from './move-capability.ts';
+import { MOVE_TERM } from './move-term.ts';
+import { MOVE_REPOSITORY } from './move-repository.ts';
+import { MOVE_DOMAIN_SERVICE } from './move-domain-service.ts';
 
 export const DOMAIN_COMMANDS = [
   ADD_DOMAIN,
@@ -44,4 +48,8 @@ export const DOMAIN_COMMANDS = [
   ADD_DOMAIN_SERVICE_TEST,
   CHANGE_DOMAIN_SERVICE_TEST,
   REMOVE_DOMAIN_SERVICE_TEST,
+  MOVE_CAPABILITY,
+  MOVE_TERM,
+  MOVE_REPOSITORY,
+  MOVE_DOMAIN_SERVICE,
 ] as const satisfies readonly AnyCommand[];

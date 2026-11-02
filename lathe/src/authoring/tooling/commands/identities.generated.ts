@@ -26,3 +26,12 @@ export const REMOVE_TOOLING_IDENTITY = {
   method: 'POST',
   route: '/api/tooling/remove-tooling',
 } as const;
+
+export const MOVE_TOOLING_IDENTITY = {
+  id: 'LA-AUT-CMD394',
+  slice: { aggregate: 'LA-AUT-A21', name: 'tooling' },
+  name: 'move-tooling',
+  description: 'Moves a dev script or config file to another domain of its product: it takes the new domain\'s ID in place of the old one\'s, and every record that names it names the new ID. Refused for a domain of another product, or a new ID another record has.',
+  method: 'POST',
+  route: '/api/tooling/move-tooling',
+} as const;

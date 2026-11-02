@@ -23,4 +23,8 @@ export const ENTRY_POINT_FIELDS = {
   '/api/entry-point/remove-entry-point': {
     id: { kind: 'column', table: 'entry_point', column: 'id', required: true, clearable: false },
   },
+  '/api/entry-point/move-entry-point': {
+    id: { kind: 'column', table: 'entry_point', column: 'id', required: true, clearable: false },
+    domain_id: { kind: 'column', table: 'entry_point', column: 'domain_id', required: true, clearable: false },
+  },
 } as const satisfies Record<string, InputFields>;

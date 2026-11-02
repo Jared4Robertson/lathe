@@ -94,7 +94,7 @@ export const MOVE_QUESTION_IDENTITY = {
   id: 'LA-AUT-CMD130',
   slice: { aggregate: 'LA-AUT-A1', name: 'product' },
   name: 'move-question',
-  description: 'Moves an open question between its product and one of the product\'s domains, or from one domain to another of the same product.',
+  description: 'Moves an open question under its product or another of its domains; its ID takes the new parent\'s in place of the old one\'s, and every record that names it names the new ID. What it is about stays.',
   method: 'POST',
   route: '/api/product/move-question',
 } as const;

@@ -22,7 +22,7 @@ export const MOVE_USE_CASE_IDENTITY = {
   id: 'LA-AUT-CMD102',
   slice: { aggregate: 'LA-AUT-A11', name: 'use-case' },
   name: 'move-use-case',
-  description: 'Moves a use case, with everything in it, under another capability of its domain.',
+  description: 'Moves a use case, with everything in it, under another capability of its product: under another domain\'s, it and everything in it take that domain\'s ID in place of the old one\'s, and every record that names one of them names the new ID.',
   method: 'POST',
   route: '/api/use-case/move-use-case',
 } as const;
@@ -178,4 +178,13 @@ export const MOVE_FLOW_STEP_IDENTITY = {
   description: 'Moves a step to another position, on its own path or another, shifting the steps of the old path and the new so each stays numbered 1, 2, 3.',
   method: 'POST',
   route: '/api/use-case/move-flow-step',
+} as const;
+
+export const MOVE_UC_REQUIREMENT_IDENTITY = {
+  id: 'LA-AUT-CMD396',
+  slice: { aggregate: 'LA-AUT-A11', name: 'use-case' },
+  name: 'move-uc-requirement',
+  description: 'Moves a UC requirement, with its tests, to another use case of its product: it takes the next free number there, its tests the new requirement\'s ID in place of the old one\'s, and every record that names one of them names the new ID. Refused while a step of its use case fulfills it, or for a use case of another product.',
+  method: 'POST',
+  route: '/api/use-case/move-uc-requirement',
 } as const;

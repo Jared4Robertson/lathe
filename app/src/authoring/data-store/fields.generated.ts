@@ -20,4 +20,8 @@ export const DATA_STORE_FIELDS = {
   '/api/data-store/remove-data-store': {
     id: { kind: 'column', table: 'data_store', column: 'id', required: true, clearable: false },
   },
+  '/api/data-store/move-data-store': {
+    id: { kind: 'column', table: 'data_store', column: 'id', required: true, clearable: false },
+    domain_id: { kind: 'column', table: 'data_store', column: 'domain_id', required: true, clearable: false },
+  },
 } as const satisfies Record<string, InputFields>;

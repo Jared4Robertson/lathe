@@ -26,3 +26,12 @@ export const REMOVE_ENTRY_POINT_IDENTITY = {
   method: 'POST',
   route: '/api/entry-point/remove-entry-point',
 } as const;
+
+export const MOVE_ENTRY_POINT_IDENTITY = {
+  id: 'LA-AUT-CMD398',
+  slice: { aggregate: 'LA-AUT-A20', name: 'entry-point' },
+  name: 'move-entry-point',
+  description: 'Moves a start-up file to another domain of its product: it takes the new domain\'s ID in place of the old one\'s, and every record that names it names the new ID. Refused for a domain of another product, or a new ID another record has.',
+  method: 'POST',
+  route: '/api/entry-point/move-entry-point',
+} as const;
