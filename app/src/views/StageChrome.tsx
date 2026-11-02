@@ -20,7 +20,7 @@ import { useScrollToZoom } from '../platform/appearance/use-scroll-to-zoom';
 //   its keys do. It is one row at every width (LA-PAT-APP-UX-R08): while it does not fit it steps down a tier before
 //   paint (TOOLBAR_FORMS), and the walk, Frame and the stage's primary controls are the last to give way.
 // - On a phone, a stage that walks there (the Graph and the ERD) shows its walk as a bar of four buttons along the foot
-//   of the stage instead (StageWalkBar, LA-V93-R76): Out, Previous, Next and In, each one tap, never in More. The
+//   of the stage instead (StageWalkBar, LA-V93-R76): Previous, Out, In and Next, each one tap, never in More. The
 //   arrows the bar does not carry, which step somewhere Out, In, Previous and Next do not (the ERD's Up and Down), stay
 //   in More. The camera, the key chip and the read-only note sit above the bar.
 // - StageCamera sits in the bottom left corner of the frame: zoom in, zoom out and fit the whole map, the same buttons,
@@ -197,10 +197,10 @@ export function StageToolbar({ can, walkLabels = {}, own, measureKey, bar }: Sta
 
 /** The bar's buttons, left to right: each its word, its icon and the move it takes on the stage. */
 const BAR_STEPS: readonly { word: string; icon: IconName; move: (bar: WalkBar) => Move }[] = [
-  { word: 'Out', icon: 'corner-left-up', move: () => 'out' },
   { word: 'Previous', icon: 'chevron-left', move: (bar) => bar.previous },
-  { word: 'Next', icon: 'chevron-right', move: (bar) => bar.next },
+  { word: 'Out', icon: 'corner-left-up', move: () => 'out' },
   { word: 'In', icon: 'corner-right-down', move: () => 'in' },
+  { word: 'Next', icon: 'chevron-right', move: (bar) => bar.next },
 ];
 
 /** A bar button's name: what the move does on the stage, led by the button's word when the label does not say it (WCAG 2.5.3). */
@@ -210,7 +210,7 @@ function barStepName(word: string, label: string): string {
 
 /**
  * The walk on a phone (LA-V93-R76): a bar along the foot of the stage, clear of the safe area, of four buttons tapped
- * directly, Out, Previous, Next and In, each a touch target with its icon and word. A step that goes nowhere from the
+ * directly, Previous, Out, In and Next (across on the outside, levels in the middle), each a touch target with its icon and word. A step that goes nowhere from the
  * focus is disabled, never hidden, so the bar never shifts. It is a floating panel at the bottom (`data-floating`), so
  * the camera frames above it.
  */

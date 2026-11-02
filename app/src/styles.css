@@ -438,7 +438,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 @media (pointer: coarse) { :root { --tools-row: calc(var(--touch-target) + 14px); } .focus-stage { --key-clear-left: calc(4px + var(--touch-target) + 6px + 8px); } }
 /* On a phone: a Key chip at the foot of the stage, opening the entries with their meanings as a sheet. */
 .stage-key-chip { position: absolute; z-index: 6; bottom: var(--stage-foot); left: 50%; translate: -50% 0; padding: 4px 12px; border: 1px solid var(--float-border); border-radius: 999px; background: var(--sheet); box-shadow: var(--float-shadow); font-size: 0.8rem; }
-/* On a phone, the walk's bar (StageWalkBar, LA-V93-R76): Out, Previous, Next and In along the foot of the stage, each a
+/* On a phone, the walk's bar (StageWalkBar, LA-V93-R76): Previous, Out, In and Next along the foot of the stage, each a
    touch target with its icon and word, clear of the safe area. On a phone every stage's foot rises above it (the Trace,
    a list there, draws nothing at its foot), so the camera, the minimap, the key chip and the touch card sit over the
    bar, never on it, and the read-only note rises with them. */
