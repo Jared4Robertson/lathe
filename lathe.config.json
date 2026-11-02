@@ -8,6 +8,7 @@
     "**/*.test.{ts,tsx,js,mjs}",
     "**/*.spec.{ts,tsx,js}",
     "app/a11y/**/*.ts",
+    "app/mobile/**/*.ts",
     "app/perf/**/*.ts",
     "app/stability/**/*.ts",
     "lathe/perf/**/*.ts",
