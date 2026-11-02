@@ -11,6 +11,9 @@ const RELOAD_DELAY_MS = 50;
 /** How long the server waits after a change to the engine's code or schema for the next, so a merge makes one reload. */
 const ENGINE_RELOAD_DELAY_MS = 400;
 
+/** How long a failed engine reload waits before its one retry, for the merge's files to settle. */
+const ENGINE_RELOAD_RETRY_MS = 1500;
+
 // Serves Lathe's API (lathe/src/server/api.ts: the spec, writes and history) inside the Vite dev server. The module
 // is loaded through Vite, and when the engine's code, schema or manifest changes (an edit, a merge) the server closes
 // the old engine's stores and DuckDB instance, imports the engine afresh and tells the pages to read everything again,
@@ -80,19 +83,32 @@ export function latheApi(root: string, engineDir = path.resolve(import.meta.dirn
 
       // Imports the engine afresh: stops hearing the old module, closes its stores and the shared DuckDB instance (so
       // it is not held twice), drops every loaded module, loads the new engine and tells the open pages to read all.
+      const reloadOnce = async () => {
+        unsubscribe?.();
+        unsubscribe = undefined;
+        // Closes every store the old engine opened, not those its config lists for the root: reading the product's
+        // config on the old engine fails when a merge has already moved the data to a new schema version.
+        const old = await load<ApiModule>('src/server/api.ts').catch(() => undefined);
+        await old?.closeStores();
+        const store = await load<{ closeEngine(): Promise<void> }>('src/platform/data/store.ts').catch(() => undefined);
+        await store?.closeEngine();
+        server.moduleGraph.invalidateAll();
+        await attach();
+        // The fresh engine must accept the product (its schema version is read again with its code), or this reload failed.
+        (await load<ApiModule>('src/server/api.ts')).watchTargets(root);
+      };
+      // A reload that fails (a merge still writing its files) is tried once more after they settle, so the server
+      // does not stay broken until it is restarted.
       const reload = async () => {
-        try {
-          unsubscribe?.();
-          unsubscribe = undefined;
-          const old = await load<ApiModule>('src/server/api.ts').catch(() => undefined);
-          await old?.closeStores(root);
-          const store = await load<{ closeEngine(): Promise<void> }>('src/platform/data/store.ts').catch(() => undefined);
-          await store?.closeEngine();
-          server.moduleGraph.invalidateAll();
-          await attach();
-          server.config.logger.info('Lathe engine changed: reloaded it.', { timestamp: true });
-        } catch (error) {
-          server.config.logger.error(`Lathe engine could not be reloaded: ${message(error)}`, { timestamp: true });
+        for (let attempt = 1; attempt <= 2; attempt += 1) {
+          try {
+            await reloadOnce();
+            server.config.logger.info('Lathe engine changed: reloaded it.', { timestamp: true });
+            break;
+          } catch (error) {
+            server.config.logger.error(`Lathe engine could not be reloaded${attempt === 1 ? ' (trying once more)' : ''}: ${message(error)}`, { timestamp: true });
+            if (attempt === 1) await new Promise((resolve) => setTimeout(resolve, ENGINE_RELOAD_RETRY_MS));
+          }
         }
         send({ tables: [], readModels: null });
       };
