@@ -1,13 +1,13 @@
 import { createPortal } from 'react-dom';
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '../components/Button';
-import { Icon } from '../components/icons';
+import { Icon, type IconName } from '../components/icons';
 import { useKeymap, useRunCommand, useRunWalk } from '../shell/commands';
 import { WALK_COMMANDS, walkLetter } from '../shell/keymap';
 import { Tooltip } from '../shell/Tooltip';
 import { BottomSheet } from '../shell/BottomSheet';
 import { useNarrow } from '../shell/useNarrow';
-import { MOVES, type Move } from './levels';
+import { MOVES, type Direction, type Move } from './levels';
 import { ChangesTools } from '../changes/ChangesTools';
 import { useScrollToZoom } from '../platform/appearance/use-scroll-to-zoom';
 
@@ -19,6 +19,10 @@ import { useScrollToZoom } from '../platform/appearance/use-scroll-to-zoom';
 //   stage's own. Each step runs the stage's walk (views/levels.ts) through the commands layer, as
 //   its keys do. It is one row at every width (LA-PAT-APP-UX-R08): while it does not fit it steps down a tier before
 //   paint (TOOLBAR_FORMS), and the walk, Frame and the stage's primary controls are the last to give way.
+// - On a phone, a stage that walks there (the Graph and the ERD) shows its walk as a bar of four buttons along the foot
+//   of the stage instead (StageWalkBar, LA-V93-R76): Out, Previous, Next and In, each one tap, never in More. The
+//   arrows the bar does not carry, which step somewhere Out, In, Previous and Next do not (the ERD's Up and Down), stay
+//   in More. The camera, the key chip and the read-only note sit above the bar.
 // - StageCamera sits in the bottom left corner of the frame: zoom in, zoom out and fit the whole map, the same buttons,
 //   look and tooltips on every stage. A minimap (the Graph's) sits in the bottom right corner and the edge hints (the
 //   ERD's) at the frame's edges, in their shared styles.
@@ -55,7 +59,8 @@ interface ToolbarForm {
  * What each tier changes, in the fold order: the names and the baseline picker give way first, then the Changes group
  * folds into More, then the stage's secondary controls, then the step letters drop and the stage's own
  * controls narrow. The walk (the steps, Out and In), Frame and the stage's primary controls stay in the row on every
- * desktop width; only the last tier, for a phone, folds the steps too.
+ * desktop width; only the last tier, for a room narrower than that, folds the steps too. On a phone a stage that walks
+ * there shows its steps in the walk's bar instead (StageWalkBar), whatever the tier.
  */
 export const TOOLBAR_FORMS: Readonly<Record<ToolbarTier, ToolbarForm>> = {
   full: { names: true, picker: true, letters: true, narrow: false, folded: [] },
@@ -65,6 +70,16 @@ export const TOOLBAR_FORMS: Readonly<Record<ToolbarTier, ToolbarForm>> = {
   narrow: { names: false, picker: false, letters: false, narrow: true, folded: ['changes', 'secondary'] },
   menu: { names: false, picker: false, letters: false, narrow: true, folded: ['steps', 'changes', 'secondary'] },
 };
+
+/** On a phone, which of the stage's arrows the walk's bar steps Previous and Next by (LA-V93-R76). */
+export interface WalkBar {
+  /** The arrow that steps back to the previous node at the same level. */
+  previous: Direction;
+  /** The arrow that steps on to the next node at the same level. */
+  next: Direction;
+  /** The other arrows that step somewhere Out, In, Previous and Next do not: on a phone they stay in More. */
+  more: readonly Direction[];
+}
 
 /** The mark each step button shows; beside it, the plain letter that takes the same step as the person bound it (A for Left by default). */
 const STEP_MARKS: Readonly<Record<Move, string>> = { left: '←', right: '→', up: '↑', down: '↓', out: 'Out', in: 'In' };
@@ -79,9 +94,12 @@ export interface StageToolbarProps {
   own?: (narrow: boolean) => { primary?: ReactNode; secondary?: ReactNode };
   /** Changes when the stage's own controls change width (a filter count shown), so the toolbar finds its tier again. */
   measureKey?: string | number;
+  /** On a phone, the walk's bar; a stage that does not walk on a phone (the Trace, a list there) gives none. */
+  bar?: WalkBar;
 }
 
-export function StageToolbar({ can, walkLabels = {}, own, measureKey }: StageToolbarProps) {
+export function StageToolbar({ can, walkLabels = {}, own, measureKey, bar }: StageToolbarProps) {
+  const phone = useNarrow() && bar !== undefined;
   const runWalk = useRunWalk();
   const keymap = useKeymap();
   const titleOf = (move: Move) => keymap.commands.find((c) => c.id === WALK_COMMANDS[move])!.title;
@@ -118,12 +136,16 @@ export function StageToolbar({ can, walkLabels = {}, own, measureKey }: StageToo
 
   const name = TOOLBAR_TIERS[tier];
   const form = TOOLBAR_FORMS[name];
-  const folds = (group: ToolbarGroup) => form.folded.includes(group);
+  // On a phone the bar carries the walk, so the steps never take a place in the row; what the bar leaves is in More.
+  const folded: readonly ToolbarGroup[] = phone ? ['steps', ...form.folded.filter((g) => g !== 'steps')] : form.folded;
+  const folds = (group: ToolbarGroup) => folded.includes(group);
   const mine = own?.(form.narrow) ?? {};
-  const steps = (
-    <div className="stage-steps" role="group" aria-label="Walk the stage">
-      {MOVES.map((move) => {
-        const label = walkLabels[move] ?? titleOf(move);
+  const labelOf = (move: Move) => walkLabels[move] ?? titleOf(move);
+  const stepMoves = phone ? bar.more : MOVES;
+  const steps = stepMoves.length > 0 && (
+    <div className="stage-steps" role="group" aria-label={phone ? 'More steps' : 'Walk the stage'}>
+      {stepMoves.map((move) => {
+        const label = labelOf(move);
         const mark = STEP_MARKS[move];
         const letter = ARROW_MOVES.includes(move) ? walkLetter(move, keymap.commands, keymap.mac) : '';
         return (
@@ -140,8 +162,10 @@ export function StageToolbar({ can, walkLabels = {}, own, measureKey }: StageToo
   );
   const groups: Partial<Record<ToolbarGroup, ReactNode>> = { steps, changes: <ChangesTools picker />, secondary: mine.secondary };
   // A group with nothing in it (the ERD and the Trace have no secondary controls) takes no place in More.
-  const inMore = form.folded.filter((g) => groups[g]);
+  const inMore = folded.filter((g) => groups[g]);
   return (
+    <>
+    {phone && <StageWalkBar bar={bar} can={can} labelOf={labelOf} />}
     <div className="stage-tools-room" ref={room}>
       <div className="stage-tools" data-stage-tools="top">
         <div className="stage-toolbar" ref={toolbar} data-tier={name} data-names={form.names ? undefined : 'hidden'}>
@@ -166,6 +190,44 @@ export function StageToolbar({ can, walkLabels = {}, own, measureKey }: StageToo
           </div>
         </div>
       </div>
+    </div>
+    </>
+  );
+}
+
+/** The bar's buttons, left to right: each its word, its icon and the move it takes on the stage. */
+const BAR_STEPS: readonly { word: string; icon: IconName; move: (bar: WalkBar) => Move }[] = [
+  { word: 'Out', icon: 'corner-left-up', move: () => 'out' },
+  { word: 'Previous', icon: 'chevron-left', move: (bar) => bar.previous },
+  { word: 'Next', icon: 'chevron-right', move: (bar) => bar.next },
+  { word: 'In', icon: 'corner-right-down', move: () => 'in' },
+];
+
+/** A bar button's name: what the move does on the stage, led by the button's word when the label does not say it (WCAG 2.5.3). */
+function barStepName(word: string, label: string): string {
+  return new RegExp(`\\b${word}\\b`, 'i').test(label) ? label : `${word}: ${label[0].toLowerCase()}${label.slice(1)}`;
+}
+
+/**
+ * The walk on a phone (LA-V93-R76): a bar along the foot of the stage, clear of the safe area, of four buttons tapped
+ * directly, Out, Previous, Next and In, each a touch target with its icon and word. A step that goes nowhere from the
+ * focus is disabled, never hidden, so the bar never shifts. It is a floating panel at the bottom (`data-floating`), so
+ * the camera frames above it.
+ */
+function StageWalkBar({ bar, can, labelOf }: { bar: WalkBar; can: (move: Move) => boolean; labelOf: (move: Move) => string }) {
+  const runWalk = useRunWalk();
+  return (
+    <div className="stage-walk-bar" role="group" aria-label="Walk the stage" data-floating="bottom">
+      {BAR_STEPS.map(({ word, icon, move: of }) => {
+        const move = of(bar);
+        return (
+          <Tooltip key={word} label={labelOf(move)} command={WALK_COMMANDS[move]} placement="top">
+            <Button className={`stage-walk-step is-${word.toLowerCase()}`} aria-label={barStepName(word, labelOf(move))} disabled={!can(move)} onClick={() => runWalk(move)}>
+              <Icon name={icon} size={18} /><span className="stage-walk-word">{word}</span>
+            </Button>
+          </Tooltip>
+        );
+      })}
     </div>
   );
 }

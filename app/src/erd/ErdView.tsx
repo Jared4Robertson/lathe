@@ -25,7 +25,7 @@ import { useWalk } from '../graph/steps';
 import { useCommand } from '../shell/commands';
 import { StageCamera, StageKey, StageToolbar, TidyUp, ZOOM_STEP, type KeyEntry } from '../views/StageChrome';
 import type { Move } from '../views/levels';
-import { erdTarget } from './walk';
+import { ERD_WALK_BAR, erdTarget } from './walk';
 import { useChanges } from '../changes/changes';
 import { GHOST_MS, highlightFade, markPhase, marksMoving, useStageMarks } from '../changes/marks';
 import { useChangesKey } from '../changes/ChangesKey';
@@ -135,7 +135,7 @@ export function ErdView({ index, focus, onNavigate, onPeek, onCounts, space, cam
           <ErdCanvas index={index} map={map} at={at} focus={focus} refocus={refocus} onNavigate={onNavigate} onPeek={onPeek} space={space} cameraKey={cameraKey} onOpenNew={onOpenNew} onLaidOut={() => setLaidOut((n) => n + 1)} />
         </div>
       )}
-      <StageToolbar can={(move) => target(move) !== null} own={() => ({ primary: <TidyUp /> })} />
+      <StageToolbar can={(move) => target(move) !== null} own={() => ({ primary: <TidyUp /> })} bar={ERD_WALK_BAR} />
       <StageKey entries={keyEntries} />
     </section>
   );
