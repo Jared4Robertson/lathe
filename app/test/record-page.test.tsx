@@ -49,7 +49,7 @@ describe('record page', () => {
     expect(pageOf(meta, 'security_control')?.name).toBe('ExtensionRecordPage');
   });
 
-  it('LA-PAT-RECORD-PAGE-R08-T01 The record page shows the ID, kind, title, text fields as Markdown, parent and children', async () => {
+  it('LA-PAT-RECORD-PAGE-R08-T01 LA-PAT-RECORD-PAGE-R08-T02 LA-PAT-RECORD-PAGE-R08-T03 LA-PAT-RECORD-PAGE-R08-T04 LA-PAT-RECORD-PAGE-R08-T05 LA-PAT-RECORD-PAGE-R08-T06 The record page shows the ID, kind, title, text fields as Markdown, parent and children', async () => {
     expanded();
     await openApp('/DM-SHOP-UC01');
     expect(await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' })).toBeInTheDocument();
@@ -77,7 +77,7 @@ describe('record page', () => {
     expect((await screen.findByText('component tests')).tagName).toBe('STRONG');
   });
 
-  it('LA-PAT-RECORD-PAGE-R09-T01 The record page shows links out and links in, grouped and named by their labels, each clickable', async () => {
+  it('LA-PAT-RECORD-PAGE-R09-T01 LA-PAT-RECORD-PAGE-R09-T02 LA-PAT-RECORD-PAGE-R09-T03 LA-PAT-RECORD-PAGE-R09-T04 LA-PAT-RECORD-PAGE-R09-T05 LA-PAT-RECORD-PAGE-R09-T06 The record page shows links out and links in, grouped and named by their labels, each clickable', async () => {
     expanded();
     await openApp('/DM-SHOP-UC01-R01');
     await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
@@ -104,7 +104,7 @@ describe('record page', () => {
     expect(factLinks()).toEqual(expect.arrayContaining(['/DM-SHOP-UC01-R01', '/DM-SHOP-CMD01']));
   });
 
-  it('LA-PAT-RECORD-PAGE-R09-T01 A use case\'s frame lists every link its record summary holds both ways, and its Problems count matches its list', async () => {
+  it('LA-PAT-RECORD-PAGE-R09-T01 LA-PAT-RECORD-PAGE-R09-T02 LA-PAT-RECORD-PAGE-R09-T03 LA-PAT-RECORD-PAGE-R09-T04 LA-PAT-RECORD-PAGE-R09-T05 LA-PAT-RECORD-PAGE-R09-T06 A use case\'s frame lists every link its record summary holds both ways, and its Problems count matches its list', async () => {
     // A use case that follows a pattern (a link out), named by a step's flow (links in through its requirements are
     // its requirements' own), with a problem of its own: the frame agrees with the reads one by one.
     const data = patternWorkspace();
@@ -129,7 +129,7 @@ describe('record page', () => {
     expect(problems.querySelector('.section-count')).toHaveTextContent(String(index.problemsFor.get('DM-SHOP-UC01')!.length));
   });
 
-  it('LA-PAT-RECORD-PAGE-R10-T01 A record body is sanitized before it is shown', async () => {
+  it('LA-PAT-RECORD-PAGE-R10-T01 LA-PAT-RECORD-PAGE-R10-T02 LA-PAT-RECORD-PAGE-R10-T03 LA-PAT-RECORD-PAGE-R10-T04 LA-PAT-RECORD-PAGE-R10-T05 LA-PAT-RECORD-PAGE-R10-T06 A record body is sanitized before it is shown', async () => {
     await openApp('/DM-SHOP-CMD01-H');
     await screen.findByRole('heading', { level: 1, name: 'addToBasket' });
     const body = main().querySelector('.markdown') as HTMLElement;
@@ -145,7 +145,7 @@ describe('record page', () => {
     expect(html).toContain('<p>hi</p>');
   });
 
-  it('LA-PAT-RECORD-PAGE-R11-T01 The record page lists every problem about the record', async () => {
+  it('LA-PAT-RECORD-PAGE-R11-T01 LA-PAT-RECORD-PAGE-R11-T02 LA-PAT-RECORD-PAGE-R11-T03 LA-PAT-RECORD-PAGE-R11-T04 LA-PAT-RECORD-PAGE-R11-T05 LA-PAT-RECORD-PAGE-R11-T06 The record page lists every problem about the record', async () => {
     await openApp('/DM-SHOP-UC01-R01-T01');
     await screen.findByRole('heading', { level: 1, name: 'Adding an item shows it' });
     const problems = within(section(/^Problems/)).getAllByRole('listitem');
@@ -158,7 +158,7 @@ describe('record page', () => {
     expect(within(section(/^Problems/)).getByText('No problems.')).toBeInTheDocument();
   });
 
-  it('LA-PAT-RECORD-PAGE-R08-T01 A record\'s fields show their types: a basic type, a value object as a link, a reference to an aggregate with an arrow', async () => {
+  it('LA-PAT-RECORD-PAGE-R08-T01 LA-PAT-RECORD-PAGE-R08-T02 LA-PAT-RECORD-PAGE-R08-T03 LA-PAT-RECORD-PAGE-R08-T04 LA-PAT-RECORD-PAGE-R08-T05 LA-PAT-RECORD-PAGE-R08-T06 A record\'s fields show their types: a basic type, a value object as a link, a reference to an aggregate with an arrow', async () => {
     await openApp('/P-D-EN03', { data: modelWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     const table = section(/^Fields/).querySelector('table')!;
@@ -181,7 +181,7 @@ describe('record page', () => {
 
 
 
-  it('LA-PAT-RECORD-PAGE-R08-T01 A record\'s kind shows in its stage\'s color, and a kind with no owner sits in its product, in no domain', async () => {
+  it('LA-PAT-RECORD-PAGE-R08-T01 LA-PAT-RECORD-PAGE-R08-T02 LA-PAT-RECORD-PAGE-R08-T03 LA-PAT-RECORD-PAGE-R08-T04 LA-PAT-RECORD-PAGE-R08-T05 LA-PAT-RECORD-PAGE-R08-T06 A record\'s kind shows in its stage\'s color, and a kind with no owner sits in its product, in no domain', async () => {
     await openApp('/DM-V01?stage=graph');
     await screen.findByRole('heading', { level: 1, name: 'Basket page' });
     expect(card().style.getPropertyValue('--card-accent')).toBe('var(--g-interaction-design)');

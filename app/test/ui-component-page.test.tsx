@@ -7,7 +7,7 @@ import { addRows } from './fixtures/load';
 import { modelWorkspace } from './fixtures/model';
 import { findSection, main, openApp, section } from './helpers';
 
-// The UI component page and its editor (LA-AUT-A15, LA-V151): a UI component is read through the aggregate's own
+// The UI component page and its editor (LA-IXD-A15, LA-V151): a UI component is read through the aggregate's own
 // query, and changed only through the aggregate's own commands, one per change, each refusal shown with its reasons.
 
 const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };

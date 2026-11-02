@@ -7,7 +7,7 @@ import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp } from './helpers';
 
-// The Test data set page and its editor (LA-AUT-A17, LA-V121): a test data set is read through the aggregate's own
+// The Test data set page and its editor (LA-TST-A17, LA-V121): a test data set is read through the aggregate's own
 // query, and changed only through the aggregate's own commands, one per change, each refusal shown with its reasons.
 
 const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };

@@ -1,4 +1,4 @@
-// LA-PAT-AGGREGATE-COMMANDS-R11, proved in Authoring, Checking and Traceability (T01 to T03): code that runs an outside
+// LA-PAT-AGGREGATE-COMMANDS-R11, proved in each domain that follows the pattern: code that runs an outside
 // program, such as git or the speech helper, starts it with spawn or execFile and an array of arguments, never through
 // a shell, so no record ID or path can be read as shell syntax. A scan of every source file.
 import { readdirSync, readFileSync } from 'node:fs';
@@ -40,7 +40,7 @@ function shellRuns(text: string): string[] {
   return found;
 }
 
-describe('LA-PAT-AGGREGATE-COMMANDS-R11-T01 LA-PAT-AGGREGATE-COMMANDS-R11-T02 LA-PAT-AGGREGATE-COMMANDS-R11-T03 an outside program runs from an argument array', () => {
+describe('LA-PAT-AGGREGATE-COMMANDS-R11-T01 LA-PAT-AGGREGATE-COMMANDS-R11-T04 LA-PAT-AGGREGATE-COMMANDS-R11-T05 LA-PAT-AGGREGATE-COMMANDS-R11-T06 LA-PAT-AGGREGATE-COMMANDS-R11-T07 LA-PAT-AGGREGATE-COMMANDS-R11-T08 LA-PAT-AGGREGATE-COMMANDS-R11-T02 LA-PAT-AGGREGATE-COMMANDS-R11-T03 an outside program runs from an argument array', () => {
   it('finds exec, execSync and a shell option, and lets spawn, execFile and shell: false pass', () => {
     // The samples quote through q, so this file's own text starts nothing.
     const q = "'";

@@ -1,6 +1,6 @@
-// Authoring's rules the store keeps: a specification the schema's keys, foreign keys and checks, and the store's own
+// The stage domains' rules the store keeps: a specification the schema's keys, foreign keys and checks, and the store's own
 // validation rules, refuse when the data loads. The invariants are their aggregates' own rules, tested in
-// test/authoring/rules.test.ts.
+// test/rules.test.ts.
 import { afterAll, describe, expect, it } from 'vitest';
 import { type Row, type StoreProblem } from '../../src/index.ts';
 import { refusals } from '../helpers.ts';
@@ -16,8 +16,8 @@ function changingRow(table: string, at: number, changes: Record<string, Row[stri
 
 const one = (rule: string, extra: Partial<StoreProblem> = {}) => [expect.objectContaining({ rule, ...extra })];
 
-describe("Authoring's specifications", () => {
-  it('LA-PLT-UC01-R08-T03 A missing, unknown or disallowed parent is refused, as is a second parent or a parent column on a kind with no owner', async () => {
+describe("The stage domains' specifications", () => {
+  it('LA-PRD-UC37-R03-T03 A missing, unknown or disallowed parent is refused, as is a second parent or a parent column on a kind with no owner', async () => {
     // Missing: the parent column is required.
     expect(await refusals(changingRow('aggregate', 1, { domain_id: undefined }))).toEqual(one('required', { table: 'aggregate', file: 'data/aggregate.jsonl', line: 2, message: 'aggregate.domain_id is required' }));
     // Unknown, or a record of a kind the aggregate may not sit under: the foreign key names no domain.

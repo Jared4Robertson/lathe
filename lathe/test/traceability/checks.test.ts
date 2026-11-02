@@ -37,7 +37,7 @@ check('test-file-missing', () => {
     expect(ofCheck(ws, 'test-file-missing')[2].message).toBe('Constraint test EX-VO01-C01-T names the file test/email.test.ts, which does not exist.');
   });
 
-  it('LA-TRC-UC03-R03-T01 only an automated test needs a file and only a manual test gives a reason; a test not automated yet may name a file to come', async () => {
+  it('LA-TST-UC03-R03-T01 only an automated test needs a file and only a manual test gives a reason; a test not automated yet may name a file to come', async () => {
     const test = (changes: Record<string, string | undefined>) => changing(complete(), 'use_case_test', (r) => r.id === 'EX-LEND-UC01-R01-T01', changes);
     const refused = async (changes: Record<string, string | undefined>) => (await refusals(test(changes))).map((p) => p.rule);
     expect(await refused({ file: undefined })).toEqual(['check']);
@@ -64,7 +64,7 @@ check('test-file-missing-id', () => {
     ]);
   });
 
-  it('LA-TRC-UC03-R01-T01 an automated test whose file does not name it proves nothing', async () => {
+  it('LA-TST-UC03-R01-T01 an automated test whose file does not name it proves nothing', async () => {
     const ws = await loadData(complete(), { silent: ['EX-LEND-INV01-T'] });
     expect(gaps(ws)).toEqual(['proved EX-LEND-INV01']);
     expect(gaps(clean)).toEqual([]);
@@ -182,7 +182,7 @@ check('manual-test-file-silent', () => {
 });
 
 check('technical-file-missing', () => {
-  it('LA-AUT-UC17-R07-T02 a technical record whose file does not exist is a warning; a folder will do', async () => {
+  it('LA-TEC-UC17-R07-T02 a technical record whose file does not exist is a warning; a folder will do', async () => {
     let data = changing(complete(), 'adapter', () => true, { file: 'src/mail' });
     data = changing(data, 'ui_component', () => true, { file: 'src' });
     const ws = await loadData(data, { missing: ['src/dates.ts', 'src/mail', 'src'] });
@@ -194,7 +194,7 @@ check('technical-file-missing', () => {
 });
 
 check('test-data-set-file-missing', () => {
-  it('LA-AUT-UC13-R09-T01 a test data set no test starts from is an error; one whose file does not exist is an error when an automated test starts from it, else a warning; a folder will do', async () => {
+  it('LA-TST-UC13-R09-T01 a test data set no test starts from is an error; one whose file does not exist is an error when an automated test starts from it, else a warning; a folder will do', async () => {
     const unused = await loadData(without(complete(), 'starts_from', () => true));
     expect(ofCheck(unused, 'test-data-set-unused').map((p) => [p.severity, p.record])).toEqual([['error', 'EX-LEND-TD01']]);
     const missing = await loadData(complete(), { missing: ['test/seed.ts'] });
@@ -451,7 +451,7 @@ check('essential-repeated', () => {
 });
 
 check('outcome-duration-without-journey', () => {
-  it('LA-AUT-UC33-R09-T01 an outcome whose measure reads as a duration is a warning while no journey serves it, saying to write the journey it times', async () => {
+  it('LA-PRD-UC33-R09-T01 an outcome whose measure reads as a duration is a warning while no journey serves it, saying to write the journey it times', async () => {
     expect(ofCheck(await loadData(withJourney()), 'outcome-duration-without-journey')).toEqual([]);
     const unserved = without(withJourney(), 'serves', (r) => r.source_id === 'EX-JR01');
     expect(ofCheck(await loadData(unserved), 'outcome-duration-without-journey')).toEqual([

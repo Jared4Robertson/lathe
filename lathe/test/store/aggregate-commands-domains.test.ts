@@ -1,4 +1,4 @@
-// LA-PAT-AGGREGATE-COMMANDS' store rules, proved in the domains that owe them besides Authoring: Traceability, through
+// LA-PAT-AGGREGATE-COMMANDS' store rules, proved in the domains that owe them besides the six stage domains: Traceability, through
 // the Slot filling, Provision and Pattern following aggregates, and Checking, through the Product setting aggregate.
 // Each runs that domain's own commands on a store, as every interface runs them.
 import { readdirSync, readFileSync, statSync } from 'node:fs';

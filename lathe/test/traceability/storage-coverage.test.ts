@@ -7,7 +7,7 @@ import { adding, complete, gaps, loadData, obligation, removeData, without } fro
 
 afterAll(removeData);
 
-describe('LA-AUT-UC31-R01-T01 a storage requirement sits under its aggregate or read model, built through what stores it and proved by its tests', () => {
+describe('LA-MOD-UC31-R01-T01 a storage requirement sits under its aggregate or read model, built through what stores it and proved by its tests', () => {
   it('counts it in its domain, designed by construction, built by the repository that names its data store, and proved by its test', async () => {
     const ws = await loadData(complete());
     expect(obligation(ws, 'EX-LEND', 'storage_requirement')).toMatchObject({ total: 1, designed: 1, built: 1, proved: 1 });
@@ -29,7 +29,7 @@ describe('LA-AUT-UC31-R01-T01 a storage requirement sits under its aggregate or 
   });
 });
 
-describe('LA-AUT-UC32-R01-T01 every repository, reader and table names the one data store it is kept in, and a data store nothing uses is a gap', () => {
+describe('LA-TEC-UC32-R01-T01 every repository, reader and table names the one data store it is kept in, and a data store nothing uses is a gap', () => {
   it('reports a repository, reader or table that names no data store, and a data store that stores nothing', async () => {
     const data = adding(without(complete(), 'stored_in', (l) => ['EX-LEND-RM01-RD', 'EX-LEND-EN03-TB'].includes(String(l.source_id))), {
       data_store: [{ id: 'EX-LEND-STORE01', title: 'localStorage', domain_id: 'EX-LEND', kind: 'browser storage', description: 'The browser\'s local storage.' }],

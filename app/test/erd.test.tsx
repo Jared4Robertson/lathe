@@ -190,7 +190,7 @@ describe('the ERD stage', () => {
   };
   it('LA-V94-R03-T01 An aggregate\'s focus keeps its boundary, entities, fields and lines at full strength, its domain a trail, and fades the rest', proveLaV94R03T01);
   it('LA-V94-R01-T03 A large region is laid out to about the map\'s shape, its layers wrapped or its parts packed, whichever comes nearer', async () => {
-    // A large domain's aggregates at their laid-out sizes and the references between them (Lathe's own Authoring),
+    // A large domain's aggregates at their laid-out sizes and the references between them (Lathe's own Authoring, before it split by stage),
     // whose layers, wrapped, stand taller than wide.
     const SIZES: [string, number, number][] = [
       ['A1', 1142, 724], ['A2', 738, 461], ['A3', 738, 276], ['A4', 916, 674], ['A5', 488, 441], ['A6', 738, 706], ['A7', 488, 501], ['A8', 738, 548],

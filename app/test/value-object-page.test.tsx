@@ -6,7 +6,7 @@ import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { modelWorkspace } from './fixtures/model';
 import { main, openApp, section } from './helpers';
 
-// The Value object page and its editor (LA-AUT-A9, LA-V142): a value object and its constraints, value type and tests
+// The Value object page and its editor (LA-MOD-A9, LA-V142): a value object and its constraints, value type and tests
 // are read through the aggregate's own query, and changed only through the aggregate's own commands, one per change,
 // each refusal shown with its reasons.
 

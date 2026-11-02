@@ -61,7 +61,7 @@ export interface RuleProblem {
 
 /** An aggregate's rules over all data, as every load and commit runs them. */
 export interface AggregateRules {
-  /** The aggregate's record ID, such as LA-AUT-A11. */
+  /** The aggregate's record ID, such as LA-UCS-A11. */
   aggregate: string;
   /** Every row of the data that breaks one of the aggregate's rules. */
   check(view: ReadView): RuleProblem[];

@@ -1,6 +1,6 @@
 // Each aggregate's repository and the handlers of its pattern commands, generated from Lathe's records, its schema and
 // the aggregate's shape (its model.ts's <AGGREGATE>_SHAPE: how each of its kinds sits in an instance). What is generated
-// is what the generator's tooling record (LA-AUT-TOOL03, scripts/generate/) generates: a repository (its repository.ts) and a
+// is what the generator's tooling record (LA-MOD-TOOL03, scripts/generate/) generates: a repository (its repository.ts) and a
 // command handler (written into its slice's commands/handlers.generated.ts). Everything else stays written by hand.
 //
 // A repository loads and saves its aggregate whole through the model's <aggregates>From and <aggregate>Rows, and loads
@@ -24,7 +24,7 @@ import { GENERATED_HEADER, type Generated } from './output.ts';
 type Row = Record<string, unknown>;
 
 /** The tooling record that generates the repositories and handlers: the generator, scripts/generate/. */
-export const GENERATOR = 'LA-AUT-TOOL03';
+export const GENERATOR = 'LA-MOD-TOOL03';
 
 const quote = (text: string) => `'${text.replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`;
 const pascal = (name: string) => name.replace(/(^|[-_])([a-z0-9])/g, (_, __, c: string) => c.toUpperCase());
@@ -63,7 +63,7 @@ function table(repo: string, name: string): Row[] {
 
 /** One aggregate, as its repository and handlers are generated from it. */
 interface Aggregate {
-  /** Its folder, such as lathe/src/authoring/aggregate, and its repository's class, such as AggregateRepository. */
+  /** Its folder, such as lathe/src/domain-modeling/aggregate, and its repository's class, such as AggregateRepository. */
   dir: string;
   repository: { id: string; title: string; description: string };
   /** Its model's names: the instance type (Aggregate), its builder (aggregatesFrom), rows (aggregateRows), tables and shape. */

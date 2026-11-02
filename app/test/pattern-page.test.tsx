@@ -7,7 +7,7 @@ import { setRow } from './fixtures/load';
 import { patternWorkspace } from './fixtures/patterns';
 import { main, openApp } from './helpers';
 
-// The Pattern page and its editor (LA-AUT-A2, LA-V122): a pattern and its rules and tests are read through the
+// The Pattern page and its editor (LA-UCS-A2, LA-V122): a pattern and its rules and tests are read through the
 // aggregate's own query, and changed only through the aggregate's own commands, one per change, each refusal shown
 // with its reasons. What the page shows of followers is in patterns.test.tsx (LA-V122-R04, R05).
 

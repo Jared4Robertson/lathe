@@ -37,7 +37,7 @@ import {
 } from './reference';
 import './format.css';
 
-// The format reference's pages (LA-AUT-UC14): the record format (the concepts, then an index of the
+// The format reference's pages (LA-PRD-UC14): the record format (the concepts, then an index of the
 // kinds by stage, the relations, and the checks by severity), a kind's page and a check's page. Each
 // opens in the wiki card over the stage, the whole page, the stage keeping its focus (views/overlays.ts):
 // a link to one is `?page=format/kinds/<kind>` on the current address. The pages read the schema and

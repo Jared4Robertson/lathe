@@ -239,7 +239,7 @@ describe('one address, one stage', () => {
     }
   });
 
-  it('LA-PAT-RECORD-PAGE-R15-T01 Lists on group pages stay at ten rows', async () => {
+  it('LA-PAT-RECORD-PAGE-R15-T01 LA-PAT-RECORD-PAGE-R15-T02 LA-PAT-RECORD-PAGE-R15-T03 LA-PAT-RECORD-PAGE-R15-T04 LA-PAT-RECORD-PAGE-R15-T05 LA-PAT-RECORD-PAGE-R15-T06 Lists on group pages stay at ten rows', async () => {
     const w = testWorkspace();
     for (let i = 3; i <= 13; i++) {
       const id = `P-D-INV${String(i).padStart(2, '0')}`;

@@ -3,10 +3,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import { LOCAL_ACTION_CHANNELS } from '../src/launch.ts';
-import { FIND_RECORD_DATA_FILE } from '../../lathe/src/authoring/record-data-file/queries.ts';
+import { FIND_RECORD_DATA_FILE } from '../../lathe/src/product/record-data-file/queries.ts';
 import { parseRecordId, RECORD_DATA_FILE_ROUTE, recordDataFile, recordMenuTemplate, revealLabel } from '../src/records.ts';
 
-describe('LA-PAT-RECORD-DATA-FILE-R01-T01 LA-PAT-SHELL-ACTIONS-R01-T02 The record actions take only a record ID, each on its own channel, and ask the engine for the data file', () => {
+describe('LA-PAT-RECORD-DATA-FILE-R01-T01 LA-PAT-RECORD-DATA-FILE-R01-T02 LA-PAT-RECORD-DATA-FILE-R01-T03 LA-PAT-RECORD-DATA-FILE-R01-T04 LA-PAT-RECORD-DATA-FILE-R01-T05 LA-PAT-RECORD-DATA-FILE-R01-T06 LA-PAT-SHELL-ACTIONS-R01-T02 LA-PAT-SHELL-ACTIONS-R01-T03 LA-PAT-SHELL-ACTIONS-R01-T04 LA-PAT-SHELL-ACTIONS-R01-T05 LA-PAT-SHELL-ACTIONS-R01-T06 LA-PAT-SHELL-ACTIONS-R01-T07 The record actions take only a record ID, each on its own channel, and ask the engine for the data file', () => {
   it('accepts exactly { id } with a record ID, each action on its own channel', () => {
     expect(parseRecordId({ id: 'SMK-ORD' })).toBe('SMK-ORD');
     expect(parseRecordId({ id: 'LA-V71-R01' })).toBe('LA-V71-R01');
@@ -79,7 +79,7 @@ describe('LA-PAT-RECORD-DATA-FILE-R01-T01 LA-PAT-SHELL-ACTIONS-R01-T02 The recor
 
 const SRC = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'src');
 
-describe('LA-PAT-SHELL-ACTIONS-R01-T02 Each shell action has its own channel', () => {
+describe('LA-PAT-SHELL-ACTIONS-R01-T02 LA-PAT-SHELL-ACTIONS-R01-T03 LA-PAT-SHELL-ACTIONS-R01-T04 LA-PAT-SHELL-ACTIONS-R01-T05 LA-PAT-SHELL-ACTIONS-R01-T06 LA-PAT-SHELL-ACTIONS-R01-T07 Each shell action has its own channel', () => {
   it('sends each error page button on its command\'s channel', () => {
     const preload = readFileSync(path.join(SRC, 'local-preload.cts'), 'utf8');
     for (const [action, channel] of Object.entries(LOCAL_ACTION_CHANNELS)) expect(preload).toMatch(new RegExp(`'?${action}'?: '${channel}'`));

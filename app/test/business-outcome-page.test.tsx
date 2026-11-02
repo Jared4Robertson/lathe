@@ -7,7 +7,7 @@ import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp } from './helpers';
 
-// The Business outcome page and its editor (LA-AUT-A16): an outcome is read through the aggregate's own query, and
+// The Business outcome page and its editor (LA-PRD-A16): an outcome is read through the aggregate's own query, and
 // changed only through the aggregate's own commands, one per change, each refusal shown with its reasons.
 
 const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };

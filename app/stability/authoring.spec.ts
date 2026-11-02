@@ -5,21 +5,21 @@ import { expect, test } from './test';
 import { openPage } from './measure';
 import { keepData, RECORD } from './scenarios';
 
-// Authoring's flow that the Reader walks in the app: reading how each kind and check works, from
+// Product customization's flow that the Reader walks in the app: reading how each kind and check works, from
 // where they are, without leaving the workbench. The flows run from the command line are in
 // lathe/test/flows/authoring.test.ts.
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const PROBLEM = 'LA-AUT-UC14-R98';
+const PROBLEM = 'LA-PRD-UC14-R98';
 
 /** Adds a UC requirement no step fulfills to the suite's copy of the data, so it has problems to follow to their check; the caller puts the data back. */
 function seedProblem() {
-  execFileSync('node', [path.join(repo, 'lathe/bin/lathe.ts'), 'use-case', 'add-uc-requirement', '--id', PROBLEM, '--title', 'A requirement the suite leaves unmet', '--use_case_id', 'LA-AUT-UC14', '--statement', 'The Reader MUST find this requirement unmet.', '--root', process.env.STABILITY_ROOT!], { stdio: 'pipe' });
+  execFileSync('node', [path.join(repo, 'lathe/bin/lathe.ts'), 'use-case', 'add-uc-requirement', '--id', PROBLEM, '--title', 'A requirement the suite leaves unmet', '--use_case_id', 'LA-PRD-UC14', '--statement', 'The Reader MUST find this requirement unmet.', '--root', process.env.STABILITY_ROOT!], { stdio: 'pipe' });
   return `/${PROBLEM}`;
 }
 
-test.describe('Authoring flows', () => {
-  test('LA-AUT-UC14-FL-T look up a kind or check', async ({ page }) => {
+test.describe('Product customization flows', () => {
+  test('LA-PRD-UC14-FL-T look up a kind or check', async ({ page }) => {
     const restore = keepData();
     try {
       const WITH_PROBLEM = seedProblem();

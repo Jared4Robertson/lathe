@@ -41,7 +41,7 @@ describe('LA-EXP-UC02-R08-T03 the space\'s record index, from the record summari
   });
 });
 
-describe('LA-AUT-UC08-R05-T01 the meta model gives kinds, stages and relations from the schema, kinds in the schema\'s order', () => {
+describe('LA-PRD-UC08-R05-T01 the meta model gives kinds, stages and relations from the schema, kinds in the schema\'s order', () => {
   it('reads kinds in order, with their stage, parents and ID scope', () => {
     const { meta } = recordIndexOf(workspace(), 'DM');
     const kinds = meta.kindList;

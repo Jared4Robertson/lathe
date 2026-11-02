@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from 'react';
 import { navigate } from '../router';
-import type { ProductSummary } from '../../../lathe/src/authoring/product/read-model';
-import { useProducts } from '../authoring/product/reads';
+import type { ProductSummary } from '../../../lathe/src/product/product/read-model';
+import { useProducts } from '../product/product/reads';
 import { parseSpecRoute } from '../views/spec-route';
 import { productOfId } from '../exploring/record-summaries/record-index';
 import { addressOf } from '../views/address';

@@ -126,11 +126,46 @@ async function staysCurrent(domain: string): Promise<void> {
   }
 }
 
-describe('Authoring follows Aggregate queries', () => {
-  it('LA-PAT-AGGREGATE-QUERIES-R01-T01 each Authoring query is named on its own on every interface', () => namedOnItsOwn('LA-AUT'));
-  it('LA-PAT-AGGREGATE-QUERIES-R03-T01 asking each Authoring query changes no row and no data file', () => changesNothing('LA-AUT'));
-  it('LA-PAT-AGGREGATE-QUERIES-R04-T01 each Authoring query asked by an ID that names nothing is refused, naming it', () => refusesWhatItCannotFind('LA-AUT'));
-  it('LA-PAT-AGGREGATE-QUERIES-R05-T01 after a write, each Authoring read model answers as it does over the data loaded afresh', () => staysCurrent('LA-AUT'));
+describe('Domain modeling follows Aggregate queries', () => {
+  it('LA-PAT-AGGREGATE-QUERIES-R01-T01 each Domain modeling query is named on its own on every interface', () => namedOnItsOwn('LA-MOD'));
+  it('LA-PAT-AGGREGATE-QUERIES-R03-T01 asking each Domain modeling query changes no row and no data file', () => changesNothing('LA-MOD'));
+  it('LA-PAT-AGGREGATE-QUERIES-R04-T01 each Domain modeling query asked by an ID that names nothing is refused, naming it', () => refusesWhatItCannotFind('LA-MOD'));
+  it('LA-PAT-AGGREGATE-QUERIES-R05-T01 after a write, each Domain modeling read model answers as it does over the data loaded afresh', () => staysCurrent('LA-MOD'));
+});
+
+describe('Product follows Aggregate queries', () => {
+  it('LA-PAT-AGGREGATE-QUERIES-R01-T06 each Product query is named on its own on every interface', () => namedOnItsOwn('LA-PRD'));
+  it('LA-PAT-AGGREGATE-QUERIES-R03-T06 asking each Product query changes no row and no data file', () => changesNothing('LA-PRD'));
+  it('LA-PAT-AGGREGATE-QUERIES-R04-T06 each Product query asked by an ID that names nothing is refused, naming it', () => refusesWhatItCannotFind('LA-PRD'));
+  it('LA-PAT-AGGREGATE-QUERIES-R05-T06 after a write, each Product read model answers as it does over the data loaded afresh', () => staysCurrent('LA-PRD'));
+});
+
+describe('Use cases follows Aggregate queries', () => {
+  it('LA-PAT-AGGREGATE-QUERIES-R01-T07 each Use cases query is named on its own on every interface', () => namedOnItsOwn('LA-UCS'));
+  it('LA-PAT-AGGREGATE-QUERIES-R03-T07 asking each Use cases query changes no row and no data file', () => changesNothing('LA-UCS'));
+  it('LA-PAT-AGGREGATE-QUERIES-R04-T07 each Use cases query asked by an ID that names nothing is refused, naming it', () => refusesWhatItCannotFind('LA-UCS'));
+  it('LA-PAT-AGGREGATE-QUERIES-R05-T07 after a write, each Use cases read model answers as it does over the data loaded afresh', () => staysCurrent('LA-UCS'));
+});
+
+describe('Interaction design follows Aggregate queries', () => {
+  it('LA-PAT-AGGREGATE-QUERIES-R01-T08 each Interaction design query is named on its own on every interface', () => namedOnItsOwn('LA-IXD'));
+  it('LA-PAT-AGGREGATE-QUERIES-R03-T08 asking each Interaction design query changes no row and no data file', () => changesNothing('LA-IXD'));
+  it('LA-PAT-AGGREGATE-QUERIES-R04-T08 each Interaction design query asked by an ID that names nothing is refused, naming it', () => refusesWhatItCannotFind('LA-IXD'));
+  it('LA-PAT-AGGREGATE-QUERIES-R05-T08 after a write, each Interaction design read model answers as it does over the data loaded afresh', () => staysCurrent('LA-IXD'));
+});
+
+describe('Technical specification follows Aggregate queries', () => {
+  it('LA-PAT-AGGREGATE-QUERIES-R01-T09 each Technical specification query is named on its own on every interface', () => namedOnItsOwn('LA-TEC'));
+  it('LA-PAT-AGGREGATE-QUERIES-R03-T09 asking each Technical specification query changes no row and no data file', () => changesNothing('LA-TEC'));
+  it('LA-PAT-AGGREGATE-QUERIES-R04-T09 each Technical specification query asked by an ID that names nothing is refused, naming it', () => refusesWhatItCannotFind('LA-TEC'));
+  it('LA-PAT-AGGREGATE-QUERIES-R05-T09 after a write, each Technical specification read model answers as it does over the data loaded afresh', () => staysCurrent('LA-TEC'));
+});
+
+describe('Test planning follows Aggregate queries', () => {
+  it('LA-PAT-AGGREGATE-QUERIES-R01-T10 each Test planning query is named on its own on every interface', () => namedOnItsOwn('LA-TST'));
+  it('LA-PAT-AGGREGATE-QUERIES-R03-T10 asking each Test planning query changes no row and no data file', () => changesNothing('LA-TST'));
+  it('LA-PAT-AGGREGATE-QUERIES-R04-T10 each Test planning query asked by an ID that names nothing is refused, naming it', () => refusesWhatItCannotFind('LA-TST'));
+  it('LA-PAT-AGGREGATE-QUERIES-R05-T10 after a write, each Test planning read model answers as it does over the data loaded afresh', () => staysCurrent('LA-TST'));
 });
 
 describe('Checking follows Aggregate queries', () => {

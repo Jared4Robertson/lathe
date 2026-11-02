@@ -256,7 +256,7 @@ describe('proved', () => {
     expect(ws.coverage[0].tests).toEqual({ automated: 10, manual: 3, not_automated: 1 });
   });
 
-  it('LA-AUT-UC16-R02-T03 a standard rule with no standard rule test is not proved', () => {
+  it('LA-TEC-UC16-R02-T03 a standard rule with no standard rule test is not proved', () => {
     expect(obligation(ws, null, 'standard_rule')).toMatchObject({ total: 1, designed: 1, built: 1, proved: 0 });
   });
 });
@@ -332,7 +332,7 @@ describe('LA-TRC-UC01-R05-T01 minimums', () => {
     expect(gaps(await loadData(byJourneyAlone))).toEqual(['outcome-not-served EX-BO02']);
   });
 
-  it('LA-AUT-UC33-R05-T02 a journey test proves only at the service, system or browser level', async () => {
+  it('LA-PRD-UC33-R05-T02 a journey test proves only at the service, system or browser level', async () => {
     expect(ALLOWED_LEVELS.journey_test).toEqual(['service', 'system', 'browser']);
     const unit = changing(withJourney(), 'journey_test', () => true, { level: 'unit' });
     expect(records(ofCheck(await loadData(unit), 'test-level-not-allowed'))).toEqual(['EX-JR01-T']);
@@ -592,7 +592,7 @@ describe('pattern rules, domain by domain', () => {
 });
 
 describe('the other obligation kinds and their gaps', () => {
-  it('LA-AUT-UC06-R15-T01 a use case with no flow is a use-case-without-flow gap in its domain, never an error', async () => {
+  it('LA-UCS-UC06-R15-T01 a use case with no flow is a use-case-without-flow gap in its domain, never an error', async () => {
     const data = adding(complete(), {
       use_case: [{ id: 'EX-LEND-UC03', title: 'Renew a loan', capability_id: 'EX-LEND-CAP01', goal: 'A member keeps a tool longer.' }],
       use_case_actor: [{ use_case_id: 'EX-LEND-UC03', position: 1, role_name: 'Member' }],

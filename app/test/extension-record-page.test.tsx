@@ -6,7 +6,7 @@ import { setRow } from './fixtures/load';
 import { productKindWorkspace } from './fixtures/product-kinds';
 import { main, openApp } from './helpers';
 
-// The Extension record page and its editor (LA-AUT-A19): a record of a product's own kind (the fixture's security
+// The Extension record page and its editor (LA-PRD-A19): a record of a product's own kind (the fixture's security
 // control, DM-SHOP-EP01-SC01) is read through the aggregate's own query, its fields its kind's declaration, and changed
 // only through the aggregate's own commands, one per change, each refusal shown with its reasons.
 

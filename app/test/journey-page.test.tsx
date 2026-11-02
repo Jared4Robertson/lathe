@@ -9,7 +9,7 @@ import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp, section } from './helpers';
 
-// The Journey page and its editor (LA-AUT-A25's page, LA-V156), and the places a journey shows on other pages: a
+// The Journey page and its editor (LA-PRD-A25's page, LA-V156), and the places a journey shows on other pages: a
 // product's Discovery (LA-V51-R13), an outcome's Journeys (LA-V110-R05), a use case's and a policy's In journeys
 // (LA-V101-R13, LA-V132-R07) and a record's Serves line.
 
@@ -102,7 +102,7 @@ describe('LA-V156-R04-T01 a journey\'s steps show in order a list per path, with
     expect(lanes).toHaveAttribute('aria-hidden', 'true');
     expect(lanes).toHaveTextContent('The product');
     // On a phone the strip is not drawn at all: only the list shows (the stylesheet hides it below 600px).
-    expect(readFileSync('src/authoring/journey/journey.css', 'utf8')).toMatch(/@media \(max-width: 600px\) \{ \.journey-lanes \{ display: none; \} \}/);
+    expect(readFileSync('src/product/journey/journey.css', 'utf8')).toMatch(/@media \(max-width: 600px\) \{ \.journey-lanes \{ display: none; \} \}/);
   });
 });
 

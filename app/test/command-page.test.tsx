@@ -8,7 +8,7 @@ import { addRows } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp, section } from './helpers';
 
-// The Command page and its editor (LA-AUT-A8, LA-V132): a command and every record in it are read through the
+// The Command page and its editor (LA-MOD-A8, LA-V132): a command and every record in it are read through the
 // aggregate's own query, and changed only through the aggregate's own commands, one per change, each refusal shown with
 // its reasons; a command lists its handler, its policies and the endpoints that expose it, and a policy the event it
 // hears.

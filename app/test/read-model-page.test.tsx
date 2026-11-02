@@ -8,7 +8,7 @@ import { addRows } from './fixtures/load';
 import { modelWorkspace } from './fixtures/model';
 import { main, openApp, section } from './helpers';
 
-// The Read model page and its editor (LA-AUT-A10, LA-V143): a read model and its queries, projection, reader and query
+// The Read model page and its editor (LA-MOD-A10, LA-V143): a read model and its queries, projection, reader and query
 // handlers are read through the aggregate's own query, and changed only through the aggregate's own commands, one per
 // change, each refusal shown with its reasons.
 

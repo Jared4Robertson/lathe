@@ -7,7 +7,7 @@ import { setRow } from './fixtures/load';
 import { standardWorkspace } from './fixtures/standards';
 import { main, openApp } from './helpers';
 
-// The Standard page and its editor (LA-AUT-A3, LA-V123): a standard and its rules and tests are read through the
+// The Standard page and its editor (LA-TEC-A3, LA-V123): a standard and its rules and tests are read through the
 // aggregate's own query, and changed only through the aggregate's own commands, one per change, each refusal shown
 // with its reasons. The rules table is in engineering-standards.test.tsx (LA-V123-R04).
 

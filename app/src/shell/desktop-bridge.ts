@@ -22,7 +22,7 @@ export interface LatheDesktop {
   setMenuKeys: (keys: Record<string, string[]>) => void;
   /** Sets the Dock badge to the product's number of check errors (LA-V71-R03). */
   setErrorCount: (count: number) => void;
-  /** The record actions (LA-AUT-UC15-R01): reveal its data file, open it in the editor, copy its ID, or a native menu of the three. */
+  /** The record actions (LA-PAT-RECORD-DATA-FILE-R01): reveal its data file, open it in the editor, copy its ID, or a native menu of the three. */
   revealRecord: (id: string) => void;
   openRecordInEditor: (id: string) => void;
   copyRecordId: (id: string) => void;

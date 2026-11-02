@@ -139,7 +139,7 @@ async function eventsUntil(response: Response, wanted: string, timeoutMs: number
 }
 
 describe('Platform flows', () => {
-  it('LA-PLT-UC01-FL-T LA-PAT-PACKAGE-STEPS-R01-T01 LA-PAT-PACKAGE-STEPS-R02-T01 an Agent\'s script loads the workspace, sees refused data as data-refused errors, and loads again after a write', async () => {
+  it('LA-PLT-UC01-FL-T LA-PAT-PACKAGE-STEPS-R01-T01 LA-PAT-PACKAGE-STEPS-R01-T02 LA-PAT-PACKAGE-STEPS-R02-T01 LA-PAT-PACKAGE-STEPS-R02-T02 an Agent\'s script loads the workspace, sees refused data as data-refused errors, and loads again after a write', async () => {
     // A product with a record of nearly every kind, every obligation designed, built and proved.
     const root = await build(complete());
 

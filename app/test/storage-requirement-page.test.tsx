@@ -8,7 +8,7 @@ import { addRows } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp } from './helpers';
 
-// The Storage requirement page and its editor (LA-AUT-A22): a storage requirement is read through the aggregate's own
+// The Storage requirement page and its editor (LA-MOD-A22): a storage requirement is read through the aggregate's own
 // query, and changed only through the aggregate's own commands, one per change.
 
 const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
