@@ -4,6 +4,7 @@
 import { DataFiles } from './data-files.ts';
 import { describeKey, rowKey, type Row } from './rows.ts';
 import type { Located } from './references.ts';
+import type { Renames } from './renames.ts';
 import type { Transaction } from './transaction.ts';
 
 /** An instance's rows, by table. */
@@ -115,6 +116,14 @@ export abstract class AggregateRepository<M extends { readonly root: string }> {
     }
     this.files.refuseWhileReferenced(removed);
     this.loaded.set(instance, after);
+  }
+
+  /**
+   * Carries the new IDs a move gave the instance's records, and the records under them, into every row that names
+   * them, in any table (DataFiles.carryRenames); the instance is not saved again after.
+   */
+  carryRenames(renames: Renames): void {
+    this.files.carryRenames(renames);
   }
 
   /** Removes the instance whole: every row it has. Refused, naming what does, while anything else references them. */

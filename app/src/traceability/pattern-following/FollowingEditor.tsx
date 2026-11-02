@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { PatternPage } from '../../../../lathe/src/authoring/pattern/read-model';
+import type { PatternPage } from '../../../../lathe/src/use-cases/pattern/read-model';
 import type { FollowingPage } from '../../../../lathe/src/traceability/pattern-following/read-model';
 import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, formFields, type Draft, type FieldSpec } from '../../edit/command-form';

@@ -9,7 +9,7 @@ import { readSchema } from '../src/cli/operations.ts';
 import { closeStores, handleApi } from '../src/server/api.ts';
 import { everyKind } from './store/fixture.ts';
 import { writeData } from './helpers.ts';
-import type { UseCasePage } from '../src/authoring/use-case/read-model.ts';
+import type { UseCasePage } from '../src/use-cases/use-case/read-model.ts';
 import { ALL_COMMANDS, ALL_QUERIES } from '../src/commands.ts';
 
 export function useCaseLayerCases(): void {

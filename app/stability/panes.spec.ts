@@ -276,7 +276,7 @@ test.describe('a flow\'s steps in the wiki card', () => {
 
   test('LA-V101-R10-T02 in the 360 px wiki card, a use case\'s requirement rows read whole, stacked, and nothing is cut', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await openPage(page, '/LA-AUT-UC06?stage=graph', STRIP);
+    await openPage(page, '/LA-UCS-UC06?stage=graph', STRIP);
     await showCard(page, 'whole');
     const table = page.locator(`${CARD} table.trace-requirements`).first();
     await table.waitFor();

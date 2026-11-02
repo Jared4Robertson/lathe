@@ -3,9 +3,9 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { openStore, StoreError, type Row, type StoreProblem } from '../../src/index.ts';
 import { everyKind, removeData, writeData, type Data } from './fixture.ts';
-import { ADD_COMMAND_HANDLER } from '../../src/authoring/command/commands/add-command-handler.ts';
-import { ADD_POLICY_TEST } from '../../src/authoring/command/commands/add-policy-test.ts';
-import { ADD_REPOSITORY } from '../../src/authoring/domain/commands/add-repository.ts';
+import { ADD_COMMAND_HANDLER } from '../../src/domain-modeling/command/commands/add-command-handler.ts';
+import { ADD_POLICY_TEST } from '../../src/domain-modeling/command/commands/add-policy-test.ts';
+import { ADD_REPOSITORY } from '../../src/domain-modeling/domain/commands/add-repository.ts';
 import { runCommand } from '../../src/platform/commands/run.ts';
 import { FOLLOW_PATTERN } from '../../src/traceability/pattern-following/commands/follow-pattern.ts';
 import { CHANGE_SETTING_VALUES } from '../../src/traceability/pattern-following/commands/change-setting-values.ts';
@@ -51,7 +51,7 @@ const merge = (...parts: Data[]): Data => {
 };
 
 describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the model is refused when it is written', () => {
-  it('LA-AUT-INV08-T refuses a step fulfilling another use case\'s requirement', async () => {
+  it('LA-UCS-INV08-T refuses a step fulfilling another use case\'s requirement', async () => {
     const problems = await refusal(
       adding({
         use_case: [{ id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.' }],
@@ -63,7 +63,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     expect(problems[0].message).toContain('cannot fulfill TL-LEND-UC02-R01, a requirement of TL-LEND-UC02');
   });
 
-  it('LA-AUT-INV104-T refuses a second handler of a command and a second test of a policy from their commands, with command-one-each', async () => {
+  it('LA-MOD-INV104-T refuses a second handler of a command and a second test of a policy from their commands, with command-one-each', async () => {
     const store = await openStore(writeData(everyKind()), { latheDataDir: null });
     try {
       const refused = async (definition: Parameters<typeof runCommand>[1], input: unknown) => {
@@ -86,12 +86,12 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     }
   });
 
-  it('LA-AUT-INV104-T refuses a policy hearing two events', async () => {
+  it('LA-MOD-INV104-T refuses a policy hearing two events', async () => {
     const problems = await refusal(adding({ domain_event: [{ id: 'TL-LEND-EV02', title: 'Loan closed', aggregate_id: 'TL-LEND-A1', published: false, description: 'A tool came back.' }], hears: [{ source_id: 'TL-LEND-PO01', target_id: 'TL-LEND-EV02' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'unique', file: 'data/hears.jsonl' })]);
   });
 
-  it('LA-AUT-SP09-T refuses a command and a specification in different domains', async () => {
+  it('LA-MOD-SP09-T refuses a command and a specification in different domains', async () => {
     const problems = await refusal(adding(merge(catalog, { reads: [{ source_id: 'TL-CAT-SP01', target_id: 'TL-CAT-A1' }], checks: [{ source_id: 'TL-LEND-CMD01', target_id: 'TL-CAT-SP01' }] })));
     expect(problems).toEqual([expect.objectContaining({ rule: 'link-scope', file: 'data/checks.jsonl', line: 2 })]);
     expect(problems[0].message).toBe('TL-LEND-CMD01 is in domain TL-LEND, so it cannot checks TL-CAT-SP01, which is in domain TL-CAT: checks links records of one domain');
@@ -157,11 +157,11 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
   it('refuses a link, or a field reference, across products', async () => {
     const other: Data = {
       product: [{ id: 'LA', title: 'Lathe', description: 'A tool for writing specs.' }],
-      domain: [{ id: 'LA-AUT', title: 'Authoring', product_id: 'LA', subdomain_type: 'core', description: 'Writing the records of a spec.' }],
-      aggregate: [{ id: 'LA-AUT-A1', title: 'Record', domain_id: 'LA-AUT', identity: 'Record ID', description: 'One record of a spec.' }],
+      domain: [{ id: 'LA-PRD', title: 'Product', product_id: 'LA', subdomain_type: 'core', description: 'Writing the records of a spec.' }],
+      aggregate: [{ id: 'LA-PRD-A1', title: 'Record', domain_id: 'LA-PRD', identity: 'Record ID', description: 'One record of a spec.' }],
       value_object: [{ id: 'LA-VO01', title: 'Record ID', description: 'The ID a record is known by.' }],
     };
-    const link = await refusal(adding(merge(other, { reads: [{ source_id: 'TL-LEND-SP01', target_id: 'LA-AUT-A1' }] })));
+    const link = await refusal(adding(merge(other, { reads: [{ source_id: 'TL-LEND-SP01', target_id: 'LA-PRD-A1' }] })));
     expect(link).toEqual([expect.objectContaining({ rule: 'link-crosses-product', table: 'reads' })]);
     const field = await refusal(adding(merge(other, { entity_field: [{ entity_id: 'TL-LEND-EN01', position: 4, name: 'Record', meaning: 'x', type_value_object_id: 'LA-VO01', required: false }] })));
     expect(field).toEqual([expect.objectContaining({ rule: 'reference-crosses-product', table: 'entity_field', file: 'data/entity_field.jsonl', line: 4 })]);
@@ -177,7 +177,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     // A link from it would cross products too, so the prefix rule is the one reported for a lone record.
   });
 
-  it("LA-PLT-UC01-R13-T01 refuses an ID that does not start with its parent's or domain's ID", async () => {
+  it("LA-PRD-UC37-R05-T01 refuses an ID that does not start with its parent's or domain's ID", async () => {
     const problems = await refusal(adding({ uc_requirement: [{ id: 'TL-LEND-UC09-R01', title: 'Lost', use_case_id: 'TL-LEND-UC01', statement: 'x' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'id-prefix', message: 'TL-LEND-UC09-R01 is a UC requirement under TL-LEND-UC01, so its ID starts with TL-LEND-UC01-' })]);
   });
@@ -221,7 +221,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     expect(await refusal(data)).toEqual([expect.objectContaining({ rule: 'check', table: 'question' })]);
   });
 
-  it('LA-AUT-INV41-T refuses a second repository for one aggregate, a second aggregate for one repository, and a second repository of one identifier', async () => {
+  it('LA-MOD-INV41-T refuses a second repository for one aggregate, a second aggregate for one repository, and a second repository of one identifier', async () => {
     const second = adding({
       repository: [{ id: 'TL-LEND-REPO02', title: 'LoanStore', domain_id: 'TL-LEND', file: 'src/lending/loans.ts', description: 'Keeps loans in a second table.' }],
       persists: [{ source_id: 'TL-LEND-REPO02', target_id: 'TL-LEND-A1' }],

@@ -9,9 +9,9 @@ import { TRACE, traceSceneOf } from './scene';
 // and the wiki card follows. The outcomes a focused row serves slide beside it and follow the focus to another row
 // (LA-V98-R22), and the camera frames them with the focused box.
 
-const USE_CASE = 'LA-AUT-UC06';
-const STEP = 'LA-AUT-UC06-FL-S04';
-/** Lathe's own journey "Take a new use case to proof": its first steps carry out LA-AUT-UC06, then LA-AUT-UC12. */
+const USE_CASE = 'LA-UCS-UC06';
+const STEP = 'LA-UCS-UC06-FL-S04';
+/** Lathe's own journey "Take a new use case to proof": its first steps carry out LA-UCS-UC06, then LA-MOD-UC12. */
 const JOURNEY = 'LA-JR01';
 
 const sceneOf = (page: Page, whole = true) => traceSceneOf(page, whole);

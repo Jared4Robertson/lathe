@@ -20,29 +20,29 @@ const line = (row: object) => `${JSON.stringify(row)}\n`;
 const v = (n: number, title = `View ${n}`) => line({ id: `TL-V0${n}`, title, description: 'A page of the desk app.' });
 
 describe('mergeData', () => {
-  it('LA-AUT-UC19-R01-T01 keeps the rows both sides added, sorted', async () => {
+  it('LA-PRD-UC19-R01-T01 keeps the rows both sides added, sorted', async () => {
     const result = await mergeData(v(1), v(1) + v(3), v(1) + v(2), view);
     expect(result).toEqual({ text: v(1) + v(2) + v(3), clashes: [], problems: [] });
   });
 
-  it('LA-AUT-UC19-R01-T02 takes a change or a removal made on one side only', async () => {
+  it('LA-PRD-UC19-R01-T02 takes a change or a removal made on one side only', async () => {
     const result = await mergeData(v(1) + v(2) + v(3), v(1, 'Catalog') + v(2) + v(3), v(1) + v(3), view);
     expect(result).toEqual({ text: v(1, 'Catalog') + v(3), clashes: [], problems: [] });
   });
 
-  it('LA-AUT-UC19-R01-T03 keeps one copy of a row both sides added alike, and of a link both sides made', async () => {
+  it('LA-PRD-UC19-R01-T03 keeps one copy of a row both sides added alike, and of a link both sides made', async () => {
     const link = line({ source_id: 'TL-LEND-SP01', target_id: 'TL-LEND-A1' });
     expect(await mergeData('', link, link, reads)).toEqual({ text: link, clashes: [], problems: [] });
     expect((await mergeData(v(1), v(1) + v(2), v(1) + v(2), view)).clashes).toEqual([]);
   });
 
-  it("LA-AUT-UC19-R01-T04 keeps a field this side's schema does not know, added on the other side, and leaves its check to the next load", async () => {
+  it("LA-PRD-UC19-R01-T04 keeps a field this side's schema does not know, added on the other side, and leaves its check to the next load", async () => {
     const withNew = (n: number) => line({ id: `TL-V0${n}`, title: `View ${n}`, description: 'A page of the desk app.', added_column: 'kept' });
     const result = await mergeData(v(1), v(1) + v(2), withNew(1), view);
     expect(result).toEqual({ text: withNew(1) + v(2), clashes: [], problems: [] });
   });
 
-  it('LA-AUT-UC19-R01-T05 keeps one side\'s removals and change while another row clashes', async () => {
+  it('LA-PRD-UC19-R01-T05 keeps one side\'s removals and change while another row clashes', async () => {
     // Ours removed V02 and V03 and changed V01; theirs left them alone, added V05, and added V04 as ours did, unlike it.
     const base = v(1) + v(2) + v(3);
     const ours = v(1, 'Catalog') + v(4, 'Desk');
@@ -70,7 +70,7 @@ describe('mergeData', () => {
     expect(removedByTheirs.text).toBe(`<<<<<<< ours\n${v(1, 'Ours')}=======\n>>>>>>> theirs\n`);
   });
 
-  it("LA-AUT-UC19-R03-T01 checks the merged table's own rules", async () => {
+  it("LA-PRD-UC19-R03-T01 checks the merged table's own rules", async () => {
     const step = (id: string, position: number) => line({ id, title: 'Step', flow_id: 'TL-LEND-UC01-FL', path: 'main', position });
     // Each side adds a step 2 to the same path: no line clashes, but the table's unique key does.
     const result = await mergeData(step('TL-LEND-UC01-FL-S01', 1), step('TL-LEND-UC01-FL-S01', 1) + step('TL-LEND-UC01-FL-S03', 2), step('TL-LEND-UC01-FL-S01', 1) + step('TL-LEND-UC01-FL-S02', 2), schema.tables.flow_step);
@@ -97,14 +97,14 @@ describe('lathe merge-data', () => {
     return path.join(dir, name);
   };
 
-  it('LA-AUT-UC19-R04-T01 writes the merge over ours, as git expects', async () => {
+  it('LA-PRD-UC19-R04-T01 writes the merge over ours, as git expects', async () => {
     const [base, ours, theirs] = [write('base', v(1)), write('ours', v(1) + v(3)), write('theirs', v(1) + v(2))];
     const result = await mergeDataFiles(base, ours, theirs, 'data/view.jsonl');
     expect(result.clashes).toEqual([]);
     expect(readFileSync(ours, 'utf8')).toBe(v(1) + v(2) + v(3));
   });
 
-  it('LA-AUT-UC19-R02-T01 exits 1 with the clash on a real clash, and 0 on a clean merge', () => {
+  it('LA-PRD-UC19-R02-T01 exits 1 with the clash on a real clash, and 0 on a clean merge', () => {
     const bin = path.join(import.meta.dirname, '..', '..', 'bin', 'lathe.ts');
     const run = (b: string, o: string, t: string) => {
       const args = [bin, 'merge-data', write('b', b), write('o', o), write('t', t), 'data/view.jsonl'];
@@ -169,14 +169,14 @@ describe('lathe merge-data', () => {
     expect(mergeThroughGit(v(1) + v(5), v(1) + v(4) + v(5), v(1) + v(2) + v(5))).toMatchObject({ merged: true, text: v(1) + v(2) + v(4) + v(5) });
   });
 
-  it("LA-AUT-UC19-R01-T05 keeps one side's removals and change through git while another row clashes", () => {
+  it("LA-PRD-UC19-R01-T05 keeps one side's removals and change through git while another row clashes", () => {
     const result = mergeThroughGit(v(1) + v(2) + v(3), v(1, 'Catalog') + v(4, 'Desk'), v(1) + v(2) + v(3) + v(4, 'Return desk') + v(5));
     expect(result).toMatchObject({ merged: false, status: 'UU data/view.jsonl' });
     expect(result.output).toContain('TL-V04 was added on both sides with different content');
     expect(result.text).toBe(`${v(1, 'Catalog')}<<<<<<< ours\n${v(4, 'Desk')}=======\n${v(4, 'Return desk')}>>>>>>> theirs\n${v(5)}`);
   });
 
-  it('LA-AUT-UC19-R05-T01 a driver whose lathe is not installed fails the merge loudly, saying the file was not merged', () => {
+  it('LA-PRD-UC19-R05-T01 a driver whose lathe is not installed fails the merge loudly, saying the file was not merged', () => {
     // A copy of the command line with no node_modules anywhere above it.
     const copy = mkdtempSync(path.join(tmpdir(), 'lathe-uninstalled-'));
     try {

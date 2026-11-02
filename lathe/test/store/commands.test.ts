@@ -27,7 +27,7 @@ const files = (root: string) =>
 const mtimes = (root: string) => Object.fromEntries(readdirSync(path.join(root, 'data')).map((f) => [f, statSync(path.join(root, 'data', f)).mtimeMs]));
 
 describe('adding', () => {
-  it('LA-PAT-AGGREGATE-COMMANDS-R05-T01 adds a record, registers its ID and supertypes, and rewrites only its table file', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R05-T01 LA-PAT-AGGREGATE-COMMANDS-R05-T04 LA-PAT-AGGREGATE-COMMANDS-R05-T05 LA-PAT-AGGREGATE-COMMANDS-R05-T06 LA-PAT-AGGREGATE-COMMANDS-R05-T07 LA-PAT-AGGREGATE-COMMANDS-R05-T08 adds a record, registers its ID and supertypes, and rewrites only its table file', async () => {
     const { store, root } = await fresh();
     const before = mtimes(root);
     const result = await run(store, 'use-case add-uc-requirement', { id: 'TL-LEND-UC01-R02', title: 'Member is known', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse an unknown member.' });
@@ -43,7 +43,7 @@ describe('adding', () => {
     await store.close();
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R05-T01 adds a record of each new kind: one with no owner, one under either of two parents, and a test', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R05-T01 LA-PAT-AGGREGATE-COMMANDS-R05-T04 LA-PAT-AGGREGATE-COMMANDS-R05-T05 LA-PAT-AGGREGATE-COMMANDS-R05-T06 LA-PAT-AGGREGATE-COMMANDS-R05-T07 LA-PAT-AGGREGATE-COMMANDS-R05-T08 adds a record of each new kind: one with no owner, one under either of two parents, and a test', async () => {
     const { store } = await fresh();
     await run(store, 'specification add-specification', { id: 'TL-LEND-SP02', title: 'Member in good standing', statement: 'A member owes nothing.', reads: ['TL-LEND-A1'] });
     await run(store, 'endpoint add-endpoint', { id: 'TL-LEND-EP02', title: 'GET /tools/free', query_id: 'TL-LEND-QRY01', method: 'GET', route: '/tools/free', description: 'Answers 200 with the free tools.' });
@@ -57,7 +57,7 @@ describe('adding', () => {
     await store.close();
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R07-T01 refuses a record whose ID is taken and a record under a parent that does not exist', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R07-T01 LA-PAT-AGGREGATE-COMMANDS-R07-T04 LA-PAT-AGGREGATE-COMMANDS-R07-T05 LA-PAT-AGGREGATE-COMMANDS-R07-T06 LA-PAT-AGGREGATE-COMMANDS-R07-T07 LA-PAT-AGGREGATE-COMMANDS-R07-T08 refuses a record whose ID is taken and a record under a parent that does not exist', async () => {
     const { store } = await fresh();
     expect(await refusedBy(store, 'view add-view', { id: 'TL-V01', title: 'Again', description: 'The catalog again.' })).toEqual([expect.objectContaining({ rule: 'primary-key' })]);
     expect(await refusedBy(store, 'view add-view-requirement', { id: 'TL-V09-R01', title: 'Lost', view_id: 'TL-V09', statement: 'x' })).toEqual([expect.objectContaining({ rule: 'missing' })]);
@@ -66,7 +66,7 @@ describe('adding', () => {
 });
 
 describe('record_scope', () => {
-  it('LA-PLT-UC01-R05-T01 a record with no owner belongs to the one domain that uses it, with what sits under it, and is shared when two or none do', async () => {
+  it('LA-PRD-UC37-R02-T01 a record with no owner belongs to the one domain that uses it, with what sits under it, and is shared when two or none do', async () => {
     const { store } = await fresh();
     const domains = async (ids: string[]) =>
       Object.fromEntries(
@@ -116,30 +116,33 @@ describe('record_scope', () => {
 });
 
 describe('moving', () => {
-  it('LA-PAT-AGGREGATE-COMMANDS-R07-T01 refuses a move that leaves an ID outside its domain', async () => {
-    const { store } = await fresh();
-    await run(store, 'domain add-domain', { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'generic', description: 'The tools the library holds.' });
-    await run(store, 'domain add-capability', { id: 'TL-CAT-CAP01', title: 'Listing', domain_id: 'TL-CAT', position: 1, description: 'Listing the tools on the shelf.' });
-    expect(await refusedBy(store, 'use-case move-use-case', { id: 'TL-LEND-UC01', capability_id: 'TL-CAT-CAP01' })).toEqual([
-      expect.objectContaining({ rule: 'id-prefix', key: 'TL-LEND-UC01', message: 'TL-LEND-UC01 is a Use case in domain TL-CAT, so its ID starts with TL-CAT-' }),
-    ]);
-    await store.close();
-  });
-
-  it('LA-AUT-UC18-R05-T03 a view, which has no owner, has no move: only a use case, a flow step, a journey step, an endpoint, a table and a question move', () => {
+  it('LA-IXD-UC18-R05-T03 a view, which has no owner, has no move: only records with a parent, or a domain their ID names, move', () => {
     expect(ALL_COMMANDS.filter((c) => c.name.startsWith('move-')).map((c) => `${c.slice.name} ${c.name}`).sort()).toEqual([
+      'aggregate move-aggregate',
+      'data-store move-data-store',
+      'domain move-capability',
+      'domain move-domain-service',
+      'domain move-repository',
+      'domain move-term',
       'endpoint move-endpoint',
+      'entry-point move-entry-point',
+      'extension-record move-extension-record',
       'journey move-journey-step',
       'product move-question',
+      'read-model move-read-model',
+      'specification move-specification',
       'table move-table',
+      'test-data-set move-test-data-set',
+      'tooling move-tooling',
       'use-case move-flow-step',
+      'use-case move-uc-requirement',
       'use-case move-use-case',
     ]);
   });
 });
 
 describe('links', () => {
-  it('LA-PAT-AGGREGATE-COMMANDS-R05-T01 a record\'s links are inputs of its own change, keeping the file sorted by its key columns', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R05-T01 LA-PAT-AGGREGATE-COMMANDS-R05-T04 LA-PAT-AGGREGATE-COMMANDS-R05-T05 LA-PAT-AGGREGATE-COMMANDS-R05-T06 LA-PAT-AGGREGATE-COMMANDS-R05-T07 LA-PAT-AGGREGATE-COMMANDS-R05-T08 a record\'s links are inputs of its own change, keeping the file sorted by its key columns', async () => {
     const { store, root } = await fresh();
     await run(store, 'read-model change-query', { id: 'TL-LEND-QRY01', calls: ['TL-LEND-DS01'] });
     expect(readFileSync(path.join(root, 'data', 'calls.jsonl'), 'utf8')).toBe(
@@ -150,7 +153,7 @@ describe('links', () => {
     await store.close();
   });
 
-  it('LA-PLT-UC01-R09-T02 refuses a link its ends allow but its relation does not, and a wrong kind at an end', async () => {
+  it('LA-PRD-UC38-R01-T02 refuses a link its ends allow but its relation does not, and a wrong kind at an end', async () => {
     const { store } = await fresh();
     // A second pair widens documents to a link table whose target is any record, so its pairs are what hold.
     await run(store, 'product declare-product-relation', { name: 'documents', source_kind: 'cli_command', target_kind: 'integration', product_id: 'TL', forward_label: 'Documents', reverse_label: 'Documented by', description: 'The CLI command is documented with the integration.' });
@@ -164,19 +167,19 @@ describe('links', () => {
     await store.close();
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R07-T01 refuses a link to another product', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R07-T01 LA-PAT-AGGREGATE-COMMANDS-R07-T04 LA-PAT-AGGREGATE-COMMANDS-R07-T05 LA-PAT-AGGREGATE-COMMANDS-R07-T06 LA-PAT-AGGREGATE-COMMANDS-R07-T07 LA-PAT-AGGREGATE-COMMANDS-R07-T08 refuses a link to another product', async () => {
     const { store } = await fresh();
     await run(store, 'product add-product', { id: 'LA', title: 'Lathe', description: 'A tool for writing specs.' });
-    await run(store, 'domain add-domain', { id: 'LA-AUT', title: 'Authoring', product_id: 'LA', subdomain_type: 'core', description: 'Writing the records of a spec.' });
-    await run(store, 'aggregate add-aggregate', { id: 'LA-AUT-A1', title: 'Record', domain_id: 'LA-AUT', identity: 'Record ID', description: 'One record of a spec.' });
-    expect(await refusedBy(store, 'read-model change-read-model', { id: 'TL-LEND-RM01', reads: ['TL-LEND-A1', 'LA-AUT-A1'] })).toEqual([expect.objectContaining({ rule: 'link-crosses-product' })]);
+    await run(store, 'domain add-domain', { id: 'LA-PRD', title: 'Product', product_id: 'LA', subdomain_type: 'core', description: 'Writing the records of a spec.' });
+    await run(store, 'aggregate add-aggregate', { id: 'LA-PRD-A1', title: 'Record', domain_id: 'LA-PRD', identity: 'Record ID', description: 'One record of a spec.' });
+    expect(await refusedBy(store, 'read-model change-read-model', { id: 'TL-LEND-RM01', reads: ['TL-LEND-A1', 'LA-PRD-A1'] })).toEqual([expect.objectContaining({ rule: 'link-crosses-product' })]);
     await store.close();
   });
 });
 
 describe('a command', () => {
   describe('LA-STD-PRINCIPLES-R01-T02 a refused command changes nothing', () => {
-    it('LA-PAT-AGGREGATE-COMMANDS-R03-T01 is all or nothing: a refused command leaves the data and the files as they were', async () => {
+    it('LA-PAT-AGGREGATE-COMMANDS-R03-T01 LA-PAT-AGGREGATE-COMMANDS-R03-T04 LA-PAT-AGGREGATE-COMMANDS-R03-T05 LA-PAT-AGGREGATE-COMMANDS-R03-T06 LA-PAT-AGGREGATE-COMMANDS-R03-T07 LA-PAT-AGGREGATE-COMMANDS-R03-T08 is all or nothing: a refused command leaves the data and the files as they were', async () => {
       const { store, root } = await fresh();
       const before = files(root);
       // An automated test with no file breaks the table's own rule at the commit, after the command has run.
@@ -239,7 +242,7 @@ describe('a command', () => {
     await store.close();
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R04-T01 refuses an aggregate with two roots, before any file changes', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R04-T01 LA-PAT-AGGREGATE-COMMANDS-R04-T04 LA-PAT-AGGREGATE-COMMANDS-R04-T05 LA-PAT-AGGREGATE-COMMANDS-R04-T06 LA-PAT-AGGREGATE-COMMANDS-R04-T07 LA-PAT-AGGREGATE-COMMANDS-R04-T08 refuses an aggregate with two roots, before any file changes', async () => {
     const { store } = await fresh();
     expect(await refusedBy(store, 'aggregate change-entity', { id: 'TL-LEND-EN02', role: 'root', in_root_table: null })).toEqual([
       expect.objectContaining({ rule: 'aggregate-root', table: 'aggregate', message: expect.stringContaining('aggregate TL-LEND-A1 has 2 root entities') }),
@@ -247,7 +250,7 @@ describe('a command', () => {
     await store.close();
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R06-T01 runs commands one after another, each on the state the one before left', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R06-T01 LA-PAT-AGGREGATE-COMMANDS-R06-T04 LA-PAT-AGGREGATE-COMMANDS-R06-T05 LA-PAT-AGGREGATE-COMMANDS-R06-T06 LA-PAT-AGGREGATE-COMMANDS-R06-T07 LA-PAT-AGGREGATE-COMMANDS-R06-T08 runs commands one after another, each on the state the one before left', async () => {
     const { store } = await fresh();
     await Promise.all([2, 3, 4].map((n) => run(store, 'view add-view', { id: `TL-V0${n}`, title: `View ${n}`, description: 'A page of the desk app.' })));
     expect(store.rows('view').map((v) => v.id)).toEqual(['TL-V01', 'TL-V02', 'TL-V03', 'TL-V04']);

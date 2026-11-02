@@ -64,10 +64,10 @@ describe('LA-PLT-INV05-T Each folder has one window: the Product window\'s repos
     expect(reportMenuKeys(windows, { folder: '/p/x', keys: {} })).toBe(false);
     expect(windows.load().open.get('/p/b')?.menuKeys).toEqual({ toggleNav: ['Shift+Meta+J'] });
     const reveal = vi.fn();
-    await revealRecordDataFile(windows, { folder: '/p/b', request: { id: 'LA-AUT-UC01', path: '/etc' } }, dataFileOf, reveal);
-    await revealRecordDataFile(windows, { folder: '/p/x', request: { id: 'LA-AUT-UC01' } }, dataFileOf, reveal);
-    await revealRecordDataFile(windows, { folder: '/p/b', request: { id: 'LA-AUT-UC01' } }, dataFileOf, reveal);
-    expect(dataFileOf.mock.calls).toEqual([['/p/b', 'LA-AUT-UC01']]);
+    await revealRecordDataFile(windows, { folder: '/p/b', request: { id: 'LA-MOD-UC02', path: '/etc' } }, dataFileOf, reveal);
+    await revealRecordDataFile(windows, { folder: '/p/x', request: { id: 'LA-MOD-UC02' } }, dataFileOf, reveal);
+    await revealRecordDataFile(windows, { folder: '/p/b', request: { id: 'LA-MOD-UC02' } }, dataFileOf, reveal);
+    expect(dataFileOf.mock.calls).toEqual([['/p/b', 'LA-MOD-UC02']]);
     expect(reveal.mock.calls).toEqual([['/p/b/data/use_case.jsonl']]);
   });
 

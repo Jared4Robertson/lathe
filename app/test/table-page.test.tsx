@@ -6,7 +6,7 @@ import { addRows, setRow } from './fixtures/load';
 import { modelWorkspace } from './fixtures/model';
 import { main, openApp, section } from './helpers';
 
-// The Table page and its editor (LA-AUT-A18, LA-V140): a table is read through the aggregate's own query, and changed
+// The Table page and its editor (LA-TEC-A18, LA-V140): a table is read through the aggregate's own query, and changed
 // only through the aggregate's own commands, one per change (Move among them), each refusal shown with its reasons.
 
 const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };

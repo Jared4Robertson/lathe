@@ -1,5 +1,5 @@
 // Shell settings (LA-PLT-A11): the shell's own settings, kept in settings.json in the user data folder: which
-// editor "Open in editor" uses (LA-AUT-UC15-R02), VS Code by default, another known editor, the system's default
+// editor "Open in editor" uses (LA-PAT-RECORD-DATA-FILE-R02), VS Code by default, another known editor, the system's default
 // app for the file, or a command of the person's own ("editorCommand", written there by hand, which gets the file
 // as its last argument); and the `claude` the chat panel runs ("claudePath"), when it is not where its installers
 // put it. File › Open Records In sets the editor; Edit Settings File… opens the file.

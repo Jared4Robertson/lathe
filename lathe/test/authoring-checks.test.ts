@@ -1,4 +1,4 @@
-// Authoring's rules that Lathe's checks (lathe/data/check.jsonl) report when a workspace loads: each starts from the
+// The stage domains' rules that Lathe's checks (lathe/data/check.jsonl) report when a workspace loads: each starts from the
 // complete product, which breaks none of them, and changes one thing to break the rule.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Workspace } from '../src/index.ts';
@@ -11,8 +11,8 @@ beforeAll(async () => {
   clean = await loadData(complete());
 });
 
-describe("Authoring's rules kept by checks", () => {
-  it('LA-AUT-UC18-R05-T02 A view, integration, value object, specification or UI component that nothing uses is an error', async () => {
+describe("The stage domains' rules kept by checks", () => {
+  it('LA-IXD-UC18-R05-T02 A view, integration, value object, specification or UI component that nothing uses is an error', async () => {
     const unused = ['view-unused', 'integration-unused', 'value-object-unused', 'specification-unused', 'ui-component-unused'];
     for (const check of unused) expect(ofCheck(clean, check), check).toEqual([]);
     let data = without(complete(), 'presents', () => true);

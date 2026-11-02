@@ -30,7 +30,7 @@ function withText() {
 }
 
 describe('record IDs in text fields', () => {
-  it('LA-PAT-RECORD-PAGE-R13-T01 Every mentioned ID in the text becomes a link to its record, with its title on hover', () => {
+  it('LA-PAT-RECORD-PAGE-R13-T01 LA-PAT-RECORD-PAGE-R13-T02 LA-PAT-RECORD-PAGE-R13-T03 LA-PAT-RECORD-PAGE-R13-T04 LA-PAT-RECORD-PAGE-R13-T05 LA-PAT-RECORD-PAGE-R13-T06 Every mentioned ID in the text becomes a link to its record, with its title on hover', () => {
     const html = renderMarkdown('See TL-LEND-DR01, and again TL-LEND-DR01.\n\n- In a list: TL-LEND-UC01', links({ 'TL-LEND-DR01': 'One loan at a time', 'TL-LEND-UC01': 'Lend a tool' }));
     const div = document.createElement('div');
     div.innerHTML = html;
@@ -61,8 +61,8 @@ describe('record IDs in text fields', () => {
     // Nothing to link leaves the HTML as it was.
     expect(linkMentions('<p>TL-LEND-DR01</p>', links({}))).toBe('<p>TL-LEND-DR01</p>');
   };
-  it('LA-PAT-RECORD-PAGE-R13-T01 IDs inside code blocks, code with other text, links and longer IDs are never linked; a code span of one lone ID is', proveLaV92R18T02);
-  it('LA-PAT-RECORD-PAGE-R05-T01 IDs in code blocks, code with other text, links and longer IDs are not linked; a lone-ID code span is', proveLaV92R18T02);
+  it('LA-PAT-RECORD-PAGE-R13-T01 LA-PAT-RECORD-PAGE-R13-T02 LA-PAT-RECORD-PAGE-R13-T03 LA-PAT-RECORD-PAGE-R13-T04 LA-PAT-RECORD-PAGE-R13-T05 LA-PAT-RECORD-PAGE-R13-T06 IDs inside code blocks, code with other text, links and longer IDs are never linked; a code span of one lone ID is', proveLaV92R18T02);
+  it('LA-PAT-RECORD-PAGE-R05-T01 LA-PAT-RECORD-PAGE-R05-T02 LA-PAT-RECORD-PAGE-R05-T03 LA-PAT-RECORD-PAGE-R05-T04 LA-PAT-RECORD-PAGE-R05-T05 LA-PAT-RECORD-PAGE-R05-T06 IDs in code blocks, code with other text, links and longer IDs are not linked; a lone-ID code span is', proveLaV92R18T02);
 
   const proveLaV92R18T03 = () => {
     const ix = recordIndexOf(withText());
@@ -71,8 +71,8 @@ describe('record IDs in text fields', () => {
     const p = proseLinks(ix, `${String(goal)} See DM-SHOP-UC01.`, uc.id);
     expect([...p.titles]).toEqual([['DM-PAT-AUDIT', 'Audited action'], ['DM-SHOP-INV01', 'A basket holds at most 50 items']]);
   };
-  it('LA-PAT-RECORD-PAGE-R13-T01 Only the IDs of records are linked, never the record itself; an ID that is no record is not', proveLaV92R18T03);
-  it('LA-PAT-RECORD-PAGE-R14-T01 Only the IDs of records are linked, never the record itself', proveLaV92R18T03);
+  it('LA-PAT-RECORD-PAGE-R13-T01 LA-PAT-RECORD-PAGE-R13-T02 LA-PAT-RECORD-PAGE-R13-T03 LA-PAT-RECORD-PAGE-R13-T04 LA-PAT-RECORD-PAGE-R13-T05 LA-PAT-RECORD-PAGE-R13-T06 Only the IDs of records are linked, never the record itself; an ID that is no record is not', proveLaV92R18T03);
+  it('LA-PAT-RECORD-PAGE-R14-T01 LA-PAT-RECORD-PAGE-R14-T02 LA-PAT-RECORD-PAGE-R14-T03 LA-PAT-RECORD-PAGE-R14-T04 LA-PAT-RECORD-PAGE-R14-T05 LA-PAT-RECORD-PAGE-R14-T06 Only the IDs of records are linked, never the record itself', proveLaV92R18T03);
 
   const proveLaV92R18T04 = async () => {
     await openApp('/DM-SHOP-UC01', { data: withText() });
@@ -89,8 +89,8 @@ describe('record IDs in text fields', () => {
     expect(window.location.pathname).toBe('/DM-SHOP-INV01');
     await screen.findByRole('heading', { level: 1, name: 'A basket holds at most 50 items' });
   };
-  it('LA-PAT-RECORD-PAGE-R13-T01 On a record page a text field links the records it names, leaves an unknown ID as text, and a link moves within the app', proveLaV92R18T04);
-  it('LA-PAT-RECORD-PAGE-R14-T01 On a record page a text field links the records it names, and a link moves within the app', proveLaV92R18T04);
+  it('LA-PAT-RECORD-PAGE-R13-T01 LA-PAT-RECORD-PAGE-R13-T02 LA-PAT-RECORD-PAGE-R13-T03 LA-PAT-RECORD-PAGE-R13-T04 LA-PAT-RECORD-PAGE-R13-T05 LA-PAT-RECORD-PAGE-R13-T06 On a record page a text field links the records it names, leaves an unknown ID as text, and a link moves within the app', proveLaV92R18T04);
+  it('LA-PAT-RECORD-PAGE-R14-T01 LA-PAT-RECORD-PAGE-R14-T02 LA-PAT-RECORD-PAGE-R14-T03 LA-PAT-RECORD-PAGE-R14-T04 LA-PAT-RECORD-PAGE-R14-T05 LA-PAT-RECORD-PAGE-R14-T06 On a record page a text field links the records it names, and a link moves within the app', proveLaV92R18T04);
 
   const proveLaV92R18T05 = async () => {
     await openApp('/DM-PAY-UC01', { data: withText() });
@@ -110,6 +110,6 @@ describe('record IDs in text fields', () => {
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     await waitFor(() => expect(document.querySelector('.spec-body .record-lead a.mention')).toHaveAttribute('href', '/DM-SHOP-UC01'));
   };
-  it('LA-PAT-RECORD-PAGE-R13-T01 An ID inside a longer ID links only as the longer one, a named record is not a link between records, and domain pages link theirs too', proveLaV92R18T05);
-  it('LA-PAT-RECORD-PAGE-R04-T01 An ID inside a longer ID links only as the longer one, and domain pages link theirs too', proveLaV92R18T05);
+  it('LA-PAT-RECORD-PAGE-R13-T01 LA-PAT-RECORD-PAGE-R13-T02 LA-PAT-RECORD-PAGE-R13-T03 LA-PAT-RECORD-PAGE-R13-T04 LA-PAT-RECORD-PAGE-R13-T05 LA-PAT-RECORD-PAGE-R13-T06 An ID inside a longer ID links only as the longer one, a named record is not a link between records, and domain pages link theirs too', proveLaV92R18T05);
+  it('LA-PAT-RECORD-PAGE-R04-T01 LA-PAT-RECORD-PAGE-R04-T02 LA-PAT-RECORD-PAGE-R04-T03 LA-PAT-RECORD-PAGE-R04-T04 LA-PAT-RECORD-PAGE-R04-T05 LA-PAT-RECORD-PAGE-R04-T06 An ID inside a longer ID links only as the longer one, and domain pages link theirs too', proveLaV92R18T05);
 });

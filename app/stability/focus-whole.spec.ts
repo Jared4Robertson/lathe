@@ -10,7 +10,7 @@ import { erdDrawn, erdSceneOf, GRAPH, graphDrawn, sceneOf, traceDrawn, traceScen
 // a domain on the ERD.
 
 const MANY = 'LA-PAT-APP-UX';
-const USE_CASE = 'LA-AUT-UC06';
+const USE_CASE = 'LA-UCS-UC06';
 const DOMAIN = 'LA-EXP';
 
 type Rect = { left: number; top: number; width: number; height: number };

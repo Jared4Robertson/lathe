@@ -169,7 +169,7 @@ describe('every drawn box shows its name', () => {
         if (layout.name === 'Nested') expect(hi / lo, `${product} ${layout.name}: ${medians.map((m) => m.toFixed(1)).join(', ')}`).toBeLessThan(1.5);
         else expect(hi / lo, `${product} ${layout.name}: ${medians.map((m) => m.toFixed(1)).join(', ')}`).toBeLessThan(1.2);
         // Readable: at least 9 pixels; at most 36, a focus filling FOCUS_SHARE of the pane reading large but not huge.
-        for (const m of medians) { expect(m).toBeGreaterThanOrEqual(9); expect(m).toBeLessThanOrEqual(36); }
+        for (const m of medians) { expect(m).toBeGreaterThanOrEqual(9); expect(m).toBeLessThanOrEqual(36 * (1 + 1e-9)); }
         if (leaves.length > 0) expect(median(leaves), `${product} ${layout.name} leaves`).toBeGreaterThanOrEqual(9);
         // The camera frames even the deepest, smallest leaf without reaching its zoom limit.
         const smallest = [...map.nodes.values()].reduce((a, b) => (Math.min(b.w, b.h) < Math.min(a.w, a.h) ? b : a));

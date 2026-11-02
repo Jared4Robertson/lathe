@@ -1,7 +1,7 @@
-// The desktop-only record actions (LA-AUT-UC15-R01): reveal a record's data file in Finder, open it in the editor,
+// The desktop-only record actions (LA-PAT-RECORD-DATA-FILE-R01): reveal a record's data file in Finder, open it in the editor,
 // copy its ID, or a native menu of the three, each on its own channel (product-window/commands/). The page names only a
 // record ID; the main process checks the request (LA-PAT-SHELL-ACTIONS-R01) and asks the window's engine which data file
-// holds the record (its Record's data file read, LA-AUT-QRY05), so a page can never name a file of its own.
+// holds the record (its Record's data file read, LA-PRD-QRY05), so a page can never name a file of its own.
 import type { MenuItemConstructorOptions } from 'electron';
 import path from 'node:path';
 
@@ -19,7 +19,7 @@ export function parseRecordId(input: unknown): string | null {
   return id;
 }
 
-/** The engine's route of the Record's data file read (lathe/src/authoring/record-data-file/queries.ts). */
+/** The engine's route of the Record's data file read (lathe/src/product/record-data-file/queries.ts). */
 export const RECORD_DATA_FILE_ROUTE = '/api/record-data-file/find-record-data-file';
 
 /**

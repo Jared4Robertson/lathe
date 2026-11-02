@@ -36,7 +36,8 @@ test.describe('Checking flows', () => {
       const main = page.locator(PANEL);
       await expect(main.locator('.tool-panel-title')).toHaveText('Checks');
       await expect(page.locator('.focus-stage')).toBeVisible();
-      await expect(main.getByText(new RegExp(`^${errors} errors? · \\d+ warnings?$`))).toBeVisible();
+      // The first check run of a cold server takes as long as the one after a change (S02 below).
+      await expect(main.getByText(new RegExp(`^${errors} errors? · \\d+ warnings?$`))).toBeVisible({ timeout: 20_000 });
       const severity = new Map(spec.problems.map((p) => [p.check, p.severity]));
       const groups = (await main.locator('h3 a[href*="page=format/checks/"]').allTextContents()).map((t) => t.trim());
       const order = groups.map((g) => severity.get(g));

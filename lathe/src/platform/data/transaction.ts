@@ -54,6 +54,8 @@ interface Draft {
   tables: Tables;
   changed: Set<string>;
   schema: SchemaDescription;
+  /** The rows a move gave new IDs and nothing else (DataFiles.carryRenames): they say nothing new, so the write rules pass them by. */
+  renamed: WeakSet<Row>;
 }
 
 const drafts = new WeakMap<Transaction, Draft>();
@@ -61,7 +63,7 @@ const drafts = new WeakMap<Transaction, Draft>();
 /** One write in progress: the tables as the command leaves them, read-only to everything but data-files.ts. */
 export class Transaction implements ReadView {
   constructor(host: TransactionHost) {
-    drafts.set(this, { host, tables: new Map(host.tables), changed: new Set(), schema: host.schema });
+    drafts.set(this, { host, tables: new Map(host.tables), changed: new Set(), schema: host.schema, renamed: new WeakSet() });
   }
 
   /** The schema, Lathe's and the product's own kinds and relations. */
@@ -97,10 +99,10 @@ export class Transaction implements ReadView {
   }
 }
 
-/** The draft's tables, to change: for data-files.ts only (a test holds it to that). */
-export function draftOf(tx: Transaction): { tables: Tables } {
+/** The draft's tables, to change, and the rows a move only renamed: for data-files.ts only (a test holds it to that). */
+export function draftOf(tx: Transaction): { tables: Tables; renamed: WeakSet<Row> } {
   const draft = drafts.get(tx)!;
-  return { tables: draft.tables };
+  return { tables: draft.tables, renamed: draft.renamed };
 }
 
 /** Makes the table's rows the transaction's own copy, to change. */
@@ -143,7 +145,7 @@ export async function commit(tx: Transaction): Promise<Committed> {
   }
   const names = [...changed].sort();
   const changes = rowChanges(schema, host.tables, tables, names);
-  refuseWritten(schema, tables, origins, changes);
+  refuseWritten(schema, tables, origins, changes.filter((c) => !c.after || !draft.renamed.has(c.after)));
   const dataDb = await host.build(schemaDb, schema, tables, origins, changed);
   const files = await writeFiles(host.dataDir, schema, tables, host.builtIn, origins, names);
   await host.adopt({ tables, schema, schemaDb, dataDb });
@@ -151,7 +153,7 @@ export async function commit(tx: Transaction): Promise<Committed> {
 }
 
 // Holds the rows the write adds or changes to the write rules (write-rules.ts), over the data as it leaves it, and
-// refuses the write with every problem they find.
+// refuses the write with every problem they find. A row a move only gave new IDs is not given: it says nothing new.
 function refuseWritten(schema: SchemaDescription, tables: Tables, origins: WeakMap<Row, Origin>, changes: readonly RowChange[]): void {
   const view: ReadView = {
     schema,

@@ -8,7 +8,7 @@
 // records with a position come in its order (capabilities, and flow steps path by path, the main path first), then by
 // ID; terms bottom-up, each after the terms it builds on. The projection is the only code that reads the source rows
 // for the query and the only code that writes the read model's table.
-import { termsBottomUp } from '../../authoring/domain/read-model.ts';
+import { termsBottomUp } from '../../domain-modeling/domain/read-model.ts';
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { Stage } from '../../platform/data/schema.ts';
 import { inSpace, placementOf, type Placed } from '../placement.ts';

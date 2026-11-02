@@ -5,7 +5,7 @@
 //
 // Essential records keep accidental complexity out (LA-STD-PRINCIPLES-R05, LA-CHK-UC08):
 // - essential-names-technology: an essential record the write adds, or whose title or lead it changes, that names a
-//   word its kind's group has no business with (essential.ts: Lathe's words, a term of its own domain excused; the
+//   word its kind's group has no business with (essential.ts: Lathe's words, a term of any of its product's domains excused; the
 //   titles of its product's interfaces, a variant step's own excused; the product's technology words), as
 //   accidental-in-essential warns of a record already in the data;
 // - essential-links-accidental: a link the write adds from an essential record to an accidental one, or a product
@@ -33,13 +33,13 @@ function ownInterfaceOf(view: ReadView, kind: string, row: Row): string | undefi
   return at ? String(at.row.title) : undefined;
 }
 
-/** The words a record of the group, in the product and domain, has no business with. */
-function wordsFor(view: ReadView, group: WordGroup, product: string | null, domain: string | undefined, ownInterface: string | undefined): string[] {
+/** The words a record of the group, in the product, has no business with: a term of any of its domains is the product's language. */
+function wordsFor(view: ReadView, group: WordGroup, product: string | null, ownInterface: string | undefined): string[] {
   const productDomains = new Set(view.rows('domain').filter((d) => d.product_id === product).map((d) => String(d.id)));
   const terms = new Set(
     view
       .rows('term')
-      .filter((t) => (domain === undefined ? productDomains.has(String(t.domain_id)) : t.domain_id === domain))
+      .filter((t) => productDomains.has(String(t.domain_id)))
       .map((t) => String(t.title).trim().toLowerCase()),
   );
   const own = ownInterface?.trim().toLowerCase();
@@ -60,7 +60,7 @@ function namesTechnology(view: ReadView, placement: Placement, kind: string, row
   const id = String(row.id);
   if (placement.complexityOf(id) !== 'essential') return undefined;
   const own = ownInterfaceOf(view, kind, row)?.toLowerCase();
-  const words = wordsFor(view, group, placement.productOf(id), placement.domainOf(id), own);
+  const words = wordsFor(view, group, placement.productOf(id), own);
   const lead = view.schema.tables[kind].columns.find((c) => isLeadColumn(c.name))?.name;
   const said = (column: string) => {
     const text = typeof row[column] === 'string' ? String(row[column]).toLowerCase() : '';

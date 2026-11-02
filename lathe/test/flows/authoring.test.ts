@@ -1,8 +1,8 @@
-// Authoring's flows, each walked through the real `lathe` command (or the scripts the flow names) on a temporary
+// The stage domains' flows, each walked through the real `lathe` command (or the scripts the flow names) on a temporary
 // product: deciding domains, changing the schema, declaring a product's own kinds, organizing use cases, writing flows,
 // models, rules, tests, technical records and standards, reading the reference and merging two branches' data. Each
 // step runs the one aggregate command or query it names (`lathe <aggregate> <command>`). The Reader's flow in the app is
-// in app/stability/authoring.spec.ts; the flows through the MCP tools are in agent-tools.test.ts.
+// in app/stability/product.spec.ts; the flows through the MCP tools are in agent-tools.test.ts.
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, cpSync, existsSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -43,8 +43,8 @@ const recordOf = (tl: Product, id: string) => tl.workspace().records.find((r) =>
 /** The links of the workspace that start at the record, as `relation target`. */
 const linksOf = (tl: Product, id: string) => tl.workspace().links.filter((l) => l.source === id).map((l) => `${l.relation} ${l.target}`);
 
-describe('Authoring flows', () => {
-  it('LA-AUT-UC02-FL-T split a product into domains by capability', () => {
+describe('The stage domains\' flows', () => {
+  it('LA-MOD-UC02-FL-T split a product into domains by capability', () => {
     const tl = product();
     // S01: the modeling skill's first step is to find the product's business capabilities.
     const skill = readFileSync(path.join(LATHE_DIR, '..', 'plugin', 'skills', 'model-a-domain', 'SKILL.md'), 'utf8');
@@ -60,7 +60,7 @@ describe('Authoring flows', () => {
     expect(problemsOf(tl.workspace(), 'domain-named-for-technology')).toEqual([]);
   });
 
-  it('LA-AUT-UC03-FL-T change Lathe\'s schema with a migration', async () => {
+  it('LA-PRD-UC03-FL-T change Lathe\'s schema with a migration', async () => {
     // A copy of the lathe package, so the migration changes only the copy.
     const dir = mkdtempSync(path.join(tmpdir(), 'lathe-flow-schema-'));
     temps.push(dir);
@@ -93,7 +93,7 @@ describe('Authoring flows', () => {
     expect(node(path.join(LATHE_DIR, 'bin', 'lathe.ts'), ['check', '--root', tl.root]).stdout).toContain('[data-refused]');
   });
 
-  it('LA-AUT-UC04-FL-T declare a product\'s own kinds with their relations', async () => {
+  it('LA-PRD-UC04-FL-T declare a product\'s own kinds with their relations', async () => {
     const tl = product();
     await tl.seed(LENDING);
     const launcher = { kind: 'launcher', id: 'TL-LEND-EP1', parent_id: 'TL-LEND', values: { title: 'Start the lending service', file: 'src/main.ts' } };
@@ -102,7 +102,7 @@ describe('Authoring flows', () => {
     tl.command('product declare-product-kind', { ...HOUSE_KIND, fields: [{ name: 'file', type: 'text', required: true, description: 'The file it starts from.' }] });
     // S02: a new relation, and a pair added to one of Lathe's.
     tl.command('product declare-product-relation', { name: 'starts', source_kind: 'launcher', target_kind: 'command', product_id: 'TL', forward_label: 'Starts', reverse_label: 'Started by', description: 'The launcher starts the command.' });
-    // The next load generates the tables: the Extension record's commands take the new kind with its columns (LA-AUT-UC34).
+    // The next load generates the tables: the Extension record's commands take the new kind with its columns (LA-PRD-UC34).
     tl.command('extension-record add-extension-record', { ...launcher, links: { starts: ['TL-LEND-CMD01'] } });
     expect(tl.read('data/launcher.jsonl')).toContain('"id":"TL-LEND-EP1"');
     // S03: a kind declared twice is refused; in the data files, naming the file and line of each.
@@ -112,7 +112,7 @@ describe('Authoring flows', () => {
     expect(twice.join('\n')).toMatch(/data\/product_kind\.jsonl:2:.*line 1/);
   });
 
-  it('LA-AUT-UC34-FL-T write a record of a product\'s own kind', async () => {
+  it('LA-PRD-UC34-FL-T write a record of a product\'s own kind', async () => {
     const tl = product();
     await tl.seed(LENDING);
     tl.command('product declare-product-kind', { ...HOUSE_KIND, fields: [{ name: 'file', type: 'text', required: true, description: 'The file it starts from.' }] });
@@ -134,7 +134,7 @@ describe('Authoring flows', () => {
     expect(linksOf(tl, 'TL-LEND-EP1')).toEqual([]);
   });
 
-  it('LA-AUT-UC35-FL-T name a product\'s roles', async () => {
+  it('LA-PRD-UC35-FL-T name a product\'s roles', async () => {
     const tl = product();
     await tl.seed(LENDING);
     // S02: the product's roles, each with what it does; S01 reads the product back with them.
@@ -145,7 +145,7 @@ describe('Authoring flows', () => {
     expect(tl.read('data/use_case_actor.jsonl')).toContain('"role_name":"Member"');
   });
 
-  it('LA-AUT-UC36-FL-T ask an open question', async () => {
+  it('LA-PRD-UC36-FL-T ask an open question', async () => {
     const tl = product();
     await tl.seed(LENDING);
     tl.command('product change-product', { id: 'TL', roles: [{ name: 'Librarian', description: 'Lends tools at the desk.' }] });
@@ -160,7 +160,7 @@ describe('Authoring flows', () => {
     expect(linksOf(tl, 'TL-LEND-Q01')).toEqual([]);
   });
 
-  it('LA-AUT-UC05-FL-T organize a domain\'s use cases into capabilities and patterns', async () => {
+  it('LA-UCS-UC05-FL-T organize a domain\'s use cases into capabilities and patterns', async () => {
     const tl = product();
     await tl.seed([...LENDING, add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.' })]);
     // S01: the domain's capabilities in order; a repeated position is refused.
@@ -184,7 +184,7 @@ describe('Authoring flows', () => {
     expect(gapsOf(ws, 'TL-LEND')).toContain('proved TL-PAT-ACT-R01');
   });
 
-  it('LA-AUT-UC06-FL-T write a use case\'s flow as ordered steps', async () => {
+  it('LA-UCS-UC06-FL-T write a use case\'s flow as ordered steps', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
@@ -229,7 +229,7 @@ describe('Authoring flows', () => {
     expect(tl.refuse('use-case change-flow-step', { id: 'TL-LEND-UC01-FL-S01', fulfills: ['TL-LEND-UC02-R01'] })).toContain('TL-LEND-UC02-R01');
   });
 
-  it('LA-AUT-UC08-FL-T read each kind\'s stage and order from the schema', () => {
+  it('LA-PRD-UC08-FL-T read each kind\'s stage and order from the schema', () => {
     const tl = product();
     tl.command('domain add-domain', LENDING_DOMAIN);
     // S01: each kind's stage and place, in the reference and in the workspace, in the schema's one order.
@@ -246,7 +246,7 @@ describe('Authoring flows', () => {
     expect(tl.workspace().kinds.filter((k) => k.stage === 'use-cases').map((k) => k.kind)).toEqual([...kinds, 'house_rule']);
   });
 
-  it('LA-AUT-UC10-FL-T model each aggregate\'s entities and value objects', async () => {
+  it('LA-MOD-UC10-FL-T model each aggregate\'s entities and value objects', async () => {
     const tl = product();
     await tl.seed([
       add('domain', LENDING_DOMAIN),
@@ -281,7 +281,7 @@ describe('Authoring flows', () => {
     expect(ws.records.find((r) => r.id === 'TL-LEND-EN01')?.parts.entity_field.map((f) => f.name)).toEqual(['Due date', 'Borrower email', 'Tool']);
   });
 
-  it('LA-AUT-UC11-FL-T read the reference generated from the schema', async () => {
+  it('LA-PRD-UC11-FL-T read the reference generated from the schema', async () => {
     const tl = product();
     await tl.seed(LENDING);
     // S01: the reference, written from the schema and the check rows, with its word for a use case.
@@ -303,7 +303,7 @@ describe('Authoring flows', () => {
     tl.refuse('check add-check', { name: 'blank', product_id: 'TL', domain_id: 'LA-CHK', position: 2, severity: 'warning', summary: 'Blank.', explanation: ' ', query: 'SELECT 1' });
   });
 
-  it('LA-AUT-UC12-FL-T model commands and their events', async () => {
+  it('LA-MOD-UC12-FL-T model commands and their events', async () => {
     const tl = product();
     await tl.seed([
       add('domain', LENDING_DOMAIN),
@@ -339,7 +339,7 @@ describe('Authoring flows', () => {
     expect(gapsOf(ws, 'TL-LEND').filter((g) => /^(policy-hears-nothing|event-not-raised)/.test(g))).toEqual([]);
   });
 
-  it('LA-AUT-UC13-FL-T write the test plan', async () => {
+  it('LA-TST-UC13-FL-T write the test plan', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
@@ -378,7 +378,7 @@ describe('Authoring flows', () => {
     expect(problemsOf(tl.workspace(), 'test-data-set-file-missing')).toEqual([]);
   });
 
-  it('LA-AUT-UC22-FL-T write the business outcomes the product exists to achieve', async () => {
+  it('LA-PRD-UC22-FL-T write the business outcomes the product exists to achieve', async () => {
     const tl = product();
     await tl.seed([...LENDING]);
     // S01: a measurable outcome under the product; one without its measure is refused.
@@ -405,7 +405,7 @@ describe('Authoring flows', () => {
     expect(tl.command('business-outcome get-business-outcome', { id: 'TL-BO01' })).toContain('TL-LEND-UC01-R01-T01');
   });
 
-  it('LA-AUT-UC16-FL-T write the engineering standards the code follows', async () => {
+  it('LA-TEC-UC16-FL-T write the engineering standards the code follows', async () => {
     const tl = product();
     await tl.seed([...LENDING, add('command_handler', { id: 'TL-LEND-CMD01-H', title: 'openLoan', command_id: 'TL-LEND-CMD01', file: 'src/loans.ts', description: 'Opens the loan in one transaction.' })]);
     tl.write('src/loans.ts', '// TL-LEND-CMD01-H\n');
@@ -424,7 +424,7 @@ describe('Authoring flows', () => {
     expect(ws.coverage.find((c) => c.domain === null)?.obligations.find((o) => o.kind === 'standard_rule')).toMatchObject({ total: 1, designed: 1, built: 1, proved: 1 });
   });
 
-  it('LA-AUT-UC17-FL-T write the technical records that build the design', async () => {
+  it('LA-TEC-UC17-FL-T write the technical records that build the design', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
@@ -453,7 +453,7 @@ describe('Authoring flows', () => {
     expect(ws.coverage.find((c) => c.domain === 'TL-LEND')?.obligations.find((o) => o.kind === 'invariant')).toMatchObject({ designed: 1, built: 1 });
   });
 
-  it('LA-AUT-UC18-FL-T write what a flow reaches', async () => {
+  it('LA-IXD-UC18-FL-T write what a flow reaches', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
@@ -481,7 +481,7 @@ describe('Authoring flows', () => {
     expect(['TL-LEND-EP01', 'TL-V01', 'TL-INT01'].map(domainOf)).toEqual(['TL-LEND', 'TL-LEND', 'TL-LEND']);
   });
 
-  it('LA-AUT-UC19-FL-T merge two branches\' data', async () => {
+  it('LA-PRD-UC19-FL-T merge two branches\' data', async () => {
     const tl = product();
     await tl.seed(LENDING);
     const git = (...args: string[]) => {
@@ -522,7 +522,7 @@ describe('Authoring flows', () => {
     git('merge', '--abort');
   });
 
-  it('LA-AUT-UC20-FL-T sort a domain\'s rules by what they do', async () => {
+  it('LA-MOD-UC20-FL-T sort a domain\'s rules by what they do', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
@@ -550,7 +550,7 @@ describe('Authoring flows', () => {
     expect(ws.coverage.find((c) => c.domain === 'TL-LEND')?.obligations.filter((o) => o.total).map((o) => [o.kind, o.total])).toEqual([['constraint', 1], ['invariant', 1], ['specification', 1], ['uc_requirement', 1]]);
   });
 
-  it('LA-AUT-UC21-FL-T model read models and queries', async () => {
+  it('LA-MOD-UC21-FL-T model read models and queries', async () => {
     const tl = product();
     await tl.seed(LENDING);
     // S01: each read model with its fields, the aggregates it reads, and its queries.

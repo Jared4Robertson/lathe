@@ -1,4 +1,4 @@
-// The constraints of Authoring's value objects (LA-VO01 ... LA-VO17): each loads the fixture through the store with a
+// The constraints of Lathe's value objects (LA-VO01 ... LA-VO17): each loads the fixture through the store with a
 // bad value, which is refused, and with the good values, which load. Lathe's checks on column values live in two
 // places: the row checks of src/platform/data/rows.ts, made before the database sees a row, and the CHECKs and ENUM types of
 // schema/*.sql, which the database enforces.
@@ -29,7 +29,7 @@ const one = (rule: string, table: string, extra: Partial<StoreProblem> = {}) => 
 const notOneOf = (table: string, column: string, value: string, values: string[]) =>
   one('column', table, { file: `data/${table}.jsonl`, line: 1, message: `${table}.${column} ${JSON.stringify(value)} is not one of ${values.join(', ')}` });
 
-describe("Authoring's value objects", () => {
+describe("Lathe's value objects", () => {
   it('LA-VO01-C01-T A record ID that does not match the ID pattern is refused by the registry, naming the ID', async () => {
     for (const id of ['TL-v01', 'tl-V01', '1TL-V01', 'TL--V01', 'TL-V01-', 'TL-V 01', 'TL_V01']) {
       const problems = await refusals(firstRow('view', { id }));

@@ -1,4 +1,4 @@
-// How "Open in editor" (LA-AUT-UC15-R02) launches the editor the Shell settings name (shell-settings/model.ts):
+// How "Open in editor" (LA-PAT-RECORD-DATA-FILE-R02) launches the editor the Shell settings name (shell-settings/model.ts):
 // a known editor by its app or command, the system's default app for the file, or a command of the person's own.
 import { EDITOR_NAMES, type Settings } from './shell-settings/model.ts';
 

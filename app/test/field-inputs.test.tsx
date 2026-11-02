@@ -10,7 +10,7 @@ import { ColumnField, columnValue } from '../src/edit/fields';
 const column = (kind: ColumnDescription['kind'], over: Partial<ColumnDescription> = {}): ColumnDescription =>
   ({ name: 'field', sqlType: 'VARCHAR', kind, required: false, description: 'What it means.', ...over });
 
-describe('LA-PAT-FIELD-INPUTS-R01-T01 a field\'s input follows its column\'s type', () => {
+describe('LA-PAT-FIELD-INPUTS-R01-T01 LA-PAT-FIELD-INPUTS-R01-T02 LA-PAT-FIELD-INPUTS-R01-T03 LA-PAT-FIELD-INPUTS-R01-T04 LA-PAT-FIELD-INPUTS-R01-T05 LA-PAT-FIELD-INPUTS-R01-T06 a field\'s input follows its column\'s type', () => {
   it('gives each column type its input, labeled and described by its column', () => {
     const field = (c: ColumnDescription, label: string, long = false) => render(<ColumnField id={label} column={c} label={label} value="" long={long} onChange={() => {}} />);
     field(column('enum', { values: ['unit', 'browser'], required: true }), 'level');
@@ -38,11 +38,11 @@ describe('LA-PAT-FIELD-INPUTS-R01-T01 a field\'s input follows its column\'s typ
   });
 });
 
-describe('LA-PAT-FIELD-INPUTS-R02-T01 a shared field input knows no kind', () => {
+describe('LA-PAT-FIELD-INPUTS-R02-T01 LA-PAT-FIELD-INPUTS-R02-T02 LA-PAT-FIELD-INPUTS-R02-T03 LA-PAT-FIELD-INPUTS-R02-T04 LA-PAT-FIELD-INPUTS-R02-T05 LA-PAT-FIELD-INPUTS-R02-T06 a shared field input knows no kind', () => {
   it('imports nothing of the specs, the aggregates\' slices or the shell, and names no kind', () => {
     const text = readFileSync(path.join(import.meta.dirname, '../src/edit/fields.tsx'), 'utf8');
     const imports = [...text.matchAll(/from '([^']+)'/g)].map((m) => m[1]);
-    expect(imports.filter((i) => /specs|authoring|shell|graph|views/.test(i))).toEqual([]);
+    expect(imports.filter((i) => /specs|product|domain-modeling|use-cases|interaction-design|technical-specification|test-planning|shell|graph|views/.test(i))).toEqual([]);
     expect(text).not.toMatch(/use_case|flow_step|uc_requirement/);
   });
 });

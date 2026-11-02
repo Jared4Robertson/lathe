@@ -6,7 +6,7 @@ import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { modelWorkspace } from './fixtures/model';
 import { main, openApp, section } from './helpers';
 
-// The Integration page and its editor (LA-AUT-A14, LA-V153): an integration and its adapter and tests are read through
+// The Integration page and its editor (LA-IXD-A14, LA-V153): an integration and its adapter and tests are read through
 // the aggregate's own query, and changed only through the aggregate's own commands, one per change, each refusal shown
 // with its reasons. The aggregate has no Move.
 

@@ -97,7 +97,7 @@ function flags<M extends Mode>(mode: M): Flags<M> {
 
 /** What an aggregate's commands and queries are reached by: `lathe use-case`, the use_case_ tools, /api/use-case/. */
 export interface Slice {
-  /** The aggregate's record ID, such as LA-AUT-A11; a slice of reads alone, with no aggregate of its own, names its read model, such as LA-TRC-RM11. */
+  /** The aggregate's record ID, such as LA-UCS-A11; a slice of reads alone, with no aggregate of its own, names its read model, such as LA-TRC-RM11. */
   aggregate: string;
   /** Its name in kebab case, such as use-case. */
   name: string;
@@ -105,7 +105,7 @@ export interface Slice {
 
 /** One command: what it is in the model, how each interface names it, its input and its handler. Each is written `satisfies CommandDefinition<T>`, keeping its literal route for the app (InputsByRoute). */
 export interface CommandDefinition<T = never> {
-  /** The command's record ID, such as LA-AUT-CMD112. */
+  /** The command's record ID, such as LA-UCS-CMD112. */
   id: string;
   slice: Slice;
   /** Its name in kebab case, such as add-flow-step: `lathe use-case add-flow-step`, tool use_case_add_flow_step. */
@@ -125,7 +125,7 @@ export interface CommandDefinition<T = never> {
  * made (`reader`), and the query runner injects it: its handler is given only that reader, never the data.
  */
 export interface QueryDefinition<T = never, R = unknown, D = unknown> {
-  /** The query's record ID, such as LA-AUT-QRY100. */
+  /** The query's record ID, such as LA-UCS-QRY100. */
   id: string;
   slice: Slice;
   name: string;

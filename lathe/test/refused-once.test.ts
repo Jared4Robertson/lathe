@@ -33,14 +33,14 @@ const check = (changes: Record<string, string | number> = {}): Data => ({
 });
 
 describe('one problem per mistake', () => {
-  it('LA-AUT-UC04-R05-T01 A product relation declared twice is refused once, naming its file and line', async () => {
+  it('LA-PRD-UC04-R05-T01 A product relation declared twice is refused once, naming its file and line', async () => {
     const relation = { name: 'enforces', source_kind: 'ui_component', target_kind: 'uc_requirement', product_id: 'EX', forward_label: 'Enforces', reverse_label: 'Enforced by', description: 'It enforces it.' };
     expect(await refusals(adding(complete(), { product_relation: [relation, relation] }))).toEqual([
       expect.objectContaining({ rule: 'primary-key', file: 'data/product_relation.jsonl', line: 2, message: expect.stringContaining('is already on line 1') }),
     ]);
   });
 
-  it('LA-PLT-UC01-R12-T01 A row taking another record\'s ID is refused once, as unique-id naming that record\'s file and line, and the links to the ID are not', async () => {
+  it('LA-PRD-UC37-R04-T01 A row taking another record\'s ID is refused once, as unique-id naming that record\'s file and line, and the links to the ID are not', async () => {
     // EX-LEND-SP01 is the target of a checks link and the source of a reads link.
     const twin = { id: 'EX-LEND-SP01', title: 'Twin', uc_requirement_id: 'EX-LEND-UC01-R01', level: 'service', state: 'not automated yet', when: 'A member asks for a tool on loan.', then: 'The library refuses.' };
     expect(await refusals(adding(complete(), { use_case_test: [twin] }))).toEqual([
@@ -48,7 +48,7 @@ describe('one problem per mistake', () => {
     ]);
   });
 
-  it('LA-PLT-UC01-R08-T01 A parent that names no record is refused once, as a foreign key naming the record and the kind it must be', async () => {
+  it('LA-PRD-UC37-R03-T01 A parent that names no record is refused once, as a foreign key naming the record and the kind it must be', async () => {
     const lost = { id: 'EX-LEND-UC03', title: 'Lost', capability_id: 'EX-LEND-CAP09', goal: 'A member finds a lost tool.' };
     const actor = { use_case_id: 'EX-LEND-UC03', position: 1, role_name: 'Member' };
     expect(await refusals(adding(complete(), { use_case: [lost], use_case_actor: [actor] }))).toEqual([
@@ -56,7 +56,7 @@ describe('one problem per mistake', () => {
     ]);
   });
 
-  it('LA-PLT-UC01-R09-T01 A link between kinds its relation does not allow, and a parent column its kind lacks, are each refused once', async () => {
+  it('LA-PRD-UC38-R01-T01 A link between kinds its relation does not allow, and a parent column its kind lacks, are each refused once', async () => {
     expect(await refusals(adding(complete(), { renders: [{ source_id: 'EX-UI01', target_id: 'EX-LEND-UC01-R01' }] }))).toEqual([
       expect.objectContaining({ file: 'data/renders.jsonl', line: 2, message: expect.stringContaining('names no view') }),
     ]);
@@ -68,7 +68,7 @@ describe('one problem per mistake', () => {
 });
 
 describe("a test's run by", () => {
-  it('LA-TRC-UC03-R02-T01 A state other than automated, manual and not automated yet, in any letter case, or none, is refused', async () => {
+  it('LA-TST-UC03-R02-T01 A state other than automated, manual and not automated yet, in any letter case, or none, is refused', async () => {
     for (const state of ['someday', 'Manual']) {
       expect(await refusals(test({ state })), state).toEqual([
         expect.objectContaining({ rule: 'column', file: 'data/use_case_test.jsonl', message: `use_case_test.state "${state}" is not one of automated, manual, not automated yet` }),
@@ -77,7 +77,7 @@ describe("a test's run by", () => {
     expect(await refusals(test({ state: undefined }))).toEqual([expect.objectContaining({ rule: 'required', message: 'use_case_test.state is required' })]);
   });
 
-  it('LA-TRC-UC03-R06-T01 A level outside the five, or none, is refused', async () => {
+  it('LA-TST-UC03-R06-T01 A level outside the five, or none, is refused', async () => {
     expect(await refusals(test({ level: 'smoke' }))).toEqual([
       expect.objectContaining({ rule: 'column', message: 'use_case_test.level "smoke" is not one of unit, integration, service, system, browser' }),
     ]);
