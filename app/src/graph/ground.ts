@@ -199,11 +199,17 @@ const packRow = (sizes: readonly Size[], gap: number) => packRows(sizes, Infinit
 
 /**
  * Boxes in rows, in reading order, `gap` apart, the rows as wide as keeps the whole about PACK_ASPECT (its room's area
- * times the aspect, square-rooted), and never narrower than `columns` leaves or the widest box.
+ * times the aspect, square-rooted), and never narrower than `columns` leaves or the widest box. Three or more large
+ * boxes whose aimed width falls just short of two side by side would stand in one tall column: then the rows take two,
+ * when that keeps the whole nearer the aspect.
  */
 export function packShaped(sizes: readonly Size[], columns: number, gap: number) {
   const room = sizes.reduce((a, s) => a + (s.w + gap) * (s.h + gap), 0);
-  return packRows(sizes, Math.max(rowOf(columns, gap), ...sizes.map((s) => s.w), Math.sqrt(room * PACK_ASPECT)), gap);
+  const aimed = packRows(sizes, Math.max(rowOf(columns, gap), ...sizes.map((s) => s.w), Math.sqrt(room * PACK_ASPECT)), gap);
+  if (sizes.length < 3 || aimed.at.some((p) => p.x > 0)) return aimed;
+  const paired = packRows(sizes, Math.max(...sizes.map((s) => s.w)) * 2 + gap, gap);
+  const off = (shape: { w: number; h: number }) => Math.abs(Math.log(shape.w / shape.h / PACK_ASPECT));
+  return off(paired) < off(aimed) ? paired : aimed;
 }
 
 /** The widest row of `n` leaves, `gap` apart. */
