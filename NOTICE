@@ -9,3 +9,8 @@ OFL.txt sits beside its files.
 The web app bundles elkjs 0.12 (https://www.npmjs.com/package/elkjs), unmodified, which Lathe uses under the
 Eclipse Public License 2.0 (https://www.eclipse.org/legal/epl-2.0/), one of the two licenses it is offered under.
 Its source is available at https://github.com/kieler/elkjs and in its npm package.
+
+The desktop app's speech helper (desktop/native/speech) links FluidAudio 0.18.2
+(https://github.com/FluidInference/FluidAudio), under the Apache License 2.0. The speech model it runs, NVIDIA's
+Parakeet Unified 0.6B in FluidInference's Core ML conversion, is not shipped: the helper fetches its weights from
+Hugging Face on first use, under NVIDIA's model license.

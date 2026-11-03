@@ -1,6 +1,7 @@
 // The chat's voice in the shell (LA-PLT-UC20): whether this Mac can dictate, and a window's listening, by
-// the speech helper (native/speech/main.swift, built to out/lathe-speech), which hears the microphone and recognizes
-// speech on the Mac itself with macOS's SpeechAnalyzer: audio never leaves it, and nothing is recorded or saved.
+// the speech helper (the Swift package native/speech, built to out/lathe-speech), which hears the microphone and
+// recognizes speech on the Mac itself with NVIDIA's Parakeet model (macOS's SpeechAnalyzer when that model cannot be
+// loaded): audio never leaves it, and nothing is recorded or saved.
 // A window listens only while the page wants it to and the window is in front (shouldListen): going behind another
 // window or app stops the helper, and coming back in front starts it again. The page reads the events as
 // app/src/chat/types.ts's VoiceEvent; this file checks every line the helper writes before passing it on.
@@ -31,7 +32,7 @@ export type VoiceEvent =
 /** What the helper writes beside the events the page gets: ready, an error, or (for probe) whether the Mac can. */
 type HelperLine = VoiceEvent | { type: 'ready' } | { type: 'error'; message: string } | { type: 'support'; onDevice: boolean; reason: string | null };
 
-/** The macOS that has SpeechAnalyzer, the on-device recognizer the helper uses: macOS 26 is Darwin 25. */
+/** The macOS the helper needs, for SpeechAnalyzer, its fallback recognizer: macOS 26 is Darwin 25. */
 const FIRST_DARWIN = 25;
 
 /** The helper's path: in the packed app, beside its resources (unpacked, so it can run); otherwise the build's. */

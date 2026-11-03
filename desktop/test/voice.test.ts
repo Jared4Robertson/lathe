@@ -1,6 +1,6 @@
 // The chat's voice in the shell (src/voice.ts): the front-only rule with a stand-in helper, the helper's lines checked,
-// and, on macOS 26 or later, the real helper (native/speech) recognizing recorded audio on the Mac, its words read by
-// the app's own dictation (app/src/chat/voice/), as the window would.
+// and, on macOS 26 or later, the real helper (native/speech) recognizing recorded audio on the Mac with the Parakeet
+// model, its words read by the app's own dictation (app/src/chat/voice/), as the window would.
 import { execFileSync, spawn } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import { existsSync } from 'node:fs';
@@ -107,9 +107,13 @@ describe('LA-PLT-UC26-R02-T01 The chat listens only while its window is in front
 const helper = speechHelperPath(null, desktop);
 const canRecognize = process.platform === 'darwin' && Number.parseInt(os.release(), 10) >= 25;
 
+// The helper is built (the first time, with its package's dependency fetched), and the Parakeet model fetched once
+// (about 0.6 GB) and loaded, before any test is timed.
 beforeAll(() => {
-  if (canRecognize) execFileSync(process.execPath, [path.join(desktop, 'scripts', 'speech.ts')], { cwd: desktop, stdio: 'inherit' });
-}, 300_000);
+  if (!canRecognize) return;
+  execFileSync(process.execPath, [path.join(desktop, 'scripts', 'speech.ts')], { cwd: desktop, stdio: 'inherit' });
+  execFileSync(helper, ['prepare'], { stdio: ['ignore', 'ignore', 'inherit'] });
+}, 900_000);
 
 /** The helper's lines for an audio file, read as the shell reads them. */
 function hearFile(file: string): Promise<VoiceEvent[]> {
