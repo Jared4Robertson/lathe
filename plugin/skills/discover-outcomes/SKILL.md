@@ -19,6 +19,8 @@ A business outcome is a measurable change in the world that the product exists t
 
 Shape of a good one: a title naming the state wanted (More tools in use, not a task such as Increase borrowing or a feature such as Online borrowing); a statement that is a change in the world, not "Members can borrow tools"; a measure someone can actually count from the product's own data or runs; a target that is a value and a date.
 
+An outcome's notes say how it serves the product's headline outcome, the one the product exists for: "Fewer lost tools keeps the shelves full, which is what brings members back to borrow." An outcome whose notes cannot say this is a candidate to drop or restate.
+
 Write a handful, not dozens: three to six cover most products. Two outcomes with the same measure are one outcome. An outcome no capability could move is a wish; leave it out or say what would serve it.
 
 Everything else in the product serves at least one outcome, and Lathe works that out: a record serves an outcome when a use case whose capability serves it, or that a step of a journey serving it carries out, reaches the record. You never type that link. A record that serves nothing is a warning: write the use case that needs it, or remove the record.

@@ -12,6 +12,8 @@
 //   case's page), in under 500 ms from the file's change; so is one of the page's own writes (the use case retitled
 //   through its command's route), from the request; the checks' run in the background is announced within 4 s of the
 //   change; and a cold load with every check takes under 4 s.
+// - The full check (`lathe check` in a fresh process on Lathe's own spec, about 7,000 records) takes under 20 s
+//   (LA-CHK-A1-SR02-T01), from the process's start to its exit.
 // It also measures the reference, without a budget.
 //
 // Timings mean nothing on a machine that is busy with other work, so when the one-minute load average is above
@@ -40,7 +42,7 @@ import { LARGE_PRODUCT, largeProduct } from './large-product.ts';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, '../..');
 
-export const ENGINE_BUDGETS = { loadMs: 2000, reloadMs: 500, cliMs: 800 } as const;
+export const ENGINE_BUDGETS = { loadMs: 2000, reloadMs: 500, cliMs: 800, checkMs: 20000 } as const;
 /**
  * The large product's budgets (LA-PLT-UC03-R05). The edit's is the Owner's, and holds for the page's own writes too.
  * The others are set from measurements on the dev machine (2026-10-29): without its three slow parts (the
@@ -105,6 +107,16 @@ function cliGetUseCase(root: string, id: string): number {
   };
   once();
   return median(Array.from({ length: RUNS }, once));
+}
+
+/** `lathe check` in a fresh process, timed from its start to its exit; one run, as it takes seconds. */
+function cliCheck(root: string): number {
+  const bin = path.join(here, '..', 'bin', 'lathe.ts');
+  const start = performance.now();
+  const run = spawnSync(process.execPath, [bin, 'check', '--root', root], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const ms = performance.now() - start;
+  if (run.status !== 0) throw new Error(`lathe check failed (${run.status}): ${run.stderr}`);
+  return ms;
 }
 
 /** The steps of a load, slowest first, with the totals of the inserts, integrity queries and checks. */
@@ -236,6 +248,7 @@ try {
   judge("Lathe's spec, loaded again after a change", live.ms, ENGINE_BUDGETS.reloadMs, phases(live.timings));
   if (PROFILE) lines.push(`Steps of that load (1 ms and over):\n${profile(live.timings)}`);
   judge('A cold CLI command (lathe use-case get-use-case)', cliGetUseCase(lathe, 'LA-PLT-UC01'), ENGINE_BUDGETS.cliMs, `median of ${RUNS} fresh processes`);
+  judge('The full check (lathe check)', cliCheck(lathe), ENGINE_BUDGETS.checkMs, 'one fresh process on Lathe\'s spec');
   const refs: number[] = [];
   for (let i = 0; i < RUNS; i++) { const t = performance.now(); await buildReference(lathe); refs.push(performance.now() - t); }
   judge('Reference (first, then cached)', refs[0], null, `cached ${median(refs.slice(1)).toFixed(1)} ms`);

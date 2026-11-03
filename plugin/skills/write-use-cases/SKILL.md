@@ -33,6 +33,8 @@ Every use case sits in a capability: an ordered slice of its domain. Add the dom
 - **A goal, not a quality**: "Read without anything jumping" or "Work by keyboard" are properties every use case keeps. Write them as rules of a quality standard (`write-the-technical-spec`), not as use cases.
 - **On its own**: a goal nobody ever starts alone is a step of the use case it sits in; the same steps in three or more use cases are a pattern.
 
+A use case's **goal** says who acts and what they want, and ends with one plain sentence of the value it gives that actor, why it matters to them, so a goal reads as more than mechanics. Mechanics only: "A member reserves a tool for a date." With the value: "A member reserves a tool for a date, so the tool is waiting when they come and nobody makes a wasted trip."
+
 Another actor's write is what starts a use case, never a step of it (`another-actor-writes-in-a-step`): a Reader's use case starts when an Agent's change lands; the Agent's write is the Agent's own use case.
 
 When a use case fails a test, split it, fold it into the use case it is a step of, make it a journey, a policy or a quality standard's rule, and move its requirements, tests and flow steps with what they prove, in one change.
