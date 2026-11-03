@@ -49,7 +49,7 @@ interface ToolbarForm {
   picker: boolean;
   /** Each step button's letter. */
   letters: boolean;
-  /** The stage's narrow form of its own controls (the Graph's layouts by their first letter). */
+  /** The stage's narrow form of its own controls (the Graph's layouts as one Layout menu), every control still a word or a named icon. */
   narrow: boolean;
   /** The groups folded into the More menu, in its order. */
   folded: readonly ToolbarGroup[];

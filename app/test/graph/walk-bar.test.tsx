@@ -88,4 +88,20 @@ describe('the walk on a phone', () => {
     expect(outside).toMatch(/\.stage-layout\.is-phone > \.focus-stage \{ --key-slot: var\(--touch-target\); \}/);
     expect(css).toMatch(/@media \(orientation: portrait\) \{\s*\.stage-layout\.is-phone > \.focus-stage \.stage-key-word \{[^}]*clip-path: inset\(50%\)/);
   });
+
+  it('LA-V93-R76-T03 Nothing in the bar touches: 8 px between its targets and before the Key chip, each 44 px, and narrower than 360 px each button is its icon alone, its word kept as its name', async () => {
+    phone();
+    await openApp(`/${FROM}?stage=graph`, { data: testWorkspace() });
+    await waitFor(() => expect(bar()).toBeInTheDocument());
+    // Each button keeps its word in the page, so its name and the word it shows from 360 px up agree (LA-V61-R44).
+    for (const b of within(bar()).getAllByRole('button')) expect(b.getAttribute('aria-label')).toMatch(new RegExp(b.querySelector('.stage-walk-word')!.textContent!, 'i'));
+    const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
+    const outside = css.replace(/@media[^{]*\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}/g, '');
+    // The buttons share the bar's width, 8 px apart, each at least a touch target, and 8 px clear of the Key chip's slot.
+    expect(outside).toMatch(/\.stage-walk-bar \{[^}]*display: flex; gap: 8px;/);
+    expect(outside).toMatch(/\.stage-walk-step \{[^}]*flex: 1 1 auto; min-width: var\(--touch-target\); min-height: var\(--touch-target\);/);
+    expect(outside).toMatch(/\.stage-layout\.is-phone > \.focus-stage \.stage-walk-bar \{ padding-right: calc\(max\(8px, env\(safe-area-inset-right\)\) \+ var\(--key-slot\) \+ 8px\); \}/);
+    // Narrower than 360 px the word is hidden but for assistive technology, never squeezed.
+    expect(css).toMatch(/@media \(max-width: 359\.98px\) \{\s*\.stage-walk-word \{[^}]*clip-path: inset\(50%\)/);
+  });
 });

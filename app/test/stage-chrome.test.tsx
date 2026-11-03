@@ -136,6 +136,34 @@ describe('the toolbar\'s fold order', () => {
       client.mockRestore();
     }
   });
+
+  it('LA-V93-R21-T03 Too narrow for the three layout words, the Graph\'s toolbar shows one Layout menu naming the layout in words, never a letter, and choosing in it switches the layout', async () => {
+    // The row overflows until the narrow tier (jsdom lays nothing out), as on a 320 px phone.
+    const fits = TOOLBAR_TIERS.indexOf('narrow');
+    const scroll = vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.classList.contains('stage-toolbar') && TOOLBAR_TIERS.indexOf(this.dataset.tier as (typeof TOOLBAR_TIERS)[number]) < fits ? 900 : 0;
+    });
+    const client = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(300);
+    try {
+      await openApp('/P-D-UC01?stage=graph', { data: modelWorkspace() });
+      await waitFor(() => expect(stage().querySelector('.graph-box')).not.toBeNull());
+      const toolbar = stage().querySelector<HTMLElement>('.stage-toolbar')!;
+      await waitFor(() => expect(toolbar).toHaveAttribute('data-tier', 'narrow'));
+      // No layout button group, and no control in the row reads as a lone letter.
+      expect(within(toolbar).queryByRole('group', { name: 'Layout' })).toBeNull();
+      const more = toolbar.querySelector('.stage-more-body')!;
+      for (const el of toolbar.querySelectorAll('button, summary, select')) if (!more.contains(el)) expect(el.textContent!.trim()).not.toMatch(/^[A-Z]$/);
+      const pick = within(toolbar).getByRole('combobox', { name: 'Layout' });
+      expect([...pick.querySelectorAll('option')].map((o) => o.textContent)).toEqual(['Tree', 'Nested', 'Map']);
+      expect(pick).toHaveValue('tree');
+      fireEvent.change(pick, { target: { value: 'nested' } });
+      await waitFor(() => expect(stage().querySelector('[data-layout]')).toHaveAttribute('data-layout', 'nested'));
+      expect(within(toolbar).getByRole('combobox', { name: 'Layout' })).toHaveValue('nested');
+    } finally {
+      scroll.mockRestore();
+      client.mockRestore();
+    }
+  });
 });
 
 describe('the stage key bar', () => {

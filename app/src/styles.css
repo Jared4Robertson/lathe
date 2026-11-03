@@ -318,6 +318,8 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-filter-body label { display: flex; gap: 6px; align-items: center; font-size: 0.82rem; }
 .graph-filters > summary .icon { align-self: center; }
 .graph-depth.is-narrow button { padding-inline: 6px; }
+/* The layouts' narrow form (LA-V93-R21): one Layout menu showing the layout's word, never a letter. */
+.graph-layout-pick { flex: none; font: inherit; font-size: 0.82rem; font-weight: 600; padding: 3px 4px; border: 1px solid var(--steel); border-radius: 5px; background: var(--sheet); color: var(--steel); cursor: pointer; }
 .stage-more-body .graph-depth.is-idle { display: none; }
 .stage-more-body .graph-depth { flex-wrap: wrap; }
 .graph-filter-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; }
@@ -439,11 +441,15 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 /* On a phone: a Key chip at the foot of the stage, opening the entries with their meanings as a sheet. */
 .stage-key-chip { position: absolute; z-index: 6; bottom: var(--stage-foot); left: 50%; translate: -50% 0; padding: 4px 12px; border: 1px solid var(--float-border); border-radius: 999px; background: var(--sheet); box-shadow: var(--float-shadow); font-size: 0.8rem; }
 /* On a phone, the walk's bar (StageWalkBar, LA-V93-R76): Previous, Out, In and Next along the foot of the stage, each a
-   touch target with its icon and word, clear of the safe area. On a phone every stage's foot rises above it, so the camera, the minimap, the key chip and the touch card sit over the
+   touch target with its icon, and its word from 360 px up (narrower, the word is its name alone, never squeezed), the
+   buttons sharing the bar's width with 8 px between their targets, clear of the safe area. On a phone every stage's foot rises above it, so the camera, the minimap, the key chip and the touch card sit over the
    bar, never on it, and the read-only note rises with them. */
 :root { --walk-bar-height: calc(var(--touch-target) + 13px); }
-.stage-walk-bar { position: absolute; z-index: 9; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; box-sizing: border-box; height: calc(var(--walk-bar-height) + env(safe-area-inset-bottom)); padding: 6px max(8px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); border-top: 1px solid var(--rule); background: var(--sheet); }
-.stage-walk-step { min-width: var(--touch-target); min-height: var(--touch-target); justify-content: center; }
+.stage-walk-bar { position: absolute; z-index: 9; left: 0; right: 0; bottom: 0; display: flex; gap: 8px; box-sizing: border-box; height: calc(var(--walk-bar-height) + env(safe-area-inset-bottom)); padding: 6px max(8px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); border-top: 1px solid var(--rule); background: var(--sheet); }
+.stage-walk-step { flex: 1 1 auto; min-width: var(--touch-target); min-height: var(--touch-target); justify-content: center; padding-inline: 4px; }
+@media (max-width: 359.98px) {
+  .stage-walk-word { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
 .stage-walk-step:focus-visible { outline: 2px solid var(--steel); outline-offset: -2px; }
 .stage-layout.is-phone > .focus-stage { --stage-foot: calc(var(--walk-bar-height) + env(safe-area-inset-bottom) + var(--float-inset)); }
 .stage-key-sheet-list { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 4px 16px 16px; list-style: none; overflow-y: auto; scrollbar-gutter: stable; font-size: 0.85rem; }
@@ -800,6 +806,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .row-link:focus-visible::after { outline: 2px solid var(--steel); outline-offset: -1px; }
 @media (prefers-reduced-motion: reduce) { .row-link::after { transition: none; } }
 .graph-depth button:not([aria-pressed="true"]):not(:disabled):hover { background: var(--hover-bg); border-color: var(--steel); }
+.graph-layout-pick:hover { background: var(--hover-bg); }
 .palette-list li:not(.active):hover { background: var(--hover-bg); }
 .graph-filters > summary:hover { color: var(--steel); }
 @media (prefers-reduced-motion: reduce) {
@@ -1035,7 +1042,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* On a phone the Key chip never covers node text (LA-V93-R76): it sits in the walk's bar, at its end, in a slot the bar's
    buttons leave. Upright, the slot is one touch target, the chip its icon alone (its word kept for assistive technology). */
 .stage-layout.is-phone > .focus-stage { --key-slot: var(--touch-target); }
-.stage-layout.is-phone > .focus-stage .stage-walk-bar { padding-right: calc(max(8px, env(safe-area-inset-right)) + var(--key-slot) + 4px); }
+.stage-layout.is-phone > .focus-stage .stage-walk-bar { padding-right: calc(max(8px, env(safe-area-inset-right)) + var(--key-slot) + 8px); }
 .stage-layout.is-phone > .focus-stage .stage-key-chip { z-index: 10; left: auto; right: max(8px, env(safe-area-inset-right)); translate: none; bottom: calc(6px + env(safe-area-inset-bottom)); width: var(--key-slot); min-height: var(--touch-target); padding: 0; justify-content: center; box-shadow: none; }
 @media (orientation: portrait) {
   .stage-layout.is-phone > .focus-stage .stage-key-word { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -1216,7 +1223,7 @@ a.row-link.row-link:focus-visible { outline: none; }
   .quick-open-line .palette-title { flex-basis: 100%; white-space: normal; }
   /* Readable on a phone: body text a step up, and boxes at 16 px so iOS never zooms in on focus. */
   body { font-size: max(var(--text-size), 16px); }
-  :is(.dialog, .long-list-tools, .graph-filters, .tool-panel) :is(input, select, textarea), .dialog-search { font-size: 16px; }
+  :is(.dialog, .long-list-tools, .graph-filters, .tool-panel) :is(input, select, textarea), .dialog-search, .graph-layout-pick { font-size: 16px; }
 }
 
 /* A canvas by touch: the camera's gestures take the finger (pan and pinch), never the page; a tap opens a node. */
@@ -1241,7 +1248,7 @@ a.row-link.row-link:focus-visible { outline: none; }
   .resize-handle { z-index: 5; margin-inline: calc((var(--panel-gap) - var(--touch-target)) / 2); }
   /* As specific as the most specific rule for a control's size it lists, so no wide-screen size wins on a touch screen. */
   :is(.icon-button, .button, .rail-item, .menu a, .nav-row, .nav-chevron, .nav-folder-head, .nav-section-head,
-    .graph-depth button, .graph-filters > summary, .quick-find-button, .stage-toolbar[data-names] :is(.stage-frame, .stage-tidy),
+    .graph-depth button, .graph-layout-pick, .graph-filters > summary, .quick-find-button, .stage-toolbar[data-names] :is(.stage-frame, .stage-tidy),
     .palette-list li, .tab, .long-list-tools input, .quick-open-box input, .dialog-search, .segment, .setting-switch, .file-button, .crumb-more-button,
     .theme-row .theme-pick, .changes-since select, .search input) { min-width: var(--touch-target); min-height: var(--touch-target); }
   .menu .rail-item { width: var(--touch-target); height: var(--touch-target); }

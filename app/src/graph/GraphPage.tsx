@@ -163,17 +163,27 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
   }
   // The shared stage toolbar (views/StageChrome.tsx): the steps, Out, In and Frame, the Changes controls, then the layout
   // switch, the filters and, in the Map, Tidy up (primary, always in the row), and depth (secondary, folding into More). In the toolbar's
-  // narrow form the layouts show one letter each. The key is a bar along the bottom (StageKey).
+  // narrow form the layouts are one Layout menu, each still named by its word. The key is a bar along the bottom (StageKey).
   const tools = (narrow: boolean) => ({
     primary: (
       <>
-        <div className={`graph-depth graph-layout${narrow ? ' is-narrow' : ''}`} role="group" aria-label="Layout">
-          {GRAPH_LAYOUTS.map((l) => (
-            <Tooltip key={l.layout} label={l.tip} command={l.layout !== layout ? 'graphLayout' : undefined}>
-              <button type="button" aria-pressed={layout === l.layout} aria-label={narrow ? l.label : undefined} onClick={() => update({ layout: l.layout })}>{narrow ? l.label[0] : l.label}</button>
-            </Tooltip>
-          ))}
-        </div>
+        {narrow ? (
+          // Too narrow for the three words (a 320 px phone): one Layout menu naming the layout shown, never a letter
+          // (LA-V93-R21); the phone's own picker opens on one tap.
+          <Tooltip label="Layout" command="graphLayout">
+            <select className="graph-layout-pick" aria-label="Layout" value={layout} onChange={(e) => update({ layout: e.target.value as GraphLayout })}>
+              {GRAPH_LAYOUTS.map((l) => <option key={l.layout} value={l.layout}>{l.label}</option>)}
+            </select>
+          </Tooltip>
+        ) : (
+          <div className="graph-depth graph-layout" role="group" aria-label="Layout">
+            {GRAPH_LAYOUTS.map((l) => (
+              <Tooltip key={l.layout} label={l.tip} command={l.layout !== layout ? 'graphLayout' : undefined}>
+                <button type="button" aria-pressed={layout === l.layout} onClick={() => update({ layout: l.layout })}>{l.label}</button>
+              </Tooltip>
+            ))}
+          </div>
+        )}
         <FilterControls index={index} filters={filters} setFilters={setFilters} minimap={minimap} setMinimap={(on) => update({ minimap: on })} allLinks={layout === 'map' ? allLinks : null} setAllLinks={(on) => update({ allLinks: on })} />
         {layout === 'map' && <TidyUp />}
       </>
