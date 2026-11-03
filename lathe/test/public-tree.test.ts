@@ -1,5 +1,5 @@
-// LA-STD-PRINCIPLES-R07-T01 (LA-STD-PRINCIPLES-R07): no tracked file names a client product Lathe was tried on, a person as a
-// person, or a machine's own paths. A scan of every text file git tracks.
+// LA-STD-PRINCIPLES-R07-T01 (LA-STD-PRINCIPLES-R07): no tracked file names a product Lathe was tried on for a client or a
+// collaborator, a person as a person, or a machine's own paths. A scan of every text file git tracks.
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -13,10 +13,13 @@ const FIRST = 'Jar' + 'ed';
 const FAMILY = 'Robert' + 'son';
 /** The client product's name, from parts too. */
 const PRODUCT = 'S' + '2';
+/** The product of a collaborator who tried Lathe, from parts too. */
+const COLLABORATOR_PRODUCT = 'Ste' + 'go';
 
 /** What no tracked file may name, each with what it is. */
 const FORBIDDEN: { what: string; pattern: RegExp }[] = [
   { what: 'a client product', pattern: new RegExp(`\\b${PRODUCT}(?:_sandbox)?\\b`, 'i') },
+  { what: "a collaborator's product", pattern: new RegExp(`\\b${COLLABORATOR_PRODUCT}\\b`, 'i') },
   { what: 'a person', pattern: new RegExp(`\\b${FIRST}\\b`, 'i') },
   { what: "a person's home folder name", pattern: new RegExp(FIRST + FAMILY, 'i') },
   { what: 'a home folder', pattern: /\/(?:Users|home)\/(?!person\/|Shared\/)[\w.-]+\//i },
@@ -42,13 +45,15 @@ function trackedFiles(): string[] {
   return result.stdout.split('\0').filter(Boolean);
 }
 
-describe('LA-STD-PRINCIPLES-R07-T01 no tracked file names a client product, a person or a machine', () => {
+describe('LA-STD-PRINCIPLES-R07-T01 no tracked file names a product Lathe was tried on, a person or a machine', () => {
   it('finds each kind of mention and lets the neutral fixture and the author fields pass', () => {
     // The samples are built from parts, so this file's own text names nothing it forbids.
     const u = '/' + 'Users/';
     const sample = [
       `as ${PRODUCT} lays out its specs`,
       `open ~/Development/${PRODUCT}_sandbox`,
+      `tried on ${COLLABORATOR_PRODUCT.toUpperCase()} first`,
+      `the ${COLLABORATOR_PRODUCT.toLowerCase()}graph module`,
       `decided by ${FIRST}`,
       `cd ~/${FIRST.toLowerCase()}${FAMILY.toLowerCase()}`,
       `${u}someone/Development/Lathe`,
@@ -62,11 +67,12 @@ describe('LA-STD-PRINCIPLES-R07-T01 no tracked file names a client product, a pe
     expect(findings('f', sample)).toEqual([
       'f:1: names a client product',
       'f:2: names a client product',
-      'f:3: names a person',
-      "f:4: names a person's home folder name",
-      'f:5: names a home folder',
-      'f:6: names a home folder',
-      'f:7: names the system temp folder',
+      "f:3: names a collaborator's product",
+      'f:5: names a person',
+      "f:6: names a person's home folder name",
+      'f:7: names a home folder',
+      'f:8: names a home folder',
+      'f:9: names the system temp folder',
     ]);
   });
 

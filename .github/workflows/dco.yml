@@ -1,0 +1,26 @@
+# Every commit in a pull request carries a Developer Certificate of Origin sign-off (`git commit -s`), matching its
+# author (scripts/check-dco.sh; see CONTRIBUTING.md). Safe for forks: it runs on pull_request (not
+# pull_request_target), reads only, and uses no secrets. The commit range comes through the environment.
+name: dco
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  dco:
+    runs-on: ubuntu-latest
+    steps:
+      # actions/checkout v7.0.1, pinned by commit.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - run: scripts/check-dco.sh "$BASE_SHA" "$HEAD_SHA"
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}

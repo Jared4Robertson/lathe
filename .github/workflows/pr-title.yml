@@ -20,7 +20,7 @@ jobs:
       # actions/setup-node v7.1.0, pinned by commit.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
-          node-version: 26
+          node-version-file: .nvmrc
       # The title goes through the environment, never into the script's text.
       - run: node lathe/scripts/check-commits.ts --title "$PR_TITLE"
         env:

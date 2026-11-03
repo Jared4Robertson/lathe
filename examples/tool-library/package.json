@@ -2,6 +2,7 @@
   "name": "tool-library",
   "version": "0.1.0",
   "private": true,
+  "license": "Apache-2.0",
   "description": "Lathe's example product: a neighborhood tool library API.",
   "type": "module",
   "engines": {

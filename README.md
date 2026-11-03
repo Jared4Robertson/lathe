@@ -1,6 +1,10 @@
 # Lathe
 
-A lathe is a tool that makes tools, including better lathes. Lathe organizes a product's lifecycle (discovery, domain model, use cases, interaction design, technical specification, test plan) as typed data: a table per kind of record, kept as one `data/<table>.jsonl` file per table in the product's own repo. A database loads them with every key and rule of its schema, so data that breaks the model cannot be saved; checks report the work still to do, coverage traces each business outcome through the journeys and capabilities that serve it, and each obligation to the code that builds it and the tests that prove it, and a web app lets you read, navigate and edit the result.
+What a product must do, and why, is decided once and written as records, and Agents build from those records, not from a chat that scrolls away. Lathe refuses a wrong write and checks the rest, so Agents build it right the first time without the Owner policing them. Because of both, the Owner understands the product better than its builders: why every part exists, what a change would touch before it is made, and views of it no one had before.
+
+## What it is
+
+A lathe is a tool that makes tools, including better lathes. Lathe keeps a product's spec (business outcomes, domain model, use cases, interaction design, technical design and tests) as typed data: a table per kind of record, kept as one `data/<table>.jsonl` file per table in the product's own repo, with git as its history. A database loads them with every key and rule of its schema, so data that breaks the model cannot be saved; checks report the work still to do; coverage traces each business outcome through the journeys and capabilities that serve it, and each obligation to the code that builds it and the tests that prove it; and a web app lets you read, navigate and edit the result.
 
 Lathe describes itself in its own format: its specification is the data in [data/](data/), and `lathe check` runs on it as on any product. Most records are written by agents; the [Claude Code plugin](plugin/) gives them MCP tools, one per command of each aggregate of the model, the same commands the CLI and the app run. Specs name roles (Owner, Reader, Agent), never people.
 
@@ -15,18 +19,19 @@ Lathe describes itself in its own format: its specification is the data in [data
 | [data/](data/) | Lathe's own specification (product `LA`), with this repo's own checks in `data/check.jsonl`. |
 | [examples/tool-library/](examples/tool-library/) | The example product (`TL`): its code, whose tests carry their spec IDs, and its specification in its own `data/`. |
 | [notes/](notes/) | Notes for contributors: the store's interfaces, the audits behind the accessibility and stability suites, and the phone layout's design. |
+| [brand/](brand/) | The logo and favicon, and the script that builds their preview page. |
 
-## Run it
+## Install and run
 
-Install each package you need (Node 26):
+You need Node 26 or later (see [.nvmrc](.nvmrc)) and npm. Clone the repo and install each package you need:
 
 ```sh
-npm --prefix lathe install && npm --prefix app install && npm --prefix desktop install
+npm ci --prefix lathe && npm ci --prefix app && npm ci --prefix desktop
 ```
 
 | What | Command |
 | --- | --- |
-| The web app, for working on Lathe | `npm --prefix app run dev` serves this repo at http://localhost:5199 and reloads as the data or app code change. with the Tool Library beside Lathe, as this repo's `lathe.config.json` lists it under `products`. `LATHE_ROOT=/path/to/product` points it at another product repo (or workspace); `-- --port <n>` picks another port. `npm --prefix app run dev:network` serves it on the local network too (Vite prints the addresses), read only for other devices. |
+| The web app, for working on Lathe | `npm --prefix app run dev` serves this repo at http://localhost:5199 and reloads as the data or app code change, with the Tool Library beside Lathe, as this repo's `lathe.config.json` lists it under `products`. `LATHE_ROOT=/path/to/product` points it at another product repo (or workspace); `-- --port <n>` picks another port. `npm --prefix app run dev:network` serves it on the local network too (Vite prints the addresses), read only for other devices. |
 | Check the spec | `npm --prefix lathe run check` checks Lathe's spec and the Tool Library's, each on its own, prints errors, warnings and coverage, and exits 1 on any error. |
 | Change the spec | `npm --prefix lathe run lathe -- <aggregate> <command> --root .. --<field> <value> ...`, such as `use-case add-flow-step`: each aggregate's own commands, which check its rules; or edit a record in the app. `lathe help` lists the aggregates, and `lathe <aggregate> --help` their commands. |
 | The reference | `npm --prefix lathe run reference` regenerates [lathe/REFERENCE.md](lathe/REFERENCE.md): stage by stage, every kind with its table, its checks and its coverage gaps, then every relation. |
@@ -34,24 +39,32 @@ npm --prefix lathe install && npm --prefix app install && npm --prefix desktop i
 | The desktop app | `npm --prefix desktop run dev` (hot-reloading), `npm --prefix desktop run start` (from the built package) or `npm --prefix desktop run pack` (a `Lathe.app` in `desktop/release/`). |
 | Tests | `npm --prefix lathe test`, `npm --prefix app test` and `npm --prefix desktop test` (at most 2 workers each), with `run typecheck` in each package. `npm --prefix app run test:stability` runs the stability suite: Playwright in Chromium, checking that nothing on the page jumps, in about two minutes. |
 
-Once per clone, set up the merge driver for the data files (`data/*.jsonl`, named in [.gitattributes](.gitattributes)), so git merges them row by row (see the [package README](lathe/README.md#the-merge-driver)):
+In a product repo of your own, the same commands are `npx lathe init`, `npx lathe check`, `npx lathe <aggregate> <command> ...` and `npx lathe serve`, once the package is installed there; the [package README](lathe/README.md) has every option. The npm scripts above run in `lathe/`, so `--root ..` names this repo. The package is not published to npm yet: build it with `npm --prefix lathe run build` and `npm pack` in `lathe/`, and install the tarball.
 
-```sh
-git config merge.lathe-data.name "Lathe data files"
-git config merge.lathe-data.driver "node lathe/bin/lathe.ts merge-data %O %A %B %P"
+## The Claude Code plugin
+
+Most records are written by agents. The [plugin](plugin/) gives Claude Code one MCP tool per command and query of each aggregate (each checks its aggregate's rules and refuses a change that breaks them, with every reason), a skill per stage of the spec, and a hook that refuses hand edits to the data files. To install it, add the folder as a marketplace in Claude Code:
+
+```
+/plugin marketplace add /path/to/Lathe/plugin
+/plugin install lathe@lathe
 ```
 
-Git runs the driver from each worktree's own `lathe`, so install it there first (`npm ci --prefix lathe`). A driver that cannot start stops the merge and says the file was not merged; install, then run `git checkout -m <file>` to merge it row by row again. Never resolve such a file by taking a side or by git's line merge: that brings back rows the other side removed.
+The [plugin README](plugin/README.md) lists every tool and skill.
 
-Each change lands on main as one squash commit (`git merge --squash <branch>`, or a squash merge on GitHub with the PR's title) whose title carries a [Conventional Commits](https://www.conventionalcommits.org) type, `type(scope)!: summary`, so each release's notes group themselves: `feat`, `fix`, `perf`, `refactor`, `docs`, `test`, `build`, `ci`, `chore`, `revert`, and `spec` for a change to the spec's records alone (`data/*.jsonl`). The scope is optional, the domain or area in lowercase (`journeys`, `graph`, `server`), and `!` marks a breaking change; the body lists the branch's commit subjects. Commits on a branch are free-form (typed ones are welcome). [lathe/scripts/check-commits.ts](lathe/scripts/check-commits.ts) checks the title three ways: `scripts/ci.sh --title "<title>"` before the merge, the [PR title check](.github/workflows/pr-title.yml) on GitHub, and the commit-msg hook as the squash commit is made on main, once enabled per clone:
+## The desktop app
 
-```sh
-git config core.hooksPath .githooks
-```
+Lathe also runs as a desktop app: an Electron shell around the web app and its server, one window per product folder, with tabs, native menus, and a chat panel that runs your own Claude Code with Lathe's tools. `npm --prefix desktop run dev` starts it; `npm --prefix desktop run pack` builds an unsigned `Lathe.app` for macOS. See the [desktop README](desktop/README.md).
 
-On main, [release-please](.github/workflows/release-please.yml) keeps a release PR open with the next version and `CHANGELOG.md` (from every commit in the repo, not only lathe/; the version is kept in version.txt and lathe/package.json); merging it tags the release and publishes it on GitHub.
+## The example product
 
-The npm scripts run in `lathe/`, so `--root ..` names this repo. In a product repo, the same commands are `npx lathe check`, `npx lathe <aggregate> <command> ...` and `npx lathe serve`; the [package README](lathe/README.md) has every option.
+[examples/tool-library/](examples/tool-library/) is a complete small product specified in Lathe: the HTTP API of a neighborhood tool library (product `TL`), with its domain model, use cases, endpoints, technical records and tests, and code whose tests carry their spec IDs, so every obligation traces to the code and tests that meet it. The dev server and `lathe check` load it beside Lathe's own spec. See its [README](examples/tool-library/README.md).
+
+## Contributing
+
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) first: every commit is signed off (DCO), each change is one branch and lands as one squash commit with a typed title, `scripts/ci.sh` runs the checks, and spec records change only through Lathe's commands. Report security problems privately, as [SECURITY.md](SECURITY.md) says. Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+On main, [release-please](.github/workflows/release-please.yml) keeps a release PR open with the next version and `CHANGELOG.md`; merging it tags the release and publishes it on GitHub.
 
 ## Upgrading
 
@@ -72,3 +85,7 @@ Lathe's schema has a version (in [lathe/schema/version.json](lathe/schema/versio
 ## The data model
 
 Records are rows in the data folder `lathe.config.json` names (here [data/](data/)): a table per kind with typed columns, one parent per record as a foreign key, a table per relation, and checks as rows of the `check` table. The kinds are drawn from domain-driven design, CQRS and event storming. The [package README](lathe/README.md#the-data-model) explains the model and how to change the data, and [lathe/REFERENCE.md](lathe/REFERENCE.md), generated from the schema, the check rows and the coverage rules, lists every table, column, relation, check and coverage gap by stage.
+
+## License
+
+Lathe is licensed under the [Apache License 2.0](LICENSE). See [NOTICE](NOTICE).

@@ -1,0 +1,11 @@
+Lathe
+Copyright 2026 The Lathe authors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+It ships the fonts in app/public/fonts, from Fontsource, under the SIL Open Font License 1.1; each family's
+OFL.txt sits beside its files.
+
+The web app bundles elkjs 0.12 (https://www.npmjs.com/package/elkjs), unmodified, which Lathe uses under the
+Eclipse Public License 2.0 (https://www.eclipse.org/legal/epl-2.0/), one of the two licenses it is offered under.
+Its source is available at https://github.com/kieler/elkjs and in its npm package.

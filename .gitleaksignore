@@ -1,0 +1,5 @@
+# False positives, reviewed: these lines assert aria-keyshortcuts strings (such as "Shift+ArrowUp Shift+W Shift+K"),
+# which the generic-api-key rule mistakes for keys. They hold no secret. A fingerprint names its line, so re-review
+# and update an entry when the test moves.
+app/test/graph/context.test.tsx:generic-api-key:175
+app/test/graph/context.test.tsx:generic-api-key:176

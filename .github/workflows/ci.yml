@@ -1,0 +1,60 @@
+# The merge gate (scripts/ci.sh: types, knip, every package's unit tests and lathe check) on every pull request and
+# every push to main, and the browser batch (scripts/ci.sh --browser) on pushes to main only, never as a merge gate.
+# Safe for forks: it runs on pull_request (not pull_request_target), reads only, and uses no secrets.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      # actions/checkout v7.0.1, pinned by commit.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      # actions/setup-node v7.1.0, pinned by commit.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            lathe/package-lock.json
+            app/package-lock.json
+            desktop/package-lock.json
+            examples/tool-library/package-lock.json
+      - run: scripts/ci.sh
+      - if: always()
+        run: cat ci-result.md >> "$GITHUB_STEP_SUMMARY"
+
+  browser:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      # actions/checkout v7.0.1, pinned by commit.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      # actions/setup-node v7.1.0, pinned by commit.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            lathe/package-lock.json
+            app/package-lock.json
+            desktop/package-lock.json
+            examples/tool-library/package-lock.json
+      - run: scripts/ci.sh --browser
+      - if: always()
+        run: cat ci-result.md >> "$GITHUB_STEP_SUMMARY"

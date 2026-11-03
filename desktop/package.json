@@ -1,6 +1,7 @@
 {
   "name": "lathe-desktop",
   "private": true,
+  "license": "Apache-2.0",
   "version": "0.1.0",
   "description": "Lathe as a desktop app: an Electron shell around the Lathe web app and server.",
   "author": "Jared A Robertson",
