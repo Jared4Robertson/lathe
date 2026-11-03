@@ -320,6 +320,15 @@ describe('Lathe on a phone', () => {
     expect(hidden.length).toBeGreaterThan(1);
   });
 
+  it('LA-V61-R57-T02 On a phone the trail\'s parent gives way with an ellipsis before the kind badge, which keeps its width', () => {
+    const css = readFileSync(join(__dirname, '..', 'src', 'styles.css'), 'utf8');
+    expect(css).toMatch(/\.app\.is-narrow \.breadcrumb:not\(\.topbar-trail\) \{ min-width: calc\(var\(--touch-target\) \+ 6em \+ 20px\); \}/);
+    expect(css).toMatch(/\.breadcrumb:not\(\.topbar-trail\) :is\(ol, \.crumb:last-child\) \{ min-width: 0; \}/);
+    expect(css).not.toMatch(/\.breadcrumb:not\(\.topbar-trail\)[^{]*\{ min-width: auto; \}/);
+    expect(css).toMatch(/\.header-strip-focus \.kind-badge \{ flex: none;/);
+    expect(css).toMatch(/\.crumb-link \{ min-width: 0;[^}]*overflow: hidden; text-overflow: ellipsis;/);
+  });
+
   const proveLaV61R23T01 = async () => {
     phone();
     window.sessionStorage.setItem('lathe:place', JSON.stringify({ depth: 1, hiddenKinds: [], card: { open: true, expanded: true } }));

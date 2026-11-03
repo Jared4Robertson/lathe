@@ -979,7 +979,11 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* On a phone the trail is the "…" button and the parent (LA-V61-R57): the parent keeps a readable name, never a letter,
    and the strip's counts give way first (their whole text is their tooltip). */
 .app.is-narrow .breadcrumb:not(.topbar-trail) .crumb:last-child .crumb-link { min-width: 6em; }
-.app.is-narrow .breadcrumb:not(.topbar-trail), .app.is-narrow .breadcrumb:not(.topbar-trail) :is(ol, .crumb:last-child) { min-width: auto; }
+/* Each part keeps its own space: the trail is as wide as the button and a readable parent (never narrower, never over
+   the kind badge after it), its parent gives way with an ellipsis, and the title takes what is left (LA-STD-EXPERIENCE-R13). */
+.app.is-narrow .breadcrumb:not(.topbar-trail) { min-width: calc(var(--touch-target) + 6em + 20px); }
+.app.is-narrow .breadcrumb:not(.topbar-trail) :is(ol, .crumb:last-child) { min-width: 0; }
+.app.is-narrow .breadcrumb:not(.topbar-trail) .crumb:last-child { flex: 0 1 auto; }
 .stage-layout.is-phone > .header-strip .header-strip-trail { max-width: 55%; }
 .stage-layout.is-phone > .header-strip .header-strip-counts { min-width: 0; }
 .header-strip-sep { flex: none; color: var(--muted); }
