@@ -2,7 +2,7 @@
 // has no business with, and linking to an accidental record. Records already in the data are not refused until they
 // are written; accidental-in-essential keeps reporting them. Each starts from the complete product.
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
-import { openStore, type Store } from '../../src/index.ts';
+import { loadWorkspace, openStore, type Store } from '../../src/index.ts';
 import { adding, build, changing, complete, loadData, ofCheck, refusedBy, removeData, run, type Data } from '../helpers.ts';
 
 afterAll(removeData);
@@ -76,7 +76,7 @@ describe('a write of an essential record keeps accidental complexity out', () =>
     await run(store, 'use-case change-use-case', { id: 'EX-LEND-UC02', actors: ['Librarian', 'Member'] });
   });
 
-  it('LA-CHK-UC08-R04-T02 The write refusal and accidental-in-essential read one list: every record the check reports is refused when its text is written again', async () => {
+  it('LA-CHK-UC08-R04-T02 The write refusal and accidental-in-essential read one list: every record the check reports is refused when the text it names the word in is written again', async () => {
     let data = changing(complete(), 'use_case', (r) => r.id === 'EX-LEND-UC01', { goal: 'A member clicks the borrow button.' });
     data = changing(data, 'uc_requirement', (r) => r.id === 'EX-LEND-UC01-R01', { statement: 'The Web app MUST refuse a tool whose row says it is on loan.' });
     data = changing(data, 'view', () => true, { title: 'Catalog page', description: 'Every tool in a row, read from the JSON the database keeps.' });
@@ -89,11 +89,11 @@ describe('a write of an essential record keeps accidental complexity out', () =>
     const store = await storeOf(data);
     const rewrite: Record<string, [string, Record<string, unknown>]> = {
       'EX-INT01': ['integration change-integration', { id: 'EX-INT01', description: 'Reminders sent through the mail adapter, again.' }],
-      'EX-LEND-DS01': ['domain change-domain-service', { id: 'EX-LEND-DS01', title: 'Due date, as counted' }],
-      'EX-LEND-TM01': ['domain change-term', { id: 'EX-LEND-TM01', title: 'Loan, as kept' }],
-      'EX-LEND-UC01': ['use-case change-use-case', { id: 'EX-LEND-UC01', title: 'Borrow a tool, again' }],
-      'EX-LEND-UC01-R01': ['use-case change-uc-requirement', { id: 'EX-LEND-UC01-R01', title: 'Tool is free, again' }],
-      'EX-V01': ['view change-view', { id: 'EX-V01', title: 'Catalog page, again' }],
+      'EX-LEND-DS01': ['domain change-domain-service', { id: 'EX-LEND-DS01', statement: 'The due date MUST be 14 days after the loan starts, as Postgres counts days, again.' }],
+      'EX-LEND-TM01': ['domain change-term', { id: 'EX-LEND-TM01', meaning: 'One tool lent to one member, kept by the repositories, again.' }],
+      'EX-LEND-UC01': ['use-case change-use-case', { id: 'EX-LEND-UC01', goal: 'A member clicks the borrow button, again.' }],
+      'EX-LEND-UC01-R01': ['use-case change-uc-requirement', { id: 'EX-LEND-UC01-R01', statement: 'The Web app MUST refuse a tool whose row says it is on loan, again.' }],
+      'EX-V01': ['view change-view', { id: 'EX-V01', description: 'Every tool in a row, read from the JSON the database keeps, again.' }],
     };
     for (const [record, said] of reported) {
       const [command, input] = rewrite[record];
@@ -101,6 +101,27 @@ describe('a write of an essential record keeps accidental complexity out', () =>
       expect(refused.map((p) => p.key), record).toEqual([record]);
       expect(refused[0].message, record).toContain(said.split(' and ').at(-1));
     }
+  });
+
+  it('LA-CHK-UC08-R04-T03 A change is refused only for the text it sets: a record whose title names technology can still have its lead text changed', async () => {
+    let data = adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 15, max_entities_per_aggregate: 7, technology_words: ['Postgres'] }] });
+    data = changing(data, 'use_case', (r) => r.id === 'EX-LEND-UC01', { title: 'Borrow a tool from Postgres' });
+    const root = await build(data);
+    const store = await openStore(root, { latheDataDir: null });
+    opened.push(store);
+    // The goal changes, though the title names the word: the write does not set the title.
+    await run(store, 'use-case change-use-case', { id: 'EX-LEND-UC01', goal: 'A member borrows a free tool for a week.' });
+    expect(ofCheck(await loadWorkspace(root), 'accidental-in-essential').map((p) => [p.record, p.message.replace(/^.* names technology: /, '').replace(/; say .*/, '')])).toEqual([
+      ['EX-LEND-UC01', 'its title says "postgres"'],
+    ]);
+    // A write that sets the title is refused for the title alone.
+    expect(await reasons(store, 'use-case change-use-case', { id: 'EX-LEND-UC01', title: 'Borrow a tool kept in Postgres' })).toEqual([
+      ['essential-names-technology', 'EX-LEND-UC01', 'Use case EX-LEND-UC01 is essential, and its title says "postgres"'],
+    ]);
+    // An add sets every text it is given.
+    expect(await reasons(store, 'use-case add-use-case', { id: 'EX-LEND-UC03', title: 'Return a tool', capability_id: 'EX-LEND-CAP01', goal: 'A member returns a tool and Postgres records it.', actors: ['Member'] })).toEqual([
+      ['essential-names-technology', 'EX-LEND-UC03', 'Use case EX-LEND-UC03 is essential, and its goal says "postgres"'],
+    ]);
   });
 
   it('LA-CHK-UC08-R05-T01 A write that links an essential record to an accidental one, or declares a relation that would, is refused; an outcome may still be measured by a record of an accidental kind', async () => {
