@@ -163,6 +163,7 @@
 {"id":"LA-TRC-RM10-TB","title":"FollowingTable","read_model_id":"LA-TRC-RM10","name":"FollowingTable","storage":"in memory","file":"lathe/src/traceability/pattern-following/read-model.ts"}
 {"id":"LA-TRC-RM12-TB","title":"ServesTable","read_model_id":"LA-TRC-RM12","name":"ServesTable","storage":"in memory","file":"lathe/src/traceability/serves/read-model.ts"}
 {"id":"LA-TRC-RM13-TB","title":"TraceTable","read_model_id":"LA-TRC-RM13","name":"TraceTable","storage":"in memory","file":"lathe/src/traceability/trace/read-model.ts"}
+{"id":"LA-TRC-RM14-TB","title":"ChangeReachTable","read_model_id":"LA-TRC-RM14","name":"ChangeReachTable","storage":"in memory","file":"lathe/src/traceability/change-reach/read-model.ts"}
 {"id":"LA-TST-EN85-TB","title":"test_data_set","entity_id":"LA-TST-EN85","name":"test_data_set","storage":"table","file":"lathe/schema/008-test-plan.sql"}
 {"id":"LA-TST-RM37-TB","title":"TestDataSetTable","read_model_id":"LA-TST-RM37","name":"TestDataSetTable","storage":"in memory","file":"lathe/src/test-planning/test-data-set/read-model.ts"}
 {"id":"LA-TST-TB86","title":"starts_from","domain_id":"LA-TST","name":"starts_from","storage":"table","file":"lathe/schema/010-links.sql"}

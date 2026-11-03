@@ -7,7 +7,7 @@ import { workspace as fixtureWorkspace } from './fixtures/workspace';
 import { desktopStandIn } from './desktop-bridge';
 import { SESSION_SETTINGS_STORAGE } from '../src/exploring/session-settings/model';
 import { ALL_COMMANDS, ALL_QUERIES } from '../../lathe/src/commands';
-import { InputError } from '../../lathe/src/platform/commands/definition';
+import { InputError, flagValue } from '../../lathe/src/platform/commands/definition';
 import { answerQuery } from '../../lathe/src/platform/commands/run';
 import { StoreError } from '../../lathe/src/platform/data/problems';
 import { forgetReads } from '../src/record/read';
@@ -62,10 +62,16 @@ export function serve(served: Served = {}): { requests: Requests; commands: Sent
     const read = ALL_QUERIES.find((q) => q.route === route);
     if (read && (init?.method ?? 'GET') === read.method) {
       try {
-        const input = Object.fromEntries(new URLSearchParams(query));
+        // Each field as the server reads it (flagValue): a list from the field given once per item.
+        const params = new URLSearchParams(query);
+        const view = readViewOf(data);
+        const input = Object.fromEntries([...new Set(params.keys())].map((name) => {
+          const field = read.input[name];
+          return [name, field ? flagValue(view.schema, name, field, params.getAll(name)) : params.get(name)];
+        })) as Record<string, string>;
         // The Record changes read is given the baseline its `since` names, as the server reads it from git.
         const baseline = read.route === LIST_RECORD_CHANGES.route ? served.baseline?.(input.since ?? '') : undefined;
-        return json(answerQuery({ ...readViewOf(data), ...(baseline ? { baseline } : {}) }, read, input));
+        return json(answerQuery({ ...view, ...(baseline ? { baseline } : {}) }, read, input));
       } catch (error) {
         if (error instanceof StoreError) return json({ error: error.message, problems: error.problems }, 422);
         if (error instanceof InputError) return json({ error: error.message }, 400);

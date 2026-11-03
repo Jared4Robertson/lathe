@@ -356,4 +356,27 @@ describe('Traceability flows from the command line', () => {
       'TL-LEND-A2: Aggregate TL-LEND-A2 serves no outcome: no use case whose capability serves a business outcome reaches it. Write the use case that needs it, or remove it.',
     ]);
   });
+
+  it('LA-TRC-UC24-FL-T see what a change would touch', async () => {
+    const tl = product();
+    await tl.seed([
+      ...LENDING,
+      ...DESIGNED,
+      add('use_case_test', { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'automated', file: 'test/loans.test.ts', when: 'A member borrows a tool that is on loan', then: 'The loan is refused' }),
+    ]);
+    tl.write('src/loans.ts', '// TL-LEND-CMD01-H\n');
+    tl.write('test/loans.test.ts', "it('TL-LEND-UC01-R01-T01 a tool on loan is refused');\n");
+    // S02, S03: the reach of a change of the requirement, by stage with the path to each, its files and its purposes.
+    const one = tl.run('change-reach', 'get-reach', '--ids', 'TL-LEND-UC01-R01');
+    expect(one).toContain('Changing TL-LEND-UC01-R01 touches 3 records.');
+    expect(one).toContain('  TL-LEND-UC01-FL-S01 fulfills TL-LEND-UC01-R01\n');
+    expect(one).toContain('  TL-LEND-CMD01-H (src/loans.ts) builds TL-LEND-UC01-R01\n');
+    expect(one).toContain('  TL-LEND-UC01-R01-T01 (automated, test/loans.test.ts) sits under TL-LEND-UC01-R01\n');
+    expect(one).toContain('Purposes:\n  none: no use case reaches these records');
+    // S05: with the command too, one reach, each record once with what it is reached from; dropping the command leaves
+    // what only it reached.
+    const both = tl.run('change-reach', 'get-reach', '--ids', 'TL-LEND-UC01-R01', '--ids', 'TL-LEND-CMD01');
+    expect(both).toContain('[from TL-LEND-UC01-R01, TL-LEND-CMD01]');
+    expect(both.match(/^ {2}TL-LEND-CMD01-H /gm)).toHaveLength(1);
+  });
 });

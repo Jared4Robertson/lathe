@@ -245,6 +245,8 @@
 {"source_id":"LA-TRC-RM12-TB","target_id":"LA-STORE04"}
 {"source_id":"LA-TRC-RM13-RD","target_id":"LA-STORE04"}
 {"source_id":"LA-TRC-RM13-TB","target_id":"LA-STORE04"}
+{"source_id":"LA-TRC-RM14-RD","target_id":"LA-STORE04"}
+{"source_id":"LA-TRC-RM14-TB","target_id":"LA-STORE04"}
 {"source_id":"LA-TST-EN85-TB","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-TST-REPO17","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-TST-RM37-RD","target_id":"LA-STORE04"}

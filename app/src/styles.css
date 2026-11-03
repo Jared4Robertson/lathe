@@ -678,6 +678,12 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .trace-row { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
 .trace-row > .record-row { flex: 1 1 auto; min-width: 0; }
 .trace-cell { display: inline-flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; }
+/* A record's Change reach section (LA-TRC-UC24): each record the change touches with the path that reaches it, then
+   the files and the purposes. The path wraps under the row on a narrow page. */
+.reach-summary { margin: 0 0 10px; }
+.reach-path { flex: 1 1 16rem; min-width: 0; font-size: 0.8rem; color: var(--muted); overflow-wrap: anywhere; }
+.reach-file { display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; min-width: 0; }
+.reach-file > code { overflow-wrap: anywhere; }
 /* Record links listed in a cell are 24 px targets (WCAG 2.5.8, LA-V61-R47). */
 .trace-cell > .record-link { min-block-size: 24px; align-items: center; }
 /* Four columns keep room for their words; where they can't fit, the rows stack (.table-stack). */

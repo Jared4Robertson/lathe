@@ -29,7 +29,8 @@ describe('the Storage requirement page reads it through its own query, and its e
     const { requests } = await openApp('/DM-SHOP-A1-SR01', { data: withRequirement() });
     expect(await within(main()).findByText('A basket MUST be saved whole, with its lines.')).toBeInTheDocument();
     expect(requests).toContain('GET /api/storage-requirement/get-storage-requirement?id=DM-SHOP-A1-SR01');
-    expect(within(main()).getByRole('link', { name: /DM-SHOP-A1-SR01-T01/ })).toHaveAttribute('href', '/DM-SHOP-A1-SR01-T01');
+    // Its tests list links it, as its Change reach does.
+    for (const link of within(main()).getAllByRole('link', { name: /DM-SHOP-A1-SR01-T01/ })) expect(link).toHaveAttribute('href', '/DM-SHOP-A1-SR01-T01');
   });
 
   it('LA-V154-R02-T01 adds a storage requirement from its aggregate\'s page through the aggregate\'s own Add', async () => {

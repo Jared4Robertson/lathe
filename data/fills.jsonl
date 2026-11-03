@@ -708,6 +708,7 @@
 {"source_id":"LA-TRC-EN08-TB","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL08"}
 {"source_id":"LA-TRC-EP416-CL","target_id":"LA-PAT-HTTP-STEPS-SL01"}
 {"source_id":"LA-TRC-EP418-CL","target_id":"LA-PAT-HTTP-STEPS-SL01"}
+{"source_id":"LA-TRC-EP420-CL","target_id":"LA-PAT-HTTP-STEPS-SL01"}
 {"source_id":"LA-TRC-INV01-RL","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
 {"source_id":"LA-TRC-INV02-RL","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
 {"source_id":"LA-TRC-INV03-RL","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
@@ -730,6 +731,7 @@
 {"source_id":"LA-TRC-QRY17-H","target_id":"LA-PAT-AGGREGATE-QUERIES-SL01"}
 {"source_id":"LA-TRC-QRY18-H","target_id":"LA-PAT-AGGREGATE-QUERIES-SL01"}
 {"source_id":"LA-TRC-QRY19-H","target_id":"LA-PAT-AGGREGATE-QUERIES-SL01"}
+{"source_id":"LA-TRC-QRY20-H","target_id":"LA-PAT-AGGREGATE-QUERIES-SL01"}
 {"source_id":"LA-TRC-RM01-PJ","target_id":"LA-PAT-AGGREGATE-QUERIES-SL02"}
 {"source_id":"LA-TRC-RM01-RD","target_id":"LA-PAT-AGGREGATE-QUERIES-SL03"}
 {"source_id":"LA-TRC-RM01-TB","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL08"}
@@ -759,6 +761,9 @@
 {"source_id":"LA-TRC-RM13-PJ","target_id":"LA-PAT-AGGREGATE-QUERIES-SL02"}
 {"source_id":"LA-TRC-RM13-RD","target_id":"LA-PAT-AGGREGATE-QUERIES-SL03"}
 {"source_id":"LA-TRC-RM13-TB","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL08"}
+{"source_id":"LA-TRC-RM14-PJ","target_id":"LA-PAT-AGGREGATE-QUERIES-SL02"}
+{"source_id":"LA-TRC-RM14-RD","target_id":"LA-PAT-AGGREGATE-QUERIES-SL03"}
+{"source_id":"LA-TRC-RM14-TB","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL08"}
 {"source_id":"LA-TRC-SP01-PR","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL09"}
 {"source_id":"LA-TRC-SP04-PR","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL09"}
 {"source_id":"LA-TST-CMD393-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL01"}
@@ -948,6 +953,8 @@
 {"source_id":"LA-UI337","target_id":"LA-PAT-APP-CODE-SL01"}
 {"source_id":"LA-UI338","target_id":"LA-PAT-APP-CODE-SL01"}
 {"source_id":"LA-UI339","target_id":"LA-PAT-APP-CODE-SL01"}
+{"source_id":"LA-UI340","target_id":"LA-PAT-APP-CODE-SL01"}
+{"source_id":"LA-UI341","target_id":"LA-PAT-APP-CODE-SL01"}
 {"source_id":"LA-UI52","target_id":"LA-PAT-APP-CODE-SL01"}
 {"source_id":"LA-UI53","target_id":"LA-PAT-APP-CODE-SL01"}
 {"source_id":"LA-UI54","target_id":"LA-PAT-APP-CODE-SL01"}

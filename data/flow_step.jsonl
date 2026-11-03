@@ -426,6 +426,12 @@
 {"id":"LA-TRC-UC22-FL-S04","title":"They run the check: a gap for each journey without a test, a main path or an outcome, and for each step that carries out nothing yet","flow_id":"LA-TRC-UC22-FL","path":"main","position":4,"interface_id":"LA-IF03"}
 {"id":"LA-TRC-UC23-FL-S01","title":"They name what provides a record decided outside the product, in place of any provider it had","flow_id":"LA-TRC-UC23-FL","path":"main","position":1}
 {"id":"LA-TRC-UC23-FL-S02","title":"Coverage counts the provided record as accounted for","flow_id":"LA-TRC-UC23-FL","path":"main","position":2}
+{"id":"LA-TRC-UC24-FL-S01","title":"The Owner opens a record they mean to change","flow_id":"LA-TRC-UC24-FL","path":"main","position":1,"interface_id":"LA-IF01"}
+{"id":"LA-TRC-UC24-FL-S02","title":"They read its change reach: each record it would touch by stage, with the path of links that reaches it","flow_id":"LA-TRC-UC24-FL","path":"main","position":2}
+{"id":"LA-TRC-UC24-FL-S03","title":"They read the files and tests it would touch, each test with its state, and the purposes it could break","flow_id":"LA-TRC-UC24-FL","path":"main","position":3}
+{"id":"LA-TRC-UC24-FL-S04","title":"They light the reach on the Graph and see where it falls","flow_id":"LA-TRC-UC24-FL","path":"main","position":4,"interface_id":"LA-IF01"}
+{"id":"LA-TRC-UC24-FL-S05","title":"They run lathe change-reach get-reach with every record of the change, then again with one dropped, and read what it no longer touches","flow_id":"LA-TRC-UC24-FL","path":"main","position":5,"interface_id":"LA-IF03"}
+{"id":"LA-TRC-UC24-FL-S06","title":"Before it changes anything, the Agent asks change_reach_get_reach with every record it means to change and reads the same reach","flow_id":"LA-TRC-UC24-FL","path":"main","position":6,"interface_id":"LA-IF04"}
 {"id":"LA-TST-UC03-FL-S01","title":"The Agent writes the test under the record it proves, with its level and state","flow_id":"LA-TST-UC03-FL","path":"main","position":1}
 {"id":"LA-TST-UC03-FL-S02","title":"A test says its size when it is not small, and marks itself smoke or external","flow_id":"LA-TST-UC03-FL","path":"main","position":2}
 {"id":"LA-TST-UC03-FL-S03","title":"The Agent names the file that runs an automated test","flow_id":"LA-TST-UC03-FL","path":"automated","position":1}

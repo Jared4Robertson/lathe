@@ -35,7 +35,7 @@ describe('LA-V120-R01-T01 a domain\'s records are read through the Domain aggreg
     const { requests } = await openApp('/DM-SHOP-CAP01', { data: withDomain() });
     expect(await within(main()).findByText('The fixture\'s capability Buying.')).toBeInTheDocument();
     expect(requests).toContain('GET /api/domain/get-domain?id=DM-SHOP-CAP01');
-    const useCases = within(main()).getByRole('heading', { name: /^Use cases/ }).closest('section')!;
+    const useCases = within(main()).getByRole('heading', { level: 2, name: /^Use cases/ }).closest('section')!;
     expect([...useCases.querySelectorAll('a.row-link')].map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-UC01']);
   });
 
@@ -140,6 +140,6 @@ describe('LA-V120-R04-T01 a capability lists the business outcomes it serves and
     const trace = (await within(main()).findByRole('heading', { level: 2, name: 'Traceability' })).closest('section') as HTMLElement;
     expect(within(trace).getByRole('heading', { level: 3, name: /^Serves/ })).toBeInTheDocument();
     expect(within(trace).getByRole('link', { name: /DM-BO01/ })).toBeInTheDocument();
-    expect(within(main()).getByRole('heading', { name: /^Use cases/ })).toHaveTextContent(/1$/);
+    expect(within(main()).getByRole('heading', { level: 2, name: /^Use cases/ })).toHaveTextContent(/1$/);
   });
 });

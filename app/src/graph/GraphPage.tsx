@@ -51,6 +51,8 @@ import { useChanges } from '../changes/changes';
 import { useChangesKey } from '../changes/ChangesKey';
 import { rollupText } from '../changes/rollup';
 import { GHOST_MS, highlightFade, marksMoving, useLiveVersion, useStageMarks } from '../changes/marks';
+import { reachLit, reachLitLines, useReachLight } from '../traceability/change-reach/light';
+import { useChangeReach } from '../traceability/change-reach/reads';
 
 // The graph view: the product's tree as one fixed map (map.ts), explored by a camera (camera.ts).
 // Clicking a record or a group focuses it (through onNavigate, so the host changes the address and
@@ -139,6 +141,11 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
   const setFilters = (f: Filters) => update({ filters: f });
 
   const graph = useMemo(() => neighborhood(index, focus, depth, filters), [index, focus, depth, filters]);
+  // The Change reach light (LA-V93-R78): the focus record and everything a change of it would touch, lit while it is on.
+  const [reachOn, setReachOn] = useReachLight();
+  const reachable = reachOn && index.byId.has(focus) && index.byId.get(focus)!.kind !== 'product';
+  const reachRead = useChangeReach(reachable ? focus : null, index);
+  const reach = useMemo(() => (reachable && reachRead.state === 'read' && reachRead.answer.changed[0] === focus ? reachLit(reachRead.answer) : null), [reachable, reachRead, focus]);
   // The key bar: what the graph draws now, then the live marks.
   const valid = isGraphNode(index, focus);
   const drawn = useMemo(() => (valid ? graphDrawn(index, graph, layout) : null), [valid, index, graph, layout]);
@@ -184,7 +191,7 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
             ))}
           </div>
         )}
-        <FilterControls index={index} filters={filters} setFilters={setFilters} minimap={minimap} setMinimap={(on) => update({ minimap: on })} allLinks={layout === 'map' ? allLinks : null} setAllLinks={(on) => update({ allLinks: on })} />
+        <FilterControls index={index} filters={filters} setFilters={setFilters} minimap={minimap} setMinimap={(on) => update({ minimap: on })} allLinks={layout === 'map' ? allLinks : null} setAllLinks={(on) => update({ allLinks: on })} reach={reachOn} setReach={setReachOn} />
         {layout === 'map' && <TidyUp />}
       </>
     ),
@@ -214,7 +221,7 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
       <StageKey entries={keyEntries} beside={minimap ? 'minimap' : undefined} />
       <div className="graph-workspace">
         <div className="graph-canvas">
-          <GraphCanvas index={index} graph={graph} layout={layout} depth={depth} filters={filters} onNavigate={onNavigate} minimap={minimap} allLinks={allLinks} space={space} cameraKey={cameraKey} onOpenNew={onOpenNew} />
+          <GraphCanvas index={index} graph={graph} layout={layout} depth={depth} filters={filters} onNavigate={onNavigate} minimap={minimap} allLinks={allLinks} reach={reach} space={space} cameraKey={cameraKey} onOpenNew={onOpenNew} />
         </div>
       </div>
     </section>
@@ -230,9 +237,12 @@ interface FilterProps {
   /** All links, in the Map; null in the other layouts, which draw no links. */
   allLinks: boolean | null;
   setAllLinks: (on: boolean) => void;
+  /** The Change reach light (LA-V93-R78): on or off. */
+  reach: boolean;
+  setReach: (on: boolean) => void;
 }
 
-function FilterControls({ index, filters, setFilters, minimap, setMinimap, allLinks, setAllLinks }: FilterProps) {
+function FilterControls({ index, filters, setFilters, minimap, setMinimap, allLinks, setAllLinks, reach, setReach }: FilterProps) {
   const hidden = filters.hiddenKinds.size;
   const toggle = (set: ReadonlySet<string>, value: string) => {
     const next = new Set(set);
@@ -258,6 +268,10 @@ function FilterControls({ index, filters, setFilters, minimap, setMinimap, allLi
               All links
             </label>
           )}
+          <label>
+            <input type="checkbox" role="switch" checked={reach} onChange={(e) => setReach(e.target.checked)} />
+            Change reach
+          </label>
         </fieldset>
         {kindGroups(index).map((g) => g.kinds.length > 0 && (
           <fieldset key={g.stage || 'structural'}>
@@ -376,6 +390,9 @@ function MinimapChanges({ map, pad }: { map: PlacedMap; pad: number }) {
   return <>{marks.map((m) => <circle key={m.id} className={`graph-minimap-change is-${m.change}`} cx={m.x} cy={m.y} r={r} />)}</>;
 }
 
+/** The spotlight's ID while it holds the Change reach light, which no record or group has. */
+const REACH_SPOT = ' reach';
+
 /** No floating panels: the frame is the whole stage. */
 const NO_INSETS: Insets = { left: 0, top: 0, right: 0, bottom: 0 };
 /** How far the pointer moves before a press is a drag, in CSS pixels. */
@@ -481,6 +498,8 @@ interface CanvasProps {
   onNavigate: (id: string) => void;
   minimap: boolean;
   allLinks: boolean;
+  /** The records the Change reach light lights (the focus and what a change of it would touch), or null while it is off. */
+  reach: ReadonlySet<string> | null;
   space?: OpenSpaceStore;
   cameraKey?: string;
   onOpenNew?: GraphViewProps['onOpenNew'];
@@ -505,7 +524,7 @@ function GraphStage(props: CanvasProps & { measure: TextMeasure; fonts: GraphFon
   return <GraphScene {...props} map={laid.map} mapIndex={laid.of} />;
 }
 
-function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, depth, filters, onNavigate, minimap, allLinks, space, cameraKey, onOpenNew, measure, fonts, theme }: CanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number; map: GraphMap | NestedMap | GroundMap; mapIndex: RecordIndex }) {
+function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, depth, filters, onNavigate, minimap, allLinks, reach, space, cameraKey, onOpenNew, measure, fonts, theme }: CanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number; map: GraphMap | NestedMap | GroundMap; mapIndex: RecordIndex }) {
   const focus = graph.focus;
   const wrapper = useRef<SceneHost>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -887,6 +906,24 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
    * boxes they join, and dims the rest a step; leaving restores the picture. It fades with the
    * motion tokens (at once under reduced motion).
    */
+  const reachRef = useRef(reach);
+  reachRef.current = reach;
+  /**
+   * The Change reach light (LA-V93-R78), the spotlight's own light held while nothing is hovered: the focus and every
+   * record a change of it would touch, and the lines between them, brightened, the rest dimmed a step. Off, it fades.
+   */
+  const lightReach = useCallback(() => {
+    const s = spotlight.current;
+    const value = spotNow().value;
+    const lit = reachRef.current;
+    if (!lit) {
+      if (s.id === REACH_SPOT) { spotlight.current = { ...s, id: null, from: value, to: 0, start: performance.now() }; requestPaint(); }
+      return;
+    }
+    const litLines = reachLitLines(lit, (lastFrame.current ?? frameAt(view.current)).lines);
+    spotlight.current = { id: REACH_SPOT, lit: new Set(lit), litLines, from: s.id === null ? value : 1, to: 1, start: performance.now() };
+    requestPaint();
+  }, [frameAt, requestPaint]);
   const spot = useCallback((id: string | null) => {
     const root = wrapper.current;
     if (!root) return;
@@ -895,6 +932,8 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
     const value = spotNow().value;
     if (!known) {
       root.classList.remove('has-spotlight');
+      // Leaving a box gives the light back to the Change reach, when it is on.
+      if (reachRef.current) { lightReach(); return; }
       if (s.id !== null) { spotlight.current = { ...s, id: null, from: value, to: 0, start: performance.now() }; requestPaint(); }
       return;
     }
@@ -917,9 +956,14 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
     root.classList.add('has-spotlight');
     spotlight.current = { id, lit, litLines, from: s.id === null ? value : 1, to: 1, start: performance.now() };
     requestPaint();
-  }, [map, graph, frameAt, requestPaint]);
+  }, [map, graph, frameAt, requestPaint, lightReach]);
   // A new focus starts without a spotlight.
   useEffect(() => () => spot(null), [focus]);
+  // The Change reach light follows its records and the map, unless a box is hovered or ringed.
+  useEffect(() => {
+    const s = spotlight.current;
+    if (s.id === null || s.id === REACH_SPOT) lightReach();
+  }, [reach, map, lightReach]);
 
   /** Whether a box can be focused by a click: a record or a group, not the focus. */
   const canOpen = useCallback((id: string) => id !== focus && isGraphNode(pageIndex, id), [focus, pageIndex]);

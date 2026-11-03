@@ -34,6 +34,7 @@ import { VALUE_OBJECT_COMMANDS } from './domain-modeling/value-object/commands/i
 import { VIEW_COMMANDS } from './interaction-design/view/commands/index.ts';
 import { GET_AGGREGATE, LIST_AGGREGATES, NEXT_AGGREGATE_ID } from './domain-modeling/aggregate/queries.ts';
 import { GET_BUSINESS_OUTCOME, LIST_BUSINESS_OUTCOMES, NEXT_BUSINESS_OUTCOME_ID } from './product/business-outcome/queries.ts';
+import { GET_REACH } from './traceability/change-reach/queries.ts';
 import { GET_CHECK, LIST_CHECKS } from './checking/check/queries.ts';
 import { GET_COMMAND, LIST_COMMANDS, NEXT_COMMAND_ID } from './domain-modeling/command/queries.ts';
 import { GET_COVERAGE } from './traceability/coverage/queries.ts';
@@ -121,6 +122,7 @@ export const ALL_QUERIES: readonly AnyQuery[] = [
   GET_BUSINESS_OUTCOME,
   LIST_BUSINESS_OUTCOMES,
   NEXT_BUSINESS_OUTCOME_ID,
+  GET_REACH,
   GET_CHECK,
   LIST_CHECKS,
   GET_COMMAND,

@@ -92,6 +92,7 @@
 {"id":"LA-TRC-UC21-FL","title":"Fill a slot by hand","use_case_id":"LA-TRC-UC21"}
 {"id":"LA-TRC-UC22-FL","title":"See how far each journey is proved","use_case_id":"LA-TRC-UC22"}
 {"id":"LA-TRC-UC23-FL","title":"Name what provides a record","use_case_id":"LA-TRC-UC23"}
+{"id":"LA-TRC-UC24-FL","title":"See what a change would touch","use_case_id":"LA-TRC-UC24"}
 {"id":"LA-TST-UC03-FL","title":"Plan the tests that prove a record","use_case_id":"LA-TST-UC03"}
 {"id":"LA-TST-UC13-FL","title":"Build a test data set","use_case_id":"LA-TST-UC13"}
 {"id":"LA-UCS-UC05-FL","title":"Write a pattern with its rules","use_case_id":"LA-UCS-UC05"}

@@ -4,13 +4,14 @@ import { type RecordIndex, type RecordSummary, type SummaryLink } from '../explo
 import { groupByLabel } from './labels';
 import { Traceability } from './Traceability';
 import { ServesFact } from '../traceability/serves/ServesFact';
+import { ChangeReachSection } from '../traceability/change-reach/ChangeReachSection';
 import { kindPagePath } from '../format/reference';
 import { LongList } from '../components/LongList';
 import { DesktopRecordActions } from '../shell/desktopRecord';
 import { StageFact, ProblemList, RecordLink, Section, SpecLink, TestStateTag, idText, isTestKind, notAutomatedYet } from './parts';
 
 // What every record's page holds around its aggregate's own content (the Record page pattern, LA-PAT-RECORD-PAGE):
-// the eyebrow, its Traceability, its problems, and its facts (kind, stage, a test's state, why it has no parent, its
+// the eyebrow, its Traceability, its Change reach, its problems, and its facts (kind, stage, a test's state, why it has no parent, its
 // data file) and links both ways, all from the space's record summaries and the Record trace read. The page's own
 // fields are its aggregate's (each aggregate's page in app/src/<domain>/<aggregate>/), never read here by column.
 
@@ -42,7 +43,7 @@ function LinkGroups({ index, links, direction }: { index: RecordIndex; links: Su
 
 /**
  * What every record's page holds around its own content (the Record page pattern): a test's note when it is not
- * automated yet, then the page's content, its Traceability, what comes `after` it (its children), and its problems;
+ * automated yet, then the page's content, its Traceability, what comes `after` it (its children), its Change reach and its problems;
  * its facts and links both ways beside them. An aggregate's page draws its own content inside it.
  */
 export function RecordFrame({ index, record, skip, after, children }: { index: RecordIndex; record: RecordSummary; skip?: ReadonlySet<string>; after?: ReactNode; children: ReactNode }) {
@@ -59,6 +60,8 @@ export function RecordFrame({ index, record, skip, after, children }: { index: R
         {/* After the body and its kind's own sections, before the children. */}
         <Traceability index={index} record={record} skip={skip} />
         {after}
+        {/* What changing it would touch, after what it holds (LA-TRC-UC24). */}
+        <ChangeReachSection index={index} record={record} />
         <Section title="Problems" count={problems.length}>
           <ProblemList index={index} problems={problems} showRecord={false} />
         </Section>
