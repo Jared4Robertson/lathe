@@ -10,8 +10,9 @@ import { useScrollToZoom } from '../platform/appearance/use-scroll-to-zoom';
 import { glideDuration, zoomPath, type Viewport } from './camera';
 import { readMotion } from './motion';
 
-/** How far a press moves before it is a drag, not a tap, in pixels. */
+/** How far a press moves before it is a drag, not a tap, in pixels: a mouse's, and a finger's, which wavers as it lands. A tap opens a node, so a wavering finger must still tap. */
 const DRAG_PX = 3;
+const FINGER_DRAG_PX = 10;
 
 /** Two viewports close enough that a glide between them would not show. */
 const sameView = (a: Viewport, b: Viewport) => Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) < 0.5 && Math.abs(a.zoom - b.zoom) < 1e-6;
@@ -204,7 +205,7 @@ export function useCameraGestures(options: CameraGestureOptions): CameraGestures
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   };
   const pointers = useRef(new Map<number, { x: number; y: number }>());
-  const press = useRef<{ x: number; y: number; moved: boolean } | null>(null);
+  const press = useRef<{ x: number; y: number; moved: boolean; slop: number } | null>(null);
   const pinch = useRef<{ dist: number; mid: { x: number; y: number } } | null>(null);
   const twoPointers = () => {
     const [a, b] = [...pointers.current.values()];
@@ -216,7 +217,7 @@ export function useCameraGestures(options: CameraGestureOptions): CameraGestures
     o.current.canvas.current?.setPointerCapture?.(e.pointerId);
     const at = local(e);
     pointers.current.set(e.pointerId, at);
-    if (pointers.current.size === 1) press.current = { ...at, moved: false };
+    if (pointers.current.size === 1) press.current = { ...at, moved: false, slop: e.pointerType === 'touch' ? FINGER_DRAG_PX : DRAG_PX };
     else if (pointers.current.size === 2) { pinch.current = twoPointers(); if (press.current) press.current.moved = true; stopGlide(); }
   };
   const onPointerMove = (e: ReactPointerEvent<HTMLCanvasElement>) => {
@@ -239,7 +240,7 @@ export function useCameraGestures(options: CameraGestureOptions): CameraGestures
     }
     const p = press.current;
     if (!p) return;
-    if (!p.moved && Math.hypot(at.x - p.x, at.y - p.y) < DRAG_PX) return;
+    if (!p.moved && Math.hypot(at.x - p.x, at.y - p.y) < p.slop) return;
     if (!p.moved) { p.moved = true; stopGlide(); }
     const v = getViewport();
     setViewport({ ...v, x: v.x + at.x - before.x, y: v.y + at.y - before.y });

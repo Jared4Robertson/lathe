@@ -34,7 +34,6 @@ export interface TraceViewProps {
   focus: string;
   onNavigate: (id: string) => void;
   hrefFor: (id: string) => string;
-  onPeek?: (kind: 'hover' | 'selected', id: string | null) => void;
   /** Called with what the trace holds, for the header strip: "12 use cases · 3 with gaps · 1 serves no outcome". */
   onCounts?: (counts: string) => void;
   /** The open space the host's floating panels leave over the stage, where the canvas frames the focus. */
@@ -191,7 +190,7 @@ function ProductTraceStage(props: TraceViewProps & { product: string; trace: Pro
       <StageKey entries={keyEntries} />
       <TraceCanvas
         index={index} focus={focus} graph={graph} open={openness} at={at} beside={besideNow} every={every} ordered={ordered}
-        onToggle={toggle} onEvery={setEvery} onBox={onBox} onNavigate={props.onNavigate} onPeek={props.onPeek}
+        onToggle={toggle} onEvery={setEvery} onBox={onBox} onNavigate={props.onNavigate}
         space={props.space} ring={ring} cameraKey={props.cameraKey} onOpenNew={props.onOpenNew}
       />
       <div className="trace-access" data-arrows="own">

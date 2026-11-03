@@ -5,7 +5,7 @@ import { useCommand } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
 import { Icon } from '../components/icons';
 import { graphDrawn, graphKeyEntries } from './key';
-import { TapCard, useTapToOpen } from './touch';
+import { useNodeClick } from './nodeClick';
 import {
   NO_FILTERS,
   PARENT,
@@ -86,7 +86,7 @@ export interface GraphSettings {
   filters: Filters;
   /** The minimap in a corner of the canvas. Off by default. */
   minimap: boolean;
-  /** In the Map, every link between the records drawn as a line, not only the focus's and the selection's (LA-V93-R74). Off by default. */
+  /** In the Map, every link between the records drawn as a line, not only the focus's (LA-V93-R74). Off by default. */
   allLinks: boolean;
 }
 /** "1 record", "2 records". */
@@ -114,11 +114,6 @@ export interface GraphViewProps {
   /** The settings, when the host keeps them (so they survive moving between pages and views). */
   settings?: GraphSettings;
   onSettingsChange?: (settings: GraphSettings) => void;
-  /**
-   * Called with the node under the pointer or keyboard focus (the spotlight's, `hover`) and the one
-   * selected by a first tap (`selected`), or null, so the host can tell the chat what is selected.
-   */
-  onPeek?: (kind: 'hover' | 'selected', id: string | null) => void;
   /** Called with what the graph draws of the focus, for the header strip: "9 records · 8 links". */
   onCounts?: (counts: string) => void;
   /** The open space the host's floating panels leave over the stage, where the camera frames the focus. */
@@ -129,7 +124,7 @@ export interface GraphViewProps {
   onOpenNew?: (id: string, background: boolean) => void;
 }
 
-export function GraphView({ index, focus, onNavigate, settings: hosted, onSettingsChange, onPeek, onCounts, space, cameraKey, onOpenNew }: GraphViewProps) {
+export function GraphView({ index, focus, onNavigate, settings: hosted, onSettingsChange, onCounts, space, cameraKey, onOpenNew }: GraphViewProps) {
   const [own, setOwn] = useState<GraphSettings>(DEFAULT_GRAPH_SETTINGS);
   const settings = hosted ?? own;
   const { layout, depth, filters, minimap, allLinks } = settings;
@@ -209,7 +204,7 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
       <StageKey entries={keyEntries} beside={minimap ? 'minimap' : undefined} />
       <div className="graph-workspace">
         <div className="graph-canvas">
-          <GraphCanvas index={index} graph={graph} layout={layout} depth={depth} filters={filters} onNavigate={onNavigate} minimap={minimap} allLinks={allLinks} onPeek={onPeek} space={space} cameraKey={cameraKey} onOpenNew={onOpenNew} />
+          <GraphCanvas index={index} graph={graph} layout={layout} depth={depth} filters={filters} onNavigate={onNavigate} minimap={minimap} allLinks={allLinks} space={space} cameraKey={cameraKey} onOpenNew={onOpenNew} />
         </div>
       </div>
     </section>
@@ -386,10 +381,9 @@ export interface SceneBox {
   /** Whether it is one of the focus's direct children, drawn whole with a readable label (LA-V93-R77). */
   child: boolean;
   group: boolean;
-  /** Its states as drawn: under the pointer, ringed by the keyboard, selected by a tap, lit by the spotlight (null without one). */
+  /** Its states as drawn: under the pointer, ringed by the keyboard, lit by the spotlight (null without one). */
   hover: boolean;
   ring: boolean;
-  armed: boolean;
   lit: boolean | null;
   /** How strongly the focus fade draws it (LA-EXP-DS09): 1 in the focus's subtree, less outside it, eased while the fade follows a new focus. */
   strength: number;
@@ -477,7 +471,6 @@ interface CanvasProps {
   onNavigate: (id: string) => void;
   minimap: boolean;
   allLinks: boolean;
-  onPeek?: GraphViewProps['onPeek'];
   space?: OpenSpaceStore;
   cameraKey?: string;
   onOpenNew?: GraphViewProps['onOpenNew'];
@@ -502,7 +495,7 @@ function GraphStage(props: CanvasProps & { measure: TextMeasure; fonts: GraphFon
   return <GraphScene {...props} map={laid.map} mapIndex={laid.of} />;
 }
 
-function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, depth, filters, onNavigate, minimap, allLinks, onPeek, space, cameraKey, onOpenNew, measure, fonts, theme }: CanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number; map: GraphMap | NestedMap | GroundMap; mapIndex: RecordIndex }) {
+function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, depth, filters, onNavigate, minimap, allLinks, space, cameraKey, onOpenNew, measure, fonts, theme }: CanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number; map: GraphMap | NestedMap | GroundMap; mapIndex: RecordIndex }) {
   const focus = graph.focus;
   const wrapper = useRef<SceneHost>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -526,8 +519,6 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
   const always = useMemo(() => [focus, ...whole.keys()], [focus, whole]);
   /** What a new layout moved glides from where it was (morph.ts, LA-PAT-APP-UX-R22). */
   const morph = useMorph(map);
-  /** The box a first tap selected: the Map draws its links too. */
-  const armedRef = useRef<string | null>(null);
 
   // ---- The camera ----
   const view = useRef<Viewport>({ x: 0, y: 0, zoom: 1 });
@@ -577,7 +568,7 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
     // A click on the canvas gives the graph keyboard focus, so Tab goes on from it into the boxes.
     onPress: () => { if (!wrapper.current?.contains(document.activeElement)) wrapper.current?.focus({ preventScroll: true }); },
     onHover: (x, y) => setHover(hitAt(x, y)?.id ?? null),
-    onTap: (x, y, e) => { const hit = hitAt(x, y); if (hit) tapToOpen.onNodeClick(e, hit.id); else tapToOpen.clear(); },
+    onTap: (x, y, e) => { const hit = hitAt(x, y); if (hit) nodeClick.onNodeClick(e, hit.id); },
   });
   const { moveTo } = gestures;
 
@@ -775,15 +766,14 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
         lines.push({ id: `${p.id}|${PARENT}|${b.id}`, source: p.id, target: b.id, style: 'structure', link: false, points: parentLine(p, b, shape(p.id), shape(b.id)), scale: b.text });
       }
     }
-    // The Map's links, as lines (LA-V93-R74): the focus's and the selection's; with All links, every link between the records drawn.
+    // The Map's links, as lines (LA-V93-R74): the focus's; with All links, every link between the records drawn.
     if (map.view === 'map') {
       const has = (id: string) => map.nodes.has(id) && !hidden.has(id);
       const parentOnMap = (id: string) => map.nodes.get(id)?.parent ?? null;
-      const ends = [focus, ...(armedRef.current ? [armedRef.current] : [])];
-      const records = allLinks ? shown.filter((p) => !p.area).map((p) => p.id) : [];
+          const records = allLinks ? shown.filter((p) => !p.area).map((p) => p.id) : [];
       const drawnIds = new Set(records);
       const links = [
-        ...linksOf(index, has, parentOnMap, ends),
+        ...linksOf(index, has, parentOnMap, [focus]),
         ...linksOf(index, (id) => drawnIds.has(id), parentOnMap, records, MOST_LINKS),
         // A focused journey's steps' lines to what each carries out (LA-V93-R75).
         ...linksOf(index, has, parentOnMap, map.nodes.get(focus)?.children ?? []).filter((l) => l.relation === CARRIES_OUT),
@@ -812,7 +802,7 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
   // What the last frame drew is stale once anything it was drawn from changes: the pointer then hit-tests a fresh frame.
   lastFrame.current = null;
 
-  // ---- The spotlight, the pointer, the keyboard's ring and a tap's selection ----
+  // ---- The spotlight, the pointer and the keyboard's ring ----
   const hover = useRef<string | null>(null);
   const ring = useRef<string | null>(null);
   const spotlight = useRef<{ id: string | null; lit: Set<string> | null; litLines: Set<string> | null; from: number; to: number; start: number }>({ id: null, lit: null, litLines: null, from: 0, to: 0, start: 0 });
@@ -852,7 +842,6 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
     return { at: (id) => from(id) + (to(id) - from(id)) * e, done: false };
   };
   const ctx = useRef<CanvasRenderingContext2D | null | undefined>(undefined);
-  const tap = useRef<ReturnType<typeof useTapToOpen> | null>(null);
 
   paintRef.current = () => {
     const s = sizeRef.current;
@@ -865,7 +854,7 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
     const sp = spotlight.current;
     const fade = strengthNow();
     const live = marks.at(performance.now());
-    const state: PaintState = { focus, hover: hover.current, ring: ring.current, armed: tap.current?.armed ?? null, lit: sp.lit, litLines: sp.litLines, spot: spot.value, strength: fade.at, marks: live, open: openIn(wrapper.current, space, s.w, s.h), whole };
+    const state: PaintState = { focus, hover: hover.current, ring: ring.current, lit: sp.lit, litLines: sp.litLines, spot: spot.value, strength: fade.at, marks: live, open: openIn(wrapper.current, space, s.w, s.h), whole };
     paint(ctx.current, dpr, camOf(view.current, s), frame, look.current, fonts, state);
     // The leader line to the wiki card (LA-V96-R24), under this camera, from the focus's box in its outline's color.
     const v = view.current;
@@ -892,7 +881,6 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
     const root = wrapper.current;
     if (!root) return;
     const known = id !== null && (map.nodes.has(id) || graph.nodes.some((n) => n.id === id));
-    onPeek?.('hover', known ? id : null);
     const s = spotlight.current;
     const value = spotNow().value;
     if (!known) {
@@ -919,18 +907,14 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
     root.classList.add('has-spotlight');
     spotlight.current = { id, lit, litLines, from: s.id === null ? value : 1, to: 1, start: performance.now() };
     requestPaint();
-  }, [map, graph, onPeek, frameAt, requestPaint]);
+  }, [map, graph, frameAt, requestPaint]);
   // A new focus starts without a spotlight.
   useEffect(() => () => spot(null), [focus]);
 
   /** Whether a box can be focused by a click: a record or a group, not the focus. */
   const canOpen = useCallback((id: string) => id !== focus && isGraphNode(pageIndex, id), [focus, pageIndex]);
-  // By touch, a first tap selects a node and a second tap (or a tap on its card) opens it.
-  const tapToOpen = useTapToOpen(onNavigate, canOpen, wrapper, focus, onOpenNew);
-  tap.current = tapToOpen;
-  const armedPlate = tapToOpen.armed ? plateFor(tapToOpen.armed) : null;
-  armedRef.current = tapToOpen.armed;
-  useEffect(() => { onPeek?.('selected', tapToOpen.armed); requestPaint(); }, [tapToOpen.armed, onPeek]);
+  // A click, or a tap with a finger, opens a node at once.
+  const nodeClick = useNodeClick(onNavigate, canOpen, focus, onOpenNew);
 
   // ---- The keyboard's layer ----
   const boxIds = useMemo((): string[] => {
@@ -1045,7 +1029,7 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
         lines: frame.lines.map((l) => ({ id: l.id, source: l.source, target: l.target, style: l.style, link: l.link, lit: sp.id !== null && sp.litLines ? sp.litLines.has(l.id) : null, points: l.points.map((p) => [X(p.x), Y(p.y)] as [number, number]) })),
         boxes: frame.plates.map((p) => ({ p, label: drawnLabel(p, v.zoom, whole.get(p.id)) })).map(({ p, label }) => ({
           id: p.id, kind: p.kind, stage: p.stage, shape: p.shape, view: p.view, focus: p.id === focus, child: whole.has(p.id), group: p.group,
-          hover: hover.current === p.id, ring: ring.current === p.id, armed: tapToOpen.armed === p.id, lit: sp.id !== null && sp.lit ? sp.lit.has(p.id) : null, strength: strength(p.id),
+          hover: hover.current === p.id, ring: ring.current === p.id, lit: sp.id !== null && sp.lit ? sp.lit.has(p.id) : null, strength: strength(p.id),
           change: ((m) => (m && m.change !== 'removed' ? m.change : null))(changes.live.get(p.id)),
           pill: ((c) => (c === 'added' || c === 'changed' ? c : null))(marks.highlight?.change(p.id)),
           rollup: ((r) => (r ? rollupText(r) : null))(marks.highlight?.rolls.get(p.place)),
@@ -1089,7 +1073,7 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
         onAuxClick={(e) => {
           const r = e.currentTarget.getBoundingClientRect();
           const hit = hitAt(e.clientX - r.left, e.clientY - r.top);
-          if (hit) tapToOpen.onNodeAuxClick(e, hit.id);
+          if (hit) nodeClick.onNodeAuxClick(e, hit.id);
         }}
         onPointerLeave={(e) => { if (!gestures.pressed(e.pointerId)) setHover(null); }}
       />
@@ -1118,22 +1102,14 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
               aria-roledescription="node"
               aria-label={plateName(p, id === focus)}
               tabIndex={0}
-              onClick={(e) => tapToOpen.onNodeClick(e, id)}
-              onAuxClick={(e) => tapToOpen.onNodeAuxClick(e, id)}
+              onClick={(e) => nodeClick.onNodeClick(e, id)}
+              onAuxClick={(e) => nodeClick.onNodeAuxClick(e, id)}
             />
           );
         })}
       </div>
       <StageCamera onZoomIn={zoomButton(ZOOM_STEP)} onZoomOut={zoomButton(1 / ZOOM_STEP)} onFit={fitMap} />
       {minimap && <MapOverview map={map} focus={focus} hidden={hidden} view={minimapView} />}
-      {armedPlate && (
-        <TapCard
-          kind={armedPlate.kindLabel}
-          name={armedPlate.title}
-          onOpen={tapToOpen.openArmed}
-          onDismiss={tapToOpen.clear}
-        />
-      )}
     </div>
   );
 }

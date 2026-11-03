@@ -446,7 +446,6 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .stage-walk-step { min-width: var(--touch-target); min-height: var(--touch-target); justify-content: center; }
 .stage-walk-step:focus-visible { outline: 2px solid var(--steel); outline-offset: -2px; }
 .stage-layout.is-phone > .focus-stage { --stage-foot: calc(var(--walk-bar-height) + env(safe-area-inset-bottom) + var(--float-inset)); }
-.stage-layout.is-phone > .focus-stage .card.card-bar { bottom: var(--stage-foot); }
 .stage-key-sheet-list { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 4px 16px 16px; list-style: none; overflow-y: auto; scrollbar-gutter: stable; font-size: 0.85rem; }
 .stage-key-sheet-list .stage-key-entry { flex: none; display: grid; grid-template-columns: 40px minmax(0, 1fr); column-gap: 8px; row-gap: 2px; align-items: start; white-space: normal; }
 .stage-key-sheet-list .stage-key-entry[data-group-start] { padding: 10px 0 0; border-left: 0; border-top: 1px solid var(--rule); }
@@ -1216,14 +1215,8 @@ a.row-link.row-link:focus-visible { outline: none; }
   :is(.dialog, .long-list-tools, .graph-filters, .tool-panel) :is(input, select, textarea), .dialog-search { font-size: 16px; }
 }
 
-/* A canvas by touch: the selected node is outlined, and a card at the bottom names it; a tap on the card opens it. */
+/* A canvas by touch: the camera's gestures take the finger (pan and pinch), never the page; a tap opens a node. */
 .graph-flow, .erd-flow { touch-action: none; }
-.card.card-bar { position: absolute; z-index: 6; left: 56px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; max-width: 420px; box-sizing: border-box; padding: 6px 6px 6px 14px; border-radius: 12px; box-shadow: 0 6px 20px var(--shadow); }
-.card-bar .card-title { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; min-height: var(--touch-target); }
-.card-bar .card-title::after { border-radius: 12px; }
-.tap-text { flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
-.tap-text small { font-size: 0.72rem; }
-.tap-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 0.92rem var(--body); }
 
 /* Long IDs, paths and code-like words never widen a pane or the page: an ID, the card's kind line, a record link's ID
    and name, and a row's tags break a word only where it is wider than its line. Code blocks and tables scroll in their

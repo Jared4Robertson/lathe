@@ -22,7 +22,6 @@ import { addressOf, HOME_PATH, focusOf, isFocusRoute, pathOf, STAGE_LABELS, stag
 import { HeaderStrip } from './HeaderStrip';
 import { createOpenSpaceStore, usePageRoom, useOpenSpaceMeasure, useRoom } from './openSpace';
 import { PageActions, PageBar, STAGE_COMMANDS } from './PageBar';
-import { createPeekStore } from './peek';
 import { TAB_PANEL_ID, tabId, tabLabel } from './TabStrip';
 import { rememberedStage, useNewPlaceOpener, usePlace, withStageIn, type TabsApi } from './usePlace';
 import { hereOf, type PlaceView } from './place';
@@ -176,8 +175,6 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
   // choice stays as set, and one they open while it is collapsed is held open.
   const { crowded, hold } = useRoom();
   // What the stages tell the page: the node under the pointer, the one selected (for the chat's app_focus).
-  const [peek] = useState(createPeekStore);
-  useLayoutEffect(() => { peek.clear(); }, [peek, focus]);
 
   // How the graph is laid out, the minimap and the wiki card's width are the window's, whatever the place; the depth,
   // the kind filters and the card's open and expanded state are the place's (LA-V93-R72): moving through the stage
@@ -234,8 +231,7 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
   useEffect(() => (narrow ? onCardSheetAsked(() => setSheet(true)) : undefined), [narrow]);
 
   // What the page shows, for Claude's app_focus tool in the desktop chat (LA-PLT-UC29-R01).
-  const selectedNow = useCallback(() => peek.get().selected, [peek]);
-  useViewState({ focus, stage, selected: null, wikiCard: cardShown }, selectedNow);
+  useViewState({ focus, stage, wikiCard: cardShown });
 
   const [counts, setCounts] = useState('');
 
@@ -335,17 +331,17 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
   const content: Record<StageName, ReactNode> = {
     graph: (
       <Suspense fallback={<p className="hint graph-loading">Loading the graph…</p>}>
-        <GraphView index={index} focus={shownFocus} onNavigate={onNavigate} settings={settings} onSettingsChange={onSettings} onPeek={peek.set} onCounts={setCounts} space={space} cameraKey={place.key} onOpenNew={onOpenNew} />
+        <GraphView index={index} focus={shownFocus} onNavigate={onNavigate} settings={settings} onSettingsChange={onSettings} onCounts={setCounts} space={space} cameraKey={place.key} onOpenNew={onOpenNew} />
       </Suspense>
     ),
     erd: (
       <Suspense fallback={<p className="hint graph-loading">Loading the ERD…</p>}>
-        <ErdView index={index} focus={shownFocus} onNavigate={onNavigate} onPeek={peek.set} onCounts={setCounts} space={space} cameraKey={place.key} onOpenNew={onOpenNew} />
+        <ErdView index={index} focus={shownFocus} onNavigate={onNavigate} onCounts={setCounts} space={space} cameraKey={place.key} onOpenNew={onOpenNew} />
       </Suspense>
     ),
     trace: (
       <Suspense fallback={<p className="hint graph-loading">Loading the trace…</p>}>
-        <TraceView index={index} focus={shownFocus} onNavigate={onNavigate} hrefFor={hrefFor} onPeek={peek.set} onCounts={setCounts} space={space} cameraKey={place.key} onOpenNew={onOpenNew} />
+        <TraceView index={index} focus={shownFocus} onNavigate={onNavigate} hrefFor={hrefFor} onCounts={setCounts} space={space} cameraKey={place.key} onOpenNew={onOpenNew} />
       </Suspense>
     ),
   };
@@ -456,7 +452,6 @@ export function StageBackdrop({ index, focus }: { index: RecordIndex | null; foc
   useOpenSpaceMeasure(stageEl, space, layout);
   const { graph: look } = useSessionSettings();
   const settings = useMemo(() => ({ ...DEFAULT_GRAPH_SETTINGS, ...look }), [look]);
-  const [peek] = useState(createPeekStore);
   const stage = rememberedStage();
   const shown = index && focus && index.byId.has(focus) ? focus : null;
   let content: ReactNode = null;
@@ -464,9 +459,9 @@ export function StageBackdrop({ index, focus }: { index: RecordIndex | null; foc
     const fallback = <p className="hint graph-loading">Loading the stage…</p>;
     content = (
       <Suspense fallback={fallback}>
-        {stage === 'graph' && <GraphView index={index} focus={shown} onNavigate={ignore} settings={settings} onSettingsChange={ignore} onPeek={peek.set} onCounts={ignore} space={space} />}
-        {stage === 'erd' && <ErdView index={index} focus={shown} onNavigate={ignore} onPeek={peek.set} onCounts={ignore} space={space} />}
-        {stage === 'trace' && <TraceView index={index} focus={shown} onNavigate={ignore} hrefFor={addressOf} onPeek={peek.set} onCounts={ignore} space={space} />}
+        {stage === 'graph' && <GraphView index={index} focus={shown} onNavigate={ignore} settings={settings} onSettingsChange={ignore} onCounts={ignore} space={space} />}
+        {stage === 'erd' && <ErdView index={index} focus={shown} onNavigate={ignore} onCounts={ignore} space={space} />}
+        {stage === 'trace' && <TraceView index={index} focus={shown} onNavigate={ignore} hrefFor={addressOf} onCounts={ignore} space={space} />}
       </Suspense>
     );
   }

@@ -288,7 +288,7 @@ describe('LA-PLT-UC29-R01-T03 The page answers the app bridge: what the Reader i
     fakeChat();
     await openApp('/DM-SHOP-UC01?stage=erd');
     const index = recordIndexOf(workspace());
-    expect(focusAnswer(index, '/DM-SHOP-UC01', 'DM').page).toMatchObject({ focus: { id: 'DM-SHOP-UC01', kind: 'use_case', title: 'Add an item to the basket' }, stage: 'erd', product: 'DM', selected: null });
+    expect(focusAnswer(index, '/DM-SHOP-UC01', 'DM').page).toMatchObject({ focus: { id: 'DM-SHOP-UC01', kind: 'use_case', title: 'Add an item to the basket' }, stage: 'erd', product: 'DM' });
     let answer: { ok: boolean; message: string } | undefined;
     act(() => { answer = openAnswer(index, { id: 'DM-SHOP-CMD01', stage: 'graph' }); });
     expect(answer).toEqual({ ok: true, message: 'Opened DM-SHOP-CMD01 (command): Add item, on the Graph stage.' });

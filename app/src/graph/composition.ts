@@ -1,6 +1,6 @@
 // What nests in the Graph's Map layout (LA-STD-MODELING-R14, LA-EXP-DS12): a record is drawn inside its parent only
 // when it cannot exist without it and belongs wholly to it, its composition. Everything else a record is joined to,
-// its parent included, is a link, drawn as a line when it is relevant (the focus's and the selection's).
+// its parent included, is a link, drawn as a line when it is relevant (the focus's).
 
 /** Each parent kind's composed child kinds: the Owner-approved list (LA-STD-MODELING-R14). */
 const COMPOSED: Readonly<Record<string, readonly string[]>> = {

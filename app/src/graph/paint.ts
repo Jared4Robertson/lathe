@@ -108,7 +108,7 @@ export const onCanvas = (r: { x: number; y: number; w: number; h: number }, cam:
 /** Whether a rectangle on the canvas, in its CSS pixels, meets the canvas with the margin. */
 const meets = (cam: Camera, left: number, top: number, right: number, bottom: number) =>
   right >= -CULL_PX && left <= cam.w + CULL_PX && bottom >= -CULL_PX && top <= cam.h + CULL_PX;
-/** The least width on screen of the keyboard's focus ring and a tap's selection, and of the center's ring, in CSS pixels, so they always show. */
+/** The least width on screen of the keyboard's focus ring, and of the center's ring, in CSS pixels, so they always show. */
 const RING_MIN_PX = 2;
 const FOCUS_MIN_PX = 1.5;
 
@@ -162,12 +162,11 @@ export interface Bar { parent: string; x: number; y: number; w: number; h: numbe
 /** What a frame draws, in draw order: `wires`, when given, draws a stage's own lines in one go, after the bars and under the boxes (the Trace's links). */
 export interface Frame { plates: readonly Plate[]; bars: readonly Bar[]; lines: readonly Line[]; wires?: (ctx: CanvasRenderingContext2D, X: (x: number) => number, Y: (y: number) => number) => void }
 
-/** The states the frame shows: the focus, the box under the pointer, the keyboard's ring, a tap's selection, and the spotlight. */
+/** The states the frame shows: the focus, the box under the pointer, the keyboard's ring and the spotlight. */
 export interface PaintState {
   focus: string;
   hover: string | null;
   ring: string | null;
-  armed: string | null;
   /** The hover spotlight: the places (Plate.place) and lines it keeps bright, and how far its dimming has faded in (0 to 1). */
   lit: ReadonlySet<string> | null;
   /**
@@ -458,7 +457,6 @@ function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Lo
   const colors = boxColors(look, p);
   const isFocus = p.id === state.focus;
   const ringed = state.ring === p.id;
-  const armed = state.armed === p.id;
   const hovered = state.hover === p.id && !isFocus;
   const s = p.scale;
 
@@ -469,7 +467,7 @@ function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Lo
     // The focus is outlined in its own color (its stage's or kind's edge), only stronger: the highlight matches the box.
     if (isFocus) { edge = colors.edge; edgeWidth = Math.max(FOCUS_MIN_PX, 3 * s * zoom); }
     if (hovered) { edge = look.steel; edgeWidth = 2.5 * s * zoom; }
-    if (ringed || armed) { edge = look.steel; edgeWidth = Math.max(RING_MIN_PX, 3 * s * zoom); }
+    if (ringed) { edge = look.steel; edgeWidth = Math.max(RING_MIN_PX, 3 * s * zoom); }
   } else {
     // Rings outside the outline, drawn first so the fill covers their inner half.
     const ring = (color: string, width: number) => {
@@ -478,8 +476,7 @@ function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Lo
       outlinePath(ctx, p, p.outline, X, Y, zoom);
       ctx.stroke();
     };
-    if (armed) ring(look.steel, Math.max(RING_MIN_PX, 3 * zoom));
-    else if (hovered) ring(look.hoverRing, 3 * s * zoom);
+    if (hovered) ring(look.hoverRing, 3 * s * zoom);
     else if (isFocus) ring(colors.edge, Math.max(FOCUS_MIN_PX, 2 * s * zoom));
   }
 
@@ -614,7 +611,7 @@ function paintArea(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: L
     ctx.fill();
     ctx.globalAlpha = base;
   }
-  const ring = state.armed === p.id || state.ring === p.id ? look.steel : state.focus === p.id ? stageColors(look, p.stage).edge : state.hover === p.id ? look.hoverRing : null;
+  const ring = state.ring === p.id ? look.steel : state.focus === p.id ? stageColors(look, p.stage).edge : state.hover === p.id ? look.hoverRing : null;
   if (!ring) return;
   outlinePath(ctx, p, p.outline, X, Y, zoom);
   ctx.strokeStyle = ring;

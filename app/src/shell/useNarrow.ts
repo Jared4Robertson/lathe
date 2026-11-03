@@ -8,8 +8,6 @@ import { useEffect, useState, type KeyboardEvent } from 'react';
 export const NARROW_QUERY = '(max-width: 900px)';
 /** A phone on its side: a sheet at half height would show only its head, so sheets open at full height. */
 export const LANDSCAPE_QUERY = '(orientation: landscape)';
-/** A touch screen (or a pen) is the main pointer: targets are at least 44 × 44 px and taps select before they open. */
-export const COARSE_QUERY = '(pointer: coarse)';
 
 /** Whether a media query matches, following changes. False where matchMedia is missing. */
 function useMedia(query: string): boolean {
@@ -34,11 +32,6 @@ export function useNarrow(): boolean {
 /** True when the screen is wider than tall, following turns. */
 export function useLandscape(): boolean {
   return useMedia(LANDSCAPE_QUERY);
-}
-
-/** True when the main pointer is coarse (a finger). */
-export function useCoarsePointer(): boolean {
-  return useMedia(COARSE_QUERY);
 }
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';

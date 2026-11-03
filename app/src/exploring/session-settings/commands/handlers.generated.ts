@@ -29,7 +29,7 @@ export function chooseGraphLayout({ layout }: ChooseGraphLayout): void {
 
 export interface ShowOrHideAllLinks { shown: SessionSettings['graph']['allLinks'] }
 
-/** Has the graph's Map draw every link between the records drawn, or only the focus's and the selection's, for the browser session. */
+/** Has the graph's Map draw every link between the records drawn, or only the focus's, for the browser session. */
 export function showOrHideAllLinks({ shown }: ShowOrHideAllLinks): void {
   const was = sessionSettingsRepository.load();
   if (was.graph.allLinks === shown) return;

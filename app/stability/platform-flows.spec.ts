@@ -325,14 +325,11 @@ test.describe('Platform flows in the app', () => {
       await expect.poll(async () => (await sceneOf(page)).camera.zoom).toBeGreaterThan(zoom);
       await page.locator('.focus-stage').getByRole('button', { name: 'Frame the focus' }).tap();
       await page.waitForTimeout(1300);
-      // Tap a node to see its name, and Open.
+      // One tap on a node opens it.
       const scene = await sceneOf(page);
       const node = scene.boxes.find((b) => b.id.startsWith('LA-') && !b.focus && b.label.top > scene.canvas.top + 30 && b.label.top + b.label.height < scene.canvas.top + scene.canvas.height - 60 && b.label.left > 0 && b.label.left + b.label.width < 375);
       expect(node, 'a node on screen').toBeTruthy();
       await page.touchscreen.tap(node!.label.left + node!.label.width / 2, node!.label.top + node!.label.height / 2);
-      const open = page.locator('.focus-stage').getByRole('button', { name: /^Open / });
-      await expect(open).toBeVisible();
-      await open.tap();
       await page.waitForURL((u) => u.pathname === `/${node!.id}`);
       // The wiki card's sheet: up, to full height, swiped away.
       await page.getByRole('button', { name: 'Show the wiki card' }).tap();

@@ -7,7 +7,7 @@ import { type RecordIndex } from '../exploring/record-summaries/record-index';
 //
 // Every outline here is drawn by the canvas (paint.ts) in one of three ways:
 // - a polygon (`clipped`): filled, and its edge drawn inside it, so the border follows the outline
-//   in every state (hover, focus and a tap's selection color the edge);
+//   in every state (hover, focus and the keyboard's ring color the edge);
 // - rounded corners (`radius`), its border, ring and focus outline following them;
 // - a plain box with a drawing inside it (a second border, a top bar, stripes).
 // Notches and corners grow with the box (its box scale), at most a fraction of its side. Each

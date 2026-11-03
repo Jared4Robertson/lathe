@@ -23,8 +23,8 @@ export const APP_TOOLS = [
   {
     name: 'app_focus',
     description:
-      'What the Reader is looking at in the Lathe app window this chat runs in: the page, the focused record (its ID, kind and title), the stage (graph, erd or trace) and the record selected on the stage or in the wiki card, if any. ' +
-      'Use it to resolve "this", "here" or "the selected one", and for anything about the window, instead of searching the code. Works only while the window is open.',
+      'What the Reader is looking at in the Lathe app window this chat runs in: the page, the focused record (its ID, kind and title) and the stage (graph, erd or trace). ' +
+      'Use it to resolve "this" or "here", and for anything about the window, instead of searching the code. Works only while the window is open.',
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
     annotations: { readOnlyHint: true },
   },
@@ -52,7 +52,7 @@ export const isAppTool = (name: string) => APP_TOOLS.some((t) => t.name === name
 interface Named { id: string; kind: string; title: string }
 /** What the window's page says it shows (app/src/chat/appRequests.ts). */
 export interface AppFocus {
-  page: { path: string; product: string | null; stage: string | null; focus: Named | null; selected: Named | null; wikiCard: boolean | null } | null;
+  page: { path: string; product: string | null; stage: string | null; focus: Named | null; wikiCard: boolean | null } | null;
 }
 
 const named = (n: Named) => `${n.id} (${n.kind}): ${n.title}`;
@@ -64,7 +64,6 @@ export function focusText(focus: AppFocus): string {
   const lines = [page.focus ? `The Reader is looking at ${named(page.focus)}` : `The Reader is on ${page.path}, which has no record in focus`];
   if (page.focus && page.stage) lines[0] += `, on the ${page.stage} stage`;
   lines[0] += '.';
-  if (page.selected) lines.push(`Selected: ${named(page.selected)}.`);
   if (page.product) lines.push(`Product: ${page.product}.`);
   lines.push(`Page: ${page.path}`);
   return lines.join('\n');
@@ -102,8 +101,8 @@ export async function callAppTool(app: AppBridge | null, name: string, args: Rec
 /** What the app commands add to `lathe help`. */
 export const APP_USAGE = `App commands (the MCP tools app_focus and app_open from a shell; they work only in the chat of the Lathe
 desktop app, while its window is open):
-  app focus                             Print what the Reader is looking at: the page, the focused record, the
-                                        stage and the record selected.
+  app focus                             Print what the Reader is looking at: the page, the focused record and
+                                        the stage.
   app open <id> [--stage graph|erd|trace]
                                         Open a record in the window, on the stage given or the one shown.
   Add --json for the result as JSON. With no window connected, each is refused and exits 1.

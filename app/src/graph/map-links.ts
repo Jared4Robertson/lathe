@@ -5,7 +5,7 @@ import { PARENT } from './model';
 import type { Line } from './paint';
 
 // The Map's links as lines (LA-EXP-DS12): what a record is joined to beyond its composition (its links both ways, and
-// its parent when it does not nest in it) is drawn only when it is relevant: the focus's and the selection's links,
+// its parent when it does not nest in it) is drawn only when it is relevant: the focus's links,
 // labeled by their relation; with All links on, every link between the records drawn, up to MOST_LINKS. Framing a
 // journey draws its steps' lines to what each carries out too, and inside a journey or a flow a "then" arrow joins each
 // step to the next on its path (sequence.ts).

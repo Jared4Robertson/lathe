@@ -15,7 +15,7 @@ import { lowerLabel } from '../plural';
 import { ERD_EMPTY, erdFocus, erdStrength, LINE_WORDS, lineEnds, lineGeometry, lineOffsets, RELATION_ENDS, scopeContents, type ErdBox, type ErdFocus, type ErdKind, type ErdLine, type ErdMap, type ErdRelation, type Rect, useErd } from './erd';
 import { erdLayout, readyErdLayout, tidyErdLayout } from './layout';
 import { BLOCK_BELOW_ZOOM, boxEdge, boxText, lineOnCanvas, measureAgain, paintErd, readErdFonts, readErdLook, REGION_LABEL_BELOW, regionFits, type DrawnBox, type DrawnLine, type ErdFonts, type ErdFrame, type ErdLook, type RegionLabel } from './paint';
-import { TapCard, useTapToOpen } from '../graph/touch';
+import { useNodeClick } from '../graph/nodeClick';
 import { MIN_FRAME, OPEN_GAP, useOpenSpace, type OpenSpaceStore } from '../views/openSpace';
 import { drawLeaderLine, useLeaderFollow } from '../views/leaderLine';
 import { keepCamera } from '../exploring/tab-set/commands/keep-camera';
@@ -39,7 +39,7 @@ import { useChangesKey } from '../changes/ChangesKey';
 // stage's (views/StageChrome.tsx), the key explaining the boxes and the lines it draws. Like the graph it never reads the
 // address, and frames itself in the open space it is given.
 
-/** What a box is called, in its accessible name, the key and the touch card. */
+/** What a box is called, in its accessible name and the key. */
 export const BOX_KIND: Record<ErdKind, string> = { domain: 'Domain', aggregate: 'Aggregate', entity: 'Entity' };
 
 /** The key's lines in order, each with what its label alone does not say (its whole meaning is the entry's tooltip). */
@@ -57,8 +57,6 @@ export interface ErdViewProps {
   index: RecordIndex;
   focus: string;
   onNavigate: (id: string) => void;
-  /** Called with the box under the pointer or keyboard focus (`hover`) and the one selected by a first tap (`selected`), for the chat's app_focus. */
-  onPeek?: (kind: 'hover' | 'selected', id: string | null) => void;
   /** Called with what the focus's scope holds, for the header strip: "4 entities · 3 lines". */
   onCounts?: (counts: string) => void;
   /** The open space the host's floating panels leave over the stage, where the focus is framed. */
@@ -98,7 +96,7 @@ export const erdCounts = (map: ErdMap, scope: string) => {
   return `${entities} ${entities === 1 ? 'entity' : 'entities'} · ${lines.length} ${lines.length === 1 ? 'line' : 'lines'}`;
 };
 
-export function ErdView({ index, focus, onNavigate, onPeek, onCounts, space, cameraKey, onOpenNew }: ErdViewProps) {
+export function ErdView({ index, focus, onNavigate, onCounts, space, cameraKey, onOpenNew }: ErdViewProps) {
   const at = useMemo(() => erdFocus(index, focus), [index, focus]);
   // The product's map, from the ERD read, read again with every data change (the index is the data's version).
   const read = useErd(at?.product ?? null, index);
@@ -132,7 +130,7 @@ export function ErdView({ index, focus, onNavigate, onPeek, onCounts, space, cam
         <p className="placeholder erd-empty">{ERD_EMPTY}</p>
       ) : (
         <div className="erd-canvas">
-          <ErdCanvas index={index} map={map} at={at} focus={focus} refocus={refocus} onNavigate={onNavigate} onPeek={onPeek} space={space} cameraKey={cameraKey} onOpenNew={onOpenNew} onLaidOut={() => setLaidOut((n) => n + 1)} />
+          <ErdCanvas index={index} map={map} at={at} focus={focus} refocus={refocus} onNavigate={onNavigate} space={space} cameraKey={cameraKey} onOpenNew={onOpenNew} onLaidOut={() => setLaidOut((n) => n + 1)} />
         </div>
       )}
       <StageToolbar can={(move) => target(move) !== null} own={() => ({ primary: <TidyUp /> })} bar={ERD_WALK_BAR} />
@@ -218,7 +216,7 @@ const NO_HINTS = '0 0 0 0';
 /** One drawn box as the test hook reports it: the box's place in the map and on the page, its text as drawn, and its states. */
 export interface ErdSceneBox {
   id: string; kind: ErdKind; parent: string | null; title: string[]; root: boolean; kindLine: string | null; fields: { name: string; type: string }[];
-  focus: boolean; pick: boolean; hover: boolean; ring: boolean; armed: boolean; strength: number; block: boolean;
+  focus: boolean; pick: boolean; hover: boolean; ring: boolean; strength: number; block: boolean;
   /** Its live change (a dot), whether its glow or pulse is playing now, and with Highlight changes on its change from the baseline (its pill). */
   change: 'added' | 'changed' | null; flash: boolean; pill: 'added' | 'changed' | null;
   map: Rect; rect: { left: number; top: number; width: number; height: number };
@@ -238,7 +236,7 @@ export interface ErdScene {
 /** The canvas's element, with the hooks the tests read the drawn scene and hit-test through (the desktop's record menu too). */
 export type ErdHost = HTMLDivElement & { erdScene?: (whole?: boolean) => ErdScene; graphHit?: (clientX: number, clientY: number) => string | null };
 
-interface CanvasProps { index: RecordIndex; map: ErdMap; at: ErdFocus; focus: string; refocus: { current: string | null }; onNavigate: (id: string) => void; onPeek?: ErdViewProps['onPeek']; space?: OpenSpaceStore; cameraKey?: string; onOpenNew?: ErdViewProps['onOpenNew']; onLaidOut: () => void }
+interface CanvasProps { index: RecordIndex; map: ErdMap; at: ErdFocus; focus: string; refocus: { current: string | null }; onNavigate: (id: string) => void; space?: OpenSpaceStore; cameraKey?: string; onOpenNew?: ErdViewProps['onOpenNew']; onLaidOut: () => void }
 
 /** The coarse pointer (a touch screen), where there is no hover: dashed lines always show their fields (LA-PAT-APP-UX-R07). */
 const coarsePointer = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
@@ -254,7 +252,7 @@ function toSegment(p: Point, a: Point, b: Point): number {
 const inRect = (p: Point, r: Rect) => p.x >= r.x && p.x <= r.x + r.width && p.y >= r.y && p.y <= r.y + r.height;
 const toRect = (b: { x: number; y: number; w: number; h: number }): Rect => ({ x: b.x, y: b.y, width: b.w, height: b.h });
 
-function ErdCanvas({ index, map, at, focus, refocus, onNavigate, onPeek, space, cameraKey, onOpenNew, onLaidOut }: CanvasProps) {
+function ErdCanvas({ index, map, at, focus, refocus, onNavigate, space, cameraKey, onOpenNew, onLaidOut }: CanvasProps) {
   const relations = index.meta.relations;
   // The map's layout: ready at once when this product was laid out before on the same data.
   const [placed, setPlaced] = useState<{ map: ErdMap; rects: Map<string, Rect> } | null>(() => {
@@ -306,7 +304,7 @@ function ErdCanvas({ index, map, at, focus, refocus, onNavigate, onPeek, space, 
     setViewport,
     zoom: { min: MIN_ZOOM, max: MAX_ZOOM },
     onHover: (x, y) => setHover(hitAt(x, y)),
-    onTap: (x, y, e) => { const hit = hitAt(x, y); if (hit?.box) tap.onNodeClick(e, hit.box); else tap.clear(); },
+    onTap: (x, y, e) => { const hit = hitAt(x, y); if (hit?.box) nodeClick.onNodeClick(e, hit.box); },
   });
 
   // ---- The look, the fade, the glide and the marks ----
@@ -349,17 +347,12 @@ function ErdCanvas({ index, map, at, focus, refocus, onNavigate, onPeek, space, 
   const marks = useStageMarks(placeOf, tree);
   useEffect(() => { requestPaint(); }, [marks.version, marks.highlight]);
 
-  // ---- The pointer, the keyboard's ring and a tap's selection ----
+  // ---- The pointer and the keyboard's ring ----
   const hover = useRef<{ box: string | null; line: string | null }>({ box: null, line: null });
   const ring = useRef<string | null>(null);
   const touch = useMemo(coarsePointer, []);
   const canOpen = useCallback((id: string) => id !== focus, [focus]);
-  const tap = useTapToOpen(onNavigate, canOpen, wrapper, focus, onOpenNew);
-  const armed = useRef(tap.armed);
-  armed.current = tap.armed;
-  useEffect(() => { onPeek?.('selected', tap.armed); requestPaint(); }, [tap.armed, onPeek]);
-  // A new focus starts with nothing under the pointer.
-  useEffect(() => () => onPeek?.('hover', null), [focus, onPeek]);
+  const nodeClick = useNodeClick(onNavigate, canOpen, focus, onOpenNew);
 
   // ---- What a camera shows ----
   const titles = useMemo(() => new Map(map.boxes.map((b) => [b.id, b.title])), [map]);
@@ -380,7 +373,7 @@ function ErdCanvas({ index, map, at, focus, refocus, onNavigate, onPeek, space, 
       const laid = placed.rects.get(box.id)!;
       const d: DrawnBox = {
         box, rect, text: boxText(box, laid.width, kindLine(box), fonts), strength: fade(box.id),
-        focus: box.id === focus, pick: box.id === at.pick, hover: hover.current.box === box.id, ring: ring.current === box.id, armed: armed.current === box.id,
+        focus: box.id === focus, pick: box.id === at.pick, hover: hover.current.box === box.id, ring: ring.current === box.id,
         hl: hl ? { change: hl.change(box.id), roll: hl.rolls.get(box.id) ?? null } : null,
       };
       (box.kind === 'entity' ? out.over : out.under).push(d);
@@ -606,7 +599,6 @@ function ErdCanvas({ index, map, at, focus, refocus, onNavigate, onPeek, space, 
   const setHover = (hit: { box: string | null; line: string | null } | null) => {
     const next = hit ?? { box: null, line: null };
     if (hover.current.box === next.box && hover.current.line === next.line) return;
-    if (hover.current.box !== next.box) onPeek?.('hover', next.box);
     hover.current = next;
     const c = canvas.current;
     if (c) {
@@ -681,7 +673,7 @@ function ErdCanvas({ index, map, at, focus, refocus, onNavigate, onPeek, space, 
       const live = marks.at(now);
       const box = (d: DrawnBox): ErdSceneBox => ({
         id: d.box.id, kind: d.box.kind, parent: d.box.parent ?? null, title: d.text.title, root: d.text.root > 0, kindLine: d.text.kind, fields: d.text.fields.map((f) => ({ name: f.name, type: f.type })),
-        focus: d.focus, pick: d.pick, hover: d.hover, ring: d.ring, armed: d.armed, strength: d.strength, block: v.zoom < BLOCK_BELOW_ZOOM,
+        focus: d.focus, pick: d.pick, hover: d.hover, ring: d.ring, strength: d.strength, block: v.zoom < BLOCK_BELOW_ZOOM,
         change: ((m) => (m && m.change !== 'removed' ? m.change : null))(changes.live.get(d.box.id)),
         flash: ((m) => !!m && m.change !== 'removed' && markPhase(live, m) !== null)(live.mark(d.box.id)),
         pill: d.hl?.change === 'added' || d.hl?.change === 'changed' ? d.hl.change : null,
@@ -704,7 +696,6 @@ function ErdCanvas({ index, map, at, focus, refocus, onNavigate, onPeek, space, 
   });
 
   if (error) return <p className="error">Couldn't draw the diagram: {error}</p>;
-  const armedBox = tap.armed ? map.boxes.find((b) => b.id === tap.armed) : undefined;
   const pan = (side: Side) => { const s = sizeRef.current; if (s) gestures.moveTo(panToward(view.current, side, s.w, s.h), true); };
   const past = (key: string) => { const [up, down, left, right] = key.split(' ').map(Number); return { up, down, left, right }; };
   return (
@@ -726,7 +717,7 @@ function ErdCanvas({ index, map, at, focus, refocus, onNavigate, onPeek, space, 
         onAuxClick={(e) => {
           const r = e.currentTarget.getBoundingClientRect();
           const hit = hitAt(e.clientX - r.left, e.clientY - r.top);
-          if (hit?.box) tap.onNodeAuxClick(e, hit.box);
+          if (hit?.box) nodeClick.onNodeAuxClick(e, hit.box);
         }}
         onPointerLeave={(e) => { if (!gestures.pressed(e.pointerId)) setHover(null); }}
       />
@@ -737,10 +728,9 @@ function ErdCanvas({ index, map, at, focus, refocus, onNavigate, onPeek, space, 
           const el = (e.target as HTMLElement).closest?.<HTMLElement>('.erd-node');
           const id = el?.dataset.id ?? null;
           ring.current = el && el.matches(':focus-visible') ? id : null;
-          onPeek?.('hover', id);
           requestPaint();
         }}
-        onBlur={() => { ring.current = null; onPeek?.('hover', null); requestPaint(); }}
+        onBlur={() => { ring.current = null; requestPaint(); }}
       >
         {layerBoxes.map((box) => {
           const s = strength(box.id);
@@ -755,8 +745,8 @@ function ErdCanvas({ index, map, at, focus, refocus, onNavigate, onPeek, space, 
               aria-roledescription="node"
               {...(s < 1 ? { 'aria-hidden': true } : { 'aria-label': boxName(box, pick), tabIndex: 0 })}
               aria-current={box.id === focus ? 'true' : undefined}
-              onClick={(e) => tap.onNodeClick(e, box.id)}
-              onAuxClick={(e) => tap.onNodeAuxClick(e, box.id)}
+              onClick={(e) => nodeClick.onNodeClick(e, box.id)}
+              onAuxClick={(e) => nodeClick.onNodeAuxClick(e, box.id)}
             >
               {box.fields.length > 0 && (
                 <ul aria-label={`Fields of ${box.title}`}>
@@ -775,7 +765,6 @@ function ErdCanvas({ index, map, at, focus, refocus, onNavigate, onPeek, space, 
       <StageCamera onZoomIn={zoomButton(ZOOM_STEP)} onZoomOut={zoomButton(1 / ZOOM_STEP)} onFit={fitMap} />
       {hints.more !== NO_HINTS && <EdgeHintChips past={past(hints.more)} noun="more" onPan={pan} />}
       {marks.highlight && hints.changes !== NO_HINTS && <EdgeHintChips past={past(hints.changes)} noun="changed" word={{ one: 'change', many: 'changes' }} onPan={pan} />}
-      {armedBox && <TapCard kind={BOX_KIND[armedBox.kind]} name={armedBox.title} onOpen={tap.openArmed} onDismiss={tap.clear} />}
     </div>
   );
 }

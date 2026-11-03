@@ -11,7 +11,7 @@ const TOKEN = 'secret';
 const opened: unknown[] = [];
 let server: Server;
 let base: string;
-const page = { path: '/TL-LEND-UC01', product: 'TL', stage: 'graph', focus: { id: 'TL-LEND-UC01', kind: 'use_case', title: 'Borrow a tool' }, selected: { id: 'TL-LEND', kind: 'domain', title: 'Lending' }, wikiCard: true };
+const page = { path: '/TL-LEND-UC01', product: 'TL', stage: 'graph', focus: { id: 'TL-LEND-UC01', kind: 'use_case', title: 'Borrow a tool' }, wikiCard: true };
 
 beforeAll(async () => {
   server = createServer((req, res) => {
@@ -66,7 +66,7 @@ describe('LA-PLT-UC29-R01-T01 Claude asks what the Reader is looking at and open
   it('says what the Reader is looking at', async () => {
     const result = await callTool('/unused', 'app_focus', {}, app('open-window'));
     expect(result.isError).toBeUndefined();
-    expect(result.content[0].text).toBe('The Reader is looking at TL-LEND-UC01 (use_case): Borrow a tool, on the graph stage.\nSelected: TL-LEND (domain): Lending.\nProduct: TL.\nPage: /TL-LEND-UC01');
+    expect(result.content[0].text).toBe('The Reader is looking at TL-LEND-UC01 (use_case): Borrow a tool, on the graph stage.\nProduct: TL.\nPage: /TL-LEND-UC01');
     expect(result.structuredContent).toMatchObject({ page: { focus: { id: 'TL-LEND-UC01' } } });
     expect(focusText({ page: null })).toBe('The window shows no page yet.');
   });

@@ -99,7 +99,7 @@ export const COMMANDS: readonly Command[] = [
   // Dictation in the chat (LA-PLT-UC20-R01), as VS Code's Start Dictation: listed only where the Mac recognizes speech on-device.
   { id: 'dictate', title: 'Dictate a message to Claude, or stop dictating', group: 'View', keys: ['Mod+Alt+V'], when: 'global', dynamic: true },
   // Point and ask, and Claude's changes (LA-PLT-UC22-R01, LA-PLT-UC21-R01): attach the box pointed at to the message; walk the last turn's changes on the stage.
-  { id: 'askClaude', title: 'Ask Claude about this: attach the selected box, or the focused record, to the message', group: 'View', keys: ['Mod+Alt+K'], when: 'global', dynamic: true },
+  { id: 'askClaude', title: 'Ask Claude about this: attach the focused record to the message', group: 'View', keys: ['Mod+Alt+K'], when: 'global', dynamic: true },
   { id: 'askClaudeAboutRecord', title: 'Ask Claude about the record', group: 'View', keys: [], when: 'global', dynamic: true },
   { id: 'reviewClaudeChanges', title: "Review Claude's changes: light the last turn's records on the stage and walk through them", group: 'View', keys: ['g r'], when: 'global', dynamic: true },
   // Ctrl is the Control key on a Mac too, where Cmd+W stays the browser's; elsewhere Ctrl+W closes the tab and Ctrl+G finds the next match, so Alt.

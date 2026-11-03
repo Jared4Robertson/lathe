@@ -101,30 +101,8 @@ Each decision lists the options weighed, the choice and why.
 ### 7. Touch on the graph and the ERD
 
 - **Pan and pinch:** React Flow's own (`touch-action: none` on the canvas so the page does not scroll instead).
-- **Tap to select, tap again to open** (`LA-BRW-DR222`): a finger has no hover, and on a dense graph a tap that navigates at once is too easy to make by mistake. The first tap outlines the node and shows a card at the bottom of the canvas (in thumb reach, clear of the zoom controls) with its kind, its name and an **Open** chip; a second tap on the same node or the chip opens it; a tap on the canvas lets go. A mouse click still opens at once. The event's `pointerType` decides; where a browser does not say, a touch screen (`pointer: coarse`) counts as a finger.
-- **Long-press: not used.** Options were a long-press preview or nothing. The tap's card already previews the node, long-press is undiscoverable, and on iOS it fights the system's own callout. The inspector, a tap away, shows the full facts.
-
-```
-┌──────────────────────────────────────┐
-│ ☰  ‹ Lathe                         ⌕ │
-│    Browsing                          │
-├──────────────────────────────────────┤
-│ ⧉ 1     [ 📖 | ⑂ | ▦ ]            ⓘ │
-├──────────────────────────────────────┤
-│ Read a record as… (LA-BRW-UC50) › (… │  the trail scrolls sideways in its own box
-│ Depth [1][2][3]  Filters             │
-│        1 record · 8 groups · 8 links │
-│                                      │
-│ ┏━━━━━━━━━┓      ┌────────┐          │
-│ ┃Domains 4┃──────│Browsing│──▶ …     │  the first tap outlines the node
-│ ┗━━━━━━━━━┛      └────────┘          │
-│ [+]                                  │
-│ [−] ┌────────────────────────────┐   │
-│ [⤢] │ Group                      │   │  the card: kind, name, Open, let go
-│     │ Domains (4)   ( Open )   ✕ │   │
-│     └────────────────────────────┘   │
-└──────────────────────────────────────┘
-```
+- **One tap opens** (`LA-V93-R02`): a tap on a node opens it at once, as a mouse click does; a press that moves more than a finger's waver (10 px), or a second finger landing, is a pan or a pinch and opens nothing. A tap on the empty canvas does nothing. The record sheet and the header strip name what opened, so no card names a node first.
+- **Long-press: not used.** It is undiscoverable, and on iOS it fights the system's own callout. The inspector, a tap away, shows the full facts.
 
 ### 8. Quick find
 
@@ -163,7 +141,7 @@ The page bar's ⧉ button shows the count and opens a bottom sheet: one row per 
 ### 12. Everything works by touch (`LA-PAT-APP-UX-R07`)
 
 - On a coarse pointer every control's target is at least `--touch-target` (44 px): the control itself, or for a small control inside a row or a node (tree and tab chevrons, tab and pane close buttons, the graph group chevron, theme swatches), a `::before` stretched to 44 × 44 around it. The resize gaps of a tablet's workbench reach 19 px over the panels' edges, so a finger can grab them.
-- Nothing only by hover: a tab's close button shows always on touch; tooltips only repeat names and keys and also open on focus; the graph and ERD give a tap card instead of a hover title.
+- Nothing only by hover: a tab's close button shows always on touch; tooltips only repeat names and keys and also open on focus; on the graph and the ERD a tap opens the node, and the header strip names it.
 - No sideways page scroll at 320 px: no fixed least width over 288 px outside a wide-screen query.
 
 ## What was checked in a browser
@@ -173,7 +151,6 @@ With the in-app browser at 375 × 812 and 320 × 640 in touch emulation, against
 - the record page, a domain's Graph view and its ERD view (ERD): `document.documentElement.scrollWidth` equal to the viewport, and no element wider than the viewport outside a scrolling box, at both widths;
 - the inspector sheet opening at half height, a drag up to full, a drag down to half and a further drag closing it, with focus back on its toggle;
 - the nav sheet full screen with the rail, 44 px rows and indent guides; quick find as a full-width sheet at the top with 16 px text;
-- a touch tap on a graph node arming it and showing the card;
 - the desktop page bar at 1280 px: 40 px high over the panes only, the View toggles and the inspector toggle at its right, each pane's header holding only its close and full screen buttons.
 
 What could not be checked: a real iPhone's safe areas and rubber-band scrolling, a real pinch (React Flow's own handling is relied on), and a tablet's coarse pointer at 1024 px (the browser emulates touch only below 768 px); those follow from the CSS. jsdom cannot lay pages out, so `T470` checks the stylesheet and the rendered markup, not real widths.
@@ -184,4 +161,3 @@ What could not be checked: a real iPhone's safe areas and rubber-band scrolling,
 - The up link keeps the view in front (`?view=` of the current address).
 - The inspector on a phone always starts closed on a new page; its desktop open state is not touched.
 - The pages sheet closes on a page change.
-- The tap card sits at the bottom of the canvas rather than beside the node, so it never covers the node or falls off-screen.

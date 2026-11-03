@@ -7,16 +7,16 @@ import { join } from 'node:path';
 import { settle } from '../src/shell/BottomSheet';
 import { LANDSCAPE_QUERY } from '../src/shell/useNarrow';
 import { useThemeColor } from '../src/shell/themeColor';
-import { isTap } from '../src/graph/touch';
 import { checksPanel, desktopBridgeStub, openApp } from './helpers';
 import { navigate } from '../src/router';
 import { testWorkspace } from './graph/workspace';
-import { boxElement, drawnBox, pointOn, tapAt, tapEmpty } from './graph/scene';
+import { boxElement, cameraOf, canvasOf, pointOn, tapEmpty } from './graph/scene';
+import { erdDrawn, erdHost, erdScene } from './erd-scene';
 import type { LatheDesktop } from '../src/shell/desktop-bridge';
 
 // Lathe on a phone (notes/mobile-design.md): a compact top bar, the page bar compact under it, the
-// stage full screen, sheets for the nav, the wiki card, the open pages and quick find, and taps that
-// select before they open on the graph and the ERD. Proves LA-V61-R17 to R07 and R09, LA-V61-R18,
+// stage full screen, sheets for the nav, the wiki card, the open pages and quick find, and a tap that
+// opens a node at once on the graph and the ERD, as a click does. Proves LA-V61-R17 to R07 and R09, LA-V61-R18,
 // LA-V93-R02 and LA-V61-R42.
 
 const served = () => ({ data: testWorkspace() });
@@ -326,34 +326,41 @@ describe('Lathe on a phone', () => {
     await openApp('/P-D-UC01-R01?stage=graph', served());
     // The requirement's use case, its parent, is drawn beside it.
     await waitFor(() => expect(boxElement('P-D-UC01')).not.toBeNull());
-    const node = () => boxElement('P-D-UC01')!;
-    // A finger's tap on the box drawn on the canvas.
-    tapAt(pointOn('P-D-UC01'));
-    expect(window.location.pathname).toBe('/P-D-UC01-R01');
-    const card = await waitFor(() => { const c = document.querySelector<HTMLElement>('.card[role="status"]'); expect(c).not.toBeNull(); return c!; });
-    expect(card).toHaveTextContent('Lend a thing');
-    // The card is one button, its title, named for what it does.
-    const [title, letGo] = within(card).getAllByRole('button');
-    expect(title).toHaveAccessibleName(/^Open .*Lend a thing$/);
-    expect(letGo).toHaveAccessibleName('Let go of the selection');
-    expect(node()).toHaveClass('is-armed');
-    expect(drawnBox('P-D-UC01')!.armed).toBe(true);
-    // A tap on the canvas lets go.
+    const at = pointOn('P-D-UC01');
+    const canvas = canvasOf();
+    // A drag that starts on the box pans: it opens nothing. So does a pinch.
+    const finger = (id: number, x: number, y: number) => ({ clientX: x, clientY: y, pointerType: 'touch', pointerId: id, button: 0 });
+    fireEvent.pointerDown(canvas, finger(7, at.x, at.y));
+    fireEvent.pointerMove(canvas, finger(7, at.x + 30, at.y));
+    fireEvent.pointerUp(canvas, finger(7, at.x + 30, at.y));
+    fireEvent.pointerDown(canvas, finger(7, at.x, at.y));
+    fireEvent.pointerDown(canvas, finger(8, at.x + 40, at.y));
+    fireEvent.pointerUp(canvas, finger(8, at.x + 40, at.y));
+    fireEvent.pointerUp(canvas, finger(7, at.x, at.y));
+    // A tap on the canvas away from every box does nothing.
     tapEmpty();
-    await waitFor(() => expect(document.querySelector('.card[role="status"]')).toBeNull());
-    // A tap on the card opens it (selected again, here by the box in the keyboard's layer).
-    fireEvent.click(node());
-    fireEvent.click(screen.getByRole('button', { name: /^Open .*Lend a thing$/ }));
-    expect(window.location.pathname).toBe('/P-D-UC01');
-    // A click that says it came from a mouse opens at once; a finger's or a pen's selects first.
-    expect(isTap({ pointerType: 'mouse' } as unknown as Event, true)).toBe(false);
-    expect(isTap({ pointerType: 'touch' } as unknown as Event, false)).toBe(true);
-    expect(isTap({ pointerType: 'pen' } as unknown as Event, false)).toBe(true);
-    expect(isTap({ pointerType: '' } as unknown as Event, true)).toBe(true);
-    expect(isTap({ pointerType: '' } as unknown as Event, false)).toBe(false);
+    expect(window.location.pathname).toBe('/P-D-UC01-R01');
+    // A finger's tap on the box drawn on the canvas, wavering a little as it lands, opens it at once.
+    const pan = cameraOf();
+    fireEvent.pointerDown(canvas, finger(7, at.x, at.y));
+    fireEvent.pointerMove(canvas, finger(7, at.x + 4, at.y + 3));
+    expect(cameraOf()).toBe(pan);
+    fireEvent.pointerUp(canvas, finger(7, at.x + 4, at.y + 3));
+    await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC01'));
+    // No card stands in for the record sheet: nothing is left selected.
+    expect(document.querySelector('.card[role="status"]')).toBeNull();
+    // On the ERD a tap opens a box at once too.
+    await openApp('/P-D?stage=erd', served());
+    await waitFor(() => expect(erdDrawn()).toBe(true));
+    const box = await waitFor(() => { const b = erdScene().boxes.find((x) => !x.focus && x.kind !== 'domain'); expect(b).toBeDefined(); return b!; });
+    const erdCanvas = erdHost()!.querySelector('canvas')!;
+    const middle = { x: box.rect.left + box.rect.width / 2, y: box.rect.top + Math.min(12, box.rect.height / 2) };
+    fireEvent.pointerDown(erdCanvas, finger(7, middle.x, middle.y));
+    fireEvent.pointerUp(erdCanvas, finger(7, middle.x, middle.y));
+    await waitFor(() => expect(window.location.pathname).toBe(`/${box.id}`));
   };
-  it('LA-V61-R23-T01 By touch, a first tap on a graph node selects it and a second tap or a tap on its card opens it', proveLaV61R23T01);
-  it('LA-V93-R02-T01 By touch, a first tap on a graph node selects it and a second tap or a tap on its card opens it', proveLaV61R23T01);
+  it('LA-V61-R23-T01 By touch, one tap on a node opens it, on the Graph and the ERD; a drag or a pinch opens nothing', proveLaV61R23T01);
+  it('LA-V93-R02-T01 By touch, one tap on a node opens it, as a click does; a drag or a pinch opens nothing', proveLaV61R23T01);
 
   it('LA-V61-R25-T01 The theme-color meta follows the theme\'s --sheet token', async () => {
     function Host() { useThemeColor(); const r = useRef(null); return <div ref={r} />; }

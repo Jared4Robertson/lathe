@@ -17,7 +17,7 @@ import { boxColors, GAP_KIND, isBlock, paint, stageColors, type Bar, type Camera
 import { plateName, plateOf, plateTip, type Plate, type PlainBox } from '../graph/plate';
 import { BORDER, LABEL_PAD, labelHeight, linesIn, setTextMeasure, titleWidth, treeLabel, type MapLabel, type TextMeasure, type WrappedLabel } from '../graph/text';
 import { SHAPES } from '../graph/shapes';
-import { TapCard, useTapToOpen } from '../graph/touch';
+import { useNodeClick } from '../graph/nodeClick';
 import { stageFor } from '../graph/model';
 import { useCommand } from '../shell/commands';
 import { keepCamera } from '../exploring/tab-set/commands/keep-camera';
@@ -119,7 +119,6 @@ export interface TraceCanvasProps {
   /** A box was clicked: the box the walk stands on from now (a record's is navigated to). */
   onBox: (key: string) => void;
   onNavigate: (id: string) => void;
-  onPeek?: (kind: 'hover' | 'selected', id: string | null) => void;
   space?: OpenSpaceStore;
   /** The box the keyboard is on, ringed and brought into view; null for none. */
   ring: string | null;
@@ -210,7 +209,7 @@ function plainOf(item: Item): PlainBox {
 /** What one frame draws. */
 interface TraceFrame { plates: Plate[]; bars: Bar[]; barred: boolean; serves: number[]; journeyServes: number[]; carries: number[]; marks: { key: string; x: number; y: number }[] }
 
-function TraceScene({ index, focus, graph, laid, open, at, beside, every, onToggle, onEvery, onBox, onNavigate, onPeek, space, ring: ringAt, cameraKey, onOpenNew, fonts, theme }: Omit<TraceCanvasProps, 'ordered'> & { laid: TraceLaid; fonts: GraphFonts; theme: number }) {
+function TraceScene({ index, focus, graph, laid, open, at, beside, every, onToggle, onEvery, onBox, onNavigate, space, ring: ringAt, cameraKey, onOpenNew, fonts, theme }: Omit<TraceCanvasProps, 'ordered'> & { laid: TraceLaid; fonts: GraphFonts; theme: number }) {
   const wrapper = useRef<TraceHost>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
@@ -430,7 +429,6 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
     return { value: s.from + (s.to - s.from) * t, done: t >= 1 };
   };
   const ctx = useRef<CanvasRenderingContext2D | null | undefined>(undefined);
-  const tap = useRef<ReturnType<typeof useTapToOpen> | null>(null);
   const lastFrame = useRef<TraceFrame | null>(null);
   lastFrame.current = null;
 
@@ -496,7 +494,7 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
     const faded = tween.now();
     const live = marks.at(now);
     const strength = (place: string) => (place.startsWith('column:') ? 1 : faded.at(place));
-    const state: PaintState = { focus: focusKey ?? focus, hover: hover.current, ring: ring.current, armed: tap.current?.armed ?? null, lit: sp.lit?.keys ?? null, litLines: null, spot: spot.value, strength, marks: live, open: openIn(wrapper.current, space, s.w, s.h) };
+    const state: PaintState = { focus: focusKey ?? focus, hover: hover.current, ring: ring.current, lit: sp.lit?.keys ?? null, litLines: null, spot: spot.value, strength, marks: live, open: openIn(wrapper.current, space, s.w, s.h) };
     const v = view.current;
     const cam: Camera = { cx: (s.w / 2 - v.x) / v.zoom, cy: (s.h / 2 - v.y) / v.zoom, zoom: v.zoom, w: s.w, h: s.h };
     const lk = look.current;
@@ -626,7 +624,6 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
   /** Lights a box's path while the pointer is on it; null lets go. */
   const spot = useCallback((key: string | null) => {
     const item = key ? graph.items.get(key) : undefined;
-    onPeek?.('hover', item?.id && index.byId.has(item.id) ? item.id : null);
     const s = spotlight.current;
     const value = spotNow().value;
     if (!key || !item?.id || item.role === 'hint') {
@@ -636,13 +633,11 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
     if (s.key === key) return;
     spotlight.current = { key, lit: litBy(graph, laid, item.id, key), from: s.key === null ? value : 1, to: 1, start: performance.now() };
     requestPaint();
-  }, [graph, laid, index, onPeek, requestPaint]);
+  }, [graph, laid, index, requestPaint]);
   useEffect(() => () => spot(null), [focus, graph]);
 
   const canOpen = useCallback((id: string) => id !== focus && index.byId.has(id), [focus, index]);
-  const tapToOpen = useTapToOpen(onNavigate, canOpen, wrapper, focus, onOpenNew);
-  tap.current = tapToOpen;
-  useEffect(() => { onPeek?.('selected', tapToOpen.armed); requestPaint(); }, [tapToOpen.armed, onPeek]);
+  const nodeClick = useNodeClick(onNavigate, canOpen, focus, onOpenNew);
 
   // The keyboard's ring: the box the walk stands on, brought into view when it is not.
   useEffect(() => {
@@ -671,7 +666,7 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
     return hitPlate(frame.plates, { x: (x - v.x) / v.zoom, y: (y - v.y) / v.zoom });
   }, [frameAt, frameBox]);
   /** A tap or click: a column's name opens its stage in every row; a box's toggle opens it; a record opens; another box is stood on (a status opens). */
-  const tapAt = (x: number, y: number, e: Parameters<typeof tapToOpen.onNodeClick>[0]) => {
+  const tapAt = (x: number, y: number, e: Parameters<typeof nodeClick.onNodeClick>[0]) => {
     const s = sizeRef.current;
     const box = s ? frameBox(s) : null;
     const v = view.current;
@@ -682,16 +677,14 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
       return;
     }
     const hit = hitAt(x, y);
-    if (!hit) { tapToOpen.clear(); return; }
+    if (!hit) return;
     const item = graph.items.get(hit.place)!;
     const at = { x: (x - v.x) / v.zoom, y: (y - v.y) / v.zoom };
     const t = toggleAt(hit);
     const onToggleZone = !!item.opens && at.x >= t.x - 4 && at.x <= t.x + t.w + 4 && at.y >= t.y - 4 && at.y <= t.y + t.h + 4;
     if (onToggleZone || (item.opens && item.role !== 'record' && !(item.role === 'heading' && item.id))) { onToggle(item.opens!); return; }
     onBox(hit.place);
-    if (item.role === 'record' && item.id) tapToOpen.onNodeClick(e, item.id);
-    else if (item.role === 'heading' && item.id) tapToOpen.onNodeClick(e, item.id);
-    else tapToOpen.clear();
+    if ((item.role === 'record' || item.role === 'heading') && item.id) nodeClick.onNodeClick(e, item.id);
   };
   const setHover = (hit: Plate | null) => {
     const key = hit?.place ?? null;
@@ -765,7 +758,6 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
     };
   });
 
-  const armedPlate = tapToOpen.armed ? plateFor(graph.boxesOf.get(tapToOpen.armed)?.find((k) => laid.places.has(k)) ?? '') : null;
   return (
     <div ref={wrapper} className="graph-flow trace-flow" data-ready={size ? 'true' : undefined}>
       <canvas
@@ -777,12 +769,11 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
           const r = e.currentTarget.getBoundingClientRect();
           const hit = hitAt(e.clientX - r.left, e.clientY - r.top);
           const id = hit ? graph.items.get(hit.place)?.id : null;
-          if (hit && id && hit.kind !== GAP_KIND) tapToOpen.onNodeAuxClick(e, id);
+          if (hit && id && hit.kind !== GAP_KIND) nodeClick.onNodeAuxClick(e, id);
         }}
         onPointerLeave={(e) => { if (!gestures.pressed(e.pointerId)) setHover(null); }}
       />
       <StageCamera onZoomIn={zoomButton(ZOOM_STEP)} onZoomOut={zoomButton(1 / ZOOM_STEP)} onFit={fitAll} />
-      {armedPlate && <TapCard kind={armedPlate.kindLabel} name={armedPlate.title} onOpen={tapToOpen.openArmed} onDismiss={tapToOpen.clear} />}
     </div>
   );
 }

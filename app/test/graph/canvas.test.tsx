@@ -98,7 +98,7 @@ describe('badges', () => {
         get: (t, k) => (k in t ? t[k as string] : k === 'measureText' ? () => ({ width: 10 }) : k === 'fillText' ? (text: string) => out.push(`${String(t.fillStyle)}:${text}:${Number(t.globalAlpha).toFixed(2)}`) : () => undefined),
         set: (t, k, v) => { t[k as string] = v; return true; },
       }) as unknown as CanvasRenderingContext2D;
-      const state: PaintState = { focus: '', hover: null, ring: null, armed: null, lit: null, litLines: null, spot: 0, strength: () => strength, marks: null, open: { left: 0, top: 0, right: 2000, bottom: 2000 } };
+      const state: PaintState = { focus: '', hover: null, ring: null, lit: null, litLines: null, spot: 0, strength: () => strength, marks: null, open: { left: 0, top: 0, right: 2000, bottom: 2000 } };
       const cam = { cx: plate.x + plate.w / 2, cy: plate.y + plate.h / 2, zoom: 1, w: 2000, h: 2000 };
       paint(ctx, 1, cam, { plates: [plate], bars: [], lines: [] }, PLAIN_LOOK, { body: 'sans-serif', mono: 'monospace' }, state);
       return out.filter((t) => plate.badges.some((b) => t.includes(`:${b.label}:`)));

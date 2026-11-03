@@ -79,7 +79,7 @@ describe('LA-EXP-DS06-T14 a label the open space cuts is laid out in the box\'s 
       get: (t, k) => (k in t ? t[k as string] : k === 'measureText' ? () => ({ width: 10 }) : k === 'fillText' ? (text: string) => drawn.push(text) : () => undefined),
       set: (t, k, v) => { t[k as string] = v; return true; },
     }) as unknown as CanvasRenderingContext2D;
-    const state: PaintState = { focus: '', hover: null, ring: null, armed: null, lit: null, litLines: null, spot: 0, strength: () => 1, marks: null, open };
+    const state: PaintState = { focus: '', hover: null, ring: null, lit: null, litLines: null, spot: 0, strength: () => 1, marks: null, open };
     // The camera of X and Y: the box from x = 0 to 900 on a 2000 px canvas.
     const cam = { cx: node.x + 1000 / zoom, cy: node.y + 1000 / zoom, zoom, w: 2000, h: 2000 };
     paint(ctx, 1, cam, { plates: [plate], bars: [], lines: [] }, PLAIN_LOOK, { body: 'sans-serif', mono: 'monospace' }, state);

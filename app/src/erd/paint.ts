@@ -186,8 +186,8 @@ export interface DrawnBox {
   rect: Rect;
   text: BoxText;
   strength: number;
-  /** The record in focus; picked out by the focus; under the pointer; ringed by the keyboard; selected by a first tap. */
-  focus: boolean; pick: boolean; hover: boolean; ring: boolean; armed: boolean;
+  /** The record in focus; picked out by the focus; under the pointer; ringed by the keyboard. */
+  focus: boolean; pick: boolean; hover: boolean; ring: boolean;
   /** With Highlight changes on, its change from the baseline and what changed under it. */
   hl: { change: 'added' | 'changed' | 'removed' | undefined; roll: ChangeCounts | null } | null;
 }
@@ -227,9 +227,9 @@ function paintBox(ctx: CanvasRenderingContext2D, d: DrawnBox, look: ErdLook, fon
   const c = colors(look, box.kind);
   const border = BORDER[box.kind];
   const radius = look.radius;
-  // A faded box reads whole under the pointer, and by touch once selected; a region stays faded.
-  ctx.globalAlpha = (d.hover || d.armed) && box.kind !== 'domain' ? 1 : d.strength;
-  const ring = d.armed ? look.steel : d.pick ? look.ink : d.hover && !d.focus ? look.hoverRing : null;
+  // A faded box reads whole under the pointer; a region stays faded.
+  ctx.globalAlpha = d.hover && box.kind !== 'domain' ? 1 : d.strength;
+  const ring = d.pick ? look.ink : d.hover && !d.focus ? look.hoverRing : null;
   // Outside its edge, stroked so a faded box's ring never shows through its fill.
   if (ring) { roundRect(ctx, r, radius, RING / 2); ctx.lineWidth = RING; ctx.strokeStyle = ring; ctx.stroke(); }
   roundRect(ctx, r, radius);

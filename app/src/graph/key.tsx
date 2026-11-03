@@ -86,7 +86,7 @@ export function graphKeyEntries(drawn: GraphDrawn, stages: readonly MetaStage[] 
     out.push({ id: 'district', group: 'lines', sample: <span className="graph-swatch stage-district" />, words: 'District', meaning: 'Map: a domain (or what the product shares) as an area, its stages left to right in it, their folders one under another, each named with its count of records' });
     out.push({ id: 'composed', group: 'lines', sample: <span className="graph-swatch stage-nested" />, words: 'Part of', meaning: 'Map: a record inside another is part of it (an aggregate\'s entities, a journey\'s steps, a use case\'s requirements and flows, every record\'s tests); every leaf record is one size' });
     out.push({ id: 'then', group: 'lines', sample: <span className="graph-line is-link" />, words: 'Then', meaning: 'Map: inside a journey or a flow, an arrow from each step to the next on its path, the main path and each other one' });
-    out.push({ id: 'link', group: 'lines', sample: <span className="graph-line is-link" />, words: 'Link', meaning: 'Map: the focus\'s and the selection\'s links as lines, named by their relation (All links, under Filters, draws every link in view)' });
+    out.push({ id: 'link', group: 'lines', sample: <span className="graph-line is-link" />, words: 'Link', meaning: 'Map: the focus\'s links as lines, named by their relation (All links, under Filters, draws every link in view)' });
   }
   if (drawn.layout !== 'map') out.push({ id: 'bar', group: 'lines', sample: <span className="graph-swatch stage-bar" />, words: 'Too small', meaning: 'A bar: children too small to draw at this zoom' });
   for (const badge of BADGE_TONES) {
