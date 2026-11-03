@@ -184,7 +184,8 @@ describe('the Trace stage', () => {
       // Open (the place may keep it open from before).
       const toggle = within(design).getByRole('button', { name: /1 interface · all designed/ });
       if (toggle.getAttribute('aria-expanded') !== 'true') fireEvent.click(toggle);
-      expect(within(design).getByRole('link', { name: /^Flow · P-D-UC01-FL(?!-)/ })).toBeInTheDocument();
+      // A box's link reads its kind and ID, then its title, a word apart.
+      expect(within(design).getByRole('link', { name: /^Flow · P-D-UC01-FL \S/ })).toBeInTheDocument();
       // Another use case.
       fireEvent.change(within(list).getByRole('combobox', { name: 'Use case' }), { target: { value: 'P-D-UC02' } });
       expect(within(within(list).getByRole('region', { name: 'Design flow' })).getByText('No flow', { selector: 'small + span' })).toBeInTheDocument();
