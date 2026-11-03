@@ -40,10 +40,12 @@ CREATE TABLE meets_target (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIG
 COMMENT ON TABLE meets_target IS 'The rules a technical record may follow (meets): a standard''s rules, and a pattern''s rules, which a generic piece of code such as a shared component, an entry point or a build script carries out.';
 CREATE TABLE provided_by_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
 COMMENT ON TABLE provided_by_source IS 'The records something outside the product may provide: data stores, standards, technical records and obligations, Lathe''s kinds and a product''s own of those.';
+CREATE TABLE presents_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
+COMMENT ON TABLE presents_source IS 'The records that present commands and queries: views, and the records of a product''s own interaction design kinds (such as a command line''s invocations), once the product adds the pair with a product_relation named presents.';
 
 INSERT INTO meta_table VALUES ('record_id', 'registry', NULL);
 INSERT INTO meta_table
-  SELECT name, 'supertype', NULL FROM (VALUES ('obligation'), ('operation'), ('reads_source'), ('calls_source'), ('follows_source'), ('technical_record'), ('test'), ('serves_source'), ('carries_out_target'), ('exchanges_with_source'), ('stored_in_source'), ('accidental_record'), ('meets_target'), ('provided_by_source')) AS t (name);
+  SELECT name, 'supertype', NULL FROM (VALUES ('obligation'), ('operation'), ('reads_source'), ('calls_source'), ('follows_source'), ('technical_record'), ('test'), ('serves_source'), ('carries_out_target'), ('exchanges_with_source'), ('stored_in_source'), ('accidental_record'), ('meets_target'), ('provided_by_source'), ('presents_source')) AS t (name);
 INSERT INTO meta_supertype_member
   SELECT 'obligation', kind FROM (VALUES ('constraint'), ('invariant'), ('specification'), ('policy'), ('domain_service'),
     ('storage_requirement'), ('uc_requirement'), ('view_requirement'), ('api_requirement'), ('pattern_rule'), ('standard_rule')) AS t (kind)
@@ -61,7 +63,8 @@ INSERT INTO meta_supertype_member
   UNION ALL SELECT 'carries_out_target', kind FROM (VALUES ('use_case'), ('policy')) AS t (kind)
   UNION ALL SELECT 'exchanges_with_source', kind FROM (VALUES ('flow_step'), ('policy')) AS t (kind)
   UNION ALL SELECT 'stored_in_source', kind FROM (VALUES ('repository'), ('reader'), ('table')) AS t (kind)
-  UNION ALL SELECT 'meets_target', kind FROM (VALUES ('standard_rule'), ('pattern_rule')) AS t (kind);
+  UNION ALL SELECT 'meets_target', kind FROM (VALUES ('standard_rule'), ('pattern_rule')) AS t (kind)
+  UNION ALL SELECT 'presents_source', 'view';
 INSERT INTO meta_supertype_member
   SELECT 'accidental_record', kind FROM meta_supertype_member WHERE supertype = 'technical_record'
   UNION ALL SELECT 'accidental_record', kind FROM (VALUES ('endpoint'), ('data_store')) AS t (kind);

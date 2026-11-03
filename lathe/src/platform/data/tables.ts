@@ -1121,7 +1121,7 @@ export interface PredicateRow {
   file?: string;
 }
 
-/** The view presents the command or query: a person sends the command or asks the query there, so a step that invokes it is carried out in the view on a web app or desktop interface. */
+/** The view presents the command or query: a person sends the command or asks the query there, so a step that invokes it is carried out in the view on a web app or desktop interface. A record of a product's own interaction design kind presents them the same way, once the product adds that pair with a product_relation named presents: a command line's invocation that carries out several commands and queries, so a step that invokes one is carried out through it on a CLI or agent tools interface. */
 export interface PresentsRow {
   source_id: string;
   target_id: string;

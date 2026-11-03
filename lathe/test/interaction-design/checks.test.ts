@@ -1,8 +1,10 @@
 // Lathe's checks of the Interaction design domain, one at a time: each starts from the complete product, which gives no
 // problem, and changes one thing to break the rule. LA-PAT-AGGREGATE-TESTS-R04: each of the domain's check rows is tested here.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { Workspace } from '../../src/index.ts';
-import { adding, changing, complete, loadData, ofCheck, removeData, without } from '../helpers.ts';
+import { openStore, type Workspace } from '../../src/index.ts';
+import { runQuery } from '../../src/platform/commands/run.ts';
+import { GET_USE_CASE } from '../../src/use-cases/use-case/queries.ts';
+import { adding, changing, complete, loadData, ofCheck, removeData, without, writeData, type Data } from '../helpers.ts';
 
 afterAll(removeData);
 
@@ -58,6 +60,49 @@ check('step-unreached', () => {
     expect(ofCheck(await loadData(withCli()), 'step-unreached').map((p) => [p.record, p.message.includes('EX-IF02')])).toEqual([['EX-LEND-UC01-FL-S01', true], ['EX-LEND-UC01-FL-S02', true]]);
     const variants = changing(withCli(), 'flow_step', (r) => String(r.id).startsWith('EX-LEND-UC01-FL-S'), { interface_id: 'EX-IF01' });
     expect(ofCheck(await loadData(variants), 'step-unreached')).toEqual([]);
+  });
+});
+
+check('step-unreached', () => {
+  /** The CLI of withCli, and an invocation kind of the product's own under the parent given, that presents commands and queries. */
+  const withInvocation = (parent: 'product' | 'interface', invocation: Record<string, string>, presents: string[]): Data =>
+    adding(withCli(), {
+      product_kind: [{ name: 'invocation', product_id: 'EX', label: 'Invocation', description: 'One invocation of the library\'s command line.', parent_kind: parent, stage: 'interaction-design', obligation: false, complexity: 'essential', id_pattern: '<P>-INV<nn>' }],
+      product_relation: [
+        { name: 'presents', source_kind: 'invocation', target_kind: 'command', product_id: 'EX', forward_label: 'Presents', reverse_label: 'Presented in', description: 'A person sends the command through the invocation.' },
+        { name: 'presents', source_kind: 'invocation', target_kind: 'query', product_id: 'EX', forward_label: 'Presents', reverse_label: 'Presented in', description: 'A person asks the query through the invocation.' },
+      ],
+      invocation: [{ id: 'EX-INV01', title: 'library lend', ...invocation }],
+      presents: presents.map((target_id) => ({ source_id: 'EX-INV01', target_id })),
+    });
+  const both = ['EX-LEND-CMD01', 'EX-LEND-QRY01'];
+  const otherCli = { interface: [{ id: 'EX-IF03', title: 'Shell', product_id: 'EX', kind: 'CLI', description: 'The shell the librarian runs.', public: false }] };
+
+  it('LA-UCS-UC06-R09-T06 a CLI or agent tools reaches a step through a record of the product\'s own that presents its command or query, scoped as a view is', async () => {
+    // Under no interface, it reaches every CLI and agent tools of the product.
+    const anywhere = withInvocation('product', { product_id: 'EX' }, both);
+    expect(ofCheck(await loadData(anywhere), 'step-unreached')).toEqual([]);
+    // Under the interface, it reaches that interface.
+    expect(ofCheck(await loadData(withInvocation('interface', { interface_id: 'EX-IF02' }, both)), 'step-unreached')).toEqual([]);
+    // Under another interface, it does not reach this one.
+    const elsewhere = adding(withInvocation('interface', { interface_id: 'EX-IF03' }, both), otherCli);
+    expect(ofCheck(await loadData(elsewhere), 'step-unreached')).toEqual([
+      unreached('EX-LEND-UC01-FL-S01', 'EX-LEND-CMD01', 'EX-IF02', 'CLI', 'record of the product\'s own interaction design under it or that presents it'),
+      unreached('EX-LEND-UC01-FL-S02', 'EX-LEND-QRY01', 'EX-IF02', 'CLI', 'record of the product\'s own interaction design under it or that presents it'),
+    ]);
+    // Presenting only the command leaves the query's step unreached.
+    expect(ofCheck(await loadData(withInvocation('product', { product_id: 'EX' }, ['EX-LEND-CMD01'])), 'step-unreached').map((p) => p.record)).toEqual(['EX-LEND-UC01-FL-S02']);
+    // The use case read model names the record as where the CLI carries out each step, and the web app keeps its view.
+    const store = await openStore(writeData(anywhere), { latheDataDir: null });
+    try {
+      const [flow] = (runQuery(store, GET_USE_CASE, { id: 'EX-LEND-UC01' }) as ReturnType<typeof GET_USE_CASE.run>).flows;
+      expect(flow.through.map((t) => [t.interface, t.paths.flatMap((p) => p.steps.map((x) => x.reach.join(',')))])).toEqual([
+        ['EX-IF01', ['EX-V01', 'EX-V01']],
+        ['EX-IF02', ['EX-INV01', 'EX-INV01']],
+      ]);
+    } finally {
+      await store.close();
+    }
   });
 });
 

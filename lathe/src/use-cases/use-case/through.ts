@@ -2,9 +2,10 @@
 // every interface that offers it, and the interface's kind and pattern say how each step is carried out there. Its
 // version leaves out the other interfaces' variants and, for each step that invokes a command or query, names where it
 // is carried out: the views that present it (a web app or desktop: views of every such interface, or of this one), the
-// endpoints that expose it (an API), or the records of the product's own interaction design kinds under it (a CLI or
-// agent tools, such as Lathe's CLI commands). An interface of kind other reaches its operations in a way no record
-// says. Its actor is the first of the use case's actors the interface lists (the use case's main actor when it lists
+// endpoints that expose it (an API), or the records of the product's own interaction design kinds under it or that
+// present it (a CLI or agent tools, such as Lathe's CLI commands or an invocation that carries out several commands:
+// one that sits under an interface reaches only that one). An interface of kind other reaches its operations in a way
+// no record says. Its actor is the first of the use case's actors the interface lists (the use case's main actor when it lists
 // none), and how it reaches a step's command or query and shows a refusal is what the rules of the patterns it follows
 // say. The Use case read model and the Trace read model read the same answer; the step-unreached check says it in SQL.
 import type { ReadView } from '../../platform/data/rules.ts';
@@ -79,21 +80,29 @@ export function interfaceVersions(view: Pick<ReadView, 'rows' | 'schema'>): (use
     const operation = String(e.command_id ?? e.query_id ?? '');
     endpointsOf.set(operation, [...(endpointsOf.get(operation) ?? []), String(e.id)]);
   }
-  // The records of the product's own interaction design kinds under a command or a query (a CLI command).
+  // The records of the product's own interaction design kinds under a command or a query (a CLI command), and those
+  // that present it (an invocation that carries out several), each with the one interface it sits under, if it does.
   const ownOf = new Map<string, string[]>();
+  const ownInterface = new Map<string, string | null>();
   for (const kind of Object.values(view.schema.kinds)) {
     if (kind.productId === null || kind.obligation || kind.stage !== 'interaction-design') continue;
+    const under = kind.parents.find((p) => p.kind === 'interface')?.column;
+    for (const r of rows(kind.name)) ownInterface.set(String(r.id), under && typeof r[under] === 'string' ? r[under] : null);
     for (const parent of kind.parents) {
       if (parent.kind !== 'command' && parent.kind !== 'query') continue;
       for (const [operation, ids] of grouped(rows(kind.name), parent.column, 'id')) ownOf.set(operation, [...(ownOf.get(operation) ?? []), ...ids]);
     }
   }
+  for (const [operation, sources] of presentedIn) {
+    const own = sources.filter((id) => ownInterface.has(id));
+    if (own.length) ownOf.set(operation, [...new Set([...(ownOf.get(operation) ?? []), ...own])]);
+  }
 
   /** Where the interface carries out a step that invokes the operation; null when no record of it can say (other). */
   const reachOf = (face: string, kind: string, operation: string): string[] | null => {
-    if (VIEW_KINDS.has(kind)) return (presentedIn.get(operation) ?? []).filter((v) => { const only = viewInterface.get(v); return !only || only === face; }).sort();
+    if (VIEW_KINDS.has(kind)) return (presentedIn.get(operation) ?? []).filter((v) => { const only = viewInterface.get(v); return viewInterface.has(v) && (!only || only === face); }).sort();
     if (kind === 'API') return [...(endpointsOf.get(operation) ?? [])].sort();
-    if (OWN_KINDS.has(kind)) return [...(ownOf.get(operation) ?? [])].sort();
+    if (OWN_KINDS.has(kind)) return (ownOf.get(operation) ?? []).filter((r) => { const only = ownInterface.get(r); return !only || only === face; }).sort();
     return null;
   };
 

@@ -5,9 +5,10 @@
 //
 // Essential records keep accidental complexity out (LA-STD-PRINCIPLES-R05, LA-CHK-UC08):
 // - essential-names-technology: an essential record the write adds, or whose title or lead it changes, that names a
-//   word its kind's group has no business with (essential.ts: Lathe's words, a term of any of its product's domains excused; the
-//   titles of its product's interfaces, a variant step's own excused; the product's technology words), as
-//   accidental-in-essential warns of a record already in the data;
+//   word its kind's group has no business with (essential.ts: Lathe's words, a term of any of its product's domains
+//   excused; the titles of its product's interfaces, a variant step's own excused; the product's technology words) in
+//   the text the write sets: an add's title and lead, a change's only where it changes them. accidental-in-essential
+//   warns of every record in the data, whatever text it names the word in;
 // - essential-links-accidental: a link the write adds from an essential record to an accidental one, or a product
 //   relation it declares from an essential kind to an accidental kind. Only measured_by may: what measures an
 //   outcome may be a report or a script.
@@ -52,8 +53,8 @@ function wordsFor(view: ReadView, group: WordGroup, product: string | null, ownI
   ];
 }
 
-/** The essential record's title and lead, with the word each names, when it names one. */
-function namesTechnology(view: ReadView, placement: Placement, kind: string, row: Row): string | undefined {
+/** The essential record's columns given (its title, its lead or both), with the word each names, when it names one. */
+function namesTechnology(view: ReadView, placement: Placement, kind: string, row: Row, columns: readonly string[]): string | undefined {
   const description = view.schema.kinds[kind];
   const group = description && wordGroupOf(description);
   if (!group) return undefined;
@@ -61,13 +62,12 @@ function namesTechnology(view: ReadView, placement: Placement, kind: string, row
   if (placement.complexityOf(id) !== 'essential') return undefined;
   const own = ownInterfaceOf(view, kind, row)?.toLowerCase();
   const words = wordsFor(view, group, placement.productOf(id), own);
-  const lead = view.schema.tables[kind].columns.find((c) => isLeadColumn(c.name))?.name;
   const said = (column: string) => {
     const text = typeof row[column] === 'string' ? String(row[column]).toLowerCase() : '';
     const word = wordNamed(own ? text.replaceAll(own, ' ') : text, words);
     return word ? `its ${column} says "${word}"` : undefined;
   };
-  const found = [said('title'), lead ? said(lead) : undefined].filter(Boolean);
+  const found = columns.map(said).filter(Boolean);
   return found.length ? found.join(' and ') : undefined;
 }
 
@@ -78,9 +78,12 @@ const essentialNamesTechnology: WriteRule = {
     return changes.flatMap((change) => {
       const { table, before, after } = change;
       if (!after || !view.schema.kinds[table]) return [];
+      // Only the text the write sets is read: an add sets its title and lead, a change those whose value it changes,
+      // so a record whose title the owner accepts with a warning can still have its lead text changed.
       const lead = view.schema.tables[table].columns.find((c) => isLeadColumn(c.name))?.name;
-      if (before && before.title === after.title && (!lead || before[lead] === after[lead])) return [];
-      const said = namesTechnology(view, placement, table, after);
+      const written = ['title', ...(lead ? [lead] : [])].filter((column) => !before || before[column] !== after[column]);
+      if (!written.length) return [];
+      const said = namesTechnology(view, placement, table, after, written);
       if (!said) return [];
       return [{
         rule: 'essential-names-technology',
