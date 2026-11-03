@@ -17,6 +17,11 @@ const PANEL = '.tool-panel.checks-panel';
 /** A view the suite adds while the page is open; nothing uses it, so it is an error. */
 const ADDED = 'LA-V990';
 const ADDED_ROW = `${JSON.stringify({ id: ADDED, title: 'A page nothing reaches', description: 'A view that presents nothing.' })}\n`;
+/**
+ * How long the server's checks' run over the whole of Lathe's own spec may take: about 17 s on an idle machine, the
+ * browser batch runs it under load (as the whole-build tests in lathe/test allow 30 s).
+ */
+const CHECK_RUN_MS = 45_000;
 
 /** The desktop shell's bridge, stood in for: it keeps each error count the page sends for the Dock badge. */
 function keepCounts(bridge: LatheDesktop) {
@@ -26,25 +31,30 @@ function keepCounts(bridge: LatheDesktop) {
 }
 
 test.describe('Checking flows', () => {
+  // Each flow waits for up to two of the server's runs and makes the suite's own run beside them.
+  test.describe.configure({ timeout: 180_000 });
+
   test('LA-CHK-UC07-FL-T review every problem of a product', async ({ page }) => {
     const restore = keepData();
     try {
-      // S01: the product's Checks panel over its stage: its problems counted, errors first, grouped by check.
-      const spec = await servedWorkspace();
-      const errors = spec.problems.filter((p) => p.severity === 'error').length;
+      // S01: the product's Checks panel over its stage: its problems counted, errors first, grouped by check. The suite's
+      // own run of the checks goes beside the server's.
+      const served = servedWorkspace();
       await openPage(page, CHECKS, PANEL);
+      const spec = await served;
+      const errors = spec.problems.filter((p) => p.severity === 'error').length;
       const main = page.locator(PANEL);
       await expect(main.locator('.tool-panel-title')).toHaveText('Checks');
       await expect(page.locator('.focus-stage')).toBeVisible();
       // The first check run of a cold server takes as long as the one after a change (S02 below).
-      await expect(main.getByText(new RegExp(`^${errors} errors? · \\d+ warnings?$`))).toBeVisible({ timeout: 20_000 });
+      await expect(main.getByText(new RegExp(`^${errors} errors? · \\d+ warnings?$`))).toBeVisible({ timeout: CHECK_RUN_MS });
       const severity = new Map(spec.problems.map((p) => [p.check, p.severity]));
       const groups = (await main.locator('h3 a[href*="page=format/checks/"]').allTextContents()).map((t) => t.trim());
       const order = groups.map((g) => severity.get(g));
       expect(order.indexOf('warning') === -1 || order.lastIndexOf('error') < order.indexOf('warning')).toBe(true);
       // S02: a data file changes while the page is open; the page shows the problems as they are now.
       appendFileSync(path.join(process.env.STABILITY_ROOT!, 'data', 'view.jsonl'), ADDED_ROW);
-      await expect(main.getByRole('heading', { name: /^view-unused \d+$/, level: 3 })).toBeVisible({ timeout: 20_000 });
+      await expect(main.getByRole('heading', { name: /^view-unused \d+$/, level: 3 })).toBeVisible({ timeout: CHECK_RUN_MS });
       await expect(main.getByText(new RegExp(`^${errors + 1} errors? · \\d+ warnings?$`))).toBeVisible();
       // S03: they select a problem: its record takes the stage and the wiki card, and the panel stays open.
       await main.getByRole('link', { name: ADDED, exact: true }).first().click();
@@ -69,13 +79,13 @@ test.describe('Checking flows', () => {
   test("LA-CHK-UC07-R01-T01 every problem of a product shows in one place, as the data is after its latest change", async ({ page }) => {
     const restore = keepData();
     try {
-      const spec = await servedWorkspace();
-      const errors = spec.problems.filter((p) => p.severity === 'error').length;
+      const served = servedWorkspace();
       await openPage(page, CHECKS, PANEL);
+      const errors = (await served).problems.filter((p) => p.severity === 'error').length;
       const main = page.locator(PANEL);
-      await expect(main.getByText(new RegExp(`^${errors} errors? · \\d+ warnings?$`))).toBeVisible();
+      await expect(main.getByText(new RegExp(`^${errors} errors? · \\d+ warnings?$`))).toBeVisible({ timeout: CHECK_RUN_MS });
       appendFileSync(path.join(process.env.STABILITY_ROOT!, 'data', 'view.jsonl'), ADDED_ROW);
-      await expect(main.getByText(new RegExp(`^${errors + 1} errors? · \\d+ warnings?$`))).toBeVisible({ timeout: 20_000 });
+      await expect(main.getByText(new RegExp(`^${errors + 1} errors? · \\d+ warnings?$`))).toBeVisible({ timeout: CHECK_RUN_MS });
     } finally {
       restore();
     }
@@ -85,17 +95,17 @@ test.describe('Checking flows', () => {
     const restore = keepData();
     try {
       // S01: the product's Checks panel in the desktop app, its bridge stood in for, sends its error count to the Dock badge.
-      const spec = await servedWorkspace();
-      const errors = spec.problems.filter((p) => p.severity === 'error').length;
+      const served = servedWorkspace();
       await asDesktop(page, keepCounts);
       await openPage(page, CHECKS, PANEL);
+      const errors = (await served).problems.filter((p) => p.severity === 'error').length;
       const main = page.locator(PANEL);
       const badge = () => page.evaluate(() => (window as unknown as { __counts: number[] }).__counts.at(-1));
-      await expect.poll(badge).toBe(errors);
+      await expect.poll(badge, { timeout: CHECK_RUN_MS }).toBe(errors);
       // S02, S05: a data file changes while the page is open; the page shows the new error and the badge counts it.
       appendFileSync(path.join(process.env.STABILITY_ROOT!, 'data', 'view.jsonl'), ADDED_ROW);
-      await expect(main.getByRole('heading', { name: /^view-unused \d+$/, level: 3 })).toBeVisible({ timeout: 20_000 });
-      await expect.poll(badge).toBe(errors + 1);
+      await expect(main.getByRole('heading', { name: /^view-unused \d+$/, level: 3 })).toBeVisible({ timeout: CHECK_RUN_MS });
+      await expect.poll(badge, { timeout: CHECK_RUN_MS }).toBe(errors + 1);
     } finally {
       restore();
     }

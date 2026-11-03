@@ -173,7 +173,12 @@ test.describe('graph', () => {
     await nodes(page);
     await page.locator('.focus-stage .graph-layout button', { hasText: 'Nested' }).click();
     await graphDrawn(page, 'nested', 1300);
-    const marks = (await sceneOf(page)).boxes
+    // A focus's child whose own label reads too small draws its title alone (LA-V93-R77): it has no kind and ID line to
+    // carry the mark. Every other box draws that line, its shape's mark before it.
+    const boxes = (await sceneOf(page)).boxes;
+    const titleAlone = boxes.filter((b) => b.child && b.lines.length > 0 && b.lines.every((l) => l.face === 'title'));
+    expect(titleAlone.every((b) => !b.block && b.icons.length === 0)).toBe(true);
+    const marks = boxes.filter((b) => !titleAlone.includes(b))
       .map((b) => ({ id: b.id, icon: b.icons.some((i) => i.draw === 'shape' && i.name === b.shape), outline: b.polygon !== null || b.view !== 'nested' }));
     await test.step("LA-V93-R06-T02 in the Nested view every record shows its kind's shape as a mark", () => {
       expect(marks.length).toBeGreaterThan(5);

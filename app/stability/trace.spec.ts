@@ -2,12 +2,13 @@ import type { Page } from '@playwright/test';
 import { expect, test } from './test';
 import { openPage } from './measure';
 import { TRACE, traceSceneOf } from './scene';
+import type { TraceHost } from '../src/trace/TraceCanvas';
 
 // The Trace stage stays where the Reader left it (LA-V98-R20, LA-PAT-APP-UX-R22): opening a row moves
 // only that row's boxes and the rows below it, which glide there, never the rows above or the camera; selecting a step
 // lights its path across its row, the line from each requirement it fulfills to it and on to its chain, the rest faded,
-// and the wiki card follows. The outcomes a focused row serves slide beside it and follow the focus to another row
-// (LA-V98-R22), and the camera frames them with the focused box.
+// and the wiki card follows. The outcomes a focused row serves and the journeys carrying it out slide beside it and
+// follow the focus to another row (LA-V98-R22), and the camera frames them with the focused box.
 
 const USE_CASE = 'LA-UCS-UC06';
 const STEP = 'LA-UCS-UC06-FL-S04';
@@ -75,23 +76,26 @@ test.describe('the Trace stage stays where the Reader left it', () => {
     await expect(page.locator('.wiki-panel-title h2')).toContainText('flow\'s steps');
   });
 
-  test('LA-V98-R22-T03 The outcomes a focused row serves sit beside it, framed with it, and follow the focus to another row', async ({ page }) => {
+  test('LA-V98-R22-T03 The outcomes a focused row serves and the journeys carrying it out sit beside it, framed with it, and follow the focus to another row', async ({ page }) => {
     await openPage(page, `/${USE_CASE}?stage=trace`);
     await page.locator(`${TRACE}[data-ready] canvas`).waitFor();
-    /** The outcomes a row serves, as drawn now, and its use case's box. */
+    /** What sits beside a row as drawn now: the outcomes it serves, the journeys' boxes carrying it out, and its use case's box. */
     const beside = async (u: string) => {
       const s = await sceneOf(page);
-      const outcomes = s.lines.filter((l) => l.kind === 'serves' && l.to === `${u}|use-case`).map((l) => s.boxes.find((b) => b.key === l.from)!.rect);
-      return { s, own: s.boxes.find((b) => b.key === `${u}|use-case`)!.rect, outcomes };
+      const to = (kind: 'serves' | 'carries') => s.lines.filter((l) => l.kind === kind && l.to === `${u}|use-case`).map((l) => s.boxes.find((b) => b.key === l.from)!.rect);
+      return { s, own: s.boxes.find((b) => b.key === `${u}|use-case`)!.rect, outcomes: to('serves'), journeys: to('carries') };
     };
-    /** The stack's middle level with the use case's, every box of it in the frame. */
+    /** Each column's stack (the outcomes, the journeys) with its middle level with the use case's, every box of it in the frame. */
     const level = async (u: string) => {
-      const { s, own, outcomes } = await beside(u);
+      const { s, own, outcomes, journeys } = await beside(u);
       expect(outcomes.length).toBeGreaterThan(0);
-      const top = Math.min(...outcomes.map((r) => r.top));
-      const bottom = Math.max(...outcomes.map((r) => r.top + r.height));
-      expect(Math.abs((top + bottom) / 2 - (own.top + own.height / 2))).toBeLessThan(2);
-      for (const r of [own, ...outcomes]) {
+      expect(journeys.length).toBeGreaterThan(0);
+      for (const stack of [outcomes, journeys]) {
+        const top = Math.min(...stack.map((r) => r.top));
+        const bottom = Math.max(...stack.map((r) => r.top + r.height));
+        expect(Math.abs((top + bottom) / 2 - (own.top + own.height / 2))).toBeLessThan(2);
+      }
+      for (const r of [own, ...outcomes, ...journeys]) {
         expect(r.top).toBeGreaterThanOrEqual(s.canvas.top - 1);
         expect(r.top + r.height).toBeLessThanOrEqual(s.canvas.top + s.canvas.height + 1);
       }
@@ -99,13 +103,17 @@ test.describe('the Trace stage stays where the Reader left it', () => {
     await expect.poll(async () => { try { await level(USE_CASE); return true; } catch { return false; } }, { timeout: 5000 }).toBe(true);
     await level(USE_CASE);
 
-    // Another row's use case, clicked where it is drawn: its outcomes glide to it.
+    // Another row's use case, served by an outcome and carried out by a journey, clicked where it is drawn: its outcomes
+    // and journeys glide to it.
     const s = await sceneOf(page, false);
-    const serving = s.boxes.filter((b) => b.column === 2 && b.depth === 0 && b.row !== USE_CASE && b.row !== null && s.lines.some((l) => l.kind === 'serves' && l.to === b.key));
-    // One whose middle is in the open space, as drawn: not under a panel, not past the canvas's edge.
-    const middle = (b: (typeof serving)[number]) => ({ x: b.rect.left + b.rect.width / 2, y: b.rect.top + b.rect.height / 2 });
-    let other: (typeof serving)[number] | undefined;
-    for (const b of serving) if (await onCanvas(page, middle(b).x, middle(b).y)) { other = b; break; }
+    const candidates = s.boxes.filter((b) => b.column === 2 && b.depth === 0 && b.row !== USE_CASE && b.row !== null
+      && s.lines.some((l) => l.kind === 'serves' && l.to === b.key) && s.lines.some((l) => l.kind === 'carries' && l.to === b.key));
+    // One whose middle the canvas hits as that box, in the open space: not under a panel or the columns' names, not past
+    // the canvas's edge.
+    const middle = (b: (typeof candidates)[number]) => ({ x: b.rect.left + b.rect.width / 2, y: b.rect.top + b.rect.height / 2 });
+    const hits = (b: (typeof candidates)[number]) => page.evaluate(({ sel, x, y }) => (document.querySelector(sel) as TraceHost).traceHit!(x, y), { sel: TRACE, ...middle(b) });
+    let other: (typeof candidates)[number] | undefined;
+    for (const b of candidates) if (await onCanvas(page, middle(b).x, middle(b).y) && (await hits(b)) === b.key) { other = b; break; }
     expect(other).toBeTruthy();
     await page.mouse.click(middle(other!).x, middle(other!).y);
     await expect(page).toHaveURL(new RegExp(`/${other!.row}\\?stage=trace`));

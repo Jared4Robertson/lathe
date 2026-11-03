@@ -46,7 +46,7 @@ export function TraceList({ index, graph, order, open, focus, hrefFor, onNavigat
       return (
         <div>
           <a href={hrefFor(item.id!)} aria-current={item.id === focus ? 'page' : undefined} data-trace-id={item.id!} onClick={go(item.id!)}>
-            <small>{item.meta ?? `${kindLabel(index, record.kind)} · ${item.id}`}</small>
+            <small>{item.meta ?? `${kindLabel(index, record.kind)} · ${item.id}`}</small>{' '}
             <span>{record.title}</span>
           </a>
           {toggle(item)}
@@ -56,7 +56,7 @@ export function TraceList({ index, graph, order, open, focus, hrefFor, onNavigat
     return (
       <div>
         <div>
-          <small>{item.words!.meta}</small>
+          <small>{item.words!.meta}</small>{' '}
           <span>{item.words!.title}</span>
         </div>
         {toggle(item)}
