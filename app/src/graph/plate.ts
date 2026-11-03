@@ -7,8 +7,8 @@ import { countOf } from '../plural';
 import { treeGroup } from './tree';
 import { nodeShape, outlineOf, SHAPES, type Mark, type Outline, type Shape } from './shapes';
 import {
-  BORDER, LABEL_PAD, LABEL_PAD_BLOCK, labelLines, LINE_HEIGHT, META_FONT,
-  marksOf, textMeasure, TITLE_FONT, type Face, type WrappedLabel,
+  BORDER, EYEBROW_FONT, EYEBROW_GAP, eyebrowRuns, LABEL_PAD, LABEL_PAD_BLOCK, labelLines, LINE_HEIGHT,
+  marksOf, NODE_TEXT, STATUS_FONT, textMeasure, TITLE_FONT, type Face, type WrappedLabel,
 } from './text';
 
 // A box as the canvas draws it (LA-EXP-DS06, LA-V93-R06): its outline, its colors' roles and,
@@ -20,9 +20,13 @@ import {
 /** How a box is drawn: a Tree box in its kind's shape (the Graph's and the Trace stage's), a Nested box, or a Map box or area. */
 export type PlateView = 'tree' | 'nested' | 'map';
 
-/** One line of a label, at its place in the map: its text as the map broke it (a space it ends with is not drawn), its left end and baseline, its font size, and its width in map units. */
-export interface PlateLine { text: string; face: Face; size: number; x: number; baseline: number; top: number; height: number; width: number; tone: 'ink' | 'muted' }
-/** A small drawing before the kind and ID line: a shape's mark (Nested) or a kind's mark. */
+/**
+ * One run of a label's line, at its place in the map: its text as the map broke it (a space it ends with is not drawn),
+ * its face, its left end and baseline, its font size, its width in map units, and its level in the node text scale
+ * (text.ts NODE_TEXT). A title line is one run; an eyebrow or status line one run per face (its words, a record ID).
+ */
+export interface PlateLine { text: string; face: Face; size: number; x: number; baseline: number; top: number; height: number; width: number; level: 'title' | 'eyebrow' | 'status'; tone: 'ink' | 'muted' }
+/** A small drawing before the eyebrow: a shape's mark (Nested) or a kind's mark. */
 export interface PlateIcon { draw: 'shape' | 'mark'; name: Shape | Mark; x: number; y: number; w: number; h: number }
 /** The problem badges' tones, by their swatches in the graph's key: errors, warnings, coverage gaps. */
 export const BADGE_TONES = ['error', 'warning', 'gap'] as const;
@@ -40,7 +44,7 @@ export interface Plate {
   /** The kind's name ("Use case"), or "Group". */
   kindLabel: string;
   title: string;
-  /** The line above the title: "Use case · LA-EXP-UC03", "Group · LA-EXP". */
+  /** The eyebrow above the title as it is drawn: "Use case · LA-EXP-UC03", "Stage · LA-EXP", an ID alone where a band names its kind. */
   meta: string;
   stage: BoxStage;
   group: boolean;
@@ -60,8 +64,9 @@ export interface Plate {
   dashed: boolean;
   /** What its shape draws inside its outline, in the Tree view. */
   decoration: Shape | null;
-  /** Where its label lies (its content box). */
+  /** Where its label lies (its content box), and whether its lines are centered in it rather than set at its left. */
   label: { x: number; y: number; w: number; h: number };
+  centered: boolean;
   lines: PlateLine[];
   icons: PlateIcon[];
   badges: PlateBadge[];
@@ -81,7 +86,7 @@ export interface Plate {
   gaps: string[];
 }
 
-/** The size of an icon before the kind and ID line, at text scale 1: a shape's 14 by 10, a mark's 10 by 10, and the gap after each. */
+/** The size of an icon before the eyebrow, at text scale 1: a shape's 14 by 10, a mark's 10 by 10, and the gap after each. */
 const ICON = { shape: { w: 14, h: 10 }, mark: { w: 10, h: 10 }, gap: 4, drop: 1.5 };
 /** A badge at text scale 1: its height and least width, its padding, its font, the gap between two, and its offset from the top right. */
 const BADGE = { h: 15, minW: 15, pad: 3, font: 9.5, gap: 3, top: 3, right: 8 };
@@ -97,14 +102,19 @@ interface Place {
   icons: { draw: 'shape' | 'mark'; name: Shape | Mark }[];
 }
 
-/** A label's lines placed in its box, as a column of lines centered or at the left, its icons before the first kind and ID line. */
+/**
+ * A label's lines placed in its box, as a column of lines centered or at the left, its icons before the first eyebrow
+ * line: each eyebrow line drawn as its runs (text.ts eyebrowRuns), side by side on one baseline.
+ */
 function placeLines({ lines, box, centered, top, t, icons }: Place): { lines: PlateLine[]; icons: PlateIcon[] } {
   const m = textMeasure();
   const all = [
-    ...lines.meta.map((text) => ({ text, face: 'meta' as Face, size: META_FONT * t, tone: 'muted' as const })),
-    ...lines.title.map((text) => ({ text, face: 'title' as Face, size: TITLE_FONT * t, tone: 'ink' as const })),
+    ...lines.meta.map((text) => ({ text, level: 'eyebrow' as const, size: EYEBROW_FONT * t })),
+    ...lines.title.map((text) => ({ text, level: 'title' as const, size: TITLE_FONT * t })),
+    ...(lines.status ?? []).map((text) => ({ text, level: 'status' as const, size: STATUS_FONT * t })),
   ];
-  const height = all.reduce((s, l) => s + l.size * LINE_HEIGHT, 0);
+  const gap = lines.meta.length > 0 ? EYEBROW_GAP * t : 0;
+  const height = all.reduce((s, l) => s + l.size * LINE_HEIGHT, 0) + gap;
   let y = top ? box.top : box.top + (box.bottom - box.top - height) / 2;
   const cx = (box.left + box.right) / 2;
   const iconRun = icons.reduce((s, i) => s + (ICON[i.draw].w + ICON.gap) * t, 0);
@@ -112,9 +122,14 @@ function placeLines({ lines, box, centered, top, t, icons }: Place): { lines: Pl
   const placedIcons: PlateIcon[] = [];
   all.forEach((l, i) => {
     const lh = l.size * LINE_HEIGHT;
-    const { ascent, descent } = m.metrics(l.face);
+    const tone = NODE_TEXT[l.level].tone;
+    const runs = l.level === 'title' ? [{ text: l.text, face: 'title' as Face }] : eyebrowRuns(l.text);
+    const last = runs.length - 1;
+    const widths = runs.map((r, k) => m.em(k === last ? r.text.trimEnd() : r.text, r.face) * l.size);
+    const width = widths.reduce((s, w) => s + w, 0);
+    // The line's baseline, from its level's face: an eyebrow's runs share one, whatever their faces.
+    const { ascent, descent } = m.metrics(l.level === 'title' ? 'title' : 'eyebrow');
     const baseline = y + (lh - (ascent + descent) * l.size) / 2 + ascent * l.size;
-    const width = m.em(l.text.trimEnd(), l.face) * l.size;
     const lead = i === 0 && lines.meta.length > 0 ? iconRun : 0;
     const left = centered ? cx - (lead + width) / 2 : box.left;
     if (lead > 0) {
@@ -125,8 +140,12 @@ function placeLines({ lines, box, centered, top, t, icons }: Place): { lines: Pl
         x += (size.w + ICON.gap) * t;
       }
     }
-    out.push({ text: l.text, face: l.face, size: l.size, x: left + lead, baseline, top: y, height: lh, width, tone: l.tone });
-    y += lh;
+    let x = left + lead;
+    runs.forEach((r, k) => {
+      out.push({ text: r.text, face: r.face, size: l.size, x, baseline, top: y, height: lh, width: widths[k], level: l.level, tone });
+      x += widths[k];
+    });
+    y += lh + (i === lines.meta.length - 1 ? gap : 0);
   });
   return { lines: out, icons: placedIcons };
 }
@@ -151,7 +170,7 @@ function badgesAt(marks: { errors: number; warnings: number; gaps: string[] }, r
  * What a Trace stage box is when it is no record (a gap): its kind, its words and its colors' role. It is drawn as a
  * plain box, dashed when it is a gap.
  */
-export interface PlainBox { kind: string; kindLabel: string; title: string; meta: string; stage: BoxStage; dashed: boolean }
+export interface PlainBox { kind: string; kindLabel: string; title: string; meta: string; status?: string; stage: BoxStage; dashed: boolean }
 
 /**
  * Where a box comes from: a Tree map's node (the Graph's, or a Trace stage box, LA-V98, where `place` is its key and
@@ -171,6 +190,8 @@ export function plateOf(index: RecordIndex, id: string, source: PlateSource): Pl
   const plain = source.view === 'tree' ? source.plain : undefined;
   const record = plain ? undefined : index.byId.get(id);
   const words = plain ?? labelLines(index, id);
+  // The eyebrow as the map broke it: an ID alone where a band names the box's kind (text.ts mapLabel).
+  const shown = source.view === 'map' && source.node.role !== 'record' ? words.meta : source.node.lines.meta.join('');
   const kind = plain ? plain.kind : record ? record.kind : treeGroup(index, id)?.kind ?? 'folder';
   const { shape, mark } = plain ? { shape: 'box' as Shape, mark: undefined } : nodeShape(index, id);
   const stage = plain ? plain.stage : stageFor(index, id, kind);
@@ -178,7 +199,7 @@ export function plateOf(index: RecordIndex, id: string, source: PlateSource): Pl
   const marked = marks.errors + marks.warnings + marks.gaps.length > 0;
   const base = {
     id, place: (source.view === 'tree' ? source.place : undefined) ?? id, kind,
-    kindLabel: plain ? plain.kindLabel : record ? kindLabel(index, record.kind) : groupKindLabel(index, id), title: words.title, meta: words.meta,
+    kindLabel: plain ? plain.kindLabel : record ? kindLabel(index, record.kind) : groupKindLabel(index, id), title: words.title, meta: shown || words.meta,
     stage, group: !plain && !record, shape, view: source.view, x, y, w, h, text: t, ...marks,
     dashed: plain ? plain.dashed : kind === 'question', area: null, far: null,
   };
@@ -193,7 +214,7 @@ export function plateOf(index: RecordIndex, id: string, source: PlateSource): Pl
     const badges = marked ? badgesAt(marks, x + w - BADGE.right, y + BADGE.top, 1) : [];
     return {
       ...base, scale: 1, outline: { kind: 'round', rx: r, ry: r }, edged: false, border: BORDER, decoration: null,
-      label: { x: x + LABEL_PAD, y, w: Math.max(0, w - 2 * LABEL_PAD), h: n.header }, lines: [], icons: [], badges,
+      label: { x: x + LABEL_PAD, y, w: Math.max(0, w - 2 * LABEL_PAD), h: n.header }, centered: false, lines: [], icons: [], badges,
       area: { role, name, count: countOf(n.count, 'record') },
     };
   }
@@ -213,10 +234,10 @@ export function plateOf(index: RecordIndex, id: string, source: PlateSource): Pl
     const placed = placeLines({ lines, box, centered, top: false, t, icons: mark ? [{ draw: 'mark', name: mark }] : [] });
     // Its badge sits at its top right, inside its shape's room.
     const badges = !marked ? [] : badgesAt(marks, x + w - inset - (BADGE.right + room.r) * t, y + inset + (BADGE.top + room.t) * t, t);
-    return { ...base, scale, outline, edged, border, decoration: shape, label: { x: box.left, y: box.top, w: box.right - box.left, h: box.bottom - box.top }, lines: placed.lines, icons: placed.icons, badges };
+    return { ...base, scale, outline, edged, border, decoration: shape, label: { x: box.left, y: box.top, w: box.right - box.left, h: box.bottom - box.top }, centered, lines: placed.lines, icons: placed.icons, badges };
   }
 
-  // Nested (LA-EXP-DS07) and a Map's record (LA-EXP-DS12): its border grows with its text; its shape is a mark before its kind and ID line.
+  // Nested (LA-EXP-DS07) and a Map's record (LA-EXP-DS12): its border grows with its text; its shape is a mark before its eyebrow.
   const n = source.node;
   const scale = Math.max(0.5, t);
   const border = BORDER * scale;
@@ -225,13 +246,13 @@ export function plateOf(index: RecordIndex, id: string, source: PlateSource): Pl
   const placed = placeLines({ lines: n.lines, box, centered: n.centered, top: n.header > 0, t, icons });
   const outline = outlineOf('box', { x, y, w, h }, scale);
   const badges = marked ? badgesAt(marks, x + w - border - BADGE.right * t, y + border + BADGE.top * t, t) : [];
-  const plate: Plate = { ...base, scale, outline, edged: false, border, decoration: null, label: { x: box.left, y: box.top, w: box.right - box.left, h: box.bottom - box.top }, lines: placed.lines, icons: placed.icons, badges };
+  const plate: Plate = { ...base, scale, outline, edged: false, border, decoration: null, label: { x: box.left, y: box.top, w: box.right - box.left, h: box.bottom - box.top }, centered: n.centered, lines: placed.lines, icons: placed.icons, badges };
   const far = source.view === 'map' ? source.node.far : null;
   if (!far) return plate;
-  // From afar: the title alone at FAR_TEXT, centered in the box, its border and badges as they are.
+  // From afar: the title alone at FAR_TEXT, at the box's left as near, its border and badges as they are.
   const f = FAR_TEXT;
   const farBox = { left: x + border + LABEL_PAD * f, right: x + w - border - LABEL_PAD * f, top: y + border + LABEL_PAD_BLOCK * f, bottom: y + h - border - LABEL_PAD_BLOCK * f };
-  const farPlaced = placeLines({ lines: far, box: farBox, centered: true, top: false, t: f, icons: [] });
+  const farPlaced = placeLines({ lines: far, box: farBox, centered: false, top: false, t: f, icons: [] });
   return { ...plate, far: { ...plate, text: f, label: { x: farBox.left, y: farBox.top, w: farBox.right - farBox.left, h: farBox.bottom - farBox.top }, lines: farPlaced.lines, icons: [] } };
 }
 

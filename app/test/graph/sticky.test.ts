@@ -4,7 +4,9 @@ import { PLAIN_LOOK } from '../../src/graph/look';
 import { paint, type PaintState } from '../../src/graph/paint';
 import { plateOf } from '../../src/graph/plate';
 import { keepLabel, STICKY_READ_PX, stickyLabel, stickyRoom, type ScreenBox } from '../../src/graph/sticky';
-import { BORDER, LABEL_PAD, TITLE_FONT, textMeasure } from '../../src/graph/text';
+import { BORDER, LABEL_PAD, linesIn, TITLE_FONT, textMeasure, treeLabel } from '../../src/graph/text';
+import { besideToggle, ITEM_HEIGHT, ITEM_WIDTH, toggleAt, TOGGLE_ROOM } from '../../src/trace/layout';
+import type { MapNode } from '../../src/graph/map';
 import { testIndex } from './workspace';
 import { graphMap } from './maps';
 
@@ -23,7 +25,7 @@ describe('LA-EXP-DS06-T14 a label the open space cuts is laid out in the box\'s 
   const box = { left: 0, top: 0, right: 900, bottom: node.h * zoom };
   const own = plate.text * zoom * TITLE_FONT;
 
-  it('keeps its title when the visible part cannot hold its kind and ID line too, and draws it as placed, cut by the edge, only when the title cannot fit', () => {
+  it('keeps its title when the visible part cannot hold its eyebrow too, and draws it as placed, cut by the edge, only when the title cannot fit', () => {
     // A panel over the box's right part and one over its lower part: the visible part shrinks from below.
     const shown = (bottom: number) => stickyLabel(plate, zoom, X, Y, { left: -10, top: -10, right: 600, bottom });
     const labelTop = Y(plate.label.y);
@@ -87,6 +89,52 @@ describe('LA-EXP-DS06-T14 a label the open space cuts is laid out in the box\'s 
   });
 });
 
+describe('LA-EXP-DS06-T14 a label pulled into view stays in its room: before a Trace box\'s toggle, a word too long cut, no copy left', () => {
+  const index = testIndex();
+  // A Trace box as the Trace makes it (TraceCanvas.tsx plateFor): 264 by 72 at text scale 1, its label wrapped beside its
+  // toggle; 220 px wide on screen, its left part under a panel.
+  const own = { ...treeLabel(index, 'P-D-UC01'), title: 'Read the reference generated from the schema' };
+  const node: MapNode = { id: 'P-D-UC01', parent: null, children: [], level: 2, x: 0, y: 0, w: ITEM_WIDTH, h: ITEM_HEIGHT, text: 1, centered: false, lines: linesIn(own, ITEM_WIDTH - TOGGLE_ROOM - 2 * BORDER, false) };
+  const plate = besideToggle({ ...plateOf(index, 'P-D-UC01', { view: 'tree', node }), title: own.title });
+  const zoom = 220 / node.w;
+  const X = (x: number) => (x - node.x) * zoom;
+  const Y = (y: number) => (y - node.y) * zoom;
+  const m = textMeasure();
+  const rightOf = (l: { text: string; face: 'title' | 'eyebrow' | 'mono' | 'badge'; px: number; x: number }) => l.x + m.em(l.text.trimEnd(), l.face) * l.px;
+
+  it('wraps a label pulled into a cut box\'s visible part before its toggle, never under it, at every cut', () => {
+    const toggle = X(toggleAt(plate).x);
+    let moved = 0;
+    for (let left = 10; left < 200; left += 5) {
+      const s = stickyLabel(plate, zoom, X, Y, { left, top: -10, right: 2000, bottom: 2000 });
+      if (s.kind !== 'moved') continue;
+      moved++;
+      for (const l of s.lines) {
+        expect(l.x, `${left} ${l.text}`).toBeGreaterThanOrEqual(left - 1e-6);
+        expect(rightOf(l), `${left} ${l.text}`).toBeLessThanOrEqual(toggle + 1e-6);
+      }
+    }
+    expect(moved).toBeGreaterThan(0);
+  });
+
+  it('draws a title too long for the visible part at the floor, its words cut with an ellipsis, rather than as placed', () => {
+    // A long word in a narrow room: laid out anew it cannot fit on whole words.
+    const long = { ...plate, title: 'Supercalifragilistic expialidocious reference generated', lines: plate.lines.map((l) => (l.level === 'title' ? { ...l, text: 'Supercalifragilistic expialidocious reference generated' } : l)) };
+    const open: ScreenBox = { left: X(plate.label.x + plate.label.w) - 60, top: -10, right: 2000, bottom: 2000 };
+    const s = stickyLabel(long, zoom, X, Y, open);
+    expect(s.kind).toBe('moved');
+    if (s.kind !== 'moved') return;
+    expect(s.clipped).toBe(true);
+    expect(s.lines.at(-1)!.text.endsWith('…')).toBe(true);
+    const room = stickyRoom(long, X, Y, open);
+    for (const l of s.lines) {
+      expect(l.px).toBe(STICKY_READ_PX);
+      expect(l.x).toBeGreaterThanOrEqual(room.left - 1e-6);
+      expect(rightOf(l)).toBeLessThanOrEqual(room.right + 1e-6);
+    }
+  });
+});
+
 describe('LA-EXP-DS06-T14 a moved label lies on its box\'s one fill, never across an edge or a decoration', () => {
   const index = testIndex();
   const map = graphMap(index, 'P');
@@ -137,13 +185,15 @@ describe('LA-EXP-DS06-T15 a focused box is never left without its label: the cam
   });
 
   it('moves a camera whose cut leaves the label no room right, as little as it takes, at the same zoom', () => {
-    expect(at(v).kind).toBe('cut');
+    // Drawn whole: placed, or laid out anew with no word cut.
+    const whole = (s: ReturnType<typeof at>) => s.kind === 'placed' || (s.kind === 'moved' && !s.clipped);
+    expect(whole(at(v))).toBe(false);
     const kept = keepLabel(plate, v, open);
     expect(kept.zoom).toBe(zoom);
     expect(kept.y).toBe(v.y);
     expect(kept.x).toBeGreaterThan(v.x);
-    expect(at(kept).kind).not.toBe('cut');
-    // A pixel less and it would only be drawn cut by the edge.
-    expect(at({ ...kept, x: kept.x - 1.5 }).kind).toBe('cut');
+    expect(whole(at(kept))).toBe(true);
+    // A pixel less and it would only be drawn cut, by the edge or with an ellipsis.
+    expect(whole(at({ ...kept, x: kept.x - 1.5 }))).toBe(false);
   });
 });

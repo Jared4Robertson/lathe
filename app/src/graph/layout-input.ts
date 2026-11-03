@@ -24,10 +24,10 @@ export interface MapInput {
 const FIELD = '\u0000';
 const NODE = '\u0001';
 
-/** A map's input from its roots, children and labels (and in the Map, each node's role), measured by `measure`. */
-export function mapInput(view: MapInput['view'], roots: readonly string[], childrenOf: (id: string) => readonly string[], labelOf: (id: string) => MapLabel, measure: string, roleOf?: (id: string) => GroundRole): MapInput {
+/** A map's input from its roots, children and labels (each given its parent: and in the Map, each node's role), measured by `measure`. */
+export function mapInput(view: MapInput['view'], roots: readonly string[], childrenOf: (id: string) => readonly string[], labelOf: (id: string, parent: string | null) => MapLabel, measure: string, roleOf?: (id: string) => GroundRole): MapInput {
   const shape = treeShape(roots, childrenOf);
-  const labels = shape.ids.map((id) => labelOf(id));
+  const labels = shape.ids.map((id, i) => labelOf(id, shape.parents[i] < 0 ? null : shape.ids[shape.parents[i]]));
   const roles = roleOf ? shape.ids.map((id) => roleOf(id)) : [];
   const parts: string[] = [`${view}${FIELD}${measure}`];
   labels.forEach((l, i) => parts.push(`${shape.parents[i]}${FIELD}${l.title}${FIELD}${l.meta}${FIELD}${l.shape ?? ''}${FIELD}${l.marks ?? 0}${FIELD}${roles.length > 0 ? roleCode(roles[i]) : ''}`));
@@ -47,9 +47,9 @@ export function productInput(index: RecordIndex, root: string, view: MapInput['v
   if (!input) {
     if (view === 'map') {
       const ground = groundTree(index);
-      input = mapInput(view, ground.root ? [ground.root] : [], (id) => groundChildren(index, id), (id) => mapLabel(index, id), measure, (id) => ground.role.get(id) ?? 'record');
+      input = mapInput(view, ground.root ? [ground.root] : [], (id) => groundChildren(index, id), (id, parent) => mapLabel(index, id, parent), measure, (id) => ground.role.get(id) ?? 'record');
     } else {
-      input = mapInput(view, [root], (id) => treeChildren(index, id), (id) => (view === 'tree' ? treeLabel(index, id) : mapLabel(index, id)), measure);
+      input = mapInput(view, [root], (id) => treeChildren(index, id), (id, parent) => (view === 'tree' ? treeLabel(index, id) : mapLabel(index, id, parent)), measure);
     }
     known.set(key, input);
   }
@@ -77,7 +77,7 @@ export function unpackInput(packed: string, roots: readonly number[]): { shape: 
 
 /** Strings whose widths, in each face, tell two measures apart: the page's and the worker's must agree on them. */
 const PROBES = ['Hamburgefontsiv', 'Use case · LA-EXP-UC03', 'MW@% il1 0123456789', 'Data files changed'];
-export const probeOf = (m: TextMeasure): number[] => (['title', 'meta', 'badge'] as Face[]).flatMap((face) => PROBES.map((p) => m.em(p, face)));
+export const probeOf = (m: TextMeasure): number[] => (['title', 'eyebrow', 'mono', 'badge'] as Face[]).flatMap((face) => PROBES.map((p) => m.em(p, face)));
 
 /** What the page sends the worker, and what it answers. */
 export type LayoutRequest =

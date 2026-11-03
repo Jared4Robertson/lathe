@@ -3,7 +3,7 @@ import { type RecordIndex } from '../exploring/record-summaries/record-index';
 // A shape for each kind (LA-V93-R06): a secondary cue, after the label, that keeps a box's
 // rectangular footprint so boxes still stack. In the Tree view a box's outline is its
 // kind's shape; in the Nested view a box keeps its rectangle and shows its
-// shape as a small mark before its kind and ID line (shape-icons.tsx).
+// shape as a small mark before its eyebrow (shape-icons.tsx).
 //
 // Every outline here is drawn by the canvas (paint.ts) in one of three ways:
 // - a polygon (`clipped`): filled, and its edge drawn inside it, so the border follows the outline
@@ -27,7 +27,7 @@ export type Shape =
   | 'chevron-bar' | 'chevron' | 'tab' | 'window' | 'port' | 'stripes' | 'component' | 'shield'
   | 'diamond';
 
-/** A small glyph a kind adds before its kind and ID line: a shape shared with another kind, told apart. */
+/** A small glyph a kind adds before its eyebrow: a shape shared with another kind, told apart. */
 export type Mark = 'value' | 'gear' | 'lens' | 'marker' | 'ruler' | 'port' | 'target' | 'data' | 'plug' | 'route';
 
 export interface KindShape { shape: Shape; mark?: Mark }
@@ -44,31 +44,33 @@ interface ShapeSpec {
   room: Room;
   /** How it is drawn: a polygon, rounded corners, or a box (with a drawing inside it). */
   draw: 'clipped' | 'radius' | 'box';
+  /** Whether its label is centered: its sides close in on the text (a stadium, a hexagon, a diamond); else set at the left (text.ts centeredLabel). */
+  centered: boolean;
 }
 
 /** Every shape the graph draws, in the key's order: structure, then stage by stage, then open questions. */
 export const SHAPES: Readonly<Record<Shape, ShapeSpec>> = {
-  product: { name: 'a large rounded box', kinds: 'Product', room: { l: 0, r: 4, t: 0, b: 0 }, draw: 'radius' },
-  hexagon: { name: 'a hexagon', kinds: 'Domain', room: { l: 12, r: 12, t: 0, b: 0 }, draw: 'clipped' },
-  folder: { name: 'a folder with a tab', kinds: 'Stage, folder or group, with its count', room: { l: 0, r: 0, t: 8, b: 0 }, draw: 'clipped' },
-  double: { name: 'a double border', kinds: 'Aggregate', room: { l: 2, r: 2, t: 2, b: 2 }, draw: 'box' },
-  box: { name: 'a plain box', kinds: 'Entity (a business outcome, journey, value object, read model, domain service, term, integration or test data set with its mark), and any kind a product adds', room: NO_ROOM, draw: 'box' },
-  octagon: { name: 'an octagon', kinds: 'Constraint, invariant, specification, pattern rule (a policy with a gear, a standard rule with a ruler)', room: NO_ROOM, draw: 'clipped' },
-  flag: { name: 'a flag, notched on the right', kinds: 'Domain event', room: { l: 0, r: 10, t: 0, b: 0 }, draw: 'clipped' },
-  parallelogram: { name: 'a slanted box', kinds: 'Command (a query with a lens)', room: { l: 8, r: 8, t: 0, b: 0 }, draw: 'clipped' },
-  slice: { name: 'a slice pointing right', kinds: 'Capability', room: { l: 0, r: 8, t: 0, b: 0 }, draw: 'clipped' },
-  stadium: { name: 'a stadium', kinds: 'Use case', room: { l: 4, r: 8, t: 0, b: 0 }, draw: 'radius' },
-  page: { name: 'a page with a folded corner', kinds: 'UC requirement, view requirement, API requirement', room: { l: 0, r: 10, t: 0, b: 0 }, draw: 'clipped' },
-  stack: { name: 'stacked boxes', kinds: 'Pattern (a standard with a ruler)', room: { l: 0, r: 5, t: 5, b: 0 }, draw: 'clipped' },
-  'chevron-bar': { name: 'a chevron bar', kinds: 'Flow', room: { l: 6, r: 16, t: 0, b: 0 }, draw: 'clipped' },
-  chevron: { name: 'a chevron', kinds: 'Flow step', room: { l: 6, r: 6, t: 0, b: 0 }, draw: 'clipped' },
-  tab: { name: 'a tab rounded on its left', kinds: 'Journey step', room: NO_ROOM, draw: 'clipped' },
-  window: { name: 'a window with a top bar', kinds: 'View (an interface with a plug)', room: { l: 0, r: 0, t: 6, b: 0 }, draw: 'box' },
-  port: { name: 'a box with a port notch on its left', kinds: 'Endpoint', room: { l: 2, r: 0, t: 0, b: 0 }, draw: 'clipped' },
-  component: { name: 'a box with component tabs', kinds: 'Technical records: repository, data model, value type, predicate, event type, projection, reader, handlers, service, UI component, adapter, entry point, tooling', room: { l: 4, r: 0, t: 0, b: 0 }, draw: 'clipped' },
-  stripes: { name: 'a striped box', kinds: 'Table', room: { l: 0, r: 0, t: 5, b: 5 }, draw: 'box' },
-  shield: { name: 'a shield', kinds: 'Every kind of test', room: { l: 0, r: 0, t: 0, b: 6 }, draw: 'clipped' },
-  diamond: { name: 'a diamond', kinds: 'Open question', room: { l: 14, r: 14, t: 2, b: 2 }, draw: 'clipped' },
+  product: { name: 'a large rounded box', kinds: 'Product', room: { l: 0, r: 4, t: 0, b: 0 }, draw: 'radius', centered: false },
+  hexagon: { name: 'a hexagon', kinds: 'Domain', room: { l: 12, r: 12, t: 0, b: 0 }, draw: 'clipped', centered: true },
+  folder: { name: 'a folder with a tab', kinds: 'Stage, folder or group, with its count', room: { l: 0, r: 0, t: 8, b: 0 }, draw: 'clipped', centered: false },
+  double: { name: 'a double border', kinds: 'Aggregate', room: { l: 2, r: 2, t: 2, b: 2 }, draw: 'box', centered: false },
+  box: { name: 'a plain box', kinds: 'Entity (a business outcome, journey, value object, read model, domain service, term, integration or test data set with its mark), and any kind a product adds', room: NO_ROOM, draw: 'box', centered: false },
+  octagon: { name: 'an octagon', kinds: 'Constraint, invariant, specification, pattern rule (a policy with a gear, a standard rule with a ruler)', room: NO_ROOM, draw: 'clipped', centered: false },
+  flag: { name: 'a flag, notched on the right', kinds: 'Domain event', room: { l: 0, r: 10, t: 0, b: 0 }, draw: 'clipped', centered: false },
+  parallelogram: { name: 'a slanted box', kinds: 'Command (a query with a lens)', room: { l: 8, r: 8, t: 0, b: 0 }, draw: 'clipped', centered: false },
+  slice: { name: 'a slice pointing right', kinds: 'Capability', room: { l: 0, r: 8, t: 0, b: 0 }, draw: 'clipped', centered: false },
+  stadium: { name: 'a stadium', kinds: 'Use case', room: { l: 4, r: 8, t: 0, b: 0 }, draw: 'radius', centered: true },
+  page: { name: 'a page with a folded corner', kinds: 'UC requirement, view requirement, API requirement', room: { l: 0, r: 10, t: 0, b: 0 }, draw: 'clipped', centered: false },
+  stack: { name: 'stacked boxes', kinds: 'Pattern (a standard with a ruler)', room: { l: 0, r: 5, t: 5, b: 0 }, draw: 'clipped', centered: false },
+  'chevron-bar': { name: 'a chevron bar', kinds: 'Flow', room: { l: 6, r: 16, t: 0, b: 0 }, draw: 'clipped', centered: false },
+  chevron: { name: 'a chevron', kinds: 'Flow step', room: { l: 6, r: 6, t: 0, b: 0 }, draw: 'clipped', centered: false },
+  tab: { name: 'a tab rounded on its left', kinds: 'Journey step', room: NO_ROOM, draw: 'clipped', centered: false },
+  window: { name: 'a window with a top bar', kinds: 'View (an interface with a plug)', room: { l: 0, r: 0, t: 6, b: 0 }, draw: 'box', centered: false },
+  port: { name: 'a box with a port notch on its left', kinds: 'Endpoint', room: { l: 2, r: 0, t: 0, b: 0 }, draw: 'clipped', centered: false },
+  component: { name: 'a box with component tabs', kinds: 'Technical records: repository, data model, value type, predicate, event type, projection, reader, handlers, service, UI component, adapter, entry point, tooling', room: { l: 4, r: 0, t: 0, b: 0 }, draw: 'clipped', centered: false },
+  stripes: { name: 'a striped box', kinds: 'Table', room: { l: 0, r: 0, t: 5, b: 5 }, draw: 'box', centered: false },
+  shield: { name: 'a shield', kinds: 'Every kind of test', room: { l: 0, r: 0, t: 0, b: 6 }, draw: 'clipped', centered: false },
+  diamond: { name: 'a diamond', kinds: 'Open question', room: { l: 14, r: 14, t: 2, b: 2 }, draw: 'clipped', centered: true },
 };
 
 /** What each mark tells apart, for the key. */

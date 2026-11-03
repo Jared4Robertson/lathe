@@ -64,13 +64,13 @@ function wrapCut(title: string, size: number, room: number, most: number): strin
   if (i < words.length) lines.push(cutToWidth(words.slice(i).join(' '), size, room));
   return lines.filter((l) => l !== '');
 }
-/** Where a focus's child's whole label sits: centered in its box, or at its top (a Nested or Map box that holds others, over them). */
+/** Where a focus's child's whole label sits: in its box's middle, or at its top (a Nested or Map box that holds others, over them). */
 export type WholePlace = 'middle' | 'top';
 /**
  * The label a focus's direct child draws at a zoom (LA-V93-R77): its own (labelPlate) where its title reads at
  * CHILD_TITLE_PX or more there; else its title alone at CHILD_TITLE_PX on screen, wrapped on whole words to two lines
- * (one where its box holds no more) and cut with an ellipsis only past them, centered in its box or, for a box that
- * holds others, at its top, drawn over them on a band of its fill (paint, wholeLabels). Its full title stays its
+ * (one where its box holds no more) and cut with an ellipsis only past them, set as its own label is (centered or at
+ * its left: text.ts centeredLabel), in its box's middle or, for a box that holds others, at its top, drawn over them on a band of its fill (paint, wholeLabels). Its full title stays its
  * accessible name and tooltip. Never a block. `floor` says it is the title alone.
  */
 function wholeLabel(p: Plate, zoom: number, place: WholePlace): { plate: Plate; floor: boolean } {
@@ -86,7 +86,8 @@ function wholeLabel(p: Plate, zoom: number, place: WholePlace): { plate: Plate; 
   const lines = texts.map((text, i) => {
     const width = textMeasure().em(text, 'title') * size;
     const y = top + i * lh;
-    return { text, face: 'title' as const, size, x: p.x + (p.w - width) / 2, baseline: y + (lh - (ascent + descent) * size) / 2 + ascent * size, top: y, height: lh, width, tone: 'ink' as const };
+    const x = p.centered ? p.x + (p.w - width) / 2 : p.x + pad;
+    return { text, face: 'title' as const, size, x, baseline: y + (lh - (ascent + descent) * size) / 2 + ascent * size, top: y, height: lh, width, level: 'title' as const, tone: 'ink' as const };
   });
   return { plate: { ...p, text: size / TITLE_FONT, label: { x: p.x + pad, y: top, w: Math.max(0, p.w - 2 * pad), h: height }, lines, icons: [], far: null }, floor: true };
 }
@@ -643,9 +644,9 @@ function fitWords(ctx: CanvasRenderingContext2D, text: string, room: number): st
 
 /** An area's label fitted to `room` pixels wide: name and count at its size; else the name alone; else (a district's, `shrink`) the name smaller, down to the floor, else cut with an ellipsis at the floor. Another area's is left out where its name does not fit. */
 function fitAreaLabel(ctx: CanvasRenderingContext2D, fonts: GraphFonts, name: string, count: string, px: number, room: number, shrink: boolean): { name: string; count: string; px: number; nameW: number; w: number } | null {
-  const measure = (text: string, face: 'title' | 'meta', size: number) => { ctx.font = fontFor(fonts, face, size); return ctx.measureText(text).width; };
+  const measure = (text: string, face: 'title' | 'mono', size: number) => { ctx.font = fontFor(fonts, face, size); return ctx.measureText(text).width; };
   const nameW = measure(name, 'title', px);
-  const full = nameW + px * 0.6 + measure(count, 'meta', px * 0.8);
+  const full = nameW + px * 0.6 + measure(count, 'mono', px * 0.8);
   if (full <= room) return { name, count, px, nameW, w: full };
   if (nameW <= room) return { name, count: '', px, nameW, w: nameW };
   if (!shrink) return null;
@@ -712,7 +713,7 @@ function paintAreaLabels(ctx: CanvasRenderingContext2D, areas: readonly Plate[],
     ctx.fillStyle = look.ink;
     halo(l.name, box.left + 2);
     if (l.count) {
-      ctx.font = fontFor(fonts, 'meta', l.px * 0.8);
+      ctx.font = fontFor(fonts, 'mono', l.px * 0.8);
       ctx.fillStyle = look.muted;
       halo(l.count, box.left + 2 + l.nameW + l.px * 0.6);
     }
@@ -771,7 +772,7 @@ function paintLineLabels(ctx: CanvasRenderingContext2D, lines: readonly Line[], 
     if (group) group.push(line); else groups.set(key, [line]);
   }
   if (groups.size === 0) return;
-  ctx.font = fontFor(fonts, 'meta', LINE_LABEL_PX);
+  ctx.font = fontFor(fonts, 'mono', LINE_LABEL_PX);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   const taken: ScreenBox[] = [...keepClear];

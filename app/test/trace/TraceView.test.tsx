@@ -66,21 +66,32 @@ describe('the Trace stage', () => {
     expect(box(scene, 'outcome/P-BO01')).toMatchObject({ column: 0 });
     expect(scene.lines.filter((l) => l.kind === 'serves').map((l) => `${l.from}>${l.to}`)).toEqual(['outcome/P-BO01>P-D-UC01|use-case', 'outcome/P-BO01>P-D-UC02|use-case', 'outcome/P-BO01>journey/P-JR01']);
     // The journey beside the rows, its proof on its box, a line to each row its steps carry out labeled with the step.
-    expect(box(scene, 'journey/P-JR01')).toMatchObject({ column: 1, row: null, kind: 'journey', meta: '2 steps · 0 proved · no test', opens: true, open: false });
+    expect(box(scene, 'journey/P-JR01')).toMatchObject({ column: 1, row: null, kind: 'journey', meta: 'P-JR01', status: '2 steps · 0 proved · no test', opens: true, open: false });
     expect(scene.lines.filter((l) => l.kind === 'carries').map((l) => `${l.from}>${l.to} ${l.label}`)).toEqual(['journey/P-JR01>P-D-UC01|use-case 1', 'journey/P-JR01>P-D-UC02|use-case 2']);
     await waitFor(() => expect(counts()).toHaveTextContent('2 use cases · 2 with gaps · 0 serve no outcome'));
     // Its toggle opens it to its steps, each line then from its step.
     await click('journey/P-JR01', true);
-    await waitFor(async () => expect(box(await drawn(), 'journey/P-JR01/P-JR01-S02')).toMatchObject({ column: 1, depth: 1, meta: 'Step 2 · P-D-UC02 · ✗' }));
+    await waitFor(async () => expect(box(await drawn(), 'journey/P-JR01/P-JR01-S02')).toMatchObject({ column: 1, depth: 1, status: 'Step 2 · P-D-UC02 · ✗' }));
     expect((await drawn()).lines.filter((l) => l.kind === 'carries').map((l) => l.from)).toEqual(['journey/P-JR01/P-JR01-S01', 'journey/P-JR01/P-JR01-S02']);
   });
 
-  it('LA-V98-R16-T02 A closed row shows a status per stage, a stage with a gap a dashed box', async () => {
+  it('LA-V98-R16-T02 LA-PAT-APP-UX-R24-T02 A closed row shows a status per stage, a stage with a gap a dashed box: its ID, then its status as its title, the use case still in its name', async () => {
     await openTrace('/P-D-UC01?stage=trace');
     const scene = await drawn();
-    expect(box(scene, 'P-D-UC01|design')).toMatchObject({ role: 'status', title: '1 interface · all designed', dashed: false, opens: true, open: false });
-    expect(box(scene, 'P-D-UC01|suite')).toMatchObject({ role: 'gap', title: '3 tests · 1 not proved', dashed: true });
-    expect(box(scene, 'P-D-UC02|design')).toMatchObject({ role: 'gap', title: 'No flow', dashed: true });
+    // The Use case cell keeps its title; the stage cells' status is their title, with no line under it.
+    expect(box(scene, 'P-D-UC01|use-case')).toMatchObject({ meta: 'P-D-UC01', title: 'Lend a thing', status: '' });
+    expect(box(scene, 'P-D-UC01|design')).toMatchObject({ role: 'status', meta: 'P-D-UC01', title: '1 interface · all designed', status: '', dashed: false, opens: true, open: false });
+    expect(box(scene, 'P-D-UC01|technical')).toMatchObject({ meta: 'P-D-UC01', status: '' });
+    expect(box(scene, 'P-D-UC01|technical')!.title).toMatch(/handler/);
+    expect(box(scene, 'P-D-UC01|suite')).toMatchObject({ role: 'gap', title: '3 tests · 1 not proved', status: '', dashed: true });
+    expect(box(scene, 'P-D-UC02|design')).toMatchObject({ role: 'gap', title: 'No flow', status: '', dashed: true });
+    // Its accessible name says its kind, its status and its row's use case.
+    expect(box(scene, 'P-D-UC01|design')!.name).toBe('Design flow 1 interface · all designed, Lend a thing');
+    expect(box(scene, 'P-D-UC02|design')!.name).toMatch(/^Design flow No flow, \S/);
+    // Their main line is as large as the use case's title, in every stage column.
+    const title = box(scene, 'P-D-UC01|use-case')!.titlePx;
+    expect(title).toBeGreaterThan(0);
+    for (const stage of ['design', 'technical', 'suite']) expect(box(scene, `P-D-UC01|${stage}`)!.titlePx, stage).toBe(title);
   });
 
   it('LA-V98-R17-T02 Boxes open by their toggle, Expand row opens the focus\'s row and Expand all a stage in every row; the place keeps what is open', async () => {
@@ -186,7 +197,7 @@ describe('the Trace stage', () => {
       if (toggle.getAttribute('aria-expanded') !== 'true') fireEvent.click(toggle);
       // A box's link reads its kind and ID, then its title, a word apart.
       expect(within(design).getByRole('link', { name: /^Flow · P-D-UC01-FL \S/ })).toBeInTheDocument();
-      // Another use case.
+      // Another use case: its Design flow box's title is its status.
       fireEvent.change(within(list).getByRole('combobox', { name: 'Use case' }), { target: { value: 'P-D-UC02' } });
       expect(within(within(list).getByRole('region', { name: 'Design flow' })).getByText('No flow', { selector: 'small + span' })).toBeInTheDocument();
     };

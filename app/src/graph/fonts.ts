@@ -1,4 +1,4 @@
-import { PLAIN_MEASURE, type Face, type TextMeasure } from './text';
+import { NODE_TEXT, PLAIN_MEASURE, type Face, type TextMeasure } from './text';
 
 // The faces the graph's canvas draws its text in, and the measure the maps are laid out with
 // (LA-EXP-DS06): the theme's body and mono stacks (`--body`, `--mono`), loaded before the first
@@ -14,14 +14,18 @@ const LOAD_TIMEOUT_MS = 3000;
 /** The two stacks the graph draws with, as the stylesheet sets them. */
 export interface GraphFonts { body: string; mono: string }
 
-/** The CSS font for a face at a size in px: the title in the body face at 600, a badge in mono at 700, the rest in mono. */
+/**
+ * The CSS font for a face at a size in px: a title and an eyebrow's words in the body face at their weights in the node
+ * text scale (text.ts NODE_TEXT), a badge in mono at 700, a record ID or code word in mono at 400.
+ */
 export function fontFor(fonts: GraphFonts, face: Face, px: number): string {
-  if (face === 'title') return `600 ${px}px ${fonts.body}`;
+  if (face === 'title') return `${NODE_TEXT.title.weight} ${px}px ${fonts.body}`;
+  if (face === 'eyebrow') return `${NODE_TEXT.eyebrow.weight} ${px}px ${fonts.body}`;
   if (face === 'badge') return `700 ${px}px ${fonts.mono}`;
   return `400 ${px}px ${fonts.mono}`;
 }
 
-const FACES: readonly Face[] = ['title', 'meta', 'badge'];
+const FACES: readonly Face[] = ['title', 'eyebrow', 'mono', 'badge'];
 
 /** The stylesheet's stacks, read from the page's root. */
 export function readGraphFonts(): GraphFonts {

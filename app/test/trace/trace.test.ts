@@ -105,7 +105,7 @@ describe('LA-V98-R17-T01 Each box opens down to its children, many at once', () 
   it('opens the suite to how much is proved, each requirement\'s and flow\'s tests with a gap where proof is missing, and Lower tests to what they rest on', () => {
     const suite = cellKey('P-D-UC01', 'suite');
     expect(keys(5, opened([suite]))).toEqual(['P-D-UC01|suite', 'proved', 'P-D-UC01-R01-T01', 'P-D-UC01-R02-T01', 'P-D-UC01-R02', 'P-D-UC01-FL-T', 'lower']);
-    expect(graph.items.get('P-D-UC01|suite/proved')!.words!.title).toBe('2 of 3 proved');
+    expect(graph.items.get('P-D-UC01|suite/proved')!.words).toMatchObject({ title: 'Use case and flow tests', status: '2 of 3 proved' });
     expect(keys(5, opened([suite, innerKey('P-D-UC01', 'suite', 'lower')])).slice(-2)).toEqual(['P-D-INV01-T', 'P-D-INV02']);
   });
 });
@@ -423,10 +423,10 @@ describe('LA-V98-R24-T01 The Journey column joins outcomes to use cases through 
     expect(at('journey/P-JR01').x).toBeLessThan(at('P-D-UC01|use-case').x);
     // Closed: one line to each row, labeled with every step of it, and its proof.
     expect(laid.carries.map((l) => `${l.from}>${l.to} ${l.label}`)).toEqual(['journey/P-JR01>P-D-UC01|use-case 1', 'journey/P-JR01>P-D-UC02|use-case 3, alt 1']);
-    expect(graph.items.get('journey/P-JR01')!.meta).toBe('4 steps · 1 proved · test ✗');
+    expect(graph.items.get('journey/P-JR01')!.status).toBe('4 steps · 1 proved · test ✗');
     // Open: its steps in order, the handoff its own box with its policy's proof, the other path under its name, its test.
     const open = opened([journeyKey('P-JR01')]);
-    const shown = visible(graph, journeyBox('P-JR01'), open).map((k) => { const item = graph.items.get(k)!; return `${item.depth} ${item.meta ?? item.words?.title}`; });
+    const shown = visible(graph, journeyBox('P-JR01'), open).map((k) => { const item = graph.items.get(k)!; return `${item.depth} ${item.status ?? item.words?.title}`; });
     expect(shown).toEqual([
       '0 4 steps · 1 proved · test ✗',
       '1 Step 1 · P-D-UC01 · ✗',
@@ -434,7 +434,7 @@ describe('LA-V98-R24-T01 The Journey column joins outcomes to use cases through 
       '1 Step 3 · P-D-UC02 · ✗',
       '1 returned elsewhere',
       '2 Step 1 · P-D-UC02 · ✗',
-      '1 Journey test · not proved',
+      '1 Not proved',
     ]);
     const openLaid = layOutTrace(graph, order, open);
     expect(openLaid.carries.map((l) => `${l.from}>${l.to} ${l.label}`)).toEqual([
@@ -447,6 +447,6 @@ describe('LA-V98-R24-T01 The Journey column joins outcomes to use cases through 
     removeRows(bare, 'journey_test', () => true);
     const g = traced(bare).graph;
     expect(g.items.get('journey/P-JR01/gap:test')).toMatchObject({ role: 'gap', words: { title: 'No journey test' } });
-    expect(g.items.get('journey/P-JR01')!.meta).toBe('3 steps · 1 proved · no test');
+    expect(g.items.get('journey/P-JR01')!.status).toBe('3 steps · 1 proved · no test');
   });
 });

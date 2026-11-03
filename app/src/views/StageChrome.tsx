@@ -319,7 +319,7 @@ function KeyItems({ entries, meanings = false }: { entries: readonly KeyEntry[];
   ));
 }
 
-/** The phone's key: a chip at the foot of the stage that opens the entries as a sheet, each with its meaning. */
+/** The phone's key: a chip at the end of the walk's bar that opens the entries as a sheet, each with its meaning. */
 function KeyChip({ entries }: { entries: readonly KeyEntry[] }) {
   const [open, setOpen] = useState(false);
   const chip = useRef<HTMLButtonElement>(null);
@@ -328,7 +328,7 @@ function KeyChip({ entries }: { entries: readonly KeyEntry[] }) {
   useEffect(() => { if (open) document.querySelector<HTMLElement>('.stage-key-sheet .sheet-head button')?.focus(); }, [open]);
   return (
     <>
-      <Button ref={chip} className="stage-key-chip" icon="info" data-floating="bottom" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>Key</Button>
+      <Button ref={chip} className="stage-key-chip" icon="info" data-floating="bottom" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}><span className="stage-key-word">Key</span></Button>
       {open && createPortal(
         <BottomSheet label="Key" className="stage-key-sheet" onClose={close}>
           <div className="sheet-head">

@@ -9,6 +9,8 @@ import { assembleGround, groundChildren, groundTree, keptGround, placeGround, ty
 // placeTree and placeNested: a tree given by its roots, children and labels, and a product's map from its index.
 
 const plain = (id: string): MapLabel => ({ title: id, meta: '' });
+/** A node's parent in a shape, by its place: what its label's band is (text.ts mapLabel). */
+const parentOf = (shape: { ids: readonly string[]; parents: Int32Array }, i: number) => (shape.parents[i] < 0 ? null : shape.ids[shape.parents[i]]);
 
 /** A tree as an icicle (the Tree map), each node's label its ID unless given. */
 export function layoutTree(roots: readonly string[], childrenOf: (id: string) => readonly string[], labelOf: (id: string) => MapLabel = plain): GraphMap {
@@ -18,9 +20,9 @@ export function layoutTree(roots: readonly string[], childrenOf: (id: string) =>
 }
 
 /** A tree as nested squares (the Nested map), each node's label its ID unless given. */
-export function layoutNested(roots: readonly string[], childrenOf: (id: string) => readonly string[], labelOf: (id: string) => MapLabel = plain): NestedMap {
+export function layoutNested(roots: readonly string[], childrenOf: (id: string) => readonly string[], labelOf: (id: string, parent: string | null) => MapLabel = plain): NestedMap {
   const shape = treeShape(roots, childrenOf);
-  const labels = shape.ids.map((id) => labelOf(id));
+  const labels = shape.ids.map((id, i) => labelOf(id, parentOf(shape, i)));
   return assembleNested(shape, (i) => labels[i], placeNested(shape, (i) => labels[i]));
 }
 
@@ -40,14 +42,14 @@ export const graphMap = (index: RecordIndex, root: string): GraphMap =>
 
 /** A product's Nested map, from its root, as the Graph lays it out. */
 export const nestedMap = (index: RecordIndex, root: string): NestedMap =>
-  once(index, `nested|${root}`, () => layoutNested([root], (id) => treeChildren(index, id), (id) => mapLabel(index, id)));
+  once(index, `nested|${root}`, () => layoutNested([root], (id) => treeChildren(index, id), (id, parent) => mapLabel(index, id, parent)));
 
 /** A product's Map (its ground), as the Graph lays it out. */
 export const groundMap = (index: RecordIndex): GroundMap =>
   once(index, 'map', () => {
     const tree = groundTree(index);
     const shape = treeShape(tree.root ? [tree.root] : [], (id) => groundChildren(index, id));
-    const labels = shape.ids.map((id) => mapLabel(index, id));
+    const labels = shape.ids.map((id, i) => mapLabel(index, id, parentOf(shape, i)));
     const roles = shape.ids.map((id) => tree.role.get(id) ?? 'record');
     return assembleGround(shape, (i) => labels[i], (i) => roles[i], placeGround(shape, (i) => labels[i], (i) => roles[i]));
   });
@@ -56,7 +58,7 @@ export const groundMap = (index: RecordIndex): GroundMap =>
 export function groundMapAfter(index: RecordIndex, previous: GroundMap | null): GroundMap {
   const tree = groundTree(index);
   const shape = treeShape(tree.root ? [tree.root] : [], (id) => groundChildren(index, id));
-  const labels = shape.ids.map((id) => mapLabel(index, id));
+  const labels = shape.ids.map((id, i) => mapLabel(index, id, parentOf(shape, i)));
   const roles = shape.ids.map((id) => tree.role.get(id) ?? 'record');
   return assembleGround(shape, (i) => labels[i], (i) => roles[i], placeGround(shape, (i) => labels[i], (i) => roles[i], previous ? keptGround(shape, previous) : null));
 }

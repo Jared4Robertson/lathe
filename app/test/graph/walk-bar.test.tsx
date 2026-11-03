@@ -1,5 +1,7 @@
 import './setup';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { openApp, startAtDepth } from '../helpers';
 import { testWorkspace } from './workspace';
@@ -69,5 +71,21 @@ describe('the walk on a phone', () => {
     const more = toolbar().querySelector<HTMLElement>('.stage-more-body')!;
     expect(within(more).getByRole('group', { name: 'More steps' })).toBeInTheDocument();
     expect([...more.querySelectorAll('.stage-step')].map((b) => b.className.match(/is-(\w+)/)![1])).toEqual(['up', 'down']);
+  });
+
+  it('LA-V93-R76-T01 The Key chip sits in the bar\'s row, at its end, in a slot its buttons leave, so it never covers node text', async () => {
+    phone();
+    await openApp(`/${FROM}?stage=graph`, { data: testWorkspace() });
+    await waitFor(() => expect(bar()).toBeInTheDocument());
+    // The chip keeps its word as its name; upright, the word is hidden but for assistive technology.
+    const chip = screen.getByRole('button', { name: 'Key' });
+    expect(chip.querySelector('.stage-key-word')).toHaveTextContent('Key');
+    const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
+    const outside = css.replace(/@media[^{]*\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}/g, '');
+    // In every orientation, not only on its side: the bar leaves the slot, and the chip sits in it, in the bar's row.
+    expect(outside).toMatch(/\.stage-layout\.is-phone > \.focus-stage \.stage-walk-bar \{ padding-right: calc\([^;]*var\(--key-slot\)/);
+    expect(outside).toMatch(/\.stage-layout\.is-phone > \.focus-stage \.stage-key-chip \{[^}]*right: max\(8px, env\(safe-area-inset-right\)\);[^}]*bottom: calc\(6px \+ env\(safe-area-inset-bottom\)\);[^}]*width: var\(--key-slot\)/);
+    expect(outside).toMatch(/\.stage-layout\.is-phone > \.focus-stage \{ --key-slot: var\(--touch-target\); \}/);
+    expect(css).toMatch(/@media \(orientation: portrait\) \{\s*\.stage-layout\.is-phone > \.focus-stage \.stage-key-word \{[^}]*clip-path: inset\(50%\)/);
   });
 });

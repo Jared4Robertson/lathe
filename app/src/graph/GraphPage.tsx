@@ -409,7 +409,7 @@ export interface SceneBox {
   /** Whether it is drawn as a plain block, its title under the readable size on screen (LA-EXP-DS10): then no line, icon or badge of it is drawn. */
   block: boolean;
   /** Each line of its label: its text, face, font size in the map and on screen, the font it is drawn in, its place, and its width as the canvas measures it at its drawn font. */
-  lines: { text: string; face: string; mapPx: number; fontPx: number; font: string; rect: Rect; drawnWidth: number }[];
+  lines: { text: string; face: string; level: string; mapPx: number; fontPx: number; font: string; rect: Rect; drawnWidth: number }[];
   icons: { draw: string; name: string; rect: Rect }[];
   badges: { label: string; tone: string; rect: Rect }[];
   tip: string;
@@ -1059,7 +1059,7 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
             const font = fontFor(fonts, l.face, fontPx);
             let drawnWidth = l.width * v.zoom;
             if (measureCtx && !label.block) { measureCtx.font = font; drawnWidth = measureCtx.measureText(l.text.trimEnd()).width; }
-            return { text: l.text, face: l.face, mapPx: l.size, fontPx, font, rect: rect(l.x, l.top, l.width, l.height), drawnWidth };
+            return { text: l.text, face: l.face, level: l.level, mapPx: l.size, fontPx, font, rect: rect(l.x, l.top, l.width, l.height), drawnWidth };
           }),
           icons: label.plate.icons.map((i) => ({ draw: i.draw, name: i.name, rect: rect(i.x, i.y, i.w, i.h) })),
           badges: p.badges.map((b) => ({ label: b.label, tone: b.tone, rect: rect(b.x, b.y, b.w, b.h) })),

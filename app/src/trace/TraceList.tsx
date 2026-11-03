@@ -7,7 +7,7 @@
 import { useState, type MouseEvent } from 'react';
 import { kindLabel, type RecordIndex } from '../exploring/record-summaries/record-index';
 import { Button } from '../components/Button';
-import { journeyBox, STAGE_COLUMN, TRACE_COLUMN_LABELS, TRACE_STAGES, isOpen, rowsOf, visible, type TraceGraph, type Item, type Openness } from './trace';
+import { journeyBox, STAGE_COLUMN, TRACE_COLUMN_LABELS, TRACE_STAGES, isOpen, rowsOf, visible, wordsName, type TraceGraph, type Item, type Openness } from './trace';
 
 export interface TraceListProps {
   index: RecordIndex;
@@ -37,7 +37,7 @@ export function TraceList({ index, graph, order, open, focus, hrefFor, onNavigat
   const go = (id: string) => (e: MouseEvent) => { if (!plain(e)) return; e.preventDefault(); onNavigate(id); };
   const toggle = (item: Item) => item.opens && (
     <Button aria-expanded={isOpen(item, open)} onClick={() => onToggle(item.opens!)}>
-      {isOpen(item, open) ? 'Close' : 'Open'}<span className="sr-only"> {item.words?.title ?? index.byId.get(item.id ?? '')?.title ?? ''}</span>
+      {isOpen(item, open) ? 'Close' : 'Open'}<span className="sr-only"> {item.words ? wordsName(item.words) : index.byId.get(item.id ?? '')?.title ?? ''}</span>
     </Button>
   );
   const box = (item: Item) => {
@@ -46,8 +46,9 @@ export function TraceList({ index, graph, order, open, focus, hrefFor, onNavigat
       return (
         <div>
           <a href={hrefFor(item.id!)} aria-current={item.id === focus ? 'page' : undefined} data-trace-id={item.id!} onClick={go(item.id!)}>
-            <small>{item.meta ?? `${kindLabel(index, record.kind)} · ${item.id}`}</small>{' '}
+            <small>{`${kindLabel(index, record.kind)} · ${item.id}`}</small>{' '}
             <span>{record.title}</span>
+            {item.status && <small>{item.status}</small>}
           </a>
           {toggle(item)}
         </div>
@@ -56,8 +57,9 @@ export function TraceList({ index, graph, order, open, focus, hrefFor, onNavigat
     return (
       <div>
         <div>
-          <small>{item.words!.meta}</small>{' '}
-          <span>{item.words!.title}</span>
+          {item.words!.meta && <small>{item.words!.meta}</small>}{item.words!.meta && ' '}
+          {item.words!.title && <span>{item.words!.title}</span>}
+          {item.words!.status && <small>{item.words!.status}</small>}
         </div>
         {toggle(item)}
       </div>

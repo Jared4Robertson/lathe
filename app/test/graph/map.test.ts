@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { COLUMN_GAP_SHARE, groupWidth, MAP_SIZE, MAX_ASPECT, MAX_COLUMN_SHARE, parentLine, ROOT_WIDTH, ROW_GAP_SHARE, treeText, type GraphMap, type MapNode } from '../../src/graph/map';
 import { drawnFor, frameOnMap, MAX_DRAWN, MIN_DRAWN, MIN_ZOOM, viewRect } from '../../src/graph/camera';
 import { shapeOf, SHAPES } from '../../src/graph/shapes';
-import { BADGE_ROOM, BORDER, LABEL_PAD, labelHeight, largestFit, metaWidth, MARK_ROOM, narrowestWidth, TITLE_FONT, titleWidth, treeLabel, wrapLabel, wrapText, type MapLabel } from '../../src/graph/text';
+import { BADGE_ROOM, BORDER, LABEL_PAD, centeredLabel, EYEBROW_FONT, eyebrowWidth, labelHeight, largestFit, MARK_ROOM, PLAIN_MEASURE, narrowestWidth, TITLE_FONT, titleWidth, treeLabel, wrapLabel, wrapText, type MapLabel } from '../../src/graph/text';
 import type { RecordIndex } from '../../src/exploring/record-summaries/record-index';
 import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } from './workspace';
 import { graphMap, layoutTree } from './maps';
@@ -126,20 +126,20 @@ describe('columns and text', () => {
         const border = BORDER * n.text;
         const room = label.shape ? SHAPES[label.shape].room : { l: 0, r: 0 };
         const across = (n.w - 2 * border) / n.text;
-        expect(across, n.id).toBeGreaterThanOrEqual(narrowestWidth(label, true) - 1e-6);
+        expect(across, n.id).toBeGreaterThanOrEqual(narrowestWidth(label, centeredLabel(label)) - 1e-6);
         expect(n.lines.title.join(''), n.id).toBe(label.title);
         expect(n.lines.meta.join(''), n.id).toBe(label.meta);
         const inner = across - 2 * LABEL_PAD - room.l - room.r;
         for (const line of n.lines.title) expect(titleWidth(line.trimEnd()), n.id).toBeLessThanOrEqual(inner + 1e-6);
-        const meta = inner - (label.marks ?? 0) * MARK_ROOM - 2 * BADGE_ROOM;
-        for (const line of n.lines.meta) expect(metaWidth(line.trimEnd()), n.id).toBeLessThanOrEqual(meta + 1e-6);
+        const meta = inner - (label.marks ?? 0) * MARK_ROOM - (centeredLabel(label) ? 2 : 1) * BADGE_ROOM;
+        for (const line of n.lines.meta) expect(eyebrowWidth(line.trimEnd()), n.id).toBeLessThanOrEqual(meta + 1e-6);
         expect(n.text * labelHeight(n.lines) + 2 * border, n.id).toBeLessThanOrEqual(n.h * (1 + eps));
-        expect(n.centered).toBe(true);
+        expect(n.centered).toBe(centeredLabel(label));
       }
     }
-    // The plain measure (no canvas, in the tests): a title is at least its characters at 0.45 em, and a kind and ID line 0.6 em a character.
+    // The plain measure (no canvas, in the tests): a title is at least its characters at 0.45 em; an eyebrow its kind's words in the eyebrow face and its ID 0.6 em a character.
     expect(titleWidth('Capabilities')).toBeGreaterThan(12 * 0.45 * TITLE_FONT);
-    expect(metaWidth('Use case · LA-EXP-UC03')).toBeGreaterThanOrEqual(22 * 0.6 * 10.5);
+    expect(eyebrowWidth('Use case · LA-EXP-UC03')).toBeCloseTo((PLAIN_MEASURE.em('Use case · ', 'eyebrow') + 11 * 0.6) * EYEBROW_FONT, 9);
     // Wrapping breaks only after a space; a word too wide for a line breaks after a hyphen, then between characters.
     const chars = (s: string) => s.length;
     expect(wrapText('walk the model as a graph', 10, chars)).toEqual(['walk the ', 'model as a ', 'graph']);
@@ -155,7 +155,7 @@ describe('columns and text', () => {
     expect(wrapLabel({ ...lines, title: `${lines.title} and on through every group in it` }).title.length).toBeGreaterThan(wrapLabel(lines).title.length);
     expect(wrapLabel(lines, { centered: true }).meta).toEqual(['Use case · ', 'LA-EXP-UC03']);
     // An ID is never broken across lines: too narrow a box keeps it whole on its own line (LA-EXP-DS06).
-    expect(wrapLabel(lines, { width: 2 * LABEL_PAD + BADGE_ROOM + metaWidth('LA-EXP') }).meta).toEqual(['Use ', 'case · ', 'LA-EXP-UC03']);
+    expect(wrapLabel(lines, { width: 2 * LABEL_PAD + BADGE_ROOM + eyebrowWidth('LA-EXP') }).meta).toEqual(['Use ', 'case · ', 'LA-EXP-UC03']);
     // With `whole` a word too wide for a line stays whole.
     expect(wrapText('a well-formed step', 6, chars, '-', false, true)).toEqual(['a ', 'well-formed ', 'step']);
     expect(wrapLabel(lines, { badge: false }).meta).toEqual(['Use case · LA-EXP-UC03']);
@@ -282,7 +282,7 @@ describe('real titles', () => {
       const all = records(path.join(repo, product === 'lathe' ? 'data' : 'examples/tool-library/data'));
       expect(all.length, product).toBeGreaterThan(product === 'lathe' ? 1000 : 50);
       for (const r of all) {
-        // As its box breaks it: its kind's shape keeps room clear (the badge's room is beside the kind and ID line, not the title).
+        // As its box breaks it: its kind's shape keeps room clear (the badge's room is beside the eyebrow, not the title).
         const title = wrapLabel({ title: r.title, meta: '' }, { shape: shapeOf(r.kind).shape }).title;
         expect(title.join(''), r.title).toBe(r.title);
         // Every line but the last ends after a space or, inside one word too wide for a line, after a hyphen, a code

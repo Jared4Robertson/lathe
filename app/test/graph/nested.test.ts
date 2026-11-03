@@ -1,8 +1,8 @@
 import { recordIndexOf } from '../read-view';
 import { describe, expect, it } from 'vitest';
 import { MAP_SIZE, nestedLeafText, nestedText, sizeText } from '../../src/graph/map';
-import { BORDER, LABEL_PAD, labelHeight, largestFit, linesIn, mapLabel, metaWidth, narrowestWidth, titleWidth, type MapLabel } from '../../src/graph/text';
-import { gridOf, HEADER_SHARE, leafLabel, NEST_GAP, NEST_PAD, type NestedMap, type NestedNode } from '../../src/graph/nested';
+import { BORDER, LABEL_PAD, eyebrowWidth, labelHeight, largestFit, linesIn, mapLabel, narrowestWidth, titleWidth, type MapLabel } from '../../src/graph/text';
+import { gridOf, HEADER_SHARE, NEST_GAP, NEST_PAD, type NestedMap, type NestedNode } from '../../src/graph/nested';
 import type { RecordIndex } from '../../src/exploring/record-summaries/record-index';
 import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } from './workspace';
 import { graphMap, layoutNested, nestedMap } from './maps';
@@ -117,9 +117,9 @@ describe('the Nested map', () => {
         const side = group[0].w;
         const border = (s: number) => BORDER * Math.max(0.5, s);
         // Each scale the largest that fits, worked out over every sibling's label whatever it holds now, so what a sibling
-        // holds sizes nothing of the others: as a leaf's (centered in its square, its title at most a tenth of the side),
+        // holds sizes nothing of the others: as a leaf's (in its square, its title at most a tenth of the side),
         // and as a parent's (in a header band).
-        const leafText = Math.min(nestedLeafText(side), ...group.map((n) => largestFit(leafLabel(labelOf(map, n)), true, side, side, nestedLeafText(side), border)));
+        const leafText = Math.min(nestedLeafText(side), ...group.map((n) => largestFit(labelOf(map, n), false, side, side, nestedLeafText(side), border)));
         const text = Math.min(nestedText(side), ...group.map((n) => largestFit(labelOf(map, n), false, side, HEADER_SHARE * side, nestedText(side), border)));
         expect(leafText).toBeLessThanOrEqual(side / 125 * (1 + eps));
         expect(text).toBeGreaterThan(0);
@@ -143,11 +143,12 @@ describe('the Nested map', () => {
   it('LA-EXP-DS06-T09 Every label fits its box: no word broken, a leaf\'s lines inside its square, a parent\'s inside its header band', () => {
     for (const map of all()) {
       for (const n of map.nodes.values()) {
-        const label = n.centered ? leafLabel(labelOf(map, n)) : labelOf(map, n);
+        const label = labelOf(map, n);
+        expect(n.centered, n.id).toBe(false);
         const across = (n.w - 2 * borderOf(n)) / n.text;
         expect(across).toBeGreaterThanOrEqual(narrowestWidth(label, n.centered) - eps);
         for (const line of n.lines.title) expect(titleWidth(line.trimEnd()), n.id).toBeLessThanOrEqual(across - 2 * LABEL_PAD + eps);
-        for (const line of n.lines.meta) expect(metaWidth(line.trimEnd()), n.id).toBeLessThanOrEqual(across - 2 * LABEL_PAD + eps);
+        for (const line of n.lines.meta) expect(eyebrowWidth(line.trimEnd()), n.id).toBeLessThanOrEqual(across - 2 * LABEL_PAD + eps);
         expect(n.lines.title.join('')).toBe(label.title);
         const height = n.text * labelHeight(n.lines) + 2 * borderOf(n);
         if (n.children.length === 0) expect(height, n.id).toBeLessThanOrEqual(n.h * (1 + eps));
@@ -159,6 +160,6 @@ describe('the Nested map', () => {
 
 /** A box's label as its map was given it: the real index's, or a synthetic tree's (its ID its title). */
 function labelOf(map: NestedMap, n: NestedNode): MapLabel {
-  for (const index of indexes()) if (nestedMap(index, 'P') === map) return mapLabel(index, n.id);
+  for (const index of indexes()) if (nestedMap(index, 'P') === map) return mapLabel(index, n.id, n.parent);
   return { title: n.lines.title.join(''), meta: n.lines.meta.join('') };
 }

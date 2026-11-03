@@ -1,5 +1,6 @@
 import { BLOCK_BELOW_PX } from '../graph/camera';
-import type { GraphFonts } from '../graph/fonts';
+import { fontFor, type GraphFonts } from '../graph/fonts';
+import { EYEBROW_FONT, TITLE_FONT } from '../graph/text';
 import { readLook, type Look } from '../graph/look';
 import { changeColor, onCanvas, paintDots, paintGhosts, pill, PILL_WORDS, type Camera } from '../graph/paint';
 import { markPhase, type StageMarks } from '../changes/marks';
@@ -15,8 +16,9 @@ import { endStrokes, lineEnds, titleLines, type ErdBox, type ErdKind, type ErdLi
 // would be drawn under BLOCK_BELOW_PX. Zoomed out past REGION_LABEL_BELOW, each region's name shows over it at one size
 // on screen.
 
-/** A box's title in map units at zoom 1 (the display face's bold at 13 px). */
-const TITLE_PX = 13;
+/** A box's title and its kind line (its eyebrow, above it) in map units at zoom 1: the node text scale's (graph/text.ts NODE_TEXT). */
+const TITLE_PX = TITLE_FONT;
+const EYEBROW_PX = EYEBROW_FONT;
 /** Below this zoom a box's title would be drawn under BLOCK_BELOW_PX, so every box is a plain block, its fill and edge with no text or fields. */
 export const BLOCK_BELOW_ZOOM = BLOCK_BELOW_PX / TITLE_PX;
 /** Below this zoom a region's head is too small to read, and its name shows over it at a readable size. */
@@ -28,7 +30,10 @@ const ENDS_BELOW_ZOOM = 0.15;
 const BORDER: Record<ErdKind, number> = { domain: 2, aggregate: 1.5, entity: 1.5 };
 const PAD: Record<ErdKind, { x: number; y: number }> = { domain: { x: 14, y: 8 }, aggregate: { x: 14, y: 8 }, entity: { x: 10, y: 8 } };
 const TITLE_LINE = 16.25;
-const KIND_PX = 10.5;
+/** A domain's or an aggregate's kind line, its eyebrow above its title (erd.ts KIND_LINE). */
+const KIND_LINE = 14;
+/** A field's type, in the mono face. */
+const TYPE_PX = 10.5;
 const FIELD_PX = 11.5;
 const ROW = 20;
 const GAP = 2;
@@ -90,9 +95,11 @@ export function readErdLook(at: HTMLElement): ErdLook {
 
 // ---------- Text, laid out once per box ----------
 
-const titleFont = (f: ErdFonts, px: number) => `700 ${px}px ${f.display}`;
+const titleFont = (f: ErdFonts, px: number) => fontFor(f, 'title', px);
+const eyebrowFont = (f: ErdFonts, px: number) => fontFor(f, 'eyebrow', px);
+const regionFont = (f: ErdFonts, px: number) => `700 ${px}px ${f.display}`;
 const fieldFont = (f: ErdFonts, px: number) => `400 ${px}px ${f.body}`;
-const kindFont = (f: ErdFonts, px: number) => `400 ${px}px ${f.mono}`;
+const typeFont = (f: ErdFonts, px: number) => fontFor(f, 'mono', px);
 const rootFont = (f: ErdFonts, px: number) => `600 ${px}px ${f.mono}`;
 
 let measurer: CanvasRenderingContext2D | null | undefined;
@@ -160,13 +167,13 @@ export function boxText(box: ErdBox, width: number, kindLine: string, fonts: Erd
   const room = inner - (root ? root + ROOT_GAP : 0);
   const most = box.kind === 'entity' ? titleLines(box.title, width, box.root) : 1;
   const title = wrap(titleFont(fonts, TITLE_PX), box.title, room, most);
-  const kf = kindFont(fonts, KIND_PX);
+  const tf = typeFont(fonts, TYPE_PX);
   const fields = box.fields.map((f) => {
-    const type = cut(kf, f.kind, inner * KIND_SHARE);
-    const typeWidth = widthOf(kf, type);
+    const type = cut(tf, f.kind, inner * KIND_SHARE);
+    const typeWidth = widthOf(tf, type);
     return { name: cut(fieldFont(fonts, FIELD_PX), f.field, inner - typeWidth - FIELD_GAP), type, typeWidth };
   });
-  const text: BoxText = { title, root, kind: box.kind === 'entity' ? null : cut(kf, kindLine, inner), fields };
+  const text: BoxText = { title, root, kind: box.kind === 'entity' ? null : cut(eyebrowFont(fonts, EYEBROW_PX), kindLine, inner), fields };
   texts.set(box, { key, text });
   return text;
 }
@@ -246,6 +253,13 @@ function paintBox(ctx: CanvasRenderingContext2D, d: DrawnBox, look: ErdLook, fon
   let top = r.y + border + PAD[box.kind].y;
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'left';
+  // A domain's or an aggregate's kind line is its eyebrow, above its title (graph/text.ts NODE_TEXT).
+  if (d.text.kind !== null) {
+    ctx.font = eyebrowFont(fonts, EYEBROW_PX);
+    ctx.fillStyle = look.muted;
+    ctx.fillText(d.text.kind, left, top + KIND_LINE / 2);
+    top += KIND_LINE;
+  }
   ctx.fillStyle = look.ink;
   ctx.font = titleFont(fonts, TITLE_PX);
   d.text.title.forEach((line, i) => ctx.fillText(line, left, top + i * TITLE_LINE + TITLE_LINE / 2));
@@ -265,11 +279,6 @@ function paintBox(ctx: CanvasRenderingContext2D, d: DrawnBox, look: ErdLook, fon
     if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
   }
   top += d.text.title.length * TITLE_LINE + GAP;
-  if (d.text.kind !== null) {
-    ctx.font = kindFont(fonts, KIND_PX);
-    ctx.fillStyle = look.muted;
-    ctx.fillText(d.text.kind, left, top + (KIND_PX * 1.3) / 2);
-  }
   if (d.text.fields.length > 0) {
     top += RULE_ABOVE;
     ctx.fillStyle = look.rule;
@@ -281,7 +290,7 @@ function paintBox(ctx: CanvasRenderingContext2D, d: DrawnBox, look: ErdLook, fon
       ctx.font = fieldFont(fonts, FIELD_PX);
       ctx.fillText(f.name, left, y);
       ctx.fillStyle = look.muted;
-      ctx.font = kindFont(fonts, KIND_PX);
+      ctx.font = typeFont(fonts, TYPE_PX);
       // The type's mono face sits a pixel low beside the name's, as the two share a row's middle on the page.
       ctx.fillText(f.type, right - f.typeWidth, y + 1);
     });
@@ -404,14 +413,14 @@ function paintPills(ctx: CanvasRenderingContext2D, boxes: readonly DrawnBox[], l
 }
 
 /** Whether a region holds its name whole on screen at a zoom (LA-PAT-APP-UX-R12): else none shows, so no name is cut or drawn over its neighbor's. */
-export const regionFits = (g: Pick<RegionLabel, 'title' | 'rect'>, zoom: number, fonts: ErdFonts) => g.rect.width * zoom - 8 >= widthOf(titleFont(fonts, REGION_PX), g.title) + 2 * REGION_PAD;
+export const regionFits = (g: Pick<RegionLabel, 'title' | 'rect'>, zoom: number, fonts: ErdFonts) => g.rect.width * zoom - 8 >= widthOf(regionFont(fonts, REGION_PX), g.title) + 2 * REGION_PAD;
 
 /** Each region's name at the top left of its region, at one size on screen, where the region holds it whole (LA-PAT-APP-UX-R12): none is cut or drawn over its neighbor's. */
 function paintRegionLabels(ctx: CanvasRenderingContext2D, regions: readonly RegionLabel[], look: ErdLook, fonts: ErdFonts, X: (x: number) => number, Y: (y: number) => number, zoom: number) {
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'left';
   for (const g of regions) {
-    const name = titleFont(fonts, REGION_PX);
+    const name = regionFont(fonts, REGION_PX);
     const extra = g.roll ? ` ${rollupShort(g.roll)}` : '';
     if (!regionFits(g, zoom, fonts)) continue;
     const room = g.rect.width * zoom - 8;

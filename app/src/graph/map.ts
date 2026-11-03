@@ -1,5 +1,5 @@
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
-import { BORDER, fitsAt, largestFit, linesIn, type MapLabel, type WrappedLabel, textMeasure } from './text';
+import { BORDER, centeredLabel, fitsAt, largestFit, linesIn, type MapLabel, type WrappedLabel, textMeasure } from './text';
 import { outlineInset, type Shape } from './shapes';
 import { treeParent } from './tree';
 
@@ -20,8 +20,8 @@ import { treeParent } from './tree';
 //   their parent, a share of their width. So one depth level's boxes may sit at different places:
 //   each parent's children are a column of their own.
 // - Siblings share one text scale: their column's width over TEXT_SIZE, or less when a sibling's
-//   whole label (its kind and ID line, and its title wrapped on whole words) would not fit its box
-//   at that, the largest at which every sibling's does. Every label is centered.
+//   whole label (its eyebrow, and its title wrapped on whole words) would not fit its box
+//   at that, the largest at which every sibling's does. A label is centered only in a shape that closes in on it (text.ts centeredLabel).
 // - Filters do not change the map: a hidden kind is not drawn, but keeps its place.
 //
 // Map units are doubles, never rounded, so the deepest boxes keep their places however small they
@@ -197,7 +197,7 @@ export function placeTree(shape: TreeShape, labelOf: (i: number) => MapLabel, ca
     const key = `${aspect}\u0000${label.shape ?? ''}\u0000${label.marks ?? 0}\u0000${label.meta}\u0000${label.title}`;
     const known = cache.fits.get(key);
     if (known && (known.exact || known.at >= most)) return Math.min(known.at, most);
-    const at = largestFit(label, true, 1, aspect, most, (s) => BORDER * s);
+    const at = largestFit(label, centeredLabel(label), 1, aspect, most, (s) => BORDER * s);
     cache.fits.set(key, { at, exact: at < most });
     return at;
   };
@@ -213,7 +213,7 @@ export function placeTree(shape: TreeShape, labelOf: (i: number) => MapLabel, ca
     // far, which a sibling that fits there answers at once. Scaled from one unit wide, it is settled just under itself
     // where rounding would wrap a sibling's label one more line.
     let text = Math.min(treeText(w), w * labels.reduce((most, label) => unitFit(label, h / w, most), treeText(w) / w));
-    for (let step = 1e-12; text > 0 && step < 1e-3 && !labels.every((label) => fitsAt(label, true, w, h, text, border)); step *= 16) text *= 1 - step;
+    for (let step = 1e-12; text > 0 && step < 1e-3 && !labels.every((label) => fitsAt(label, centeredLabel(label), w, h, text, border)); step *= 16) text *= 1 - step;
     ids.forEach((i, k) => {
       const y = y0 + k * (h + gap);
       boxes.set([x, y, w, h, text], i * 5);
@@ -233,13 +233,13 @@ export function placeTree(shape: TreeShape, labelOf: (i: number) => MapLabel, ca
  */
 class TreeNode implements MapNode {
   private wrapped: WrappedLabel | null = null;
-  readonly centered = true;
   constructor(
     readonly id: string, readonly parent: string | null, readonly children: readonly string[], readonly level: number,
     readonly x: number, readonly y: number, readonly w: number, readonly h: number, readonly text: number, private readonly label: MapLabel,
   ) {}
+  get centered() { return centeredLabel(this.label); }
   get lines(): WrappedLabel {
-    return (this.wrapped ??= linesIn(this.label, this.text > 0 ? (this.w - 2 * BORDER * this.text) / this.text : Infinity, true));
+    return (this.wrapped ??= linesIn(this.label, this.text > 0 ? (this.w - 2 * BORDER * this.text) / this.text : Infinity, this.centered));
   }
 }
 

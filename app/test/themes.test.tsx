@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { openApp } from './helpers';
 import { auditContrast } from '../src/theme/audit';
+import { STAGE_FILLS } from '../src/theme/tokens';
 import { themeCss } from '../src/theme/css';
 import { APPEARANCE_STORAGE } from '../src/platform/appearance/model';
 import { appearanceRepository } from '../src/platform/appearance/repository';
@@ -223,7 +224,8 @@ describe('themes', () => {
     expect(row.querySelectorAll('.contrast-warning')).toHaveLength(0);
     fireEvent.change(muted, { target: { value: '#B0B0B0' } });
     fireEvent.keyDown(muted, { key: 'Enter' });
-    await waitFor(() => expect(row.querySelectorAll('.contrast-warning')).toHaveLength(2));
+    // Paper, sheet and every stage's fill, where muted text is a box's eyebrow (LA-PAT-APP-UX-R24).
+    await waitFor(() => expect(row.querySelectorAll('.contrast-warning')).toHaveLength(2 + STAGE_FILLS.length));
     return { muted, row };
   };
 

@@ -1,8 +1,8 @@
 import { gapsOf, kindLabel, type RecordIndex } from '../exploring/record-summaries/record-index';
-import { groupKindLabel, groupLabel, groupMarks, groupOwner } from './model';
+import { filterKind, groupKindLabel, groupLabel, groupMarks, groupOwner } from './model';
 import { NODE_WIDTH, nodeShape, SHAPES, type Room, type Shape } from './shapes';
 
-// A box's label as part of the map (LA-EXP-DS06): its two lines, the kind and ID line and the
+// A box's label as part of the map (LA-EXP-DS06): its lines, the eyebrow (kind and ID) and the
 // title, are sized once, in map units, when the map is built, and never change size relative to
 // the box; only the camera changes how big they look. Siblings share one text scale: the largest,
 // at most a fixed share of their box's size, at which every sibling's whole label fits its room
@@ -11,26 +11,49 @@ import { NODE_WIDTH, nodeShape, SHAPES, type Room, type Shape } from './shapes';
 // measured by the canvas's own text metrics: fonts.ts), when the map is built (in the layout's worker,
 // with the same faces: layout.ts) or a box is first drawn, and the canvas draws exactly these lines (paint.ts).
 
-/** A label's font sizes and padding at text scale 1 (a leaf-wide level), in map units; the canvas draws them with these. */
-export const TITLE_FONT = 12.5;
-export const META_FONT = 10.5;
+/**
+ * Node text's one type scale (LA-PAT-APP-UX-R24), read by every stage that draws records as boxes (the Graph's Tree, Nested
+ * and Map, the Trace and the ERD): at most three levels, so a box reads title first, then what it is, then its status.
+ * - The title: the body face at 600, in ink, the primary level.
+ * - The eyebrow above it: the kind word in the body face at 400, any record ID in the mono face at 400, both muted, at
+ *   EYEBROW_RATIO of the title's size. Muted meets 4.5:1 on every stage's fill in every built-in theme, light and dark.
+ * - The status, the third level: problem badges in the box's top right corner (plate.ts); where a box's status is words
+ *   (a journey's proof, a test's), a status line under the title, the body face at 400, muted, at STATUS_RATIO of the
+ *   title's size: never at the title's weight. A Trace stage cell (Design flow, Technical flow, Acceptance test suite)
+ *   is its status, so its status is its title ("1 interface · all designed"); the Use case cell keeps its title.
+ * Sizes are in map units at text scale 1 (a leaf-wide level); the canvas draws them at their map size times the zoom.
+ */
+export const NODE_TEXT = {
+  title: { size: 12.5, weight: 600, tone: 'ink' },
+  eyebrow: { size: 9, weight: 400, tone: 'muted' },
+  status: { size: 10, weight: 400, tone: 'muted' },
+} as const;
+/** The eyebrow's size over the title's: secondary, clearly under the title, still read at a glance. */
+export const EYEBROW_RATIO = NODE_TEXT.eyebrow.size / NODE_TEXT.title.size;
+/**
+ * The space under an eyebrow, before its title, at text scale 1: what keeps the label as tall as it was with the
+ * former, larger kind and ID line (10.5 in mono), so a smaller eyebrow grows no text scale and wraps no title more.
+ */
+export const EYEBROW_GAP = 2.1;
+/** A status line's size over the title's: under the title, a little over the eyebrow, as it is read rather than scanned. */
+export const STATUS_RATIO = NODE_TEXT.status.size / NODE_TEXT.title.size;
+export const TITLE_FONT = NODE_TEXT.title.size;
+export const EYEBROW_FONT = NODE_TEXT.eyebrow.size;
+export const STATUS_FONT = NODE_TEXT.status.size;
 /** Every line's height over its font size, and the padding above and below a label and the border around it. */
 export const LINE_HEIGHT = 1.4;
 export const LABEL_PAD_BLOCK = 6;
 export const BORDER = 1.5;
-/** The padding on each side of a label, and the room kept beside the kind and ID line for the problem badge. */
+/** The padding on each side of a label, and the room kept beside the eyebrow for the problem badge. */
 export const LABEL_PAD = 14;
 export const BADGE_ROOM = 30;
-/**
- * The height a label kept clear of the badge above it keeps above and below its lines (so it stays centered), at text
- * scale 1: the badge's top and height (plate.ts) past the label's own padding, and a small gap. A Nested leaf's label,
- * centered in its square, keeps its badge's room so, rather than beside its kind and ID line (LA-EXP-DS07).
- */
-export const BADGE_CLEAR = 14;
-/** The room a small mark takes before the kind and ID line (a shape's in the Nested view, a gear or a ruler), its gap included (LA-V93-R06). */
+/** The room a small mark takes before the eyebrow (a shape's in the Nested view, a gear or a ruler), its gap included (LA-V93-R06). */
 export const MARK_ROOM = 18;
-/** The faces the graph draws text in: a title (the body face at 600), a kind and ID line (the mono face), a problem badge (mono at 700). */
-export type Face = 'title' | 'meta' | 'badge';
+/**
+ * The faces the graph draws text in: a title (the body face at 600), an eyebrow's words (the body face at 400), a
+ * record ID or a code word (the mono face at 400), a problem badge (mono at 700).
+ */
+export type Face = 'title' | 'eyebrow' | 'mono' | 'badge';
 
 /**
  * How wide a text is in one of the graph's faces, in em (its width at a 1 px font), and each face's
@@ -52,7 +75,7 @@ const WIDE = new Set('mwMW@%');
 export const PLAIN_MEASURE: TextMeasure = {
   key: 'plain',
   em: (text, face) => {
-    if (face !== 'title') return [...text].length * 0.6;
+    if (face === 'mono' || face === 'badge') return [...text].length * 0.6;
     let w = 0;
     for (const c of text) w += NARROW.has(c) ? 0.3 : WIDE.has(c) ? 0.88 : c >= 'A' && c <= 'Z' ? 0.7 : 0.58;
     return w;
@@ -68,8 +91,23 @@ export const textMeasure = () => current;
 
 /** A title's width at a font size, in the same units. */
 export const titleWidth = (text: string, font = TITLE_FONT) => current.em(text, 'title') * font;
-/** A kind and ID line's width at a font size. */
-export const metaWidth = (text: string, font = META_FONT) => current.em(text, 'meta') * font;
+/** A record ID as the specs write them ("LA-PRD-UC11", "LA-EXP"): capitals and digits, in parts joined by hyphens. */
+const RECORD_ID = /^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+$/;
+
+/** An eyebrow's text split into runs by face: each record ID in the mono face, every other word (a kind's name) in the eyebrow's. */
+export function eyebrowRuns(text: string): { text: string; face: Face }[] {
+  const runs: { text: string; face: Face }[] = [];
+  for (const part of text.match(/\S+|\s+/g) ?? []) {
+    const face: Face = RECORD_ID.test(part) ? 'mono' : 'eyebrow';
+    const last = runs.at(-1);
+    if (last && (last.face === face || /^\s+$/.test(part))) last.text += part;
+    else runs.push({ text: part, face });
+  }
+  return runs;
+}
+
+/** An eyebrow's width at a font size: its runs, each in its face. */
+export const eyebrowWidth = (text: string, font: number = EYEBROW_FONT) => eyebrowRuns(text).reduce((w, r) => w + current.em(r.text, r.face) * font, 0);
 
 /**
  * Breaks a text into lines no wider than `width` by `measure`, greedily, only after a space, so no
@@ -99,10 +137,14 @@ export function wrapText(text: string, width: number, measure: (s: string) => nu
   return greedy(text.match(/\S+\s*|\s+/g) ?? [], whole ? (word) => [word] : at ? byBreaks : byChars);
 }
 
-/** What a box's label says: its title and its kind and ID line ("Use case · LA-EXP-UC03"; a group's "Stage · LA-EXP", "Aggregate folder · LA-EXP"). */
-export function labelLines(index: RecordIndex, id: string): { title: string; meta: string } {
+/**
+ * What a box's label says: its title and its eyebrow ("Use case · LA-EXP-UC03"; a group's "Stage · LA-EXP", "Aggregate
+ * folder · LA-EXP"). With `kindNamed`, an enclosing band already names the record's kind for every box in it (a Nested or
+ * Map folder of one kind), so the eyebrow is its ID alone; its accessible name still says its kind (plate.ts plateName).
+ */
+export function labelLines(index: RecordIndex, id: string, kindNamed = false): { title: string; meta: string } {
   const record = index.byId.get(id);
-  if (record) return { title: record.title, meta: `${kindLabel(index, record.kind)} · ${id}` };
+  if (record) return { title: record.title, meta: kindNamed ? id : `${kindLabel(index, record.kind)} · ${id}` };
   return { title: groupLabel(index, id), meta: `${groupKindLabel(index, id)} · ${groupOwner(index, id)}` };
 }
 
@@ -133,41 +175,45 @@ const TITLE_BREAKS = '-._:/(';
 export interface WrappedLabel {
   title: string[];
   meta: string[];
+  /** Its status line's lines, under its title, where its status is words (a Trace cell's). */
+  status?: string[];
   /** The height its shape keeps clear above and below it, at text scale 1 (LA-V93-R06), and a label kept clear of the badge above it its room: none for a box. */
   pad?: number;
 }
 
 /**
- * What a label keeps room for besides its padding: its shape's room (the Tree view) and the marks before its kind and ID line.
+ * What a label keeps room for besides its padding: its shape's room (the Tree view) and the marks before its eyebrow.
  * The problem badge's room is always kept, whether the box has the badge now or not, so a badge appearing changes no
  * label's text or size, nor its siblings' (LA-PAT-APP-UX-R22).
  */
-interface LabelRoom { shape?: Shape; marks?: number; badge?: boolean | 'above'; centered?: boolean }
+interface LabelRoom { shape?: Shape; marks?: number; badge?: boolean; centered?: boolean }
 
 const NO_ROOM: Room = { l: 0, r: 0, t: 0, b: 0 };
 
-/** How much less a kind and ID line holds than a title: the marks before it, and the badge's room beside it (on both sides once centered), kept always unless it is kept above the label. */
-const metaRoom = ({ marks = 0, badge = true, centered = false }: LabelRoom) => marks * MARK_ROOM + (badge === true ? (centered ? 2 : 1) * BADGE_ROOM : 0);
+/** How much less an eyebrow holds than a title: the marks before it, and the badge's room beside it (on both sides once centered). */
+const metaRoom = ({ marks = 0, badge = true, centered = false }: LabelRoom) => marks * MARK_ROOM + (badge ? (centered ? 2 : 1) * BADGE_ROOM : 0);
 
 /**
  * A label broken into lines for a box `width` wide at text scale 1 (LA-EXP-DS06), less the padding,
- * its shape's room (LA-V93-R06), and beside the kind and ID line its marks and the badge's room. At a text scale `s`, a box `w` wide wraps its label at `w / s`.
+ * its shape's room (LA-V93-R06), and beside the eyebrow its marks and the badge's room. At a text scale `s`, a box `w` wide wraps its label at `w / s`.
  */
-export function wrapLabel(lines: { title: string; meta: string }, { shape, marks = 0, badge = true, centered = false, width = NODE_WIDTH }: LabelRoom & { width?: number } = {}): WrappedLabel {
+export function wrapLabel(lines: { title: string; meta: string; status?: string }, { shape, marks = 0, badge = true, centered = false, width = NODE_WIDTH }: LabelRoom & { width?: number } = {}): WrappedLabel {
   const room = shape ? SHAPES[shape].room : NO_ROOM;
   const inner = width - 2 * LABEL_PAD - room.l - room.r;
   const label: WrappedLabel = {
-    title: wrapText(lines.title, inner, (s) => titleWidth(s), TITLE_BREAKS, true),
-    // The kind and ID line breaks only between words: an ID is never broken across lines (LA-EXP-DS06). A label with
+    title: lines.title === '' ? [] : wrapText(lines.title, inner, (s) => titleWidth(s), TITLE_BREAKS, true),
+    // The eyebrow breaks only between words: an ID is never broken across lines (LA-EXP-DS06). A label with
     // none (a cut label laid out by its title alone, sticky.ts) has no line for it.
-    meta: lines.meta === '' ? [] : wrapText(lines.meta, inner - metaRoom({ marks, badge, centered }), (s) => metaWidth(s), '', false, true),
+    meta: lines.meta === '' ? [] : wrapText(lines.meta, inner - metaRoom({ marks, badge, centered }), (s) => eyebrowWidth(s), '', false, true),
+    ...(lines.status ? { status: wrapText(lines.status, inner, (s) => eyebrowWidth(s, STATUS_FONT), '', false, true) } : {}),
   };
-  const pad = room.t + room.b + (badge === 'above' ? 2 * BADGE_CLEAR : 0);
+  const pad = room.t + room.b;
   return pad > 0 ? { ...label, pad } : label;
 }
 
-/** A label's lines' height at text scale 1. */
-const textHeight = (label: WrappedLabel) => LINE_HEIGHT * (label.meta.length * META_FONT + label.title.length * TITLE_FONT);
+/** A label's lines' height at text scale 1: its eyebrow and the gap under it, its title and its status line. */
+export const textHeight = (label: Pick<WrappedLabel, 'title' | 'meta' | 'status'>) =>
+  LINE_HEIGHT * (label.meta.length * EYEBROW_FONT + label.title.length * TITLE_FONT + (label.status?.length ?? 0) * STATUS_FONT) + (label.meta.length > 0 ? EYEBROW_GAP : 0);
 
 /** How tall a box must be for its wrapped label at text scale 1: its lines, the padding above and below, the border, and its shape's room. */
 export const labelHeight = (label: WrappedLabel) => 2 * (LABEL_PAD_BLOCK + BORDER) + textHeight(label) + (label.pad ?? 0);
@@ -177,22 +223,37 @@ export const labelHeight = (label: WrappedLabel) => 2 * (LABEL_PAD_BLOCK + BORDE
 /**
  * What a box's label says, and what it keeps room for: its shape's room (the Tree view) and the marks before its kind and
  * ID line. A map's label always keeps the badge's room; only a label drawn where no badge sits beside it (a sticky label,
- * laid out anew in a box's visible part: sticky.ts) is `badge: false`; a Nested leaf's, centered, keeps it above its
- * lines rather than beside its kind and ID line (`badge: 'above'`, BADGE_CLEAR).
+ * laid out anew in a box's visible part: sticky.ts) is `badge: false`.
  */
-export interface MapLabel { title: string; meta: string; shape?: Shape; marks?: number; badge?: false | 'above' }
+export interface MapLabel { title: string; meta: string; status?: string; shape?: Shape; marks?: number; badge?: false }
 
-/** A node's label in the Tree map: its kind's shape is its outline, so the label keeps its shape's room, and its kind's mark comes before its kind and ID line (LA-V93-R06). */
+/** A node's label in the Tree map: its kind's shape is its outline, so the label keeps its shape's room, and its kind's mark comes before its eyebrow (LA-V93-R06). */
 export function treeLabel(index: RecordIndex, id: string): MapLabel {
   const { shape, mark } = nodeShape(index, id);
   return { ...labelLines(index, id), shape, marks: mark ? 1 : 0 };
 }
 
-/** A node's label in the Nested map: its lines and its marks (its shape's and its kind's, LA-V93-R06). */
-export function mapLabel(index: RecordIndex, id: string): MapLabel {
+/**
+ * A node's label in the Nested and Map views: its lines and its marks (its shape's and its kind's, LA-V93-R06). Its kind
+ * word is left out where `parent`, the band it sits in, is a folder of its kind, which names it for every box in it.
+ */
+export function mapLabel(index: RecordIndex, id: string, parent: string | null = null): MapLabel {
   const marks = nodeShape(index, id).mark ? 2 : 1;
-  return { ...labelLines(index, id), marks };
+  return { ...labelLines(index, id, parent !== null && kindNamedBy(index, parent, id)), marks };
 }
+
+/** Whether a group names a record's kind for every box in it: a folder of that one kind ("Commands"), the record in it. */
+function kindNamedBy(index: RecordIndex, parent: string, id: string): boolean {
+  const kind = index.byId.get(id)?.kind;
+  return kind !== undefined && !index.byId.has(parent) && filterKind(index, parent) === kind;
+}
+
+/**
+ * Whether a label is centered in its box, rather than set at its left: only in a shape whose sides close in on its text
+ * (a use case's stadium, a domain's hexagon, a question's diamond: SHAPES' `centered`). A rectangle's lines start at
+ * one left edge, which a title over several lines scans down best (LA-PAT-APP-UX-R24).
+ */
+export const centeredLabel = (label: Pick<MapLabel, 'shape'>) => (label.shape ? SHAPES[label.shape].centered : false);
 
 /** A label's lines in a box `width` wide at text scale 1 (`wrapLabel`), centered or at the top left. */
 export const linesIn = (label: MapLabel, width: number, centered: boolean): WrappedLabel =>
@@ -203,7 +264,7 @@ export function narrowestWidth(label: MapLabel, centered: boolean): number {
   const words = (text: string, measure: (s: string) => number) => text.split(/\s+/).filter(Boolean).map((w) => measure(w));
   const room = label.shape ? SHAPES[label.shape].room : NO_ROOM;
   const meta = metaRoom({ ...label, centered });
-  return 2 * LABEL_PAD + room.l + room.r + Math.max(1, ...words(label.title, (s) => titleWidth(s)), ...words(label.meta, metaWidth).map((w) => w + meta));
+  return 2 * LABEL_PAD + room.l + room.r + Math.max(1, ...words(label.title, (s) => titleWidth(s)), ...words(label.meta, (s) => eyebrowWidth(s)).map((w) => w + meta), ...words(label.status ?? '', (s) => eyebrowWidth(s, STATUS_FONT)));
 }
 
 /** How many halvings find where a label's room crosses a bound: to well under a millionth of the scale. */
@@ -219,11 +280,11 @@ function largestWhere(ok: (s: number) => boolean, lo: number, hi: number): numbe
   return lo;
 }
 
-/** The narrowest box, at text scale 1, that breaks a label into the same lines: its widest title line, or its widest kind and ID line and the room beside it. */
+/** The narrowest box, at text scale 1, that breaks a label into the same lines: its widest title or status line, or its widest eyebrow line and the room beside it. */
 function widthKeeping(label: MapLabel, lines: WrappedLabel, centered: boolean): number {
   const room = label.shape ? SHAPES[label.shape].room : NO_ROOM;
   const widest = (texts: readonly string[], measure: (s: string) => number) => Math.max(0, ...texts.map((t) => measure(t.trimEnd())));
-  return 2 * LABEL_PAD + room.l + room.r + Math.max(widest(lines.title, (t) => titleWidth(t)), widest(lines.meta, (t) => metaWidth(t)) + metaRoom({ ...label, centered }));
+  return 2 * LABEL_PAD + room.l + room.r + Math.max(widest(lines.title, (t) => titleWidth(t)), widest(lines.meta, (t) => eyebrowWidth(t)) + metaRoom({ ...label, centered }), widest(lines.status ?? [], (t) => eyebrowWidth(t, STATUS_FONT)));
 }
 
 /**

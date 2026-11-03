@@ -1,3 +1,5 @@
+import type { Plate } from '../graph/plate';
+import { LABEL_PAD } from '../graph/text';
 import { journeyBox, JOURNEY_COLUMN, OUTCOME_COLUMN, STAGE_COLUMN, TRACE_COLUMNS, TRACE_STAGES, visible, type TraceGraph, type Openness } from './trace';
 import type { TraceOrder } from './order';
 
@@ -27,6 +29,18 @@ const PITCH = ITEM_HEIGHT + ITEM_GAP;
 export const NEAR_OUTCOME_ROWS = 3;
 
 /** A column's left edge. */
+/** The toggle at a box's right, in map units: its size, and the room its box's text leaves for it. */
+export const TOGGLE = 18;
+export const TOGGLE_ROOM = TOGGLE + 10;
+/**
+ * A box's label room with its toggle left out: its content box ends a label's padding before the toggle's room, so a
+ * label pulled into a cut box's visible part (graph/sticky.ts) wraps before the toggle and never runs under it.
+ */
+export const TOGGLE_CLEAR = TOGGLE_ROOM + LABEL_PAD;
+export const besideToggle = (p: Plate): Plate => ({ ...p, label: { ...p.label, w: p.label.w - TOGGLE_CLEAR } });
+/** Where a box's toggle is, in map units: at the right of its box's label room, clear of its shape's point. */
+export const toggleAt = (p: Plate) => ({ x: p.label.x + p.label.w + TOGGLE_CLEAR - TOGGLE, y: p.y + (p.h - TOGGLE) / 2, w: TOGGLE, h: TOGGLE });
+
 export const columnLeft = (column: number) => column * (ITEM_WIDTH + COLUMN_GAP);
 
 /** One box's place, in map units. */

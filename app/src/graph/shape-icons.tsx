@@ -1,6 +1,6 @@
 import type { Mark, Shape } from './shapes';
 
-// The small marks for a kind's shape (LA-V93-R06): drawn before a box's kind and ID line in the
+// The small marks for a kind's shape (LA-V93-R06): drawn before a box's eyebrow in the
 // Nested view, where every box keeps its rectangle (by the canvas, paint.ts,
 // from these same paths), and in the graph's key.
 // A mark (a tag, a gear, a lens, a marker, a ruler, a port, a target, a cylinder, a plug, a route) tells apart two kinds that share a shape, in every
@@ -45,7 +45,7 @@ export const MARK_PATHS: Readonly<Record<Mark, string>> = {
   plug: 'M3.5 1v2.5 M7.5 1v2.5 M2 3.5h7v2a3.5 3.5 0 0 1-7 0z M5.5 9v1.5',
 };
 
-/** A shape's mark, as a box shows it before its kind and ID line or the key beside its meaning. */
+/** A shape's mark, as a box shows it before its eyebrow or the key beside its meaning. */
 export function ShapeIcon({ shape }: { shape: Shape }) {
   return (
     <svg className={`graph-shape-icon shape-${shape}`} viewBox="0 0 16 11" aria-hidden="true" focusable="false">

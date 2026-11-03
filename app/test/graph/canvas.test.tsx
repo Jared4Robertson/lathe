@@ -7,7 +7,7 @@ import { BLOCK_BELOW_PX } from '../../src/graph/camera';
 import { BADGE_LEAST_ALPHA, onCanvas, paint, type PaintState } from '../../src/graph/paint';
 import { PLAIN_LOOK } from '../../src/graph/look';
 import { canvasMeasure, fontFor } from '../../src/graph/fonts';
-import { META_FONT, PLAIN_MEASURE, TITLE_FONT } from '../../src/graph/text';
+import { EYEBROW_FONT, PLAIN_MEASURE, STATUS_FONT, TITLE_FONT } from '../../src/graph/text';
 import type { NestedNode } from '../../src/graph/nested';
 import type { PlacedMap } from '../../src/graph/map';
 import { openApp, startAtDepth } from '../helpers';
@@ -33,7 +33,7 @@ describe('text sizing', () => {
         expect(p.lines.length, p.id).toBeGreaterThan(0);
         for (const line of p.lines) {
           // Its size is its face's at text scale 1 times the box's text scale, fixed by the map.
-          const base = line.tone === 'muted' ? META_FONT : TITLE_FONT;
+          const base = line.level === 'eyebrow' ? EYEBROW_FONT : line.level === 'status' ? STATUS_FONT : TITLE_FONT;
           expect(line.size, `${p.id} ${line.text}`).toBeCloseTo(base * p.text, 9);
           // The whole line lies inside its box: within its rectangle.
           const eps = 1e-6 * Math.max(1, p.w);
@@ -74,14 +74,15 @@ describe('text sizing', () => {
     expect(m.em('abcd', 'title')).toBe(2);
     expect(m.em('abcd', 'title')).toBe(2);
     expect(asked).toEqual([`${fontFor(fonts, 'title', 100)}|abcd`]);
-    expect(m.metrics('meta')).toEqual({ ascent: 0.9, descent: 0.2 });
+    expect(m.metrics('mono')).toEqual({ ascent: 0.9, descent: 0.2 });
     expect(m.key).toBe('canvas|"Public Sans", sans-serif|"JetBrains Mono", monospace');
     expect(fontFor(fonts, 'title', 12.5)).toBe('600 12.5px "Public Sans", sans-serif');
     expect(fontFor(fonts, 'badge', 9.5)).toBe('700 9.5px "JetBrains Mono", monospace');
-    expect(fontFor(fonts, 'meta', 10.5)).toBe('400 10.5px "JetBrains Mono", monospace');
+    expect(fontFor(fonts, 'eyebrow', 9)).toBe('400 9px "Public Sans", sans-serif');
+    expect(fontFor(fonts, 'mono', 9)).toBe('400 9px "JetBrains Mono", monospace');
     // The plain measure: the same text always measures the same.
     expect(PLAIN_MEASURE.em('Lend a thing', 'title')).toBe(PLAIN_MEASURE.em('Lend a thing', 'title'));
-    expect(PLAIN_MEASURE.em('LA-EXP', 'meta')).toBeCloseTo(6 * 0.6, 9);
+    expect(PLAIN_MEASURE.em('LA-EXP', 'mono')).toBeCloseTo(6 * 0.6, 9);
   });
 });
 

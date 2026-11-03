@@ -13,17 +13,17 @@ import { kindLabel, type RecordIndex } from '../exploring/record-summaries/recor
 //   ("3 steps · 2 proved · test ✓"); open, its steps in order (main path first, each alternate path under a
 //   heading naming it), a handoff a step of its own with its policy's proof, and its journey test (a dashed gap with none).
 // - Use case: the use case; expanded, its UC requirements, the aggregates its steps change and the read models they read.
-// - Design flow: a status ("2 interfaces · all designed"); expanded, its flow (one per use case, the same through
+// - Design flow: its status as its title ("2 interfaces · all designed"); expanded, its flow (one per use case, the same through
 //   every interface), expanding to a box per interface that offers the use case, each opening that interface's version
 //   of the flow (derived): its steps, each to where it is carried out there (the views that present what it invokes,
 //   with their view requirements; the endpoints that expose it, with their API requirements; or the product's own
 //   records) and its integrations, and a dashed gap under a step the interface cannot reach. A flow no interface
 //   offers opens to its steps as written.
-// - Technical flow: a status ("4 handlers · 1 not built"); expanded, the selected step's chain: the UI components
+// - Technical flow: its status as its title ("4 handlers · 1 not built"); expanded, the selected step's chain: the UI components
 //   rendering the views that present what it invokes, the endpoints or channels of what it invokes, that command's or query's handler, its repository or
 //   reader, their data store, and the adapters of its integrations. Expanded by Expand all, every step's chain, grouped
 //   by step.
-// - Acceptance test suite: a status ("12 tests · all proved"); expanded, "k of N proved", each UC requirement's use
+// - Acceptance test suite: its status as its title ("12 tests · all proved"); expanded, "k of N proved", each UC requirement's use
 //   case tests and each flow's flow test (a dashed gap where proof is missing), and Lower tests, expanding to the tests
 //   of what they rest on (view and API requirements, invariants, storage requirements).
 //
@@ -64,10 +64,15 @@ export interface Item {
   /** Its parent box, null for a cell's own box. */
   parent: string | null;
   role: ItemRole;
-  /** What a box that is no record says. */
-  words?: { kind: string; title: string; meta: string };
-  /** A record box's second line in place of its kind and ID: a journey's proof, a step's number and what it carries out. */
-  meta?: string;
+  /**
+   * What a box that is no record says: its kind, its title, its eyebrow, and any status in words under its title, at the
+   * node text scale's status level (graph/text.ts NODE_TEXT). A Design flow, Technical flow or Acceptance test suite cell's
+   * title is its status ("2 interfaces · all designed", LA-PAT-APP-UX-R24), with no line under it, and `of` names the use
+   * case of its row by title, for its accessible name.
+   */
+  words?: { kind: string; title: string; meta: string; status?: string; of?: string };
+  /** A record box's status line under its title: a journey's proof, a step's number and what it carries out, a test's proof. */
+  status?: string;
   /** The key that opens it, for a box with children. */
   opens?: string;
   /** Its children, in order. */
@@ -129,6 +134,9 @@ export const everyStepKey = (row: string) => innerKey(row, 'technical', '*');
 export const journeyBox = (journey: string) => `journey/${journey}`;
 export const journeyKey = (journey: string) => `journey|${journey}`;
 
+/** A box's words as its accessible name says them: its title, any status line, and a stage cell's use case by title. */
+export const wordsName = (w: NonNullable<Item['words']>) => [w.title, w.status, w.of].filter(Boolean).join(', ');
+
 const n = (k: number, one: string, many = `${one}s`) => `${k} ${k === 1 ? one : many}`;
 
 /** A row's stage status in words, and whether it has a gap: "2 interfaces · all designed", "No flow". */
@@ -155,7 +163,7 @@ const isMain = (path: string) => path.trim().toLowerCase() === 'main';
 /** A journey step's number, as the line to its row says it: "3" on the main path, "alt 2" on another. */
 export const stepNumber = (s: Pick<TraceJourneyStep, 'path' | 'position'>) => (isMain(s.path) ? String(s.position) : `alt ${s.position}`);
 
-/** A journey's proof in words, as its closed box says it in place of its kind and ID: "3 steps · 2 proved · test ✓". */
+/** A journey's proof in words, as its box's status line says it: "3 steps · 2 proved · test ✓". */
 export function journeyWords(j: TraceJourney): string {
   const { steps, unlinked, stepsProved } = j.status;
   const test = !j.test ? 'no test' : j.testProved ? 'test ✓' : 'test ✗';
@@ -218,8 +226,10 @@ function build(index: RecordIndex, trace: ProductTrace): TraceGraph {
     // Design flow: its status, then its flow, a box per interface that offers it, and each interface's version: its
     // steps, each with where it is carried out there and its integrations, a gap under a step it cannot reach.
     const design = statusOf(data, 'design');
-    const designBox = add({ key: `${u}|design`, id: null, row: u, column: STAGE_COLUMN.design, depth: 0, parent: null, role: design.gap ? 'gap' : 'status', words: { kind: 'Design flow', title: design.title, meta: `Design flow · ${u}` }, opens: cellKey(u, 'design') });
     const f = data.flow && known(data.flow.id) ? data.flow : null;
+    /** A stage cell's title is its status; it names its row's use case for its accessible name (LA-PAT-APP-UX-R24). */
+    const of = index.byId.get(u)!.title;
+    const designBox = add({ key: `${u}|design`, id: null, row: u, column: STAGE_COLUMN.design, depth: 0, parent: null, role: design.gap ? 'gap' : 'status', words: { kind: 'Design flow', title: design.title, meta: `Design flow · ${u}`, of }, opens: cellKey(u, 'design') });
     const steps = f ? f.steps.filter((s) => known(s.id)) : [];
     if (f) {
       const flow = record(designBox, f.id, { opens: innerKey(u, 'design', f.id) });
@@ -266,7 +276,7 @@ function build(index: RecordIndex, trace: ProductTrace): TraceGraph {
 
     // Technical flow: its status, then each step's chain under a heading naming the step.
     const technical = statusOf(data, 'technical');
-    const techBox = add({ key: `${u}|technical`, id: null, row: u, column: STAGE_COLUMN.technical, depth: 0, parent: null, role: technical.gap ? 'gap' : 'status', words: { kind: 'Technical flow', title: technical.title, meta: `Technical flow · ${u}` }, opens: cellKey(u, 'technical') });
+    const techBox = add({ key: `${u}|technical`, id: null, row: u, column: STAGE_COLUMN.technical, depth: 0, parent: null, role: technical.gap ? 'gap' : 'status', words: { kind: 'Technical flow', title: technical.title, meta: `Technical flow · ${u}`, of }, opens: cellKey(u, 'technical') });
     plain(techBox, 'hint', 'hint', { kind: 'Hint', title: 'Select a step to show its chain', meta: 'Technical flow' });
     for (const s of steps) {
       const head = plain(techBox, `step:${s.id}`, 'heading', { kind: 'Step', title: index.byId.get(s.id)!.title, meta: `${kindOf(s.id)} · ${s.id}` }, { id: s.id, step: s.id });
@@ -288,8 +298,8 @@ function build(index: RecordIndex, trace: ProductTrace): TraceGraph {
 
     // Acceptance test suite: its status, "k of N proved", each requirement's tests, each flow's test, and Lower tests.
     const suite = statusOf(data, 'suite');
-    const suiteBox = add({ key: `${u}|suite`, id: null, row: u, column: STAGE_COLUMN.suite, depth: 0, parent: null, role: suite.gap ? 'gap' : 'status', words: { kind: 'Acceptance test suite', title: suite.title, meta: `Acceptance test suite · ${u}` }, opens: cellKey(u, 'suite') });
-    plain(suiteBox, 'proved', 'heading', { kind: 'Proved', title: provedWords(data), meta: 'Use case and flow tests' });
+    const suiteBox = add({ key: `${u}|suite`, id: null, row: u, column: STAGE_COLUMN.suite, depth: 0, parent: null, role: suite.gap ? 'gap' : 'status', words: { kind: 'Acceptance test suite', title: suite.title, meta: `Acceptance test suite · ${u}`, of }, opens: cellKey(u, 'suite') });
+    plain(suiteBox, 'proved', 'heading', { kind: 'Proved', title: 'Use case and flow tests', meta: '', status: provedWords(data) });
     for (const r of data.requirements) {
       if (!known(r.id)) continue;
       testsOf(suiteBox, r);
@@ -301,7 +311,7 @@ function build(index: RecordIndex, trace: ProductTrace): TraceGraph {
       if (!f.proved) { plain(suiteBox, `gap:${f.id}`, 'gap', { kind: 'Gap', title: f.test ? 'Flow test not automated' : 'No flow test', meta: `Gap · ${f.id}` }, { id: f.id }); link(f.id, `${suiteBox}/gap:${f.id}`); }
     }
     if (data.lower.length > 0) {
-      const lower = plain(suiteBox, 'lower', 'heading', { kind: 'Lower tests', title: `Lower tests · ${n(data.lower.length, 'obligation')}`, meta: 'What the suite rests on' }, { opens: innerKey(u, 'suite', 'lower') });
+      const lower = plain(suiteBox, 'lower', 'heading', { kind: 'Lower tests', title: 'Lower tests', meta: '', status: `${n(data.lower.length, 'obligation')} the suite rests on` }, { opens: innerKey(u, 'suite', 'lower') });
       for (const o of data.lower) {
         if (!known(o.id)) continue;
         testsOf(lower, o);
@@ -322,7 +332,7 @@ function build(index: RecordIndex, trace: ProductTrace): TraceGraph {
   const carries: Carry[] = [];
   for (const j of journeys) {
     journeyOf.set(j.id, j);
-    const box = add({ key: journeyBox(j.id), id: j.id, row: null, column: JOURNEY_COLUMN, depth: 0, parent: null, role: 'record', opens: journeyKey(j.id), meta: journeyWords(j) });
+    const box = add({ key: journeyBox(j.id), id: j.id, row: null, column: JOURNEY_COLUMN, depth: 0, parent: null, role: 'record', opens: journeyKey(j.id), status: journeyWords(j) });
     const paths = new Map<string, string>();
     for (const s of j.steps) {
       if (!known(s.id)) continue;
@@ -333,10 +343,10 @@ function build(index: RecordIndex, trace: ProductTrace): TraceGraph {
         parent = paths.get(name.toLowerCase()) ?? plain(box, `path:${name}`, 'heading', { kind: 'Path', title: name, meta: `Alternate path · ${j.id}` });
         paths.set(name.toLowerCase(), parent);
       }
-      record(parent, s.id, { meta: stepWords(s) });
+      record(parent, s.id, { status: stepWords(s) });
       if (s.kind === 'use_case' && s.carriesOut && rowOf.has(s.carriesOut)) carries.push({ journey: j.id, step: s.id, useCase: s.carriesOut, label: stepNumber(s) });
     }
-    if (j.test && known(j.test)) { journeyOf.set(j.test, j); record(box, j.test, { meta: `Journey test · ${j.testProved ? 'proved' : 'not proved'}` }); }
+    if (j.test && known(j.test)) { journeyOf.set(j.test, j); record(box, j.test, { status: j.testProved ? 'Proved' : 'Not proved' }); }
     else plain(box, 'gap:test', 'gap', { kind: 'Gap', title: 'No journey test', meta: `Gap · ${j.id}` }, { id: j.id });
     for (const o of j.outcomes) if (items.has(`outcome/${o}`)) journeyServes.push([o, j.id]);
   }

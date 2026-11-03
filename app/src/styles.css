@@ -336,7 +336,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-access { position: absolute; top: 0; left: 0; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .graph-box { position: absolute; top: 0; left: 0; width: 1px; height: 1px; }
 /* The key's marks: each kind's shape and each kind's own mark (a gear, a ruler, a port, a marker), ink on sheet, as the canvas
-   draws them before a box's kind and ID line (app/src/graph/shape-icons.tsx), and the problem badges as the canvas draws them. */
+   draws them before a box's eyebrow (app/src/graph/shape-icons.tsx), and the problem badges as the canvas draws them. */
 .graph-shape-icon, .graph-mark-icon { display: inline-block; overflow: visible; fill: color-mix(in srgb, var(--ink) 14%, var(--sheet)); stroke: var(--ink); stroke-width: 1.2; stroke-linejoin: round; stroke-linecap: round; }
 .graph-swatch.is-shape { width: auto; height: auto; border: 0; border-radius: 0; background: none; line-height: 0; }
 .graph-swatch.is-shape :is(.graph-shape-icon, .graph-mark-icon) { margin: 0; height: 12px; width: 17px; vertical-align: middle; }
@@ -1029,13 +1029,20 @@ a.row-link.row-link:focus-visible { outline: none; }
 .focus-stage .stage-camera { left: calc(var(--frame-left, 0px) + 4px); bottom: var(--stage-foot); }
 .focus-stage .graph-minimap { right: calc(var(--frame-right, 0px) + 4px); bottom: var(--stage-foot); }
 .focus-stage .graph-edge-hints { inset: var(--frame-top, 0px) var(--frame-right, 0px) var(--frame-bottom, 0px) var(--frame-left, 0px); }
-/* A phone on its side (LA-V93-R76): nothing floats over the stage's open space. The camera, as one row, and the Key
-   chip sit in the walk's bar, at its end, so the frame runs from under the toolbar down to the bar. */
+/* On a phone the Key chip never covers node text (LA-V93-R76): it sits in the walk's bar, at its end, in a slot the bar's
+   buttons leave. Upright, the slot is one touch target, the chip its icon alone (its word kept for assistive technology). */
+.stage-layout.is-phone > .focus-stage { --key-slot: var(--touch-target); }
+.stage-layout.is-phone > .focus-stage .stage-walk-bar { padding-right: calc(max(8px, env(safe-area-inset-right)) + var(--key-slot) + 4px); }
+.stage-layout.is-phone > .focus-stage .stage-key-chip { z-index: 10; left: auto; right: max(8px, env(safe-area-inset-right)); translate: none; bottom: calc(6px + env(safe-area-inset-bottom)); width: var(--key-slot); min-height: var(--touch-target); padding: 0; justify-content: center; box-shadow: none; }
+@media (orientation: portrait) {
+  .stage-layout.is-phone > .focus-stage .stage-key-word { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+/* A phone on its side (LA-V93-R76): nothing floats over the stage's open space. The camera, as one row, sits in the
+   walk's bar too, before the Key chip, which shows its word, so the frame runs from under the toolbar down to the bar. */
 @media (orientation: landscape) {
   .stage-layout.is-phone > .focus-stage { --camera-row: calc(3 * var(--touch-target) + 10px); --key-slot: 88px; }
   .stage-layout.is-phone > .focus-stage .stage-walk-bar { padding-right: calc(max(8px, env(safe-area-inset-right)) + var(--camera-row) + var(--key-slot) + 12px); }
   .stage-layout.is-phone > .focus-stage .stage-camera { z-index: 10; grid-template-columns: none; grid-auto-flow: column; left: auto; right: calc(max(8px, env(safe-area-inset-right)) + var(--key-slot) + 6px); bottom: calc(5px + env(safe-area-inset-bottom)); border: 0; box-shadow: none; }
-  .stage-layout.is-phone > .focus-stage .stage-key-chip { z-index: 10; left: auto; right: max(8px, env(safe-area-inset-right)); translate: none; bottom: calc(6px + env(safe-area-inset-bottom)); width: var(--key-slot); min-height: var(--touch-target); justify-content: center; box-shadow: none; }
 }
 .stage-page > .focus-missing { position: absolute; top: var(--float-inset); right: var(--chat-space); bottom: var(--float-inset); left: var(--nav-space); background: var(--paper); }
 .stage-page > .error { position: absolute; z-index: 5; bottom: var(--float-inset); left: var(--nav-space); margin: 0; }

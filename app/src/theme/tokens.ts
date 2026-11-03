@@ -23,6 +23,8 @@ export interface ColorToken {
 export const COLOR_GROUPS: readonly ColorGroup[] = ['Surfaces', 'Text', 'Borders', 'Accent', 'Signals', 'Graph', 'Depth'];
 
 const TEXT = 4.5;
+/** Every stage's box fill on the graph, the ERD and the Trace: what a box's muted text is drawn on. */
+export const STAGE_FILLS = ['--g-discovery-bg', '--g-domain-model-bg', '--g-use-cases-bg', '--g-interaction-design-bg', '--g-technical-specification-bg', '--g-test-plan-bg', '--g-structural-bg'] as const;
 const CONTROL = 3;
 
 export const COLOR_TOKENS: readonly ColorToken[] = [
@@ -30,7 +32,8 @@ export const COLOR_TOKENS: readonly ColorToken[] = [
   { name: '--paper', label: 'Paper, the page', group: 'Surfaces', core: true },
   { name: '--sheet', label: 'Sheet, cards and panels', group: 'Surfaces', core: true },
   { name: '--ink', label: 'Ink, body text', group: 'Text', core: true, on: { bg: ['--paper', '--sheet'], min: TEXT } },
-  { name: '--muted', label: 'Muted text', group: 'Text', core: true, on: { bg: ['--paper', '--sheet'], min: TEXT } },
+  // Muted text is also a box's eyebrow and status line on every stage's fill (graph/text.ts NODE_TEXT, LA-PAT-APP-UX-R24).
+  { name: '--muted', label: 'Muted text', group: 'Text', core: true, on: { bg: ['--paper', '--sheet', ...STAGE_FILLS], min: TEXT } },
   { name: '--rule', label: 'Rule, borders and lines', group: 'Borders', core: true },
   { name: '--steel', label: 'Accent, links and the current item', group: 'Accent', core: true, on: { bg: ['--paper', '--sheet', '--steel-bg'], min: TEXT } },
   { name: '--steel-bg', label: 'Accent tint, behind the current item', group: 'Accent', core: true },

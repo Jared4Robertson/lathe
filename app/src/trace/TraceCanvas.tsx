@@ -15,7 +15,7 @@ import { readMotion } from '../graph/motion';
 import { followBox, useMorph } from '../graph/morph';
 import { boxColors, GAP_KIND, isBlock, paint, stageColors, type Bar, type Camera, type PaintState } from '../graph/paint';
 import { plateName, plateOf, plateTip, type Plate, type PlainBox } from '../graph/plate';
-import { BORDER, LABEL_PAD, labelHeight, largestFit, linesIn, setTextMeasure, titleWidth, treeLabel, type MapLabel, type TextMeasure, type WrappedLabel } from '../graph/text';
+import { BORDER, LABEL_PAD, labelHeight, linesIn, setTextMeasure, titleWidth, treeLabel, type MapLabel, type TextMeasure, type WrappedLabel } from '../graph/text';
 import { SHAPES } from '../graph/shapes';
 import { TapCard, useTapToOpen } from '../graph/touch';
 import { stageFor } from '../graph/model';
@@ -31,10 +31,10 @@ import { highlightFade, marksMoving, useStageMarks, type MarkTree } from '../cha
 import { anchorOf, rollupText, totalChanges, type ChangeCounts } from '../changes/rollup';
 import { JOURNEY_COLUMN, STAGE_COLUMN, TRACE_COLUMN_LABELS, TRACE_COLUMNS, TRACE_STAGES, isOpen, stageOfColumn, type TraceGraph, type TraceStage, type Item, type Openness } from './trace';
 import { lastTraceOrder, type Ordered } from './order';
-import { columnLeft, ITEM_HEIGHT, ITEM_WIDTH, layOutTrace, besideRow, OUTSIDE_GAP, type BoxPlace, type TraceLaid } from './layout';
+import { besideToggle, columnLeft, ITEM_HEIGHT, ITEM_WIDTH, layOutTrace, besideRow, OUTSIDE_GAP, toggleAt, TOGGLE_ROOM, type BoxPlace, type TraceLaid } from './layout';
 import { litBy, type Lit } from './path';
 
-// Every box is one height, its kind and ID line and its title at a readable size; a box with children carries a ▸ at
+// Every box is one height, its eyebrow and its title at a readable size; a box with children carries a ▸ at
 // its right (▾ when open), which opens it. A column is drawn only where the camera shows it: each box in view (a tenth
 // of the pane to spare), and when its boxes are under 3 px tall or past the budget of 260, each run of them as one bar,
 // the lit path still marked on it. A box whose title would draw under 5 px is a plain block (graph/camera.ts
@@ -56,17 +56,16 @@ const BOX_BUDGET = 260;
 /** The least zoom the framing of a row goes to, so its boxes read; and the keyboard ring's. */
 const ROW_ZOOM = 0.8;
 const READ_ZOOM = 0.55;
-/** The most a box's text grows to fill its box, and the least it shrinks to (a longer title is cut). */
-const MOST_TEXT = 1.5;
-const LEAST_TEXT = 1;
+/**
+ * Every box's one text scale: its main line at the node text scale's title size (graph/text.ts NODE_TEXT, 12.5 at zoom 1)
+ * in every column, a stage cell's status as large as a use case's title (LA-PAT-APP-UX-R24); a longer title is cut.
+ */
+const TEXT = 1;
 /** The height of the columns' names at the top of the frame, in CSS pixels. */
 const HEAD_PX = 30;
 /** The frame below the columns' names: where the camera frames a box. */
 const belowHead = (box: { x: number; y: number; w: number; h: number }) => ({ ...box, y: box.y + HEAD_PX, h: Math.max(1, box.h - HEAD_PX) });
 const HEAD_FONT = 12;
-/** The toggle at a box's right, in map units: its size, and the room its box's text leaves for it. */
-const TOGGLE = 18;
-const TOGGLE_ROOM = TOGGLE + 10;
 
 /** The stage of each column's own boxes that are no record: a status in its stage's color. */
 const COLUMN_STAGE: readonly BoxStage[] = ['discovery', 'discovery', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan'];
@@ -77,7 +76,9 @@ const CARRY_FONT = 11;
 export interface TraceSceneBox {
   key: string; id: string | null; row: string | null; role: Item['role']; column: number; depth: number; opens: boolean; open: boolean;
   focus: boolean; ring: boolean; lit: boolean | null; strength: number; change: 'added' | 'changed' | null; pill: 'added' | 'changed' | null; rollup: string | null; dashed: boolean; block: boolean;
-  kind: string; title: string; meta: string; name: string;
+  kind: string; title: string; meta: string; status: string; name: string;
+  /** Its main line's font size on screen, in CSS pixels. */
+  titlePx: number;
   rect: { left: number; top: number; width: number; height: number };
   /** Its toggle's middle, in the page's pixels, for a box with children. */
   toggle: { x: number; y: number } | null;
@@ -182,17 +183,28 @@ function firstFrom(order: readonly string[], places: ReadonlyMap<string, BoxPlac
   return lo;
 }
 
-/** Where a box's toggle is, in map units: at the right of its label's room, clear of its shape's point. */
-const toggleAt = (p: Plate) => ({ x: p.label.x + p.label.w - TOGGLE, y: p.y + (p.h - TOGGLE) / 2, w: TOGGLE, h: TOGGLE });
 
 /** The record a box shows, or the box's own key for a box that is no record (a status, a gap, a heading). */
 const recordAt = (graph: TraceGraph, key: string) => { const item = graph.items.get(key); return item?.role === 'record' && item.id ? item.id : key; };
+
+/**
+ * A box's eyebrow in its column: its kind word left out where the column's header names it ("Use case · LA-PRD-UC11" in
+ * the Use case column reads "LA-PRD-UC11", "Business outcome · LA-BO06" under Outcome "LA-BO06"), since the header names
+ * it for every box under it (LA-PAT-APP-UX-R24).
+ */
+const inColumn = (meta: string, column: number) => {
+  const name = TRACE_COLUMN_LABELS[TRACE_COLUMNS[column]].toLowerCase();
+  const [kind, ...rest] = meta.split(' · ');
+  // The header names the kind: it is the kind ("Use case") or the kind's last word ("Outcome" over "Business outcome").
+  const named = kind.toLowerCase() === name || kind.toLowerCase().endsWith(` ${name}`);
+  return named ? rest.join(' · ') : meta;
+};
 
 /** What a non-record box looks like. */
 function plainOf(item: Item): PlainBox {
   const words = item.words!;
   const gap = item.role === 'gap';
-  return { kind: gap ? GAP_KIND : `trace-${item.role}`, kindLabel: words.kind, title: words.title, meta: words.meta, dashed: gap || item.role === 'hint', stage: item.role === 'hint' ? 'structural' : COLUMN_STAGE[item.column] };
+  return { kind: gap ? GAP_KIND : `trace-${item.role}`, kindLabel: words.kind, title: words.title, meta: inColumn(words.meta, item.column), ...(words.status ? { status: words.status } : {}), dashed: gap || item.role === 'hint', stage: item.role === 'hint' ? 'structural' : COLUMN_STAGE[item.column] };
 }
 
 /** What one frame draws. */
@@ -391,14 +403,18 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
     if (!item || !at) return null;
     const plain = item.role === 'record' && item.id ? undefined : plainOf(item);
     const id = plain ? key : item.id!;
-    const label: MapLabel = plain ? { title: plain.title, meta: plain.meta, shape: 'box' } : { ...treeLabel(index, id), ...(item.meta ? { meta: item.meta } : {}) };
+    const own = plain ? undefined : treeLabel(index, id);
+    const label: MapLabel = plain
+      ? { title: plain.title, meta: plain.meta, ...(plain.status ? { status: plain.status } : {}), shape: 'box' }
+      : { ...own!, meta: inColumn(own!.meta, item.column), ...(item.status ? { status: item.status } : {}) };
     const border = (s: number) => BORDER * s;
-    // Its text as large as its label fits, beside its toggle when it opens, and never under LEAST_TEXT (a longer title is cut, whole in its tooltip).
+    // Its text at the one scale, beside its toggle when it opens (a longer title is cut, whole in its tooltip).
     const room = at.w - (item.opens ? TOGGLE_ROOM : 0);
-    const text = Math.max(LEAST_TEXT, largestFit(label, false, room, ITEM_HEIGHT, MOST_TEXT, border) || LEAST_TEXT);
+    const text = TEXT;
     const width = (room - 2 * border(text)) / text;
     const home: MapNode = { id: key, parent: null, children: [], level: item.column, x: 0, y: 0, w: at.w, h: ITEM_HEIGHT, text, centered: false, lines: cutToFit(linesIn(label, width, false), label, width, ITEM_HEIGHT / text) };
-    const plate = plateOf(index, id, { view: 'tree', node: home, place: key, plain });
+    const made = plateOf(index, id, { view: 'tree', node: home, place: key, plain });
+    const plate = item.opens ? besideToggle(made) : made;
     plates.set(key, plate);
     return plate;
   }, [plates, graph, index, laid]);
@@ -685,7 +701,7 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
     if (c) {
       const item = key ? graph.items.get(key) : undefined;
       c.style.cursor = item && (item.opens || (item.id && canOpen(item.id))) ? 'pointer' : '';
-      c.title = hit ? (item?.role === 'record' ? plateTip(hit) : `${hit.title} (${hit.meta})`) : '';
+      c.title = hit ? (item?.role === 'record' ? plateTip(hit) : [hit.title, item?.words?.status, item?.words?.of].filter(Boolean).join(' · ') + (hit.meta ? ` (${hit.meta})` : '')) : '';
     }
     spot(key);
     requestPaint();
@@ -740,7 +756,7 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
             change: ((m) => (m && m.change !== 'removed' ? m.change : null))(item.id ? changes.live.get(item.id) : undefined),
             pill: ((c) => (c === 'added' || c === 'changed' ? c : null))(item.id ? marks.highlight?.change(item.id) : undefined),
             rollup: ((r) => (r ? rollupText(r) : null))(marks.highlight?.rolls.get(p.place)),
-            dashed: p.dashed, block: isBlock(p, v.zoom), kind: p.kind, title: p.title, meta: p.lines.filter((l) => l.face === 'meta').map((l) => l.text).join(''), name: plateName(p, p.place === focusKey),
+            dashed: p.dashed, block: isBlock(p, v.zoom), kind: p.kind, title: p.title, meta: p.lines.filter((l) => l.level === 'eyebrow').map((l) => l.text).join(''), status: p.lines.filter((l) => l.level === 'status').map((l) => l.text).join(''), titlePx: (p.lines.find((l) => l.level === 'title')?.size ?? 0) * v.zoom, name: [plateName(p, p.place === focusKey).trimEnd(), item.words?.status ?? item.status, item.words?.of].filter(Boolean).join(', '),
             rect: { left: r.left + p.x * v.zoom + v.x, top: r.top + p.y * v.zoom + v.y, width: p.w * v.zoom, height: p.h * v.zoom },
             toggle: item.opens ? ((t) => ({ x: r.left + (t.x + t.w / 2) * v.zoom + v.x, y: r.top + (t.y + t.h / 2) * v.zoom + v.y }))(toggleAt(p)) : null,
           };
@@ -892,7 +908,7 @@ function paintHeads(g: CanvasRenderingContext2D, counts: readonly number[], roll
     const countText = gaps ? (counts[i] ? `${counts[i]} with gaps` : 'no gaps') : String(counts[i] ?? 0);
     g.font = fontFor(fonts, 'title', HEAD_FONT);
     const nameW = g.measureText(name).width;
-    g.font = fontFor(fonts, 'meta', HEAD_FONT - 1);
+    g.font = fontFor(fonts, 'mono', HEAD_FONT - 1);
     const countW = g.measureText(countText).width;
     const glyph = stage ? 14 : 0;
     const start = mid - (glyph + nameW + 6 + countW) / 2;
@@ -914,7 +930,7 @@ function paintHeads(g: CanvasRenderingContext2D, counts: readonly number[], roll
     g.font = fontFor(fonts, 'title', HEAD_FONT);
     g.fillText(name, start + glyph, line);
     g.fillStyle = gaps && counts[i] ? look.warn : look.muted;
-    g.font = fontFor(fonts, 'meta', HEAD_FONT - 1);
+    g.font = fontFor(fonts, 'mono', HEAD_FONT - 1);
     g.fillText(countText, start + glyph + nameW + 6, line);
     if (roll) {
       // The column's roll-up: all three counts when they fit across the column, else how many changes in all.

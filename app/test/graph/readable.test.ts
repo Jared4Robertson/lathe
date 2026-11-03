@@ -4,7 +4,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { repoData } from '../fixtures/repo';
 import { CHILD_MIN_H, CHILD_MIN_W, childZoom, drawnFor, drawnNested, FRAME_PADDING, frameGround, frameNested, frameOnMap, maxZoomFor, MIN_ZOOM, type Drawn, type Viewport } from '../../src/graph/camera';
 import { treeText, type GraphMap, type PlacedMap } from '../../src/graph/map';
-import { BORDER, labelHeight, labelLines, TITLE_FONT } from '../../src/graph/text';
+import { BORDER, labelHeight, labelLines, mapLabel, TITLE_FONT } from '../../src/graph/text';
 import { treeOf } from '../../src/graph/tree';
 import type { RecordIndex } from '../../src/exploring/record-summaries/record-index';
 import type { ServedData } from '../read-view';
@@ -30,7 +30,7 @@ const sourceOf = (map: PlacedMap, id: string): PlateSource => {
 };
 
 // Every drawn box shows its name (LA-PAT-APP-UX-R12): in every layout of the graph, at every focus
-// and depth, each box the camera draws carries its label, its title and its kind and ID line in the
+// and depth, each box the camera draws carries its label, its title and its eyebrow in the
 // lines the page draws, siblings are the same size with one text scale (LA-EXP-DS06), and the label
 // fits its box at its scale, so nothing is clipped. The sweep frames every domain, stage and folder
 // group of every product in Lathe's own spec and the Tool Library's (data/ and examples/tool-library/data/),
@@ -96,7 +96,8 @@ function nameless(spaces: Map<string, RecordIndex>): { problems: string[]; frame
           const v = layout.frame(map, focus, w, h);
           for (const b of layout.drawn(map, v, focus, depth, w, h).boxes) {
             const n = map.nodes.get(b.id)!;
-            const { title, meta } = labelLines(index, b.id);
+            // Its name as its layout gives it: in Nested, its kind word left out under a folder of its kind (text.ts mapLabel).
+            const { title, meta } = layout.name === 'Nested' ? mapLabel(index, b.id, n.parent) : labelLines(index, b.id);
             const { lines } = n;
             const height = layout.height(map, b.id);
             const at = `${layout.name} ${focus} depth ${depth} in ${w}x${h}: ${b.id} (${Math.round(n.w * v.zoom)} x ${Math.round(n.h * v.zoom)} px)`;

@@ -72,9 +72,9 @@ export function placeNested(shape: TreeShape, labelOf: (i: number) => MapLabel):
     const leaf = ids.map((i) => shape.children[i].length === 0);
     // Both scales fitted over every sibling, a leaf or a parent now, so a sibling gaining its first child or losing its
     // last changes neither its siblings' text nor their header band (LA-PAT-APP-UX-R22): every label must fit a header
-    // band at the parents' scale and, centered, the whole square at the leaves'.
+    // band at the parents' scale and the whole square at the leaves'.
     const text = labels.reduce((t, label) => Math.min(t, largestFit(label, false, side, HEADER_SHARE * side, t, border)), nestedText(side));
-    const leafText = labels.reduce((t, label) => Math.min(t, largestFit(leafLabel(label), true, side, side, t, border)), nestedLeafText(side));
+    const leafText = labels.reduce((t, label) => Math.min(t, largestFit(label, false, side, side, t, border)), nestedLeafText(side));
     const header = Math.max(0, ...labels.map((label) => text * labelHeight(linesIn(label, text > 0 ? (side - 2 * border(text)) / text : Infinity, false))));
     const pad = NEST_PAD * unit;
     const gap = NEST_GAP * unit;
@@ -101,9 +101,6 @@ export function placeNested(shape: TreeShape, labelOf: (i: number) => MapLabel):
   };
 }
 
-/** A leaf's label as a Nested leaf draws it, centered in its square: its badge's room kept above its lines, not beside its kind and ID line. */
-export const leafLabel = (label: MapLabel): MapLabel => ({ ...label, badge: 'above' });
-
 /** A Nested map's node: its lines wrapped for its box at its scale when first read (only a drawn box's are). */
 class NestNode implements NestedNode {
   private wrapped: WrappedLabel | null = null;
@@ -111,10 +108,11 @@ class NestNode implements NestedNode {
     readonly id: string, readonly parent: string | null, readonly children: readonly string[], readonly level: number, readonly order: number,
     readonly x: number, readonly y: number, readonly w: number, readonly h: number, readonly text: number, readonly header: number, private readonly label: MapLabel,
   ) {}
-  get centered() { return this.children.length === 0; }
+  /** A Nested box is a rectangle: its label is set at its left, a leaf's in its square's middle, a parent's in its header band (text.ts centeredLabel). */
+  readonly centered = false;
   get lines(): WrappedLabel {
     const border = BORDER * Math.max(0.5, this.text);
-    return (this.wrapped ??= linesIn(this.centered ? leafLabel(this.label) : this.label, this.text > 0 ? (this.w - 2 * border) / this.text : Infinity, this.centered));
+    return (this.wrapped ??= linesIn(this.label, this.text > 0 ? (this.w - 2 * border) / this.text : Infinity, false));
   }
 }
 

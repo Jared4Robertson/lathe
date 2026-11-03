@@ -4,7 +4,7 @@ import { composes } from './composition';
 import { composedOrder } from './sequence';
 import type { MapNode, PlacedMap, TreeGeometry, TreeShape } from './map';
 import { keepPlaces, type Was } from './keep-places';
-import { LINE_HEIGHT, linesIn, META_FONT, TITLE_FONT, LABEL_PAD_BLOCK, BORDER, type MapLabel, type WrappedLabel } from './text';
+import { linesIn, textHeight, LABEL_PAD_BLOCK, BORDER, type MapLabel, type WrappedLabel } from './text';
 
 // The Graph's Map layout (LA-EXP-DS12), the third beside Tree and Nested, read as people read a map: the product is the
 // ground; each domain a district on it (a labeled area, not a box), the product's shared records a district of their
@@ -29,7 +29,7 @@ const ROLE_CODES: Readonly<Record<GroundRole, string>> = { ground: 'g', district
 export const roleCode = (role: GroundRole) => ROLE_CODES[role];
 export const roleOfCode = (code: string): GroundRole => (Object.keys(ROLE_CODES) as GroundRole[]).find((r) => ROLE_CODES[r] === code) ?? 'record';
 
-/** Every leaf record's box, in map units at text scale 1 (street level): room for its kind and ID line and three title lines. */
+/** Every leaf record's box, in map units at text scale 1 (street level): room for its eyebrow and three title lines. */
 export const LEAF_W = 240;
 export const LEAF_H = 84;
 /** The most title lines a box shows: a longer title ends in an ellipsis (its whole title is in its tooltip and card). */
@@ -155,8 +155,8 @@ export const groundChildren = (index: RecordIndex, id: string): readonly string[
  * line, so every leaf's label fits its box; a title cut short ends in an ellipsis (its whole title is in its tooltip
  * and its card).
  */
-export function groundLines(label: MapLabel, width: number, centered: boolean, titleLines = TITLE_LINES): WrappedLabel {
-  const lines = linesIn(label, width, centered);
+export function groundLines(label: MapLabel, width: number, titleLines = TITLE_LINES): WrappedLabel {
+  const lines = linesIn(label, width, false);
   const most = Math.max(1, titleLines - Math.max(0, lines.meta.length - 1));
   if (lines.title.length <= most) return lines;
   const kept = lines.title.slice(0, most);
@@ -166,13 +166,13 @@ export function groundLines(label: MapLabel, width: number, centered: boolean, t
 
 /** A leaf's title alone at FAR_TEXT in a box `width` wide, at most FAR_LINES lines, the last ending in an ellipsis when cut. */
 export function farLines(title: string, width: number): WrappedLabel {
-  return groundLines({ title, meta: '' }, width / FAR_TEXT, true, FAR_LINES);
+  return groundLines({ title, meta: '' }, width / FAR_TEXT, FAR_LINES);
 }
 
-/** A record container's header band: its kind and ID line and its title, wrapped to its width, at most TITLE_LINES lines of title. */
+/** A record container's header band: its eyebrow and its title, wrapped to its width, at most TITLE_LINES lines of title. */
 const recordHeader = (label: MapLabel, width: number) => {
-  const lines = groundLines(label, width, false);
-  return 2 * (LABEL_PAD_BLOCK + BORDER) + LINE_HEIGHT * (lines.meta.length * META_FONT + lines.title.length * TITLE_FONT);
+  const lines = groundLines(label, width);
+  return 2 * (LABEL_PAD_BLOCK + BORDER) + textHeight(lines);
 };
 
 interface Size { w: number; h: number }
@@ -366,9 +366,10 @@ class GroundBox implements GroundNode {
     readonly role: GroundRole, readonly count: number,
     readonly x: number, readonly y: number, readonly w: number, readonly h: number, readonly header: number, private readonly label: MapLabel,
   ) {}
-  get centered() { return this.children.length === 0; }
+  /** A Map box is a rectangle: its label is set at its left (text.ts centeredLabel). */
+  readonly centered = false;
   get lines(): WrappedLabel {
-    return (this.wrapped ??= groundLines(this.label, this.w - 2 * BORDER, this.centered));
+    return (this.wrapped ??= groundLines(this.label, this.w - 2 * BORDER));
   }
   get far(): WrappedLabel | null {
     if (this.role !== 'record' || this.children.length > 0) return null;

@@ -2,7 +2,7 @@ import { stepName } from '../graph/steps';
 import type { RecordIndex } from '../exploring/record-summaries/record-index';
 import type { Move } from '../views/levels';
 import type { WalkBar } from '../views/StageChrome';
-import { journeyBox, JOURNEY_COLUMN, OUTCOME_COLUMN, STAGE_COLUMN, TRACE_COLUMN_LABELS, TRACE_COLUMNS, isOpen, shownChildren, type TraceGraph, type Openness } from './trace';
+import { journeyBox, JOURNEY_COLUMN, OUTCOME_COLUMN, STAGE_COLUMN, TRACE_COLUMN_LABELS, TRACE_COLUMNS, isOpen, shownChildren, wordsName, type TraceGraph, type Openness } from './trace';
 import type { TraceLaid } from './layout';
 
 // The Trace stage's walk (LA-V61-R49, LA-V98), pure and tested directly: Up and Down within a column, top to bottom as
@@ -116,5 +116,5 @@ export function traceWords(index: RecordIndex, graph: TraceGraph, key: string): 
   const item = graph.items.get(key);
   if (!item) return key;
   if (item.role === 'record' && item.id) return stepName(index, item.id);
-  return `${item.words?.title ?? key}, ${TRACE_COLUMN_LABELS[TRACE_COLUMNS[item.column]]}`;
+  return `${(item.words && wordsName(item.words)) || key}, ${TRACE_COLUMN_LABELS[TRACE_COLUMNS[item.column]]}`;
 }
