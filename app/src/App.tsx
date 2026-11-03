@@ -296,7 +296,6 @@ function Shell() {
           onCollapse={() => { if (!navCollapsed) setNavOpen(false); }}
         />
       )}
-      {readOnly && <p className="read-only-note" role="status">Read only on this device</p>}
       {page}
       {isHome && <ProductsPicker version={spec.version} onClose={leaveHome} />}
       {toolPanel}

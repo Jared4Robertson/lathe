@@ -442,8 +442,8 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .stage-key-chip { position: absolute; z-index: 6; bottom: var(--stage-foot); left: 50%; translate: -50% 0; padding: 4px 12px; border: 1px solid var(--float-border); border-radius: 999px; background: var(--sheet); box-shadow: var(--float-shadow); font-size: 0.8rem; }
 /* On a phone, the walk's bar (StageWalkBar, LA-V93-R76): Previous, Out, In and Next along the foot of the stage, each a
    touch target with its icon, and its word from 360 px up (narrower, the word is its name alone, never squeezed), the
-   buttons sharing the bar's width with 8 px between their targets, clear of the safe area. On a phone every stage's foot rises above it, so the camera, the minimap, the key chip and the touch card sit over the
-   bar, never on it, and the read-only note rises with them. */
+   buttons sharing the bar's width with 8 px between their targets, clear of the safe area. On a phone every stage's foot rises above it, so the camera, the minimap and the key chip sit over the
+   bar, never on it. */
 :root { --walk-bar-height: calc(var(--touch-target) + 13px); }
 .stage-walk-bar { position: absolute; z-index: 9; left: 0; right: 0; bottom: 0; display: flex; gap: 8px; box-sizing: border-box; height: calc(var(--walk-bar-height) + env(safe-area-inset-bottom)); padding: 6px max(8px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); border-top: 1px solid var(--rule); background: var(--sheet); }
 .stage-walk-step { flex: 1 1 auto; min-width: var(--touch-target); min-height: var(--touch-target); justify-content: center; padding-inline: 4px; }
@@ -500,10 +500,6 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .skip-link { position: absolute; left: 8px; top: -64px; z-index: 100; padding: 6px 10px; background: var(--sheet); color: var(--steel); border: 1px solid var(--steel); border-radius: 6px; }
 .skip-link:focus { top: 8px; }
-/* Another device on the network only reads (LA-V61-R55): a small note that stays at the bottom right of the window. */
-.read-only-note { position: fixed; right: 12px; bottom: 12px; z-index: 90; margin: 0; padding: 4px 12px; border: 1px solid var(--rule); border-radius: 999px; background: var(--sheet); color: var(--muted); font-size: 0.8125rem; pointer-events: none; }
-/* On a phone the stage's walk bar and key chip sit at the foot of the screen: the note stays clear above both. */
-.app.is-narrow .read-only-note { bottom: calc(var(--walk-bar-height) + env(safe-area-inset-bottom) + 60px); }
 .icon-button { display: inline-grid; place-items: center; min-width: 32px; min-height: 32px; padding: 0; border: 1px solid transparent; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; font: inherit; }
 .icon-button:hover { color: var(--ink); background: var(--paper); border-color: var(--rule); }
 /* A toggle that is on (the pressed view, a shown panel): one look for every such icon button. */
