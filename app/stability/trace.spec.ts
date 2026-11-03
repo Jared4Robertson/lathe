@@ -12,7 +12,7 @@ import type { TraceHost } from '../src/trace/TraceCanvas';
 
 const USE_CASE = 'LA-UCS-UC06';
 const STEP = 'LA-UCS-UC06-FL-S04';
-/** Lathe's own journey "Take a new use case to proof": its first steps carry out LA-UCS-UC06, then LA-MOD-UC12. */
+/** Lathe's own journey "Take an idea to proof": its first steps carry out LA-UCS-UC06, then LA-MOD-UC12. */
 const JOURNEY = 'LA-JR01';
 
 const sceneOf = (page: Page, whole = true) => traceSceneOf(page, whole);

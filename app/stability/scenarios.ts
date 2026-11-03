@@ -13,7 +13,7 @@ export const AGGREGATE = '/LA-EXP-A1';
 /** A UC requirement of RECORD: what the edit scenarios change, then put back. */
 export const EDITED = '/LA-PLT-UC07-R08';
 
-/** Lathe's own journey "Take a new use case to proof", with its steps in order, each carrying out a use case: the journeys scenario and the journey page's audit. */
+/** Lathe's own journey "Take an idea to proof", with its steps in order, each carrying out a use case: the journeys scenario and the journey page's audit. */
 export const JOURNEY = '/LA-JR01';
 /** A use case that is a step of JOURNEY: its In journeys fact leads back to the journey. */
 export const JOURNEY_USE_CASE = '/LA-UCS-UC06';

@@ -144,6 +144,8 @@
 {"use_case_id":"LA-TRC-UC22","position":2,"role_name":"Agent"}
 {"use_case_id":"LA-TRC-UC23","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-TRC-UC23","position":2,"role_name":"Agent"}
+{"use_case_id":"LA-TRC-UC24","position":1,"role_name":"Owner"}
+{"use_case_id":"LA-TRC-UC24","position":2,"role_name":"Agent"}
 {"use_case_id":"LA-TST-UC03","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-TST-UC03","position":2,"role_name":"Agent"}
 {"use_case_id":"LA-TST-UC13","position":1,"role_name":"Owner"}
