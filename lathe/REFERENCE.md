@@ -1560,7 +1560,7 @@ A view's route is the address it is shown at, and the UI components that render 
 
 A step that invokes a command or query one of the interfaces that offer its use case cannot reach.
 
-A use case's flow is the same through every interface that offers it, and each interface carries a step out through its own means: a web app or desktop in a view that presents the step's command or query (a view of every such interface, or of that one), an API through the endpoint that exposes it, a CLI or agent tools through a record of the product's own interaction design kinds under it (such as Lathe's CLI commands). So each interface that offers the use case must reach what each step invokes, but for a step that is another interface's variant. An interface of kind other reaches its operations in a way no record says, so it is not read. Have a view present the command or query, add the endpoint or the product's own record under it, make the step a variant of the interfaces that do reach it, or stop offering the use case through that interface.
+A use case's flow is the same through every interface that offers it, and each interface carries a step out through its own means: a web app or desktop in a view that presents the step's command or query (a view of every such interface, or of that one), an API through the endpoint that exposes it, a CLI or agent tools through a record of the product's own interaction design kinds under it (such as Lathe's CLI commands) or that presents it (such as an invocation that carries out several commands and queries; one that sits under an interface reaches only that one, any other every CLI and agent tools of its product). So each interface that offers the use case must reach what each step invokes, but for a step that is another interface's variant. An interface of kind other reaches its operations in a way no record says, so it is not read. Have a view present the command or query, add the endpoint, or the product's own record under it or that presents it, make the step a variant of the interfaces that do reach it, or stop offering the use case through that interface.
 
 <a id="check-flow-title-off-pattern"></a>
 
@@ -3691,7 +3691,7 @@ The repository loads and saves the aggregate, whole: one repository per aggregat
 
 ### `presents`
 
-The view presents the command or query: a person sends the command or asks the query there, so a step that invokes it is carried out in the view on a web app or desktop interface.
+The view presents the command or query: a person sends the command or asks the query there, so a step that invokes it is carried out in the view on a web app or desktop interface. A record of a product's own interaction design kind presents them the same way, once the product adds that pair with a product_relation named presents: a command line's invocation that carries out several commands and queries, so a step that invokes one is carried out through it on a CLI or agent tools interface.
 
 - **Reads:** Presents / Presented in
 - **Role:** none

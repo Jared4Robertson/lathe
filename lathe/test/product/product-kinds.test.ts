@@ -129,6 +129,43 @@ describe('a product\'s own relations', () => {
   });
 });
 
+describe('a product\'s own interaction design kind presents', () => {
+  /** The complete product with an invocation kind of its own, in the interaction design, that presents commands and queries. */
+  const withInvocations = (stage = 'interaction-design'): Data =>
+    adding(complete(), {
+      product_kind: [{ name: 'invocation', product_id: 'EX', label: 'Invocation', description: 'One invocation of the library\'s command line.', parent_kind: 'product', stage, obligation: false, complexity: 'essential', id_pattern: '<P>-INV<nn>' }],
+      product_relation: [
+        { name: 'presents', source_kind: 'invocation', target_kind: 'command', product_id: 'EX', forward_label: 'Presents', reverse_label: 'Presented in', description: 'A person sends the command through the invocation.' },
+        { name: 'presents', source_kind: 'invocation', target_kind: 'query', product_id: 'EX', forward_label: 'Presents', reverse_label: 'Presented in', description: 'A person asks the query through the invocation.' },
+      ],
+    });
+
+  it('LA-PRD-UC04-R06-T01 A product\'s interaction design kind may present commands and queries; any other kind may not', async () => {
+    const root = await build(withInvocations());
+    const store = await openStore(root, { latheDataDir: null });
+    await run(store, 'extension-record add-extension-record', { kind: 'invocation', id: 'EX-INV01', parent_id: 'EX', values: { title: 'library lend' }, links: { presents: ['EX-LEND-CMD01', 'EX-LEND-QRY01'] } });
+    await store.close();
+    const ws = await loadWorkspace(root);
+    expect(ws.relations.filter((r) => r.relation === 'presents').map((r) => `${r.source_kind} ${r.target_kind} ${r.forward_label}/${r.reverse_label}`)).toEqual([
+      'invocation command Presents/Presented in',
+      'invocation query Presents/Presented in',
+      'view command Presents/Presented in',
+      'view query Presents/Presented in',
+    ]);
+    expect(ws.links.filter((l) => l.source === 'EX-INV01')).toEqual([
+      { source: 'EX-INV01', relation: 'presents', target: 'EX-LEND-CMD01' },
+      { source: 'EX-INV01', relation: 'presents', target: 'EX-LEND-QRY01' },
+    ]);
+    // A view's own presents links stay as they were.
+    expect(ws.links.filter((l) => l.source === 'EX-V01' && l.relation === 'presents')).toHaveLength(3);
+    // A kind of any other stage cannot present.
+    expect((await refusals(withInvocations('technical-specification'))).map((p) => [p.rule, p.message])).toEqual([
+      ['product-relation-own', "Lathe's relation presents links presents_source to operation, so it cannot link invocation to command; give the relation a name of its own."],
+      ['product-relation-own', "Lathe's relation presents links presents_source to operation, so it cannot link invocation to query; give the relation a name of its own."],
+    ]);
+  });
+});
+
 describe('stages', () => {
   it('LA-PRD-UC08-R01-T01 The engine loads the six stages in order and each kind\'s stage and position, with the product and open questions outside them', () => {
     expect(plain.stages.map((s) => [s.position, s.stage, s.label])).toEqual([

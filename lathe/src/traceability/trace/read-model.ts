@@ -242,7 +242,8 @@ export function traceTableFrom(view: ReadView): TraceTable {
   const invariantsOf = under('invariant', 'aggregate_id');
   const storageOf = merge(under('storage_requirement', 'aggregate_id'), under('storage_requirement', 'read_model_id'));
   const flowTestOf = new Map(rows('flow_test').map((t) => [String(t.flow_id), t]));
-  // The product's own interaction design records under a command or a query (an IPC channel, a CLI command).
+  // The product's own interaction design records under a command or a query (an IPC channel, a CLI command), and those
+  // that present it (an invocation that carries out several commands and queries); the views that present it apart.
   const ownEntries = new Map<string, string[]>();
   for (const kind of Object.values(schema.kinds)) {
     if (kind.productId === null || kind.obligation || kind.stage !== 'interaction-design') continue;
@@ -250,6 +251,13 @@ export function traceTableFrom(view: ReadView): TraceTable {
       if (parent.kind !== 'command' && parent.kind !== 'query') continue;
       for (const [k, v] of under(kind.name, parent.column)) ownEntries.set(k, [...(ownEntries.get(k) ?? []), ...v]);
     }
+  }
+  const viewsPresenting = new Map<string, string[]>();
+  for (const [operation, sources] of presentedIn) {
+    const isView = (id: string) => view.record(id)?.kind === 'view';
+    viewsPresenting.set(operation, sources.filter(isView));
+    const own = sources.filter((id) => !isView(id));
+    if (own.length) ownEntries.set(operation, [...new Set([...(ownEntries.get(operation) ?? []), ...own])]);
   }
   const kindOf = (id: string) => view.record(id)?.kind;
   const versionsOf = interfaceVersions(view);
@@ -273,7 +281,7 @@ export function traceTableFrom(view: ReadView): TraceTable {
   const stepOf = (s: Row): TraceStep => {
     const id = String(s.id);
     const operation = invokes.get(id)?.[0] ?? null;
-    const views = operation ? byId(presentedIn.get(operation) ?? []) : [];
+    const views = operation ? byId(viewsPresenting.get(operation) ?? []) : [];
     const integrations = byId(exchangesWith.get(id) ?? []);
     const endpoints = operation ? byId(endpointsOf.get(operation) ?? []) : [];
     const command = operation ? entityOfCommand.get(operation) : undefined;
