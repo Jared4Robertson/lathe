@@ -1,11 +1,11 @@
 # Changelog
 
-## [7.0.0](https://github.com/Jared4Robertson/lathe/compare/v6.0.0...v7.0.0) (2026-11-03)
+## [7.0.0](https://github.com/Jared4Robertson/lathe/commits/v7.0.0) (2026-11-03)
 
 
 ### ⚠ BREAKING CHANGES
 
-* **graph:** * feat(graph): one tap on a node opens it, as a click does
+* **graph:** one tap on a node opens it; the app_focus tool no longer returns a selection, and touch has no select-then-open step
 
 ### Features
 
