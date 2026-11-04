@@ -149,6 +149,13 @@
 {"read_model_id":"LA-PLT-RM06","position":3,"name":"Stage","meaning":"The stage shown: graph, erd or trace.","type":"text","required":false}
 {"read_model_id":"LA-PLT-RM06","position":4,"name":"Selected","meaning":"The record selected on the stage or in the wiki card, by ID, kind and title.","type":"text","required":false}
 {"read_model_id":"LA-PLT-RM06","position":5,"name":"Product","meaning":"The space's product.","type":"text","required":false}
+{"read_model_id":"LA-PLT-RM07","position":1,"name":"Session","meaning":"The Claude Code session the chat continues, once Claude Code has named it.","type":"text","required":false,"example":"2b0c6f4e-3f5a-4d0e-9b1c-7a8d9e0f1a2b"}
+{"read_model_id":"LA-PLT-RM07","position":2,"name":"Status","meaning":"idle while it waits for the Owner, running while a turn is under way, stopping while a turn is being stopped, or closed when no session runs and the next message starts one.","type":"text","required":true,"example":"running"}
+{"read_model_id":"LA-PLT-RM07","position":3,"name":"Permission mode","meaning":"The mode the session runs in: Ask, Accept reads, Auto, Bypass or View only.","type":"text","required":true,"example":"accept-reads"}
+{"read_model_id":"LA-PLT-RM07","position":4,"name":"Model and effort","meaning":"The model and effort the session runs with; none leaves either to Claude Code's own default.","type":"text","required":false,"example":"opus, high"}
+{"read_model_id":"LA-PLT-RM07","position":5,"name":"Lathe tools","meaning":"The Lathe tools the session has: still being counted, how many and from which Lathe, or why they did not load.","type":"text","required":true,"example":"212 tools from Lathe 6.0.0"}
+{"read_model_id":"LA-PLT-RM07","position":6,"name":"Items","meaning":"What the chat shows, in order: the Owner's messages, Claude's text as it is written, each tool call with its input and result, each permission prompt with its answer, and notices.","type":"text","required":true}
+{"read_model_id":"LA-PLT-RM07","position":7,"name":"Queued messages","meaning":"The messages the Owner typed while Claude worked, waiting to go in order.","type":"text","required":false}
 {"read_model_id":"LA-PLT-RM08","position":1,"name":"Kind","meaning":"A kind: its label, stage, place in reading order, parent kinds and columns, whether it is an obligation, its ID scope and the product that declares it.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM08","position":2,"name":"Stage","meaning":"A stage with its label and description, in order.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM08","position":3,"name":"Relation","meaning":"A pair of kinds a relation may link, with its role and its words read from each end.","type":"text","required":true}

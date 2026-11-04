@@ -444,6 +444,7 @@
 {"source_id":"LA-PLT-ENTRY06","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-PLT-ENTRY07","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-PLT-ENTRY08","target_id":"LA-STD-PRINCIPLES-R02"}
+{"source_id":"LA-PLT-ENTRY09","target_id":"LA-STD-PRINCIPLES-R02"}
 {"source_id":"LA-PLT-EP411-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
 {"source_id":"LA-PLT-MOD07","target_id":"LA-STD-PRINCIPLES-R02"}
 {"source_id":"LA-PLT-MOD13","target_id":"LA-STD-PRINCIPLES-R02"}
@@ -451,6 +452,8 @@
 {"source_id":"LA-PLT-MOD30","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-PLT-MOD37","target_id":"LA-STD-PRINCIPLES-R02"}
 {"source_id":"LA-PLT-MOD39","target_id":"LA-STD-PRINCIPLES-R01"}
+{"source_id":"LA-PLT-MOD49","target_id":"LA-STD-PRINCIPLES-R01"}
+{"source_id":"LA-PLT-MOD52","target_id":"LA-STD-PRINCIPLES-R02"}
 {"source_id":"LA-PLT-RM01-PJ","target_id":"LA-PAT-AGGREGATE-COMMANDS-R12"}
 {"source_id":"LA-PLT-RM08-PJ","target_id":"LA-PAT-AGGREGATE-COMMANDS-R12"}
 {"source_id":"LA-PLT-RM08-PJ","target_id":"LA-STD-MODELING-R01"}
@@ -857,6 +860,17 @@
 {"source_id":"LA-UI145","target_id":"LA-PAT-APP-CODE-R25"}
 {"source_id":"LA-UI149","target_id":"LA-PAT-APP-CODE-R01"}
 {"source_id":"LA-UI149","target_id":"LA-PAT-APP-UX-R20"}
+{"source_id":"LA-UI345","target_id":"LA-PAT-FIELD-INPUTS-R03"}
+{"source_id":"LA-UI345","target_id":"LA-PAT-PAGE-STEPS-R02"}
+{"source_id":"LA-UI346","target_id":"LA-PAT-FIELD-INPUTS-R03"}
+{"source_id":"LA-UI346","target_id":"LA-PAT-PAGE-STEPS-R02"}
+{"source_id":"LA-UI348","target_id":"LA-PAT-APP-UX-R22"}
+{"source_id":"LA-UI349","target_id":"LA-PAT-APP-UX-R11"}
+{"source_id":"LA-UI349","target_id":"LA-PAT-APP-UX-R19"}
+{"source_id":"LA-UI349","target_id":"LA-PAT-APP-UX-R22"}
+{"source_id":"LA-UI350","target_id":"LA-PAT-APP-UX-R19"}
+{"source_id":"LA-UI351","target_id":"LA-PAT-APP-UX-R19"}
+{"source_id":"LA-UI354","target_id":"LA-PAT-APP-UX-R19"}
 {"source_id":"LA-UI61","target_id":"LA-STD-EXPERIENCE-R01"}
 {"source_id":"LA-UI61","target_id":"LA-STD-EXPERIENCE-R04"}
 {"source_id":"LA-UI62","target_id":"LA-STD-EXPERIENCE-R05"}

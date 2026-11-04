@@ -1605,7 +1605,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | Gap | Kinds | What it reports |
 | --- | --- | --- |
 | <a id="gap-interface-offers-nothing"></a>`interface-offers-nothing` | [`interface`](#kind-interface), [`use_case`](#kind-use_case) | An interface that offers no use case. |
-| <a id="gap-endpoint-without-requirement"></a>`endpoint-without-requirement` | [`endpoint`](#kind-endpoint), [`api_requirement`](#kind-api_requirement) | An endpoint with no API requirement. |
+| <a id="gap-endpoint-without-requirement"></a>`endpoint-without-requirement` | [`endpoint`](#kind-endpoint), [`api_requirement`](#kind-api_requirement), [`interface`](#kind-interface) | An endpoint of a product with a public API, with no API requirement. |
 | <a id="gap-route-without-record"></a>`route-without-record` | [`product`](#kind-product), [`endpoint`](#kind-endpoint), [`view`](#kind-view) | A route the code serves that no endpoint or view has. |
 | <a id="gap-record-untraced"></a>`record-untraced` | [`flow_step`](#kind-flow_step), [`command`](#kind-command), [`query`](#kind-query), [`ui_component`](#kind-ui_component) | A flow step, command, query or UI component no obligation's chain reaches. |
 

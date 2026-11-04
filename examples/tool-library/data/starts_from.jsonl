@@ -1,6 +1,6 @@
-{"source_id":"TL-JR01-T","target_id":"TL-LEND-TD01"}
-{"source_id":"TL-JR02-T","target_id":"TL-LEND-TD01"}
-{"source_id":"TL-JR03-T","target_id":"TL-LEND-TD01"}
+{"source_id":"TL-JR01-T","target_id":"TL-LEND-TD02"}
+{"source_id":"TL-JR02-T","target_id":"TL-LEND-TD02"}
+{"source_id":"TL-JR03-T","target_id":"TL-LEND-TD02"}
 {"source_id":"TL-LEND-DS01-T01","target_id":"TL-LEND-TD01"}
 {"source_id":"TL-LEND-EP01-R01-T01","target_id":"TL-LEND-TD02"}
 {"source_id":"TL-LEND-EP01-R02-T01","target_id":"TL-LEND-TD02"}

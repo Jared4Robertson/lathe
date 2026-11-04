@@ -10,11 +10,17 @@
 {"id":"LA-EXP-MOD07","title":"app/src/views/leaderLine.ts","domain_id":"LA-EXP","file":"app/src/views/leaderLine.ts"}
 {"id":"LA-EXP-MOD08","title":"app/src/views/preview.ts","domain_id":"LA-EXP","file":"app/src/views/preview.ts"}
 {"id":"LA-EXP-MOD09","title":"app/src/views/overlays.ts","domain_id":"LA-EXP","file":"app/src/views/overlays.ts"}
-{"id":"LA-EXP-MOD10","title":"app/src/views/peek.ts","domain_id":"LA-EXP","file":"app/src/views/peek.ts"}
 {"id":"LA-EXP-MOD11","title":"app/src/views/levels.ts","domain_id":"LA-EXP","file":"app/src/views/levels.ts"}
 {"id":"LA-EXP-MOD12","title":"app/src/changes/marks.ts","domain_id":"LA-EXP","file":"app/src/changes/marks.ts"}
 {"id":"LA-EXP-MOD13","title":"app/src/changes/rollup.ts","domain_id":"LA-EXP","file":"app/src/changes/rollup.ts"}
 {"id":"LA-EXP-MOD14","title":"app/src/changes/jump.ts","domain_id":"LA-EXP","file":"app/src/changes/jump.ts"}
+{"id":"LA-EXP-MOD15","title":"lathe/src/changes.ts","domain_id":"LA-EXP","file":"lathe/src/changes.ts","group_name":"Workspace navigation"}
+{"id":"LA-EXP-MOD16","title":"lathe/src/server/baseline.ts","domain_id":"LA-EXP","file":"lathe/src/server/baseline.ts","group_name":"Workspace navigation"}
+{"id":"LA-EXP-MOD17","title":"app/src/exploring/session-settings/use-session-settings.ts","domain_id":"LA-EXP","file":"app/src/exploring/session-settings/use-session-settings.ts","group_name":"Workspace navigation"}
+{"id":"LA-EXP-MOD18","title":"app/src/exploring/tab-set/reads.ts","domain_id":"LA-EXP","file":"app/src/exploring/tab-set/reads.ts","group_name":"Workspace navigation"}
+{"id":"LA-EXP-MOD19","title":"app/src/exploring/tab-set/run.ts","domain_id":"LA-EXP","file":"app/src/exploring/tab-set/run.ts","group_name":"Workspace navigation"}
+{"id":"LA-EXP-MOD20","title":"app/src/views/tabHistory.ts","domain_id":"LA-EXP","file":"app/src/views/tabHistory.ts","group_name":"Workspace navigation"}
+{"id":"LA-EXP-MOD21","title":"app/src/views/usePlace.ts","domain_id":"LA-EXP","file":"app/src/views/usePlace.ts","group_name":"Workspace navigation"}
 {"id":"LA-IXD-MOD60","title":"lathe/src/interface-design/view/model.ts","domain_id":"LA-IXD","file":"lathe/src/interface-design/view/model.ts","group_name":"View"}
 {"id":"LA-IXD-MOD61","title":"lathe/src/interface-design/view/commands/index.ts","domain_id":"LA-IXD","file":"lathe/src/interface-design/view/commands/index.ts","group_name":"View"}
 {"id":"LA-IXD-MOD62","title":"lathe/src/interface-design/endpoint/model.ts","domain_id":"LA-IXD","file":"lathe/src/interface-design/endpoint/model.ts","group_name":"Endpoint"}
@@ -23,6 +29,10 @@
 {"id":"LA-IXD-MOD65","title":"lathe/src/interface-design/integration/commands/index.ts","domain_id":"LA-IXD","file":"lathe/src/interface-design/integration/commands/index.ts","group_name":"Integration"}
 {"id":"LA-IXD-MOD66","title":"lathe/src/interface-design/ui-component/model.ts","domain_id":"LA-IXD","file":"lathe/src/interface-design/ui-component/model.ts","group_name":"UI component"}
 {"id":"LA-IXD-MOD67","title":"lathe/src/interface-design/ui-component/commands/index.ts","domain_id":"LA-IXD","file":"lathe/src/interface-design/ui-component/commands/index.ts","group_name":"UI component"}
+{"id":"LA-IXD-MOD68","title":"lathe/src/interface-design/endpoint/commands","domain_id":"LA-IXD","file":"lathe/src/interface-design/endpoint/commands","group_name":"Endpoint"}
+{"id":"LA-IXD-MOD69","title":"lathe/src/interface-design/integration/commands","domain_id":"LA-IXD","file":"lathe/src/interface-design/integration/commands","group_name":"Integration"}
+{"id":"LA-IXD-MOD70","title":"lathe/src/interface-design/ui-component/commands","domain_id":"LA-IXD","file":"lathe/src/interface-design/ui-component/commands","group_name":"UI component"}
+{"id":"LA-IXD-MOD71","title":"lathe/src/interface-design/view/commands","domain_id":"LA-IXD","file":"lathe/src/interface-design/view/commands","group_name":"View"}
 {"id":"LA-MOD-MOD30","title":"lathe/src/domain-modeling/domain/model.ts","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/domain/model.ts","group_name":"Domain"}
 {"id":"LA-MOD-MOD31","title":"lathe/src/domain-modeling/domain/rules.ts","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/domain/rules.ts","group_name":"Domain"}
 {"id":"LA-MOD-MOD32","title":"lathe/src/domain-modeling/domain/commands/index.ts","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/domain/commands/index.ts","group_name":"Domain"}
@@ -43,6 +53,14 @@
 {"id":"LA-MOD-MOD56","title":"lathe/src/domain-modeling/read-model/commands/index.ts","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/read-model/commands/index.ts","group_name":"Read model"}
 {"id":"LA-MOD-MOD80","title":"lathe/src/domain-modeling/storage-requirement/model.ts","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/storage-requirement/model.ts","group_name":"Storage requirement"}
 {"id":"LA-MOD-MOD81","title":"lathe/src/domain-modeling/storage-requirement/commands/index.ts","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/storage-requirement/commands/index.ts","group_name":"Storage requirement"}
+{"id":"LA-MOD-MOD82","title":"lathe/src/domain-modeling/aggregate/commands","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/aggregate/commands","group_name":"Aggregate"}
+{"id":"LA-MOD-MOD83","title":"lathe/src/domain-modeling/command/commands","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/command/commands","group_name":"Command"}
+{"id":"LA-MOD-MOD84","title":"lathe/src/domain-modeling/domain-event/commands","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/domain-event/commands","group_name":"Domain event"}
+{"id":"LA-MOD-MOD85","title":"lathe/src/domain-modeling/domain/commands","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/domain/commands","group_name":"Domain"}
+{"id":"LA-MOD-MOD86","title":"lathe/src/domain-modeling/read-model/commands","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/read-model/commands","group_name":"Read model"}
+{"id":"LA-MOD-MOD87","title":"lathe/src/domain-modeling/specification/commands","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/specification/commands","group_name":"Specification"}
+{"id":"LA-MOD-MOD88","title":"lathe/src/domain-modeling/storage-requirement/commands","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/storage-requirement/commands","group_name":"Storage requirement"}
+{"id":"LA-MOD-MOD89","title":"lathe/src/domain-modeling/value-object/commands","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/value-object/commands","group_name":"Value object"}
 {"id":"LA-PLT-MOD01","title":"app/src/shell/useNarrow.ts","domain_id":"LA-PLT","file":"app/src/shell/useNarrow.ts","group_name":"Workbench"}
 {"id":"LA-PLT-MOD02","title":"app/src/theme/apply.ts","domain_id":"LA-PLT","file":"app/src/theme/apply.ts","group_name":"Workbench"}
 {"id":"LA-PLT-MOD03","title":"app/src/theme/contrast.ts","domain_id":"LA-PLT","file":"app/src/theme/contrast.ts","group_name":"Workbench"}
@@ -60,13 +78,29 @@
 {"id":"LA-PLT-MOD30","title":"lathe/src/platform/data","domain_id":"LA-PLT","file":"lathe/src/platform/data","group_name":"Live loading"}
 {"id":"LA-PLT-MOD31","title":"app/src/platform/appearance/use-scroll-to-zoom.ts","domain_id":"LA-PLT","file":"app/src/platform/appearance/use-scroll-to-zoom.ts","group_name":"Workbench"}
 {"id":"LA-PLT-MOD32","title":"lathe/src/server/events.ts","domain_id":"LA-PLT","file":"lathe/src/server/events.ts","group_name":"Live loading"}
-{"id":"LA-PLT-MOD33","title":"desktop/src/chatLathe.ts","domain_id":"LA-PLT","file":"desktop/src/chatLathe.ts","group_name":"Desktop hosting"}
+{"id":"LA-PLT-MOD33","title":"desktop/src/chatLathe.ts","domain_id":"LA-PLT","file":"desktop/src/chatLathe.ts","group_name":"Window chat"}
 {"id":"LA-PLT-MOD34","title":"app/src/chat/voice","domain_id":"LA-PLT","file":"app/src/chat/voice","group_name":"Desktop hosting"}
 {"id":"LA-PLT-MOD35","title":"app/src/platform/voice-settings/use-voice-settings.ts","domain_id":"LA-PLT","file":"app/src/platform/voice-settings/use-voice-settings.ts","group_name":"Desktop hosting"}
-{"id":"LA-PLT-MOD36","title":"desktop/src/chatSession.ts","domain_id":"LA-PLT","file":"desktop/src/chatSession.ts","group_name":"Desktop hosting"}
+{"id":"LA-PLT-MOD36","title":"desktop/src/chatSession.ts","domain_id":"LA-PLT","file":"desktop/src/chatSession.ts","group_name":"Window chat"}
 {"id":"LA-PLT-MOD37","title":"lathe/src/cli/aggregates.ts","domain_id":"LA-PLT","file":"lathe/src/cli/aggregates.ts","group_name":"Repo setup"}
 {"id":"LA-PLT-MOD38","title":"lathe/src/commands.ts","domain_id":"LA-PLT","file":"lathe/src/commands.ts","group_name":"Live loading"}
 {"id":"LA-PLT-MOD39","title":"lathe/src/aggregate-rules.ts","domain_id":"LA-PLT","file":"lathe/src/aggregate-rules.ts","group_name":"Live loading"}
+{"id":"LA-PLT-MOD40","title":"app/src/chat/draft.ts","domain_id":"LA-PLT","file":"app/src/chat/draft.ts","group_name":"Desktop hosting"}
+{"id":"LA-PLT-MOD41","title":"app/src/edit/access.ts","domain_id":"LA-PLT","file":"app/src/edit/access.ts","group_name":"Repo setup"}
+{"id":"LA-PLT-MOD42","title":"lathe/src/server/access.ts","domain_id":"LA-PLT","file":"lathe/src/server/access.ts","group_name":"Repo setup"}
+{"id":"LA-PLT-MOD43","title":"app/src/edit/back-to-actions.ts","domain_id":"LA-PLT","file":"app/src/edit/back-to-actions.ts","group_name":"Workbench"}
+{"id":"LA-PLT-MOD44","title":"app/src/edit/write.ts","domain_id":"LA-PLT","file":"app/src/edit/write.ts","group_name":"Workbench"}
+{"id":"LA-PLT-MOD45","title":"app/src/record/read.ts","domain_id":"LA-PLT","file":"app/src/record/read.ts","group_name":"Live loading"}
+{"id":"LA-PLT-MOD46","title":"app/src/shell/prefs.ts","domain_id":"LA-PLT","file":"app/src/shell/prefs.ts","group_name":"Workbench"}
+{"id":"LA-PLT-MOD47","title":"app/src/shell/storage.ts","domain_id":"LA-PLT","file":"app/src/shell/storage.ts","group_name":"Workbench"}
+{"id":"LA-PLT-MOD48","title":"app/src/shell/desktop-bridge.ts","domain_id":"LA-PLT","file":"app/src/shell/desktop-bridge.ts","group_name":"Desktop hosting"}
+{"id":"LA-PLT-MOD49","title":"desktop/src/rules.ts","domain_id":"LA-PLT","file":"desktop/src/rules.ts","group_name":"Desktop hosting"}
+{"id":"LA-PLT-MOD50","title":"desktop/src/records.ts","domain_id":"LA-PLT","file":"desktop/src/records.ts","group_name":"Desktop hosting"}
+{"id":"LA-PLT-MOD51","title":"desktop/src/app-server/model.ts","domain_id":"LA-PLT","file":"desktop/src/app-server/model.ts","group_name":"Desktop hosting"}
+{"id":"LA-PLT-MOD52","title":"lathe/src/cli/operations.ts","domain_id":"LA-PLT","file":"lathe/src/cli/operations.ts","group_name":"Repo setup"}
+{"id":"LA-PLT-MOD53","title":"lathe/src/server/undo.ts","domain_id":"LA-PLT","file":"lathe/src/server/undo.ts","group_name":"Desktop hosting"}
+{"id":"LA-PLT-MOD54","title":"desktop/src/claudeLogin.ts","domain_id":"LA-PLT","file":"desktop/src/claudeLogin.ts","group_name":"Window chat"}
+{"id":"LA-PLT-MOD55","title":"desktop/native/speech","domain_id":"LA-PLT","file":"desktop/native/speech","group_name":"Window chat"}
 {"id":"LA-PRD-MOD20","title":"lathe/src/product/product/rules.ts","domain_id":"LA-PRD","file":"lathe/src/product/product/rules.ts","group_name":"Product"}
 {"id":"LA-PRD-MOD21","title":"lathe/src/product/product/commands/index.ts","domain_id":"LA-PRD","file":"lathe/src/product/product/commands/index.ts","group_name":"Product"}
 {"id":"LA-PRD-MOD22","title":"lathe/src/product/extension-record/rules.ts","domain_id":"LA-PRD","file":"lathe/src/product/extension-record/rules.ts","group_name":"Extension record"}
@@ -85,6 +119,8 @@
 {"id":"LA-PRD-MOD93","title":"lathe/src/product/journey/commands/change-journey-test.ts","domain_id":"LA-PRD","file":"lathe/src/product/journey/commands/change-journey-test.ts","group_name":"Journey"}
 {"id":"LA-PRD-MOD94","title":"lathe/src/product/journey/commands/remove-journey-test.ts","domain_id":"LA-PRD","file":"lathe/src/product/journey/commands/remove-journey-test.ts","group_name":"Journey"}
 {"id":"LA-PRD-MOD95","title":"lathe/src/product/journey/appearances.ts","domain_id":"LA-PRD","file":"lathe/src/product/journey/appearances.ts","group_name":"Journey"}
+{"id":"LA-PRD-MOD96","title":"lathe/src/product/business-outcome/commands","domain_id":"LA-PRD","file":"lathe/src/product/business-outcome/commands","group_name":"Discovery"}
+{"id":"LA-PRD-MOD97","title":"lathe/src/product/interface/commands","domain_id":"LA-PRD","file":"lathe/src/product/interface/commands"}
 {"id":"LA-TEC-MOD25","title":"lathe/src/technical-specification/entry-point/commands/index.ts","domain_id":"LA-TEC","file":"lathe/src/technical-specification/entry-point/commands/index.ts","group_name":"Technical specification"}
 {"id":"LA-TEC-MOD26","title":"lathe/src/technical-specification/tooling/commands/index.ts","domain_id":"LA-TEC","file":"lathe/src/technical-specification/tooling/commands/index.ts","group_name":"Technical specification"}
 {"id":"LA-TEC-MOD37","title":"lathe/src/technical-specification/standard/model.ts","domain_id":"LA-TEC","file":"lathe/src/technical-specification/standard/model.ts","group_name":"Standard"}
@@ -94,14 +130,25 @@
 {"id":"LA-TEC-MOD59","title":"lathe/src/technical-specification/table/commands/index.ts","domain_id":"LA-TEC","file":"lathe/src/technical-specification/table/commands/index.ts","group_name":"Table"}
 {"id":"LA-TEC-MOD82","title":"lathe/src/technical-specification/data-store/model.ts","domain_id":"LA-TEC","file":"lathe/src/technical-specification/data-store/model.ts","group_name":"Data store"}
 {"id":"LA-TEC-MOD83","title":"lathe/src/technical-specification/data-store/commands/index.ts","domain_id":"LA-TEC","file":"lathe/src/technical-specification/data-store/commands/index.ts","group_name":"Data store"}
+{"id":"LA-TEC-MOD84","title":"lathe/src/technical-specification/data-store/commands","domain_id":"LA-TEC","file":"lathe/src/technical-specification/data-store/commands","group_name":"Data store"}
+{"id":"LA-TEC-MOD85","title":"lathe/src/technical-specification/entry-point/commands","domain_id":"LA-TEC","file":"lathe/src/technical-specification/entry-point/commands","group_name":"Technical specification"}
+{"id":"LA-TEC-MOD86","title":"lathe/src/technical-specification/standard/commands","domain_id":"LA-TEC","file":"lathe/src/technical-specification/standard/commands","group_name":"Standard"}
+{"id":"LA-TEC-MOD87","title":"lathe/src/technical-specification/table/commands","domain_id":"LA-TEC","file":"lathe/src/technical-specification/table/commands","group_name":"Table"}
+{"id":"LA-TEC-MOD88","title":"lathe/src/technical-specification/tooling/commands","domain_id":"LA-TEC","file":"lathe/src/technical-specification/tooling/commands","group_name":"Technical specification"}
 {"id":"LA-TRC-MOD01","title":"lathe/src/trace/measures.ts","domain_id":"LA-TRC","file":"lathe/src/trace/measures.ts"}
 {"id":"LA-TRC-MOD03","title":"lathe/src/traceability/pattern-following/model.ts","domain_id":"LA-TRC","file":"lathe/src/traceability/pattern-following/model.ts"}
 {"id":"LA-TRC-MOD04","title":"lathe/src/traceability/pattern-following/commands/index.ts","domain_id":"LA-TRC","file":"lathe/src/traceability/pattern-following/commands/index.ts"}
 {"id":"LA-TRC-MOD05","title":"lathe/src/trace/packages.ts","domain_id":"LA-TRC","file":"lathe/src/trace/packages.ts"}
+{"id":"LA-TRC-MOD06","title":"lathe/src/traceability/provision/model.ts","domain_id":"LA-TRC","file":"lathe/src/traceability/provision/model.ts"}
+{"id":"LA-TRC-MOD07","title":"lathe/src/traceability/slot-filling/model.ts","domain_id":"LA-TRC","file":"lathe/src/traceability/slot-filling/model.ts"}
 {"id":"LA-TST-MOD33","title":"lathe/src/test-planning/test-data-set/model.ts","domain_id":"LA-TST","file":"lathe/src/test-planning/test-data-set/model.ts","group_name":"Test data set"}
 {"id":"LA-TST-MOD34","title":"lathe/src/test-planning/test-data-set/commands/index.ts","domain_id":"LA-TST","file":"lathe/src/test-planning/test-data-set/commands/index.ts","group_name":"Test data set"}
+{"id":"LA-TST-MOD35","title":"lathe/src/test-planning/test-data-set/commands","domain_id":"LA-TST","file":"lathe/src/test-planning/test-data-set/commands","group_name":"Test data set"}
 {"id":"LA-UCS-MOD10","title":"lathe/src/use-cases/use-case/model.ts","domain_id":"LA-UCS","file":"lathe/src/use-cases/use-case/model.ts","group_name":"Use case"}
 {"id":"LA-UCS-MOD11","title":"lathe/src/use-cases/use-case/rules.ts","domain_id":"LA-UCS","file":"lathe/src/use-cases/use-case/rules.ts","group_name":"Use case"}
 {"id":"LA-UCS-MOD12","title":"lathe/src/use-cases/use-case/commands/index.ts","domain_id":"LA-UCS","file":"lathe/src/use-cases/use-case/commands/index.ts","group_name":"Use case"}
 {"id":"LA-UCS-MOD35","title":"lathe/src/use-cases/pattern/model.ts","domain_id":"LA-UCS","file":"lathe/src/use-cases/pattern/model.ts","group_name":"Pattern"}
 {"id":"LA-UCS-MOD36","title":"lathe/src/use-cases/pattern/commands/index.ts","domain_id":"LA-UCS","file":"lathe/src/use-cases/pattern/commands/index.ts","group_name":"Pattern"}
+{"id":"LA-UCS-MOD37","title":"lathe/src/use-cases/use-case/through.ts","domain_id":"LA-UCS","file":"lathe/src/use-cases/use-case/through.ts","group_name":"Use case"}
+{"id":"LA-UCS-MOD38","title":"lathe/src/use-cases/pattern/commands","domain_id":"LA-UCS","file":"lathe/src/use-cases/pattern/commands","group_name":"Pattern"}
+{"id":"LA-UCS-MOD39","title":"lathe/src/use-cases/use-case/commands","domain_id":"LA-UCS","file":"lathe/src/use-cases/use-case/commands","group_name":"Use case"}

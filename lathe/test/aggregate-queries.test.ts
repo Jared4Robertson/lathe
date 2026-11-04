@@ -1,7 +1,8 @@
 // The Aggregate queries pattern (LA-PAT-AGGREGATE-QUERIES), proved in each domain that follows it: every query of the
 // domain is named on its own on every interface (R01), asking changes nothing (R03), an ID that names nothing is
 // refused with a reason that names it (R04), and a read model is current with the records it reads after a write
-// (R05). That a query answers from its read model alone (R02) is the static guard in command-layers.test.ts.
+// (R05), and each record a query reads by its ID can be found first (R06). That a query answers from its read model
+// alone (R02) is the static guard in command-layers.test.ts.
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -126,11 +127,41 @@ async function staysCurrent(domain: string): Promise<void> {
   }
 }
 
+/**
+ * Each record the domain's queries read by its ID can be found first: through a list query of the same aggregate, or,
+ * for a query that takes any record, through the product's record summaries, which list every record of the product.
+ */
+async function foundFirst(domain: string): Promise<void> {
+  const lists = ALL_QUERIES.filter((q) => q.name.startsWith('list-'));
+  const naming = queriesOf(domain).filter((q) => q.input.id?.required && q.input.id.kind === 'id');
+  const anyRecord = naming.filter((q) => !lists.some((l) => l.slice.name === q.slice.name));
+  // A domain whose queries name no record by its ID, such as Checking's, has nothing to find first.
+  if (!naming.length) expect(queriesOf(domain).filter((q) => q.input.id).map((q) => q.id)).toEqual([]);
+  if (!anyRecord.length) return;
+  const summaries = ALL_QUERIES.find((q) => q.id === 'LA-EXP-QRY01');
+  expect(summaries?.name).toBe('list-record-summaries');
+  const data = everyKind();
+  const store = await openStore(writeData(data));
+  try {
+    const listed = JSON.stringify(answerQuery(store, summaries as AnyQuery, { product_id: 'TL' }));
+    // Every record of the fixture with an ID of its own, of each of Lathe's kinds.
+    const ids = Object.entries(data)
+      .filter(([kind]) => store.schema.kinds[kind])
+      .flatMap(([, rows]) => (rows as Record<string, unknown>[]).map((row) => row.id))
+      .filter((id): id is string => typeof id === 'string' && id.startsWith('TL'));
+    expect(ids.length).toBeGreaterThan(0);
+    expect(ids.filter((id) => !listed.includes(`"${id}"`))).toEqual([]);
+  } finally {
+    await store.close();
+  }
+}
+
 describe('Domain modeling follows Aggregate queries', () => {
   it('LA-PAT-AGGREGATE-QUERIES-R01-T01 each Domain modeling query is named on its own on every interface', () => namedOnItsOwn('LA-MOD'));
   it('LA-PAT-AGGREGATE-QUERIES-R03-T01 asking each Domain modeling query changes no row and no data file', () => changesNothing('LA-MOD'));
   it('LA-PAT-AGGREGATE-QUERIES-R04-T01 each Domain modeling query asked by an ID that names nothing is refused, naming it', () => refusesWhatItCannotFind('LA-MOD'));
   it('LA-PAT-AGGREGATE-QUERIES-R05-T01 after a write, each Domain modeling read model answers as it does over the data loaded afresh', () => staysCurrent('LA-MOD'));
+  it('LA-PAT-AGGREGATE-QUERIES-R06-T01 each record a Domain modeling query reads by its ID can be found first', () => foundFirst('LA-MOD'));
 });
 
 describe('Product follows Aggregate queries', () => {
@@ -138,6 +169,7 @@ describe('Product follows Aggregate queries', () => {
   it('LA-PAT-AGGREGATE-QUERIES-R03-T06 asking each Product query changes no row and no data file', () => changesNothing('LA-PRD'));
   it('LA-PAT-AGGREGATE-QUERIES-R04-T06 each Product query asked by an ID that names nothing is refused, naming it', () => refusesWhatItCannotFind('LA-PRD'));
   it('LA-PAT-AGGREGATE-QUERIES-R05-T06 after a write, each Product read model answers as it does over the data loaded afresh', () => staysCurrent('LA-PRD'));
+  it('LA-PAT-AGGREGATE-QUERIES-R06-T06 each record a Product query reads by its ID can be found first', () => foundFirst('LA-PRD'));
 });
 
 describe('Use cases follows Aggregate queries', () => {
@@ -145,6 +177,7 @@ describe('Use cases follows Aggregate queries', () => {
   it('LA-PAT-AGGREGATE-QUERIES-R03-T07 asking each Use cases query changes no row and no data file', () => changesNothing('LA-UCS'));
   it('LA-PAT-AGGREGATE-QUERIES-R04-T07 each Use cases query asked by an ID that names nothing is refused, naming it', () => refusesWhatItCannotFind('LA-UCS'));
   it('LA-PAT-AGGREGATE-QUERIES-R05-T07 after a write, each Use cases read model answers as it does over the data loaded afresh', () => staysCurrent('LA-UCS'));
+  it('LA-PAT-AGGREGATE-QUERIES-R06-T07 each record a Use cases query reads by its ID can be found first', () => foundFirst('LA-UCS'));
 });
 
 describe('Interface design follows Aggregate queries', () => {
@@ -152,6 +185,7 @@ describe('Interface design follows Aggregate queries', () => {
   it('LA-PAT-AGGREGATE-QUERIES-R03-T08 asking each Interface design query changes no row and no data file', () => changesNothing('LA-IXD'));
   it('LA-PAT-AGGREGATE-QUERIES-R04-T08 each Interface design query asked by an ID that names nothing is refused, naming it', () => refusesWhatItCannotFind('LA-IXD'));
   it('LA-PAT-AGGREGATE-QUERIES-R05-T08 after a write, each Interface design read model answers as it does over the data loaded afresh', () => staysCurrent('LA-IXD'));
+  it('LA-PAT-AGGREGATE-QUERIES-R06-T08 each record a Interface design query reads by its ID can be found first', () => foundFirst('LA-IXD'));
 });
 
 describe('Technical specification follows Aggregate queries', () => {
@@ -159,6 +193,7 @@ describe('Technical specification follows Aggregate queries', () => {
   it('LA-PAT-AGGREGATE-QUERIES-R03-T09 asking each Technical specification query changes no row and no data file', () => changesNothing('LA-TEC'));
   it('LA-PAT-AGGREGATE-QUERIES-R04-T09 each Technical specification query asked by an ID that names nothing is refused, naming it', () => refusesWhatItCannotFind('LA-TEC'));
   it('LA-PAT-AGGREGATE-QUERIES-R05-T09 after a write, each Technical specification read model answers as it does over the data loaded afresh', () => staysCurrent('LA-TEC'));
+  it('LA-PAT-AGGREGATE-QUERIES-R06-T09 each record a Technical specification query reads by its ID can be found first', () => foundFirst('LA-TEC'));
 });
 
 describe('Test planning follows Aggregate queries', () => {
@@ -166,6 +201,7 @@ describe('Test planning follows Aggregate queries', () => {
   it('LA-PAT-AGGREGATE-QUERIES-R03-T10 asking each Test planning query changes no row and no data file', () => changesNothing('LA-TST'));
   it('LA-PAT-AGGREGATE-QUERIES-R04-T10 each Test planning query asked by an ID that names nothing is refused, naming it', () => refusesWhatItCannotFind('LA-TST'));
   it('LA-PAT-AGGREGATE-QUERIES-R05-T10 after a write, each Test planning read model answers as it does over the data loaded afresh', () => staysCurrent('LA-TST'));
+  it('LA-PAT-AGGREGATE-QUERIES-R06-T10 each record a Test planning query reads by its ID can be found first', () => foundFirst('LA-TST'));
 });
 
 describe('Checking follows Aggregate queries', () => {
@@ -173,6 +209,7 @@ describe('Checking follows Aggregate queries', () => {
   it('LA-PAT-AGGREGATE-QUERIES-R03-T02 asking each Checking query changes no row and no data file', () => changesNothing('LA-CHK'));
   it('LA-PAT-AGGREGATE-QUERIES-R04-T02 each Checking query asked by an ID that names nothing is refused, naming it', () => refusesWhatItCannotFind('LA-CHK'));
   it('LA-PAT-AGGREGATE-QUERIES-R05-T02 after a write, each Checking read model answers as it does over the data loaded afresh', () => staysCurrent('LA-CHK'));
+  it('LA-PAT-AGGREGATE-QUERIES-R06-T02 each record a Checking query reads by its ID can be found first', () => foundFirst('LA-CHK'));
 });
 
 describe('Exploring follows Aggregate queries', () => {
@@ -180,6 +217,7 @@ describe('Exploring follows Aggregate queries', () => {
   it('LA-PAT-AGGREGATE-QUERIES-R03-T03 asking each Exploring query changes no row and no data file', () => changesNothing('LA-EXP'));
   it('LA-PAT-AGGREGATE-QUERIES-R04-T03 each Exploring query asked by an ID that names nothing is refused, naming it', () => refusesWhatItCannotFind('LA-EXP'));
   it('LA-PAT-AGGREGATE-QUERIES-R05-T03 after a write, each Exploring read model answers as it does over the data loaded afresh', () => staysCurrent('LA-EXP'));
+  it('LA-PAT-AGGREGATE-QUERIES-R06-T03 each record a Exploring query reads by its ID can be found first', () => foundFirst('LA-EXP'));
 });
 
 describe('Platform follows Aggregate queries', () => {
@@ -187,6 +225,7 @@ describe('Platform follows Aggregate queries', () => {
   it('LA-PAT-AGGREGATE-QUERIES-R03-T04 asking each Platform query changes no row and no data file', () => changesNothing('LA-PLT'));
   it('LA-PAT-AGGREGATE-QUERIES-R04-T04 each Platform query asked by an ID that names nothing is refused, naming it', () => refusesWhatItCannotFind('LA-PLT'));
   it('LA-PAT-AGGREGATE-QUERIES-R05-T04 after a write, each Platform read model answers as it does over the data loaded afresh', () => staysCurrent('LA-PLT'));
+  it('LA-PAT-AGGREGATE-QUERIES-R06-T04 each record a Platform query reads by its ID can be found first', () => foundFirst('LA-PLT'));
 });
 
 describe('Traceability follows Aggregate queries', () => {
@@ -194,4 +233,5 @@ describe('Traceability follows Aggregate queries', () => {
   it('LA-PAT-AGGREGATE-QUERIES-R03-T05 asking each Traceability query changes no row and no data file', () => changesNothing('LA-TRC'));
   it('LA-PAT-AGGREGATE-QUERIES-R04-T05 each Traceability query asked by an ID that names nothing is refused, naming it', () => refusesWhatItCannotFind('LA-TRC'));
   it('LA-PAT-AGGREGATE-QUERIES-R05-T05 after a write, each Traceability read model answers as it does over the data loaded afresh', () => staysCurrent('LA-TRC'));
+  it('LA-PAT-AGGREGATE-QUERIES-R06-T05 each record a Traceability query reads by its ID can be found first', () => foundFirst('LA-TRC'));
 });

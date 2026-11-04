@@ -28,3 +28,4 @@
 {"id":"LA-VO91-VT","title":"StageName","value_object_id":"LA-VO91","file":"app/src/views/address.ts"}
 {"id":"LA-VO92-VT","title":"SessionSettings","value_object_id":"LA-VO92","file":"app/src/exploring/session-settings/model.ts"}
 {"id":"LA-VO93-VT","title":"product_setting.max_entities_per_aggregate","value_object_id":"LA-VO93","file":"lathe/schema/003-product.sql"}
+{"id":"LA-VO94-VT","title":"PlaceView","value_object_id":"LA-VO94","file":"app/src/views/place.ts"}
