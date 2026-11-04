@@ -717,7 +717,7 @@ export interface SlotRow {
   statement: string;
 }
 
-/** The accidental record (a technical record, an endpoint or a data store), written by hand or set up by hand, fills the pattern's slot against its contract: it is a fill, accidental complexity recorded where it is owed and counted as debt until the pattern can derive it. A record of a product's own accidental kind, such as a shared module, fills a slot the same way, with no declaration. */
+/** The accidental record (a technical record, an endpoint or a data store), written by hand or set up by hand, fills the pattern's slot against its contract: it is a fill, accidental complexity recorded where it is owed and counted as debt until the pattern can derive it. A record of a product's own accidental kind, such as a shared module, fills a slot the same way, with no declaration. A standard and its rules fill no slot: an engineering standard is accounted for through the records that meet its rules. */
 export interface FillsRow {
   source_id: string;
   target_id: string;
@@ -1381,7 +1381,7 @@ export interface SpecificationTestRow {
   notes?: string;
 }
 
-/** A library of rules that holds across the product, such as exact money, a latency budget, logging, error handling or naming. Its type says whether its rules are essential (a quality) or accidental (engineering). What follows one of its rules meets it. */
+/** A library of rules that holds across the product, such as exact money, a latency budget, logging, error handling or naming. Its type says whether its rules are essential (a quality) or accidental (engineering). What follows one of its rules meets it. A standard is the rules that code follows, not code, so it fills no slot: an engineering standard is accounted for through the records that meet its rules. */
 export interface StandardRow {
   /** The standard's ID, such as TL-STD-CODE. */
   id: string;

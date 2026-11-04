@@ -309,7 +309,7 @@ CREATE TABLE standard (
   type standard_type NOT NULL,
   description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
-COMMENT ON TABLE standard IS 'A library of rules that holds across the product, such as exact money, a latency budget, logging, error handling or naming. Its type says whether its rules are essential (a quality) or accidental (engineering). What follows one of its rules meets it.';
+COMMENT ON TABLE standard IS 'A library of rules that holds across the product, such as exact money, a latency budget, logging, error handling or naming. Its type says whether its rules are essential (a quality) or accidental (engineering). What follows one of its rules meets it. A standard is the rules that code follows, not code, so it fills no slot: an engineering standard is accounted for through the records that meet its rules.';
 COMMENT ON COLUMN standard.id IS 'The standard''s ID, such as TL-STD-CODE.';
 COMMENT ON COLUMN standard.title IS 'The standard''s name.';
 COMMENT ON COLUMN standard.product_id IS 'The product it belongs to.';

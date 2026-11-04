@@ -401,9 +401,9 @@ check('accidental-not-accounted-for', () => {
     // serves the command the endpoint exposes.
     const endpointFill = await loadData(adding(handWritten('EX-LEND-EP01-H'), fill('EX-LEND-EP01-H')));
     expect(records(ofCheck(endpointFill, 'accidental-not-accounted-for'))).toEqual([]);
-    // An engineering standard is accidental, and its rule with it, until it is provided; the rule's test follows them
-    // and is never reported. A quality is essential.
-    const unprovided = without(complete(), 'provided_by', (r) => r.source_id === 'EX-STD-CODE');
+    // An engineering standard is accidental, and its rule with it, until it is provided or followed; the rule's test
+    // follows them and is never reported. A quality is essential.
+    const unprovided = without(without(complete(), 'provided_by', (r) => r.source_id === 'EX-STD-CODE'), 'meets', (r) => r.target_id === 'EX-STD-CODE-R01');
     expect(records(ofCheck(await loadData(unprovided), 'accidental-not-accounted-for'))).toEqual(['EX-STD-CODE', 'EX-STD-CODE-R01']);
     expect(ofCheck(await loadData(changing(unprovided, 'standard', () => true, { type: 'quality' })), 'accidental-not-accounted-for')).toEqual([]);
   });
@@ -445,6 +445,25 @@ check('accidental-not-accounted-for', () => {
     });
     const ws = await loadData(components);
     expect(records(ofCheck(ws, 'accidental-not-accounted-for'))).toEqual(['EX-LEND-CO04']);
+  });
+
+  it('LA-STD-PRINCIPLES-R06-T06 An engineering standard and its rules fill no slot: a rule is accounted for when a record accounted for meets it, and the standard when one of its rules is', async () => {
+    // Nothing provides the standard: the command handler that fills the slot and meets its rule accounts for both.
+    const unprovided = without(complete(), 'provided_by', (r) => r.source_id === 'EX-STD-CODE');
+    expect(ofCheck(await loadData(unprovided), 'accidental-not-accounted-for')).toEqual([]);
+    // A second rule that nothing meets is reported alone: the standard is still followed through its first rule.
+    const unmet = adding(unprovided, { standard_rule: [{ id: 'EX-STD-CODE-R02', title: 'Typed errors', standard_id: 'EX-STD-CODE', statement: 'Code MUST throw typed errors.' }] });
+    const second = ofCheck(await loadData(unmet), 'accidental-not-accounted-for');
+    expect(records(second)).toEqual(['EX-STD-CODE-R02']);
+    expect(second[0].message).toBe(
+      'Standard rule EX-STD-CODE-R02 is accidental complexity nothing accounts for: nothing provides it, and no record that is accounted for meets it; link the records that follow it with meets, name its provider, or remove it.',
+    );
+    // The record that meets the first rule fills no slot any more: it, both rules and the standard are reported.
+    const unfilled = ofCheck(await loadData(without(unmet, 'fills', (r) => r.source_id === 'EX-LEND-CMD01-H')), 'accidental-not-accounted-for');
+    expect(records(unfilled)).toEqual(['EX-LEND-CMD01-H', 'EX-STD-CODE', 'EX-STD-CODE-R01', 'EX-STD-CODE-R02']);
+    expect(unfilled.find((p) => p.record === 'EX-STD-CODE')?.message).toBe(
+      'Standard EX-STD-CODE is accidental complexity nothing accounts for: nothing provides it, and no record that is accounted for meets one of its rules; link the records that follow its rules with meets, name its provider, or remove it.',
+    );
   });
 });
 
