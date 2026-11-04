@@ -1816,7 +1816,7 @@ Enforces its invariant: the rule in its aggregate's code, run by the aggregate's
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
 | `id` | VARCHAR → `record_id` | yes | The rule's ID: its invariant's ID and RL, such as TL-LEND-INV01-RL. |
-| `title` | VARCHAR | yes | Its name in code, the name its refusal carries, such as step-fulfills-own-use-case or email_taken. |
+| `title` | VARCHAR | yes | Its name in code, the name its refusal carries, such as step-fulfills-own-use-case or email_taken. Two rules share a title only when they share a file: one function that enforces two invariants, each keeping its own rule. |
 | `invariant_id` | VARCHAR → [`invariant`](#table-invariant) | yes | The invariant it enforces; one rule each. |
 | `file` | VARCHAR | no | The file that holds its code, from the product root, such as its aggregate's rules.ts; it may not exist yet, and several records may share one file. |
 
