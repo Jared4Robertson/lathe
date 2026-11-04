@@ -10,11 +10,17 @@
 {"id":"LA-EXP-MOD07","title":"app/src/views/leaderLine.ts","domain_id":"LA-EXP","file":"app/src/views/leaderLine.ts"}
 {"id":"LA-EXP-MOD08","title":"app/src/views/preview.ts","domain_id":"LA-EXP","file":"app/src/views/preview.ts"}
 {"id":"LA-EXP-MOD09","title":"app/src/views/overlays.ts","domain_id":"LA-EXP","file":"app/src/views/overlays.ts"}
-{"id":"LA-EXP-MOD10","title":"app/src/views/peek.ts","domain_id":"LA-EXP","file":"app/src/views/peek.ts"}
 {"id":"LA-EXP-MOD11","title":"app/src/views/levels.ts","domain_id":"LA-EXP","file":"app/src/views/levels.ts"}
 {"id":"LA-EXP-MOD12","title":"app/src/changes/marks.ts","domain_id":"LA-EXP","file":"app/src/changes/marks.ts"}
 {"id":"LA-EXP-MOD13","title":"app/src/changes/rollup.ts","domain_id":"LA-EXP","file":"app/src/changes/rollup.ts"}
 {"id":"LA-EXP-MOD14","title":"app/src/changes/jump.ts","domain_id":"LA-EXP","file":"app/src/changes/jump.ts"}
+{"id":"LA-EXP-MOD15","title":"lathe/src/changes.ts","domain_id":"LA-EXP","file":"lathe/src/changes.ts","group_name":"Workspace navigation"}
+{"id":"LA-EXP-MOD16","title":"lathe/src/server/baseline.ts","domain_id":"LA-EXP","file":"lathe/src/server/baseline.ts","group_name":"Workspace navigation"}
+{"id":"LA-EXP-MOD17","title":"app/src/exploring/session-settings/use-session-settings.ts","domain_id":"LA-EXP","file":"app/src/exploring/session-settings/use-session-settings.ts","group_name":"Workspace navigation"}
+{"id":"LA-EXP-MOD18","title":"app/src/exploring/tab-set/reads.ts","domain_id":"LA-EXP","file":"app/src/exploring/tab-set/reads.ts","group_name":"Workspace navigation"}
+{"id":"LA-EXP-MOD19","title":"app/src/exploring/tab-set/run.ts","domain_id":"LA-EXP","file":"app/src/exploring/tab-set/run.ts","group_name":"Workspace navigation"}
+{"id":"LA-EXP-MOD20","title":"app/src/views/tabHistory.ts","domain_id":"LA-EXP","file":"app/src/views/tabHistory.ts","group_name":"Workspace navigation"}
+{"id":"LA-EXP-MOD21","title":"app/src/views/usePlace.ts","domain_id":"LA-EXP","file":"app/src/views/usePlace.ts","group_name":"Workspace navigation"}
 {"id":"LA-IXD-MOD60","title":"lathe/src/interaction-design/view/model.ts","domain_id":"LA-IXD","file":"lathe/src/interaction-design/view/model.ts","group_name":"View"}
 {"id":"LA-IXD-MOD61","title":"lathe/src/interaction-design/view/commands/index.ts","domain_id":"LA-IXD","file":"lathe/src/interaction-design/view/commands/index.ts","group_name":"View"}
 {"id":"LA-IXD-MOD62","title":"lathe/src/interaction-design/endpoint/model.ts","domain_id":"LA-IXD","file":"lathe/src/interaction-design/endpoint/model.ts","group_name":"Endpoint"}
@@ -67,6 +73,20 @@
 {"id":"LA-PLT-MOD37","title":"lathe/src/cli/aggregates.ts","domain_id":"LA-PLT","file":"lathe/src/cli/aggregates.ts","group_name":"Repo setup"}
 {"id":"LA-PLT-MOD38","title":"lathe/src/commands.ts","domain_id":"LA-PLT","file":"lathe/src/commands.ts","group_name":"Live loading"}
 {"id":"LA-PLT-MOD39","title":"lathe/src/aggregate-rules.ts","domain_id":"LA-PLT","file":"lathe/src/aggregate-rules.ts","group_name":"Live loading"}
+{"id":"LA-PLT-MOD40","title":"app/src/chat/draft.ts","domain_id":"LA-PLT","file":"app/src/chat/draft.ts","group_name":"Desktop hosting"}
+{"id":"LA-PLT-MOD41","title":"app/src/edit/access.ts","domain_id":"LA-PLT","file":"app/src/edit/access.ts","group_name":"Repo setup"}
+{"id":"LA-PLT-MOD42","title":"lathe/src/server/access.ts","domain_id":"LA-PLT","file":"lathe/src/server/access.ts","group_name":"Repo setup"}
+{"id":"LA-PLT-MOD43","title":"app/src/edit/back-to-actions.ts","domain_id":"LA-PLT","file":"app/src/edit/back-to-actions.ts","group_name":"Workbench"}
+{"id":"LA-PLT-MOD44","title":"app/src/edit/write.ts","domain_id":"LA-PLT","file":"app/src/edit/write.ts","group_name":"Workbench"}
+{"id":"LA-PLT-MOD45","title":"app/src/record/read.ts","domain_id":"LA-PLT","file":"app/src/record/read.ts","group_name":"Live loading"}
+{"id":"LA-PLT-MOD46","title":"app/src/shell/prefs.ts","domain_id":"LA-PLT","file":"app/src/shell/prefs.ts","group_name":"Workbench"}
+{"id":"LA-PLT-MOD47","title":"app/src/shell/storage.ts","domain_id":"LA-PLT","file":"app/src/shell/storage.ts","group_name":"Workbench"}
+{"id":"LA-PLT-MOD48","title":"app/src/shell/desktop-bridge.ts","domain_id":"LA-PLT","file":"app/src/shell/desktop-bridge.ts","group_name":"Desktop hosting"}
+{"id":"LA-PLT-MOD49","title":"desktop/src/rules.ts","domain_id":"LA-PLT","file":"desktop/src/rules.ts","group_name":"Desktop hosting"}
+{"id":"LA-PLT-MOD50","title":"desktop/src/records.ts","domain_id":"LA-PLT","file":"desktop/src/records.ts","group_name":"Desktop hosting"}
+{"id":"LA-PLT-MOD51","title":"desktop/src/app-server/model.ts","domain_id":"LA-PLT","file":"desktop/src/app-server/model.ts","group_name":"Desktop hosting"}
+{"id":"LA-PLT-MOD52","title":"lathe/src/cli/operations.ts","domain_id":"LA-PLT","file":"lathe/src/cli/operations.ts","group_name":"Repo setup"}
+{"id":"LA-PLT-MOD53","title":"lathe/src/server/undo.ts","domain_id":"LA-PLT","file":"lathe/src/server/undo.ts","group_name":"Desktop hosting"}
 {"id":"LA-PRD-MOD20","title":"lathe/src/product/product/rules.ts","domain_id":"LA-PRD","file":"lathe/src/product/product/rules.ts","group_name":"Product"}
 {"id":"LA-PRD-MOD21","title":"lathe/src/product/product/commands/index.ts","domain_id":"LA-PRD","file":"lathe/src/product/product/commands/index.ts","group_name":"Product"}
 {"id":"LA-PRD-MOD22","title":"lathe/src/product/extension-record/rules.ts","domain_id":"LA-PRD","file":"lathe/src/product/extension-record/rules.ts","group_name":"Extension record"}
@@ -98,6 +118,8 @@
 {"id":"LA-TRC-MOD03","title":"lathe/src/traceability/pattern-following/model.ts","domain_id":"LA-TRC","file":"lathe/src/traceability/pattern-following/model.ts"}
 {"id":"LA-TRC-MOD04","title":"lathe/src/traceability/pattern-following/commands/index.ts","domain_id":"LA-TRC","file":"lathe/src/traceability/pattern-following/commands/index.ts"}
 {"id":"LA-TRC-MOD05","title":"lathe/src/trace/packages.ts","domain_id":"LA-TRC","file":"lathe/src/trace/packages.ts"}
+{"id":"LA-TRC-MOD06","title":"lathe/src/traceability/provision/model.ts","domain_id":"LA-TRC","file":"lathe/src/traceability/provision/model.ts"}
+{"id":"LA-TRC-MOD07","title":"lathe/src/traceability/slot-filling/model.ts","domain_id":"LA-TRC","file":"lathe/src/traceability/slot-filling/model.ts"}
 {"id":"LA-TST-MOD33","title":"lathe/src/test-planning/test-data-set/model.ts","domain_id":"LA-TST","file":"lathe/src/test-planning/test-data-set/model.ts","group_name":"Test data set"}
 {"id":"LA-TST-MOD34","title":"lathe/src/test-planning/test-data-set/commands/index.ts","domain_id":"LA-TST","file":"lathe/src/test-planning/test-data-set/commands/index.ts","group_name":"Test data set"}
 {"id":"LA-UCS-MOD10","title":"lathe/src/use-cases/use-case/model.ts","domain_id":"LA-UCS","file":"lathe/src/use-cases/use-case/model.ts","group_name":"Use case"}
@@ -105,3 +127,4 @@
 {"id":"LA-UCS-MOD12","title":"lathe/src/use-cases/use-case/commands/index.ts","domain_id":"LA-UCS","file":"lathe/src/use-cases/use-case/commands/index.ts","group_name":"Use case"}
 {"id":"LA-UCS-MOD35","title":"lathe/src/use-cases/pattern/model.ts","domain_id":"LA-UCS","file":"lathe/src/use-cases/pattern/model.ts","group_name":"Pattern"}
 {"id":"LA-UCS-MOD36","title":"lathe/src/use-cases/pattern/commands/index.ts","domain_id":"LA-UCS","file":"lathe/src/use-cases/pattern/commands/index.ts","group_name":"Pattern"}
+{"id":"LA-UCS-MOD37","title":"lathe/src/use-cases/use-case/through.ts","domain_id":"LA-UCS","file":"lathe/src/use-cases/use-case/through.ts","group_name":"Use case"}
