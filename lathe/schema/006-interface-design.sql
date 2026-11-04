@@ -137,7 +137,7 @@ CREATE TABLE integration (
   system VARCHAR,
   description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
-COMMENT ON TABLE integration IS 'An outside system the product exchanges with, such as a payment provider or a mail service. It has no owner: it exists because flow steps exchange with it, and its product follows from its ID.';
+COMMENT ON TABLE integration IS 'An outside system the product exchanges with, such as a payment provider or a mail service. It has no owner: it exists because flow steps exchange with it, and its product follows from its ID. It may perform use cases of its product on its own, with no person and no interface of the product (performs).';
 COMMENT ON COLUMN integration.id IS 'The integration''s ID: the product prefix and INT<nn>, such as TL-INT01.';
 COMMENT ON COLUMN integration.title IS 'The integration''s name.';
 COMMENT ON COLUMN integration.system IS 'The outside system, such as Stripe.';

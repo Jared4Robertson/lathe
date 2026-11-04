@@ -57,7 +57,7 @@ export interface AboutRow {
   target_id: string;
 }
 
-/** An outside system the product exchanges with, such as a payment provider or a mail service. It has no owner: it exists because flow steps exchange with it, and its product follows from its ID. */
+/** An outside system the product exchanges with, such as a payment provider or a mail service. It has no owner: it exists because flow steps exchange with it, and its product follows from its ID. It may perform use cases of its product on its own, with no person and no interface of the product (performs). */
 export interface IntegrationRow {
   /** The integration's ID: the product prefix and INT<nn>, such as TL-INT01. */
   id: string;
@@ -1059,6 +1059,12 @@ export interface PatternSettingRow {
   meaning: string;
 }
 
+/** The integration performs the use case, of its own product: its outside system carries the use case out on its own, with no person and no interface of the product, such as a build service that publishes a release when a tag is pushed. Each step of the use case's flow that exchanges with the integration is carried out there, so the use case needs no interface to offer it. */
+export interface PerformsRow {
+  source_id: string;
+  target_id: string;
+}
+
 /** Loads and saves its aggregate, whole: the way command handlers reach the aggregate's storage, in the one data store it names (stored_in). It persists exactly one aggregate, linked with persists, and sits under its domain, or, for one several domains share, under the domain that holds what they share. */
 export interface RepositoryRow {
   /** The repository's ID: its domain's ID and REPO<nn>, such as TL-LEND-REPO01. */
@@ -1743,6 +1749,7 @@ export interface TableRows {
   pattern_rule: PatternRuleRow;
   pattern_rule_test: PatternRuleTestRow;
   pattern_setting: PatternSettingRow;
+  performs: PerformsRow;
   repository: RepositoryRow;
   persists: PersistsRow;
   policy_test: PolicyTestRow;

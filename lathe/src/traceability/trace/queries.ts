@@ -18,10 +18,11 @@ export function listTracedUseCases(reader: TraceReader, input: { product_id: str
 }
 
 const all = (k: number, words: string) => (k === 0 ? `all ${words}` : `${k} not ${words}`);
-/** A row's status per stage in words: "2 interfaces, all designed · 3 handlers, 1 not built · 4 tests, all proved". */
+/** A row's status per stage in words: "2 interfaces, all designed · 3 handlers, 1 not built · 4 tests, all proved"; the integrations that perform it, when any do. */
 export const statusWords = (r: TraceRow): string => {
   const { design, technical, suite } = r.status;
-  return `${design.interfaces} interface${design.interfaces === 1 ? '' : 's'}, ${all(design.notDesigned, 'designed')} · ${technical.handlers} handler${technical.handlers === 1 ? '' : 's'}, ${all(technical.notBuilt, 'built')} · ${suite.tests} test${suite.tests === 1 ? '' : 's'}, ${all(suite.notProved, 'proved')}`;
+  const performers = design.integrations > 0 ? `, ${design.integrations} integration${design.integrations === 1 ? '' : 's'}` : '';
+  return `${design.interfaces} interface${design.interfaces === 1 ? '' : 's'}${performers}, ${all(design.notDesigned, 'designed')} · ${technical.handlers} handler${technical.handlers === 1 ? '' : 's'}, ${all(technical.notBuilt, 'built')} · ${suite.tests} test${suite.tests === 1 ? '' : 's'}, ${all(suite.notProved, 'proved')}`;
 };
 
 /** List a product's traced use cases (LA-TRC-QRY18). */

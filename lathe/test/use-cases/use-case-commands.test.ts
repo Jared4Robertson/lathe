@@ -79,7 +79,7 @@ describe('LA-UCS-UC06-R12-T01 each Use case command (LA-UCS-A11) changes one use
     expect(whole.record).toEqual({ id: 'TL-LEND-UC02-FL-S01', kind: 'flow_step' });
     expect(whole.useCase.id).toBe('TL-LEND-UC02');
     const added = { step: { id: step.id, title: step.title, flow_id: step.flow_id, path: 'main', position: 1, interface_id: 'TL-IF01' }, fulfills: ['TL-LEND-UC02-R01'], invokes: null, exchangesWith: [] };
-    expect(whole.flows).toEqual([{ flow: expect.objectContaining({ id: 'TL-LEND-UC02-FL' }), paths: [{ name: 'main', steps: [added] }], test: null, through: [] }]);
+    expect(whole.flows).toEqual([{ flow: expect.objectContaining({ id: 'TL-LEND-UC02-FL' }), paths: [{ name: 'main', steps: [added] }], test: null, through: [], performedBy: [] }]);
     expect(whole.requirements).toEqual([{ requirement: expect.objectContaining({ id: 'TL-LEND-UC02-R01' }), tests: [], fulfilledBy: [step.id] }]);
     expect(runQuery(store, LIST_USE_CASES, { capability_id: 'TL-LEND-CAP01' })).toEqual([
       { id: 'TL-LEND-UC01', title: 'Borrow a tool' },

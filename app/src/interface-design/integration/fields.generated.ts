@@ -8,12 +8,14 @@ export const INTEGRATION_FIELDS = {
     title: { kind: 'column', table: 'integration', column: 'title', required: true, clearable: false },
     description: { kind: 'column', table: 'integration', column: 'description', required: true, clearable: false },
     system: { kind: 'column', table: 'integration', column: 'system', required: false, clearable: false },
+    performs: { kind: 'ids', description: 'The use cases of its product it performs on its own, with no person and no interface of the product.', required: false, clearable: false },
   },
   '/api/integration/change-integration': {
     id: { kind: 'column', table: 'integration', column: 'id', required: true, clearable: false },
     title: { kind: 'column', table: 'integration', column: 'title', required: false, clearable: false },
     description: { kind: 'column', table: 'integration', column: 'description', required: false, clearable: false },
     system: { kind: 'column', table: 'integration', column: 'system', required: false, clearable: true },
+    performs: { kind: 'ids', description: 'The use cases of its product it performs on its own.', required: false, clearable: false },
   },
   '/api/integration/remove-integration': {
     id: { kind: 'column', table: 'integration', column: 'id', required: true, clearable: false },

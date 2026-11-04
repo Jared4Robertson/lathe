@@ -154,9 +154,25 @@ check('flow-not-offered', () => {
     expect(ofCheck(ws, 'flow-not-offered')).toEqual([
       {
         severity: 'warning', check: 'flow-not-offered', record: 'EX-LEND-UC02',
-        message: 'Use case EX-LEND-UC02 has a flow, EX-LEND-UC02-FL, but no interface offers it; offer it through the interfaces it happens through.',
+        message: 'Use case EX-LEND-UC02 has a flow, EX-LEND-UC02-FL, but no interface offers it and no integration performs it; offer it through the interfaces it happens through, or have the integration that carries it out perform it.',
       },
     ]);
+  });
+
+  it('LA-IXD-UC27-R02-T01 a use case an integration performs needs no interface, and its steps that exchange with the integration are reached', async () => {
+    // Borrow a tool's second step exchanges with the mail integration, EX-INT01.
+    const unoffered = without(complete(), 'offers', (l) => l.target_id === 'EX-LEND-UC01');
+    expect(ofCheck(await loadData(unoffered), 'flow-not-offered').map((p) => p.record)).toEqual(['EX-LEND-UC01']);
+    const performed = adding(unoffered, { performs: [{ source_id: 'EX-INT01', target_id: 'EX-LEND-UC01' }] });
+    expect(ofCheck(await loadData(performed), 'flow-not-offered')).toEqual([]);
+    // Offered through an API, which has no endpoint for the second step's query, that step is reached once the
+    // integration it exchanges with performs the use case; the other use case's step stays unreached.
+    const api = adding(ofKind('API'), { performs: [{ source_id: 'EX-INT01', target_id: 'EX-LEND-UC01' }] });
+    expect(ofCheck(await loadData(ofKind('API')), 'step-unreached').map((p) => p.record)).toEqual(['EX-LEND-UC01-FL-S02', 'EX-LEND-UC02-FL-S01']);
+    expect(ofCheck(await loadData(api), 'step-unreached').map((p) => p.record)).toEqual(['EX-LEND-UC02-FL-S01']);
+    // An integration that performs another use case does not reach the step.
+    const elsewhere = adding(ofKind('API'), { performs: [{ source_id: 'EX-INT01', target_id: 'EX-LEND-UC02' }] });
+    expect(ofCheck(await loadData(elsewhere), 'step-unreached').map((p) => p.record)).toEqual(['EX-LEND-UC01-FL-S02', 'EX-LEND-UC02-FL-S01']);
   });
 });
 

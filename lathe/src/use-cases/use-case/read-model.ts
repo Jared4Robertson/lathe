@@ -1,10 +1,10 @@
 // The Use case aggregate's read model (LA-UCS-RM11), shaped for its readers: the Use case page reads a use case as a
 // tree (its requirements each with their tests and the steps that fulfill them; its flow with its steps path by path in
-// order, its flow test and each offering interface's version of it, derived by through.ts), a capability's list reads
-// each use case's ID and title, and the editor's next ID reads the IDs in use. The projection
-// (useCaseTableFrom) is the only code that reads the source rows and the only code that writes the read model's table;
-// the query handlers read that table only through the reader (reader.ts). Nothing here is the aggregate's own instance
-// type.
+// order, its flow test, each offering interface's version of it, derived by through.ts, and the integrations that
+// perform it on its own), a capability's list reads each use case's ID and title, and the editor's next ID reads the
+// IDs in use. The projection (useCaseTableFrom) is the only code that reads the source rows and the only code that
+// writes the read model's table; the query handlers read that table only through the reader (reader.ts). Nothing here
+// is the aggregate's own instance type.
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { FlowRow, FlowStepRow, FlowTestRow, UcRequirementRow, UseCaseRow, UseCaseTestRow } from '../../platform/data/tables.ts';
@@ -47,6 +47,8 @@ export interface FlowOnPage {
   test: TestOnPage<FlowTestRow> | null;
   /** How each interface that offers the use case carries the flow out, derived, by interface ID. */
   through: FlowThrough[];
+  /** The integrations that perform the use case on its own, with no person and no interface of the product, by ID. */
+  performedBy: string[];
 }
 
 /** A use case whole, as its page shows it. */
@@ -123,6 +125,7 @@ export function useCaseTableFrom(view: ReadView): UseCaseTable {
   const flows = grouped<FlowRow>(view.rows('flow'), 'use_case_id');
   const steps = grouped<FlowStepRow>(view.rows('flow_step'), 'flow_id');
   const flowTests = grouped<FlowTestRow>(view.rows('flow_test'), 'flow_id');
+  const performers = grouped<{ source_id: string }>(view.rows('performs'), 'target_id');
   const tested = <T extends { id: string }>(test: T): TestOnPage<T> => ({ test, startsFrom: startsFrom(test.id) });
 
   const useCases = new Map<string, UseCaseTree>();
@@ -148,7 +151,7 @@ export function useCaseTableFrom(view: ReadView): UseCaseTable {
         const test = (flowTests.get(flow.id) ?? [])[0];
         const own = ownSteps.filter((s) => s.step.flow_id === flow.id);
         const through = versionsOf(root, ownActors, own.map((s) => ({ id: s.step.id, path: s.step.path, position: s.step.position, variantOf: s.step.interface_id ?? null, operation: s.invokes })));
-        return { flow, paths: pathsOf(own), test: test ? tested(test) : null, through };
+        return { flow, paths: pathsOf(own), test: test ? tested(test) : null, through, performedBy: (performers.get(root) ?? []).map((l) => l.source_id).sort() };
       }),
       journeys: journeysOf(root),
     };

@@ -1,5 +1,5 @@
 // The Integration aggregate (LA-IXD-A14): an integration with its adapter (with the standard rules it meets and the
-// packages it uses) and its integration tests (with the test data sets each starts from). An integration has no
+// packages it uses), its integration tests (with the test data sets each starts from) and the use cases it performs. An integration has no
 // owner: its product follows from its ID. One instance is one integration, whole; it holds only the links its own
 // records start.
 import type { AggregateShape } from '../../platform/data/repository.ts';
@@ -28,17 +28,19 @@ export interface Integration {
   /** The integration's ID: the instance's root. */
   readonly root: string;
   integration: IntegrationRow;
+  /** The use cases of its product it performs on its own, with no person and no interface of the product, by ID. */
+  performs: string[];
   /** The code that talks to its outside system, when it has some: an integration has at most one adapter. */
   adapter: Built<AdapterRow> | null;
   tests: Tested<IntegrationTestRow>[];
 }
 
 /** The tables the Integration aggregate keeps its rows in: its kinds and the relations its records start. */
-export const INTEGRATION_TABLES = ['integration', 'adapter', 'integration_test', 'meets', 'package_use', 'starts_from'] as const;
+export const INTEGRATION_TABLES = ['integration', 'adapter', 'integration_test', 'meets', 'package_use', 'starts_from', 'performs'] as const;
 
 /** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
 export const INTEGRATION_SHAPE = {
-  integration: { at: 'integration' },
+  integration: { at: 'integration', lists: { performs: 'performs' } },
   adapter: { at: 'adapter', one: true, refusedBy: 'oneAdapter', lists: { meets: 'meets', packages: 'packages' } },
   integration_test: { at: 'tests', lists: { starts_from: 'startsFrom' } },
 } as const satisfies AggregateShape;
@@ -56,11 +58,13 @@ export function integrationsFrom(rows: (table: string) => Row[], only?: string):
   const meets = bySource(rows('meets'), 'source_id', 'target_id');
   const packages = bySource(rows('package_use'), 'record_id', 'package');
   const startsFrom = bySource(rows('starts_from'), 'source_id', 'target_id');
+  const performs = bySource(rows('performs'), 'source_id', 'target_id');
   return integrations.map((integration) => {
     const adapter = groupOf(adaptersOf, integration.id)[0];
     return {
       root: integration.id,
       integration,
+      performs: performs.get(integration.id) ?? [],
       adapter: adapter ? { row: adapter, meets: meets.get(adapter.id) ?? [], packages: packages.get(adapter.id) ?? [] } : null,
       tests: groupOf(testsOf, integration.id).map((row) => ({ row, startsFrom: startsFrom.get(row.id) ?? [] })),
     };
@@ -78,6 +82,7 @@ export function integrationRows(integration: Integration): Map<string, Row[]> {
     ['meets', adapter ? adapter.meets.map((target) => ({ source_id: adapter.row.id, target_id: target })) : []],
     ['package_use', adapter ? adapter.packages.map((p) => ({ record_id: adapter.row.id, package: p })) : []],
     ['starts_from', integration.tests.flatMap((t) => t.startsFrom.map((target) => ({ source_id: t.row.id, target_id: target })))],
+    ['performs', integration.performs.map((target) => ({ source_id: integration.root, target_id: target }))],
   ]);
 }
 

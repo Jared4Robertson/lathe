@@ -41,7 +41,10 @@ function fieldsOf(index: RecordIndex, product: string | undefined, kind: Integra
   switch (kind) {
     case 'integration':
       // An integration has no parent column to leave out: its ID names its product.
-      return adding ? formFields(F['/api/integration/add-integration'], [], { description: LONG }) : formFields(F['/api/integration/change-integration'], ['id'], { description: LONG });
+      // It performs use cases of its own product on its own.
+      return adding
+        ? formFields(F['/api/integration/add-integration'], [], { description: LONG, performs: { choices: choicesOf(index, product, 'use_case') } })
+        : formFields(F['/api/integration/change-integration'], ['id'], { description: LONG, performs: { choices: choicesOf(index, product, 'use_case') } });
     case 'adapter':
       return addOrChangeFields(adding, F['/api/integration/add-adapter'], 'integration_id', F['/api/integration/change-adapter'], { description: LONG, meets: { choices: choicesOf(index, product, 'standard_rule') } });
     case 'integration_test':
@@ -55,7 +58,7 @@ function fieldsOf(index: RecordIndex, product: string | undefined, kind: Integra
 function currentOf(page: IntegrationPage, kind: IntegrationKind, id: string): Record<string, unknown> {
   switch (kind) {
     case 'integration':
-      return { ...page.integration };
+      return { ...page.integration, performs: page.performs };
     case 'adapter':
       return { ...page.adapter!.adapter, meets: page.adapter!.meets, packages: page.adapter!.packages };
     case 'integration_test': {

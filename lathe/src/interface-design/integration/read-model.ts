@@ -1,7 +1,7 @@
 // The Integration aggregate's read model (LA-IXD-RM34), shaped for its readers: the Integration page reads an
-// integration whole (its adapter with the standard rules it meets and the packages it uses, and its integration tests
-// by ID) with the record the page is about, a product's list reads each of its integrations, and the editor's next ID
-// reads the IDs in use. The projection (integrationTableFrom) is the only code that reads the source rows and the only
+// integration whole (its adapter with the standard rules it meets and the packages it uses, its integration tests by
+// ID and the use cases it performs) with the record the page is about, a product's list reads each of its
+// integrations, and the editor's next ID reads the IDs in use. The projection (integrationTableFrom) is the only code that reads the source rows and the only
 // code that writes the read model's table; the query handlers read that table only through the reader (reader.ts).
 // Nothing here is the aggregate's own instance type.
 import type { ReadView } from '../../platform/data/rules.ts';
@@ -23,9 +23,11 @@ export interface AdapterOnPage {
   packages: string[];
 }
 
-/** An integration whole, as its page shows it: its row, its adapter when it has one, and its tests by ID. */
+/** An integration whole, as its page shows it: its row, the use cases it performs, its adapter when it has one, and its tests by ID. */
 export interface IntegrationTree {
   integration: IntegrationRow;
+  /** The use cases of its product it performs on its own, by ID. */
+  performs: string[];
   adapter: AdapterOnPage | null;
   tests: IntegrationTestOnPage[];
 }
@@ -71,6 +73,7 @@ export function integrationTableFrom(view: ReadView): IntegrationTable {
   const startsFrom = linked(view, 'starts_from', 'source_id', 'target_id');
   const meets = linked(view, 'meets', 'source_id', 'target_id');
   const packages = linked(view, 'package_use', 'record_id', 'package');
+  const performs = linked(view, 'performs', 'source_id', 'target_id');
   const adapters = grouped<AdapterRow>(view.rows('adapter'), 'integration_id');
   const tests = grouped<IntegrationTestRow>(view.rows('integration_test'), 'integration_id');
   const integrations = new Map<string, IntegrationTree>();
@@ -84,6 +87,7 @@ export function integrationTableFrom(view: ReadView): IntegrationTable {
     const adapter = adapters.get(root)?.[0];
     const tree: IntegrationTree = {
       integration,
+      performs: performs(root),
       adapter: adapter ? { adapter, meets: meets(adapter.id), packages: packages(adapter.id) } : null,
       tests: [...(tests.get(root) ?? [])].sort(byRecordId).map((test) => ({ test, startsFrom: startsFrom(test.id) })),
     };

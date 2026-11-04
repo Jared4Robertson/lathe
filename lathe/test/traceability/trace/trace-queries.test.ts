@@ -66,7 +66,7 @@ describe('LA-TRC-UC10-R06-T01 A product\'s trace rows read gives each use case o
     // What its tests rest on: the view and API requirements of the interfaces that carry its steps (the fixture's only interface is a web app, so no API requirement), its aggregates' invariants and storage requirements.
     expect(uc1.lower.map((o) => o.id)).toEqual(['EX-LEND-A1-SR01', 'EX-LEND-INV01', 'EX-V01-R01']);
     expect(uc1.lower.find((o) => o.id === 'EX-LEND-INV01')!.tests).toEqual(['EX-LEND-INV01-T01']);
-    expect(uc1.status).toEqual({ design: { interfaces: 1, notDesigned: 0 }, technical: { handlers: 2, notBuilt: 1 }, suite: { tests: 2, owed: 2, notProved: 0 } });
+    expect(uc1.status).toEqual({ design: { interfaces: 1, integrations: 0, notDesigned: 0 }, technical: { handlers: 2, notBuilt: 1 }, suite: { tests: 2, owed: 2, notProved: 0 } });
     expect(LIST_TRACED_USE_CASES.text(ex).split('\n')[1]).toBe('  EX-LEND-UC01 (EX-BO01): 1 interface, all designed · 2 handlers, 1 not built · 2 tests, all proved');
   });
 
