@@ -9,7 +9,7 @@ import PackageDescription
 
 let package = Package(
   name: "lathe-speech",
-  platforms: [.macOS(.v14)],
+  platforms: [.macOS(.v26)],
   dependencies: [
     .package(url: "https://github.com/FluidInference/FluidAudio.git", exact: "0.18.2", traits: []),
   ],
