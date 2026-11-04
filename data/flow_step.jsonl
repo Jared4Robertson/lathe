@@ -115,7 +115,7 @@
 {"id":"LA-IXD-UC26-FL-S03","title":"The Owner adds the endpoint's API requirements and its handler","flow_id":"LA-IXD-UC26-FL","path":"main","position":3}
 {"id":"LA-IXD-UC26-FL-S04","title":"The Owner moves an endpoint to the command or query it now exposes","flow_id":"LA-IXD-UC26-FL","path":"main","position":4}
 {"id":"LA-IXD-UC27-FL-S01","title":"The Owner reads the integration whole, with its requirements and tests, before changing it","flow_id":"LA-IXD-UC27-FL","path":"main","position":1}
-{"id":"LA-IXD-UC27-FL-S02","title":"The Owner adds an integration for an outside system the product exchanges with","flow_id":"LA-IXD-UC27-FL","path":"main","position":2}
+{"id":"LA-IXD-UC27-FL-S02","title":"The Owner adds an integration for an outside system the product exchanges with, and the use cases it performs on its own","flow_id":"LA-IXD-UC27-FL","path":"main","position":2}
 {"id":"LA-IXD-UC27-FL-S03","title":"The Owner adds the integration's adapter, naming its file, and its integration test","flow_id":"LA-IXD-UC27-FL","path":"main","position":3}
 {"id":"LA-IXD-UC27-FL-S04","title":"The Owner removes an integration no step exchanges with","flow_id":"LA-IXD-UC27-FL","path":"main","position":4}
 {"id":"LA-IXD-UC28-FL-S01","title":"The Owner reads how the view is drawn, with the components and the requirements they build, before changing it","flow_id":"LA-IXD-UC28-FL","path":"main","position":1}
