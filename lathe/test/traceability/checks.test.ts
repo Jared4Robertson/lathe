@@ -419,8 +419,8 @@ check('accidental-not-accounted-for', () => {
     const components = adding(complete(), {
       product_kind: [
         { name: 'component', product_id: 'EX', label: 'Component', description: 'A component of the library.', parent_kind: 'domain', stage: 'technical-specification', obligation: false, complexity: 'accidental' },
-        { name: 'contract', product_id: 'EX', label: 'Contract', description: 'What a component promises.', parent_kind: 'component', stage: 'interaction-design', obligation: false, complexity: 'essential' },
-        { name: 'verb', product_id: 'EX', label: 'Verb', description: 'A verb the librarian types.', parent_kind: 'domain', stage: 'interaction-design', obligation: false, complexity: 'essential' },
+        { name: 'contract', product_id: 'EX', label: 'Contract', description: 'What a component promises.', parent_kind: 'component', stage: 'interface-design', obligation: false, complexity: 'essential' },
+        { name: 'verb', product_id: 'EX', label: 'Verb', description: 'A verb the librarian types.', parent_kind: 'domain', stage: 'interface-design', obligation: false, complexity: 'essential' },
       ],
       product_relation: [
         { name: 'runs', source_kind: 'component', target_kind: 'verb', product_id: 'EX', forward_label: 'Runs', reverse_label: 'Run by', description: 'The component runs the verb.' },
