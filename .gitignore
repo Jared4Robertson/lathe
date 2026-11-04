@@ -7,3 +7,6 @@ desktop/build/stage/
 # The full check's output (scripts/ci.sh)
 ci-result.md
 ci-logs/
+
+# The speech helper's SwiftPM build (scripts/speech.ts)
+desktop/native/speech/.build/
