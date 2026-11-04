@@ -117,6 +117,7 @@ export function everyKind(): Data {
     entry_point: [{ id: 'TL-LEND-ENTRY01', title: 'server.ts', domain_id: 'TL-LEND', file: 'src/server.ts', description: 'Opens the database and serves the API.' }],
     tooling: [{ id: 'TL-LEND-TOOL01', title: 'vitest.config.ts', domain_id: 'TL-LEND', file: 'vitest.config.ts' }],
     package_use: [{ record_id: 'TL-INT01-AD', package: 'nodemailer' }],
+    helper_file: [{ record_id: 'TL-INT01-AD', file: 'src/mail/templates.ts' }],
     standard: [{ id: 'TL-STD-CODE', title: 'Code', product_id: 'TL', type: 'engineering', description: 'How the code is written.' }],
     standard_rule: [{ id: 'TL-STD-CODE-R01', title: 'Node prefix', standard_id: 'TL-STD-CODE', statement: 'Code MUST import node: modules.' }],
 
