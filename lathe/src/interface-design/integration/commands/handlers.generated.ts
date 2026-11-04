@@ -38,26 +38,26 @@ export function removeIntegration(tx: Transaction, input: RemoveIntegration): vo
   integrations.remove(integration);
 }
 
-/** Adds an integration's adapter, its one piece of code that talks to the outside system: its name in code and its file, with the standard rules it meets and the packages it uses. */
+/** Adds an integration's adapter, its one piece of code that talks to the outside system: its name in code and its file, with the standard rules it meets, the packages it uses and its helper files. */
 export function addAdapter(tx: Transaction, input: AddAdapter): void {
   const integrations = new IntegrationRepository(tx);
   const integration = integrations.load(input.integration_id) ?? tx.refuse('missing', `there is no integration ${input.integration_id}`);
-  const { meets = [], packages = [], ...row } = input;
+  const { meets = [], packages = [], helpers = [], ...row } = input;
   refuseBroken(oneAdapter([...(integration.adapter ? [integration.adapter.row] : []), row]));
-  integration.adapter = { row, meets: meets, packages: packages };
+  integration.adapter = { row, meets: meets, packages: packages, helpers: helpers };
   integrations.save(integration);
 }
 
-/** Changes an adapter's title, file or description, or the standard rules it meets or the packages it uses (each list whole). Its integration does not change. */
+/** Changes an adapter's title, file or description, or the standard rules it meets, the packages it uses or its helper files (each list whole). Its integration does not change. */
 export function changeAdapter(tx: Transaction, input: ChangeAdapter): void {
   const integrations = new IntegrationRepository(tx);
   const integration = integrations.loadHolding('adapter', input.id) ?? tx.refuse('missing', `there is no adapter ${input.id}`);
   const held = integration.adapter!;
-  integration.adapter = { row: changed(held.row, input, ['title', 'description', 'file']), meets: input.meets ?? held.meets, packages: input.packages ?? held.packages };
+  integration.adapter = { row: changed(held.row, input, ['title', 'description', 'file']), meets: input.meets ?? held.meets, packages: input.packages ?? held.packages, helpers: input.helpers ?? held.helpers };
   integrations.save(integration);
 }
 
-/** Removes an adapter with the links it starts and the packages it uses. Refused while anything else references them. */
+/** Removes an adapter with the links it starts, the packages it uses and its helper files. Refused while anything else references them. */
 export function removeAdapter(tx: Transaction, input: RemoveAdapter): void {
   const integrations = new IntegrationRepository(tx);
   const integration = integrations.loadHolding('adapter', input.id) ?? tx.refuse('missing', `there is no adapter ${input.id}`);

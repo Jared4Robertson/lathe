@@ -61,9 +61,9 @@ describe('LA-MOD-UC02-R06-T02 each Domain command (LA-MOD-A4) changes one domain
     expect(whole.record).toEqual({ id: 'TL-LEND-DS01-T01', kind: 'domain_service_test' });
     expect(whole.domain.id).toBe('TL-LEND');
     expect(whole.capabilities.map((c) => c.capability.id)).toEqual(['TL-LEND-CAP01']);
-    expect(whole.domainServices.map((s) => s.service)).toEqual([{ service: { id: 'TL-LEND-DS01-SV', title: 'lateFee', domain_service_id: 'TL-LEND-DS01', file: 'src/fees.ts' }, meets: [], packages: [] }]);
+    expect(whole.domainServices.map((s) => s.service)).toEqual([{ service: { id: 'TL-LEND-DS01-SV', title: 'lateFee', domain_service_id: 'TL-LEND-DS01', file: 'src/fees.ts' }, meets: [], packages: [], helpers: [] }]);
     expect(whole.domainServices[0].tests.map((t) => t.test.id)).toEqual(['TL-LEND-DS01-T01']);
-    expect(whole.repositories).toEqual([expect.objectContaining({ persists: null, meets: [], packages: [] })]);
+    expect(whole.repositories).toEqual([expect.objectContaining({ persists: null, meets: [], packages: [], helpers: [] })]);
     expect(whole.repositories[0]).not.toHaveProperty('alsoPersists');
     expect(runQuery(store, LIST_DOMAINS, { product_id: 'TL' })).toEqual([{ id: 'TL-LEND', title: 'Lending' }]);
     expect(runQuery(store, NEXT_DOMAIN_ID, { kind: 'capability', parent: 'TL-LEND' })).toBe('TL-LEND-CAP02');

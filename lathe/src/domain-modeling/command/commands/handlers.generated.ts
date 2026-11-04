@@ -51,28 +51,28 @@ export function removeCommand(tx: Transaction, input: RemoveCommand): void {
   commands.remove(command);
 }
 
-/** Adds the handler that carries out a command: its name in code, its file and what it does, with the standard rules it meets and the packages it uses. A command has one handler. */
+/** Adds the handler that carries out a command: its name in code, its file and what it does, with the standard rules it meets, the packages it uses and its helper files. A command has one handler. */
 export function addCommandHandler(tx: Transaction, input: AddCommandHandler): void {
   const commands = new CommandRepository(tx);
   const command = commands.load(input.command_id) ?? tx.refuse('missing', `there is no command ${input.command_id}`);
-  const { meets = [], packages = [], ...row } = input;
+  const { meets = [], packages = [], helpers = [], ...row } = input;
   refuseBroken(oneCommandHandler([...(command.handler ? [command.handler.row] : []), row]));
-  command.handler = { row, meets: meets, packages: packages };
+  command.handler = { row, meets: meets, packages: packages, helpers: helpers };
   holdToRules(tx, command);
   commands.save(command);
 }
 
-/** Changes a command handler's title, file or description, or the standard rules it meets or the packages it uses (each list whole). Its command does not change. */
+/** Changes a command handler's title, file or description, or the standard rules it meets, the packages it uses or its helper files (each list whole). Its command does not change. */
 export function changeCommandHandler(tx: Transaction, input: ChangeCommandHandler): void {
   const commands = new CommandRepository(tx);
   const command = commands.loadHolding('command_handler', input.id) ?? tx.refuse('missing', `there is no command handler ${input.id}`);
   const held = command.handler!;
-  command.handler = { row: changed(held.row, input, ['title', 'file', 'description']), meets: input.meets ?? held.meets, packages: input.packages ?? held.packages };
+  command.handler = { row: changed(held.row, input, ['title', 'file', 'description']), meets: input.meets ?? held.meets, packages: input.packages ?? held.packages, helpers: input.helpers ?? held.helpers };
   holdToRules(tx, command);
   commands.save(command);
 }
 
-/** Removes a command handler with the links it starts and the packages it uses. Refused while anything else references it. */
+/** Removes a command handler with the links it starts, the packages it uses and its helper files. Refused while anything else references it. */
 export function removeCommandHandler(tx: Transaction, input: RemoveCommandHandler): void {
   const commands = new CommandRepository(tx);
   const command = commands.loadHolding('command_handler', input.id) ?? tx.refuse('missing', `there is no command handler ${input.id}`);
@@ -109,26 +109,26 @@ export function removePolicy(tx: Transaction, input: RemovePolicy): void {
   commands.save(command);
 }
 
-/** Adds the handler that carries out a policy: its name in code, its file and what it does, with the standard rules it meets and the packages it uses. A policy has one event handler. */
+/** Adds the handler that carries out a policy: its name in code, its file and what it does, with the standard rules it meets, the packages it uses and its helper files. A policy has one event handler. */
 export function addEventHandler(tx: Transaction, input: AddEventHandler): void {
   const commands = new CommandRepository(tx);
   const command = commands.loadHolding('policy', input.policy_id) ?? tx.refuse('missing', `there is no policy ${input.policy_id}`);
-  const { meets = [], packages = [], ...row } = input;
-  command.eventHandlers.push({ row, meets: meets, packages: packages });
+  const { meets = [], packages = [], helpers = [], ...row } = input;
+  command.eventHandlers.push({ row, meets: meets, packages: packages, helpers: helpers });
   holdToRules(tx, command);
   commands.save(command);
 }
 
-/** Changes an event handler's title, file or description, or the standard rules it meets or the packages it uses (each list whole). Its policy does not change. */
+/** Changes an event handler's title, file or description, or the standard rules it meets, the packages it uses or its helper files (each list whole). Its policy does not change. */
 export function changeEventHandler(tx: Transaction, input: ChangeEventHandler): void {
   const commands = new CommandRepository(tx);
   const command = commands.loadHolding('event_handler', input.id) ?? tx.refuse('missing', `there is no event handler ${input.id}`);
-  command.eventHandlers = command.eventHandlers.map((x) => (x.row.id === input.id ? { row: changed(x.row, input, ['title', 'file', 'description']), meets: input.meets ?? x.meets, packages: input.packages ?? x.packages } : x));
+  command.eventHandlers = command.eventHandlers.map((x) => (x.row.id === input.id ? { row: changed(x.row, input, ['title', 'file', 'description']), meets: input.meets ?? x.meets, packages: input.packages ?? x.packages, helpers: input.helpers ?? x.helpers } : x));
   holdToRules(tx, command);
   commands.save(command);
 }
 
-/** Removes an event handler with the links it starts and the packages it uses. Refused while anything else references it. */
+/** Removes an event handler with the links it starts, the packages it uses and its helper files. Refused while anything else references it. */
 export function removeEventHandler(tx: Transaction, input: RemoveEventHandler): void {
   const commands = new CommandRepository(tx);
   const command = commands.loadHolding('event_handler', input.id) ?? tx.refuse('missing', `there is no event handler ${input.id}`);

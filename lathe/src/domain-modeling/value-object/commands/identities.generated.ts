@@ -58,7 +58,7 @@ export const ADD_VALUE_TYPE_IDENTITY = {
   id: 'LA-MOD-CMD276',
   slice: { aggregate: 'LA-MOD-A9', name: 'value-object' },
   name: 'add-value-type',
-  description: 'Adds the value type of a value object, its one piece of code, with the standard rules it meets and the packages it uses.',
+  description: 'Adds the value type of a value object, its one piece of code, with the standard rules it meets, the packages it uses and its helper files.',
   method: 'POST',
   route: '/api/value-object/add-value-type',
 } as const;
@@ -67,7 +67,7 @@ export const CHANGE_VALUE_TYPE_IDENTITY = {
   id: 'LA-MOD-CMD277',
   slice: { aggregate: 'LA-MOD-A9', name: 'value-object' },
   name: 'change-value-type',
-  description: 'Changes a value type\'s title or file, or the standard rules it meets or packages it uses (each the whole list).',
+  description: 'Changes a value type\'s title or file, or the standard rules it meets, the packages it uses or its helper files (each the whole list).',
   method: 'POST',
   route: '/api/value-object/change-value-type',
 } as const;
@@ -76,7 +76,7 @@ export const REMOVE_VALUE_TYPE_IDENTITY = {
   id: 'LA-MOD-CMD278',
   slice: { aggregate: 'LA-MOD-A9', name: 'value-object' },
   name: 'remove-value-type',
-  description: 'Removes a value object\'s value type with the links it starts and the packages it uses. Refused while anything references it.',
+  description: 'Removes a value object\'s value type with the links it starts, the packages it uses and its helper files. Refused while anything references it.',
   method: 'POST',
   route: '/api/value-object/remove-value-type',
 } as const;

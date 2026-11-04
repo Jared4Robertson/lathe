@@ -83,7 +83,7 @@ function currentOf(page: DomainPage, kind: DomainKind, id: string): Record<strin
       return { ...page.domainServices.find((s) => s.domainService.id === id)!.domainService };
     case 'service': {
       const s = page.domainServices.find((x) => x.service?.service.id === id)!.service!;
-      return { ...s.service, meets: s.meets, packages: s.packages };
+      return { ...s.service, meets: s.meets, packages: s.packages, helpers: s.helpers };
     }
     case 'domain_service_test': {
       const t = page.domainServices.flatMap((s) => s.tests).find((x) => x.test.id === id)!;
@@ -91,7 +91,7 @@ function currentOf(page: DomainPage, kind: DomainKind, id: string): Record<strin
     }
     case 'repository': {
       const r = page.repositories.find((x) => x.repository.id === id)!;
-      return { ...r.repository, persists: r.persists ?? undefined, meets: r.meets, packages: r.packages };
+      return { ...r.repository, persists: r.persists ?? undefined, meets: r.meets, packages: r.packages, helpers: r.helpers };
     }
   }
 }

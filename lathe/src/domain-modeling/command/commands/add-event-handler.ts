@@ -3,7 +3,7 @@ import type { EventHandlerRow } from '../../../platform/data/tables.ts';
 import { ADD_EVENT_HANDLER_IDENTITY } from './identities.generated.ts';
 import { addEventHandler } from './handlers.generated.ts';
 
-export type AddEventHandler = Pick<EventHandlerRow, 'id' | 'title' | 'policy_id' | 'file' | 'description'> & { meets?: string[]; packages?: string[] };
+export type AddEventHandler = Pick<EventHandlerRow, 'id' | 'title' | 'policy_id' | 'file' | 'description'> & { meets?: string[]; packages?: string[]; helpers?: string[] };
 
 export const ADD_EVENT_HANDLER = {
   ...ADD_EVENT_HANDLER_IDENTITY,
@@ -15,6 +15,7 @@ export const ADD_EVENT_HANDLER = {
     description: column('event_handler', 'description', 'required'),
     meets: ids('The standard rules it follows.', 'optional'),
     packages: texts('The packages it uses, each listed in one of the product\'s package.json files.', 'optional'),
+    helpers: texts('The helper files its code is split across beside its file, such as helpers and build-tag variants, each from the product root; no other record names one.', 'optional'),
   },
   handler: addEventHandler,
 } satisfies CommandDefinition<AddEventHandler>;

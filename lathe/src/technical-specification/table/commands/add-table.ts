@@ -6,7 +6,7 @@ import { TableRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 import { ADD_TABLE_IDENTITY } from './identities.generated.ts';
 
-export type AddTable = Pick<TableRow, 'id' | 'title' | 'entity_id' | 'read_model_id' | 'domain_id' | 'name' | 'storage' | 'file'> & { keys?: TableKey[]; stored_in?: string; meets?: string[]; packages?: string[] };
+export type AddTable = Pick<TableRow, 'id' | 'title' | 'entity_id' | 'read_model_id' | 'domain_id' | 'name' | 'storage' | 'file'> & { keys?: TableKey[]; stored_in?: string; meets?: string[]; packages?: string[]; helpers?: string[] };
 
 export const ADD_TABLE = {
   ...ADD_TABLE_IDENTITY,
@@ -23,6 +23,7 @@ export const ADD_TABLE = {
     stored_in: id('The data store it is kept in.', 'optional'),
     meets: ids('The standard rules it meets.', 'optional'),
     packages: texts("The packages it uses, by their names in the product's package.json files.", 'optional'),
+    helpers: texts('The helper files its code is split across beside its file, such as helpers and build-tag variants, each from the product root; no other record names one.', 'optional'),
   },
   handler: addTable,
 } satisfies CommandDefinition<AddTable>;
@@ -32,8 +33,8 @@ export function addTable(tx: Transaction, input: AddTable): void {
   const tables = new TableRepository(tx);
   const given = [input.entity_id, input.read_model_id, input.domain_id].filter((p) => p !== undefined).length;
   if (given !== 1) tx.refuse('parent', `table ${input.id} sits under exactly one entity, read model or domain; ${given} are given`);
-  const { keys = [], stored_in, meets = [], packages = [], ...row } = input;
-  const table = tables.create({ root: row.id, table: row, keys, storedIn: stored_in ?? null, meets, packages });
+  const { keys = [], stored_in, meets = [], packages = [], helpers = [], ...row } = input;
+  const table = tables.create({ root: row.id, table: row, keys, storedIn: stored_in ?? null, meets, packages, helpers });
   holdToRules(tx, table);
   tables.save(table);
 }

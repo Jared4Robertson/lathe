@@ -71,6 +71,8 @@ interface FileFact {
   file_exists: boolean;
   /** Whether the file names the record's own ID as a whole ID; false when it is missing or a folder. */
   contains_id: boolean;
+  /** Whether it is one of the record's helper files (helper_file) rather than its own file. */
+  helper: boolean;
 }
 
 // Resolves a path named in a record, refusing anything outside root.
@@ -98,13 +100,21 @@ function mentionsId(content: string, id: string): boolean {
 }
 
 // Facts about the files records name: every record of a kind with a file column (the technical kinds, the test kinds,
-// and a product's own kinds with a file field) that gives one. A test's file must be a file; a technical record's may
-// also be a folder of files. Each file is read once, however many records name it, to see which of them it names.
+// and a product's own kinds with a file field) that gives one, and each helper file of a technical record, as one
+// more row of that record. A test's file must be a file; a technical record's may also be a folder of files, and its
+// helper file must be a file. Each file is read once, however many records name it, to see which of them it names.
 async function gatherFileFacts(root: string, store: Store): Promise<FileFact[]> {
   const tests = new Set(TEST_KINDS);
   const named = Object.keys(store.schema.kinds)
     .filter((kind) => store.schema.tables[kind]?.columns.some((c) => c.name === 'file'))
-    .flatMap((kind) => store.rows(kind).filter((row) => typeof row.file === 'string').map((row) => ({ kind, id: String(row.id), file: String(row.file) })));
+    .flatMap((kind) => store.rows(kind).filter((row) => typeof row.file === 'string').map((row) => ({ kind, id: String(row.id), file: String(row.file), helper: false })));
+  // A helper file's record is a technical record; its kind is read only when some record names a helper file.
+  const helperRows = store.schema.tables.helper_file ? store.rows('helper_file') : [];
+  const kindOf = new Map<string, string>();
+  if (helperRows.length) {
+    for (const kind of Object.values(store.schema.kinds).filter((k) => k.stage === 'technical-specification')) for (const row of store.rows(kind.name)) kindOf.set(String(row.id), kind.name);
+  }
+  const helpers = helperRows.map((row) => ({ kind: kindOf.get(String(row.record_id)) ?? '', id: String(row.record_id), file: String(row.file), helper: true }));
   const contents = new Map<string, Promise<{ type: 'file' | 'folder' | null; text: string }>>();
   const read = (resolved: string | null) => {
     const key = resolved ?? '';
@@ -118,11 +128,11 @@ async function gatherFileFacts(root: string, store: Store): Promise<FileFact[]> 
     }
     return known;
   };
-  return Promise.all(named.map(async ({ kind, id, file }): Promise<FileFact> => {
+  return Promise.all([...named, ...helpers].map(async ({ kind, id, file, helper }): Promise<FileFact> => {
     const { type, text } = await read(resolveInside(root, file));
-    const exists = type === 'file' || (type === 'folder' && !tests.has(kind));
+    const exists = type === 'file' || (type === 'folder' && !tests.has(kind) && !helper);
     const resolved = resolveInside(root, file);
-    return { record: id, kind, file, path: resolved && normalizePath(path.relative(root, resolved)), file_exists: exists, contains_id: type === 'file' && mentionsId(text, id) };
+    return { record: id, kind, file, path: resolved && normalizePath(path.relative(root, resolved)), file_exists: exists, contains_id: type === 'file' && mentionsId(text, id), helper };
   }));
 }
 
@@ -153,13 +163,15 @@ async function gatherTestCases(root: string, globs: readonly string[], facts: Fi
 }
 
 // The product's source files, each with whether a technical record (of a technical-specification kind, Lathe's or the
-// product's own) names it or a folder holding it: what code-file-untraced reports (trace/source-files.ts).
+// product's own) names it, as its file or a helper file, or names a folder holding it: what code-file-untraced reports
+// (trace/source-files.ts).
 async function gatherSourceFiles(config: Pick<LatheConfig, 'root' | 'source' | 'tests'>, store: Store): Promise<{ file: string; traced: boolean }[]> {
-  const named = new Set(
-    Object.values(store.schema.kinds)
+  const named = new Set([
+    ...Object.values(store.schema.kinds)
       .filter((k) => k.stage === 'technical-specification' && store.schema.tables[k.name]?.columns.some((c) => c.name === 'file'))
       .flatMap((k) => store.rows(k.name).filter((row) => typeof row.file === 'string').map((row) => normalizePath(String(row.file)))),
-  );
+    ...(store.schema.tables.helper_file ? store.rows('helper_file') : []).map((row) => normalizePath(String(row.file))),
+  ]);
   return (await sourceFiles(config.root, config.source, config.tests)).map((file) => ({ file, traced: isTraced(file, named) }));
 }
 
@@ -288,7 +300,9 @@ async function computeChains(store: Store, records: SpecRecord[], order: string[
   const rank = new Map(order.map((k, i) => [k, i]));
   const of = (id: string) => rank.get(kindOf.get(id) ?? '') ?? rank.size;
   const sorted = (ids: Iterable<string>) => [...new Set(ids)].sort((a, b) => of(a) - of(b) || compareIds(a, b));
-  const fileOf = new Map(files.map((f) => [f.record, f.file]));
+  // A record's own file and its helper files, each with the record that names it.
+  const filesOf = new Map<string, string[]>();
+  for (const f of files) filesOf.set(f.record, [...(filesOf.get(f.record) ?? []), f.file]);
   const by = new Map<string, typeof links>();
   for (const l of links) by.set(l.obligation_id, [...(by.get(l.obligation_id) ?? []), l]);
   return obligations.map(({ id }) => {
@@ -297,8 +311,7 @@ async function computeChains(store: Store, records: SpecRecord[], order: string[
     const [design, build, tests] = [part('design'), part('build'), part('tests')];
     const named = new Map<string, string[]>();
     for (const r of [...build, ...tests]) {
-      const file = fileOf.get(r);
-      if (file) named.set(file, [...(named.get(file) ?? []), r]);
+      for (const file of filesOf.get(r) ?? []) named.set(file, [...(named.get(file) ?? []), r]);
     }
     return {
       obligation: id,
@@ -412,7 +425,7 @@ export async function readWorkspace(store: Store, config: Pick<LatheConfig, 'roo
   const cases = await step('test cases', () => gatherTestCases(path.resolve(config.root), config.tests, facts));
   const connection = store.connection;
   await connection.run(FACT_TABLES_SQL);
-  await append(connection, 'file_facts', facts.map((f) => [f.record, f.kind, f.file, f.path, f.file_exists, f.contains_id]));
+  await append(connection, 'file_facts', facts.map((f) => [f.record, f.kind, f.file, f.path, f.file_exists, f.contains_id, f.helper]));
   await append(connection, 'source_file', sources.map((f) => [f.file, f.traced]));
   const served = await step('serves', async () => servesOf({ schema: store.schema, rows: (table) => store.rows(table) }));
   await append(connection, 'record_serves', [...served].flatMap(([record, s]) => s.outcomes.map((outcome) => [record, outcome])));

@@ -59,7 +59,7 @@ export interface ChangeReach {
   count: number;
   /** The records it touches, by stage in the stages' order; a stage it touches nothing in is left out. */
   groups: ReachGroup[];
-  /** The files the changed and touched records name (technical records and tests), each with those records, by path. */
+  /** The files the changed and touched records name (technical records with their helper files, and tests), each with those records, by path. */
   files: { path: string; records: string[] }[];
   /** The use cases, journeys and business outcomes the changed and touched records serve, each in ID order. */
   purposes: { useCases: string[]; journeys: string[]; outcomes: string[] };
@@ -203,10 +203,13 @@ export function changeReachTableFrom(view: ReadView): ChangeReachTable {
           records: records.sort((a, b) => kindRank.get(a.kind)! - kindRank.get(b.kind)! || compareIds(a.id, b.id)),
         }));
       const touched = [...changed, ...reached.keys()];
+      // Each record's own file and its helper files (helper_file), each with the records that name it.
+      const helpersOf = new Map<string, string[]>();
+      for (const h of schema.tables.helper_file ? view.rows('helper_file') : []) helpersOf.set(String(h.record_id), [...(helpersOf.get(String(h.record_id)) ?? []), String(h.file)]);
       const files = new Map<string, string[]>();
       for (const id of touched) {
-        const file = str(placed!.get(id)!.row.file).trim();
-        if (file) files.set(file, [...(files.get(file) ?? []), id]);
+        const own = str(placed!.get(id)!.row.file).trim();
+        for (const file of [...(own ? [own] : []), ...(helpersOf.get(id) ?? [])]) files.set(file, [...(files.get(file) ?? []), id]);
       }
       served ??= servesOf(view);
       const purposes = { useCases: new Set<string>(), journeys: new Set<string>(), outcomes: new Set<string>() };

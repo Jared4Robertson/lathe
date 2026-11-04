@@ -31,6 +31,7 @@ export const COMMAND_FIELDS = {
     description: { kind: 'column', table: 'command_handler', column: 'description', required: true, clearable: false },
     meets: { kind: 'ids', description: 'The standard rules it follows.', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses, each listed in one of the product\'s package.json files.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, such as helpers and build-tag variants, each from the product root; no other record names one.', required: false, clearable: false },
   },
   '/api/command/change-command-handler': {
     id: { kind: 'column', table: 'command_handler', column: 'id', required: true, clearable: false },
@@ -39,6 +40,7 @@ export const COMMAND_FIELDS = {
     description: { kind: 'column', table: 'command_handler', column: 'description', required: false, clearable: false },
     meets: { kind: 'ids', description: 'The standard rules it follows.', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, each from the product root.', required: false, clearable: false },
   },
   '/api/command/remove-command-handler': {
     id: { kind: 'column', table: 'command_handler', column: 'id', required: true, clearable: false },
@@ -69,6 +71,7 @@ export const COMMAND_FIELDS = {
     description: { kind: 'column', table: 'event_handler', column: 'description', required: true, clearable: false },
     meets: { kind: 'ids', description: 'The standard rules it follows.', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses, each listed in one of the product\'s package.json files.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, such as helpers and build-tag variants, each from the product root; no other record names one.', required: false, clearable: false },
   },
   '/api/command/change-event-handler': {
     id: { kind: 'column', table: 'event_handler', column: 'id', required: true, clearable: false },
@@ -77,6 +80,7 @@ export const COMMAND_FIELDS = {
     description: { kind: 'column', table: 'event_handler', column: 'description', required: false, clearable: false },
     meets: { kind: 'ids', description: 'The standard rules it follows.', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, each from the product root.', required: false, clearable: false },
   },
   '/api/command/remove-event-handler': {
     id: { kind: 'column', table: 'event_handler', column: 'id', required: true, clearable: false },

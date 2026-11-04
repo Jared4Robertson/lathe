@@ -27,6 +27,8 @@ export interface ValueTypeOnPage {
   valueType: ValueTypeRow;
   meets: string[];
   packages: string[];
+  /** Its helper files, sorted. */
+  helpers: string[];
 }
 
 /** A value object whole, as its page shows it. */
@@ -83,6 +85,7 @@ export function valueObjectTableFrom(view: ReadView): ValueObjectTable {
   const meets = linked(view.rows('meets'), 'source_id', 'target_id');
   const startsFrom = linked(view.rows('starts_from'), 'source_id', 'target_id');
   const packages = linked(view.rows('package_use'), 'record_id', 'package');
+  const helpers = linked(view.rows('helper_file'), 'record_id', 'file');
   const fields = grouped<ValueObjectFieldRow>(view.rows('value_object_field'), 'value_object_id');
   const constraints = grouped<ConstraintRow>(view.rows('constraint'), 'value_object_id');
   const tests = new Map((view.rows('constraint_test') as unknown as ConstraintTestRow[]).map((t) => [t.constraint_id, t]));
@@ -104,7 +107,7 @@ export function valueObjectTableFrom(view: ReadView): ValueObjectTable {
         const test = tests.get(constraint.id);
         return { constraint, test: test ? { test, startsFrom: startsFrom(test.id) } : null };
       }),
-      valueType: valueType ? { valueType, meets: meets(valueType.id), packages: packages(valueType.id) } : null,
+      valueType: valueType ? { valueType, meets: meets(valueType.id), packages: packages(valueType.id), helpers: helpers(valueType.id) } : null,
     };
     valueObjects.set(root, tree);
     holding.set(root, { root, kind: 'value_object' });

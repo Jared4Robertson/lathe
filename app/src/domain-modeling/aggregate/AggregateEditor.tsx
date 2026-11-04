@@ -76,11 +76,11 @@ function currentOf(page: AggregatePage, kind: AggregateKind, id: string): Record
       return { ...page.invariants.find((i) => i.invariant.id === id)!.invariant };
     case 'data_model': {
       const d = page.entities.find((e) => e.dataModel?.dataModel.id === id)!.dataModel!;
-      return { ...d.dataModel, meets: d.meets, packages: d.packages };
+      return { ...d.dataModel, meets: d.meets, packages: d.packages, helpers: d.helpers };
     }
     case 'rule': {
       const r = page.invariants.find((i) => i.rule?.rule.id === id)!.rule!;
-      return { ...r.rule, meets: r.meets, packages: r.packages };
+      return { ...r.rule, meets: r.meets, packages: r.packages, helpers: r.helpers };
     }
     case 'invariant_test': {
       const t = page.invariants.find((i) => i.test?.test.id === id)!.test!;

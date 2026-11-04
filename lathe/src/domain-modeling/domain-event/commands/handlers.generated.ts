@@ -40,28 +40,28 @@ export function removeDomainEvent(tx: Transaction, input: RemoveDomainEvent): vo
   domainEvents.remove(domainEvent);
 }
 
-/** Adds a domain event's shape in code: its name, how it is delivered and its file, with the standard rules it meets and the packages it uses. An event has one event type. */
+/** Adds a domain event's shape in code: its name, how it is delivered and its file, with the standard rules it meets, the packages it uses and its helper files. An event has one event type. */
 export function addEventType(tx: Transaction, input: AddEventType): void {
   const domainEvents = new DomainEventRepository(tx);
   const domainEvent = domainEvents.load(input.domain_event_id) ?? tx.refuse('missing', `there is no domain event ${input.domain_event_id}`);
-  const { meets = [], packages = [], ...row } = input;
+  const { meets = [], packages = [], helpers = [], ...row } = input;
   refuseBroken(oneEventType([...(domainEvent.eventType ? [domainEvent.eventType.row] : []), row]));
-  domainEvent.eventType = { row, meets: meets, packages: packages };
+  domainEvent.eventType = { row, meets: meets, packages: packages, helpers: helpers };
   holdToRules(tx, domainEvent);
   domainEvents.save(domainEvent);
 }
 
-/** Changes an event type's title, delivery or file, or the standard rules it meets or the packages it uses (each list whole). Its event does not change. */
+/** Changes an event type's title, delivery or file, or the standard rules it meets, the packages it uses or its helper files (each list whole). Its event does not change. */
 export function changeEventType(tx: Transaction, input: ChangeEventType): void {
   const domainEvents = new DomainEventRepository(tx);
   const domainEvent = domainEvents.loadHolding('event_type', input.id) ?? tx.refuse('missing', `there is no event type ${input.id}`);
   const held = domainEvent.eventType!;
-  domainEvent.eventType = { row: changed(held.row, input, ['title', 'delivery', 'file']), meets: input.meets ?? held.meets, packages: input.packages ?? held.packages };
+  domainEvent.eventType = { row: changed(held.row, input, ['title', 'delivery', 'file']), meets: input.meets ?? held.meets, packages: input.packages ?? held.packages, helpers: input.helpers ?? held.helpers };
   holdToRules(tx, domainEvent);
   domainEvents.save(domainEvent);
 }
 
-/** Removes an event type with the links it starts and the packages it uses. Refused while anything else references it. */
+/** Removes an event type with the links it starts, the packages it uses and its helper files. Refused while anything else references it. */
 export function removeEventType(tx: Transaction, input: RemoveEventType): void {
   const domainEvents = new DomainEventRepository(tx);
   const domainEvent = domainEvents.loadHolding('event_type', input.id) ?? tx.refuse('missing', `there is no event type ${input.id}`);

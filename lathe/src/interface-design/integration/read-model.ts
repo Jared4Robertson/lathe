@@ -21,6 +21,8 @@ export interface AdapterOnPage {
   adapter: AdapterRow;
   meets: string[];
   packages: string[];
+  /** Its helper files, sorted. */
+  helpers: string[];
 }
 
 /** An integration whole, as its page shows it: its row, its adapter when it has one, and its tests by ID. */
@@ -71,6 +73,7 @@ export function integrationTableFrom(view: ReadView): IntegrationTable {
   const startsFrom = linked(view, 'starts_from', 'source_id', 'target_id');
   const meets = linked(view, 'meets', 'source_id', 'target_id');
   const packages = linked(view, 'package_use', 'record_id', 'package');
+  const helpers = linked(view, 'helper_file', 'record_id', 'file');
   const adapters = grouped<AdapterRow>(view.rows('adapter'), 'integration_id');
   const tests = grouped<IntegrationTestRow>(view.rows('integration_test'), 'integration_id');
   const integrations = new Map<string, IntegrationTree>();
@@ -84,7 +87,7 @@ export function integrationTableFrom(view: ReadView): IntegrationTable {
     const adapter = adapters.get(root)?.[0];
     const tree: IntegrationTree = {
       integration,
-      adapter: adapter ? { adapter, meets: meets(adapter.id), packages: packages(adapter.id) } : null,
+      adapter: adapter ? { adapter, meets: meets(adapter.id), packages: packages(adapter.id), helpers: helpers(adapter.id) } : null,
       tests: [...(tests.get(root) ?? [])].sort(byRecordId).map((test) => ({ test, startsFrom: startsFrom(test.id) })),
     };
     if (adapter) holding.set(adapter.id, { root, kind: 'adapter' });

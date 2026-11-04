@@ -31,7 +31,7 @@ export const ADD_COMMAND_HANDLER_IDENTITY = {
   id: 'LA-MOD-CMD243',
   slice: { aggregate: 'LA-MOD-A8', name: 'command' },
   name: 'add-command-handler',
-  description: 'Adds the handler that carries out a command: its name in code, its file and what it does, with the standard rules it meets and the packages it uses. A command has one handler.',
+  description: 'Adds the handler that carries out a command: its name in code, its file and what it does, with the standard rules it meets, the packages it uses and its helper files. A command has one handler.',
   method: 'POST',
   route: '/api/command/add-command-handler',
 } as const;
@@ -40,7 +40,7 @@ export const CHANGE_COMMAND_HANDLER_IDENTITY = {
   id: 'LA-MOD-CMD244',
   slice: { aggregate: 'LA-MOD-A8', name: 'command' },
   name: 'change-command-handler',
-  description: 'Changes a command handler\'s title, file or description, or the standard rules it meets or the packages it uses (each list whole). Its command does not change.',
+  description: 'Changes a command handler\'s title, file or description, or the standard rules it meets, the packages it uses or its helper files (each list whole). Its command does not change.',
   method: 'POST',
   route: '/api/command/change-command-handler',
 } as const;
@@ -49,7 +49,7 @@ export const REMOVE_COMMAND_HANDLER_IDENTITY = {
   id: 'LA-MOD-CMD245',
   slice: { aggregate: 'LA-MOD-A8', name: 'command' },
   name: 'remove-command-handler',
-  description: 'Removes a command handler with the links it starts and the packages it uses. Refused while anything else references it.',
+  description: 'Removes a command handler with the links it starts, the packages it uses and its helper files. Refused while anything else references it.',
   method: 'POST',
   route: '/api/command/remove-command-handler',
 } as const;
@@ -85,7 +85,7 @@ export const ADD_EVENT_HANDLER_IDENTITY = {
   id: 'LA-MOD-CMD249',
   slice: { aggregate: 'LA-MOD-A8', name: 'command' },
   name: 'add-event-handler',
-  description: 'Adds the handler that carries out a policy: its name in code, its file and what it does, with the standard rules it meets and the packages it uses. A policy has one event handler.',
+  description: 'Adds the handler that carries out a policy: its name in code, its file and what it does, with the standard rules it meets, the packages it uses and its helper files. A policy has one event handler.',
   method: 'POST',
   route: '/api/command/add-event-handler',
 } as const;
@@ -94,7 +94,7 @@ export const CHANGE_EVENT_HANDLER_IDENTITY = {
   id: 'LA-MOD-CMD250',
   slice: { aggregate: 'LA-MOD-A8', name: 'command' },
   name: 'change-event-handler',
-  description: 'Changes an event handler\'s title, file or description, or the standard rules it meets or the packages it uses (each list whole). Its policy does not change.',
+  description: 'Changes an event handler\'s title, file or description, or the standard rules it meets, the packages it uses or its helper files (each list whole). Its policy does not change.',
   method: 'POST',
   route: '/api/command/change-event-handler',
 } as const;
@@ -103,7 +103,7 @@ export const REMOVE_EVENT_HANDLER_IDENTITY = {
   id: 'LA-MOD-CMD251',
   slice: { aggregate: 'LA-MOD-A8', name: 'command' },
   name: 'remove-event-handler',
-  description: 'Removes an event handler with the links it starts and the packages it uses. Refused while anything else references it.',
+  description: 'Removes an event handler with the links it starts, the packages it uses and its helper files. Refused while anything else references it.',
   method: 'POST',
   route: '/api/command/remove-event-handler',
 } as const;

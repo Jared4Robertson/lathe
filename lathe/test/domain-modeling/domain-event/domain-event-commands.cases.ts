@@ -41,7 +41,7 @@ export function domainEventCommandCases(): void {
       [1, 'Loan ID'],
       [2, 'Due'],
     ]);
-    expect(whole.eventType).toEqual({ eventType: { id: 'TL-LEND-EV01-ET', title: 'LoanOpened', domain_event_id: 'TL-LEND-EV01', delivery: 'outbox', file: 'src/lending/events.ts' }, meets: ['TL-STD-CODE-R01'], packages: [] });
+    expect(whole.eventType).toEqual({ eventType: { id: 'TL-LEND-EV01-ET', title: 'LoanOpened', domain_event_id: 'TL-LEND-EV01', delivery: 'outbox', file: 'src/lending/events.ts' }, meets: ['TL-STD-CODE-R01'], packages: [], helpers: [] });
     expect(runQuery(store, LIST_DOMAIN_EVENTS, { aggregate_id: 'TL-LEND-A1' })).toEqual([
       { id: 'TL-LEND-EV01', title: 'Loan opened' },
       { id: 'TL-LEND-EV02', title: 'Loan closed' },

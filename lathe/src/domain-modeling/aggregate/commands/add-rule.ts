@@ -3,7 +3,7 @@ import type { RuleRow } from '../../../platform/data/tables.ts';
 import { ADD_RULE_IDENTITY } from './identities.generated.ts';
 import { addRule } from './handlers.generated.ts';
 
-export type AddRule = Pick<RuleRow, 'id' | 'title' | 'invariant_id' | 'file'> & { meets?: string[]; packages?: string[] };
+export type AddRule = Pick<RuleRow, 'id' | 'title' | 'invariant_id' | 'file'> & { meets?: string[]; packages?: string[]; helpers?: string[] };
 
 export const ADD_RULE = {
   ...ADD_RULE_IDENTITY,
@@ -14,6 +14,7 @@ export const ADD_RULE = {
     file: column('rule', 'file', 'optional'),
     meets: ids('The standard rules it follows.', 'optional'),
     packages: texts('The packages it uses, each listed in one of the product\'s package.json files.', 'optional'),
+    helpers: texts('The helper files its code is split across beside its file, such as helpers and build-tag variants, each from the product root; no other record names one.', 'optional'),
   },
   handler: addRule,
 } satisfies CommandDefinition<AddRule>;

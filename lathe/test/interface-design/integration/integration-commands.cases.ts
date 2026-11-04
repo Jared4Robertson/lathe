@@ -41,7 +41,7 @@ export function integrationCommandCases(): void {
     const page = runQuery(store, GET_INTEGRATION, { id: 'TL-INT01-AD' }) as Page;
     expect(page.record).toEqual({ id: 'TL-INT01-AD', kind: 'adapter' });
     expect(page.integration).toMatchObject({ id: 'TL-INT01', title: 'Mail', system: "The library's mail service" });
-    expect(page.adapter).toEqual({ adapter: { id: 'TL-INT01-AD', title: 'mailer', integration_id: 'TL-INT01', file: 'src/mailer.ts', description: 'Sends one mail through the service.' }, meets: ['TL-STD-CODE-R01'], packages: ['nodemailer'] });
+    expect(page.adapter).toEqual({ adapter: { id: 'TL-INT01-AD', title: 'mailer', integration_id: 'TL-INT01', file: 'src/mailer.ts', description: 'Sends one mail through the service.' }, meets: ['TL-STD-CODE-R01'], packages: ['nodemailer'], helpers: [] });
     expect(page.tests.map((t) => [t.test.id, t.test.state, t.startsFrom])).toEqual([['TL-INT01-T01', 'manual', ['TL-LEND-TD01']]]);
     expect((runQuery(store, GET_INTEGRATION, { id: 'TL-INT01-T01' }) as Page).record).toEqual({ id: 'TL-INT01-T01', kind: 'integration_test' });
     expect(() => runQuery(store, GET_INTEGRATION, { id: 'TL' })).toThrow(/TL is a product, not an integration or a record in one/);

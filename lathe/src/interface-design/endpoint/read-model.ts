@@ -27,6 +27,8 @@ export interface EndpointHandlerOnPage {
   handler: EndpointHandlerRow;
   meets: string[];
   packages: string[];
+  /** Its helper files, sorted. */
+  helpers: string[];
 }
 
 /** An endpoint whole, as its page shows it: its row, its handler when it has one, and its API requirements by ID. */
@@ -79,6 +81,7 @@ export function endpointTableFrom(view: ReadView): EndpointTable {
   const startsFrom = linked(view, 'starts_from', 'source_id', 'target_id');
   const meets = linked(view, 'meets', 'source_id', 'target_id');
   const packages = linked(view, 'package_use', 'record_id', 'package');
+  const helpers = linked(view, 'helper_file', 'record_id', 'file');
   const requirements = grouped<ApiRequirementRow>(view.rows('api_requirement'), 'endpoint_id');
   const tests = grouped<EndpointTestRow>(view.rows('endpoint_test'), 'api_requirement_id');
   const handlers = grouped<EndpointHandlerRow>(view.rows('endpoint_handler'), 'endpoint_id');
@@ -91,7 +94,7 @@ export function endpointTableFrom(view: ReadView): EndpointTable {
     const handler = handlers.get(root)?.[0];
     const tree: EndpointTree = {
       endpoint,
-      handler: handler ? { handler, meets: meets(handler.id), packages: packages(handler.id) } : null,
+      handler: handler ? { handler, meets: meets(handler.id), packages: packages(handler.id), helpers: helpers(handler.id) } : null,
       requirements: [...(requirements.get(root) ?? [])].sort(byRecordId).map((requirement) => ({
         requirement,
         tests: [...(tests.get(requirement.id) ?? [])].sort(byRecordId).map((test) => ({ test, startsFrom: startsFrom(test.id) })),

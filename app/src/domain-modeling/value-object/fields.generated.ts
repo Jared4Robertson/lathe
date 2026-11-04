@@ -39,6 +39,7 @@ export const VALUE_OBJECT_FIELDS = {
     file: { kind: 'column', table: 'value_type', column: 'file', required: false, clearable: false },
     meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, such as helpers and build-tag variants, each from the product root; no other record names one.', required: false, clearable: false },
   },
   '/api/value-object/change-value-type': {
     id: { kind: 'column', table: 'value_type', column: 'id', required: true, clearable: false },
@@ -46,6 +47,7 @@ export const VALUE_OBJECT_FIELDS = {
     file: { kind: 'column', table: 'value_type', column: 'file', required: false, clearable: true },
     meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, each from the product root.', required: false, clearable: false },
   },
   '/api/value-object/remove-value-type': {
     id: { kind: 'column', table: 'value_type', column: 'id', required: true, clearable: false },

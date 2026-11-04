@@ -54,7 +54,7 @@ export function UiComponentEditor({ index, page, children }: { index: RecordInde
   const product = index.byId.get(id)?.product ?? '';
   if (mode === 'change') {
     const specs = fieldsOf(index, product, false);
-    const current = { ...page.component, renders: page.renders, builds: page.builds, meets: page.meets, packages: page.packages } as Record<string, unknown>;
+    const current = { ...page.component, renders: page.renders, builds: page.builds, meets: page.meets, packages: page.packages, helpers: page.helpers } as Record<string, unknown>;
     const submit = async (draft: Draft) => {
       const input = changeInput(index, specs, draft, current, { id });
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }

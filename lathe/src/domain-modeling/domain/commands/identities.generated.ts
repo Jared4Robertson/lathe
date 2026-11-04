@@ -112,7 +112,7 @@ export const ADD_REPOSITORY_IDENTITY = {
   id: 'LA-MOD-CMD172',
   slice: { aggregate: 'LA-MOD-A4', name: 'domain' },
   name: 'add-repository',
-  description: 'Adds a repository to its domain, with the aggregate it persists, the data store it is stored in, the standard rules it meets and the packages it uses.',
+  description: 'Adds a repository to its domain, with the aggregate it persists, the data store it is stored in, the standard rules it meets, the packages it uses and its helper files.',
   method: 'POST',
   route: '/api/domain/add-repository',
 } as const;
@@ -121,7 +121,7 @@ export const CHANGE_REPOSITORY_IDENTITY = {
   id: 'LA-MOD-CMD173',
   slice: { aggregate: 'LA-MOD-A4', name: 'domain' },
   name: 'change-repository',
-  description: 'Changes a repository\'s title, file or description, the aggregate it persists or the data store it is stored in (null clears either), or the standard rules it meets or packages it uses (each the whole list).',
+  description: 'Changes a repository\'s title, file or description, the aggregate it persists or the data store it is stored in (null clears either), or the standard rules it meets, the packages it uses or its helper files (each the whole list).',
   method: 'POST',
   route: '/api/domain/change-repository',
 } as const;
@@ -130,7 +130,7 @@ export const REMOVE_REPOSITORY_IDENTITY = {
   id: 'LA-MOD-CMD174',
   slice: { aggregate: 'LA-MOD-A4', name: 'domain' },
   name: 'remove-repository',
-  description: 'Removes a repository with the links it starts and the packages it uses. Refused while anything references it.',
+  description: 'Removes a repository with the links it starts, the packages it uses and its helper files. Refused while anything references it.',
   method: 'POST',
   route: '/api/domain/remove-repository',
 } as const;
@@ -139,7 +139,7 @@ export const ADD_SERVICE_IDENTITY = {
   id: 'LA-MOD-CMD175',
   slice: { aggregate: 'LA-MOD-A4', name: 'domain' },
   name: 'add-service',
-  description: 'Adds the service that implements a domain service in code, with the standard rules it meets and the packages it uses.',
+  description: 'Adds the service that implements a domain service in code, with the standard rules it meets, the packages it uses and its helper files.',
   method: 'POST',
   route: '/api/domain/add-service',
 } as const;
@@ -148,7 +148,7 @@ export const CHANGE_SERVICE_IDENTITY = {
   id: 'LA-MOD-CMD176',
   slice: { aggregate: 'LA-MOD-A4', name: 'domain' },
   name: 'change-service',
-  description: 'Changes a service\'s title or file, or the standard rules it meets or packages it uses (each the whole list).',
+  description: 'Changes a service\'s title or file, or the standard rules it meets, the packages it uses or its helper files (each the whole list).',
   method: 'POST',
   route: '/api/domain/change-service',
 } as const;
@@ -157,7 +157,7 @@ export const REMOVE_SERVICE_IDENTITY = {
   id: 'LA-MOD-CMD177',
   slice: { aggregate: 'LA-MOD-A4', name: 'domain' },
   name: 'remove-service',
-  description: 'Removes a service with the links it starts and the packages it uses. Refused while anything references it.',
+  description: 'Removes a service with the links it starts, the packages it uses and its helper files. Refused while anything references it.',
   method: 'POST',
   route: '/api/domain/remove-service',
 } as const;

@@ -32,7 +32,9 @@ domain, and lists as gaps each obligation still short of one, and each record sh
 it (an "at least one" or "exactly one" that is missing while records are written stage by stage). An obligation is
 proved by a test of it, automated or manual, at a run by level its test kind allows, whose file (when automated)
 exists and names the test's ID. An obligation something outside the product provides (`provided_by`) is built and
-proved through its provider.
+proved through its provider. A technical record that names a file counts toward building only when that file and each
+of its helper files (`helper_file`: the other files its code is split across) exist; a helper file traces to its
+record as the record's own file does.
 
 **Complexity.** Every kind says whether its records are essential complexity, what the problem itself demands and
 the product decides once (discovery, the domain model, use cases and patterns, the what of interface design), or
@@ -3307,6 +3309,21 @@ A product's typed settings for its checks. A product without a row takes the def
 - **Rule:** `(max_entities_per_aggregate >= 1)`
 
 ### Other part tables: rows that belong to one record and are removed with it.
+
+<a id="table-helper_file"></a>
+
+#### `helper_file`
+
+A helper file of a technical record: one more file its code is split across beside the record's file, such as a helper or a build-tag variant of it. The file traces to the record, as its own file does, and the record is built only when its file and every helper file exist. Only a technical record names one (technical_record), one record names each, and a helper file is never the file of a technical record (helper-file-is-a-file).
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `record_id` | VARCHAR → `technical_record` | yes | The technical record whose code the file holds part of: any technical record, a record of a product's own technical kind included. |
+| `file` | VARCHAR | yes | The helper file, from the product root with forward slashes, such as internal/compiler/lock_unix.go; it may not exist yet. It does not start with ./ or /, and it is a file, not a folder. |
+
+- **Key:** `record_id`, `file`
+- **Unique:** `file`
+- **Rule:** `(("trim"(file) != '') AND (NOT regexp_matches(file, '^\.?/|/$|\\')))`
 
 <a id="table-package_use"></a>
 

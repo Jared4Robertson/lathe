@@ -25,6 +25,8 @@ export interface ServiceOnPage {
   service: ServiceRow;
   meets: string[];
   packages: string[];
+  /** Its helper files, sorted. */
+  helpers: string[];
 }
 
 /** A domain service test as the page shows it: its row and the test data sets it starts from. */
@@ -46,6 +48,8 @@ export interface RepositoryOnPage {
   persists: string | null;
   meets: string[];
   packages: string[];
+  /** Its helper files, sorted. */
+  helpers: string[];
 }
 
 /** A term as the page shows it: its row and the terms its meaning builds on, by ID. */
@@ -141,6 +145,7 @@ export function termsBottomUp<T extends { id: string; title: string }>(terms: re
 export function domainTableFrom(view: ReadView): DomainTable {
   const [serves, persists, meets, startsFrom, buildsOn] = ['serves', 'persists', 'meets', 'starts_from', 'builds_on'].map((t) => targets(view, t));
   const packages = targets(view, 'package_use', 'record_id', 'package');
+  const helpers = targets(view, 'helper_file', 'record_id', 'file');
   const capabilities = grouped<CapabilityRow>(view.rows('capability'), 'domain_id');
   const useCases = grouped<{ id: string }>(view.rows('use_case'), 'capability_id');
   const terms = grouped<TermRow>(view.rows('term'), 'domain_id');
@@ -166,7 +171,7 @@ export function domainTableFrom(view: ReadView): DomainTable {
         const service = (services.get(domainService.id) ?? [])[0];
         return {
           domainService,
-          service: service ? { service, meets: meets(service.id), packages: packages(service.id) } : null,
+          service: service ? { service, meets: meets(service.id), packages: packages(service.id), helpers: helpers(service.id) } : null,
           tests: [...(tests.get(domainService.id) ?? [])].sort(byRecordId).map((test) => ({ test, startsFrom: startsFrom(test.id) })),
         };
       }),
@@ -175,6 +180,7 @@ export function domainTableFrom(view: ReadView): DomainTable {
         persists: persists(repository.id)[0] ?? null,
         meets: meets(repository.id),
         packages: packages(repository.id),
+        helpers: helpers(repository.id),
       })),
     };
     for (const c of tree.capabilities) hold(c.capability.id, 'capability');

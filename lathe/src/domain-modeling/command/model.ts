@@ -14,6 +14,8 @@ export interface Built<T> {
   row: T;
   meets: string[];
   packages: string[];
+  /** Its helper files (helper_file), sorted. */
+  helpers: string[];
 }
 
 /** A test with the test data sets it starts from. */
@@ -60,16 +62,16 @@ export const COMMAND_TABLES = [
   'hears',
   'exchanges_with',
   'meets',
-  'package_use',
+  'package_use', 'helper_file',
   'starts_from',
 ] as const;
 
 /** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
 export const COMMAND_SHAPE = {
   command: { at: 'command', lists: { raises: 'raises', checks: 'checks', calls: 'calls' } },
-  command_handler: { at: 'handler', one: true, refusedBy: 'oneCommandHandler', lists: { meets: 'meets', packages: 'packages' } },
+  command_handler: { at: 'handler', one: true, refusedBy: 'oneCommandHandler', lists: { meets: 'meets', packages: 'packages', helpers: 'helpers' } },
   policy: { at: 'policies', links: { hears: 'hears' }, lists: { exchanges_with: 'exchangesWith' } },
-  event_handler: { at: 'eventHandlers', lists: { meets: 'meets', packages: 'packages' } },
+  event_handler: { at: 'eventHandlers', lists: { meets: 'meets', packages: 'packages', helpers: 'helpers' } },
   policy_test: { at: 'policyTests', lists: { starts_from: 'startsFrom' } },
 } as const satisfies AggregateShape;
 
@@ -90,7 +92,8 @@ export function commandsFrom(rows: (table: string) => Row[], only?: string): Com
   const policyTestsOf = groupBy((rows('policy_test') as unknown as PolicyTestRow[]).filter((t) => policyIds.has(t.policy_id)), (t) => commandOf.get(t.policy_id));
   const [raises, checks, calls, hears, exchangesWith, meets, startsFrom] = ['raises', 'checks', 'calls', 'hears', 'exchanges_with', 'meets', 'starts_from'].map((table) => bySource(rows(table)));
   const packages = bySource(rows('package_use'), 'record_id', 'package');
-  const built = <T extends { id: string }>(row: T): Built<T> => ({ row, meets: groupOf(meets, row.id), packages: groupOf(packages, row.id) });
+  const helpers = bySource(rows('helper_file'), 'record_id', 'file');
+  const built = <T extends { id: string }>(row: T): Built<T> => ({ row, meets: groupOf(meets, row.id), packages: groupOf(packages, row.id), helpers: groupOf(helpers, row.id) });
   return commands.map((command) => {
     const handler = groupOf(handlersOf, command.id)[0];
     return {
@@ -126,6 +129,7 @@ export function commandRows(command: Command): Map<string, Row[]> {
     ['exchanges_with', command.policies.flatMap((p) => links(p.row.id, p.exchangesWith))],
     ['meets', built.flatMap((b) => links(b.row.id, b.meets))],
     ['package_use', built.flatMap((b) => b.packages.map((p) => ({ record_id: b.row.id, package: p })))],
+    ['helper_file', built.flatMap((b) => b.helpers.map((p) => ({ record_id: b.row.id, file: p })))],
     ['starts_from', command.policyTests.flatMap((t) => links(t.row.id, t.startsFrom))],
   ]);
 }

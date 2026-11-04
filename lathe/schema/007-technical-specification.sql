@@ -395,3 +395,16 @@ COMMENT ON TABLE package_use IS 'A package a technical record uses: a dependency
 COMMENT ON COLUMN package_use.record_id IS 'The technical record that uses the package: an adapter, a UI component, an entry point, a tooling record, or a record of a product''s own technical kind.';
 COMMENT ON COLUMN package_use.package IS 'The package''s name as package.json lists it, such as @duckdb/node-api.';
 INSERT INTO meta_table VALUES ('package_use', 'part', 'record_id');
+
+-- The helper files technical records name beside their file: the other files a record's code is split across, such as
+-- helpers and build-tag variants, so each traces to the one record it serves.
+CREATE TABLE helper_file (
+  record_id VARCHAR NOT NULL REFERENCES technical_record (id),
+  file VARCHAR NOT NULL CHECK (trim(file) <> '' AND NOT regexp_matches(file, '^\.?/|/$|\\')),
+  PRIMARY KEY (record_id, file),
+  UNIQUE (file)
+);
+COMMENT ON TABLE helper_file IS 'A helper file of a technical record: one more file its code is split across beside the record''s file, such as a helper or a build-tag variant of it. The file traces to the record, as its own file does, and the record is built only when its file and every helper file exist. Only a technical record names one (technical_record), one record names each, and a helper file is never the file of a technical record (helper-file-is-a-file).';
+COMMENT ON COLUMN helper_file.record_id IS 'The technical record whose code the file holds part of: any technical record, a record of a product''s own technical kind included.';
+COMMENT ON COLUMN helper_file.file IS 'The helper file, from the product root with forward slashes, such as internal/compiler/lock_unix.go; it may not exist yet. It does not start with ./ or /, and it is a file, not a folder.';
+INSERT INTO meta_table VALUES ('helper_file', 'part', 'record_id');

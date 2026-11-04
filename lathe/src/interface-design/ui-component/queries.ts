@@ -31,6 +31,7 @@ export const GET_UI_COMPONENT: QueryDefinition<{ id: string }, UiComponentPage, 
     if (c.builds.length) lines.push(`  builds: ${c.builds.join(', ')}`);
     if (c.meets.length) lines.push(`  meets: ${c.meets.join(', ')}`);
     if (c.packages.length) lines.push(`  uses: ${c.packages.join(', ')}`);
+    if (c.helpers.length) lines.push(`  helper files: ${c.helpers.join(", ")}`);
     return lines.join('\n');
   },
 };

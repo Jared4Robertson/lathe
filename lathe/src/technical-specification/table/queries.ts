@@ -88,5 +88,6 @@ function tableText(page: TablePage): string {
   }
   for (const m of page.meets) lines.push(`  meets ${m}`);
   for (const p of page.packages) lines.push(`  uses ${p}`);
+  for (const h of page.helpers) lines.push(`  helper file ${h}`);
   return lines.join('\n');
 }

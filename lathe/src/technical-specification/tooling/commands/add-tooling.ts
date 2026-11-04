@@ -3,7 +3,7 @@ import type { ToolingRow } from '../../../platform/data/tables.ts';
 import { ADD_TOOLING_IDENTITY } from './identities.generated.ts';
 import { addTooling } from './handlers.generated.ts';
 
-export type AddTooling = Pick<ToolingRow, 'id' | 'title' | 'domain_id' | 'file'> & { packages?: string[]; meets?: string[]; generates?: string[] };
+export type AddTooling = Pick<ToolingRow, 'id' | 'title' | 'domain_id' | 'file'> & { packages?: string[]; helpers?: string[]; meets?: string[]; generates?: string[] };
 
 export const ADD_TOOLING = {
   ...ADD_TOOLING_IDENTITY,
@@ -13,6 +13,7 @@ export const ADD_TOOLING = {
     domain_id: column('tooling', 'domain_id', 'required'),
     file: column('tooling', 'file', 'optional'),
     packages: texts('The packages it uses, as the product\'s package.json files list them.', 'optional'),
+    helpers: texts('The helper files its code is split across beside its file, such as helpers and build-tag variants, each from the product root; no other record names one.', 'optional'),
     meets: ids('The standard rules it meets.', 'optional'),
     generates: ids('The technical records it generates: derived, never written by hand.', 'optional'),
   },

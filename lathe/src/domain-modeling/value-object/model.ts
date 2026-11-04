@@ -21,6 +21,8 @@ export interface Technical<T> {
   row: T;
   meets: string[];
   packages: string[];
+  /** Its helper files (helper_file), sorted. */
+  helpers: string[];
 }
 
 /** A test with the test data sets it starts from. */
@@ -43,13 +45,13 @@ export interface ValueObject {
 }
 
 /** The tables the Value object aggregate keeps its rows in: its kinds, its part, and the relations and parts its records start. */
-export const VALUE_OBJECT_TABLES = ['value_object', 'value_object_field', 'constraint', 'value_type', 'constraint_test', 'meets', 'package_use', 'starts_from'] as const;
+export const VALUE_OBJECT_TABLES = ['value_object', 'value_object_field', 'constraint', 'value_type', 'constraint_test', 'meets', 'package_use', 'helper_file', 'starts_from'] as const;
 
 /** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
 export const VALUE_OBJECT_SHAPE = {
   value_object: { at: 'valueObject', given: { fields: 'fields' } },
   constraint: { at: 'constraints' },
-  value_type: { at: 'valueType', one: true, refusedBy: 'oneValueType', lists: { meets: 'meets', packages: 'packages' } },
+  value_type: { at: 'valueType', one: true, refusedBy: 'oneValueType', lists: { meets: 'meets', packages: 'packages', helpers: 'helpers' } },
   constraint_test: { at: 'constraintTests', refusedBy: 'oneConstraintTest', lists: { starts_from: 'startsFrom' } },
 } as const satisfies AggregateShape;
 
@@ -69,6 +71,7 @@ export function valueObjectsFrom(rows: (table: string) => Row[], only?: string):
   const constraintsOf = groupBy(constraints, (c) => c.value_object_id);
   const [meets, startsFrom] = ['meets', 'starts_from'].map((table) => bySource(rows(table)));
   const packages = bySource(rows('package_use'), 'record_id', 'package');
+  const helpers = bySource(rows('helper_file'), 'record_id', 'file');
   return valueObjects.map((valueObject) => {
     const valueType = groupOf(valueTypesOf, valueObject.id)[0];
     return {
@@ -78,7 +81,7 @@ export function valueObjectsFrom(rows: (table: string) => Row[], only?: string):
         .sort((a, b) => a.position - b.position)
         .map(({ value_object_id: _owner, position: _at, ...field }) => field),
       constraints: groupOf(constraintsOf, valueObject.id),
-      valueType: valueType ? { row: valueType, meets: groupOf(meets, valueType.id), packages: groupOf(packages, valueType.id) } : null,
+      valueType: valueType ? { row: valueType, meets: groupOf(meets, valueType.id), packages: groupOf(packages, valueType.id), helpers: groupOf(helpers, valueType.id) } : null,
       constraintTests: groupOf(testsOf, valueObject.id).map((row) => ({ row, startsFrom: groupOf(startsFrom, row.id) })),
     };
   });
@@ -98,6 +101,7 @@ export function valueObjectRows(valueObject: ValueObject): Map<string, Row[]> {
     ['constraint_test', valueObject.constraintTests.map((t) => asRow(t.row))],
     ['meets', valueType ? links(valueType.row.id, valueType.meets) : []],
     ['package_use', valueType ? valueType.packages.map((name) => ({ record_id: valueType.row.id, package: name })) : []],
+    ['helper_file', valueType ? valueType.helpers.map((name) => ({ record_id: valueType.row.id, file: name })) : []],
     ['starts_from', valueObject.constraintTests.flatMap((t) => links(t.row.id, t.startsFrom))],
   ]);
 }

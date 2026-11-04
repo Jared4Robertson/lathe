@@ -69,28 +69,28 @@ export function removeQuery(tx: Transaction, input: RemoveQuery): void {
   readModels.save(readModel);
 }
 
-/** Adds the projection that fills a read model, its one piece of code, with the standard rules it meets and the packages it uses. */
+/** Adds the projection that fills a read model, its one piece of code, with the standard rules it meets, the packages it uses and its helper files. */
 export function addProjection(tx: Transaction, input: AddProjection): void {
   const readModels = new ReadModelRepository(tx);
   const readModel = readModels.load(input.read_model_id) ?? tx.refuse('missing', `there is no read model ${input.read_model_id}`);
-  const { meets = [], packages = [], ...row } = input;
+  const { meets = [], packages = [], helpers = [], ...row } = input;
   refuseBroken(oneProjection([...(readModel.projection ? [readModel.projection.row] : []), row]));
-  readModel.projection = { row, meets: meets, packages: packages };
+  readModel.projection = { row, meets: meets, packages: packages, helpers: helpers };
   holdToRules(tx, readModel);
   readModels.save(readModel);
 }
 
-/** Changes a projection's title, file or description, or the standard rules it meets or packages it uses (each the whole list). */
+/** Changes a projection's title, file or description, or the standard rules it meets, the packages it uses or its helper files (each the whole list). */
 export function changeProjection(tx: Transaction, input: ChangeProjection): void {
   const readModels = new ReadModelRepository(tx);
   const readModel = readModels.loadHolding('projection', input.id) ?? tx.refuse('missing', `there is no projection ${input.id}`);
   const held = readModel.projection!;
-  readModel.projection = { row: changed(held.row, input, ['title', 'file', 'description']), meets: input.meets ?? held.meets, packages: input.packages ?? held.packages };
+  readModel.projection = { row: changed(held.row, input, ['title', 'file', 'description']), meets: input.meets ?? held.meets, packages: input.packages ?? held.packages, helpers: input.helpers ?? held.helpers };
   holdToRules(tx, readModel);
   readModels.save(readModel);
 }
 
-/** Removes a read model's projection with the links it starts and the packages it uses. Refused while anything references it. */
+/** Removes a read model's projection with the links it starts, the packages it uses and its helper files. Refused while anything references it. */
 export function removeProjection(tx: Transaction, input: RemoveProjection): void {
   const readModels = new ReadModelRepository(tx);
   const readModel = readModels.loadHolding('projection', input.id) ?? tx.refuse('missing', `there is no projection ${input.id}`);
@@ -98,26 +98,26 @@ export function removeProjection(tx: Transaction, input: RemoveProjection): void
   readModels.save(readModel);
 }
 
-/** Adds the handler that answers a query, its one piece of code, with the standard rules it meets and the packages it uses. */
+/** Adds the handler that answers a query, its one piece of code, with the standard rules it meets, the packages it uses and its helper files. */
 export function addQueryHandler(tx: Transaction, input: AddQueryHandler): void {
   const readModels = new ReadModelRepository(tx);
   const readModel = readModels.loadHolding('query', input.query_id) ?? tx.refuse('missing', `there is no query ${input.query_id}`);
-  const { meets = [], packages = [], ...row } = input;
-  readModel.queryHandlers.push({ row, meets: meets, packages: packages });
+  const { meets = [], packages = [], helpers = [], ...row } = input;
+  readModel.queryHandlers.push({ row, meets: meets, packages: packages, helpers: helpers });
   holdToRules(tx, readModel);
   readModels.save(readModel);
 }
 
-/** Changes a query handler's title, file or description, or the standard rules it meets or packages it uses (each the whole list). */
+/** Changes a query handler's title, file or description, or the standard rules it meets, the packages it uses or its helper files (each the whole list). */
 export function changeQueryHandler(tx: Transaction, input: ChangeQueryHandler): void {
   const readModels = new ReadModelRepository(tx);
   const readModel = readModels.loadHolding('query_handler', input.id) ?? tx.refuse('missing', `there is no query handler ${input.id}`);
-  readModel.queryHandlers = readModel.queryHandlers.map((x) => (x.row.id === input.id ? { row: changed(x.row, input, ['title', 'file', 'description']), meets: input.meets ?? x.meets, packages: input.packages ?? x.packages } : x));
+  readModel.queryHandlers = readModel.queryHandlers.map((x) => (x.row.id === input.id ? { row: changed(x.row, input, ['title', 'file', 'description']), meets: input.meets ?? x.meets, packages: input.packages ?? x.packages, helpers: input.helpers ?? x.helpers } : x));
   holdToRules(tx, readModel);
   readModels.save(readModel);
 }
 
-/** Removes a query's handler with the links it starts and the packages it uses. Refused while anything references it. */
+/** Removes a query's handler with the links it starts, the packages it uses and its helper files. Refused while anything references it. */
 export function removeQueryHandler(tx: Transaction, input: RemoveQueryHandler): void {
   const readModels = new ReadModelRepository(tx);
   const readModel = readModels.loadHolding('query_handler', input.id) ?? tx.refuse('missing', `there is no query handler ${input.id}`);
@@ -125,28 +125,28 @@ export function removeQueryHandler(tx: Transaction, input: RemoveQueryHandler): 
   readModels.save(readModel);
 }
 
-/** Adds a read model's reader, the one way its query handlers read its table, with the data store it reads the table in, the standard rules it meets and the packages it uses. */
+/** Adds a read model's reader, the one way its query handlers read its table, with the data store it reads the table in, the standard rules it meets, the packages it uses and its helper files. */
 export function addReader(tx: Transaction, input: AddReader): void {
   const readModels = new ReadModelRepository(tx);
   const readModel = readModels.load(input.read_model_id) ?? tx.refuse('missing', `there is no read model ${input.read_model_id}`);
-  const { stored_in, meets = [], packages = [], ...row } = input;
+  const { stored_in, meets = [], packages = [], helpers = [], ...row } = input;
   refuseBroken(oneReader([...(readModel.reader ? [readModel.reader.row] : []), row]));
-  readModel.reader = { row, meets: meets, packages: packages, storedIn: stored_in ?? null };
+  readModel.reader = { row, meets: meets, packages: packages, helpers: helpers, storedIn: stored_in ?? null };
   holdToRules(tx, readModel);
   readModels.save(readModel);
 }
 
-/** Changes a reader's title, file or description, the data store it reads in (null clears it), or the standard rules it meets or packages it uses (each the whole list). */
+/** Changes a reader's title, file or description, the data store it reads in (null clears it), or the standard rules it meets, the packages it uses or its helper files (each the whole list). */
 export function changeReader(tx: Transaction, input: ChangeReader): void {
   const readModels = new ReadModelRepository(tx);
   const readModel = readModels.loadHolding('reader', input.id) ?? tx.refuse('missing', `there is no reader ${input.id}`);
   const held = readModel.reader!;
-  readModel.reader = { row: changed(held.row, input, ['title', 'file', 'description']), meets: input.meets ?? held.meets, packages: input.packages ?? held.packages, storedIn: input.stored_in === undefined ? held.storedIn : input.stored_in };
+  readModel.reader = { row: changed(held.row, input, ['title', 'file', 'description']), meets: input.meets ?? held.meets, packages: input.packages ?? held.packages, helpers: input.helpers ?? held.helpers, storedIn: input.stored_in === undefined ? held.storedIn : input.stored_in };
   holdToRules(tx, readModel);
   readModels.save(readModel);
 }
 
-/** Removes a read model's reader with the links it starts and the packages it uses. Refused while anything references it. */
+/** Removes a read model's reader with the links it starts, the packages it uses and its helper files. Refused while anything references it. */
 export function removeReader(tx: Transaction, input: RemoveReader): void {
   const readModels = new ReadModelRepository(tx);
   const readModel = readModels.loadHolding('reader', input.id) ?? tx.refuse('missing', `there is no reader ${input.id}`);

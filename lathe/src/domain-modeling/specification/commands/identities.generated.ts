@@ -31,7 +31,7 @@ export const ADD_PREDICATE_IDENTITY = {
   id: 'LA-MOD-CMD263',
   slice: { aggregate: 'LA-MOD-A5', name: 'specification' },
   name: 'add-predicate',
-  description: 'Adds the predicate of a specification, its one piece of code, with the standard rules it meets and the packages it uses.',
+  description: 'Adds the predicate of a specification, its one piece of code, with the standard rules it meets, the packages it uses and its helper files.',
   method: 'POST',
   route: '/api/specification/add-predicate',
 } as const;
@@ -40,7 +40,7 @@ export const CHANGE_PREDICATE_IDENTITY = {
   id: 'LA-MOD-CMD264',
   slice: { aggregate: 'LA-MOD-A5', name: 'specification' },
   name: 'change-predicate',
-  description: 'Changes a predicate\'s title or file, or the standard rules it meets or packages it uses (each the whole list).',
+  description: 'Changes a predicate\'s title or file, or the standard rules it meets, the packages it uses or its helper files (each the whole list).',
   method: 'POST',
   route: '/api/specification/change-predicate',
 } as const;
@@ -49,7 +49,7 @@ export const REMOVE_PREDICATE_IDENTITY = {
   id: 'LA-MOD-CMD265',
   slice: { aggregate: 'LA-MOD-A5', name: 'specification' },
   name: 'remove-predicate',
-  description: 'Removes a specification\'s predicate with the links it starts and the packages it uses. Refused while anything references it.',
+  description: 'Removes a specification\'s predicate with the links it starts, the packages it uses and its helper files. Refused while anything references it.',
   method: 'POST',
   route: '/api/specification/remove-predicate',
 } as const;

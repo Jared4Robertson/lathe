@@ -31,7 +31,7 @@ export const ADD_EVENT_TYPE_IDENTITY = {
   id: 'LA-MOD-CMD233',
   slice: { aggregate: 'LA-MOD-A7', name: 'domain-event' },
   name: 'add-event-type',
-  description: 'Adds a domain event\'s shape in code: its name, how it is delivered and its file, with the standard rules it meets and the packages it uses. An event has one event type.',
+  description: 'Adds a domain event\'s shape in code: its name, how it is delivered and its file, with the standard rules it meets, the packages it uses and its helper files. An event has one event type.',
   method: 'POST',
   route: '/api/domain-event/add-event-type',
 } as const;
@@ -40,7 +40,7 @@ export const CHANGE_EVENT_TYPE_IDENTITY = {
   id: 'LA-MOD-CMD234',
   slice: { aggregate: 'LA-MOD-A7', name: 'domain-event' },
   name: 'change-event-type',
-  description: 'Changes an event type\'s title, delivery or file, or the standard rules it meets or the packages it uses (each list whole). Its event does not change.',
+  description: 'Changes an event type\'s title, delivery or file, or the standard rules it meets, the packages it uses or its helper files (each list whole). Its event does not change.',
   method: 'POST',
   route: '/api/domain-event/change-event-type',
 } as const;
@@ -49,7 +49,7 @@ export const REMOVE_EVENT_TYPE_IDENTITY = {
   id: 'LA-MOD-CMD235',
   slice: { aggregate: 'LA-MOD-A7', name: 'domain-event' },
   name: 'remove-event-type',
-  description: 'Removes an event type with the links it starts and the packages it uses. Refused while anything else references it.',
+  description: 'Removes an event type with the links it starts, the packages it uses and its helper files. Refused while anything else references it.',
   method: 'POST',
   route: '/api/domain-event/remove-event-type',
 } as const;

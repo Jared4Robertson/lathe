@@ -67,7 +67,7 @@ export const ADD_ENDPOINT_HANDLER_IDENTITY = {
   id: 'LA-IXD-CMD327',
   slice: { aggregate: 'LA-IXD-A13', name: 'endpoint' },
   name: 'add-endpoint-handler',
-  description: 'Adds an endpoint\'s handler, its one piece of code that serves it: its name in code and its file, with the standard rules it meets and the packages it uses.',
+  description: 'Adds an endpoint\'s handler, its one piece of code that serves it: its name in code and its file, with the standard rules it meets, the packages it uses and its helper files.',
   method: 'POST',
   route: '/api/endpoint/add-endpoint-handler',
 } as const;
@@ -76,7 +76,7 @@ export const CHANGE_ENDPOINT_HANDLER_IDENTITY = {
   id: 'LA-IXD-CMD328',
   slice: { aggregate: 'LA-IXD-A13', name: 'endpoint' },
   name: 'change-endpoint-handler',
-  description: 'Changes an endpoint handler\'s title, file or description, or the standard rules it meets or the packages it uses (each list whole). Its endpoint does not change.',
+  description: 'Changes an endpoint handler\'s title, file or description, or the standard rules it meets, the packages it uses or its helper files (each list whole). Its endpoint does not change.',
   method: 'POST',
   route: '/api/endpoint/change-endpoint-handler',
 } as const;
@@ -85,7 +85,7 @@ export const REMOVE_ENDPOINT_HANDLER_IDENTITY = {
   id: 'LA-IXD-CMD329',
   slice: { aggregate: 'LA-IXD-A13', name: 'endpoint' },
   name: 'remove-endpoint-handler',
-  description: 'Removes an endpoint handler with the links it starts and the packages it uses. Refused while anything else references them.',
+  description: 'Removes an endpoint handler with the links it starts, the packages it uses and its helper files. Refused while anything else references them.',
   method: 'POST',
   route: '/api/endpoint/remove-endpoint-handler',
 } as const;

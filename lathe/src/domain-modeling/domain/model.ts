@@ -28,6 +28,8 @@ export interface Technical<T> {
   row: T;
   meets: string[];
   packages: string[];
+  /** Its helper files (helper_file), sorted. */
+  helpers: string[];
 }
 
 /** A repository with the one aggregate it persists and the data store it is stored in. */
@@ -68,7 +70,7 @@ export const DOMAIN_TABLES = [
   'persists',
   'stored_in',
   'meets',
-  'package_use',
+  'package_use', 'helper_file',
   'starts_from',
   'builds_on',
 ] as const;
@@ -79,9 +81,9 @@ export const DOMAIN_SHAPE = {
   capability: { at: 'capabilities', lists: { serves: 'serves' } },
   term: { at: 'terms', lists: { builds_on: 'buildsOn' } },
   domain_service: { at: 'domainServices' },
-  service: { at: 'services', lists: { meets: 'meets', packages: 'packages' } },
+  service: { at: 'services', lists: { meets: 'meets', packages: 'packages', helpers: 'helpers' } },
   domain_service_test: { at: 'domainServiceTests', lists: { starts_from: 'startsFrom' } },
-  repository: { at: 'repositories', lists: { meets: 'meets', packages: 'packages' }, links: { persists: 'persists', stored_in: 'storedIn' } },
+  repository: { at: 'repositories', lists: { meets: 'meets', packages: 'packages', helpers: 'helpers' }, links: { persists: 'persists', stored_in: 'storedIn' } },
 } as const satisfies AggregateShape;
 
 export type DomainKind = keyof typeof DOMAIN_SHAPE;
@@ -102,7 +104,8 @@ export function domainsFrom(rows: (table: string) => Row[], only?: string): Doma
   const testsOf = groupBy((rows('domain_service_test') as unknown as DomainServiceTestRow[]).filter((t) => serviceOf.has(t.domain_service_id)), (t) => serviceOf.get(t.domain_service_id));
   const [serves, persists, storedIn, meets, startsFrom, buildsOn] = ['serves', 'persists', 'stored_in', 'meets', 'starts_from', 'builds_on'].map((table) => bySource(rows(table)));
   const packages = bySource(rows('package_use'), 'record_id', 'package');
-  const technical = <T extends { id: string }>(row: T): Technical<T> => ({ row, meets: groupOf(meets, row.id), packages: groupOf(packages, row.id) });
+  const helpers = bySource(rows('helper_file'), 'record_id', 'file');
+  const technical = <T extends { id: string }>(row: T): Technical<T> => ({ row, meets: groupOf(meets, row.id), packages: groupOf(packages, row.id), helpers: groupOf(helpers, row.id) });
   return domains.map((domain) => ({
     root: domain.id,
     domain,
@@ -138,6 +141,7 @@ export function domainRows(domain: Domain): Map<string, Row[]> {
     ['stored_in', domain.repositories.flatMap((r) => links(r.row.id, [r.storedIn]))],
     ['meets', technical.flatMap((t) => links(t.row.id, t.meets))],
     ['package_use', technical.flatMap((t) => t.packages.map((name) => ({ record_id: t.row.id, package: name })))],
+    ['helper_file', technical.flatMap((t) => t.helpers.map((name) => ({ record_id: t.row.id, file: name })))],
     ['starts_from', domain.domainServiceTests.flatMap((t) => links(t.row.id, t.startsFrom))],
     ['builds_on', domain.terms.flatMap((t) => links(t.row.id, t.buildsOn))],
   ]);

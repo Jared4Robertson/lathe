@@ -83,6 +83,7 @@ export const DOMAIN_FIELDS = {
     stored_in: { kind: 'id', description: 'The data store it loads and saves its aggregate in.', required: false, clearable: false },
     meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, such as helpers and build-tag variants, each from the product root; no other record names one.', required: false, clearable: false },
   },
   '/api/domain/change-repository': {
     id: { kind: 'column', table: 'repository', column: 'id', required: true, clearable: false },
@@ -93,6 +94,7 @@ export const DOMAIN_FIELDS = {
     stored_in: { kind: 'id', description: 'The data store it loads and saves its aggregate in.', required: false, clearable: true },
     meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, each from the product root.', required: false, clearable: false },
   },
   '/api/domain/remove-repository': {
     id: { kind: 'column', table: 'repository', column: 'id', required: true, clearable: false },
@@ -104,6 +106,7 @@ export const DOMAIN_FIELDS = {
     file: { kind: 'column', table: 'service', column: 'file', required: false, clearable: false },
     meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, such as helpers and build-tag variants, each from the product root; no other record names one.', required: false, clearable: false },
   },
   '/api/domain/change-service': {
     id: { kind: 'column', table: 'service', column: 'id', required: true, clearable: false },
@@ -111,6 +114,7 @@ export const DOMAIN_FIELDS = {
     file: { kind: 'column', table: 'service', column: 'file', required: false, clearable: true },
     meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, each from the product root.', required: false, clearable: false },
   },
   '/api/domain/remove-service': {
     id: { kind: 'column', table: 'service', column: 'id', required: true, clearable: false },

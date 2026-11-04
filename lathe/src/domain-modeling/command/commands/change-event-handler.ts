@@ -4,7 +4,7 @@ import { CHANGE_EVENT_HANDLER_IDENTITY } from './identities.generated.ts';
 import { changeEventHandler } from './handlers.generated.ts';
 
 /** The event handler's changes: a column given is set, null clears an optional one; a list given replaces its list. */
-export type ChangeEventHandler = Pick<EventHandlerRow, 'id'> & { title?: string; file?: string | null; description?: string; meets?: string[]; packages?: string[] };
+export type ChangeEventHandler = Pick<EventHandlerRow, 'id'> & { title?: string; file?: string | null; description?: string; meets?: string[]; packages?: string[]; helpers?: string[] };
 
 export const CHANGE_EVENT_HANDLER = {
   ...CHANGE_EVENT_HANDLER_IDENTITY,
@@ -15,6 +15,7 @@ export const CHANGE_EVENT_HANDLER = {
     description: column('event_handler', 'description', 'optional'),
     meets: ids('The standard rules it follows. Replaces the list.', 'optional'),
     packages: texts('The packages it uses. Replaces the list.', 'optional'),
+    helpers: texts('The helper files its code is split across beside its file, each from the product root. Replaces the list.', 'optional'),
   },
   handler: changeEventHandler,
 } satisfies CommandDefinition<ChangeEventHandler>;

@@ -113,8 +113,9 @@ describe('LA-PRD-UC34-R01-T51 each Extension record command changes one record o
       values: { title: 'printLateReport', file: 'src/late.ts', usage: 'npm run late', description: 'Counts late returns.' },
       links: { reports_on: ['TL-LEND-CMD01'] },
       packages: ['vitest'],
+      helpers: ['src/late_unix.ts'],
     });
-    expect(committed.tables).toEqual(['package_use', 'report', 'reports_on']);
+    expect(committed.tables).toEqual(['helper_file', 'package_use', 'report', 'reports_on']);
     const whole = runQuery(store, GET_EXTENSION_RECORD, { id: 'TL-LEND-RP02' }) as ReturnType<typeof GET_EXTENSION_RECORD.run>;
     expect(whole).toEqual({
       id: 'TL-LEND-RP02',
@@ -124,6 +125,7 @@ describe('LA-PRD-UC34-R01-T51 each Extension record command changes one record o
       values: { title: 'printLateReport', file: 'src/late.ts', usage: 'npm run late', description: 'Counts late returns.' },
       links: { reports_on: ['TL-LEND-CMD01'] },
       packages: ['vitest'],
+      helpers: ['src/late_unix.ts'],
     });
     expect(runQuery(store, LIST_EXTENSION_RECORDS, { kind: 'report', parent: 'TL-LEND' })).toEqual([
       { id: 'TL-LEND-RP01', title: 'printOutcomeReport' },

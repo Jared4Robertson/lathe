@@ -855,6 +855,14 @@ export interface HearsRow {
   target_id: string;
 }
 
+/** A helper file of a technical record: one more file its code is split across beside the record's file, such as a helper or a build-tag variant of it. The file traces to the record, as its own file does, and the record is built only when its file and every helper file exist. Only a technical record names one (technical_record), one record names each, and a helper file is never the file of a technical record (helper-file-is-a-file). */
+export interface HelperFileRow {
+  /** The technical record whose code the file holds part of: any technical record, a record of a product's own technical kind included. */
+  record_id: string;
+  /** The helper file, from the product root with forward slashes, such as internal/compiler/lock_unix.go; it may not exist yet. It does not start with ./ or /, and it is a file, not a folder. */
+  file: string;
+}
+
 /** Proves an exchange with its integration's outside system. */
 export interface IntegrationTestRow {
   /** The test's ID: its integration's ID and T<nn>, such as TL-INT01-T01. */
@@ -1730,6 +1738,7 @@ export interface TableRows {
   has_many: HasManyRow;
   has_one: HasOneRow;
   hears: HearsRow;
+  helper_file: HelperFileRow;
   integration_test: IntegrationTestRow;
   interface_actor: InterfaceActorRow;
   invariant: InvariantRow;

@@ -16,6 +16,8 @@ export interface CodeOnPage<T> {
   code: T;
   meets: string[];
   packages: string[];
+  /** Its helper files, sorted. */
+  helpers: string[];
 }
 
 /** A query as the page shows it: its row, the specifications it selects by, the domain services it calls, and its handler. */
@@ -87,7 +89,8 @@ function byParent<T>(rows: Row[], column: string): Map<string, T> {
 export function readModelTableFrom(view: ReadView): ReadModelTable {
   const [reads, calls, fedBy, selectsBy, meets] = ['reads', 'calls', 'fed_by', 'selects_by', 'meets'].map((t) => linked(view.rows(t), 'source_id', 'target_id'));
   const packages = linked(view.rows('package_use'), 'record_id', 'package');
-  const code = <T extends { id: string }>(row: T | undefined): CodeOnPage<T> | null => (row ? { code: row, meets: meets(row.id), packages: packages(row.id) } : null);
+  const helpers = linked(view.rows('helper_file'), 'record_id', 'file');
+  const code = <T extends { id: string }>(row: T | undefined): CodeOnPage<T> | null => (row ? { code: row, meets: meets(row.id), packages: packages(row.id), helpers: helpers(row.id) } : null);
   const fields = grouped<ReadModelFieldRow>(view.rows('read_model_field'), 'read_model_id');
   const queries = grouped<QueryRow>(view.rows('query'), 'read_model_id');
   const handlers = byParent<QueryHandlerRow>(view.rows('query_handler'), 'query_id');

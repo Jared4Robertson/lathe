@@ -93,5 +93,6 @@ function extensionRecordText(record: ExtensionRecordPage): string {
   for (const [column, value] of Object.entries(record.values)) if (column !== 'title') lines.push(`  ${column}: ${Array.isArray(value) ? value.join(', ') : String(value)}`);
   for (const [relation, targets] of Object.entries(record.links)) lines.push(`  ${relation}: ${targets.join(', ')}`);
   if (record.packages.length) lines.push(`  packages: ${record.packages.join(', ')}`);
+  if (record.helpers.length) lines.push(`  helper files: ${record.helpers.join(", ")}`);
   return lines.join('\n');
 }

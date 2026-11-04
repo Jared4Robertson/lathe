@@ -85,8 +85,8 @@ function integrationText(page: IntegrationPage): string {
   const { integration: row } = page;
   const lines = [`Integration ${row.id}: ${row.title}`, ...(row.system ? [`  system: ${row.system}`] : []), `  description: ${row.description}`];
   if (page.adapter) {
-    const { adapter: a, meets, packages } = page.adapter;
-    const extra = [...(a.file ? [a.file] : []), ...meets.map((x) => `meets ${x}`), ...packages.map((x) => `uses ${x}`)];
+    const { adapter: a, meets, packages, helpers } = page.adapter;
+    const extra = [...(a.file ? [a.file] : []), ...meets.map((x) => `meets ${x}`), ...packages.map((x) => `uses ${x}`), ...helpers.map((x) => `helper file ${x}`)];
     lines.push(`Adapter ${a.id}: ${a.title}${extra.length ? ` [${extra.join('; ')}]` : ''}`);
   }
   for (const t of page.tests) lines.push(`Integration test ${t.test.id}: ${t.test.title} (${t.test.state})`);

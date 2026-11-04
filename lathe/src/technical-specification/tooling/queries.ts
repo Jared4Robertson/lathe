@@ -65,6 +65,7 @@ function toolingText(record: ToolingPage): string {
   const lines = [`Tooling ${row.id}: ${row.title}`, `  domain: ${row.domain_id}`, ...(row.file ? [`  file: ${row.file}`] : [])];
 
   if (record.packages.length) lines.push(`  packages: ${record.packages.join(', ')}`);
+  if (record.helpers.length) lines.push(`  helper files: ${record.helpers.join(", ")}`);
   if (record.meets.length) lines.push(`  meets: ${record.meets.join(', ')}`);
   if (record.generates.length) lines.push(`  generates: ${record.generates.join(', ')}`);
   return lines.join('\n');

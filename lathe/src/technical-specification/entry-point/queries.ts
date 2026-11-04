@@ -65,6 +65,7 @@ function entryPointText(record: EntryPointPage): string {
   const lines = [`Entry point ${row.id}: ${row.title}`, `  domain: ${row.domain_id}`, ...(row.file ? [`  file: ${row.file}`] : [])];
   lines.push(`  description: ${row.description}`);
   if (record.packages.length) lines.push(`  packages: ${record.packages.join(', ')}`);
+  if (record.helpers.length) lines.push(`  helper files: ${record.helpers.join(", ")}`);
   if (record.meets.length) lines.push(`  meets: ${record.meets.join(', ')}`);
   return lines.join('\n');
 }

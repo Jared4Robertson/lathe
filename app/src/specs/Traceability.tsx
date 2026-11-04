@@ -219,18 +219,30 @@ function BuildsTable({ index, record, builds }: { index: RecordIndex; record: Re
   );
 }
 
+/** A technical record's helper files: the other files its code is split across beside its own file (LA-TRC-UC25-R04). */
+function HelperFiles({ files }: { files: RecordTrace['files'] }) {
+  const helpers = files.filter((f) => f.helper);
+  if (helpers.length === 0) return null;
+  return (
+    <Section title="Helper files" count={helpers.length} level={3} className="trace-group record-helper-files">
+      <ul className="plain">{helpers.map((f) => <li key={f.path}><code>{f.path}</code></li>)}</ul>
+    </Section>
+  );
+}
+
 export function Traceability({ index, record, skip = new Set() }: { index: RecordIndex; record: RecordSummary; skip?: ReadonlySet<string> }) {
   const read = useRecordTrace(record.id, index);
   if (read.state !== 'read' || read.answer.id !== record.id) return null;
   const trace = read.answer;
   const groups = groupsOf(trace, !!index.meta.kinds.get(record.kind)?.obligation, skip);
-  if (groups.length === 0 && trace.judgments.length === 0 && trace.requirements.length === 0 && trace.builds.length === 0 && !trace.runBy) return null;
+  if (groups.length === 0 && trace.judgments.length === 0 && trace.requirements.length === 0 && trace.builds.length === 0 && !trace.files.some((f) => f.helper) && !trace.runBy) return null;
   const built = new Set(trace.built);
   return (
     <Section title="Traceability" className="traceability">
       <Judgments index={index} record={record} judgments={trace.judgments} />
       <RequirementTable index={index} useCase={record} requirements={trace.requirements} />
       <BuildsTable index={index} record={record} builds={trace.builds} />
+      <HelperFiles files={trace.files} />
       {groups.map((g, i) => (
         <Fragment key={g.key}>
           {/* A test's run by follows what it proves. */}

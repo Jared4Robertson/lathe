@@ -71,7 +71,7 @@ function currentOf(page: EndpointPage, kind: EndpointKind, id: string): Record<s
     case 'api_requirement':
       return { ...page.requirements.find((r) => r.requirement.id === id)!.requirement };
     case 'endpoint_handler':
-      return { ...page.handler!.handler, meets: page.handler!.meets, packages: page.handler!.packages };
+      return { ...page.handler!.handler, meets: page.handler!.meets, packages: page.handler!.packages, helpers: page.handler!.helpers };
     case 'endpoint_test': {
       const test = page.requirements.flatMap((r) => r.tests).find((t) => t.test.id === id)!;
       return { ...test.test, starts_from: test.startsFrom };

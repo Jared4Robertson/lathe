@@ -9,6 +9,8 @@ export interface ToolingPage {
   tooling: ToolingRow;
   /** The packages it uses, sorted. */
   packages: string[];
+  /** Its helper files, sorted. */
+  helpers: string[];
   /** The standard rules it meets, sorted. */
   meets: string[];
   /** The technical records it generates, sorted. */
@@ -25,11 +27,13 @@ export interface ToolingSummary {
 function toolingPagesFrom(view: ReadView): ToolingPage[] {
   const found = (view.rows('tooling') as unknown as ToolingRow[]);
   const packages = view.rows('package_use');
+  const helpers = view.rows('helper_file');
   const meets = view.rows('meets');
   const generates = view.rows('generates');
   return found.map((tooling) => ({
     tooling,
     packages: packages.filter((p) => p.record_id === tooling.id).map((p) => String(p.package)).sort(),
+    helpers: helpers.filter((p) => p.record_id === tooling.id).map((p) => String(p.file)).sort(),
     meets: meets.filter((m) => m.source_id === tooling.id).map((m) => String(m.target_id)).sort(),
     generates: generates.filter((g) => g.source_id === tooling.id).map((g) => String(g.target_id)).sort(),
   }));

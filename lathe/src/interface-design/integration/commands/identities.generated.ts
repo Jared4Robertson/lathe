@@ -31,7 +31,7 @@ export const ADD_ADAPTER_IDENTITY = {
   id: 'LA-IXD-CMD338',
   slice: { aggregate: 'LA-IXD-A14', name: 'integration' },
   name: 'add-adapter',
-  description: 'Adds an integration\'s adapter, its one piece of code that talks to the outside system: its name in code and its file, with the standard rules it meets and the packages it uses.',
+  description: 'Adds an integration\'s adapter, its one piece of code that talks to the outside system: its name in code and its file, with the standard rules it meets, the packages it uses and its helper files.',
   method: 'POST',
   route: '/api/integration/add-adapter',
 } as const;
@@ -40,7 +40,7 @@ export const CHANGE_ADAPTER_IDENTITY = {
   id: 'LA-IXD-CMD339',
   slice: { aggregate: 'LA-IXD-A14', name: 'integration' },
   name: 'change-adapter',
-  description: 'Changes an adapter\'s title, file or description, or the standard rules it meets or the packages it uses (each list whole). Its integration does not change.',
+  description: 'Changes an adapter\'s title, file or description, or the standard rules it meets, the packages it uses or its helper files (each list whole). Its integration does not change.',
   method: 'POST',
   route: '/api/integration/change-adapter',
 } as const;
@@ -49,7 +49,7 @@ export const REMOVE_ADAPTER_IDENTITY = {
   id: 'LA-IXD-CMD340',
   slice: { aggregate: 'LA-IXD-A14', name: 'integration' },
   name: 'remove-adapter',
-  description: 'Removes an adapter with the links it starts and the packages it uses. Refused while anything else references them.',
+  description: 'Removes an adapter with the links it starts, the packages it uses and its helper files. Refused while anything else references them.',
   method: 'POST',
   route: '/api/integration/remove-adapter',
 } as const;

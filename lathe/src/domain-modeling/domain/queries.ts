@@ -84,7 +84,7 @@ function domainText(page: DomainPage): string {
   const { domain: row } = page;
   const lines = [`Domain ${row.id}: ${row.title}`, `  product: ${row.product_id}`, `  subdomain type: ${row.subdomain_type}`, `  description: ${row.description}`];
   if (row.notes) lines.push(`  notes: ${row.notes}`);
-  const technical = (t: { meets: string[]; packages: string[] }) => [...t.meets.map((x) => `meets ${x}`), ...t.packages.map((x) => `uses ${x}`)];
+  const technical = (t: { meets: string[]; packages: string[]; helpers: string[] }) => [...t.meets.map((x) => `meets ${x}`), ...t.packages.map((x) => `uses ${x}`), ...t.helpers.map((x) => `helper file ${x}`)];
   const listed = (links: string[]) => (links.length ? ` [${links.join('; ')}]` : '');
   for (const c of page.capabilities) lines.push(`Capability ${c.capability.id}: ${c.capability.title} (position ${c.capability.position})${listed(c.serves.map((x) => `serves ${x}`))}`);
   for (const t of page.terms) lines.push(`Term ${t.term.id}: ${t.term.title}${listed(t.buildsOn.map((x) => `builds on ${x}`))}`);

@@ -25,6 +25,8 @@ export interface TableTree {
   /** The standard rules it meets and the packages it uses. */
   meets: string[];
   packages: string[];
+  /** Its helper files, sorted. */
+  helpers: string[];
 }
 
 /** A table as its page reads it, with the record the page is about: the table itself, its aggregate's one kind. */
@@ -72,6 +74,7 @@ function parentOf(table: TableRow): TableParent {
 export function tableTableFrom(view: ReadView): TableTable {
   const meets = linked(view.rows('meets'), 'source_id', 'target_id');
   const packages = linked(view.rows('package_use'), 'record_id', 'package');
+  const helpers = linked(view.rows('helper_file'), 'record_id', 'file');
   const keys = grouped<TableKeyRow>(view.rows('table_key'), 'table_id');
   const tables = new Map<string, TableTree>();
   const under = new Map<string, TableSummary[]>();
@@ -83,6 +86,7 @@ export function tableTableFrom(view: ReadView): TableTable {
       keys: [...(keys.get(table.id) ?? [])].sort((a, b) => a.position - b.position),
       meets: meets(table.id),
       packages: packages(table.id),
+      helpers: helpers(table.id),
     });
     under.set(parent.id, [...(under.get(parent.id) ?? []), { id: table.id, title: table.title }]);
   }

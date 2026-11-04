@@ -161,7 +161,7 @@ export interface TraceFile {
  *   queries that select by it; empty for the other kinds, designed by their technical records;
  * - build: the technical records that implement it, as built counts them;
  * - tests: its tests, whether or not they count as proof yet (Coverage.proved_by says which do);
- * - files: the files its build and test records name.
+ * - files: the files its build and test records name, a technical record's helper files included.
  * Each list is in kind order, then by ID. Whether it is designed, built and proved is coverage's (Coverage.gaps); a
  * design or build record no chain reaches is a record-untraced gap.
  */

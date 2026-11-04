@@ -10,6 +10,7 @@ export const ENTRY_POINT_FIELDS = {
     file: { kind: 'column', table: 'entry_point', column: 'file', required: false, clearable: false },
     description: { kind: 'column', table: 'entry_point', column: 'description', required: true, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses, as the product\'s package.json files list them.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, such as helpers and build-tag variants, each from the product root; no other record names one.', required: false, clearable: false },
     meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
   },
   '/api/entry-point/change-entry-point': {
@@ -18,6 +19,7 @@ export const ENTRY_POINT_FIELDS = {
     file: { kind: 'column', table: 'entry_point', column: 'file', required: false, clearable: true },
     description: { kind: 'column', table: 'entry_point', column: 'description', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, each from the product root.', required: false, clearable: false },
     meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
   },
   '/api/entry-point/remove-entry-point': {

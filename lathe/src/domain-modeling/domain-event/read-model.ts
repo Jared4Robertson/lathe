@@ -15,6 +15,8 @@ export interface EventTypeOnPage {
   eventType: EventTypeRow;
   meets: string[];
   packages: string[];
+  /** Its helper files, sorted. */
+  helpers: string[];
 }
 
 /** A domain event whole, as its page shows it. */
@@ -70,6 +72,7 @@ function linked(view: ReadView, table: string, by: string, to: string): (id: str
 export function domainEventTableFrom(view: ReadView): DomainEventTable {
   const meets = linked(view, 'meets', 'source_id', 'target_id');
   const packages = linked(view, 'package_use', 'record_id', 'package');
+  const helpers = linked(view, 'helper_file', 'record_id', 'file');
   const raisedBy = linked(view, 'raises', 'target_id', 'source_id');
   const heardBy = linked(view, 'hears', 'target_id', 'source_id');
   const fields = grouped<EventFieldRow>(view.rows('event_field'), 'domain_event_id');
@@ -86,7 +89,7 @@ export function domainEventTableFrom(view: ReadView): DomainEventTable {
     events.set(root, {
       event,
       fields: [...(fields.get(root) ?? [])].sort((a, b) => a.position - b.position),
-      eventType: type ? { eventType: type, meets: meets(type.id), packages: packages(type.id) } : null,
+      eventType: type ? { eventType: type, meets: meets(type.id), packages: packages(type.id), helpers: helpers(type.id) } : null,
       raisedBy: raisedBy(root),
       heardBy: heardBy(root),
     });

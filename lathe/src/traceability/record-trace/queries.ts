@@ -28,6 +28,7 @@ export const GET_RECORD_TRACE: QueryDefinition<{ id: string }, RecordTrace, Reco
       ...t.chain.map((g) => `  ${g.label}: ${g.ids.join(', ')}`),
       ...t.judgments.map((j) => `  ${j.domain}: ${j.gaps.length ? j.gaps.map((g) => g.kind).join(', ') : 'designed, built and proved'}`),
       ...t.requirements.map((r) => `  ${r.id}: ${r.judgment?.gaps.map((g) => g.kind).join(', ') || 'ok'}`),
+      ...t.files.map((f) => `  ${f.helper ? 'Helper file' : 'File'}: ${f.path}`),
       ...(t.proves ? [`  Proves: ${t.proves}`] : []),
       ...t.links.map((g) => `  ${g.label}: ${g.ids.join(', ')}`),
     ].join('\n'),

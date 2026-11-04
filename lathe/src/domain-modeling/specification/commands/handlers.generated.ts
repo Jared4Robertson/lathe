@@ -40,26 +40,26 @@ export function removeSpecification(tx: Transaction, input: RemoveSpecification)
   specifications.remove(specification);
 }
 
-/** Adds the predicate of a specification, its one piece of code, with the standard rules it meets and the packages it uses. */
+/** Adds the predicate of a specification, its one piece of code, with the standard rules it meets, the packages it uses and its helper files. */
 export function addPredicate(tx: Transaction, input: AddPredicate): void {
   const specifications = new SpecificationRepository(tx);
   const specification = specifications.load(input.specification_id) ?? tx.refuse('missing', `there is no specification ${input.specification_id}`);
-  const { meets = [], packages = [], ...row } = input;
+  const { meets = [], packages = [], helpers = [], ...row } = input;
   refuseBroken(onePredicate([...(specification.predicate ? [specification.predicate.row] : []), row]));
-  specification.predicate = { row, meets: meets, packages: packages };
+  specification.predicate = { row, meets: meets, packages: packages, helpers: helpers };
   specifications.save(specification);
 }
 
-/** Changes a predicate's title or file, or the standard rules it meets or packages it uses (each the whole list). */
+/** Changes a predicate's title or file, or the standard rules it meets, the packages it uses or its helper files (each the whole list). */
 export function changePredicate(tx: Transaction, input: ChangePredicate): void {
   const specifications = new SpecificationRepository(tx);
   const specification = specifications.loadHolding('predicate', input.id) ?? tx.refuse('missing', `there is no predicate ${input.id}`);
   const held = specification.predicate!;
-  specification.predicate = { row: changed(held.row, input, ['title', 'file']), meets: input.meets ?? held.meets, packages: input.packages ?? held.packages };
+  specification.predicate = { row: changed(held.row, input, ['title', 'file']), meets: input.meets ?? held.meets, packages: input.packages ?? held.packages, helpers: input.helpers ?? held.helpers };
   specifications.save(specification);
 }
 
-/** Removes a specification's predicate with the links it starts and the packages it uses. Refused while anything references it. */
+/** Removes a specification's predicate with the links it starts, the packages it uses and its helper files. Refused while anything references it. */
 export function removePredicate(tx: Transaction, input: RemovePredicate): void {
   const specifications = new SpecificationRepository(tx);
   const specification = specifications.loadHolding('predicate', input.id) ?? tx.refuse('missing', `there is no predicate ${input.id}`);

@@ -42,7 +42,7 @@ const currentOf = (page: TablePage): Record<string, unknown> => ({
   ...page.table,
   keys: page.keys,
   meets: page.meets,
-  packages: page.packages,
+  packages: page.packages, helpers: page.helpers,
 });
 
 type Mode = 'view' | 'change' | 'move' | 'remove';

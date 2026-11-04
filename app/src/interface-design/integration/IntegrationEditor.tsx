@@ -57,7 +57,7 @@ function currentOf(page: IntegrationPage, kind: IntegrationKind, id: string): Re
     case 'integration':
       return { ...page.integration };
     case 'adapter':
-      return { ...page.adapter!.adapter, meets: page.adapter!.meets, packages: page.adapter!.packages };
+      return { ...page.adapter!.adapter, meets: page.adapter!.meets, packages: page.adapter!.packages, helpers: page.adapter!.helpers };
     case 'integration_test': {
       const test = page.tests.find((t) => t.test.id === id)!;
       return { ...test.test, starts_from: test.startsFrom };

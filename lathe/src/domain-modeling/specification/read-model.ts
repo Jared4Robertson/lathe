@@ -15,6 +15,8 @@ export interface PredicateOnPage {
   predicate: PredicateRow;
   meets: string[];
   packages: string[];
+  /** Its helper files, sorted. */
+  helpers: string[];
 }
 
 /** The specification test as the page shows it: its row and the test data sets it starts from. */
@@ -77,6 +79,7 @@ export function specificationTableFrom(view: ReadView): SpecificationTable {
   const meets = linked(view.rows('meets'), 'source_id', 'target_id');
   const startsFrom = linked(view.rows('starts_from'), 'source_id', 'target_id');
   const packages = linked(view.rows('package_use'), 'record_id', 'package');
+  const helpers = linked(view.rows('helper_file'), 'record_id', 'file');
   const predicates = byParent<PredicateRow>(view.rows('predicate'), 'specification_id');
   const tests = byParent<SpecificationTestRow>(view.rows('specification_test'), 'specification_id');
   // A specification's domain is the longest domain ID its own ID starts with, and a hyphen.
@@ -93,7 +96,7 @@ export function specificationTableFrom(view: ReadView): SpecificationTable {
       specification,
       domain: domainOf(root),
       reads: reads(root),
-      predicate: predicate ? { predicate, meets: meets(predicate.id), packages: packages(predicate.id) } : null,
+      predicate: predicate ? { predicate, meets: meets(predicate.id), packages: packages(predicate.id), helpers: helpers(predicate.id) } : null,
       test: test ? { test, startsFrom: startsFrom(test.id) } : null,
     };
     specifications.set(root, tree);

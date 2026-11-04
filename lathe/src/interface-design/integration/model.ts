@@ -15,6 +15,8 @@ export interface Built<T> {
   row: T;
   meets: string[];
   packages: string[];
+  /** Its helper files (helper_file), sorted. */
+  helpers: string[];
 }
 
 /** A test with the test data sets it starts from. */
@@ -34,12 +36,12 @@ export interface Integration {
 }
 
 /** The tables the Integration aggregate keeps its rows in: its kinds and the relations its records start. */
-export const INTEGRATION_TABLES = ['integration', 'adapter', 'integration_test', 'meets', 'package_use', 'starts_from'] as const;
+export const INTEGRATION_TABLES = ['integration', 'adapter', 'integration_test', 'meets', 'package_use', 'helper_file', 'starts_from'] as const;
 
 /** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
 export const INTEGRATION_SHAPE = {
   integration: { at: 'integration' },
-  adapter: { at: 'adapter', one: true, refusedBy: 'oneAdapter', lists: { meets: 'meets', packages: 'packages' } },
+  adapter: { at: 'adapter', one: true, refusedBy: 'oneAdapter', lists: { meets: 'meets', packages: 'packages', helpers: 'helpers' } },
   integration_test: { at: 'tests', lists: { starts_from: 'startsFrom' } },
 } as const satisfies AggregateShape;
 
@@ -55,13 +57,14 @@ export function integrationsFrom(rows: (table: string) => Row[], only?: string):
   const testsOf = groupBy((rows('integration_test') as unknown as IntegrationTestRow[]).filter((t) => ids.has(t.integration_id)), (t) => t.integration_id);
   const meets = bySource(rows('meets'), 'source_id', 'target_id');
   const packages = bySource(rows('package_use'), 'record_id', 'package');
+  const helpers = bySource(rows('helper_file'), 'record_id', 'file');
   const startsFrom = bySource(rows('starts_from'), 'source_id', 'target_id');
   return integrations.map((integration) => {
     const adapter = groupOf(adaptersOf, integration.id)[0];
     return {
       root: integration.id,
       integration,
-      adapter: adapter ? { row: adapter, meets: meets.get(adapter.id) ?? [], packages: packages.get(adapter.id) ?? [] } : null,
+      adapter: adapter ? { row: adapter, meets: meets.get(adapter.id) ?? [], packages: packages.get(adapter.id) ?? [], helpers: helpers.get(adapter.id) ?? [] } : null,
       tests: groupOf(testsOf, integration.id).map((row) => ({ row, startsFrom: startsFrom.get(row.id) ?? [] })),
     };
   });
@@ -77,6 +80,7 @@ export function integrationRows(integration: Integration): Map<string, Row[]> {
     ['integration_test', integration.tests.map((t) => asRow(t.row))],
     ['meets', adapter ? adapter.meets.map((target) => ({ source_id: adapter.row.id, target_id: target })) : []],
     ['package_use', adapter ? adapter.packages.map((p) => ({ record_id: adapter.row.id, package: p })) : []],
+    ['helper_file', adapter ? adapter.helpers.map((p) => ({ record_id: adapter.row.id, file: p })) : []],
     ['starts_from', integration.tests.flatMap((t) => t.startsFrom.map((target) => ({ source_id: t.row.id, target_id: target })))],
   ]);
 }
