@@ -220,6 +220,24 @@ describe('chains', () => {
     const presented = await loadData(adding(data, { presents: [{ source_id: 'EX-V01', target_id: 'EX-LEND-CMD09' }] }));
     expect(gaps(presented).filter((g) => g.startsWith('record-untraced'))).toEqual(['record-untraced EX-LEND-UC01-FL-S02', 'record-untraced EX-UI02']);
     expect(presented.chains.find((c) => c.obligation === 'EX-V01-R01')?.design).toContain('EX-LEND-CMD09');
+    // So is one a record of the product's own kind presents, once a design link ties that record to an obligation: a
+    // command line's invocation that is how the product meets a pattern rule. Presenting alone reaches nothing.
+    const invoked = (links: Data) =>
+      adding(data, {
+        product_kind: [{ name: 'cli_call', product_id: 'EX', label: 'CLI call', description: 'A command of the command line.', parent_kind: 'command', stage: 'interaction-design', obligation: false, complexity: 'essential' }],
+        product_relation: [
+          { name: 'presents', source_kind: 'cli_call', target_kind: 'command', product_id: 'EX', forward_label: 'Presents', reverse_label: 'Presented in', description: 'The call sends its command.' },
+          { name: 'realizes', source_kind: 'cli_call', target_kind: 'pattern_rule', product_id: 'EX', role: 'design', forward_label: 'Realizes', reverse_label: 'Realized by', description: 'The call is how the command line meets the rule.' },
+        ],
+        cli_call: [{ id: 'EX-LEND-CMD09-CLI', title: 'tools forget', command_id: 'EX-LEND-CMD09' }],
+        presents: [{ source_id: 'EX-LEND-CMD09-CLI', target_id: 'EX-LEND-CMD09' }],
+        ...links,
+      });
+    const unrealized = await loadData(invoked({}));
+    expect(gaps(unrealized).filter((g) => g.startsWith('record-untraced'))).toContain('record-untraced EX-LEND-CMD09');
+    const realized = await loadData(invoked({ realizes: [{ source_id: 'EX-LEND-CMD09-CLI', target_id: 'EX-PAT-ACT-R01' }] }));
+    expect(gaps(realized).filter((g) => g.startsWith('record-untraced'))).toEqual(['record-untraced EX-LEND-UC01-FL-S02', 'record-untraced EX-UI02']);
+    expect(realized.chains.find((c) => c.obligation === 'EX-PAT-ACT-R01')?.design).toEqual(expect.arrayContaining(['EX-LEND-CMD09-CLI', 'EX-LEND-CMD09']));
     expect(ws.coverage.flatMap((c) => c.gaps).find((g) => g.id === 'EX-LEND-UC01-FL-S02')).toEqual({
       id: 'EX-LEND-UC01-FL-S02', kind: 'flow_step', missing: 'record-untraced',
       message: "Flow step EX-LEND-UC01-FL-S02 is untraced: no obligation's chain reaches it, as it fulfills no UC requirement.",
