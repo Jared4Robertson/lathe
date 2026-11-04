@@ -69,4 +69,5 @@ When two or more use cases would state the same rules, write those rules once as
 
 - Titles: sentence case, no trailing period, unique within kind and product. A requirement or pattern rule is a sentence that is true when the rule holds ("An unavailable tool is refused with the reason").
 - Something undecided is a question about the use case with an owner role, never "TBD" in a requirement.
+- A flow step says what the actor does or learns, never how an interface does it (no command names, screens or tools); each interface's version is derived (`step-repeated-per-interface`).
 - Next, write each use case's flow (`design-interactions`), then finish with `check-and-fix`.

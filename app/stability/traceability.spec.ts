@@ -30,7 +30,7 @@ test.describe('Traceability flows', () => {
     const spec = await servedWorkspace();
     await openPage(page, PRODUCT);
     const wiki = page.locator(WIKI);
-    // LA-TRC-UC01-FL-S05: each domain card's coverage bars, as coverage counts them.
+    // LA-TRC-UC01-FL-S01: each domain's coverage by obligation kind, here its card's bars, as coverage counts them.
     const domains = rowsOf(spec, 'domain').filter((d) => d.product_id === 'LA');
     for (const d of domains) {
       const card = wiki.getByRole('list', { name: 'Domains' }).locator('.card').filter({ has: page.getByRole('link', { name: `${d.id} ${d.title}` }) });
@@ -40,19 +40,19 @@ test.describe('Traceability flows', () => {
         await expect(card.locator(`.coverage-group[data-kind="${o.kind}"]`).getByRole('img', { name: `proved: ${o.proved} of ${o.total}` })).toBeAttached();
       }
     }
-    // LA-TRC-UC01-FL-S06: the product's Summary: coverage, tests by state, open questions, errors and warnings.
+    // LA-TRC-UC01-FL-S03 and S04: the product's tests by state in total, its open questions and problems, here in its Summary.
     const summary = wiki.locator('dl.summary-list');
     const sum = (key: 'automated' | 'manual' | 'not_automated') => spec.coverage.filter((c) => c.product === 'LA').reduce((n, c) => n + c.tests[key], 0);
     await expect(summary.locator('div', { has: page.locator('dt', { hasText: /^Tests$/ }) }).locator('dd')).toHaveText(testsText({ automated: sum('automated'), manual: sum('manual'), not_automated: sum('not_automated') }));
     const errors = spec.problems.filter((p) => p.record && p.severity === 'error').length;
     await expect(summary.locator('div', { has: page.locator('dt', { hasText: /^Errors$/ }) }).locator('dd')).toHaveText(String(errors));
     for (const label of ['Designed', 'Built', 'Proved', 'Open questions', 'Warnings']) await expect(summary.locator('dt', { hasText: new RegExp(`^${label}$`) })).toBeVisible();
-    // LA-TRC-UC01-FL-S07: the product's open questions and problems.
+    // LA-TRC-UC01-FL-S04: the product's open questions and problems.
     const questions = rowsOf(spec, 'question').length;
     await expect(wiki.getByRole('heading', { name: `Open questions ${questions}`, level: 2 })).toBeVisible();
     await expect(wiki.getByRole('heading', { name: /^Problems in this product \d+$/, level: 2 })).toBeVisible();
     await expect(wiki.getByRole('list', { name: 'Problems' }).getByRole('listitem').first()).toBeVisible();
-    // LA-TRC-UC01-FL-S08: a domain card opens its domain page.
+    // A domain card opens its domain page.
     await wiki.getByRole('link', { name: 'LA-TRC Traceability' }).click();
     await page.waitForURL((u) => u.pathname === `/${TRC}`);
     await expect(page.locator(`.header-strip h1`)).toHaveText('Traceability');
@@ -157,17 +157,17 @@ test.describe('Traceability flows', () => {
   test('LA-TRC-UC06-R04-T01 the Reader sees each domain\'s tests by state beside its coverage', async ({ page }) => {
     const spec = await servedWorkspace();
     const ofDomain = (id: string) => spec.coverage.find((c) => c.domain === id)!.tests;
-    // LA-TRC-UC06-FL-S03: each domain card's tests by state.
+    // LA-TRC-UC06-FL-S01: each domain's tests by state, here on its card.
     await openPage(page, PRODUCT);
     const wiki = page.locator(WIKI);
     for (const d of rowsOf(spec, 'domain').filter((x) => x.product_id === 'LA')) {
       const card = wiki.getByRole('list', { name: 'Domains' }).locator('.card').filter({ has: page.getByRole('link', { name: `${d.id} ${d.title}` }) });
       await expect(card.getByLabel('Tests by state')).toHaveText(`Tests ${testsText(ofDomain(String(d.id)))}`);
     }
-    // LA-TRC-UC06-FL-S04: the Summary's tests by state in total.
+    // LA-TRC-UC06-FL-S03: the product's tests by state in total, here in its Summary.
     const total = spec.coverage.filter((c) => c.product === 'LA').reduce((t, c) => ({ automated: t.automated + c.tests.automated, manual: t.manual + c.tests.manual, not_automated: t.not_automated + c.tests.not_automated }), { automated: 0, manual: 0, not_automated: 0 });
     await expect(wiki.locator('dl.summary-list div', { has: page.locator('dt', { hasText: /^Tests$/ }) }).locator('dd')).toHaveText(testsText(total));
-    // LA-TRC-UC06-FL-S05: a domain's own Coverage section says the same.
+    // LA-TRC-UC06-FL-S01 again: a domain's own Coverage section says the same.
     await wiki.getByRole('link', { name: 'LA-TRC Traceability' }).click();
     await page.waitForURL((u) => u.pathname === `/${TRC}`);
     await expect(page.locator(`${WIKI} .coverage`).last().getByLabel('Tests by state')).toHaveText(`Tests ${testsText(ofDomain(TRC))}`);
