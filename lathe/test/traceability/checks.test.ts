@@ -385,8 +385,9 @@ check('accidental-not-accounted-for', () => {
     // Written by hand, provided by nothing: the command handler, the data store and the generator itself.
     let data = handWritten('EX-LEND-CMD02-H', 'EX-UI01', 'EX-LEND-REPO01', 'EX-LEND-REPO02');
     data = without(data, 'provided_by', (r) => r.source_id === 'EX-STORE01' || r.source_id === 'EX-LEND-TOOL01');
+    data = without(data, 'persists', (r) => r.source_id === 'EX-LEND-REPO02');
     // Fills of the slot: a UI component that builds a view requirement, a repository whose aggregate has a storage
-    // requirement, and a repository that serves nothing essential.
+    // requirement, and a repository that persists nothing, so serves nothing essential.
     data = adding(data, fill('EX-UI01', 'EX-LEND-REPO01', 'EX-LEND-REPO02'));
     const ws = await loadData(data);
     expect(records(ofCheck(ws, 'accidental-not-accounted-for'))).toEqual(['EX-LEND-CMD02-H', 'EX-LEND-REPO02', 'EX-LEND-TOOL01', 'EX-STORE01']);
@@ -394,7 +395,7 @@ check('accidental-not-accounted-for', () => {
       'Command handler EX-LEND-CMD02-H is accidental complexity nothing accounts for: no tooling record generates it, nothing provides it, and it fills no slot; generate it, name its provider, or record the pattern slot it fills.',
     );
     expect(ofCheck(ws, 'accidental-not-accounted-for').find((p) => p.record === 'EX-LEND-REPO02')?.message).toBe(
-      'Repository EX-LEND-REPO02 is accidental complexity nothing accounts for: it fills a slot but serves no essential record; put it under the essential record it implements, or remove it.',
+      'Repository EX-LEND-REPO02 is accidental complexity nothing accounts for: it fills a slot but serves no essential record; put it under the essential record it implements, link it to the essential record it serves, or remove it.',
     );
     // A fill sits under an essential record through other accidental ones: the endpoint handler, under its endpoint,
     // serves the command the endpoint exposes.
@@ -405,6 +406,45 @@ check('accidental-not-accounted-for', () => {
     const unprovided = without(complete(), 'provided_by', (r) => r.source_id === 'EX-STD-CODE');
     expect(records(ofCheck(await loadData(unprovided), 'accidental-not-accounted-for'))).toEqual(['EX-STD-CODE', 'EX-STD-CODE-R01']);
     expect(ofCheck(await loadData(changing(unprovided, 'standard', () => true, { type: 'quality' })), 'accidental-not-accounted-for')).toEqual([]);
+  });
+
+  it('LA-STD-PRINCIPLES-R06-T05 A fill serves the essential aggregate it persists, an essential record a product relation links it to in either direction, or an essential record under it', async () => {
+    // A repository written by hand whose aggregate has no storage requirement serves the aggregate it persists.
+    const repository = adding(handWritten('EX-LEND-REPO02'), fill('EX-LEND-REPO02'));
+    expect(ofCheck(await loadData(repository), 'accidental-not-accounted-for')).toEqual([]);
+    const persistsNothing = without(repository, 'persists', (r) => r.source_id === 'EX-LEND-REPO02');
+    expect(records(ofCheck(await loadData(persistsNothing), 'accidental-not-accounted-for'))).toEqual(['EX-LEND-REPO02']);
+    // Components the product declares itself, each a fill of the slot: one runs a verb, a verb documents one, one holds a
+    // contract, and one only wraps another component, which is accidental too.
+    const components = adding(complete(), {
+      product_kind: [
+        { name: 'component', product_id: 'EX', label: 'Component', description: 'A component of the library.', parent_kind: 'domain', stage: 'technical-specification', obligation: false, complexity: 'accidental' },
+        { name: 'contract', product_id: 'EX', label: 'Contract', description: 'What a component promises.', parent_kind: 'component', stage: 'interaction-design', obligation: false, complexity: 'essential' },
+        { name: 'verb', product_id: 'EX', label: 'Verb', description: 'A verb the librarian types.', parent_kind: 'domain', stage: 'interaction-design', obligation: false, complexity: 'essential' },
+      ],
+      product_relation: [
+        { name: 'runs', source_kind: 'component', target_kind: 'verb', product_id: 'EX', forward_label: 'Runs', reverse_label: 'Run by', description: 'The component runs the verb.' },
+        { name: 'documents', source_kind: 'verb', target_kind: 'component', product_id: 'EX', forward_label: 'Documents', reverse_label: 'Documented by', description: 'The verb documents the component.' },
+        { name: 'wraps', source_kind: 'component', target_kind: 'component', product_id: 'EX', forward_label: 'Wraps', reverse_label: 'Wrapped by', description: 'The component wraps another.' },
+      ],
+      component: [
+        { id: 'EX-LEND-CO01', title: 'Lend runner', domain_id: 'EX-LEND' },
+        { id: 'EX-LEND-CO02', title: 'Return runner', domain_id: 'EX-LEND' },
+        { id: 'EX-LEND-CO03', title: 'Catalog', domain_id: 'EX-LEND' },
+        { id: 'EX-LEND-CO04', title: 'Catalog wrapper', domain_id: 'EX-LEND' },
+      ],
+      contract: [{ id: 'EX-LEND-CO03-CT01', title: 'Tool listing', component_id: 'EX-LEND-CO03' }],
+      verb: [
+        { id: 'EX-LEND-VB01', title: 'lend', domain_id: 'EX-LEND' },
+        { id: 'EX-LEND-VB02', title: 'return', domain_id: 'EX-LEND' },
+      ],
+      runs: [{ source_id: 'EX-LEND-CO01', target_id: 'EX-LEND-VB01' }],
+      documents: [{ source_id: 'EX-LEND-VB02', target_id: 'EX-LEND-CO02' }],
+      wraps: [{ source_id: 'EX-LEND-CO04', target_id: 'EX-LEND-CO03' }],
+      ...fill('EX-LEND-CO01', 'EX-LEND-CO02', 'EX-LEND-CO03', 'EX-LEND-CO04'),
+    });
+    const ws = await loadData(components);
+    expect(records(ofCheck(ws, 'accidental-not-accounted-for'))).toEqual(['EX-LEND-CO04']);
   });
 });
 
