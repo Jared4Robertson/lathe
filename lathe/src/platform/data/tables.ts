@@ -1307,7 +1307,7 @@ export interface RoleRow {
 export interface RuleRow {
   /** The rule's ID: its invariant's ID and RL, such as TL-LEND-INV01-RL. */
   id: string;
-  /** Its name in code, the name its refusal carries, such as step-fulfills-own-use-case or email_taken. */
+  /** Its name in code, the name its refusal carries, such as step-fulfills-own-use-case or email_taken. Two rules share a title only when they share a file: one function that enforces two invariants, each keeping its own rule. */
   title: string;
   /** The invariant it enforces; one rule each. */
   invariant_id: string;

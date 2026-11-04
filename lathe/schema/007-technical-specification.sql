@@ -69,7 +69,7 @@ CREATE TABLE rule (
 );
 COMMENT ON TABLE rule IS 'Enforces its invariant: the rule in its aggregate''s code, run by the aggregate''s commands before saving, which refuses a change that would break it. Lathe''s own rules sit in each aggregate''s rules.ts and also run over all data on every load. An invariant is built only through its rule.';
 COMMENT ON COLUMN rule.id IS 'The rule''s ID: its invariant''s ID and RL, such as TL-LEND-INV01-RL.';
-COMMENT ON COLUMN rule.title IS 'Its name in code, the name its refusal carries, such as step-fulfills-own-use-case or email_taken.';
+COMMENT ON COLUMN rule.title IS 'Its name in code, the name its refusal carries, such as step-fulfills-own-use-case or email_taken. Two rules share a title only when they share a file: one function that enforces two invariants, each keeping its own rule.';
 COMMENT ON COLUMN rule.invariant_id IS 'The invariant it enforces; one rule each.';
 COMMENT ON COLUMN rule.file IS 'The file that holds its code, from the product root, such as its aggregate''s rules.ts; it may not exist yet, and several records may share one file.';
 

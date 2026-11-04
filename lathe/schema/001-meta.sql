@@ -77,7 +77,7 @@ CREATE TABLE meta_kind_title (
   kind VARCHAR PRIMARY KEY REFERENCES meta_kind (name),
   form title_form NOT NULL
 );
-COMMENT ON TABLE meta_kind_title IS 'The code-bound kinds, whose records are titled by what they are in code rather than in words. Every title is in sentence case, unique within its kind and product, and ends without a period; a kind listed here also takes its form, which the store refuses a title for breaking.';
+COMMENT ON TABLE meta_kind_title IS 'The code-bound kinds, whose records are titled by what they are in code rather than in words. Every title is in sentence case, unique within its kind and product (two rules of one file may share one, for one function that enforces two invariants), and ends without a period; a kind listed here also takes its form, which the store refuses a title for breaking.';
 COMMENT ON COLUMN meta_kind_title.kind IS 'The kind.';
 COMMENT ON COLUMN meta_kind_title.form IS 'identifier: one token exactly as in code, with no whitespace, such as LoanRow or lathe:tabs; invocation: the command as typed, lower case first, words one space apart, such as lathe add; kebab-case: lower-case words joined by hyphens, such as event-tense.';
 

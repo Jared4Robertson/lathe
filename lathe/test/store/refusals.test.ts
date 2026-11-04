@@ -1,7 +1,9 @@
 // The refusals of the domain model: what the schema's constraints, the integrity queries and the aggregates' rules refuse across columns and
 // tables. Each names the rule, the file and the line of the row that breaks it.
+import { mkdirSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { openStore, StoreError, type Row, type StoreProblem } from '../../src/index.ts';
+import { loadWorkspace, openStore, StoreError, type Row, type StoreProblem } from '../../src/index.ts';
 import { everyKind, removeData, writeData, type Data } from './fixture.ts';
 import { ADD_COMMAND_HANDLER } from '../../src/domain-modeling/command/commands/add-command-handler.ts';
 import { ADD_POLICY_TEST } from '../../src/domain-modeling/command/commands/add-policy-test.ts';
@@ -268,6 +270,35 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     const period = everyKind();
     period.invariant[0] = { ...period.invariant[0], title: 'One active loan per tool.' };
     expect(await refusal(period)).toEqual([expect.objectContaining({ rule: 'title-period', file: 'data/invariant.jsonl', line: 1 })]);
+  });
+
+  it('LA-STD-MODELING-R04-T02 loads two rules of one function in one file, and refuses two rules of one name in two files', async () => {
+    // A second invariant, enforced by the same function as the first.
+    const second = (file: string): Data =>
+      adding({
+        invariant: [{ id: 'TL-LEND-INV02', title: 'A loan has a due date', aggregate_id: 'TL-LEND-A1', statement: 'A loan MUST have a due date.' }],
+        rule: [{ id: 'TL-LEND-INV02-RL', title: 'tool-on-loan', invariant_id: 'TL-LEND-INV02', file }],
+      });
+    const root = writeData(second('src/lending/loan.ts'));
+    mkdirSync(path.join(root, 'src', 'lending'), { recursive: true });
+    writeFileSync(path.join(root, 'src', 'lending', 'loan.ts'), 'export function toolOnLoan(): void {}\n');
+    const workspace = await loadWorkspace(root);
+    expect(workspace.problems.filter((p) => p.check === 'data-refused')).toEqual([]);
+    // Each invariant is owed and built through its own rule; only their proof is missing, as no test file is written.
+    const gaps = workspace.coverage.flatMap((c) => c.gaps).filter((g) => g.id.startsWith('TL-LEND-INV0'));
+    expect(gaps.map((g) => [g.id, g.missing])).toEqual([
+      ['TL-LEND-INV01', 'proved'],
+      ['TL-LEND-INV02', 'proved'],
+    ]);
+    // The same name in another file is another function, so it needs a title of its own.
+    const found = await refusal(second('src/lending/due.ts'));
+    expect(found.map((p) => [p.rule, p.key]).sort()).toEqual([
+      ['title-unique', 'TL-LEND-INV01-RL'],
+      ['title-unique', 'TL-LEND-INV02-RL'],
+    ]);
+    expect(found.find((p) => p.key === 'TL-LEND-INV02-RL')?.message).toBe(
+      'Rule TL-LEND-INV02-RL is titled "tool-on-loan", as is TL-LEND-INV01-RL in product TL; give each rule a title of its own, or name one file in both when one function enforces both invariants',
+    );
   });
 
   it('LA-STD-MODELING-R09-T01 refuses a code-bound title that is not one identifier, and an endpoint not titled by its method and route', async () => {

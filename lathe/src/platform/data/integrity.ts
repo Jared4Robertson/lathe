@@ -7,7 +7,7 @@
 // to report, because records are written stage by stage.
 import { ESSENTIAL_WORDS, wordGroupOf } from '../../essential.ts';
 import { isLeadColumn } from '../../lead.ts';
-import { sqlName, sqlString, type SchemaDescription } from './schema.ts';
+import { sqlName, sqlString, type KindDescription, type SchemaDescription } from './schema.ts';
 
 export interface IntegrityQuery {
   /** The rule's name, reported with each problem. */
@@ -321,6 +321,14 @@ const TITLE_FORMS = {
 } as const;
 
 /**
+ * The code a record of the kind is, when two records of one title may be one piece of code: a rule's file, since one
+ * function in one file can enforce two invariants, each keeping its own rule. NULL for every other kind.
+ */
+function sharedCode(k: KindDescription): string {
+  return k.name === 'rule' && k.productId === null ? 'trim(file)' : 'NULL::VARCHAR';
+}
+
+/**
  * The title refusals, over every kind, Lathe's and a product's own: a title unique within its kind and product
  * (compared trimmed, and in any letter case unless the kind is code-bound), with no trailing period, and, for a code-bound kind, in its form.
  */
@@ -330,24 +338,26 @@ function titleQueries(schema: SchemaDescription): IntegrityQuery[] {
   const titled = kinds
     .map(
       (k) =>
-        `SELECT ${sqlString(k.name)} AS kind, ${sqlString(k.label)} AS label, id, title, ${k.titleForm ? 'trim(title)' : 'lower(trim(title))'} AS same FROM ${sqlName(k.name)}`,
+        `SELECT ${sqlString(k.name)} AS kind, ${sqlString(k.label)} AS label, id, title, ${k.titleForm ? 'trim(title)' : 'lower(trim(title))'} AS same, ${sharedCode(k)} AS code FROM ${sqlName(k.name)}`,
     )
     .join('\nUNION ALL ');
   const queries: IntegrityQuery[] = [
     {
       name: 'title-unique',
       description:
-        "A title is unique within its kind and product, compared trimmed: two records of one kind are told apart by their titles. Titles in words compare in any letter case; a code-bound kind's identifiers compare exactly, as code does.",
+        "A title is unique within its kind and product, compared trimmed: two records of one kind are told apart by their titles. Titles in words compare in any letter case; a code-bound kind's identifiers compare exactly, as code does. Two rules may share a title when they share a file: one function that enforces two invariants.",
       sql: `
 WITH titled AS (${titled}),
 keyed AS (
-  SELECT t.kind, t.label, t.id, t.title, s.product_id, t.same
+  SELECT t.kind, t.label, t.id, t.title, s.product_id, t.same, t.code
   FROM titled t JOIN record_scope s ON s.id = t.id
 )
 SELECT a.kind AS table_name, a.id AS row_key,
        a.label || ' ' || a.id || ' is titled "' || trim(a.title) || '", as is ' || string_agg(b.id, ', ' ORDER BY b.id)
-       || ' in product ' || coalesce(a.product_id, 'none') || '; give each ' || lower(a.label) || ' a title of its own' AS message
+       || ' in product ' || coalesce(a.product_id, 'none') || '; give each ' || lower(a.label) || ' a title of its own'
+       || CASE WHEN a.kind = 'rule' THEN ', or name one file in both when one function enforces both invariants' ELSE '' END AS message
 FROM keyed a JOIN keyed b ON b.kind = a.kind AND b.same = a.same AND b.product_id IS NOT DISTINCT FROM a.product_id AND b.id <> a.id
+  AND (a.code IS NULL OR a.code IS DISTINCT FROM b.code)
 GROUP BY a.kind, a.label, a.id, a.title, a.product_id`,
     },
     {
