@@ -44,7 +44,8 @@ describe("Lathe's own spec", () => {
       return words.length > 4 || /^(a|an|the)$/i.test(words[0]);
     });
     expect(off).toEqual([]);
-  });
+    // The first test loads both products whole on a cold engine: seconds alone, past vitest's 5 s on a busy machine.
+  }, 30_000);
 
   it('LA-STD-MODELING-R07-T01 Every policy in Lathe and the Tool Library reads "When" an event, then its reaction', async () => {
     const policies = await titles(['policy']);

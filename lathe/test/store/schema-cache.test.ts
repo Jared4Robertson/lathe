@@ -69,6 +69,8 @@ const stamp = (file: string) => {
 
 const fresh = await load(uncached());
 
+// Each test starts the engine afresh for every load, as a new process does, and waits for the cache files to be
+// written: two to five loads, about a second each alone, so past vitest's 5 s on a busy machine.
 describe('the schema cache', () => {
   it('LA-PLT-UC01-R11-T01 A cached schema gives what one built afresh gives, and is used without being built again', async () => {
     const dir = cacheFolder();
@@ -132,9 +134,7 @@ describe('the schema cache', () => {
     writeFileSync(path.join(dir, product), 'not a database');
     expect(await load(dir)).toEqual(fresh);
     expect(statSync(path.join(dir, product)).size).toBeGreaterThan(1000);
-    // Five loads with the engine started afresh each time, and each cached file copied into memory before it is
-    // detached (a sealed engine keeps no file open, LA-CHK-INV06): longer than the 5 s default on a busy machine.
-  }, 30_000);
+  });
 
   it('LA-PLT-UC01-R11-T01 Two processes starting at once with no cache both load the same, and leave only whole files', async () => {
     const dir = cacheFolder();
@@ -156,4 +156,4 @@ await store.close();`;
     expect(await load(dir)).toEqual(fresh);
     expect(cached.map((f) => stamp(path.join(dir, f)))).toEqual(was);
   });
-});
+}, 30_000);
