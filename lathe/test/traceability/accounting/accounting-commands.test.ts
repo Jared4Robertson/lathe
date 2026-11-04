@@ -23,8 +23,8 @@ afterEach(async () => {
 });
 
 /**
- * A product with a pattern and its slot, two tooling records (TOOL01 generates TOOL02), a data store, a domain service
- * and the integration that may provide them, written as their rows.
+ * A product with a pattern and its slot, three tooling records (TOOL01 generates TOOL02), a data store, the
+ * integrations that may provide them and an engineering standard with its rule, written as their rows.
  */
 const rows = () => ({
   product: [{ id: 'TL', title: 'Tool Library', description: 'A neighborhood tool library.' }],
@@ -42,6 +42,8 @@ const rows = () => ({
     { id: 'TL-INT02', title: 'Backup host', system: 'Managed backups', description: 'The service that keeps copies.' },
   ],
   data_store: [{ id: 'TL-STORE01', title: 'DATABASE_URL', product_id: 'TL', kind: 'database', description: "The library's database." }],
+  standard: [{ id: 'TL-STD-CODE', title: 'Code', product_id: 'TL', type: 'engineering', description: 'How the code is written.' }],
+  standard_rule: [{ id: 'TL-STD-CODE-R01', title: 'Node prefix', standard_id: 'TL-STD-CODE', statement: 'Code MUST import node: modules.' }],
 });
 
 async function storeOf(): Promise<Store> {
@@ -98,6 +100,20 @@ describe('LA-TRC-UC21-R50-T01 each Slot filling command changes one fill through
       await closeStores(root);
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
+  });
+});
+
+describe('LA-TRC-UC21-R51-T01 fill slot refuses a standard and a standard rule, and says that the records that meet its rules account for an engineering standard', () => {
+  it('refuses the standard and its rule as fills, naming the way, and changes nothing', async () => {
+    const store = await storeOf();
+    expect((await refusal(store, FILL_SLOT, { record_id: 'TL-STD-CODE', slot_id: 'TL-PAT-ACT-SL01' })).problems).toEqual([{
+      rule: 'standard-fills-no-slot',
+      message: 'TL-STD-CODE is a standard, the rules that code follows and not code, so it cannot fill TL-PAT-ACT-SL01: an engineering standard is accounted for through the records that meet its rules',
+    }]);
+    expect((await refusal(store, FILL_SLOT, { record_id: 'TL-STD-CODE-R01', slot_id: 'TL-PAT-ACT-SL01' })).problems).toEqual([expect.objectContaining({
+      rule: 'standard-fills-no-slot', message: expect.stringMatching(/^TL-STD-CODE-R01 is a standard rule, /),
+    })]);
+    expect(store.rows('fills')).toEqual([]);
   });
 });
 

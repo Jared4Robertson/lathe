@@ -321,7 +321,9 @@ the product decides once (discovery, the domain model, use cases and patterns, t
 accidental complexity, what comes from the means used to build it (the technical specification); a test follows what
 it proves, and a standard its type (a quality is essential, engineering accidental). An accidental record is derived
 (a tooling record \`generates\` it), provided (\`provided_by\`), or a fill: written by hand at a pattern's slot
-(\`fills\`), serving an essential record. Coverage lists each fill as accidental debt.`;
+(\`fills\`), serving an essential record. An engineering standard and its rules are the rules that code follows, not
+code, so they fill no slot: a rule is accounted for when a record that is accounted for meets it, and the standard when
+one of its rules is. Coverage lists each fill as accidental debt.`;
 
 /** The reference as one Markdown document, by stage: each stage's kinds with their tables, checks and gaps; then the other tables, relations and checks of any kind, each with an anchor. */
 export function renderReference(ref: Reference): string {

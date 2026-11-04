@@ -39,7 +39,9 @@ the product decides once (discovery, the domain model, use cases and patterns, t
 accidental complexity, what comes from the means used to build it (the technical specification); a test follows what
 it proves, and a standard its type (a quality is essential, engineering accidental). An accidental record is derived
 (a tooling record `generates` it), provided (`provided_by`), or a fill: written by hand at a pattern's slot
-(`fills`), serving an essential record. Coverage lists each fill as accidental debt.
+(`fills`), serving an essential record. An engineering standard and its rules are the rules that code follows, not
+code, so they fill no slot: a rule is accounted for when a record that is accounted for meets it, and the standard when
+one of its rules is. Coverage lists each fill as accidental debt.
 
 <!-- Generated from the schema, the check rows and the coverage rules by `npm --prefix lathe run reference`. Do not edit it by hand. -->
 
@@ -2216,7 +2218,7 @@ A dev script or config file outside the running product: a build, a generator, a
 
 ### Standard (`standard`)
 
-A library of rules that holds across the product, such as exact money, a latency budget, logging, error handling or naming. Its type says whether its rules are essential (a quality) or accidental (engineering). What follows one of its rules meets it.
+A library of rules that holds across the product, such as exact money, a latency budget, logging, error handling or naming. Its type says whether its rules are essential (a quality) or accidental (engineering). What follows one of its rules meets it. A standard is the rules that code follows, not code, so it fills no slot: an engineering standard is accounted for through the records that meet its rules.
 
 - **Parents:** [`product`](#kind-product) (`product_id`)
 - **Children:** [`standard_rule`](#kind-standard_rule)
@@ -3456,7 +3458,7 @@ The read model is kept current from the event: of its own domain, or another dom
 
 ### `fills`
 
-The accidental record (a technical record, an endpoint or a data store), written by hand or set up by hand, fills the pattern's slot against its contract: it is a fill, accidental complexity recorded where it is owed and counted as debt until the pattern can derive it. A record of a product's own accidental kind, such as a shared module, fills a slot the same way, with no declaration.
+The accidental record (a technical record, an endpoint or a data store), written by hand or set up by hand, fills the pattern's slot against its contract: it is a fill, accidental complexity recorded where it is owed and counted as debt until the pattern can derive it. A record of a product's own accidental kind, such as a shared module, fills a slot the same way, with no declaration. A standard and its rules fill no slot: an engineering standard is accounted for through the records that meet its rules.
 
 - **Reads:** Fills / Filled by
 - **Role:** none
@@ -3923,9 +3925,9 @@ A flow says how its use case is carried out whatever the interface, and each int
 
 **Warning** · Lathe's
 
-An accidental record that is neither derived (a tooling record generates it), provided (it or a record it sits under names its provider), nor a fill of a pattern's slot that serves an essential record.
+An accidental record that is neither derived (a tooling record generates it), provided (it or a record it sits under names its provider), nor a fill of a pattern's slot that serves an essential record; or an engineering standard or rule that nothing provides and no such record follows.
 
-Essential complexity is decided once, per product; accidental complexity, what comes from the means used to build it, is derived, provided, or a recorded fill at a slot, never free-floating (LA-STD-PRINCIPLES). A record is accidental by its kind (the technical specification), or as an engineering standard and its rules; a test follows what it proves and is not reported. It is accounted for when a tooling record generates it (generates), when it or a record it sits under is provided by something outside the product (provided_by), or when it fills a pattern's slot (fills) and serves an essential record: it builds an essential obligation as coverage counts it, carries out a pattern rule it meets (a generic piece of code: a shared component, an entry point, a build script), implements an essential record it sits under, directly or through other accidental records such as an endpoint (other than its product or domain), persists an essential aggregate (persists), is linked to an essential record by one of the product's own relations, in either direction, or has an essential record under it, such as a contract it holds (a test is never the essential record served); a data store serves what is stored in it that serves. Generate it, name its provider, or record the slot it fills and link it to the essential record it serves; code that serves nothing essential is removed.
+Essential complexity is decided once, per product; accidental complexity, what comes from the means used to build it, is derived, provided, or a recorded fill at a slot, never free-floating (LA-STD-PRINCIPLES). A record is accidental by its kind (the technical specification), or as an engineering standard and its rules; a test follows what it proves and is not reported. It is accounted for when a tooling record generates it (generates), when it or a record it sits under is provided by something outside the product (provided_by), or when it fills a pattern's slot (fills) and serves an essential record: it builds an essential obligation as coverage counts it, carries out a pattern rule it meets (a generic piece of code: a shared component, an entry point, a build script), implements an essential record it sits under, directly or through other accidental records such as an endpoint (other than its product or domain), persists an essential aggregate (persists), is linked to an essential record by one of the product's own relations, in either direction, or has an essential record under it, such as a contract it holds (a test is never the essential record served); a data store serves what is stored in it that serves. An engineering standard and its rules are the rules that code follows, not code, so they fill no slot: a rule is accounted for when a record that is accounted for builds it as coverage counts it (meets), and a standard when one of its rules is, unless it or its standard is provided. A record that meets a rule and is not accounted for is reported on its own, so the rule it meets stays accounted for through the others. Generate it, name its provider, or record the slot it fills and link it to the essential record it serves; code that serves nothing essential is removed. Link the records that follow an engineering rule to it with meets; a rule that nothing follows is removed.
 
 <a id="check-accidental-in-essential"></a>
 
