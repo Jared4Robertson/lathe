@@ -67,4 +67,16 @@ describe('LA-V61-R54-T02 after a write, the page reads again only the read model
     act(() => result.current.answered(2));
     await reloading;
   });
+
+  it('stops waiting for the change when the page closes, so nothing reads again after it', async () => {
+    listeners.clear();
+    const { result, unmount } = renderHook(() => useDataVersion());
+    await hear({ tables: [], readModels: [] });
+    act(() => { void result.current.reload({ mark: result.current.mark(), tables: ['use_case'] }); });
+    const meta = readModelChanges(metaRead);
+    unmount();
+    // Past the wait for the write's change: a reload still waiting would read every read model again.
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(readModelChanges(metaRead)).toBe(meta);
+  });
 });

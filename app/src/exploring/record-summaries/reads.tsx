@@ -108,6 +108,16 @@ export function useDataVersion(): DataVersion {
     setVersion(next);
     return next;
   }, []);
+  // The waits of reloads after writes. They stop when the hook unmounts, so none moves the version after it: in a test,
+  // the window is gone by the time one would end.
+  const waits = useRef(new Set<ReturnType<typeof setTimeout>>());
+  useEffect(() => {
+    const pending = waits.current;
+    return () => {
+      for (const wait of pending) clearTimeout(wait);
+      pending.clear();
+    };
+  }, []);
   const covers = (change: { tables: readonly string[] }, tables: readonly string[]) => tables.every((t) => change.tables.includes(t));
   const reload = useCallback(async (write?: { mark: number; tables: readonly string[] }) => {
     if (!write || !greeted.current) return answeredFor(everything());
@@ -116,10 +126,12 @@ export function useDataVersion(): DataVersion {
     const at = await new Promise<number | null>((resolve) => {
       const entry = { ...write, found: (v: number) => resolve(v) };
       writes.current.push(entry);
-      setTimeout(() => {
+      const wait = setTimeout(() => {
+        waits.current.delete(wait);
         writes.current = writes.current.filter((w) => w !== entry);
         resolve(null);
       }, WRITE_CHANGE_WAIT_MS);
+      waits.current.add(wait);
     });
     return answeredFor(at ?? everything());
   }, [answeredFor, everything]);

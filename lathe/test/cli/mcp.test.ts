@@ -92,7 +92,9 @@ describe('the server', () => {
     expect(messages).toContainEqual({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Parse error' } });
     expect(messages.filter((m) => m.id === undefined).length).toBe(1);
     expect(readFileSync(path.join(root, 'data', 'view.jsonl'), 'utf8')).toContain('TL-V02');
-  });
+    // Two writes, the second a product kind that builds a new schema and the data whole: seconds alone, past vitest's
+    // 5 s on a busy machine.
+  }, 30_000);
 
   it('LA-PLT-UC17-R01-T02 for a product whose data is for another schema, offers only check, and every tool says what to do', async () => {
     const root = writeData(everyKind());

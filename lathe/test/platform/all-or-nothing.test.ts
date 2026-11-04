@@ -185,6 +185,32 @@ describe('a write a crash left is settled before anything reads the data, and sa
     }
   });
 
+  // Each data database is a few hundred megabytes in memory, and the engine is the process's own: one kept for every
+  // crash fills it after a few dozen.
+  it('LA-MOD-A22-SR01-T02 a write a crash stopped keeps no database of its own', async () => {
+    const root = copy();
+    const step: Step = ['storage-requirement', 'remove-storage-requirement', { id: 'TL-LEND-A3-SR01' }];
+    for (let i = 0; i < 3; i++) {
+      // Each load rolls back the write before it, and the next write builds its state afresh.
+      const store = await openStore(root, { latheDataDir: null });
+      try {
+        crash.at = 'new file half written';
+        await expect(write(store, [step])).rejects.toThrow('crashed');
+      } finally {
+        crash.at = null;
+        await store.close();
+      }
+    }
+    const store = await openStore(root, { latheDataDir: null });
+    try {
+      // The store's own database, and the empty one ready for its next load: no more.
+      const [{ data }] = await store.query<{ data: number }>("SELECT count(*)::INTEGER AS data FROM duckdb_databases() WHERE database_name LIKE 'lathe_data_%'");
+      expect(data).toBeLessThanOrEqual(2);
+    } finally {
+      await store.close();
+    }
+  });
+
   it('LA-PRD-A1-SR01-T02 a write in progress is ignored by git', async () => {
     const root = copy();
     execFileSync('git', ['init', '-q'], { cwd: root });

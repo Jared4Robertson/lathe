@@ -35,6 +35,8 @@ export interface TransactionHost {
    * (its name), or held without one (null) when the store can hold it so; throws a StoreError when it is refused.
    */
   build(schemaDb: string, schema: SchemaDescription, tables: Tables, origins: WeakMap<Row, Origin>, changed: ReadonlySet<string>): Promise<string | null>;
+  /** Drops a database build made for a state the store does not adopt. */
+  discard(dataDb: string): Promise<void>;
   /** Makes the state the store's current one, with its database when it was built in one. */
   adopt(state: { tables: Tables; schema: SchemaDescription; schemaDb: string; dataDb: string | null }): Promise<void>;
 }
@@ -147,7 +149,14 @@ export async function commit(tx: Transaction): Promise<Committed> {
   const changes = rowChanges(schema, host.tables, tables, names);
   refuseWritten(schema, tables, origins, changes.filter((c) => !c.after || !draft.renamed.has(c.after)));
   const dataDb = await host.build(schemaDb, schema, tables, origins, changed);
-  const files = await writeFiles(host.dataDir, schema, tables, host.builtIn, origins, names);
+  let files: string[];
+  try {
+    files = await writeFiles(host.dataDir, schema, tables, host.builtIn, origins, names);
+  } catch (error) {
+    // The files were not written, so the state is not adopted: its database is dropped, or it stays in memory.
+    if (dataDb !== null) await host.discard(dataDb);
+    throw error;
+  }
   await host.adopt({ tables, schema, schemaDb, dataDb });
   return { tables: names, files, changes };
 }

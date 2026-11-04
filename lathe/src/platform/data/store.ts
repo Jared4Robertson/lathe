@@ -1135,6 +1135,7 @@ export class Store {
       buildSchema: (tables, origins) => this.buildSchema(tables, origins),
       build: async (schemaDb, schema, tables, origins, changed) =>
         schemaDb === this.schemaDb && (await this.step('write holds', () => this.writeHolds(schema, tables, changed))) ? null : this.buildData(schemaDb, schema, tables, origins),
+      discard: (dataDb) => this.detach(dataDb),
       adopt: async (state) => {
         this.tables = state.tables;
         this.currentSchema = state.schema;
