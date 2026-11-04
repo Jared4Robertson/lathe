@@ -5,6 +5,7 @@
 {"id":"LA-CHK-RM11-TB","title":"LimitsTable","read_model_id":"LA-CHK-RM11","name":"LimitsTable","storage":"in memory","file":"lathe/src/checking/product-setting/read-model.ts"}
 {"id":"LA-CHK-RM12-TB","title":"EssentialReviewTable","read_model_id":"LA-CHK-RM12","name":"EssentialReviewTable","storage":"in memory","file":"lathe/src/checking/essential-review/read-model.ts"}
 {"id":"LA-CHK-TB01","title":"problem","domain_id":"LA-CHK","name":"problem","storage":"table","file":"lathe/schema/011-checking.sql"}
+{"id":"LA-EXP-EN01-TB","title":"history","entity_id":"LA-EXP-EN01","name":"history","storage":"browser storage","file":"app/src/router.tsx"}
 {"id":"LA-EXP-EN02-TB","title":"lathe:space-pages","entity_id":"LA-EXP-EN02","name":"lathe:space-pages","storage":"browser storage","file":"app/src/exploring/space/model.ts"}
 {"id":"LA-EXP-EN03-TB","title":"lathe:nav-folders","entity_id":"LA-EXP-EN03","name":"lathe:nav-folders","storage":"browser storage","file":"app/src/exploring/nav-row/model.ts"}
 {"id":"LA-EXP-EN09-TB","title":"lathe:tabs","entity_id":"LA-EXP-EN09","name":"lathe:tabs","storage":"browser storage","file":"app/src/exploring/tab-set/model.ts"}
@@ -109,7 +110,8 @@
 {"id":"LA-PLT-RM03-TB","title":"ThemesTable","read_model_id":"LA-PLT-RM03","name":"ThemesTable","storage":"in memory","file":"app/src/platform/appearance/read-model.ts"}
 {"id":"LA-PLT-RM04-TB","title":"RecentFoldersTable","read_model_id":"LA-PLT-RM04","name":"RecentFoldersTable","storage":"in memory","file":"desktop/src/recent-folders/read-model.ts"}
 {"id":"LA-PLT-RM05-TB","title":"transcripts","read_model_id":"LA-PLT-RM05","name":"~/.claude/projects/<folder>/<session>.jsonl","storage":"file","file":"desktop/src/claudeSessions.ts"}
-{"id":"LA-PLT-RM06-TB","title":"shown","read_model_id":"LA-PLT-RM06","name":"shown","storage":"in memory","file":"app/src/chat/appRequests.ts"}
+{"id":"LA-PLT-RM06-TB","title":"latest","read_model_id":"LA-PLT-RM06","name":"latest","storage":"in memory","file":"app/src/chat/appRequests.ts"}
+{"id":"LA-PLT-RM07-TB","title":"ChatPatch","read_model_id":"LA-PLT-RM07","name":"ChatPatch","storage":"in memory","file":"desktop/src/chat.ts"}
 {"id":"LA-PLT-RM08-TB","title":"MetaModelTable","read_model_id":"LA-PLT-RM08","name":"MetaModelTable","storage":"in memory","file":"lathe/src/platform/meta-model/read-model.ts"}
 {"id":"LA-PLT-RM10-TB","title":"skillFiles","read_model_id":"LA-PLT-RM10","name":"skills/<name>/SKILL.md and commands/<name>.md","storage":"file","file":"desktop/src/chatSkills.ts"}
 {"id":"LA-PRD-EN01-TB","title":"product","entity_id":"LA-PRD-EN01","name":"product","storage":"table","file":"lathe/schema/003-product.sql"}

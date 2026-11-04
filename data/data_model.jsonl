@@ -73,6 +73,7 @@
 {"id":"LA-PRD-EN01-DM","title":"ProductRow","entity_id":"LA-PRD-EN01","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-PRD-EN02-DM","title":"ProductKindRow","entity_id":"LA-PRD-EN02","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-PRD-EN03-DM","title":"RoleRow","entity_id":"LA-PRD-EN03","file":"lathe/src/platform/data/tables.ts"}
+{"id":"LA-PRD-EN114-DM","title":"InterfaceActorRow","entity_id":"LA-PRD-EN114","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-PRD-EN115-DM","title":"JourneyRow","entity_id":"LA-PRD-EN115","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-PRD-EN116-DM","title":"JourneyStepRow","entity_id":"LA-PRD-EN116","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-PRD-EN117-DM","title":"JourneyTestRow","entity_id":"LA-PRD-EN117","file":"lathe/src/platform/data/tables.ts"}
