@@ -108,7 +108,7 @@ test.describe('Exploring flows', () => {
     await expect(page.locator('.header-strip .breadcrumb .crumb').first()).toContainText('Lathe');
     // Filters: the minimap.
     await page.locator(`${STAGE_BOX} .graph-filters > summary`).click();
-    await page.locator(`${STAGE_BOX} .graph-filter-body input[role="switch"]`).check();
+    await page.locator(`${STAGE_BOX} .graph-filter-body`).getByRole('switch', { name: 'Minimap' }).check();
     await expect(page.locator(`${STAGE_BOX} .graph-minimap`)).toBeVisible();
     await page.locator(`${STAGE_BOX} .graph-filters > summary`).click();
     // Nested, then back to Tree.
