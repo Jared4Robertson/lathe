@@ -74,18 +74,13 @@
 {"id":"LA-EXP-UC09-FL-S02","title":"The domain page lists Test plan by test kind","flow_id":"LA-EXP-UC09-FL","path":"main","position":2}
 {"id":"LA-EXP-UC09-FL-S04","title":"In the nav the kind groups fold with their counts, and the current page's branch opens","flow_id":"LA-EXP-UC09-FL","path":"main","position":3}
 {"id":"LA-EXP-UC09-FL-S05","title":"In the graph they reach the same records through the same groups, and the header strip's breadcrumb names where each sits","flow_id":"LA-EXP-UC09-FL","path":"main","position":4}
-{"id":"LA-EXP-UC10-FL-S01","title":"The Reader moves through the stage, the links and quick find, and every move stays in the active tab, even onto a record another tab holds, as the policy that hears a page open moves it","flow_id":"LA-EXP-UC10-FL","path":"main","position":1,"interface_id":"LA-IF02"}
-{"id":"LA-EXP-UC10-FL-S02","title":"The Reader opens a new tab by Cmd or Ctrl with a press, a middle press, Open in New Tab, Cmd+Enter in quick open, Cmd+T or Duplicate Tab","flow_id":"LA-EXP-UC10-FL","path":"main","position":2,"interface_id":"LA-IF02"}
-{"id":"LA-EXP-UC10-FL-S03","title":"The Reader flips between tabs by a press, Ctrl+Tab or View › Tabs, and the address follows the active tab","flow_id":"LA-EXP-UC10-FL","path":"main","position":3,"interface_id":"LA-IF02"}
-{"id":"LA-EXP-UC10-FL-S04","title":"The Reader moves through the stage, the links and quick find, each move staying in the browser tab as one entry of its history","flow_id":"LA-EXP-UC10-FL","path":"main","position":4,"interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC10-FL-S05","title":"Cmd or Ctrl with a press, or a middle press, on a box or a link opens its address in a new browser tab, the browser's own","flow_id":"LA-EXP-UC10-FL","path":"main","position":5,"interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC10-FL-S06","title":"The Reader flips between browser tabs, each its own place","flow_id":"LA-EXP-UC10-FL","path":"main","position":6,"interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC10-FL-S07","title":"Each browser tab keeps its own stage, depth, filters and wiki card; the layout and the minimap are the session's","flow_id":"LA-EXP-UC10-FL","path":"main","position":7,"interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC10-FL-S08","title":"The Reader closes a tab by its close control, a middle press, Cmd+W or Alt+Shift+W","flow_id":"LA-EXP-UC10-FL","path":"main","position":8,"interface_id":"LA-IF02"}
-{"id":"LA-EXP-UC10-FL-S09","title":"The app brings back every tab with its place and history after a reload","flow_id":"LA-EXP-UC10-FL","path":"main","position":9,"interface_id":"LA-IF02"}
-{"id":"LA-EXP-UC10-FL-S10","title":"The Reader goes Back and Forward within the active tab, by the title bar's controls, Cmd+[ and Cmd+] or View › Tabs","flow_id":"LA-EXP-UC10-FL","path":"main","position":10,"interface_id":"LA-IF02"}
-{"id":"LA-EXP-UC10-FL-S11","title":"Back and Forward step through the browser tab's own history, the browser's","flow_id":"LA-EXP-UC10-FL","path":"main","position":11,"interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC10-FL-S12","title":"A reload brings back the browser tab's place","flow_id":"LA-EXP-UC10-FL","path":"main","position":12,"interface_id":"LA-IF01"}
+{"id":"LA-EXP-UC10-FL-S01","title":"The Reader moves through the stage, the links and quick find, and every move stays in the active tab","flow_id":"LA-EXP-UC10-FL","path":"main","position":1}
+{"id":"LA-EXP-UC10-FL-S02","title":"The Reader opens a box, a link or a found record in a new tab","flow_id":"LA-EXP-UC10-FL","path":"main","position":2}
+{"id":"LA-EXP-UC10-FL-S03","title":"The Reader flips between tabs, and the address follows the active one","flow_id":"LA-EXP-UC10-FL","path":"main","position":3}
+{"id":"LA-EXP-UC10-FL-S04","title":"Each tab keeps its own stage, depth, filters and wiki card; the layout and the minimap stay the session's","flow_id":"LA-EXP-UC10-FL","path":"main","position":4}
+{"id":"LA-EXP-UC10-FL-S05","title":"The Reader goes Back and Forward within the active tab, never into another's history","flow_id":"LA-EXP-UC10-FL","path":"main","position":5}
+{"id":"LA-EXP-UC10-FL-S06","title":"The Reader closes a tab","flow_id":"LA-EXP-UC10-FL","path":"main","position":6}
+{"id":"LA-EXP-UC10-FL-S07","title":"A reload brings back each tab with its place and history","flow_id":"LA-EXP-UC10-FL","path":"main","position":7}
 {"id":"LA-EXP-UC11-FL-S01","title":"On a domain, aggregate or entity page the reader opens the ERD stage","flow_id":"LA-EXP-UC11-FL","path":"main","position":1}
 {"id":"LA-EXP-UC11-FL-S02","title":"A domain's ERD shows its aggregates as boundaries around their entities, and the relationship and reference lines between them","flow_id":"LA-EXP-UC11-FL","path":"main","position":2}
 {"id":"LA-EXP-UC11-FL-S03","title":"They select an aggregate's box: its entities with their fields, and the aggregates around it faded","flow_id":"LA-EXP-UC11-FL","path":"main","position":3}
@@ -133,17 +128,17 @@
 {"id":"LA-MOD-UC02-FL-S05","title":"The Owner adds the domain's services and its repositories, each persisting one aggregate and naming the data store it is kept in","flow_id":"LA-MOD-UC02-FL","path":"main","position":5}
 {"id":"LA-MOD-UC02-FL-S06","title":"The Owner renames a domain the check finds named for a technology","flow_id":"LA-MOD-UC02-FL","path":"main","position":6}
 {"id":"LA-MOD-UC02-FL-S07","title":"The Owner links each capability to the business outcomes it serves","flow_id":"LA-MOD-UC02-FL","path":"main","position":4}
-{"id":"LA-MOD-UC02-FL-S08","title":"The Owner moves a capability, with its use cases, to another domain","flow_id":"LA-MOD-UC02-FL","path":"main","position":7,"interface_id":"LA-IF03"}
-{"id":"LA-MOD-UC02-FL-S09","title":"The Owner moves a glossary term to the domain whose language it is","flow_id":"LA-MOD-UC02-FL","path":"main","position":8,"interface_id":"LA-IF03"}
-{"id":"LA-MOD-UC02-FL-S10","title":"The Owner moves a repository to the domain of the aggregate it persists","flow_id":"LA-MOD-UC02-FL","path":"main","position":9,"interface_id":"LA-IF03"}
-{"id":"LA-MOD-UC02-FL-S11","title":"The Owner moves a domain service, with its service and tests, to another domain","flow_id":"LA-MOD-UC02-FL","path":"main","position":10,"interface_id":"LA-IF03"}
+{"id":"LA-MOD-UC02-FL-S08","title":"The Owner moves a capability, with its use cases, to another domain","flow_id":"LA-MOD-UC02-FL","path":"main","position":7}
+{"id":"LA-MOD-UC02-FL-S09","title":"The Owner moves a glossary term to the domain whose language it is","flow_id":"LA-MOD-UC02-FL","path":"main","position":8}
+{"id":"LA-MOD-UC02-FL-S10","title":"The Owner moves a repository to the domain of the aggregate it persists","flow_id":"LA-MOD-UC02-FL","path":"main","position":9}
+{"id":"LA-MOD-UC02-FL-S11","title":"The Owner moves a domain service, with its service and tests, to another domain","flow_id":"LA-MOD-UC02-FL","path":"main","position":10}
 {"id":"LA-MOD-UC02-FL-S12","title":"The Owner puts the domains in the order the product is read, by position","flow_id":"LA-MOD-UC02-FL","path":"main","position":11}
 {"id":"LA-MOD-UC10-FL-S01","title":"The Owner reads the aggregate whole, with its entities and invariants, before changing it","flow_id":"LA-MOD-UC10-FL","path":"main","position":1}
 {"id":"LA-MOD-UC10-FL-S02","title":"The Owner adds an aggregate with its root entity and the root's fields","flow_id":"LA-MOD-UC10-FL","path":"main","position":2}
 {"id":"LA-MOD-UC10-FL-S03","title":"The Owner adds a child entity with its fields, linked from the root by has_one or has_many, another aggregate referenced by a typed field","flow_id":"LA-MOD-UC10-FL","path":"main","position":3}
 {"id":"LA-MOD-UC10-FL-S04","title":"The Owner adds the aggregate's invariants, a uniqueness rule named on its unique key","flow_id":"LA-MOD-UC10-FL","path":"main","position":4}
 {"id":"LA-MOD-UC10-FL-S05","title":"The Owner adds a second root entity, and is refused with every reason","flow_id":"LA-MOD-UC10-FL","path":"refused","position":1}
-{"id":"LA-MOD-UC10-FL-S06","title":"The Owner moves an aggregate, with everything under it, to another domain","flow_id":"LA-MOD-UC10-FL","path":"main","position":5,"interface_id":"LA-IF03"}
+{"id":"LA-MOD-UC10-FL-S06","title":"The Owner moves an aggregate, with everything under it, to another domain","flow_id":"LA-MOD-UC10-FL","path":"main","position":5}
 {"id":"LA-MOD-UC12-FL-S01","title":"The Owner reads the command whole, with its policies and the events it raises, before changing it","flow_id":"LA-MOD-UC12-FL","path":"main","position":1}
 {"id":"LA-MOD-UC12-FL-S02","title":"The Owner adds a command under its aggregate, with the events it raises and the specifications it checks","flow_id":"LA-MOD-UC12-FL","path":"main","position":2}
 {"id":"LA-MOD-UC12-FL-S03","title":"The Owner adds the command's handler, naming its file","flow_id":"LA-MOD-UC12-FL","path":"main","position":3}
@@ -152,13 +147,13 @@
 {"id":"LA-MOD-UC20-FL-S02","title":"The Owner adds a specification reading the aggregates it judges, with its predicate","flow_id":"LA-MOD-UC20-FL","path":"main","position":2}
 {"id":"LA-MOD-UC20-FL-S03","title":"The Owner adds the specification's test","flow_id":"LA-MOD-UC20-FL","path":"main","position":3}
 {"id":"LA-MOD-UC20-FL-S04","title":"The Owner removes a specification nothing checks or selects by","flow_id":"LA-MOD-UC20-FL","path":"main","position":4}
-{"id":"LA-MOD-UC20-FL-S05","title":"The Owner moves a specification, with its predicate and test, to another domain","flow_id":"LA-MOD-UC20-FL","path":"main","position":5,"interface_id":"LA-IF03"}
+{"id":"LA-MOD-UC20-FL-S05","title":"The Owner moves a specification, with its predicate and test, to another domain","flow_id":"LA-MOD-UC20-FL","path":"main","position":5}
 {"id":"LA-MOD-UC21-FL-S01","title":"The Owner reads the read model whole, with its fields and queries, before changing it","flow_id":"LA-MOD-UC21-FL","path":"main","position":1}
 {"id":"LA-MOD-UC21-FL-S02","title":"The Owner adds a read model with its fields, reading the aggregates it spans","flow_id":"LA-MOD-UC21-FL","path":"main","position":2}
 {"id":"LA-MOD-UC21-FL-S03","title":"The Owner adds each query under the read model it reads, with its handler","flow_id":"LA-MOD-UC21-FL","path":"main","position":3}
 {"id":"LA-MOD-UC21-FL-S04","title":"The Owner adds the projection that builds the read model","flow_id":"LA-MOD-UC21-FL","path":"main","position":4}
 {"id":"LA-MOD-UC21-FL-S05","title":"The Owner adds the reader the query handlers read the read model through","flow_id":"LA-MOD-UC21-FL","path":"main","position":5}
-{"id":"LA-MOD-UC21-FL-S06","title":"The Owner moves a read model, with its queries, projection and reader, to another domain","flow_id":"LA-MOD-UC21-FL","path":"main","position":6,"interface_id":"LA-IF03"}
+{"id":"LA-MOD-UC21-FL-S06","title":"The Owner moves a read model, with its queries, projection and reader, to another domain","flow_id":"LA-MOD-UC21-FL","path":"main","position":6}
 {"id":"LA-MOD-UC24-FL-S01","title":"The Owner reads the value object whole, with its constraints, before changing it","flow_id":"LA-MOD-UC24-FL","path":"main","position":1}
 {"id":"LA-MOD-UC24-FL-S02","title":"The Owner adds a value object with its fields","flow_id":"LA-MOD-UC24-FL","path":"main","position":2}
 {"id":"LA-MOD-UC24-FL-S03","title":"The Owner adds the value object's constraints, each with its test","flow_id":"LA-MOD-UC24-FL","path":"main","position":3}
@@ -182,10 +177,8 @@
 {"id":"LA-PLT-UC02-FL-S02","title":"They set up the merge driver once per clone, as the README says, so git merges the data files through it","flow_id":"LA-PLT-UC02-FL","path":"main","position":2}
 {"id":"LA-PLT-UC02-FL-S03","title":"They run lathe check, which loads the records in the data folder the config names, with the product's own kinds","flow_id":"LA-PLT-UC02-FL","path":"main","position":3}
 {"id":"LA-PLT-UC02-FL-S06","title":"The Owner lists the other products in the workspace's Lathe configuration file, and lathe check checks each in its own folder","flow_id":"LA-PLT-UC02-FL","path":"workspace","position":1}
-{"id":"LA-PLT-UC03-FL-S01","title":"A use case's flow step is added with its own command while the Reader keeps the record open","flow_id":"LA-PLT-UC03-FL","path":"main","position":1,"interface_id":"LA-IF02"}
-{"id":"LA-PLT-UC03-FL-S02","title":"In the desktop shell, Data files changed sends spec:changed and the open view loads the data again at the same address","flow_id":"LA-PLT-UC03-FL","path":"main","position":2,"interface_id":"LA-IF02"}
-{"id":"LA-PLT-UC03-FL-S03","title":"An aggregate is added with its own command while the Reader keeps the record open","flow_id":"LA-PLT-UC03-FL","path":"main","position":3,"interface_id":"LA-IF01"}
-{"id":"LA-PLT-UC03-FL-S04","title":"The file watcher raises Data files changed, the server sends spec:changed and the open view loads the data again at the same address","flow_id":"LA-PLT-UC03-FL","path":"main","position":4,"interface_id":"LA-IF01"}
+{"id":"LA-PLT-UC03-FL-S01","title":"A record is changed with its own command while the Reader keeps its page open","flow_id":"LA-PLT-UC03-FL","path":"main","position":1}
+{"id":"LA-PLT-UC03-FL-S02","title":"The open page loads the data again at the same address and shows the change","flow_id":"LA-PLT-UC03-FL","path":"main","position":2}
 {"id":"LA-PLT-UC03-FL-S05","title":"When the data cannot be loaded, the view says what is wrong rather than showing other data","flow_id":"LA-PLT-UC03-FL","path":"refused","position":1}
 {"id":"LA-PLT-UC06-FL-S01","title":"The Reader drags the gap between two panels, or focuses it and steps it with the keys","flow_id":"LA-PLT-UC06-FL","path":"main","position":1}
 {"id":"LA-PLT-UC06-FL-S02","title":"Lathe remembers the sizes; a double press on the divider resets one","flow_id":"LA-PLT-UC06-FL","path":"main","position":2}
@@ -271,6 +264,13 @@
 {"id":"LA-PLT-UC28-FL-S02","title":"They clear the recent folders from File › Open Recent","flow_id":"LA-PLT-UC28-FL","path":"main","position":2}
 {"id":"LA-PLT-UC29-FL-S01","title":"The Agent asks what the Owner is looking at","flow_id":"LA-PLT-UC29-FL","path":"main","position":1}
 {"id":"LA-PLT-UC29-FL-S02","title":"The Agent opens a record in the window, on the stage it names","flow_id":"LA-PLT-UC29-FL","path":"main","position":2}
+{"id":"LA-PLT-UC30-FL-S01","title":"The Owner learns the chat's agent is not signed in: before a conversation starts, or in place of a turn's answer","flow_id":"LA-PLT-UC30-FL","path":"main","position":1}
+{"id":"LA-PLT-UC30-FL-S02","title":"They start signing in, with their subscription or a Console account","flow_id":"LA-PLT-UC30-FL","path":"main","position":2}
+{"id":"LA-PLT-UC30-FL-S03","title":"They finish signing in in the browser the sign-in opened, or open its page themselves","flow_id":"LA-PLT-UC30-FL","path":"main","position":3}
+{"id":"LA-PLT-UC30-FL-S04","title":"When the sign-in asks for the code the browser shows, they give it","flow_id":"LA-PLT-UC30-FL","path":"main","position":4}
+{"id":"LA-PLT-UC30-FL-S05","title":"They learn the agent is signed in and the chat can start; or why the sign-in failed, and try again","flow_id":"LA-PLT-UC30-FL","path":"main","position":5}
+{"id":"LA-PLT-UC30-FL-S06","title":"They cancel the sign-in under way, which leaves everything as it was","flow_id":"LA-PLT-UC30-FL","path":"cancel","position":1}
+{"id":"LA-PLT-UC30-FL-S07","title":"They sign the agent out, so another account can sign in","flow_id":"LA-PLT-UC30-FL","path":"sign-out","position":1}
 {"id":"LA-PRD-UC03-FL-S01","title":"The Owner writes the change into Lathe's migrations and reviews the diff in git","flow_id":"LA-PRD-UC03-FL","path":"main","position":1}
 {"id":"LA-PRD-UC03-FL-S02","title":"They regenerate the record types and the reference; a test fails while either is stale","flow_id":"LA-PRD-UC03-FL","path":"main","position":2}
 {"id":"LA-PRD-UC03-FL-S03","title":"The next load applies the migrations in order and checks every product's data against them","flow_id":"LA-PRD-UC03-FL","path":"main","position":3}
@@ -303,14 +303,14 @@
 {"id":"LA-PRD-UC33-FL-S04","title":"The Owner moves a step to another place on its path, or to another path","flow_id":"LA-PRD-UC33-FL","path":"main","position":4}
 {"id":"LA-PRD-UC33-FL-S05","title":"Once a step's use case is written, the Owner links the step to it","flow_id":"LA-PRD-UC33-FL","path":"main","position":5}
 {"id":"LA-PRD-UC33-FL-S06","title":"The Owner adds the journey test, its main path end to end","flow_id":"LA-PRD-UC33-FL","path":"main","position":6}
-{"id":"LA-PRD-UC33-FL-S07","title":"They run the check: a warning for a journey of one use case, a handoff its previous use case does not lead to, and an outcome timing a duration no journey serves","flow_id":"LA-PRD-UC33-FL","path":"main","position":7,"interface_id":"LA-IF03"}
+{"id":"LA-PRD-UC33-FL-S07","title":"They read a warning for a journey of one use case, a handoff its previous use case does not lead to, and an outcome timing a duration no journey serves","flow_id":"LA-PRD-UC33-FL","path":"main","position":7}
 {"id":"LA-PRD-UC33-FL-S08","title":"Removing a use case a step carries out is refused, naming the step","flow_id":"LA-PRD-UC33-FL","path":"refused","position":1}
 {"id":"LA-PRD-UC34-FL-S01","title":"The Owner reads the record whole, with its fields and links, before changing it","flow_id":"LA-PRD-UC34-FL","path":"main","position":1}
 {"id":"LA-PRD-UC34-FL-S02","title":"The Owner adds a record of the product's own kind under its parent, with the fields and links its kind declares","flow_id":"LA-PRD-UC34-FL","path":"main","position":2}
 {"id":"LA-PRD-UC34-FL-S03","title":"The Owner changes the record's fields or links","flow_id":"LA-PRD-UC34-FL","path":"main","position":3}
 {"id":"LA-PRD-UC34-FL-S04","title":"The Owner removes the record with its links","flow_id":"LA-PRD-UC34-FL","path":"main","position":4}
 {"id":"LA-PRD-UC34-FL-S05","title":"The Owner adds a record with a field its kind does not declare, and is refused with every reason","flow_id":"LA-PRD-UC34-FL","path":"refused","position":1}
-{"id":"LA-PRD-UC34-FL-S06","title":"The Owner moves a record of the product's own kind to another domain","flow_id":"LA-PRD-UC34-FL","path":"main","position":5,"interface_id":"LA-IF03"}
+{"id":"LA-PRD-UC34-FL-S06","title":"The Owner moves a record of the product's own kind to another domain","flow_id":"LA-PRD-UC34-FL","path":"main","position":5}
 {"id":"LA-PRD-UC35-FL-S01","title":"The Owner reads the product whole, with its roles, before changing them","flow_id":"LA-PRD-UC35-FL","path":"main","position":1}
 {"id":"LA-PRD-UC35-FL-S02","title":"The Owner changes the product's roles, the actors its use cases name, each with what it does","flow_id":"LA-PRD-UC35-FL","path":"main","position":2}
 {"id":"LA-PRD-UC36-FL-S01","title":"The Owner reads the product whole, with its open questions and what each is about","flow_id":"LA-PRD-UC36-FL","path":"main","position":1}
@@ -333,24 +333,21 @@
 {"id":"LA-TEC-UC29-FL-S01","title":"The Owner reads the product's starting points whole, with what each starts, before changing them","flow_id":"LA-TEC-UC29-FL","path":"main","position":1}
 {"id":"LA-TEC-UC29-FL-S02","title":"The Owner adds an entry point under its domain, titled as in code, naming the file that starts it","flow_id":"LA-TEC-UC29-FL","path":"main","position":2}
 {"id":"LA-TEC-UC29-FL-S03","title":"The Owner changes an entry point's file when it moves","flow_id":"LA-TEC-UC29-FL","path":"main","position":3}
-{"id":"LA-TEC-UC29-FL-S04","title":"The Owner moves an entry point to another domain","flow_id":"LA-TEC-UC29-FL","path":"main","position":4,"interface_id":"LA-IF03"}
+{"id":"LA-TEC-UC29-FL-S04","title":"The Owner moves an entry point to another domain","flow_id":"LA-TEC-UC29-FL","path":"main","position":4}
 {"id":"LA-TEC-UC30-FL-S01","title":"The Owner reads the tooling record whole, with what it holds, before changing it","flow_id":"LA-TEC-UC30-FL","path":"main","position":1}
 {"id":"LA-TEC-UC30-FL-S02","title":"The Owner adds a tooling record under its domain, titled as in code, naming its script or configuration","flow_id":"LA-TEC-UC30-FL","path":"main","position":2}
 {"id":"LA-TEC-UC30-FL-S03","title":"The Owner changes a tooling record's file when it moves","flow_id":"LA-TEC-UC30-FL","path":"main","position":3}
-{"id":"LA-TEC-UC30-FL-S04","title":"The Owner moves a tooling record to another domain","flow_id":"LA-TEC-UC30-FL","path":"main","position":4,"interface_id":"LA-IF03"}
+{"id":"LA-TEC-UC30-FL-S04","title":"The Owner moves a tooling record to another domain","flow_id":"LA-TEC-UC30-FL","path":"main","position":4}
 {"id":"LA-TEC-UC32-FL-S01","title":"The Owner reads where the product's data lives whole, with what is kept there, before changing it","flow_id":"LA-TEC-UC32-FL","path":"main","position":1}
 {"id":"LA-TEC-UC32-FL-S02","title":"The Owner adds a data store under it, for the repositories, readers and tables kept there to name","flow_id":"LA-TEC-UC32-FL","path":"main","position":2}
 {"id":"LA-TEC-UC32-FL-S05","title":"The Owner changes the data store's kind or description","flow_id":"LA-TEC-UC32-FL","path":"main","position":3}
 {"id":"LA-TEC-UC32-FL-S06","title":"They remove a data store nothing is kept in","flow_id":"LA-TEC-UC32-FL","path":"main","position":4}
-{"id":"LA-TEC-UC32-FL-S07","title":"The Owner moves a data store of one domain to another domain","flow_id":"LA-TEC-UC32-FL","path":"main","position":5,"interface_id":"LA-IF03"}
-{"id":"LA-TRC-UC01-FL-S01","title":"The Owner runs lathe check and reads one coverage line per domain and obligation kind: designed, built, proved and not automated yet","flow_id":"LA-TRC-UC01-FL","path":"main","position":1,"interface_id":"LA-IF03"}
-{"id":"LA-TRC-UC01-FL-S02","title":"Each gap names the obligation and what it lacks: its design, a built file or a test","flow_id":"LA-TRC-UC01-FL","path":"main","position":2,"interface_id":"LA-IF03"}
-{"id":"LA-TRC-UC01-FL-S03","title":"The gaps are warnings, so the check still passes","flow_id":"LA-TRC-UC01-FL","path":"main","position":3,"interface_id":"LA-IF03"}
-{"id":"LA-TRC-UC01-FL-S04","title":"An Agent closes each gap in that domain, and the next check counts it","flow_id":"LA-TRC-UC01-FL","path":"main","position":4,"interface_id":"LA-IF03"}
-{"id":"LA-TRC-UC01-FL-S05","title":"The Reader opens a product and reads each domain card's coverage bars","flow_id":"LA-TRC-UC01-FL","path":"main","position":5,"interface_id":"LA-IF01"}
-{"id":"LA-TRC-UC01-FL-S06","title":"They read the product's Summary: coverage, tests by state, open questions, errors and warnings","flow_id":"LA-TRC-UC01-FL","path":"main","position":6,"interface_id":"LA-IF01"}
-{"id":"LA-TRC-UC01-FL-S07","title":"They read the product's open questions and problems","flow_id":"LA-TRC-UC01-FL","path":"main","position":7,"interface_id":"LA-IF01"}
-{"id":"LA-TRC-UC01-FL-S08","title":"The Reader opens a domain card to its domain","flow_id":"LA-TRC-UC01-FL","path":"main","position":8,"interface_id":"LA-IF01"}
+{"id":"LA-TEC-UC32-FL-S07","title":"The Owner moves a data store of one domain to another domain","flow_id":"LA-TEC-UC32-FL","path":"main","position":5}
+{"id":"LA-TRC-UC01-FL-S01","title":"The Owner reads, for each domain and obligation kind, how many obligations are designed, built, proved and not automated yet","flow_id":"LA-TRC-UC01-FL","path":"main","position":1}
+{"id":"LA-TRC-UC01-FL-S02","title":"They read each gap: the obligation and what it lacks, its design, a built file or a test","flow_id":"LA-TRC-UC01-FL","path":"main","position":2}
+{"id":"LA-TRC-UC01-FL-S03","title":"They read the product's tests by state in total","flow_id":"LA-TRC-UC01-FL","path":"main","position":3}
+{"id":"LA-TRC-UC01-FL-S04","title":"They read the product's open questions and problems, each gap a warning, so the check still passes","flow_id":"LA-TRC-UC01-FL","path":"main","position":4}
+{"id":"LA-TRC-UC01-FL-S05","title":"An Agent closes a gap in a domain, and the next reading counts it","flow_id":"LA-TRC-UC01-FL","path":"main","position":5}
 {"id":"LA-TRC-UC02-FL-S01","title":"The Owner runs lathe check on a product with every obligation kind, its own kinds among them","flow_id":"LA-TRC-UC02-FL","path":"main","position":1}
 {"id":"LA-TRC-UC02-FL-S02","title":"Coverage decides designed, built and proved from the tree, counting only tests at levels their kind allows","flow_id":"LA-TRC-UC02-FL","path":"main","position":2}
 {"id":"LA-TRC-UC02-FL-S03","title":"An obligation with only a test not automated yet counts as not automated yet, not proved","flow_id":"LA-TRC-UC02-FL","path":"main","position":3}
@@ -369,11 +366,8 @@
 {"id":"LA-TRC-UC05-FL-S06","title":"The check reads each test case in the product's test files for the ID of a test whose file it is in","flow_id":"LA-TRC-UC05-FL","path":"main","position":4}
 {"id":"LA-TRC-UC05-FL-S08","title":"The check reports a file that does not name its test as an error naming the test and the file, and the Agent names it","flow_id":"LA-TRC-UC05-FL","path":"refused","position":1}
 {"id":"LA-TRC-UC05-FL-S09","title":"The check reports a test case that names no such test as an error naming its file and line, and the Agent names it or removes it","flow_id":"LA-TRC-UC05-FL","path":"refused","position":2}
-{"id":"LA-TRC-UC06-FL-S01","title":"The Owner runs lathe check and, after each domain's obligation lines, reads its tests by state","flow_id":"LA-TRC-UC06-FL","path":"main","position":1,"interface_id":"LA-IF03"}
-{"id":"LA-TRC-UC06-FL-S02","title":"An Agent reads the same counts from the machine-readable output of lathe check, on each domain's coverage","flow_id":"LA-TRC-UC06-FL","path":"json","position":1,"interface_id":"LA-IF03"}
-{"id":"LA-TRC-UC06-FL-S03","title":"The Reader reads each domain card's tests by state","flow_id":"LA-TRC-UC06-FL","path":"main","position":2,"interface_id":"LA-IF01"}
-{"id":"LA-TRC-UC06-FL-S04","title":"In the product's Summary they read the tests by state in total","flow_id":"LA-TRC-UC06-FL","path":"main","position":3,"interface_id":"LA-IF01"}
-{"id":"LA-TRC-UC06-FL-S05","title":"They open a domain and read the same in its Coverage section","flow_id":"LA-TRC-UC06-FL","path":"main","position":4,"interface_id":"LA-IF01"}
+{"id":"LA-TRC-UC06-FL-S01","title":"The Owner reads each domain's tests by state, automated, manual and not automated yet, beside its coverage","flow_id":"LA-TRC-UC06-FL","path":"main","position":1}
+{"id":"LA-TRC-UC06-FL-S03","title":"They read the tests by state totaled for the whole product","flow_id":"LA-TRC-UC06-FL","path":"main","position":2}
 {"id":"LA-TRC-UC07-FL-S01","title":"The Owner makes a domain follow a pattern with lathe pattern-following follow-pattern","flow_id":"LA-TRC-UC07-FL","path":"main","position":1}
 {"id":"LA-TRC-UC07-FL-S02","title":"They give the pattern's settings their values with lathe pattern-following change-setting-values, or none where the pattern has none","flow_id":"LA-TRC-UC07-FL","path":"main","position":2}
 {"id":"LA-TRC-UC07-FL-S03","title":"They read which domains and use cases follow a pattern, with lathe pattern-following list-followers","flow_id":"LA-TRC-UC07-FL","path":"main","position":3}
@@ -411,27 +405,23 @@
 {"id":"LA-TRC-UC19-FL-S02","title":"Lathe check reports each package no record names as one gap on the product, with the manifests that list it","flow_id":"LA-TRC-UC19-FL","path":"main","position":2}
 {"id":"LA-TRC-UC19-FL-S03","title":"The Agent names the package on the technical record that uses it; the store refuses it on any other record","flow_id":"LA-TRC-UC19-FL","path":"main","position":3}
 {"id":"LA-TRC-UC19-FL-S04","title":"Once the package leaves the manifest, the record that still names it is an error until the Agent removes the name","flow_id":"LA-TRC-UC19-FL","path":"main","position":4}
-{"id":"LA-TRC-UC20-FL-S01","title":"The Reader opens an aggregate","flow_id":"LA-TRC-UC20-FL","path":"main","position":1,"interface_id":"LA-IF01"}
-{"id":"LA-TRC-UC20-FL-S02","title":"Its facts name the outcomes it serves, each a link","flow_id":"LA-TRC-UC20-FL","path":"main","position":2}
-{"id":"LA-TRC-UC20-FL-S03","title":"They run lathe serves list-serves for the product: each record with its outcomes, then those serving none","flow_id":"LA-TRC-UC20-FL","path":"main","position":3,"interface_id":"LA-IF03"}
-{"id":"LA-TRC-UC20-FL-S04","title":"They run lathe check: a serves-no-outcome warning for each record none reaches, saying how to fix it","flow_id":"LA-TRC-UC20-FL","path":"main","position":4,"interface_id":"LA-IF03"}
-{"id":"LA-TRC-UC20-FL-S05","title":"They follow an outcome to its record","flow_id":"LA-TRC-UC20-FL","path":"main","position":5,"interface_id":"LA-IF01"}
-{"id":"LA-TRC-UC20-FL-S06","title":"They open Tools › Checks and read each serves-no-outcome warning","flow_id":"LA-TRC-UC20-FL","path":"main","position":6,"interface_id":"LA-IF01"}
+{"id":"LA-TRC-UC20-FL-S01","title":"The Reader reads the outcomes a record serves, and the use cases it serves them through","flow_id":"LA-TRC-UC20-FL","path":"main","position":1}
+{"id":"LA-TRC-UC20-FL-S02","title":"They list each record of the product with the outcomes it serves, then those serving none","flow_id":"LA-TRC-UC20-FL","path":"main","position":2,"interface_id":"LA-IF03"}
+{"id":"LA-TRC-UC20-FL-S03","title":"They read a serves-no-outcome warning for each record no outcome reaches, saying how to fix it","flow_id":"LA-TRC-UC20-FL","path":"main","position":3}
 {"id":"LA-TRC-UC21-FL-S01","title":"The Owner records that a record written by hand fills a slot of the pattern it is owed to","flow_id":"LA-TRC-UC21-FL","path":"main","position":1}
 {"id":"LA-TRC-UC21-FL-S03","title":"Coverage lists the fill as debt at its slot","flow_id":"LA-TRC-UC21-FL","path":"main","position":2}
 {"id":"LA-TRC-UC21-FL-S04","title":"A fill of a record a generator writes is refused with every reason, and nothing changes","flow_id":"LA-TRC-UC21-FL","path":"refused","position":1}
 {"id":"LA-TRC-UC22-FL-S01","title":"The Reader opens a journey and reads its proof: its steps, how many are proved, and its journey test","flow_id":"LA-TRC-UC22-FL","path":"main","position":1}
-{"id":"LA-TRC-UC22-FL-S02","title":"They open an outcome the journey serves and read each journey's proof under its measure","flow_id":"LA-TRC-UC22-FL","path":"main","position":2,"interface_id":"LA-IF01"}
-{"id":"LA-TRC-UC22-FL-S03","title":"On the Trace stage they select a journey, read its numbered lines to the use cases its steps carry out, and walk them in journey order","flow_id":"LA-TRC-UC22-FL","path":"main","position":3,"interface_id":"LA-IF01"}
-{"id":"LA-TRC-UC22-FL-S04","title":"They run the check: a gap for each journey without a test, a main path or an outcome, and for each step that carries out nothing yet","flow_id":"LA-TRC-UC22-FL","path":"main","position":4,"interface_id":"LA-IF03"}
+{"id":"LA-TRC-UC22-FL-S02","title":"They read each journey's proof under the measure of an outcome it serves","flow_id":"LA-TRC-UC22-FL","path":"main","position":2}
+{"id":"LA-TRC-UC22-FL-S03","title":"They follow the journey's steps in order to the use cases they carry out","flow_id":"LA-TRC-UC22-FL","path":"main","position":3}
+{"id":"LA-TRC-UC22-FL-S04","title":"They read a gap for each journey without a test, a main path or an outcome, and for each step that carries out nothing yet","flow_id":"LA-TRC-UC22-FL","path":"main","position":4}
 {"id":"LA-TRC-UC23-FL-S01","title":"They name what provides a record decided outside the product, in place of any provider it had","flow_id":"LA-TRC-UC23-FL","path":"main","position":1}
 {"id":"LA-TRC-UC23-FL-S02","title":"Coverage counts the provided record as accounted for","flow_id":"LA-TRC-UC23-FL","path":"main","position":2}
-{"id":"LA-TRC-UC24-FL-S01","title":"The Owner opens a record they mean to change","flow_id":"LA-TRC-UC24-FL","path":"main","position":1,"interface_id":"LA-IF01"}
-{"id":"LA-TRC-UC24-FL-S02","title":"They read its change reach: each record it would touch by stage, with the path of links that reaches it","flow_id":"LA-TRC-UC24-FL","path":"main","position":2}
+{"id":"LA-TRC-UC24-FL-S01","title":"The Owner names the records they mean to change","flow_id":"LA-TRC-UC24-FL","path":"main","position":1}
+{"id":"LA-TRC-UC24-FL-S02","title":"They read the change's reach: each record it would touch by stage, with the path of links that reaches it","flow_id":"LA-TRC-UC24-FL","path":"main","position":2}
 {"id":"LA-TRC-UC24-FL-S03","title":"They read the files and tests it would touch, each test with its state, and the purposes it could break","flow_id":"LA-TRC-UC24-FL","path":"main","position":3}
-{"id":"LA-TRC-UC24-FL-S04","title":"They light the reach on the Graph and see where it falls","flow_id":"LA-TRC-UC24-FL","path":"main","position":4,"interface_id":"LA-IF01"}
-{"id":"LA-TRC-UC24-FL-S05","title":"They run lathe change-reach get-reach with every record of the change, then again with one dropped, and read what it no longer touches","flow_id":"LA-TRC-UC24-FL","path":"main","position":5,"interface_id":"LA-IF03"}
-{"id":"LA-TRC-UC24-FL-S06","title":"Before it changes anything, the Agent asks change_reach_get_reach with every record it means to change and reads the same reach","flow_id":"LA-TRC-UC24-FL","path":"main","position":6,"interface_id":"LA-IF04"}
+{"id":"LA-TRC-UC24-FL-S04","title":"They drop a record from the change and read what it no longer touches","flow_id":"LA-TRC-UC24-FL","path":"main","position":4}
+{"id":"LA-TRC-UC24-FL-S05","title":"Before it changes anything, an Agent reads the same reach","flow_id":"LA-TRC-UC24-FL","path":"main","position":5}
 {"id":"LA-TST-UC03-FL-S01","title":"The Agent writes the test under the record it proves, with its level and state","flow_id":"LA-TST-UC03-FL","path":"main","position":1}
 {"id":"LA-TST-UC03-FL-S02","title":"A test says its size when it is not small, and marks itself smoke or external","flow_id":"LA-TST-UC03-FL","path":"main","position":2}
 {"id":"LA-TST-UC03-FL-S03","title":"The Agent names the file that runs an automated test","flow_id":"LA-TST-UC03-FL","path":"automated","position":1}
@@ -442,7 +432,7 @@
 {"id":"LA-TST-UC13-FL-S02","title":"The Owner adds a test data set under its domain, with the file that builds it","flow_id":"LA-TST-UC13-FL","path":"main","position":2}
 {"id":"LA-TST-UC13-FL-S03","title":"The Owner changes a data set's preparation and reset","flow_id":"LA-TST-UC13-FL","path":"main","position":3}
 {"id":"LA-TST-UC13-FL-S04","title":"The Owner removes a data set no test starts from","flow_id":"LA-TST-UC13-FL","path":"main","position":4}
-{"id":"LA-TST-UC13-FL-S05","title":"The Owner moves a test data set to the domain whose tests start from it","flow_id":"LA-TST-UC13-FL","path":"main","position":5,"interface_id":"LA-IF03"}
+{"id":"LA-TST-UC13-FL-S05","title":"The Owner moves a test data set to the domain whose tests start from it","flow_id":"LA-TST-UC13-FL","path":"main","position":5}
 {"id":"LA-UCS-UC05-FL-S01","title":"The Owner reads the pattern whole, with its rules and slots, before changing it","flow_id":"LA-UCS-UC05-FL","path":"main","position":1}
 {"id":"LA-UCS-UC05-FL-S02","title":"The Owner adds a pattern with its settings","flow_id":"LA-UCS-UC05-FL","path":"main","position":2}
 {"id":"LA-UCS-UC05-FL-S03","title":"The Owner adds each of its rules, and a pattern rule test per following domain","flow_id":"LA-UCS-UC05-FL","path":"main","position":3}
@@ -455,4 +445,4 @@
 {"id":"LA-UCS-UC06-FL-S06","title":"The Owner removes a flow with its steps and test","flow_id":"LA-UCS-UC06-FL","path":"main","position":6}
 {"id":"LA-UCS-UC06-FL-S07","title":"The Owner adds a step fulfilling another use case's requirement, or a second flow, and is refused with every reason","flow_id":"LA-UCS-UC06-FL","path":"refused","position":1}
 {"id":"LA-UCS-UC06-FL-S08","title":"The Owner moves a use case, with everything in it, under another capability of its domain or of another","flow_id":"LA-UCS-UC06-FL","path":"main","position":7}
-{"id":"LA-UCS-UC06-FL-S09","title":"The Owner moves a UC requirement, with its tests, to the use case whose goal it serves","flow_id":"LA-UCS-UC06-FL","path":"main","position":8,"interface_id":"LA-IF03"}
+{"id":"LA-UCS-UC06-FL-S09","title":"The Owner moves a UC requirement, with its tests, to the use case whose goal it serves","flow_id":"LA-UCS-UC06-FL","path":"main","position":8}

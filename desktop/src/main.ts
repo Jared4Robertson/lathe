@@ -55,6 +55,12 @@ import { takeMessageOutOfQueue } from './window-chat/commands/take-message-out-o
 import { startingMode, type WindowChat } from './window-chat/model.ts';
 import { onWindowClosedEndChat } from './window-chat/policies.ts';
 import { WindowChatRepository } from './window-chat/repository.ts';
+import { cancelSignIn } from './agent-sign-in/commands/cancel-sign-in.ts';
+import { giveSignInCode } from './agent-sign-in/commands/give-sign-in-code.ts';
+import { signAgentIn } from './agent-sign-in/commands/sign-agent-in.ts';
+import { signAgentOut } from './agent-sign-in/commands/sign-agent-out.ts';
+import { AgentSignInRepository } from './agent-sign-in/repository.ts';
+import { ClaudeLogin, claudeSignOut, NO_SIGN_IN, type SignInState } from './claudeLogin.ts';
 import { startBridge, type Bridge, type OpenAnswer, type OpenRequest } from './bridge.ts';
 import { chatPatch, transcriptItems, type ChatModelChoice, type ChatMode } from './chat.ts';
 import { captureStage } from './chatCapture.ts';
@@ -107,6 +113,7 @@ const userFile = (name: string) => () => path.join(app.getPath('userData'), name
 // The aggregates' repositories: the only code that reaches their storage.
 const productWindows = new ProductWindowRepository({ places: userFile('window-state.json'), chrome: userFile('chrome.json') });
 const windowChats = new WindowChatRepository({ modes: userFile('chat-modes.json') });
+const agentSignIns = new AgentSignInRepository();
 const appServers = new AppServerRepository({ ports: userFile('app-server-ports.json') });
 const recentFolders = new RecentFolderRepository(userFile('recent-folders.json'));
 const shellSettings = new ShellSettingsRepository(userFile('settings.json'));
@@ -651,7 +658,27 @@ async function chatSessions(entry: OpenWindow) {
   const current = chatOf(entry.folder)?.session?.state.sessionId ?? null;
   const sessions = listSessions(path.join(home, 'projects'), entry.folder, running).map((s) => (s.id === current ? { ...s, openElsewhere: null } : s));
   const signedIn = claude ? await claudeSignedIn(claude, claudeEnvFor(claude)) : null;
-  return { claude, configured: !!settings.claudePath, signedIn, mode: startingMode(windowChats.load().modes, entry.folder), current, sessions };
+  const signIn = agentSignIns.load().login?.state ?? NO_SIGN_IN;
+  return { claude, configured: !!settings.claudePath, signedIn, signIn, mode: startingMode(windowChats.load().modes, entry.folder), current, sessions };
+}
+
+/** Tells every product window how the agent's sign-in goes: the CLI's sign-in is the same for every folder. */
+function signInChanged(state: SignInState) {
+  for (const entry of openWindows().values()) if (!entry.win.isDestroyed()) entry.win.webContents.send('lathe:sign-in', state);
+}
+
+/** A sign-in of the user's `claude` (LA-PLT-UC30), not yet started; null without one. */
+function newClaudeLogin(): ClaudeLogin | null {
+  const claude = findClaude(shellSettings.load().claudePath, os.homedir(), process.env.PATH);
+  if (!claude) return null;
+  const env = claudeEnvFor(claude);
+  return new ClaudeLogin({ command: claude, env, signedIn: () => claudeSignedIn(claude, env), onChange: signInChanged });
+}
+
+/** Signs the user's `claude` out; null without one. */
+function claudeSignOutFor(): (() => Promise<boolean>) | null {
+  const claude = findClaude(shellSettings.load().claudePath, os.homedir(), process.env.PATH);
+  return claude ? () => claudeSignOut(claude, claudeEnvFor(claude)) : null;
 }
 
 /** The Lathe a window's chat brings (chatLathe.ts): the plugin and Lathe of the Lathe the window runs. */
@@ -841,6 +868,7 @@ if (!SMOKE && !app.requestSingleInstanceLock()) {
       void endWindowChat(windowChats, { folder: entry.folder });
     }
     if (bridge) void bridge.then((b) => b.close());
+    void cancelSignIn(agentSignIns);
     void settleWithin([...appServers.load().stopping, ...windowChats.load().stopping], QUIT_TIMEOUT).then((all) => {
       if (!all) log(`Lathe: quitting without waiting longer for a server to stop (${QUIT_TIMEOUT / 1000} s).`);
       quit = 'stopped';
@@ -935,6 +963,11 @@ if (!SMOKE && !app.requestSingleInstanceLock()) {
     const entry = fromPageCall(event);
     return !!entry && chooseChatMode(windowChats, { folder: entry.folder, mode });
   });
+  // The chat's agent sign-in (LA-PLT-UC30): one for the shell, asked for from any product window's own page.
+  ipcMain.handle('lathe:chat-sign-in', (event, method: unknown) => !!fromPageCall(event) && signAgentIn(agentSignIns, { method, create: newClaudeLogin }));
+  ipcMain.handle('lathe:chat-sign-in-code', (event, code: unknown) => !!fromPageCall(event) && giveSignInCode(agentSignIns, { code }));
+  ipcMain.handle('lathe:chat-sign-in-cancel', (event) => (fromPageCall(event) ? cancelSignIn(agentSignIns) : false));
+  ipcMain.handle('lathe:chat-sign-out', (event) => (fromPageCall(event) ? signAgentOut(agentSignIns, { signOut: claudeSignOutFor() }) : false));
   // The chat's voice (the preload's voice): each call from a product window's own page, about that window.
   ipcMain.handle('lathe:voice-support', (event) => (fromPageCall(event) ? voiceSupport() : null));
   ipcMain.handle('lathe:voice-listen', (event, on: unknown) => {

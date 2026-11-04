@@ -1,7 +1,7 @@
-import type { AppRequest, ChatBridge, ChatPatch, VoiceBridge, VoiceEvent } from '../chat/types.ts';
+import type { AppRequest, ChatBridge, ChatPatch, SignInState, VoiceBridge, VoiceEvent } from '../chat/types.ts';
 
 /** @public Read by the desktop preload (through its 'lathe-desktop-bridge' path), which knip in app/ cannot see. */
-export type { AppRequest, ChatPatch, VoiceEvent };
+export type { AppRequest, ChatPatch, SignInState, VoiceEvent };
 
 // The desktop app's bridge: the one description of window.latheDesktop. The page reads it (desktopBridge in
 // desktopChrome.ts); the preload (desktop/src/preload.cts, which reads it as 'lathe-desktop-bridge') builds the object and checks it against this, so a

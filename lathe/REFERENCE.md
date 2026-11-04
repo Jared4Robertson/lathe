@@ -1320,7 +1320,7 @@ One step of a flow, in order on its path, in the words of the people who take it
 - **ID:** `<flow>-S<nn>`, such as `TL-LEND-UC01-FL-S01`; it starts with its parent's ID
 - **Links out:** Exchanges with ([`exchanges_with`](#relation-exchanges_with)), Fulfills ([`fulfills`](#relation-fulfills)), Invokes ([`invokes`](#relation-invokes))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`step-order`](#check-step-order), [`step-unreached`](#check-step-unreached), [`use-case-changes-many-aggregates`](#check-use-case-changes-many-aggregates), [`another-actor-writes-in-a-step`](#check-another-actor-writes-in-a-step)
+- **Checks:** [`step-order`](#check-step-order), [`step-unreached`](#check-step-unreached), [`use-case-changes-many-aggregates`](#check-use-case-changes-many-aggregates), [`another-actor-writes-in-a-step`](#check-another-actor-writes-in-a-step), [`step-repeated-per-interface`](#check-step-repeated-per-interface)
 - **Gaps:** [`record-untraced`](#gap-record-untraced)
 
 <a id="table-flow_step"></a>
@@ -1581,6 +1581,16 @@ A use case has one flow, the same through every interface that offers it, so the
 A flow step in which a role that is not one of its use case's actors sends a command.
 
 A use case is the goal of its own actors (LA-STD-MODELING-R15). When a step's subject is another role of the product, and the step sends a command, another actor's write sits inside the use case: it is what starts the use case, or a use case of its own, not a step. The check reads each flow step that invokes a command for a role of the use case's product that is not one of its actors, as the step's subject: the title starting with, or holding a clause (after a comma, semicolon or colon) starting with, the, a or an and the role's name, in any letter case. Start the flow where the use case's actors take over and say what started it in the goal, or make the write a use case of its own actor and string the two in a journey. The write is not counted by use-case-changes-many-aggregates.
+
+<a id="check-step-repeated-per-interface"></a>
+
+### `step-repeated-per-interface`
+
+**Error** · Lathe's · Kinds: [`flow_step`](#kind-flow_step)
+
+Variant steps of one flow, on two or more interfaces, that invoke the same command or query.
+
+A use case's flow is the same through every interface that offers it: a step says what the actor does or learns, and each interface's version of the flow, derived from the steps, says how that interface carries it out. A variant step is for something only one interface does. Variant steps of two or more interfaces that invoke the same command or query are the same step written once per interface, each naming its interface's mechanism. Make them one step every interface does, saying what the actor does or learns, with the requirements each fulfilled; keep a variant only for what that one interface alone does.
 
 ### Coverage gaps: interaction design
 

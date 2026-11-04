@@ -50,6 +50,7 @@
 {"id":"LA-PLT-INV43-RL","title":"shortcut-can-be-bound","invariant_id":"LA-PLT-INV43","file":"app/src/platform/key-bindings/rules.ts"}
 {"id":"LA-PLT-INV44-RL","title":"voice-phrases-distinct","invariant_id":"LA-PLT-INV44","file":"app/src/platform/voice-settings/rules.ts"}
 {"id":"LA-PLT-INV45-RL","title":"one-chat-per-window","invariant_id":"LA-PLT-INV45","file":"desktop/src/window-chat/rules.ts"}
+{"id":"LA-PLT-INV46-RL","title":"one-sign-in-at-a-time","invariant_id":"LA-PLT-INV46","file":"desktop/src/agent-sign-in/rules.ts"}
 {"id":"LA-PRD-INV186-RL","title":"title-from-field","invariant_id":"LA-PRD-INV186","file":"lathe/src/product/extension-record/rules.ts"}
 {"id":"LA-PRD-INV187-RL","title":"journey-step-id","invariant_id":"LA-PRD-INV187","file":"lathe/src/product/journey/rules.ts"}
 {"id":"LA-PRD-INV188-RL","title":"journey-test-id","invariant_id":"LA-PRD-INV188","file":"lathe/src/product/journey/rules.ts"}

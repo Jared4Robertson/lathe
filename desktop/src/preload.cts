@@ -5,7 +5,7 @@
 // its own channel (the main process checks every request: chat.ts, voice.ts, bridge.ts, chrome.ts,
 // menu.ts, dock.ts, product-window/commands/). Until the app subscribes to onCommand, a menu choice
 // presses the command's default keys in the page, so the app's keymap runs it as if typed.
-import type { AppRequest, ChatPatch, LatheDesktop, VoiceEvent } from 'lathe-desktop-bridge';
+import type { AppRequest, ChatPatch, LatheDesktop, SignInState, VoiceEvent } from 'lathe-desktop-bridge';
 
 const { contextBridge, ipcRenderer } = require('electron') as typeof import('electron');
 
@@ -39,6 +39,12 @@ let appRequestHandler: AppRequestHandler | null = null;
 
 ipcRenderer.on('lathe:chat', (_event, patch: ChatPatch) => {
   for (const listener of patchListeners) listener(patch);
+});
+
+type SignInListener = (state: SignInState) => void;
+const signInListeners = new Set<SignInListener>();
+ipcRenderer.on('lathe:sign-in', (_event, state: SignInState) => {
+  for (const listener of signInListeners) listener(state);
 });
 
 type VoiceListener = (event: VoiceEvent) => void;
@@ -109,6 +115,18 @@ contextBridge.exposeInMainWorld('latheDesktop', {
     answer: (id: unknown, answer: unknown) => ipcRenderer.invoke('lathe:chat-answer', { id, answer }),
     stop: () => ipcRenderer.invoke('lathe:chat-stop'),
     setMode: (mode: unknown) => ipcRenderer.invoke('lathe:chat-mode', mode),
+    signIn: (method: unknown) => ipcRenderer.invoke('lathe:chat-sign-in', method),
+    giveSignInCode: (code: unknown) => ipcRenderer.invoke('lathe:chat-sign-in-code', code),
+    cancelSignIn: () => ipcRenderer.invoke('lathe:chat-sign-in-cancel'),
+    signOut: () => ipcRenderer.invoke('lathe:chat-sign-out'),
+    /** Subscribes to how the agent's sign-in goes, in every window. */
+    onSignIn(listener: SignInListener) {
+      if (typeof listener !== 'function') return () => {};
+      signInListeners.add(listener);
+      return () => {
+        signInListeners.delete(listener);
+      };
+    },
     /** Subscribes to the chat's patches; the first is the whole chat, when there is one. */
     onPatch(listener: PatchListener) {
       if (typeof listener !== 'function') return () => {};

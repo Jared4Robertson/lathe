@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  applyLine, CHAT_PROMPT, chatPatch, claudeArgs, claudeEnv, decide, EMPTY_CHAT, focusBlock, interruptLine, NEW_CURSOR, permissionLine, promptText, toolLabel, toolSummary,
+  applyLine, CHAT_PROMPT, chatPatch, claudeArgs, claudeEnv, decide, EMPTY_CHAT, focusBlock, interruptLine, NEW_CURSOR, permissionLine, promptText, saysNotSignedIn, toolLabel, toolSummary,
   parseImages, transcriptItems, TRANSCRIPT_LIMIT, userLine, VIEW_ONLY_DISALLOWED, VIEW_ONLY_PROMPT, viewOnlyRefusal, type ChatState,
 } from '../src/chat.ts';
 
@@ -208,6 +208,30 @@ describe('LA-PLT-UC19-R03-T02 The CLI\'s stream becomes the chat\'s text, tool r
     expect(patch.reset).toBe(false);
     expect(patch.items.map((i) => i.at)).toEqual([1]);
     expect(chatPatch(two, { ...two, items: [] }).reset).toBe(true);
+  });
+});
+
+describe('LA-PLT-UC30-R02-T01 A turn that finds Claude Code not signed in marks the chat signed out, not Claude\'s answer', () => {
+  const said = 'Not logged in · Please run /login';
+  it('leaves out the CLI\'s message and its error, and marks the chat signed out', () => {
+    const state = run([
+      { type: 'assistant', message: { id: 'm9', model: '<synthetic>', content: [{ type: 'text', text: said }] }, error: 'authentication_failed' },
+      { type: 'result', subtype: 'success', is_error: true, result: said },
+    ]);
+    expect(state).toMatchObject({ status: 'idle', signedOut: true, items: [] });
+    expect(chatPatch(null, state).signedOut).toBe(true);
+  });
+
+  it('knows the CLI\'s words without its error mark, and a sign-in that no longer works', () => {
+    expect(run([{ type: 'assistant', message: { id: 'm9', content: [{ type: 'text', text: said }] } }]).signedOut).toBe(true);
+    expect(run([{ type: 'result', is_error: true, result: 'Invalid API key · Please run /login' }])).toMatchObject({ signedOut: true, items: [] });
+    expect(saysNotSignedIn('OAuth token has expired. Please run /login')).toBe(true);
+  });
+
+  it('keeps an answer that only talks about logging in', () => {
+    const state = run([{ type: 'assistant', message: { id: 'm9', content: [{ type: 'text', text: 'Signed-out visitors see the public page. To test it, sign out first, or tell people: Please run /login to see more. ' + 'The app checks the session before each page. '.repeat(4) }] } }]);
+    expect(state.signedOut).toBe(false);
+    expect(state.items).toHaveLength(1);
   });
 });
 

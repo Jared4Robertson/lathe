@@ -60,7 +60,7 @@ for (const layout of ['tree', 'nested'] as const) {
     await graphDrawn(page);
     await page.locator('.focus-stage .graph-depth:not(.graph-layout) button', { hasText: '2' }).click();
     await page.locator('.focus-stage .graph-filters > summary').click();
-    await page.locator('.focus-stage .graph-filter-body input[role="switch"]').check();
+    await page.locator('.focus-stage .graph-filter-body').getByRole('switch', { name: 'Minimap' }).check();
     await page.locator('.focus-stage .graph-filters > summary').click();
     await page.locator('.focus-stage .graph-layout button', { hasText: LAYOUTS[layout] }).click();
     await graphDrawn(page, layout, 900);

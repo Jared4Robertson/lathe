@@ -559,9 +559,9 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
       const after = await placesOf(page);
       for (const [id, place] of Object.entries(after)) if (before[id]) expect(place, id).toBe(before[id]);
       await kind.check();
-      await page.locator('.focus-stage .graph-filter-body input[role="switch"]').check();
+      await page.locator('.focus-stage .graph-filter-body').getByRole('switch', { name: 'Minimap' }).check();
       await expect(page.locator('.focus-stage .graph-minimap')).toBeVisible();
-      await page.locator('.focus-stage .graph-filter-body input[role="switch"]').uncheck();
+      await page.locator('.focus-stage .graph-filter-body').getByRole('switch', { name: 'Minimap' }).uncheck();
       await page.locator('.focus-stage .graph-filters > summary').click();
     },
   },

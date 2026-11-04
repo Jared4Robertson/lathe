@@ -18,3 +18,7 @@
 {"id":"LA-PLT-CMD65-IPC","title":"lathe:chat-model","command_id":"LA-PLT-CMD65","file":"desktop/src/preload.cts"}
 {"id":"LA-PLT-CMD66-IPC","title":"lathe:chat-unqueue","command_id":"LA-PLT-CMD66","file":"desktop/src/preload.cts"}
 {"id":"LA-PLT-CMD67-IPC","title":"lathe:chat-capture","command_id":"LA-PLT-CMD67","file":"desktop/src/preload.cts"}
+{"id":"LA-PLT-CMD70-IPC","title":"lathe:chat-sign-in","command_id":"LA-PLT-CMD70","file":"desktop/src/preload.cts"}
+{"id":"LA-PLT-CMD71-IPC","title":"lathe:chat-sign-in-code","command_id":"LA-PLT-CMD71","file":"desktop/src/preload.cts"}
+{"id":"LA-PLT-CMD72-IPC","title":"lathe:chat-sign-in-cancel","command_id":"LA-PLT-CMD72","file":"desktop/src/preload.cts"}
+{"id":"LA-PLT-CMD73-IPC","title":"lathe:chat-sign-out","command_id":"LA-PLT-CMD73","file":"desktop/src/preload.cts"}

@@ -54,7 +54,25 @@ export interface ChatPatch {
   choice: ModelChoice;
   lathe: LatheTools;
   queue: QueuedMessage[];
+  /** A turn found Claude Code not signed in: the panel offers to sign in instead of showing its answer. */
+  signedOut: boolean;
   items: { at: number; item: ChatItem }[];
+}
+
+/** How the Owner signs Claude Code in: their Claude subscription, or an Anthropic Console account (desktop/src/claudeLogin.ts). */
+export type SignInMethod = 'claudeai' | 'console';
+
+/**
+ * Where the chat's sign-in stands. idle: none under way; waiting: Claude Code waits for the browser (with the sign-in
+ * page's link once it gives one, and whether it asks for a code); checking: it ended and is asked whether it is signed in;
+ * signed-in; failed: why, in its own last words.
+ */
+export interface SignInState {
+  status: 'idle' | 'waiting' | 'checking' | 'signed-in' | 'failed';
+  method: SignInMethod | null;
+  url: string | null;
+  asksForCode: boolean;
+  problem: string | null;
 }
 
 export interface SessionSummary {
@@ -71,6 +89,8 @@ export interface ChatSessions {
   configured: boolean;
   /** Whether it is signed in, as `claude auth status` says; null when it cannot tell. */
   signedIn: boolean | null;
+  /** How the sign-in started in the app goes, in any window. */
+  signIn: SignInState;
   /** The mode the folder's next chat starts in (its last chat's). */
   mode: ChatMode;
   /** The session the window's chat has open. */
@@ -100,6 +120,16 @@ export interface ChatBridge {
   stop: () => Promise<boolean>;
   /** Chooses the permission mode: the open chat starts again on its session, and the folder keeps it; false when refused. */
   setMode: (mode: ChatMode) => Promise<boolean>;
+  /** Starts Claude Code's own sign-in, which opens the browser; false when refused (one runs already, or no Claude Code). */
+  signIn: (method: SignInMethod) => Promise<boolean>;
+  /** Gives the sign-in the code the browser showed, when it asks for one. */
+  giveSignInCode: (code: string) => Promise<boolean>;
+  /** Cancels the sign-in under way. */
+  cancelSignIn: () => Promise<boolean>;
+  /** Signs Claude Code out, so another account can sign in. */
+  signOut: () => Promise<boolean>;
+  /** Subscribes to how the sign-in goes. */
+  onSignIn: (listener: (state: SignInState) => void) => () => void;
   /** Subscribes to the chat's patches; the first is the whole chat, when the window has one. */
   onPatch: (listener: (patch: ChatPatch) => void) => () => void;
 }

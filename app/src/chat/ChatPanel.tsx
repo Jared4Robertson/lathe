@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type RefObject } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 import { Button } from '../components/Button';
 import { Icon } from '../components/icons';
 import { ResizeHandle } from '../components/ResizeHandle';
@@ -26,6 +26,7 @@ import { choiceLabel, ModelMenu } from './ModelMenu';
 import { changesOfTurn, ReviewBar, TurnActions, type UndoState } from './Review';
 import { MicButton, VoiceIntro, VoiceMenu, VoiceStatus } from './voice/VoiceControls';
 import { useVoice } from './voice/useVoice';
+import { SignInNotice, useSignIn } from './SignIn';
 import './ChatPanel.css';
 
 // The chat panel (LA-PLT-UC19, LA-V99): the desktop app's conversation with the Owner's own Claude
@@ -47,6 +48,8 @@ import './ChatPanel.css';
 // images pasted, or the stage as it is drawn, go with the message (images.ts); the model and effort picker sits beside the
 // mode (ModelMenu.tsx); typing "/" lists the skills and slash commands (slash.ts); a message typed while Claude works is
 // queued and sent in order (LA-PLT-UC22-R04); a turn's changes can be reviewed on the stage or undone (Review.tsx).
+// When Claude Code is not signed in, before a session or when a turn says so, the panel signs it in (SignIn.tsx,
+// LA-PLT-UC30); the session picker's foot signs it out, so another account can sign in.
 // The shell runs the CLI (desktop/src/chatSession.ts); the panel only draws and asks.
 
 export interface ChatPanelProps {
@@ -100,6 +103,23 @@ export function ChatPanel({ bridge, index, product, width, onWidth, onClose, inp
   const loadSessions = useCallback(() => { void bridge.sessions().then(setSessions); }, [bridge]);
   useEffect(() => { if (showPicker) loadSessions(); }, [showPicker, loadSessions]);
 
+  // Signed out: before a session (the CLI says so) or when a turn found it so, until a sign-in succeeds. Each time it
+  // turns out signed out, or a sign-in succeeds, the CLI is asked again.
+  const signIn = useSignIn(bridge, sessions?.signIn);
+  const signedOut = !!sessions?.claude && sessions.signedIn === false || (view.signedOut && signIn.status !== 'signed-in');
+  useEffect(() => { if (view.signedOut) loadSessions(); }, [view.signedOut, loadSessions]);
+  useEffect(() => {
+    if (signIn.status !== 'signed-in') return;
+    loadSessions();
+    announce('Claude Code is signed in');
+  }, [signIn.status, loadSessions, announce]);
+  const signOut = async () => {
+    if (!(await bridge.signOut())) { announce('Claude Code could not sign out.'); return; }
+    announce('Claude Code is signed out');
+    loadSessions();
+  };
+  const signInNotice = signedOut ? <SignInNotice bridge={bridge} state={signIn.status === 'signed-in' ? { ...signIn, status: 'idle' } : signIn} /> : null;
+
   const choose = useCallback(async (choice: OpenChoice) => {
     const ok = await bridge.open(choice);
     if (!ok) { announce('Claude Code could not open that session.'); loadSessions(); return; }
@@ -127,6 +147,7 @@ export function ChatPanel({ bridge, index, product, width, onWidth, onClose, inp
     const text = message.trim();
     const putBack = () => { if (chatDraft.read() === '') chatDraft.write(message); };
     if (!text) return;
+    if (view.open && signedOut) { putBack(); announce('Claude Code is not signed in.'); return; }
     if (!view.open && blocked(sessions)) { putBack(); announce(blocked(sessions) === 'missing' ? 'Lathe could not find Claude Code.' : 'Claude Code is not signed in.'); return; }
     if (!view.open && !(await bridge.open({ mode: 'new' }))) { putBack(); announce('Claude Code could not start.'); return; }
     setPicker(false);
@@ -299,8 +320,9 @@ export function ChatPanel({ bridge, index, product, width, onWidth, onClose, inp
       {confirmBypass && <BypassWarning onConfirm={() => void chooseMode('bypass')} onCancel={() => setConfirmBypass(false)} />}
       {help && <ChatHelp />}
       {showPicker
-        ? <SessionPicker sessions={sessions} current={view.sessionId} busy={working} onChoose={(c) => void choose(c)} onCheck={loadSessions} />
+        ? <SessionPicker sessions={sessions} current={view.sessionId} busy={working} signInNotice={signInNotice} onChoose={(c) => void choose(c)} onCheck={loadSessions} onSignOut={() => void signOut()} />
         : <ChatLog items={view.items} turns={view.turns} index={index} answer={answer} viewOnly={mode === 'view-only'} idle={!working} undoStates={undoStates} onUndoState={(start, state) => setUndoStates((m) => { const next = new Map(m); if (state) next.set(start, state); else next.delete(start); return next; })} />}
+      {!showPicker && signInNotice}
       <div className="chat-status" aria-live="polite">
         {working ? (view.status === 'stopping' ? 'Stopping…' : 'Claude is working…') : view.open && view.status === 'closed' ? 'Claude Code is not running; your next message starts it again.' : ''}
       </div>
@@ -392,7 +414,7 @@ function ChatHelp() {
 
 // ---------- The session picker ----------
 
-function SessionPicker({ sessions, current, busy, onChoose, onCheck }: { sessions: ChatSessions | null; current: string | null; busy: boolean; onChoose: (choice: OpenChoice) => void; onCheck: () => void }) {
+function SessionPicker({ sessions, current, busy, signInNotice, onChoose, onCheck, onSignOut }: { sessions: ChatSessions | null; current: string | null; busy: boolean; signInNotice: ReactNode; onChoose: (choice: OpenChoice) => void; onCheck: () => void; onSignOut: () => void }) {
   const [warning, setWarning] = useState<SessionSummary | null>(null);
   const resume = (s: SessionSummary) => (s.openElsewhere ? setWarning(s) : onChoose({ mode: 'resume', id: s.id }));
   return (
@@ -410,14 +432,7 @@ function SessionPicker({ sessions, current, busy, onChoose, onCheck }: { session
           <Button onClick={onCheck}>Check again</Button>
         </div>
       )}
-      {sessions?.claude && sessions.signedIn === false && (
-        <div className="chat-missing" role="alert">
-          <p>
-            Claude Code is not signed in, so it cannot answer yet. In a terminal, run <code>claude</code> and type <code>/login</code> (or run <code>claude auth login</code>), then check again.
-          </p>
-          <Button onClick={onCheck}>Check again</Button>
-        </div>
-      )}
+      {signInNotice}
       {warning && (
         <div className="chat-warning" role="alert">
           <p>
@@ -451,6 +466,11 @@ function SessionPicker({ sessions, current, busy, onChoose, onCheck }: { session
             </li>
           ))}
         </ul>
+      )}
+      {sessions?.claude && sessions.signedIn === true && (
+        <div className="chat-account">
+          <Button disabled={busy} onClick={onSignOut}>Sign out of Claude Code</Button>
+        </div>
       )}
     </section>
   );

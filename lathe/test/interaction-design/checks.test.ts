@@ -122,6 +122,31 @@ check('variant-not-offered', () => {
   });
 });
 
+check('step-repeated-per-interface', () => {
+  it('LA-UCS-UC06-R82-T01 variant steps of one flow on two interfaces that invoke the same command or query are an error', async () => {
+    expect(ofCheck(clean, 'step-repeated-per-interface')).toEqual([]);
+    // The web app borrows in one step, and the CLI's variant borrows again: the same step written per interface.
+    const twice = adding(changing(withCli(), 'flow_step', (r) => r.id === 'EX-LEND-UC01-FL-S01', { interface_id: 'EX-IF01' }), {
+      flow_step: [{ id: 'EX-LEND-UC01-FL-S03', title: 'Run library borrow', flow_id: 'EX-LEND-UC01-FL', path: 'main', position: 3, interface_id: 'EX-IF02' }],
+      invokes: [{ source_id: 'EX-LEND-UC01-FL-S03', target_id: 'EX-LEND-CMD01' }],
+    });
+    const message = (step: string, of: string, other: string, otherOf: string) =>
+      `Flow step ${step}, a variant of ${of}, invokes EX-LEND-CMD01, as other interfaces' variants in its flow EX-LEND-UC01-FL do (${other} of ${otherOf}): the same step written per interface; make them one step every interface does, and let each interface's version say how.`;
+    expect(ofCheck(await loadData(twice), 'step-repeated-per-interface')).toEqual([
+      { severity: 'error', check: 'step-repeated-per-interface', record: 'EX-LEND-UC01-FL-S01', message: message('EX-LEND-UC01-FL-S01', 'EX-IF01', 'EX-LEND-UC01-FL-S03', 'EX-IF02') },
+      { severity: 'error', check: 'step-repeated-per-interface', record: 'EX-LEND-UC01-FL-S03', message: message('EX-LEND-UC01-FL-S03', 'EX-IF02', 'EX-LEND-UC01-FL-S01', 'EX-IF01') },
+    ]);
+    // One interface's variant beside a step every interface does, two variants of one interface, and variants that
+    // invoke different operations, are left be.
+    const beside = changing(twice, 'flow_step', (r) => r.id === 'EX-LEND-UC01-FL-S01', { interface_id: undefined });
+    expect(ofCheck(await loadData(beside), 'step-repeated-per-interface')).toEqual([]);
+    const oneInterface = changing(twice, 'flow_step', (r) => r.id === 'EX-LEND-UC01-FL-S03', { interface_id: 'EX-IF01' });
+    expect(ofCheck(await loadData(oneInterface), 'step-repeated-per-interface')).toEqual([]);
+    const different = changing(twice, 'invokes', (l) => l.source_id === 'EX-LEND-UC01-FL-S03', { target_id: 'EX-LEND-QRY01' });
+    expect(ofCheck(await loadData(different), 'step-repeated-per-interface')).toEqual([]);
+  });
+});
+
 check('flow-not-offered', () => {
   it('LA-UCS-UC06-R09-T04 a use case with a flow that no interface offers is a warning', async () => {
     expect(ofCheck(clean, 'flow-not-offered')).toEqual([]);
