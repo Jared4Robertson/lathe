@@ -5,7 +5,8 @@
 // endpoints that expose it (an API), or the records of the product's own interface design kinds under it or that
 // present it (a CLI or agent tools, such as Lathe's CLI commands or an invocation that carries out several commands:
 // one that sits under an interface reaches only that one). An interface of kind other reaches its operations in a way
-// no record says. Its actor is the first of the use case's actors the interface lists (the use case's main actor when it lists
+// no record says. A step that exchanges with an integration that performs the use case (performs) is carried out
+// there, by the outside system on its own, so it is reached whatever the interface. Its actor is the first of the use case's actors the interface lists (the use case's main actor when it lists
 // none), and how it reaches a step's command or query and shows a refusal is what the rules of the patterns it follows
 // say. The Use case read model and the Trace read model read the same answer; the step-unreached check says it in SQL.
 import type { ReadView } from '../../platform/data/rules.ts';
@@ -24,7 +25,7 @@ export interface StepToCarry {
 /** One step as an interface carries it out. */
 export interface StepThrough {
   id: string;
-  /** Where it is carried out, by ID: views, endpoints or the product's own records; empty when nothing reaches it or it invokes nothing. */
+  /** Where it is carried out, by ID: views, endpoints, the product's own records or the integrations that perform its use case; empty when nothing reaches it or it invokes nothing. */
   reach: string[];
   /** True when it invokes a command or query this interface has no way to reach. */
   unreached: boolean;
@@ -67,6 +68,8 @@ export function interfaceVersions(view: Pick<ReadView, 'rows' | 'schema'>): (use
   const rows = (table: string): Row[] => (view.schema.tables[table] ? view.rows(table) : []);
   const interfaces = new Map(rows('interface').map((i) => [String(i.id), i]));
   const offeredBy = grouped(rows('offers'), 'target_id', 'source_id');
+  const performedBy = grouped(rows('performs'), 'target_id', 'source_id');
+  const exchangesWith = grouped(rows('exchanges_with'), 'source_id', 'target_id');
   const actorsOf = new Map<string, string[]>();
   for (const a of [...rows('interface_actor')].sort((x, y) => Number(x.position) - Number(y.position))) {
     actorsOf.set(String(a.interface_id), [...(actorsOf.get(String(a.interface_id)) ?? []), String(a.role_name)]);
@@ -114,8 +117,12 @@ export function interfaceVersions(view: Pick<ReadView, 'rows' | 'schema'>): (use
       const uses = actorsOf.get(face) ?? [];
       const patterns = [...(follows.get(face) ?? [])].sort();
       const byPath = new Map<string, StepThrough[]>();
+      const performers = new Set(performedBy.get(useCase) ?? []);
       for (const s of [...steps].filter((x) => x.variantOf === null || x.variantOf === face).sort((a, b) => a.position - b.position || a.id.localeCompare(b.id))) {
-        const reach = s.operation ? reachOf(face, kind, s.operation) : [];
+        const own = s.operation ? reachOf(face, kind, s.operation) : [];
+        // A step the interface cannot reach is carried out by an integration that performs the use case, if it exchanges with one.
+        const performing = (exchangesWith.get(s.id) ?? []).filter((i) => performers.has(i)).sort();
+        const reach = own?.length || !performing.length ? own : performing;
         const path = s.path.trim().toLowerCase() || 'main';
         byPath.set(path, [...(byPath.get(path) ?? []), { id: s.id, reach: reach ?? [], unreached: reach !== null && s.operation !== null && reach.length === 0 }]);
       }

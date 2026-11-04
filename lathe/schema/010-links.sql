@@ -31,6 +31,8 @@ CREATE TABLE presents (source_id VARCHAR NOT NULL REFERENCES presents_source (id
 COMMENT ON TABLE presents IS 'The view presents the command or query: a person sends the command or asks the query there, so a step that invokes it is carried out in the view on a web app or desktop interface. A record of a product''s own interface design kind presents them the same way, once the product adds that pair with a product_relation named presents: a command line''s invocation that carries out several commands and queries, so a step that invokes one is carried out through it on a CLI or agent tools interface.';
 CREATE TABLE offers (source_id VARCHAR NOT NULL REFERENCES interface (id), target_id VARCHAR NOT NULL REFERENCES use_case (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE offers IS 'The interface offers the use case, of its own product: its actors can carry it out there, and the interface has its own version of the use case''s flow, derived by its pattern.';
+CREATE TABLE performs (source_id VARCHAR NOT NULL REFERENCES integration (id), target_id VARCHAR NOT NULL REFERENCES use_case (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE performs IS 'The integration performs the use case, of its own product: its outside system carries the use case out on its own, with no person and no interface of the product, such as a build service that publishes a release when a tag is pushed. Each step of the use case''s flow that exchanges with the integration is carried out there, so the use case needs no interface to offer it.';
 CREATE TABLE renders (source_id VARCHAR NOT NULL REFERENCES ui_component (id), target_id VARCHAR NOT NULL REFERENCES view (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE renders IS 'The UI component renders the view, or part of it.';
 CREATE TABLE builds (source_id VARCHAR NOT NULL REFERENCES ui_component (id), target_id VARCHAR NOT NULL REFERENCES view_requirement (id), PRIMARY KEY (source_id, target_id));
@@ -77,6 +79,7 @@ INSERT INTO meta_relation VALUES
   ('presents', NULL, 'product', 'Presents', 'Presented in', NULL),
   ('offers', NULL, 'product', 'Offers', 'Offered through', NULL),
   ('exchanges_with', NULL, 'product', 'Exchanges with', 'Exchanged with by', NULL),
+  ('performs', NULL, 'product', 'Performs', 'Performed by', NULL),
   ('renders', NULL, 'product', 'Renders', 'Rendered by', NULL),
   ('builds', 'build', 'product', 'Builds', 'Built by', NULL),
   ('follows', NULL, 'product', 'Follows', 'Followed by', NULL),
@@ -114,6 +117,7 @@ INSERT INTO meta_relation_pair VALUES
   ('offers', 'interface', 'use_case', 'The use case is carried out through the interface.'),
   ('exchanges_with', 'flow_step', 'integration', 'The step exchanges with the outside system.'),
   ('exchanges_with', 'policy', 'integration', 'The policy exchanges with the outside system as it acts.'),
+  ('performs', 'integration', 'use_case', 'The outside system carries the use case out on its own, with no person and no interface of the product.'),
   ('renders', 'ui_component', 'view', 'The UI component renders the view, or part of it.'),
   ('builds', 'ui_component', 'view_requirement', 'The UI component''s code does what the view requirement says.'),
   ('follows', 'domain', 'pattern', 'The whole domain follows the pattern, and so owes each of its rules.'),

@@ -16,22 +16,24 @@ import type { AddIntegrationTest } from './add-integration-test.ts';
 import type { ChangeIntegrationTest } from './change-integration-test.ts';
 import type { RemoveIntegrationTest } from './remove-integration-test.ts';
 
-/** Adds an integration: an outside system the product exchanges with. It has no owner; its product follows from its ID. */
+/** Adds an integration: an outside system the product exchanges with, with the use cases of its product it performs on its own. It has no owner; its product follows from its ID. */
 export function addIntegration(tx: Transaction, input: AddIntegration): void {
   const integrations = new IntegrationRepository(tx);
-  const integration = integrations.create({ root: input.id, integration: input, adapter: null, tests: [] });
+  const { performs = [], ...row } = input;
+  const integration = integrations.create({ root: row.id, integration: row, performs: performs, adapter: null, tests: [] });
   integrations.save(integration);
 }
 
-/** Changes an integration's title, system or description. */
+/** Changes an integration's title, system or description, or the use cases it performs (the whole list). */
 export function changeIntegration(tx: Transaction, input: ChangeIntegration): void {
   const integrations = new IntegrationRepository(tx);
   const integration = integrations.load(input.id) ?? tx.refuse('missing', `there is no integration ${input.id}`);
   integration.integration = changed(integration.integration, input, ['title', 'description', 'system']);
+  integration.performs = input.performs ?? integration.performs;
   integrations.save(integration);
 }
 
-/** Removes an integration whole: its adapter, its integration tests and the links they start. Refused while anything outside it references what is in it. */
+/** Removes an integration whole: its adapter, its integration tests and the links they start, and the use cases it performs. Refused while anything outside it references what is in it. */
 export function removeIntegration(tx: Transaction, input: RemoveIntegration): void {
   const integrations = new IntegrationRepository(tx);
   const integration = integrations.load(input.id) ?? tx.refuse('missing', `there is no integration ${input.id}`);

@@ -34,6 +34,7 @@
 {"id":"LA-IXD-TB83","title":"renders","domain_id":"LA-IXD","name":"renders","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-IXD-TB89","title":"builds","domain_id":"LA-IXD","name":"builds","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-IXD-TB93","title":"presents","domain_id":"LA-IXD","name":"presents","storage":"table","file":"lathe/schema/010-links.sql"}
+{"id":"LA-IXD-TB94","title":"performs","domain_id":"LA-IXD","name":"performs","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-MOD-EN04-TB","title":"domain","entity_id":"LA-MOD-EN04","name":"domain","storage":"table","file":"lathe/schema/004-domain-model.sql"}
 {"id":"LA-MOD-EN05-TB","title":"capability","entity_id":"LA-MOD-EN05","name":"capability","storage":"table","file":"lathe/schema/005-use-cases.sql"}
 {"id":"LA-MOD-EN06-TB","title":"aggregate","entity_id":"LA-MOD-EN06","name":"aggregate","storage":"table","file":"lathe/schema/004-domain-model.sql"}

@@ -4,7 +4,7 @@ export const ADD_INTEGRATION_IDENTITY = {
   id: 'LA-IXD-CMD335',
   slice: { aggregate: 'LA-IXD-A14', name: 'integration' },
   name: 'add-integration',
-  description: 'Adds an integration: an outside system the product exchanges with. It has no owner; its product follows from its ID.',
+  description: 'Adds an integration: an outside system the product exchanges with, with the use cases of its product it performs on its own. It has no owner; its product follows from its ID.',
   method: 'POST',
   route: '/api/integration/add-integration',
 } as const;
@@ -13,7 +13,7 @@ export const CHANGE_INTEGRATION_IDENTITY = {
   id: 'LA-IXD-CMD336',
   slice: { aggregate: 'LA-IXD-A14', name: 'integration' },
   name: 'change-integration',
-  description: 'Changes an integration\'s title, system or description.',
+  description: 'Changes an integration\'s title, system or description, or the use cases it performs (the whole list).',
   method: 'POST',
   route: '/api/integration/change-integration',
 } as const;
@@ -22,7 +22,7 @@ export const REMOVE_INTEGRATION_IDENTITY = {
   id: 'LA-IXD-CMD337',
   slice: { aggregate: 'LA-IXD-A14', name: 'integration' },
   name: 'remove-integration',
-  description: 'Removes an integration whole: its adapter, its integration tests and the links they start. Refused while anything outside it references what is in it.',
+  description: 'Removes an integration whole: its adapter, its integration tests and the links they start, and the use cases it performs. Refused while anything outside it references what is in it.',
   method: 'POST',
   route: '/api/integration/remove-integration',
 } as const;

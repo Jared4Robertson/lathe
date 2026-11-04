@@ -110,7 +110,7 @@ export function FlowInterfaces({ index, flow }: { index: RecordIndex; flow: Flow
       <div className="flow-tab-panel" role="tabpanel" id={`${base}-panel-${selected}`} aria-labelledby={`${base}-tab-${selected}`} tabIndex={0}>
         {selected === 0 ? (
           <>
-            {flow.through.length === 0 && <p className="hint">No interface offers its use case yet.</p>}
+            {flow.through.length === 0 && <p className="hint">{flow.performedBy.length > 0 ? 'No interface offers its use case: an integration performs it on its own.' : 'No interface offers its use case yet.'}</p>}
             <FlowSteps index={index} flow={flow.flow.id} paths={flow.paths} />
           </>
         ) : (

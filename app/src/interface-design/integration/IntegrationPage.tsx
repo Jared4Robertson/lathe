@@ -9,9 +9,9 @@ import { useIntegration } from './reads';
 
 // The Integration page (LA-IXD-A14's page, LA-V153): any record of an integration, at its address (/<id>), drawn from
 // the integration read whole (GET /api/integration/get-integration) and changed only through its own commands
-// (IntegrationEditor). An integration shows its description, its adapter and its integration tests; an adapter its
-// description and packages (its Traceability lists the standard rules it meets); an integration test its scenario
-// and what it starts from. What every record's page holds around that (traceability with the flow steps that exchange
+// (IntegrationEditor). An integration shows its description, the use cases it performs on its own, its adapter and its
+// integration tests; an adapter its description and packages (its Traceability lists the standard rules it meets); an
+// integration test its scenario and what it starts from. What every record's page holds around that (traceability with the flow steps that exchange
 // with it, problems, facts with its outside system, and links) is the Record page's (RecordFrame).
 
 /** The packages the code uses, as the page shows them (its file is among the record's facts). */
@@ -35,6 +35,7 @@ function Content({ index, page }: { index: RecordIndex; page: Integration }) {
         <>
           <Text index={index} id={id} source={page.integration.description} field="description" />
           <Facts facts={page.integration.system ? [{ label: 'System', value: page.integration.system }] : []} />
+          <RowsSection index={index} title="Performs" ids={page.performs} label={`The use cases ${id} performs`} empty="It performs no use case on its own." className="integration-performs" />
           <RowsSection index={index} title="Adapter" ids={page.adapter ? [page.adapter.adapter.id] : []} label={`The adapter of ${id}`} empty="No adapter yet." className="integration-adapter" />
           <RowsSection index={index} title="Integration tests" ids={page.tests.map((t) => t.test.id)} label={`The integration tests of ${id}`} empty="No integration tests yet." className="integration-tests" />
         </>

@@ -63,7 +63,7 @@ function InterfaceKind({ index, id }: { index: RecordIndex; id: string }) {
   return iface && !saysKind(iface) ? <small className="meta" data-meta="interface-kind">{iface.kind}</small> : null;
 }
 
-/** The use case's flow, the same through every interface, and the interfaces that offer it. */
+/** The use case's flow, the same through every interface, the interfaces that offer it and the integrations that perform it on its own. */
 function FlowAndInterfaces({ index, useCase }: { index: RecordIndex; useCase: UseCaseRead }) {
   const flow = useCase.flows[0];
   if (!flow) return null;
@@ -72,7 +72,7 @@ function FlowAndInterfaces({ index, useCase }: { index: RecordIndex; useCase: Us
     <Section title="Flow" count={1} className="use-case-flow">
       <Rows index={index} ids={[flow.flow.id]} label={`Flow of ${useCase.useCase.id}`} />
       <Section title="Offered through" count={offering.length} level={3} className="use-case-interfaces">
-        {offering.length === 0 ? <p className="hint">No interface offers it yet.</p> : (
+        {offering.length === 0 ? <p className="hint">{flow.performedBy.length > 0 ? 'No interface offers it: an integration performs it on its own.' : 'No interface offers it yet.'}</p> : (
           <ul className="plain record-list" aria-label={`Interfaces that offer ${useCase.useCase.id}`}>
             {offering.map((i) => (
               <li key={i}><div className="record-row"><RecordLink index={index} id={i} row /><span className="row-tags"><InterfaceKind index={index} id={i} /></span></div></li>
@@ -80,6 +80,13 @@ function FlowAndInterfaces({ index, useCase }: { index: RecordIndex; useCase: Us
           </ul>
         )}
       </Section>
+      {flow.performedBy.length > 0 && (
+        <Section title="Performed by" count={flow.performedBy.length} level={3} className="use-case-performers">
+          <ul className="plain record-list" aria-label={`Integrations that perform ${useCase.useCase.id}`}>
+            {flow.performedBy.map((i) => <li key={i}><div className="record-row"><RecordLink index={index} id={i} row /></div></li>)}
+          </ul>
+        </Section>
+      )}
     </Section>
   );
 }

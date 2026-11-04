@@ -145,7 +145,10 @@ export function statusOf(row: TraceRow, stage: Exclude<TraceStage, 'use-case'>):
   switch (stage) {
     case 'flow':
       if (!row.flow) return { title: 'No flow', gap: true };
-      return { title: `${n(design.interfaces, 'interface')} · ${design.notDesigned === 0 ? 'all designed' : `${n(design.notDesigned, 'requirement')} not designed`}`, gap: design.notDesigned > 0 || design.interfaces === 0 };
+      return {
+        title: `${[...(design.interfaces > 0 || design.integrations === 0 ? [n(design.interfaces, 'interface')] : []), ...(design.integrations > 0 ? [n(design.integrations, 'integration')] : [])].join(' · ')} · ${design.notDesigned === 0 ? 'all designed' : `${n(design.notDesigned, 'requirement')} not designed`}`,
+        gap: design.notDesigned > 0 || design.interfaces + design.integrations === 0,
+      };
     case 'technical':
       if (technical.handlers === 0) return { title: technical.notBuilt > 0 ? `No handlers · ${technical.notBuilt} not built` : 'No handlers', gap: true };
       return { title: `${n(technical.handlers, 'handler')} · ${technical.notBuilt === 0 ? 'all built' : `${technical.notBuilt} not built`}`, gap: technical.notBuilt > 0 };
@@ -224,7 +227,8 @@ function build(index: RecordIndex, trace: ProductTrace): TraceGraph {
     for (const a of [...data.changes, ...data.reads]) if (known(a)) { record(useCase, a); link(u, a); }
 
     // Flow: its status, then its flow, a box per interface that offers it, and each interface's version: its
-    // steps, each with where it is carried out there and its integrations, a gap under a step it cannot reach.
+    // steps, each with where it is carried out there and its integrations, a gap under a step it cannot reach; and a box
+    // per integration that performs the use case on its own.
     const flowStatus = statusOf(data, 'flow');
     const f = data.flow && known(data.flow.id) ? data.flow : null;
     /** A stage cell's title is its status; it names its row's use case for its accessible name (LA-PAT-APP-UX-R24). */
@@ -238,6 +242,7 @@ function build(index: RecordIndex, trace: ProductTrace): TraceGraph {
       for (const s of steps) for (const r of s.fulfills) link(r, s.id);
       const integrations = (parent: string, id: string) => { for (const i of written.get(id)!.integrations) if (known(i)) { record(parent, i); link(id, i); } };
       const faces = f.through.filter((t) => known(t.interface));
+      for (const i of f.performedBy) if (known(i)) { record(flow, i); link(f.id, i); }
       if (faces.length === 0) {
         // No interface offers it: the flow opens to its steps as written.
         for (const s of steps) {

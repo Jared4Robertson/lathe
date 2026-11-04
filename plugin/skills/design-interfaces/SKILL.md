@@ -1,6 +1,6 @@
 ---
 name: design-interfaces
-description: Write or change a Lathe product's interface design - the product's interfaces (web app, API, CLI, agent tools, desktop) with the roles that use them, the use cases they offer and the patterns they follow, so every interface that offers a use case reaches each step of its flow; the views that present commands and queries and their view requirements, the endpoints that expose commands and queries with their API requirements, and integrations. Use when deciding where and through what a use case's flow is carried out, its screens, routes, request and response rules, or the outside systems its steps talk to, in a repo with lathe.config.json.
+description: Write or change a Lathe product's interface design - the product's interfaces (web app, API, CLI, agent tools, desktop) with the roles that use them, the use cases they offer and the patterns they follow, so every interface that offers a use case reaches each step of its flow; the views that present commands and queries and their view requirements, the endpoints that expose commands and queries with their API requirements, and integrations with the use cases they perform on their own. Use when deciding where and through what a use case's flow is carried out, its screens, routes, request and response rules, or the outside systems its steps talk to, in a repo with lathe.config.json.
 ---
 
 # Design interfaces
@@ -24,6 +24,8 @@ Change the spec only with Lathe's MCP tools (or the `lathe` CLI), never by editi
 **Endpoints** expose exactly one command or query. Keep the description to the request and responses in brief; state every rule that must be built and tested as an API requirement (a body's shape, each refusal's status and error code, what success returns, a size limit). A rule shared by every endpoint, such as the shape of an error, is a pattern their use cases follow or a standard rule their handlers meet.
 
 **Integrations** are outside systems the product exchanges with, named once and shared: a flow's step exchanges with one from the use cases stage, the one link besides a variant's interface that reaches forward into this stage. One no step or policy exchanges with is an error; its adapter is a technical record. A policy that reaches an outside system as it acts, such as mailing a reminder, names that integration too (`exchanges_with` on Add or Change a policy), and the adapter builds the policy with its event handler.
+
+**An integration may perform a use case.** When an outside system carries a use case out on its own, with no person and no interface of the product (a build service that publishes a release when a tag is pushed), do not invent an interface for it. Have the integration perform the use case (`performs` on Add or Change an integration) and have each step that happens there exchange with it. Such a use case needs no interface to offer it (`flow-not-offered` is satisfied), and a step that exchanges with the performing integration is reached whatever the interface (`step-unreached` leaves it be). A use case that a person also starts through an interface is offered by that interface as well.
 
 ## Naming
 

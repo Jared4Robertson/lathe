@@ -966,7 +966,7 @@ An actor's goal: its actors (use_case_actor rows), its UC requirements and its f
 - **Obligation:** no
 - **ID:** `<P>-<D>-UC<nn>`, such as `TL-LEND-UC01`; it starts with its domain's ID
 - **Links out:** Follows ([`follows`](#relation-follows))
-- **Links in:** Questions about this ([`about`](#relation-about)), Carried out in ([`carries_out`](#relation-carries_out)), Offered through ([`offers`](#relation-offers))
+- **Links in:** Questions about this ([`about`](#relation-about)), Carried out in ([`carries_out`](#relation-carries_out)), Offered through ([`offers`](#relation-offers)), Performed by ([`performs`](#relation-performs))
 - **Parts:** [`use_case_actor`](#table-use_case_actor)
 - **Checks:** [`pattern-setting-missing`](#check-pattern-setting-missing), [`pattern-not-followed`](#check-pattern-not-followed), [`title-breaks-convention`](#check-title-breaks-convention), [`flow-title-off-pattern`](#check-flow-title-off-pattern), [`journey-of-one-use-case`](#check-journey-of-one-use-case), [`handoff-not-connected`](#check-handoff-not-connected), [`use-case-changes-many-aggregates`](#check-use-case-changes-many-aggregates), [`use-case-title-joins-goals`](#check-use-case-title-joins-goals), [`another-actor-writes-in-a-step`](#check-another-actor-writes-in-a-step)
 - **Gaps:** [`use-case-without-actor`](#gap-use-case-without-actor), [`use-case-without-requirement`](#gap-use-case-without-requirement), [`use-case-without-flow`](#gap-use-case-without-flow)
@@ -1253,9 +1253,9 @@ A level that holds one record groups nothing. A capability with exactly one chil
 
 **Warning** · Lathe's · Kinds: [`flow_step`](#kind-flow_step), [`endpoint`](#kind-endpoint)
 
-A step that invokes a command or query one of the interfaces that offer its use case cannot reach.
+A step that invokes a command or query one of the interfaces that offer its use case cannot reach, and that no integration performing its use case carries out.
 
-A use case's flow is the same through every interface that offers it, and each interface carries a step out through its own means: a web app or desktop in a view that presents the step's command or query (a view of every such interface, or of that one), an API through the endpoint that exposes it, a CLI or agent tools through a record of the product's own interface design kinds under it (such as Lathe's CLI commands) or that presents it (such as an invocation that carries out several commands and queries; one that sits under an interface reaches only that one, any other every CLI and agent tools of its product). So each interface that offers the use case must reach what each step invokes, but for a step that is another interface's variant. An interface of kind other reaches its operations in a way no record says, so it is not read. Have a view present the command or query, add the endpoint, or the product's own record under it or that presents it, make the step a variant of the interfaces that do reach it, or stop offering the use case through that interface.
+A use case's flow is the same through every interface that offers it, and each interface carries a step out through its own means: a web app or desktop in a view that presents the step's command or query (a view of every such interface, or of that one), an API through the endpoint that exposes it, a CLI or agent tools through a record of the product's own interface design kinds under it (such as Lathe's CLI commands) or that presents it (such as an invocation that carries out several commands and queries; one that sits under an interface reaches only that one, any other every CLI and agent tools of its product). So each interface that offers the use case must reach what each step invokes, but for a step that is another interface's variant, and a step that exchanges with an integration that performs the use case: the outside system carries that step out on its own. An interface of kind other reaches its operations in a way no record says, so it is not read. Have a view present the command or query, add the endpoint, or the product's own record under it or that presents it, make the step a variant of the interfaces that do reach it, or stop offering the use case through that interface.
 
 <a id="check-title-breaks-convention"></a>
 
@@ -1531,14 +1531,14 @@ One rule an endpoint must follow, such as an error's response or a limit on its 
 
 ### Integration (`integration`)
 
-An outside system the product exchanges with, such as a payment provider or a mail service. It has no owner: it exists because flow steps exchange with it, and its product follows from its ID.
+An outside system the product exchanges with, such as a payment provider or a mail service. It has no owner: it exists because flow steps exchange with it, and its product follows from its ID. It may perform use cases of its product on its own, with no person and no interface of the product (performs).
 
 - **Parents:** none (no owner: it exists because other records use it)
 - **Children:** [`adapter`](#kind-adapter), [`integration_test`](#kind-integration_test)
 - **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-INT<nn>`, such as `TL-INT01`; it starts with its product's ID
-- **Links out:** none
+- **Links out:** Performs ([`performs`](#relation-performs))
 - **Links in:** Questions about this ([`about`](#relation-about)), Exchanged with by ([`exchanges_with`](#relation-exchanges_with)), Provides ([`provided_by`](#relation-provided_by))
 - **Checks:** [`integration-unused`](#check-integration-unused)
 - **Gaps:** [`integration-without-adapter`](#gap-integration-without-adapter)
@@ -3703,6 +3703,19 @@ The interface offers the use case, of its own product: its actors can carry it o
 | --- | --- | --- |
 | [`interface`](#kind-interface) | [`use_case`](#kind-use_case) | The use case is carried out through the interface. |
 
+<a id="relation-performs"></a>
+
+### `performs`
+
+The integration performs the use case, of its own product: its outside system carries the use case out on its own, with no person and no interface of the product, such as a build service that publishes a release when a tag is pushed. Each step of the use case's flow that exchanges with the integration is carried out there, so the use case needs no interface to offer it.
+
+- **Reads:** Performs / Performed by
+- **Role:** none
+
+| From | To | Meaning |
+| --- | --- | --- |
+| [`integration`](#kind-integration) | [`use_case`](#kind-use_case) | The outside system carries the use case out on its own, with no person and no interface of the product. |
+
 <a id="relation-persists"></a>
 
 ### `persists`
@@ -3932,9 +3945,9 @@ The setting is the product's product_setting row (15 when it has none). A parent
 
 **Warning** · Lathe's
 
-A use case with a flow that no interface offers.
+A use case with a flow that no interface offers and no integration performs.
 
-A flow says how its use case is carried out whatever the interface, and each interface that offers the use case has its own version of it. A use case no interface offers has a flow nobody can follow. Offer it through the interfaces it happens through.
+A flow says how its use case is carried out whatever the interface, and each interface that offers the use case has its own version of it. A use case that an outside system carries out on its own, with no person and no interface of the product, is performed by that integration instead. A use case no interface offers and no integration performs has a flow nobody can follow. Offer it through the interfaces it happens through, or have the integration that carries it out perform it.
 
 <a id="check-accidental-not-accounted-for"></a>
 

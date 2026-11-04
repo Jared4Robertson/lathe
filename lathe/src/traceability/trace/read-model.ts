@@ -6,9 +6,9 @@
 // endpoints or the product's own channels of what it invokes, that command's or query's handler, the repository or
 // reader behind it, their data store, and the adapters of its integrations), and each offering interface's version of
 // the flow (derived by the use case's through.ts: per step, the views with their requirements, the endpoints with
-// their API requirements, or the product's own records it is carried out in); its flow test; the lower obligations its
-// suite rests on (view and API requirements, invariants and storage requirements, with their tests); the journeys whose
-// steps carry it out; and a status per stage. Beside the rows, each journey of the product with how far it is proved
+// their API requirements, or the product's own records it is carried out in); the integrations that perform the use
+// case on its own; its flow test; the lower obligations its suite rests on (view and API requirements, invariants and
+// storage requirements, with their tests); the journeys whose steps carry it out; and a status per stage. Beside the rows, each journey of the product with how far it is proved
 // (TraceJourney): a step carrying out a use case is proved when every UC requirement of it and its flow test are, a
 // handoff when its policy is, and the journey when its journey test counts and every step is proved. Gaps and
 // tests are the checks' run's (`ReadView.checked`: coverage's gaps, the chains' tests), as the Trace read model reads
@@ -92,6 +92,8 @@ export interface TraceFlow {
   steps: TraceStep[];
   /** Each offering interface's version, by interface ID. */
   through: TraceThrough[];
+  /** The integrations that perform the use case on its own, with no person and no interface of the product, by ID. */
+  performedBy: string[];
   /** Its flow test, or null. */
   test: string | null;
   /** Whether its flow test counts as proof: there is one, automated or manual. */
@@ -100,8 +102,8 @@ export interface TraceFlow {
 
 /** A row's status per stage, as its collapsed cells say it. */
 export interface TraceStatus {
-  /** The interfaces its flow is carried out through (none without a flow), and its UC requirements no step designs. */
-  design: { interfaces: number; notDesigned: number };
+  /** The interfaces its flow is carried out through and the integrations that perform it (none without a flow), and its UC requirements no step designs. */
+  design: { interfaces: number; integrations: number; notDesigned: number };
   /** The handlers its steps' chains reach, and its obligations (UC, view and API requirements) not built. */
   technical: { handlers: number; notBuilt: number };
   /** Its acceptance tests (use case and flow tests), what they owe proof of (each UC requirement and flow), and how many of those are not proved. */
@@ -261,6 +263,7 @@ export function traceTableFrom(view: ReadView): TraceTable {
   }
   const kindOf = (id: string) => view.record(id)?.kind;
   const versionsOf = interfaceVersions(view);
+  const performedBy = into('performs');
   const actorsOf = new Map<string, string[]>();
   for (const a of [...rows('use_case_actor')].sort((x, y) => Number(x.position) - Number(y.position))) actorsOf.set(String(a.use_case_id), [...(actorsOf.get(String(a.use_case_id)) ?? []), String(a.role_name)]);
 
@@ -332,11 +335,12 @@ export function traceTableFrom(view: ReadView): TraceTable {
               id: s.id,
               views: s.reach.filter((r) => kind(r) === 'view').map((v) => ({ id: v, requirements: byId(viewRequirementsOf.get(v) ?? []).map(obligation) })),
               endpoints: s.reach.filter((r) => kind(r) === 'endpoint').map((e) => ({ id: e, apiRequirements: byId(apiRequirementsOf.get(e) ?? []).map(obligation) })),
-              entries: s.reach.filter((r) => kind(r) !== 'view' && kind(r) !== 'endpoint'),
+              entries: s.reach.filter((r) => kind(r) !== 'view' && kind(r) !== 'endpoint' && kind(r) !== 'integration'),
               unreached: s.unreached,
             };
           }),
         })),
+        performedBy: byId(performedBy.get(useCase) ?? []),
         test: test ? String(test.id) : null,
         proved: !!test && test.state !== 'not automated yet',
       };
@@ -365,7 +369,7 @@ export function traceTableFrom(view: ReadView): TraceTable {
       lower,
       journeys: (journeysOf.get(useCase) ?? []).map((step) => ({ journey: String(journeyOfStep.get(step)), step })).sort((a, b) => compareIds(a.journey, b.journey) || compareIds(a.step, b.step)),
       status: {
-        design: { interfaces: flow?.through.length ?? 0, notDesigned: requirements.filter((r) => r.gaps.includes('designed')).length },
+        design: { interfaces: flow?.through.length ?? 0, integrations: flow?.performedBy.length ?? 0, notDesigned: requirements.filter((r) => r.gaps.includes('designed')).length },
         technical: { handlers: new Set(steps.flatMap((s) => s.chain.handlers)).size, notBuilt: notBuilt.size },
         suite: { tests, owed: requirements.length + flows.length, notProved: requirements.filter((r) => r.gaps.includes('proved')).length + flows.filter((x) => !x.proved).length },
       },
