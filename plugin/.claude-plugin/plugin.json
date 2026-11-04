@@ -3,8 +3,17 @@
   "displayName": "Lathe",
   "version": "0.7.0",
   "description": "Change Lathe specs the Lathe way: skills for each stage, MCP tools, one per aggregate command and query, and a hook that keeps hand edits out of the data files.",
-  "author": { "name": "Jared A Robertson" },
+  "author": {
+    "name": "Jared A Robertson"
+  },
   "license": "Apache-2.0",
-  "keywords": ["specs", "requirements", "traceability", "lathe"],
-  "lathe": { "version": "7.0.0" }
+  "keywords": [
+    "specs",
+    "requirements",
+    "traceability",
+    "lathe"
+  ],
+  "lathe": {
+    "version": "7.0.0"
+  }
 }

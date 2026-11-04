@@ -27,15 +27,20 @@ const FORBIDDEN: { what: string; pattern: RegExp }[] = [
 ];
 
 /**
- * The lines that may name the author: the packages' author and owner fields. The package name `@jaredrob/lathe` and
+ * The lines that may name the author: the packages' author and owner fields, in one line or expanded. The package name `@jaredrob/lathe` and
  * the GitHub owner in the repo's URL are not matched by any pattern above.
  */
 const ALLOWED = new RegExp(`^\\s*"(?:author|owner)":\\s*(?:\\{\\s*"name":\\s*)?"${FIRST} A ${FAMILY}"`);
 
+/** The `name` line of an expanded `author` or `owner` object, which is allowed when the line before opens that object. */
+const ALLOWED_NAME = new RegExp(`^\\s*"name":\\s*"${FIRST} A ${FAMILY}"`);
+const OBJECT_OPEN = /^\s*"(?:author|owner)":\s*\{\s*$/;
+
 /** Each forbidden mention in a file's text, as `file:line: what`. */
 function findings(file: string, text: string): string[] {
-  return text.split('\n').flatMap((line, i) =>
-    ALLOWED.test(line) ? [] : FORBIDDEN.filter(({ pattern }) => pattern.test(line)).map(({ what }) => `${file}:${i + 1}: names ${what}`),
+  const lines = text.split('\n');
+  return lines.flatMap((line, i) =>
+    ALLOWED.test(line) || (ALLOWED_NAME.test(line) && OBJECT_OPEN.test(lines[i - 1] ?? '')) ? [] : FORBIDDEN.filter(({ pattern }) => pattern.test(line)).map(({ what }) => `${file}:${i + 1}: names ${what}`),
   );
 }
 
@@ -62,6 +67,10 @@ describe('LA-STD-PRINCIPLES-R07-T01 no tracked file names a product Lathe was tr
       `${u}person/Development/Lathe`,
       `  "author": "${FIRST} A ${FAMILY}",`,
       `  "owner": { "name": "${FIRST} A ${FAMILY}" },`,
+      '  "author": {',
+      `    "name": "${FIRST} A ${FAMILY}"`,
+      '  },',
+      `  "name": "${FIRST} A ${FAMILY}",`,
       "import { openStore } from '@jaredrob/lathe';",
     ].join('\n');
     expect(findings('f', sample)).toEqual([
@@ -73,6 +82,7 @@ describe('LA-STD-PRINCIPLES-R07-T01 no tracked file names a product Lathe was tr
       'f:7: names a home folder',
       'f:8: names a home folder',
       'f:9: names the system temp folder',
+      'f:16: names a person',
     ]);
   });
 
