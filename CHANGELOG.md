@@ -1,5 +1,44 @@
 # Changelog
 
+## [8.0.0](https://github.com/Jared4Robertson/lathe/compare/v7.0.0...v8.0.0) (2026-11-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* **meta-model:** product data moves to schema 7; run lathe upgrade.
+
+### Features
+
+* **desktop:** sign the chat's Claude Code in and out from inside the app ([89a03a7](https://github.com/Jared4Robertson/lathe/commit/89a03a756739b41536a6daefc906b38b70ba7a9e))
+* **interface-design:** an integration may perform a use case ([18d9fd0](https://github.com/Jared4Robertson/lathe/commit/18d9fd00c253c531b75214de62b39562a81275a1))
+* one function may be the rule of two invariants ([21dd36e](https://github.com/Jared4Robertson/lathe/commit/21dd36e7e5c0a5d27b5458407b2200e5bae8663f))
+* **trace:** a technical record names its helper files ([3afff90](https://github.com/Jared4Robertson/lathe/commit/3afff903e671bd142c57c0715013f3e1909a98b1))
+* **traceability:** count more ways a fill serves an essential record ([36c352b](https://github.com/Jared4Robertson/lathe/commit/36c352be681bb081a55604e9f311719602def692))
+* **traceability:** records that meet a rule account for its standard ([eb4e4e3](https://github.com/Jared4Robertson/lathe/commit/eb4e4e3e52f81b21c957fc03af947002ce1007cb))
+* **voice:** dictation recognized by NVIDIA's Parakeet model on the Mac ([#2](https://github.com/Jared4Robertson/lathe/issues/2)) ([5933f1a](https://github.com/Jared4Robertson/lathe/commit/5933f1a43bb9be6894f0dba86a1bd8e69eda12d6))
+
+
+### Bug Fixes
+
+* **ci:** free leaked databases, clear app timers, allow slow tests ([5b0b844](https://github.com/Jared4Robertson/lathe/commit/5b0b8446cbee5cd7375e695684a6c97538239ab1))
+* **graph:** the Tree frames its focus whole with its children's level, however many children it has ([201cd4a](https://github.com/Jared4Robertson/lathe/commit/201cd4a651d344af1949d25f4db5710777ee8927))
+* **plugin:** the plugin asks for Lathe 7, the major the 7.0.0 release set ([1cb713c](https://github.com/Jared4Robertson/lathe/commit/1cb713c877e07a56598fab0b0876c8d391fe2288))
+* **plugin:** the release sets the plugin's Lathe version, so the plugin never asks for an old major ([ecbd7a0](https://github.com/Jared4Robertson/lathe/commit/ecbd7a07de7484814a85b1e293e092e629a4d45f))
+* **release:** the public-tree check accepts a manifest's author however release-please lays it out ([ced51fd](https://github.com/Jared4Robertson/lathe/commit/ced51fdb3cd61d91e7243149631992276fd5dcfd))
+* **stability:** the graph suites find the Minimap switch by name, now that Change reach sits beside it ([ef49e19](https://github.com/Jared4Robertson/lathe/commit/ef49e1966dfe6431174cc50dacc6a6a30547e73c))
+
+
+### Specification
+
+* **coverage:** close the storage, tracing and proof gaps lathe check reports ([ffe3e51](https://github.com/Jared4Robertson/lathe/commit/ffe3e5151caf65baf900ed337e1b1194c6769276))
+* **traceability:** See what a change would touch has one interface-neutral flow ([0a5cea0](https://github.com/Jared4Robertson/lathe/commit/0a5cea05d7705d7dc366dc8658da7e30243ecc37))
+* **use-cases:** every flow stays interface neutral, and step-repeated-per-interface keeps it so ([bc006c0](https://github.com/Jared4Robertson/lathe/commit/bc006c09df463c5ebb0cd995b0d8e284b6f8baf8))
+
+
+### Refactoring
+
+* **meta-model:** flows belong to use cases, and interaction design is interface design ([07a7e3c](https://github.com/Jared4Robertson/lathe/commit/07a7e3cf0a2e243f7abf1addc161f96f706f551a))
+
 ## [7.0.0](https://github.com/Jared4Robertson/lathe/commits/v7.0.0) (2026-11-03)
 
 
