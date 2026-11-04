@@ -344,7 +344,7 @@ function currentBranch(index: RecordIndex, path: string): string[] {
 /**
  * The current space in the panel: its overview; its own stages (Shared: its business outcomes and what it shares, such
  * as patterns, standards, and the value objects and views two or more domains use); its domains, each folding its stages
- * (Domain model, Use cases, Interaction design, Technical specification, Test plan) and its open questions;
+ * (Domain model, Use cases, Interface design, Technical specification, Test plan) and its open questions;
  * then the product's open questions. Each stage holds one folder per kind, each listing the records
  * that start a branch of the stage; a stage with one folder lists its records itself. One level shows by default; every stage and folder folds on its
  * own (remembered for the session) and shows its count, and the current page's branch opens itself.

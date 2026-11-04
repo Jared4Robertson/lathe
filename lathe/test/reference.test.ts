@@ -95,7 +95,7 @@ describe('check rows', () => {
 
 describe('the reference', () => {
   it("LA-PRD-UC11-R02-T01 The reference holds every stage, kind, table, relation, check and gap of Lathe's schema", async () => {
-    expect(defaults.stages.map((s) => s.stage)).toEqual(['discovery', 'domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan']);
+    expect(defaults.stages.map((s) => s.stage)).toEqual(['discovery', 'domain-model', 'use-cases', 'interface-design', 'technical-specification', 'test-plan']);
     const useCase = defaults.kinds.find((k) => k.kind === 'use_case')!;
     expect(useCase).toMatchObject({
       label: 'Use case',
@@ -152,7 +152,7 @@ describe('the reference', () => {
     const markdown = renderReference(defaults);
     const at = (text: string) => markdown.indexOf(text);
     expect(at('# Lathe reference')).toBe(0);
-    const order = ['data/<table>.jsonl', '\n## Domain model\n', '<a id="kind-aggregate">', '### Checks: domain model', '### Coverage gaps: domain model', '\n## Use cases\n', '\n## Interaction design\n', '\n## Technical specification\n', '\n## Test plan\n', '\n## Outside the stages\n', '<a id="kind-question">', '\n## Other tables\n', '\n## Relations\n', '\n## Checks of any kind\n', '<a id="check-data-refused">'];
+    const order = ['data/<table>.jsonl', '\n## Domain model\n', '<a id="kind-aggregate">', '### Checks: domain model', '### Coverage gaps: domain model', '\n## Use cases\n', '\n## Interface design\n', '\n## Technical specification\n', '\n## Test plan\n', '\n## Outside the stages\n', '<a id="kind-question">', '\n## Other tables\n', '\n## Relations\n', '\n## Checks of any kind\n', '<a id="check-data-refused">'];
     for (let i = 1; i < order.length; i++) expect(at(order[i - 1]), `${order[i - 1]} before ${order[i]}`).toBeLessThan(at(order[i]));
     for (const anchor of ['stage-test-plan', 'kind-use_case', 'table-use_case', 'table-entity_field', 'relation-fulfills', 'check-view-unused', 'check-data-refused', 'gap-use-case-without-flow']) {
       expect(markdown).toContain(`<a id="${anchor}"></a>`);

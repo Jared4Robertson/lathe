@@ -11,7 +11,7 @@ export interface Look {
   steel: string; sparkBg: string; warn: string; error: string; onMark: string;
   hoverRing: string; linkEdge: string;
   discoveryEdge: string; discoveryFill: string; domainModelEdge: string; domainModelFill: string; useCasesEdge: string; useCasesFill: string;
-  interactionDesignEdge: string; interactionDesignFill: string; technicalSpecificationEdge: string; technicalSpecificationFill: string;
+  interfaceDesignEdge: string; interfaceDesignFill: string; technicalSpecificationEdge: string; technicalSpecificationFill: string;
   testPlanEdge: string; testPlanFill: string;
   structuralEdge: string; structuralFill: string;
   /** The live marks' colors (changes/marks.ts): a new record's glow and dot, a changed record's dot, a removed record's ghost. */
@@ -32,7 +32,7 @@ const COLORS: Record<Exclude<keyof Look, 'spotlightDim' | 'contextOpacity' | 'fo
   hoverRing: '--hover-ring', linkEdge: '--link-edge',
   discoveryEdge: '--g-discovery', discoveryFill: '--g-discovery-bg',
   domainModelEdge: '--g-domain-model', domainModelFill: '--g-domain-model-bg', useCasesEdge: '--g-use-cases', useCasesFill: '--g-use-cases-bg',
-  interactionDesignEdge: '--g-interaction-design', interactionDesignFill: '--g-interaction-design-bg',
+  interfaceDesignEdge: '--g-interface-design', interfaceDesignFill: '--g-interface-design-bg',
   technicalSpecificationEdge: '--g-technical-specification', technicalSpecificationFill: '--g-technical-specification-bg',
   testPlanEdge: '--g-test-plan', testPlanFill: '--g-test-plan-bg',
   structuralEdge: '--g-structural', structuralFill: '--g-structural-bg',
@@ -46,7 +46,7 @@ export const PLAIN_LOOK: Look = {
   hoverRing: 'rgb(46 106 136 / 0.45)', linkEdge: '#B5512A',
   discoveryEdge: '#75640E', discoveryFill: '#F4EFD8',
   domainModelEdge: '#2E6A88', domainModelFill: '#E4EEF3', useCasesEdge: '#2F7148', useCasesFill: '#E2F1E7',
-  interactionDesignEdge: '#6A4C9C', interactionDesignFill: '#EEE8F6', technicalSpecificationEdge: '#B5512A', technicalSpecificationFill: '#F8E8DF',
+  interfaceDesignEdge: '#6A4C9C', interfaceDesignFill: '#EEE8F6', technicalSpecificationEdge: '#B5512A', technicalSpecificationFill: '#F8E8DF',
   testPlanEdge: '#A3365F', testPlanFill: '#F7E4EC',
   structuralEdge: '#1D2830', structuralFill: '#FFFFFF',
   changeNew: '#2F7148', changeChanged: '#875C00', changeGone: '#A83523',

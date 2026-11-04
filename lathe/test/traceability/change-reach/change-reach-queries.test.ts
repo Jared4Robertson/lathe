@@ -37,7 +37,8 @@ describe('LA-TRC-UC24-R01-T01 The reach of a change lists every record that sits
     const r = reach(await checkedView(await build(complete())), ['EX-LEND-CMD01']);
     expect(r.changed).toEqual(['EX-LEND-CMD01']);
     expect(r.groups.map((g) => [g.label, g.records.map((x) => x.id)])).toEqual([
-      ['Interaction design', ['EX-LEND-UC01-FL-S01', 'EX-V01', 'EX-LEND-EP01', 'EX-LEND-EP01-R01']],
+      ['Use cases', ['EX-LEND-UC01-FL-S01']],
+      ['Interface design', ['EX-V01', 'EX-LEND-EP01', 'EX-LEND-EP01-R01']],
       ['Technical specification', ['EX-LEND-CMD01-H', 'EX-UI01', 'EX-LEND-EP01-H']],
       ['Test plan', ['EX-LEND-EP01-R01-T01']],
     ]);

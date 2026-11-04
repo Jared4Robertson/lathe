@@ -73,11 +73,11 @@ describe('obligation kinds and test states', () => {
     expect(value('Not automated yet')).toBe('1 of 7 obligations, by tests no file runs yet');
   });
 
-  it('LA-V91-R52-T01 The domain page lists an endpoint in Interaction design, with its API requirements and a product\'s own kind folded under it', async () => {
+  it('LA-V91-R52-T01 The domain page lists an endpoint in Interface design, with its API requirements and a product\'s own kind folded under it', async () => {
     await openApp('/DM-SHOP', served());
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const user = userEvent.setup();
-    const endpoints = within(stage('interaction-design')).getByRole('heading', { name: /^Endpoints/ }).closest('section') as HTMLElement;
+    const endpoints = within(stage('interface-design')).getByRole('heading', { name: /^Endpoints/ }).closest('section') as HTMLElement;
     const endpoint = within(endpoints).getByRole('link', { name: /^DM-SHOP-EP01\s*POST \/basket\/items/ }).closest('li') as HTMLElement;
     expect(endpoint).toHaveTextContent('2 children');
     await user.click(within(endpoint).getByRole('button', { name: 'Expand DM-SHOP-EP01' }));
@@ -93,8 +93,8 @@ describe('obligation kinds and test states', () => {
     await user.click(within(endpoint).getByRole('button', { name: 'Collapse DM-SHOP-EP01' }));
     await user.type(screen.getByLabelText('Filter records'), 'answers 201');
     expect(ids(endpoints)).toEqual(['DM-SHOP-EP01', 'DM-SHOP-EP01-R01']);
-    const flows = within(stage('interaction-design')).getByRole('heading', { name: /^Flows/ }).closest('section') as HTMLElement;
-    expect(within(flows).getByText('Nothing matches.')).toBeInTheDocument();
+    const views = within(stage('interface-design')).getByRole('heading', { name: /^Views/ }).closest('section') as HTMLElement;
+    expect(within(views).getByText('Nothing matches.')).toBeInTheDocument();
   });
 
   it('LA-V91-R53-T01 The domain page tags each test with its state, and one not automated yet looks unfinished', async () => {

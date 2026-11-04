@@ -221,16 +221,16 @@ WHERE NOT EXISTS (SELECT 1 FROM uc_requirement r WHERE r.use_case_id = u.id) AND
   gap('journey-step-unlinked', 'use-cases', ['journey_step', 'use_case', 'policy'], 'A journey step that carries out no use case or policy yet.',
     `SELECT s.id, 'Journey step ' || s.id || ' carries out no use case or policy yet: write the use case (or the policy, for a handoff) and link the step.' AS message FROM journey_step s
 WHERE NOT EXISTS (SELECT 1 FROM carries_out c WHERE c.source_id = s.id)`),
+  gap('use-case-without-flow', 'use-cases', ['use_case', 'flow'], 'A use case with no flow.',
+    `SELECT u.id, 'Use case ' || u.id || ' has no flow.' AS message FROM use_case u WHERE NOT EXISTS (SELECT 1 FROM flow f WHERE f.use_case_id = u.id)`),
+  gap('flow-without-main-path', 'use-cases', ['flow', 'flow_step'], 'A flow with no step on its main path.',
+    `SELECT f.id, 'Flow ' || f.id || ' has no step on its main path.' AS message FROM flow f WHERE NOT EXISTS (SELECT 1 FROM flow_step s WHERE s.flow_id = f.id AND s.path = 'main')`),
   gap('pattern-without-rule', 'use-cases', ['pattern', 'pattern_rule'], 'A pattern with no rule.',
     `SELECT p.id, 'Pattern ' || p.id || ' has no rule.' AS message FROM pattern p WHERE NOT EXISTS (SELECT 1 FROM pattern_rule r WHERE r.pattern_id = p.id)`),
-  // Interaction design.
-  gap('use-case-without-flow', 'interaction-design', ['use_case', 'flow'], 'A use case with no flow.',
-    `SELECT u.id, 'Use case ' || u.id || ' has no flow.' AS message FROM use_case u WHERE NOT EXISTS (SELECT 1 FROM flow f WHERE f.use_case_id = u.id)`),
-  gap('interface-offers-nothing', 'interaction-design', ['interface', 'use_case'], 'An interface that offers no use case.',
+  // Interface design.
+  gap('interface-offers-nothing', 'interface-design', ['interface', 'use_case'], 'An interface that offers no use case.',
     `SELECT i.id, 'Interface ' || i.id || ' offers no use case yet.' AS message FROM interface i WHERE NOT EXISTS (SELECT 1 FROM offers o WHERE o.source_id = i.id)`),
-  gap('flow-without-main-path', 'interaction-design', ['flow', 'flow_step'], 'A flow with no step on its main path.',
-    `SELECT f.id, 'Flow ' || f.id || ' has no step on its main path.' AS message FROM flow f WHERE NOT EXISTS (SELECT 1 FROM flow_step s WHERE s.flow_id = f.id AND s.path = 'main')`),
-  gap('endpoint-without-requirement', 'interaction-design', ['endpoint', 'api_requirement'], 'An endpoint with no API requirement.',
+  gap('endpoint-without-requirement', 'interface-design', ['endpoint', 'api_requirement'], 'An endpoint with no API requirement.',
     `SELECT e.id, 'Endpoint ' || e.id || ' has no API requirement.' AS message FROM endpoint e WHERE NOT EXISTS (SELECT 1 FROM api_requirement r WHERE r.endpoint_id = e.id)`),
   // Every route the code serves has an endpoint or a view (trace/routes.ts).
   ...ROUTE_GAP_RULES,
@@ -279,7 +279,7 @@ FROM source_file f WHERE NOT f.traced AND EXISTS (SELECT 1 FROM product)`),
   // command or query handler is left out: it serves what its operation serves, so its operation's gap stands for it
   // (reporting both would double each gap). So is a test: one of an obligation sits in its chain by construction, and a flow or integration test
   // proves its flow or integration, never an obligation.
-  gap('record-untraced', 'interaction-design', [...UNTRACED_KINDS], 'A flow step, command, query or UI component no obligation\'s chain reaches.',
+  gap('record-untraced', 'interface-design', [...UNTRACED_KINDS], 'A flow step, command, query or UI component no obligation\'s chain reaches.',
     `SELECT r.id, k.label || ' ' || r.id || ' is untraced: no obligation''s chain reaches it' || CASE r.kind
     WHEN 'flow_step' THEN ', as it fulfills no UC requirement.'
     WHEN 'command' THEN ', as no step that fulfills a UC requirement invokes it, no policy does, and it calls no domain service and checks no specification.'

@@ -11,8 +11,10 @@ COMMENT ON COLUMN meta_migration.version IS 'The migration''s number, from its f
 COMMENT ON COLUMN meta_migration.name IS 'The migration''s file name.';
 
 CREATE TYPE table_role AS ENUM ('meta', 'registry', 'supertype', 'kind', 'part', 'link', 'declaration', 'checking', 'result');
--- The stages, in the order a product is modeled: links run from what is defined first to what is defined later.
-CREATE TYPE stage AS ENUM ('discovery', 'domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan');
+-- The stages, in the order a product is modeled: links run from what is defined first to what is defined later. One
+-- reference runs forward, deliberately: a flow step, in use cases, names the interface of a variant and the integrations
+-- it exchanges with, both in interface design (meta_stage says so).
+CREATE TYPE stage AS ENUM ('discovery', 'domain-model', 'use-cases', 'interface-design', 'technical-specification', 'test-plan');
 CREATE TYPE id_scope AS ENUM ('product', 'domain', 'parent');
 CREATE TYPE link_role AS ENUM ('design', 'build', 'proof');
 CREATE TYPE link_scope AS ENUM ('product', 'domain', 'aggregate');
@@ -41,7 +43,7 @@ CREATE TABLE meta_stage (
   label VARCHAR NOT NULL,
   description VARCHAR NOT NULL
 );
-COMMENT ON TABLE meta_stage IS 'The stages a product is modeled in, in order: discovery, domain model, use cases, interaction design, technical specification and test plan. Kinds are colored and ordered by stage; product, role and open questions sit outside them.';
+COMMENT ON TABLE meta_stage IS 'The stages a product is modeled in, in order: discovery, domain model, use cases, interface design, technical specification and test plan. Kinds are colored and ordered by stage; product, role and open questions sit outside them. A record names records of its own stage or an earlier one, with one deliberate exception: a flow step, in use cases, names the one interface that does it when it is a variant, and exchanges with integrations, both in interface design.';
 COMMENT ON COLUMN meta_stage.name IS 'The stage''s name, such as domain-model.';
 COMMENT ON COLUMN meta_stage.position IS 'The stage''s place in the order, from 1.';
 COMMENT ON COLUMN meta_stage.label IS 'The stage''s name as people read it.';
@@ -69,7 +71,7 @@ COMMENT ON COLUMN meta_kind.id_pattern IS 'How its IDs are written, such as <P>-
 COMMENT ON COLUMN meta_kind.id_example IS 'An example ID, such as TL-LEND-UC01.';
 COMMENT ON COLUMN meta_kind.id_scope IS 'What its IDs start with, followed by a hyphen: its product''s ID, its domain''s ID or its parent''s ID. A kind with no owner takes its product, or its domain, from that prefix. None for a kind whose IDs are free.';
 COMMENT ON COLUMN meta_kind.product_id IS 'For a product''s own kind, the product that declares it; none for Lathe''s kinds.';
-COMMENT ON COLUMN meta_kind.complexity IS 'Whether its records are essential or accidental complexity. essential: complexity that comes from the problem itself, decided once per product (discovery, the domain model, use cases and patterns, the what of interaction design, test data sets); accidental: complexity that comes from the means used to build the solution (the technical specification and endpoints, an HTTP API''s shape), which is derived, provided or a recorded fill at a slot; as-parent: as the record it sits under (a test, a standard rule); by-type: as its own type says (a standard: quality is essential, engineering accidental); by-interface: essential when its product marks an API interface public, its contract with the outside world, and otherwise accidental (an API requirement). A kind is never mixed: one that holds both is split. None for an open question, a note on the spec rather than part of it.';
+COMMENT ON COLUMN meta_kind.complexity IS 'Whether its records are essential or accidental complexity. essential: complexity that comes from the problem itself, decided once per product (discovery, the domain model, use cases and patterns, the what of interface design, test data sets); accidental: complexity that comes from the means used to build the solution (the technical specification and endpoints, an HTTP API''s shape), which is derived, provided or a recorded fill at a slot; as-parent: as the record it sits under (a test, a standard rule); by-type: as its own type says (a standard: quality is essential, engineering accidental); by-interface: essential when its product marks an API interface public, its contract with the outside world, and otherwise accidental (an API requirement). A kind is never mixed: one that holds both is split. None for an open question, a note on the spec rather than part of it.';
 
 CREATE TABLE meta_kind_title (
   kind VARCHAR PRIMARY KEY REFERENCES meta_kind (name),
@@ -139,7 +141,7 @@ INSERT INTO meta_table VALUES
 INSERT INTO meta_stage VALUES
   ('discovery', 1, 'Discovery', 'The business outcomes the product exists to achieve, each a measurable statement with its measure and target, which its capabilities serve, and the journeys that reach them: the use cases and handoffs, in order, from a trigger to a result.'),
   ('domain-model', 2, 'Domain model', 'Domains and their aggregates, entities, value objects, rules (constraints, invariants, specifications and policies), events, commands, read models, queries, domain services and glossary terms.'),
-  ('use-cases', 3, 'Use cases', 'Capabilities, the use cases in them with their actors and UC requirements, and the patterns use cases and domains follow.'),
-  ('interaction-design', 4, 'Interaction design', 'The product''s interfaces and the use cases each offers, each use case''s flow and its steps, and the views, endpoints and integrations the steps reach, with their requirements.'),
+  ('use-cases', 3, 'Use cases', 'Capabilities, the use cases in them with their actors and UC requirements, each use case''s flow and its steps (how it is carried out, whatever the interface), and the patterns use cases and domains follow.'),
+  ('interface-design', 4, 'Interface design', 'The product''s interfaces with the roles that use them and the use cases each offers, and the views, endpoints and integrations a flow''s steps reach through them, with their requirements.'),
   ('technical-specification', 5, 'Technical specification', 'The technical record that implements each design record, such as a command''s handler or an entity''s table, and the standards code meets.'),
   ('test-plan', 6, 'Test plan', 'The tests, one kind per thing tested, each proving exactly its parent, and the test data sets they start from.');

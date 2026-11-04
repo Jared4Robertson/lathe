@@ -17,7 +17,7 @@
 {"id":"LA-EXP-UC10-FL","title":"Explore several places at once in tabs","use_case_id":"LA-EXP-UC10"}
 {"id":"LA-EXP-UC11-FL","title":"Read a domain as an ERD","use_case_id":"LA-EXP-UC11"}
 {"id":"LA-EXP-UC12-FL","title":"Look up a record's history","use_case_id":"LA-EXP-UC12"}
-{"id":"LA-EXP-UC13-FL","title":"Read a domain's interaction design","use_case_id":"LA-EXP-UC13"}
+{"id":"LA-EXP-UC13-FL","title":"Read a domain's interface design","use_case_id":"LA-EXP-UC13"}
 {"id":"LA-EXP-UC15-FL","title":"Watch the spec change","use_case_id":"LA-EXP-UC15"}
 {"id":"LA-EXP-UC16-FL","title":"Follow a journey step by step","use_case_id":"LA-EXP-UC16"}
 {"id":"LA-EXP-UC17-FL","title":"Choose how the graph is drawn","use_case_id":"LA-EXP-UC17"}

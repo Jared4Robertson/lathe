@@ -4,7 +4,7 @@ import { kindLabel, type RecordIndex } from '../exploring/record-summaries/recor
 // The Trace stage (LA-V98), pure and tested directly: one row per use case of a product's space, each
 // use case once, across six columns, left to right:
 //
-//   Outcome | Journey | Use case | Design flow | Technical flow | Acceptance test suite
+//   Outcome | Journey | Use case | Flow | Technical flow | Acceptance test suite
 //
 // - Outcome: each business outcome once, with a line to every use case its capability serves (serves.ts's reach) and
 //   to every journey serving it.
@@ -13,7 +13,7 @@ import { kindLabel, type RecordIndex } from '../exploring/record-summaries/recor
 //   ("3 steps · 2 proved · test ✓"); open, its steps in order (main path first, each alternate path under a
 //   heading naming it), a handoff a step of its own with its policy's proof, and its journey test (a dashed gap with none).
 // - Use case: the use case; expanded, its UC requirements, the aggregates its steps change and the read models they read.
-// - Design flow: its status as its title ("2 interfaces · all designed"); expanded, its flow (one per use case, the same through
+// - Flow: its status as its title ("2 interfaces · all designed"); expanded, its flow (one per use case, the same through
 //   every interface), expanding to a box per interface that offers the use case, each opening that interface's version
 //   of the flow (derived): its steps, each to where it is carried out there (the views that present what it invokes,
 //   with their view requirements; the endpoints that expose it, with their API requirements; or the product's own
@@ -33,17 +33,17 @@ import { kindLabel, type RecordIndex } from '../exploring/record-summaries/recor
 // titles, kinds and stages to draw. Where each box goes is layout.ts's.
 
 /** The six columns, left to right. */
-export const TRACE_COLUMNS = ['outcome', 'journey', 'use-case', 'design', 'technical', 'suite'] as const;
+export const TRACE_COLUMNS = ['outcome', 'journey', 'use-case', 'flow', 'technical', 'suite'] as const;
 export type TraceColumn = (typeof TRACE_COLUMNS)[number];
-export const TRACE_COLUMN_LABELS: Record<TraceColumn, string> = { outcome: 'Outcome', journey: 'Journey', 'use-case': 'Use case', design: 'Design flow', technical: 'Technical flow', suite: 'Acceptance test suite' };
+export const TRACE_COLUMN_LABELS: Record<TraceColumn, string> = { outcome: 'Outcome', journey: 'Journey', 'use-case': 'Use case', flow: 'Flow', technical: 'Technical flow', suite: 'Acceptance test suite' };
 /** The columns that expand down, each a stage of every row. */
-export const TRACE_STAGES = ['use-case', 'design', 'technical', 'suite'] as const;
+export const TRACE_STAGES = ['use-case', 'flow', 'technical', 'suite'] as const;
 export type TraceStage = (typeof TRACE_STAGES)[number];
 /** The columns beside the rows: the outcomes and the journeys. */
 export const OUTCOME_COLUMN = 0;
 export const JOURNEY_COLUMN = 1;
 /** Each stage's column: a row's cells, from the Use case column on. */
-export const STAGE_COLUMN: Readonly<Record<TraceStage, number>> = { 'use-case': 2, design: 3, technical: 4, suite: 5 };
+export const STAGE_COLUMN: Readonly<Record<TraceStage, number>> = { 'use-case': 2, flow: 3, technical: 4, suite: 5 };
 /** The stage of a row's column, or null for the outcomes' and journeys'. */
 export const stageOfColumn = (column: number): TraceStage | null => TRACE_STAGES.find((s) => STAGE_COLUMN[s] === column) ?? null;
 
@@ -66,7 +66,7 @@ export interface Item {
   role: ItemRole;
   /**
    * What a box that is no record says: its kind, its title, its eyebrow, and any status in words under its title, at the
-   * node text scale's status level (graph/text.ts NODE_TEXT). A Design flow, Technical flow or Acceptance test suite cell's
+   * node text scale's status level (graph/text.ts NODE_TEXT). A Flow, Technical flow or Acceptance test suite cell's
    * title is its status ("2 interfaces · all designed", LA-PAT-APP-UX-R24), with no line under it, and `of` names the use
    * case of its row by title, for its accessible name.
    */
@@ -143,7 +143,7 @@ const n = (k: number, one: string, many = `${one}s`) => `${k} ${k === 1 ? one : 
 export function statusOf(row: TraceRow, stage: Exclude<TraceStage, 'use-case'>): { title: string; gap: boolean } {
   const { design, technical, suite } = row.status;
   switch (stage) {
-    case 'design':
+    case 'flow':
       if (!row.flow) return { title: 'No flow', gap: true };
       return { title: `${n(design.interfaces, 'interface')} · ${design.notDesigned === 0 ? 'all designed' : `${n(design.notDesigned, 'requirement')} not designed`}`, gap: design.notDesigned > 0 || design.interfaces === 0 };
     case 'technical':
@@ -223,16 +223,16 @@ function build(index: RecordIndex, trace: ProductTrace): TraceGraph {
     for (const r of data.requirements) if (known(r.id)) { record(useCase, r.id); link(u, r.id); }
     for (const a of [...data.changes, ...data.reads]) if (known(a)) { record(useCase, a); link(u, a); }
 
-    // Design flow: its status, then its flow, a box per interface that offers it, and each interface's version: its
+    // Flow: its status, then its flow, a box per interface that offers it, and each interface's version: its
     // steps, each with where it is carried out there and its integrations, a gap under a step it cannot reach.
-    const design = statusOf(data, 'design');
+    const flowStatus = statusOf(data, 'flow');
     const f = data.flow && known(data.flow.id) ? data.flow : null;
     /** A stage cell's title is its status; it names its row's use case for its accessible name (LA-PAT-APP-UX-R24). */
     const of = index.byId.get(u)!.title;
-    const designBox = add({ key: `${u}|design`, id: null, row: u, column: STAGE_COLUMN.design, depth: 0, parent: null, role: design.gap ? 'gap' : 'status', words: { kind: 'Design flow', title: design.title, meta: `Design flow · ${u}`, of }, opens: cellKey(u, 'design') });
+    const flowBox = add({ key: `${u}|flow`, id: null, row: u, column: STAGE_COLUMN.flow, depth: 0, parent: null, role: flowStatus.gap ? 'gap' : 'status', words: { kind: 'Flow', title: flowStatus.title, meta: `Flow · ${u}`, of }, opens: cellKey(u, 'flow') });
     const steps = f ? f.steps.filter((s) => known(s.id)) : [];
     if (f) {
-      const flow = record(designBox, f.id, { opens: innerKey(u, 'design', f.id) });
+      const flow = record(flowBox, f.id, { opens: innerKey(u, 'flow', f.id) });
       link(u, f.id);
       const written = new Map(steps.map((s) => [s.id, s]));
       for (const s of steps) for (const r of s.fulfills) link(r, s.id);
@@ -241,13 +241,13 @@ function build(index: RecordIndex, trace: ProductTrace): TraceGraph {
       if (faces.length === 0) {
         // No interface offers it: the flow opens to its steps as written.
         for (const s of steps) {
-          const step = record(flow, s.id, s.integrations.length > 0 ? { opens: innerKey(u, 'design', s.id) } : {});
+          const step = record(flow, s.id, s.integrations.length > 0 ? { opens: innerKey(u, 'flow', s.id) } : {});
           link(f.id, s.id);
           integrations(step, s.id);
         }
       }
       for (const t of faces) {
-        const face = record(flow, t.interface, { opens: innerKey(u, 'design', t.interface) });
+        const face = record(flow, t.interface, { opens: innerKey(u, 'flow', t.interface) });
         link(f.id, t.interface);
         for (const s of t.steps) {
           if (!written.has(s.id)) continue;
@@ -255,7 +255,7 @@ function build(index: RecordIndex, trace: ProductTrace): TraceGraph {
           const endpoints = s.endpoints.filter((e) => known(e.id));
           const entries = s.entries.filter(known);
           const has = views.length + endpoints.length + entries.length + written.get(s.id)!.integrations.length > 0;
-          const step = record(face, s.id, has ? { opens: innerKey(u, 'design', `${t.interface}/${s.id}`) } : {});
+          const step = record(face, s.id, has ? { opens: innerKey(u, 'flow', `${t.interface}/${s.id}`) } : {});
           link(t.interface, s.id);
           if (s.unreached) plain(step, 'gap:unreached', 'gap', { kind: 'Gap', title: 'Not reached', meta: `Gap · ${s.id} through ${t.interface}` }, { id: s.id });
           for (const v of views) {
@@ -319,8 +319,8 @@ function build(index: RecordIndex, trace: ProductTrace): TraceGraph {
         if (o.gaps.includes('proved')) link(o.id, `${lower}/gap:${o.id}`);
       }
     }
-    if (design.gap || technical.gap || suite.gap) gapped++;
-    rows.push({ useCase: u, data, cells: ['', '', useCase, designBox, techBox, suiteBox], links, steps: steps.map((s) => s.id) });
+    if (flowStatus.gap || technical.gap || suite.gap) gapped++;
+    rows.push({ useCase: u, data, cells: ['', '', useCase, flowBox, techBox, suiteBox], links, steps: steps.map((s) => s.id) });
   }
   const rowOf = new Map(rows.map((r) => [r.useCase, r]));
 

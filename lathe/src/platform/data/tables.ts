@@ -679,7 +679,7 @@ export interface EventTypeRow {
   file?: string;
 }
 
-/** The flow step or policy exchanges with the integration's outside system: a step as its actor carries it out, a policy as the product acts on the event it hears. */
+/** The flow step or policy exchanges with the integration's outside system: a step as its actor carries it out, a policy as the product acts on the event it hears. A step's link is one of the two references that run from use cases forward to interface design, deliberately (meta_stage). */
 export interface ExchangesWithRow {
   source_id: string;
   target_id: string;
@@ -759,7 +759,7 @@ export interface FlowStepRow {
   path: string;
   /** The step's place on its path, from 1, among every interface's steps; each interface's version skips the other interfaces' variants. */
   position: number;
-  /** The one interface that does this step, which makes it a variant, such as opening the app from the Dock; none when every interface that offers the use case does it. The interface offers the step's use case. */
+  /** The one interface that does this step, which makes it a variant, such as opening the app from the Dock; none when every interface that offers the use case does it. The interface offers the step's use case. One of the two references that run from use cases forward to interface design, deliberately (meta_stage). */
   interface_id?: string;
 }
 
@@ -1121,7 +1121,7 @@ export interface PredicateRow {
   file?: string;
 }
 
-/** The view presents the command or query: a person sends the command or asks the query there, so a step that invokes it is carried out in the view on a web app or desktop interface. A record of a product's own interaction design kind presents them the same way, once the product adds that pair with a product_relation named presents: a command line's invocation that carries out several commands and queries, so a step that invokes one is carried out through it on a CLI or agent tools interface. */
+/** The view presents the command or query: a person sends the command or asks the query there, so a step that invokes it is carried out in the view on a web app or desktop interface. A record of a product's own interface design kind presents them the same way, once the product adds that pair with a product_relation named presents: a command line's invocation that carries out several commands and queries, so a step that invokes one is carried out through it on a CLI or agent tools interface. */
 export interface PresentsRow {
   source_id: string;
   target_id: string;
@@ -1140,7 +1140,7 @@ export interface ProductKindRow {
   /** The kind its records sit under, their one parent: one of Lathe's or another product kind. Its table gets a required <parent_kind>_id column. */
   parent_kind: string;
   /** The stage its records belong to, any of the six, if one; such as technical-specification for a kind of code Lathe has no kind for. */
-  stage?: "discovery" | "domain-model" | "use-cases" | "interaction-design" | "technical-specification" | "test-plan";
+  stage?: "discovery" | "domain-model" | "use-cases" | "interface-design" | "technical-specification" | "test-plan";
   /** Whether a record of the kind is an obligation, to be designed, built and proved. An obligation kind joins the obligation supertype, and the records something outside the product may provide (provided_by_source). */
   obligation: boolean;
   /** How its IDs are written, its own pattern, such as <command>-CLI. */

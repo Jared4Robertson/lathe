@@ -12,25 +12,26 @@ describe('graph neighborhood', () => {
   const index = testIndex();
 
   it('LA-EXP-DS09-T01 LA-V93-R10-T01 Depth counts levels of the tree below the focus, stages and folders included, with the parent kept; siblings and links are not added', () => {
-    // Depth 1: the requirement and its use case, the parent at the left edge. Its test is in the test plan, not below it.
+    // Depth 1: the requirement and its use case's UC requirements group (the use case holds its flow too), the parent at
+    // the left edge. Its test is in the test plan, not below it.
     const one = neighborhood(index, 'P-D-UC01-R01', 1);
     expect(one.nodes[0]).toMatchObject({ id: 'P-D-UC01-R01', distance: 0 });
-    expect(ids(one)).toEqual(['P-D-UC01', 'P-D-UC01-R01']);
+    expect(ids(one)).toEqual(['P-D-UC01-R01', 'P-D-UC01/uc_requirement']);
     // A leaf has nothing below it, so depth 2 and 3 frame the same picture.
-    expect(ids(neighborhood(index, 'P-D-UC01-R01', 3))).toEqual(['P-D-UC01', 'P-D-UC01-R01']);
+    expect(ids(neighborhood(index, 'P-D-UC01-R01', 3))).toEqual(['P-D-UC01-R01', 'P-D-UC01/uc_requirement']);
     // From the Use cases stage, which holds only capabilities and so lists them itself, each depth one level further
-    // down: the capability, its use case, its requirements.
+    // down: the capability, its use case, its groups of requirements and of flows.
     const stage = (d: number) => ids(neighborhood(index, 'P-D/use-cases', d));
     expect(stage(1)).toEqual(['P-D', 'P-D-CAP01', 'P-D/use-cases']);
     expect(stage(2)).toEqual(['P-D', 'P-D-CAP01', 'P-D-UC01', 'P-D/use-cases']);
-    expect(stage(3)).toEqual(expect.arrayContaining(['P-D-UC01', 'P-D-UC01-R01', 'P-D-UC01-R02']));
+    expect(stage(3)).toEqual(expect.arrayContaining(['P-D-UC01', 'P-D-UC01/uc_requirement', 'P-D-UC01/flow']));
     // From the Domain model stage, which keeps its folders: its folders, then their records.
     expect(ids(neighborhood(index, 'P-D/domain-model', 1))).toEqual(expect.arrayContaining(['P-D', 'P-D/domain-model', 'P-D/domain-model/aggregate']));
     expect(ids(neighborhood(index, 'P-D/domain-model', 1))).not.toContain('P-D-A1');
     // Each node at its level, reached from the one above it.
     const four = neighborhood(index, 'P-D/use-cases', 4);
     const distance = new Map(four.nodes.map((x) => [x.id, x.distance]));
-    expect(['P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01'].map((id) => distance.get(id))).toEqual([1, 2, 3]);
+    expect(['P-D-CAP01', 'P-D-UC01', 'P-D-UC01/uc_requirement', 'P-D-UC01-R01'].map((id) => distance.get(id))).toEqual([1, 2, 3, 4]);
     // Down as well as up: from an aggregate, its folder above and its entity below; no sibling and no link.
     const aggregate = neighborhood(index, 'P-D-A4', 1);
     expect(ids(aggregate)).toEqual(['P-D-A4', 'P-D-EN06', 'P-D/domain-model/aggregate']);
@@ -39,8 +40,8 @@ describe('graph neighborhood', () => {
   });
 
   it('LA-EXP-SP04-T LA-V93-R13-T01 Filters hide kinds, nothing is reached through them, and the focus is never hidden', () => {
-    // Hiding use cases cuts the tree there: nothing above the requirement is reached.
-    expect(ids(neighborhood(index, 'P-D-UC01-R01', 3, filters(['use_case'])))).toEqual(['P-D-UC01-R01']);
+    // Hiding use cases cuts the tree there: nothing above the requirement's group is reached.
+    expect(ids(neighborhood(index, 'P-D-UC01-R01', 3, filters(['use_case'])))).toEqual(['P-D-UC01-R01', 'P-D-UC01/uc_requirement']);
     // Hiding entities leaves the aggregate without them; a folder goes with its kind, a stage has none and stays.
     expect(ids(neighborhood(index, 'P-D-A4', 1, filters(['entity'])))).toEqual(['P-D-A4', 'P-D/domain-model/aggregate']);
     expect(ids(neighborhood(index, 'P-D/domain-model', 2, filters(['aggregate'])))).not.toContain('P-D-A1');
@@ -70,7 +71,7 @@ describe('graph neighborhood', () => {
     const n = neighborhood(index, 'P-D/use-cases', 4);
     const column = new Map(n.nodes.map((x) => [x.id, x.column]));
     // The parent one column to the left, each level below one more to the right; the leftmost column is 0.
-    expect(['P-D', 'P-D/use-cases', 'P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01'].map((id) => column.get(id))).toEqual([0, 1, 2, 3, 4]);
+    expect(['P-D', 'P-D/use-cases', 'P-D-CAP01', 'P-D-UC01', 'P-D-UC01/uc_requirement', 'P-D-UC01-R01'].map((id) => column.get(id))).toEqual([0, 1, 2, 3, 4, 5]);
     // Every node's parent line runs from one column to the next.
     for (const e of n.edges.filter((e) => e.relation === 'parent')) expect(column.get(e.target)).toBe(column.get(e.source)! + 1);
     // From the domain at depth 2: stages in one column, every folder (or a one-folder stage's record) in the next,
@@ -78,7 +79,7 @@ describe('graph neighborhood', () => {
     const domain = neighborhood(index, 'P-D', 2);
     const dc = new Map(domain.nodes.map((x) => [x.id, x.column]));
     expect(dc.get('P-D/domain-model')).toBe(dc.get('P-D/test-plan'));
-    const folders = ['P-D/domain-model/aggregate', 'P-D-CAP01', 'P-D/interaction-design/flow', 'P-D/technical-specification/table', 'P-D/test-plan/use_case_test'];
+    const folders = ['P-D/domain-model/aggregate', 'P-D-CAP01', 'P-D/interface-design/endpoint', 'P-D/technical-specification/table', 'P-D/test-plan/use_case_test'];
     expect(new Set(folders.map((id) => dc.get(id)))).toEqual(new Set([dc.get('P-D/domain-model')! + 1]));
   });
 

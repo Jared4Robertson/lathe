@@ -2,7 +2,7 @@
 // every interface that offers it, and the interface's kind and pattern say how each step is carried out there. Its
 // version leaves out the other interfaces' variants and, for each step that invokes a command or query, names where it
 // is carried out: the views that present it (a web app or desktop: views of every such interface, or of this one), the
-// endpoints that expose it (an API), or the records of the product's own interaction design kinds under it or that
+// endpoints that expose it (an API), or the records of the product's own interface design kinds under it or that
 // present it (a CLI or agent tools, such as Lathe's CLI commands or an invocation that carries out several commands:
 // one that sits under an interface reaches only that one). An interface of kind other reaches its operations in a way
 // no record says. Its actor is the first of the use case's actors the interface lists (the use case's main actor when it lists
@@ -80,12 +80,12 @@ export function interfaceVersions(view: Pick<ReadView, 'rows' | 'schema'>): (use
     const operation = String(e.command_id ?? e.query_id ?? '');
     endpointsOf.set(operation, [...(endpointsOf.get(operation) ?? []), String(e.id)]);
   }
-  // The records of the product's own interaction design kinds under a command or a query (a CLI command), and those
+  // The records of the product's own interface design kinds under a command or a query (a CLI command), and those
   // that present it (an invocation that carries out several), each with the one interface it sits under, if it does.
   const ownOf = new Map<string, string[]>();
   const ownInterface = new Map<string, string | null>();
   for (const kind of Object.values(view.schema.kinds)) {
-    if (kind.productId === null || kind.obligation || kind.stage !== 'interaction-design') continue;
+    if (kind.productId === null || kind.obligation || kind.stage !== 'interface-design') continue;
     const under = kind.parents.find((p) => p.kind === 'interface')?.column;
     for (const r of rows(kind.name)) ownInterface.set(String(r.id), under && typeof r[under] === 'string' ? r[under] : null);
     for (const parent of kind.parents) {

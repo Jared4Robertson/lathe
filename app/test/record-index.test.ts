@@ -52,7 +52,7 @@ describe('LA-PRD-UC08-R05-T01 the meta model gives kinds, stages and relations f
     expect(meta.kinds.get('uc_requirement')).toMatchObject({ label: 'UC requirement', stage: 'use-cases', parent_kinds: ['use_case'], obligation: true, id_scope: 'parent' });
     expect(meta.kinds.get('endpoint')!.parent_kinds).toEqual(['command', 'query']);
     expect(meta.kinds.get('view')).toMatchObject({ parent_kinds: [], id_scope: 'product' });
-    expect(meta.stages.map((s) => s.stage)).toEqual(['discovery', 'domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan']);
+    expect(meta.stages.map((s) => s.stage)).toEqual(['discovery', 'domain-model', 'use-cases', 'interface-design', 'technical-specification', 'test-plan']);
     expect(meta.stages[0]).toMatchObject({ label: 'Discovery' });
     expect(meta.relations).toContainEqual(expect.objectContaining({ relation: 'fulfills', source_kind: 'flow_step', target_kind: 'uc_requirement', role: 'design', forward_label: 'Fulfills' }));
     expect(meta.columns.uc_requirement.map((c) => c.name)).toContain('statement');
@@ -60,7 +60,7 @@ describe('LA-PRD-UC08-R05-T01 the meta model gives kinds, stages and relations f
 
   it('gives a product\'s own kind a place after Lathe\'s, with its declared parent and its product', () => {
     const index = recordIndexOf(productKindWorkspace(), 'DM');
-    expect(index.meta.kindList.at(-1)).toMatchObject({ kind: 'security_control', label: 'Security control', stage: 'interaction-design', parent_kinds: ['endpoint'], obligation: true, declared_by: 'DM' });
+    expect(index.meta.kindList.at(-1)).toMatchObject({ kind: 'security_control', label: 'Security control', stage: 'interface-design', parent_kinds: ['endpoint'], obligation: true, declared_by: 'DM' });
     expect(index.byId.get('DM-SHOP-EP01-SC01')).toMatchObject({ kind: 'security_control', parent: 'DM-SHOP-EP01', domain: 'DM-SHOP' });
   });
 });

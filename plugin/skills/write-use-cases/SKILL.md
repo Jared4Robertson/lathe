@@ -1,11 +1,11 @@
 ---
 name: write-use-cases
-description: Write or change Lathe use cases - the capabilities that group a domain's use cases, each use case's actors and goal, its UC requirements, the product's roles, and the patterns use cases share with their settings and rules. Use when adding what an actor does with the product, splitting a use case, grouping use cases into capabilities, naming or renaming a capability or use case, or writing behavior several use cases share as a pattern, in a repo with lathe.config.json.
+description: Write or change Lathe use cases - the capabilities that group a domain's use cases, each use case's actors and goal, its UC requirements, its one flow and the flow's steps (which fulfill the requirements, invoke a command or query, exchange with integrations and may be one interface's variant), the product's roles, and the patterns use cases share with their settings and rules. Use when adding what an actor does with the product, splitting a use case, writing how a use case is carried out step by step, grouping use cases into capabilities, naming or renaming a capability or use case, or writing behavior several use cases share as a pattern, in a repo with lathe.config.json.
 ---
 
 # Write use cases
 
-A use case is an actor's goal: who acts, what they want, and the rules the product must follow while they reach it. It changes nothing itself and names no aggregate or event; what it changes follows from the commands its flows' steps invoke. It happens through one or more interfaces, with one flow each (`design-interactions`). Write use cases after the domain model (`model-a-domain`), whose commands, queries and terms they use.
+A use case is an actor's goal: who acts, what they want, the rules the product must follow while they reach it, and its flow: the steps the actor and the product take, once, whatever the interface. It changes nothing itself and names no aggregate or event; what it changes follows from the commands its flow's steps invoke. Each interface that offers it carries the same flow out its own way (`design-interfaces`). Write use cases after the domain model (`model-a-domain`), whose commands, queries and terms they use.
 
 Change the spec only with Lathe's MCP tools (or the `lathe` CLI), never by editing files. Fields, ID patterns and checks are in `lathe/REFERENCE.md` in the Lathe package (`node_modules/@jaredrob/lathe/REFERENCE.md` in a product repo). Before you write, read the domain's terms, commands and queries, its capabilities and use cases (so you do not repeat one), and the product's patterns.
 
@@ -49,11 +49,23 @@ A UC requirement is one rule the use case must follow at the level of the actor'
 
 - One rule per record, each testable on its own.
 - It does not restate the domain model. An invariant, specification or constraint the use case's command keeps is already owed there; write a requirement only for what this use case adds: an order of checks, what the actor sees, what is refused and how.
-- It says what, not how. A rule that names a route, status code, field limit or screen element is a view or API requirement (`design-interactions`).
+- It says what, not how. A rule that names a route, status code, field limit or screen element is a view or API requirement (`design-interfaces`).
 - It holds whatever the interface: a step of its flow fulfills it. A rule only one interface can meet is a view or API requirement, or that interface's pattern rule, instead.
 - Sort more than about 8 into groups (Validation, Errors), at least two each.
 
 Every use case has at least one actor and one requirement, unless all its rules come from patterns.
+
+## The flow
+
+**One flow per use case, the same through every interface.** Write the steps once, in the people's words, as what the actor does and decides and what the product answers. Each interface's version of the flow is derived from the steps' commands and queries by the interface's pattern and shown, never written: a second flow for another interface is the same flow said again. Alternate courses (a refusal, an optional branch) are paths within the flow, beside the main path. Every UC requirement is fulfilled by a step of the flow; a requirement it misses is not designed. A step fulfills only requirements of its own use case.
+
+**A step invokes at most one command or query**, never a route or a screen; one that only shows a result invokes nothing. A step whose actor reaches an outside system exchanges with that integration, naming it from the interface design stage (an integration is shared, so reuse one before adding it). That is one of the two references a use case's flow makes forward to interface design, deliberately.
+
+**Step titles** say what the actor or the system does, in the present tense ("The member picks a tool"). They carry no text beyond the title; what a title cannot hold goes into a requirement the step fulfills. A step says what the actor does or learns, never how an interface does it (no command names, screens or tools).
+
+**Variants are rare.** A step only one interface can do (opening the app from the Dock, a phone's sheet) names that interface, the other forward reference, and is in that interface's version alone. Before you mark one, ask whether the others do the same thing another way: then it is one step. Two steps that say one thing for two interfaces are one step; variants of two interfaces that invoke the same command or query are an error (`step-repeated-per-interface`). If only one interface can meet a rule (a disabled button, a status code), it is a view or API requirement, or that interface's pattern rule, instead.
+
+A flow is titled as its use case ("Borrow a tool").
 
 ## Patterns
 
@@ -69,5 +81,4 @@ When two or more use cases would state the same rules, write those rules once as
 
 - Titles: sentence case, no trailing period, unique within kind and product. A requirement or pattern rule is a sentence that is true when the rule holds ("An unavailable tool is refused with the reason").
 - Something undecided is a question about the use case with an owner role, never "TBD" in a requirement.
-- A flow step says what the actor does or learns, never how an interface does it (no command names, screens or tools); each interface's version is derived (`step-repeated-per-interface`).
-- Next, write each use case's flow (`design-interactions`), then finish with `check-and-fix`.
+- Next, design the interfaces that carry each flow out, with the views, endpoints and integrations its steps reach (`design-interfaces`), then finish with `check-and-fix`.

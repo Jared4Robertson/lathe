@@ -16,7 +16,7 @@
 {"value_object_id":"LA-VO14","position":3,"name":"File","meaning":"The file that runs it, from the repo root; required when automated.","type":"text","required":false,"column_name":"file"}
 {"value_object_id":"LA-VO14","position":4,"name":"Manual reason","meaning":"Why a person runs it; given when manual, and only then.","type":"text","required":false,"column_name":"manual_reason"}
 {"value_object_id":"LA-VO15","position":1,"name":"Type","meaning":"text, integer, boolean or date.","type":"text","required":true,"example":"text"}
-{"value_object_id":"LA-VO16","position":1,"name":"Stage","meaning":"domain-model, use-cases, interaction-design, technical-specification or test-plan.","type":"text","required":true,"example":"use-cases"}
+{"value_object_id":"LA-VO16","position":1,"name":"Stage","meaning":"discovery, domain-model, use-cases, interface-design, technical-specification or test-plan.","type":"text","required":true,"example":"use-cases"}
 {"value_object_id":"LA-VO17","position":1,"name":"Role","meaning":"design, build or proof.","type":"text","required":true,"example":"proof"}
 {"value_object_id":"LA-VO18","position":1,"name":"Group","meaning":"The heading as first written; two groups are one when they are equal trimmed and in any letter case.","type":"text","required":true,"example":"Missing links"}
 {"value_object_id":"LA-VO41","position":1,"name":"Name","meaning":"Lower-case letters and digits in words joined by single hyphens, such as too-many-children.","type":"text","required":true,"column_name":"name","example":"too-many-children"}

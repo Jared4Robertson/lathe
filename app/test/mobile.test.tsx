@@ -312,7 +312,7 @@ describe('Lathe on a phone', () => {
     await openApp('/P-D-UC01-R01', served());
     await screen.findByRole('heading', { level: 1 });
     const trail = within(document.querySelector<HTMLElement>('.header-strip-trail')!);
-    expect(trail.getAllByRole('link').map((a) => a.textContent)).toEqual(['Lend a thing']);
+    expect(trail.getAllByRole('link').map((a) => a.textContent)).toEqual(['UC requirements']);
     const more = trail.getByRole('button', { name: /hidden levels?$/ });
     fireEvent.click(more);
     const hidden = within(screen.getByRole('list', { name: 'Hidden levels' })).getAllByRole('link').map((a) => a.getAttribute('href'));
@@ -332,10 +332,10 @@ describe('Lathe on a phone', () => {
   const proveLaV61R23T01 = async () => {
     phone();
     window.sessionStorage.setItem('lathe:place', JSON.stringify({ depth: 1, hiddenKinds: [], card: { open: true, expanded: true } }));
-    await openApp('/P-D-UC01-R01?stage=graph', served());
-    // The requirement's use case, its parent, is drawn beside it.
-    await waitFor(() => expect(boxElement('P-D-UC01')).not.toBeNull());
-    const at = pointOn('P-D-UC01');
+    await openApp('/P-D-UC01?stage=graph', served());
+    // The use case's capability, its parent, is drawn beside it.
+    await waitFor(() => expect(boxElement('P-D-CAP01')).not.toBeNull());
+    const at = pointOn('P-D-CAP01');
     const canvas = canvasOf();
     // A drag that starts on the box pans: it opens nothing. So does a pinch.
     const finger = (id: number, x: number, y: number) => ({ clientX: x, clientY: y, pointerType: 'touch', pointerId: id, button: 0 });
@@ -348,14 +348,14 @@ describe('Lathe on a phone', () => {
     fireEvent.pointerUp(canvas, finger(7, at.x, at.y));
     // A tap on the canvas away from every box does nothing.
     tapEmpty();
-    expect(window.location.pathname).toBe('/P-D-UC01-R01');
+    expect(window.location.pathname).toBe('/P-D-UC01');
     // A finger's tap on the box drawn on the canvas, wavering a little as it lands, opens it at once.
     const pan = cameraOf();
     fireEvent.pointerDown(canvas, finger(7, at.x, at.y));
     fireEvent.pointerMove(canvas, finger(7, at.x + 4, at.y + 3));
     expect(cameraOf()).toBe(pan);
     fireEvent.pointerUp(canvas, finger(7, at.x + 4, at.y + 3));
-    await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC01'));
+    await waitFor(() => expect(window.location.pathname).toBe('/P-D-CAP01'));
     // No card stands in for the record sheet: nothing is left selected.
     expect(document.querySelector('.card[role="status"]')).toBeNull();
     // On the ERD a tap opens a box at once too.

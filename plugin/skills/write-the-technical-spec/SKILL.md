@@ -5,7 +5,7 @@ description: Write or change a Lathe product's technical specification - the one
 
 # Write the technical specification
 
-The technical specification says which code implements each design record and how the domain's data is stored. One concrete kind implements each design kind, and each technical record names the file that holds it. Write it after the domain model and the interaction design it implements.
+The technical specification says which code implements each design record and how the domain's data is stored. One concrete kind implements each design kind, and each technical record names the file that holds it. Write it after the domain model and the interface design it implements.
 
 Change the spec only with Lathe's MCP tools (or the `lathe` CLI), never by editing files. The technical kinds, what each implements, ID patterns and fields are in `lathe/REFERENCE.md` in the Lathe package (`node_modules/@jaredrob/lathe/REFERENCE.md` in a product repo). Read the design record you implement and the real code first: a record names a real unit in a real file, not a wish.
 

@@ -293,7 +293,7 @@ test.describe('graph', () => {
   test('LA-V93-R29-T05 a label keeps its size in the map when the focus changes and the camera zooms, or as the focus\'s child reads at the readable size', async ({ page }) => {
     await openPage(page, `${DOMAIN}?stage=graph`);
     await nodes(page);
-    const target = `${DOMAIN.slice(1)}/interaction-design`;
+    const target = `${DOMAIN.slice(1)}/interface-design`;
     const size = async () => {
       const s = await sceneOf(page);
       const b = s.boxes.find((x) => x.id === target)!;
@@ -304,13 +304,13 @@ test.describe('graph', () => {
     expect((await size()).px).toBeGreaterThanOrEqual(12.5 - 1e-6);
     // Focused, then walked out and in again: its font size in map units stays, and its size on screen follows the zoom.
     await clickBox(page, target);
-    await page.waitForURL(/\/interaction-design(\?|$)/);
+    await page.waitForURL(/\/interface-design(\?|$)/);
     await page.waitForTimeout(1300);
     const before = await size();
     await page.goBack();
     await page.waitForTimeout(1300);
     await page.goForward();
-    await page.waitForURL(/\/interaction-design(\?|$)/);
+    await page.waitForURL(/\/interface-design(\?|$)/);
     await page.waitForTimeout(1300);
     const focused = await size();
     expect(focused.font).toBe(before.font);

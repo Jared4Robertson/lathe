@@ -199,7 +199,7 @@ export function lineStroke(look: Look, line: Pick<Line, 'link'>): { color: strin
  * structural records' (product, domain), a group's and an open question's.
  */
 export const BOX_LOOKS = [
-  'stage-discovery', 'stage-domain-model', 'stage-use-cases', 'stage-interaction-design', 'stage-technical-specification', 'stage-test-plan',
+  'stage-discovery', 'stage-domain-model', 'stage-use-cases', 'stage-interface-design', 'stage-technical-specification', 'stage-test-plan',
   'stage-structural', 'stage-group', 'kind-question',
 ] as const;
 export type BoxLook = (typeof BOX_LOOKS)[number];
@@ -217,7 +217,7 @@ export function stageColors(look: Look, stage: Plate['stage']): { edge: string; 
     case 'discovery': return { edge: look.discoveryEdge, fill: look.discoveryFill };
     case 'domain-model': return { edge: look.domainModelEdge, fill: look.domainModelFill };
     case 'use-cases': return { edge: look.useCasesEdge, fill: look.useCasesFill };
-    case 'interaction-design': return { edge: look.interactionDesignEdge, fill: look.interactionDesignFill };
+    case 'interface-design': return { edge: look.interfaceDesignEdge, fill: look.interfaceDesignFill };
     case 'technical-specification': return { edge: look.technicalSpecificationEdge, fill: look.technicalSpecificationFill };
     case 'test-plan': return { edge: look.testPlanEdge, fill: look.testPlanFill };
     default: return { edge: look.structuralEdge, fill: look.structuralFill };

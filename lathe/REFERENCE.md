@@ -11,7 +11,7 @@ flow step (`lathe use-case add-flow-step`, the plugin's `use_case_add_flow_step`
 lines it changed, or is refused with every reason; git is the history. Each aggregate reads through its own queries.
 
 The model is drawn from domain-driven design, CQRS and event storming, in six stages: discovery (the business
-outcomes the product exists to achieve), the domain model, use cases on top of it, their interaction design, the
+outcomes the product exists to achieve), the domain model, use cases on top of it, their interface design, the
 technical records that implement each design record, and the test plan. Links run from what is defined first to
 what is defined later. A capability names the outcomes it serves, so the trace runs from an outcome to its
 capabilities, their use cases, the code and the tests. An outcome names what measures it (`measured_by`): a test,
@@ -35,7 +35,7 @@ exists and names the test's ID. An obligation something outside the product prov
 proved through its provider.
 
 **Complexity.** Every kind says whether its records are essential complexity, what the problem itself demands and
-the product decides once (discovery, the domain model, use cases and patterns, the what of interaction design), or
+the product decides once (discovery, the domain model, use cases and patterns, the what of interface design), or
 accidental complexity, what comes from the means used to build it (the technical specification); a test follows what
 it proves, and a standard its type (a quality is essential, engineering accidental). An accidental record is derived
 (a tooling record `generates` it), provided (`provided_by`), or a fill: written by hand at a pattern's slot
@@ -850,7 +850,7 @@ An event is named for what happened, such as Loan opened or Payment sent. The ch
 
 A domain is named for a technology layer or delivery channel rather than a business capability.
 
-A domain is a vertical slice of business capability: it owns its model, its use cases, their interaction design, the technical records that implement them and their tests. Technology is expressed through the technical kinds inside each domain, never as a domain of its own. A domain whose title or domain code (its ID after the product prefix, such as LEND in TL-LEND) names a technology splits one capability across several domains. The words are web app, frontend, front end, backend, back end, API, UI, server, database, DB, desktop, mobile, engine, infrastructure, infra and Electron, matched as whole words in any letter case, with or without a space or hyphen inside the two-word ones, and in the plural. Only the title and code are read, never the description. Name the domain for the capability it serves.
+A domain is a vertical slice of business capability: it owns its model, its use cases, their interface design, the technical records that implement them and their tests. Technology is expressed through the technical kinds inside each domain, never as a domain of its own. A domain whose title or domain code (its ID after the product prefix, such as LEND in TL-LEND) names a technology splits one capability across several domains. The words are web app, frontend, front end, backend, back end, API, UI, server, database, DB, desktop, mobile, engine, infrastructure, infra and Electron, matched as whole words in any letter case, with or without a space or hyphen inside the two-word ones, and in the plural. Only the title and code are read, never the description. Name the domain for the capability it serves.
 
 <a id="check-aggregate-too-large"></a>
 
@@ -916,7 +916,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 
 ## Use cases
 
-Capabilities, the use cases in them with their actors and UC requirements, and the patterns use cases and domains follow.
+Capabilities, the use cases in them with their actors and UC requirements, each use case's flow and its steps (how it is carried out, whatever the interface), and the patterns use cases and domains follow.
 
 <a id="kind-capability"></a>
 
@@ -1028,6 +1028,67 @@ One rule a use case must follow, whatever the interface: a step of the use case'
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `("trim"("statement") != '')`
+
+<a id="kind-flow"></a>
+
+### Flow (`flow`)
+
+How its use case is carried out, whatever the interface: the steps on its main path and its alternate paths. A use case has one flow, and each interface that offers the use case has its own version of it, derived from the steps' commands and queries by the interface's pattern.
+
+- **Parents:** [`use_case`](#kind-use_case) (`use_case_id`)
+- **Children:** [`flow_step`](#kind-flow_step), [`flow_test`](#kind-flow_test)
+- **Complexity:** essential: what the problem itself demands, decided once per product
+- **Obligation:** no
+- **ID:** `<use case>-FL`, such as `TL-LEND-UC01-FL`; it starts with its parent's ID
+- **Links out:** none
+- **Links in:** Questions about this ([`about`](#relation-about))
+- **Checks:** [`step-order`](#check-step-order), [`flow-title-off-pattern`](#check-flow-title-off-pattern), [`handoff-not-connected`](#check-handoff-not-connected), [`use-case-changes-many-aggregates`](#check-use-case-changes-many-aggregates)
+- **Gaps:** [`flow-without-main-path`](#gap-flow-without-main-path), [`flow-without-test`](#gap-flow-without-test)
+
+<a id="table-flow"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The flow's ID: its use case's ID and FL, such as TL-LEND-UC01-FL. |
+| `title` | VARCHAR | yes | The flow's name: its use case's title, such as Borrow a tool. |
+| `use_case_id` | VARCHAR → [`use_case`](#table-use_case) | yes | The use case it carries out, which has no other flow. |
+
+- **Key:** `id`
+- **Unique:** `use_case_id`
+- **Rule:** `("trim"(title) != '')`
+
+<a id="kind-flow_step"></a>
+
+### Flow step (`flow_step`)
+
+One step of a flow, in order on its path, in the words of the people who take it. It fulfills UC requirements of its own use case, invokes at most one command or query and may exchange with integrations; where it happens is its interface's, derived. A step only one interface can do is a variant: it names that interface.
+
+- **Parents:** [`flow`](#kind-flow) (`flow_id`)
+- **Children:** none
+- **Complexity:** essential: what the problem itself demands, decided once per product
+- **Obligation:** no
+- **ID:** `<flow>-S<nn>`, such as `TL-LEND-UC01-FL-S01`; it starts with its parent's ID
+- **Links out:** Exchanges with ([`exchanges_with`](#relation-exchanges_with)), Fulfills ([`fulfills`](#relation-fulfills)), Invokes ([`invokes`](#relation-invokes))
+- **Links in:** Questions about this ([`about`](#relation-about))
+- **Checks:** [`step-order`](#check-step-order), [`step-unreached`](#check-step-unreached), [`use-case-changes-many-aggregates`](#check-use-case-changes-many-aggregates), [`another-actor-writes-in-a-step`](#check-another-actor-writes-in-a-step), [`step-repeated-per-interface`](#check-step-repeated-per-interface)
+- **Gaps:** [`record-untraced`](#gap-record-untraced)
+
+<a id="table-flow_step"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The step's ID: its flow's ID and S<nn>, such as TL-LEND-UC01-FL-S01. |
+| `title` | VARCHAR | yes | What happens, in a few words. |
+| `flow_id` | VARCHAR → [`flow`](#table-flow) | yes | The flow it belongs to. |
+| `path` | VARCHAR | yes | The path through the flow the step is on, such as main or refused. |
+| `position` | INTEGER | yes | The step's place on its path, from 1, among every interface's steps; each interface's version skips the other interfaces' variants. |
+| `interface_id` | VARCHAR → [`interface`](#table-interface) | no | The one interface that does this step, which makes it a variant, such as opening the app from the Dock; none when every interface that offers the use case does it. The interface offers the step's use case. One of the two references that run from use cases forward to interface design, deliberately (meta_stage). |
+
+- **Key:** `id`
+- **Unique:** `flow_id`, `path`, `position`
+- **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(path) != '')`
+- **Rule:** `("position" >= 1)`
 
 <a id="kind-pattern"></a>
 
@@ -1162,6 +1223,16 @@ A pattern that no use case and no domain follows.
 
 No domain owes its rules, so they count in no domain's coverage. Link the use cases or domains that follow it with `follows`, or remove the pattern if nothing needs it.
 
+<a id="check-step-order"></a>
+
+### `step-order`
+
+**Error** · Lathe's · Kinds: [`flow_step`](#kind-flow_step), [`flow`](#kind-flow), [`journey_step`](#kind-journey_step), [`journey`](#kind-journey)
+
+The steps on each path of a flow or a journey are numbered 1, 2, 3 and so on, without gaps.
+
+A flow's steps, and a journey's, are read in `position` within their `path`, a short name such as main or refused, compared trimmed and in any letter case. The schema gives each step a whole number that no other step on its path has; a path whose positions skip a number is reported once, on the first step after the gap. Renumber the steps of the path to close the gap, or move a step with its move command.
+
 <a id="check-lone-child"></a>
 
 ### `lone-child`
@@ -1172,6 +1243,16 @@ A capability or a group with exactly one child.
 
 A level that holds one record groups nothing. A capability with exactly one child is reported, counting its own children of every kind (its use cases, and the records of a product's own kinds under it) but not theirs; one with none is a coverage gap instead. A group (the `group_name` of every kind that has one, read from the record_group view: terms, UC requirements, view requirements, API requirements, pattern rules, standard rules and a product's own kinds) is counted among its parent's children of one kind, compared trimmed and in any letter case, and reported on that parent. Merge it into a neighbor, or give it more.
 
+<a id="check-step-unreached"></a>
+
+### `step-unreached`
+
+**Warning** · Lathe's · Kinds: [`flow_step`](#kind-flow_step), [`endpoint`](#kind-endpoint)
+
+A step that invokes a command or query one of the interfaces that offer its use case cannot reach.
+
+A use case's flow is the same through every interface that offers it, and each interface carries a step out through its own means: a web app or desktop in a view that presents the step's command or query (a view of every such interface, or of that one), an API through the endpoint that exposes it, a CLI or agent tools through a record of the product's own interface design kinds under it (such as Lathe's CLI commands) or that presents it (such as an invocation that carries out several commands and queries; one that sits under an interface reaches only that one, any other every CLI and agent tools of its product). So each interface that offers the use case must reach what each step invokes, but for a step that is another interface's variant. An interface of kind other reaches its operations in a way no record says, so it is not read. Have a view present the command or query, add the endpoint, or the product's own record under it or that presents it, make the step a variant of the interfaces that do reach it, or stop offering the use case through that interface.
+
 <a id="check-title-breaks-convention"></a>
 
 ### `title-breaks-convention`
@@ -1181,6 +1262,16 @@ A level that holds one record groups nothing. A capability with exactly one chil
 A capability, use case or journey title that breaks its naming convention: an interface named in it, a capability starting with The or an -ing word, or a list in a capability or journey.
 
 A capability is named as a noun phrase for a lasting ability of the business, two to four words: subject and activity noun, such as Invoice management or Member registration, or a single noun when the area is clear on its own, such as Catalog or Lending. A use case is named for one goal of its actor, verb first: verb and object, such as Borrow a tool or Approve an invoice, two to six words. A journey is named the same way for the summary goal its steps reach together, verb first, such as Get a damaged tool back in lending. None names a screen, a tool or a technology: a use case happens through interfaces, with one flow each, so the interface belongs to its flows, not its title, and a journey's steps are use cases. The check reads only the mechanical parts, in any letter case and as whole words: a use case, journey or capability title that holds one of its product's interface titles or the words command line, CLI, desktop app, web app, MCP, API, agent tools, command layer or page (or their plurals); a capability title of two or more words that starts with "The" or with an -ing word (a word of five or more letters ending in -ing, other than the few that are not verbs, such as thing, string and evening), so a single noun such as Lending passes; a capability or journey title that holds a list, a comma followed later by "and" or "or" (a use case that joins goals, with a list or with "and" alone, is use-case-title-joins-goals's); and a use case or journey title that starts with a CRUD verb (create, read, update, delete, change or edit) and holds the word record, records or data, since a use case names the domain's own verb for its goal (Borrow a tool, Model an aggregate), never a verb over a record or data. A journey strings goals, so its "and" with no comma is not read, nor is a use case or journey title that does not start with a verb. Rename the capability, use case or journey by the convention.
+
+<a id="check-flow-title-off-pattern"></a>
+
+### `flow-title-off-pattern`
+
+**Warning** · Lathe's · Kinds: [`flow`](#kind-flow), [`use_case`](#kind-use_case), [`interface`](#kind-interface)
+
+A flow whose title is not its use case's title.
+
+A use case has one flow, the same through every interface that offers it, so the flow's title is its use case's: a renamed use case then shows in a flow that still has the old title. The check compares trimmed and in any letter case. Retitle the flow as its use case.
 
 <a id="check-pattern-candidate"></a>
 
@@ -1212,6 +1303,26 @@ A use case title that joins goals with and, or, or a list.
 
 A use case is one goal of one actor (LA-STD-MODELING-R15), so its title names one goal, verb first (LA-STD-MODELING-R03), with no "and" and no list. The check reads each use case title, in any letter case, for the words and or or as whole words, or a comma, semicolon, ampersand, plus or slash, leaving out what follows the word with: a with phrase names the parts of the one thing the goal makes (Write a use case with its flow and tests), not a second goal. Split the use case into one per goal, each with its own requirements and flow, string them in a journey when one waits on the other, or name the parts with with when they are one thing. Capability and journey titles holding a list are title-breaks-convention's.
 
+<a id="check-another-actor-writes-in-a-step"></a>
+
+### `another-actor-writes-in-a-step`
+
+**Warning** · Lathe's · Kinds: [`flow_step`](#kind-flow_step), [`use_case`](#kind-use_case), [`command`](#kind-command)
+
+A flow step in which a role that is not one of its use case's actors sends a command.
+
+A use case is the goal of its own actors (LA-STD-MODELING-R15). When a step's subject is another role of the product, and the step sends a command, another actor's write sits inside the use case: it is what starts the use case, or a use case of its own, not a step. The check reads each flow step that invokes a command for a role of the use case's product that is not one of its actors, as the step's subject: the title starting with, or holding a clause (after a comma, semicolon or colon) starting with, the, a or an and the role's name, in any letter case. Start the flow where the use case's actors take over and say what started it in the goal, or make the write a use case of its own actor and string the two in a journey. The write is not counted by use-case-changes-many-aggregates.
+
+<a id="check-step-repeated-per-interface"></a>
+
+### `step-repeated-per-interface`
+
+**Error** · Lathe's · Kinds: [`flow_step`](#kind-flow_step)
+
+Variant steps of one flow, on two or more interfaces, that invoke the same command or query.
+
+A use case's flow is the same through every interface that offers it: a step says what the actor does or learns, and each interface's version of the flow, derived from the steps, says how that interface carries it out. A variant step is for something only one interface does. Variant steps of two or more interfaces that invoke the same command or query are the same step written once per interface, each naming its interface's mechanism. Make them one step every interface does, saying what the actor does or learns, with the requirements each fulfilled; keep a variant only for what that one interface alone does.
+
 ### Coverage gaps: use cases
 
 Each is reported in coverage, under the record that falls short, never as a problem.
@@ -1223,13 +1334,15 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | <a id="gap-use-case-without-actor"></a>`use-case-without-actor` | [`use_case`](#kind-use_case), `use_case_actor` | A use case with no actor. |
 | <a id="gap-use-case-without-requirement"></a>`use-case-without-requirement` | [`use_case`](#kind-use_case), [`uc_requirement`](#kind-uc_requirement) | A use case with no UC requirement that follows no pattern. |
 | <a id="gap-journey-step-unlinked"></a>`journey-step-unlinked` | [`journey_step`](#kind-journey_step), [`use_case`](#kind-use_case), [`policy`](#kind-policy) | A journey step that carries out no use case or policy yet. |
+| <a id="gap-use-case-without-flow"></a>`use-case-without-flow` | [`use_case`](#kind-use_case), [`flow`](#kind-flow) | A use case with no flow. |
+| <a id="gap-flow-without-main-path"></a>`flow-without-main-path` | [`flow`](#kind-flow), [`flow_step`](#kind-flow_step) | A flow with no step on its main path. |
 | <a id="gap-pattern-without-rule"></a>`pattern-without-rule` | [`pattern`](#kind-pattern), [`pattern_rule`](#kind-pattern_rule) | A pattern with no rule. |
 
-<a id="stage-interaction-design"></a>
+<a id="stage-interface-design"></a>
 
-## Interaction design
+## Interface design
 
-The product's interfaces and the use cases each offers, each use case's flow and its steps, and the views, endpoints and integrations the steps reach, with their requirements.
+The product's interfaces with the roles that use them and the use cases each offers, and the views, endpoints and integrations a flow's steps reach through them, with their requirements.
 
 <a id="kind-interface"></a>
 
@@ -1277,67 +1390,6 @@ One role that uses an interface, in order: a role of the interface's product. A 
 
 - **Key:** `interface_id`, `position`
 - **Unique:** `interface_id`, `role_name`
-- **Rule:** `("position" >= 1)`
-
-<a id="kind-flow"></a>
-
-### Flow (`flow`)
-
-How its use case is carried out, whatever the interface: the steps on its main path and its alternate paths. A use case has one flow, and each interface that offers the use case has its own version of it, derived from the steps' commands and queries by the interface's pattern.
-
-- **Parents:** [`use_case`](#kind-use_case) (`use_case_id`)
-- **Children:** [`flow_step`](#kind-flow_step), [`flow_test`](#kind-flow_test)
-- **Complexity:** essential: what the problem itself demands, decided once per product
-- **Obligation:** no
-- **ID:** `<use case>-FL`, such as `TL-LEND-UC01-FL`; it starts with its parent's ID
-- **Links out:** none
-- **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`step-order`](#check-step-order), [`flow-title-off-pattern`](#check-flow-title-off-pattern), [`handoff-not-connected`](#check-handoff-not-connected), [`use-case-changes-many-aggregates`](#check-use-case-changes-many-aggregates)
-- **Gaps:** [`flow-without-main-path`](#gap-flow-without-main-path), [`flow-without-test`](#gap-flow-without-test)
-
-<a id="table-flow"></a>
-
-| Column | Type | Required | Meaning |
-| --- | --- | --- | --- |
-| `id` | VARCHAR → `record_id` | yes | The flow's ID: its use case's ID and FL, such as TL-LEND-UC01-FL. |
-| `title` | VARCHAR | yes | The flow's name: its use case's title, such as Borrow a tool. |
-| `use_case_id` | VARCHAR → [`use_case`](#table-use_case) | yes | The use case it carries out, which has no other flow. |
-
-- **Key:** `id`
-- **Unique:** `use_case_id`
-- **Rule:** `("trim"(title) != '')`
-
-<a id="kind-flow_step"></a>
-
-### Flow step (`flow_step`)
-
-One step of a flow, in order on its path, in the words of the people who take it. It fulfills UC requirements of its own use case, invokes at most one command or query and may exchange with integrations; where it happens is its interface's, derived. A step only one interface can do is a variant: it names that interface.
-
-- **Parents:** [`flow`](#kind-flow) (`flow_id`)
-- **Children:** none
-- **Complexity:** essential: what the problem itself demands, decided once per product
-- **Obligation:** no
-- **ID:** `<flow>-S<nn>`, such as `TL-LEND-UC01-FL-S01`; it starts with its parent's ID
-- **Links out:** Exchanges with ([`exchanges_with`](#relation-exchanges_with)), Fulfills ([`fulfills`](#relation-fulfills)), Invokes ([`invokes`](#relation-invokes))
-- **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`step-order`](#check-step-order), [`step-unreached`](#check-step-unreached), [`use-case-changes-many-aggregates`](#check-use-case-changes-many-aggregates), [`another-actor-writes-in-a-step`](#check-another-actor-writes-in-a-step), [`step-repeated-per-interface`](#check-step-repeated-per-interface)
-- **Gaps:** [`record-untraced`](#gap-record-untraced)
-
-<a id="table-flow_step"></a>
-
-| Column | Type | Required | Meaning |
-| --- | --- | --- | --- |
-| `id` | VARCHAR → `record_id` | yes | The step's ID: its flow's ID and S<nn>, such as TL-LEND-UC01-FL-S01. |
-| `title` | VARCHAR | yes | What happens, in a few words. |
-| `flow_id` | VARCHAR → [`flow`](#table-flow) | yes | The flow it belongs to. |
-| `path` | VARCHAR | yes | The path through the flow the step is on, such as main or refused. |
-| `position` | INTEGER | yes | The step's place on its path, from 1, among every interface's steps; each interface's version skips the other interfaces' variants. |
-| `interface_id` | VARCHAR → [`interface`](#table-interface) | no | The one interface that does this step, which makes it a variant, such as opening the app from the Dock; none when every interface that offers the use case does it. The interface offers the step's use case. |
-
-- **Key:** `id`
-- **Unique:** `flow_id`, `path`, `position`
-- **Rule:** `("trim"(title) != '')`
-- **Rule:** `("trim"(path) != '')`
 - **Rule:** `("position" >= 1)`
 
 <a id="kind-view"></a>
@@ -1500,7 +1552,7 @@ An outside system the product exchanges with, such as a payment provider or a ma
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `("trim"(description) != '')`
 
-### Checks: interaction design
+### Checks: interface design
 
 <a id="check-view-unused"></a>
 
@@ -1522,16 +1574,6 @@ An integration that nothing uses: no flow step or policy exchanges with it, and 
 
 An integration has no owner: it exists because flow steps or policies exchange with it, or because it provides records of the product from outside it (provided_by), such as a platform or a dependency. One that nothing uses is a leftover, or a link is missing. Link the steps or policies that exchange with it with exchanges_with, name it the provider of what it provides, or remove it.
 
-<a id="check-step-order"></a>
-
-### `step-order`
-
-**Error** · Lathe's · Kinds: [`flow_step`](#kind-flow_step), [`flow`](#kind-flow), [`journey_step`](#kind-journey_step), [`journey`](#kind-journey)
-
-The steps on each path of a flow or a journey are numbered 1, 2, 3 and so on, without gaps.
-
-A flow's steps, and a journey's, are read in `position` within their `path`, a short name such as main or refused, compared trimmed and in any letter case. The schema gives each step a whole number that no other step on its path has; a path whose positions skip a number is reported once, on the first step after the gap. Renumber the steps of the path to close the gap, or move a step with its move command.
-
 <a id="check-endpoint-route-not-in-file"></a>
 
 ### `endpoint-route-not-in-file`
@@ -1552,55 +1594,13 @@ A view whose route no file of the UI components that render it names.
 
 A view's route is the address it is shown at, and the UI components that render it show it there, so one of their files names the route, written any way routes are written (`/tools/{toolId}`, `/tools/:toolId`, `/tools/<tool-id>`, `/tools/[toolId]`, a template's `${toolId}`, or a regular expression literal that matches it, such as `/^\/tools\/(\d+)$/`), in code, a string or a comment. Parameters match whatever their names, and only the path counts: a query string or fragment is not part of a route. Then a reader of the record finds the code, and an address changed on one side and not the other is caught. A view with no route, or whose components' files do not exist yet, is not checked. Correct the view's route, or name it in the file of the component that shows the view at that address.
 
-<a id="check-step-unreached"></a>
-
-### `step-unreached`
-
-**Warning** · Lathe's · Kinds: [`flow_step`](#kind-flow_step), [`endpoint`](#kind-endpoint)
-
-A step that invokes a command or query one of the interfaces that offer its use case cannot reach.
-
-A use case's flow is the same through every interface that offers it, and each interface carries a step out through its own means: a web app or desktop in a view that presents the step's command or query (a view of every such interface, or of that one), an API through the endpoint that exposes it, a CLI or agent tools through a record of the product's own interaction design kinds under it (such as Lathe's CLI commands) or that presents it (such as an invocation that carries out several commands and queries; one that sits under an interface reaches only that one, any other every CLI and agent tools of its product). So each interface that offers the use case must reach what each step invokes, but for a step that is another interface's variant. An interface of kind other reaches its operations in a way no record says, so it is not read. Have a view present the command or query, add the endpoint, or the product's own record under it or that presents it, make the step a variant of the interfaces that do reach it, or stop offering the use case through that interface.
-
-<a id="check-flow-title-off-pattern"></a>
-
-### `flow-title-off-pattern`
-
-**Warning** · Lathe's · Kinds: [`flow`](#kind-flow), [`use_case`](#kind-use_case), [`interface`](#kind-interface)
-
-A flow whose title is not its use case's title.
-
-A use case has one flow, the same through every interface that offers it, so the flow's title is its use case's: a renamed use case then shows in a flow that still has the old title. The check compares trimmed and in any letter case. Retitle the flow as its use case.
-
-<a id="check-another-actor-writes-in-a-step"></a>
-
-### `another-actor-writes-in-a-step`
-
-**Warning** · Lathe's · Kinds: [`flow_step`](#kind-flow_step), [`use_case`](#kind-use_case), [`command`](#kind-command)
-
-A flow step in which a role that is not one of its use case's actors sends a command.
-
-A use case is the goal of its own actors (LA-STD-MODELING-R15). When a step's subject is another role of the product, and the step sends a command, another actor's write sits inside the use case: it is what starts the use case, or a use case of its own, not a step. The check reads each flow step that invokes a command for a role of the use case's product that is not one of its actors, as the step's subject: the title starting with, or holding a clause (after a comma, semicolon or colon) starting with, the, a or an and the role's name, in any letter case. Start the flow where the use case's actors take over and say what started it in the goal, or make the write a use case of its own actor and string the two in a journey. The write is not counted by use-case-changes-many-aggregates.
-
-<a id="check-step-repeated-per-interface"></a>
-
-### `step-repeated-per-interface`
-
-**Error** · Lathe's · Kinds: [`flow_step`](#kind-flow_step)
-
-Variant steps of one flow, on two or more interfaces, that invoke the same command or query.
-
-A use case's flow is the same through every interface that offers it: a step says what the actor does or learns, and each interface's version of the flow, derived from the steps, says how that interface carries it out. A variant step is for something only one interface does. Variant steps of two or more interfaces that invoke the same command or query are the same step written once per interface, each naming its interface's mechanism. Make them one step every interface does, saying what the actor does or learns, with the requirements each fulfilled; keep a variant only for what that one interface alone does.
-
-### Coverage gaps: interaction design
+### Coverage gaps: interface design
 
 Each is reported in coverage, under the record that falls short, never as a problem.
 
 | Gap | Kinds | What it reports |
 | --- | --- | --- |
-| <a id="gap-use-case-without-flow"></a>`use-case-without-flow` | [`use_case`](#kind-use_case), [`flow`](#kind-flow) | A use case with no flow. |
 | <a id="gap-interface-offers-nothing"></a>`interface-offers-nothing` | [`interface`](#kind-interface), [`use_case`](#kind-use_case) | An interface that offers no use case. |
-| <a id="gap-flow-without-main-path"></a>`flow-without-main-path` | [`flow`](#kind-flow), [`flow_step`](#kind-flow_step) | A flow with no step on its main path. |
 | <a id="gap-endpoint-without-requirement"></a>`endpoint-without-requirement` | [`endpoint`](#kind-endpoint), [`api_requirement`](#kind-api_requirement) | An endpoint with no API requirement. |
 | <a id="gap-route-without-record"></a>`route-without-record` | [`product`](#kind-product), [`endpoint`](#kind-endpoint), [`view`](#kind-view) | A route the code serves that no endpoint or view has. |
 | <a id="gap-record-untraced"></a>`record-untraced` | [`flow_step`](#kind-flow_step), [`command`](#kind-command), [`query`](#kind-query), [`ui_component`](#kind-ui_component) | A flow step, command, query or UI component no obligation's chain reaches. |
@@ -3202,7 +3202,7 @@ A kind a product adds to Lathe's, such as a report or a CLI command. Its records
 | `label` | VARCHAR | yes | The kind's name as people read it, such as Report. |
 | `description` | VARCHAR | yes | What a record of the kind is. |
 | `parent_kind` | VARCHAR | yes | The kind its records sit under, their one parent: one of Lathe's or another product kind. Its table gets a required <parent_kind>_id column. |
-| `stage` | ENUM('discovery', 'domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan') | no | The stage its records belong to, any of the six, if one; such as technical-specification for a kind of code Lathe has no kind for. |
+| `stage` | ENUM('discovery', 'domain-model', 'use-cases', 'interface-design', 'technical-specification', 'test-plan') | no | The stage its records belong to, any of the six, if one; such as technical-specification for a kind of code Lathe has no kind for. |
 | `obligation` | BOOLEAN | yes | Whether a record of the kind is an obligation, to be designed, built and proved. An obligation kind joins the obligation supertype, and the records something outside the product may provide (provided_by_source). |
 | `id_pattern` | VARCHAR | no | How its IDs are written, its own pattern, such as <command>-CLI. |
 | `id_example` | VARCHAR | no | An example ID. |
@@ -3429,7 +3429,7 @@ The command checks the specification, of its own domain, before it acts.
 
 ### `exchanges_with`
 
-The flow step or policy exchanges with the integration's outside system: a step as its actor carries it out, a policy as the product acts on the event it hears.
+The flow step or policy exchanges with the integration's outside system: a step as its actor carries it out, a policy as the product acts on the event it hears. A step's link is one of the two references that run from use cases forward to interface design, deliberately (meta_stage).
 
 - **Reads:** Exchanges with / Exchanged with by
 - **Role:** none
@@ -3701,7 +3701,7 @@ The repository loads and saves the aggregate, whole: one repository per aggregat
 
 ### `presents`
 
-The view presents the command or query: a person sends the command or asks the query there, so a step that invokes it is carried out in the view on a web app or desktop interface. A record of a product's own interaction design kind presents them the same way, once the product adds that pair with a product_relation named presents: a command line's invocation that carries out several commands and queries, so a step that invokes one is carried out through it on a CLI or agent tools interface.
+The view presents the command or query: a person sends the command or asks the query there, so a step that invokes it is carried out in the view on a web app or desktop interface. A record of a product's own interface design kind presents them the same way, once the product adds that pair with a product_relation named presents: a command line's invocation that carries out several commands and queries, so a step that invokes one is carried out through it on a CLI or agent tools interface.
 
 - **Reads:** Presents / Presented in
 - **Role:** none

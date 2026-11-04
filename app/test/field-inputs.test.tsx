@@ -42,7 +42,7 @@ describe('LA-PAT-FIELD-INPUTS-R02-T01 LA-PAT-FIELD-INPUTS-R02-T02 LA-PAT-FIELD-I
   it('imports nothing of the specs, the aggregates\' slices or the shell, and names no kind', () => {
     const text = readFileSync(path.join(import.meta.dirname, '../src/edit/fields.tsx'), 'utf8');
     const imports = [...text.matchAll(/from '([^']+)'/g)].map((m) => m[1]);
-    expect(imports.filter((i) => /specs|product|domain-modeling|use-cases|interaction-design|technical-specification|test-planning|shell|graph|views/.test(i))).toEqual([]);
+    expect(imports.filter((i) => /specs|product|domain-modeling|use-cases|interface-design|technical-specification|test-planning|shell|graph|views/.test(i))).toEqual([]);
     expect(text).not.toMatch(/use_case|flow_step|uc_requirement/);
   });
 });

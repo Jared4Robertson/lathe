@@ -23,7 +23,7 @@ const groups = (n: Neighborhood) => n.nodes.filter((x) => x.group).map((x) => x.
 const records = (n: Neighborhood) => n.nodes.filter((x) => !x.group).map((x) => x.id).sort();
 const spine = (n: Neighborhood) => n.edges.filter((e) => e.relation === 'parent').map((e) => `${e.source} > ${e.target}`).sort();
 const filters = (kinds: string[] = []): Filters => ({ hiddenKinds: new Set(kinds) });
-const STAGES = ['P-D/domain-model', 'P-D/interaction-design', 'P-D/technical-specification', 'P-D/test-plan', 'P-D/use-cases'];
+const STAGES = ['P-D/domain-model', 'P-D/interface-design', 'P-D/technical-specification', 'P-D/test-plan', 'P-D/use-cases'];
 
 describe('graph groups', () => {
   const index = testIndex();
@@ -96,8 +96,8 @@ describe('graph groups', () => {
     expect(ids(at('P-D'))).toEqual(['P', 'P-D', ...STAGES, 'P-D/question'].sort());
     // A record with several kinds of children reaches them through their groups.
     expect(ids(at('P-D-A4'))).toEqual(['P-D-A4', 'P-D-A4/domain_event', 'P-D-A4/entity', 'P-D/domain-model/aggregate']);
-    // A leaf frames only itself and its parent.
-    expect(ids(at('P-D-UC01-R01'))).toEqual(['P-D-UC01', 'P-D-UC01-R01']);
+    // A leaf frames only itself and its parent: here its use case's UC requirements group (the use case holds its flow too).
+    expect(ids(at('P-D-UC01-R01'))).toEqual(['P-D-UC01-R01', 'P-D-UC01/uc_requirement']);
     for (const id of ['P-D-CAP01', 'P-D', 'P-D-UC01-R01']) expect(new Set(at(id).edges.map((e) => e.relation))).toEqual(new Set([PARENT]));
   });
 

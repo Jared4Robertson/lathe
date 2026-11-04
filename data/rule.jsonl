@@ -9,8 +9,8 @@
 {"id":"LA-EXP-INV20-RL","title":"space-page-is-a-page","invariant_id":"LA-EXP-INV20","file":"app/src/exploring/space/rules.ts"}
 {"id":"LA-EXP-INV21-RL","title":"nav-row-is-open-or-folded","invariant_id":"LA-EXP-INV21","file":"app/src/exploring/nav-row/rules.ts"}
 {"id":"LA-EXP-INV30-RL","title":"session-settings-known","invariant_id":"LA-EXP-INV30","file":"app/src/exploring/session-settings/rules.ts"}
-{"id":"LA-IXD-INV110-RL","title":"one-endpoint-handler","invariant_id":"LA-IXD-INV110","file":"lathe/src/interaction-design/endpoint/rules.ts"}
-{"id":"LA-IXD-INV111-RL","title":"one-adapter","invariant_id":"LA-IXD-INV111","file":"lathe/src/interaction-design/integration/rules.ts"}
+{"id":"LA-IXD-INV110-RL","title":"one-endpoint-handler","invariant_id":"LA-IXD-INV110","file":"lathe/src/interface-design/endpoint/rules.ts"}
+{"id":"LA-IXD-INV111-RL","title":"one-adapter","invariant_id":"LA-IXD-INV111","file":"lathe/src/interface-design/integration/rules.ts"}
 {"id":"LA-MOD-INV101-RL","title":"value-object-one-each","invariant_id":"LA-MOD-INV101","file":"lathe/src/domain-modeling/value-object/rules.ts"}
 {"id":"LA-MOD-INV102-RL","title":"aggregate-one-each","invariant_id":"LA-MOD-INV102","file":"lathe/src/domain-modeling/aggregate/rules.ts"}
 {"id":"LA-MOD-INV103-RL","title":"specification-one-each","invariant_id":"LA-MOD-INV103","file":"lathe/src/domain-modeling/specification/rules.ts"}

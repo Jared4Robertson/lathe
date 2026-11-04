@@ -42,7 +42,7 @@ test.describe('Exploring flows', () => {
     await domains.getByRole('link', { name: 'Exploring' }).click();
     await page.waitForURL((u) => u.pathname === '/LA-EXP');
     const wiki = page.locator(WIKI);
-    for (const stage of ['Domain model', 'Use cases', 'Interaction design', 'Technical specification', 'Test plan']) {
+    for (const stage of ['Domain model', 'Use cases', 'Interface design', 'Technical specification', 'Test plan']) {
       await expect(wiki.getByRole('heading', { level: 2, name: new RegExp(`^${stage} \\d+`) })).toBeVisible();
     }
     await wiki.getByRole('searchbox', { name: 'Filter records' }).fill('Tab set');
@@ -132,14 +132,14 @@ test.describe('Exploring flows', () => {
     await graphReady(page);
     // The depth decides the levels drawn: a domain's stages are its first level, a stage's kinds its second.
     await page.locator(`${STAGE_BOX} .graph-depth:not(.graph-layout) button`, { hasText: '2' }).click();
-    await expect.poll(async () => (await sceneOf(page)).boxes.some((b) => b.id === 'LA-EXP/interaction-design/flow')).toBe(true);
+    await expect.poll(async () => (await sceneOf(page)).boxes.some((b) => b.id === 'LA-EXP/interface-design/endpoint')).toBe(true);
     const groups = (await sceneOf(page)).boxes.filter((b) => b.group && b.id.startsWith('LA-EXP/')).map((b) => b.id);
-    expect(groups).toEqual(expect.arrayContaining(['LA-EXP/domain-model', 'LA-EXP/test-plan', 'LA-EXP/interaction-design/flow']));
+    expect(groups).toEqual(expect.arrayContaining(['LA-EXP/domain-model', 'LA-EXP/test-plan', 'LA-EXP/interface-design/endpoint']));
     // A group becomes the focus at its own address; the wiki beside it follows.
-    await page.locator(`${FLOW} .graph-box[data-id="LA-EXP/interaction-design/flow"]`).focus();
+    await page.locator(`${FLOW} .graph-box[data-id="LA-EXP/interface-design/endpoint"]`).focus();
     await page.keyboard.press('Enter');
-    await page.waitForURL((u) => u.pathname === '/LA-EXP/interaction-design/flow');
-    await expect(wikiTitle(page)).toHaveText(/^Flows \(\d+\)$/);
+    await page.waitForURL((u) => u.pathname === '/LA-EXP/interface-design/endpoint');
+    await expect(wikiTitle(page)).toHaveText(/^Endpoints \(\d+\)$/);
     // Under an aggregate, its events in a Domain events group.
     await page.goto('/LA-EXP-A1?stage=graph');
     await graphReady(page);
@@ -242,10 +242,10 @@ test.describe('Exploring flows', () => {
     await expect.poll(async () => (await traceSceneOf(page, true)).boxes.find((b) => b.key === own)?.strength, { timeout: 5000 }).toBe(1);
     const lit = await traceSceneOf(page, true);
     expect(lit.boxes.find((b) => b.key === own)).toMatchObject({ column: 2, lit: true, strength: 1 });
-    expect(lit.boxes.find((b) => b.key === 'LA-EXP-UC03|design/LA-EXP-UC03-FL')!.lit).toBe(true);
+    expect(lit.boxes.find((b) => b.key === 'LA-EXP-UC03|flow/LA-EXP-UC03-FL')!.lit).toBe(true);
     expect(lit.lines.some((l) => l.kind === 'path' && l.lit && l.from === own)).toBe(true);
     // From the keyboard, through the list under the canvas: the flow opened, then the step's link and Enter.
-    const design = page.locator('.focus-stage .trace-access').getByRole('region', { name: 'Design flow' });
+    const design = page.locator('.focus-stage .trace-access').getByRole('region', { name: 'Flow' });
     const flow = design.getByRole('listitem').filter({ has: page.getByRole('link', { name: /LA-EXP-UC03-FL(?!-)/ }) });
     if ((await flow.getByRole('button').getAttribute('aria-expanded')) !== 'true') {
       await flow.getByRole('button').focus();
@@ -333,7 +333,7 @@ test.describe('Exploring flows', () => {
     await expect(n.getByRole('list', { name: 'Shared in Lathe' })).toBeVisible();
     await n.getByRole('button', { name: 'Unfold Exploring' }).click();
     const folders = n.getByRole('list', { name: 'Folders of Exploring' });
-    for (const stage of ['Domain model', 'Use cases', 'Interaction design', 'Technical specification', 'Test plan']) {
+    for (const stage of ['Domain model', 'Use cases', 'Interface design', 'Technical specification', 'Test plan']) {
       await expect(folders.getByRole('button', { name: new RegExp(`^${stage} \\d+$`) })).toBeVisible();
     }
     // Opening a page opens the rows that hold it.
@@ -354,8 +354,8 @@ test.describe('Exploring flows', () => {
     await page.goto('/LA-EXP');
     await expect(page.locator(WIKI).getByRole('heading', { level: 2, name: /^Test plan \d+/ })).toBeVisible();
     const headings = await page.locator(WIKI).getByRole('heading', { level: 2 }).allTextContents();
-    expect(headings.map((h) => h.replace(/\s*\d+$/, '')).filter((h) => ['Domain model', 'Use cases', 'Interaction design', 'Technical specification', 'Test plan'].includes(h)))
-      .toEqual(['Domain model', 'Use cases', 'Interaction design', 'Technical specification', 'Test plan']);
+    expect(headings.map((h) => h.replace(/\s*\d+$/, '')).filter((h) => ['Domain model', 'Use cases', 'Interface design', 'Technical specification', 'Test plan'].includes(h)))
+      .toEqual(['Domain model', 'Use cases', 'Interface design', 'Technical specification', 'Test plan']);
   });
 
   test('LA-EXP-UC09-FL-T read the technical specification and test plan by kind: the domain page, the nav\'s kind groups, the graph\'s groups', async ({ page }) => {
@@ -478,7 +478,7 @@ test.describe('Exploring flows', () => {
     }
   });
 
-  test('LA-EXP-UC13-FL-T read a domain\'s endpoints and integrations: the domain\'s Interaction design, a command\'s endpoint, an integration\'s steps', async ({ page }) => {
+  test('LA-EXP-UC13-FL-T read a domain\'s endpoints and integrations: the domain\'s Interface design, a command\'s endpoint, an integration\'s steps', async ({ page }) => {
     await openPage(page, '/LA-PRD');
     const wiki = page.locator(WIKI);
     await expect(wiki.getByRole('list', { name: 'Endpoints' }).getByRole('link', { name: 'LA-PRD-EP121 POST /api/product/change-product' })).toBeVisible();

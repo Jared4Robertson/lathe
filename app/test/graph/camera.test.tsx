@@ -230,11 +230,11 @@ describe('graph camera on the page', () => {
     reducedMotion();
     await open();
     const first = moves();
-    fireEvent.click(node('P-D-UC01-R01')!);
-    await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
+    fireEvent.click(node('P-D-UC01/uc_requirement')!);
+    await waitFor(() => expect(isCenter('P-D-UC01/uc_requirement')).toBe(true));
     await waitFor(() => expect(moves()).toBe(first + 1));
     expect(glides()).toBe(0);
-    expect(camera()).toEqual(roundCamera(frameOnMap(graphMap(testIndex(), 'P'), 'P-D-UC01-R01', 1000, 800)));
+    expect(camera()).toEqual(roundCamera(frameOnMap(graphMap(testIndex(), 'P'), 'P-D-UC01/uc_requirement', 1000, 800)));
   });
 });
 

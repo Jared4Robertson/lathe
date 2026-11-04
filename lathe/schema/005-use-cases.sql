@@ -1,5 +1,7 @@
--- Use cases: capabilities, use cases with their actors, UC requirements, and the patterns use cases and domains follow,
--- with their settings, rules and slots.
+-- Use cases: capabilities, use cases with their actors, UC requirements, each use case's one flow and its steps, and the
+-- patterns use cases and domains follow, with their settings, rules and slots. The flow and flow step tables are created
+-- in 006-interface-design.sql, after interface: a variant step names its interface, one of the two references that run
+-- from use cases forward to interface design, deliberately (meta_stage).
 
 CREATE TABLE capability (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
@@ -116,9 +118,9 @@ INSERT INTO meta_kind VALUES
   ('capability', 'Capability', 'use-cases', 20, false, '<P>-<D>-CAP<nn>', 'TL-LEND-CAP01', 'domain', NULL, 'essential'),
   ('use_case', 'Use case', 'use-cases', 21, false, '<P>-<D>-UC<nn>', 'TL-LEND-UC01', 'domain', NULL, 'essential'),
   ('uc_requirement', 'UC requirement', 'use-cases', 22, true, '<use case>-R<nn>', 'TL-LEND-UC01-R01', 'parent', NULL, 'essential'),
-  ('pattern', 'Pattern', 'use-cases', 23, false, '<P>-PAT-<name>', 'TL-PAT-LIBRARIAN-ACTION', 'parent', NULL, 'essential'),
-  ('pattern_rule', 'Pattern rule', 'use-cases', 24, true, '<pattern>-R<nn>', 'TL-PAT-LIBRARIAN-ACTION-R01', 'parent', NULL, 'essential'),
-  ('slot', 'Slot', 'use-cases', 25, false, '<pattern>-SL<nn>', 'TL-PAT-LIBRARIAN-ACTION-SL01', 'parent', NULL, 'essential');
+  ('pattern', 'Pattern', 'use-cases', 25, false, '<P>-PAT-<name>', 'TL-PAT-LIBRARIAN-ACTION', 'parent', NULL, 'essential'),
+  ('pattern_rule', 'Pattern rule', 'use-cases', 26, true, '<pattern>-R<nn>', 'TL-PAT-LIBRARIAN-ACTION-R01', 'parent', NULL, 'essential'),
+  ('slot', 'Slot', 'use-cases', 27, false, '<pattern>-SL<nn>', 'TL-PAT-LIBRARIAN-ACTION-SL01', 'parent', NULL, 'essential');
 INSERT INTO meta_kind_parent VALUES
   ('capability', 'domain', 1, 'domain_id'),
   ('use_case', 'capability', 1, 'capability_id'),

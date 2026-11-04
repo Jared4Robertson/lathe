@@ -90,7 +90,7 @@ export interface TableDescription {
 }
 
 /** A stage, in the order a product is modeled; links run from what is defined first to what is defined later. */
-export type Stage = 'discovery' | 'domain-model' | 'use-cases' | 'interaction-design' | 'technical-specification' | 'test-plan';
+export type Stage = 'discovery' | 'domain-model' | 'use-cases' | 'interface-design' | 'technical-specification' | 'test-plan';
 
 /**
  * Whether a kind's records are essential complexity (decided once per product), accidental (from the means used to

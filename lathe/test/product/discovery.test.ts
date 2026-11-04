@@ -85,7 +85,7 @@ describe('business outcomes', () => {
   });
 
   it('LA-PRD-UC22-R03-T01 Discovery is the first stage, before the domain model, and the business outcome is its kind', () => {
-    expect(schema.stages.map((s) => s.name)).toEqual(['discovery', 'domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan']);
+    expect(schema.stages.map((s) => s.name)).toEqual(['discovery', 'domain-model', 'use-cases', 'interface-design', 'technical-specification', 'test-plan']);
     expect(schema.stages[0]).toMatchObject({ position: 1, label: 'Discovery' });
     expect(Object.values(schema.kinds).filter((k) => k.stage === 'discovery').map((k) => k.name)).toEqual(['business_outcome', 'journey', 'journey_step']);
     // They come right after the product in the kinds' order: the outcomes, then the journeys that reach them.

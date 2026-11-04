@@ -24,7 +24,7 @@ export const COLOR_GROUPS: readonly ColorGroup[] = ['Surfaces', 'Text', 'Borders
 
 const TEXT = 4.5;
 /** Every stage's box fill on the graph, the ERD and the Trace: what a box's muted text is drawn on. */
-export const STAGE_FILLS = ['--g-discovery-bg', '--g-domain-model-bg', '--g-use-cases-bg', '--g-interaction-design-bg', '--g-technical-specification-bg', '--g-test-plan-bg', '--g-structural-bg'] as const;
+export const STAGE_FILLS = ['--g-discovery-bg', '--g-domain-model-bg', '--g-use-cases-bg', '--g-interface-design-bg', '--g-technical-specification-bg', '--g-test-plan-bg', '--g-structural-bg'] as const;
 const CONTROL = 3;
 
 export const COLOR_TOKENS: readonly ColorToken[] = [
@@ -48,8 +48,8 @@ export const COLOR_TOKENS: readonly ColorToken[] = [
   { name: '--g-domain-model-bg', label: 'Domain model stage fill', group: 'Graph', core: false },
   { name: '--g-use-cases', label: 'Use cases stage', group: 'Graph', core: false, on: { bg: ['--g-use-cases-bg'], min: CONTROL } },
   { name: '--g-use-cases-bg', label: 'Use cases stage fill', group: 'Graph', core: false },
-  { name: '--g-interaction-design', label: 'Interaction design stage', group: 'Graph', core: false, on: { bg: ['--g-interaction-design-bg'], min: CONTROL } },
-  { name: '--g-interaction-design-bg', label: 'Interaction design stage fill', group: 'Graph', core: false },
+  { name: '--g-interface-design', label: 'Interface design stage', group: 'Graph', core: false, on: { bg: ['--g-interface-design-bg'], min: CONTROL } },
+  { name: '--g-interface-design-bg', label: 'Interface design stage fill', group: 'Graph', core: false },
   { name: '--g-technical-specification', label: 'Technical specification stage', group: 'Graph', core: false, on: { bg: ['--g-technical-specification-bg'], min: CONTROL } },
   { name: '--g-technical-specification-bg', label: 'Technical specification stage fill', group: 'Graph', core: false },
   { name: '--g-test-plan', label: 'Test plan stage', group: 'Graph', core: false, on: { bg: ['--g-test-plan-bg'], min: CONTROL } },

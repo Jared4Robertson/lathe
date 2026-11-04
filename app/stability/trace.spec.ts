@@ -59,7 +59,7 @@ test.describe('the Trace stage stays where the Reader left it', () => {
 
     // A step of its flow through the web app: its path across the row, the wiki card on it. The flow opens to a box per
     // interface that offers the use case, the web app's to its version's steps.
-    for (const key of [`${USE_CASE}|design/${USE_CASE}-FL`, `${USE_CASE}|design/${USE_CASE}-FL/LA-IF01`]) {
+    for (const key of [`${USE_CASE}|flow/${USE_CASE}-FL`, `${USE_CASE}|flow/${USE_CASE}-FL/LA-IF01`]) {
       expect((await sceneOf(page, false)).boxes.find((b) => b.key === key)?.toggle).toBeTruthy();
       const toggle = await reach(page, async () => (await sceneOf(page, false)).boxes.find((b) => b.key === key)!.toggle!);
       await page.mouse.click(toggle.x, toggle.y);

@@ -109,8 +109,8 @@ export function productKindSql(
     const accidental = kind.stage === 'technical-specification' || kind.complexity === 'accidental';
     if (accidental) statements.push(`INSERT INTO meta_supertype_member VALUES ('accidental_record', ${literal(name)});`);
     if (kind.obligation === true || accidental) statements.push(`INSERT INTO meta_supertype_member VALUES ('provided_by_source', ${literal(name)});`);
-    // A kind of the interaction design may present commands and queries, as a view does, once the product adds the pair.
-    if (kind.stage === 'interaction-design') statements.push(`INSERT INTO meta_supertype_member VALUES ('presents_source', ${literal(name)});`);
+    // A kind of the interface design may present commands and queries, as a view does, once the product adds the pair.
+    if (kind.stage === 'interface-design') statements.push(`INSERT INTO meta_supertype_member VALUES ('presents_source', ${literal(name)});`);
     // The pairs of provided_by, fills and generates the kind gains as a member of their supertypes, as Lathe's own
     // kinds gain them (010-links.sql): never declared, so an accidental kind is accounted for the one way.
     for (const [relation, source, target] of accountingPairs(name, kind.obligation === true, accidental)) {

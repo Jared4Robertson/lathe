@@ -30,7 +30,7 @@ function productRepo(): string {
   return root;
 }
 
-const SKILLS = ['discover-outcomes', 'model-a-domain', 'write-use-cases', 'design-interactions', 'write-the-technical-spec', 'plan-tests', 'check-and-fix', 'extend-the-meta-model'];
+const SKILLS = ['discover-outcomes', 'model-a-domain', 'write-use-cases', 'design-interfaces', 'write-the-technical-spec', 'plan-tests', 'check-and-fix', 'extend-the-meta-model'];
 
 // Every tool a skill names in backticks, such as `domain_add_capability`.
 const TOOL_NAME = /`([a-z]+(?:_[a-z]+)*_(?:add|change|remove|move|get|list|next_id|follow|stop)(?:_[a-z]+)*)`/g;

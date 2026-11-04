@@ -41,7 +41,7 @@ COMMENT ON TABLE meets_target IS 'The rules a technical record may follow (meets
 CREATE TABLE provided_by_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
 COMMENT ON TABLE provided_by_source IS 'The records something outside the product may provide: data stores, standards, technical records and obligations, Lathe''s kinds and a product''s own of those.';
 CREATE TABLE presents_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
-COMMENT ON TABLE presents_source IS 'The records that present commands and queries: views, and the records of a product''s own interaction design kinds (such as a command line''s invocations), once the product adds the pair with a product_relation named presents.';
+COMMENT ON TABLE presents_source IS 'The records that present commands and queries: views, and the records of a product''s own interface design kinds (such as a command line''s invocations), once the product adds the pair with a product_relation named presents.';
 
 INSERT INTO meta_table VALUES ('record_id', 'registry', NULL);
 INSERT INTO meta_table

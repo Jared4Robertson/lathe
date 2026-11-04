@@ -39,7 +39,7 @@ describe('format reference pages', () => {
     const kinds = section(/^Kinds\d/);
     // The six stages in order, then the kinds outside them.
     expect([...kinds.querySelectorAll(':scope > section > .spec-section-head h3')].map((h) => h.firstChild?.textContent)).toEqual([
-      'Discovery', 'Domain model', 'Use cases', 'Interaction design', 'Technical specification', 'Test plan', 'Outside the stages',
+      'Discovery', 'Domain model', 'Use cases', 'Interface design', 'Technical specification', 'Test plan', 'Outside the stages',
     ]);
     const useCases = within(kinds).getByRole('heading', { name: /^Use cases/ }).closest('section')!;
     const row = within(useCases).getByRole('link', { name: /use_case\s*Use case/ });
@@ -155,9 +155,9 @@ describe('format reference pages', () => {
     expect(within(checksPanel()).getByRole('link', { name: 'test-file-missing' })).toHaveAttribute('href', '/DM?panel=checks&page=format/checks/test-file-missing');
 
     // A group's kind leads to the kind's page too.
-    await openApp('/DM-SHOP/interaction-design/flow');
-    await screen.findByRole('heading', { level: 1, name: /^Flows/ });
-    expect(within(card()).getByRole('link', { name: 'Flow' })).toHaveAttribute('href', over('format/kinds/flow', '/DM-SHOP/interaction-design/flow'));
+    await openApp('/DM-SHOP/interface-design/view');
+    await screen.findByRole('heading', { level: 1, name: /^Views/ });
+    expect(within(card()).getByRole('link', { name: 'View' })).toHaveAttribute('href', over('format/kinds/view', '/DM-SHOP/interface-design/view'));
   };
   it('LA-PAT-RECORD-PAGE-R18-T01 LA-PAT-RECORD-PAGE-R18-T02 LA-PAT-RECORD-PAGE-R18-T03 LA-PAT-RECORD-PAGE-R18-T04 LA-PAT-RECORD-PAGE-R18-T05 LA-PAT-RECORD-PAGE-R18-T06 The wiki card\'s kind and each problem code link to their format pages', proveLaV92R71T01);
   it('LA-V41-R02-T01 Each problem code links to its check\'s page', proveLaV92R71T01);

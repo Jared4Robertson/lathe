@@ -15,8 +15,8 @@ import { ADD_PROJECTION } from '../src/domain-modeling/read-model/commands/add-p
 import { ADD_QUERY_HANDLER } from '../src/domain-modeling/read-model/commands/add-query-handler.ts';
 import { ADD_READER } from '../src/domain-modeling/read-model/commands/add-reader.ts';
 import { ADD_EVENT_TYPE } from '../src/domain-modeling/domain-event/commands/add-event-type.ts';
-import { ADD_ENDPOINT_HANDLER } from '../src/interaction-design/endpoint/commands/add-endpoint-handler.ts';
-import { ADD_ADAPTER } from '../src/interaction-design/integration/commands/add-adapter.ts';
+import { ADD_ENDPOINT_HANDLER } from '../src/interface-design/endpoint/commands/add-endpoint-handler.ts';
+import { ADD_ADAPTER } from '../src/interface-design/integration/commands/add-adapter.ts';
 import { ADD_SERVICE } from '../src/domain-modeling/domain/commands/add-service.ts';
 import type { AnyCommand } from '../src/platform/commands/definition.ts';
 import { runCommand } from '../src/platform/commands/run.ts';

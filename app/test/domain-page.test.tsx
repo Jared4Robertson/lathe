@@ -30,7 +30,7 @@ describe('domain page', () => {
       ['Domain model', ['Aggregates', 'Specifications', 'Read models', 'Terms']],
       // Use cases holds only capabilities, so it lists them itself, with no folder heading.
       ['Use cases', []],
-      ['Interaction design', ['Flows', 'Views', 'Endpoints']],
+      ['Interface design', ['Views', 'Endpoints']],
       ['Technical specification', ['Tables', 'Command handlers']],
       ['Test plan', ['Invariant tests', 'Use case tests']],
     ]);
@@ -57,9 +57,8 @@ describe('domain page', () => {
     const add = within(buying).getByRole('link', { name: /^DM-SHOP-UC01\s*Add/ }).closest('li') as HTMLElement;
     expect(add).toHaveTextContent('Add an item to the basket');
 
-    // Interaction design, technical specification and test plan list what starts a branch of their stage; a technical
+    // Interface design, technical specification and test plan list what starts a branch of their stage; a technical
     // record with what it names in code, a test with its level and file.
-    expect(ids(section(/^Flows/))).toEqual(['DM-SHOP-UC01-FL']);
     expect(ids(section(/^Views/))).toEqual(['DM-V01']);
     expect(ids(section(/^Endpoints/))).toEqual(['DM-SHOP-EP01']);
     expect(section(/^Tables/)).toHaveTextContent('baskets');
@@ -132,7 +131,7 @@ describe('domain page', () => {
     expect(stages()).toEqual([
       ['Domain model', ['Aggregates']],
       ['Use cases', []],
-      ['Interaction design', []],
+      ['Interface design', []],
       ['Technical specification', []],
       ['Test plan', []],
     ]);

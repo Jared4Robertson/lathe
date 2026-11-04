@@ -9,7 +9,7 @@ import { TRACE_COLUMN_LABELS, TRACE_COLUMNS, type TraceGraph } from './trace';
 // toggle that opens a box, the mark over the rows serving no outcome, the focus and, while a selection lights a path,
 // what is faded off it.
 
-const STAGE_ORDER: readonly Stage[] = ['discovery', 'domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan'];
+const STAGE_ORDER: readonly Stage[] = ['discovery', 'domain-model', 'use-cases', 'interface-design', 'technical-specification', 'test-plan'];
 
 const stagesOf = new WeakMap<TraceGraph, Set<string>>();
 /** The stages of the records the view draws, worked out once per graph. */
@@ -37,7 +37,7 @@ export function traceKeyEntries(index: RecordIndex, graph: TraceGraph, faded: bo
   if (graph.serves.length + graph.journeyServes.length > 0) out.push({ id: 'link-serves', group: 'links', sample: <svg className="trace-key-link is-serves" width="22" height="12" viewBox="0 0 22 12" aria-hidden="true"><path d="M1 10 C 11 10, 11 2, 21 2" /></svg>, words: 'Serves', meaning: 'An outcome to each use case whose capability serves it, and to each journey serving it' });
   if (graph.carries.length > 0) out.push({ id: 'link-carries', group: 'links', sample: <svg className="trace-key-link is-serves" width="22" height="12" viewBox="0 0 22 12" aria-hidden="true"><path d="M1 10 C 11 10, 11 2, 21 2" /><text className="trace-key-number" x="11" y="8.5" textAnchor="middle">1</text></svg>, words: 'Carries out', meaning: "A journey to each use case its steps carry out, labeled with the steps' numbers (alt for an alternate path)" });
   out.push({ id: 'link-path', group: 'links', sample: <svg className="trace-key-link is-path" width="22" height="12" viewBox="0 0 22 12" aria-hidden="true"><path d="M1 10 C 11 10, 11 2, 21 2" /></svg>, words: 'Path', meaning: "The selection's path across its row: a requirement, the steps fulfilling it, their technical chain and the tests proving it" });
-  out.push({ id: 'status', group: 'boxes', sample: <span className="graph-swatch stage-interaction-design" />, words: 'Status', meaning: "A stage's status in a closed row: its flows designed, its handlers built, its tests proved" });
+  out.push({ id: 'status', group: 'boxes', sample: <span className="graph-swatch stage-use-cases" />, words: 'Status', meaning: "A stage's status in a closed row: its flows designed, its handlers built, its tests proved" });
   if (graph.counts.gapped > 0) out.push({ id: 'gap', group: 'boxes', sample: <span className="graph-swatch is-gap" />, words: 'Gap', meaning: 'A stage with a gap, or what is missing, dashed: not designed, not built, not proved' });
   out.push({ id: 'toggle', group: 'boxes', sample: <span className="trace-key-toggle" aria-hidden="true">▸</span>, words: 'Open', meaning: "A box with children: ▸ opens it, ▾ closes it; a column's name opens its stage in every row" });
   if (graph.counts.outside > 0) out.push({ id: 'outside', group: 'boxes', sample: <span className="trace-key-outside" aria-hidden="true" />, words: 'No outcome', meaning: 'Under the dashed mark: the use cases whose capability serves no business outcome' });

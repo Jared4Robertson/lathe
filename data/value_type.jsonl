@@ -2,14 +2,14 @@
 {"id":"LA-VO02-VT","title":"title","value_object_id":"LA-VO02","file":"lathe/src/platform/data/rows.ts"}
 {"id":"LA-VO03-VT","title":"statement","value_object_id":"LA-VO03","file":"lathe/src/platform/data/rows.ts"}
 {"id":"LA-VO04-VT","title":"position","value_object_id":"LA-VO04","file":"lathe/schema/005-use-cases.sql"}
-{"id":"LA-VO05-VT","title":"flow_step.path","value_object_id":"LA-VO05","file":"lathe/schema/006-interaction-design.sql"}
+{"id":"LA-VO05-VT","title":"flow_step.path","value_object_id":"LA-VO05","file":"lathe/schema/006-interface-design.sql"}
 {"id":"LA-VO06-VT","title":"product_kind.name","value_object_id":"LA-VO06","file":"lathe/schema/012-product-kinds.sql"}
 {"id":"LA-VO07-VT","title":"subdomain_type","value_object_id":"LA-VO07","file":"lathe/schema/004-domain-model.sql"}
 {"id":"LA-VO08-VT","title":"entity_role","value_object_id":"LA-VO08","file":"lathe/schema/004-domain-model.sql"}
 {"id":"LA-VO09-VT","title":"basic_type","value_object_id":"LA-VO09","file":"lathe/schema/004-domain-model.sql"}
 {"id":"LA-VO10-VT","title":"table_storage","value_object_id":"LA-VO10","file":"lathe/schema/007-technical-specification.sql"}
 {"id":"LA-VO11-VT","title":"key_type","value_object_id":"LA-VO11","file":"lathe/schema/007-technical-specification.sql"}
-{"id":"LA-VO12-VT","title":"http_method","value_object_id":"LA-VO12","file":"lathe/schema/006-interaction-design.sql"}
+{"id":"LA-VO12-VT","title":"http_method","value_object_id":"LA-VO12","file":"lathe/schema/006-interface-design.sql"}
 {"id":"LA-VO13-VT","title":"event_delivery","value_object_id":"LA-VO13","file":"lathe/schema/007-technical-specification.sql"}
 {"id":"LA-VO14-VT","title":"test_level","value_object_id":"LA-VO14","file":"lathe/schema/008-test-plan.sql"}
 {"id":"LA-VO15-VT","title":"field_type","value_object_id":"LA-VO15","file":"lathe/schema/012-product-kinds.sql"}

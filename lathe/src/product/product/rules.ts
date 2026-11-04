@@ -49,12 +49,12 @@ function declarationProblems(product: Product, view: ReadView): RuleProblem[] {
   // The supertypes an own kind joins as its tables are built (platform/data/product-kinds.ts): an obligation kind the
   // obligation supertype, a kind of the technical specification the technical records, an accidental kind (one of
   // the technical specification, or one that says it is accidental) the accidental records, and a kind of the
-  // interaction design the records that present commands and queries.
+  // interface design the records that present commands and queries.
   const ownMember = (table: string, end: string) =>
     (table === 'obligation' && own.get(end)?.obligation === true) ||
     (table === 'technical_record' && own.get(end)?.stage === 'technical-specification') ||
     (table === 'accidental_record' && (own.get(end)?.stage === 'technical-specification' || own.get(end)?.complexity === 'accidental')) ||
-    (table === 'presents_source' && own.get(end)?.stage === 'interaction-design');
+    (table === 'presents_source' && own.get(end)?.stage === 'interface-design');
   // The provided_by, fills and generates pairs each own kind has without a declaration (platform/data/product-kinds.ts).
   const accounting = new Set(
     product.kinds.flatMap(({ row }) =>

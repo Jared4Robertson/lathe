@@ -87,7 +87,7 @@
 {"id":"LA-EXP-UC11-FL-S04","title":"On an entity the same ERD picks it out","flow_id":"LA-EXP-UC11-FL","path":"main","position":4}
 {"id":"LA-EXP-UC11-FL-S05","title":"The Reader reads the key under the diagram","flow_id":"LA-EXP-UC11-FL","path":"main","position":5}
 {"id":"LA-EXP-UC12-FL-S01","title":"They expand the wiki card and show the history: the uncommitted change first, an older commit's diff, Load more","flow_id":"LA-EXP-UC12-FL","path":"main","position":1}
-{"id":"LA-EXP-UC13-FL-S01","title":"The reader opens a domain's Interaction design and sees how a client reaches its commands and queries, and the integrations only its steps exchange with","flow_id":"LA-EXP-UC13-FL","path":"main","position":1}
+{"id":"LA-EXP-UC13-FL-S01","title":"The reader opens a domain's Interface design and sees how a client reaches its commands and queries, and the integrations only its steps exchange with","flow_id":"LA-EXP-UC13-FL","path":"main","position":1}
 {"id":"LA-EXP-UC13-FL-S02","title":"They open a command and read how a client reaches it: method, address and API requirements","flow_id":"LA-EXP-UC13-FL","path":"main","position":2}
 {"id":"LA-EXP-UC13-FL-S03","title":"They open an integration and read the steps that exchange with its system","flow_id":"LA-EXP-UC13-FL","path":"main","position":3}
 {"id":"LA-EXP-UC15-FL-S01","title":"While the Reader has the product open on a stage, a change lands: an aggregate added and a requirement edited through the command line","flow_id":"LA-EXP-UC15-FL","path":"main","position":1}

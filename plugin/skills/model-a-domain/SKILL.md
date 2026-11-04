@@ -25,12 +25,12 @@ A candidate that fails these is a layer or a platform concern, not a domain. Giv
 
 ## The order of the whole spec
 
-Write a product stage by stage, so each record's links point at records written before it. Each stage has its skill.
+Write a product stage by stage, so each record's links point at records written before it; the one deliberate exception is a flow step naming the interface of a variant or an integration it exchanges with, both written in interface design. Each stage has its skill.
 
 1. **Discovery** (`discover-outcomes`): business outcomes, each measurable, and the journeys that reach them.
 2. **Domain model** (this skill), in event storming order: aggregates with entities and fields; commands and the events they raise; then invariants, value objects and constraints, specifications, policies, read models and queries, domain services, storage requirements, terms.
-3. **Use cases** (`write-use-cases`): capabilities, use cases with actors and UC requirements, shared patterns.
-4. **Interaction design** (`design-interactions`): interfaces, flows and steps, views, endpoints, integrations.
+3. **Use cases** (`write-use-cases`): capabilities, use cases with actors and UC requirements, each use case's flow and its steps, shared patterns.
+4. **Interface design** (`design-interfaces`): interfaces, views, endpoints, integrations.
 5. **Technical specification** (`write-the-technical-spec`): one technical record per design record, tables, standards.
 6. **Test plan** (`plan-tests`): one test kind per thing tested.
 

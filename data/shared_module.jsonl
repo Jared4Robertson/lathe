@@ -15,14 +15,14 @@
 {"id":"LA-EXP-MOD12","title":"app/src/changes/marks.ts","domain_id":"LA-EXP","file":"app/src/changes/marks.ts"}
 {"id":"LA-EXP-MOD13","title":"app/src/changes/rollup.ts","domain_id":"LA-EXP","file":"app/src/changes/rollup.ts"}
 {"id":"LA-EXP-MOD14","title":"app/src/changes/jump.ts","domain_id":"LA-EXP","file":"app/src/changes/jump.ts"}
-{"id":"LA-IXD-MOD60","title":"lathe/src/interaction-design/view/model.ts","domain_id":"LA-IXD","file":"lathe/src/interaction-design/view/model.ts","group_name":"View"}
-{"id":"LA-IXD-MOD61","title":"lathe/src/interaction-design/view/commands/index.ts","domain_id":"LA-IXD","file":"lathe/src/interaction-design/view/commands/index.ts","group_name":"View"}
-{"id":"LA-IXD-MOD62","title":"lathe/src/interaction-design/endpoint/model.ts","domain_id":"LA-IXD","file":"lathe/src/interaction-design/endpoint/model.ts","group_name":"Endpoint"}
-{"id":"LA-IXD-MOD63","title":"lathe/src/interaction-design/endpoint/commands/index.ts","domain_id":"LA-IXD","file":"lathe/src/interaction-design/endpoint/commands/index.ts","group_name":"Endpoint"}
-{"id":"LA-IXD-MOD64","title":"lathe/src/interaction-design/integration/model.ts","domain_id":"LA-IXD","file":"lathe/src/interaction-design/integration/model.ts","group_name":"Integration"}
-{"id":"LA-IXD-MOD65","title":"lathe/src/interaction-design/integration/commands/index.ts","domain_id":"LA-IXD","file":"lathe/src/interaction-design/integration/commands/index.ts","group_name":"Integration"}
-{"id":"LA-IXD-MOD66","title":"lathe/src/interaction-design/ui-component/model.ts","domain_id":"LA-IXD","file":"lathe/src/interaction-design/ui-component/model.ts","group_name":"UI component"}
-{"id":"LA-IXD-MOD67","title":"lathe/src/interaction-design/ui-component/commands/index.ts","domain_id":"LA-IXD","file":"lathe/src/interaction-design/ui-component/commands/index.ts","group_name":"UI component"}
+{"id":"LA-IXD-MOD60","title":"lathe/src/interface-design/view/model.ts","domain_id":"LA-IXD","file":"lathe/src/interface-design/view/model.ts","group_name":"View"}
+{"id":"LA-IXD-MOD61","title":"lathe/src/interface-design/view/commands/index.ts","domain_id":"LA-IXD","file":"lathe/src/interface-design/view/commands/index.ts","group_name":"View"}
+{"id":"LA-IXD-MOD62","title":"lathe/src/interface-design/endpoint/model.ts","domain_id":"LA-IXD","file":"lathe/src/interface-design/endpoint/model.ts","group_name":"Endpoint"}
+{"id":"LA-IXD-MOD63","title":"lathe/src/interface-design/endpoint/commands/index.ts","domain_id":"LA-IXD","file":"lathe/src/interface-design/endpoint/commands/index.ts","group_name":"Endpoint"}
+{"id":"LA-IXD-MOD64","title":"lathe/src/interface-design/integration/model.ts","domain_id":"LA-IXD","file":"lathe/src/interface-design/integration/model.ts","group_name":"Integration"}
+{"id":"LA-IXD-MOD65","title":"lathe/src/interface-design/integration/commands/index.ts","domain_id":"LA-IXD","file":"lathe/src/interface-design/integration/commands/index.ts","group_name":"Integration"}
+{"id":"LA-IXD-MOD66","title":"lathe/src/interface-design/ui-component/model.ts","domain_id":"LA-IXD","file":"lathe/src/interface-design/ui-component/model.ts","group_name":"UI component"}
+{"id":"LA-IXD-MOD67","title":"lathe/src/interface-design/ui-component/commands/index.ts","domain_id":"LA-IXD","file":"lathe/src/interface-design/ui-component/commands/index.ts","group_name":"UI component"}
 {"id":"LA-MOD-MOD30","title":"lathe/src/domain-modeling/domain/model.ts","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/domain/model.ts","group_name":"Domain"}
 {"id":"LA-MOD-MOD31","title":"lathe/src/domain-modeling/domain/rules.ts","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/domain/rules.ts","group_name":"Domain"}
 {"id":"LA-MOD-MOD32","title":"lathe/src/domain-modeling/domain/commands/index.ts","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/domain/commands/index.ts","group_name":"Domain"}

@@ -17,7 +17,7 @@ describe("LA-V92-R79-T01 A record's page lists what changing it would touch, by 
     const reach = await section();
     expect(requests).toContain('GET /api/change-reach/get-reach?ids=DM-SHOP-CMD01');
     expect(headings(reach, 2)).toEqual(['Change reach5']);
-    expect(headings(reach, 3)).toEqual(['Interaction design4', 'Technical specification1', 'Files1', 'Purposes']);
+    expect(headings(reach, 3)).toEqual(['Use cases1', 'Interface design3', 'Technical specification1', 'Files1', 'Purposes']);
     expect(reach).toHaveTextContent('Changing it touches 5 records and 1 file.');
     const endpointRequirement = reach.querySelector('[data-reached="DM-SHOP-EP01-R01"]') as HTMLElement;
     expect(within(endpointRequirement).getByText((_, el) => el?.getAttribute('data-meta') === 'path')).toHaveTextContent('sits under DM-SHOP-EP01, which sits under DM-SHOP-CMD01');

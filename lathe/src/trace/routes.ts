@@ -313,7 +313,7 @@ CREATE OR REPLACE TABLE served_routes (product VARCHAR NOT NULL, file VARCHAR NO
 /** The coverage gap for a route the code serves that no endpoint or view has. */
 export const ROUTE_GAP_RULES: GapRule[] = [{
   name: 'route-without-record',
-  stage: 'interaction-design',
+  stage: 'interface-design',
   kinds: ['product', 'endpoint', 'view'],
   summary: 'A route the code serves that no endpoint or view has.',
   sql: () => `SELECT s.product AS id, 'The code serves ' || coalesce(s.method || ' ', '') || s.route || ' (' || s.file || ', line ' || s.line || '), but no '

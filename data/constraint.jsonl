@@ -17,7 +17,7 @@
 {"id":"LA-VO14-C03","title":"An automated test names its file","value_object_id":"LA-VO14","statement":"An automated run by MUST name the file that runs it, relative to the repo root."}
 {"id":"LA-VO14-C04","title":"Only a manual test gives a manual reason","value_object_id":"LA-VO14","statement":"A manual run by MUST give its reason, and any other MUST NOT."}
 {"id":"LA-VO15-C01","title":"A kind field is text, integer, boolean or date","value_object_id":"LA-VO15","statement":"A product kind field's type MUST be `text`, `integer`, `boolean` or `date`."}
-{"id":"LA-VO16-C01","title":"A stage is one of the six","value_object_id":"LA-VO16","statement":"A stage MUST be discovery, domain-model, use-cases, interaction-design, technical-specification or test-plan."}
+{"id":"LA-VO16-C01","title":"A stage is one of the six","value_object_id":"LA-VO16","statement":"A stage MUST be discovery, domain-model, use-cases, interface-design, technical-specification or test-plan."}
 {"id":"LA-VO17-C01","title":"A relation's role is design, build or proof","value_object_id":"LA-VO17","statement":"A relation's role, when it has one, MUST be `design`, `build` or `proof`."}
 {"id":"LA-VO18-C01","title":"Groups compare trimmed and in any letter case","value_object_id":"LA-VO18","statement":"Two group names MUST be one group when they are equal trimmed and in any letter case."}
 {"id":"LA-VO41-C01","title":"A check name is lower-case words joined by hyphens","value_object_id":"LA-VO41","statement":"A check name MUST be lower-case letters and digits in words joined by single hyphens, such as `too-many-children`."}

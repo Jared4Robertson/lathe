@@ -125,9 +125,9 @@ describe('graph page', () => {
   it('LA-V93-R12-T01 Nodes show their stage and kind, records with errors or gaps are marked, parent lines join them, and there is a key', async () => {
     await showGraph(`/${STEP}`);
     await waitFor(() => expect(node('P-D-UC01-FL')).not.toBeNull());
-    expect(drawnBox(STEP)!.stage).toBe('interaction-design');
+    expect(drawnBox(STEP)!.stage).toBe('use-cases');
     expect(drawnBox(STEP)!.focus).toBe(true);
-    expect(drawnBox('P-D-UC01-FL')!.stage).toBe('interaction-design');
+    expect(drawnBox('P-D-UC01-FL')!.stage).toBe('use-cases');
     expect(screen.getByRole('region', { name: 'Key' })).toBeTruthy();
     expect(scene().lines.map((l) => l.style)).toContain('structure');
     // A capability in the use cases' colors, its use case beside it.
@@ -157,7 +157,7 @@ describe('graph page', () => {
 
   it('LA-V93-R14-T01 The plain arrows step through the tree from a focused box, Enter re-centers on the focused box, and Escape clears the filters', async () => {
     await showGraph(`/${STEP}`);
-    await waitFor(() => expect(node('P-D-UC01-FL-S03')).not.toBeNull());
+    await waitFor(() => expect(node('P-D-UC01-FL-S02')).not.toBeNull());
     const center = node(STEP)!;
     center.focus();
     expect(document.activeElement).toBe(center);
@@ -182,11 +182,11 @@ describe('graph page', () => {
     fireEvent.keyDown(canvas, { key: 'ArrowLeft', altKey: true });
     expect(window.location.pathname).toBe(`/${STEP}`);
     // Enter on a box with keyboard focus re-centers on it (Tab, the browser's, steps through the boxes).
-    await waitFor(() => expect(node('P-D-UC01-FL-S03')).not.toBeNull());
-    node('P-D-UC01-FL-S03')!.focus();
-    fireEvent.keyDown(node('P-D-UC01-FL-S03')!, { key: 'Enter' });
-    expect(window.location.pathname).toBe(addressOf('P-D-UC01-FL-S03'));
-    await waitFor(() => expect(document.activeElement).toBe(node('P-D-UC01-FL-S03')));
+    await waitFor(() => expect(node('P-D-UC01-FL-S02')).not.toBeNull());
+    node('P-D-UC01-FL-S02')!.focus();
+    fireEvent.keyDown(node('P-D-UC01-FL-S02')!, { key: 'Enter' });
+    expect(window.location.pathname).toBe(addressOf('P-D-UC01-FL-S02'));
+    await waitFor(() => expect(document.activeElement).toBe(node('P-D-UC01-FL-S02')));
 
     // Hide views, then Escape brings them back.
     const views = screen.getByRole('checkbox', { name: 'View' }) as HTMLInputElement;
@@ -321,13 +321,13 @@ describe('graph groups on the page', () => {
     const index = testIndex();
     const props = { index, onNavigate: (id: string) => moves.push(id), onCounts: (c: string) => counts.push(c) };
     const { rerender } = render(<GraphView {...props} settings={DEFAULT_GRAPH_SETTINGS} focus={STEP} />);
-    await waitFor(() => expect(node('P-D-UC01-FL-S03')).not.toBeNull());
+    await waitFor(() => expect(node('P-D-UC01-FL-S02')).not.toBeNull());
     expect(counts.at(-1)).toMatch(/^\d+ records? · .*\d+ links?$/);
-    fireEvent.click(node('P-D-UC01-FL-S03')!);
-    expect(moves).toEqual(['P-D-UC01-FL-S03']);
+    fireEvent.click(node('P-D-UC01-FL-S02')!);
+    expect(moves).toEqual(['P-D-UC01-FL-S02']);
     expect(window.location.pathname).toBe('/somewhere-else');
-    rerender(<GraphView {...props} settings={DEFAULT_GRAPH_SETTINGS} focus="P-D-UC01-FL-S03" />);
-    await waitFor(() => expect(isCenter('P-D-UC01-FL-S03')).toBe(true));
+    rerender(<GraphView {...props} settings={DEFAULT_GRAPH_SETTINGS} focus="P-D-UC01-FL-S02" />);
+    await waitFor(() => expect(isCenter('P-D-UC01-FL-S02')).toBe(true));
     expect(window.location.pathname).toBe('/somewhere-else');
 
     // When its container changes size, it fits the picture to the new size.

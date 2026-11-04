@@ -184,8 +184,9 @@ describe('the stage key bar', () => {
     expect(key().closest('.stage-tools')).toBeNull();
     expect(stage().querySelector('.stage-tools details.stage-key, .stage-tools [aria-label="Key"]')).toBeNull();
     // Each entry a sample and a word or two, its whole meaning in its tooltip.
-    // Only what the graph draws around the focus: a capability, the use case and its requirements, in the use cases' color.
-    expect(entries()).toEqual(['stage-use-cases', 'focus', 'shape-slice', 'shape-stadium', 'shape-page', 'line', 'bar', 'badge-gap', 'scroll']);
+    // Only what the graph draws around the focus: a capability, the use case and its groups of requirements and of
+    // flows (folders, one with an error beneath it), in the use cases' color.
+    expect(entries()).toEqual(['stage-use-cases', 'stage-group', 'focus', 'shape-folder', 'shape-slice', 'shape-stadium', 'line', 'bar', 'badge-error', 'badge-gap', 'scroll']);
     const useCase = key().querySelector('[data-key-entry="shape-stadium"]')!;
     expect(useCase).toHaveTextContent('Use case');
     expect(useCase).toHaveAttribute('title', expect.stringMatching(/^Use case: a stadium$/));

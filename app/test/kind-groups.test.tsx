@@ -46,8 +46,8 @@ describe('groups by stage and kind', () => {
     await user.click(stage);
     // The capability, a record, links to its own page; Use cases holds only capabilities, so lists them itself.
     expect(within(list('Use cases of Shopping')).getByRole('link', { name: 'Buying' })).toHaveAttribute('href', '/DM-SHOP-CAP01');
-    await user.click(head(folders, /^Interaction design/));
-    const kind = head(list('Interaction design of Shopping'), /^Flows/);
+    await user.click(head(folders, /^Interface design/));
+    const kind = head(list('Interface design of Shopping'), /^Views/);
     expect(kind.tagName).toBe('BUTTON');
     expect(kind.closest('li')!.querySelector(':scope > a')).toBeNull();
   });
@@ -95,13 +95,13 @@ describe('groups by stage and kind', () => {
     const user = userEvent.setup();
     expect(rows(list('Shared in Product'))).toEqual(['Shared4']);
     await user.click(head(list('Shared in Product'), /^Shared/));
-    expect(rows(list('Stages of Product'))).toEqual(['Domain model1', 'Interaction design1', 'Technical specification1', 'Test plan1']);
+    expect(rows(list('Stages of Product'))).toEqual(['Domain model1', 'Interface design1', 'Technical specification1', 'Test plan1']);
     const shared = section(/^Shared/);
     expect(within(shared).getAllByRole('link', { name: /P-VO01/ })[0]).toHaveAttribute('href', '/P-VO01');
-    // One domain's flow steps use the view and the integration: they sit in its Interaction design, with the specification in its Domain model.
+    // One domain's flow steps use the view and the integration: they sit in its Interface design, with the specification in its Domain model.
     await openApp('/P-D', { data: modelWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Domain' });
-    expect(kindHeadings('Interaction design')).toEqual(['Flows1', 'Views1', 'Endpoints2', 'Integrations1']);
+    expect(kindHeadings('Interface design')).toEqual(['Views1', 'Endpoints2', 'Integrations1']);
     expect(kindHeadings('Domain model')).toContain('Specifications1');
     expect(within(section(/^Views/)).getByRole('link', { name: /P-V01/ })).toBeInTheDocument();
     const folders = ownerFolders(modelIndex(), 'P-D').stages.flatMap((s) => s.folders);
@@ -150,16 +150,16 @@ describe('groups by stage and kind', () => {
     expect([...main().querySelectorAll('h2')].map((h) => h.textContent).filter((t) => /tests/.test(t!))).toEqual(['Invariant tests1', 'Use case tests1']);
   });
 
-  it('LA-V91-R09-T01 An endpoint sits in its domain\'s Interaction design and an integration in the one domain that uses it, by their stage', () => {
+  it('LA-V91-R09-T01 An endpoint sits in its domain\'s Interface design and an integration in the one domain that uses it, by their stage', () => {
     const index = modelIndex();
     const folders = ownerFolders(index, 'P-D').stages;
-    const design = folders.find((s) => s.label === 'Interaction design')!;
+    const design = folders.find((s) => s.label === 'Interface design')!;
     expect(design.folders.filter((f) => f.count > 0).map((f) => [f.kind, f.records.map((r) => r.id)])).toEqual([
-      ['flow', ['P-D-UC01-FL']], ['view', ['P-V01']], ['endpoint', ['P-D-EP01', 'P-D-EP02']], ['integration', ['P-INT01']],
+      ['view', ['P-V01']], ['endpoint', ['P-D-EP01', 'P-D-EP02']], ['integration', ['P-INT01']],
     ]);
     // The graph places them the same: in the stage's kind folders.
-    expect(treeParent(index, 'P-D-EP01')).toBe('P-D/interaction-design/endpoint');
-    expect(treeParent(index, 'P-INT01')).toBe('P-D/interaction-design/integration');
-    expect(treeChildren(index, 'P-D/interaction-design')).toContain('P-D/interaction-design/integration');
+    expect(treeParent(index, 'P-D-EP01')).toBe('P-D/interface-design/endpoint');
+    expect(treeParent(index, 'P-INT01')).toBe('P-D/interface-design/integration');
+    expect(treeChildren(index, 'P-D/interface-design')).toContain('P-D/interface-design/integration');
   });
 });

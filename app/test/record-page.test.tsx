@@ -184,7 +184,7 @@ describe('record page', () => {
   it('LA-PAT-RECORD-PAGE-R08-T01 LA-PAT-RECORD-PAGE-R08-T02 LA-PAT-RECORD-PAGE-R08-T03 LA-PAT-RECORD-PAGE-R08-T04 LA-PAT-RECORD-PAGE-R08-T05 LA-PAT-RECORD-PAGE-R08-T06 A record\'s kind shows in its stage\'s color, and a kind with no owner sits in its product, in no domain', async () => {
     await openApp('/DM-V01?stage=graph');
     await screen.findByRole('heading', { level: 1, name: 'Basket page' });
-    expect(card().style.getPropertyValue('--card-accent')).toBe('var(--g-interaction-design)');
+    expect(card().style.getPropertyValue('--card-accent')).toBe('var(--g-interface-design)');
     // Both domains' flow steps happen in the view, so the product shares it: its breadcrumb starts at the product, in no domain.
     expect(within(card().querySelector<HTMLElement>('.breadcrumb')!).getAllByRole('link')[0]).toHaveTextContent('Demo shop');
     expect(card().querySelector('.breadcrumb')).not.toHaveTextContent('Shopping');

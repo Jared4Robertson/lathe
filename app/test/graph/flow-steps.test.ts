@@ -35,8 +35,8 @@ describe('flow steps in the graph', () => {
     const index = recordIndexOf(flowWorkspace(6));
     expect(spine(neighborhood(index, 'P-D-UC01-FL', 1))).toEqual(expect.arrayContaining(['P-D-UC01-FL > P-D-UC01-FL-S01', 'P-D-UC01-FL > P-D-UC01-FL-S06']));
     expect(isGraphNode(index, 'P-D-UC01-FL/flow_step')).toBe(false);
-    // The flow sits in Interaction design's Flows folder, its test in Test plan's.
-    expect(nodeParent(index, 'P-D-UC01-FL')).toBe('P-D/interaction-design/flow');
+    // The flow sits under its use case, in Use cases (in its Flows group beside the UC requirements), its test in Test plan's folder.
+    expect(nodeParent(index, 'P-D-UC01-FL')).toBe('P-D-UC01/flow');
     expect(nodeParent(index, 'P-D-UC01-FL-T')).toBe('P-D/test-plan/flow_test');
     const map = graphMap(index, 'P');
     expect(map.nodes.get('P-D-UC01-FL-S05')!.parent).toBe('P-D-UC01-FL');

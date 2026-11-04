@@ -129,9 +129,9 @@ describe('a product\'s own relations', () => {
   });
 });
 
-describe('a product\'s own interaction design kind presents', () => {
-  /** The complete product with an invocation kind of its own, in the interaction design, that presents commands and queries. */
-  const withInvocations = (stage = 'interaction-design'): Data =>
+describe('a product\'s own interface design kind presents', () => {
+  /** The complete product with an invocation kind of its own, in the interface design, that presents commands and queries. */
+  const withInvocations = (stage = 'interface-design'): Data =>
     adding(complete(), {
       product_kind: [{ name: 'invocation', product_id: 'EX', label: 'Invocation', description: 'One invocation of the library\'s command line.', parent_kind: 'product', stage, obligation: false, complexity: 'essential', id_pattern: '<P>-INV<nn>' }],
       product_relation: [
@@ -140,7 +140,7 @@ describe('a product\'s own interaction design kind presents', () => {
       ],
     });
 
-  it('LA-PRD-UC04-R06-T01 A product\'s interaction design kind may present commands and queries; any other kind may not', async () => {
+  it('LA-PRD-UC04-R06-T01 A product\'s interface design kind may present commands and queries; any other kind may not', async () => {
     const root = await build(withInvocations());
     const store = await openStore(root, { latheDataDir: null });
     await run(store, 'extension-record add-extension-record', { kind: 'invocation', id: 'EX-INV01', parent_id: 'EX', values: { title: 'library lend' }, links: { presents: ['EX-LEND-CMD01', 'EX-LEND-QRY01'] } });
@@ -172,7 +172,7 @@ describe('stages', () => {
       [1, 'discovery', 'Discovery'],
       [2, 'domain-model', 'Domain model'],
       [3, 'use-cases', 'Use cases'],
-      [4, 'interaction-design', 'Interaction design'],
+      [4, 'interface-design', 'Interface design'],
       [5, 'technical-specification', 'Technical specification'],
       [6, 'test-plan', 'Test plan'],
     ]);

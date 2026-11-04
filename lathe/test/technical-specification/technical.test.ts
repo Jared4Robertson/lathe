@@ -1,4 +1,4 @@
-// Authoring the interaction design, the technical specification and standards (LA-TEC-UC16,
+// Authoring the interface design, the technical specification and standards (LA-TEC-UC16,
 // LA-TEC-UC17, LA-IXD-UC18): views, endpoints and integrations, technical records and their files, tables and
 // standards, proved through the store, the engine's load and the reference.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -41,7 +41,7 @@ describe('files', () => {
   });
 });
 
-describe('the interaction design', () => {
+describe('the interface design', () => {
   it('LA-IXD-UC26-R01-T01 An endpoint sits under the one command or query it exposes, and a step reaches it only through that command or query', async () => {
     expect(parentsOf(schema, 'endpoint')).toEqual(['command.command_id', 'query.query_id']);
     expect(schema.tables.endpoint.checks).toContainEqual('((command_id IS NULL) != (query_id IS NULL))');
@@ -71,10 +71,10 @@ describe('the interaction design', () => {
     expect(await refusals(adding(everyKind(), { view: [{ id: 'XX-V09', title: 'Lost', description: 'A page of no product.' }] }))).toEqual([expect.objectContaining({ rule: 'id-prefix', key: 'XX-V09' })]);
   });
 
-  it('LA-IXD-UC18-R06-T01 LA-IXD-UC26-R02-T01 A rule of the interaction design is a view requirement under its view or an API requirement under its endpoint', () => {
+  it('LA-IXD-UC18-R06-T01 LA-IXD-UC26-R02-T01 A rule of the interface design is a view requirement under its view or an API requirement under its endpoint', () => {
     expect(parentsOf(schema, 'view_requirement')).toEqual(['view.view_id']);
     expect(parentsOf(schema, 'api_requirement')).toEqual(['endpoint.endpoint_id']);
-    const rules = Object.values(schema.kinds).filter((k) => k.stage === 'interaction-design' && k.obligation).map((k) => k.name).sort();
+    const rules = Object.values(schema.kinds).filter((k) => k.stage === 'interface-design' && k.obligation).map((k) => k.name).sort();
     expect(rules).toEqual(['api_requirement', 'view_requirement']);
     for (const kind of rules) expect(requiredOf(schema, kind), kind).toContain('statement');
     expect(record(good, 'EX-V01-R01')).toMatchObject({ parent: 'EX-V01', kind: 'view_requirement' });
@@ -87,7 +87,7 @@ describe('the interaction design', () => {
 
 describe('the technical specification', () => {
   it('LA-TEC-UC17-R07-T01 A technical record sits under the one design record it implements and names its file; a file not there yet is work to do', async () => {
-    const designStages = ['domain-model', 'use-cases', 'interaction-design'];
+    const designStages = ['domain-model', 'use-cases', 'interface-design'];
     for (const kind of technical()) {
       const parents = schema.kinds[kind].parents;
       // A UI component has no owner (it renders views); a table may instead sit under a domain as its infrastructure.

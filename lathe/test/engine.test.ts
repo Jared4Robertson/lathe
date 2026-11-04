@@ -182,7 +182,7 @@ describe('loading', () => {
     expect(Object.keys(ws).sort()).toEqual(['chains', 'coverage', 'kinds', 'links', 'problems', 'records', 'relations', 'stages']);
     expect(Object.keys(ws.chains[0]).sort()).toEqual(['build', 'design', 'files', 'links', 'obligation', 'tests']);
     expect(Object.keys(ws.kinds[0]).sort()).toEqual(['complexity', 'description', 'id_scope', 'kind', 'label', 'obligation', 'parent_kinds', 'position', 'required_fields', 'stage']);
-    expect(ws.stages.map((s) => s.stage)).toEqual(['discovery', 'domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan']);
+    expect(ws.stages.map((s) => s.stage)).toEqual(['discovery', 'domain-model', 'use-cases', 'interface-design', 'technical-specification', 'test-plan']);
     expect(Object.keys(ws.stages[0]).sort()).toEqual(['description', 'label', 'position', 'stage']);
     expect(Object.keys(ws.relations[0]).sort()).toEqual(['description', 'forward_label', 'relation', 'reverse_label', 'role', 'source_kind', 'target_kind']);
     expect(Object.keys(ws.records[0]).sort()).toEqual(['aggregate', 'domain', 'fields', 'id', 'kind', 'parent', 'parts', 'product', 'title']);
@@ -193,7 +193,7 @@ describe('loading', () => {
     // Kinds come in kind order, stage by stage, with product and question outside the stages.
     expect(ws.kinds.slice(0, 5).map((k) => k.kind)).toEqual(['product', 'business_outcome', 'journey', 'journey_step', 'domain']);
     expect(ws.kinds.find((k) => k.kind === 'question')).toMatchObject({ stage: null, parent_kinds: ['product', 'domain'] });
-    expect(ws.kinds.find((k) => k.kind === 'view')).toMatchObject({ stage: 'interaction-design', parent_kinds: [], id_scope: 'product', obligation: false });
+    expect(ws.kinds.find((k) => k.kind === 'view')).toMatchObject({ stage: 'interface-design', parent_kinds: [], id_scope: 'product', obligation: false });
     expect(ws.kinds.find((k) => k.kind === 'invariant')).toMatchObject({ stage: 'domain-model', obligation: true, required_fields: ['statement'] });
     // A record's typed columns and its parts come as stored.
     const entity = ws.records.find((r) => r.id === 'EX-LEND-EN01')!;

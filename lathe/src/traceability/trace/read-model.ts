@@ -37,7 +37,7 @@ export interface TraceObligation {
 export interface TraceChain {
   /** The UI components that render the views that present what the step invokes. */
   components: string[];
-  /** The endpoints, and the product's own interaction design records (an IPC channel, a CLI command), of what it invokes. */
+  /** The endpoints, and the product's own interface design records (an IPC channel, a CLI command), of what it invokes. */
   entries: string[];
   /** The command or query handler of what it invokes. */
   handlers: string[];
@@ -70,7 +70,7 @@ export interface TraceStepThrough {
   id: string;
   views: { id: string; requirements: TraceObligation[] }[];
   endpoints: { id: string; apiRequirements: TraceObligation[] }[];
-  /** The product's own interaction design records it is carried out in, such as a CLI command. */
+  /** The product's own interface design records it is carried out in, such as a CLI command. */
   entries: string[];
   /** It invokes a command or query this interface has no way to reach. */
   unreached: boolean;
@@ -242,11 +242,11 @@ export function traceTableFrom(view: ReadView): TraceTable {
   const invariantsOf = under('invariant', 'aggregate_id');
   const storageOf = merge(under('storage_requirement', 'aggregate_id'), under('storage_requirement', 'read_model_id'));
   const flowTestOf = new Map(rows('flow_test').map((t) => [String(t.flow_id), t]));
-  // The product's own interaction design records under a command or a query (an IPC channel, a CLI command), and those
+  // The product's own interface design records under a command or a query (an IPC channel, a CLI command), and those
   // that present it (an invocation that carries out several commands and queries); the views that present it apart.
   const ownEntries = new Map<string, string[]>();
   for (const kind of Object.values(schema.kinds)) {
-    if (kind.productId === null || kind.obligation || kind.stage !== 'interaction-design') continue;
+    if (kind.productId === null || kind.obligation || kind.stage !== 'interface-design') continue;
     for (const parent of kind.parents) {
       if (parent.kind !== 'command' && parent.kind !== 'query') continue;
       for (const [k, v] of under(kind.name, parent.column)) ownEntries.set(k, [...(ownEntries.get(k) ?? []), ...v]);

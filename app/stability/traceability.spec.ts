@@ -71,18 +71,18 @@ test.describe('Traceability flows', () => {
     await openPage(page, `/${useCase}?stage=trace`);
     await traceDrawn(page, 900);
     const row = await traceSceneOf(page, true);
-    expect(row.columns.map((c) => c.name)).toEqual(['Outcome', 'Journey', 'Use case', 'Design flow', 'Technical flow', 'Acceptance test suite']);
+    expect(row.columns.map((c) => c.name)).toEqual(['Outcome', 'Journey', 'Use case', 'Flow', 'Technical flow', 'Acceptance test suite']);
     expect(row.rows.filter((r) => r === useCase)).toHaveLength(1);
     expect(box(row, `${useCase}|use-case`)).toMatchObject({ focus: true });
     expect(row.lines.filter((l) => l.kind === 'serves' && l.to === `${useCase}|use-case`).map((l) => l.from).sort()).toEqual(outcomes.map((o) => `outcome/${o}`).sort());
-    for (const stage of ['design', 'technical', 'suite']) expect(['status', 'gap'], stage).toContain(box(row, `${useCase}|${stage}`)!.role);
+    for (const stage of ['flow', 'technical', 'suite']) expect(['status', 'gap'], stage).toContain(box(row, `${useCase}|${stage}`)!.role);
     await expectKeyWhole(page);
     // S03: Expand row opens every stage of the row: its requirements, its flows, its tests.
     const expandRow = page.locator('.focus-stage .stage-toolbar').getByRole('button', { name: 'Expand row' });
     if ((await expandRow.getAttribute('aria-pressed')) !== 'true') await expandRow.click();
     await expect.poll(async () => !!box(await traceSceneOf(page, true), `${useCase}|use-case/${REQUIREMENT}`), { timeout: 5000 }).toBe(true);
     const open = await traceSceneOf(page, true);
-    for (const f of flows) expect(box(open, `${useCase}|design/${f}`), f).toBeTruthy();
+    for (const f of flows) expect(box(open, `${useCase}|flow/${f}`), f).toBeTruthy();
     for (const t of tests) expect(box(open, `${useCase}|suite/${t}`), t).toBeTruthy();
     // S04: the requirement selected (by its address, as a click or the walk does): its path lit across the row, from its
     // outcomes to the flows whose steps fulfill it and its tests, every other row faded.

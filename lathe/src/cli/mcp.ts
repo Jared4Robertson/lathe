@@ -27,7 +27,7 @@ const CHECK_TOOL: Tool = {
   name: 'check',
   description:
     'Run lathe check on the whole workspace: every error (fix them before going on), every warning (work still to do), ' +
-    'and each product\'s coverage as lathe check --json gives it: per domain and obligation kind, how many are designed, built and proved, with its gaps (what each obligation still lacks, and each record short of a minimum, such as interface-without-flow).',
+    'and each product\'s coverage as lathe check --json gives it: per domain and obligation kind, how many are designed, built and proved, with its gaps (what each obligation still lacks, and each record short of a minimum, such as use-case-without-flow).',
   inputSchema: { type: 'object', properties: {}, additionalProperties: false },
   annotations: { readOnlyHint: true },
 };

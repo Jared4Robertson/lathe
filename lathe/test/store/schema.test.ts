@@ -71,7 +71,7 @@ describe('the schema description', () => {
 
   it('LA-PRD-UC08-R01-T03 orders the kinds stage by stage, with product first and open questions last', () => {
     const stages = schema.stages.map((s) => s.name);
-    expect(stages).toEqual(['discovery', 'domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan']);
+    expect(stages).toEqual(['discovery', 'domain-model', 'use-cases', 'interface-design', 'technical-specification', 'test-plan']);
     const kinds = Object.values(schema.kinds).sort((a, b) => a.position! - b.position!);
     expect(kinds[0].name).toBe('product');
     expect(kinds.at(-1)!.name).toBe('question');

@@ -30,7 +30,7 @@ describe('LA-PRD-UC08-R05-T02 The meta model read gives the kinds in the schema\
 
   it('reads the six stages in order and each relation pair with its words read from both ends', async () => {
     const model = await read();
-    expect(model.stages.map((s) => s.stage)).toEqual(['discovery', 'domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan']);
+    expect(model.stages.map((s) => s.stage)).toEqual(['discovery', 'domain-model', 'use-cases', 'interface-design', 'technical-specification', 'test-plan']);
     const fulfills = model.relations.find((r) => r.relation === 'fulfills');
     expect(fulfills).toMatchObject({ source_kind: 'flow_step', target_kind: 'uc_requirement' });
     expect(fulfills?.forward_label).toBeTruthy();

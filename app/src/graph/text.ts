@@ -19,7 +19,7 @@ import { NODE_WIDTH, nodeShape, SHAPES, type Room, type Shape } from './shapes';
  *   EYEBROW_RATIO of the title's size. Muted meets 4.5:1 on every stage's fill in every built-in theme, light and dark.
  * - The status, the third level: problem badges in the box's top right corner (plate.ts); where a box's status is words
  *   (a journey's proof, a test's), a status line under the title, the body face at 400, muted, at STATUS_RATIO of the
- *   title's size: never at the title's weight. A Trace stage cell (Design flow, Technical flow, Acceptance test suite)
+ *   title's size: never at the title's weight. A Trace stage cell (Flow, Technical flow, Acceptance test suite)
  *   is its status, so its status is its title ("1 interface · all designed"); the Use case cell keeps its title.
  * Sizes are in map units at text scale 1 (a leaf-wide level); the canvas draws them at their map size times the zoom.
  */

@@ -28,7 +28,7 @@
 .journey-lane-name { font-size: 0.78rem; color: var(--muted); background: var(--paper); white-space: nowrap; }
 .journey-lane-cell { display: flex; align-items: center; justify-content: center; min-height: 2rem; }
 .journey-mark { display: inline-grid; place-items: center; min-width: 1.5rem; height: 1.5rem; padding: 0 4px; border-radius: 999px; font: 600 0.75rem var(--mono); color: var(--on-mark); background: var(--g-use-cases); }
-.journey-mark.is-handoff { background: var(--g-interaction-design); border-radius: 4px; }
+.journey-mark.is-handoff { background: var(--g-interface-design); border-radius: 4px; }
 @media (max-width: 600px) { .journey-lanes { display: none; } }
 /* A journey's proof in a list or on a card (JourneyLine, the product's Discovery). */
 .journey-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; }

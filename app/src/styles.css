@@ -27,7 +27,7 @@
   --g-discovery: #75640E; --g-discovery-bg: #F4EFD8;
   --g-domain-model: #2E6A88; --g-domain-model-bg: #E4EEF3;
   --g-use-cases: #2F7148; --g-use-cases-bg: #E2F1E7;
-  --g-interaction-design: #6A4C9C; --g-interaction-design-bg: #EEE8F6;
+  --g-interface-design: #6A4C9C; --g-interface-design-bg: #EEE8F6;
   --g-technical-specification: #B5512A; --g-technical-specification-bg: #F8E8DF;
   --g-test-plan: #A3365F; --g-test-plan-bg: #F7E4EC;
   --g-structural: var(--ink); --g-structural-bg: var(--sheet);
@@ -76,7 +76,7 @@
     --g-discovery: #D6C060; --g-discovery-bg: #2E2912;
     --g-domain-model: #7DB4D0; --g-domain-model-bg: #1A2E3A;
     --g-use-cases: #7CC79A; --g-use-cases-bg: #17301F;
-    --g-interaction-design: #B9A0E6; --g-interaction-design-bg: #261E36;
+    --g-interface-design: #B9A0E6; --g-interface-design-bg: #261E36;
     --g-technical-specification: #E88A5E; --g-technical-specification-bg: #3A2219;
     --g-test-plan: #E58AAE; --g-test-plan-bg: #3A1A27;
     --float-shadow: 0 1px 3px rgb(0 0 0 / 0.3), 0 8px 28px rgb(0 0 0 / 0.45);
@@ -186,7 +186,7 @@ code { font: 0.86em var(--mono); }
 .stage-discovery { --stage-color: var(--g-discovery); --stage-fill: var(--g-discovery-bg); }
 .stage-domain-model { --stage-color: var(--g-domain-model); --stage-fill: var(--g-domain-model-bg); }
 .stage-use-cases { --stage-color: var(--g-use-cases); --stage-fill: var(--g-use-cases-bg); }
-.stage-interaction-design { --stage-color: var(--g-interaction-design); --stage-fill: var(--g-interaction-design-bg); }
+.stage-interface-design { --stage-color: var(--g-interface-design); --stage-fill: var(--g-interface-design-bg); }
 .stage-technical-specification { --stage-color: var(--g-technical-specification); --stage-fill: var(--g-technical-specification-bg); }
 .stage-test-plan { --stage-color: var(--g-test-plan); --stage-fill: var(--g-test-plan-bg); }
 /* A product's business outcomes: each a block, its statement, then its measure, target and the capabilities serving it. */
@@ -353,7 +353,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-swatch.stage-discovery { border-color: var(--g-discovery); background: var(--g-discovery-bg); }
 .graph-swatch.stage-domain-model { border-color: var(--g-domain-model); background: var(--g-domain-model-bg); }
 .graph-swatch.stage-use-cases { border-color: var(--g-use-cases); background: var(--g-use-cases-bg); }
-.graph-swatch.stage-interaction-design { border-color: var(--g-interaction-design); background: var(--g-interaction-design-bg); }
+.graph-swatch.stage-interface-design { border-color: var(--g-interface-design); background: var(--g-interface-design-bg); }
 .graph-swatch.stage-technical-specification { border-color: var(--g-technical-specification); background: var(--g-technical-specification-bg); }
 .graph-swatch.stage-test-plan { border-color: var(--g-test-plan); background: var(--g-test-plan-bg); }
 .graph-swatch.stage-bar { background: var(--rule); border-color: var(--rule); opacity: 0.6; }

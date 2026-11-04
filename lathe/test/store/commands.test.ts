@@ -200,13 +200,13 @@ describe('a command', () => {
       label: 'Report',
       description: 'A report the library prints.',
       parent_kind: 'read_model',
-      stage: 'interaction-design',
+      stage: 'interface-design',
       obligation: true, complexity: 'essential',
       id_pattern: '<read model>-REP<nn>',
       fields: [{ name: 'printed_on', type: 'date', required: false, description: 'When it was printed.' }],
     });
     await run(store, 'extension-record add-extension-record', { kind: 'report', id: 'TL-LEND-RM01-REP01', parent_id: 'TL-LEND-RM01', values: { title: 'Overdue loans', printed_on: '2026-03-02' } });
-    expect(store.schema.kinds.report).toMatchObject({ productId: 'TL', stage: 'interaction-design', obligation: true, idScope: null, parents: [{ kind: 'read_model', column: 'read_model_id' }] });
+    expect(store.schema.kinds.report).toMatchObject({ productId: 'TL', stage: 'interface-design', obligation: true, idScope: null, parents: [{ kind: 'read_model', column: 'read_model_id' }] });
     expect(store.schema.supertypes.obligation).toContain('report');
     expect(readFileSync(path.join(root, 'data', 'report.jsonl'), 'utf8')).toBe('{"id":"TL-LEND-RM01-REP01","title":"Overdue loans","read_model_id":"TL-LEND-RM01","printed_on":"2026-03-02"}\n');
     expect(await refusedBy(store, 'extension-record add-extension-record', { kind: 'report', id: 'TL-LEND-RM01-REP02', parent_id: 'TL-LEND-RM01', values: { title: 'x', printed_on: '2026-02-30' } })).toEqual([

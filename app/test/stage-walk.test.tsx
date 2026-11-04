@@ -63,13 +63,13 @@ describe('the stage walk', () => {
     window.history.go(-2);
     await waitFor(() => expect(at()).toBe('/P-D-UC01'));
 
-    // The Trace stage walks its rows: Right to the row's Design flow box (no record: the ring moves, the focus stays),
+    // The Trace stage walks its rows: Right to the row's Flow box (no record: the ring moves, the focus stays),
     // Left back to the use case; Shift+Down in to its first requirement, Down to the next, Up back. A link of its list,
     // the accessible layer under the canvas, keeps its own arrows.
     fireEvent.click(stageButton('Trace'));
     await waitFor(() => expect(document.querySelector('.focus-stage[data-stage="trace"] .trace-flow[data-ready]')).not.toBeNull());
     press(document.body, 'ArrowRight');
-    await waitFor(() => expect(announcer()).toHaveTextContent(/, Design flow$/));
+    await waitFor(() => expect(announcer()).toHaveTextContent(/, Flow$/));
     expect(at()).toBe('/P-D-UC01');
     press(document.body, 'ArrowLeft');
     await waitFor(() => expect(announcer()).toHaveTextContent('Use case Lend a thing'));
@@ -131,11 +131,11 @@ describe('the walking letters', () => {
     window.history.back();
     await waitFor(() => expect(at()).toBe('/P-D-UC01'));
 
-    // The Trace stage, along its row: D to the Design flow box, A back to the use case.
+    // The Trace stage, along its row: D to the Flow box, A back to the use case.
     fireEvent.click(stageButton('Trace'));
     await waitFor(() => expect(document.querySelector('.focus-stage[data-stage="trace"] .trace-flow[data-ready]')).not.toBeNull());
     letter(document.body, 'd');
-    await waitFor(() => expect(announcer()).toHaveTextContent(/, Design flow$/));
+    await waitFor(() => expect(announcer()).toHaveTextContent(/, Flow$/));
     letter(document.body, 'a');
     await waitFor(() => expect(announcer()).toHaveTextContent('Use case Lend a thing'));
     expect(at()).toBe('/P-D-UC01');

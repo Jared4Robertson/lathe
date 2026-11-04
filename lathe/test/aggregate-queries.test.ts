@@ -147,11 +147,11 @@ describe('Use cases follows Aggregate queries', () => {
   it('LA-PAT-AGGREGATE-QUERIES-R05-T07 after a write, each Use cases read model answers as it does over the data loaded afresh', () => staysCurrent('LA-UCS'));
 });
 
-describe('Interaction design follows Aggregate queries', () => {
-  it('LA-PAT-AGGREGATE-QUERIES-R01-T08 each Interaction design query is named on its own on every interface', () => namedOnItsOwn('LA-IXD'));
-  it('LA-PAT-AGGREGATE-QUERIES-R03-T08 asking each Interaction design query changes no row and no data file', () => changesNothing('LA-IXD'));
-  it('LA-PAT-AGGREGATE-QUERIES-R04-T08 each Interaction design query asked by an ID that names nothing is refused, naming it', () => refusesWhatItCannotFind('LA-IXD'));
-  it('LA-PAT-AGGREGATE-QUERIES-R05-T08 after a write, each Interaction design read model answers as it does over the data loaded afresh', () => staysCurrent('LA-IXD'));
+describe('Interface design follows Aggregate queries', () => {
+  it('LA-PAT-AGGREGATE-QUERIES-R01-T08 each Interface design query is named on its own on every interface', () => namedOnItsOwn('LA-IXD'));
+  it('LA-PAT-AGGREGATE-QUERIES-R03-T08 asking each Interface design query changes no row and no data file', () => changesNothing('LA-IXD'));
+  it('LA-PAT-AGGREGATE-QUERIES-R04-T08 each Interface design query asked by an ID that names nothing is refused, naming it', () => refusesWhatItCannotFind('LA-IXD'));
+  it('LA-PAT-AGGREGATE-QUERIES-R05-T08 after a write, each Interface design read model answers as it does over the data loaded afresh', () => staysCurrent('LA-IXD'));
 });
 
 describe('Technical specification follows Aggregate queries', () => {

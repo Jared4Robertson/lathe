@@ -293,7 +293,7 @@ flow step (\`lathe use-case add-flow-step\`, the plugin's \`use_case_add_flow_st
 lines it changed, or is refused with every reason; git is the history. Each aggregate reads through its own queries.
 
 The model is drawn from domain-driven design, CQRS and event storming, in six stages: discovery (the business
-outcomes the product exists to achieve), the domain model, use cases on top of it, their interaction design, the
+outcomes the product exists to achieve), the domain model, use cases on top of it, their interface design, the
 technical records that implement each design record, and the test plan. Links run from what is defined first to
 what is defined later. A capability names the outcomes it serves, so the trace runs from an outcome to its
 capabilities, their use cases, the code and the tests. An outcome names what measures it (\`measured_by\`): a test,
@@ -317,7 +317,7 @@ exists and names the test's ID. An obligation something outside the product prov
 proved through its provider.
 
 **Complexity.** Every kind says whether its records are essential complexity, what the problem itself demands and
-the product decides once (discovery, the domain model, use cases and patterns, the what of interaction design), or
+the product decides once (discovery, the domain model, use cases and patterns, the what of interface design), or
 accidental complexity, what comes from the means used to build it (the technical specification); a test follows what
 it proves, and a standard its type (a quality is essential, engineering accidental). An accidental record is derived
 (a tooling record \`generates\` it), provided (\`provided_by\`), or a fill: written by hand at a pattern's slot

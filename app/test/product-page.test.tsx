@@ -71,12 +71,12 @@ describe('product page', () => {
     const stages = [...level.querySelectorAll('.stage')].map((s) => [s.className, s.querySelector('.stage-title')?.textContent]);
     expect(stages).toEqual([
       ['stage stage-domain-model', 'Domain model1'],
-      ['stage stage-interaction-design', 'Interaction design1'],
+      ['stage stage-interface-design', 'Interface design1'],
     ]);
     // Domain model holds only value objects, so it lists them itself.
     expect(within(level).queryByRole('heading', { name: /^Value objects/ })).toBeNull();
     expect(within(stageOf('domain-model', level)).getByRole('link', { name: /DM-VO01/ })).toBeInTheDocument();
-    expect(within(stageOf('interaction-design', level)).getByRole('link', { name: /DM-IF01\s*Web app/ })).toHaveAttribute('href', '/DM-IF01');
+    expect(within(stageOf('interface-design', level)).getByRole('link', { name: /DM-IF01\s*Web app/ })).toHaveAttribute('href', '/DM-IF01');
     // A domain's records are never listed in Shared.
     expect(level).not.toHaveTextContent('DM-SHOP-SP01');
   });

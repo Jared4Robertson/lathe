@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { ADD_POLICY } from '../../../src/domain-modeling/command/commands/add-policy.ts';
 import { CHANGE_POLICY } from '../../../src/domain-modeling/command/commands/change-policy.ts';
 import { GET_COMMAND } from '../../../src/domain-modeling/command/queries.ts';
-import { ADD_INTEGRATION } from '../../../src/interaction-design/integration/commands/add-integration.ts';
+import { ADD_INTEGRATION } from '../../../src/interface-design/integration/commands/add-integration.ts';
 import type { AnyCommand } from '../../../src/platform/commands/definition.ts';
 import { runCommand, runQuery } from '../../../src/platform/commands/run.ts';
 import { StoreError } from '../../../src/platform/data/problems.ts';

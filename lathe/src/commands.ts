@@ -9,10 +9,10 @@ import { COMMAND_COMMANDS } from './domain-modeling/command/commands/index.ts';
 import { DATA_STORE_COMMANDS } from './technical-specification/data-store/commands/index.ts';
 import { DOMAIN_COMMANDS } from './domain-modeling/domain/commands/index.ts';
 import { DOMAIN_EVENT_COMMANDS } from './domain-modeling/domain-event/commands/index.ts';
-import { ENDPOINT_COMMANDS } from './interaction-design/endpoint/commands/index.ts';
+import { ENDPOINT_COMMANDS } from './interface-design/endpoint/commands/index.ts';
 import { ENTRY_POINT_COMMANDS } from './technical-specification/entry-point/commands/index.ts';
 import { EXTENSION_RECORD_COMMANDS } from './product/extension-record/commands/index.ts';
-import { INTEGRATION_COMMANDS } from './interaction-design/integration/commands/index.ts';
+import { INTEGRATION_COMMANDS } from './interface-design/integration/commands/index.ts';
 import { INTERFACE_COMMANDS } from './product/interface/commands/index.ts';
 import { JOURNEY_COMMANDS } from './product/journey/commands/index.ts';
 import { PATTERN_COMMANDS } from './use-cases/pattern/commands/index.ts';
@@ -28,10 +28,10 @@ import { STORAGE_REQUIREMENT_COMMANDS } from './domain-modeling/storage-requirem
 import { TABLE_COMMANDS } from './technical-specification/table/commands/index.ts';
 import { TEST_DATA_SET_COMMANDS } from './test-planning/test-data-set/commands/index.ts';
 import { TOOLING_COMMANDS } from './technical-specification/tooling/commands/index.ts';
-import { UI_COMPONENT_COMMANDS } from './interaction-design/ui-component/commands/index.ts';
+import { UI_COMPONENT_COMMANDS } from './interface-design/ui-component/commands/index.ts';
 import { USE_CASE_COMMANDS } from './use-cases/use-case/commands/index.ts';
 import { VALUE_OBJECT_COMMANDS } from './domain-modeling/value-object/commands/index.ts';
-import { VIEW_COMMANDS } from './interaction-design/view/commands/index.ts';
+import { VIEW_COMMANDS } from './interface-design/view/commands/index.ts';
 import { GET_AGGREGATE, LIST_AGGREGATES, NEXT_AGGREGATE_ID } from './domain-modeling/aggregate/queries.ts';
 import { GET_BUSINESS_OUTCOME, LIST_BUSINESS_OUTCOMES, NEXT_BUSINESS_OUTCOME_ID } from './product/business-outcome/queries.ts';
 import { GET_REACH } from './traceability/change-reach/queries.ts';
@@ -42,14 +42,14 @@ import { LIST_COVERAGE_GAPS, FIND_UNUSED_PACKAGES } from './traceability/coverag
 import { GET_DATA_STORE, LIST_DATA_STORES, NEXT_DATA_STORE_ID } from './technical-specification/data-store/queries.ts';
 import { GET_DOMAIN, LIST_DOMAINS, NEXT_DOMAIN_ID } from './domain-modeling/domain/queries.ts';
 import { GET_DOMAIN_EVENT, LIST_DOMAIN_EVENTS, NEXT_DOMAIN_EVENT_ID } from './domain-modeling/domain-event/queries.ts';
-import { GET_ENDPOINT, LIST_ENDPOINTS, NEXT_ENDPOINT_ID } from './interaction-design/endpoint/queries.ts';
+import { GET_ENDPOINT, LIST_ENDPOINTS, NEXT_ENDPOINT_ID } from './interface-design/endpoint/queries.ts';
 import { GET_ENTRY_POINT, LIST_ENTRY_POINTS, NEXT_ENTRY_POINT_ID } from './technical-specification/entry-point/queries.ts';
 import { GET_ERD } from './exploring/erd/queries.ts';
 import { LIST_ESSENTIAL_RECORDS } from './checking/essential-review/queries.ts';
 import { GET_EXTENSION_RECORD, LIST_EXTENSION_RECORDS, NEXT_EXTENSION_RECORD_ID } from './product/extension-record/queries.ts';
 import { LIST_TRACED_ADDRESSES } from './traceability/file-facts/queries.ts';
 import { GET_FOLDER_TREE } from './exploring/folder-tree/queries.ts';
-import { GET_INTEGRATION, LIST_INTEGRATIONS, NEXT_INTEGRATION_ID } from './interaction-design/integration/queries.ts';
+import { GET_INTEGRATION, LIST_INTEGRATIONS, NEXT_INTEGRATION_ID } from './interface-design/integration/queries.ts';
 import { GET_JOURNEY, LIST_JOURNEYS, NEXT_JOURNEY_ID } from './product/journey/queries.ts';
 import { GET_META_MODEL } from './platform/meta-model/queries.ts';
 import { GET_PATTERN, LIST_PATTERNS, NEXT_PATTERN_ID } from './use-cases/pattern/queries.ts';
@@ -72,10 +72,10 @@ import { GET_TEST_DATA_SET, LIST_TEST_DATA_SETS, NEXT_TEST_DATA_SET_ID } from '.
 import { GET_TEST_COUNTS } from './traceability/tests-by-state/queries.ts';
 import { GET_TOOLING, LIST_TOOLING, NEXT_TOOLING_ID } from './technical-specification/tooling/queries.ts';
 import { LIST_TRACED_USE_CASES, GET_JOURNEY_PROOF } from './traceability/trace/queries.ts';
-import { GET_UI_COMPONENT, LIST_UI_COMPONENTS, NEXT_UI_COMPONENT_ID } from './interaction-design/ui-component/queries.ts';
+import { GET_UI_COMPONENT, LIST_UI_COMPONENTS, NEXT_UI_COMPONENT_ID } from './interface-design/ui-component/queries.ts';
 import { GET_USE_CASE, LIST_USE_CASES, NEXT_USE_CASE_ID } from './use-cases/use-case/queries.ts';
 import { GET_VALUE_OBJECT, LIST_VALUE_OBJECTS, NEXT_VALUE_OBJECT_ID } from './domain-modeling/value-object/queries.ts';
-import { GET_VIEW, LIST_VIEWS, NEXT_VIEW_ID } from './interaction-design/view/queries.ts';
+import { GET_VIEW, LIST_VIEWS, NEXT_VIEW_ID } from './interface-design/view/queries.ts';
 
 const COMMANDS = [
   ...AGGREGATE_COMMANDS,

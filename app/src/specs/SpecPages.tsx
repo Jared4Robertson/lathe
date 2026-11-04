@@ -88,7 +88,7 @@ function StageBlock({ stage, level, children }: { stage: StageFolders; level: 2 
 
 /**
  * A domain's or a product's records in its stages, as the side nav reads them: each stage under its
- * heading and color (Domain model, Use cases, Interaction design, Technical specification, Test plan),
+ * heading and color (Domain model, Use cases, Interface design, Technical specification, Test plan),
  * and in it one section per kind with records (or, for a stage with one folder, its records directly), each record a
  * row whose children of the same stage fold under it. A stage with nothing yet says so. Then the folders outside the stages, except open
  * questions, which the page lists itself.

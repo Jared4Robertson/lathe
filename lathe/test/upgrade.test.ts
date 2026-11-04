@@ -549,6 +549,17 @@ describe('the schema version', () => {
     return { changes, todos };
   };
 
+  const run6to7 = async (tables: Record<string, Record<string, unknown>[]>) => {
+    const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 6);
+    const changes: string[] = [];
+    const todos: string[] = [];
+    await step!.converter.files!(
+      { tables: () => Object.keys(tables), read: (table) => tables[table] ?? [], write: (table, rows) => void (tables[table] = rows) },
+      { changed: (text) => changes.push(text), todo: (text) => todos.push(text) },
+    );
+    return { changes, todos };
+  };
+
   it("LA-PRD-UC03-R08-T15 4-to-5 changes no row, asks to rename a product's own kind or relation that clashes with a new table, and to write the journey each duration outcome times", async () => {
     const tables: Record<string, Record<string, unknown>[]> = {
       product_kind: [{ name: 'journey', product_id: 'TL' }, { name: 'report', product_id: 'TL' }],
@@ -601,5 +612,24 @@ describe('the schema version', () => {
     expect(changes).toEqual(['Each domain has a position: 4 numbered from 1 within their product, in ID order.']);
     expect(todos).toEqual([]);
     expect((await run5to6({})).changes).toEqual([]);
+  });
+
+  it('LA-PRD-UC03-R08-T18 6-to-7 moves each product kind in interaction-design to interface-design, keeps its other fields and every other kind, and does nothing to data already upgraded', async () => {
+    const tables: Record<string, Record<string, unknown>[]> = {
+      product_kind: [
+        { name: 'cli_command', product_id: 'TL', label: 'CLI command', stage: 'interaction-design', obligation: false },
+        { name: 'runbook', product_id: 'TL', label: 'Runbook', stage: 'technical-specification', obligation: false },
+      ],
+    };
+    const { changes, todos } = await run6to7(tables);
+    expect(tables.product_kind).toEqual([
+      { name: 'cli_command', product_id: 'TL', label: 'CLI command', stage: 'interface-design', obligation: false },
+      { name: 'runbook', product_id: 'TL', label: 'Runbook', stage: 'technical-specification', obligation: false },
+    ]);
+    expect(changes).toEqual(["Interaction design is interface design: 1 of the product's own kinds (cli_command) moved to stage interface-design."]);
+    expect(todos).toEqual([]);
+    const before = structuredClone(tables);
+    expect((await run6to7(tables)).changes).toEqual([]);
+    expect(tables).toEqual(before);
   });
 });

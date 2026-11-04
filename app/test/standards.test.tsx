@@ -567,10 +567,10 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     const index = recordIndexOf(workspace());
     expect(parseSpecRoute('/', index)).toEqual({ page: 'specs' });
     for (const id of ['DM', 'DM-SHOP', 'DM-SHOP-UC01']) expect(parseSpecRoute(`/${id}`, index)?.page, id).toMatch(/^(product|domain|record)$/);
-    expect(parseSpecRoute('/DM-SHOP/interaction-design/flow', index)).toEqual({ page: 'group', parent: 'DM-SHOP', kind: 'interaction-design/flow' });
+    expect(parseSpecRoute('/DM-SHOP/interface-design/view', index)).toEqual({ page: 'group', parent: 'DM-SHOP', kind: 'interface-design/view' });
 
     // The pages: every in-app link is the home page or an ID, a tool over the stage in its query, and none is an old address.
-    for (const path of ['/', '/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP/interaction-design/flow?stage=graph', '/DM?panel=checks', '/DM-SHOP-UC01?page=format', '/DM?panel=appearance']) {
+    for (const path of ['/', '/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP/interface-design/view?stage=graph', '/DM?panel=checks', '/DM-SHOP-UC01?page=format', '/DM?panel=appearance']) {
       await openApp(path);
       await screen.findAllByRole('heading', { level: 1 });
       const wrong = [...document.querySelectorAll('a[href^="/"]')].map((a) => a.getAttribute('href')!).filter((href) => {

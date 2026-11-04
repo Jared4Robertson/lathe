@@ -57,7 +57,7 @@ describe('the Trace stage', () => {
     const { requests } = await openTrace('/P-D-UC01?stage=trace', withJourney());
     const scene = await drawn();
     expect(requests).toContain('GET /api/trace/list-traced-use-cases?product_id=P');
-    expect(scene.columns.map((c) => c.name)).toEqual(['Outcome', 'Journey', 'Use case', 'Design flow', 'Technical flow', 'Acceptance test suite']);
+    expect(scene.columns.map((c) => c.name)).toEqual(['Outcome', 'Journey', 'Use case', 'Flow', 'Technical flow', 'Acceptance test suite']);
     expect(scene.columns.map((c) => c.count)).toEqual([1, 1, 2, 1, 1, 2]);
     expect(scene.rows).toEqual(['P-D-UC01', 'P-D-UC02']);
     // Each use case once, in the Use case column; the outcome once, with a line to each row it serves and to the journey.
@@ -80,27 +80,27 @@ describe('the Trace stage', () => {
     const scene = await drawn();
     // The Use case cell keeps its title; the stage cells' status is their title, with no line under it.
     expect(box(scene, 'P-D-UC01|use-case')).toMatchObject({ meta: 'P-D-UC01', title: 'Lend a thing', status: '' });
-    expect(box(scene, 'P-D-UC01|design')).toMatchObject({ role: 'status', meta: 'P-D-UC01', title: '1 interface · all designed', status: '', dashed: false, opens: true, open: false });
+    expect(box(scene, 'P-D-UC01|flow')).toMatchObject({ role: 'status', meta: 'P-D-UC01', title: '1 interface · all designed', status: '', dashed: false, opens: true, open: false });
     expect(box(scene, 'P-D-UC01|technical')).toMatchObject({ meta: 'P-D-UC01', status: '' });
     expect(box(scene, 'P-D-UC01|technical')!.title).toMatch(/handler/);
     expect(box(scene, 'P-D-UC01|suite')).toMatchObject({ role: 'gap', title: '3 tests · 1 not proved', status: '', dashed: true });
-    expect(box(scene, 'P-D-UC02|design')).toMatchObject({ role: 'gap', title: 'No flow', status: '', dashed: true });
+    expect(box(scene, 'P-D-UC02|flow')).toMatchObject({ role: 'gap', title: 'No flow', status: '', dashed: true });
     // Its accessible name says its kind, its status and its row's use case.
-    expect(box(scene, 'P-D-UC01|design')!.name).toBe('Design flow 1 interface · all designed, Lend a thing');
-    expect(box(scene, 'P-D-UC02|design')!.name).toMatch(/^Design flow No flow, \S/);
+    expect(box(scene, 'P-D-UC01|flow')!.name).toBe('Flow 1 interface · all designed, Lend a thing');
+    expect(box(scene, 'P-D-UC02|flow')!.name).toMatch(/^Flow No flow, \S/);
     // Their main line is as large as the use case's title, in every stage column.
     const title = box(scene, 'P-D-UC01|use-case')!.titlePx;
     expect(title).toBeGreaterThan(0);
-    for (const stage of ['design', 'technical', 'suite']) expect(box(scene, `P-D-UC01|${stage}`)!.titlePx, stage).toBe(title);
+    for (const stage of ['flow', 'technical', 'suite']) expect(box(scene, `P-D-UC01|${stage}`)!.titlePx, stage).toBe(title);
   });
 
   it('LA-V98-R17-T02 Boxes open by their toggle, Expand row opens the focus\'s row and Expand all a stage in every row; the place keeps what is open', async () => {
     await openTrace('/P-D-UC01?stage=trace');
     await canvasHost();
     // A box's toggle opens it: its children show under it.
-    await click('P-D-UC01|design', true);
-    await waitFor(async () => expect(box(await drawn(), 'P-D-UC01|design/P-D-UC01-FL')).toBeDefined());
-    expect(box(await drawn(), 'P-D-UC01|design')!.open).toBe(true);
+    await click('P-D-UC01|flow', true);
+    await waitFor(async () => expect(box(await drawn(), 'P-D-UC01|flow/P-D-UC01-FL')).toBeDefined());
+    expect(box(await drawn(), 'P-D-UC01|flow')!.open).toBe(true);
     // Expand row: every stage of the focus's row.
     fireEvent.click(toolbarButton('Expand row'));
     await waitFor(async () => expect(box(await drawn(), 'P-D-UC01|use-case/P-D-UC01-R01')).toBeDefined());
@@ -157,24 +157,24 @@ describe('the Trace stage', () => {
     await openTrace('/P-D-UC01?stage=trace');
     await canvasHost();
     if (toolbarButton('Expand row').getAttribute('aria-pressed') !== 'true') fireEvent.click(toolbarButton('Expand row'));
-    await click('P-D-UC01|design/P-D-UC01-FL', true);
+    await click('P-D-UC01|flow/P-D-UC01-FL', true);
     // The flow opens to a box per interface that offers its use case; the web app's opens to its version's steps.
-    await click('P-D-UC01|design/P-D-UC01-FL/P-IF01', true);
-    await click('P-D-UC01|design/P-D-UC01-FL/P-IF01/P-D-UC01-FL-S01');
+    await click('P-D-UC01|flow/P-D-UC01-FL/P-IF01', true);
+    await click('P-D-UC01|flow/P-D-UC01-FL/P-IF01/P-D-UC01-FL-S01');
     await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC01-FL-S01'));
     // The step's chain in Technical flow, its requirement and its test lit, the line across each column, the rest faded.
     await waitFor(async () => expect(box(await drawn(), 'P-D-UC01|technical/step:P-D-UC01-FL-S01/P-D-CMD01-H')).toBeDefined());
     await waitFor(async () => {
       const scene = await drawn();
-      expect(box(scene, 'P-D-UC01|design/P-D-UC01-FL/P-IF01/P-D-UC01-FL-S01')).toMatchObject({ focus: true, lit: true });
+      expect(box(scene, 'P-D-UC01|flow/P-D-UC01-FL/P-IF01/P-D-UC01-FL-S01')).toMatchObject({ focus: true, lit: true });
       expect(box(scene, 'P-D-UC01|use-case/P-D-UC01-R01')!.lit).toBe(true);
       expect(box(scene, 'P-D-UC01|use-case/P-D-UC01-R02')!.lit).toBe(false);
       expect(box(scene, 'P-D-UC01|suite/P-D-UC01-R01-T01')!.lit).toBe(true);
       expect(box(scene, 'P-D-UC01|suite/P-D-UC01-R01-T01')!.strength).toBe(1);
       expect(box(scene, 'P-D-UC02|use-case')!.strength).toBeLessThan(1);
       expect(scene.lines.filter((l) => l.kind === 'path').map((l) => `${l.from}>${l.to}`)).toEqual(expect.arrayContaining([
-        'P-D-UC01|use-case/P-D-UC01-R01>P-D-UC01|design/P-D-UC01-FL/P-IF01/P-D-UC01-FL-S01',
-        'P-D-UC01|design/P-D-UC01-FL/P-IF01/P-D-UC01-FL-S01>P-D-UC01|technical/step:P-D-UC01-FL-S01/P-UI01',
+        'P-D-UC01|use-case/P-D-UC01-R01>P-D-UC01|flow/P-D-UC01-FL/P-IF01/P-D-UC01-FL-S01',
+        'P-D-UC01|flow/P-D-UC01-FL/P-IF01/P-D-UC01-FL-S01>P-D-UC01|technical/step:P-D-UC01-FL-S01/P-UI01',
       ]));
     });
     // The wiki card follows the selection.
@@ -190,16 +190,16 @@ describe('the Trace stage', () => {
       const access = traceStage().querySelector<HTMLElement>('.trace-access')!;
       const list = within(access).getByRole('region', { name: 'Trace rows' });
       expect(within(list).getByRole('combobox', { name: 'Use case' })).toHaveValue('P-D-UC01');
-      expect(within(list).getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual(['Outcome', 'Journey', 'Use case', 'Design flow', 'Technical flow', 'Acceptance test suite']);
-      const design = within(list).getByRole('region', { name: 'Design flow' });
+      expect(within(list).getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual(['Outcome', 'Journey', 'Use case', 'Flow', 'Technical flow', 'Acceptance test suite']);
+      const design = within(list).getByRole('region', { name: 'Flow' });
       // Open (the place may keep it open from before).
       const toggle = within(design).getByRole('button', { name: /1 interface · all designed/ });
       if (toggle.getAttribute('aria-expanded') !== 'true') fireEvent.click(toggle);
       // A box's link reads its kind and ID, then its title, a word apart.
       expect(within(design).getByRole('link', { name: /^Flow · P-D-UC01-FL \S/ })).toBeInTheDocument();
-      // Another use case: its Design flow box's title is its status.
+      // Another use case: its Flow box's title is its status.
       fireEvent.change(within(list).getByRole('combobox', { name: 'Use case' }), { target: { value: 'P-D-UC02' } });
-      expect(within(within(list).getByRole('region', { name: 'Design flow' })).getByText('No flow', { selector: 'small + span' })).toBeInTheDocument();
+      expect(within(within(list).getByRole('region', { name: 'Flow' })).getByText('No flow', { selector: 'small + span' })).toBeInTheDocument();
     };
     await proveOn(false);
     try {
@@ -224,7 +224,7 @@ describe('the Trace stage', () => {
       expect(within(toolbar).getByRole('button', { name: 'Tidy up' })).toBeInTheDocument();
       expect(within(traceStage()).getByRole('button', { name: 'Key' })).toBeInTheDocument();
       expect(traceStage().querySelector('.stage-key')).toBeNull();
-      // Next steps along the row from the use case into the Design flow column; Previous back to the use case.
+      // Next steps along the row from the use case into the Flow column; Previous back to the use case.
       await waitFor(() => expect(buttons[3]).toBeEnabled());
       fireEvent.click(buttons[3]);
       await waitFor(async () => expect((await drawn(false)).boxes.filter((b) => b.ring || b.focus).map((b) => b.column)).toEqual([3]));
@@ -247,7 +247,7 @@ describe('the Trace stage', () => {
     const scene = await drawn();
     expect(box(scene, 'outcome/P-BO01')!.pill).toBe('added');
     expect(scene.columns[2].rollup).toBe('1 new');
-    await waitFor(async () => expect(box(await drawn(), 'P-D-UC01|design')!.strength).toBeLessThanOrEqual(0.2 + 1e-9));
+    await waitFor(async () => expect(box(await drawn(), 'P-D-UC01|flow')!.strength).toBeLessThanOrEqual(0.2 + 1e-9));
   });
   it('LA-V98-R01-T01 Trace works on every focus: Ctrl+3 or the switch shows it, never disabled, on a use case, a requirement and a record no row shows', async () => {
     // On a use case: Ctrl+3 switches to the Trace stage, its row drawn and focused; Alt+E to the ERD (off a Mac).
@@ -273,12 +273,12 @@ describe('the Trace stage', () => {
 
   it('LA-PAT-APP-UX-R17-T03 On the Trace stage a record a row shows stands on its box, and any other record shows the product\'s rows', async () => {
     // A requirement and a flow step: their boxes focused in their row (the row opened to them), their paths lit.
-    for (const [path, key] of [['/P-D-UC01-R01', 'P-D-UC01|use-case/P-D-UC01-R01'], ['/P-D-UC01-FL-S01', 'P-D-UC01|design/P-D-UC01-FL/P-IF01/P-D-UC01-FL-S01']] as const) {
+    for (const [path, key] of [['/P-D-UC01-R01', 'P-D-UC01|use-case/P-D-UC01-R01'], ['/P-D-UC01-FL-S01', 'P-D-UC01|flow/P-D-UC01-FL/P-IF01/P-D-UC01-FL-S01']] as const) {
       await openTrace(`${path}?stage=trace`);
       await canvasHost();
       if (toolbarButton('Expand row').getAttribute('aria-pressed') !== 'true') fireEvent.click(toolbarButton('Expand row'));
       if (path.includes('-FL-')) {
-        for (const opens of ['P-D-UC01|design/P-D-UC01-FL', 'P-D-UC01|design/P-D-UC01-FL/P-IF01']) {
+        for (const opens of ['P-D-UC01|flow/P-D-UC01-FL', 'P-D-UC01|flow/P-D-UC01-FL/P-IF01']) {
           await waitFor(async () => expect(box(await drawn(), opens)).toBeDefined());
           if (!box(await drawn(), opens)!.open) await click(opens, true);
         }
@@ -367,7 +367,7 @@ describe('the Trace stage', () => {
     await canvasHost();
     // Every row's stages open: the use case's 400 requirements among them.
     const every = within(traceStage()).getByRole('group', { name: 'Expand all' });
-    for (const stage of ['Use case', 'Design', 'Technical', 'Suite']) {
+    for (const stage of ['Use case', 'Flow', 'Technical', 'Suite']) {
       const button = within(every).getByRole('button', { name: stage });
       if (button.getAttribute('aria-pressed') !== 'true') fireEvent.click(button);
     }

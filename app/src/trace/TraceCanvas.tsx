@@ -68,7 +68,7 @@ const belowHead = (box: { x: number; y: number; w: number; h: number }) => ({ ..
 const HEAD_FONT = 12;
 
 /** The stage of each column's own boxes that are no record: a status in its stage's color. */
-const COLUMN_STAGE: readonly BoxStage[] = ['discovery', 'discovery', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan'];
+const COLUMN_STAGE: readonly BoxStage[] = ['discovery', 'discovery', 'use-cases', 'use-cases', 'technical-specification', 'test-plan'];
 /** The size of a journey line's label, in CSS pixels at zoom 1. */
 const CARRY_FONT = 11;
 

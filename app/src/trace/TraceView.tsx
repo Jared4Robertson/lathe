@@ -59,7 +59,7 @@ function ProductTrace(props: TraceViewProps & { product: string }) {
 }
 
 /** The stage names Expand all says, short for the toolbar. */
-const SHORT: Record<TraceStage, string> = { 'use-case': 'Use case', design: 'Design', technical: 'Technical', suite: 'Suite' };
+const SHORT: Record<TraceStage, string> = { 'use-case': 'Use case', flow: 'Flow', technical: 'Technical', suite: 'Suite' };
 
 /** Whether every row has the stage open. */
 const everyOpen = (graph: TraceGraph, open: ReadonlySet<string>, stage: TraceStage) =>

@@ -38,7 +38,7 @@ describe('standards in the nav and the wiki', () => {
     const user = userEvent.setup();
     await user.click(head(list('Shared in Demo shop'), /^Shared/));
     const own = list('Stages of Demo shop');
-    expect(rows(own)).toEqual(['Domain model1', 'Interaction design1', 'Technical specification1', 'Test plan1']);
+    expect(rows(own)).toEqual(['Domain model1', 'Interface design1', 'Technical specification1', 'Test plan1']);
     await user.click(head(own, /^Technical specification/));
     const stage = list('Technical specification of Demo shop');
     expect(rows(stage)).toEqual(['Standards1']);

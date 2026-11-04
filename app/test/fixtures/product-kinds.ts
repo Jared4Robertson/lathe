@@ -4,7 +4,7 @@ import { fixture } from './load';
 import { gap, obligation, workspace } from './workspace';
 
 // The component-test workspace with a product's own kind (data/product-kinds/): DM declares
-// `security_control`, an obligation in the interaction design stage that sits under an endpoint, with
+// `security_control`, an obligation in the interface design stage that sits under an endpoint, with
 // a required `statement`; DM-SHOP-EP01-SC01 is one, not designed or proved yet.
 
 export function productKindWorkspace(): ServedData {

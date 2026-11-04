@@ -1,1 +1,1 @@
-{"name":"security_control","product_id":"DM","label":"Security control","description":"A control an endpoint must enforce.","parent_kind":"endpoint","stage":"interaction-design","obligation":true,"complexity":"essential","id_pattern":"<endpoint>-SC<nn>","id_example":"DM-SHOP-EP01-SC01"}
+{"name":"security_control","product_id":"DM","label":"Security control","description":"A control an endpoint must enforce.","parent_kind":"endpoint","stage":"interface-design","obligation":true,"complexity":"essential","id_pattern":"<endpoint>-SC<nn>","id_example":"DM-SHOP-EP01-SC01"}

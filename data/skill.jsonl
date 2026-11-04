@@ -1,5 +1,5 @@
 {"id":"LA-CHK-SK01","title":"Check and fix","domain_id":"LA-CHK","file":"plugin/skills/check-and-fix/SKILL.md"}
-{"id":"LA-IXD-SK02","title":"Design interactions","domain_id":"LA-IXD","file":"plugin/skills/design-interactions/SKILL.md"}
+{"id":"LA-IXD-SK02","title":"Design interfaces","domain_id":"LA-IXD","file":"plugin/skills/design-interfaces/SKILL.md"}
 {"id":"LA-MOD-SK01","title":"Model a domain","domain_id":"LA-MOD","file":"plugin/skills/model-a-domain/SKILL.md"}
 {"id":"LA-PRD-SK03","title":"Extend the meta-model","domain_id":"LA-PRD","file":"plugin/skills/extend-the-meta-model/SKILL.md"}
 {"id":"LA-PRD-SK07","title":"Discover outcomes","domain_id":"LA-PRD","file":"plugin/skills/discover-outcomes/SKILL.md"}

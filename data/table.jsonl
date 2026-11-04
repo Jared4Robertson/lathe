@@ -16,21 +16,21 @@
 {"id":"LA-EXP-RM05-TB","title":"HistoryCommit","read_model_id":"LA-EXP-RM05","name":"HistoryCommit","storage":"in memory","file":"lathe/src/server/history.ts"}
 {"id":"LA-EXP-RM06-TB","title":"Space","read_model_id":"LA-EXP-RM06","name":"Space","storage":"in memory","file":"app/src/shell/spaces.tsx"}
 {"id":"LA-EXP-RM07-TB","title":"RecordChangesTable","read_model_id":"LA-EXP-RM07","name":"RecordChangesTable","storage":"in memory","file":"lathe/src/exploring/record-changes/read-model.ts"}
-{"id":"LA-IXD-EN20-TB","title":"view","entity_id":"LA-IXD-EN20","name":"view","storage":"table","file":"lathe/schema/006-interaction-design.sql"}
-{"id":"LA-IXD-EN21-TB","title":"endpoint","entity_id":"LA-IXD-EN21","name":"endpoint","storage":"table","file":"lathe/schema/006-interaction-design.sql"}
-{"id":"LA-IXD-EN25-TB","title":"integration","entity_id":"LA-IXD-EN25","name":"integration","storage":"table","file":"lathe/schema/006-interaction-design.sql"}
-{"id":"LA-IXD-EN45-TB","title":"view_requirement","entity_id":"LA-IXD-EN45","name":"view_requirement","storage":"table","file":"lathe/schema/006-interaction-design.sql"}
-{"id":"LA-IXD-EN46-TB","title":"api_requirement","entity_id":"LA-IXD-EN46","name":"api_requirement","storage":"table","file":"lathe/schema/006-interaction-design.sql"}
+{"id":"LA-IXD-EN20-TB","title":"view","entity_id":"LA-IXD-EN20","name":"view","storage":"table","file":"lathe/schema/006-interface-design.sql"}
+{"id":"LA-IXD-EN21-TB","title":"endpoint","entity_id":"LA-IXD-EN21","name":"endpoint","storage":"table","file":"lathe/schema/006-interface-design.sql"}
+{"id":"LA-IXD-EN25-TB","title":"integration","entity_id":"LA-IXD-EN25","name":"integration","storage":"table","file":"lathe/schema/006-interface-design.sql"}
+{"id":"LA-IXD-EN45-TB","title":"view_requirement","entity_id":"LA-IXD-EN45","name":"view_requirement","storage":"table","file":"lathe/schema/006-interface-design.sql"}
+{"id":"LA-IXD-EN46-TB","title":"api_requirement","entity_id":"LA-IXD-EN46","name":"api_requirement","storage":"table","file":"lathe/schema/006-interface-design.sql"}
 {"id":"LA-IXD-EN59-TB","title":"ui_component","entity_id":"LA-IXD-EN59","name":"ui_component","storage":"table","file":"lathe/schema/007-technical-specification.sql"}
 {"id":"LA-IXD-EN60-TB","title":"endpoint_handler","entity_id":"LA-IXD-EN60","name":"endpoint_handler","storage":"table","file":"lathe/schema/007-technical-specification.sql"}
 {"id":"LA-IXD-EN61-TB","title":"adapter","entity_id":"LA-IXD-EN61","name":"adapter","storage":"table","file":"lathe/schema/007-technical-specification.sql"}
 {"id":"LA-IXD-EN70-TB","title":"view_test","entity_id":"LA-IXD-EN70","name":"view_test","storage":"table","file":"lathe/schema/008-test-plan.sql"}
 {"id":"LA-IXD-EN71-TB","title":"endpoint_test","entity_id":"LA-IXD-EN71","name":"endpoint_test","storage":"table","file":"lathe/schema/008-test-plan.sql"}
 {"id":"LA-IXD-EN73-TB","title":"integration_test","entity_id":"LA-IXD-EN73","name":"integration_test","storage":"table","file":"lathe/schema/008-test-plan.sql"}
-{"id":"LA-IXD-RM32-TB","title":"ViewTable","read_model_id":"LA-IXD-RM32","name":"ViewTable","storage":"in memory","file":"lathe/src/interaction-design/view/read-model.ts"}
-{"id":"LA-IXD-RM33-TB","title":"EndpointTable","read_model_id":"LA-IXD-RM33","name":"EndpointTable","storage":"in memory","file":"lathe/src/interaction-design/endpoint/read-model.ts"}
-{"id":"LA-IXD-RM34-TB","title":"IntegrationTable","read_model_id":"LA-IXD-RM34","name":"IntegrationTable","storage":"in memory","file":"lathe/src/interaction-design/integration/read-model.ts"}
-{"id":"LA-IXD-RM35-TB","title":"UiComponentTable","read_model_id":"LA-IXD-RM35","name":"UiComponentTable","storage":"in memory","file":"lathe/src/interaction-design/ui-component/read-model.ts"}
+{"id":"LA-IXD-RM32-TB","title":"ViewTable","read_model_id":"LA-IXD-RM32","name":"ViewTable","storage":"in memory","file":"lathe/src/interface-design/view/read-model.ts"}
+{"id":"LA-IXD-RM33-TB","title":"EndpointTable","read_model_id":"LA-IXD-RM33","name":"EndpointTable","storage":"in memory","file":"lathe/src/interface-design/endpoint/read-model.ts"}
+{"id":"LA-IXD-RM34-TB","title":"IntegrationTable","read_model_id":"LA-IXD-RM34","name":"IntegrationTable","storage":"in memory","file":"lathe/src/interface-design/integration/read-model.ts"}
+{"id":"LA-IXD-RM35-TB","title":"UiComponentTable","read_model_id":"LA-IXD-RM35","name":"UiComponentTable","storage":"in memory","file":"lathe/src/interface-design/ui-component/read-model.ts"}
 {"id":"LA-IXD-TB83","title":"renders","domain_id":"LA-IXD","name":"renders","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-IXD-TB89","title":"builds","domain_id":"LA-IXD","name":"builds","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-IXD-TB93","title":"presents","domain_id":"LA-IXD","name":"presents","storage":"table","file":"lathe/schema/010-links.sql"}
@@ -115,14 +115,14 @@
 {"id":"LA-PRD-EN01-TB","title":"product","entity_id":"LA-PRD-EN01","name":"product","storage":"table","file":"lathe/schema/003-product.sql"}
 {"id":"LA-PRD-EN02-TB","title":"product_kind","entity_id":"LA-PRD-EN02","name":"product_kind","storage":"table","file":"lathe/schema/012-product-kinds.sql"}
 {"id":"LA-PRD-EN03-TB","title":"role","entity_id":"LA-PRD-EN03","name":"role","storage":"table","file":"lathe/schema/003-product.sql"}
-{"id":"LA-PRD-EN114-TB","title":"interface_actor","entity_id":"LA-PRD-EN114","name":"interface_actor","storage":"table","file":"lathe/schema/006-interaction-design.sql"}
+{"id":"LA-PRD-EN114-TB","title":"interface_actor","entity_id":"LA-PRD-EN114","name":"interface_actor","storage":"table","file":"lathe/schema/006-interface-design.sql"}
 {"id":"LA-PRD-EN115-TB","title":"journey","entity_id":"LA-PRD-EN115","name":"journey","storage":"table","file":"lathe/schema/003-product.sql"}
 {"id":"LA-PRD-EN116-TB","title":"journey_step","entity_id":"LA-PRD-EN116","name":"journey_step","storage":"table","file":"lathe/schema/003-product.sql"}
 {"id":"LA-PRD-EN117-TB","title":"journey_test","entity_id":"LA-PRD-EN117","name":"journey_test","storage":"table","file":"lathe/schema/008-test-plan.sql"}
 {"id":"LA-PRD-EN23-TB","title":"question","entity_id":"LA-PRD-EN23","name":"question","storage":"table","file":"lathe/schema/009-questions.sql"}
 {"id":"LA-PRD-EN28-TB","title":"product_kind_field","entity_id":"LA-PRD-EN28","name":"product_kind_field","storage":"table","file":"lathe/schema/012-product-kinds.sql"}
 {"id":"LA-PRD-EN29-TB","title":"product_relation","entity_id":"LA-PRD-EN29","name":"product_relation","storage":"table","file":"lathe/schema/012-product-kinds.sql"}
-{"id":"LA-PRD-EN76-TB","title":"interface","entity_id":"LA-PRD-EN76","name":"interface","storage":"table","file":"lathe/schema/006-interaction-design.sql"}
+{"id":"LA-PRD-EN76-TB","title":"interface","entity_id":"LA-PRD-EN76","name":"interface","storage":"table","file":"lathe/schema/006-interface-design.sql"}
 {"id":"LA-PRD-EN80-TB","title":"business_outcome","entity_id":"LA-PRD-EN80","name":"business_outcome","storage":"table","file":"lathe/schema/003-product.sql"}
 {"id":"LA-PRD-RM01-TB","title":"Reference","read_model_id":"LA-PRD-RM01","name":"Reference","storage":"in memory","file":"lathe/src/index.ts"}
 {"id":"LA-PRD-RM02-TB","title":"RecordDataFileTable","read_model_id":"LA-PRD-RM02","name":"RecordDataFileTable","storage":"in memory","file":"lathe/src/product/record-data-file/read-model.ts"}
@@ -174,8 +174,8 @@
 {"id":"LA-UCS-EN13-TB","title":"pattern","entity_id":"LA-UCS-EN13","name":"pattern","storage":"table","file":"lathe/schema/005-use-cases.sql"}
 {"id":"LA-UCS-EN14-TB","title":"pattern_rule","entity_id":"LA-UCS-EN14","name":"pattern_rule","storage":"table","file":"lathe/schema/005-use-cases.sql"}
 {"id":"LA-UCS-EN15-TB","title":"pattern_setting","entity_id":"LA-UCS-EN15","name":"pattern_setting","storage":"table","file":"lathe/schema/005-use-cases.sql"}
-{"id":"LA-UCS-EN18-TB","title":"flow","entity_id":"LA-UCS-EN18","name":"flow","storage":"table","file":"lathe/schema/006-interaction-design.sql"}
-{"id":"LA-UCS-EN19-TB","title":"flow_step","entity_id":"LA-UCS-EN19","name":"flow_step","storage":"table","file":"lathe/schema/006-interaction-design.sql"}
+{"id":"LA-UCS-EN18-TB","title":"flow","entity_id":"LA-UCS-EN18","name":"flow","storage":"table","file":"lathe/schema/006-interface-design.sql"}
+{"id":"LA-UCS-EN19-TB","title":"flow_step","entity_id":"LA-UCS-EN19","name":"flow_step","storage":"table","file":"lathe/schema/006-interface-design.sql"}
 {"id":"LA-UCS-EN43-TB","title":"use_case_actor","entity_id":"LA-UCS-EN43","name":"use_case_actor","storage":"table","file":"lathe/schema/005-use-cases.sql"}
 {"id":"LA-UCS-EN69-TB","title":"use_case_test","entity_id":"LA-UCS-EN69","name":"use_case_test","storage":"table","file":"lathe/schema/008-test-plan.sql"}
 {"id":"LA-UCS-EN72-TB","title":"flow_test","entity_id":"LA-UCS-EN72","name":"flow_test","storage":"table","file":"lathe/schema/008-test-plan.sql"}
