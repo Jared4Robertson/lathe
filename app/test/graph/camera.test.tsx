@@ -75,7 +75,7 @@ describe('graph camera', () => {
     expect(map.height * all.zoom).toBeLessThanOrEqual(h);
   });
 
-  it('LA-EXP-DS09-T14 LA-V93-R07-T07 LA-PAT-APP-UX-R23-T01 A focus is framed with its children readable: whole with their column where they read so, else their column whole at the right and the first of them at the top', () => {
+  it('LA-EXP-DS09-T14 LA-V93-R07-T07 LA-PAT-APP-UX-R23-T01 A focus is framed whole with its children\'s column, however many children it has; they read where the room lets them', () => {
     // A 6:1 tree: the product holds six parents; one has two children, one eight (each with two of its own), one forty.
     const kids: Record<string, string[]> = {
       P: ['few', 'many', 'most', 'other 1', 'other 2', 'other 3'],
@@ -84,37 +84,29 @@ describe('graph camera', () => {
       most: Array.from({ length: 40 }, (_, i) => `rule ${i + 1}`) };
     for (const k of kids.many) kids[k] = [`${k} step 1`, `${k} step 2`];
     const tree = layoutTree(['P'], (id) => kids[id] ?? [], (id) => ({ title: `The record called ${id}`, meta: `Use case · ${id}` }));
-    const wholes = new Set<string>();
+    const reads = new Set<string>();
     for (const [w, h] of [[1000, 800], [547, 600], [1400, 1000], [343, 560]] as const) for (const id of ['few', 'many', 'most']) {
       const v = frameOnMap(tree, id, w, h);
       const f = tree.nodes.get(id)!;
       const at = `${id} in ${w}x${h}`;
-      const [x0, y0, x1, y1] = [f.x * v.zoom + v.x, f.y * v.zoom + v.y, (f.x + f.w) * v.zoom + v.x, (f.y + f.h) * v.zoom + v.y];
-      const whole = x0 >= -0.5 && y0 >= -0.5 && x1 <= w + 0.5 && y1 <= h + 0.5;
-      if (whole) wholes.add(at);
-      // Every child reads: at least CHILD_MIN_W by CHILD_MIN_H on screen.
+      // The focus and its whole column on screen, inside the padding, and centered top to bottom.
+      const last = tree.nodes.get(f.children.at(-1)!)!;
+      expect(f.x * v.zoom + v.x, at).toBeGreaterThan(0);
+      expect(f.y * v.zoom + v.y, at).toBeGreaterThanOrEqual(FRAME_PADDING - 1e-6);
+      expect((f.y + f.h) * v.zoom + v.y, at).toBeLessThanOrEqual(h - FRAME_PADDING + 1e-6);
+      expect((last.x + last.w) * v.zoom + v.x, at).toBeLessThanOrEqual(w - FRAME_PADDING + 1e-6);
+      expect((f.y + f.h / 2) * v.zoom + v.y, at).toBeCloseTo(h / 2, 6);
       const first = tree.nodes.get(f.children[0])!;
-      expect(first.w * v.zoom, at).toBeGreaterThanOrEqual(CHILD_MIN_W - 1e-6);
-      expect(first.h * v.zoom, at).toBeGreaterThanOrEqual(CHILD_MIN_H - 1e-6);
-      expect(v.zoom, at).toBeCloseTo(Math.max(v.zoom, childZoom(tree, id)), 9);
-      // Their column on screen across, at least CHILD_MIN_W of it, its first child at the top; the focus's right edge in view beside it.
-      expect(first.x * v.zoom + v.x, at).toBeGreaterThanOrEqual(0);
-      expect(Math.min(w, (first.x + first.w) * v.zoom + v.x) - (first.x * v.zoom + v.x), at).toBeGreaterThanOrEqual(CHILD_MIN_W);
-      expect(first.y * v.zoom + v.y, at).toBeGreaterThanOrEqual(-0.5);
-      expect((first.y + first.h) * v.zoom + v.y, at).toBeLessThanOrEqual(h);
-      expect(x1, at).toBeGreaterThan(0);
-      expect(x1, at).toBeLessThan(first.x * v.zoom + v.x);
-      // Cut only where its children could not read with it whole; then from its top, the rest a pan away.
-      if (!whole && y0 < -0.5) expect(y0, at).toBeCloseTo(FRAME_PADDING, 6);
-      // What the camera keeps whole as it follows: the focus with its column when whole, else the part framed, inside the frame.
+      if (first.w * v.zoom >= CHILD_MIN_W - 1e-6 && first.h * v.zoom >= CHILD_MIN_H - 1e-6) reads.add(at);
+      // What the camera keeps whole as it follows: the focus with its column, inside the frame, at the same zoom.
       const kept = keptBox(tree, id, v, w, h)!;
       expect(kept.x * v.zoom + v.x, at).toBeGreaterThanOrEqual(FOCUS_CLEAR - 1e-6);
       expect((kept.x + kept.w) * v.zoom + v.x, at).toBeLessThanOrEqual(w - FOCUS_CLEAR + 1e-6);
       expect(wholeIn(v, kept, { x: 0, y: 0, w, h }).zoom / v.zoom, at).toBeCloseTo(1, 9);
     }
-    // Two children read beside a whole focus in a desktop pane; forty never do in a phone's.
-    expect(wholes).toContain('few in 1000x800');
-    expect(wholes).not.toContain('most in 343x560');
+    // Two children read beside the whole focus in a desktop pane; forty in a phone's are too small to, and walking in reads them.
+    expect(reads).toContain('few in 1000x800');
+    expect(reads).not.toContain('most in 343x560');
   });
 
   it('LA-PAT-APP-UX-R23-T01 The focused box is always whole in the frame: kept as it is when whole, moved in at an edge, zoomed out when too big, clear of the panels', () => {
@@ -326,7 +318,9 @@ describe('a focus\'s children drawn whole', () => {
       const place = name === 'Nested' ? 'top' : 'middle';
       for (const c of children) {
         const plate = plateOf(testIndex(), c, name === 'Tree' ? { view: 'tree', node: map.nodes.get(c)! } : { view: 'nested', node: map.nodes.get(c)! as NestedNode });
-        const framed = (name === 'Tree' ? frameOnMap(tree, 'parent', 343, 560) : frameNested(nested, 'parent', 343, 560)).zoom;
+        // Framed: in Nested as the camera frames it; in the Tree, where the focus stays whole and its thirty children are too
+        // small there to read, as walking in or zooming in draws them, at the zoom they read at.
+        const framed = name === 'Tree' ? childZoom(tree, 'parent') : frameNested(nested, 'parent', 343, 560).zoom;
         for (const z of [zoom, framed]) {
           // Under the zoom the children would be blocks, as any other box.
           if (z === zoom) expect(isBlock(plate, z), `${name} ${c}`).toBe(true);

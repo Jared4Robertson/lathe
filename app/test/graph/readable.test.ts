@@ -207,7 +207,7 @@ describe('every drawn box shows its name', () => {
     expect(unreadable.length, unreadable.slice(0, 20).join('\n')).toBe(0);
   }, 120_000);
 
-  it('LA-EXP-DS09-T16 LA-V93-R77-T03 In the Tree, Nested and Map layouts, every box of every product, framed as the focus in two panes, is whole on screen, or its children read and the first of them is whole', () => {
+  it('LA-EXP-DS09-T16 LA-V93-R77-T03 In the Tree, Nested and Map layouts, every box of every product, framed as the focus in two panes, is whole on screen, or outside the Tree its children read and the first of them is whole', () => {
     const cut: string[] = [];
     let frames = 0;
     let shown = 0;
@@ -215,6 +215,11 @@ describe('every drawn box shows its name', () => {
       frames++;
       const box = (b: { x: number; y: number; w: number; h: number }) => [b.x * v.zoom + v.x, b.y * v.zoom + v.y, (b.x + b.w) * v.zoom + v.x, (b.y + b.h) * v.zoom + v.y];
       const inside = ([x0, y0, x1, y1]: number[]) => x0 >= -0.5 && y0 >= -0.5 && x1 <= w + 0.5 && y1 <= h + 0.5;
+      // The Tree keeps every focus whole, however small its children are there (LA-EXP-DS09).
+      if (name === 'Tree') {
+        if (!inside(box(n))) cut.push(`${name} ${n.id} in ${w}x${h}: ${box(n).map(Math.round).join(', ')}`);
+        return;
+      }
       // Every child reads (LA-V93-R77): at least CHILD_MIN_W by CHILD_MIN_H on screen, unless the camera's zoom limit stops it.
       for (const c of n.children) {
         const child = map.nodes.get(c)!;

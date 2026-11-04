@@ -120,12 +120,11 @@ function childrenStart(map: PlacedMap, node: MapNode): { x: number; y: number } 
  * The camera that frames a focus in the Tree (LA-EXP-DS09). A focus with children is framed with its children's
  * column: the focus as wide as the room their column and its parent's strip at the left edge (at most PARENT_STRIP of
  * the pane, PARENT_STRIP_MAX pixels) leave, whole and centered top to bottom (a tall box's height caps the zoom,
- * LA-PAT-APP-UX-R23), zoomed in no further than `max` (maxZoomFor), and at least as far as its children read
- * (childZoom). Where they cannot read with the focus whole (a node with many children, or on a phone), they win: the
- * camera zooms in until they read, its children's column at the right and their first ones at the top, the rest a pan
- * away; the focus shows as much as fits, at least FOCUS_SLIVER. A leaf fills FOCUS_SHARE of the pane's width, its parent's strip at the left.
- * Siblings above and below may be cut at the edges. The depth decides only how many levels are drawn (drawnFor), never
- * what is framed.
+ * LA-PAT-APP-UX-R23), zoomed in no further than `max` (maxZoomFor). The focus is always whole: where its children are
+ * too small there to read at the page's text size (a node with many children, or on a phone), their titles are drawn
+ * as large as their boxes hold (paint.ts wholeLabel), and walking in reads them. A leaf fills FOCUS_SHARE of the pane's
+ * width, its parent's strip at the left. Siblings above and below may be cut at the edges. The depth decides only how
+ * many levels are drawn (drawnFor), never what is framed.
  */
 export function frameOnMap(map: GraphMap, focus: string, width: number, height: number, max = MAX_ZOOM): Viewport {
   const node = map.nodes.get(focus);
@@ -144,14 +143,8 @@ export function frameOnMap(map: GraphMap, focus: string, width: number, height: 
   const all = withChildren(map, node);
   // From the parent's gap to the right of the children's column, in map units.
   const span = all.x + all.w - node.x + gap;
-  const fits = Math.min(max, (width - FRAME_PADDING - strip) / Math.max(1e-12, span), (height - 2 * FRAME_PADDING) / Math.max(1e-12, node.h));
-  const zoom = Math.max(fits, Math.min(max, childZoom(map, focus)));
-  // The parent's strip and the focus with its column, when they fit; else the column at the right, the focus cut at the
-  // left, at least FOCUS_SLIVER of it in view (the column's right edge may then be cut a little).
-  const x = span * zoom <= width - FRAME_PADDING - strip
-    ? strip + gap * zoom - node.x * zoom
-    : Math.max(width - FOCUS_CLEAR - (all.x + all.w) * zoom, FOCUS_SLIVER - (node.x + node.w) * zoom);
-  return { x, y: placeAlong(node.y, node.h, zoom, height), zoom };
+  const zoom = Math.min(max, (width - FRAME_PADDING - strip) / Math.max(1e-12, span), (height - 2 * FRAME_PADDING) / Math.max(1e-12, node.h));
+  return { x: strip + gap * zoom - node.x * zoom, y: height / 2 - (node.y + node.h / 2) * zoom, zoom };
 }
 
 /** The whole map in the pane: the overview's camera, and the least the camera zooms out. */
@@ -181,8 +174,6 @@ export function frameRect(rect: MapRect, frame: MapRect, { pad, read, max, min }
   return { x: along(rect.x, rect.w, frame.w, frame.x), y: along(rect.y, rect.h, frame.h, frame.y), zoom };
 }
 
-/** How much of a focus cut at the left by its children's column stays in view, in screen pixels (frameOnMap). */
-const FOCUS_SLIVER = 24;
 /** The least room, in screen pixels, a focused box keeps from the frame's edges (wholeIn). */
 export const FOCUS_CLEAR = 8;
 
@@ -399,7 +390,7 @@ export function frameGround(map: GroundMap, focus: string, width: number, height
 
 /**
  * What a framing must keep whole (LA-PAT-APP-UX-R23): the focus, and in the Tree its children's column with it; where
- * its children cannot read with it whole (frameOnMap, frameNested, frameGround), the part of them the framing `v` shows
+ * its children cannot read with it whole (frameNested, frameGround), the part of them the framing `v` shows
  * in a frame `width` by `height`, less FOCUS_CLEAR at each edge. wholeIn keeps it whole as the camera follows.
  */
 export function keptBox(map: PlacedMap, focus: string, v: Viewport, width: number, height: number): MapRect | null {

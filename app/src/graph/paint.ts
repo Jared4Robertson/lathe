@@ -69,17 +69,19 @@ export type WholePlace = 'middle' | 'top';
 /**
  * The label a focus's direct child draws at a zoom (LA-V93-R77): its own (labelPlate) where its title reads at
  * CHILD_TITLE_PX or more there; else its title alone at CHILD_TITLE_PX on screen, wrapped on whole words to two lines
- * (one where its box holds no more) and cut with an ellipsis only past them, set as its own label is (centered or at
+ * (one where its box holds no more; on one line as large as its box holds where it is shorter than one at that size, as
+ * a focus's children in the Tree may be beside a whole focus, LA-EXP-DS09, and none under BLOCK_BELOW_PX) and cut
+ * with an ellipsis only past them, set as its own label is (centered or at
  * its left: text.ts centeredLabel), in its box's middle or, for a box that holds others, at its top, drawn over them on a band of its fill (paint, wholeLabels). Its full title stays its
  * accessible name and tooltip. Never a block. `floor` says it is the title alone.
  */
 function wholeLabel(p: Plate, zoom: number, place: WholePlace): { plate: Plate; floor: boolean } {
   const shown = labelPlate(p, zoom);
   if (shown.text * TITLE_FONT * zoom >= CHILD_TITLE_PX - 1e-9) return { plate: shown, floor: false };
-  const size = CHILD_TITLE_PX / zoom;
-  const pad = p.border + CHILD_PAD_PX / zoom;
+  const pad = p.border + Math.min(CHILD_PAD_PX / zoom, p.h / 8);
+  const size = Math.min(CHILD_TITLE_PX / zoom, Math.max(0, p.h - 2 * pad - 2 * p.border) / LINE_HEIGHT);
   const lh = size * LINE_HEIGHT;
-  const texts = wrapCut(p.title, size, p.w - 2 * pad, p.h - 2 * pad >= 2 * lh ? 2 : 1);
+  const texts = size * zoom < BLOCK_BELOW_PX ? [] : wrapCut(p.title, size, p.w - 2 * pad, p.h - 2 * pad >= 2 * lh ? 2 : 1);
   const { ascent, descent } = textMeasure().metrics('title');
   const height = texts.length * lh;
   const top = place === 'top' ? p.y + pad : p.y + (p.h - height) / 2;
