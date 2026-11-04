@@ -157,6 +157,7 @@ export function everyKind(): Data {
     invokes: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-CMD01' }],
     presents: [{ source_id: 'TL-V01', target_id: 'TL-LEND-CMD01' }],
     offers: [{ source_id: 'TL-IF01', target_id: 'TL-LEND-UC01' }],
+    performs: [{ source_id: 'TL-INT01', target_id: 'TL-LEND-UC01' }],
     exchanges_with: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-INT01' }],
     renders: [{ source_id: 'TL-UI01', target_id: 'TL-V01' }],
     builds: [{ source_id: 'TL-UI01', target_id: 'TL-V01-R01' }],
