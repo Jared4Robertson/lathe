@@ -541,6 +541,8 @@
 {"source_id":"LA-PLT-MOD51","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL03"}
 {"source_id":"LA-PLT-MOD52","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL17"}
 {"source_id":"LA-PLT-MOD53","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL01"}
+{"source_id":"LA-PLT-MOD54","target_id":"LA-PAT-SHELL-ACTIONS-SL01"}
+{"source_id":"LA-PLT-MOD55","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL15"}
 {"source_id":"LA-PLT-PO01-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL09"}
 {"source_id":"LA-PLT-PO02-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL09"}
 {"source_id":"LA-PLT-PO03-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL09"}

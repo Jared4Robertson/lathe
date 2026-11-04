@@ -78,10 +78,10 @@
 {"id":"LA-PLT-MOD30","title":"lathe/src/platform/data","domain_id":"LA-PLT","file":"lathe/src/platform/data","group_name":"Live loading"}
 {"id":"LA-PLT-MOD31","title":"app/src/platform/appearance/use-scroll-to-zoom.ts","domain_id":"LA-PLT","file":"app/src/platform/appearance/use-scroll-to-zoom.ts","group_name":"Workbench"}
 {"id":"LA-PLT-MOD32","title":"lathe/src/server/events.ts","domain_id":"LA-PLT","file":"lathe/src/server/events.ts","group_name":"Live loading"}
-{"id":"LA-PLT-MOD33","title":"desktop/src/chatLathe.ts","domain_id":"LA-PLT","file":"desktop/src/chatLathe.ts","group_name":"Desktop hosting"}
+{"id":"LA-PLT-MOD33","title":"desktop/src/chatLathe.ts","domain_id":"LA-PLT","file":"desktop/src/chatLathe.ts","group_name":"Window chat"}
 {"id":"LA-PLT-MOD34","title":"app/src/chat/voice","domain_id":"LA-PLT","file":"app/src/chat/voice","group_name":"Desktop hosting"}
 {"id":"LA-PLT-MOD35","title":"app/src/platform/voice-settings/use-voice-settings.ts","domain_id":"LA-PLT","file":"app/src/platform/voice-settings/use-voice-settings.ts","group_name":"Desktop hosting"}
-{"id":"LA-PLT-MOD36","title":"desktop/src/chatSession.ts","domain_id":"LA-PLT","file":"desktop/src/chatSession.ts","group_name":"Desktop hosting"}
+{"id":"LA-PLT-MOD36","title":"desktop/src/chatSession.ts","domain_id":"LA-PLT","file":"desktop/src/chatSession.ts","group_name":"Window chat"}
 {"id":"LA-PLT-MOD37","title":"lathe/src/cli/aggregates.ts","domain_id":"LA-PLT","file":"lathe/src/cli/aggregates.ts","group_name":"Repo setup"}
 {"id":"LA-PLT-MOD38","title":"lathe/src/commands.ts","domain_id":"LA-PLT","file":"lathe/src/commands.ts","group_name":"Live loading"}
 {"id":"LA-PLT-MOD39","title":"lathe/src/aggregate-rules.ts","domain_id":"LA-PLT","file":"lathe/src/aggregate-rules.ts","group_name":"Live loading"}
@@ -99,6 +99,8 @@
 {"id":"LA-PLT-MOD51","title":"desktop/src/app-server/model.ts","domain_id":"LA-PLT","file":"desktop/src/app-server/model.ts","group_name":"Desktop hosting"}
 {"id":"LA-PLT-MOD52","title":"lathe/src/cli/operations.ts","domain_id":"LA-PLT","file":"lathe/src/cli/operations.ts","group_name":"Repo setup"}
 {"id":"LA-PLT-MOD53","title":"lathe/src/server/undo.ts","domain_id":"LA-PLT","file":"lathe/src/server/undo.ts","group_name":"Desktop hosting"}
+{"id":"LA-PLT-MOD54","title":"desktop/src/claudeLogin.ts","domain_id":"LA-PLT","file":"desktop/src/claudeLogin.ts","group_name":"Window chat"}
+{"id":"LA-PLT-MOD55","title":"desktop/native/speech","domain_id":"LA-PLT","file":"desktop/native/speech","group_name":"Window chat"}
 {"id":"LA-PRD-MOD20","title":"lathe/src/product/product/rules.ts","domain_id":"LA-PRD","file":"lathe/src/product/product/rules.ts","group_name":"Product"}
 {"id":"LA-PRD-MOD21","title":"lathe/src/product/product/commands/index.ts","domain_id":"LA-PRD","file":"lathe/src/product/product/commands/index.ts","group_name":"Product"}
 {"id":"LA-PRD-MOD22","title":"lathe/src/product/extension-record/rules.ts","domain_id":"LA-PRD","file":"lathe/src/product/extension-record/rules.ts","group_name":"Extension record"}
