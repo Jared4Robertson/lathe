@@ -211,9 +211,24 @@ export function CommandsProvider({ children }: { children: ReactNode }) {
     list[list.length - 1].current();
     return true;
   }, []);
+  // The announcements still to be said: each sets the message 30 ms after the message is cleared.
+  const saying = useRef(new Set<ReturnType<typeof setTimeout>>());
   const announce = useCallback((text: string) => {
     setMessage('');
-    setTimeout(() => setMessage(text), 30);
+    const said = setTimeout(() => {
+      saying.current.delete(said);
+      setMessage(text);
+    }, 30);
+    saying.current.add(said);
+  }, []);
+  // No timer of the provider's runs after it unmounts: in a test, the window is gone by the time it would fire.
+  useEffect(() => {
+    const pending = saying.current;
+    return () => {
+      for (const said of pending) clearTimeout(said);
+      pending.clear();
+      if (timer.current) clearTimeout(timer.current);
+    };
   }, []);
   const titleOf = useCallback((c: Command) => handlers.current.get(c.id)?.at(-1)?.title ?? c.title, []);
   const walk = useCallback((move: Move) => {

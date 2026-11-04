@@ -2,7 +2,7 @@ import './graph/setup';
 import { Suspense, use } from 'react';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { CommandsProvider, useCommand, useRunCommand } from '../src/shell/commands';
+import { CommandsProvider, useCommand, useRunCommand, useRunWalk, useStageWalk } from '../src/shell/commands';
 import { modelWorkspace } from './fixtures/model';
 import { openApp } from './helpers';
 
@@ -285,5 +285,29 @@ describe('a hidden stage', () => {
     await waitFor(() => expect(screen.getByText('stage')).toBeVisible());
     act(() => { expect(runCommand('graphFit')).toBe(true); });
     expect(onFit).toHaveBeenCalledTimes(2);
+  });
+});
+
+/** A stage whose walk says where it went, and the toolbar's button that walks it. */
+let runWalk: ReturnType<typeof useRunWalk> = () => false;
+function SayingStage() {
+  useStageWalk(() => 'Use case Lend a thing');
+  runWalk = useRunWalk();
+  return null;
+}
+
+describe('a walk announced as the page closes', () => {
+  it('LA-V61-R49-T02 A step announced just before the page unmounts sets nothing after it', () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      const { unmount } = render(<CommandsProvider><SayingStage /></CommandsProvider>);
+      act(() => { expect(runWalk('right')).toBe(true); });
+      // The announcement waits 30 ms after the message is cleared; the page goes first.
+      expect(vi.getTimerCount()).toBeGreaterThan(0);
+      unmount();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
