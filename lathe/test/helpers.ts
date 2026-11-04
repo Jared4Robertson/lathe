@@ -465,6 +465,8 @@ export function sparse(): Data {
     interface: [
       { id: 'SP-IF01', title: 'Web app', product_id: 'SP', kind: 'web app', description: 'The desk app.', public: false },
       { id: 'SP-IF02', title: 'CLI', product_id: 'SP', kind: 'CLI', description: 'The command line.', public: false },
+      // A public API: its endpoints owe API requirements (endpoint-without-requirement).
+      { id: 'SP-IF03', title: 'HTTP API', product_id: 'SP', kind: 'API', description: 'The library over HTTP.', public: true },
     ],
     flow: [{ id: 'SP-D-UC02-FL', title: 'Return a tool', use_case_id: 'SP-D-UC02' }],
     flow_step: [{ id: 'SP-D-UC02-FL-S01', title: 'Refuse', flow_id: 'SP-D-UC02-FL', path: 'refused', position: 1 }],

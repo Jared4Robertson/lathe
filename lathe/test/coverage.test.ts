@@ -209,11 +209,17 @@ describe('chains', () => {
       ui_component: [{ id: 'EX-UI02', title: 'Unused page', file: 'web/catalog.tsx', description: 'A page no view uses.' }],
     });
     const ws = await loadData(data);
-    // A step that fulfills nothing, the query only it invokes, a command nothing invokes and a UI component that
-    // builds no view requirement; never the handlers, the integration's test or a flow test.
+    // A step that fulfills nothing, a command nothing invokes or presents and a UI component that builds no view
+    // requirement; never the handlers, the integration's test or a flow test. The query only that step invokes is
+    // still reached: the catalog, a view with a requirement, presents it.
     expect(gaps(ws).filter((g) => g.startsWith('record-untraced'))).toEqual([
-      'record-untraced EX-LEND-CMD09', 'record-untraced EX-LEND-QRY01', 'record-untraced EX-LEND-UC01-FL-S02', 'record-untraced EX-UI02',
+      'record-untraced EX-LEND-CMD09', 'record-untraced EX-LEND-UC01-FL-S02', 'record-untraced EX-UI02',
     ]);
+    // A command a view presents is reached through the view's requirements, as an editor form reaches the Change and
+    // Remove commands no flow step invokes.
+    const presented = await loadData(adding(data, { presents: [{ source_id: 'EX-V01', target_id: 'EX-LEND-CMD09' }] }));
+    expect(gaps(presented).filter((g) => g.startsWith('record-untraced'))).toEqual(['record-untraced EX-LEND-UC01-FL-S02', 'record-untraced EX-UI02']);
+    expect(presented.chains.find((c) => c.obligation === 'EX-V01-R01')?.design).toContain('EX-LEND-CMD09');
     expect(ws.coverage.flatMap((c) => c.gaps).find((g) => g.id === 'EX-LEND-UC01-FL-S02')).toEqual({
       id: 'EX-LEND-UC01-FL-S02', kind: 'flow_step', missing: 'record-untraced',
       message: "Flow step EX-LEND-UC01-FL-S02 is untraced: no obligation's chain reaches it, as it fulfills no UC requirement.",
@@ -308,6 +314,12 @@ describe('LA-TRC-UC01-R05-T01 minimums', () => {
     expect(ws.coverage.find((c) => c.domain === 'SP-D')?.gaps).toContainEqual({ id: 'SP-V01', kind: 'view', missing: 'view-without-ui-component', message: 'View SP-V01 is rendered by no UI component.' });
     expect(ws.coverage.find((c) => c.domain === 'SP-D')?.gaps).toContainEqual({ id: 'SP-D-UC01', kind: 'use_case', missing: 'use-case-without-flow', message: 'Use case SP-D-UC01 has no flow.' });
     expect(ws.coverage.find((c) => c.domain === 'SP-E')?.gaps).toEqual([{ id: 'SP-E', kind: 'domain', missing: 'domain-without-aggregate', message: 'Domain SP-E has no aggregate.' }]);
+    // An endpoint owes an API requirement only where its product has a public API: without one, its endpoints are
+    // held to their pattern's rules alone.
+    const endpointGaps = (w: Workspace) => w.coverage.flatMap((c) => c.gaps).filter((g) => g.missing === 'endpoint-without-requirement').map((g) => g.id).sort();
+    expect(endpointGaps(ws)).toEqual(['SP-D-EP01', 'SP-D-EP02']);
+    const privateApi = await loadData(changing(sparse(), 'interface', (r) => r.id === 'SP-IF03', { public: false }), { files: SPARSE_FILES.files });
+    expect(endpointGaps(privateApi)).toEqual([]);
     // Gaps are coverage, never problems; the sparse product serves no outcome, so what it holds is warned of apart
     // (serves-no-outcome), and accounts for none of its accidental records (accidental-not-accounted-for).
     expect(ws.problems.filter((p) => !['serves-no-outcome', 'accidental-not-accounted-for'].includes(p.check)).map((p) => p.check).sort()).toEqual(['journey-of-one-use-case', 'not-built', 'not-built', 'not-built', 'not-proved', 'not-proved', 'not-proved', 'outcome-target-undated', 'pattern-not-followed', 'value-object-unused']);

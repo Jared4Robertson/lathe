@@ -1601,7 +1601,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | <a id="gap-use-case-without-flow"></a>`use-case-without-flow` | [`use_case`](#kind-use_case), [`flow`](#kind-flow) | A use case with no flow. |
 | <a id="gap-interface-offers-nothing"></a>`interface-offers-nothing` | [`interface`](#kind-interface), [`use_case`](#kind-use_case) | An interface that offers no use case. |
 | <a id="gap-flow-without-main-path"></a>`flow-without-main-path` | [`flow`](#kind-flow), [`flow_step`](#kind-flow_step) | A flow with no step on its main path. |
-| <a id="gap-endpoint-without-requirement"></a>`endpoint-without-requirement` | [`endpoint`](#kind-endpoint), [`api_requirement`](#kind-api_requirement) | An endpoint with no API requirement. |
+| <a id="gap-endpoint-without-requirement"></a>`endpoint-without-requirement` | [`endpoint`](#kind-endpoint), [`api_requirement`](#kind-api_requirement), [`interface`](#kind-interface) | An endpoint of a product with a public API, with no API requirement. |
 | <a id="gap-route-without-record"></a>`route-without-record` | [`product`](#kind-product), [`endpoint`](#kind-endpoint), [`view`](#kind-view) | A route the code serves that no endpoint or view has. |
 | <a id="gap-record-untraced"></a>`record-untraced` | [`flow_step`](#kind-flow_step), [`command`](#kind-command), [`query`](#kind-query), [`ui_component`](#kind-ui_component) | A flow step, command, query or UI component no obligation's chain reaches. |
 

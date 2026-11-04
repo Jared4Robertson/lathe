@@ -230,8 +230,13 @@ WHERE NOT EXISTS (SELECT 1 FROM carries_out c WHERE c.source_id = s.id)`),
     `SELECT i.id, 'Interface ' || i.id || ' offers no use case yet.' AS message FROM interface i WHERE NOT EXISTS (SELECT 1 FROM offers o WHERE o.source_id = i.id)`),
   gap('flow-without-main-path', 'interaction-design', ['flow', 'flow_step'], 'A flow with no step on its main path.',
     `SELECT f.id, 'Flow ' || f.id || ' has no step on its main path.' AS message FROM flow f WHERE NOT EXISTS (SELECT 1 FROM flow_step s WHERE s.flow_id = f.id AND s.path = 'main')`),
-  gap('endpoint-without-requirement', 'interaction-design', ['endpoint', 'api_requirement'], 'An endpoint with no API requirement.',
-    `SELECT e.id, 'Endpoint ' || e.id || ' has no API requirement.' AS message FROM endpoint e WHERE NOT EXISTS (SELECT 1 FROM api_requirement r WHERE r.endpoint_id = e.id)`),
+  // An API requirement is owed only where the product has a public API: an endpoint of a private one (the HTTP API a
+  // product's own app calls) is held to its pattern's rules once, not to a requirement of its own (as essential.ts
+  // counts an API requirement essential only for a product with a public API).
+  gap('endpoint-without-requirement', 'interaction-design', ['endpoint', 'api_requirement', 'interface'], 'An endpoint of a product with a public API, with no API requirement.',
+    `SELECT e.id, 'Endpoint ' || e.id || ' has no API requirement, and its product has a public API.' AS message FROM endpoint e
+WHERE NOT EXISTS (SELECT 1 FROM api_requirement r WHERE r.endpoint_id = e.id)
+  AND EXISTS (SELECT 1 FROM record_scope s JOIN interface i ON i.product_id = s.product_id WHERE s.id = e.id AND i.public AND i.kind = 'API')`),
   // Every route the code serves has an endpoint or a view (trace/routes.ts).
   ...ROUTE_GAP_RULES,
   // Technical specification: one technical record per design record.
@@ -274,16 +279,16 @@ FROM source_file f WHERE NOT f.traced AND EXISTS (SELECT 1 FROM product)`),
   },
   // A design or build record a trace relation links that no obligation's chain reaches (trace_link): it serves no
   // requirement or rule. The kinds are those a chain reaches through a trace relation: a step fulfills, a command or
-  // query is invoked by a fulfilling step, is a policy's command, calls a domain service, checks a specification or
-  // selects by one, a UI component builds a view requirement. A
+  // query is invoked by a fulfilling step, is presented by a view with a view requirement, is a policy's command,
+  // calls a domain service, checks a specification or selects by one, a UI component builds a view requirement. A
   // command or query handler is left out: it serves what its operation serves, so its operation's gap stands for it
   // (reporting both would double each gap). So is a test: one of an obligation sits in its chain by construction, and a flow or integration test
   // proves its flow or integration, never an obligation.
   gap('record-untraced', 'interaction-design', [...UNTRACED_KINDS], 'A flow step, command, query or UI component no obligation\'s chain reaches.',
     `SELECT r.id, k.label || ' ' || r.id || ' is untraced: no obligation''s chain reaches it' || CASE r.kind
     WHEN 'flow_step' THEN ', as it fulfills no UC requirement.'
-    WHEN 'command' THEN ', as no step that fulfills a UC requirement invokes it, no policy does, and it calls no domain service and checks no specification.'
-    WHEN 'query' THEN ', as no step that fulfills a UC requirement invokes it, and it calls no domain service and selects by no specification.'
+    WHEN 'command' THEN ', as no step that fulfills a UC requirement invokes it, no view with a view requirement presents it, no policy does, and it calls no domain service and checks no specification.'
+    WHEN 'query' THEN ', as no step that fulfills a UC requirement invokes it, no view with a view requirement presents it, and it calls no domain service and selects by no specification.'
     ELSE ', as it builds no view requirement.' END AS message
 FROM record_id r JOIN meta_kind k ON k.name = r.kind
 WHERE r.kind IN (${list(UNTRACED_KINDS)}) AND NOT EXISTS (SELECT 1 FROM trace_link t WHERE t.target_id = r.id)`),
@@ -430,7 +435,8 @@ SELECT *, state IN ('automated', 'manual') AND valid AS counts FROM proofs;
 
 -- Each obligation's chain, link by link, each from the record nearer the obligation to the one it leads to (part: the
 -- column of its target). Design: a UC requirement's fulfilling steps, their flows, what they invoke and the
--- integrations they exchange with; a constraint's value object, an invariant's aggregate, a policy's
+-- integrations they exchange with; a view requirement's view's presented commands and queries (the editor forms
+-- that reach an aggregate's generated Change, Remove, List and next-ID operations); a constraint's value object, an invariant's aggregate, a policy's
 -- command and the integrations it exchanges with, a storage requirement's aggregate or read model; the commands and queries that call a domain service; the
 -- commands that check a specification and the queries that select by it. Build: what implements it (obligation_impl),
 -- and for a storage requirement the data store its repository or reader is stored in. Tests: its tests
@@ -449,6 +455,7 @@ SELECT DISTINCT * FROM (
   UNION ALL SELECT target_id, target_id, source_id, 'design' FROM calls
   UNION ALL SELECT target_id, target_id, source_id, 'design' FROM checks
   UNION ALL SELECT target_id, target_id, source_id, 'design' FROM selects_by
+  UNION ALL SELECT q.id, q.id, p.target_id, 'design' FROM view_requirement q JOIN presents p ON p.source_id = q.view_id
   UNION ALL SELECT obligation_id, obligation_id, source_id, 'design' FROM product_design_link
   UNION ALL SELECT obligation_id, coalesce(via_id, obligation_id), impl_id, 'build' FROM obligation_impl
   UNION ALL SELECT i.obligation_id, i.impl_id, d.target_id, 'build' FROM obligation_impl i JOIN storage_requirement s ON s.id = i.obligation_id JOIN stored_in d ON d.source_id = i.impl_id
