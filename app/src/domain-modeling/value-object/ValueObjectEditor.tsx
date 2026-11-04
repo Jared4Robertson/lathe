@@ -61,7 +61,7 @@ function currentOf(page: ValueObjectPage, kind: ValueObjectKind, id: string): Re
     case 'constraint':
       return { ...constraintOf(page, id).constraint };
     case 'value_type':
-      return { ...page.valueType!.valueType, meets: page.valueType!.meets, packages: page.valueType!.packages };
+      return { ...page.valueType!.valueType, meets: page.valueType!.meets, packages: page.valueType!.packages, helpers: page.valueType!.helpers };
     case 'constraint_test': {
       const { test } = holdingTest(page, id);
       return { ...test!.test, starts_from: test!.startsFrom };

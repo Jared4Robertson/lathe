@@ -28,6 +28,8 @@ export interface Built<T> {
   row: T;
   meets: string[];
   packages: string[];
+  /** Its helper files (helper_file), sorted. */
+  helpers: string[];
 }
 
 /** A test with the test data sets it starts from. */
@@ -61,7 +63,7 @@ export const AGGREGATE_TABLES = [
   'has_one',
   'has_many',
   'meets',
-  'package_use',
+  'package_use', 'helper_file',
   'starts_from',
 ] as const;
 
@@ -70,8 +72,8 @@ export const AGGREGATE_SHAPE = {
   aggregate: { at: 'aggregate' },
   entity: { at: 'entities', lists: { fields: 'fields', has_one: 'hasOne', has_many: 'hasMany' } },
   invariant: { at: 'invariants' },
-  data_model: { at: 'dataModels', lists: { meets: 'meets', packages: 'packages' } },
-  rule: { at: 'rules', lists: { meets: 'meets', packages: 'packages' } },
+  data_model: { at: 'dataModels', lists: { meets: 'meets', packages: 'packages', helpers: 'helpers' } },
+  rule: { at: 'rules', lists: { meets: 'meets', packages: 'packages', helpers: 'helpers' } },
   invariant_test: { at: 'invariantTests', lists: { starts_from: 'startsFrom' } },
 } as const satisfies AggregateShape;
 
@@ -92,6 +94,7 @@ export function aggregatesFrom(rows: (table: string) => Row[], only?: string): A
   const invariantTests = (rows('invariant_test') as unknown as InvariantTestRow[]).filter((t) => invariantIds.has(t.invariant_id));
   const [hasOne, hasMany, meets, startsFrom] = ['has_one', 'has_many', 'meets', 'starts_from'].map((table) => bySource(rows(table)));
   const packages = bySource(rows('package_use'), 'record_id', 'package');
+  const helpers = bySource(rows('helper_file'), 'record_id', 'file');
   // Each table's rows by the aggregate they sit in, grouped once.
   const aggregateOfEntity = new Map(entities.map((e) => [e.id, e.aggregate_id]));
   const aggregateOfInvariant = new Map(invariants.map((i) => [i.id, i.aggregate_id]));
@@ -106,8 +109,8 @@ export function aggregatesFrom(rows: (table: string) => Row[], only?: string): A
     aggregate,
     entities: groupOf(entitiesOf, aggregate.id).map((row) => ({ row, fields: groupOf(fieldsOf, row.id), hasOne: groupOf(hasOne, row.id), hasMany: groupOf(hasMany, row.id) })),
     invariants: groupOf(invariantsOf, aggregate.id),
-    dataModels: groupOf(dataModelsOf, aggregate.id).map((row) => ({ row, meets: groupOf(meets, row.id), packages: groupOf(packages, row.id) })),
-    rules: groupOf(rulesOf, aggregate.id).map((row) => ({ row, meets: groupOf(meets, row.id), packages: groupOf(packages, row.id) })),
+    dataModels: groupOf(dataModelsOf, aggregate.id).map((row) => ({ row, meets: groupOf(meets, row.id), packages: groupOf(packages, row.id), helpers: groupOf(helpers, row.id) })),
+    rules: groupOf(rulesOf, aggregate.id).map((row) => ({ row, meets: groupOf(meets, row.id), packages: groupOf(packages, row.id), helpers: groupOf(helpers, row.id) })),
     invariantTests: groupOf(invariantTestsOf, aggregate.id).map((row) => ({ row, startsFrom: groupOf(startsFrom, row.id) })),
   }));
 }
@@ -129,6 +132,7 @@ export function aggregateRows(aggregate: Aggregate): Map<string, Row[]> {
     ['has_many', aggregate.entities.flatMap((e) => links(e.row.id, e.hasMany))],
     ['meets', [...aggregate.dataModels, ...aggregate.rules].flatMap((d) => links(d.row.id, d.meets))],
     ['package_use', [...aggregate.dataModels, ...aggregate.rules].flatMap((d) => d.packages.map((p) => ({ record_id: d.row.id, package: p })))],
+    ['helper_file', [...aggregate.dataModels, ...aggregate.rules].flatMap((d) => d.helpers.map((p) => ({ record_id: d.row.id, file: p })))],
     ['starts_from', aggregate.invariantTests.flatMap((t) => links(t.row.id, t.startsFrom))],
   ]);
 }

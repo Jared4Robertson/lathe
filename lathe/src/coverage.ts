@@ -105,8 +105,9 @@ const list = (items: readonly string[]) => items.map(sqlString).join(', ');
 
 /**
  * The tables the engine fills before the checks run: file_facts, a row for each record that names a file (a technical
- * record, a test, or a product's own kind with a file field), the file as a path from the product root (null outside
- * it), whether it exists and whether it names the record's own ID; test_case, each test case read from the product's
+ * record, a test, or a product's own kind with a file field) and one more for each helper file of a technical record
+ * (helper), the file as a path from the product root (null outside it), whether it exists and whether it names the
+ * record's own ID; test_case, each test case read from the product's
  * test files (its file as a path from the root, its place among the file's test cases, its line, and its name after
  * its describes' names), with test_case_id, each ID it or its describes name; test_level_allowed, the levels each test
  * kind allows (typed by the schema's test_level, so a level it does not know fails the load); source_file, each of
@@ -115,7 +116,7 @@ const list = (items: readonly string[]) => items.map(sqlString).join(', ');
  * and package_facts, the packages the product's package.json files list (trace/packages.ts).
  */
 export const FACT_TABLES_SQL = `
-CREATE OR REPLACE TABLE file_facts (record VARCHAR NOT NULL, kind VARCHAR NOT NULL, file VARCHAR NOT NULL, path VARCHAR, file_exists BOOLEAN NOT NULL, contains_id BOOLEAN NOT NULL);
+CREATE OR REPLACE TABLE file_facts (record VARCHAR NOT NULL, kind VARCHAR NOT NULL, file VARCHAR NOT NULL, path VARCHAR, file_exists BOOLEAN NOT NULL, contains_id BOOLEAN NOT NULL, helper BOOLEAN NOT NULL);
 CREATE OR REPLACE TABLE test_case (file VARCHAR NOT NULL, position INTEGER NOT NULL, line INTEGER NOT NULL, name VARCHAR NOT NULL);
 CREATE OR REPLACE TABLE test_case_id (file VARCHAR NOT NULL, position INTEGER NOT NULL, id VARCHAR NOT NULL);
 CREATE OR REPLACE TABLE test_level_allowed (kind VARCHAR NOT NULL, level test_level NOT NULL);
@@ -339,7 +340,7 @@ CREATE OR REPLACE TABLE test_run AS
 SELECT t.*, EXISTS (SELECT 1 FROM test_level_allowed a WHERE a.kind = t.kind AND a.level = t.level) AS level_allowed,
   t.state <> 'automated' OR coalesce(f.file_exists AND f.contains_id, false) AS backed
 FROM (${testRun}) t
-LEFT JOIN file_facts f ON f.record = t.id;
+LEFT JOIN file_facts f ON f.record = t.id AND NOT f.helper;
 
 CREATE OR REPLACE TABLE owed_pattern_rules AS
 WITH followers AS (
@@ -404,12 +405,15 @@ FROM fulfills f JOIN invokes i ON i.source_id = f.source_id
 JOIN (SELECT source_id, target_id FROM checks UNION ALL SELECT source_id, target_id FROM selects_by UNION ALL SELECT source_id, target_id FROM calls) c ON c.source_id = i.target_id;
 
 -- Each obligation's own build: at least one of its specific technical records implements it, and every one names a
--- file that exists (an invariant has one, its rule); or something outside the product provides it (provided_by).
+-- file that exists (an invariant has one, its rule), and so does each of its helper files; or something outside the
+-- product provides it (provided_by).
 CREATE OR REPLACE TABLE obligation_own_built AS
 SELECT o.id,
   EXISTS (SELECT 1 FROM provided_by p WHERE p.source_id = o.id)
   OR (EXISTS (SELECT 1 FROM obligation_impl i WHERE i.obligation_id = o.id)
-    AND NOT EXISTS (SELECT 1 FROM obligation_impl i LEFT JOIN file_facts f ON f.record = i.impl_id WHERE i.obligation_id = o.id AND NOT coalesce(f.file_exists, false))) AS built
+    AND NOT EXISTS (SELECT 1 FROM obligation_impl i WHERE i.obligation_id = o.id AND (
+      NOT EXISTS (SELECT 1 FROM file_facts f WHERE f.record = i.impl_id AND NOT f.helper AND f.file_exists)
+      OR EXISTS (SELECT 1 FROM file_facts f WHERE f.record = i.impl_id AND f.helper AND NOT f.file_exists)))) AS built
 FROM obligation o;
 
 CREATE OR REPLACE TABLE obligation_proof AS
@@ -423,7 +427,7 @@ WITH proofs AS (
   UNION ALL SELECT l.target_id, l.source_id, NULL, coalesce(t.state, 'automated'),
     coalesce(t.level_allowed AND t.backed, f.file_exists AND f.contains_id, true)
   FROM link l JOIN meta_relation r ON r.name = l.relation AND r.role = 'proof' JOIN obligation o ON o.id = l.target_id
-  LEFT JOIN test_run t ON t.id = l.source_id LEFT JOIN file_facts f ON f.record = l.source_id
+  LEFT JOIN test_run t ON t.id = l.source_id LEFT JOIN file_facts f ON f.record = l.source_id AND NOT f.helper
   WHERE o.kind NOT IN (${lathe}) OR r.product_id IS NOT NULL
 )
 SELECT *, state IN ('automated', 'manual') AND valid AS counts FROM proofs;

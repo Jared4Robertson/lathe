@@ -66,6 +66,7 @@ export const AGGREGATE_FIELDS = {
     file: { kind: 'column', table: 'data_model', column: 'file', required: false, clearable: false },
     meets: { kind: 'ids', description: 'The standard rules it follows.', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses, each listed in one of the product\'s package.json files.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, such as helpers and build-tag variants, each from the product root; no other record names one.', required: false, clearable: false },
   },
   '/api/aggregate/change-data-model': {
     id: { kind: 'column', table: 'data_model', column: 'id', required: true, clearable: false },
@@ -73,6 +74,7 @@ export const AGGREGATE_FIELDS = {
     file: { kind: 'column', table: 'data_model', column: 'file', required: false, clearable: true },
     meets: { kind: 'ids', description: 'The standard rules it follows.', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, each from the product root.', required: false, clearable: false },
   },
   '/api/aggregate/remove-data-model': {
     id: { kind: 'column', table: 'data_model', column: 'id', required: true, clearable: false },
@@ -118,6 +120,7 @@ export const AGGREGATE_FIELDS = {
     file: { kind: 'column', table: 'rule', column: 'file', required: false, clearable: false },
     meets: { kind: 'ids', description: 'The standard rules it follows.', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses, each listed in one of the product\'s package.json files.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, such as helpers and build-tag variants, each from the product root; no other record names one.', required: false, clearable: false },
   },
   '/api/aggregate/change-rule': {
     id: { kind: 'column', table: 'rule', column: 'id', required: true, clearable: false },
@@ -125,6 +128,7 @@ export const AGGREGATE_FIELDS = {
     file: { kind: 'column', table: 'rule', column: 'file', required: false, clearable: true },
     meets: { kind: 'ids', description: 'The standard rules it follows.', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, each from the product root.', required: false, clearable: false },
   },
   '/api/aggregate/remove-rule': {
     id: { kind: 'column', table: 'rule', column: 'id', required: true, clearable: false },

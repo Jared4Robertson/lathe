@@ -309,6 +309,26 @@ WHERE a.product_id IS DISTINCT FROM b.product_id`,
         .join('\nUNION ALL'),
     });
   }
+  // A helper file is one more file of its record's code, so it is never the file of a technical record, its own or
+  // another's: that file traces to its record already. The table's own keys refuse one helper file on two records.
+  const filed = Object.values(schema.kinds)
+    .filter((k) => k.stage === 'technical-specification' && schema.tables[k.name]?.columns.some((c) => c.name === 'file'))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  if (filed.length && schema.tables.helper_file) {
+    queries.push({
+      name: 'helper-file-is-a-file',
+      description: 'A helper file is never the file of a technical record: that file traces to its own record, so a record names it as its file only.',
+      sql: filed
+        .map(
+          (k) => `
+SELECT 'helper_file' AS table_name, h.record_id || chr(0) || h.file AS row_key,
+       h.record_id || ' cannot name ' || h.file || ' as a helper file: it is the file of ' || ${sqlString(`${k.label.toLowerCase()} `)} || r.id
+       || '; a file traces to one record, so name it as one record''s file or one record''s helper file' AS message
+FROM helper_file h JOIN ${sqlName(k.name)} r ON r.file = h.file`,
+        )
+        .join('\nUNION ALL'),
+    });
+  }
   queries.push(...titleQueries(schema));
   return queries;
 }

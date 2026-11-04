@@ -51,7 +51,7 @@ export function EntryPointEditor({ index, page, children }: { index: RecordIndex
   };
   if (mode === 'change') {
     const specs = fieldsOf(index, entryPoint.domain_id, false);
-    const current = { ...entryPoint, packages: page.packages, meets: page.meets } as Record<string, unknown>;
+    const current = { ...entryPoint, packages: page.packages, helpers: page.helpers, meets: page.meets } as Record<string, unknown>;
     const submit = async (draft: Draft) => {
       const input = changeInput(index, specs, draft, current, { id: entryPoint.id });
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }

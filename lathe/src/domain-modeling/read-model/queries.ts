@@ -99,8 +99,8 @@ function readModelText(page: ReadModelPage): string {
   const { readModel: row } = page;
   const lines = [`Read model ${row.id}: ${row.title}`, `  domain: ${row.domain_id}`, `  description: ${row.description}`];
   const listed = (links: string[]) => (links.length ? ` [${links.join('; ')}]` : '');
-  const technical = (t: { meets: string[]; packages: string[] }) => [...t.meets.map((x) => `meets ${x}`), ...t.packages.map((x) => `uses ${x}`)];
-  const code = (label: string, c: { code: { id: string; title: string }; meets: string[]; packages: string[] }) => `${label} ${c.code.id}: ${c.code.title}${listed(technical(c))}`;
+  const technical = (t: { meets: string[]; packages: string[]; helpers: string[] }) => [...t.meets.map((x) => `meets ${x}`), ...t.packages.map((x) => `uses ${x}`), ...t.helpers.map((x) => `helper file ${x}`)];
+  const code = (label: string, c: { code: { id: string; title: string }; meets: string[]; packages: string[]; helpers: string[] }) => `${label} ${c.code.id}: ${c.code.title}${listed(technical(c))}`;
   for (const f of page.fields) {
     const type = f.type ?? f.type_value_object_id ?? f.type_aggregate_id;
     lines.push(`  field ${f.position}: ${f.name} (${type}${f.required ? ', required' : ''}): ${f.meaning}`);

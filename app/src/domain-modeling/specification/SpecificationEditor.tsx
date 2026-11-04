@@ -54,7 +54,7 @@ function currentOf(page: SpecificationPage, kind: SpecificationKind): Record<str
     case 'specification':
       return { ...page.specification, reads: page.reads };
     case 'predicate':
-      return { ...page.predicate!.predicate, meets: page.predicate!.meets, packages: page.predicate!.packages };
+      return { ...page.predicate!.predicate, meets: page.predicate!.meets, packages: page.predicate!.packages, helpers: page.predicate!.helpers };
     case 'specification_test':
       return { ...page.test!.test, starts_from: page.test!.startsFrom };
   }

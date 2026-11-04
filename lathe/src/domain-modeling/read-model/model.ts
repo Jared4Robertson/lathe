@@ -23,6 +23,8 @@ export interface Technical<T> {
   row: T;
   meets: string[];
   packages: string[];
+  /** Its helper files (helper_file), sorted. */
+  helpers: string[];
 }
 
 /** A query with the specifications it selects by and the domain services it calls. */
@@ -54,15 +56,15 @@ export interface ReadModel {
 }
 
 /** The tables the Read model aggregate keeps its rows in: its kinds, its part, and the relations and parts its records start. */
-export const READ_MODEL_TABLES = ['read_model', 'read_model_field', 'query', 'projection', 'reader', 'query_handler', 'reads', 'calls', 'fed_by', 'selects_by', 'meets', 'package_use', 'stored_in'] as const;
+export const READ_MODEL_TABLES = ['read_model', 'read_model_field', 'query', 'projection', 'reader', 'query_handler', 'reads', 'calls', 'fed_by', 'selects_by', 'meets', 'package_use', 'helper_file', 'stored_in'] as const;
 
 /** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
 export const READ_MODEL_SHAPE = {
   read_model: { at: 'readModel', lists: { reads: 'reads', calls: 'calls', fed_by: 'fedBy' }, given: { fields: 'fields' } },
   query: { at: 'queries', lists: { selects_by: 'selectsBy', calls: 'calls' } },
-  projection: { at: 'projection', one: true, refusedBy: 'oneProjection', lists: { meets: 'meets', packages: 'packages' } },
-  reader: { at: 'reader', one: true, refusedBy: 'oneReader', lists: { meets: 'meets', packages: 'packages' }, links: { stored_in: 'storedIn' } },
-  query_handler: { at: 'queryHandlers', lists: { meets: 'meets', packages: 'packages' } },
+  projection: { at: 'projection', one: true, refusedBy: 'oneProjection', lists: { meets: 'meets', packages: 'packages', helpers: 'helpers' } },
+  reader: { at: 'reader', one: true, refusedBy: 'oneReader', lists: { meets: 'meets', packages: 'packages', helpers: 'helpers' }, links: { stored_in: 'storedIn' } },
+  query_handler: { at: 'queryHandlers', lists: { meets: 'meets', packages: 'packages', helpers: 'helpers' } },
 } as const satisfies AggregateShape;
 
 export type ReadModelKind = keyof typeof READ_MODEL_SHAPE;
@@ -87,7 +89,8 @@ export function readModelsFrom(rows: (table: string) => Row[], only?: string): R
   const queriesOf = groupBy(queries, (q) => q.read_model_id);
   const [reads, calls, fedBy, selectsBy, meets, storedIn] = ['reads', 'calls', 'fed_by', 'selects_by', 'meets', 'stored_in'].map((table) => bySource(rows(table)));
   const packages = bySource(rows('package_use'), 'record_id', 'package');
-  const technical = <T extends { id: string }>(row: T): Technical<T> => ({ row, meets: groupOf(meets, row.id), packages: groupOf(packages, row.id) });
+  const helpers = bySource(rows('helper_file'), 'record_id', 'file');
+  const technical = <T extends { id: string }>(row: T): Technical<T> => ({ row, meets: groupOf(meets, row.id), packages: groupOf(packages, row.id), helpers: groupOf(helpers, row.id) });
   return readModels.map((readModel) => {
     const projection = groupOf(projectionsOf, readModel.id)[0];
     const reader = groupOf(readersOf, readModel.id)[0];
@@ -128,6 +131,7 @@ export function readModelRows(readModel: ReadModel): Map<string, Row[]> {
     ['selects_by', readModel.queries.flatMap((q) => links(q.row.id, q.selectsBy))],
     ['meets', technical.flatMap((t) => links(t.row.id, t.meets))],
     ['package_use', technical.flatMap((t) => t.packages.map((name) => ({ record_id: t.row.id, package: name })))],
+    ['helper_file', technical.flatMap((t) => t.helpers.map((name) => ({ record_id: t.row.id, file: name })))],
   ]);
 }
 

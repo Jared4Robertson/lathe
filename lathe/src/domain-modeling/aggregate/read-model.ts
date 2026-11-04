@@ -16,6 +16,8 @@ export interface DataModelOnPage {
   dataModel: DataModelRow;
   meets: string[];
   packages: string[];
+  /** Its helper files, sorted. */
+  helpers: string[];
 }
 
 /** An entity as the page shows it: its row, its fields in order, the entities it holds, its data model, and the commands and tables under it by ID. */
@@ -44,6 +46,8 @@ export interface RuleOnPage {
   rule: RuleRow;
   meets: string[];
   packages: string[];
+  /** Its helper files, sorted. */
+  helpers: string[];
 }
 
 /** An invariant as the page shows it: its row, the rule that enforces it and its test. */
@@ -113,6 +117,7 @@ export function aggregateTableFrom(view: ReadView): AggregateTable {
   const raisedBy = linked(view, 'raises', 'target_id', 'source_id');
   const heardBy = linked(view, 'hears', 'target_id', 'source_id');
   const packages = linked(view, 'package_use', 'record_id', 'package');
+  const helpers = linked(view, 'helper_file', 'record_id', 'file');
   const entities = grouped<EntityRow>(view.rows('entity'), 'aggregate_id');
   const fields = grouped<EntityFieldRow>(view.rows('entity_field'), 'entity_id');
   const dataModels = grouped<DataModelRow>(view.rows('data_model'), 'entity_id');
@@ -141,7 +146,7 @@ export function aggregateTableFrom(view: ReadView): AggregateTable {
             fields: [...(fields.get(entity.id) ?? [])].sort((a, b) => a.position - b.position),
             hasOne: hasOne(entity.id),
             hasMany: hasMany(entity.id),
-            dataModel: dataModel ? { dataModel, meets: meets(dataModel.id), packages: packages(dataModel.id) } : null,
+            dataModel: dataModel ? { dataModel, meets: meets(dataModel.id), packages: packages(dataModel.id), helpers: helpers(dataModel.id) } : null,
             commands: (commands.get(entity.id) ?? []).map((c) => c.id).sort(compareIds),
             tables: (tables.get(entity.id) ?? []).map((t) => t.id).sort(compareIds),
           };
@@ -151,7 +156,7 @@ export function aggregateTableFrom(view: ReadView): AggregateTable {
         const test = (tests.get(invariant.id) ?? [])[0];
         return {
           invariant,
-          rule: rule ? { rule, meets: meets(rule.id), packages: packages(rule.id) } : null,
+          rule: rule ? { rule, meets: meets(rule.id), packages: packages(rule.id), helpers: helpers(rule.id) } : null,
           test: test ? { test, startsFrom: startsFrom(test.id) } : null,
         };
       }),

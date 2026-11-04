@@ -314,7 +314,9 @@ domain, and lists as gaps each obligation still short of one, and each record sh
 it (an "at least one" or "exactly one" that is missing while records are written stage by stage). An obligation is
 proved by a test of it, automated or manual, at a run by level its test kind allows, whose file (when automated)
 exists and names the test's ID. An obligation something outside the product provides (\`provided_by\`) is built and
-proved through its provider.
+proved through its provider. A technical record that names a file counts toward building only when that file and each
+of its helper files (\`helper_file\`: the other files its code is split across) exist; a helper file traces to its
+record as the record's own file does.
 
 **Complexity.** Every kind says whether its records are essential complexity, what the problem itself demands and
 the product decides once (discovery, the domain model, use cases and patterns, the what of interface design), or

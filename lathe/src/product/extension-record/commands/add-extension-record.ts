@@ -14,6 +14,7 @@ export type AddExtensionRecord = {
   values: Record<string, unknown>;
   links?: Record<string, string[]>;
   packages?: string[];
+  helpers?: string[];
 };
 
 export const ADD_EXTENSION_RECORD = {
@@ -25,6 +26,7 @@ export const ADD_EXTENSION_RECORD = {
     values: values('Its title and its declared fields, by column name: each required field is required, and so is title unless a field of its kind titles it.', 'required'),
     links: links('The records it links to, by relation: only relations its kind may start.', 'optional'),
     packages: texts('The packages it uses, as package.json lists them; only a technical record uses one.', 'optional'),
+    helpers: texts('The helper files its code is split across beside its file, such as helpers and build-tag variants, each from the product root; no other record names one.', 'optional'),
   },
   handler: addExtensionRecord,
 } satisfies CommandDefinition<AddExtensionRecord>;
@@ -38,7 +40,7 @@ export function addExtensionRecord(tx: Transaction, input: AddExtensionRecord): 
   const problem = undeclared(tx.schema, kind, input);
   if (problem) tx.refuse(problem.rule, problem.message);
   const row = withValues(tx, kind.name, { id: input.id, [parentColumn(kind)]: input.parent_id }, input.values);
-  const record = records.create({ root: input.id, kind: kind.name, row, links: withLinks({}, input.links), packages: [...new Set(input.packages ?? [])].sort() });
+  const record = records.create({ root: input.id, kind: kind.name, row, links: withLinks({}, input.links), packages: [...new Set(input.packages ?? [])].sort(), helpers: [...new Set(input.helpers ?? [])].sort() });
   holdToRules(tx, record);
   records.save(record);
 }

@@ -4,7 +4,7 @@ export const ADD_TABLE_IDENTITY = {
   id: 'LA-TEC-CMD300',
   slice: { aggregate: 'LA-TEC-A18', name: 'table' },
   name: 'add-table',
-  description: 'Adds a table under the one entity, read model or domain it stores, with its keys in order, the data store it is kept in, the standard rules it meets and the packages it uses.',
+  description: 'Adds a table under the one entity, read model or domain it stores, with its keys in order, the data store it is kept in, the standard rules it meets, the packages it uses and its helper files.',
   method: 'POST',
   route: '/api/table/add-table',
 } as const;
@@ -13,7 +13,7 @@ export const CHANGE_TABLE_IDENTITY = {
   id: 'LA-TEC-CMD301',
   slice: { aggregate: 'LA-TEC-A18', name: 'table' },
   name: 'change-table',
-  description: 'Changes a table\'s title, name, storage or file, its keys (the whole list, in order), the data store it is kept in (null clears it), or the standard rules it meets or packages it uses (each the whole list). Its parent changes only by a move.',
+  description: 'Changes a table\'s title, name, storage or file, its keys (the whole list, in order), the data store it is kept in (null clears it), or the standard rules it meets, the packages it uses or its helper files (each the whole list). Its parent changes only by a move.',
   method: 'POST',
   route: '/api/table/change-table',
 } as const;
@@ -31,7 +31,7 @@ export const REMOVE_TABLE_IDENTITY = {
   id: 'LA-TEC-CMD303',
   slice: { aggregate: 'LA-TEC-A18', name: 'table' },
   name: 'remove-table',
-  description: 'Removes a table whole: its keys, and the links and packages it names. Refused while anything else references it, such as another table\'s foreign key.',
+  description: 'Removes a table whole: its keys, and the links, packages and helper files it names. Refused while anything else references it, such as another table\'s foreign key.',
   method: 'POST',
   route: '/api/table/remove-table',
 } as const;

@@ -9,6 +9,8 @@ export interface EntryPointPage {
   entryPoint: EntryPointRow;
   /** The packages it uses, sorted. */
   packages: string[];
+  /** Its helper files, sorted. */
+  helpers: string[];
   /** The standard rules it meets, sorted. */
   meets: string[];
 }
@@ -23,10 +25,12 @@ export interface EntryPointSummary {
 function entryPointPagesFrom(view: ReadView): EntryPointPage[] {
   const found = (view.rows('entry_point') as unknown as EntryPointRow[]);
   const packages = view.rows('package_use');
+  const helpers = view.rows('helper_file');
   const meets = view.rows('meets');
   return found.map((entryPoint) => ({
     entryPoint,
     packages: packages.filter((p) => p.record_id === entryPoint.id).map((p) => String(p.package)).sort(),
+    helpers: helpers.filter((p) => p.record_id === entryPoint.id).map((p) => String(p.file)).sort(),
     meets: meets.filter((m) => m.source_id === entryPoint.id).map((m) => String(m.target_id)).sort(),
   }));
 }

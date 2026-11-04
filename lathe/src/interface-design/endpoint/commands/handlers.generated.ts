@@ -66,26 +66,26 @@ export function removeApiRequirement(tx: Transaction, input: RemoveApiRequiremen
   endpoints.save(endpoint);
 }
 
-/** Adds an endpoint's handler, its one piece of code that serves it: its name in code and its file, with the standard rules it meets and the packages it uses. */
+/** Adds an endpoint's handler, its one piece of code that serves it: its name in code and its file, with the standard rules it meets, the packages it uses and its helper files. */
 export function addEndpointHandler(tx: Transaction, input: AddEndpointHandler): void {
   const endpoints = new EndpointRepository(tx);
   const endpoint = endpoints.load(input.endpoint_id) ?? tx.refuse('missing', `there is no endpoint ${input.endpoint_id}`);
-  const { meets = [], packages = [], ...row } = input;
+  const { meets = [], packages = [], helpers = [], ...row } = input;
   refuseBroken(oneEndpointHandler([...(endpoint.handler ? [endpoint.handler.row] : []), row]));
-  endpoint.handler = { row, meets: meets, packages: packages };
+  endpoint.handler = { row, meets: meets, packages: packages, helpers: helpers };
   endpoints.save(endpoint);
 }
 
-/** Changes an endpoint handler's title, file or description, or the standard rules it meets or the packages it uses (each list whole). Its endpoint does not change. */
+/** Changes an endpoint handler's title, file or description, or the standard rules it meets, the packages it uses or its helper files (each list whole). Its endpoint does not change. */
 export function changeEndpointHandler(tx: Transaction, input: ChangeEndpointHandler): void {
   const endpoints = new EndpointRepository(tx);
   const endpoint = endpoints.loadHolding('endpoint_handler', input.id) ?? tx.refuse('missing', `there is no endpoint handler ${input.id}`);
   const held = endpoint.handler!;
-  endpoint.handler = { row: changed(held.row, input, ['title', 'description', 'file']), meets: input.meets ?? held.meets, packages: input.packages ?? held.packages };
+  endpoint.handler = { row: changed(held.row, input, ['title', 'description', 'file']), meets: input.meets ?? held.meets, packages: input.packages ?? held.packages, helpers: input.helpers ?? held.helpers };
   endpoints.save(endpoint);
 }
 
-/** Removes an endpoint handler with the links it starts and the packages it uses. Refused while anything else references them. */
+/** Removes an endpoint handler with the links it starts, the packages it uses and its helper files. Refused while anything else references them. */
 export function removeEndpointHandler(tx: Transaction, input: RemoveEndpointHandler): void {
   const endpoints = new EndpointRepository(tx);
   const endpoint = endpoints.loadHolding('endpoint_handler', input.id) ?? tx.refuse('missing', `there is no endpoint handler ${input.id}`);

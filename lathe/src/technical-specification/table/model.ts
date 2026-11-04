@@ -30,14 +30,16 @@ export interface Table {
   storedIn: string | null;
   meets: string[];
   packages: string[];
+  /** Its helper files (helper_file), sorted. */
+  helpers: string[];
 }
 
 /** The tables the Table aggregate keeps its rows in: its kind, its part, and the relation and part its record starts. */
-export const TABLE_TABLES = ['table', 'table_key', 'stored_in', 'meets', 'package_use'] as const;
+export const TABLE_TABLES = ['table', 'table_key', 'stored_in', 'meets', 'package_use', 'helper_file'] as const;
 
 /** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
 export const TABLE_SHAPE = {
-  table: { at: 'table', lists: { meets: 'meets', packages: 'packages' }, given: { keys: 'keys' }, links: { stored_in: 'storedIn' } },
+  table: { at: 'table', lists: { meets: 'meets', packages: 'packages', helpers: 'helpers' }, given: { keys: 'keys' }, links: { stored_in: 'storedIn' } },
 } as const satisfies AggregateShape;
 
 /** The tables in the data, each whole, built from the aggregate's tables; only the one given, when given. */
@@ -49,6 +51,7 @@ export function tablesFrom(rows: (table: string) => Row[], only?: string): Table
   const storedIn = bySource(rows('stored_in'));
   const meets = bySource(rows('meets'));
   const packages = bySource(rows('package_use'), 'record_id', 'package');
+  const helpers = bySource(rows('helper_file'), 'record_id', 'file');
   return tables.map((table) => ({
     root: table.id,
     table,
@@ -58,6 +61,7 @@ export function tablesFrom(rows: (table: string) => Row[], only?: string): Table
     storedIn: groupOf(storedIn, table.id)[0] ?? null,
     meets: groupOf(meets, table.id),
     packages: groupOf(packages, table.id),
+    helpers: groupOf(helpers, table.id),
   }));
 }
 
@@ -70,5 +74,6 @@ export function tableRows(table: Table): Map<string, Row[]> {
     ['stored_in', table.storedIn ? [{ source_id: table.root, target_id: table.storedIn }] : []],
     ['meets', table.meets.map((target) => ({ source_id: table.root, target_id: target }))],
     ['package_use', table.packages.map((name) => ({ record_id: table.root, package: name }))],
+    ['helper_file', table.helpers.map((name) => ({ record_id: table.root, file: name }))],
   ]);
 }

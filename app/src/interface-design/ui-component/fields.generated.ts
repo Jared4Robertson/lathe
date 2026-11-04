@@ -12,6 +12,7 @@ export const UI_COMPONENT_FIELDS = {
     builds: { kind: 'ids', description: 'The view requirements its code builds: does what each says.', required: false, clearable: false },
     meets: { kind: 'ids', description: 'The standard rules it follows.', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses, each listed in one of the product\'s package.json files.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, such as helpers and build-tag variants, each from the product root; no other record names one.', required: false, clearable: false },
   },
   '/api/ui-component/change-ui-component': {
     id: { kind: 'column', table: 'ui_component', column: 'id', required: true, clearable: false },
@@ -22,6 +23,7 @@ export const UI_COMPONENT_FIELDS = {
     builds: { kind: 'ids', description: 'The view requirements its code builds.', required: false, clearable: false },
     meets: { kind: 'ids', description: 'The standard rules it follows.', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, each from the product root.', required: false, clearable: false },
   },
   '/api/ui-component/remove-ui-component': {
     id: { kind: 'column', table: 'ui_component', column: 'id', required: true, clearable: false },

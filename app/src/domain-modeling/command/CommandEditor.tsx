@@ -88,14 +88,14 @@ function currentOf(page: CommandPage, kind: CommandKind, id: string): Record<str
     case 'command':
       return { ...page.command, raises: page.raises, checks: page.checks, calls: page.calls };
     case 'command_handler':
-      return { ...page.handler!.handler, meets: page.handler!.meets, packages: page.handler!.packages };
+      return { ...page.handler!.handler, meets: page.handler!.meets, packages: page.handler!.packages, helpers: page.handler!.helpers };
     case 'policy': {
       const p = policyOf(page, id);
       return { ...p.policy, hears: p.hears ?? undefined, exchanges_with: p.exchangesWith };
     }
     case 'event_handler': {
       const h = policyOf(page, id).eventHandler!;
-      return { ...h.handler, meets: h.meets, packages: h.packages };
+      return { ...h.handler, meets: h.meets, packages: h.packages, helpers: h.helpers };
     }
     case 'policy_test': {
       const t = policyOf(page, id).test!;

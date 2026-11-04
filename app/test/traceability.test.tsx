@@ -133,6 +133,20 @@ describe('traceability', () => {
     expect(groupIds(trace, 'Offered through')).toEqual(['DM-IF01']);
   });
 
+  it('LA-TRC-UC25-R04-T02 A technical record lists its helper files under Traceability, and a record with none shows no such list', async () => {
+    const data = workspace();
+    data.sources[0].tables.helper_file = [
+      { record_id: 'DM-SHOP-CMD01-H', file: 'src/basket_unix.ts' },
+      { record_id: 'DM-SHOP-CMD01-H', file: 'src/basket_other.ts' },
+    ];
+    const trace = await show(data, 'DM-SHOP-CMD01-H');
+    const helpers = within(trace).getByRole('heading', { level: 3, name: /Helper files/ }).closest('section') as HTMLElement;
+    expect([...helpers.querySelectorAll('li code')].map((c) => c.textContent)).toEqual(['src/basket_other.ts', 'src/basket_unix.ts']);
+    expect(traceOf(data, 'DM-SHOP-CMD01-H').files.filter((f) => f.helper).map((f) => f.path)).toEqual(['src/basket_other.ts', 'src/basket_unix.ts']);
+    cleanup();
+    expect(traceOf(workspace(), 'DM-SHOP-CMD01-H').files.filter((f) => f.helper)).toEqual([]);
+  });
+
   it('LA-V92-R59-T01 A test shows Proves (its parent) and how it is run: its level, its state, and the file that runs it or why it is manual', async () => {
     let trace = await show(workspace(), 'DM-SHOP-UC01-R01-T01');
     expect(groupTitles(trace)).toEqual(['Proves', 'Run by']);

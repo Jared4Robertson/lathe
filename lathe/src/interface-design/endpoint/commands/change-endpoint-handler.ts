@@ -4,7 +4,7 @@ import { CHANGE_ENDPOINT_HANDLER_IDENTITY } from './identities.generated.ts';
 import { changeEndpointHandler } from './handlers.generated.ts';
 
 /** The endpoint handler's changes: a column given is set, null clears an optional one; a list given replaces its list. */
-export type ChangeEndpointHandler = Pick<EndpointHandlerRow, 'id'> & { title?: EndpointHandlerRow['title']; description?: EndpointHandlerRow['description']; file?: EndpointHandlerRow['file'] | null; meets?: string[]; packages?: string[] };
+export type ChangeEndpointHandler = Pick<EndpointHandlerRow, 'id'> & { title?: EndpointHandlerRow['title']; description?: EndpointHandlerRow['description']; file?: EndpointHandlerRow['file'] | null; meets?: string[]; packages?: string[]; helpers?: string[] };
 
 export const CHANGE_ENDPOINT_HANDLER = {
   ...CHANGE_ENDPOINT_HANDLER_IDENTITY,
@@ -15,6 +15,7 @@ export const CHANGE_ENDPOINT_HANDLER = {
     file: column('endpoint_handler', 'file', 'clearable'),
     meets: ids('The standard rules it follows. Replaces the list.', 'optional'),
     packages: texts('The packages it uses. Replaces the list.', 'optional'),
+    helpers: texts('The helper files its code is split across beside its file, each from the product root. Replaces the list.', 'optional'),
   },
   handler: changeEndpointHandler,
 } satisfies CommandDefinition<ChangeEndpointHandler>;

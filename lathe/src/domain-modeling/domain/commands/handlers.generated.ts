@@ -134,26 +134,26 @@ export function removeDomainService(tx: Transaction, input: RemoveDomainService)
   domains.save(domain);
 }
 
-/** Adds a repository to its domain, with the aggregate it persists, the data store it is stored in, the standard rules it meets and the packages it uses. */
+/** Adds a repository to its domain, with the aggregate it persists, the data store it is stored in, the standard rules it meets, the packages it uses and its helper files. */
 export function addRepository(tx: Transaction, input: AddRepository): void {
   const domains = new DomainRepository(tx);
   const domain = domains.load(input.domain_id) ?? tx.refuse('missing', `there is no domain ${input.domain_id}`);
-  const { persists, stored_in, meets = [], packages = [], ...row } = input;
-  domain.repositories.push({ row, meets: meets, packages: packages, persists: persists ?? null, storedIn: stored_in ?? null });
+  const { persists, stored_in, meets = [], packages = [], helpers = [], ...row } = input;
+  domain.repositories.push({ row, meets: meets, packages: packages, helpers: helpers, persists: persists ?? null, storedIn: stored_in ?? null });
   holdToRules(tx, domain);
   domains.save(domain);
 }
 
-/** Changes a repository's title, file or description, the aggregate it persists or the data store it is stored in (null clears either), or the standard rules it meets or packages it uses (each the whole list). */
+/** Changes a repository's title, file or description, the aggregate it persists or the data store it is stored in (null clears either), or the standard rules it meets, the packages it uses or its helper files (each the whole list). */
 export function changeRepository(tx: Transaction, input: ChangeRepository): void {
   const domains = new DomainRepository(tx);
   const domain = domains.loadHolding('repository', input.id) ?? tx.refuse('missing', `there is no repository ${input.id}`);
-  domain.repositories = domain.repositories.map((x) => (x.row.id === input.id ? { row: changed(x.row, input, ['title', 'file', 'description']), meets: input.meets ?? x.meets, packages: input.packages ?? x.packages, persists: input.persists === undefined ? x.persists : input.persists, storedIn: input.stored_in === undefined ? x.storedIn : input.stored_in } : x));
+  domain.repositories = domain.repositories.map((x) => (x.row.id === input.id ? { row: changed(x.row, input, ['title', 'file', 'description']), meets: input.meets ?? x.meets, packages: input.packages ?? x.packages, helpers: input.helpers ?? x.helpers, persists: input.persists === undefined ? x.persists : input.persists, storedIn: input.stored_in === undefined ? x.storedIn : input.stored_in } : x));
   holdToRules(tx, domain);
   domains.save(domain);
 }
 
-/** Removes a repository with the links it starts and the packages it uses. Refused while anything references it. */
+/** Removes a repository with the links it starts, the packages it uses and its helper files. Refused while anything references it. */
 export function removeRepository(tx: Transaction, input: RemoveRepository): void {
   const domains = new DomainRepository(tx);
   const domain = domains.loadHolding('repository', input.id) ?? tx.refuse('missing', `there is no repository ${input.id}`);
@@ -161,26 +161,26 @@ export function removeRepository(tx: Transaction, input: RemoveRepository): void
   domains.save(domain);
 }
 
-/** Adds the service that implements a domain service in code, with the standard rules it meets and the packages it uses. */
+/** Adds the service that implements a domain service in code, with the standard rules it meets, the packages it uses and its helper files. */
 export function addService(tx: Transaction, input: AddService): void {
   const domains = new DomainRepository(tx);
   const domain = domains.loadHolding('domain_service', input.domain_service_id) ?? tx.refuse('missing', `there is no domain service ${input.domain_service_id}`);
-  const { meets = [], packages = [], ...row } = input;
-  domain.services.push({ row, meets: meets, packages: packages });
+  const { meets = [], packages = [], helpers = [], ...row } = input;
+  domain.services.push({ row, meets: meets, packages: packages, helpers: helpers });
   holdToRules(tx, domain);
   domains.save(domain);
 }
 
-/** Changes a service's title or file, or the standard rules it meets or packages it uses (each the whole list). */
+/** Changes a service's title or file, or the standard rules it meets, the packages it uses or its helper files (each the whole list). */
 export function changeService(tx: Transaction, input: ChangeService): void {
   const domains = new DomainRepository(tx);
   const domain = domains.loadHolding('service', input.id) ?? tx.refuse('missing', `there is no service ${input.id}`);
-  domain.services = domain.services.map((x) => (x.row.id === input.id ? { row: changed(x.row, input, ['title', 'file']), meets: input.meets ?? x.meets, packages: input.packages ?? x.packages } : x));
+  domain.services = domain.services.map((x) => (x.row.id === input.id ? { row: changed(x.row, input, ['title', 'file']), meets: input.meets ?? x.meets, packages: input.packages ?? x.packages, helpers: input.helpers ?? x.helpers } : x));
   holdToRules(tx, domain);
   domains.save(domain);
 }
 
-/** Removes a service with the links it starts and the packages it uses. Refused while anything references it. */
+/** Removes a service with the links it starts, the packages it uses and its helper files. Refused while anything references it. */
 export function removeService(tx: Transaction, input: RemoveService): void {
   const domains = new DomainRepository(tx);
   const domain = domains.loadHolding('service', input.id) ?? tx.refuse('missing', `there is no service ${input.id}`);

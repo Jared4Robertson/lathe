@@ -41,7 +41,7 @@ function fieldsOf(index: RecordIndex, product: string, kind: DomainEventKind, ad
 function currentOf(page: DomainEventPage, kind: DomainEventKind): Record<string, unknown> {
   if (kind === 'domain_event') return { ...page.event, fields: page.fields };
   const t = page.eventType!;
-  return { ...t.eventType, meets: t.meets, packages: t.packages };
+  return { ...t.eventType, meets: t.meets, packages: t.packages, helpers: t.helpers };
 }
 
 /** Each kind's Change command. */

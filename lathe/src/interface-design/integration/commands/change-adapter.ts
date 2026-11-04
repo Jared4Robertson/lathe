@@ -4,7 +4,7 @@ import { CHANGE_ADAPTER_IDENTITY } from './identities.generated.ts';
 import { changeAdapter } from './handlers.generated.ts';
 
 /** The adapter's changes: a column given is set, null clears an optional one; a list given replaces its list. */
-export type ChangeAdapter = Pick<AdapterRow, 'id'> & { title?: AdapterRow['title']; description?: AdapterRow['description']; file?: AdapterRow['file'] | null; meets?: string[]; packages?: string[] };
+export type ChangeAdapter = Pick<AdapterRow, 'id'> & { title?: AdapterRow['title']; description?: AdapterRow['description']; file?: AdapterRow['file'] | null; meets?: string[]; packages?: string[]; helpers?: string[] };
 
 export const CHANGE_ADAPTER = {
   ...CHANGE_ADAPTER_IDENTITY,
@@ -15,6 +15,7 @@ export const CHANGE_ADAPTER = {
     file: column('adapter', 'file', 'clearable'),
     meets: ids('The standard rules it follows. Replaces the list.', 'optional'),
     packages: texts('The packages it uses. Replaces the list.', 'optional'),
+    helpers: texts('The helper files its code is split across beside its file, each from the product root. Replaces the list.', 'optional'),
   },
   handler: changeAdapter,
 } satisfies CommandDefinition<ChangeAdapter>;

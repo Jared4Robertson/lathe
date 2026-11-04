@@ -12,16 +12,18 @@ export interface EntryPoint {
   entryPoint: EntryPointRow;
   /** The packages it uses (package_use), sorted. */
   packages: string[];
+  /** Its helper files (helper_file), sorted. */
+  helpers: string[];
   /** The standard rules it meets, sorted. */
   meets: string[];
 }
 
 /** The tables the aggregate keeps its rows in: its kind, the package_use rows naming it, and the meets links it starts. */
-export const ENTRY_POINT_TABLES = ['entry_point', 'package_use', 'meets'] as const;
+export const ENTRY_POINT_TABLES = ['entry_point', 'package_use', 'helper_file', 'meets'] as const;
 
 /** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
 export const ENTRY_POINT_SHAPE = {
-  entry_point: { at: 'entryPoint', lists: { meets: 'meets', packages: 'packages' } },
+  entry_point: { at: 'entryPoint', lists: { meets: 'meets', packages: 'packages', helpers: 'helpers' } },
 } as const satisfies AggregateShape;
 
 /** The entry points in the data, each whole; only the one given, when given. */
@@ -30,11 +32,13 @@ export function entryPointsFrom(rows: (table: string) => Row[], only?: string): 
   if (!found.length) return [];
   const ids = new Set(found.map((r) => r.id));
   const packages = bySource(rows('package_use').filter((p) => ids.has(String(p.record_id))), 'record_id', 'package');
+  const helpers = bySource(rows('helper_file').filter((p) => ids.has(String(p.record_id))), 'record_id', 'file');
   const meets = bySource(rows('meets').filter((m) => ids.has(String(m.source_id))));
   return found.map((row) => ({
     root: row.id,
     entryPoint: row,
     packages: groupOf(packages, row.id),
+    helpers: groupOf(helpers, row.id),
     meets: groupOf(meets, row.id),
   }));
 }
@@ -44,6 +48,7 @@ export function entryPointRows(record: EntryPoint): Map<string, Row[]> {
   return new Map<string, Row[]>([
     ['entry_point', [record.entryPoint as unknown as Row]],
     ['package_use', record.packages.map((name) => ({ record_id: record.root, package: name }))],
+    ['helper_file', record.helpers.map((name) => ({ record_id: record.root, file: name }))],
     ['meets', record.meets.map((target) => ({ source_id: record.root, target_id: target }))],
   ]);
 }

@@ -94,8 +94,8 @@ function commandText(page: CommandPage): string {
   const lines = [`Command ${row.id}: ${row.title}`, `  entity: ${row.entity_id}`, `  description: ${row.description}`];
   const links = [...page.raises.map((x) => `raises ${x}`), ...page.checks.map((x) => `checks ${x}`), ...page.calls.map((x) => `calls ${x}`)];
   if (links.length) lines.push(`  ${links.join('; ')}`);
-  const built = (b: { handler: { file?: string }; meets: string[]; packages: string[] }) => {
-    const extra = [...(b.handler.file ? [b.handler.file] : []), ...b.meets.map((x) => `meets ${x}`), ...b.packages.map((x) => `uses ${x}`)];
+  const built = (b: { handler: { file?: string }; meets: string[]; packages: string[]; helpers: string[] }) => {
+    const extra = [...(b.handler.file ? [b.handler.file] : []), ...b.meets.map((x) => `meets ${x}`), ...b.packages.map((x) => `uses ${x}`), ...b.helpers.map((x) => `helper file ${x}`)];
     return extra.length ? ` [${extra.join('; ')}]` : '';
   };
   if (page.handler) lines.push(`Command handler ${page.handler.handler.id}: ${page.handler.handler.title}${built(page.handler)}`);

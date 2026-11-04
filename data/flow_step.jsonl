@@ -423,6 +423,10 @@
 {"id":"LA-TRC-UC24-FL-S03","title":"They read the files and tests it would touch, each test with its state, and the purposes it could break","flow_id":"LA-TRC-UC24-FL","path":"main","position":3}
 {"id":"LA-TRC-UC24-FL-S04","title":"They drop a record from the change and read what it no longer touches","flow_id":"LA-TRC-UC24-FL","path":"main","position":4}
 {"id":"LA-TRC-UC24-FL-S05","title":"Before it changes anything, an Agent reads the same reach","flow_id":"LA-TRC-UC24-FL","path":"main","position":5}
+{"id":"LA-TRC-UC25-FL-S01","title":"The Agent names the helper files on the technical record whose code they hold; the store refuses a helper file another record names","flow_id":"LA-TRC-UC25-FL","path":"main","position":1}
+{"id":"LA-TRC-UC25-FL-S02","title":"Lathe check counts each helper file as traced, so no helper file is a code-file-untraced gap","flow_id":"LA-TRC-UC25-FL","path":"main","position":2}
+{"id":"LA-TRC-UC25-FL-S03","title":"A helper file not written yet keeps what the record implements unbuilt, and the check reports it as a missing file","flow_id":"LA-TRC-UC25-FL","path":"main","position":3}
+{"id":"LA-TRC-UC25-FL-S04","title":"The Owner reads the trace and sees each helper file beside its record's file","flow_id":"LA-TRC-UC25-FL","path":"main","position":4}
 {"id":"LA-TST-UC03-FL-S01","title":"The Agent writes the test under the record it proves, with its level and state","flow_id":"LA-TST-UC03-FL","path":"main","position":1}
 {"id":"LA-TST-UC03-FL-S02","title":"A test says its size when it is not small, and marks itself smoke or external","flow_id":"LA-TST-UC03-FL","path":"main","position":2}
 {"id":"LA-TST-UC03-FL-S03","title":"The Agent names the file that runs an automated test","flow_id":"LA-TST-UC03-FL","path":"automated","position":1}

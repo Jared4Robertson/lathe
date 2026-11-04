@@ -88,7 +88,7 @@ function domainEventText(page: DomainEventPage): string {
   }
   const type = page.eventType;
   if (type) {
-    const extra = [...(type.eventType.delivery ? [type.eventType.delivery] : []), ...(type.eventType.file ? [type.eventType.file] : []), ...type.meets.map((x) => `meets ${x}`), ...type.packages.map((x) => `uses ${x}`)];
+    const extra = [...(type.eventType.delivery ? [type.eventType.delivery] : []), ...(type.eventType.file ? [type.eventType.file] : []), ...type.meets.map((x) => `meets ${x}`), ...type.packages.map((x) => `uses ${x}`), ...type.helpers.map((x) => `helper file ${x}`)];
     lines.push(`Event type ${type.eventType.id}: ${type.eventType.title}${extra.length ? ` [${extra.join('; ')}]` : ''}`);
   }
   if (page.raisedBy.length) lines.push(`Raised by ${page.raisedBy.join(', ')}`);

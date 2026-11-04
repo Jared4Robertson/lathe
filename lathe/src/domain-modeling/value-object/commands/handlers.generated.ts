@@ -72,28 +72,28 @@ export function removeConstraint(tx: Transaction, input: RemoveConstraint): void
   valueObjects.save(valueObject);
 }
 
-/** Adds the value type of a value object, its one piece of code, with the standard rules it meets and the packages it uses. */
+/** Adds the value type of a value object, its one piece of code, with the standard rules it meets, the packages it uses and its helper files. */
 export function addValueType(tx: Transaction, input: AddValueType): void {
   const valueObjects = new ValueObjectRepository(tx);
   const valueObject = valueObjects.load(input.value_object_id) ?? tx.refuse('missing', `there is no value object ${input.value_object_id}`);
-  const { meets = [], packages = [], ...row } = input;
+  const { meets = [], packages = [], helpers = [], ...row } = input;
   refuseBroken(oneValueType([...(valueObject.valueType ? [valueObject.valueType.row] : []), row]));
-  valueObject.valueType = { row, meets: meets, packages: packages };
+  valueObject.valueType = { row, meets: meets, packages: packages, helpers: helpers };
   holdToRules(tx, valueObject);
   valueObjects.save(valueObject);
 }
 
-/** Changes a value type's title or file, or the standard rules it meets or packages it uses (each the whole list). */
+/** Changes a value type's title or file, or the standard rules it meets, the packages it uses or its helper files (each the whole list). */
 export function changeValueType(tx: Transaction, input: ChangeValueType): void {
   const valueObjects = new ValueObjectRepository(tx);
   const valueObject = valueObjects.loadHolding('value_type', input.id) ?? tx.refuse('missing', `there is no value type ${input.id}`);
   const held = valueObject.valueType!;
-  valueObject.valueType = { row: changed(held.row, input, ['title', 'file']), meets: input.meets ?? held.meets, packages: input.packages ?? held.packages };
+  valueObject.valueType = { row: changed(held.row, input, ['title', 'file']), meets: input.meets ?? held.meets, packages: input.packages ?? held.packages, helpers: input.helpers ?? held.helpers };
   holdToRules(tx, valueObject);
   valueObjects.save(valueObject);
 }
 
-/** Removes a value object's value type with the links it starts and the packages it uses. Refused while anything references it. */
+/** Removes a value object's value type with the links it starts, the packages it uses and its helper files. Refused while anything references it. */
 export function removeValueType(tx: Transaction, input: RemoveValueType): void {
   const valueObjects = new ValueObjectRepository(tx);
   const valueObject = valueObjects.loadHolding('value_type', input.id) ?? tx.refuse('missing', `there is no value type ${input.id}`);

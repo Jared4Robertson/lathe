@@ -3,7 +3,7 @@ import type { AdapterRow } from '../../../platform/data/tables.ts';
 import { ADD_ADAPTER_IDENTITY } from './identities.generated.ts';
 import { addAdapter } from './handlers.generated.ts';
 
-export type AddAdapter = Pick<AdapterRow, 'id' | 'title' | 'integration_id' | 'description' | 'file'> & { meets?: string[]; packages?: string[] };
+export type AddAdapter = Pick<AdapterRow, 'id' | 'title' | 'integration_id' | 'description' | 'file'> & { meets?: string[]; packages?: string[]; helpers?: string[] };
 
 export const ADD_ADAPTER = {
   ...ADD_ADAPTER_IDENTITY,
@@ -15,6 +15,7 @@ export const ADD_ADAPTER = {
     file: column('adapter', 'file', 'optional'),
     meets: ids('The standard rules it follows.', 'optional'),
     packages: texts("The packages it uses, each listed in one of the product's package.json files.", 'optional'),
+    helpers: texts('The helper files its code is split across beside its file, such as helpers and build-tag variants, each from the product root; no other record names one.', 'optional'),
   },
   handler: addAdapter,
 } satisfies CommandDefinition<AddAdapter>;

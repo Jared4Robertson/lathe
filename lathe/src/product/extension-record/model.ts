@@ -22,18 +22,21 @@ export interface ExtensionRecord {
   links: Record<string, string[]>;
   /** The packages it uses (package_use), sorted. */
   packages: string[];
+  /** Its helper files (helper_file), sorted. */
+  helpers: string[];
 }
 
 /** The tables the aggregate keeps its rows in: every product kind's, package_use, and the links its kinds start. */
 export function extensionRecordTables(schema: SchemaDescription): string[] {
   const kinds = productKinds(schema).map((k) => k.name);
-  return [...new Set([...kinds, 'package_use', ...kinds.flatMap((k) => startedRelations(schema, k))])];
+  return [...new Set([...kinds, 'package_use', 'helper_file', ...kinds.flatMap((k) => startedRelations(schema, k))])];
 }
 
 /** The extension records in the data, each whole; only the one given, when given. */
 export function extensionRecordsFrom(schema: SchemaDescription, rows: (table: string) => Row[], only?: string): ExtensionRecord[] {
   const found: ExtensionRecord[] = [];
   const packages = bySource(rows('package_use'), 'record_id', 'package');
+  const helpers = bySource(rows('helper_file'), 'record_id', 'file');
   for (const kind of productKinds(schema)) {
     const own = rows(kind.name).filter((r) => only === undefined || r.id === only);
     if (!own.length) continue;
@@ -45,7 +48,7 @@ export function extensionRecordsFrom(schema: SchemaDescription, rows: (table: st
         const targets = groupOf(relation.targets, id);
         if (targets.length) links[relation.name] = targets;
       }
-      found.push({ root: id, kind: kind.name, row, links, packages: groupOf(packages, id) });
+      found.push({ root: id, kind: kind.name, row, links, packages: groupOf(packages, id), helpers: groupOf(helpers, id) });
     }
   }
   return found;
@@ -56,6 +59,7 @@ export function extensionRecordRows(schema: SchemaDescription, record: Extension
   const rows = new Map<string, Row[]>([
     [record.kind, [record.row]],
     ['package_use', record.packages.map((name) => ({ record_id: record.root, package: name }))],
+    ['helper_file', record.helpers.map((name) => ({ record_id: record.root, file: name }))],
   ]);
   for (const relation of startedRelations(schema, record.kind)) {
     rows.set(relation, (record.links[relation] ?? []).map((target) => ({ source_id: record.root, target_id: target })));

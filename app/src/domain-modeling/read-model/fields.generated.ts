@@ -51,6 +51,7 @@ export const READ_MODEL_FIELDS = {
     description: { kind: 'column', table: 'projection', column: 'description', required: true, clearable: false },
     meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, such as helpers and build-tag variants, each from the product root; no other record names one.', required: false, clearable: false },
   },
   '/api/read-model/change-projection': {
     id: { kind: 'column', table: 'projection', column: 'id', required: true, clearable: false },
@@ -59,6 +60,7 @@ export const READ_MODEL_FIELDS = {
     description: { kind: 'column', table: 'projection', column: 'description', required: false, clearable: false },
     meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, each from the product root.', required: false, clearable: false },
   },
   '/api/read-model/remove-projection': {
     id: { kind: 'column', table: 'projection', column: 'id', required: true, clearable: false },
@@ -71,6 +73,7 @@ export const READ_MODEL_FIELDS = {
     description: { kind: 'column', table: 'query_handler', column: 'description', required: true, clearable: false },
     meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, such as helpers and build-tag variants, each from the product root; no other record names one.', required: false, clearable: false },
   },
   '/api/read-model/change-query-handler': {
     id: { kind: 'column', table: 'query_handler', column: 'id', required: true, clearable: false },
@@ -79,6 +82,7 @@ export const READ_MODEL_FIELDS = {
     description: { kind: 'column', table: 'query_handler', column: 'description', required: false, clearable: false },
     meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, each from the product root.', required: false, clearable: false },
   },
   '/api/read-model/remove-query-handler': {
     id: { kind: 'column', table: 'query_handler', column: 'id', required: true, clearable: false },
@@ -92,6 +96,7 @@ export const READ_MODEL_FIELDS = {
     stored_in: { kind: 'id', description: 'The data store it reads its read model\'s table in.', required: false, clearable: false },
     meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, such as helpers and build-tag variants, each from the product root; no other record names one.', required: false, clearable: false },
   },
   '/api/read-model/change-reader': {
     id: { kind: 'column', table: 'reader', column: 'id', required: true, clearable: false },
@@ -101,6 +106,7 @@ export const READ_MODEL_FIELDS = {
     stored_in: { kind: 'id', description: 'The data store it reads its read model\'s table in.', required: false, clearable: true },
     meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, each from the product root.', required: false, clearable: false },
   },
   '/api/read-model/remove-reader': {
     id: { kind: 'column', table: 'reader', column: 'id', required: true, clearable: false },

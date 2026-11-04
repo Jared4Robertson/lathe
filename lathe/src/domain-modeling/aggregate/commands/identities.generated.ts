@@ -85,7 +85,7 @@ export const ADD_DATA_MODEL_IDENTITY = {
   id: 'LA-MOD-CMD219',
   slice: { aggregate: 'LA-MOD-A6', name: 'aggregate' },
   name: 'add-data-model',
-  description: 'Adds the data model of an entity of the aggregate: its name in code and its file, with the standard rules it meets and the packages it uses.',
+  description: 'Adds the data model of an entity of the aggregate: its name in code and its file, with the standard rules it meets, the packages it uses and its helper files.',
   method: 'POST',
   route: '/api/aggregate/add-data-model',
 } as const;
@@ -94,7 +94,7 @@ export const CHANGE_DATA_MODEL_IDENTITY = {
   id: 'LA-MOD-CMD220',
   slice: { aggregate: 'LA-MOD-A6', name: 'aggregate' },
   name: 'change-data-model',
-  description: 'Changes a data model\'s title or file, or the standard rules it meets or the packages it uses (each list whole). Its entity does not change.',
+  description: 'Changes a data model\'s title or file, or the standard rules it meets, the packages it uses or its helper files (each list whole). Its entity does not change.',
   method: 'POST',
   route: '/api/aggregate/change-data-model',
 } as const;
@@ -103,7 +103,7 @@ export const REMOVE_DATA_MODEL_IDENTITY = {
   id: 'LA-MOD-CMD221',
   slice: { aggregate: 'LA-MOD-A6', name: 'aggregate' },
   name: 'remove-data-model',
-  description: 'Removes a data model with the links it starts and the packages it uses. Refused while anything else references it.',
+  description: 'Removes a data model with the links it starts, the packages it uses and its helper files. Refused while anything else references it.',
   method: 'POST',
   route: '/api/aggregate/remove-data-model',
 } as const;
@@ -139,7 +139,7 @@ export const ADD_RULE_IDENTITY = {
   id: 'LA-MOD-CMD225',
   slice: { aggregate: 'LA-MOD-A6', name: 'aggregate' },
   name: 'add-rule',
-  description: 'Adds the rule that enforces an invariant of the aggregate: its name in code, the name its refusal carries, and its file, with the standard rules it meets and the packages it uses.',
+  description: 'Adds the rule that enforces an invariant of the aggregate: its name in code, the name its refusal carries, and its file, with the standard rules it meets, the packages it uses and its helper files.',
   method: 'POST',
   route: '/api/aggregate/add-rule',
 } as const;
@@ -148,7 +148,7 @@ export const CHANGE_RULE_IDENTITY = {
   id: 'LA-MOD-CMD226',
   slice: { aggregate: 'LA-MOD-A6', name: 'aggregate' },
   name: 'change-rule',
-  description: 'Changes a rule\'s title or file, or the standard rules it meets or the packages it uses (each list whole). Its invariant does not change.',
+  description: 'Changes a rule\'s title or file, or the standard rules it meets, the packages it uses or its helper files (each list whole). Its invariant does not change.',
   method: 'POST',
   route: '/api/aggregate/change-rule',
 } as const;
@@ -157,7 +157,7 @@ export const REMOVE_RULE_IDENTITY = {
   id: 'LA-MOD-CMD227',
   slice: { aggregate: 'LA-MOD-A6', name: 'aggregate' },
   name: 'remove-rule',
-  description: 'Removes a rule with the links it starts and the packages it uses, so its invariant is no longer built. Refused while anything else references it.',
+  description: 'Removes a rule with the links it starts, the packages it uses and its helper files, so its invariant is no longer built. Refused while anything else references it.',
   method: 'POST',
   route: '/api/aggregate/remove-rule',
 } as const;

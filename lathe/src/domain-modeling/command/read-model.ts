@@ -17,6 +17,8 @@ export interface HandlerOnPage<T> {
   handler: T;
   meets: string[];
   packages: string[];
+  /** Its helper files, sorted. */
+  helpers: string[];
 }
 
 /** A policy test as the page shows it: its row and the test data sets it starts from. */
@@ -91,13 +93,14 @@ function linked(view: ReadView, table: string, by = 'source_id', to = 'target_id
 export function commandTableFrom(view: ReadView): CommandTable {
   const [raises, checks, calls, hears, exchangesWith, meets, startsFrom] = ['raises', 'checks', 'calls', 'hears', 'exchanges_with', 'meets', 'starts_from'].map((t) => linked(view, t));
   const packages = linked(view, 'package_use', 'record_id', 'package');
+  const helpers = linked(view, 'helper_file', 'record_id', 'file');
   const handlers = grouped<CommandHandlerRow>(view.rows('command_handler'), 'command_id');
   const policies = grouped<PolicyRow>(view.rows('policy'), 'command_id');
   const eventHandlers = grouped<EventHandlerRow>(view.rows('event_handler'), 'policy_id');
   const tests = grouped<PolicyTestRow>(view.rows('policy_test'), 'policy_id');
   const endpoints = grouped<{ id: string }>(view.rows('endpoint').filter((e) => e.command_id !== undefined), 'command_id');
   const journeysOf = journeyAppearances(view);
-  const built = <T extends { id: string }>(handler: T | undefined): HandlerOnPage<T> | null => (handler ? { handler, meets: meets(handler.id), packages: packages(handler.id) } : null);
+  const built = <T extends { id: string }>(handler: T | undefined): HandlerOnPage<T> | null => (handler ? { handler, meets: meets(handler.id), packages: packages(handler.id), helpers: helpers(handler.id) } : null);
 
   const domainOfAggregate = new Map(view.rows('aggregate').map((a) => [String(a.id), String(a.domain_id)]));
   const entities = new Map<string, { domain: string; commands: CommandSummary[] }>(

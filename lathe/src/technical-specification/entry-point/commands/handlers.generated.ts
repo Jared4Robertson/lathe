@@ -8,26 +8,27 @@ import type { AddEntryPoint } from './add-entry-point.ts';
 import type { ChangeEntryPoint } from './change-entry-point.ts';
 import type { RemoveEntryPoint } from './remove-entry-point.ts';
 
-/** Adds an entry point under its domain, with the packages it uses and the standard rules it meets. */
+/** Adds an entry point under its domain, with the packages it uses, its helper files and the standard rules it meets. */
 export function addEntryPoint(tx: Transaction, input: AddEntryPoint): void {
   const entryPoints = new EntryPointRepository(tx);
   if (tx.record(input.domain_id)?.kind !== 'domain') tx.refuse('missing', `there is no domain ${input.domain_id}`);
-  const { packages = [], meets = [], ...row } = input;
-  const entryPoint = entryPoints.create({ root: row.id, entryPoint: row, meets: meets, packages: packages });
+  const { packages = [], helpers = [], meets = [], ...row } = input;
+  const entryPoint = entryPoints.create({ root: row.id, entryPoint: row, meets: meets, packages: packages, helpers: helpers });
   entryPoints.save(entryPoint);
 }
 
-/** Changes an entry point's title, file, description, packages or standard rules met. Its domain stays. */
+/** Changes an entry point's title, file, description, packages, helper files or standard rules met. Its domain stays. */
 export function changeEntryPoint(tx: Transaction, input: ChangeEntryPoint): void {
   const entryPoints = new EntryPointRepository(tx);
   const entryPoint = entryPoints.load(input.id) ?? tx.refuse('missing', `there is no entry point ${input.id}`);
   entryPoint.entryPoint = changed(entryPoint.entryPoint, input, ['title', 'file', 'description']);
   entryPoint.meets = input.meets ?? entryPoint.meets;
   entryPoint.packages = input.packages ?? entryPoint.packages;
+  entryPoint.helpers = input.helpers ?? entryPoint.helpers;
   entryPoints.save(entryPoint);
 }
 
-/** Removes an entry point whole, with the packages it names and the links it starts. Refused while anything references it. */
+/** Removes an entry point whole, with the packages and helper files it names and the links it starts. Refused while anything references it. */
 export function removeEntryPoint(tx: Transaction, input: RemoveEntryPoint): void {
   const entryPoints = new EntryPointRepository(tx);
   const entryPoint = entryPoints.load(input.id) ?? tx.refuse('missing', `there is no entry point ${input.id}`);

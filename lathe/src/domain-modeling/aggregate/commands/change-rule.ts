@@ -4,7 +4,7 @@ import { CHANGE_RULE_IDENTITY } from './identities.generated.ts';
 import { changeRule } from './handlers.generated.ts';
 
 /** The rule's changes: a column given is set, null clears an optional one; a list given replaces its list. */
-export type ChangeRule = Pick<RuleRow, 'id'> & { title?: string; file?: string | null; meets?: string[]; packages?: string[] };
+export type ChangeRule = Pick<RuleRow, 'id'> & { title?: string; file?: string | null; meets?: string[]; packages?: string[]; helpers?: string[] };
 
 export const CHANGE_RULE = {
   ...CHANGE_RULE_IDENTITY,
@@ -14,6 +14,7 @@ export const CHANGE_RULE = {
     file: column('rule', 'file', 'clearable'),
     meets: ids('The standard rules it follows. Replaces the list.', 'optional'),
     packages: texts('The packages it uses. Replaces the list.', 'optional'),
+    helpers: texts('The helper files its code is split across beside its file, each from the product root. Replaces the list.', 'optional'),
   },
   handler: changeRule,
 } satisfies CommandDefinition<ChangeRule>;

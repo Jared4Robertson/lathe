@@ -105,26 +105,26 @@ export function removeInvariant(tx: Transaction, input: RemoveInvariant): void {
   aggregates.save(aggregate);
 }
 
-/** Adds the data model of an entity of the aggregate: its name in code and its file, with the standard rules it meets and the packages it uses. */
+/** Adds the data model of an entity of the aggregate: its name in code and its file, with the standard rules it meets, the packages it uses and its helper files. */
 export function addDataModel(tx: Transaction, input: AddDataModel): void {
   const aggregates = new AggregateRepository(tx);
   const aggregate = aggregates.loadHolding('entity', input.entity_id) ?? tx.refuse('missing', `there is no entity ${input.entity_id}`);
-  const { meets = [], packages = [], ...row } = input;
-  aggregate.dataModels.push({ row, meets: meets, packages: packages });
+  const { meets = [], packages = [], helpers = [], ...row } = input;
+  aggregate.dataModels.push({ row, meets: meets, packages: packages, helpers: helpers });
   holdToRules(tx, aggregate);
   aggregates.save(aggregate);
 }
 
-/** Changes a data model's title or file, or the standard rules it meets or the packages it uses (each list whole). Its entity does not change. */
+/** Changes a data model's title or file, or the standard rules it meets, the packages it uses or its helper files (each list whole). Its entity does not change. */
 export function changeDataModel(tx: Transaction, input: ChangeDataModel): void {
   const aggregates = new AggregateRepository(tx);
   const aggregate = aggregates.loadHolding('data_model', input.id) ?? tx.refuse('missing', `there is no data model ${input.id}`);
-  aggregate.dataModels = aggregate.dataModels.map((x) => (x.row.id === input.id ? { row: changed(x.row, input, ['title', 'file']), meets: input.meets ?? x.meets, packages: input.packages ?? x.packages } : x));
+  aggregate.dataModels = aggregate.dataModels.map((x) => (x.row.id === input.id ? { row: changed(x.row, input, ['title', 'file']), meets: input.meets ?? x.meets, packages: input.packages ?? x.packages, helpers: input.helpers ?? x.helpers } : x));
   holdToRules(tx, aggregate);
   aggregates.save(aggregate);
 }
 
-/** Removes a data model with the links it starts and the packages it uses. Refused while anything else references it. */
+/** Removes a data model with the links it starts, the packages it uses and its helper files. Refused while anything else references it. */
 export function removeDataModel(tx: Transaction, input: RemoveDataModel): void {
   const aggregates = new AggregateRepository(tx);
   const aggregate = aggregates.loadHolding('data_model', input.id) ?? tx.refuse('missing', `there is no data model ${input.id}`);
@@ -159,26 +159,26 @@ export function removeInvariantTest(tx: Transaction, input: RemoveInvariantTest)
   aggregates.save(aggregate);
 }
 
-/** Adds the rule that enforces an invariant of the aggregate: its name in code, the name its refusal carries, and its file, with the standard rules it meets and the packages it uses. */
+/** Adds the rule that enforces an invariant of the aggregate: its name in code, the name its refusal carries, and its file, with the standard rules it meets, the packages it uses and its helper files. */
 export function addRule(tx: Transaction, input: AddRule): void {
   const aggregates = new AggregateRepository(tx);
   const aggregate = aggregates.loadHolding('invariant', input.invariant_id) ?? tx.refuse('missing', `there is no invariant ${input.invariant_id}`);
-  const { meets = [], packages = [], ...row } = input;
-  aggregate.rules.push({ row, meets: meets, packages: packages });
+  const { meets = [], packages = [], helpers = [], ...row } = input;
+  aggregate.rules.push({ row, meets: meets, packages: packages, helpers: helpers });
   holdToRules(tx, aggregate);
   aggregates.save(aggregate);
 }
 
-/** Changes a rule's title or file, or the standard rules it meets or the packages it uses (each list whole). Its invariant does not change. */
+/** Changes a rule's title or file, or the standard rules it meets, the packages it uses or its helper files (each list whole). Its invariant does not change. */
 export function changeRule(tx: Transaction, input: ChangeRule): void {
   const aggregates = new AggregateRepository(tx);
   const aggregate = aggregates.loadHolding('rule', input.id) ?? tx.refuse('missing', `there is no rule ${input.id}`);
-  aggregate.rules = aggregate.rules.map((x) => (x.row.id === input.id ? { row: changed(x.row, input, ['title', 'file']), meets: input.meets ?? x.meets, packages: input.packages ?? x.packages } : x));
+  aggregate.rules = aggregate.rules.map((x) => (x.row.id === input.id ? { row: changed(x.row, input, ['title', 'file']), meets: input.meets ?? x.meets, packages: input.packages ?? x.packages, helpers: input.helpers ?? x.helpers } : x));
   holdToRules(tx, aggregate);
   aggregates.save(aggregate);
 }
 
-/** Removes a rule with the links it starts and the packages it uses, so its invariant is no longer built. Refused while anything else references it. */
+/** Removes a rule with the links it starts, the packages it uses and its helper files, so its invariant is no longer built. Refused while anything else references it. */
 export function removeRule(tx: Transaction, input: RemoveRule): void {
   const aggregates = new AggregateRepository(tx);
   const aggregate = aggregates.loadHolding('rule', input.id) ?? tx.refuse('missing', `there is no rule ${input.id}`);

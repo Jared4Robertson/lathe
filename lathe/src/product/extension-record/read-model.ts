@@ -21,6 +21,8 @@ export interface ExtensionRecordPage {
   links: Record<string, string[]>;
   /** The packages it uses, sorted. */
   packages: string[];
+  /** Its helper files, sorted. */
+  helpers: string[];
 }
 
 /** One line of a list of records of a product kind. */
@@ -33,6 +35,7 @@ export interface ExtensionRecordSummary {
 function extensionRecordPagesFrom(view: ReadView): ExtensionRecordPage[] {
   const pages: ExtensionRecordPage[] = [];
   const packages = view.rows('package_use');
+  const helpers = view.rows('helper_file');
   for (const kind of productKinds(view.schema)) {
     const own = view.rows(kind.name);
     const parent = parentColumn(kind);
@@ -55,6 +58,7 @@ function extensionRecordPagesFrom(view: ReadView): ExtensionRecordPage[] {
         values,
         links,
         packages: packages.filter((p) => p.record_id === id).map((p) => String(p.package)).sort(),
+        helpers: helpers.filter((p) => p.record_id === id).map((p) => String(p.file)).sort(),
       });
     }
   }

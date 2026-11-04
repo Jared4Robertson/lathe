@@ -47,7 +47,7 @@ export function ToolingEditor({ index, page, children }: { index: RecordIndex; p
   };
   if (mode === 'change') {
     const specs = fieldsOf(index, tooling.domain_id, false);
-    const current = { ...tooling, packages: page.packages, meets: page.meets, generates: page.generates } as Record<string, unknown>;
+    const current = { ...tooling, packages: page.packages, helpers: page.helpers, meets: page.meets, generates: page.generates } as Record<string, unknown>;
     const submit = async (draft: Draft) => {
       const input = changeInput(index, specs, draft, current, { id: tooling.id });
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }

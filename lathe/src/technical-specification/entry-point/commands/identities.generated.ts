@@ -4,7 +4,7 @@ export const ADD_ENTRY_POINT_IDENTITY = {
   id: 'LA-TEC-CMD150',
   slice: { aggregate: 'LA-TEC-A20', name: 'entry-point' },
   name: 'add-entry-point',
-  description: 'Adds an entry point under its domain, with the packages it uses and the standard rules it meets.',
+  description: 'Adds an entry point under its domain, with the packages it uses, its helper files and the standard rules it meets.',
   method: 'POST',
   route: '/api/entry-point/add-entry-point',
 } as const;
@@ -13,7 +13,7 @@ export const CHANGE_ENTRY_POINT_IDENTITY = {
   id: 'LA-TEC-CMD151',
   slice: { aggregate: 'LA-TEC-A20', name: 'entry-point' },
   name: 'change-entry-point',
-  description: 'Changes an entry point\'s title, file, description, packages or standard rules met. Its domain stays.',
+  description: 'Changes an entry point\'s title, file, description, packages, helper files or standard rules met. Its domain stays.',
   method: 'POST',
   route: '/api/entry-point/change-entry-point',
 } as const;
@@ -22,7 +22,7 @@ export const REMOVE_ENTRY_POINT_IDENTITY = {
   id: 'LA-TEC-CMD152',
   slice: { aggregate: 'LA-TEC-A20', name: 'entry-point' },
   name: 'remove-entry-point',
-  description: 'Removes an entry point whole, with the packages it names and the links it starts. Refused while anything references it.',
+  description: 'Removes an entry point whole, with the packages and helper files it names and the links it starts. Refused while anything references it.',
   method: 'POST',
   route: '/api/entry-point/remove-entry-point',
 } as const;

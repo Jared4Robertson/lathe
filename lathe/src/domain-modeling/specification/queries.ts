@@ -82,12 +82,12 @@ export const NEXT_SPECIFICATION_ID: QueryDefinition<{ kind: string; parent: stri
 /** A specification as text: its row, what it reads, then its predicate and test. */
 function specificationText(page: SpecificationPage): string {
   const { specification: row } = page;
-  const predicate = page.predicate && { ...page.predicate.predicate, meets: page.predicate.meets, packages: page.predicate.packages };
+  const predicate = page.predicate && { ...page.predicate.predicate, meets: page.predicate.meets, packages: page.predicate.packages, helpers: page.predicate.helpers };
   const test = page.test && { ...page.test.test, startsFrom: page.test.startsFrom };
   const lines = [`Specification ${row.id}: ${row.title}`, `  statement: ${row.statement}`];
   if (page.reads.length) lines.push(`  reads: ${page.reads.join(', ')}`);
   const listed = (links: string[]) => (links.length ? ` [${links.join('; ')}]` : '');
-  if (predicate) lines.push(`Predicate ${predicate.id}: ${predicate.title}${predicate.file ? ` (${predicate.file})` : ''}${listed([...predicate.meets.map((x) => `meets ${x}`), ...predicate.packages.map((x) => `uses ${x}`)])}`);
+  if (predicate) lines.push(`Predicate ${predicate.id}: ${predicate.title}${predicate.file ? ` (${predicate.file})` : ''}${listed([...predicate.meets.map((x) => `meets ${x}`), ...predicate.packages.map((x) => `uses ${x}`), ...predicate.helpers.map((x) => `helper file ${x}`)])}`);
   if (test) lines.push(`Specification test ${test.id}: ${test.title} (${test.level}, ${test.state})${listed(test.startsFrom.map((x) => `starts from ${x}`))}`);
   return lines.join('\n');
 }

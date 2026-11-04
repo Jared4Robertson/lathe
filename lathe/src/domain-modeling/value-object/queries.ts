@@ -98,6 +98,6 @@ function valueObjectText(page: ValueObjectPage): string {
     lines.push(`Constraint ${c.id}: ${c.title}`);
     if (test) lines.push(`  constraint test ${test.test.id}: ${test.test.title} (${test.test.level}, ${test.test.state})${listed(test.startsFrom.map((x) => `starts from ${x}`))}`);
   }
-  if (valueType) lines.push(`Value type ${valueType.valueType.id}: ${valueType.valueType.title}${valueType.valueType.file ? ` (${valueType.valueType.file})` : ''}${listed([...valueType.meets.map((x) => `meets ${x}`), ...valueType.packages.map((x) => `uses ${x}`)])}`);
+  if (valueType) lines.push(`Value type ${valueType.valueType.id}: ${valueType.valueType.title}${valueType.valueType.file ? ` (${valueType.valueType.file})` : ''}${listed([...valueType.meets.map((x) => `meets ${x}`), ...valueType.packages.map((x) => `uses ${x}`), ...valueType.helpers.map((x) => `helper file ${x}`)])}`);
   return lines.join('\n');
 }

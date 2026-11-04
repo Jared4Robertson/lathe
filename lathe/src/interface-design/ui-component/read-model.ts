@@ -23,6 +23,8 @@ export interface UiComponentTree {
   meets: string[];
   /** The packages it uses. */
   packages: string[];
+  /** Its helper files, sorted. */
+  helpers: string[];
 }
 
 /** A UI component as its page reads it, with the record of it the page is about. */
@@ -67,13 +69,14 @@ export function uiComponentTableFrom(view: ReadView): UiComponentTable {
   const builds = linked(view, 'builds', 'source_id', 'target_id');
   const meets = linked(view, 'meets', 'source_id', 'target_id');
   const packages = linked(view, 'package_use', 'record_id', 'package');
+  const helpers = linked(view, 'helper_file', 'record_id', 'file');
   const components = new Map<string, UiComponentTree>();
   const holding = new Map<string, { root: string; kind: UiComponentKind }>();
   const products = new Map<string, UiComponentSummary[]>(view.rows('product').map((p) => [String(p.id), []]));
   for (const component of view.rows('ui_component') as unknown as UiComponentRow[]) {
     const root = component.id;
     holding.set(root, { root, kind: 'ui_component' });
-    components.set(root, { component, renders: renders(root), builds: builds(root), meets: meets(root), packages: packages(root) });
+    components.set(root, { component, renders: renders(root), builds: builds(root), meets: meets(root), packages: packages(root), helpers: helpers(root) });
     products.get(root.replace(/-UI\d+$/, ''))?.push({ id: root, title: component.title });
   }
   for (const list of products.values()) list.sort(byRecordId);

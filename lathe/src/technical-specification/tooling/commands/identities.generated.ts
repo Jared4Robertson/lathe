@@ -4,7 +4,7 @@ export const ADD_TOOLING_IDENTITY = {
   id: 'LA-TEC-CMD155',
   slice: { aggregate: 'LA-TEC-A21', name: 'tooling' },
   name: 'add-tooling',
-  description: 'Adds a tooling record under its domain, with the packages it uses, the standard rules it meets and the technical records it generates.',
+  description: 'Adds a tooling record under its domain, with the packages it uses, its helper files, the standard rules it meets and the technical records it generates.',
   method: 'POST',
   route: '/api/tooling/add-tooling',
 } as const;
@@ -13,7 +13,7 @@ export const CHANGE_TOOLING_IDENTITY = {
   id: 'LA-TEC-CMD156',
   slice: { aggregate: 'LA-TEC-A21', name: 'tooling' },
   name: 'change-tooling',
-  description: 'Changes a tooling record\'s title, file, packages, standard rules met or technical records generated. Its domain stays.',
+  description: 'Changes a tooling record\'s title, file, packages, helper files, standard rules met or technical records generated. Its domain stays.',
   method: 'POST',
   route: '/api/tooling/change-tooling',
 } as const;
@@ -22,7 +22,7 @@ export const REMOVE_TOOLING_IDENTITY = {
   id: 'LA-TEC-CMD157',
   slice: { aggregate: 'LA-TEC-A21', name: 'tooling' },
   name: 'remove-tooling',
-  description: 'Removes a tooling record whole, with the packages it names and the links it starts. Refused while anything references it.',
+  description: 'Removes a tooling record whole, with the packages and helper files it names and the links it starts. Refused while anything references it.',
   method: 'POST',
   route: '/api/tooling/remove-tooling',
 } as const;

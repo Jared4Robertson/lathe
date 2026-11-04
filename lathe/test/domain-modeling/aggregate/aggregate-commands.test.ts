@@ -77,7 +77,7 @@ describe('LA-PAT-AGGREGATE-COMMANDS-R10-T01 LA-PAT-AGGREGATE-COMMANDS-R10-T04 LA
       ['TL-LEND-EN02', 1, []],
     ]);
     expect(whole.entities[0].fields[1]).toEqual({ entity_id: 'TL-LEND-EN01', position: 2, name: 'Tool', meaning: 'The tool lent.', type_aggregate_id: 'TL-LEND-A2', required: true, column_name: 'tool_id' });
-    expect(whole.entities[0].dataModel).toEqual({ dataModel: { id: 'TL-LEND-EN01-DM', title: 'Loan', entity_id: 'TL-LEND-EN01', file: 'src/lending/loan.ts' }, meets: ['TL-STD-CODE-R01'], packages: [] });
+    expect(whole.entities[0].dataModel).toEqual({ dataModel: { id: 'TL-LEND-EN01-DM', title: 'Loan', entity_id: 'TL-LEND-EN01', file: 'src/lending/loan.ts' }, meets: ['TL-STD-CODE-R01'], packages: [], helpers: [] });
     expect(whole.invariants[0].test?.startsFrom).toEqual(['TL-LEND-TD01']);
     expect(runQuery(store, LIST_AGGREGATES, { domain_id: 'TL-LEND' })).toEqual([
       { id: 'TL-LEND-A1', title: 'Loan' },

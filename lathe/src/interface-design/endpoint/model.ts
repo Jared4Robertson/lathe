@@ -15,6 +15,8 @@ export interface Built<T> {
   row: T;
   meets: string[];
   packages: string[];
+  /** Its helper files (helper_file), sorted. */
+  helpers: string[];
 }
 
 /** A test with the test data sets it starts from. */
@@ -35,13 +37,13 @@ export interface Endpoint {
 }
 
 /** The tables the Endpoint aggregate keeps its rows in: its kinds and the relations its records start. */
-export const ENDPOINT_TABLES = ['endpoint', 'api_requirement', 'endpoint_handler', 'endpoint_test', 'meets', 'package_use', 'starts_from'] as const;
+export const ENDPOINT_TABLES = ['endpoint', 'api_requirement', 'endpoint_handler', 'endpoint_test', 'meets', 'package_use', 'helper_file', 'starts_from'] as const;
 
 /** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
 export const ENDPOINT_SHAPE = {
   endpoint: { at: 'endpoint' },
   api_requirement: { at: 'requirements' },
-  endpoint_handler: { at: 'handler', one: true, refusedBy: 'oneEndpointHandler', lists: { meets: 'meets', packages: 'packages' } },
+  endpoint_handler: { at: 'handler', one: true, refusedBy: 'oneEndpointHandler', lists: { meets: 'meets', packages: 'packages', helpers: 'helpers' } },
   endpoint_test: { at: 'tests', lists: { starts_from: 'startsFrom' } },
 } as const satisfies AggregateShape;
 
@@ -60,6 +62,7 @@ export function endpointsFrom(rows: (table: string) => Row[], only?: string): En
   const testsOf = groupBy((rows('endpoint_test') as unknown as EndpointTestRow[]).filter((t) => endpointOf.has(t.api_requirement_id)), (t) => endpointOf.get(t.api_requirement_id));
   const meets = bySource(rows('meets'), 'source_id', 'target_id');
   const packages = bySource(rows('package_use'), 'record_id', 'package');
+  const helpers = bySource(rows('helper_file'), 'record_id', 'file');
   const startsFrom = bySource(rows('starts_from'), 'source_id', 'target_id');
   return endpoints.map((endpoint) => {
     const handler = groupOf(handlersOf, endpoint.id)[0];
@@ -67,7 +70,7 @@ export function endpointsFrom(rows: (table: string) => Row[], only?: string): En
       root: endpoint.id,
       endpoint,
       requirements: groupOf(requirementsOf, endpoint.id),
-      handler: handler ? { row: handler, meets: groupOf(meets, handler.id), packages: groupOf(packages, handler.id) } : null,
+      handler: handler ? { row: handler, meets: groupOf(meets, handler.id), packages: groupOf(packages, handler.id), helpers: groupOf(helpers, handler.id) } : null,
       tests: groupOf(testsOf, endpoint.id).map((row) => ({ row, startsFrom: groupOf(startsFrom, row.id) })),
     };
   });
@@ -84,6 +87,7 @@ export function endpointRows(endpoint: Endpoint): Map<string, Row[]> {
     ['endpoint_test', endpoint.tests.map((t) => asRow(t.row))],
     ['meets', handler ? handler.meets.map((target) => ({ source_id: handler.row.id, target_id: target })) : []],
     ['package_use', handler ? handler.packages.map((p) => ({ record_id: handler.row.id, package: p })) : []],
+    ['helper_file', handler ? handler.helpers.map((p) => ({ record_id: handler.row.id, file: p })) : []],
     ['starts_from', endpoint.tests.flatMap((t) => t.startsFrom.map((target) => ({ source_id: t.row.id, target_id: target })))],
   ]);
 }

@@ -16,6 +16,7 @@ export const TABLE_FIELDS = {
     stored_in: { kind: 'id', description: 'The data store it is kept in.', required: false, clearable: false },
     meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, such as helpers and build-tag variants, each from the product root; no other record names one.', required: false, clearable: false },
   },
   '/api/table/change-table': {
     id: { kind: 'column', table: 'table', column: 'id', required: true, clearable: false },
@@ -27,6 +28,7 @@ export const TABLE_FIELDS = {
     stored_in: { kind: 'id', description: 'The data store it is kept in.', required: false, clearable: true },
     meets: { kind: 'ids', description: 'The standard rules it meets.', required: false, clearable: false },
     packages: { kind: 'texts', description: 'The packages it uses, by their names in the product\'s package.json files.', required: false, clearable: false },
+    helpers: { kind: 'texts', description: 'The helper files its code is split across beside its file, each from the product root.', required: false, clearable: false },
   },
   '/api/table/move-table': {
     id: { kind: 'column', table: 'table', column: 'id', required: true, clearable: false },

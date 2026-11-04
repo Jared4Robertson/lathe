@@ -105,7 +105,7 @@ function aggregateText(page: AggregatePage): string {
     }
     const d = e.dataModel;
     if (d) {
-      const extra = [...(d.dataModel.file ? [d.dataModel.file] : []), ...d.meets.map((x) => `meets ${x}`), ...d.packages.map((x) => `uses ${x}`)];
+      const extra = [...(d.dataModel.file ? [d.dataModel.file] : []), ...d.meets.map((x) => `meets ${x}`), ...d.packages.map((x) => `uses ${x}`), ...d.helpers.map((x) => `helper file ${x}`)];
       lines.push(`  data model ${d.dataModel.id}: ${d.dataModel.title}${extra.length ? ` [${extra.join('; ')}]` : ''}`);
     }
   }
@@ -113,7 +113,7 @@ function aggregateText(page: AggregatePage): string {
     lines.push(`Invariant ${i.invariant.id}: ${i.invariant.title}`);
     const r = i.rule;
     if (r) {
-      const extra = [...(r.rule.file ? [r.rule.file] : []), ...r.meets.map((x) => `meets ${x}`), ...r.packages.map((x) => `uses ${x}`)];
+      const extra = [...(r.rule.file ? [r.rule.file] : []), ...r.meets.map((x) => `meets ${x}`), ...r.packages.map((x) => `uses ${x}`), ...r.helpers.map((x) => `helper file ${x}`)];
       lines.push(`  rule ${r.rule.id}: ${r.rule.title}${extra.length ? ` [${extra.join('; ')}]` : ''}`);
     }
     if (i.test) lines.push(`  invariant test ${i.test.test.id}: ${i.test.test.title} (${i.test.test.state})`);

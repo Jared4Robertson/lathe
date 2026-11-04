@@ -85,7 +85,7 @@ function currentOf(page: ReadModelPage, kind: ReadModelKind, id: string): Record
     }
     default: {
       const c = codeOf(page, kind, id);
-      return { ...c.code, meets: c.meets, packages: c.packages };
+      return { ...c.code, meets: c.meets, packages: c.packages, helpers: c.helpers };
     }
   }
 }

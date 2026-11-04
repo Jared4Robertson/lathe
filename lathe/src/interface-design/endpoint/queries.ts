@@ -91,8 +91,8 @@ function endpointText(page: EndpointPage): string {
   const lines = [`Endpoint ${row.id}: ${row.title}`, `  exposes: ${row.command_id ?? row.query_id}`, `  description: ${row.description}`];
   if (row.notes) lines.push(`  notes: ${row.notes}`);
   if (page.handler) {
-    const { handler: h, meets, packages } = page.handler;
-    const extra = [...(h.file ? [h.file] : []), ...meets.map((x) => `meets ${x}`), ...packages.map((x) => `uses ${x}`)];
+    const { handler: h, meets, packages, helpers } = page.handler;
+    const extra = [...(h.file ? [h.file] : []), ...meets.map((x) => `meets ${x}`), ...packages.map((x) => `uses ${x}`), ...helpers.map((x) => `helper file ${x}`)];
     lines.push(`Endpoint handler ${h.id}: ${h.title}${extra.length ? ` [${extra.join('; ')}]` : ''}`);
   }
   for (const r of page.requirements) {
