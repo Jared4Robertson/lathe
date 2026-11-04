@@ -411,6 +411,7 @@
 {"id":"LA-TRC-UC21-FL-S01","title":"The Owner records that a record written by hand fills a slot of the pattern it is owed to","flow_id":"LA-TRC-UC21-FL","path":"main","position":1}
 {"id":"LA-TRC-UC21-FL-S03","title":"Coverage lists the fill as debt at its slot","flow_id":"LA-TRC-UC21-FL","path":"main","position":2}
 {"id":"LA-TRC-UC21-FL-S04","title":"A fill of a record a generator writes is refused with every reason, and nothing changes","flow_id":"LA-TRC-UC21-FL","path":"refused","position":1}
+{"id":"LA-TRC-UC21-FL-S05","title":"A fill of a standard or its rule is refused with every reason, and nothing changes","flow_id":"LA-TRC-UC21-FL","path":"refused","position":2}
 {"id":"LA-TRC-UC22-FL-S01","title":"The Reader opens a journey and reads its proof: its steps, how many are proved, and its journey test","flow_id":"LA-TRC-UC22-FL","path":"main","position":1}
 {"id":"LA-TRC-UC22-FL-S02","title":"They read each journey's proof under the measure of an outcome it serves","flow_id":"LA-TRC-UC22-FL","path":"main","position":2}
 {"id":"LA-TRC-UC22-FL-S03","title":"They follow the journey's steps in order to the use cases they carry out","flow_id":"LA-TRC-UC22-FL","path":"main","position":3}
