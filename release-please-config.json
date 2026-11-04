@@ -2,6 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
   "bootstrap-sha": "b4110ad0c3f9f673170e13a91ff1e36f9edc4309",
   "include-component-in-tag": false,
+  "signoff": "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>",
   "changelog-sections": [
     {
       "type": "feat",

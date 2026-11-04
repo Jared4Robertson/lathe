@@ -1,6 +1,6 @@
 # Keeps a release PR open on main (the version bump and CHANGELOG.md, grouped by commit type, from commits anywhere in the repo); merging it tags
 # the release and publishes it on GitHub. Its settings are release-please-config.json and .release-please-manifest.json.
-# Nothing is published to npm.
+# The bot signs off the release commit itself ("signoff" in the config) so the dco check passes. Nothing is published to npm.
 name: release-please
 
 on:
