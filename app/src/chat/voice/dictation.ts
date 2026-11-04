@@ -1,6 +1,6 @@
 import type { VoiceEvent } from '../types.ts';
 import { turnDelay, type Pitch } from './endOfTurn.ts';
-import { appendText, newParagraph, PAUSE_SECONDS, previewWords, readTokens, scratchLast, withPauses, type HeardWord, type Phrases, type Quiet } from './grammar.ts';
+import { appendText, newParagraph, normalWord, PAUSE_SECONDS, previewWords, readTokens, scratchLast, withPauses, type HeardWord, type Phrases, type Quiet } from './grammar.ts';
 
 // Dictation (LA-PLT-UC20): what the window does with what the shell hears. The Owner dictates with the mic
 // button or its key, or, with voice activation on, by saying the wake phrase after a pause; the words go into the
@@ -194,8 +194,14 @@ export class Dictation {
     }
   }
 
-  #heard(words: readonly HeardWord[]) {
+  #heard(heard: readonly HeardWord[]) {
     this.#utterance = null;
+    // A recognizer may settle the stop that ends one utterance at the start of the next (". Lathe, send"): it ends the
+    // draft so far, and is not the first word after the pause.
+    let start = 0;
+    while (start < heard.length && normalWord(heard[start].text) === '') start++;
+    const carried = heard.slice(0, start).map((w) => w.text.trim()).join('');
+    const words = heard.slice(start);
     if (this.#state === 'off' || words.length === 0) return;
     const tokens = withPauses(words, this.#quiets, this.#lastWord);
     this.#lastWord = words[words.length - 1];
@@ -204,6 +210,7 @@ export class Dictation {
     const { steps, dictating } = readTokens(tokens, this.#reading, this.#settings.phrases);
     this.#reading = dictating;
     let draft = this.#base();
+    if (carried && draft.trim() && !/[.!?,;:]$/.test(draft.trimEnd())) draft = draft.trimEnd() + carried;
     this.#shown = '';
     let ended = false;
     for (const step of steps) {

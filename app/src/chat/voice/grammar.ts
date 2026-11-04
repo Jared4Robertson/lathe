@@ -68,8 +68,26 @@ export function withPauses(words: readonly HeardWord[], quiets: readonly Quiet[]
 /** What one stretch of heard words does. */
 export type GrammarStep = { kind: 'wake' } | { kind: 'text'; text: string } | { kind: 'command'; command: VoiceCommand };
 
+/**
+ * The tokens with each word that is only punctuation joined to the word before it: a recognizer may start an utterance
+ * with the stop that ended the last one (". Lathe, send"), and that stop is not the first word after the pause.
+ */
+function joinStrayPunctuation(tokens: readonly Token[]): Token[] {
+  const out: Token[] = [];
+  for (const t of tokens) {
+    if (t.kind === 'word' && normalWord(t.text) === '') {
+      const last = [...out].reverse().find((o): o is Extract<Token, { kind: 'word' }> => o.kind === 'word');
+      if (last) out[out.lastIndexOf(last)] = { ...last, text: last.text + t.text.trim() };
+      continue;
+    }
+    out.push(t);
+  }
+  return out;
+}
+
 /** Reads the tokens from a state: the steps they make, and whether the chat is dictating after them. */
-export function readTokens(tokens: readonly Token[], dictating: boolean, phrases: Phrases): { steps: GrammarStep[]; dictating: boolean } {
+export function readTokens(given: readonly Token[], dictating: boolean, phrases: Phrases): { steps: GrammarStep[]; dictating: boolean } {
+  const tokens = joinStrayPunctuation(given);
   const wake = phraseWords(phrases.wake);
   const commands = VOICE_COMMANDS.map((c) => [c, phraseWords(phrases.commands[c])] as const);
   const words = tokens.filter((t): t is Extract<Token, { kind: 'word' }> => t.kind === 'word');
@@ -121,7 +139,9 @@ export function readTokens(tokens: readonly Token[], dictating: boolean, phrases
  * heard a pause before it began).
  */
 export function previewWords(text: string, pausedBefore: boolean, dictating: boolean, phrases: Phrases): { wakes: boolean; text: string; command: boolean } {
+  // A stop carried over from the last utterance (". Lathe, send") is not its first word.
   const words = text.split(/\s+/).filter(Boolean);
+  while (words.length && normalWord(words[0]) === '') words.shift();
   const plain = words.map(normalWord);
   const woke = pausedBefore ? matchAt(plain, 0, phraseWords(phrases.wake)) : 0;
   if (!dictating) return { wakes: woke > 0, text: woke ? words.slice(woke).join(' ') : '', command: false };

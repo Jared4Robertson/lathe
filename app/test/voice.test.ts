@@ -169,6 +169,17 @@ describe('LA-PLT-UC20-R01-T01 Dictation shows the words as they are heard, settl
     expect(v.draft()).toBe('Look at the basket. Then zoom into this.');
   });
 
+  it('ends the draft with a stop the recognizer settles at the start of the next utterance, and still wakes after it', () => {
+    const v = setUp({ activation: true });
+    v.hear({ type: 'listening', on: true, why: 'started', message: null });
+    v.utter('show me the tool library', 0.1);
+    v.utter('. Lathe, zoom into this', 3);
+    expect(v.wakes()).toBe(1);
+    v.utter('. then send it to the team', 6);
+    v.utter('. Lathe, send', 9);
+    expect(v.sent).toEqual(['Zoom into this. Then send it to the team.']);
+  });
+
   it('ends after about 20 seconds of quiet, leaving the draft', () => {
     const v = setUp();
     v.d.start();
