@@ -106,8 +106,10 @@ describe('the MCP launcher', () => {
   });
 
   it('LA-PLT-UC18-R01-T01 LA-PLT-UC18-FL-T warns once, in the first tool result, when the installed Lathe is not the major version the skills were written for', async () => {
-    const major = JSON.parse(readFileSync(path.join(pluginDir, '.claude-plugin', 'plugin.json'), 'utf8')).lathe.major;
-    expect(major).toBe(Number(JSON.parse(readFileSync(path.join(here, '..', '..', 'package.json'), 'utf8')).version.split('.')[0]));
+    // Each release sets the manifest's lathe.version with the package's version, so the two never drift.
+    const skills: string = JSON.parse(readFileSync(path.join(pluginDir, '.claude-plugin', 'plugin.json'), 'utf8')).lathe.version;
+    expect(skills).toBe(JSON.parse(readFileSync(path.join(here, '..', '..', 'package.json'), 'utf8')).version);
+    const major = Number(skills.split('.')[0]);
     // The tool results for two show calls, with the installed Lathe at the given version.
     const results = async (version: string) => {
       const root = productRepo();

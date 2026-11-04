@@ -6,5 +6,5 @@
   "author": { "name": "Jared A Robertson" },
   "license": "Apache-2.0",
   "keywords": ["specs", "requirements", "traceability", "lathe"],
-  "lathe": { "major": 7 }
+  "lathe": { "version": "7.0.0" }
 }

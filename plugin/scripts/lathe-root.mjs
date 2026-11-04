@@ -108,19 +108,20 @@ export function installedLathe(root, env = process.env) {
   return { version, schema };
 }
 
-/** The major version of Lathe the plugin's skills were written for (plugin.json's lathe.major), or null. */
-export function skillsMajor(pluginDir) {
+/** The Lathe version the plugin's skills were written for (plugin.json's lathe.version, set by each release), or null. */
+export function skillsVersion(pluginDir) {
   try {
-    const major = JSON.parse(readFileSync(path.join(pluginDir, '.claude-plugin', 'plugin.json'), 'utf8')).lathe?.major;
-    return Number.isInteger(major) ? major : null;
+    const version = JSON.parse(readFileSync(path.join(pluginDir, '.claude-plugin', 'plugin.json'), 'utf8')).lathe?.version;
+    return typeof version === 'string' && /^\d+\.\d+\.\d+/.test(version) ? version : null;
   } catch {
     return null;
   }
 }
 
-/** The warning when the installed Lathe's major version is not the one the skills were written for, else null. */
-export function versionWarning(installed, major, root) {
-  if (!installed || major === null) return null;
+/** The warning when the installed Lathe's major version is not the major of the version the skills were written for, else null. */
+export function versionWarning(installed, skills, root) {
+  if (!installed || skills === null) return null;
+  const major = Number(skills.split('.')[0]);
   if (Number(installed.version.split('.')[0]) === major) return null;
   const schema = installed.schema === null ? '' : ` (schema ${installed.schema})`;
   return (
