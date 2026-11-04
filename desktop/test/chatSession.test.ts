@@ -274,3 +274,20 @@ describe('LA-PLT-UC22-R03-T01 The model and effort the Owner chooses are the CLI
     expect(chat.setChoice({ model: null, effort: null })).toBe(false);
   });
 });
+
+describe('LA-PLT-UC30-R02-T02 The chat ends Claude Code when a turn finds it not signed in, and the next message starts it again', () => {
+  it('marks the chat signed out with no answer, ends the CLI, and clears the mark with the next message', async () => {
+    const { chat, until } = session();
+    chat.open({}, []);
+    chat.send('Am I signed out?');
+    await until((s) => s.status === 'closed');
+    expect(chat.state.signedOut).toBe(true);
+    expect(chat.state.items.map((i) => i.kind)).toEqual(['user']);
+    expect(chat.pid).toBeNull();
+    chat.send('hello');
+    expect(chat.state.signedOut).toBe(false);
+    await until((s) => s.status === 'idle');
+    expect(seen).toHaveLength(2);
+    expect(chat.state.items.at(-1)).toMatchObject({ kind: 'assistant' });
+  });
+});

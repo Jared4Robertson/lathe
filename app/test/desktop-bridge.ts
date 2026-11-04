@@ -19,7 +19,7 @@ export function desktopStandIn(): LatheDesktop {
     copyRecordId: () => {},
     showRecordMenu: () => {},
     chat: {
-      sessions: async () => ({ claude: null, configured: false, signedIn: null, mode: 'accept-reads', current: null, sessions: [] }),
+      sessions: async () => ({ claude: null, configured: false, signedIn: null, signIn: { status: 'idle', method: null, url: null, asksForCode: false, problem: null }, mode: 'accept-reads', current: null, sessions: [] }),
       open: async () => false,
       send: async () => false,
       answer: async () => false,
@@ -29,6 +29,11 @@ export function desktopStandIn(): LatheDesktop {
       unqueue: async () => false,
       skills: async () => [],
       captureStage: async () => null,
+      signIn: async () => false,
+      giveSignInCode: async () => false,
+      cancelSignIn: async () => false,
+      signOut: async () => false,
+      onSignIn: () => () => {},
       onPatch: () => () => {},
     },
     voice: {

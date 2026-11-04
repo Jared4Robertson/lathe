@@ -35,9 +35,11 @@ export interface ChatView {
   queue: QueuedMessage[];
   /** The Lathe tools the open chat has; null with none open. */
   lathe: LatheTools | null;
+  /** A turn found Claude Code not signed in. */
+  signedOut: boolean;
 }
 
-const EMPTY: ChatView = { sessionId: null, status: 'closed', items: [], turns: [], open: false, mode: null, choice: { model: null, effort: null }, queue: [], lathe: null };
+const EMPTY: ChatView = { sessionId: null, status: 'closed', items: [], turns: [], open: false, mode: null, choice: { model: null, effort: null }, queue: [], lathe: null, signedOut: false };
 
 /** Applies a patch to the items: a reset replaces them, otherwise each item lands at its position. */
 export function applyPatch(items: ChatItem[], patch: ChatPatch): ChatItem[] {
@@ -66,7 +68,7 @@ export function useChat(bridge: ChatBridge, index: RecordIndex | null, product: 
         const start = Math.max(0, items.findLastIndex((i) => i.kind === 'user'));
         turns = [...turns.map((t, n) => (n === turns.length - 1 && t.after === null ? { ...t, after: now } : t)), { start, before: now, after: null, product: productRef.current, snapshot: productRef.current ? takeSnapshot(productRef.current) : Promise.resolve(null) }];
       }
-      return { sessionId: patch.sessionId, status: patch.status, items, turns, open: true, mode: patch.mode, choice: patch.choice, queue: patch.queue, lathe: patch.lathe };
+      return { sessionId: patch.sessionId, status: patch.status, items, turns, open: true, mode: patch.mode, choice: patch.choice, queue: patch.queue, lathe: patch.lathe, signedOut: patch.signedOut };
     });
   }), [bridge]);
 

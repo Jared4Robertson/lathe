@@ -83,9 +83,11 @@ export interface ChatState {
   items: ChatItem[];
   /** The messages typed while Claude worked, sent in order as each turn ends. */
   queue: QueuedMessage[];
+  /** A turn found Claude Code not signed in (LA-PLT-UC30-R02): the panel offers to sign in instead of showing its answer. */
+  signedOut: boolean;
 }
 
-export const EMPTY_CHAT: ChatState = { sessionId: null, status: 'closed', mode: DEFAULT_MODE, choice: { model: null, effort: null }, lathe: { status: 'counting', version: null }, items: [], queue: [] };
+export const EMPTY_CHAT: ChatState = { sessionId: null, status: 'closed', mode: DEFAULT_MODE, choice: { model: null, effort: null }, lathe: { status: 'counting', version: null }, items: [], queue: [], signedOut: false };
 
 /** What the page is sent: the state's head, and the items changed since the last patch, by position. */
 export interface ChatPatch {
@@ -96,6 +98,7 @@ export interface ChatPatch {
   choice: ChatModelChoice;
   lathe: LatheTools;
   queue: QueuedMessage[];
+  signedOut: boolean;
   /** Every item when reset; otherwise those new or changed, each with its position. */
   items: { at: number; item: ChatItem }[];
 }
@@ -104,7 +107,7 @@ export interface ChatPatch {
 export function chatPatch(before: ChatState | null, after: ChatState): ChatPatch {
   const reset = !before || after.items.length < before.items.length || after.items.slice(0, before.items.length).some((item, i) => item.id !== before.items[i].id);
   const items = after.items.flatMap((item, at) => (reset || before?.items[at] !== item ? [{ at, item }] : []));
-  return { reset, sessionId: after.sessionId, status: after.status, mode: after.mode, choice: after.choice, lathe: after.lathe, queue: after.queue, items };
+  return { reset, sessionId: after.sessionId, status: after.status, mode: after.mode, choice: after.choice, lathe: after.lathe, queue: after.queue, signedOut: after.signedOut, items };
 }
 
 // ---------- The CLI's arguments and input ----------
@@ -358,6 +361,22 @@ export const withdrawPrompts = (items: ChatItem[]): ChatItem[] =>
 export interface StreamCursor { messageId: string | null; notices: number }
 export const NEW_CURSOR: StreamCursor = { messageId: null, notices: 0 };
 
+/** The CLI's answer when it is not signed in, or its sign-in no longer works ("Not logged in · Please run /login"). */
+const NOT_SIGNED_IN = /\bPlease run \/login\b/i;
+/** The CLI says so in a line; a longer text is an answer that talks about signing in. */
+const NOT_SIGNED_IN_MAX = 200;
+
+/** Whether text the CLI gave as a turn's answer, or printed as it ended, says it is not signed in. */
+export const saysNotSignedIn = (text: string | null | undefined) => !!text && text.trim().length <= NOT_SIGNED_IN_MAX && NOT_SIGNED_IN.test(text);
+
+/** Whether an assistant message is the CLI saying it is not signed in, rather than Claude's answer. */
+function notSignedInMessage(line: Json, message: Json): boolean {
+  if (line.error === 'authentication_failed') return true;
+  const content = Array.isArray(message.content) ? message.content : [];
+  const texts = content.map(asObject).filter((b): b is Json => b?.type === 'text').map((b) => str(b.text) ?? '');
+  return texts.length > 0 && texts.every((t) => saysNotSignedIn(t));
+}
+
 /** The tool calls and text blocks of one assistant message, as items. */
 function assistantBlocks(items: ChatItem[], message: Json, streamed: boolean): ChatItem[] {
   const id = str(message.id) ?? 'message';
@@ -433,6 +452,11 @@ export function applyLine(state: ChatState, cursor: StreamCursor, line: string):
       if (message.parent_tool_use_id) return same;
       const inner = asObject(message.message);
       if (!inner) return same;
+      // Not signed in: the panel says so and offers to sign in; the CLI's line is not Claude's answer.
+      if (notSignedInMessage(message, inner)) {
+        const id = str(inner.id) ?? 'message';
+        return { state: { ...state, signedOut: true, items: state.items.filter((i) => !(i.kind === 'assistant' && i.id.startsWith(`a:${id}:`))) }, cursor };
+      }
       const streamed = state.items.some((i) => i.kind === 'assistant' && i.id.startsWith(`a:${str(inner.id) ?? 'message'}:`));
       return { state: { ...state, items: assistantBlocks(state.items, inner, streamed) }, cursor };
     }
@@ -456,10 +480,11 @@ export function applyLine(state: ChatState, cursor: StreamCursor, line: string):
     case 'result': {
       const items = withdrawPrompts(state.items).map((i) => (i.kind === 'assistant' && i.streaming ? { ...i, streaming: false } : i.kind === 'tool' && i.status === 'running' ? { ...i, status: 'error' as const, result: i.result ?? 'Stopped before it finished.' } : i));
       const stopped = state.status === 'stopping';
-      const error = message.is_error === true && !stopped ? str(message.result) ?? (Array.isArray(message.errors) ? message.errors.join('\n') : 'Claude Code ended the turn with an error.') : null;
+      const signedOut = state.signedOut || saysNotSignedIn(str(message.result));
+      const error = message.is_error === true && !stopped && !signedOut ? str(message.result) ?? (Array.isArray(message.errors) ? message.errors.join('\n') : 'Claude Code ended the turn with an error.') : null;
       const notices = cursor.notices + 1;
       const notice: ChatItem | null = stopped ? { kind: 'notice', id: `n:${notices}`, text: 'Stopped.', tone: 'info' } : error ? { kind: 'notice', id: `n:${notices}`, text: error, tone: 'error' } : null;
-      return { state: { ...state, status: 'idle', items: notice ? [...items, notice] : items }, cursor: notice ? { ...cursor, notices } : cursor };
+      return { state: { ...state, status: 'idle', signedOut, items: notice ? [...items, notice] : items }, cursor: notice ? { ...cursor, notices } : cursor };
     }
     default:
       return same;

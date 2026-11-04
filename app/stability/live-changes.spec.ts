@@ -127,10 +127,10 @@ test.describe('watching the spec change', () => {
         let listener: ((patch: import('../src/chat/types').ChatPatch) => void) | null = null;
         // The test sends a patch's session, status and items; the rest is as the shell sends it.
         (window as unknown as { chatPatch: (patch: Pick<import('../src/chat/types').ChatPatch, 'reset' | 'sessionId' | 'status' | 'items'>) => void }).chatPatch = (patch) =>
-          listener?.({ mode: 'accept-reads', choice: { model: null, effort: null }, lathe: { status: 'counting', version: null }, queue: [], ...patch });
+          listener?.({ mode: 'accept-reads', choice: { model: null, effort: null }, lathe: { status: 'counting', version: null }, queue: [], signedOut: false, ...patch });
         bridge.chat = {
           ...bridge.chat,
-          sessions: async () => ({ claude: '/usr/local/bin/claude', configured: false, signedIn: true, mode: 'accept-reads', current: 'session-1', sessions: [{ id: 'session-1', title: 'Watch list', updated: Date.now(), openElsewhere: null }] }),
+          sessions: async () => ({ claude: '/usr/local/bin/claude', configured: false, signedIn: true, signIn: { status: 'idle', method: null, url: null, asksForCode: false, problem: null }, mode: 'accept-reads', current: 'session-1', sessions: [{ id: 'session-1', title: 'Watch list', updated: Date.now(), openElsewhere: null }] }),
           open: async () => true, send: async () => true, answer: async () => true, stop: async () => true,
           onPatch: (l) => { listener = l; return () => { listener = null; }; },
         };

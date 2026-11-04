@@ -4,7 +4,7 @@ import { SESSION_SETTINGS_STORAGE } from '../src/exploring/session-settings/mode
 import { focusAnswer, focusContext, openAnswer } from '../src/chat/appRequests';
 import { reloadChanges } from '../src/changes/changes';
 import { sessionDate } from '../src/chat/ChatPanel';
-import type { ChatBridge, ChatItem, ChatMode, ChatPatch, ChatSessions, ChatSkill, ChatStatus, LatheTools, OpenChoice, PromptAnswer, VoiceBridge, VoiceEvent, VoiceSupport } from '../src/chat/types';
+import type { ChatBridge, ChatItem, ChatMode, ChatPatch, ChatSessions, ChatSkill, ChatStatus, LatheTools, OpenChoice, PromptAnswer, SignInMethod, SignInState, VoiceBridge, VoiceEvent, VoiceSupport } from '../src/chat/types';
 import { chatDraft } from '../src/chat/draft';
 import { chatChips } from '../src/chat/chips';
 import { setRow } from './fixtures/load';
@@ -25,11 +25,13 @@ vi.mock('../src/events', () => ({
   } }));
 
 const host = window as unknown as { latheDesktop?: LatheDesktop };
+const IDLE_SIGN_IN: SignInState = { status: 'idle', method: null, url: null, asksForCode: false, problem: null };
 const NOW = Date.now();
 const SESSIONS: ChatSessions = {
   claude: '/Users/person/.local/bin/claude',
   configured: false,
   signedIn: true,
+  signIn: IDLE_SIGN_IN,
   mode: 'accept-reads',
   current: null,
   sessions: [
@@ -54,8 +56,19 @@ function fakeChat(sessions: ChatSessions = SESSIONS) {
   const unqueued: string[] = [];
   const imageCounts: number[] = [];
   let stops = 0;
+  const signIns: SignInMethod[] = [];
+  const codes: string[] = [];
+  let cancels = 0;
+  let signOuts = 0;
+  let signInListener: ((state: SignInState) => void) | null = null;
+  let current = sessions;
   const bridge: ChatBridge = {
-    sessions: async () => sessions,
+    sessions: async () => current,
+    signIn: async (method) => { signIns.push(method); return true; },
+    giveSignInCode: async (code) => { codes.push(code); return true; },
+    cancelSignIn: async () => { cancels++; return true; },
+    signOut: async () => { signOuts++; return true; },
+    onSignIn: (l) => { signInListener = l; return () => { signInListener = null; }; },
     open: async (choice) => { opened.push(choice); return true; },
     send: async (text, focus, images) => { sent.push(text); focuses.push(focus); imageCounts.push(images.length); return true; },
     setModel: async (model, effort) => { models.push([model, effort]); return true; },
@@ -69,12 +82,17 @@ function fakeChat(sessions: ChatSessions = SESSIONS) {
   host.latheDesktop = desktopBridgeStub({ chat: bridge });
   // The first patch is the whole chat; later ones carry every item, as changed in place.
   let first = true;
-  const push = (items: ChatItem[], status: ChatStatus = 'idle', sessionId = 's-new', mode: ChatMode = 'accept-reads', lathe: LatheTools = { status: 'loaded', version: '2.0.0', count: 142 }, extra: { choice?: ChatPatch['choice']; queue?: ChatPatch['queue'] } = {}) => {
+  const push = (items: ChatItem[], status: ChatStatus = 'idle', sessionId = 's-new', mode: ChatMode = 'accept-reads', lathe: LatheTools = { status: 'loaded', version: '2.0.0', count: 142 }, extra: { choice?: ChatPatch['choice']; queue?: ChatPatch['queue']; signedOut?: boolean } = {}) => {
     const reset = first;
     first = false;
-    act(() => listener?.({ reset, sessionId, status, mode, choice: extra.choice ?? { model: null, effort: null }, queue: extra.queue ?? [], lathe, items: items.map((item, at) => ({ at, item })) }));
+    act(() => listener?.({ reset, sessionId, status, mode, choice: extra.choice ?? { model: null, effort: null }, queue: extra.queue ?? [], lathe, signedOut: extra.signedOut ?? false, items: items.map((item, at) => ({ at, item })) }));
   };
-  return { opened, sent, focuses, answers, modes, models, unqueued, imageCounts, stops: () => stops, push };
+  /** The shell telling the window how the sign-in goes; `then` is what the session list says from then on. */
+  const pushSignIn = (state: Partial<SignInState>, then?: Partial<ChatSessions>) => {
+    if (then) current = { ...current, ...then };
+    act(() => signInListener?.({ ...IDLE_SIGN_IN, ...state }));
+  };
+  return { opened, sent, focuses, answers, modes, models, unqueued, imageCounts, stops: () => stops, push, pushSignIn, signIns, codes, cancels: () => cancels, signOuts: () => signOuts, setSessions: (next: Partial<ChatSessions>) => { current = { ...current, ...next }; } };
 }
 
 const openChat = (open = true) =>
@@ -269,7 +287,7 @@ describe('LA-PLT-UC19-R05-T02 The picker resumes, forks or starts a session, and
   });
 
   it('says how to set it up when Claude Code is not found', async () => {
-    fakeChat({ claude: null, configured: false, signedIn: null, mode: 'accept-reads', current: null, sessions: [] });
+    fakeChat({ claude: null, configured: false, signedIn: null, signIn: IDLE_SIGN_IN, mode: 'accept-reads', current: null, sessions: [] });
     await openApp('/DM-SHOP-UC01');
     expect(await within(chat()).findByText(/Lathe could not find Claude Code/)).toBeInTheDocument();
     expect(within(chat()).getByRole('button', { name: 'New session' })).toBeDisabled();
@@ -352,11 +370,11 @@ describe('LA-V99-R03-T01 The chat\'s head shows the Lathe tools, the permission 
     expect(within(chat()).getByText('Bypass', { selector: '.chat-bypass-badge' })).toBeInTheDocument();
   });
 
-  it('says Claude Code is not signed in, with the fix, and starts no session', async () => {
+  it('says Claude Code is not signed in, offers to sign in, and starts no session', async () => {
     const { opened, sent } = fakeChat({ ...SESSIONS, signedIn: false });
     await openApp('/DM-SHOP-UC01');
-    const alert = await within(chat()).findByText(/Claude Code is not signed in/);
-    expect(alert).toHaveTextContent('run claude and type /login');
+    await within(chat()).findByText(/Claude Code is not signed in/);
+    expect(within(chat()).getByRole('button', { name: 'Sign in' })).toBeInTheDocument();
     expect(within(chat()).getByRole('button', { name: 'New session' })).toBeDisabled();
     const box = screen.getByRole('textbox', { name: 'Message Claude' });
     fireEvent.change(box, { target: { value: 'Hello' } });
@@ -771,5 +789,73 @@ describe('LA-V99-R05-T01 The chat panel draws the picker, queue, chips, images, 
     push([{ kind: 'user', images: 0, id: 'u1', text: 'Go' }], 'idle');
     expect(within(chat()).queryByRole('region', { name: 'Messages waiting for Claude' })).toBeNull();
     expect(screen.queryByRole('region', { name: "Review Claude's changes" })).toBeNull();
+  });
+});
+
+describe('LA-V99-R06-T01 The chat signs Claude Code in: the offer, the wait for the browser, the code, failure and sign-out', () => {
+  it('signs in from the notice: waits for the browser with the link, takes the code, then shows the sessions', async () => {
+    const { signIns, codes, pushSignIn } = fakeChat({ ...SESSIONS, signedIn: false });
+    await openApp('/DM-SHOP-UC01');
+    fireEvent.click(await within(chat()).findByRole('button', { name: 'Sign in' }));
+    await waitFor(() => expect(signIns).toEqual(['claudeai']));
+    pushSignIn({ status: 'waiting', method: 'claudeai' });
+    const wait = within(chat()).getByRole('status', { name: 'Signing in to Claude Code' });
+    expect(wait).toHaveTextContent('Finish signing in in your browser.');
+    expect(within(wait).queryByRole('link')).toBeNull();
+    expect(within(wait).queryByRole('textbox')).toBeNull();
+    pushSignIn({ status: 'waiting', method: 'claudeai', url: 'https://claude.ai/oauth/authorize?state=x', asksForCode: true });
+    expect(within(wait).getByRole('link', { name: 'Open the sign-in page' })).toHaveAttribute('href', 'https://claude.ai/oauth/authorize?state=x');
+    const box = within(wait).getByRole('textbox', { name: 'Code from the browser' });
+    expect(box).toHaveFocus();
+    expect(within(wait).getByRole('button', { name: 'Send code' })).toBeDisabled();
+    fireEvent.change(box, { target: { value: 'abc-123' } });
+    fireEvent.click(within(wait).getByRole('button', { name: 'Send code' }));
+    await waitFor(() => expect(codes).toEqual(['abc-123']));
+    pushSignIn({ status: 'signed-in', method: 'claudeai' }, { signedIn: true });
+    await waitFor(() => expect(within(chat()).queryByText(/not signed in/)).toBeNull());
+    expect(within(chat()).getByRole('button', { name: 'New session' })).toBeEnabled();
+    expect(within(chat()).getByRole('button', { name: 'Sign out of Claude Code' })).toBeInTheDocument();
+  });
+
+  it('offers a Console account, links only https, cancels, and says why a sign-in failed with Try again', async () => {
+    const { signIns, pushSignIn, cancels } = fakeChat({ ...SESSIONS, signedIn: false });
+    await openApp('/DM-SHOP-UC01');
+    fireEvent.click(await within(chat()).findByRole('button', { name: 'Use an API key account instead' }));
+    await waitFor(() => expect(signIns).toEqual(['console']));
+    pushSignIn({ status: 'waiting', method: 'console', url: 'http://example.com/phish' });
+    expect(within(chat()).queryByRole('link', { name: 'Open the sign-in page' })).toBeNull();
+    fireEvent.click(within(chat()).getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(cancels()).toBe(1));
+    pushSignIn({ status: 'failed', method: 'console', problem: 'Login failed: the sign-in was denied in the browser.' });
+    expect(within(chat()).getByRole('alert')).toHaveTextContent('Signing in did not finish: Login failed: the sign-in was denied in the browser.');
+    fireEvent.click(within(chat()).getByRole('button', { name: 'Try again' }));
+    await waitFor(() => expect(signIns).toEqual(['console', 'console']));
+    expect(within(chat()).getByRole('button', { name: 'Sign in with a Claude account' })).toBeInTheDocument();
+  });
+
+  it('shows the notice, not an answer, when a turn finds Claude Code signed out, and keeps the message from going', async () => {
+    const { push, sent, setSessions } = fakeChat();
+    await openApp('/DM-SHOP-UC01');
+    push([{ kind: 'user', id: 'u1', text: 'Hello', images: 0 }]);
+    setSessions({ signedIn: false });
+    push([{ kind: 'user', id: 'u1', text: 'Hello', images: 0 }], 'closed', 's-new', 'accept-reads', undefined, { signedOut: true });
+    expect(await within(chat()).findByText(/Claude Code is not signed in/)).toBeInTheDocument();
+    expect(within(log()).queryByText(/Please run \/login/)).toBeNull();
+    const box = screen.getByRole('textbox', { name: 'Message Claude' });
+    fireEvent.change(box, { target: { value: 'Again' } });
+    fireEvent.keyDown(box, { key: 'Enter' });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(sent).toEqual([]);
+    expect(box).toHaveValue('Again');
+  });
+
+  it('signs out from the session picker, and then offers to sign in', async () => {
+    const { signOuts, setSessions } = fakeChat();
+    await openApp('/DM-SHOP-UC01');
+    const button = await within(chat()).findByRole('button', { name: 'Sign out of Claude Code' });
+    setSessions({ signedIn: false });
+    fireEvent.click(button);
+    await waitFor(() => expect(signOuts()).toBe(1));
+    expect(await within(chat()).findByRole('button', { name: 'Sign in' })).toBeInTheDocument();
   });
 });

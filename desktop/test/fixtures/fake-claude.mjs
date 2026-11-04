@@ -7,6 +7,7 @@
 //   "note"        asks to use another MCP server's tool that writes a note, and uses it only when allowed;
 //   "twice"       asks to run two Bash commands, one after the other;
 //   "read"        asks to use a Lathe query, as the CLI does for an MCP tool no rule allows;
+//   "signed out"  answers as the CLI does when it is not signed in;
 //   anything else with a <lathe-focus> block before it answers from the block, naming the record it holds.
 //   "tool"        reads a file with a tool;
 //   "slow"        streams slowly, so it can be stopped;
@@ -78,6 +79,13 @@ async function answer(text, focus) {
   if (!started) {
     started = true;
     out({ type: 'system', subtype: 'init', cwd: process.cwd(), tools: ['Bash', 'Read'], model: 'fake' });
+  }
+  if (/signed out/i.test(text)) {
+    // What the real CLI answers when it is not signed in: a synthetic message and a result saying so.
+    const said = 'Not logged in · Please run /login';
+    out({ type: 'assistant', message: { id: `msg_${run}_${++n}`, model: '<synthetic>', role: 'assistant', content: [{ type: 'text', text: said }] }, parent_tool_use_id: null, error: 'authentication_failed' });
+    out({ type: 'result', subtype: 'success', is_error: true, result: said, duration_ms: 1, num_turns: 1 });
+    return;
   }
   if (/permission/i.test(text)) {
     const input = { command: 'touch notes.txt', description: 'Create notes.txt' };

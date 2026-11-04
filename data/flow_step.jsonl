@@ -264,6 +264,13 @@
 {"id":"LA-PLT-UC28-FL-S02","title":"They clear the recent folders from File › Open Recent","flow_id":"LA-PLT-UC28-FL","path":"main","position":2}
 {"id":"LA-PLT-UC29-FL-S01","title":"The Agent asks what the Owner is looking at","flow_id":"LA-PLT-UC29-FL","path":"main","position":1}
 {"id":"LA-PLT-UC29-FL-S02","title":"The Agent opens a record in the window, on the stage it names","flow_id":"LA-PLT-UC29-FL","path":"main","position":2}
+{"id":"LA-PLT-UC30-FL-S01","title":"The Owner learns the chat's agent is not signed in: before a conversation starts, or in place of a turn's answer","flow_id":"LA-PLT-UC30-FL","path":"main","position":1}
+{"id":"LA-PLT-UC30-FL-S02","title":"They start signing in, with their subscription or a Console account","flow_id":"LA-PLT-UC30-FL","path":"main","position":2}
+{"id":"LA-PLT-UC30-FL-S03","title":"They finish signing in in the browser the sign-in opened, or open its page themselves","flow_id":"LA-PLT-UC30-FL","path":"main","position":3}
+{"id":"LA-PLT-UC30-FL-S04","title":"When the sign-in asks for the code the browser shows, they give it","flow_id":"LA-PLT-UC30-FL","path":"main","position":4}
+{"id":"LA-PLT-UC30-FL-S05","title":"They learn the agent is signed in and the chat can start; or why the sign-in failed, and try again","flow_id":"LA-PLT-UC30-FL","path":"main","position":5}
+{"id":"LA-PLT-UC30-FL-S06","title":"They cancel the sign-in under way, which leaves everything as it was","flow_id":"LA-PLT-UC30-FL","path":"cancel","position":1}
+{"id":"LA-PLT-UC30-FL-S07","title":"They sign the agent out, so another account can sign in","flow_id":"LA-PLT-UC30-FL","path":"sign-out","position":1}
 {"id":"LA-PRD-UC03-FL-S01","title":"The Owner writes the change into Lathe's migrations and reviews the diff in git","flow_id":"LA-PRD-UC03-FL","path":"main","position":1}
 {"id":"LA-PRD-UC03-FL-S02","title":"They regenerate the record types and the reference; a test fails while either is stale","flow_id":"LA-PRD-UC03-FL","path":"main","position":2}
 {"id":"LA-PRD-UC03-FL-S03","title":"The next load applies the migrations in order and checks every product's data against them","flow_id":"LA-PRD-UC03-FL","path":"main","position":3}

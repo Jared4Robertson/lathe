@@ -6,11 +6,12 @@
 // answers a permission prompt itself when the mode decides it (chat.ts `decide`): allowed without a
 // row, or, in View only, refused at once, saying why; a tool the Owner allowed always is allowed for
 // the rest of the chat (LA-PLT-UC19-R11). Each message may carry what the Owner is looking at
-// (LA-PLT-UC19-R12).
+// (LA-PLT-UC19-R12). A turn that finds the CLI not signed in marks the chat signed out (LA-PLT-UC30-R02) and ends the
+// process, so the next message, once the Owner has signed in, starts it again with the new sign-in.
 import { spawn as nodeSpawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import {
-  applyLine, claudeArgs, claudeEnv, decide, EMPTY_CHAT, interruptLine, NEW_CURSOR, permissionLine, userLine, withdrawPrompts,
+  applyLine, claudeArgs, claudeEnv, decide, EMPTY_CHAT, interruptLine, NEW_CURSOR, permissionLine, saysNotSignedIn, userLine, withdrawPrompts,
   type ChatImage, type ChatItem, type ChatMode, type ChatModelChoice, type ChatSetup, type ChatState, type LatheTools, type StartOptions, type StreamCursor,
 } from './chat.ts';
 
@@ -176,6 +177,8 @@ export class ChatSession {
     this.inputs.clear();
     this.queued.clear();
     const items = withdrawPrompts(this.state.items).map((i) => (i.kind === 'assistant' && i.streaming ? { ...i, streaming: false } : i));
+    // The CLI ended saying it is not signed in: the panel offers to sign in rather than showing its words.
+    if (saysNotSignedIn(this.stderr.trim().split('\n').at(-1))) return this.set({ ...this.state, status: 'closed', queue: [], signedOut: true, items });
     this.set({ ...this.state, status: 'closed', queue: [], items: problem ? [...items, this.notice(problem, 'error')] : items });
   }
 
@@ -203,6 +206,13 @@ export class ChatSession {
     const next = applyLine(this.state, this.cursor, line);
     this.cursor = next.cursor;
     if (next.state !== this.state) this.set(next.state);
+    // Not signed in: the CLI ends, and the queue with it, so the next message starts it again once signed in.
+    if (this.state.signedOut && this.state.status === 'idle') {
+      void this.kill();
+      this.queued.clear();
+      this.set({ ...this.state, status: 'closed', queue: [] });
+      return;
+    }
     if (this.state.status === 'idle' && this.queued.size) this.sendNext();
   }
 
@@ -250,7 +260,7 @@ export class ChatSession {
   private transmit(message: string, focus: string | null, images: readonly ChatImage[]): boolean {
     if (!this.child) this.launch(this.state.sessionId ? { resume: this.state.sessionId } : {});
     if (!this.child) return false;
-    this.set({ ...this.state, status: 'running', items: [...this.state.items, { kind: 'user', id: `u:${++this.counter}`, text: message, images: images.length }] });
+    this.set({ ...this.state, status: 'running', signedOut: false, items: [...this.state.items, { kind: 'user', id: `u:${++this.counter}`, text: message, images: images.length }] });
     return this.write(userLine(message, focus, images));
   }
 

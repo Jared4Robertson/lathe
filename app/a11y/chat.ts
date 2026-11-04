@@ -25,11 +25,12 @@ export async function withChat(page: Page, record: string, open: 'conversation' 
     let mode: Patch['mode'] = 'accept-reads';
     let listener: ((patch: Patch) => void) | null = null;
     const lathe: Patch['lathe'] = { status: 'loaded', version: '2.0.0', count: 142 };
-    const emit = (reset: boolean) => listener?.({ reset, sessionId: 'session-1', status, mode, choice: { model: null, effort: null }, lathe, queue: [], items: items.map((item, at) => ({ at, item })) });
+    const emit = (reset: boolean) => listener?.({ reset, sessionId: 'session-1', status, mode, choice: { model: null, effort: null }, lathe, queue: [], signedOut: false, items: items.map((item, at) => ({ at, item })) });
     const sessions = {
       claude: '/usr/local/bin/claude',
       configured: false,
       signedIn: true,
+      signIn: { status: 'idle', method: null, url: null, asksForCode: false, problem: null } as const,
       mode,
       current: open === 'conversation' ? 'session-1' : null,
       sessions: [

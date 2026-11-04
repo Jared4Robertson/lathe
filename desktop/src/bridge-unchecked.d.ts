@@ -5,3 +5,4 @@ export type LatheDesktop = object;
 export type AppRequest = any;
 export type ChatPatch = any;
 export type VoiceEvent = any;
+export type SignInState = any;

@@ -351,6 +351,12 @@
 {"entity_id":"LA-PLT-EN27","position":3,"name":"Chat mode","meaning":"The permission mode its chat last ran in, which its next chat starts in: Ask, Accept reads (the default, never kept), Auto, Bypass or View only.","type":"text","required":false,"example":"view-only"}
 {"entity_id":"LA-PLT-EN27","position":4,"name":"Model and effort","meaning":"The model and effort its session runs with; none leaves either to Claude Code's own default.","type":"text","required":false,"example":"opus, high"}
 {"entity_id":"LA-PLT-EN27","position":5,"name":"Listening","meaning":"Whether the window listens for the voice; it hears only while the window is in front.","type":"yes/no","required":false,"example":"yes"}
+{"entity_id":"LA-PLT-EN28","position":1,"name":"Way in","meaning":"How the Owner signs in: their Claude subscription, or a Console account billed by use.","type":"text","required":false,"example":"claudeai"}
+{"entity_id":"LA-PLT-EN28","position":2,"name":"Sign-in status","meaning":"Where the sign-in stands: none, waiting for the browser, checking, signed in, or failed.","type":"text","required":true,"example":"waiting"}
+{"entity_id":"LA-PLT-EN28","position":3,"name":"Sign-in page","meaning":"The link to the sign-in page the agent gave, once it gives one; only an https link is kept.","type":"text","required":false,"example":"https://claude.ai/oauth/authorize?state=x"}
+{"entity_id":"LA-PLT-EN28","position":4,"name":"Asks for a code","meaning":"Whether the sign-in waits for the code the browser shows.","type":"yes/no","required":false,"example":"yes"}
+{"entity_id":"LA-PLT-EN28","position":5,"name":"Problem","meaning":"Why the last sign-in failed, in the agent's own last words.","type":"text","required":false,"example":"Login failed: the sign-in was denied in the browser."}
+{"entity_id":"LA-PLT-EN28","position":6,"name":"Signing out","meaning":"Whether the agent is being signed out now.","type":"yes/no","required":false,"example":"no"}
 {"entity_id":"LA-PRD-EN01","position":1,"name":"ID","meaning":"The product's ID, its prefix, such as TL.","type_value_object_id":"LA-VO01","required":true}
 {"entity_id":"LA-PRD-EN01","position":2,"name":"Title","meaning":"The product's name, such as Tool Library.","type_value_object_id":"LA-VO02","required":true}
 {"entity_id":"LA-PRD-EN01","position":3,"name":"Description","meaning":"What the product is, who it is for and what it must do, in a paragraph.","type":"text","required":true}

@@ -69,9 +69,18 @@
 .chat-session-meta { display: flex; gap: 8px; font-size: 0.76rem; color: var(--muted); }
 .chat-session-elsewhere { color: var(--warn); font-weight: 600; }
 .chat-missing p { margin: 0 0 8px; }
+.chat-missing a { color: var(--steel); text-decoration-thickness: 1px; text-underline-offset: 2px; }
 .chat-warning, .chat-missing { margin: 0; padding: 8px 10px; border: 1px solid var(--warn); border-radius: 6px; font-size: 0.82rem; color: var(--ink); background: var(--sheet); }
 .chat-warning p { margin: 0 0 8px; }
 .chat-warning-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+/* Signing Claude Code in (SignIn.tsx): over the log while a session is open, in the picker before one. */
+.chat-log + .chat-sign-in { flex: none; margin: 0 12px 8px; }
+.chat-sign-in-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.chat-sign-in-code { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 8px; }
+.chat-sign-in-code label { flex-basis: 100%; font-weight: 600; }
+.chat-sign-in-input { flex: 1; min-width: 0; padding: 5px 8px; border: 1px solid var(--rule); border-radius: 4px; background: var(--paper); color: var(--ink); font: 0.86rem/1.3 var(--mono, ui-monospace, monospace); }
+.chat-sign-in-input:focus-visible { outline: 2px solid var(--steel); outline-offset: 0; }
+.chat-account { margin-top: auto; padding-top: 8px; border-top: 1px solid var(--float-border); }
 
 /* The log. */
 .chat-log { flex: 1; min-height: 0; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; scrollbar-gutter: stable; }

@@ -74,6 +74,7 @@
 {"use_case_id":"LA-PLT-UC27","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-PLT-UC28","position":1,"role_name":"Reader"}
 {"use_case_id":"LA-PLT-UC29","position":1,"role_name":"Agent"}
+{"use_case_id":"LA-PLT-UC30","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-PRD-UC03","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-PRD-UC04","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-PRD-UC04","position":2,"role_name":"Agent"}

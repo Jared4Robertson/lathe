@@ -54,6 +54,7 @@
 {"id":"LA-PLT-UC27-FL","title":"Undo Claude's turn","use_case_id":"LA-PLT-UC27"}
 {"id":"LA-PLT-UC28-FL","title":"Clear the recent folders","use_case_id":"LA-PLT-UC28"}
 {"id":"LA-PLT-UC29-FL","title":"Show the Owner a record","use_case_id":"LA-PLT-UC29"}
+{"id":"LA-PLT-UC30-FL","title":"Sign the chat's agent in","use_case_id":"LA-PLT-UC30"}
 {"id":"LA-PRD-UC03-FL","title":"Change Lathe's schema with a migration","use_case_id":"LA-PRD-UC03"}
 {"id":"LA-PRD-UC04-FL","title":"Declare a product's own kinds with their relations","use_case_id":"LA-PRD-UC04"}
 {"id":"LA-PRD-UC08-FL","title":"Read where each kind sits in the stages","use_case_id":"LA-PRD-UC08"}
