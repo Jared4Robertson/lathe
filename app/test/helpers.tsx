@@ -130,7 +130,7 @@ export async function findSection(name: string | RegExp) {
 
 /** Starts the place at a depth and the window at a layout, as if the person had chosen them (the default is 1, Tree). */
 export function startAtDepth(depth: number, layout: 'tree' | 'nested' | 'map' = 'tree') {
-  window.sessionStorage.setItem(SESSION_SETTINGS_STORAGE.key, JSON.stringify({ layout, minimap: false, allLinks: false, cardWidth: null, chat: false, chatWidth: null, highlight: false, since: 'commit', follow: false, looked: {} }));
+  window.sessionStorage.setItem(SESSION_SETTINGS_STORAGE.key, JSON.stringify({ layout, minimap: false, allLinks: false, cardWidth: null, chatWidth: null, highlight: false, since: 'commit', follow: false, looked: {} }));
   window.sessionStorage.setItem('lathe:place', JSON.stringify({ depth, hiddenKinds: [], card: { open: true, expanded: true } }));
 }
 

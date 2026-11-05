@@ -20,7 +20,8 @@ import { kindWord, addedUnder } from '../../platform/meta-model/reads';
 // commands, POST /api/use-case/<command>, and nothing else. Edit sends its kind's Change with only what changed; Add
 // opens an empty form for a kind that sits under the record in the use case, with the next free ID read from the
 // aggregate (next-id), and sends its Add; Move, offered only for a kind the aggregate has a Move command for (a use
-// case: Move a use case, to another capability), sends that command; Remove
+// case: Move a use case, to another capability; a UC requirement: Move a UC requirement, to another use case of its
+// product, then to its new address, the next free number there), sends that command; Remove
 // says what goes with the record and sends its Remove. Each form is the shared command form (edit/command-form.tsx),
 // its fields those of its command's input. A refusal shows every reason the command gave, in its own words, keeps what was
 // entered, and changes nothing.
@@ -31,7 +32,8 @@ const withArticle = (index: RecordIndex, kind: UseCaseKind) => `${kind === 'uc_r
 const INSIDE: readonly UseCaseKind[] = ['uc_requirement', 'flow', 'use_case_test', 'flow_step', 'flow_test'];
 
 /** The kinds the aggregate has a Move command for, each with it: a record of another kind is never moved. */
-const MOVE: Partial<Record<UseCaseKind, '/api/use-case/move-use-case'>> = { use_case: '/api/use-case/move-use-case' };
+const MOVE = { use_case: '/api/use-case/move-use-case', uc_requirement: '/api/use-case/move-uc-requirement' } as const satisfies Partial<Record<UseCaseKind, CommandRoute>>;
+const movable = (kind: UseCaseKind): kind is keyof typeof MOVE => kind in MOVE;
 
 type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: UseCaseKind } | { mode: 'move' } | { mode: 'remove' };
 
@@ -52,14 +54,14 @@ export function UseCaseEditor({ index, useCase, id, kind, children }: { index: R
   const context: FormContext = { index, useCase, writer, onDone: back };
   if (mode.mode === 'change') return <div className="spec-body"><ChangeForm context={context} id={id} kind={kind} /></div>;
   if (mode.mode === 'add') return <div className="spec-body"><AddForm context={context} parent={id} kind={mode.kind} /></div>;
-  if (mode.mode === 'move') return <div className="spec-body"><MoveForm context={context} /></div>;
+  if (mode.mode === 'move') return <div className="spec-body">{kind === 'uc_requirement' ? <MoveRequirementForm context={context} id={id} /> : <MoveForm context={context} />}</div>;
   // A use case has one flow and a flow one flow test: once it has it, there is nothing more to add of that kind.
   const addable = addedUnder(index.meta, kind, INSIDE).filter((k) => (k !== 'flow' || useCase.flows.length === 0) && (k !== 'flow_test' || !useCase.flows.some((f) => f.flow.id === id && f.test)));
   return (
     <>
       <div className="record-actions" role="toolbar" aria-label={`Change ${id}`} ref={toolbar}>
         <Button icon="edit" onClick={() => setMode({ mode: 'change' })}>Edit</Button>
-        {MOVE[kind] && <Button onClick={() => setMode({ mode: 'move' })}>Move</Button>}
+        {movable(kind) && <Button onClick={() => setMode({ mode: 'move' })}>Move</Button>}
         <AddMenu id={id} choices={addable.map((k) => ({ key: k, label: kindLabel(index, k) }))} onPick={(k) => setMode({ mode: 'add', kind: k as UseCaseKind })} />
         <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>
       </div>
@@ -231,7 +233,7 @@ function MoveForm({ context }: { context: FormContext }) {
   const choices = productChoices(index, useCase, ['capability']);
   const submit = async () => {
     if (capability === useCase.useCase.capability_id) { announce('Nothing changed'); onDone(); return null; }
-    const answer = await writer.command(MOVE.use_case!, { id: useCase.useCase.id, capability_id: capability });
+    const answer = await writer.command(MOVE.use_case, { id: useCase.useCase.id, capability_id: capability });
     if (answer.ok) { announce(`Moved ${useCase.useCase.id}`); onDone(); }
     return answer;
   };
@@ -240,6 +242,37 @@ function MoveForm({ context }: { context: FormContext }) {
       {(first) => (
         <IdField id={`${formId}-capability`} label="Capability" required inputRef={first} choices={choices} value={capability} onChange={setCapability}
           description="The capability of its product it moves to; everything in the use case moves with it." />
+      )}
+    </CommandForm>
+  );
+}
+
+/** The next free UC requirement ID under a use case: one past the highest number in use, as Move a UC requirement gives it. */
+function nextRequirementId(index: RecordIndex, useCase: string): string {
+  const numbers = [...index.byId.keys()].map((id) => new RegExp(`^${useCase}-R(\\d+)$`).exec(id)?.[1]).filter((n): n is string => n !== undefined).map(Number);
+  return `${useCase}-R${String(Math.max(0, ...numbers) + 1).padStart(2, '0')}`;
+}
+
+/** Move: a UC requirement, with its tests, to another use case of its product, as its own command; then to its new address. */
+function MoveRequirementForm({ context, id }: { context: FormContext; id: string }) {
+  const { index, useCase, writer, onDone } = context;
+  const announce = useAnnounce();
+  const from = useCase.useCase.id;
+  const [target, setTarget] = useState(from);
+  const formId = useId();
+  const choices = productChoices(index, useCase, ['use_case']);
+  const submit = async () => {
+    if (target === from) { announce('Nothing changed'); onDone(); return null; }
+    const moved = nextRequirementId(index, target);
+    const answer = await writer.command(MOVE.uc_requirement, { id, use_case_id: target });
+    if (answer.ok) { announce(`Moved ${id} to ${moved}`); navigate(addressOf(moved)); }
+    return answer;
+  };
+  return (
+    <CommandForm eyebrow="UC requirement" title={`Move ${id}`} submit={submit} saveLabel="Move" onCancel={onDone}>
+      {(first) => (
+        <IdField id={`${formId}-use-case`} label="Use case" required inputRef={first} choices={choices} value={target} onChange={setTarget}
+          description="The use case of its product whose goal it serves; it takes the next free number there, and its tests go with it." />
       )}
     </CommandForm>
   );

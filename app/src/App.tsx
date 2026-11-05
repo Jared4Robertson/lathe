@@ -34,7 +34,6 @@ import { chatChips } from './chat/chips';
 import { takeMenuRecord } from './shell/desktopRecord';
 import { CARD_MIN, CHAT_DEFAULT } from './exploring/session-settings/model';
 import { useSessionSettings } from './exploring/session-settings/use-session-settings';
-import { showOrHideChat } from './exploring/session-settings/commands/handlers.generated';
 import { resizeChat } from './exploring/session-settings/commands/resize-chat';
 import { CARD_GAP, CARD_GAP_Y, crowdedLabel, RoomContext, STAGE_MIN, useRoomState } from './views/openSpace';
 import { desktopBridge } from './shell/desktopChrome';
@@ -96,7 +95,7 @@ function Shell() {
 
   // The nav: collapsed to a rail (remembered), or a drawer on a narrow screen.
   const narrow = useNarrow();
-  const { nav: { collapsed, width: navWidth } } = useAggregate(panelRepository);
+  const { nav: { collapsed, width: navWidth }, chat: { collapsed: chatCollapsed } } = useAggregate(panelRepository);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
@@ -105,10 +104,11 @@ function Shell() {
   const closeDrawer = useCallback(() => { setDrawerOpen(false); setTimeout(() => menuButton.current?.focus(), 0); }, []);
   // An opened drawer takes focus (its Go to button); closing it gives focus back to the menu button.
   useEffect(() => { if (narrow && drawerOpen) setTimeout(() => navRef.current?.querySelector<HTMLElement>('.quick-find-button')?.focus(), 0); }, [narrow, drawerOpen]);
-  // The chat panel (LA-PLT-UC19): desktop only, never on a phone. Its open state and width are the session's setting.
+  // The chat panel (LA-PLT-UC19): desktop only, never on a phone. Whether it shows is a Panel's (LA-PLT-UC06), kept
+  // from one launch to the next; its width is the session's setting.
   const chatBridge = narrow ? null : desktopBridge()?.chat ?? null;
   const { chat } = useSessionSettings();
-  const chatShown = !!chatBridge && chat.open;
+  const chatShown = !!chatBridge && !chatCollapsed;
   // Panels never crowd the page (LA-PAT-APP-UX-R18): the nav collapses to its rail for space last,
   // after the page's wiki card; the Reader's own choice (`collapsed`) stays as set.
   const room = useRoomState({ nav: { open: !collapsed, width: navWidth, rail: NAV_RAIL }, chat: chatShown ? chat.width ?? CHAT_DEFAULT : null, tool: tool ? TOOL_WIDTHS[tool] : null }, narrow);
@@ -163,13 +163,13 @@ function Shell() {
   const chatPanel = () => document.getElementById('chat-panel');
   useCommand('toggleChat', () => {
     // Open: focus the message box; open with focus elsewhere: focus it; with focus in it: hide it.
-    if (chatShown && chatPanel()?.contains(document.activeElement)) { showOrHideChat({ shown: false }); announce('Chat hidden'); return; }
-    if (!chatShown) { showOrHideChat({ shown: true }); announce('Chat shown'); }
+    if (chatShown && chatPanel()?.contains(document.activeElement)) { showOrHidePanel({ panel: 'chat', shown: false }); announce('Chat hidden'); return; }
+    if (!chatShown) { showOrHidePanel({ panel: 'chat', shown: true }); announce('Chat shown'); }
     setTimeout(() => chatInput.current?.focus(), 0);
   }, !!chatBridge);
   // The chat's voice (LA-PLT-UC20): voice activation wakes the chat, hidden or not, and focuses its message box.
   const wakeChat = useCallback(() => {
-    showOrHideChat({ shown: true });
+    showOrHidePanel({ panel: 'chat', shown: true });
     setTimeout(() => chatInput.current?.focus(), 0);
   }, []);
   const voice = useWindowVoice(chatBridge ? desktopBridge()?.voice ?? null : null, wakeChat, announce);
@@ -307,7 +307,7 @@ function Shell() {
           product={spaces.current?.id ?? null}
           width={chat.width}
           onWidth={(width) => resizeChat({ width })}
-          onClose={() => { showOrHideChat({ shown: false }); announce('Chat hidden'); }}
+          onClose={() => { showOrHidePanel({ panel: 'chat', shown: false }); announce('Chat hidden'); }}
           input={chatInput}
         />
         </VoiceContext.Provider>

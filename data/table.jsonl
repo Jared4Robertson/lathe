@@ -94,7 +94,7 @@
 {"id":"LA-MOD-TB47","title":"calls","domain_id":"LA-MOD","name":"calls","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-MOD-TB48","title":"fed_by","domain_id":"LA-MOD","name":"fed_by","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-MOD-TB88","title":"builds_on","domain_id":"LA-MOD","name":"builds_on","storage":"table","file":"lathe/schema/010-links.sql"}
-{"id":"LA-PLT-EN02-TB","title":"lathe:nav-*","entity_id":"LA-PLT-EN02","name":"lathe:nav-*","storage":"browser storage","file":"app/src/platform/panel/model.ts"}
+{"id":"LA-PLT-EN02-TB","title":"lathe:nav-*","entity_id":"LA-PLT-EN02","name":"lathe:nav-*, lathe:chat-collapsed","storage":"browser storage","file":"app/src/platform/panel/model.ts"}
 {"id":"LA-PLT-EN06-TB","title":"lathe:themes","entity_id":"LA-PLT-EN06","name":"lathe:themes","storage":"browser storage","file":"app/src/platform/appearance/model.ts"}
 {"id":"LA-PLT-EN08-TB","title":"window-state.json","entity_id":"LA-PLT-EN08","name":"window-state.json","storage":"file","file":"desktop/src/product-window/repository.ts"}
 {"id":"LA-PLT-EN10-TB","title":"running","entity_id":"LA-PLT-EN10","name":"running","storage":"in memory","file":"desktop/src/app-server/repository.ts"}

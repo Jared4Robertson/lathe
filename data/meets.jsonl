@@ -70,6 +70,8 @@
 {"source_id":"LA-INT03-AD","target_id":"LA-PAT-AGGREGATE-COMMANDS-R12"}
 {"source_id":"LA-INT04-AD","target_id":"LA-PAT-AGGREGATE-COMMANDS-R11"}
 {"source_id":"LA-INT04-AD","target_id":"LA-PAT-AGGREGATE-COMMANDS-R12"}
+{"source_id":"LA-INT66-AD","target_id":"LA-STD-ENGINEERING-R01"}
+{"source_id":"LA-INT66-AD","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-IXD-CMD310-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R14"}
 {"source_id":"LA-IXD-CMD311-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R14"}
 {"source_id":"LA-IXD-CMD312-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R14"}
@@ -469,6 +471,7 @@
 {"source_id":"LA-PLT-TOOL01","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-PLT-TOOL02","target_id":"LA-PAT-PAGE-STEPS-R01"}
 {"source_id":"LA-PLT-TOOL03","target_id":"LA-PAT-PAGE-STEPS-R01"}
+{"source_id":"LA-PLT-TOOL04","target_id":"LA-STD-EXPERIENCE-R12"}
 {"source_id":"LA-PLT-TOOL05","target_id":"LA-PAT-APP-CODE-R03"}
 {"source_id":"LA-PLT-TOOL10","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-PLT-TOOL11","target_id":"LA-STD-PRINCIPLES-R01"}
@@ -478,8 +481,6 @@
 {"source_id":"LA-PLT-TOOL15","target_id":"LA-PAT-APP-UX-R10"}
 {"source_id":"LA-PLT-TOOL16","target_id":"LA-STD-PRINCIPLES-R04"}
 {"source_id":"LA-PLT-TOOL17","target_id":"LA-STD-PRINCIPLES-R04"}
-{"source_id":"LA-PLT-TOOL18","target_id":"LA-STD-ENGINEERING-R01"}
-{"source_id":"LA-PLT-TOOL18","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-PLT-TOOL19","target_id":"LA-STD-EXPERIENCE-R13"}
 {"source_id":"LA-PRD-CMD120-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R14"}
 {"source_id":"LA-PRD-CMD121-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R14"}
@@ -864,6 +865,7 @@
 {"source_id":"LA-UI345","target_id":"LA-PAT-PAGE-STEPS-R02"}
 {"source_id":"LA-UI346","target_id":"LA-PAT-FIELD-INPUTS-R03"}
 {"source_id":"LA-UI346","target_id":"LA-PAT-PAGE-STEPS-R02"}
+{"source_id":"LA-UI347","target_id":"LA-STD-MODELING-R14"}
 {"source_id":"LA-UI348","target_id":"LA-PAT-APP-UX-R22"}
 {"source_id":"LA-UI349","target_id":"LA-PAT-APP-UX-R11"}
 {"source_id":"LA-UI349","target_id":"LA-PAT-APP-UX-R19"}

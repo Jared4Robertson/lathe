@@ -6,4 +6,5 @@
 {"id":"LA-PLT-EV04-ET","title":"raiseProductWindowOpened","domain_event_id":"LA-PLT-EV04","delivery":"in process","file":"desktop/src/product-window/events.ts"}
 {"id":"LA-PLT-EV05-ET","title":"raiseProductWindowClosed","domain_event_id":"LA-PLT-EV05","delivery":"in process","file":"desktop/src/product-window/events.ts"}
 {"id":"LA-PLT-EV06-ET","title":"spec:changed","domain_event_id":"LA-PLT-EV06","delivery":"in process","file":"lathe/src/server/api.ts"}
+{"id":"LA-PLT-EV07-ET","title":"BrowserRepository.subscribe","domain_event_id":"LA-PLT-EV07","delivery":"in process","file":"app/src/shell/prefs.ts"}
 {"id":"LA-PRD-EV03-ET","title":"tools/list_changed","domain_event_id":"LA-PRD-EV03","delivery":"in process","file":"lathe/src/cli/mcp.ts"}

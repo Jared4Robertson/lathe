@@ -82,6 +82,17 @@ describe('LA-V101-R02-T01 the Use case editor writes only through the aggregate\
     await waitFor(() => expect(commands).toEqual([{ route: '/api/use-case/move-use-case', input: { id: 'DM-SHOP-UC01', capability_id: 'DM-PAY-CAP01' } }]));
   });
 
+  it('LA-V101-R14-T01 Move sends Move a UC requirement to the use case chosen, and goes to its next free number there', async () => {
+    const user = userEvent.setup();
+    const { commands } = await openApp('/DM-SHOP-UC01-R01', { command: () => ({ answer: ok }) });
+    await user.click(within(await screen.findByRole('toolbar', { name: 'Change DM-SHOP-UC01-R01' })).getByRole('button', { name: 'Move' }));
+    const form = screen.getByRole('form', { name: 'Move DM-SHOP-UC01-R01' });
+    await user.selectOptions(within(form).getByRole('combobox', { name: /^Use case/ }), 'DM-PAY-UC01');
+    await user.click(within(form).getByRole('button', { name: 'Move' }));
+    await waitFor(() => expect(commands).toEqual([{ route: '/api/use-case/move-uc-requirement', input: { id: 'DM-SHOP-UC01-R01', use_case_id: 'DM-PAY-UC01' } }]));
+    await waitFor(() => expect(window.location.pathname).toBe('/DM-PAY-UC01-R02'));
+  });
+
   it('offers Move only for a kind the aggregate has a Move command for', async () => {
     await openApp('/DM-SHOP-UC01-FL');
     const actions = await screen.findByRole('toolbar', { name: 'Change DM-SHOP-UC01-FL' });

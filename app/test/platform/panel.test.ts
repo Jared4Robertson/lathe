@@ -29,10 +29,21 @@ describe('LA-PLT-INV30-T A panel\'s width stays within its limits: a resize is b
     expect(panelRepository.load().nav.width).toBe(PANEL_LIMITS.nav.fallback);
   });
 
+  it('shows and hides the chat, hidden until shown, and keeps it in local storage', () => {
+    expect(panelRepository.load().chat.collapsed).toBe(true);
+    showOrHidePanel({ panel: 'chat', shown: true });
+    expect(stored('lathe:chat-collapsed')).toBe(false);
+    expect(panelRepository.load().chat.collapsed).toBe(false);
+    showOrHidePanel({ panel: 'chat', shown: false });
+    expect(stored('lathe:chat-collapsed')).toBe(true);
+    window.localStorage.setItem('lathe:chat-collapsed', '"open"');
+    expect(panelRepository.load().chat.collapsed).toBe(true);
+  });
+
   it('refuses a width outside the limits with its reason, and nothing is saved', () => {
     const before = window.localStorage.getItem('lathe:nav-width');
-    expect(() => holdToRules({ nav: { width: 10, collapsed: false } })).toThrow(RuleBroken);
-    expect(() => holdToRules({ nav: { width: 10, collapsed: false } })).toThrow("The nav panel's width 10 is outside 256–560 px.");
+    expect(() => holdToRules({ nav: { width: 10, collapsed: false }, chat: { collapsed: true } })).toThrow(RuleBroken);
+    expect(() => holdToRules({ nav: { width: 10, collapsed: false }, chat: { collapsed: true } })).toThrow("The nav panel's width 10 is outside 256–560 px.");
     expect(window.localStorage.getItem('lathe:nav-width')).toBe(before);
   });
 });

@@ -4,8 +4,8 @@ import { NO_FILTERS } from '../../graph/model';
 import type { LookMark, Since } from '../../changes/changes';
 
 // Session settings (LA-EXP-A6): how the Reader likes to see things, for the window's session, shared by every tab and
-// every page (LA-V93-R72): the graph's layout, minimap and the Map's All links, how wide the wiki card is, whether the desktop app's chat
-// panel is open and how wide (LA-PLT-UC19), and Highlight changes (LA-EXP-UC15): whether it is on, the baseline it
+// every page (LA-V93-R72): the graph's layout, minimap and the Map's All links, how wide the wiki card is, how wide the desktop app's chat
+// panel is (LA-PLT-UC19; whether it shows is a Panel's, platform/panel), and Highlight changes (LA-EXP-UC15): whether it is on, the baseline it
 // compares with, whether Follow is on, and the moment the Reader last looked at each product. Where the Reader is (the
 // focus, the stage, the depth, the kind filters, the wiki card's open and expanded state) is not here: it is the
 // place's (views/place.ts). Moving through the stage never changes it; only the person's own commands do.
@@ -27,9 +27,9 @@ export const DEFAULT_CARD: CardSettings = { width: null };
 export const CARD_MIN = 360;
 export const CARD_MAX = 900;
 
-/** The desktop app's chat panel: open or closed, and its width in px (null: its default). */
-export interface ChatSettings { open: boolean; width: number | null }
-export const DEFAULT_CHAT: ChatSettings = { open: false, width: null };
+/** The desktop app's chat panel's width in px (null: its default). Whether it shows is a Panel's (platform/panel). */
+export interface ChatSettings { width: number | null }
+export const DEFAULT_CHAT: ChatSettings = { width: null };
 /** The chat's narrowest, default and widest, in px. */
 export const CHAT_MIN = 320;
 export const CHAT_DEFAULT = 400;
@@ -51,7 +51,7 @@ export const SESSION_SETTINGS_STORAGE = { key: 'lathe:session-settings', store: 
 /** The settings as they are stored, flat. */
 export interface StoredSettings {
   layout: GraphLayout; minimap: boolean; allLinks: boolean;
-  cardWidth: number | null; chat: boolean; chatWidth: number | null;
+  cardWidth: number | null; chatWidth: number | null;
   highlight: boolean; since: Since; follow: boolean; looked: Record<string, LookMark>;
 }
 
@@ -66,7 +66,7 @@ const isStored = (v: unknown): v is StoredSettings => {
   const s = v as StoredSettings;
   return typeof s.layout === 'string'
     && typeof s.minimap === 'boolean' && typeof s.allLinks === 'boolean' && (s.cardWidth === null || isNumber(s.cardWidth))
-    && typeof s.chat === 'boolean' && (s.chatWidth === null || isNumber(s.chatWidth))
+    && (s.chatWidth === null || isNumber(s.chatWidth))
     && typeof s.highlight === 'boolean' && (s.since === 'commit' || s.since === 'branch' || s.since === 'looked') && typeof s.follow === 'boolean'
     && !!s.looked && typeof s.looked === 'object' && Object.values(s.looked).every(isMark);
 };
@@ -83,7 +83,7 @@ export function sessionSettingsFrom(stored: unknown): SessionSettings {
   return {
     graph: { layout: LAYOUTS.includes(stored.layout) ? stored.layout : DEFAULT_GRAPH_LOOK.layout, minimap: stored.minimap, allLinks: stored.allLinks },
     card: { width: cardWidthWithin(stored.cardWidth) },
-    chat: { open: stored.chat, width: chatWidthWithin(stored.chatWidth) },
+    chat: { width: chatWidthWithin(stored.chatWidth) },
     changes: { highlight: stored.highlight, since: stored.since, follow: stored.follow, looked: stored.looked },
   };
 }
@@ -91,7 +91,7 @@ export function sessionSettingsFrom(stored: unknown): SessionSettings {
 /** The settings in their stored form. */
 export const sessionSettingsStored = ({ graph, card, chat, changes }: SessionSettings): StoredSettings => ({
   layout: graph.layout, minimap: graph.minimap, allLinks: graph.allLinks,
-  cardWidth: card.width, chat: chat.open, chatWidth: chat.width,
+  cardWidth: card.width, chatWidth: chat.width,
   highlight: changes.highlight, since: changes.since, follow: changes.follow, looked: changes.looked,
 });
 
@@ -103,7 +103,6 @@ export const SESSION_SETTINGS_SETS = {
   chooseChangesBaseline: { since: 'changes.since' },
   chooseGraphLayout: { layout: 'graph.layout' },
   showOrHideAllLinks: { shown: 'graph.allLinks' },
-  showOrHideChat: { shown: 'chat.open' },
   showOrHideMinimap: { shown: 'graph.minimap' },
   turnFollowOnOrOff: { on: 'changes.follow' },
   turnHighlightChangesOnOrOff: { on: 'changes.highlight' },

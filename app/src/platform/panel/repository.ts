@@ -1,17 +1,18 @@
 // Generated from data/ by `npm run generate`. Do not edit.
-// PanelRepository (LA-PLT-REPO01): Keeps the nav's width and whether it is collapsed as JSON in local storage,
-// `lathe:nav-width` and `lathe:nav-collapsed`, loaded and saved whole; the app works on without storage.
+// PanelRepository (LA-PLT-REPO01): Keeps the nav's width and whether it is collapsed, and whether the chat is, as JSON
+// in local storage, `lathe:nav-width`, `lathe:nav-collapsed` and `lathe:chat-collapsed`, loaded and saved whole; the
+// app works on without storage.
 import { BrowserRepository } from '../../shell/prefs';
 import { putStored, readStored, storedText } from '../../shell/storage';
 import { PANEL_STORAGE, panelFrom, panelStored, type Panels } from './model';
 
 export class PanelRepository extends BrowserRepository<Panels> {
   protected stored() {
-    return [storedText(PANEL_STORAGE.navWidth), storedText(PANEL_STORAGE.navCollapsed)].join('\n');
+    return [storedText(PANEL_STORAGE.navWidth), storedText(PANEL_STORAGE.navCollapsed), storedText(PANEL_STORAGE.chatCollapsed)].join('\n');
   }
 
   protected read(): Panels {
-    const panel = panelFrom({ navWidth: readStored(PANEL_STORAGE.navWidth), navCollapsed: readStored(PANEL_STORAGE.navCollapsed) });
+    const panel = panelFrom({ navWidth: readStored(PANEL_STORAGE.navWidth), navCollapsed: readStored(PANEL_STORAGE.navCollapsed), chatCollapsed: readStored(PANEL_STORAGE.chatCollapsed) });
     this.#put(panel, true);
     return panel;
   }
@@ -26,6 +27,7 @@ export class PanelRepository extends BrowserRepository<Panels> {
     const stored = panelStored(panel);
     putStored(PANEL_STORAGE.navWidth, stored.navWidth, held);
     putStored(PANEL_STORAGE.navCollapsed, stored.navCollapsed, held);
+    putStored(PANEL_STORAGE.chatCollapsed, stored.chatCollapsed, held);
   }
 }
 

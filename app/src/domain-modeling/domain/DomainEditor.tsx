@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import type { DomainKind } from '../../../../lathe/src/domain-modeling/domain/model';
 import type { DomainPage } from '../../../../lathe/src/domain-modeling/domain/read-model';
 import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
 import { addInput, addOrChangeFields, changeInput, CommandForm, draftOf, emptyDraft, Fields, formFields, LONG, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
-import type { Choice } from '../../edit/fields';
+import { IdField, type Choice } from '../../edit/fields';
 import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { adderOf, othersAddedUnder } from '../../record/pages';
 import { AddMenu } from '../../edit/AddMenu';
@@ -22,7 +22,9 @@ import { kindWord, addedUnder } from '../../platform/meta-model/reads';
 // POST /api/domain/<command>, and nothing else. Edit sends its kind's Change with only what changed; Add opens an empty
 // form for a kind that sits under the record in the domain (a capability, term, domain service or repository under the
 // domain; a service or test under a domain service), with the next free ID read from the aggregate (next-id), and sends
-// its Add; Remove says what goes with the record and sends its Remove. The aggregate has no Move. Another aggregate's
+// its Add; Move, offered for a kind the aggregate has a Move command for (a capability, term, domain service or
+// repository: to another domain of its product), sends that command and goes to the record's new address, the new
+// domain's ID in place of the old one's; Remove says what goes with the record and sends its Remove. Another aggregate's
 // root that sits under a domain or a capability (a test data set, a use case) is added through that aggregate's own
 // Add form, from the Record page's list (adderOf). A domain is added from its product's page (AddDomainForm). A refusal
 // shows every reason the command gave, in its own words, keeps what was entered, and changes nothing.
@@ -129,6 +131,14 @@ const REMOVE: Record<DomainKind, CommandRoute> = {
   repository: '/api/domain/remove-repository',
 };
 
+/** The kinds the aggregate has a Move command for, each with it: a record of another kind is never moved on its own. */
+const MOVE: Partial<Record<DomainKind, CommandRoute>> = {
+  capability: '/api/domain/move-capability',
+  term: '/api/domain/move-term',
+  domain_service: '/api/domain/move-domain-service',
+  repository: '/api/domain/move-repository',
+};
+
 /** Sends a command whose input this form has built to its kind's shape: the route names the type it takes. */
 const send = (writer: Writer, route: CommandRoute, input: Record<string, unknown>): Promise<WriteAnswer> => writer.command(route, input as unknown as CommandInputs[typeof route]);
 
@@ -158,7 +168,7 @@ function parentOf(page: DomainPage, kind: DomainKind, id: string): string {
 }
 
 
-type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: Inside } | { mode: 'adopt'; kind: string } | { mode: 'remove' };
+type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: Inside } | { mode: 'adopt'; kind: string } | { mode: 'move' } | { mode: 'remove' };
 
 /** A record of the domain with its actions; a form or the remove question shows in place of its page. */
 export function DomainEditor({ index, page, children }: { index: RecordIndex; page: DomainPage; children: ReactNode }) {
@@ -187,6 +197,7 @@ export function DomainEditor({ index, page, children }: { index: RecordIndex; pa
     return <div className="spec-body"><ChangeForm index={index} specs={specs} current={current} eyebrow={kindWord(index.meta, kind)} id={id} submit={submit} onDone={back} /></div>;
   }
   if (mode.mode === 'add') return <div className="spec-body"><AddForm index={index} page={page} kind={mode.kind} parent={id} onDone={back} /></div>;
+  if (mode.mode === 'move') return <div className="spec-body"><MoveForm index={index} page={page} onDone={back} /></div>;
   if (mode.mode === 'adopt') {
     const Adder = adderOf(index.meta, mode.kind)!;
     return <div className="spec-body"><Adder index={index} parent={id} onDone={back} /></div>;
@@ -198,6 +209,7 @@ export function DomainEditor({ index, page, children }: { index: RecordIndex; pa
     <>
       <div className="record-actions" role="toolbar" aria-label={`Change ${id}`} ref={toolbar}>
         <Button icon="edit" onClick={() => setMode({ mode: 'change' })}>Edit</Button>
+        {MOVE[kind] && <Button onClick={() => setMode({ mode: 'move' })}>Move</Button>}
         <AddMenu id={id} choices={[...adds, ...others].map((k) => ({ key: k, label: kindLabel(index, k) }))}
           onPick={(k) => setMode((adds as readonly string[]).includes(k) ? { mode: 'add', kind: k as Inside } : { mode: 'adopt', kind: k })} />
         <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>
@@ -225,6 +237,36 @@ function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
   return (
     <CommandForm eyebrow={eyebrow.charAt(0).toUpperCase() + eyebrow.slice(1)} title={`Edit ${id}`} submit={() => submit(draft)} saveLabel="Save" onCancel={onDone}>
       {(first) => <Fields index={index} specs={specs} draft={draft} setDraft={setDraft} first={first} />}
+    </CommandForm>
+  );
+}
+
+/** Move: the record, with what sits under it, to another domain of its product, as its kind's own command. */
+function MoveForm({ index, page, onDone }: { index: RecordIndex; page: DomainPage; onDone: () => void }) {
+  const writer = useWriter()!;
+  const announce = useAnnounce();
+  const formId = useId();
+  const { id, kind } = page.record;
+  const from = page.domain.id;
+  const [domain, setDomain] = useState(from);
+  const domains = index.domains.filter((d) => d.product === page.domain.product_id).map((d) => ({ id: d.id, title: d.title }));
+  const word = kindWord(index.meta, kind);
+  const submit = async () => {
+    if (domain === from) { announce('Nothing changed'); onDone(); return null; }
+    const answer = await send(writer, MOVE[kind]!, { id, domain_id: domain });
+    if (answer.ok) {
+      const moved = `${domain}${id.slice(from.length)}`;
+      announce(`Moved ${id} to ${moved}`);
+      navigate(addressOf(moved));
+    }
+    return answer;
+  };
+  return (
+    <CommandForm eyebrow={word.charAt(0).toUpperCase() + word.slice(1)} title={`Move ${id}`} submit={submit} saveLabel="Move" onCancel={onDone}>
+      {(first) => (
+        <IdField id={`${formId}-domain`} label="Domain" required inputRef={first} choices={domains} value={domain} onChange={setDomain}
+          description={`The domain of its product it moves to; it takes that domain's ID in place of ${from}, and what sits under it moves with it.`} />
+      )}
     </CommandForm>
   );
 }

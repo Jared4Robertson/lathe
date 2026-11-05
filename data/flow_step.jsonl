@@ -31,6 +31,10 @@
 {"id":"LA-CHK-UC08-FL-S06","title":"The Agent links an essential record to one that says how it is built, and the write is refused, naming both ends","flow_id":"LA-CHK-UC08-FL","path":"refused","position":3}
 {"id":"LA-CHK-UC09-FL-S01","title":"The Agent lists the product's essential records alone, by domain, with each one's kind, title and lead text","flow_id":"LA-CHK-UC09-FL","path":"main","position":1}
 {"id":"LA-CHK-UC09-FL-S02","title":"The Agent names each record that someone who knows the domain but not software would not recognize or care about, with why, for the Owner to decide","flow_id":"LA-CHK-UC09-FL","path":"main","position":2}
+{"id":"LA-CHK-UC10-FL-S01","title":"The Agent commits on its branch as it works, in any form","flow_id":"LA-CHK-UC10-FL","path":"main","position":1}
+{"id":"LA-CHK-UC10-FL-S02","title":"Before the merge, they check the title the change will land under, which names its kind","flow_id":"LA-CHK-UC10-FL","path":"main","position":2}
+{"id":"LA-CHK-UC10-FL-S03","title":"They land the branch on main as one commit under that title, its body listing the branch's commit subjects","flow_id":"LA-CHK-UC10-FL","path":"main","position":3}
+{"id":"LA-CHK-UC10-FL-S04","title":"A title that names no kind is refused before it reaches main, with the reason, and they land the change again under a typed title","flow_id":"LA-CHK-UC10-FL","path":"refused","position":1}
 {"id":"LA-EXP-UC01-FL-S01","title":"The reader sees the current space's domains in the nav","flow_id":"LA-EXP-UC01-FL","path":"main","position":1}
 {"id":"LA-EXP-UC01-FL-S02","title":"They open a domain: its records by stage, its coverage gaps and problems","flow_id":"LA-EXP-UC01-FL","path":"main","position":2}
 {"id":"LA-EXP-UC01-FL-S03","title":"The Reader types in the search box, and the records filter by ID or title","flow_id":"LA-EXP-UC01-FL","path":"main","position":3}
@@ -185,6 +189,7 @@
 {"id":"LA-PLT-UC06-FL-S02","title":"Lathe remembers the sizes; a double press on the divider resets one","flow_id":"LA-PLT-UC06-FL","path":"main","position":2}
 {"id":"LA-PLT-UC06-FL-S03","title":"Dragging the navigation small folds it to its rail","flow_id":"LA-PLT-UC06-FL","path":"main","position":3}
 {"id":"LA-PLT-UC06-FL-S04","title":"They collapse the wiki card; the stage takes its room and recenters, and the toggle brings it back","flow_id":"LA-PLT-UC06-FL","path":"main","position":4}
+{"id":"LA-PLT-UC06-FL-S05","title":"They show the chat with Claude from the title bar or its key, or hide it; the stage frames its focus in what the chat leaves, and the chat shows again on the next launch","flow_id":"LA-PLT-UC06-FL","path":"main","position":5,"interface_id":"LA-IF02"}
 {"id":"LA-PLT-UC07-FL-S01","title":"The Reader presses g then t and arrows through the themes, each shown on the whole app at once","flow_id":"LA-PLT-UC07-FL","path":"main","position":1}
 {"id":"LA-PLT-UC07-FL-S02","title":"They keep one with Enter, or put back the one before with Escape","flow_id":"LA-PLT-UC07-FL","path":"main","position":2}
 {"id":"LA-PLT-UC07-FL-S03","title":"They switch Light, Dark or System from the palette","flow_id":"LA-PLT-UC07-FL","path":"main","position":3}
@@ -221,19 +226,18 @@
 {"id":"LA-PLT-UC18-FL-S01","title":"Claude Code starts the plugin's launcher, which finds the product repo and starts its installed Lathe's tools","flow_id":"LA-PLT-UC18-FL","path":"main","position":1}
 {"id":"LA-PLT-UC18-FL-S02","title":"The Agent calls a tool; when the skills were written for another major version, the first result alone carries one warning naming both","flow_id":"LA-PLT-UC18-FL","path":"main","position":2}
 {"id":"LA-PLT-UC18-FL-S03","title":"The launcher says why it cannot start outside a Lathe repo","flow_id":"LA-PLT-UC18-FL","path":"refused","position":1}
-{"id":"LA-PLT-UC19-FL-S01","title":"The Owner shows the chat from the title bar or its key; the stage frames its focus in what the chat leaves","flow_id":"LA-PLT-UC19-FL","path":"main","position":1}
-{"id":"LA-PLT-UC19-FL-S02","title":"The chat lists the folder's saved sessions by title and date, marking one another Claude client may have open","flow_id":"LA-PLT-UC19-FL","path":"main","position":2}
-{"id":"LA-PLT-UC19-FL-S03","title":"They resume a session, or fork the one open elsewhere; the saved conversation shows first","flow_id":"LA-PLT-UC19-FL","path":"main","position":3}
-{"id":"LA-PLT-UC19-FL-S04","title":"They ask Claude in their own words; it answers as rich text, with their login, settings, skills, plugins and CLAUDE.md","flow_id":"LA-PLT-UC19-FL","path":"main","position":4}
-{"id":"LA-PLT-UC19-FL-S07","title":"Each tool call Claude makes shows as an entry that expands to its input and result","flow_id":"LA-PLT-UC19-FL","path":"main","position":5}
-{"id":"LA-PLT-UC19-FL-S08","title":"A tool that needs permission waits in the chat until they allow it once, allow it always in this chat, or deny it","flow_id":"LA-PLT-UC19-FL","path":"main","position":6}
-{"id":"LA-PLT-UC19-FL-S09","title":"They stop the turn under way","flow_id":"LA-PLT-UC19-FL","path":"main","position":7}
-{"id":"LA-PLT-UC19-FL-S10","title":"After the turn, the records it changed show as diffs, by record","flow_id":"LA-PLT-UC19-FL","path":"main","position":8}
-{"id":"LA-PLT-UC19-FL-S11","title":"A record ID in Claude's answer opens the record on the stage","flow_id":"LA-PLT-UC19-FL","path":"main","position":9}
-{"id":"LA-PLT-UC19-FL-S12","title":"Each session loads the Lathe tools of the Lathe the window runs; the head shows how many, and from which Lathe","flow_id":"LA-PLT-UC19-FL","path":"main","position":10}
-{"id":"LA-PLT-UC19-FL-S13","title":"Before the first message, the empty chat says when Claude Code is not found or not signed in, with the fix","flow_id":"LA-PLT-UC19-FL","path":"main","position":11}
-{"id":"LA-PLT-UC19-FL-S14","title":"They choose a permission mode (Ask, Accept reads, Auto, Bypass after a warning, or View only); the session starts again in it, and the folder keeps it","flow_id":"LA-PLT-UC19-FL","path":"main","position":12}
-{"id":"LA-PLT-UC19-FL-S15","title":"Each message goes with what they are looking at, a chip they can remove; Claude starts from it, and uses the app tools for anything else about the window","flow_id":"LA-PLT-UC19-FL","path":"main","position":13}
+{"id":"LA-PLT-UC19-FL-S02","title":"The chat lists the folder's saved sessions by title and date, marking one another Claude client may have open","flow_id":"LA-PLT-UC19-FL","path":"main","position":1}
+{"id":"LA-PLT-UC19-FL-S03","title":"They resume a session, or fork the one open elsewhere; the saved conversation shows first","flow_id":"LA-PLT-UC19-FL","path":"main","position":2}
+{"id":"LA-PLT-UC19-FL-S04","title":"They ask Claude in their own words; it answers as rich text, with their login, settings, skills, plugins and CLAUDE.md","flow_id":"LA-PLT-UC19-FL","path":"main","position":3}
+{"id":"LA-PLT-UC19-FL-S07","title":"Each tool call Claude makes shows as an entry that expands to its input and result","flow_id":"LA-PLT-UC19-FL","path":"main","position":4}
+{"id":"LA-PLT-UC19-FL-S08","title":"A tool that needs permission waits in the chat until they allow it once, allow it always in this chat, or deny it","flow_id":"LA-PLT-UC19-FL","path":"main","position":5}
+{"id":"LA-PLT-UC19-FL-S09","title":"They stop the turn under way","flow_id":"LA-PLT-UC19-FL","path":"main","position":6}
+{"id":"LA-PLT-UC19-FL-S10","title":"After the turn, the records it changed show as diffs, by record","flow_id":"LA-PLT-UC19-FL","path":"main","position":7}
+{"id":"LA-PLT-UC19-FL-S11","title":"A record ID in Claude's answer opens the record on the stage","flow_id":"LA-PLT-UC19-FL","path":"main","position":8}
+{"id":"LA-PLT-UC19-FL-S12","title":"Each session loads the Lathe tools of the Lathe the window runs; the head shows how many, and from which Lathe","flow_id":"LA-PLT-UC19-FL","path":"main","position":9}
+{"id":"LA-PLT-UC19-FL-S13","title":"Before the first message, the empty chat says when Claude Code is not found or not signed in, with the fix","flow_id":"LA-PLT-UC19-FL","path":"main","position":10}
+{"id":"LA-PLT-UC19-FL-S14","title":"They choose a permission mode (Ask, Accept reads, Auto, Bypass after a warning, or View only); the session starts again in it, and the folder keeps it","flow_id":"LA-PLT-UC19-FL","path":"main","position":11}
+{"id":"LA-PLT-UC19-FL-S15","title":"Each message goes with what they are looking at, a chip they can remove; Claude starts from it, and uses the app tools for anything else about the window","flow_id":"LA-PLT-UC19-FL","path":"main","position":12}
 {"id":"LA-PLT-UC20-FL-S01","title":"The Owner dictates with the mic control or its key; the words appear in the message box as they speak, to edit and send","flow_id":"LA-PLT-UC20-FL","path":"main","position":1}
 {"id":"LA-PLT-UC20-FL-S05","title":"The chat offers the mic and the Voice menu only where the Mac can recognize speech on-device, and says why not elsewhere","flow_id":"LA-PLT-UC20-FL","path":"main","position":2}
 {"id":"LA-PLT-UC21-FL-S01","title":"After a turn that wrote, they review its changes: the stage lights those records alone and next and previous walk through them with their diffs","flow_id":"LA-PLT-UC21-FL","path":"main","position":1}

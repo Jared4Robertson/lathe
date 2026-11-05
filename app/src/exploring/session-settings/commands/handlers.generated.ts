@@ -38,17 +38,6 @@ export function showOrHideAllLinks({ shown }: ShowOrHideAllLinks): void {
   sessionSettingsRepository.save(next);
 }
 
-export interface ShowOrHideChat { shown: SessionSettings['chat']['open'] }
-
-/** Opens or closes the chat panel for the browser session. */
-export function showOrHideChat({ shown }: ShowOrHideChat): void {
-  const was = sessionSettingsRepository.load();
-  if (was.chat.open === shown) return;
-  const next = { ...was, chat: { ...was.chat, open: shown } };
-  holdToRules(next);
-  sessionSettingsRepository.save(next);
-}
-
 export interface ShowOrHideMinimap { shown: SessionSettings['graph']['minimap'] }
 
 /** Shows or hides the graph's minimap for the browser session. */

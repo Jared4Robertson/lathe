@@ -54,12 +54,12 @@ describe('LA-V120-R01-T01 a domain\'s records are read through the Domain aggreg
 });
 
 describe('LA-V120-R02-T01 the Domain editor writes only through the aggregate\'s own commands, one per change', () => {
-  it('Edit sends Change a term with only what changed, and offers no Move', async () => {
+  it('Edit sends Change a term with only what changed', async () => {
     const user = userEvent.setup();
     const changed = () => setRow(withDomain(), 'term', 'DM-SHOP-TM01', { meaning: 'What a shopper fills before paying.' });
     const { commands } = await openApp('/DM-SHOP-TM01', { data: withDomain(), command: () => ({ answer: ok, data: changed() }) });
     const actions = await toolbar('DM-SHOP-TM01');
-    expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Remove']);
+    expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Move', 'Remove']);
     await user.click(within(actions).getByRole('button', { name: 'Edit' }));
     const form = screen.getByRole('form', { name: 'Edit DM-SHOP-TM01' });
     const meaning = within(form).getByRole('textbox', { name: /^meaning/ });
@@ -98,6 +98,40 @@ describe('LA-V120-R02-T01 the Domain editor writes only through the aggregate\'s
     await user.click(within(form).getByRole('button', { name: 'Add test data set' }));
     await waitFor(() => expect(commands.map((c) => c.route)).toEqual(['/api/test-data-set/add-test-data-set']));
     expect(commands[0].input).toMatchObject({ domain_id: 'DM-SHOP', id: 'DM-SHOP-TD01', title: 'An empty basket' });
+  });
+});
+
+describe('LA-V120-R05-T01 a capability, term, domain service or repository moves to another domain of its product, then to its new address', () => {
+  it.each([
+    ['capability', 'DM-SHOP-CAP01', '/api/domain/move-capability', '/DM-PAY-CAP01'],
+    ['term', 'DM-SHOP-TM01', '/api/domain/move-term', '/DM-PAY-TM01'],
+    ['domain service', 'DM-SHOP-DS01', '/api/domain/move-domain-service', '/DM-PAY-DS01'],
+    ['repository', 'DM-SHOP-REPO01', '/api/domain/move-repository', '/DM-PAY-REPO01'],
+  ])('Move sends the %s\'s own Move, to the domain chosen, and goes to its new ID', async (_kind, id, route, moved) => {
+    const user = userEvent.setup();
+    const { commands } = await openApp(`/${id}`, { data: withDomain(), command: () => ({ answer: ok }) });
+    await user.click(within(await toolbar(id)).getByRole('button', { name: 'Move' }));
+    const form = screen.getByRole('form', { name: `Move ${id}` });
+    await user.selectOptions(within(form).getByRole('combobox', { name: /^Domain/ }), 'DM-PAY');
+    await user.click(within(form).getByRole('button', { name: 'Move' }));
+    await waitFor(() => expect(commands).toEqual([{ route, input: { id, domain_id: 'DM-PAY' } }]));
+    await waitFor(() => expect(window.location.pathname).toBe(moved));
+  });
+
+  it('offers Move only for a kind the aggregate has a Move command for', async () => {
+    await openApp('/DM-SHOP-DS01-SV', { data: withDomain() });
+    expect(within(await toolbar('DM-SHOP-DS01-SV')).queryByRole('button', { name: 'Move' })).toBeNull();
+    await openApp('/DM-SHOP', { data: withDomain() });
+    expect(within(await toolbar('DM-SHOP')).queryByRole('button', { name: 'Move' })).toBeNull();
+  });
+
+  it('a move to the domain it is in already sends nothing', async () => {
+    const user = userEvent.setup();
+    const { commands } = await openApp('/DM-SHOP-TM01', { data: withDomain(), command: () => ({ answer: ok }) });
+    await user.click(within(await toolbar('DM-SHOP-TM01')).getByRole('button', { name: 'Move' }));
+    await user.click(within(screen.getByRole('form', { name: 'Move DM-SHOP-TM01' })).getByRole('button', { name: 'Move' }));
+    await screen.findByRole('toolbar', { name: 'Change DM-SHOP-TM01' });
+    expect(commands).toEqual([]);
   });
 });
 

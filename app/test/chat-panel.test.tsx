@@ -1,6 +1,6 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SESSION_SETTINGS_STORAGE } from '../src/exploring/session-settings/model';
+import { PANEL_STORAGE } from '../src/platform/panel/model';
 import { focusAnswer, focusContext, openAnswer } from '../src/chat/appRequests';
 import { reloadChanges } from '../src/changes/changes';
 import { sessionDate } from '../src/chat/ChatPanel';
@@ -95,8 +95,7 @@ function fakeChat(sessions: ChatSessions = SESSIONS) {
   return { opened, sent, focuses, answers, modes, models, unqueued, imageCounts, stops: () => stops, push, pushSignIn, signIns, codes, cancels: () => cancels, signOuts: () => signOuts, setSessions: (next: Partial<ChatSessions>) => { current = { ...current, ...next }; } };
 }
 
-const openChat = (open = true) =>
-  window.sessionStorage.setItem(SESSION_SETTINGS_STORAGE.key, JSON.stringify({ layout: 'tree', minimap: false, allLinks: false, cardWidth: null, chat: open, chatWidth: null, highlight: false, since: 'commit', follow: false, looked: {} }));
+const openChat = (open = true) => window.localStorage.setItem(PANEL_STORAGE.chatCollapsed.key, JSON.stringify(!open));
 const chat = () => screen.getByRole('complementary', { name: 'Chat with Claude' });
 const log = () => within(chat()).getByRole('log', { name: 'Conversation' });
 
@@ -114,7 +113,7 @@ describe('LA-V99-R01-T01 The chat floats at the right, measured by the stage, an
     expect(document.querySelector('.app')).toHaveClass('with-chat');
     fireEvent.click(screen.getByRole('button', { name: 'Hide the chat' }));
     expect(screen.queryByRole('complementary', { name: 'Chat with Claude' })).toBeNull();
-    expect(JSON.parse(window.sessionStorage.getItem(SESSION_SETTINGS_STORAGE.key)!)).toMatchObject({ chat: false });
+    expect(JSON.parse(window.localStorage.getItem(PANEL_STORAGE.chatCollapsed.key)!)).toBe(true);
     // Its key (Ctrl+Cmd+I on a Mac, Ctrl+Alt+C here) shows it again with the message box focused.
     fireEvent.keyDown(document.body, { key: 'c', code: 'KeyC', ctrlKey: true, altKey: true });
     await waitFor(() => expect(screen.getByRole('textbox', { name: 'Message Claude' })).toHaveFocus());

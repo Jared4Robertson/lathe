@@ -12,8 +12,7 @@ export async function withChat(page: Page, record: string, open: 'conversation' 
     type Chat = import('../src/chat/types').ChatBridge;
     type Patch = import('../src/chat/types').ChatPatch;
     type Item = import('../src/chat/types').ChatItem;
-    const settings = { layout: 'tree', minimap: false, allLinks: false, cardWidth: null, chat: true, chatWidth: null, highlight: false, since: 'commit', follow: false, looked: {} };
-    window.sessionStorage.setItem('lathe:session-settings', JSON.stringify(settings));
+    window.localStorage.setItem('lathe:chat-collapsed', 'false');
     let items: Item[] = [
       { kind: 'user', id: 'u1', text: `What does ${record} need?`, images: 0 },
       { kind: 'assistant', id: 'a1', text: `**${record}** needs a test for each requirement.\n\n- Its flow covers the steps.\n- Ask me to add the tests.`, streaming: false },
