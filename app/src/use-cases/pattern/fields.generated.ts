@@ -80,11 +80,13 @@ export const PATTERN_FIELDS = {
     title: { kind: 'column', table: 'slot', column: 'title', required: true, clearable: false },
     pattern_id: { kind: 'column', table: 'slot', column: 'pattern_id', required: true, clearable: false },
     statement: { kind: 'column', table: 'slot', column: 'statement', required: true, clearable: false },
+    fills_vary_by_design: { kind: 'column', table: 'slot', column: 'fills_vary_by_design', required: false, clearable: false },
   },
   '/api/pattern/change-slot': {
     id: { kind: 'column', table: 'slot', column: 'id', required: true, clearable: false },
     title: { kind: 'column', table: 'slot', column: 'title', required: false, clearable: false },
     statement: { kind: 'column', table: 'slot', column: 'statement', required: false, clearable: false },
+    fills_vary_by_design: { kind: 'column', table: 'slot', column: 'fills_vary_by_design', required: false, clearable: true },
   },
   '/api/pattern/remove-slot': {
     id: { kind: 'column', table: 'slot', column: 'id', required: true, clearable: false },

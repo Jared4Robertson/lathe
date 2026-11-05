@@ -48,7 +48,7 @@ function fieldsOf(index: RecordIndex, product: string, kind: PatternKind, adding
       });
     }
     case 'slot':
-      return addOrChangeFields(adding, F['/api/pattern/add-slot'], 'pattern_id', F['/api/pattern/change-slot'], { statement: LONG });
+      return addOrChangeFields(adding, F['/api/pattern/add-slot'], 'pattern_id', F['/api/pattern/change-slot'], { statement: LONG, fills_vary_by_design: LONG });
   }
 }
 

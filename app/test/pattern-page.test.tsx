@@ -3,7 +3,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
-import { setRow } from './fixtures/load';
+import { addRows, setRow } from './fixtures/load';
 import { patternWorkspace } from './fixtures/patterns';
 import { main, openApp } from './helpers';
 
@@ -84,5 +84,31 @@ describe('LA-V122-R03-T01 a refused Pattern command shows every reason, keeps wh
     expect(alert).toHaveFocus();
     expect(within(form).getByRole('textbox', { name: /^title/ })).toHaveValue('Scope is named');
     expect(commands.map((c) => c.route)).toEqual(['/api/pattern/add-pattern-rule']);
+  });
+});
+
+describe('LA-V122-R09-T01 a slot page says when its fills vary by design, and why', () => {
+  const withSlots = () => addRows(patternWorkspace(), 'slot',
+    { id: 'DM-PAT-AUDIT-SL01', title: 'Audit entry', pattern_id: 'DM-PAT-AUDIT', statement: 'A fill MUST write the entry its record keeps.', fills_vary_by_design: 'Each record keeps the entry its own business needs.' },
+    { id: 'DM-PAT-AUDIT-SL02', title: 'Retention job', pattern_id: 'DM-PAT-AUDIT', statement: 'A fill MUST drop what is past retention.' });
+
+  it('shows the reason under the contract of a slot that gives one', async () => {
+    await openApp('/DM-PAT-AUDIT-SL01', { data: withSlots() });
+    const section = await within(main()).findByRole('heading', { name: /^Fills vary by design/ });
+    expect(section.closest('section')).toHaveTextContent('Each record keeps the entry its own business needs.');
+  });
+
+  it('says so in the wiki card\'s summary', async () => {
+    window.sessionStorage.setItem('lathe:place', JSON.stringify({ depth: 1, hiddenKinds: [], card: { open: true, expanded: false } }));
+    await openApp('/DM-PAT-AUDIT-SL01', { data: withSlots() });
+    const card = screen.getByRole('region', { name: 'Wiki card' });
+    const term = await within(card).findByText('Fills vary by design', { selector: 'dt' });
+    expect(term.closest('div')).toHaveTextContent('Each record keeps the entry its own business needs.');
+  });
+
+  it('shows no such section for a slot that gives none', async () => {
+    await openApp('/DM-PAT-AUDIT-SL02', { data: withSlots() });
+    expect(await within(main()).findByText(/drop what is past retention/)).toBeInTheDocument();
+    expect(within(main()).queryByRole('heading', { name: /^Fills vary by design/ })).toBeNull();
   });
 });

@@ -1181,7 +1181,7 @@ One rule of a pattern. Every domain that follows the pattern owes it, with no ex
 
 ### Slot (`slot`)
 
-An open-ended part of a pattern, which neither its fixed part nor its settings can express: code fills it against its contract. A technical record that fills it, written by hand, is a fill (fills): accidental complexity recorded where it is owed, and debt until the pattern can derive it.
+An open-ended part of a pattern, which neither its fixed part nor its settings can express: code fills it against its contract. A technical record that fills it, written by hand, is a fill (fills): accidental complexity recorded where it is owed, and debt until the pattern can derive it. Three fills of one slot are a pattern candidate, unless the slot says why its fills vary by design.
 
 - **Parents:** [`pattern`](#kind-pattern) (`pattern_id`)
 - **Children:** none
@@ -1200,10 +1200,12 @@ An open-ended part of a pattern, which neither its fixed part nor its settings c
 | `title` | VARCHAR | yes | What fills it, in a few words, such as Refusal message. |
 | `pattern_id` | VARCHAR → [`pattern`](#table-pattern) | yes | The pattern it belongs to. |
 | `statement` | VARCHAR | yes | Its contract: what every fill MUST do, in one sentence. |
+| `fills_vary_by_design` | VARCHAR | no | Why its fills are written per record by design, in one sentence, such as Each UI component builds its own view's requirements. Given only when every fill holds what is its own record's alone, never what fills repeat; pattern-candidate then skips the slot and its page says so. None when its fills should repeat, so three of them are a pattern candidate. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `("trim"("statement") != '')`
+- **Rule:** `("trim"(fills_vary_by_design) != '')`
 
 ### Checks: use cases
 
@@ -1283,9 +1285,9 @@ A use case has one flow, the same through every interface that offers it, so the
 
 **Warning** · Lathe's · Kinds: [`slot`](#kind-slot), [`pattern`](#kind-pattern)
 
-A pattern's slot with three or more fills: what they repeat is a pattern candidate.
+A pattern's slot with three or more fills, unless it says why its fills vary by design: what they repeat is a pattern candidate.
 
-A fill is accidental complexity written by hand at a slot, against the slot's contract, and counted as accidental debt. Three fills of one slot are the same decision made three times: what they share can be stated once, in the pattern's fixed part or as a setting, and the code derived from it. One or two fills are not reported, since a pattern drawn from too few examples overfits. Make the pattern express what the fills repeat and generate them, or split the slot where they truly differ.
+A fill is accidental complexity written by hand at a slot, against the slot's contract, and counted as accidental debt. Three fills of one slot are the same decision made three times: what they share can be stated once, in the pattern's fixed part or as a setting, and the code derived from it. One or two fills are not reported, since a pattern drawn from too few examples overfits. A slot whose fills are each its own record's business logic, such as a UI component, says so with the reason its fills vary by design, and is not reported; its page shows the reason. Make the pattern express what the fills repeat and generate them, split the slot where they truly differ, or, when no fill repeats another, give the slot the reason its fills vary by design.
 
 <a id="check-use-case-changes-many-aggregates"></a>
 

@@ -484,6 +484,14 @@ check('pattern-candidate', () => {
       },
     ]);
   });
+
+  it('LA-STD-PRINCIPLES-R06-T07 A slot that says why its fills vary by design is no pattern candidate, and the reason is never empty', async () => {
+    const three = adding(handWritten('EX-LEND-CMD02-H'), fill('EX-LEND-CMD02-H'));
+    const declared = changing(three, 'slot', (r) => r.id === 'EX-PAT-ACT-SL01', { fills_vary_by_design: 'Each saving rule is its own command\'s business logic.' });
+    expect(ofCheck(await loadData(declared), 'pattern-candidate')).toEqual([]);
+    expect(ofCheck(await loadData(three), 'pattern-candidate').map((p) => p.record)).toEqual(['EX-PAT-ACT-SL01']);
+    expect(await refusals(changing(three, 'slot', (r) => r.id === 'EX-PAT-ACT-SL01', { fills_vary_by_design: '  ' }))).toEqual([expect.objectContaining({ table: 'slot' })]);
+  });
 });
 
 check('essential-repeated', () => {

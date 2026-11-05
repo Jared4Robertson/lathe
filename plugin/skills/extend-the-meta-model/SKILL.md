@@ -37,7 +37,7 @@ Lathe's own kinds cannot be given another parent or more required fields by a pr
 
 ## Patterns, slots and configuration
 
-A well-defined pattern is a function: the pattern plus its configuration gives the same output every time. It has a fixed part, settings (the known ways it varies) and slots (open-ended variation, filled by hand against a stated contract). Accidental complexity is what the fixed part and settings can express; what is left in the slots is a fill. Keep it deterministic: no hidden inputs such as time, environment, the network or unpinned versions. When settings grow conditions and loops, configuration is becoming a language: add a slot or split the pattern. Draw a pattern at the third occurrence, not the first, since one example overfits.
+A well-defined pattern is a function: the pattern plus its configuration gives the same output every time. It has a fixed part, settings (the known ways it varies) and slots (open-ended variation, filled by hand against a stated contract). Accidental complexity is what the fixed part and settings can express; what is left in the slots is a fill. Keep it deterministic: no hidden inputs such as time, environment, the network or unpinned versions. When settings grow conditions and loops, configuration is becoming a language: add a slot or split the pattern. Draw a pattern at the third occurrence, not the first, since one example overfits. A slot whose fills are open-ended by nature, each its own record's business logic, says why with `fills_vary_by_design` (a reason that is never empty), and `pattern-candidate` skips it; a slot whose fills share a shape keeps no reason, so its third fill still warns.
 
 ## Modeling a code generator
 

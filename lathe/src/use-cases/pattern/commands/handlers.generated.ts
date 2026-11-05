@@ -102,7 +102,7 @@ export function removePatternRuleTest(tx: Transaction, input: RemovePatternRuleT
   patterns.save(pattern);
 }
 
-/** Adds a slot to its pattern: an open-ended part code fills against its contract. */
+/** Adds a slot to its pattern: an open-ended part code fills against its contract, with the reason its fills vary by design when they do. */
 export function addSlot(tx: Transaction, input: AddSlot): void {
   const patterns = new PatternRepository(tx);
   const pattern = patterns.load(input.pattern_id) ?? tx.refuse('missing', `there is no pattern ${input.pattern_id}`);
@@ -111,11 +111,11 @@ export function addSlot(tx: Transaction, input: AddSlot): void {
   patterns.save(pattern);
 }
 
-/** Changes a slot's title or contract. Its pattern does not change. */
+/** Changes a slot's title or contract, or the reason its fills vary by design; null clears the reason. Its pattern does not change. */
 export function changeSlot(tx: Transaction, input: ChangeSlot): void {
   const patterns = new PatternRepository(tx);
   const pattern = patterns.loadHolding('slot', input.id) ?? tx.refuse('missing', `there is no slot ${input.id}`);
-  pattern.slots = pattern.slots.map((x) => (x.id === input.id ? changed(x, input, ['title', 'statement']) : x));
+  pattern.slots = pattern.slots.map((x) => (x.id === input.id ? changed(x, input, ['title', 'statement', 'fills_vary_by_design']) : x));
   holdToRules(tx, pattern);
   patterns.save(pattern);
 }

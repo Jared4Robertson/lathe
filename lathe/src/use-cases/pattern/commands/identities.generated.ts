@@ -85,7 +85,7 @@ export const ADD_SLOT_IDENTITY = {
   id: 'LA-UCS-CMD373',
   slice: { aggregate: 'LA-UCS-A2', name: 'pattern' },
   name: 'add-slot',
-  description: 'Adds a slot to its pattern: an open-ended part code fills against its contract.',
+  description: 'Adds a slot to its pattern: an open-ended part code fills against its contract, with the reason its fills vary by design when they do.',
   method: 'POST',
   route: '/api/pattern/add-slot',
 } as const;
@@ -94,7 +94,7 @@ export const CHANGE_SLOT_IDENTITY = {
   id: 'LA-UCS-CMD374',
   slice: { aggregate: 'LA-UCS-A2', name: 'pattern' },
   name: 'change-slot',
-  description: 'Changes a slot\'s title or contract. Its pattern does not change.',
+  description: 'Changes a slot\'s title or contract, or the reason its fills vary by design; null clears the reason. Its pattern does not change.',
   method: 'POST',
   route: '/api/pattern/change-slot',
 } as const;

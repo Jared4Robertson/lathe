@@ -106,13 +106,15 @@ CREATE TABLE slot (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   pattern_id VARCHAR NOT NULL REFERENCES pattern (id),
-  statement VARCHAR NOT NULL CHECK (trim(statement) <> '')
+  statement VARCHAR NOT NULL CHECK (trim(statement) <> ''),
+  fills_vary_by_design VARCHAR CHECK (trim(fills_vary_by_design) <> '')
 );
-COMMENT ON TABLE slot IS 'An open-ended part of a pattern, which neither its fixed part nor its settings can express: code fills it against its contract. A technical record that fills it, written by hand, is a fill (fills): accidental complexity recorded where it is owed, and debt until the pattern can derive it.';
+COMMENT ON TABLE slot IS 'An open-ended part of a pattern, which neither its fixed part nor its settings can express: code fills it against its contract. A technical record that fills it, written by hand, is a fill (fills): accidental complexity recorded where it is owed, and debt until the pattern can derive it. Three fills of one slot are a pattern candidate, unless the slot says why its fills vary by design.';
 COMMENT ON COLUMN slot.id IS 'The slot''s ID: its pattern''s ID and SL<nn>, such as TL-PAT-LIBRARIAN-ACTION-SL01.';
 COMMENT ON COLUMN slot.title IS 'What fills it, in a few words, such as Refusal message.';
 COMMENT ON COLUMN slot.pattern_id IS 'The pattern it belongs to.';
 COMMENT ON COLUMN slot.statement IS 'Its contract: what every fill MUST do, in one sentence.';
+COMMENT ON COLUMN slot.fills_vary_by_design IS 'Why its fills are written per record by design, in one sentence, such as Each UI component builds its own view''s requirements. Given only when every fill holds what is its own record''s alone, never what fills repeat; pattern-candidate then skips the slot and its page says so. None when its fills should repeat, so three of them are a pattern candidate.';
 
 INSERT INTO meta_kind VALUES
   ('capability', 'Capability', 'use-cases', 20, false, '<P>-<D>-CAP<nn>', 'TL-LEND-CAP01', 'domain', NULL, 'essential'),

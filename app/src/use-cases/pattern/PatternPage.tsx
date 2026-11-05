@@ -14,7 +14,7 @@ import { usePattern } from './reads';
 // its description and notes, its settings (each with what it means and the rules that depend on it), its rules under
 // their groups, and the domains that follow it with each one's settings and status per rule; a pattern rule its
 // statement, its setting and condition, and the domains that owe it; a pattern rule test its domain and scenario; a
-// slot its contract, and a pattern its slots. Who
+// slot its contract and, when its fills vary by design, why, and a pattern its slots. Who
 // follows the pattern and the values they give are Pattern following's, its Followed by and Owed by
 // (traceability/pattern-following/Followers.tsx), read through its own query, with the following's editor; each rule's
 // standing is the coverage's, from the workspace's index. What every record's page holds around that is the Record
@@ -127,7 +127,12 @@ function Content({ index, page }: { index: RecordIndex; page: Pattern }) {
     }
     case 'slot': {
       const slot = page.slots.find((s) => s.id === id)!;
-      return <Text index={index} id={id} source={slot.statement} field="statement" />;
+      return (
+        <>
+          <Text index={index} id={id} source={slot.statement} field="statement" />
+          <Text index={index} id={id} source={slot.fills_vary_by_design} title="Fills vary by design" field="fills_vary_by_design" />
+        </>
+      );
     }
   }
 }
@@ -156,7 +161,8 @@ function summaryOf(index: RecordIndex, page: Pattern): { lead?: string; facts: F
     }
     case 'slot': {
       const slot = page.slots.find((s) => s.id === id)!;
-      return { lead: slot.statement, facts: [{ label: 'Pattern', value: <RecordLink index={index} id={page.pattern.id} /> }] };
+      const varies: Fact[] = slot.fills_vary_by_design ? [{ label: 'Fills vary by design', value: slot.fills_vary_by_design }] : [];
+      return { lead: slot.statement, facts: [{ label: 'Pattern', value: <RecordLink index={index} id={page.pattern.id} /> }, ...varies] };
     }
   }
 }

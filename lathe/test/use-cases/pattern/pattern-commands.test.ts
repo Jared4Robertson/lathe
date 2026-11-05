@@ -58,6 +58,12 @@ describe('LA-UCS-UC05-R05-T02 each Pattern command (LA-UCS-A2) changes one patte
     expect(GET_PATTERN.text(whole)).toContain('Slot TL-PAT-ACT-SL01: Refusal message');
     await runCommand(store, CHANGE_SLOT, { id: 'TL-PAT-ACT-SL01', statement: 'A fill MUST name what was refused.' });
     expect(store.record('TL-PAT-ACT-SL01')?.row).toMatchObject({ statement: 'A fill MUST name what was refused.' });
+    // Fills that vary by design say why: an empty reason is refused.
+    await expect(runCommand(store, CHANGE_SLOT, { id: 'TL-PAT-ACT-SL01', fills_vary_by_design: '  ' })).rejects.toThrow('fills_vary_by_design "  " is empty');
+    await runCommand(store, CHANGE_SLOT, { id: 'TL-PAT-ACT-SL01', fills_vary_by_design: 'Each refusal is worded for its own action.' });
+    expect(GET_PATTERN.text(runQuery(store, GET_PATTERN, { id: 'TL-PAT-ACT' }) as ReturnType<typeof GET_PATTERN.run>)).toContain('  fills vary by design: Each refusal is worded for its own action.');
+    await runCommand(store, CHANGE_SLOT, { id: 'TL-PAT-ACT-SL01', fills_vary_by_design: null });
+    expect(store.record('TL-PAT-ACT-SL01')?.row).not.toHaveProperty('fills_vary_by_design');
     expect((await refused(runCommand(store, CHANGE_SLOT, { id: 'TL-PAT-ACT-SL09', title: 'x' }))).problems[0]).toMatchObject({ rule: 'missing', message: 'there is no slot TL-PAT-ACT-SL09' });
     expect((await runCommand(store, REMOVE_SLOT, { id: 'TL-PAT-ACT-SL01' })).tables).toEqual(['slot']);
   });

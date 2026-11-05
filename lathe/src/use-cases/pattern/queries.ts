@@ -83,6 +83,9 @@ function patternText(page: PatternPage): string {
     lines.push(`Pattern rule ${r.rule.id}: ${r.rule.title}`);
     for (const t of r.tests) lines.push(`  pattern rule test ${t.test.id}: ${t.test.title} (in ${t.test.domain_id}, ${t.test.state})`);
   }
-  for (const s of page.slots) lines.push(`Slot ${s.id}: ${s.title}`, `  statement: ${s.statement}`);
+  for (const s of page.slots) {
+    lines.push(`Slot ${s.id}: ${s.title}`, `  statement: ${s.statement}`);
+    if (s.fills_vary_by_design) lines.push(`  fills vary by design: ${s.fills_vary_by_design}`);
+  }
   return lines.join('\n');
 }

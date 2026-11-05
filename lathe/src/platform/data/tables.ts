@@ -705,7 +705,7 @@ export interface PatternRow {
   notes?: string;
 }
 
-/** An open-ended part of a pattern, which neither its fixed part nor its settings can express: code fills it against its contract. A technical record that fills it, written by hand, is a fill (fills): accidental complexity recorded where it is owed, and debt until the pattern can derive it. */
+/** An open-ended part of a pattern, which neither its fixed part nor its settings can express: code fills it against its contract. A technical record that fills it, written by hand, is a fill (fills): accidental complexity recorded where it is owed, and debt until the pattern can derive it. Three fills of one slot are a pattern candidate, unless the slot says why its fills vary by design. */
 export interface SlotRow {
   /** The slot's ID: its pattern's ID and SL<nn>, such as TL-PAT-LIBRARIAN-ACTION-SL01. */
   id: string;
@@ -715,6 +715,8 @@ export interface SlotRow {
   pattern_id: string;
   /** Its contract: what every fill MUST do, in one sentence. */
   statement: string;
+  /** Why its fills are written per record by design, in one sentence, such as Each UI component builds its own view's requirements. Given only when every fill holds what is its own record's alone, never what fills repeat; pattern-candidate then skips the slot and its page says so. None when its fills should repeat, so three of them are a pattern candidate. */
+  fills_vary_by_design?: string;
 }
 
 /** The accidental record (a technical record, an endpoint or a data store), written by hand or set up by hand, fills the pattern's slot against its contract: it is a fill, accidental complexity recorded where it is owed and counted as debt until the pattern can derive it. A record of a product's own accidental kind, such as a shared module, fills a slot the same way, with no declaration. A standard and its rules fill no slot: an engineering standard is accounted for through the records that meet its rules. */

@@ -36,7 +36,7 @@ Before you propose adding, changing or removing an essential record, list the pr
 
 ## Accidental debt and pattern candidates
 
-Every accidental record must be derived, provided or a fill (`accidental-not-accounted-for`). An engineering standard and its rules fill no slot: link the records that follow a rule to it with `meets`, or remove a rule that nothing follows. Fills are the product's accidental debt: coverage lists them, and each is a deliberate, visible deviation, not a failure. Read the debt by slot. A slot with three or more fills is a pattern candidate (`pattern-candidate`): report what the fills repeat so the Owner can have it written as a pattern and generated. Do not hide debt by deleting a fill or marking a record provided when it is not.
+Every accidental record must be derived, provided or a fill (`accidental-not-accounted-for`). An engineering standard and its rules fill no slot: link the records that follow a rule to it with `meets`, or remove a rule that nothing follows. Fills are the product's accidental debt: coverage lists them, and each is a deliberate, visible deviation, not a failure. Read the debt by slot. A slot with three or more fills is a pattern candidate (`pattern-candidate`): report what the fills repeat so the Owner can have it written as a pattern and generated. A slot that gives the reason its fills vary by design (`fills_vary_by_design`) is not reported; if you find one whose fills do repeat, report it. Do not hide debt by deleting a fill or marking a record provided when it is not.
 
 ## Use case line checks
 
