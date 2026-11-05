@@ -12,7 +12,7 @@ import { describeKey, normalizeRow, rowKey, sortRows, tableText, type Row } from
 import type { SchemaDescription, TableDescription } from './schema.ts';
 import { writeAll, type FileChange } from './journal.ts';
 import { StoreError, problemAt, type Origin, type StoreProblem } from './problems.ts';
-import type { ReadView } from './rules.ts';
+import type { CheckedProblems, ReadView } from './rules.ts';
 import { WRITE_RULES } from '../../write-rules.ts';
 
 /** Every table's rows by key. */
@@ -58,14 +58,21 @@ interface Draft {
   schema: SchemaDescription;
   /** The rows a move gave new IDs and nothing else (DataFiles.carryRenames): they say nothing new, so the write rules pass them by. */
   renamed: WeakSet<Row>;
+  /** The checks' run over the data before the write, for a command that reads it (CommandDefinition.checked). */
+  checked: CheckedProblems | undefined;
 }
 
 const drafts = new WeakMap<Transaction, Draft>();
 
 /** One write in progress: the tables as the command leaves them, read-only to everything but data-files.ts. */
 export class Transaction implements ReadView {
-  constructor(host: TransactionHost) {
-    drafts.set(this, { host, tables: new Map(host.tables), changed: new Set(), schema: host.schema, renamed: new WeakSet() });
+  constructor(host: TransactionHost, checked?: CheckedProblems) {
+    drafts.set(this, { host, tables: new Map(host.tables), changed: new Set(), schema: host.schema, renamed: new WeakSet(), checked });
+  }
+
+  /** The problems the checks found in the data as it was before this write, when the command's runner was given them; a command that reads them says so (CommandDefinition.checked). */
+  get checkedProblems(): CheckedProblems | undefined {
+    return drafts.get(this)!.checked;
   }
 
   /** The schema, Lathe's and the product's own kinds and relations. */

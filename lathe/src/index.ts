@@ -12,9 +12,11 @@ import { readTestCases } from './trace/test-cases.ts';
 import { isTraced, matching, normalizePath, sourceFiles, walkFiles } from './trace/source-files.ts';
 import { orderChecks, referenceOf, type Reference } from './reference.ts';
 import { runCheckQuery } from './checking/check/rules.ts';
+import { strictnessOfProducts, strictProblems, type ProductStrictness } from './checking/product-setting/strictness.ts';
 import { formatProblem, StoreError } from './platform/data/problems.ts';
 import { openStore, Store, LATHE_DATA_DIR, type StoreOptions } from './platform/data/store.ts';
 import { SCHEMA_DIR } from './platform/data/schema.ts';
+import { checkedKey, markValidated, readCheckedProblems, writeCheckedProblems } from './platform/data/cache.ts';
 import { gatherTableFacts, TABLE_FACTS_SQL } from './trace/tables.ts';
 import type { Row } from './platform/data/rows.ts';
 import { gatherRouteFacts, writeRouteFacts } from './trace/routes.ts';
@@ -149,17 +151,21 @@ interface TestCaseFact {
 // The test cases in the product's test files: the files matching the config's test globs (never in node_modules,
 // dist, a dot-folder or another product's folder, one with its own lathe.config.json) and the files test records
 // name, read as text (test-cases.ts says what is recognized).
-async function gatherTestCases(root: string, globs: readonly string[], facts: FileFact[]): Promise<TestCaseFact[]> {
+async function gatherTestCases(root: string, globs: readonly string[], facts: Promise<FileFact[]>): Promise<TestCaseFact[]> {
   const skip = (folder: string, name: string) => name === 'node_modules' || name === 'dist' || name.startsWith('.') || existsSync(path.join(root, folder, CONFIG_FILE));
-  const files = new Set(matching(await walkFiles(root, skip), globs));
-  const tests = new Set(TEST_KINDS);
-  for (const f of facts) if (f.path !== null && f.file_exists && tests.has(f.kind)) files.add(f.path);
-  const read = await Promise.all([...files].sort().map(async (file) => {
+  const casesOf = async (file: string): Promise<TestCaseFact[]> => {
     const resolved = path.join(root, file);
     if ((await entry(resolved)) !== 'file') return [];
     return readTestCases(await readFile(resolved, 'utf8')).map((c, i): TestCaseFact => ({ file, position: i + 1, ...c }));
-  }));
-  return read.flat();
+  };
+  // The files the globs match are read while the records' files are looked at; a test file a record names that no
+  // glob matches is read after.
+  const matched = new Set(matching(await walkFiles(root, skip), globs));
+  const read = new Map([...matched].map((file) => [file, casesOf(file)] as const));
+  const tests = new Set(TEST_KINDS);
+  for (const f of await facts) if (f.path !== null && f.file_exists && tests.has(f.kind) && !read.has(f.path)) read.set(f.path, casesOf(f.path));
+  const files = [...read.keys()].sort();
+  return (await Promise.all(files.map((file) => read.get(file)!))).flat();
 }
 
 // The product's source files, each with whether a technical record (of a technical-specification kind, Lathe's or the
@@ -402,8 +408,6 @@ export async function readWorkspace(store: Store, config: Pick<LatheConfig, 'roo
     if (timings) timings[phase] = Math.round((now - mark) * 10) / 10;
     mark = now;
   };
-  // The checks and coverage run SQL over the data.
-  await store.ensureDatabase();
   const steps = timings ? (timings.steps ??= {}) : undefined;
   const step = async <T,>(name: string, run: () => Promise<T>): Promise<T> => {
     const start = performance.now();
@@ -413,16 +417,27 @@ export async function readWorkspace(store: Store, config: Pick<LatheConfig, 'roo
       if (steps) steps[name] = Math.round((performance.now() - start) * 10) / 10;
     }
   };
+  const root = path.resolve(config.root);
+  // The files records name, the source files and the routes they serve are read side by side, and beside them the
+  // data's database is built (the checks and coverage run SQL over it): the files are read from the rows alone.
+  const gathered = (async () => {
+    const facts = step('file facts', () => gatherFileFacts(root, store));
+    // Awaited below, and by the test cases; a refusal is handled there, not when it happens.
+    facts.catch(() => undefined);
+    const [sources, routes, cases] = await Promise.all([
+      step('source files', () => gatherSourceFiles({ ...config, root }, store)),
+      step('route facts', () => gatherRouteFacts({ ...config, root }, store)),
+      step('test cases', () => gatherTestCases(root, config.tests, facts)),
+    ]);
+    const packages = await step('package facts', async () => readPackageFacts(root, config.packages));
+    return { facts: await facts, sources, routes, packages, cases };
+  })();
+  // Awaited below, after the database; a refusal (such as a config that names no package) is thrown there.
+  gathered.catch(() => undefined);
+  await step('database', () => store.ensureDatabase());
   const order = await kindOrder(store);
   const read = await step('read records', () => readRecords(store, order));
-  // The files records name, the source files and the routes they serve are read side by side.
-  const [facts, sources, routes] = await Promise.all([
-    step('file facts', () => gatherFileFacts(path.resolve(config.root), store)),
-    step('source files', () => gatherSourceFiles({ ...config, root: path.resolve(config.root) }, store)),
-    step('route facts', () => gatherRouteFacts({ ...config, root: path.resolve(config.root) }, store)),
-  ]);
-  const packages = await step('package facts', async () => readPackageFacts(path.resolve(config.root), config.packages));
-  const cases = await step('test cases', () => gatherTestCases(path.resolve(config.root), config.tests, facts));
+  const { facts, sources, routes, packages, cases } = await gathered;
   const connection = store.connection;
   await connection.run(FACT_TABLES_SQL);
   await append(connection, 'file_facts', facts.map((f) => [f.record, f.kind, f.file, f.path, f.file_exists, f.contains_id, f.helper]));
@@ -439,11 +454,51 @@ export async function readWorkspace(store: Store, config: Pick<LatheConfig, 'roo
   await step('coverage tables', () => connection.run(coverageViewsSql(store.schema)));
   lap('files');
   const scope = new Map(read.records.map((r) => [r.id, r.product]));
-  const problems = await runChecks(store, orderChecks(store.rows('check')), scope, steps);
+  const checked = await runChecks(store, orderChecks(store.rows('check')), scope, steps);
+  // A strict product's warnings fail its check (strictness.ts), counted over every other check's problems.
+  const problems = [...checked, ...strictProblems(store.rows('product_setting'), checked, (record) => scope.get(record))];
   lap('checks');
   const [coverage, chains] = await Promise.all([computeCoverage(store), computeChains(store, read.records, order)]);
   lap('coverage');
   return { ...read, problems, coverage, chains };
+}
+
+// The problems of the last runs, kept by the key of the data and config they ran on (checkedKey): in this process's
+// memory (the MCP server's, the app server's), and in the cache folder for the next process (cache.ts). A write runs
+// the checks once, after it, and reads the run before it from here.
+const keptProblems = new Map<string, readonly Problem[]>();
+const KEPT_IN_MEMORY = 8;
+
+const runKey = async (store: Store, config: Pick<LatheConfig, 'root' | 'source' | 'tests' | 'routers' | 'packages'>) => checkedKey(await store.contentKey(), JSON.stringify(config));
+
+function keepProblems(key: string, problems: readonly Problem[], write: boolean): void {
+  keptProblems.delete(key);
+  keptProblems.set(key, problems);
+  if (keptProblems.size > KEPT_IN_MEMORY) keptProblems.delete(keptProblems.keys().next().value!);
+  if (write) writeCheckedProblems(key, problems);
+}
+
+/**
+ * The problems the checks find in the store's data as its files hold it now: the ones kept for exactly this data and
+ * config (in memory, or in the cache from another process), or a run of the checks, then kept. Source and test files
+ * are not in the key: a run kept before a code change answers for the same data after it.
+ */
+export async function checkedProblems(store: Store, config: Pick<LatheConfig, 'root' | 'source' | 'tests' | 'routers' | 'packages'>): Promise<readonly Problem[]> {
+  const content = await store.contentKey();
+  const key = checkedKey(content, JSON.stringify(config));
+  const memory = keptProblems.get(key);
+  if (memory) return memory;
+  const cached = readCheckedProblems<Problem>(key);
+  if (cached) {
+    keepProblems(key, cached, false);
+    return cached;
+  }
+  const { problems } = await readWorkspace(store, config);
+  keepProblems(key, problems, true);
+  // The run built the data whole and it passed, as a load's whole build does: the next load of these files reads them
+  // without building them again (the validated-build stamp is keyed as the content is).
+  markValidated(content);
+  return problems;
 }
 
 /** A workspace whose data did not load: no records, and the store's refusals as data-refused errors. */
@@ -456,6 +511,11 @@ function refusedWorkspace(error: StoreError): Workspace {
 
 /** Loads, checks and measures the product under root (the repo root), from its data/ folder. */
 export async function loadWorkspace(root: string, options: LoadOptions = {}): Promise<Workspace> {
+  return (await loadChecked(root, options)).workspace;
+}
+
+/** The product's workspace, with the strictness of each product its data holds, as its check judged it. */
+async function loadChecked(root: string, options: LoadOptions): Promise<{ workspace: Workspace; strictness: ProductStrictness[] }> {
   const config = loadConfig(root);
   const started = performance.now();
   const timings = options.timings;
@@ -463,7 +523,7 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
   try {
     store = await openStore(config.root, { ...storeOptions(options), ...(timings ? { steps: (timings.steps ??= {}) } : {}) });
   } catch (error) {
-    if (error instanceof StoreError) return refusedWorkspace(error);
+    if (error instanceof StoreError) return { workspace: refusedWorkspace(error), strictness: [] };
     throw error;
   }
   // The checks run SQL, so the database is built here, where the open is timed (a load of validated files skips it).
@@ -473,17 +533,21 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
   });
   if (timings) timings.open = Math.round((performance.now() - started) * 10) / 10;
   try {
-    return await readWorkspace(store, config, timings);
+    const workspace = await readWorkspace(store, config, timings);
+    // The run is kept, so the next write on this data reads it instead of running the checks again.
+    keepProblems(await runKey(store, config), workspace.problems, true);
+    return { workspace, strictness: strictnessOfProducts(store.rows('product_setting'), workspace) };
   } finally {
     await store.close();
     if (timings) timings.total = Math.round((performance.now() - started) * 10) / 10;
   }
 }
 
-/** One product of a workspace: its config (its root, data folder, globs) and its loaded, checked workspace. */
+/** One product of a workspace: its config (its root, data folder, globs), its loaded, checked workspace, and the strictness of each product its data holds. */
 export interface ProductWorkspace {
   config: LatheConfig;
   workspace: Workspace;
+  strictness: ProductStrictness[];
 }
 
 /**
@@ -494,7 +558,7 @@ export interface ProductWorkspace {
 export async function loadProducts(root: string, options: Pick<LoadOptions, 'latheDataDir'> = {}): Promise<ProductWorkspace[]> {
   const configs = workspaceProducts(root);
   const loaded: ProductWorkspace[] = [];
-  for (const config of configs) loaded.push({ config, workspace: await loadWorkspace(config.root, options) });
+  for (const config of configs) loaded.push({ config, ...(await loadChecked(config.root, options)) });
   const clash = productClash(configs[0].root, loaded.map(({ config, workspace }) => ({ root: config.root, ids: workspace.records.filter((r) => r.kind === 'product').map((r) => r.id) })));
   if (clash) throw new Error(clash);
   return loaded;

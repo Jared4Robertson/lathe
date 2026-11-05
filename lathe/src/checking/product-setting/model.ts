@@ -14,6 +14,9 @@ export interface ProductSetting {
   setting: ProductSettingRow;
 }
 
+/** The limits a product without a settings row takes, which its new row starts with when a command adds it for another setting. */
+export const DEFAULT_LIMITS = { max_children: 15, max_entities_per_aggregate: 7 } as const;
+
 /** The tables the Product setting aggregate keeps its rows in. */
 export const PRODUCT_SETTING_TABLES = ['product_setting'] as const;
 

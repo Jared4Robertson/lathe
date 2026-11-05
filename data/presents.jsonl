@@ -338,6 +338,7 @@
 {"source_id":"LA-V156","target_id":"LA-UCS-CMD117"}
 {"source_id":"LA-V156","target_id":"LA-UCS-CMD118"}
 {"source_id":"LA-V41","target_id":"LA-CHK-QRY02"}
+{"source_id":"LA-V41","target_id":"LA-CHK-QRY12"}
 {"source_id":"LA-V51","target_id":"LA-CHK-CMD05"}
 {"source_id":"LA-V51","target_id":"LA-CHK-QRY02"}
 {"source_id":"LA-V51","target_id":"LA-CHK-QRY12"}

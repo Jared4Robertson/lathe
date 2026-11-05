@@ -6,6 +6,7 @@
 import { ALLOWED_LEVELS, GAP_RULES, OBLIGATION_COVERAGE } from './coverage.ts';
 import type { ColumnDescription, Complexity, IdScope, KindDescription, SchemaDescription, Stage, TableDescription, TableRole } from './platform/data/schema.ts';
 import type { Row } from './platform/data/rows.ts';
+import { STRICT_CHECK } from './checking/product-setting/strictness.ts';
 
 export interface ColumnReference {
   name: string;
@@ -143,6 +144,17 @@ export const ENGINE_CHECKS: CheckReference[] = [
     summary: 'Every data file loads: the store accepts every row of data/ with every key and rule of the schema.',
     explanation:
       'A row that breaks the schema (a missing parent, a link to a record that does not exist, a value outside its enum, an ID used twice) is refused when the data loads, and nothing is checked until it is fixed. Each refusal names the file, the line and the rule it broke. Fix the row through the CLI or the app, or resolve the merge that brought it.',
+    origin: 'engine',
+    product: null,
+    kinds: [],
+    stage: null,
+  },
+  {
+    check: STRICT_CHECK,
+    severity: 'error',
+    summary: "A strict product's check has exactly the warnings it accepts: none, unless its setting records an accepted count.",
+    explanation:
+      "A product makes its check strict with `lathe product-setting set-strict-check --product_id <id> --strict_check true`: from then on any warning of the product fails the check, as an error does, so lathe check exits 1 and the check tool reports a failure. While zero cannot be reached yet, the setting may accept a count of warnings (--accepted_warnings), a recorded deviation shown with the setting and on the check page. The check fails when the product has more warnings than it accepts (fix the new ones) and when it has fewer (lower the count to the new one), so the baseline only moves down and never hides a new warning. A count above the warnings the product has is refused when it is set. No single warning is ever silenced: a deviation is recorded on the record it concerns, such as a slot's fills_vary_by_design. Not strict by default.",
     origin: 'engine',
     product: null,
     kinds: [],

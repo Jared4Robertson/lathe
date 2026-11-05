@@ -3,7 +3,8 @@
 // (the Owner, the app or git may have changed them since the last call). Writes never commit: the Agent or the Owner
 // commits.
 import path from 'node:path';
-import { loadProducts, type Coverage } from '../index.ts';
+import { loadProducts, type Coverage, type Problem } from '../index.ts';
+import { STRICT_CHECK, strictSummary, type ProductStrictness } from '../checking/product-setting/strictness.ts';
 import type { SchemaDescription } from '../platform/data/schema.ts';
 import { SchemaVersionError } from '../config.ts';
 import { StoreError, type StoreProblem } from '../platform/data/problems.ts';
@@ -55,9 +56,10 @@ export interface CheckProblem {
   message: string;
 }
 
-/** One product's coverage, as `lathe check --json` gives it: the product's folder from the workspace root, and its coverage with its gaps. */
+/** One product's coverage, as `lathe check --json` gives it: the product's folder from the workspace root, the strictness of each product it holds, and its coverage with its gaps. */
 export interface CheckedProduct {
   root: string;
+  strictness: ProductStrictness[];
   coverage: Coverage[];
 }
 
@@ -72,11 +74,37 @@ export async function check(root: string): Promise<{ errors: number; warnings: n
     errors: problems.filter((p) => p.severity === 'error').length,
     warnings: problems.filter((p) => p.severity === 'warning').length,
     problems,
-    products: products.map(({ config, workspace }) => ({ root: productFolder(root, config.root), coverage: workspace.coverage })),
+    products: products.map(({ config, workspace, strictness }) => ({ root: productFolder(root, config.root), strictness, coverage: workspace.coverage })),
   };
 }
 
+/**
+ * The problems a write introduced: each warning, and each strict-check error, in the run after it that the run before
+ * it did not hold, so an Agent fixes them at once. A problem is the one before when it has the same check and record
+ * (a problem about no record, the same message too): a warning whose words change with the data, such as a count,
+ * is not a new one.
+ */
+export function introducedProblems(before: readonly Problem[], after: readonly Problem[]): CheckProblem[] {
+  const key = (p: Problem) => `${p.check}\u0000${p.record ?? `\u0000${p.message}`}`;
+  const left = new Map<string, number>();
+  for (const p of before) left.set(key(p), (left.get(key(p)) ?? 0) + 1);
+  return after
+    .filter((p) => p.severity === 'warning' || p.check === STRICT_CHECK)
+    .filter((p) => {
+      const n = left.get(key(p)) ?? 0;
+      if (n > 0) left.set(key(p), n - 1);
+      return n === 0;
+    })
+    .map((p) => ({ severity: p.severity, check: p.check, record: p.record ?? null, message: p.message }));
+}
+
 // Text, as the CLI prints it and the MCP tools return it.
+
+/** The problems a write introduced, or that it introduced none. */
+export function introducedText(introduced: readonly CheckProblem[]): string {
+  if (!introduced.length) return 'No new warnings.';
+  return `This write introduced ${count(introduced.length, 'problem')}; fix ${introduced.length === 1 ? 'it' : 'them'} now:\n${introduced.map((p) => `  [${p.check}]${p.record ? ` ${p.record}:` : ''} ${p.message}`).join('\n')}`;
+}
 
 const count = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`;
 
@@ -87,6 +115,7 @@ const RULE_SHAPES: [RegExp, (...m: string[]) => string][] = [
   [/^(\w+) IS NULL <> (\w+) IS NULL$/, (a, b) => `exactly one of ${a} and ${b} is given`],
   [/^(\w+) IS NOT NULL \+ (\w+) IS NOT NULL \+ (\w+) IS NOT NULL = 1$/, (a, b, c) => `exactly one of ${a}, ${b} and ${c} is given`],
   [/^(\w+) IS NULL OR (\w+) = '([^']*)'$/, (a, b, v) => `${a} is given only when ${b} is ${v}`],
+  [/^(\w+) IS NULL OR (\w+)$/, (a, b) => `${a} is given only when ${b} is true`],
   [/^(\w+) <> '([^']*)' OR (\w+) IS NOT NULL$/, (a, v, b) => `${b} is given when ${a} is ${v}`],
   [/^(\w+) = '([^']*)' = (\w+) IS NOT NULL$/, (a, v, b) => `${b} is given when, and only when, ${a} is ${v}`],
   [/^(\w+) IS NULL OR (\w+) <> (\w+)$/, (a, _, b) => `${a} is not the ${b}`],
@@ -174,6 +203,6 @@ export function checkText(result: Awaited<ReturnType<typeof check>>): string {
     const lines = coverageLines(product.coverage);
     if (lines.length) parts.push(`Coverage${result.products.length > 1 ? ` of ${product.root}` : ''}:\n${lines.join('\n')}`);
   }
-  parts.push(`${count(result.errors, 'error')}, ${count(result.warnings, 'warning')}.`);
+  parts.push([`${count(result.errors, 'error')}, ${count(result.warnings, 'warning')}.`, ...result.products.flatMap((p) => p.strictness.map(strictSummary)).filter(Boolean)].join(' '));
   return parts.join('\n\n');
 }

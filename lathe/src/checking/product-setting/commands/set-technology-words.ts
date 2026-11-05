@@ -2,13 +2,11 @@ import { column, texts, type CommandDefinition } from '../../../platform/command
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { ProductSettingRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
+import { DEFAULT_LIMITS } from '../model.ts';
 import { SET_TECHNOLOGY_WORDS_IDENTITY } from './identities.generated.ts';
 
 /** The product and the words that name technology in it. */
 export type SetTechnologyWords = { product_id: string; technology_words: string[] };
-
-/** The limits a product without a settings row takes, which its new row starts with. */
-const DEFAULT_LIMITS = { max_children: 15, max_entities_per_aggregate: 7 };
 
 export const SET_TECHNOLOGY_WORDS = {
   ...SET_TECHNOLOGY_WORDS_IDENTITY,
@@ -19,7 +17,7 @@ export const SET_TECHNOLOGY_WORDS = {
   handler: setTechnologyWords,
 } satisfies CommandDefinition<SetTechnologyWords>;
 
-/** Sets the product's technology words, keeping its limits, and adds its one row (LA-CHK-INV05), with the default limits, the first time. */
+/** Sets the product's technology words, keeping its limits and strictness, and adds its one row (LA-CHK-INV05), with the default limits, the first time. */
 export function setTechnologyWords(tx: Transaction, input: SetTechnologyWords): void {
   const settings = new ProductSettingRepository(tx);
   const words = [...new Set(input.technology_words.map((w) => w.trim()).filter(Boolean))].sort();

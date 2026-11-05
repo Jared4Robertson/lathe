@@ -116,6 +116,11 @@ export interface CommandDefinition<T = never> {
   method: 'POST';
   route: string;
   input: InputSpec<T>;
+  /**
+   * Whether its handler reads the checks' run over the data as it was before the write (`tx.checked`), such as the
+   * warnings a product has now: the runner then refuses to run it without one, and each interface runs the checks first.
+   */
+  checked?: true;
   /** Loads its aggregate through its repository, runs the aggregate's rules, saves, and raises its event. */
   handler: (tx: Transaction, input: T) => void | Promise<void>;
 }

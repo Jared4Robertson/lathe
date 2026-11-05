@@ -1,5 +1,5 @@
 {"id":"LA-CHK-EN01","title":"Check","aggregate_id":"LA-CHK-A1","role":"root","description":"One rule the engine applies: a check whose query reports each problem it finds."}
-{"id":"LA-CHK-EN03","title":"Product setting","aggregate_id":"LA-CHK-A2","role":"root","description":"A product's settings: the most children of one kind a record of the product should hold, the most entities an aggregate should hold, and the words that name technology in its essential records."}
+{"id":"LA-CHK-EN03","title":"Product setting","aggregate_id":"LA-CHK-A2","role":"root","description":"A product's settings: the most children of one kind a record of the product should hold, the most entities an aggregate should hold, the words that name technology in its essential records, and whether its check is strict, with the warnings it accepts."}
 {"id":"LA-EXP-EN01","title":"Page","aggregate_id":"LA-EXP-A1","role":"root","description":"One place in the app, identified by its address, showing a view of one loaded workspace."}
 {"id":"LA-EXP-EN02","title":"Space","aggregate_id":"LA-EXP-A2","role":"root","description":"One product as a place to work in, in the rail."}
 {"id":"LA-EXP-EN03","title":"Nav entry","aggregate_id":"LA-EXP-A3","role":"root","description":"An entry of the nav that folds, and whether the reader has it folded."}

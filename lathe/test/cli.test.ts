@@ -5,7 +5,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { loadWorkspace, SCHEMA_VERSION } from '../src/index.ts';
-import { build, changing, complete, removeData, sparse, SPARSE_FILES, writeData } from './helpers.ts';
+import { callTool } from '../src/cli/mcp.ts';
+import { adding, build, changing, complete, removeData, sparse, SPARSE_FILES, writeData } from './helpers.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const lathe = (...args: string[]) => {
@@ -85,7 +86,39 @@ describe('lathe check', () => {
   it('LA-CHK-UC01-R03-T01 With --json the check prints each product\'s whole workspace', async () => {
     const { stdout, status } = lathe('check', '--json', '--root', broken);
     expect(status).toBe(1);
-    expect(JSON.parse(stdout)).toEqual({ products: [{ root: '.', workspace: await loadWorkspace(broken) }] });
+    expect(JSON.parse(stdout)).toEqual({ products: [{ root: '.', strictness: [{ product: 'EX', strict: false, accepted: 0, warnings: 5, failure: null }], workspace: await loadWorkspace(broken) }] });
+  });
+
+  // The complete product with three warnings (a technical file not written, so two records are not built) and no error,
+  // under a strictness setting.
+  const strictly = (setting: Record<string, unknown>) =>
+    build(adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 15, max_entities_per_aggregate: 7, technology_words: [], ...setting }] }), { missing: ['src/dates.ts'] });
+
+  it('LA-CHK-UC01-R10-T01 A strict check fails on any warning, saying it is strict and why; a check that is not strict passes', async () => {
+    const lax = lathe('check', '--root', await strictly({}));
+    expect(lax.status).toBe(0);
+    expect(lax.stdout).toContain('0 errors, 3 warnings.\n');
+    const strict = lathe('check', '--root', await strictly({ strict_check: true }));
+    expect(strict.status).toBe(1);
+    expect(strict.stdout).toContain("[strict-check] EX: Product EX's check is strict and accepts none, and it has 3 warnings: fix the 3 warnings beyond the accepted count");
+    expect(strict.stdout).toContain('1 error, 3 warnings. EX is strict: warnings fail; it accepts none, and has 3, so its check fails: 3 warnings beyond the accepted count.');
+    const json = JSON.parse(lathe('check', '--json', '--root', await strictly({ strict_check: true })).stdout) as { products: { strictness: unknown[] }[] };
+    expect(json.products[0].strictness).toEqual([{ product: 'EX', strict: true, accepted: 0, warnings: 3, failure: expect.stringContaining('fix the 3 warnings beyond the accepted count') }]);
+    const none = lathe('check', '--root', clean);
+    expect(none.stdout).not.toContain('strict');
+    // The check tool reports the failure the same way.
+    const tool = await callTool(await strictly({ strict_check: true }), 'check', {});
+    expect(tool.isError).toBe(true);
+    expect(tool.content[0].text).toMatch(/1 error, 3 warnings\. EX is strict: warnings fail; [^\n]+, so its check fails: 3 warnings beyond the accepted count\.$/);
+  });
+
+  it('LA-CHK-UC01-R11-T01 A strict check passes at its accepted count, and fails above it and below it, saying to lower the count', async () => {
+    const at = lathe('check', '--root', await strictly({ strict_check: true, accepted_warnings: 3 }));
+    expect(at.status).toBe(0);
+    expect(at.stdout).toContain('0 errors, 3 warnings. EX is strict: warnings fail; it accepts 3 warnings (a recorded deviation), and has 3.');
+    const below = lathe('check', '--root', await strictly({ strict_check: true, accepted_warnings: 5 }));
+    expect(below.status).toBe(1);
+    expect(below.stdout).toContain('[strict-check] EX: Product EX\'s check is strict and accepts 5 warnings, a recorded deviation, and it now has only 3 warnings: lower the accepted count to 3 with set-strict-check');
   });
 });
 

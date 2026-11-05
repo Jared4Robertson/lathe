@@ -408,7 +408,7 @@ check('accidental-not-accounted-for', () => {
     expect(ofCheck(await loadData(changing(unprovided, 'standard', () => true, { type: 'quality' })), 'accidental-not-accounted-for')).toEqual([]);
   });
 
-  it('LA-STD-PRINCIPLES-R06-T05 A fill serves the essential aggregate it persists, an essential record a product relation links it to in either direction, or an essential record under it', async () => {
+  it('LA-STD-PRINCIPLES-R06-T05 A fill serves the essential aggregate it persists, an essential record a product relation links it to in either direction, an outcome it measures, or an essential record under it', async () => {
     // A repository written by hand whose aggregate has no storage requirement serves the aggregate it persists.
     const repository = adding(handWritten('EX-LEND-REPO02'), fill('EX-LEND-REPO02'));
     expect(ofCheck(await loadData(repository), 'accidental-not-accounted-for')).toEqual([]);
@@ -445,6 +445,12 @@ check('accidental-not-accounted-for', () => {
     });
     const ws = await loadData(components);
     expect(records(ofCheck(ws, 'accidental-not-accounted-for'))).toEqual(['EX-LEND-CO04']);
+    // A fill that measures a business outcome serves it: the outcome links it with measured_by, Lathe's own relation.
+    const measuring = adding(components, {
+      product_relation: [{ name: 'measured_by', source_kind: 'business_outcome', target_kind: 'component', product_id: 'EX', forward_label: 'Measured by', reverse_label: 'Measures', description: 'The component prints the outcome\'s measure.' }],
+      measured_by: [{ source_id: 'EX-BO01', target_id: 'EX-LEND-CO04' }],
+    });
+    expect(ofCheck(await loadData(measuring), 'accidental-not-accounted-for')).toEqual([]);
   });
 
   it('LA-STD-PRINCIPLES-R06-T06 An engineering standard and its rules fill no slot: a rule is accounted for when a record accounted for meets it, and the standard when one of its rules is', async () => {

@@ -10,9 +10,9 @@ import { committedText, runCommand, runQuery } from '../platform/commands/run.ts
 import type { ReadView } from '../platform/data/rules.ts';
 import type { SchemaDescription } from '../platform/data/schema.ts';
 import type { Store } from '../platform/data/store.ts';
-import { loadConfig, readWorkspace } from '../index.ts';
+import { checkedProblems, loadConfig, readWorkspace } from '../index.ts';
 import type { Tool } from './mcp.ts';
-import { readSchema, refusalText, withStore, type Outcome } from './operations.ts';
+import { introducedProblems, introducedText, readSchema, refusalText, withStore, type Outcome } from './operations.ts';
 
 /** The aggregates the CLI names, such as use-case: each is a command of its own, `lathe use-case ...`. */
 export const AGGREGATE_COMMANDS: readonly string[] = [...new Set([...ALL_COMMANDS, ...ALL_QUERIES].map((d) => d.slice.name))].sort();
@@ -31,16 +31,25 @@ ${AGGREGATE_COMMANDS.map((a) => `  ${a} <command> --<field> <value> ...   Run \`
   command's MCP tool takes. Bare --json prints the result as JSON.
 `;
 
-/** Runs a definition on the product at root with the arguments: what it changed or answered, or the refusal. */
-export async function runDefinition(root: string, found: Definition, args: unknown): Promise<Outcome<{ text: string; json: unknown }>> {
+/**
+ * Runs a definition on the product at root with the arguments, or with the arguments read from the product's schema
+ * (a CLI's flags, typed by their columns, on the store the definition runs on): what it changed or answered, or the refusal.
+ */
+export async function runDefinition(root: string, found: Definition, given: unknown | ((schema: SchemaDescription) => unknown)): Promise<Outcome<{ text: string; json: unknown }>> {
   try {
     return await withStore(root, async (store) => {
+      const args = typeof given === 'function' ? (given as (schema: SchemaDescription) => unknown)(store.schema) : given;
       if (found.kind === 'query') {
         const answer = runQuery(found.definition.checked ? await checkedView(root, store) : store, found.definition, args);
         return { text: found.definition.text(answer as never), json: answer };
       }
-      const committed = await runCommand(store, found.definition, args);
-      return { text: committedText(committed), json: committed };
+      // The answer lists the warnings the write introduced: the checks run once, after it, and the run before it is the
+      // one kept for the data as it was (checkedProblems), which a command that reads it (set-strict-check) is given.
+      const config = loadConfig(root);
+      const before = await checkedProblems(store, config);
+      const committed = await runCommand(store, found.definition, args, { problems: before });
+      const introduced = committed.changes.length ? introducedProblems(before, await checkedProblems(store, config)) : [];
+      return { text: `${committedText(committed)}\n\n${introducedText(introduced)}`, json: { ...committed, introduced } };
     });
   } catch (error) {
     if (error instanceof InputError) return { ok: false, problems: [{ rule: 'input', message: error.message }] };
@@ -145,14 +154,13 @@ export async function runAggregateCommand(args: string[], io: Io = { out: (t) =>
     const found = definitions.find((d) => d.definition.slice.name === aggregate && d.definition.name === name);
     if (!found) throw new UsageError(`lathe ${aggregate} has no command ${name}.`);
     if (rest.length) throw new UsageError(`lathe ${aggregate} ${name} takes no ${rest.join(' ')}; give its fields as --<field> <value>.`);
-    const schema = await readSchema(root);
     if (flags.has('help')) {
-      io.out(definitionHelp(schema, aggregate, found));
+      io.out(definitionHelp(await readSchema(root), aggregate, found));
       return 0;
     }
     const source = flags.get('json')?.at(-1);
     const fieldFlags = [...flags.keys()].filter((f) => f !== 'root' && f !== 'json');
-    let input: Record<string, unknown> = {};
+    let input: Record<string, unknown> | ((schema: SchemaDescription) => Record<string, unknown>) = {};
     if (source !== undefined && source !== 'true') {
       if (fieldFlags.length) throw new UsageError(`Give the fields from --json ${source} or as flags, not both; drop ${fieldFlags.map((f) => `--${f}`).join(', ')}.`);
       let text: string;
@@ -168,10 +176,21 @@ export async function runAggregateCommand(args: string[], io: Io = { out: (t) =>
       }
     } else {
       for (const flag of fieldFlags) {
-        const field = found.definition.input[flag];
-        if (!field) throw new UsageError(`lathe ${aggregate} ${name} has no field ${flag}; its fields are ${Object.keys(found.definition.input).join(', ')}.`);
-        input[flag] = flagValue(schema, flag, field, flags.get(flag)!);
+        if (!found.definition.input[flag]) throw new UsageError(`lathe ${aggregate} ${name} has no field ${flag}; its fields are ${Object.keys(found.definition.input).join(', ')}.`);
       }
+      // The flags are typed by the schema of the store the command runs on, so the product is opened once. A flag that
+      // is not of its type is bad usage, as before anything is read.
+      input = (schema) => {
+        const typed: Record<string, unknown> = {};
+        for (const flag of fieldFlags) {
+          try {
+            typed[flag] = flagValue(schema, flag, found.definition.input[flag], flags.get(flag)!);
+          } catch (error) {
+            throw error instanceof InputError ? new UsageError(error.message) : error;
+          }
+        }
+        return typed;
+      };
     }
     const outcome = await runDefinition(root, found, input);
     const json = source !== undefined;

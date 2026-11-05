@@ -3307,10 +3307,15 @@ A product's typed settings for its checks. A product without a row takes the def
 | `max_children` | INTEGER | yes | The most children of one kind a record should have before too-many-children warns; the default is 15. |
 | `max_entities_per_aggregate` | INTEGER | yes | The most entities an aggregate should have before aggregate-too-large warns; the default is 7. |
 | `technology_words` | VARCHAR[] | yes | The words, besides Lathe's own, that name technology in this product's essential records, which accidental-in-essential warns of, such as the name of a framework the product is built with; none by default. |
+| `strict_check` | BOOLEAN | no | True when the product's check is strict: lathe check then fails on any warning of the product, as on an error, beyond the accepted warnings; none by default, when warnings never fail it. |
+| `accepted_warnings` | INTEGER | no | The warnings a strict check accepts while zero cannot be reached yet, a recorded deviation shown with the setting and on the check page: the check fails when the product has more, and when it has fewer, until this is lowered to the new count, so it only moves down. Never above the warnings the product has when it is set; none when every warning fails it. |
 
 - **Key:** `product_id`
 - **Rule:** `(max_children >= 1)`
 - **Rule:** `(max_entities_per_aggregate >= 1)`
+- **Rule:** `strict_check`
+- **Rule:** `(accepted_warnings >= 1)`
+- **Rule:** `((accepted_warnings IS NULL) OR strict_check)`
 
 ### Other part tables: rows that belong to one record and are removed with it.
 
@@ -3959,7 +3964,7 @@ A flow says how its use case is carried out whatever the interface, and each int
 
 An accidental record that is neither derived (a tooling record generates it), provided (it or a record it sits under names its provider), nor a fill of a pattern's slot that serves an essential record; or an engineering standard or rule that nothing provides and no such record follows.
 
-Essential complexity is decided once, per product; accidental complexity, what comes from the means used to build it, is derived, provided, or a recorded fill at a slot, never free-floating (LA-STD-PRINCIPLES). A record is accidental by its kind (the technical specification), or as an engineering standard and its rules; a test follows what it proves and is not reported. It is accounted for when a tooling record generates it (generates), when it or a record it sits under is provided by something outside the product (provided_by), or when it fills a pattern's slot (fills) and serves an essential record: it builds an essential obligation as coverage counts it, carries out a pattern rule it meets (a generic piece of code: a shared component, an entry point, a build script), implements an essential record it sits under, directly or through other accidental records such as an endpoint (other than its product or domain), persists an essential aggregate (persists), is linked to an essential record by one of the product's own relations, in either direction, or has an essential record under it, such as a contract it holds (a test is never the essential record served); a data store serves what is stored in it that serves. An engineering standard and its rules are the rules that code follows, not code, so they fill no slot: a rule is accounted for when a record that is accounted for builds it as coverage counts it (meets), and a standard when one of its rules is, unless it or its standard is provided. A record that meets a rule and is not accounted for is reported on its own, so the rule it meets stays accounted for through the others. Generate it, name its provider, or record the slot it fills and link it to the essential record it serves; code that serves nothing essential is removed. Link the records that follow an engineering rule to it with meets; a rule that nothing follows is removed.
+Essential complexity is decided once, per product; accidental complexity, what comes from the means used to build it, is derived, provided, or a recorded fill at a slot, never free-floating (LA-STD-PRINCIPLES). A record is accidental by its kind (the technical specification), or as an engineering standard and its rules; a test follows what it proves and is not reported. It is accounted for when a tooling record generates it (generates), when it or a record it sits under is provided by something outside the product (provided_by), or when it fills a pattern's slot (fills) and serves an essential record: it builds an essential obligation as coverage counts it, carries out a pattern rule it meets (a generic piece of code: a shared component, an entry point, a build script), implements an essential record it sits under, directly or through other accidental records such as an endpoint (other than its product or domain), persists an essential aggregate (persists), is linked to an essential record by one of the product's own relations, in either direction, measures an essential record such as a business outcome (measured_by: a report or a script that measures it), or has an essential record under it, such as a contract it holds (a test is never the essential record served); a data store serves what is stored in it that serves. An engineering standard and its rules are the rules that code follows, not code, so they fill no slot: a rule is accounted for when a record that is accounted for builds it as coverage counts it (meets), and a standard when one of its rules is, unless it or its standard is provided. A record that meets a rule and is not accounted for is reported on its own, so the rule it meets stays accounted for through the others. Generate it, name its provider, or record the slot it fills and link it to the essential record it serves; code that serves nothing essential is removed. Link the records that follow an engineering rule to it with meets; a rule that nothing follows is removed.
 
 <a id="check-accidental-in-essential"></a>
 
@@ -4020,3 +4025,13 @@ What follows from the spec is not essential (LA-STD-PRINCIPLES-R05, R06): a reco
 Every data file loads: the store accepts every row of data/ with every key and rule of the schema.
 
 A row that breaks the schema (a missing parent, a link to a record that does not exist, a value outside its enum, an ID used twice) is refused when the data loads, and nothing is checked until it is fixed. Each refusal names the file, the line and the rule it broke. Fix the row through the CLI or the app, or resolve the merge that brought it.
+
+<a id="check-strict-check"></a>
+
+### `strict-check`
+
+**Error** · the engine
+
+A strict product's check has exactly the warnings it accepts: none, unless its setting records an accepted count.
+
+A product makes its check strict with `lathe product-setting set-strict-check --product_id <id> --strict_check true`: from then on any warning of the product fails the check, as an error does, so lathe check exits 1 and the check tool reports a failure. While zero cannot be reached yet, the setting may accept a count of warnings (--accepted_warnings), a recorded deviation shown with the setting and on the check page. The check fails when the product has more warnings than it accepts (fix the new ones) and when it has fewer (lower the count to the new one), so the baseline only moves down and never hides a new warning. A count above the warnings the product has is refused when it is set. No single warning is ever silenced: a deviation is recorded on the record it concerns, such as a slot's fills_vary_by_design. Not strict by default.

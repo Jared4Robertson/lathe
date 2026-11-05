@@ -5,6 +5,7 @@ import { parseArgs } from 'node:util';
 import { CONFIG_FILE, loadProducts, mergeDataFiles, SCHEMA_VERSION, SchemaVersionError, upgradeProduct, type Problem, type Workspace } from '../index.ts';
 import { forOneCommand } from '../platform/data/store.ts';
 import { coverageLines, productFolder } from './operations.ts';
+import { strictSummary, type ProductStrictness } from '../checking/product-setting/strictness.ts';
 import { INIT_NEXT, InitError, initProduct } from './init.ts';
 import { APP_USAGE, runAppCommand } from './app-tools.ts';
 import { AGGREGATE_COMMANDS, AGGREGATE_USAGE, runAggregateCommand } from './aggregates.ts';
@@ -20,8 +21,10 @@ Commands:
            or no git, so the upgrade is one reviewable commit.
   check    Load the data and check it: the product's, and that of each other product its ${CONFIG_FILE}
            lists under products, each on its own. Prints errors, warnings and coverage (one line per domain
-           and obligation kind) per product; exits 1 on any error.
-           --json prints { products: [{ root, workspace }] } instead.
+           and obligation kind) per product; exits 1 on any error. A product whose check is strict
+           (lathe product-setting set-strict-check) fails on any warning beyond those it accepts too,
+           as a strict-check error, and its count line says it is strict.
+           --json prints { products: [{ root, strictness, workspace }] } instead.
   serve    Serve the web app for the product repo and each product it lists.  --port 5330 (default)
            --network also listens on the local network and prints its addresses: other devices on it
            can read, and only this machine can change the spec.
@@ -73,20 +76,20 @@ async function check() {
   const sum = (severity: Problem['severity']) => products.reduce((n, { workspace }) => n + workspace.problems.filter((p) => p.severity === severity).length, 0);
   const errors = sum('error');
   if (values.json) {
-    console.log(JSON.stringify({ products: products.map(({ config, workspace }) => ({ root: productFolder(root, config.root), workspace })) }, null, 2));
+    console.log(JSON.stringify({ products: products.map(({ config, workspace, strictness }) => ({ root: productFolder(root, config.root), strictness, workspace })) }, null, 2));
   } else {
     // Each product is reported on its own; a workspace with several ends with the sum.
-    products.forEach(({ config, workspace }, at) => {
+    products.forEach(({ config, workspace, strictness }, at) => {
       if (at > 0) console.log('');
-      printProduct(config.root, workspace);
+      printProduct(config.root, workspace, strictness);
     });
     if (products.length > 1) console.log(`\nAll ${products.length} products: ${count(errors, 'error')}, ${count(sum('warning'), 'warning')}.`);
   }
   process.exitCode = errors ? 1 : 0;
 }
 
-/** One product's check: its errors, warnings and coverage, then its counts. */
-function printProduct(productRoot: string, workspace: Workspace) {
+/** One product's check: its errors, warnings and coverage, then its counts, and whether its check is strict. */
+function printProduct(productRoot: string, workspace: Workspace, strictness: ProductStrictness[]) {
   const errors = workspace.problems.filter((p) => p.severity === 'error');
   const warnings = workspace.problems.filter((p) => p.severity === 'warning');
   const line = (p: Problem) => `  [${p.check}]${p.record ? ` ${p.record}:` : ''} ${p.message}`;
@@ -95,7 +98,7 @@ function printProduct(productRoot: string, workspace: Workspace) {
   if (warnings.length) console.log(`\nWarnings (${warnings.length}):\n${warnings.map(line).join('\n')}`);
   const covered = coverageLines(workspace.coverage);
   if (covered.length) console.log(`\nCoverage:\n${covered.join('\n')}`);
-  console.log(`\n${count(errors.length, 'error')}, ${count(warnings.length, 'warning')}.`);
+  console.log(`\n${[`${count(errors.length, 'error')}, ${count(warnings.length, 'warning')}.`, ...strictness.map(strictSummary).filter(Boolean)].join(' ')}`);
 }
 
 async function init() {

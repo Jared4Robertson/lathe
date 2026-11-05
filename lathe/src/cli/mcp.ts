@@ -27,7 +27,8 @@ const CHECK_TOOL: Tool = {
   name: 'check',
   description:
     'Run lathe check on the whole workspace: every error (fix them before going on), every warning (work still to do), ' +
-    'and each product\'s coverage as lathe check --json gives it: per domain and obligation kind, how many are designed, built and proved, with its gaps (what each obligation still lacks, and each record short of a minimum, such as use-case-without-flow).',
+    'and each product\'s coverage as lathe check --json gives it: per domain and obligation kind, how many are designed, built and proved, with its gaps (what each obligation still lacks, and each record short of a minimum, such as use-case-without-flow). ' +
+    'A product whose check is strict fails on any warning beyond those it accepts, as a strict-check error, and the result is then a failure; each product\'s strictness comes with its coverage.',
   inputSchema: { type: 'object', properties: {}, additionalProperties: false },
   annotations: { readOnlyHint: true },
 };
@@ -128,7 +129,7 @@ export async function serveMcp(
               (viewOnly ? 'This chat is View only: these tools only read the spec, and nothing here can change it. ' : '') +
               'Lathe keeps the spec as typed data in data/*.jsonl. Change it only with these tools, never by editing the files. ' +
               'Each tool is one aggregate\'s command or query, named <aggregate>_<command> (use_case_add_flow_step, use_case_get_use_case): ' +
-              'a command checks its aggregate\'s rules and is refused, with every reason, when it breaks them; a query reads its aggregate\'s own read model. ' +
+              'a command checks its aggregate\'s rules and is refused, with every reason, when it breaks them, and its answer lists the warnings it introduced (introduced): fix them at once; a query reads its aggregate\'s own read model. ' +
               'Writes never commit; commit per task.' +
               (app
                 ? " This server runs under the Lathe desktop app's chat, beside the Owner's window: app_focus says what the Owner is looking at there " +

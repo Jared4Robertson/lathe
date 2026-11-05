@@ -3,6 +3,7 @@
 {"source_id":"LA-CHK-CMD03-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL01"}
 {"source_id":"LA-CHK-CMD04-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL01"}
 {"source_id":"LA-CHK-CMD05-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL01"}
+{"source_id":"LA-CHK-CMD06-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL01"}
 {"source_id":"LA-CHK-DS01-SV","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL09"}
 {"source_id":"LA-CHK-EN01-TB","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL08"}
 {"source_id":"LA-CHK-EN03-TB","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL08"}
@@ -19,6 +20,7 @@
 {"source_id":"LA-CHK-MOD03","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL03"}
 {"source_id":"LA-CHK-MOD05","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL16"}
 {"source_id":"LA-CHK-MOD06","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
+{"source_id":"LA-CHK-MOD07","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
 {"source_id":"LA-CHK-QRY01-H","target_id":"LA-PAT-AGGREGATE-QUERIES-SL01"}
 {"source_id":"LA-CHK-QRY02-H","target_id":"LA-PAT-AGGREGATE-QUERIES-SL01"}
 {"source_id":"LA-CHK-QRY10-H","target_id":"LA-PAT-AGGREGATE-QUERIES-SL01"}

@@ -3,6 +3,8 @@
 {"id":"LA-CHK-UC01-FL-S03","title":"The command exits with status 1 when there is an error, 0 otherwise","flow_id":"LA-CHK-UC01-FL","path":"main","position":3}
 {"id":"LA-CHK-UC01-FL-S04","title":"With the machine-readable option, the command prints the whole workspace instead","flow_id":"LA-CHK-UC01-FL","path":"json","position":1}
 {"id":"LA-CHK-UC01-FL-S05","title":"Data the store refuses becomes data-refused errors naming the file, the line and the rule, and nothing else is checked","flow_id":"LA-CHK-UC01-FL","path":"refused","position":1}
+{"id":"LA-CHK-UC01-FL-S06","title":"The Owner makes the product's check strict with lathe product-setting set-strict-check, accepting the warnings it has while zero cannot be reached yet","flow_id":"LA-CHK-UC01-FL","path":"strict","position":1}
+{"id":"LA-CHK-UC01-FL-S07","title":"The command fails with a strict-check error when the product has more warnings than it accepts, or fewer, and its count line says the product is strict","flow_id":"LA-CHK-UC01-FL","path":"strict","position":2}
 {"id":"LA-CHK-UC02-FL-S01","title":"The Agent adds the check with lathe check add-check: a name, a position, a severity, a summary, an explanation and one SELECT","flow_id":"LA-CHK-UC02-FL","path":"main","position":1}
 {"id":"LA-CHK-UC02-FL-S02","title":"The next check runs every check in order, the new one among them, each reading the typed records and file facts","flow_id":"LA-CHK-UC02-FL","path":"main","position":2}
 {"id":"LA-CHK-UC05-FL-S01","title":"The Owner decides a rule belongs to their product, not to Lathe","flow_id":"LA-CHK-UC05-FL","path":"main","position":1}
@@ -29,6 +31,7 @@
 {"id":"LA-CHK-UC08-FL-S04","title":"A hand edit of a data file is refused before it happens, pointing at the tools","flow_id":"LA-CHK-UC08-FL","path":"refused","position":1}
 {"id":"LA-CHK-UC08-FL-S05","title":"The Agent adds an essential record whose title or lead text names how the product is built, and the write is refused, naming the record and the word","flow_id":"LA-CHK-UC08-FL","path":"refused","position":2}
 {"id":"LA-CHK-UC08-FL-S06","title":"The Agent links an essential record to one that says how it is built, and the write is refused, naming both ends","flow_id":"LA-CHK-UC08-FL","path":"refused","position":3}
+{"id":"LA-CHK-UC08-FL-S07","title":"The tool's answer lists each warning the write introduced, and any strict-check error it caused, so the Agent fixes them at once","flow_id":"LA-CHK-UC08-FL","path":"main","position":4}
 {"id":"LA-CHK-UC09-FL-S01","title":"The Agent lists the product's essential records alone, by domain, with each one's kind, title and lead text","flow_id":"LA-CHK-UC09-FL","path":"main","position":1}
 {"id":"LA-CHK-UC09-FL-S02","title":"The Agent names each record that someone who knows the domain but not software would not recognize or care about, with why, for the Owner to decide","flow_id":"LA-CHK-UC09-FL","path":"main","position":2}
 {"id":"LA-CHK-UC10-FL-S01","title":"The Agent commits on its branch as it works, in any form","flow_id":"LA-CHK-UC10-FL","path":"main","position":1}

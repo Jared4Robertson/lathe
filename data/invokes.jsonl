@@ -3,6 +3,8 @@
 {"source_id":"LA-CHK-UC01-FL-S03","target_id":"LA-CHK-QRY01"}
 {"source_id":"LA-CHK-UC01-FL-S04","target_id":"LA-CHK-QRY01"}
 {"source_id":"LA-CHK-UC01-FL-S05","target_id":"LA-CHK-QRY01"}
+{"source_id":"LA-CHK-UC01-FL-S06","target_id":"LA-CHK-CMD06"}
+{"source_id":"LA-CHK-UC01-FL-S07","target_id":"LA-CHK-QRY01"}
 {"source_id":"LA-CHK-UC02-FL-S01","target_id":"LA-CHK-CMD01"}
 {"source_id":"LA-CHK-UC02-FL-S02","target_id":"LA-CHK-QRY01"}
 {"source_id":"LA-CHK-UC05-FL-S03","target_id":"LA-CHK-CMD01"}

@@ -7,6 +7,7 @@
 {"read_model_id":"LA-CHK-RM10","position":3,"name":"Check","meaning":"Its place in the run order, severity, summary, explanation, query and kinds.","type":"text","required":true}
 {"read_model_id":"LA-CHK-RM11","position":1,"name":"Product","meaning":"The product.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-CHK-RM11","position":2,"name":"Limits","meaning":"Its children limit and entities limit, and whether it set them or takes the defaults.","type":"text","required":true}
+{"read_model_id":"LA-CHK-RM11","position":3,"name":"Strictness","meaning":"Whether its check is strict, so any warning beyond those it accepts fails it, and how many it accepts; not strict by default.","type":"text","required":true}
 {"read_model_id":"LA-CHK-RM12","position":1,"name":"Product","meaning":"The product whose records it lists.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-CHK-RM12","position":2,"name":"Count","meaning":"How many essential records it lists.","type":"whole number","required":true,"example":"412"}
 {"read_model_id":"LA-CHK-RM12","position":3,"name":"Domains","meaning":"Each domain with its essential records in position order, then the records in no domain: each with its ID, kind, title and lead text.","type":"text","required":true}

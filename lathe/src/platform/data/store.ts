@@ -21,7 +21,7 @@ import { problemAt, StoreError, type Origin, type StoreProblem } from './problem
 import { productKindSql, type DeclarationProblem } from './product-kinds.ts';
 import type { Located } from './references.ts';
 import { keysHold, ReadSets, trackedView } from './reads.ts';
-import type { AggregateRules, ReaderFactory, ReadView } from './rules.ts';
+import type { AggregateRules, CheckedProblems, ReaderFactory, ReadView } from './rules.ts';
 import { describeKey, normalizeRow, rowKey, sortRows, type Row } from './rows.ts';
 import { applyMigrations, describeSchema, readMigrations, sqlName, type SchemaDescription } from './schema.ts';
 import { commit, DECLARATION_TABLES, Transaction, type Committed, type Tables, type TransactionHost } from './transaction.ts';
@@ -549,6 +549,16 @@ export class Store {
     this.becameWhole('all');
     await this.switchTo(dataDb, tables);
     markValidated(key);
+  }
+
+  /**
+   * A key of the data as its files hold it now, Lathe's own folder's and the product's: the base schema's key, the
+   * engine's code and each file's exact contents, as a load's validated-build stamp is keyed (cache.ts). Two stores
+   * over the same files give the same key.
+   */
+  async contentKey(): Promise<string> {
+    const texts = this.folders().flatMap((folder) => folder.files.map((file) => [path.join(folder.dir, file), readFileSync(path.join(folder.dir, file), 'utf8')] as const));
+    return validatedKey((await sharedEngine()).key, texts);
   }
 
   /**
@@ -1099,9 +1109,9 @@ export class Store {
    * files. A refusal, from the work or the commit, changes nothing. A write not built whole leaves its whole build to
    * whole(), as a reload does.
    */
-  transact<T>(work: (tx: Transaction) => T | Promise<T>): Promise<{ value: T; committed: Committed }> {
+  transact<T>(work: (tx: Transaction) => T | Promise<T>, checked?: CheckedProblems): Promise<{ value: T; committed: Committed }> {
     return this.serial(async () => {
-      const tx = new Transaction(this.host());
+      const tx = new Transaction(this.host(), checked);
       const value = await work(tx);
       const schema = this.currentSchema;
       const committed = await commit(tx);

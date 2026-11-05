@@ -11,6 +11,7 @@ import { CHANGE_CHECK } from '../../../src/checking/check/commands/change-check.
 import { REMOVE_CHECK } from '../../../src/checking/check/commands/remove-check.ts';
 import { GET_CHECK, LIST_CHECKS } from '../../../src/checking/check/queries.ts';
 import { runAggregateCommand } from '../../../src/cli/aggregates.ts';
+import { introducedProblems, introducedText } from '../../../src/cli/operations.ts';
 import { callTool } from '../../../src/cli/mcp.ts';
 import { closeStores, handleApi } from '../../../src/server/api.ts';
 import { InputError, type AnyCommand } from '../../../src/platform/commands/definition.ts';
@@ -18,7 +19,9 @@ import { runCommand, runQuery } from '../../../src/platform/commands/run.ts';
 import { StoreError } from '../../../src/platform/data/problems.ts';
 import type { Store } from '../../../src/platform/data/store.ts';
 import { SET_LIMITS } from '../../../src/checking/product-setting/commands/set-limits.ts';
+import { SET_STRICT_CHECK } from '../../../src/checking/product-setting/commands/set-strict-check.ts';
 import { SET_TECHNOLOGY_WORDS } from '../../../src/checking/product-setting/commands/set-technology-words.ts';
+import type { CheckRun } from '../../../src/platform/data/rules.ts';
 import { GET_LIMITS } from '../../../src/checking/product-setting/queries.ts';
 import { closeCheckingStores, productBesideLathesChecks } from '../data-set.ts';
 import { productSettingDataSet } from '../product-setting/data-set.ts';
@@ -108,9 +111,9 @@ describe("LA-PAT-AGGREGATE-COMMANDS-R13-T02 a product's check is removed whole, 
 describe("LA-PAT-AGGREGATE-COMMANDS-R10-T02 Set the product's limits (LA-CHK-A2) writes the product's one settings through its repository, and is reached by name from every interface", () => {
   it('reads the defaults until the limits are set, then the product\'s own, kept in one row', async () => {
     const fresh = await productBesideLathesChecks();
-    expect(runQuery(fresh, GET_LIMITS, { product_id: 'TL' })).toEqual({ product: 'TL', maxChildren: 15, maxEntitiesPerAggregate: 7, technologyWords: [], own: false });
+    expect(runQuery(fresh, GET_LIMITS, { product_id: 'TL' })).toEqual({ product: 'TL', maxChildren: 15, maxEntitiesPerAggregate: 7, technologyWords: [], strictCheck: false, acceptedWarnings: 0, own: false });
     const store = await productSettingDataSet();
-    expect(runQuery(store, GET_LIMITS, { product_id: 'TL' })).toEqual({ product: 'TL', maxChildren: 20, maxEntitiesPerAggregate: 9, technologyWords: [], own: true });
+    expect(runQuery(store, GET_LIMITS, { product_id: 'TL' })).toEqual({ product: 'TL', maxChildren: 20, maxEntitiesPerAggregate: 9, technologyWords: [], strictCheck: false, acceptedWarnings: 0, own: true });
     const again = await runCommand(store, SET_LIMITS, { product_id: 'TL', max_children: 12, max_entities_per_aggregate: 9 });
     expect(again.changes.map((c) => c.table)).toEqual(['product_setting']);
     expect(store.rows('product_setting')).toEqual([{ product_id: 'TL', max_children: 12, max_entities_per_aggregate: 9, technology_words: [] }]);
@@ -122,7 +125,7 @@ describe("LA-PAT-AGGREGATE-COMMANDS-R10-T02 Set the product's limits (LA-CHK-A2)
     expect((await runCommand(fresh, SET_TECHNOLOGY_WORDS, { product_id: 'TL', technology_words: ['React', ' Postgres ', 'React'] })).tables).toEqual(['product_setting']);
     expect(fresh.rows('product_setting')).toEqual([{ product_id: 'TL', max_children: 15, max_entities_per_aggregate: 7, technology_words: ['Postgres', 'React'] }]);
     await runCommand(fresh, SET_LIMITS, { product_id: 'TL', max_children: 12, max_entities_per_aggregate: 9 });
-    expect(runQuery(fresh, GET_LIMITS, { product_id: 'TL' })).toEqual({ product: 'TL', maxChildren: 12, maxEntitiesPerAggregate: 9, technologyWords: ['Postgres', 'React'], own: true });
+    expect(runQuery(fresh, GET_LIMITS, { product_id: 'TL' })).toEqual({ product: 'TL', maxChildren: 12, maxEntitiesPerAggregate: 9, technologyWords: ['Postgres', 'React'], strictCheck: false, acceptedWarnings: 0, own: true });
     await expect(runCommand(fresh, SET_TECHNOLOGY_WORDS, { product_id: 'TL' })).rejects.toThrow(new InputError('set-technology-words needs technology_words'));
   });
 
@@ -139,7 +142,7 @@ describe("LA-PAT-AGGREGATE-COMMANDS-R10-T02 Set the product's limits (LA-CHK-A2)
     await closeCheckingStores();
     const out: string[] = [];
     expect(await runAggregateCommand(['product-setting', 'set-limits', '--product_id', 'TL', '--max_children', '30', '--max_entities_per_aggregate', '8', '--root', root], { out: (t) => out.push(t), err: (t) => out.push(t) })).toBe(0);
-    expect((await callTool(root, 'product_setting_get_limits', { product_id: 'TL' })).content[0].text).toBe('Limits of TL\n  max_children: 30\n  max_entities_per_aggregate: 8\n  technology_words: none');
+    expect((await callTool(root, 'product_setting_get_limits', { product_id: 'TL' })).content[0].text).toBe('Limits of TL\n  max_children: 30\n  max_entities_per_aggregate: 8\n  technology_words: none\n  strict_check: not strict');
     const server = createServer((req, res) => void handleApi(root, req, res, new URL(req.url ?? '/', 'http://localhost').pathname));
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
@@ -150,5 +153,69 @@ describe("LA-PAT-AGGREGATE-COMMANDS-R10-T02 Set the product's limits (LA-CHK-A2)
       await closeStores(root);
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
+  });
+});
+
+/** A checks' run holding the given number of warnings about product TL. */
+const runWith = (warnings: number): CheckRun => ({
+  problems: Array.from({ length: warnings }, (_, i) => ({ severity: 'warning' as const, check: 'lone-child', record: 'TL', message: `Warning ${i}.` })),
+  coverage: [],
+  chains: [],
+});
+
+describe("LA-PAT-AGGREGATE-COMMANDS-R10-T02 Make the product's check strict (LA-CHK-CMD06) writes the product's one settings through its repository, reading the warnings it has now", () => {
+  it('LA-CHK-UC01-R11-T02 sets strictness with an accepted count no higher than the warnings now, keeping the limits, and refuses a higher count or a count without strictness', async () => {
+    const store = await productSettingDataSet();
+    await runCommand(store, SET_STRICT_CHECK, { product_id: 'TL', strict_check: true, accepted_warnings: 2 }, runWith(2));
+    expect(store.rows('product_setting')).toEqual([{ product_id: 'TL', max_children: 20, max_entities_per_aggregate: 9, technology_words: [], strict_check: true, accepted_warnings: 2 }]);
+    expect(runQuery(store, GET_LIMITS, { product_id: 'TL' })).toMatchObject({ strictCheck: true, acceptedWarnings: 2, maxChildren: 20 });
+    // The limits and words keep the strictness.
+    await runCommand(store, SET_LIMITS, { product_id: 'TL', max_children: 12, max_entities_per_aggregate: 9 });
+    expect(store.rows('product_setting')[0]).toMatchObject({ max_children: 12, strict_check: true, accepted_warnings: 2 });
+
+    await expect(runCommand(store, SET_STRICT_CHECK, { product_id: 'TL', strict_check: true, accepted_warnings: 3 }, runWith(2))).rejects.toThrow(/TL has 2 warnings now, so its strict check cannot accept 3/);
+    await expect(runCommand(store, SET_STRICT_CHECK, { product_id: 'TL', strict_check: false, accepted_warnings: 1 }, runWith(2))).rejects.toThrow(/only a strict check accepts warnings/);
+    await expect(runCommand(store, SET_STRICT_CHECK, { product_id: 'TL', strict_check: true }, undefined)).rejects.toThrow(/reads the checks' run, and it was given none/);
+    expect(store.rows('product_setting')[0]).toMatchObject({ strict_check: true, accepted_warnings: 2 });
+
+    // Accepting none is plain strict, and not strict drops both.
+    await runCommand(store, SET_STRICT_CHECK, { product_id: 'TL', strict_check: true, accepted_warnings: 0 }, runWith(2));
+    expect(store.rows('product_setting')[0]).toEqual({ product_id: 'TL', max_children: 12, max_entities_per_aggregate: 9, technology_words: [], strict_check: true });
+    await runCommand(store, SET_STRICT_CHECK, { product_id: 'TL', strict_check: false }, runWith(2));
+    expect(store.rows('product_setting')[0]).toEqual({ product_id: 'TL', max_children: 12, max_entities_per_aggregate: 9, technology_words: [] });
+  });
+
+  it('LA-CHK-UC08-R06-T01 `lathe product-setting set-strict-check` runs the checks first, and its answer lists the problems the write introduced', async () => {
+    const store = await productBesideLathesChecks();
+    const root = path.dirname(store.dataDir);
+    await closeCheckingStores();
+    const out: string[] = [];
+    const io = { out: (t: string) => out.push(t), err: (t: string) => out.push(t) };
+    // TL alone has no warning, so its check can accept none.
+    expect(await runAggregateCommand(['product-setting', 'set-strict-check', '--product_id', 'TL', '--strict_check', 'true', '--accepted_warnings', '1', '--root', root], io)).toBe(1);
+    expect(out.join('\n')).toContain('TL has 0 warnings now, so its strict check cannot accept 1');
+    out.length = 0;
+    expect(await runAggregateCommand(['product-setting', 'set-strict-check', '--product_id', 'TL', '--strict_check', 'true', '--root', root], io)).toBe(0);
+    expect(out.join('\n')).toContain('No new warnings.');
+    const tool = await callTool(root, 'product_setting_set_strict_check', { product_id: 'TL', strict_check: false });
+    expect(tool.structuredContent).toMatchObject({ introduced: [] });
+  });
+});
+
+describe('the problems a write introduced', () => {
+  const warning = (check: string, record: string | null, message: string) => ({ severity: 'warning' as const, check, record, message });
+
+  it('LA-CHK-UC08-R06-T02 are the warnings and strict-check errors after it that were not before, a warning whose words changed with the data being the same one', () => {
+    const before = [warning('pattern-candidate', 'TL-PAT-SL01', 'Slot has 3 fills.'), warning('not-proved', 'TL-UC01-R01', 'Not proved.')];
+    const after = [
+      warning('pattern-candidate', 'TL-PAT-SL01', 'Slot has 4 fills.'),
+      warning('not-proved', 'TL-UC01-R01', 'Not proved.'),
+      warning('not-proved', 'TL-UC01-R02', 'Not proved.'),
+      { severity: 'error' as const, check: 'strict-check', record: 'TL', message: 'Fails.' },
+      { severity: 'error' as const, check: 'missing-parent', record: 'TL-X', message: 'An error.' },
+    ];
+    expect(introducedProblems(before, after)).toEqual([after[2], after[3]]);
+    expect(introducedText([])).toBe('No new warnings.');
+    expect(introducedText([after[2]])).toBe('This write introduced 1 problem; fix it now:\n  [not-proved] TL-UC01-R02: Not proved.');
   });
 });

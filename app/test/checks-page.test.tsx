@@ -1,6 +1,8 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
+import { addRows } from './fixtures/load';
+import { workspace } from './fixtures/workspace';
 import { checksPanel, openApp } from './helpers';
 
 // The Checks panel (LA-V41): a tool over the stage at `?panel=checks` (LA-PAT-APP-UX-R20).
@@ -30,6 +32,23 @@ describe('checks panel', () => {
     expect(checksPanel().textContent).not.toContain('NF-NOTE');
     // Demo shop records no exception, so it has no such section.
     expect(within(checksPanel()).queryByRole('heading', { name: /^Recorded exceptions/ })).toBeNull();
+  });
+
+  it("LA-V41-R01-T01 A strict product's Checks panel says warnings fail above its problems, with the warnings it accepts as a recorded deviation, and nothing of strictness otherwise", async () => {
+    const strict = (accepted?: number) => addRows(workspace(), 'product_setting', { product_id: 'DM', max_children: 15, max_entities_per_aggregate: 7, technology_words: [], strict_check: true, ...(accepted ? { accepted_warnings: accepted } : {}) });
+    const { requests, unmount } = await openApp('/DM?panel=checks', { data: strict() });
+    await waitFor(() => expect(checksPanel()).toBeInTheDocument());
+    expect(await within(checksPanel()).findByText('Strict: warnings fail.')).toBeInTheDocument();
+    expect(within(checksPanel()).getByText('2 errors · 3 warnings')).toBeInTheDocument();
+    expect(requests).toContain('GET /api/product-setting/get-limits?product_id=DM');
+    unmount();
+    const { unmount: unmount2 } = await openApp('/DM?panel=checks', { data: strict(3) });
+    expect(await within(checksPanel()).findByText('Strict: warnings fail, beyond 3 accepted (a recorded deviation).')).toBeInTheDocument();
+    unmount2();
+    // Not strict: the counts say nothing of it.
+    await openApp('/DM?panel=checks');
+    expect(await within(checksPanel()).findByText('2 errors · 3 warnings')).toBeInTheDocument();
+    expect(within(checksPanel()).queryByText(/^Strict/)).toBeNull();
   });
 
   it('LA-V41-R01-T03 Selecting a problem focuses its record on the stage and in the wiki card, and the panel stays open with its row marked', async () => {

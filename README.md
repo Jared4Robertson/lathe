@@ -32,7 +32,7 @@ npm ci --prefix lathe && npm ci --prefix app && npm ci --prefix desktop
 | What | Command |
 | --- | --- |
 | The web app, for working on Lathe | `npm --prefix app run dev` serves this repo at http://localhost:5199 and reloads as the data or app code change, with the Tool Library beside Lathe, as this repo's `lathe.config.json` lists it under `products`. `LATHE_ROOT=/path/to/product` points it at another product repo (or workspace); `-- --port <n>` picks another port. `npm --prefix app run dev:network` serves it on the local network too (Vite prints the addresses), read only for other devices. |
-| Check the spec | `npm --prefix lathe run check` checks Lathe's spec and the Tool Library's, each on its own, prints errors, warnings and coverage, and exits 1 on any error. |
+| Check the spec | `npm --prefix lathe run check` checks Lathe's spec and the Tool Library's, each on its own, prints errors, warnings and coverage, and exits 1 on any error. Both checks are strict: a warning beyond the count each accepts fails it too. |
 | Change the spec | `npm --prefix lathe run lathe -- <aggregate> <command> --root .. --<field> <value> ...`, such as `use-case add-flow-step`: each aggregate's own commands, which check its rules; or edit a record in the app. `lathe help` lists the aggregates, and `lathe <aggregate> --help` their commands. |
 | The reference | `npm --prefix lathe run reference` regenerates [lathe/REFERENCE.md](lathe/REFERENCE.md): stage by stage, every kind with its table, its checks and its coverage gaps, then every relation. |
 | Serve a built app | `npm --prefix lathe run build`, then `npm --prefix lathe run lathe -- serve --root ..` serves the built app at http://127.0.0.1:5330. |

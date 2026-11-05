@@ -36,13 +36,14 @@ describe('the tools', () => {
   it('LA-INT01-T05 check reports the errors and warnings with a count, and each product\'s coverage with its gaps as lathe check --json gives it', async () => {
     const root = writeData(everyKind());
     const checked = await callTool(root, 'check', {});
-    const [{ workspace }] = await loadProducts(root);
+    const [{ workspace, strictness }] = await loadProducts(root);
     expect(checked.structuredContent).toEqual({
       errors: expect.any(Number),
       warnings: expect.any(Number),
       problems: expect.any(Array),
-      products: [{ root: '.', coverage: workspace.coverage }],
+      products: [{ root: '.', strictness, coverage: workspace.coverage }],
     });
+    expect(strictness).toEqual([{ product: 'TL', strict: false, accepted: 0, warnings: expect.any(Number), failure: null }]);
     expect(workspace.coverage.flatMap((c) => c.gaps).length).toBeGreaterThan(0);
     expect(checked.content[0].text).not.toContain('exception');
     expect(checked.content[0].text).toMatch(/\n\nCoverage:\n {2}TL-LEND [^\n]+: \d+\/\d+ designed/);

@@ -2,15 +2,24 @@
 // fields, runs its handler in a transaction of its own, and commits; a refusal, of the input, the handler or the
 // commit, changes nothing. A query runs the same way without a transaction: its handler is given its read model's
 // reader, made over the current data (and, for a query that reads the checks' run, the run over that data).
-import type { ReadView } from '../data/rules.ts';
+import type { CheckedProblems, ReadView } from '../data/rules.ts';
 import type { Store } from '../data/store.ts';
 import type { Committed } from '../data/transaction.ts';
 import { parseInput, type AnyCommand, type AnyQuery } from './definition.ts';
 
-/** Runs the command on the store with the given arguments; throws InputError or StoreError when it is refused. */
-export async function runCommand(store: Store, definition: AnyCommand, args: unknown): Promise<Committed> {
+/** A command that reads the checks' run is never one of several in a write: each runs alone, after the checks. */
+function refuseChecked(definition: AnyCommand): void {
+  if (definition.checked) throw new Error(`${definition.id} reads the checks' run, so it runs alone, never as one of several commands in a write.`);
+}
+
+/**
+ * Runs the command on the store with the given arguments; throws InputError or StoreError when it is refused. A command
+ * that reads the checks' run (`checked`) is given the problems they found before the write, and refused without them.
+ */
+export async function runCommand(store: Store, definition: AnyCommand, args: unknown, checked?: CheckedProblems): Promise<Committed> {
+  if (definition.checked && !checked) throw new Error(`${definition.id} reads the checks' run, and it was given none: run the checks first.`);
   const input = parseInput(store.schema, definition, args);
-  const { committed } = await store.transact((tx) => definition.handler(tx, input));
+  const { committed } = await store.transact((tx) => definition.handler(tx, input), checked);
   return committed;
 }
 
@@ -20,6 +29,7 @@ export async function runCommand(store: Store, definition: AnyCommand, args: unk
  * write is one reload for every reader.
  */
 export async function runCommands(store: Store, steps: readonly (readonly [AnyCommand, unknown])[]): Promise<Committed> {
+  for (const [definition] of steps) refuseChecked(definition);
   const inputs = steps.map(([definition, args]) => [definition, parseInput(store.schema, definition, args)] as const);
   const { committed } = await store.transact(async (tx) => {
     for (const [definition, input] of inputs) await definition.handler(tx, input);
@@ -40,6 +50,7 @@ export interface ConditionalStep {
  * removed with its parent is not removed again), and one commit: any refusal changes nothing.
  */
 export async function runConditionally(store: Store, steps: readonly ConditionalStep[]): Promise<Committed> {
+  for (const step of steps) refuseChecked(step.definition);
   const inputs = steps.map((s) => ({ ...s, input: parseInput(store.schema, s.definition, s.input) }));
   const { committed } = await store.transact(async (tx) => {
     for (const step of inputs) {

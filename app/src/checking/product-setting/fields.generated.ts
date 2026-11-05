@@ -12,4 +12,9 @@ export const PRODUCT_SETTING_FIELDS = {
     product_id: { kind: 'column', table: 'product_setting', column: 'product_id', required: true, clearable: false },
     technology_words: { kind: 'texts', description: 'The words, besides Lathe\'s own, that name technology in the product\'s essential records.', required: true, clearable: false },
   },
+  '/api/product-setting/set-strict-check': {
+    product_id: { kind: 'column', table: 'product_setting', column: 'product_id', required: true, clearable: false },
+    strict_check: { kind: 'column', table: 'product_setting', column: 'strict_check', required: true, clearable: false },
+    accepted_warnings: { kind: 'column', table: 'product_setting', column: 'accepted_warnings', required: false, clearable: false },
+  },
 } as const satisfies Record<string, InputFields>;

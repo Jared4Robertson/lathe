@@ -222,3 +222,52 @@ export function markValidated(key: string): void {
     }
   }
 }
+
+// ---------- Checked problems ----------
+
+/** How many runs' problems are kept per base schema; each write leaves the one before it. */
+const MAX_CHECKED_FILES = 50;
+const CHECKED = '.problems.json';
+
+const checkedFile = (key: string) => path.join(cacheDir(), `${key}${CHECKED}`);
+
+/**
+ * The problems the checks found in the data whose key is given (a content key, contentKey), when a run over exactly
+ * that data was kept; undefined otherwise. A file that does not name its key is removed.
+ */
+export function readCheckedProblems<P>(key: string): P[] | undefined {
+  const file = checkedFile(key);
+  try {
+    const kept = JSON.parse(readFileSync(file, 'utf8')) as { key: string; problems: P[] };
+    if (kept.key === key) return kept.problems;
+  } catch {
+    if (!existsSync(file)) return undefined;
+  }
+  rmSync(file, { force: true });
+  return undefined;
+}
+
+/**
+ * Keeps the problems the checks found in the data with this key, keeping the MAX_CHECKED_FILES of this base written
+ * last. Written under a name of its own and renamed into place; any failure keeps nothing and is otherwise ignored.
+ */
+export function writeCheckedProblems<P>(key: string, problems: readonly P[]): void {
+  const dir = cacheDir();
+  const file = checkedFile(key);
+  const temp = `${file}.${process.pid}.tmp`;
+  try {
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(temp, JSON.stringify({ key, problems }));
+    renameSync(temp, file);
+    const base = key.split('-')[0];
+    const kept = readdirSync(dir).filter((n) => n.startsWith(`${base}-`) && n.endsWith(CHECKED));
+    if (kept.length <= MAX_CHECKED_FILES) return;
+    const written = kept.map((name) => ({ name, at: statSync(path.join(dir, name)).mtimeMs })).sort((a, b) => b.at - a.at);
+    for (const { name } of written.slice(MAX_CHECKED_FILES)) rmSync(path.join(dir, name), { force: true });
+  } catch {
+    rmSync(temp, { force: true });
+  }
+}
+
+/** The key of a run of the checks: the data's content key and whatever else the run reads that the data does not hold (the config). */
+export const checkedKey = (contentKey: string, ...more: string[]): string => `${contentKey}-${hash(...more)}`;

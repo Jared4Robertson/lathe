@@ -18,6 +18,9 @@ export interface CheckRun {
   chains: readonly TraceChain[];
 }
 
+/** What a command that reads the checks' run is given (CommandDefinition.checked): the problems they found before the write. */
+export type CheckedProblems = Pick<CheckRun, 'problems'>;
+
 /** The data as a rule reads it: every table's rows, and any record by its ID. Read only. */
 export interface ReadView {
   readonly schema: SchemaDescription;

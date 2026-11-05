@@ -126,7 +126,7 @@ describe('the reference', () => {
     expect(defaults.relations.find((r) => r.relation === 'fulfills')).toMatchObject({ role: 'design', pairs: [expect.objectContaining({ source_kind: 'flow_step', target_kind: 'uc_requirement' })] });
     // Every Lathe check row, in run order, then the engine's own problem; and every gap rule.
     expect(defaults.checks.filter((c) => c.origin === 'lathe').map((c) => c.check)).toEqual((await latheChecks()).sort((a, b) => Number(a.position) - Number(b.position)).map((r) => String(r.name)));
-    expect(defaults.checks.filter((c) => c.origin === 'engine').map((c) => c.check)).toEqual(['data-refused']);
+    expect(defaults.checks.filter((c) => c.origin === 'engine').map((c) => c.check)).toEqual(['data-refused', 'strict-check']);
     expect(defaults.gaps.map((g) => g.gap)).toEqual(GAP_RULES.map((g) => g.name));
   });
 

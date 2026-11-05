@@ -32,13 +32,18 @@ CREATE TABLE product_setting (
   product_id VARCHAR PRIMARY KEY REFERENCES product (id),
   max_children INTEGER NOT NULL CHECK (max_children >= 1),
   max_entities_per_aggregate INTEGER NOT NULL CHECK (max_entities_per_aggregate >= 1),
-  technology_words VARCHAR[] NOT NULL
+  technology_words VARCHAR[] NOT NULL,
+  strict_check BOOLEAN CHECK (strict_check),
+  accepted_warnings INTEGER CHECK (accepted_warnings >= 1),
+  CHECK (accepted_warnings IS NULL OR strict_check)
 );
 COMMENT ON TABLE product_setting IS 'A product''s typed settings for its checks. A product without a row takes the defaults.';
 COMMENT ON COLUMN product_setting.product_id IS 'The product.';
 COMMENT ON COLUMN product_setting.max_children IS 'The most children of one kind a record should have before too-many-children warns; the default is 15.';
 COMMENT ON COLUMN product_setting.max_entities_per_aggregate IS 'The most entities an aggregate should have before aggregate-too-large warns; the default is 7.';
 COMMENT ON COLUMN product_setting.technology_words IS 'The words, besides Lathe''s own, that name technology in this product''s essential records, which accidental-in-essential warns of, such as the name of a framework the product is built with; none by default.';
+COMMENT ON COLUMN product_setting.strict_check IS 'True when the product''s check is strict: lathe check then fails on any warning of the product, as on an error, beyond the accepted warnings; none by default, when warnings never fail it.';
+COMMENT ON COLUMN product_setting.accepted_warnings IS 'The warnings a strict check accepts while zero cannot be reached yet, a recorded deviation shown with the setting and on the check page: the check fails when the product has more, and when it has fewer, until this is lowered to the new count, so it only moves down. Never above the warnings the product has when it is set; none when every warning fails it.';
 
 CREATE TABLE business_outcome (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),

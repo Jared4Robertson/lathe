@@ -1217,6 +1217,10 @@ export interface ProductSettingRow {
   max_entities_per_aggregate: number;
   /** The words, besides Lathe's own, that name technology in this product's essential records, which accidental-in-essential warns of, such as the name of a framework the product is built with; none by default. */
   technology_words: string[];
+  /** True when the product's check is strict: lathe check then fails on any warning of the product, as on an error, beyond the accepted warnings; none by default, when warnings never fail it. */
+  strict_check?: boolean;
+  /** The warnings a strict check accepts while zero cannot be reached yet, a recorded deviation shown with the setting and on the check page: the check fails when the product has more, and when it has fewer, until this is lowered to the new count, so it only moves down. Never above the warnings the product has when it is set; none when every warning fails it. */
+  accepted_warnings?: number;
 }
 
 /** Fills its read model's table and keeps it current, from events or as a view's query. It writes only its own read model's table. */

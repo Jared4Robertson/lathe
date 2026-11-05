@@ -393,9 +393,11 @@ async function runRoute(workspace: string, definition: AnyCommand, input: Record
   const products = workspaceProducts(workspace);
   const root = await productRoot(products, inputIds(input));
   const config = products.find((p) => p.root === root)!;
+  // A command that reads the checks' run is given the product's run over its data as it is now.
+  const checked = definition.checked ? await currentRun(config) : undefined;
   return withStore(config.root, async (opened) => {
     try {
-      const committed = await runCommand(opened.store, definition, input);
+      const committed = await runCommand(opened.store, definition, input, checked);
       if (committed.tables.length) {
         announce(config.root, { tables: committed.tables, readModels: touchedReadModels(opened.store, committed.tables) });
         scheduleChecks(opened);
@@ -435,6 +437,17 @@ async function workspaceView(products: LatheConfig[]): Promise<ReadView> {
       return byId.get(id);
     },
   };
+}
+
+/**
+ * The product's checks' run over its data as it is now: a run that is due, or never made, is started and waited for.
+ * Over refused data there is none, and the command's own task is then refused with the data's reasons (withStore).
+ */
+async function currentRun(config: LatheConfig): Promise<CheckRun> {
+  const opened = await openedOf(config.root);
+  if (opened.due !== null || !opened.run) startChecks(opened);
+  while (opened.checking) await opened.checking;
+  return opened.run ?? { problems: [], coverage: [], chains: [] };
 }
 
 /** Every product's checks' run, each the one the server keeps for its data, joined. */
