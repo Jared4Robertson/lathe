@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { Page } from '@playwright/test';
 import { expect, test } from './test';
 import { expectStable, openPage, step } from './measure';
-import { DOMAIN, RECORD } from './scenarios';
+import { checksCurrent, DOMAIN, RECORD } from './scenarios';
 
 // LA-V61-R33-T01: a live reload while the page is scrolled half-way. The suite edits a data file in
 // its copy of the data (STABILITY_ROOT) while the page is open: the domain's description, above
@@ -51,6 +51,7 @@ async function yOf(page: Page, text: string) {
 test.describe('live reload', () => {
   test('LA-V61-R33-T01 while scrolled half-way in the wiki card', async ({ page }) => {
     await openPage(page, DOMAIN);
+    await checksCurrent(page);
     await page.evaluate(() => {
       const box = document.querySelector('.wiki-panel-scroll')!;
       box.scrollTop = (box.scrollHeight - box.clientHeight) / 2;

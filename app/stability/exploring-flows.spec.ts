@@ -5,7 +5,7 @@ import type { Page } from '@playwright/test';
 import { expect, test } from './test';
 import { openPage, showCard } from './measure';
 import { keepData } from './scenarios';
-import { clickBox, clickErdBox, erdDrawn, erdSceneOf, expectKeyWhole, focusDrawn, sceneOf, traceDrawn, traceSceneOf } from './scene';
+import { clickBox, clickErdBox, erdDrawn, erdSceneOf, expectKeyWhole, focusDrawn, pointOnBox, sceneOf, traceDrawn, traceSceneOf } from './scene';
 
 // Exploring's flow tests (LA-EXP-UC01-FL to UC13-FL): one per flow, each walking its main path in
 // Chromium over the suite's copy of Lathe's data, as the Reader does. They prove the flow end to
@@ -100,7 +100,13 @@ test.describe('Exploring flows', () => {
     await expect(key.locator('[data-key-entry="stage-use-cases"]')).toHaveAttribute('title', /capability, use case/);
     await expect(key.locator('[data-key-entry="shape-stadium"]')).toContainText('Use case');
     await expectKeyWhole(page);
-    // Hovering spotlights; clicking focuses, and the address and the header strip follow (the wiki card, shown again below, too).
+    // Hovering spotlights; clicking focuses, and the address and the header strip follow (the wiki card, shown again below, too):
+    // the use case's requirements folder (it has flows too, so its children are folders), then its requirement.
+    await clickBox(page, 'LA-EXP-UC03/uc_requirement');
+    await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03/uc_requirement');
+    await focusDrawn(page, 'LA-EXP-UC03/uc_requirement');
+    // The camera glides to the folder; its requirement can be pointed at once it is framed.
+    await expect.poll(() => pointOnBox(page, 'LA-EXP-UC03-R18')).not.toBeNull();
     await clickBox(page, 'LA-EXP-UC03-R18');
     await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03-R18');
     await focusDrawn(page, 'LA-EXP-UC03-R18');
@@ -117,8 +123,10 @@ test.describe('Exploring flows', () => {
       await expect(page.locator(FLOW)).toHaveAttribute('data-layout', layout.toLowerCase());
     }
     await graphReady(page);
-    // From the keyboard: step out to the parent.
+    // From the keyboard: step out to the parent, the requirements folder, then its use case.
     await page.locator(FLOW).focus();
+    await page.keyboard.press('ArrowLeft');
+    await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03/uc_requirement');
     await page.keyboard.press('ArrowLeft');
     await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03');
     // Read the node's record page in the wiki card, shown again (Enter, from the stage).

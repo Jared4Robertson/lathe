@@ -1,6 +1,8 @@
 // Shared addresses and key elements for the stability scenarios.
 import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import type { Page } from '@playwright/test';
+import { expect } from './test';
 
 export const PRODUCT = '/LA';
 export const DOMAIN = '/LA-EXP';
@@ -43,4 +45,17 @@ export function keepData(): () => void {
       if (!existsSync(file) || readFileSync(file, 'utf8') !== text) writeFileSync(file, text);
     }
   };
+}
+
+/**
+ * Waits until the page shows the checks' run of the data as it is now. A scenario's keepData put the files back, and
+ * the server answers its last run at once while it checks the restored data again, so the next page may first show
+ * the run of the scenario's writes (an added record past the strict check's accepted warnings is an error) and then
+ * change. The served copy's own data has no error (lathe check), so its run is the one whose Checks row has counts and
+ * no error.
+ */
+export async function checksCurrent(page: Page) {
+  const badges = page.locator('nav#nav .nav-row', { hasText: 'Checks' }).locator('.nav-badges');
+  await expect(badges.locator('.nav-badge')).not.toHaveCount(0, { timeout: 20_000 });
+  await expect(badges.locator('.nav-badge.error')).toHaveCount(0, { timeout: 20_000 });
 }

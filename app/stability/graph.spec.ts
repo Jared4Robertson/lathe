@@ -3,7 +3,7 @@ import { expect, test } from './test';
 import { expectStable, openPage, step } from './measure';
 import { DOMAIN, GRAPH_CANVAS, GRAPH_TOOLS, ERD_CANVAS, RECORD } from './scenarios';
 import { boxOf, cameraOf, clickBox, clickErdBox, clippedLabels, erdDrawn, erdSceneOf, focusDrawn, GRAPH, graphDrawn, placesOf, pointOnBox, reachableBoxes, sceneOf } from './scene';
-import type { SceneHost } from '../src/graph/GraphPage';
+import type { SceneBox, SceneHost } from '../src/graph/GraphPage';
 
 // LA-V61-R32-T01: re-centering the graph at depth 1, 2 and 3, and moving around the ERD. The camera
 // glides (the canvas draws each frame anew, which is no layout shift); the page bar, the header strip, the
@@ -25,6 +25,19 @@ const DRAWING = `${GRAPH} canvas`;
 const PANE_BAR = '.page-bar-actions';
 
 const nodes = (page: Page) => graphDrawn(page);
+
+/**
+ * Whether a focus's child in the Tree reads as LA-V93-R77 says: its title at the page's text size, 12.5 px, or more;
+ * or, where the focus stays whole and the child's box is shorter than one line at that size, its title on one line as
+ * large as its box holds (less its padding, at most 4 px a side, and its border) and at 5 px or more.
+ */
+function readsAsChild(b: SceneBox): boolean {
+  const title = b.lines.filter((l) => l.face === 'title');
+  const px = Math.min(...title.map((l) => l.fontPx));
+  if (px >= 12.5 - 1e-6) return true;
+  const room = b.rect.height - 2 * Math.min(4, b.rect.height / 8) - 2;
+  return title.length === 1 && px >= 5 && title[0].rect.height >= room - 0.01 && 12.5 * 1.4 > room;
+}
 
 /** The ID of the n-th record box (not the center) a click can reach in the canvas, and where. */
 async function visibleNode(page: Page, n: number): Promise<{ id: string; at: { x: number; y: number } }> {
@@ -213,16 +226,16 @@ test.describe('graph', () => {
         child: b.child,
         // A focus's child drawn at the readable size wraps its own lines on whole words (LA-V93-R77), joined by spaces.
         title: title.length > 0 ? title.map((l) => l.text).join(b.child ? ' ' : '') : null,
-        px: Math.min(...title.map((l) => l.fontPx)),
+        reads: readsAsChild(b),
         // Each line the map broke it into fits, and every line but the last ends after a space or a hyphen.
         wrapped: title.length > 0 && title.every((l) => l.drawnWidth <= l.rect.width + 0.5 * s.camera.zoom + 0.5) && (b.child || title.slice(0, -1).every((l) => /[\s-]$/.test(l.text))),
       };
     });
-    await test.step('LA-V93-R10-T08 the domain is framed with its stages\' level on the right, each stage\'s title read at the page\'s size, and the domain whole with its product at the left edge where they fit', () => {
+    await test.step('LA-V93-R10-T08 the domain is framed with its stages\' level on the right, each stage\'s title read at the page\'s size or as large as its box holds, and the domain whole with its product at the left edge where they fit', () => {
       const d = boxes.find((b) => b.id === domain)!.rect;
       const stages = boxes.filter((b) => b.id.startsWith(`${domain}/`));
       expect(stages.length, 'its stages are drawn').toBeGreaterThanOrEqual(2);
-      for (const st of stages) expect(st.px, `${st.id} reads at 12.5 px or more`).toBeGreaterThanOrEqual(12.5 - 1e-6);
+      for (const st of stages) expect(st.reads, `${st.id} reads at 12.5 px or more, or as large as its short box holds`).toBe(true);
       expect(Math.min(...stages.map((b) => b.rect.left)), 'its stages\' level is in the open space').toBeGreaterThanOrEqual(open.left - 1);
       expect(d.left + d.width, 'the domain shows beside its stages').toBeGreaterThan(open.left);
       if (d.left >= open.left - 1) {
@@ -243,28 +256,27 @@ test.describe('graph', () => {
     });
   });
 
-  test('LA-V93-R10-T08 in each layout, focusing each of Lathe\'s domains at depth 2, framed and zoomed in, every drawn box shows its title text and its whole label inside it', async ({ page }) => {
-    for (const layout of ['Tree', 'Nested'] as const) {
-      for (const domain of ['LA-PRD', 'LA-MOD', 'LA-UCS', 'LA-IXD', 'LA-TEC', 'LA-TST', 'LA-CHK', 'LA-EXP', 'LA-PLT', 'LA-TRC']) {
-        await openPage(page, `/${domain}?stage=graph`);
-        await nodes(page);
-        if (layout === 'Tree') await page.locator('.graph-depth button', { hasText: '2' }).click();
-        else if (!(await page.locator('.focus-stage .graph-layout button', { hasText: layout }).getAttribute('aria-pressed'))?.includes('true')) await page.locator('.focus-stage .graph-layout button', { hasText: layout }).click();
-        await graphDrawn(page, layout.toLowerCase(), 1300);
-        // Framed, then zoomed in twice: every drawn box shows its title, and its whole label lies inside it (LA-PAT-APP-UX-R12).
-        for (const z of [0, 1, 2]) {
-          if (z > 0) { await page.locator('.focus-stage .stage-zoom-in').click(); await page.waitForTimeout(600); }
-          const s = await sceneOf(page);
-          const c = s.canvas;
-          expect(s.boxes.length, `${layout} at ${domain}: boxes drawn`).toBeGreaterThan(0);
-          const nameless = s.boxes
-            .filter((b) => { const r = b.rect; return r.left + r.width > c.left && r.left < c.left + c.width && r.top + r.height > c.top && r.top < c.top + c.height; })
-            // Its title, drawn: lines with text.
-            .filter((b) => b.lines.filter((l) => l.face === 'title').map((l) => l.text).join('').trim() === '')
-            .map((b) => b.id);
-          expect(nameless, `${layout} at ${domain}, zoomed in ${z}: boxes with no title`).toEqual([]);
-          expect(await clippedLabels(page), `${layout} at ${domain}, zoomed in ${z}: labels not inside their boxes`).toEqual([]);
-        }
+  // One test per layout, each walking every domain.
+  for (const layout of ['Tree', 'Nested'] as const) test(`LA-V93-R10-T08 in the ${layout} layout, focusing each of Lathe's domains at depth 2, framed and zoomed in, every drawn box shows its title text and its whole label inside it`, async ({ page }) => {
+    for (const domain of ['LA-PRD', 'LA-MOD', 'LA-UCS', 'LA-IXD', 'LA-TEC', 'LA-TST', 'LA-CHK', 'LA-EXP', 'LA-PLT', 'LA-TRC']) {
+      await openPage(page, `/${domain}?stage=graph`);
+      await nodes(page);
+      if (layout === 'Tree') await page.locator('.graph-depth button', { hasText: '2' }).click();
+      else if (!(await page.locator('.focus-stage .graph-layout button', { hasText: layout }).getAttribute('aria-pressed'))?.includes('true')) await page.locator('.focus-stage .graph-layout button', { hasText: layout }).click();
+      await graphDrawn(page, layout.toLowerCase(), 1300);
+      // Framed, then zoomed in twice: every drawn box shows its title, and its whole label lies inside it (LA-PAT-APP-UX-R12).
+      for (const z of [0, 1, 2]) {
+        if (z > 0) { await page.locator('.focus-stage .stage-zoom-in').click(); await page.waitForTimeout(600); }
+        const s = await sceneOf(page);
+        const c = s.canvas;
+        expect(s.boxes.length, `${layout} at ${domain}: boxes drawn`).toBeGreaterThan(0);
+        const nameless = s.boxes
+          .filter((b) => { const r = b.rect; return r.left + r.width > c.left && r.left < c.left + c.width && r.top + r.height > c.top && r.top < c.top + c.height; })
+          // Its title, drawn: lines with text.
+          .filter((b) => b.lines.filter((l) => l.face === 'title').map((l) => l.text).join('').trim() === '')
+          .map((b) => b.id);
+        expect(nameless, `${layout} at ${domain}, zoomed in ${z}: boxes with no title`).toEqual([]);
+        expect(await clippedLabels(page), `${layout} at ${domain}, zoomed in ${z}: labels not inside their boxes`).toEqual([]);
       }
     }
   });
@@ -298,10 +310,10 @@ test.describe('graph', () => {
       const s = await sceneOf(page);
       const b = s.boxes.find((x) => x.id === target)!;
       const title = b.lines.filter((l) => l.face === 'title');
-      return { font: title[0].mapPx, px: title[0].fontPx, screen: title.reduce((h, l) => h + l.rect.height, 0), lines: title.map((l) => l.text), zoom: s.camera.zoom };
+      return { font: title[0].mapPx, reads: readsAsChild(b), screen: title.reduce((h, l) => h + l.rect.height, 0), lines: title.map((l) => l.text), zoom: s.camera.zoom };
     };
-    // A child of the focus: its title reads at 12.5 px or more (its own, or its title alone at it, LA-V93-R77).
-    expect((await size()).px).toBeGreaterThanOrEqual(12.5 - 1e-6);
+    // A child of the focus: its title reads at 12.5 px or more (its own, or its title alone at it), or as large as its short box holds (LA-V93-R77).
+    expect((await size()).reads).toBe(true);
     // Focused, then walked out and in again: its font size in map units stays, and its size on screen follows the zoom.
     await clickBox(page, target);
     await page.waitForURL(/\/interface-design(\?|$)/);

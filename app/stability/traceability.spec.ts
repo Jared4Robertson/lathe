@@ -106,7 +106,10 @@ test.describe('Traceability flows', () => {
     const section = page.locator(`${WIKI} .coverage`).last();
     await expect(section.locator('.coverage-group')).toHaveCount(coverage.obligations.filter((o) => o.total > 0).length);
     for (const o of coverage.obligations.filter((x) => x.total > 0)) await expect(section.locator(`.coverage-group[data-kind="${o.kind}"] .coverage-heading`)).toContainText(String(o.total));
-    // S02: they open a gap on its record page.
+    // S02: they open a gap on its record page, on a domain of the product that has one.
+    const gapped = spec.coverage.find((c) => c.product === 'LA' && c.domain !== null && c.gaps.length > 0);
+    expect(gapped, 'a domain of Lathe has a coverage gap').toBeDefined();
+    await openPage(page, `/${gapped!.domain}`);
     const gap = page.getByRole('list', { name: 'Coverage gaps' }).getByRole('link').first();
     const gapId = (await gap.locator('code').textContent())!;
     await gap.click();

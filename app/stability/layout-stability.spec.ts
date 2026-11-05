@@ -8,7 +8,7 @@ import { keepData } from './scenarios';
 import { erdSceneOf, GRAPH, graphDrawn, sceneOf, traceSceneOf } from './scene';
 import type { SceneHost } from '../src/graph/GraphPage';
 
-// A change moves only what it changed (LA-PAT-APP-UX-R22): with a use case framed on the Graph, an Agent adds a
+// A change moves only what it changed (LA-PAT-APP-UX-R22): with a use case's requirements framed on the Graph, an Agent adds a
 // requirement to it through the real CLI, and on the Trace stage a use case beside it. The page reloads on its own; on
 // the Graph the new box lands among its siblings, every box outside the use case's region keeps its place and size; on
 // the Trace every row keeps its order and the rows above the new one their places; on the Map every box shown before
@@ -40,8 +40,9 @@ test.describe('the map stays where the Reader left it', () => {
   test('LA-PAT-APP-UX-R22-T01 Adding a record moves only its parent\'s region on the Graph, keeps every row where it was on the Trace, and keeps the camera', async ({ page }) => {
     const restore = keepData();
     try {
-      // The Graph: the use case framed with its requirements; what is drawn around it stays put.
-      await openPage(page, `/${USE_CASE}?stage=graph`);
+      // The Graph: the use case's requirements folder framed with its requirements (the use case has flows too, so its
+      // children are folders); what is drawn around it stays put.
+      await openPage(page, `/${USE_CASE}/uc_requirement?stage=graph`);
       await graphDrawn(page, 'tree');
       const before = await graphBoxes(page);
       addRequirement();
