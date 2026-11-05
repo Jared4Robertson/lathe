@@ -80,22 +80,4 @@ describe('product page', () => {
     // A domain's records are never listed in Shared.
     expect(level).not.toHaveTextContent('DM-SHOP-SP01');
   });
-
-  it("LA-V51-R03-T01 The product page sums up the product's coverage, open questions and problems", async () => {
-    await openApp('/DM');
-    await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    const summary = section('Summary');
-    const value = (name: string) => within(summary).getByText(name).nextElementSibling?.textContent;
-    expect(value('Designed')).toBe('3 of 6 obligations');
-    expect(value('Built')).toBe('1 of 6 obligations');
-    expect(value('Proved')).toBe('1 of 6 obligations');
-    expect(value('Open questions')).toBe('2');
-    expect(value('Errors')).toBe('1');
-    expect(value('Warnings')).toBe('3');
-
-    // A product with nothing to count says so in numbers.
-    await openApp('/NF');
-    await screen.findByRole('heading', { level: 1, name: 'Notebook' });
-    expect(within(section('Summary')).getByText('Built').nextElementSibling).toHaveTextContent('0 of 0 obligations');
-  });
 });

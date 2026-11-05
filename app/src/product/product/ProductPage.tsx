@@ -10,7 +10,10 @@ import { type RecordIndex } from '../../exploring/record-summaries/record-index'
 import { Markdown } from '../../specs/Markdown';
 import { Prose } from '../../specs/mentions';
 import { ProblemBadge, ProblemList, RecordLink, Section } from '../../specs/parts';
-import { CoverageBars, ProductSummary } from '../../specs/ProductHealth';
+import { CoverageBars } from '../../specs/ProductHealth';
+import { KeyMetrics } from '../../specs/KeyMetrics';
+import { coverageMetrics, openQuestionsMetric, outcomesServedMetric, problemMetrics, productProblems } from '../../specs/metrics';
+import { useProblems } from '../../checking/problems/reads';
 import { RecordFrame } from '../../specs/RecordContent';
 import { problemsUnder, StageSections } from '../../specs/SpecPages';
 import { ownerFolders } from '../../exploring/folder-tree/folders';
@@ -23,7 +26,7 @@ import { useProduct } from './reads';
 // The Product page (LA-PRD-A1's page, LA-V51): a product at its ID (/<id>), and its open questions and interfaces, each
 // at its own address, drawn from the product's page read through the aggregate's own query (GET
 // /api/product/get-product) and changed only through its own commands (ProductEditor). A product shows its description,
-// its discovery (business outcomes and journeys), its domains as cards with their coverage, what it shares in its stages, its summary, its roles,
+// its discovery (business outcomes and journeys), its key metrics, its domains as cards with their coverage, what it shares in its stages, its roles,
 // its interfaces, the kinds and relations it declares as its own, its open questions and its problems; an open question
 // its description, owner, where it sits and what it is about; an interface its kind, its description, the roles that
 // use it, the patterns it follows, the use cases it offers and those it does not, by capability. The coverage, the stages' folders and problems still come from the
@@ -187,10 +190,29 @@ function Declarations({ index, page, actions }: { index: RecordIndex; page: Prod
   );
 }
 
+/**
+ * The product's key metrics: its outcomes served, its coverage and tests over its domains and its records outside them,
+ * its errors and warnings as the Checks panel reads them, and its open questions.
+ */
+function ProductMetrics({ index, page }: { index: RecordIndex; page: Product }) {
+  const id = page.product.id;
+  const read = useProblems(id, index);
+  const problems = read.state === 'read' && read.answer.product === id ? read.answer : null;
+  const coverage = id === index.product ? [...index.coverage.values()] : [];
+  return (
+    <KeyMetrics figures={[
+      outcomesServedMetric(page.outcomes),
+      ...coverageMetrics(coverage),
+      ...problemMetrics(productProblems(problems)),
+      openQuestionsMetric(page.questions.length),
+    ]} />
+  );
+}
+
 /** How many journeys the product has. */
 const countJourneys = (index: RecordIndex, product: string) => [...index.byId.values()].filter((r) => r.kind === 'journey' && r.product === product).length;
 
-/** The product's own page: its outcomes, domains, shared records, summary, declarations, open questions and problems. */
+/** The product's own page: its key metrics, outcomes, domains, shared records, declarations, open questions and problems. */
 function ProductContent({ index, page, actions }: { index: RecordIndex; page: Product; actions: DeclarationActions | null }) {
   const id = page.product.id;
   const problems = problemsUnder(index, 'product', id);
@@ -200,6 +222,7 @@ function ProductContent({ index, page, actions }: { index: RecordIndex; page: Pr
   return (
     <div className="spec-body" data-aggregate="product">
       <Text index={index} id={id} source={page.product.description} field="description" />
+      <ProductMetrics index={index} page={page} />
       <Text index={index} id={id} source={page.product.notes} title="Notes" field="notes" />
       <Section title="Discovery" count={page.outcomes.length + countJourneys(index, id)} className="product-discovery">
         <BusinessOutcomes index={index} page={page} />
@@ -227,9 +250,6 @@ function ProductContent({ index, page, actions }: { index: RecordIndex; page: Pr
           )}
         </Section>
       )}
-      <Section title="Summary">
-        <ProductSummary index={index} productId={id} />
-      </Section>
       <LimitsSection index={index} product={id} />
       <Declarations index={index} page={page} actions={actions} />
       <Questions index={index} questions={page.questions} />

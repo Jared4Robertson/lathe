@@ -417,6 +417,7 @@
 {"source_id":"LA-V90","target_id":"LA-EXP-QRY12"}
 {"source_id":"LA-V90","target_id":"LA-MOD-QRY131"}
 {"source_id":"LA-V90","target_id":"LA-PLT-CMD02"}
+{"source_id":"LA-V91","target_id":"LA-CHK-QRY02"}
 {"source_id":"LA-V91","target_id":"LA-EXP-CMD01"}
 {"source_id":"LA-V91","target_id":"LA-EXP-QRY05"}
 {"source_id":"LA-V91","target_id":"LA-MOD-CMD162"}

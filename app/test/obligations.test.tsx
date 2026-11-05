@@ -62,17 +62,6 @@ describe('obligation kinds and test states', () => {
     );
   });
 
-  it('LA-V51-R03-T02 The summary counts every obligation kind, and tests not automated yet apart from proved', async () => {
-    await openApp('/DM', served());
-    await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    const summary = section('Summary');
-    const value = (name: string) => within(summary).getByText(name).nextElementSibling?.textContent;
-    expect(value('Designed')).toBe('3 of 7 obligations');
-    expect(value('Built')).toBe('1 of 7 obligations');
-    expect(value('Proved')).toBe('1 of 7 obligations');
-    expect(value('Not automated yet')).toBe('1 of 7 obligations, by tests no file runs yet');
-  });
-
   it('LA-V91-R52-T01 The domain page lists an endpoint in Interface design, with its API requirements and a product\'s own kind folded under it', async () => {
     await openApp('/DM-SHOP', served());
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
@@ -175,14 +164,11 @@ describe('tests by state and tests not automated yet', () => {
     expect(card('Paying').querySelector('[data-kind="invariant"]')).toBeNull();
   });
 
-  it("LA-V51-R04-T01 Each domain's coverage shows its tests by state, on the product and domain pages, and the summary counts them", async () => {
+  it("LA-V51-R04-T01 Each domain's coverage shows its tests by state, on the product and domain pages", async () => {
     await openApp('/DM', { data: states() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(testsLine(card('Shopping'))).toBe('Tests 1 automated, 1 manual, 1 not automated yet');
     expect(testsLine(card('Paying'))).toBe('Tests 0 automated, 0 manual, 0 not automated yet');
-    const summary = (name: string) => within(section('Summary')).getByText(name, { selector: 'dt' }).nextElementSibling?.textContent;
-    expect(summary('Tests')).toBe('1 automated, 1 manual, 1 not automated yet');
-    expect(summary('Not automated yet')).toBe('1 of 7 obligations, by tests no file runs yet');
 
     await openApp('/DM-SHOP', { data: states() });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });

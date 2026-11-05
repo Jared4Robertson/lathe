@@ -466,8 +466,24 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-swatch.is-faded { opacity: var(--focus-fade); }
 /* ---------- End of the stage chrome ---------- */
 
-/* The product summary */
-.summary-list > div { grid-template-columns: 130px 1fr; }
+/* Key metrics (app/src/specs/KeyMetrics.tsx): one row of tiles that wraps, two to a row on a phone */
+.metrics { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(9.5rem, calc(50% - 4px)), 1fr)); gap: 8px; }
+.metric { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 2px; min-width: 0; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--sheet); }
+.metric dt { font-size: 0.78rem; color: var(--muted); }
+.metric dd { margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; min-width: 0; overflow-wrap: break-word; }
+.metric-figure { display: block; }
+.metric-link { display: block; min-height: var(--touch-target); }
+.metric-value { font: 700 1.5rem/1.2 var(--display); color: var(--ink); }
+.metric-of { font-size: 0.8rem; color: var(--muted); }
+.metric-detail { font-size: 0.75rem; color: var(--muted); }
+.metric-link { color: inherit; text-decoration: none; border-radius: 4px; }
+.metric-link:hover { background: var(--hover-bg); }
+.metric-link:hover .metric-value { text-decoration: underline; }
+.metric.is-done .metric-value { color: var(--steel); }
+.metric.is-attention { border-color: var(--error); }
+.metric.is-attention .metric-value { color: var(--error); }
+.metric.is-caution { border-color: var(--warn); }
+.metric.is-caution .metric-value { color: var(--warn); }
 .spec-body > * { min-width: 0; }
 .markdown table { display: block; max-width: 100%; overflow-x: auto; }
 

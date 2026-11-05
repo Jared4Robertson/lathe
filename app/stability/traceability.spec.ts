@@ -1,6 +1,6 @@
 import { expect, test } from './test';
 import { openPage, showCard } from './measure';
-import { rowsOf, servedWorkspace, testsText } from './flows';
+import { rowsOf, servedWorkspace, testsMetricText, testsText } from './flows';
 import { keepData, PRODUCT } from './scenarios';
 import { expectKeyWhole, traceDrawn, traceSceneOf } from './scene';
 import { execFileSync } from 'node:child_process';
@@ -40,13 +40,12 @@ test.describe('Traceability flows', () => {
         await expect(card.locator(`.coverage-group[data-kind="${o.kind}"]`).getByRole('img', { name: `proved: ${o.proved} of ${o.total}` })).toBeAttached();
       }
     }
-    // LA-TRC-UC01-FL-S03 and S04: the product's tests by state in total, its open questions and problems, here in its Summary.
-    const summary = wiki.locator('dl.summary-list');
+    // LA-TRC-UC01-FL-S03 and S04: the product's tests by state in total, its open questions and problems, here in its Key metrics.
+    const metrics = wiki.locator('dl.metrics');
     const sum = (key: 'automated' | 'manual' | 'not_automated') => spec.coverage.filter((c) => c.product === 'LA').reduce((n, c) => n + c.tests[key], 0);
-    await expect(summary.locator('div', { has: page.locator('dt', { hasText: /^Tests$/ }) }).locator('dd')).toHaveText(testsText({ automated: sum('automated'), manual: sum('manual'), not_automated: sum('not_automated') }));
-    const errors = spec.problems.filter((p) => p.record && p.severity === 'error').length;
-    await expect(summary.locator('div', { has: page.locator('dt', { hasText: /^Errors$/ }) }).locator('dd')).toHaveText(String(errors));
-    for (const label of ['Designed', 'Built', 'Proved', 'Open questions', 'Warnings']) await expect(summary.locator('dt', { hasText: new RegExp(`^${label}$`) })).toBeVisible();
+    await expect(metrics.locator('[data-metric="testsAutomated"] dd')).toHaveText(testsMetricText({ automated: sum('automated'), manual: sum('manual'), not_automated: sum('not_automated') }));
+    for (const label of ['Outcomes served', 'Designed', 'Built', 'Proved', 'Tests automated', 'Errors', 'Warnings', 'Open questions']) await expect(metrics.locator('dt', { hasText: new RegExp(`^${label}$`) })).toBeVisible();
+    await expect(metrics.getByRole('link', { name: /^Errors: \d+$/ })).toBeVisible();
     // LA-TRC-UC01-FL-S04: the product's open questions and problems.
     const questions = rowsOf(spec, 'question').length;
     await expect(wiki.getByRole('heading', { name: `Open questions ${questions}`, level: 2 })).toBeVisible();
@@ -164,9 +163,9 @@ test.describe('Traceability flows', () => {
       const card = wiki.getByRole('list', { name: 'Domains' }).locator('.card').filter({ has: page.getByRole('link', { name: `${d.id} ${d.title}` }) });
       await expect(card.getByLabel('Tests by state')).toHaveText(`Tests ${testsText(ofDomain(String(d.id)))}`);
     }
-    // LA-TRC-UC06-FL-S03: the product's tests by state in total, here in its Summary.
+    // LA-TRC-UC06-FL-S03: the product's tests by state in total, here in its Key metrics.
     const total = spec.coverage.filter((c) => c.product === 'LA').reduce((t, c) => ({ automated: t.automated + c.tests.automated, manual: t.manual + c.tests.manual, not_automated: t.not_automated + c.tests.not_automated }), { automated: 0, manual: 0, not_automated: 0 });
-    await expect(wiki.locator('dl.summary-list div', { has: page.locator('dt', { hasText: /^Tests$/ }) }).locator('dd')).toHaveText(testsText(total));
+    await expect(wiki.locator('dl.metrics [data-metric="testsAutomated"] dd')).toHaveText(testsMetricText(total));
     // LA-TRC-UC06-FL-S01 again: a domain's own Coverage section says the same.
     await wiki.getByRole('link', { name: 'LA-TRC Traceability' }).click();
     await page.waitForURL((u) => u.pathname === `/${TRC}`);

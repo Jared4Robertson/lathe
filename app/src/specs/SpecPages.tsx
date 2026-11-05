@@ -4,6 +4,9 @@ import { Link } from '../router';
 import { DomainPatterns } from './PatternParts';
 import { patternsFollowedBy } from './patterns';
 import { CoverageBars } from './ProductHealth';
+import { KeyMetrics } from './KeyMetrics';
+import { coverageMetrics, openQuestionsMetric, problemMetrics, productProblems } from './metrics';
+import { useProblems } from '../checking/problems/reads';
 import { LongList } from '../components/LongList';
 import { ProblemList, RecordLink, RecordTree, Section, StageMark, gapText, idText, levelBelow, recordText, type SectionLevel } from './parts';
 import { allFolders, ownerFolders, foldedChildren, type Folder, type OwnerFolders, type StageFolders } from '../exploring/folder-tree/folders';
@@ -123,8 +126,26 @@ export function StageSections({ index, folders, query, level = 2 }: { index: Rec
 }
 
 /**
- * A domain's records, read in the same stages and folders as the side nav (StageSections), then the patterns the
- * domain follows, its open questions, coverage and problems. The domain's own text is its page's (DomainPage).
+ * A domain's key metrics: its coverage and tests, its errors and warnings as the Checks panel reads them (the
+ * product's, those about the domain's records), and its open questions.
+ */
+function DomainMetrics({ index, id, questions }: { index: RecordIndex; id: string; questions: number }) {
+  const product = index.byId.get(id)?.product ?? null;
+  const read = useProblems(product, index);
+  const problems = read.state === 'read' && read.answer.product === product ? productProblems(read.answer) : undefined;
+  const coverage = index.coverage.get(id);
+  return (
+    <KeyMetrics figures={[
+      ...coverageMetrics(coverage ? [coverage] : []),
+      ...problemMetrics(problems?.filter((p) => p.record !== null && index.byId.get(p.record)?.domain === id)),
+      openQuestionsMetric(questions),
+    ]} />
+  );
+}
+
+/**
+ * A domain's key metrics, then its records, read in the same stages and folders as the side nav (StageSections), then
+ * the patterns the domain follows, its open questions, coverage and problems. The domain's own text is its page's (DomainPage).
  */
 export function DomainWiki({ index, id, description = '' }: { index: RecordIndex; id: string; /** The domain's description, from its own read (DomainPage). */ description?: string }) {
   const [query, setQuery] = useState('');
@@ -147,6 +168,7 @@ export function DomainWiki({ index, id, description = '' }: { index: RecordIndex
   return (
     <div className="spec-body">
       {description.trim() && <div className="record-text"><div className="record-lead" data-field="description"><Prose index={index} source={description} self={id} /></div></div>}
+      <DomainMetrics index={index} id={id} questions={questions.length} />
       <div className="search">
         <label htmlFor="record-search">Filter records</label>
         <input id="record-search" type="search" value={query} placeholder="ID or title" onChange={(e) => setQuery(e.target.value)} />
