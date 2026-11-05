@@ -6,3 +6,4 @@
 {"id":"TL-LEND-UC06-FL","title":"Mark a tool repaired","use_case_id":"TL-LEND-UC06"}
 {"id":"TL-LEND-UC07-FL","title":"See the tools waiting for repair","use_case_id":"TL-LEND-UC07"}
 {"id":"TL-LEND-UC08-FL","title":"Renew a loan","use_case_id":"TL-LEND-UC08"}
+{"id":"TL-LEND-UC09-FL","title":"Measure the outcomes","use_case_id":"TL-LEND-UC09"}

@@ -1,0 +1,1 @@
+{"id":"TL-LEND-QRY02-CLI","title":"npm run outcomes","query_id":"TL-LEND-QRY02","usage":"DB=library.db npm run outcomes -- <YYYY-MM>"}

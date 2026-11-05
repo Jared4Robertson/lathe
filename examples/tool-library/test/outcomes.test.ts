@@ -50,7 +50,7 @@ function march() {
 }
 
 describe('TL-LEND-DS02-T01 Outcome report', () => {
-  it('TL-LEND-RP01 measures loans per tool, late loans, days to repair and active members for a month', () => {
+  it('TL-LEND-UC09-R01-T01 TL-LEND-RP01 measures loans per tool, late loans, days to repair and active members for a month', () => {
     const l = march();
     const now = new Date('2026-04-02T14:00:00.000Z');
     expect(getOutcomeMeasures(new OutcomeMeasuresReader(l), '2026-03', now, DEFAULT_TIME_ZONE)).toEqual({
@@ -77,7 +77,7 @@ describe('TL-LEND-DS02-T01 Outcome report', () => {
     expect(getOutcomeMeasures(new OutcomeMeasuresReader(l), '2026-07', now, DEFAULT_TIME_ZONE).activeMembers).toBe(0);
   });
 
-  it('TL-LEND-RP01 refuses a month that is not YYYY-MM', () => {
+  it('TL-LEND-UC09-R02-T01 TL-LEND-RP01 refuses a month that is not YYYY-MM', () => {
     const l = lending();
     for (const month of ['2026-3', '2026-13', 'March']) {
       expect(() => getOutcomeMeasures(new OutcomeMeasuresReader(l), month, new Date(), DEFAULT_TIME_ZONE)).toThrow(RangeError);

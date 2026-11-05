@@ -2,3 +2,5 @@
 {"source_id":"TL-LEND-REPO01","target_id":"TL-PAT-LIBRARIAN-ACTION-R02"}
 {"source_id":"TL-LEND-REPO02","target_id":"TL-PAT-LIBRARIAN-ACTION-R02"}
 {"source_id":"TL-LEND-TB01","target_id":"TL-PAT-LIBRARIAN-ACTION-R02"}
+{"source_id":"TL-LEND-TOOL01","target_id":"TL-PAT-LIBRARIAN-ACTION-R02"}
+{"source_id":"TL-LEND-TOOL02","target_id":"TL-PAT-LIBRARIAN-ACTION-R02"}

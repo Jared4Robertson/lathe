@@ -22,3 +22,5 @@
 {"source_id":"TL-LEND-UC08-FL-S01","target_id":"TL-LEND-CMD07"}
 {"source_id":"TL-LEND-UC08-FL-S02","target_id":"TL-LEND-CMD07"}
 {"source_id":"TL-LEND-UC08-FL-S03","target_id":"TL-LEND-CMD07"}
+{"source_id":"TL-LEND-UC09-FL-S01","target_id":"TL-LEND-QRY02"}
+{"source_id":"TL-LEND-UC09-FL-S02","target_id":"TL-LEND-QRY02"}

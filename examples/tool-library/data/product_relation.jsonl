@@ -1,1 +1,2 @@
 {"name":"measured_by","source_kind":"business_outcome","target_kind":"report","product_id":"TL","forward_label":"Measured by","reverse_label":"Measures","description":"The report measures the business outcome: it counts the measure from the library's records."}
+{"name":"prints","source_kind":"report","target_kind":"cli_query","product_id":"TL","forward_label":"Prints","reverse_label":"Printed by","description":"The report is the code behind the CLI query: it asks the query for a month's measures and prints them for the Owner."}

@@ -1,3 +1,4 @@
+{"kind":"cli_query","position":1,"name":"usage","type":"text","required":true,"description":"How it is called."}
 {"kind":"report","position":1,"name":"file","type":"text","required":true,"description":"The script, from the product root."}
 {"kind":"report","position":2,"name":"usage","type":"text","required":true,"description":"How it is run."}
 {"kind":"report","position":3,"name":"description","type":"text","required":true,"description":"What it counts."}
