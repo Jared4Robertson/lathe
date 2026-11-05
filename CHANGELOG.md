@@ -1,5 +1,20 @@
 # Changelog
 
+## [8.1.0](https://github.com/Jared4Robertson/lathe/compare/v8.0.0...v8.1.0) (2026-11-05)
+
+
+### Features
+
+* **app:** clear Lathe's own check warnings, with Move actions and the chat as a panel ([3a3bcd1](https://github.com/Jared4Robertson/lathe/commit/3a3bcd176d7e079a19eb9e31aaa48dea92b6fa3e))
+* **app:** key metrics on the pages where they answer a question ([20db6c0](https://github.com/Jared4Robertson/lathe/commit/20db6c03b244d9564d17a4a8b1631fb836352eac))
+* **check:** a product may make its check strict, so any warning fails it ([82b15d3](https://github.com/Jared4Robertson/lathe/commit/82b15d381c7c8a54514efb143b028d63d6572741))
+* **traceability:** a slot may say its fills vary by design, and pattern-candidate skips it ([75c54c6](https://github.com/Jared4Robertson/lathe/commit/75c54c6b48e43a23610d0fd0400ea09b49dd5eca))
+
+
+### Specification
+
+* **tool-library:** clear the serves-no-outcome and unaccounted-for warnings ([0ee7c23](https://github.com/Jared4Robertson/lathe/commit/0ee7c237c15f8535998e201547b818cb8cfa53a9))
+
 ## [8.0.0](https://github.com/Jared4Robertson/lathe/compare/v7.0.0...v8.0.0) (2026-11-04)
 
 
