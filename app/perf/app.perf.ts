@@ -14,6 +14,12 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const RECORD = '/LA-PLT-UC07';
 const DOMAIN = '/LA-EXP';
 const AGGREGATE = '/LA-EXP-A1';
+/**
+ * The Exploring domain's aggregates folder: at depth 3 its graph draws some 80 records of kinds a Change command retitles
+ * (perf/retitle.ts), the aggregates and what they hold. The domain's own page no longer does: since the Tree frames its focus
+ * with its children's level (camera framing, LA-EXP-DS09), a domain draws its stage folders, not their records.
+ */
+const AGGREGATES = '/LA-EXP/domain-model/aggregate';
 const TITLE = '.header-strip h1';
 
 async function open(page: Page, url: string, ready = TITLE) {
@@ -244,48 +250,66 @@ test.describe('performance', () => {
   });
 
   test('LA-V96-R29-T02 marking 50 changes at once takes under 500 ms of main-thread work', async ({ page }) => {
-    await open(page, `${DOMAIN}?stage=graph`);
+    await open(page, `${AGGREGATES}?stage=graph`);
     await boxesDrawn(page);
+    await page.locator('.graph-depth button', { hasText: '3' }).click();
     await quiet(page, 900);
     // 50 records the graph draws, retitled in one write through their own commands, as an Agent writes; then put back.
     // Records of kinds with a Change command that takes a title (perf/retitle.ts).
     const retitle = path.resolve(here, 'retitle.ts');
     const kinds = new Set(JSON.parse(execFileSync('node', [retitle, '--kinds'], { encoding: 'utf8' })) as string[]);
-    const drawn = (await sceneOf(page)).boxes.filter((b) => !b.group && !b.focus && kinds.has(b.kind)).slice(0, 50);
-    expect(drawn.length, '50 records drawn').toBe(50);
+    const drawn = (await sceneOf(page)).boxes.filter((b) => !b.group && !b.focus && kinds.has(b.kind));
     const root = process.env.PERF_ROOT!;
     const titleOf = (kind: string, id: string) => readFileSync(path.join(root, 'data', `${kind}.jsonl`), 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l) as { id: string; title: string }).find((r) => r.id === id)!.title;
     const titles = drawn.map((b) => ({ kind: b.kind, id: b.id, title: titleOf(b.kind, b.id) }));
-    // One write of the 50, each through its own Change command, as an Agent writes (perf/retitle.ts).
-    const write = (title: (was: string) => string) => execFileSync('node', [retitle, '--root', root], {
-      input: JSON.stringify(titles.map((t) => ({ kind: t.kind, id: t.id, title: title(t.title) }))), stdio: ['pipe', 'pipe', 'pipe'],
-    });
+    // One write of the first 50 drawn records the store lets the write retitle, each through its own Change command, as an
+    // Agent writes (perf/retitle.ts); then the same 50 put back.
+    let written: typeof titles = [];
+    const write = (title: (was: string) => string) => {
+      const out = execFileSync('node', [retitle, '--root', root, '--count', '50'], {
+        input: JSON.stringify((written.length ? written : titles).map((t) => ({ kind: t.kind, id: t.id, title: title(t.title) }))), encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'],
+      });
+      if (!written.length) {
+        const ids = new Set((JSON.parse(out) as { id: string }[]).map((t) => t.id));
+        written = titles.filter((t) => ids.has(t.id));
+      }
+    };
     const r = await work(page, async () => {
       write((was) => `${was} (changed)`);
-      await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => b.change === 'changed').length, { timeout: 20_000 }).toBeGreaterThanOrEqual(drawn.length);
+      await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => b.change === 'changed').length, { timeout: 20_000 }).toBeGreaterThanOrEqual(written.length);
     }, 900);
+    expect(written.length, '50 records drawn and retitled').toBe(50);
     await record({ name: 'marking 50 changes at once', value: r.workMs, unit: 'ms', budget: BUDGETS.markChangesMs, detail: `longest frame ${Math.round(r.worstFrameMs)} ms, ${r.slowFrames} of ${r.frames} frames over 20 ms` });
     write((was) => was);
   });
   test('LA-V96-R29-T04 with Highlight changes on, marking 50 changes at once, with their pills and roll-ups, takes under 500 ms of main-thread work', async ({ page }) => {
-    await open(page, `${DOMAIN}?stage=graph`);
+    await open(page, `${AGGREGATES}?stage=graph`);
     await boxesDrawn(page);
+    await page.locator('.graph-depth button', { hasText: '3' }).click();
     await quiet(page, 900);
     await page.locator('.focus-stage').getByRole('group', { name: 'Changes' }).getByRole('button', { name: 'Highlight changes' }).click();
     const retitle = path.resolve(here, 'retitle.ts');
     const kinds = new Set(JSON.parse(execFileSync('node', [retitle, '--kinds'], { encoding: 'utf8' })) as string[]);
-    const drawn = (await sceneOf(page)).boxes.filter((b) => !b.group && !b.focus && kinds.has(b.kind)).slice(0, 50);
-    expect(drawn.length, '50 records drawn').toBe(50);
+    const drawn = (await sceneOf(page)).boxes.filter((b) => !b.group && !b.focus && kinds.has(b.kind));
     const root = process.env.PERF_ROOT!;
     const titleOf = (kind: string, id: string) => readFileSync(path.join(root, 'data', `${kind}.jsonl`), 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l) as { id: string; title: string }).find((r) => r.id === id)!.title;
     const titles = drawn.map((b) => ({ kind: b.kind, id: b.id, title: titleOf(b.kind, b.id) }));
-    const write = (title: (was: string) => string) => execFileSync('node', [retitle, '--root', root], {
-      input: JSON.stringify(titles.map((t) => ({ kind: t.kind, id: t.id, title: title(t.title) }))), stdio: ['pipe', 'pipe', 'pipe'],
-    });
+    // The first 50 drawn records the store lets the write retitle; then the same 50 put back.
+    let written: typeof titles = [];
+    const write = (title: (was: string) => string) => {
+      const out = execFileSync('node', [retitle, '--root', root, '--count', '50'], {
+        input: JSON.stringify((written.length ? written : titles).map((t) => ({ kind: t.kind, id: t.id, title: title(t.title) }))), encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'],
+      });
+      if (!written.length) {
+        const ids = new Set((JSON.parse(out) as { id: string }[]).map((t) => t.id));
+        written = titles.filter((t) => ids.has(t.id));
+      }
+    };
     const r = await work(page, async () => {
       write((was) => `${was} (changed)`);
-      await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => b.pill === 'changed').length, { timeout: 20_000 }).toBeGreaterThanOrEqual(drawn.length);
+      await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => b.pill === 'changed').length, { timeout: 20_000 }).toBeGreaterThanOrEqual(written.length);
     }, 900);
+    expect(written.length, '50 records drawn and retitled').toBe(50);
     await record({ name: 'marking 50 changes at once under Highlight changes', value: r.workMs, unit: 'ms', budget: BUDGETS.markChangesMs, detail: `longest frame ${Math.round(r.worstFrameMs)} ms, ${r.slowFrames} of ${r.frames} frames over 20 ms` });
     write((was) => was);
   });

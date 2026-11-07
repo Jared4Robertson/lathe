@@ -23,8 +23,8 @@
 // store's schema copy, reading the files, each table's insert, record_scope, each integrity query, each aggregate's rules, the commit, the
 // file facts, the coverage tables and each check), and of the large product's reload, to find where the time goes.
 
-import { spawnSync } from 'node:child_process';
-import { cpSync, mkdtempSync, readdirSync, rmSync, symlinkSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { cpSync, existsSync, lstatSync, mkdtempSync, rmSync } from 'node:fs';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { loadavg, tmpdir } from 'node:os';
@@ -57,14 +57,16 @@ const PROFILE = process.argv.includes('--profile');
 const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
 const phases = (t: Partial<LoadTimings>) => (['open', 'files', 'checks', 'coverage'] as const).map((p) => `${p} ${Math.round(t[p] ?? 0)}`).join(', ');
 
-/** A copy of the repo's data and config in a temporary folder; the code folders are linked, so tests' files resolve. */
+/** A copy of the repo in a temporary folder: its data, config, code and manifests. */
 function copyOfRepo(): string {
   const root = mkdtempSync(path.join(tmpdir(), 'lathe-perf-'));
-  for (const name of readdirSync(repo)) {
-    if (name.startsWith('.') || name === 'node_modules') continue;
-    const from = path.join(repo, name);
-    if (['data', 'lathe.config.json'].includes(name)) cpSync(from, path.join(root, name), { recursive: true });
-    else symlinkSync(from, path.join(root, name));
+  // Every file git knows of (tracked, or new and not ignored), copied, as the app's suites copy the repo
+  // (app/stability/copy.ts): the code and manifests the spec names are there, so `lathe check` finds what it finds here.
+  const files = execFileSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], { cwd: repo, maxBuffer: 64 * 1024 * 1024 })
+    .toString().split('\0').filter(Boolean);
+  for (const file of files) {
+    const from = path.join(repo, file);
+    if (existsSync(from) && lstatSync(from).isFile()) cpSync(from, path.join(root, file));
   }
   return root;
 }
@@ -76,7 +78,7 @@ async function timedLoad(root: string) {
   return { ms: performance.now() - start, timings, records: workspace.records.length };
 }
 
-/** Changes one use case with Change a use case (its title, so the data file changes) and reloads; the median of RUNS. */
+/** Changes one use case with Change a use case (its title, so the data file changes) and reloads, then puts the title back; the median of RUNS. */
 async function reload(root: string) {
   const store = await openStore(root);
   const [first] = store.rows('use_case');
@@ -88,6 +90,10 @@ async function reload(root: string) {
     await writer.close();
     runs.push(await timedLoad(root));
   }
+  // The title put back, so the steps after it (the full check among them) see the spec as it is.
+  const writer = await openStore(root);
+  await runCommand(writer, CHANGE_USE_CASE, { id: String(first.id), title: String(first.title) });
+  await writer.close();
   // The median run, with its own phases.
   return [...runs].sort((a, b) => a.ms - b.ms)[Math.floor(runs.length / 2)];
 }

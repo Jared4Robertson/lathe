@@ -34,14 +34,17 @@ export function mapInput(view: MapInput['view'], roots: readonly string[], child
   return { view, shape, labels, roles, packed: parts.join(NODE) };
 }
 
-const products = new WeakMap<RecordIndex, Map<string, MapInput>>();
+// Kept by the records, tree answer and meta model it was made from, as the tree is (tree.ts): the problems and coverage
+// that answer after the records on a reload change no label, so the map is not made again for them.
+const products = new WeakMap<RecordIndex['folders'], { byId: RecordIndex['byId']; meta: RecordIndex['meta']; inputs: Map<string, MapInput> }>();
 /**
  * A product's map's input (or a tree's no product reaches), from its root, in the Graph's Tree or Nested view, or the
- * product's Map (its ground, whatever the root): made once per index.
+ * product's Map (its ground, whatever the root): made once per records, tree answer and meta model.
  */
 export function productInput(index: RecordIndex, root: string, view: MapInput['view'], measure: string): MapInput {
-  let known = products.get(index);
-  if (!known) { known = new Map(); products.set(index, known); }
+  let kept = products.get(index.folders);
+  if (!kept || kept.byId !== index.byId || kept.meta !== index.meta) { kept = { byId: index.byId, meta: index.meta, inputs: new Map() }; products.set(index.folders, kept); }
+  const known = kept.inputs;
   const key = `${view}|${measure}|${root}`;
   let input = known.get(key);
   if (!input) {

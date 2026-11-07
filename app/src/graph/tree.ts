@@ -56,14 +56,17 @@ function kindsOf(index: RecordIndex, records: readonly RecordSummary[]): string[
   return [...new Set(records.map((r) => r.kind))].sort((a, b) => rank(a) - rank(b));
 }
 
-const cache = new WeakMap<RecordIndex, Tree>();
+// Built once per tree answer and the records and meta model it was built with, as the nav's folders are
+// (exploring/folder-tree/folders.ts): an index that differs only in its problems or coverage, which come after the records
+// on every reload, shares it, so a reload builds a large product's tree once, not once per read that answers.
+const cache = new WeakMap<RecordIndex['folders'], { byId: RecordIndex['byId']; meta: RecordIndex['meta']; tree: Tree }>();
 
 /** The whole tree of an index, built once. */
 export function treeOf(index: RecordIndex): Tree {
-  const known = cache.get(index);
-  if (known) return known;
+  const known = cache.get(index.folders);
+  if (known && known.byId === index.byId && known.meta === index.meta) return known.tree;
   const tree: Tree = { parent: new Map(), children: new Map(), groups: new Map() };
-  cache.set(index, tree);
+  cache.set(index.folders, { byId: index.byId, meta: index.meta, tree });
   const visited = new Set<string>();
   const add = (parent: string, child: string) => {
     if (tree.parent.has(child) || child === parent) return false;

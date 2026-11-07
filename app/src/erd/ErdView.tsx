@@ -323,7 +323,9 @@ function ErdCanvas({ index, map, at, focus, refocus, onNavigate, space, cameraKe
     void document.fonts?.ready.then(() => { if (live) { measureAgain(); setLookVersion((n) => n + 1); requestPaint(); } });
     return () => { live = false; };
   }, [fonts]);
-  const fadeLook = useMemo<Pick<FadeLook, 'focusFade'>>(() => ({ focusFade: look.current.focusFade }), [lookVersion]);
+  // Read when drawn, as the Trace's is: reading the look (the theme, the faces loading) is no new fade to ease to, so a
+  // switch to the stage draws its fade at once, with no glide's worth of frames after it.
+  const fadeLook = useMemo<Pick<FadeLook, 'focusFade'>>(() => ({ get focusFade() { return look.current.focusFade; } }), []);
   // With Highlight changes on, what changed from its baseline is kept in place of the focus's scope (changes/marks.ts).
   const changes = useChanges();
   const strength = useMemo(() => (changes.highlight ? highlightFade(changes.byId) : erdStrength(map, at.scope, fadeLook)), [map, at.scope, fadeLook, changes.highlight, changes.byId]);
@@ -365,7 +367,10 @@ function ErdCanvas({ index, map, at, focus, refocus, onNavigate, space, cameraKe
     const cam = { cx: (s.w / 2 - v.x) / v.zoom, cy: (s.h / 2 - v.y) / v.zoom, zoom: v.zoom, w: s.w, h: s.h };
     const fade = tween.now().at;
     const hl = marks.highlight;
-    const rectAt = (id: string) => { const b = morph.box(id, now); return b ? toRect(b) : undefined; };
+    // At rest (nothing gliding to a new layout) each box is where its layout put it: read from it, with no new rectangle
+    // made for each box in each frame (a large product's map is thousands of boxes, and their garbage a dropped frame).
+    const resting = !morph.moving(now);
+    const rectAt = (id: string) => { if (resting) return placed.rects.get(id); const b = morph.box(id, now); return b ? toRect(b) : undefined; };
     for (const box of placed.map.boxes) {
       const rect = rectAt(box.id);
       if (!rect) continue;

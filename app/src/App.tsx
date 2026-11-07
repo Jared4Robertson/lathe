@@ -27,7 +27,6 @@ import { ChangesPanel } from './changes/ChangesPanel';
 import { ChangesProvider } from './changes/ChangesProvider';
 import { ProductsPicker } from './views/ProductsPicker';
 import { carryOverlays, overlaysOf, panelHref, useEscapeClosesTopmost, type ToolPanel } from './views/overlays';
-import { ChatPanel } from './chat/ChatPanel';
 import { useWindowVoice, VoiceContext } from './chat/voice/useVoice';
 import { pointedAt, useAppRequests } from './chat/appRequests';
 import { chatChips } from './chat/chips';
@@ -44,6 +43,8 @@ import { ThemeCommands } from './theme/ThemeCommands';
 // as the graph and the ERD view do (views/FocusPage.tsx).
 const AppearancePopover = lazy(() => import('./theme/Appearance').then((m) => ({ default: m.AppearancePopover })));
 const ThemeEditorPanel = lazy(() => import('./theme/Appearance').then((m) => ({ default: m.ThemeEditorPanel })));
+// The chat panel is the desktop's alone (LA-PLT-UC19): a browser never loads its code, and the desktop loads it when the chat first shows.
+const ChatPanel = lazy(() => import('./chat/ChatPanel').then((m) => ({ default: m.ChatPanel })));
 
 // A move to another focus keeps the tool open over the stage (views/overlays.ts).
 setCarry(carryOverlays);
@@ -161,17 +162,23 @@ function Shell() {
   });
   const chatInput = useRef<HTMLTextAreaElement>(null);
   const chatPanel = () => document.getElementById('chat-panel');
+  // Focuses the chat's message box once it is drawn: the first show waits for the panel's code to load.
+  const focusChat = useCallback(() => {
+    let tries = 0;
+    const go = () => { if (chatInput.current) chatInput.current.focus(); else if (tries++ < 50) setTimeout(go, 20); };
+    setTimeout(go, 0);
+  }, []);
   useCommand('toggleChat', () => {
     // Open: focus the message box; open with focus elsewhere: focus it; with focus in it: hide it.
     if (chatShown && chatPanel()?.contains(document.activeElement)) { showOrHidePanel({ panel: 'chat', shown: false }); announce('Chat hidden'); return; }
     if (!chatShown) { showOrHidePanel({ panel: 'chat', shown: true }); announce('Chat shown'); }
-    setTimeout(() => chatInput.current?.focus(), 0);
+    focusChat();
   }, !!chatBridge);
   // The chat's voice (LA-PLT-UC20): voice activation wakes the chat, hidden or not, and focuses its message box.
   const wakeChat = useCallback(() => {
     showOrHidePanel({ panel: 'chat', shown: true });
-    setTimeout(() => chatInput.current?.focus(), 0);
-  }, []);
+    focusChat();
+  }, [focusChat]);
   const voice = useWindowVoice(chatBridge ? desktopBridge()?.voice ?? null : null, wakeChat, announce);
   useCommand('dictate', () => { wakeChat(); voice?.toggle(); }, !!voice);
   // Point and ask (LA-PLT-UC22-R01): the box pointed at, or the one the native menu was opened on, is attached to the message.
@@ -301,6 +308,7 @@ function Shell() {
       {toolPanel}
       {chatShown && chatBridge && (
         <VoiceContext.Provider value={voice}>
+        <Suspense fallback={null}>
         <ChatPanel
           bridge={chatBridge}
           index={spec.index}
@@ -310,6 +318,7 @@ function Shell() {
           onClose={() => { showOrHidePanel({ panel: 'chat', shown: false }); announce('Chat hidden'); }}
           input={chatInput}
         />
+        </Suspense>
         </VoiceContext.Provider>
       )}
     </div>

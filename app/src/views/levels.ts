@@ -28,39 +28,40 @@ export interface StageLevels {
   across: (id: string, direction: Direction) => string | null;
 }
 
-/** Each level's nodes in reading order, container by container, and each node's place in its level. */
-interface LevelIndex { levels: string[][]; at: Map<string, { level: number; i: number }> }
-const indexes = new WeakMap<StageLevels, LevelIndex>();
-
-function levelIndex(levels: StageLevels): LevelIndex {
-  const known = indexes.get(levels);
-  if (known) return known;
-  const index: LevelIndex = { levels: [], at: new Map() };
-  let row = [levels.root];
-  index.at.set(levels.root, { level: 0, i: 0 });
-  while (row.length > 0) {
-    index.levels.push(row);
-    const next: string[] = [];
-    for (const id of row) {
-      for (const c of levels.children(id)) {
-        if (index.at.has(c)) continue;
-        index.at.set(c, { level: index.levels.length, i: next.length });
-        next.push(c);
-      }
-    }
-    row = next;
+/** The first node `depth` levels under `node` in reading order (the last, going back), or null when it reaches none. */
+function edgeAt(levels: StageLevels, node: string, depth: number, ahead: boolean): string | null {
+  if (depth === 0) return node;
+  const inside = levels.children(node);
+  for (let i = ahead ? 0 : inside.length - 1; i >= 0 && i < inside.length; i += ahead ? 1 : -1) {
+    const found = edgeAt(levels, inside[i], depth - 1, ahead);
+    if (found !== null) return found;
   }
-  indexes.set(levels, index);
-  return index;
+  return null;
+}
+
+/**
+ * The node after `node` at its level in reading order (before it, going back), or null at the level's end. Found from the
+ * node up, through the nearest ancestor with a sibling that way and down again, so a step looks only at the hierarchy
+ * around the node: a new map (a reload of a large product) is never indexed whole to draw the walk's buttons.
+ */
+function nextAtLevel(levels: StageLevels, node: string, ahead: boolean): string | null {
+  let at = node;
+  for (let depth = 0; ; depth++) {
+    const container = levels.parent(at);
+    if (container === null) return null;
+    const siblings = levels.children(container);
+    for (let i = siblings.indexOf(at) + (ahead ? 1 : -1); i >= 0 && i < siblings.length; i += ahead ? 1 : -1) {
+      const found = edgeAt(levels, siblings[i], depth, ahead);
+      if (found !== null) return found;
+    }
+    at = container;
+  }
 }
 
 /** The next container after `container` at its level in reading order (or before it, going back) that holds anything: its first node (or last). */
 function continueFrom(levels: StageLevels, container: string, ahead: boolean): string | null {
-  const place = levelIndex(levels).at.get(container);
-  if (!place) return null;
-  const row = levelIndex(levels).levels[place.level];
-  for (let i = place.i + (ahead ? 1 : -1); i >= 0 && i < row.length; i += ahead ? 1 : -1) {
-    const inside = levels.children(row[i]);
+  for (let next = nextAtLevel(levels, container, ahead); next !== null; next = nextAtLevel(levels, next, ahead)) {
+    const inside = levels.children(next);
     if (inside.length > 0) return ahead ? inside[0] : inside[inside.length - 1];
   }
   return null;

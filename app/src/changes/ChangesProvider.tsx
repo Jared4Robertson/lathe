@@ -95,5 +95,14 @@ export function ChangesProvider({ index, product, children }: { index: RecordInd
   return <ChangesContext.Provider value={api}>{children}</ChangesContext.Provider>;
 }
 
-/** The same changes read again, so the stages do not draw them twice. */
-const sameBaseline = (a: Baseline, b: Baseline) => a.state === 'ok' && b.state === 'ok' ? a.label === b.label && a.detail === b.detail && JSON.stringify(a.changes) === JSON.stringify(b.changes) : a.state === b.state;
+/** Two parts of a change as the same values: at once for two empty lists, the common case, else by their JSON. */
+const sameParts = (a: unknown, b: unknown) => a === b || (Array.isArray(a) && Array.isArray(b) && a.length === 0 && b.length === 0) || JSON.stringify(a) === JSON.stringify(b);
+const sameChange = (a: RecordChange, b: RecordChange) => a.id === b.id && a.kind === b.kind && a.title === b.title && a.change === b.change
+  && sameParts(a.fields, b.fields) && sameParts(a.parts, b.parts) && sameParts(a.links.added, b.links.added) && sameParts(a.links.removed, b.links.removed);
+/**
+ * The same changes read again, so the stages do not draw them twice. Compared change by change, never as one JSON of them
+ * all: on a large product every reload reads tens of thousands of changes again, and one string of them all is a long frame.
+ */
+const sameBaseline = (a: Baseline, b: Baseline) => a.state === 'ok' && b.state === 'ok'
+  ? a.label === b.label && a.detail === b.detail && a.changes.length === b.changes.length && a.changes.every((c, i) => sameChange(c, b.changes[i]!))
+  : a.state === b.state;
