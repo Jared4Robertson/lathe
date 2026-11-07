@@ -1,6 +1,7 @@
 import { kindLabel, type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
 import { foldedChildren, ownerFolders, sharedKey, type Folder } from '../exploring/folder-tree/folders';
 import { plural } from '../plural';
+import { mapChange, patchMap, sameItems, type MapChange } from '../exploring/record-summaries/map-change';
 
 // The graph's tree is the nav's tree: a product holds its Shared folder (its own stages, what it shares),
 // its domains, then its open questions; a domain holds its stages, then the folders outside every
@@ -145,6 +146,46 @@ export function treeOf(index: RecordIndex): Tree {
     addRecord(r);
   }
   return tree;
+}
+
+/**
+ * A tree's change from the tree before, entry by entry (map-change.ts), as the space's index worker sends it: a group's
+ * members by ID, or whole where the index holds no record of that ID (a record the folder tree names that the records
+ * miss), so the page puts in its own records.
+ */
+export interface TreeChange {
+  parent: MapChange<string>;
+  children: MapChange<string[]>;
+  groups: MapChange<SentGroup>;
+}
+type SentGroup = Omit<TreeGroup, 'members'> & { members: (string | RecordSummary)[] };
+
+const sameGroup = (a: TreeGroup, b: TreeGroup) => a.label === b.label && a.kind === b.kind && a.count === b.count && a.owner === b.owner && a.role === b.role && sameItems(a.members, b.members);
+
+/** What changed from `before` to `next`, a tree of the records `byId` (which name the members). */
+export function treeChange(before: Tree, next: Tree, byId: ReadonlyMap<string, RecordSummary>): TreeChange {
+  return {
+    parent: mapChange(before.parent, next.parent, (a, b) => a === b, (v) => v),
+    children: mapChange(before.children, next.children, sameItems, (v) => v),
+    groups: mapChange(before.groups, next.groups, sameGroup, (g) => ({ ...g, members: g.members.map((m) => (byId.get(m.id) === m ? m.id : m)) })),
+  };
+}
+
+/** The tree before with a change put in, its groups' members the records `byId`. */
+export function patchTree(before: Tree, change: TreeChange, byId: ReadonlyMap<string, RecordSummary>): Tree {
+  return {
+    parent: patchMap(before.parent, change.parent, (v) => v) as Map<string, string>,
+    children: patchMap(before.children, change.children, (v) => v) as Map<string, string[]>,
+    groups: patchMap(before.groups, change.groups, (g): TreeGroup => ({ ...g, members: g.members.map((m) => (typeof m === 'string' ? byId.get(m)! : m)) })) as Map<string, TreeGroup>,
+  };
+}
+
+/** The empty tree, what the first change is from. */
+export const emptyTree = (): Tree => ({ parent: new Map(), children: new Map(), groups: new Map() });
+
+/** Keeps a tree worked out elsewhere (the space's index worker's, put in by its change) as the tree of `index`. */
+export function keepTree(index: RecordIndex, tree: Tree) {
+  cache.set(index.folders, { byId: index.byId, meta: index.meta, tree });
 }
 
 /** A node's parent in the tree, or null at the top (a product). */

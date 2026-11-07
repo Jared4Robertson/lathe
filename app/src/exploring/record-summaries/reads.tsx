@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { RecordSummaries } from '../../../../lathe/src/exploring/record-summaries/read-model';
-import type { FolderTree } from '../../../../lathe/src/exploring/folder-tree/read-model';
-import type { ProductProblems } from '../../../../lathe/src/checking/problems/read-model';
-import type { ProductCoverage } from '../../../../lathe/src/traceability/coverage/read-model';
 import { onLatheEvent } from '../../events';
 import { indexMetaModel, type MetaModel } from '../../platform/meta-model/reads';
-import { readModelsChanged, useRead, useVersionedRead } from '../../record/read';
-import { coverageOf, indexOf, problemsOf, recordsOf, type RecordIndex, type Records } from './record-index';
+import { forgetWithReads, readModelChanges, readModelsChanged, useVersionedRead } from '../../record/read';
+import { indexOf, type RecordIndex } from './record-index';
+import { checksOf, forgetMirrors, keepMirroredTree, mirrorOf, NO_COVERAGE, NO_PROBLEMS, putChange, putChecks, type Mirrored, type MirroredChecks } from './space-index';
+import { askSpace, metaNumber, tellMeta } from './space-client';
 
 // The data the app shows changes when a write goes through or the files change: each is a new version of the data,
 // and each read made for a version reads again for the next when its read model changed (record/read.ts `useRead`). The space's record index
@@ -28,27 +26,25 @@ export interface DataState {
  * then the problems and coverage as they come. A product of null (the products picker) reads no space.
  */
 export function useDataState(product: string | null, { version, reload, answered: settle }: DataVersion): DataState {
-  const input = product ? { product_id: product } : null;
   const meta = useVersionedRead<MetaModel>('/api/meta-model/get-meta-model', {}, version);
-  const summaries = useVersionedRead<RecordSummaries>('/api/record-summaries/list-record-summaries', input, version);
-  const folders = useRead<FolderTree>('/api/folder-tree/get-folder-tree', input, version);
-  const problems = useRead<ProductProblems>('/api/problems/list-problems', input, version);
-  const coverage = useRead<ProductCoverage>('/api/coverage/get-coverage', input, version);
+  const model = meta.read.state === 'read' ? meta.read.answer : null;
+  const space = useSpaceLayer(RECORDS, product, version, model);
+  const checked = useSpaceLayer(CHECKED, product, version, null);
   const metaIndex = useMemo(() => (meta.read.state === 'read' ? indexMetaModel(meta.read.answer) : null), [meta.read]);
-  // The index by layer, each worked out when its own read changed: the records by what changed since the last answer, the
-  // problems and the coverage on their own, so an answer for one never builds the others again.
-  const lastRecords = useRef<Records | null>(null);
-  const records = useMemo(() => {
-    if (!product || summaries.read.state !== 'read' || summaries.read.answer.product !== product) return null;
-    return (lastRecords.current = recordsOf(summaries.read.answer, lastRecords.current));
-  }, [product, summaries.read]);
-  const problemsFor = useMemo(() => problemsOf(problems.state === 'read' && problems.answer.product === product ? problems.answer : null), [product, problems]);
-  const covered = useMemo(() => coverageOf(product ?? '', coverage.state === 'read' && coverage.answer.product === product ? coverage.answer : null), [product, coverage]);
+  // The index by layer, each worked out in the space's index worker when its own reads changed and put in by its change
+  // (space-index.ts): the records and the folder tree, then the problems and the coverage (empty until read), so an
+  // answer for one never builds the others again, and the page never parses or builds a large product's lookups whole.
+  const mirrored = space.read.state === 'read' && space.read.mirrored.records.product === product ? space.read.mirrored : null;
+  const checks = checked.read.state === 'read' && checked.read.mirrored.product === product ? checked.read.mirrored : null;
+  const problemsFor = checks?.problemsFor ?? NO_PROBLEMS;
+  const covered = checks?.coverage ?? NO_COVERAGE;
   const built = useMemo(() => {
-    if (!records || !metaIndex || folders.state !== 'read' || folders.answer.product !== product) return null;
-    return indexOf(metaIndex, records, folders.answer, problemsFor, covered);
-  }, [product, records, metaIndex, folders, problemsFor, covered]);
-  const refused = [meta.read, summaries.read, folders].find((r) => r.state === 'refused');
+    if (!mirrored || !metaIndex || !model) return null;
+    const index = indexOf(metaIndex, mirrored.records, mirrored.folders, problemsFor, covered);
+    keepMirroredTree(index, mirrored, metaNumber(model));
+    return index;
+  }, [mirrored, metaIndex, model, problemsFor, covered]);
+  const refused = [meta.read, space.read].find((r) => r.state === 'refused');
   const error = refused?.state === 'refused' ? refused.error : null;
   // A read refused on a reload (the files caught mid-write, or data the store refuses) keeps the space's last index on
   // screen, with the error beside it, as the pages say; only a space never read shows the error alone.
@@ -58,7 +54,7 @@ export function useDataState(product: string | null, { version, reload, answered
   const index = built ?? last.current;
 
   // A reload is done once the space's reads answer for its version (or the meta model's, outside every space).
-  const answered = Math.min(Number(meta.version ?? -1), product ? Number(summaries.version ?? -1) : Infinity);
+  const answered = Math.min(Number(meta.version ?? -1), product ? Number(space.version ?? -1) : Infinity);
   useEffect(() => { settle(answered); }, [answered, settle]);
   return { version, index, error, reload };
 }
@@ -161,4 +157,83 @@ export function useDataVersion(): DataVersion {
     }
   }), [everything]);
   return useMemo(() => ({ version, reload, mark, answered }), [version, reload, mark, answered]);
+}
+
+// ---------- The space's index, from its worker ----------
+
+/**
+ * One layer of the space's index the builder works out (space-index.ts): the reads it reads, the page's mirror of it, and
+ * how the builder is asked for its change from the mirror (each read flagged when its read model changed since).
+ */
+interface Layer<M> {
+  routes: readonly string[];
+  mirror: (product: string) => M | undefined;
+  ask: (product: string, base: M | undefined, again: boolean[], model: MetaModel | null) => Promise<M | { error: string } | null>;
+}
+
+const RECORDS: Layer<Mirrored> = {
+  routes: ['/api/record-summaries/list-record-summaries', '/api/folder-tree/get-folder-tree'],
+  mirror: mirrorOf,
+  ask: async (product, base, [summaries, folders], model) => {
+    tellMeta(model!);
+    const reply = await askSpace({ type: 'read', product, base: base?.seq ?? null, summaries, folders });
+    if (!reply || reply.type !== 'read') return null;
+    return 'refused' in reply.change ? { error: reply.change.refused.error } : putChange(reply.change);
+  },
+};
+
+const CHECKED: Layer<MirroredChecks> = {
+  routes: ['/api/problems/list-problems', '/api/coverage/get-coverage'],
+  mirror: checksOf,
+  ask: async (product, base, [problems, coverage]) => {
+    const reply = await askSpace({ type: 'checked', product, base: base?.seq ?? null, problems, coverage });
+    return reply && reply.type === 'checked' ? putChecks(reply.change) : null;
+  },
+};
+
+/** What each layer last read, by product: the read models' changes then (and the meta model's number), so a version that left them alone reads nothing. */
+const readFor = new Map<Layer<unknown>, Map<string, string[]>>();
+forgetWithReads(() => { forgetMirrors(); readFor.clear(); });
+
+type LayerRead<M> = { state: 'reading' } | { state: 'read'; mirrored: M } | { state: 'refused'; error: string };
+
+/**
+ * A layer of the space's index for the data's version, as the builder's changes made it: read again when one of its
+ * read models changed since it was read (LA-PLT-UC03-R02), or the meta model did, one read at a time; until it answers,
+ * the mirror read before stays on screen.
+ */
+function useSpaceLayer<M>(layer: Layer<M>, product: string | null, version: number, model: MetaModel | null): { read: LayerRead<M>; version: number | undefined } {
+  const held = (p: string | null): LayerRead<M> => { const m = p ? layer.mirror(p) : undefined; return m ? { state: 'read', mirrored: m } : { state: 'reading' }; };
+  const [state, setState] = useState<{ product: string | null; read: LayerRead<M>; version: number | undefined }>(() => ({ product, read: held(product), version: undefined }));
+  // One read at a time, the latest version wanted read next; nothing is set once the page has gone.
+  const running = useRef<Promise<void> | null>(null);
+  const wanted = useRef<{ product: string; version: number; model: MetaModel | null } | null>(null);
+  const live = useRef(true);
+  useEffect(() => { live.current = true; return () => { live.current = false; }; }, []);
+  const needsMeta = layer === (RECORDS as unknown as Layer<M>);
+  useEffect(() => {
+    if (!product || (needsMeta && !model)) return;
+    wanted.current = { product, version, model };
+    const run = async () => {
+      while (wanted.current) {
+        const want = wanted.current;
+        wanted.current = null;
+        const stamps = [...layer.routes.map(readModelChanges), needsMeta ? String(metaNumber(want.model!)) : ''];
+        let byProduct = readFor.get(layer as Layer<unknown>);
+        if (!byProduct) { byProduct = new Map(); readFor.set(layer as Layer<unknown>, byProduct); }
+        const last = byProduct.get(want.product);
+        const mirrored = layer.mirror(want.product);
+        const set = (read: LayerRead<M>) => { if (live.current) setState({ product: want.product, read, version: want.version }); };
+        if (mirrored && last && stamps.every((s, i) => s === last[i])) { set({ state: 'read', mirrored }); continue; }
+        const answer = await layer.ask(want.product, mirrored, layer.routes.map((_, i) => !mirrored || last?.[i] !== stamps[i]), want.model);
+        if (!answer) continue;
+        if ('error' in (answer as object)) { set({ state: 'refused', error: (answer as { error: string }).error }); continue; }
+        byProduct.set(want.product, stamps);
+        set({ state: 'read', mirrored: answer as M });
+      }
+    };
+    if (!running.current) running.current = run().finally(() => { running.current = null; });
+  }, [product, version, model]);
+  if (state.product !== product) return { read: held(product), version: undefined };
+  return { read: state.read, version: state.version };
 }

@@ -25,7 +25,7 @@ import { keptCamera } from '../exploring/tab-set/reads';
 import { runTabSetCommand } from '../exploring/tab-set/run';
 import { mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
 import { lastLayout, tidyGround, useLaidOut } from './layout';
-import { productInput } from './layout-input';
+import { useMapInput } from './map-input';
 import { type NestedMap, type NestedNode } from './nested';
 import { type GroundMap, type GroundNode } from './ground';
 import { treeParent } from './tree';
@@ -514,12 +514,15 @@ function GraphStage(props: CanvasProps & { measure: TextMeasure; fonts: GraphFon
   const { index, graph, layout, measure, fonts } = props;
   // The Map is always the product's ground; the Tree and Nested maps the focus's product's tree.
   const root = useMemo(() => (layout === 'map' ? index.product : mapRootOf(index, graph.focus)), [index, graph.focus, layout]);
-  const input = useMemo(() => productInput(index, root, layout, measure.key), [index, root, layout, measure]);
+  // Made in the space's index worker (map-input.ts), with the index it was made for: until a new one arrives, the
+  // one before is laid out (or stays laid out) with its own index.
+  const made = useMapInput(index, root, layout, measure.key);
+  const input = made?.input ?? null;
   // Tidy up (LA-PAT-APP-UX-R22): the Map laid out afresh, by the stage's shared command and button; every later change
   // keeps its places from it. The Tree and Nested maps are laid out top-down, so they have nothing to tidy.
   const [tidy, setTidy] = useState(0);
-  useCommand('stageTidy', () => { tidyGround(input); setTidy((t) => t + 1); }, layout === 'map');
-  const laid = useLaidOut<GraphMap | NestedMap | GroundMap, RecordIndex>(input, index, fonts, tidy);
+  useCommand('stageTidy', () => { if (input) tidyGround(input); setTidy((t) => t + 1); }, layout === 'map');
+  const laid = useLaidOut<GraphMap | NestedMap | GroundMap, RecordIndex>(input, made?.of ?? index, fonts, tidy);
   if (!laid) return <div className="graph-flow" data-layout={layout} aria-busy="true" />;
   return <GraphScene {...props} map={laid.map} mapIndex={laid.of} />;
 }

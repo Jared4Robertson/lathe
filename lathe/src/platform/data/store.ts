@@ -16,7 +16,7 @@ import { loadConfig, PACKAGE_DIR } from '../../config.ts';
 import { attachCached, baseKey, copyDatabase, isValidated, markValidated, productKey, validatedKey, writeCached } from './cache.ts';
 import { appendRows, insertRows } from './insert.ts';
 import { settleWrite, type Settled } from './journal.ts';
-import { integrityQueries, recordScopeColumns, recordScopeSql, storeViewsSql, type IntegrityQuery } from './integrity.ts';
+import { integrityQueries, materializeViewsSql, recordScopeColumns, recordScopeSql, storeViewsSql, type IntegrityQuery } from './integrity.ts';
 import { problemAt, StoreError, type Origin, type StoreProblem } from './problems.ts';
 import { productKindSql, type DeclarationProblem } from './product-kinds.ts';
 import type { Located } from './references.ts';
@@ -928,6 +928,7 @@ export class Store {
         throw error;
       });
       await this.step('record_scope', () => builder.run(recordScopeSql(schema)));
+      await this.step('views made tables', () => builder.run(materializeViewsSql()));
       // The integrity queries only read, so they run side by side on a few connections; their problems keep the
       // queries' order.
       const queries = allIntegrityQueries(schema);

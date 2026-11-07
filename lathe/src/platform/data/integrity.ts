@@ -98,6 +98,19 @@ WHERE k.complexity IS NOT NULL AND k.complexity <> 'as-parent';
 `;
 }
 
+/** The store's views that read many tables, made tables once a data database's rows are in (materializeViewsSql). */
+const MATERIALIZED_VIEWS = ['record_parent', 'link', 'record_text', 'record_complexity'] as const;
+
+/**
+ * The store's views over every kind or relation (record_parent, link, record_text, and record_complexity over
+ * record_parent), each made a table of the same name and rows once a data database's rows are in: a data database never
+ * changes after its load, so each is worked out once rather than by every integrity query and check that reads it, and
+ * DuckDB plans a query over one table rather than a union of every kind's (LA-PLT-UC01-R03). In dependency order, so
+ * record_complexity is made from the record_parent table.
+ */
+export const materializeViewsSql = (): string =>
+  MATERIALIZED_VIEWS.map((v) => `CREATE TABLE ${v}__made AS SELECT * FROM ${v}; DROP VIEW ${v}; ALTER TABLE ${v}__made RENAME TO ${v};`).join('\n');
+
 /**
  * The record_scope table (id, product_id, domain_id, aggregate_id), made once the data is in, in the same
  * transaction: every record with the product, domain and aggregate it sits in, through its parents. A record of a

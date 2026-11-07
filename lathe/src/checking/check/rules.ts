@@ -79,19 +79,35 @@ SELECT p.name, CASE
 END AS reason
 FROM parsed p LEFT JOIN writes w ON w.name = p.name`;
 
+// What DuckDB's parser reads of each query text: the parser binds nothing, so its reading of the same text is the same
+// on every load, and a process that runs the checks again (a live reload) reads each query once.
+const readings = new Map<string, Promise<string | null>>();
+const READINGS_KEPT = 512;
+function readingOf(connection: DuckDBConnection, sql: string): Promise<string | null> {
+  let known = readings.get(sql);
+  if (!known) {
+    known = (async () => {
+      const reading = await connection.prepare(`SELECT reason FROM (${queryReadingSql("(SELECT 'query' AS name, $1::VARCHAR AS query)")})`);
+      try {
+        reading.bindVarchar(1, sql);
+        return ((await reading.runAndReadAll()).getRowObjectsJson()[0]?.reason ?? null) as string | null;
+      } finally {
+        reading.destroySync();
+      }
+    })();
+    known.catch(() => readings.delete(sql));
+    if (readings.size >= READINGS_KEPT) readings.delete(readings.keys().next().value!);
+    readings.set(sql, known);
+  }
+  return known;
+}
+
 // Runs a check's query (LA-CHK-INV04, LA-CHK-INV06): first DuckDB's parser reads it, binding nothing, and a query
 // that is not one SELECT that only reads is refused before any of it is bound or run, whatever the rules let through.
 // Then it runs as one prepared SELECT inside a transaction that is always rolled back, so no check changes the data
 // the next check or coverage reads.
 export async function runCheckQuery<T>(connection: DuckDBConnection, sql: string): Promise<T[]> {
-  const reading = await connection.prepare(`SELECT reason FROM (${queryReadingSql("(SELECT 'query' AS name, $1::VARCHAR AS query)")})`);
-  let reason: string | null;
-  try {
-    reading.bindVarchar(1, sql);
-    reason = ((await reading.runAndReadAll()).getRowObjectsJson()[0]?.reason ?? null) as string | null;
-  } finally {
-    reading.destroySync();
-  }
+  const reason = await readingOf(connection, sql);
   if (reason) throw new Error(`its query ${reason}, as DuckDB reads it; a check's query is one SELECT that only reads`);
   await connection.run('BEGIN TRANSACTION');
   try {

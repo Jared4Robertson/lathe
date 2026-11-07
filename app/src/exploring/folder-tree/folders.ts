@@ -36,22 +36,43 @@ export interface OwnerFolders {
   loose: Folder[];
 }
 
-/** The tree looked up: each owner's folders and each record's folded children. */
+/** One owner looked up: its folders, and the folded children of each record in them. */
 interface Looked {
-  owners: Map<string, OwnerFolders>;
+  folders: OwnerFolders;
   folded: Map<string, RecordSummary[]>;
+  /** The IDs of every record its folders hold, folded ones too. */
+  ids: Set<string>;
+  /** The records it reads, each as it was (null where the index held none and a summary stood in): it stands while they do. */
+  read: [id: string, record: RecordSummary | null][];
+  /** The records' lookups it was found to stand for. */
+  holds: WeakSet<RecordIndex['byId']>;
 }
 
-// Worked out once per tree answer and the records and meta model it was looked up with: an index that differs only in
-// its problems or coverage shares it, so the nav does not look the whole tree up again for them.
-const cache = new WeakMap<FolderTree, { byId: RecordIndex['byId']; meta: RecordIndex['meta']; looked: Looked }>();
+// Each owner (Shared, a domain) is looked up once per its part of the tree answer and the meta model, and stands for
+// any index whose records it reads are the very ones it was looked up with: a reload that changed one domain looks up
+// that domain alone (the space's index worker sends the owners that did not change as they were), and an index that
+// differs only in its problems or coverage shares every owner.
+const owners = new WeakMap<TreeOwner, { meta: RecordIndex['meta']; looked: Looked }>();
 
-function look(index: RecordIndex): Looked {
-  const known = cache.get(index.folders);
-  if (known && known.byId === index.byId && known.meta === index.meta) return known.looked;
+function lookOwner(index: RecordIndex, owner: TreeOwner): Looked {
+  const known = owners.get(owner);
+  if (known && known.meta === index.meta) {
+    const { looked } = known;
+    if (looked.holds.has(index.byId)) return looked;
+    if (looked.read.every(([id, record]) => (record ? index.byId.get(id) === record : !index.byId.has(id)))) {
+      looked.holds.add(index.byId);
+      return looked;
+    }
+  }
   const folded = new Map<string, RecordSummary[]>();
-  const summaryOf = (e: FolderEntry): RecordSummary =>
-    index.byId.get(e.id) ?? { id: e.id, kind: e.kind, title: e.title, parent: null, product: index.product, domain: null, group: null, testState: null, names: null, level: null, file: '', line: 0, digest: '' };
+  const read: Looked['read'] = [];
+  const ids = new Set<string>();
+  const summaryOf = (e: FolderEntry): RecordSummary => {
+    const record = index.byId.get(e.id);
+    ids.add(e.id);
+    read.push([e.id, record ?? null]);
+    return record ?? { id: e.id, kind: e.kind, title: e.title, parent: null, product: index.product, domain: null, group: null, testState: null, names: null, level: null, file: '', line: 0, digest: '' };
+  };
   const walk = (e: FolderEntry) => {
     if (e.folded.length > 0) folded.set(e.id, e.folded.map(summaryOf));
     e.folded.forEach(walk);
@@ -60,29 +81,52 @@ function look(index: RecordIndex): Looked {
     f.entries.forEach(walk);
     return { key: f.key, kind: f.kind, label: plural(kindLabel(index, f.kind)), description: index.meta.kinds.get(f.kind)?.description ?? '', records: f.entries.map(summaryOf), count: f.count };
   };
-  const ownerOf = (o: TreeOwner): OwnerFolders => ({
-    stages: o.stages.map((s) => {
-      const folders = s.folders.map(folderOf);
+  const folders: OwnerFolders = {
+    stages: owner.stages.map((s) => {
+      const inStage = s.folders.map(folderOf);
       const stage = index.meta.stages.find((m) => m.stage === s.stage);
-      return { key: s.key, stage: s.stage, label: stage?.label ?? s.stage.replaceAll('-', ' '), description: stage?.description ?? '', folders, direct: s.direct ? folders[0] : null, count: s.count };
+      return { key: s.key, stage: s.stage, label: stage?.label ?? s.stage.replaceAll('-', ' '), description: stage?.description ?? '', folders: inStage, direct: s.direct ? inStage[0] : null, count: s.count };
     }),
-    loose: o.loose.map(folderOf),
-  });
-  const owners = new Map<string, OwnerFolders>();
-  owners.set(index.folders.shared.owner, ownerOf(index.folders.shared));
-  for (const d of index.folders.domains) owners.set(d.owner, ownerOf(d));
-  const looked = { owners, folded };
-  cache.set(index.folders, { byId: index.byId, meta: index.meta, looked });
+    loose: owner.loose.map(folderOf),
+  };
+  const looked: Looked = { folders, folded, ids, read, holds: new WeakSet([index.byId]) };
+  owners.set(owner, { meta: index.meta, looked });
   return looked;
+}
+
+/** Each owner of a tree answer by its ID. */
+const ownersOf = new WeakMap<FolderTree, Map<string, TreeOwner>>();
+function byOwner(tree: FolderTree): Map<string, TreeOwner> {
+  let known = ownersOf.get(tree);
+  if (!known) {
+    known = new Map([[tree.shared.owner, tree.shared], ...tree.domains.map((d) => [d.owner, d] as const)]);
+    ownersOf.set(tree, known);
+  }
+  return known;
 }
 
 const NONE: OwnerFolders = { stages: [], loose: [] };
 
 /** A domain's or a product's (its Shared) stages and folders. */
-export const ownerFolders = (index: RecordIndex, owner: string): OwnerFolders => look(index).owners.get(owner) ?? NONE;
+export function ownerFolders(index: RecordIndex, owner: string): OwnerFolders {
+  const found = byOwner(index.folders).get(owner);
+  return found ? lookOwner(index, found).folders : NONE;
+}
 
-/** A record's children that fold under it: those of its own stage, kind by kind. */
-export const foldedChildren = (index: RecordIndex, record: { id: string }): RecordSummary[] => look(index).folded.get(record.id) ?? [];
+/**
+ * A record's children that fold under it: those of its own stage, kind by kind. They are looked up in its domain's folders
+ * (Shared's for a record of no domain), where the tree places it; a record found elsewhere, or nowhere, in every owner's.
+ */
+export function foldedChildren(index: RecordIndex, record: { id: string }): RecordSummary[] {
+  const owners = byOwner(index.folders);
+  const r = index.byId.get(record.id);
+  const own = r ? owners.get(r.domain ?? r.product ?? index.product) : undefined;
+  for (const owner of own ? [own, ...owners.values()] : owners.values()) {
+    const looked = lookOwner(index, owner);
+    if (looked.ids.has(record.id)) return looked.folded.get(record.id) ?? [];
+  }
+  return [];
+}
 
 /** Every folder of an owner, the stages' then the loose ones. */
 export const allFolders = (folders: OwnerFolders): Folder[] => [...folders.stages.flatMap((s) => s.folders), ...folders.loose];

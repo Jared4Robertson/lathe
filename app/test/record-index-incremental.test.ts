@@ -86,16 +86,20 @@ describe('the record index by what changed', () => {
     expect(first.byId.get('P-D1-UC2')!.title).toBe('P-D1-UC2');
   });
 
-  it('LA-EXP-RM01-SR01-T03 keeps the folder tree looked up for an index that differs only in its problems', () => {
+  it('LA-EXP-RM01-SR01-T03 keeps each owner of the folder tree looked up while the records it reads are the very ones it was looked up with', () => {
     const { records, links } = space();
     const meta = indexMetaModel({ stages: [], kinds: [], relations: [] } as unknown as MetaModel);
-    const tree = { product: 'P', shared: { owner: 'P', stages: [], loose: [] }, domains: [] } as unknown as FolderTree;
+    const folder = (owner: string, id: string) => ({ owner, stages: [{ key: `${owner}/use-cases`, stage: 'use-cases', folders: [{ key: `${owner}/use-cases/use_case`, kind: 'use_case', entries: [{ id, kind: 'use_case', title: id, folded: [] }], count: 1 }], direct: true, count: 1 }], loose: [] });
+    const tree = { product: 'P', shared: { owner: 'P', stages: [], loose: [] }, domains: [{ ...folder('P-D1', 'P-D1-UC2'), title: 'D1' }, { ...folder('P-D2', 'P-D2-UC1'), title: 'D2' }] } as unknown as FolderTree;
     const held = recordsOf(answerOf(records, links), null);
     const one = indexOf(meta, held, tree, problemsOf(null), coverageOf('P', null));
     const other = indexOf(meta, held, tree, problemsOf(null), coverageOf('P', null));
-    expect(ownerFolders(other, 'P')).toBe(ownerFolders(one, 'P'));
-    const moved = recordsOf(answerOf(records.map((r) => (r.id === 'P-D1-UC2' ? { ...r, title: 'Renamed', digest: 'x' } : r)), links), held);
-    expect(ownerFolders(indexOf(meta, moved, tree, problemsOf(null), coverageOf('P', null)), 'P')).not.toBe(ownerFolders(one, 'P'));
+    expect(ownerFolders(other, 'P-D1')).toBe(ownerFolders(one, 'P-D1'));
+    const moved = indexOf(meta, recordsOf(answerOf(records.map((r) => (r.id === 'P-D1-UC2' ? { ...r, title: 'Renamed', digest: 'x' } : r)), links), held), tree, problemsOf(null), coverageOf('P', null));
+    // The owner that reads the renamed record is looked up again; the one that does not is kept.
+    expect(ownerFolders(moved, 'P-D1')).not.toBe(ownerFolders(one, 'P-D1'));
+    expect(ownerFolders(moved, 'P-D1').stages[0].folders[0].records[0].title).toBe('Renamed');
+    expect(ownerFolders(moved, 'P-D2')).toBe(ownerFolders(one, 'P-D2'));
   });
 });
 

@@ -21,7 +21,8 @@
 // unique key's name and condition, index keys, column types, NOT NULL, CHECKs and which statement made the table (a
 // view may be made by CREATE TABLE ... AS, as DuckDB has no materialized view) are not compared. An expression in an
 // index's column list is not a column. Statements built at run time from pieces the text does not show are not seen.
-import { readdir, readFile, stat } from 'node:fs/promises';
+import { readdir, stat } from 'node:fs/promises';
+import { textOf } from './file-texts.ts';
 import path from 'node:path';
 import type { Store } from '../platform/data/store.ts';
 import type { Row } from '../platform/data/rows.ts';
@@ -320,12 +321,12 @@ async function readTarget(resolved: string): Promise<string | null> {
   } catch {
     return null;
   }
-  if (info.isFile()) return readFile(resolved, 'utf8');
+  if (info.isFile()) return textOf(resolved);
   if (!info.isDirectory()) return null;
   const texts: string[] = [];
   for (const entry of await readdir(resolved, { withFileTypes: true, recursive: true })) {
     if (!entry.isFile() || entry.parentPath.split(path.sep).includes('node_modules')) continue;
-    texts.push(await readFile(path.join(entry.parentPath, entry.name), 'utf8'));
+    texts.push(await textOf(path.join(entry.parentPath, entry.name)));
   }
   return texts.join('\n;\n');
 }

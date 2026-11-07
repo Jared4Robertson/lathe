@@ -396,6 +396,27 @@ function ErdCanvas({ index, map, at, focus, refocus, onNavigate, space, cameraKe
     return out;
   }, [placed, morph, tween, marks.highlight, fonts, focus, at.pick, offsets, words, touch, lookVersion]);
 
+  // Every box's text laid out ahead, a few at a time while the page is idle, so a zoom out that brings thousands of boxes
+  // into view lays out none of them in its frame (LA-STD-EXPERIENCE-R02): each box's text is laid out once (boxText).
+  useEffect(() => {
+    if (!placed) return;
+    const boxes = placed.map.boxes;
+    let next = 0;
+    let handle: number | null = null;
+    const idle = typeof requestIdleCallback === 'function';
+    const work = (deadline?: IdleDeadline) => {
+      const until = performance.now() + Math.min(4, deadline ? deadline.timeRemaining() : 4);
+      while (next < boxes.length && performance.now() < until) {
+        const box = boxes[next++];
+        const laid = placed.rects.get(box.id);
+        if (laid) boxText(box, laid.width, kindLine(box), fonts);
+      }
+      if (next < boxes.length) handle = idle ? requestIdleCallback(work) : window.setTimeout(work, 16);
+    };
+    handle = idle ? requestIdleCallback(work) : window.setTimeout(work, 16);
+    return () => { if (handle !== null) { if (idle) cancelIdleCallback(handle); else clearTimeout(handle); } };
+  }, [placed, fonts, lookVersion]);
+
   /** The regions' names zoomed out. */
   const regions = useCallback((now: number): RegionLabel[] => (placed ? placed.map.boxes.flatMap((b) => {
     const b2 = b.kind === 'domain' ? morph.box(b.id, now) : null;

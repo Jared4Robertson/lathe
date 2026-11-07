@@ -32,7 +32,8 @@ export async function installProbes(page: Page) {
     try {
       new PerformanceObserver((list) => {
         for (const e of list.getEntries() as (PerformanceEntry & { blockingDuration?: number; scripts?: { duration: number; sourceFunctionName?: string; invoker?: string; sourceURL?: string }[] })[]) {
-          const scripts = (e.scripts ?? []).sort((a, b) => b.duration - a.duration).slice(0, 3)
+          // The entry's scripts are a frozen list: sorted as a copy.
+          const scripts = [...(e.scripts ?? [])].sort((a, b) => b.duration - a.duration).slice(0, 3)
             .map((s) => `${Math.round(s.duration)}ms ${s.invoker ?? ''} ${s.sourceFunctionName ?? ''} ${(s.sourceURL ?? '').split('/').pop()}`.trim());
           window.__perf.loafs.push({ t: e.startTime, duration: e.duration, blocking: e.blockingDuration ?? 0, scripts });
         }

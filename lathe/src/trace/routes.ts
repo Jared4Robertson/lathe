@@ -25,7 +25,8 @@
 // It does not recognize a route built at run time (from parts, by a function, or matched by prefix with startsWith),
 // a route table in a configuration file, a framework's file-system routes (a pages/ or app/ folder) or a
 // language whose strings and comments are not written as JavaScript's are.
-import { glob, readFile, stat } from 'node:fs/promises';
+import { glob, stat } from 'node:fs/promises';
+import { textOf } from './file-texts.ts';
 import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
 import { otherProductHolds, type LatheConfig } from '../config.ts';
@@ -340,7 +341,7 @@ export async function gatherRouteFacts({ root, routers }: Pick<LatheConfig, 'roo
         try {
           const info = await stat(resolved);
           const files = info.isFile() ? [rel] : info.isDirectory() ? await walkFiles(root, (_, name) => name === 'node_modules' || name === '.git', rel) : [];
-          return { files, texts: await Promise.all(files.map((f) => readFile(path.join(root, f), 'utf8'))) };
+          return { files, texts: await Promise.all(files.map((f) => textOf(path.join(root, f)))) };
         } catch {
           return { files: [], texts: [] };
         }

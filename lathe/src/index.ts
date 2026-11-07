@@ -1,7 +1,7 @@
 // The Lathe engine: loads a product's data/ folder through the store into the typed tables, runs the checks (rows of
 // the check table, Lathe's and the product's) against them, and computes coverage from views over them.
 import { existsSync, readdirSync, statSync } from 'node:fs';
-import { readFile, stat } from 'node:fs/promises';
+import { entryOf, fromText } from './trace/file-texts.ts';
 import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
 import { servesOf } from './trace/serves.ts';
@@ -84,21 +84,14 @@ function resolveInside(root: string, file: string): string | null {
   return rel.startsWith('..') || path.isAbsolute(rel) ? null : resolved;
 }
 
-// What a path is: a file, a folder, or nothing (missing, or outside the root).
-async function entry(file: string | null): Promise<'file' | 'folder' | null> {
-  if (!file) return null;
-  try {
-    const info = await stat(file);
-    return info.isFile() ? 'file' : info.isDirectory() ? 'folder' : null;
-  } catch {
-    return null;
-  }
-}
-
-// True if the text names the ID as a whole ID: TL-LEND-INV05 is not found in TL-LEND-INV050 or TL-LEND-INV05-T.
-function mentionsId(content: string, id: string): boolean {
-  const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(`(?<![A-Za-z0-9-])${escaped}(?![A-Za-z0-9]|-[A-Za-z0-9])`).test(content);
+// Every whole ID-shaped word a text names, so a record's ID is found in its file when it is one of them: TL-LEND-INV05
+// is not found in TL-LEND-INV050 or TL-LEND-INV05-T. A word runs over letters, digits and the hyphens between them; it
+// stands whole when no letter, digit or hyphen comes before it and none after (a hyphen ending it, as in "LA-X- " or
+// "LA-X-.", leaves it whole).
+function idsIn(content: string): Set<string> {
+  const ids = new Set<string>();
+  for (const m of content.matchAll(/(?<![A-Za-z0-9-])[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*/g)) ids.add(m[0]);
+  return ids;
 }
 
 // Facts about the files records name: every record of a kind with a file column (the technical kinds, the test kinds,
@@ -117,24 +110,21 @@ async function gatherFileFacts(root: string, store: Store): Promise<FileFact[]> 
     for (const kind of Object.values(store.schema.kinds).filter((k) => k.stage === 'technical-specification')) for (const row of store.rows(kind.name)) kindOf.set(String(row.id), kind.name);
   }
   const helpers = helperRows.map((row) => ({ kind: kindOf.get(String(row.record_id)) ?? '', id: String(row.record_id), file: String(row.file), helper: true }));
-  const contents = new Map<string, Promise<{ type: 'file' | 'folder' | null; text: string }>>();
-  const read = (resolved: string | null) => {
+  // Each file is looked at once per load; its text is read again only when it changed (file-texts.ts), and whether it
+  // names an ID is worked out once per version of it.
+  const types = new Map<string, 'file' | 'folder' | null>();
+  const typeOf = (resolved: string | null) => {
     const key = resolved ?? '';
-    let known = contents.get(key);
-    if (!known) {
-      known = (async () => {
-        const type = await entry(resolved);
-        return { type, text: type === 'file' && resolved ? await readFile(resolved, 'utf8') : '' };
-      })();
-      contents.set(key, known);
-    }
-    return known;
+    let type = types.get(key);
+    if (type === undefined) { type = entryOf(resolved).type; types.set(key, type); }
+    return type;
   };
   return Promise.all([...named, ...helpers].map(async ({ kind, id, file, helper }): Promise<FileFact> => {
-    const { type, text } = await read(resolveInside(root, file));
-    const exists = type === 'file' || (type === 'folder' && !tests.has(kind) && !helper);
     const resolved = resolveInside(root, file);
-    return { record: id, kind, file, path: resolved && normalizePath(path.relative(root, resolved)), file_exists: exists, contains_id: type === 'file' && mentionsId(text, id), helper };
+    const type = typeOf(resolved);
+    const exists = type === 'file' || (type === 'folder' && !tests.has(kind) && !helper);
+    const contains = type === 'file' && resolved !== null && (await fromText(resolved, 'ids', idsIn)).has(id);
+    return { record: id, kind, file, path: resolved && normalizePath(path.relative(root, resolved)), file_exists: exists, contains_id: contains, helper };
   }));
 }
 
@@ -155,8 +145,8 @@ async function gatherTestCases(root: string, globs: readonly string[], facts: Pr
   const skip = (folder: string, name: string) => name === 'node_modules' || name === 'dist' || name.startsWith('.') || existsSync(path.join(root, folder, CONFIG_FILE));
   const casesOf = async (file: string): Promise<TestCaseFact[]> => {
     const resolved = path.join(root, file);
-    if ((await entry(resolved)) !== 'file') return [];
-    return readTestCases(await readFile(resolved, 'utf8')).map((c, i): TestCaseFact => ({ file, position: i + 1, ...c }));
+    if (entryOf(resolved).type !== 'file') return [];
+    return (await fromText(resolved, 'test cases', readTestCases)).map((c, i): TestCaseFact => ({ file, position: i + 1, ...c }));
   };
   // The files the globs match are read while the records' files are looked at; a test file a record names that no
   // glob matches is read after.

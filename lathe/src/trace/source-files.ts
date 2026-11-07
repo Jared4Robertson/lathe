@@ -15,7 +15,8 @@
 // root, as records write them, after dropping a leading ./ and a trailing slash. It reads only names and the first
 // lines of each file; it never reads code for record IDs, which code needs not carry.
 import { existsSync } from 'node:fs';
-import { open, readdir } from 'node:fs/promises';
+import { readdir } from 'node:fs/promises';
+import { fromText } from './file-texts.ts';
 import path from 'node:path';
 import { CONFIG_FILE } from '../config.ts';
 
@@ -33,17 +34,6 @@ const GENERATED = (head: string) => /@generated/.test(head) || (/\bgenerated\b/i
 
 /** Path as records write it: from the repo root, forward slashes, no leading ./ and no trailing slash. */
 export const normalizePath = (file: string) => path.posix.normalize(file.split(path.sep).join('/').replace(/^\.\//, '')).replace(/\/+$/, '');
-
-async function head(file: string): Promise<string> {
-  const handle = await open(file, 'r');
-  try {
-    const buffer = Buffer.alloc(1024);
-    const { bytesRead } = await handle.read(buffer, 0, buffer.length, 0);
-    return buffer.subarray(0, bytesRead).toString('utf8').split('\n').slice(0, 5).join('\n');
-  } finally {
-    await handle.close();
-  }
-}
 
 /**
  * Every file in the folder (from the root, '' for the root itself) and the folders under it, from the root, depth
@@ -78,7 +68,7 @@ export async function sourceFiles(root: string, source: readonly string[], tests
   });
   const files = await Promise.all(found.map(async (rel) => {
     try {
-      return GENERATED(await head(path.join(root, rel))) ? null : rel;
+      return GENERATED(await fromText(path.join(root, rel), 'head', (text) => text.slice(0, 1024).split('\n').slice(0, 5).join('\n'))) ? null : rel;
     } catch {
       return null; // a file gone since
     }
