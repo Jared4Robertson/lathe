@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { desktopBridgeStub, openApp } from './helpers';
 import { REQUIRED_PAIRS, colorOf } from '../src/theme/audit';
@@ -12,6 +12,7 @@ import { parseSpecRoute } from '../src/views/spec-route';
 import { isRecordId } from '../src/views/address';
 import { workspace } from './fixtures/workspace';
 import { recordIndexOf } from './read-view';
+import { BottomSheet } from '../src/shell/BottomSheet';
 import { Card } from '../src/shell/Card';
 import type { LatheDesktop } from '../src/shell/desktop-bridge';
 
@@ -448,6 +449,16 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
   };
 
   it('LA-V61-R19-T02 LA-V61-R26-T01 LA-PAT-APP-UX-R07-T01 LA-PAT-APP-UX-R07-T02 Everything works by touch: on a coarse pointer every clickable control is at least 44 x 44 px, as itself or through a target stretched around it', touchTargets);
+
+  it('LA-PAT-APP-UX-R07-T01 LA-PAT-APP-UX-R07-T02 A drag by hand leaves no fling to swallow the next tap: every touch-action none surface cancels its touchmove', () => {
+    const holders: Record<string, string> = { '.resize-handle': 'components/ResizeHandle.tsx', '.sheet-grab': 'shell/BottomSheet.tsx', '.graph-flow': 'graph/gestures.ts', '.erd-flow': 'graph/gestures.ts' };
+    const surfaces = styleRules(CSS).filter((r) => /touch-action:\s*none/.test(r.body)).flatMap((r) => topLevel(r.selector).map((s) => s.trim()));
+    expect(surfaces.sort()).toEqual(Object.keys(holders).sort());
+    for (const file of new Set(Object.values(holders))) expect(readFileSync(join(SRC, file), 'utf8'), file).toMatch(/useNoFling\(/);
+    // fireEvent answers false when the event was canceled: a drag on the handle.
+    const { container } = render(<BottomSheet label="Wiki card" onClose={() => {}}>Body</BottomSheet>);
+    expect(fireEvent.touchMove(container.querySelector('.sheet-grab')!)).toBe(false);
+  });
 
   it('LA-PAT-APP-UX-R07-T01 LA-PAT-APP-UX-R07-T02 Nothing is reachable only by hover: a control a hover reveals is always shown on a coarse pointer, and every tooltip also shows on keyboard focus', () => {
     const rules = styleRules(CSS);

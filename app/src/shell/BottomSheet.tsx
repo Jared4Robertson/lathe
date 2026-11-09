@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
+import { useNoFling } from '../components/useNoFling';
 import { lowerLabel } from '../plural';
 import { trapTab, useLandscape } from './useNarrow';
 
@@ -68,6 +69,8 @@ export function BottomSheet({ label, onClose, className, size: held, onSize, chi
   const start = useRef<{ y: number; t: number } | null>(null);
   const moved = useRef(false);
   const box = useRef<HTMLDivElement>(null);
+  const grab = useRef<HTMLDivElement>(null);
+  useNoFling(grab);
   const name = lowerLabel(label);
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
@@ -116,7 +119,7 @@ export function BottomSheet({ label, onClose, className, size: held, onSize, chi
         style={offset ? { ...edge, transform: `translateY(${offset}px)` } : edge}
         onKeyDown={onKeyDown}
       >
-        <div className="sheet-grab" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
+        <div ref={grab} className="sheet-grab" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
           {/* On its side the sheet has one height: its handle only drags it away. */}
           {landscape ? (
             <span className="sheet-handle"><span className="sheet-handle-bar" aria-hidden="true" /></span>

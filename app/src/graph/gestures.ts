@@ -6,6 +6,7 @@
 // LA-PLT-A4) scroll zooms and Cmd or Ctrl with scroll pans. A gesture during a glide takes over from it.
 // Each stage keeps its own camera (its viewport ref and paint) and says what follows a move through the callbacks.
 import { useCallback, useEffect, useRef, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
+import { useNoFling } from '../components/useNoFling';
 import { useScrollToZoom } from '../platform/appearance/use-scroll-to-zoom';
 import { glideDuration, zoomPath, type Viewport } from './camera';
 import { readMotion } from './motion';
@@ -157,6 +158,7 @@ export function wheelLatch(): (e: { zoom: boolean } & Pick<WheelEvent, 'deltaX' 
 export function useCameraGestures(options: CameraGestureOptions): CameraGestures {
   const o = useRef(options);
   o.current = options;
+  useNoFling(options.canvas);
 
   const glide = useRef<number | null>(null);
   const stopGlide = useCallback(() => { if (glide.current !== null) { cancelAnimationFrame(glide.current); glide.current = null; } }, []);

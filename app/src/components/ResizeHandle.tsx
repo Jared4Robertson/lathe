@@ -1,4 +1,5 @@
-import type { KeyboardEvent, PointerEvent } from 'react';
+import { useRef, type KeyboardEvent, type PointerEvent } from 'react';
+import { useNoFling } from './useNoFling';
 
 // A vertical handle that resizes what sits beside it, as in VS Code: drag it, or focus it and use
 // the arrow keys (Shift for bigger steps), Home and End for the limits, and double-click to reset.
@@ -29,6 +30,8 @@ export interface ResizeHandleProps {
 
 export function ResizeHandle({ label, value, min, max, step, bigStep, valueAt, onChange, onReset, collapseBelow, onCollapse, side = 'before', className = '' }: ResizeHandleProps) {
   const clamp = (v: number) => Math.round(Math.min(max, Math.max(min, v)));
+  const handle = useRef<HTMLDivElement>(null);
+  useNoFling(handle);
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
@@ -60,6 +63,7 @@ export function ResizeHandle({ label, value, min, max, step, bigStep, valueAt, o
 
   return (
     <div
+      ref={handle}
       className={`resize-handle ${className}`.trim()}
       role="separator"
       aria-orientation="vertical"
