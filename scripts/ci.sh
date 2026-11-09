@@ -14,6 +14,23 @@ logs="${CI_LOGS:-ci-logs}"
 mkdir -p "$logs"
 export ELECTRON_SKIP_BINARY_DOWNLOAD=1
 
+# Each failed browser test's heading, its first Error: line and what follows it up to the code frame: the locator and
+# the expected and received lines, a diff's lines included. Bounded per test and overall, so the job log stays readable.
+first_errors() {
+  awk '
+    function flush_line(text) { if (printed < 12) { print "    " substr(text, 1, 300); printed++ } }
+    { gsub(/\033\[[0-9;]*m/, "") }
+    /^  [0-9]+\) / && index($0, " › ") {
+      if (++tests > 40) { print "  (only the first 40 failed tests are shown)"; exit }
+      cut = index($0, " ──"); print (cut ? substr($0, 1, cut - 1) : $0)
+      state = "before"; printed = 0; next
+    }
+    state == "before" && /^    Error: / { sub(/^    /, ""); flush_line($0); state = "in"; next }
+    state == "in" && (/^ +>? *[0-9]+ \|/ || /^    Call [Ll]og/ || /^    Error Context/ || /^ +at /) { state = "done"; next }
+    state == "in" && /^    (Locator: |Expected|Received|Timeout: |[-+] )/ { sub(/^    /, ""); flush_line($0) }
+  ' "$1"
+}
+
 failed=0
 rows=()
 step() {
@@ -29,6 +46,7 @@ step() {
     tail -20 "$log"
     # A browser suite prints its measures after its summary, so the tests that failed are listed here on their own.
     grep -E '^[[:space:]]+([0-9]+ (failed|flaky)$|\[[^]]+\] › )' "$log" | sort -u | head -80
+    first_errors "$log"
   else
     echo "ok   $name"
   fi
