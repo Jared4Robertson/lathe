@@ -223,7 +223,7 @@ code { font: 0.86em var(--mono); }
 .coverage { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
 .coverage-heading { margin: 4px 0 0; font-size: 0.78rem; font-weight: 600; }
 .coverage-heading span { font: 0.72rem var(--mono); color: var(--muted); margin-left: 4px; }
-.bar { display: grid; grid-template-columns: 96px 1fr 40px; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--muted); }
+.bar { display: grid; grid-template-columns: 118px 1fr 40px; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--muted); }
 .bar-track { height: 6px; border-radius: 3px; background: var(--paper); border: 1px solid var(--rule); overflow: hidden; }
 .bar-fill { display: block; height: 100%; background: var(--warn); }
 .bar-fill.full { background: var(--steel); }

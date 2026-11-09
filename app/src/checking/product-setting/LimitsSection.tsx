@@ -30,8 +30,8 @@ export function LimitsSection({ index, product }: { index: RecordIndex; product:
         <LimitsEditor index={index} limits={read.answer}>
           <p className="hint">{read.answer.own ? 'Set for this product. ' : 'The defaults: this product has not set its own. '}The checks warn of a record with more children of one kind, and of an aggregate with more entities. A strict check fails on any warning beyond those it accepts.</p>
           <Facts facts={[
-            { label: 'Children of one kind', value: read.answer.maxChildren },
-            { label: 'Entities per aggregate', value: read.answer.maxEntitiesPerAggregate },
+            { label: 'Children limit', value: read.answer.maxChildren },
+            { label: 'Entities limit', value: read.answer.maxEntitiesPerAggregate },
             { label: 'Check', value: strictnessText(read.answer) },
           ]} />
         </LimitsEditor>

@@ -16,8 +16,8 @@ import { backToActions } from '../../edit/back-to-actions';
 
 /** Set limits' fields, from its input (the product is sent by the form itself). */
 const FIELDS: FieldSpec[] = formFields(PRODUCT_SETTING_FIELDS['/api/product-setting/set-limits'], ['product_id'], {
-  max_children: { label: 'Children of one kind' },
-  max_entities_per_aggregate: { label: 'Entities per aggregate' },
+  max_children: { label: 'Children limit' },
+  max_entities_per_aggregate: { label: 'Entities limit' },
 });
 
 /** The product's limits with Set limits; the form shows in their place while it is open. */

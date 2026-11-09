@@ -26,16 +26,16 @@ describe('LA-V51-R10-T01 a product\'s limits are read through the Product settin
     const shown = await limits();
     expect(requests).toContain('GET /api/product-setting/get-limits?product_id=DM');
     expect(shown).toHaveTextContent('The defaults: this product has not set its own.');
-    expect(fact(shown, 'Children of one kind')).toBe('15');
-    expect(fact(shown, 'Entities per aggregate')).toBe('7');
+    expect(fact(shown, 'Children limit')).toBe('15');
+    expect(fact(shown, 'Entities limit')).toBe('7');
   });
 
   it('shows the limits a product set as its own', async () => {
     await openApp('/DM', { data: addRows(workspace(), 'product_setting', { product_id: 'DM', max_children: 20, max_entities_per_aggregate: 5, technology_words: [] }) });
     const shown = await limits();
     expect(shown).toHaveTextContent('Set for this product.');
-    expect(fact(shown, 'Children of one kind')).toBe('20');
-    expect(fact(shown, 'Entities per aggregate')).toBe('5');
+    expect(fact(shown, 'Children limit')).toBe('20');
+    expect(fact(shown, 'Entities limit')).toBe('5');
   });
 });
 
@@ -59,7 +59,7 @@ describe('LA-V51-R11-T01 Set limits writes only through the Product setting aggr
     const { commands } = await openApp('/DM', { command: () => ({ answer: ok }) });
     await user.click(within(within(await limits()).getByRole('toolbar', { name: 'Change the limits of DM' })).getByRole('button', { name: 'Set limits' }));
     const form = screen.getByRole('form', { name: 'Set limits' });
-    const children = within(form).getByRole('spinbutton', { name: /^Children of one kind/ });
+    const children = within(form).getByRole('spinbutton', { name: /^Children limit/ });
     expect(children).toHaveValue(15);
     await user.clear(children);
     await user.type(children, '12');
@@ -75,7 +75,7 @@ describe('LA-V51-R12-T01 a refused Set limits shows every reason, keeps what was
     const { commands } = await openApp('/DM', { command: () => ({ answer: refusal }) });
     await user.click(within(within(await limits()).getByRole('toolbar', { name: 'Change the limits of DM' })).getByRole('button', { name: 'Set limits' }));
     const form = screen.getByRole('form', { name: 'Set limits' });
-    const children = within(form).getByRole('spinbutton', { name: /^Children of one kind/ });
+    const children = within(form).getByRole('spinbutton', { name: /^Children limit/ });
     await user.clear(children);
     await user.type(children, '0');
     await user.click(within(form).getByRole('button', { name: 'Set limits' }));

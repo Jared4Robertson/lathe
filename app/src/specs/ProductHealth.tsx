@@ -39,7 +39,7 @@ function CoverageGroup({ group }: { group: ObligationFigures }) {
           <Bar label="built" value={group.built} total={total} title={BUILT} />
         </>}
       <Bar label="proved" value={group.proved} total={total} title={PROVED} />
-      <Bar label="not automated" value={group.notAutomated} total={total} title={NOT_AUTOMATED} notAutomated />
+      <Bar label="not automated yet" value={group.notAutomated} total={total} title={NOT_AUTOMATED} notAutomated />
     </div>
   );
 }

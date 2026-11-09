@@ -32,12 +32,12 @@ describe('product page', () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(bars(card('Shopping'))).toEqual([
-      'designed 1/1', 'built 0/1', 'proved 0/1', 'not automated 1/1',
-      'designed 2/2', 'built 1/2', 'proved 1/2', 'not automated 0/2',
+      'designed 1/1', 'built 0/1', 'proved 0/1', 'not automated yet 1/1',
+      'designed 2/2', 'built 1/2', 'proved 1/2', 'not automated yet 0/2',
     ]);
     // A count of zero is drawn as a bar like any other; a kind with no obligations in the domain draws none.
     const pay = card('Paying');
-    expect(bars(pay)).toEqual(['designed 0/1', 'built 0/1', 'proved 0/1', 'not automated 0/1']);
+    expect(bars(pay)).toEqual(['designed 0/1', 'built 0/1', 'proved 0/1', 'not automated yet 0/1']);
     expect(within(pay).getAllByRole('img', { name: /^built: 0 of/ })).toHaveLength(1);
 
     // The same counts on the domain page.

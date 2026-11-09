@@ -12,6 +12,9 @@ import { parseSpecRoute } from '../src/views/spec-route';
 import { isRecordId } from '../src/views/address';
 import { workspace } from './fixtures/workspace';
 import { recordIndexOf } from './read-view';
+import { METRICS } from '../src/specs/metrics';
+import { plural } from '../src/plural';
+import type { SchemaDescription } from '../../lathe/src/platform/data/schema';
 import { BottomSheet } from '../src/shell/BottomSheet';
 import { Card } from '../src/shell/Card';
 import type { LatheDesktop } from '../src/shell/desktop-bridge';
@@ -22,6 +25,73 @@ import type { LatheDesktop } from '../src/shell/desktop-bridge';
 const ROOT = join(__dirname, '..', '..');
 const SRC = join(ROOT, 'app', 'src');
 const CSS = readFileSync(join(SRC, 'styles.css'), 'utf8');
+
+// LA-PAT-APP-UX-R26: what a label must not say instead of Lathe's name. Each word the Owner has had to correct goes here
+// with the name it replaces. It is kept here because a term has no field for the words it replaces.
+const SYNONYMS: readonly { wrong: RegExp; name: string }[] = [
+  { wrong: /\bExists for\b/, name: 'Business outcomes' },
+  { wrong: /\bMoved lately\b/, name: 'Changes' },
+  { wrong: /\bOverall condition\b/, name: 'Key metrics' },
+  { wrong: /\bChildren of one kind\b/, name: 'Children limit' },
+  { wrong: /\bEntities per aggregate\b/, name: 'Entities limit' },
+  { wrong: /\bnot automated\b(?! yet)/i, name: 'Not automated yet' },
+];
+
+/** Each use of a listed synonym in `text`, as "file:line: wrong, say name". */
+function synonymsIn(file: string, text: string): string[] {
+  return SYNONYMS.flatMap(({ wrong, name }) => where(file, text, wrong).map((hit) => `${hit} (Lathe's name: ${name})`));
+}
+
+// LA-PAT-APP-UX-R26: the headings that are no Lathe concept's name, each a plain word or a phrase around one. A new
+// heading that is neither a Lathe name nor listed here fails: name the concept, or add it here on purpose.
+const PLAIN_HEADINGS: ReadonlySet<string> = new Set([
+  // Plain words that name no Lathe concept.
+  'Colors', 'Example', 'Input', 'Key', 'Motion', 'Result', 'Scroll', 'Shape and density', 'Tool', 'Type',
+  'Fields', 'Files', 'History', 'Keys', 'Limits', 'Packages', 'Settings', 'Shared', 'Steps', 'Columns', 'Workspace',
+  'Keyboard shortcuts', 'Sessions in this folder', 'How records are kept', 'Where it sits', 'Other records', 'Helper files',
+  'Coverage', 'Shared coverage', 'Key metrics', 'Tests automated', 'Outcomes served',
+  // A Lathe name in a phrase saying which ones.
+  'Allowed children', 'Allowed parents', 'Checks that concern it', 'Kinds it concerns', 'Links in', 'Links out', 'Owed by',
+  'Patterns we follow', 'Problems in this domain', 'Problems in this product', 'Problems now', 'Product relations',
+  'Use cases it does not offer', 'Use cases it offers', 'Purposes',
+  // Called by another name, the records with it; each is the Owner's to rename (Tab, Color mode, Trace).
+  'Open pages', 'Light, dark or system', 'Traceability',
+]);
+
+/** Every name Lathe has for a thing: kinds and relations from the meta-model, stages, views and defined terms, in singular and plural. */
+function lathesNames(schema: SchemaDescription): Set<string> {
+  const rows = (table: string) => readFileSync(join(ROOT, 'data', `${table}.jsonl`), 'utf8').trim().split('\n').map((line) => JSON.parse(line) as { title: string });
+  const names = [
+    ...Object.values(schema.kinds).map((k) => k.label),
+    ...Object.values(schema.relations).flatMap((r) => [r.forwardLabel, r.reverseLabel]),
+    ...schema.stages.map((s) => s.label),
+    ...rows('term').map((t) => t.title),
+    ...rows('view').map((v) => v.title.replace(/ (page|panel|stage)$/, '')),
+  ];
+  return new Set(names.flatMap((n) => [n, plural(n)]));
+}
+
+/** The literal text of every Section title, tool panel name and h1-h6 in `source`. */
+function headingLiterals(source: string): string[] {
+  const attributes = (from: number) => {
+    let quote = '';
+    let depth = 0;
+    for (let i = from; i < source.length; i++) {
+      const c = source[i];
+      if (quote) { if (c === quote) quote = ''; } else if (c === '"' || c === "'" || c === '`') quote = c;
+      else if (c === '{') depth++;
+      else if (c === '}') depth--;
+      else if (c === '>' && depth === 0) return source.slice(from, i);
+    }
+    return '';
+  };
+  const named = (tag: RegExp, attribute: string) => [...source.matchAll(tag)].flatMap((m) => {
+    const value = new RegExp(`\\b${attribute}="([^"]+)"`).exec(attributes(m.index + m[0].length));
+    return value ? [value[1]] : [];
+  });
+  const texts = [...source.matchAll(/<h[1-6]\b[^>]*>\s*([^<{]+?)\s*</g)].map((m) => m[1].trim()).filter(Boolean);
+  return [...named(/<Section\b/g, 'title'), ...named(/<ToolPanelFrame\b/g, 'label'), ...texts];
+}
 
 function filesUnder(dir: string, ext: RegExp): string[] {
   return readdirSync(dir).flatMap((name) => {
@@ -99,6 +169,34 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
   it('LA-PAT-APP-UX-R13-T01 LA-PAT-APP-UX-R13-T02 No style title-cases a label word by word', () => {
     const sheets = [...filesUnder(join(ROOT, 'app/src'), /\.css$/), ...filesUnder(join(ROOT, 'desktop'), /\.(css|html)$/)];
     expect(sheets.flatMap((file) => where(file, readFileSync(file, 'utf8'), /text-transform:\s*capitalize/))).toEqual([]);
+  });
+
+  describe('LA-PAT-APP-UX-R26-T01 LA-PAT-APP-UX-R26-T02 A label naming a Lathe concept uses that concept\'s name', () => {
+    it('no source uses a synonym that stands in for a Lathe name', () => {
+      const sources = [...filesUnder(SRC, /\.tsx?$/), ...filesUnder(join(ROOT, 'desktop', 'src'), /\.tsx?$/)];
+      expect(sources.flatMap((file) => synonymsIn(file, readFileSync(file, 'utf8')))).toEqual([]);
+    });
+
+    it('fails on a planted synonym', () => {
+      expect(synonymsIn('x.tsx', '<Section title="Exists for">')).toHaveLength(1);
+      expect(synonymsIn('x.tsx', '<Section title="Business outcomes">')).toEqual([]);
+    });
+
+    it('every heading, tool name and metric names a concept by its name, or is a recorded plain word', () => {
+      const known = lathesNames(workspace().schema);
+      const shown = [
+        ...filesUnder(SRC, /\.tsx$/).flatMap((file) => headingLiterals(readFileSync(file, 'utf8'))),
+        ...Object.values(METRICS).map((m) => m.label),
+      ];
+      expect([...new Set(shown)].filter((label) => !known.has(label) && !PLAIN_HEADINGS.has(label)).sort()).toEqual([]);
+      // Nothing outlives its purpose: a plain heading that is no longer shown leaves the list.
+      expect([...PLAIN_HEADINGS].filter((label) => !shown.includes(label)).sort()).toEqual([]);
+    });
+
+    it('fails on a planted heading no Lathe name allows', () => {
+      expect(headingLiterals('<Section count={rows.map((r) => r.id).length} title="Exists for">')).toEqual(['Exists for']);
+      expect(lathesNames(workspace().schema).has('Exists for')).toBe(false);
+    });
   });
 
   it('LA-PAT-APP-CODE-R02-T01 LA-PAT-APP-CODE-R02-T02 Styles are set by class: no selector names only elements, beyond the base styles', () => {

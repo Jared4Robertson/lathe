@@ -132,7 +132,7 @@ test.describe('editing', () => {
     saveAnEdit(page, '/LA?page=format/checks/shared-module-group-unknown', /^summary/, "A shared module's group names an aggregate or capability of its domain, as the stability suite says.", 'shared-module-group-unknown'));
   test('LA-V51-R11-T02 on the Product page, set the product\'s limits', ({ page }) =>
     sendAForm(page, '/LA', 'Change the limits of LA', 'Set limits', 'Set limits', async (form) => {
-      await form.getByRole('spinbutton', { name: /^Children of one kind/ }).fill('16');
+      await form.getByRole('spinbutton', { name: /^Children limit/ }).fill('16');
     }));
   test('LA-V122-R07-T02 on the Pattern page, make a use case follow the pattern', ({ page }) =>
     sendAForm(page, '/LA-PAT-RECORD-PAGE', 'Followers of LA-PAT-RECORD-PAGE', 'Follow', 'Follow LA-PAT-RECORD-PAGE', async (form) => {

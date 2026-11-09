@@ -42,13 +42,13 @@ describe('obligation kinds and test states', () => {
     await openApp('/DM', served());
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(groups(card('Shopping'))).toEqual([
-      'Invariants 1: designed 1/1, built 0/1, proved 0/1, not automated 1/1',
-      'UC requirements 2: designed 2/2, built 1/2, proved 1/2, not automated 0/2',
-      'Security controls 1: designed 0/1, built 0/1, proved 0/1, not automated 0/1',
+      'Invariants 1: designed 1/1, built 0/1, proved 0/1, not automated yet 1/1',
+      'UC requirements 2: designed 2/2, built 1/2, proved 1/2, not automated yet 0/2',
+      'Security controls 1: designed 0/1, built 0/1, proved 0/1, not automated yet 0/1',
     ]);
     // A not automated bar is drawn apart from proof, and never as full.
     const notAutomated = card('Shopping').querySelector('[data-kind="invariant"] .bar.not-automated') as HTMLElement;
-    expect(within(notAutomated).getByRole('img', { name: 'not automated: 1 of 1' })).toBeInTheDocument();
+    expect(within(notAutomated).getByRole('img', { name: 'not automated yet: 1 of 1' })).toBeInTheDocument();
     expect(card('Shopping').querySelectorAll('.bar.not-automated .bar-fill.full')).toHaveLength(0);
 
     // The domain page shows the same groups.
@@ -156,7 +156,7 @@ describe('tests by state and tests not automated yet', () => {
     await openApp('/DM', { data: states() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const bar = card('Shopping').querySelector('[data-kind="invariant"] .bar.not-automated') as HTMLElement;
-    expect(bar).toHaveTextContent('not automated1/1');
+    expect(bar).toHaveTextContent('not automated yet1/1');
     expect(bar.getAttribute('title')).toMatch(/not automated yet.*not proof/i);
     // A kind with no obligations in the domain draws no bars.
     expect(card('Paying').querySelector('[data-kind="invariant"]')).toBeNull();

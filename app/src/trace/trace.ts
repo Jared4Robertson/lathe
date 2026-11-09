@@ -313,7 +313,7 @@ function build(index: RecordIndex, trace: ProductTrace): TraceGraph {
     }
     if (f) {
       if (f.test && known(f.test)) { record(suiteBox, f.test); link(f.id, f.test); }
-      if (!f.proved) { plain(suiteBox, `gap:${f.id}`, 'gap', { kind: 'Gap', title: f.test ? 'Flow test not automated' : 'No flow test', meta: `Gap · ${f.id}` }, { id: f.id }); link(f.id, `${suiteBox}/gap:${f.id}`); }
+      if (!f.proved) { plain(suiteBox, `gap:${f.id}`, 'gap', { kind: 'Gap', title: f.test ? 'Flow test not automated yet' : 'No flow test', meta: `Gap · ${f.id}` }, { id: f.id }); link(f.id, `${suiteBox}/gap:${f.id}`); }
     }
     if (data.lower.length > 0) {
       const lower = plain(suiteBox, 'lower', 'heading', { kind: 'Lower tests', title: 'Lower tests', meta: '', status: `${n(data.lower.length, 'obligation')} the suite rests on` }, { opens: innerKey(u, 'suite', 'lower') });
