@@ -5,7 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { frameRect, MIN_ZOOM, wholeIn, type Viewport } from '../graph/camera';
 import { faintest, fadeTween, keptFade, type FadeLook } from '../graph/fade';
-import { fontFor, pageMeasure, readGraphFonts, readyMeasure, type GraphFonts } from '../graph/fonts';
+import { EXACT_TEXT, fontFor, pageMeasure, readGraphFonts, readyMeasure, type GraphFonts } from '../graph/fonts';
 import { useCameraGestures } from '../graph/gestures';
 import { hitPlate } from '../graph/hit';
 import { PLAIN_LOOK, readLook, useThemeVersion, type Look } from '../graph/look';
@@ -489,6 +489,7 @@ function TraceScene({ index, focus, graph, laid, open, at, beside, every, onTogg
     if (ctx.current === undefined) ctx.current = canvas.current?.getContext('2d') ?? null;
     const g = ctx.current;
     if (!g) return;
+    g.textRendering = EXACT_TEXT;
     const spot = spotNow();
     const sp = spotlight.current;
     const faded = tween.now();

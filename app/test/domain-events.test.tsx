@@ -1,4 +1,3 @@
-import './graph/setup';
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { addressOf } from '../src/views/address';

@@ -6,6 +6,7 @@ import { type RecordIndex } from '../../exploring/record-summaries/record-index'
 import { saysKind } from '../../specs/InterfaceParts';
 import { ProblemBadge, RecordLink, Section } from '../../specs/parts';
 import { FlowSteps, pathLabel } from './FlowSteps';
+import { TableScroll } from '../../components/TableScroll';
 
 // A flow's page (LA-V101): a tab per interface that offers its use case. The first tab, All interfaces, is the flow as
 // written (FlowSteps), the only place it is edited; each other tab, one per offering interface by ID, is that
@@ -42,7 +43,7 @@ function Version({ index, flow, through }: { index: RecordIndex; flow: FlowOnPag
         {through.paths.map((path) => (
           <section key={path.name} className="flow-path" aria-label={`${pathLabel(path.name)} through ${face}`}>
             <h3>{pathLabel(path.name)}<span className="section-count">{path.steps.length}</span></h3>
-            <div className="table-scroll table-stack">
+            <TableScroll stack>
               <table className="data-table flow-steps" role="table">
                 <caption className="sr-only">Steps of the {path.name} path of {flow.flow.id} through {face}, in order</caption>
                 <thead role="rowgroup">
@@ -73,7 +74,7 @@ function Version({ index, flow, through }: { index: RecordIndex; flow: FlowOnPag
                   })}
                 </tbody>
               </table>
-            </div>
+            </TableScroll>
           </section>
         ))}
       </Section>

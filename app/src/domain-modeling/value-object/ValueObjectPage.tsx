@@ -8,6 +8,7 @@ import { RecordFrame } from '../../specs/RecordContent';
 import { FieldsTable } from '../../specs/FieldsTable';
 import { ValueObjectEditor } from './ValueObjectEditor';
 import { useValueObject } from './reads';
+import { TableScroll } from '../../components/TableScroll';
 
 // The Value object page (LA-MOD-A9's page, LA-V142): any record of a value object, at its address (/<id>), drawn from
 // the value object read whole (GET /api/value-object/get-value-object) and changed only through its own commands
@@ -21,7 +22,7 @@ function Constraints({ index, page }: { index: RecordIndex; page: ValueObject })
   return (
     <Section title="Constraints" count={page.constraints.length}>
       {page.constraints.length === 0 ? <p className="hint">No constraints yet.</p> : (
-        <div className="table-scroll table-stack">
+        <TableScroll stack>
           <table className="data-table value-object-constraints" role="table">
             <caption className="sr-only">The constraints of {page.valueObject.id}, with the test that proves each</caption>
             <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Constraint</th><th scope="col" role="columnheader">Proved by</th></tr></thead>
@@ -34,7 +35,7 @@ function Constraints({ index, page }: { index: RecordIndex; page: ValueObject })
               ))}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       )}
     </Section>
   );

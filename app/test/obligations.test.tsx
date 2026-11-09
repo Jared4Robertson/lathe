@@ -4,8 +4,6 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { productKindWorkspace } from './fixtures/product-kinds';
 import { facts, main, openApp, section as pageSection } from './helpers';
-// The Graph stage needs a ResizeObserver in jsdom.
-import './graph/setup';
 import { addRows } from './fixtures/load';
 
 /** A section of the page: in the wiki card on a focus page. */

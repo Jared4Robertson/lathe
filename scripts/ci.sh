@@ -23,7 +23,15 @@ step() {
   bash -c "$*" > "$log" 2>&1
   local code=$?
   rows+=("| $name | $code | $((SECONDS - start))s |")
-  if [ $code -ne 0 ]; then failed=1; echo "FAIL $name (exit $code), last lines of $log:"; tail -20 "$log"; else echo "ok   $name"; fi
+  if [ $code -ne 0 ]; then
+    failed=1
+    echo "FAIL $name (exit $code), last lines of $log:"
+    tail -20 "$log"
+    # A browser suite prints its measures after its summary, so the tests that failed are listed here on their own.
+    grep -E '^[[:space:]]+([0-9]+ (failed|flaky)$|\[[^]]+\] › )' "$log" | sort -u | head -80
+  else
+    echo "ok   $name"
+  fi
 }
 
 mode=gate

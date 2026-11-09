@@ -6,6 +6,7 @@ import { RecordFrame } from '../../specs/RecordContent';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { EndpointEditor } from './EndpointEditor';
 import { useEndpoint } from './reads';
+import { TableScroll } from '../../components/TableScroll';
 
 // The Endpoint page (LA-IXD-A13's page, LA-V152): any record of an endpoint, at its address (/<id>), drawn from the
 // endpoint read whole (GET /api/endpoint/get-endpoint) and changed only through its own commands (EndpointEditor). An
@@ -33,7 +34,7 @@ function Requirements({ index, page }: { index: RecordIndex; page: Endpoint }) {
   return (
     <Section title="API requirements" count={page.requirements.length} className="endpoint-requirements">
       {page.requirements.length === 0 ? <p className="hint">No API requirements yet.</p> : (
-        <div className="table-scroll table-stack">
+        <TableScroll stack>
           <table className="data-table api-requirements" role="table">
             <caption className="sr-only">The API requirements of {page.endpoint.id}, with the tests that prove each one</caption>
             <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Requirement</th><th scope="col" role="columnheader">Proved by</th></tr></thead>
@@ -53,7 +54,7 @@ function Requirements({ index, page }: { index: RecordIndex; page: Endpoint }) {
               </tbody>
             ))}
           </table>
-        </div>
+        </TableScroll>
       )}
     </Section>
   );

@@ -6,6 +6,7 @@ import { groupRecords } from './groups';
 import { RecordLink, RecordRowBody, Section, SpecLink, TestStateTag, idText } from './parts';
 import type { GapKind, Judgment, RunBy, TraceGap } from '../../../lathe/src/traceability/record-trace/read-model';
 import { useRecordTrace, type RecordTrace } from '../traceability/record-trace/reads';
+import { TableScroll } from '../components/TableScroll';
 
 /** One list of the section: a chain's group, or the links of one label read from this record's end. */
 interface TraceGroup {
@@ -138,7 +139,7 @@ function RequirementTable({ index, useCase, requirements }: { index: RecordIndex
   const has = (j: Judgment | null, kind: GapKind) => !!j?.gaps.some((g) => g.kind === kind);
   const judgmentOf = new Map(rows.map((r) => [r.record.id, r.judgment]));
   return (
-    <div className="table-scroll table-stack">
+    <TableScroll stack>
       <table className="data-table trace-requirements" role="table">
         <caption className="sr-only">How each UC requirement of {useCase.id} is designed, built and proved</caption>
         <thead role="rowgroup">
@@ -162,7 +163,7 @@ function RequirementTable({ index, useCase, requirements }: { index: RecordIndex
           </tbody>
         ))}
       </table>
-    </div>
+    </TableScroll>
   );
 }
 
@@ -191,7 +192,7 @@ function RunByFacts({ record, runBy }: { record: RecordSummary; runBy: RunBy }) 
 function BuildsTable({ index, record, builds }: { index: RecordIndex; record: RecordSummary; builds: RecordTrace['builds'] }) {
   if (builds.length === 0) return null;
   return (
-    <div className="table-scroll table-stack">
+    <TableScroll stack>
       <table className="data-table trace-builds" role="table">
         <caption className="sr-only">The obligations {record.id} builds, and the tests that prove them</caption>
         <thead role="rowgroup">
@@ -215,7 +216,7 @@ function BuildsTable({ index, record, builds }: { index: RecordIndex; record: Re
           ))}
         </tbody>
       </table>
-    </div>
+    </TableScroll>
   );
 }
 

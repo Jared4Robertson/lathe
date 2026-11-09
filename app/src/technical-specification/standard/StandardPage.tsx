@@ -7,6 +7,7 @@ import { RecordFrame } from '../../specs/RecordContent';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { StandardEditor } from './StandardEditor';
 import { useStandard } from './reads';
+import { TableScroll } from '../../components/TableScroll';
 
 // The Standard page (LA-TEC-A3's page, LA-V123): any record of a standard, at its address (/<id>), drawn from the
 // standard read whole (GET /api/standard/get-standard) and changed only through its own commands (StandardEditor). A
@@ -41,7 +42,7 @@ function Rules({ index, page }: { index: RecordIndex; page: Standard }) {
   return (
     <Section title="Rules" count={page.rules.length}>
       {page.rules.length === 0 ? <p className="hint">No rules yet.</p> : (
-        <div className="table-scroll table-stack">
+        <TableScroll stack>
           <table className="data-table standard-rules" role="table">
             <caption className="sr-only">The rules of {page.standard.id}, with what meets each one and its tests</caption>
             <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Rule</th><th scope="col" role="columnheader">{metLabel}</th><th scope="col" role="columnheader">Proved by</th></tr></thead>
@@ -58,7 +59,7 @@ function Rules({ index, page }: { index: RecordIndex; page: Standard }) {
               </tbody>
             ))}
           </table>
-        </div>
+        </TableScroll>
       )}
     </Section>
   );

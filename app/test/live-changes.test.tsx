@@ -6,7 +6,6 @@ import { SESSION_SETTINGS_STORAGE } from '../src/exploring/session-settings/mode
 import { setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { openApp, serve, startAtDepth, type Served } from './helpers';
-import './graph/setup';
 import { drawnBox, scene } from './graph/scene';
 import { erdBox, erdDrawn } from './erd-scene';
 

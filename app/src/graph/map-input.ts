@@ -42,7 +42,8 @@ async function askInput(index: RecordIndex, root: string, view: MapInput['view']
 
 /**
  * The input of a map of `index`: until a new one arrives from the worker, the input shown before, with the index it was
- * made for. Where the builder runs on this thread, it is made here, at once.
+ * made for, whichever layout that was, so a layout's change never empties the stage or drops the keyboard's place in
+ * it. Where the builder runs on this thread, it is made here, at once.
  */
 export function useMapInput(index: RecordIndex, root: string, view: MapInput['view'], measure: string): { input: MapInput; of: RecordIndex } | null {
   const known = knownInput(index, root, view, measure) ?? (spaceInWorker() ? undefined : productInput(index, root, view, measure));
@@ -54,5 +55,5 @@ export function useMapInput(index: RecordIndex, root: string, view: MapInput['vi
     return () => { live = false; };
   }, [index, root, view, measure, known]);
   if (known) return { input: known, of: index };
-  return shown && shown.of.product === index.product && shown.input.view === view ? shown : null;
+  return shown && shown.of.product === index.product ? shown : null;
 }

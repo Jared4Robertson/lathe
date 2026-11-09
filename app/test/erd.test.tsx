@@ -1,4 +1,3 @@
-import './graph/setup';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { endPath, erdFocus, type ErdMap, erdStrength, lineGeometry, lineOffsets, scopeContents } from '../src/erd/erd';

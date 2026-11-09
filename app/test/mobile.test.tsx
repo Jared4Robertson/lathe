@@ -1,4 +1,3 @@
-import './graph/setup';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { useRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';

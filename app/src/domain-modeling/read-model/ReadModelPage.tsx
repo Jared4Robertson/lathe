@@ -7,6 +7,7 @@ import { RecordFrame } from '../../specs/RecordContent';
 import { FieldsTable } from '../../specs/FieldsTable';
 import { ReadModelEditor } from './ReadModelEditor';
 import { useReadModel } from './reads';
+import { TableScroll } from '../../components/TableScroll';
 
 // The Read model page (LA-MOD-A10's page, LA-V143): any record of a read model, at its address (/<id>), drawn from the
 // read model read whole (GET /api/read-model/get-read-model) and changed only through its own commands
@@ -21,7 +22,7 @@ function Queries({ index, page }: { index: RecordIndex; page: ReadModel }) {
   return (
     <Section title="Queries" count={page.queries.length}>
       {page.queries.length === 0 ? <p className="hint">No queries yet.</p> : (
-        <div className="table-scroll table-stack">
+        <TableScroll stack>
           <table className="data-table read-model-queries" role="table">
             <caption className="sr-only">The queries of {page.readModel.id}, with each one's handler</caption>
             <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Query</th><th scope="col" role="columnheader">Handler</th></tr></thead>
@@ -34,7 +35,7 @@ function Queries({ index, page }: { index: RecordIndex; page: ReadModel }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       )}
     </Section>
   );

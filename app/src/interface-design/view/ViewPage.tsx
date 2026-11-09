@@ -6,6 +6,7 @@ import { RecordFrame } from '../../specs/RecordContent';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { ViewEditor } from './ViewEditor';
 import { useView } from './reads';
+import { TableScroll } from '../../components/TableScroll';
 
 // The View page (LA-IXD-A12's page, LA-V150): any record of a view, at its address (/<id>), drawn from the view read
 // whole (GET /api/view/get-view) and changed only through its own commands (ViewEditor). A view shows its description,
@@ -39,7 +40,7 @@ function Requirements({ index, page }: { index: RecordIndex; page: View }) {
   return (
     <Section title="View requirements" count={page.requirements.length}>
       {page.requirements.length === 0 ? <p className="hint">No requirements yet.</p> : (
-        <div className="table-scroll table-stack">
+        <TableScroll stack>
           <table className="data-table view-requirements" role="table">
             <caption className="sr-only">The requirements of {page.view.id}, with the tests that prove each one</caption>
             <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Requirement</th><th scope="col" role="columnheader">Proved by</th></tr></thead>
@@ -55,7 +56,7 @@ function Requirements({ index, page }: { index: RecordIndex; page: View }) {
               </tbody>
             ))}
           </table>
-        </div>
+        </TableScroll>
       )}
     </Section>
   );

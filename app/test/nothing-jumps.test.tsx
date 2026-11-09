@@ -4,7 +4,6 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest';
 import { navigate } from '../src/router';
 import { openApp, startAtDepth } from './helpers';
-import './graph/setup';
 import { testWorkspace } from './graph/workspace';
 import { boxElement } from './graph/scene';
 

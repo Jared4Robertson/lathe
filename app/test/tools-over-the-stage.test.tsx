@@ -1,4 +1,3 @@
-import './graph/setup';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { screen, waitFor, within } from '@testing-library/react';

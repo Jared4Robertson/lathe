@@ -335,17 +335,28 @@ function install() {
         return [...el.getClientRects()].map((r) => meet(boxOf(r), seen[i])).filter((b) => area(b) > 0);
       });
       const layers = els.map(layerOf);
-      for (let i = 0; i < els.length; i++) {
-        for (let j = i + 1; j < els.length; j++) {
-          const a = els[i], b = els[j];
-          if (a.contains(b) || b.contains(a) || labelled(a, b) || labelled(b, a)) continue;
-          // A layer over the flow is judged below, scrolled, rather than where the page happens to be scrolled now.
-          if ((layers[i] === null) !== (layers[j] === null)) continue;
-          if (region(a) || region(b)) continue;
-          const m = lines[i].flatMap((x) => lines[j].map((y) => meet(x, y))).find((o) => o.right - o.left >= 2 && o.bottom - o.top >= 2);
-          if (!m) continue;
-          found.push(finding('overlap', a, `overlaps ${roleOf(b)} "${nameOf(b).slice(0, 40)}" (${selectorOf(b)}) by ${px(m.right - m.left)} x ${px(m.bottom - m.top)} px`, m));
+      // Only targets that share a row can overlap, so the pairs come from a sweep down the page: a page of 12,000 targets
+      // has 78 million pairs, and comparing every one takes longer than the test may.
+      const tops = lines.map((boxes) => Math.min(...boxes.map((x) => x.top)));
+      const bottoms = lines.map((boxes) => Math.max(...boxes.map((x) => x.bottom)));
+      const downThePage = els.map((_, i) => i).filter((i) => lines[i].length > 0).sort((p, q) => tops[p] - tops[q]);
+      const pairs: [number, number][] = [];
+      downThePage.forEach((p, at) => {
+        for (let next = at + 1; next < downThePage.length && tops[downThePage[next]] <= bottoms[p]; next++) {
+          const q = downThePage[next];
+          pairs.push([Math.min(p, q), Math.max(p, q)]);
         }
+      });
+      pairs.sort((x, y) => x[0] - y[0] || x[1] - y[1]);
+      for (const [i, j] of pairs) {
+        const a = els[i], b = els[j];
+        if (a.contains(b) || b.contains(a) || labelled(a, b) || labelled(b, a)) continue;
+        // A layer over the flow is judged below, scrolled, rather than where the page happens to be scrolled now.
+        if ((layers[i] === null) !== (layers[j] === null)) continue;
+        if (region(a) || region(b)) continue;
+        const m = lines[i].flatMap((x) => lines[j].map((y) => meet(x, y))).find((o) => o.right - o.left >= 2 && o.bottom - o.top >= 2);
+        if (!m) continue;
+        found.push(finding('overlap', a, `overlaps ${roleOf(b)} "${nameOf(b).slice(0, 40)}" (${selectorOf(b)}) by ${px(m.right - m.left)} x ${px(m.bottom - m.top)} px`, m));
       }
       const scrolled = [...document.querySelectorAll('*')].filter((e) => e.scrollHeight > e.clientHeight || e.scrollWidth > e.clientWidth).map((e) => [e, e.scrollLeft, e.scrollTop] as const);
       try {

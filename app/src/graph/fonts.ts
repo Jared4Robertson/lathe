@@ -35,12 +35,21 @@ export function readGraphFonts(): GraphFonts {
 }
 
 /** What a measure reads text with: a canvas's 2D context, the page's or the layout worker's offscreen one. */
-type Measurer = { font: string; measureText: (text: string) => TextMetrics };
+type Measurer = { font: string; textRendering: CanvasTextRendering; measureText: (text: string) => TextMetrics };
+
+/**
+ * Text as its outlines, unhinted, whose width scales exactly with its size. Without it a hinting platform (Linux) rounds
+ * each letter to a whole pixel at small sizes, so a line drawn at 13 px is wider than its measure at MEASURE_PX scaled
+ * down, and overflows the box laid out for it. Every context that draws or measures a label sets it; a canvas's size
+ * change resets it, so it is set for every paint.
+ */
+export const EXACT_TEXT: CanvasTextRendering = 'geometricPrecision';
 
 /** A measure over a canvas context, each width read once and kept (wrapping measures the same words and lines many times). */
 export function canvasMeasure(ctx: Measurer, fonts: GraphFonts): TextMeasure {
   const widths = new Map<Face, Map<string, number>>(FACES.map((f) => [f, new Map()]));
   const metrics = new Map<Face, { ascent: number; descent: number }>();
+  ctx.textRendering = EXACT_TEXT;
   return {
     key: `canvas|${fonts.body}|${fonts.mono}`,
     em: (text, face) => {

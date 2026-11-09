@@ -10,6 +10,7 @@ import { addressOf } from '../../views/address';
 import { FollowButton, FollowingForm, RowActions, type FollowingMode } from './FollowingEditor';
 import { useFollowers } from './reads';
 import { backToActions } from '../../edit/back-to-actions';
+import { TableScroll } from '../../components/TableScroll';
 
 // A pattern's followers on the Pattern page (LA-TRC-A3's sections of LA-V122, /<id>): Followed by on the pattern's page
 // and Owed by on a rule's, read through the Pattern following aggregate's own query (GET
@@ -42,7 +43,7 @@ function FollowingDomainSection({ index, page, d, setMode }: { index: RecordInde
       <h3>
         {record?.product ? <SpecLink to={addressOf(domain)} className="record-link"><code>{domain}</code> <span>{record.title}</span></SpecLink> : <SpecLink to={addressOf(domain)}><code>{domain}</code></SpecLink>}
       </h3>
-      <div className="table-scroll table-stack">
+      <TableScroll stack>
         <table className="data-table pattern-use-cases" role="table">
           <caption className="sr-only">Use cases in {domain} that follow {patternId}, with their settings</caption>
           <thead role="rowgroup">
@@ -60,9 +61,9 @@ function FollowingDomainSection({ index, page, d, setMode }: { index: RecordInde
             ))}
           </tbody>
         </table>
-      </div>
+      </TableScroll>
       {page.rules.length > 0 && (
-        <div className="table-scroll table-stack">
+        <TableScroll stack>
           <table className="data-table pattern-rule-status">
             <caption className="sr-only">How {domain} proves each rule of {patternId}</caption>
             <thead><tr><th scope="col">Rule</th><th scope="col">In {domain}</th></tr></thead>
@@ -75,7 +76,7 @@ function FollowingDomainSection({ index, page, d, setMode }: { index: RecordInde
               ))}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       )}
     </section>
   );
@@ -117,8 +118,9 @@ export function OwedBy({ index, page, id }: { index: RecordIndex; page: PatternP
   return (
     <Section title="Owed by" count={shown ? undefined : domains.length}>
       {shown ?? (domains.length === 0 ? <p className="hint">No domain follows this rule's pattern.</p> : (
-        <div className="table-scroll table-stack">
+        <TableScroll stack>
           <table className="data-table pattern-rule-status">
+            <caption className="sr-only">The domains that owe this rule of {page.pattern.id}, each with its status</caption>
             <thead><tr><th scope="col">Domain</th><th scope="col">Status</th></tr></thead>
             <tbody>
               {domains.map((d) => (
@@ -129,7 +131,7 @@ export function OwedBy({ index, page, id }: { index: RecordIndex; page: PatternP
               ))}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       ))}
     </Section>
   );

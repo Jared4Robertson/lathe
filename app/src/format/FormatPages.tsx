@@ -36,6 +36,7 @@ import {
   type RelationReference,
 } from './reference';
 import './format.css';
+import { TableScroll } from '../components/TableScroll';
 
 // The format reference's pages (LA-PRD-UC14): the record format (the concepts, then an index of the
 // kinds by stage, the relations, and the checks by severity), a kind's page and a check's page. Each
@@ -337,22 +338,22 @@ function KindBody({ index, reference, kind, problems }: { index: RecordIndex; re
       <section className="spec-section" id={FIELDS_ANCHOR} aria-labelledby="fields-heading">
         <header className="spec-section-head"><h2 id="fields-heading">Columns<span className="section-count">{kind.columns.length}</span></h2></header>
         <p>A {lowerLabel(kind.label)} is a row of the <code>{kind.kind}</code> table, in <code>{kind.kind}.jsonl</code> in its product's data folder. A required column must hold a value; the others may be left out.</p>
-        <div className="table-scroll">
-          <table className="data-table kind-columns">
+        <TableScroll stack>
+          <table className="data-table kind-columns" role="table">
             <caption className="sr-only">The columns of the {kind.kind} table</caption>
-            <thead><tr><th scope="col">Column</th><th scope="col">Type</th><th scope="col">Required</th><th scope="col">Meaning</th></tr></thead>
-            <tbody>
+            <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Column</th><th scope="col" role="columnheader">Type</th><th scope="col" role="columnheader">Required</th><th scope="col" role="columnheader">Meaning</th></tr></thead>
+            <tbody role="rowgroup">
               {kind.columns.map((c) => (
-                <tr key={c.name} id={fieldAnchor(c.name)}>
-                  <th scope="row"><code>{c.name}</code></th>
-                  <td>{columnType(c)}</td>
-                  <td>{c.required ? 'yes' : 'no'}</td>
-                  <td>{c.description ?? ''}</td>
+                <tr key={c.name} id={fieldAnchor(c.name)} role="row">
+                  <th scope="row" role="rowheader"><code>{c.name}</code></th>
+                  <td role="cell" data-label="Type">{columnType(c)}</td>
+                  <td role="cell" data-label="Required">{c.required ? 'yes' : 'no'}</td>
+                  <td role="cell" data-label="Meaning">{c.description ?? ''}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
         {kind.parts.length > 0 && (
           <>
             <p>Its records also own rows of these tables, removed with them:</p>

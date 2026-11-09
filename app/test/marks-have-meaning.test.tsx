@@ -2,7 +2,6 @@ import { recordIndexOf } from './read-view';
 // LA-PAT-APP-CODE-R21: nothing outlives its purpose, and a mark that can't be explained can't ship.
 // Every mark the Graph or the ERD view can draw (a box's shape or fill, a badge, a line style) is
 // listed in that view's key, with words that say what it means.
-import './graph/setup';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { graphKeyEntries, type GraphDrawn } from '../src/graph/key';

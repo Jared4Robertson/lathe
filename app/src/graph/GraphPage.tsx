@@ -38,7 +38,7 @@ import { readMotion } from './motion';
 import { followBox, useMorph } from './morph';
 import { nodeShape } from './shapes';
 import { Button } from '../components/Button';
-import { pageMeasure, readGraphFonts, readyMeasure, fontFor, type GraphFonts } from './fonts';
+import { EXACT_TEXT, pageMeasure, readGraphFonts, readyMeasure, fontFor, type GraphFonts } from './fonts';
 import { PLAIN_LOOK, readLook, useThemeVersion, type Look } from './look';
 import { plateName, plateOf, plateTip, type Plate, type PlateSource } from './plate';
 import { keepLabel } from './sticky';
@@ -524,7 +524,8 @@ function GraphStage(props: CanvasProps & { measure: TextMeasure; fonts: GraphFon
   useCommand('stageTidy', () => { if (input) tidyGround(input); setTidy((t) => t + 1); }, layout === 'map');
   const laid = useLaidOut<GraphMap | NestedMap | GroundMap, RecordIndex>(input, made?.of ?? index, fonts, tidy);
   if (!laid) return <div className="graph-flow" data-layout={layout} aria-busy="true" />;
-  return <GraphScene {...props} map={laid.map} mapIndex={laid.of} />;
+  // The scene draws the layout it has, the one before until the new one is laid out.
+  return <GraphScene {...props} layout={laid.map.view} map={laid.map} mapIndex={laid.of} />;
 }
 
 function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, depth, filters, onNavigate, minimap, allLinks, reach, space, cameraKey, onOpenNew, measure, fonts, theme }: CanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number; map: GraphMap | NestedMap | GroundMap; mapIndex: RecordIndex }) {
@@ -679,7 +680,9 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
    * leaves all of them alone leaves the camera where it is; where it moved the focus, the camera glides with it (LA-PAT-APP-UX-R22).
    */
   const lastFramed = useRef<{ key: string; box: { x: number; y: number; w: number; h: number } } | null>(null);
-  const framedKey = size ? `${focus} ${map.view} ${map.roots[0]} ${size.w}x${size.h} ${insetKey}` : '';
+  // The bottom panel's being there, not its height: the key gains a row when new data widens it, which is no reason to
+  // move the Reader's camera (LA-V93-R74); opening or closing it is, and it frames the focus above it (LA-PAT-APP-UX-R23).
+  const framedKey = size ? `${focus} ${map.view} ${map.roots[0]} ${size.w}x${size.h} ${inset.left} ${inset.top} ${inset.right} ${inset.bottom > 0}` : '';
   const rememberFraming = () => { const n = map.nodes.get(focus); lastFramed.current = n && size ? { key: framedKey, box: { x: n.x, y: n.y, w: n.w, h: n.h } } : null; };
   useLayoutEffect(() => {
     if (skipFraming.current === framing) { skipFraming.current = null; rememberFraming(); return; }
@@ -887,6 +890,7 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
     const fade = strengthNow();
     const live = marks.at(performance.now());
     const state: PaintState = { focus, hover: hover.current, ring: ring.current, lit: sp.lit, litLines: sp.litLines, spot: spot.value, strength: fade.at, marks: live, open: openIn(wrapper.current, space, s.w, s.h), whole };
+    ctx.current.textRendering = EXACT_TEXT;
     paint(ctx.current, dpr, camOf(view.current, s), frame, look.current, fonts, state);
     // The leader line to the wiki card (LA-V96-R24), under this camera, from the focus's box in its outline's color.
     const v = view.current;
@@ -1070,6 +1074,7 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
       const Y = (y: number) => r.top + y * v.zoom + v.y;
       const rect = (x: number, y: number, w: number, h: number): Rect => ({ left: X(x), top: Y(y), width: w * v.zoom, height: h * v.zoom });
       const measureCtx = canvas.current!.getContext?.('2d') ?? null;
+      if (measureCtx) measureCtx.textRendering = EXACT_TEXT;
       const sp = spotlight.current;
       const strength = strengthNow().at;
       return {

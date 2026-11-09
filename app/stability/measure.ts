@@ -70,6 +70,8 @@ declare global {
   interface Window {
     __stability: {
       shifts: Shift[];
+      /** The step last measured in this document, and when its measure ended. */
+      finished?: { scenario: string; step: string; everything: boolean; at: number };
       loafs: Loaf[];
       allow: string[];
       tracks: Map<string, { boxes: (Rect | null)[]; remounts: number; el: Element | null }> | null;
@@ -254,9 +256,26 @@ async function settle(page: Page, ms: number) {
 
 const results: StepResult[] = [];
 
+/**
+ * A step's shifts that landed after its measure ended, seen as the next step waits for quiet: they are still that step's
+ * doing and a Reader still sees them, so they fail that step, under its own allowances (`allow` is still its own then).
+ */
+function expectNoLateShift(last: { scenario: string; step: string; everything: boolean; shifts: Shift[] } | null) {
+  if (!last) return;
+  const late = last.shifts.filter((s) => !s.allowed && !s.deferred && !last.everything);
+  const sources = late.flatMap((s) => s.sources.filter((x) => !x.allowed).map((x) => `  ${s.value.toFixed(4)} ${x.node} ${JSON.stringify(x.from)} -> ${JSON.stringify(x.to)}`));
+  expect.soft(sum(late), [`${last.scenario} / ${last.step}: shifted late, after its measure ended`, ...sources.slice(0, 12)].join('\n')).toBeLessThanOrEqual(BUDGET);
+}
+
 /** Runs one step of a scenario and measures it. */
 export async function step(page: Page, scenario: string, name: string, options: StepOptions, action: () => Promise<unknown>): Promise<StepResult> {
   const keys = options.keys ?? [];
+  // What the step before set going may land late on a slow machine: it is that step's doing, not this one's.
+  await settle(page, 0);
+  expectNoLateShift(await page.evaluate(() => {
+    const last = window.__stability.finished;
+    return last ? { ...last, shifts: window.__stability.shifts.filter((s) => s.t >= last.at) } : null;
+  }));
   const t0 = await page.evaluate(({ keys, allow }) => {
     window.__stability.allow = allow;
     window.__stability.track(keys);
@@ -286,11 +305,14 @@ export async function openPage(page: Page, url: string, ready = '.header-strip h
 async function finish(page: Page, scenario: string, name: string, options: StepOptions, t0: number): Promise<StepResult> {
   const everything = (options.allow ?? []).includes("*");
   await settle(page, options.settle ?? 900);
-  const { shifts, loafs, tracks } = await page.evaluate((t0) => ({
-    shifts: window.__stability.shifts.filter((s) => s.t >= t0),
-    loafs: window.__stability.loafs.filter((l) => l.t >= t0),
-    tracks: window.__stability.untrack(),
-  }), t0);
+  const { shifts, loafs, tracks } = await page.evaluate(({ t0, finished }) => {
+    window.__stability.finished = { ...finished, at: performance.now() };
+    return {
+      shifts: window.__stability.shifts.filter((s) => s.t >= t0),
+      loafs: window.__stability.loafs.filter((l) => l.t >= t0),
+      tracks: window.__stability.untrack(),
+    };
+  }, { t0, finished: { scenario, step: name, everything } });
   const result: StepResult = {
     scenario,
     step: name,

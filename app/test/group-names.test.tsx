@@ -1,6 +1,5 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import './graph/setup';
 import { openApp } from './helpers';
 
 // A stage or folder group is named by its own name.

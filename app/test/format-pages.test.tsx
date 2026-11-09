@@ -7,8 +7,6 @@ import { findItems, rankItems } from '../src/shell/QuickOpen';
 import { recordIndexOf } from './read-view';
 import { workspace } from './fixtures/workspace';
 import { checksPanel, facts, openApp } from './helpers';
-// The Graph view needs a ResizeObserver in jsdom.
-import './graph/setup';
 
 // A format page opens in the wiki card over the stage (`?page=format/…`), the stage keeping its focus (LA-PAT-APP-UX-R20).
 const card = () => screen.getByRole('region', { name: 'Wiki card' });

@@ -8,6 +8,7 @@ import { RecordFrame } from '../../specs/RecordContent';
 import { FollowedBy, FollowedInCount, OwedBy } from '../../traceability/pattern-following/Followers';
 import { PatternEditor } from './PatternEditor';
 import { usePattern } from './reads';
+import { TableScroll } from '../../components/TableScroll';
 
 // The Pattern page (LA-UCS-A2's page, LA-V122): any record of a pattern, at its address (/<id>), drawn from the pattern
 // read whole (GET /api/pattern/get-pattern) and changed only through its own commands (PatternEditor). A pattern shows
@@ -41,7 +42,8 @@ function Settings({ page }: { page: Pattern }) {
   return (
     <Section title="Settings" count={page.settings.length}>
       {page.settings.length === 0 ? <p className="hint">This pattern has no settings.</p> : (
-        <div className="table-scroll table-stack"><table className="data-table pattern-settings" role="table">
+        <TableScroll stack><table className="data-table pattern-settings" role="table">
+          <caption className="sr-only">The settings of {page.pattern.id}</caption>
           <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Setting</th><th scope="col" role="columnheader">Meaning</th></tr></thead>
           <tbody role="rowgroup">
             {page.settings.map((s) => (
@@ -51,7 +53,7 @@ function Settings({ page }: { page: Pattern }) {
               </tr>
             ))}
           </tbody>
-        </table></div>
+        </table></TableScroll>
       )}
     </Section>
   );

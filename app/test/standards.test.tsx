@@ -11,8 +11,6 @@ import { COLOR_NAMES, SETTING_NAMES } from '../src/theme/tokens';
 import { parseSpecRoute } from '../src/views/spec-route';
 import { isRecordId } from '../src/views/address';
 import { workspace } from './fixtures/workspace';
-// The split view loads the graph, which needs a ResizeObserver in jsdom.
-import './graph/setup';
 import { recordIndexOf } from './read-view';
 import { Card } from '../src/shell/Card';
 import type { LatheDesktop } from '../src/shell/desktop-bridge';

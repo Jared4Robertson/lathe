@@ -1,5 +1,6 @@
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { RecordLink, Section } from './parts';
+import { TableScroll } from '../components/TableScroll';
 
 // The fields of an entity, a value object, a domain event or a read model, as their aggregates' pages show them: a
 // table of each field's name, meaning, type (a basic type, a value object or a reference to an aggregate), whether it
@@ -31,7 +32,7 @@ export function FieldsTable({ index, rows, owner }: { index: RecordIndex; rows: 
   return (
     <Section title="Fields" count={rows.length}>
       {/* Where its columns can't all fit, as in the narrow wiki card, each field's row stacks (LA-PAT-APP-UX-R18). */}
-      <div className="table-scroll table-stack">
+      <TableScroll stack>
         <table className="data-table entity-fields" role="table">
           <caption className="sr-only">The fields of {owner}</caption>
           <thead role="rowgroup">
@@ -54,7 +55,7 @@ export function FieldsTable({ index, rows, owner }: { index: RecordIndex; rows: 
             ))}
           </tbody>
         </table>
-      </div>
+      </TableScroll>
     </Section>
   );
 }

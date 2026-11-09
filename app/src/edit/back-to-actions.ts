@@ -2,7 +2,7 @@ import type { RefObject } from 'react';
 
 // After a record's form or its remove question closes, the focus goes back to the actions that opened it (the record's
 // Change toolbar, or a section's), scrolled into view in the card, where the form was opened. The write reloads the data,
-// which may draw the page anew a moment later and drop the focus; until the Reader acts (a click, a key, the focus moved
+// which may draw the page anew a moment later, drop the focus or push the toolbar out of view; until the Reader acts (a click, a key, the focus moved
 // elsewhere), it is put back on the toolbar as drawn now, found by its name.
 
 /** How long a reload may take to draw the page anew after the form closes (a section that reads its own query, such as a pattern's followers, draws its actions only once read). */
@@ -33,6 +33,8 @@ export function backToActions(label: string, toolbar?: RefObject<HTMLElement | n
     // The Reader acted, or moved the focus elsewhere: leave it there.
     if (acted || (placed && active !== placed && active !== document.body && active !== null)) { end(); return; }
     if (!placed || !placed.isConnected || active !== placed) place();
+    // A reload that draws more above the toolbar moves it away while it keeps the focus: keep it in view.
+    else placed.scrollIntoView?.({ block: 'nearest' });
     if (performance.now() < until) setTimeout(watch, WATCH_MS);
     else end();
   };

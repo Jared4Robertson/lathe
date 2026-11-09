@@ -22,6 +22,9 @@ class MemoryStorage {
   removeItem(key: string) { this.items.delete(key); }
   setItem(key: string, value: string) { this.items.set(key, String(value)); }
 }
+// What the canvas stages and TableScroll need from the browser that jsdom lacks (server and worker tests run in node).
+if (typeof window !== 'undefined') await import('./graph/setup');
+
 if (typeof window !== 'undefined') {
   // jsdom draws nothing on a canvas: the graph computes its scene and draws nothing (getContext gives null, as a browser without 2D would).
   HTMLCanvasElement.prototype.getContext = (() => null) as typeof HTMLCanvasElement.prototype.getContext;

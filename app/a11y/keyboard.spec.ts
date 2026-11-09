@@ -39,6 +39,9 @@ async function tabUntil(page: Page, match: (el: Element) => boolean, what: strin
 
 const announcer = (page: Page) => page.getByTestId('announcer');
 
+/** A record's action in its toolbar: drawn after the record's title, once the record's commands are read. */
+const ACTION = (name: string) => `[role="toolbar"] button:text-is("${name}")`;
+
 async function open(page: Page, url: string, ready = '.header-strip h1') {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto(url);
@@ -423,7 +426,7 @@ test.describe('changing records by keyboard', () => {
   test('LA-V61-R53-T01 edit a record with the keyboard, and focus comes back to its actions', async ({ page }) => {
     const restore = keepData();
     try {
-      await open(page, EDITED);
+      await open(page, EDITED, ACTION('Edit'));
       await tabUntil(page, (el) => el.textContent?.trim() === 'Edit' && !!el.closest('[role="toolbar"]'), 'the record\'s Edit');
       await page.keyboard.press('Enter');
       await expect.poll(async () => (await focused(page)).name).toBe('');
@@ -442,7 +445,7 @@ test.describe('changing records by keyboard', () => {
   });
 
   test('LA-V61-R42-T01 the remove question takes focus, and Cancel gives it back', async ({ page }) => {
-    await open(page, RECORD);
+    await open(page, RECORD, ACTION('Remove'));
     await tabUntil(page, (el) => el.textContent?.trim() === 'Remove' && !!el.closest('[role="toolbar"]'), 'the record\'s Remove');
     await page.keyboard.press('Enter');
     await expect.poll(async () => (await focused(page)).name).toBe(`Remove ${RECORD.slice(1)}?`);

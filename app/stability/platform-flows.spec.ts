@@ -428,12 +428,12 @@ test.describe('Platform flows in the app', () => {
       await page.locator('.quick-open .palette-list li').first().waitFor();
       await page.keyboard.press('Escape');
     }));
-    // The theme: only colors change.
+    // The theme: Graphite sets its own typeface, so the card's text wraps anew; the frame around it holds still.
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     await page.keyboard.press('g');
     await page.keyboard.press('t');
     await page.locator('.dialog-search').fill('Graphite');
-    expectStable(await step(page, 'flow', 'theme', { keys: [...SHELL, ...FOCUS] }, async () => {
+    expectStable(await step(page, 'flow', 'theme', { keys: [...SHELL, ...FOCUS], allow: ['.wiki-panel-scroll'] }, async () => {
       await page.keyboard.press('Enter');
       await expect(page.locator('html')).toHaveAttribute('data-theme', /graphite/);
     }));

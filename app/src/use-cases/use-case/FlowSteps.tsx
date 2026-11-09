@@ -5,6 +5,7 @@ import { Icon } from '../../components/icons';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { StepMoves } from '../../edit/StepMoves';
 import { ProblemBadge, RecordLink, Section } from '../../specs/parts';
+import { TableScroll } from '../../components/TableScroll';
 
 // A flow's steps as a table, in order (the Use case page, the flow as written): the step, what happens (a variant
 // marked with the one interface that does it), the command or query it invokes, the UC requirements it fulfills and
@@ -73,7 +74,7 @@ export function FlowSteps({ index, flow, paths }: { index: RecordIndex; flow: st
   });
 
   const table = (onPath: readonly StepOnPage[], caption: string) => (
-    <div className="table-scroll table-stack">
+    <TableScroll stack>
       <table className="data-table flow-steps" role="table">
         <caption className="sr-only">{caption}</caption>
         <thead role="rowgroup">
@@ -121,7 +122,7 @@ export function FlowSteps({ index, flow, paths }: { index: RecordIndex; flow: st
           })}
         </tbody>
       </table>
-    </div>
+    </TableScroll>
   );
 
   return (

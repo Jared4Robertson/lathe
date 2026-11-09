@@ -6,6 +6,7 @@ import { RecordFrame } from '../../specs/RecordContent';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { TableEditor } from './TableEditor';
 import { useTable } from './reads';
+import { TableScroll } from '../../components/TableScroll';
 
 // The Table page (LA-TEC-A18's page, LA-V140): a table at its address (/<id>), drawn from the table read whole
 // (GET /api/table/get-table) and changed only through its own commands (TableEditor): its keys in order, each with its
@@ -18,7 +19,7 @@ function Keys({ index, page }: { index: RecordIndex; page: Table }) {
   return (
     <Section title="Keys" count={page.keys.length} className="table-keys-section">
       {page.keys.length === 0 ? <p className="hint">No keys: {page.table.storage === 'table' ? 'a table in a database names its primary key here.' : `a table kept as ${page.table.storage} has none.`}</p> : (
-        <div className="table-scroll table-stack">
+        <TableScroll stack>
           <table className="data-table table-keys" role="table">
             <caption className="sr-only">The keys and indexes of {page.table.id}</caption>
             <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Key</th><th scope="col" role="columnheader">Type</th><th scope="col" role="columnheader">Columns</th><th scope="col" role="columnheader">Details</th></tr></thead>
@@ -40,7 +41,7 @@ function Keys({ index, page }: { index: RecordIndex; page: Table }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       )}
     </Section>
   );

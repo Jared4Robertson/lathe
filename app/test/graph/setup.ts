@@ -1,4 +1,4 @@
-// What the canvas stages need from the browser that jsdom lacks: a size for each observed pane, and an element's offset size.
+// What the canvas stages and TableScroll need from the browser that jsdom lacks: a size for each observed pane, and an element's offset size.
 
 const observed = new Set<{ target: Element; observer: ResizeObserverStub }>();
 
