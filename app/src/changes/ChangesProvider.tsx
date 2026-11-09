@@ -64,7 +64,8 @@ export function ChangesProvider({ index, product, children }: { index: RecordInd
     if (!on && note) noteTimer.current = setTimeout(() => setFollowNote(null), FOLLOW_NOTE_MS);
   }, []);
 
-  // The changes since the baseline, read again with every reload (the data, and the last commit, may have moved).
+  // The changes since the baseline, read again with every reload (the data, and the last commit, may have moved), and
+  // only after a new index: the live changes above judge a removal by the answer for the index before it.
   const mark = product ? settings.looked[product] : undefined;
   const [baseline, setBaseline] = useState<{ key: string; value: Baseline }>({ key: '', value: { state: 'loading' } });
   const key = `${product}|${settings.since}|${settings.since === 'looked' ? mark?.at ?? '' : ''}`;

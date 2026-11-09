@@ -29,6 +29,7 @@ first_errors() {
     state == "before" && /^    Error: / { sub(/^    /, ""); flush_line($0); state = "in"; next }
     state == "in" && (/^ +>? *[0-9]+ \|/ || /^    Call [Ll]og/ || /^    Error Context/ || /^ +at /) { state = "done"; next }
     state == "in" && /^    (Locator: |Expected|Received|Timeout: |Error: |[-+] )/ { sub(/^    /, ""); flush_line($0) }
+    state == "in" && /^ +[0-9]+\) </ { sub(/^ +/, ""); flush_line("  " $0) }
   ' "$1"
 }
 

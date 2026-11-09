@@ -493,8 +493,10 @@ test.describe('Exploring flows', () => {
     await expect(wiki.getByRole('list', { name: 'Integrations' }).getByRole('listitem').first()).toBeVisible();
     // The command and its endpoint, method and route.
     await page.goto('/LA-PRD-CMD121');
-    await expect(wiki.getByRole('link', { name: 'LA-PRD-EP121 POST /api/product/change-product' })).toBeVisible();
-    await wiki.getByRole('link', { name: 'LA-PRD-EP121 POST /api/product/change-product' }).click();
+    // The Endpoints section's own row: the card's change reach, drawn when its own read answers, lists the same endpoint.
+    const endpoint = wiki.getByRole('list', { name: 'Endpoints of LA-PRD-CMD121' }).getByRole('link', { name: 'LA-PRD-EP121 POST /api/product/change-product' });
+    await expect(endpoint).toBeVisible();
+    await endpoint.click();
     await page.waitForURL((u) => u.pathname === '/LA-PRD-EP121');
     // An integration lists the steps that exchange with its system.
     await page.goto('/LA-INT04');

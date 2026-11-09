@@ -7,17 +7,20 @@
 //   since=<hash>    a commit the app noted, for "since I last looked"
 //
 // git runs as for a record's history (history.ts runGit): an argument array, no shell, nothing that writes, with a
-// time limit. A commit's rows never change, so each is read once and kept. A product folder that is not a git repo,
-// or a repo with no commits yet, is an answer, not an error.
+// time limit. A commit's rows never change, so each is read once and kept, and only a whole read is kept: a file git
+// could not give (a time limit on a busy machine) is no sign the table was empty, so the answer says so and the next
+// read tries again. A product folder that is not a git repo, or a repo with no commits yet, is an answer, not an error.
 import path from 'node:path';
 import type { Row } from '../platform/data/rows.ts';
 import type { SchemaDescription } from '../platform/data/schema.ts';
 import type { BaselineAnswer, BaselineSince } from './contract.ts';
-import { runGit } from './history.ts';
+import { inBatches, runGit } from './history.ts';
 
 /** The most one data file at a commit may hold. */
 const FILE_CAP = 64 * 1024 * 1024;
 const HASH = /^[0-9a-f]{40,64}$/;
+/** How many data files are read from git at once: a product has over a hundred, each its own process under the time limit. */
+const FILES_AT_ONCE = 8;
 
 /** Reads `since` from a request's query: commit, branch, or a full commit hash; null for anything else. */
 export function parseSince(text: string | null): BaselineSince | null {
@@ -38,20 +41,18 @@ async function defaultBranch(root: string): Promise<string | null> {
   return null;
 }
 
-/** The rows a data folder's files held at a commit, read from git: each .jsonl file directly in it, one row a line. */
-async function tablesAt(root: string, dataDir: string, schema: SchemaDescription, commit: string): Promise<Record<string, Row[]>> {
+/** The rows a data folder's files held at a commit, read from git: each .jsonl file directly in it, one row a line; null when git could not give them all. */
+async function tablesAt(root: string, dataDir: string, schema: SchemaDescription, commit: string): Promise<Record<string, Row[]> | null> {
   const folder = path.relative(root, dataDir).split(path.sep).join('/') || '.';
   const key = `${root}\u0000${folder}\u0000${commit}`;
   const known = cache.get(key);
   if (known) return known;
   const listed = await runGit(root, ['ls-tree', '--name-only', commit, '--', `${folder}/`]);
-  const files = listed.code === 0 ? listed.stdout.split('\n').filter((f) => f.endsWith('.jsonl')) : [];
-  const tables: Record<string, Row[]> = {};
-  await Promise.all(files.map(async (file) => {
-    const name = path.posix.basename(file, '.jsonl');
-    if (!schema.tables[name]?.stored) return;
+  if (listed.code !== 0) return null;
+  const files = listed.stdout.split('\n').filter((f) => f.endsWith('.jsonl') && schema.tables[path.posix.basename(f, '.jsonl')]?.stored);
+  const read = await inBatches(files, FILES_AT_ONCE, async (file) => {
     const shown = await runGit(root, ['show', '--no-textconv', `${commit}:./${file}`], { cap: FILE_CAP });
-    if (shown.code !== 0) return;
+    if (shown.code !== 0) return null;
     const rows: Row[] = [];
     for (const line of shown.stdout.split('\n')) {
       if (!line.trim()) continue;
@@ -62,8 +63,11 @@ async function tablesAt(root: string, dataDir: string, schema: SchemaDescription
         // A line that is not a row (a conflict marker, say) is left out.
       }
     }
-    if (rows.length) tables[name] = rows;
-  }));
+    return { name: path.posix.basename(file, '.jsonl'), rows };
+  });
+  if (read.includes(null)) return null;
+  const tables: Record<string, Row[]> = {};
+  for (const table of read) if (table?.rows.length) tables[table.name] = table.rows;
   cache.set(key, tables);
   return tables;
 }
@@ -89,5 +93,7 @@ export async function baseline(root: string, dataDir: string, schema: SchemaDesc
   if (shown.code !== 0 || !commit || !HASH.test(commit)) {
     return { state: 'no-commit', message: since === 'commit' ? 'The repository has no commits yet.' : 'That commit is not in the repository.' };
   }
-  return { state: 'ok', commit, short, date, subject: subject ?? '', base, tables: await tablesAt(root, dataDir, schema, commit) };
+  const tables = await tablesAt(root, dataDir, schema, commit);
+  if (!tables) return { state: 'no-commit', message: `git could not give the data at ${short}, so there is nothing to compare with yet.` };
+  return { state: 'ok', commit, short, date, subject: subject ?? '', base, tables };
 }

@@ -61,23 +61,27 @@ export type Baseline =
   | { state: 'ok'; changes: RecordChange[]; label: string; detail: string };
 
 /** The answers asked, by product and baseline, each with its read model's changes when it was asked (record/read.ts). */
-const known = new Map<string, { changes: string; answer: Promise<ProductChanges | ReadRefusal> }>();
+const known = new Map<string, { changes: string; records: RecordIndex['byId']; answer: Promise<ProductChanges | ReadRefusal> }>();
 
 const ROUTE = '/api/record-changes/list-record-changes';
 
-/** Asks the Record changes read for the product's changes since a baseline, again only once its read model changed. */
-export function fetchChanges(product: string, since: string): Promise<ProductChanges | ReadRefusal> {
+/**
+ * Asks the Record changes read for the product's changes since a baseline, again only once its read model changed or new
+ * records came. The records as well: a read can bring the new data before the channel brings its announcement, so an
+ * answer from before the change would still stand for them, and no new records follow the announcement.
+ */
+export function fetchChanges(product: string, since: string, records: RecordIndex['byId']): Promise<ProductChanges | ReadRefusal> {
   const key = `${product}\u0000${since}`;
   const changes = readModelChanges(ROUTE);
   const cached = known.get(key);
-  if (cached?.changes === changes) return cached.answer;
+  if (cached?.changes === changes && cached.records === records) return cached.answer;
   const answer = (async (): Promise<ProductChanges | ReadRefusal> => {
     const res = await fetch(`${ROUTE}?${new URLSearchParams({ product_id: product, since })}`, { headers: { accept: 'application/json' } });
     const body = await res.json().catch(() => null);
     if (!res.ok || !body || typeof body !== 'object' || !('baseline' in body)) return { error: body?.error ?? `The server answered ${res.status}.` };
     return body as ProductChanges;
   })();
-  known.set(key, { changes, answer });
+  known.set(key, { changes, records, answer });
   answer.catch(() => { if (known.get(key)?.answer === answer) known.delete(key); });
   return answer;
 }
@@ -111,11 +115,11 @@ export async function loadBaseline(index: RecordIndex, product: string, since: S
     if (!mark) return { state: 'none', message: "You haven't looked at this product before in this session." };
     const detail = `you last looked, ${shortDay(mark.at)}`;
     if (mark.commit === null) return { state: 'ok', changes: sinceLook(index, mark, []), label: 'since you last looked', detail };
-    const answer = await fetchChanges(product, mark.commit);
+    const answer = await fetchChanges(product, mark.commit, index.byId);
     if (!('baseline' in answer)) return { state: 'none', message: answer.error };
     return { state: 'ok', changes: sinceLook(index, mark, answer.changes), label: 'since you last looked', detail };
   }
-  const answer = await fetchChanges(product, since);
+  const answer = await fetchChanges(product, since, index.byId);
   if (!('baseline' in answer)) return { state: 'none', message: answer.error };
   const { baseline } = answer;
   if (baseline.state !== 'ok') return { state: 'none', message: baseline.message };
@@ -129,7 +133,7 @@ export async function loadBaseline(index: RecordIndex, product: string, since: S
 export async function markNow(index: RecordIndex, product: string): Promise<LookMark> {
   const at = new Date().toISOString();
   const digests = Object.fromEntries([...index.byId.values()].map((r) => [r.id, r.digest]));
-  const head = await fetchChanges(product, 'commit').catch(() => null);
+  const head = await fetchChanges(product, 'commit', index.byId).catch(() => null);
   const commit = head && 'baseline' in head && head.baseline.state === 'ok' ? head.baseline.commit : null;
   return { commit, digests, at };
 }

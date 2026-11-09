@@ -36,6 +36,13 @@ function agentChanges() {
 }
 
 const tools = (page: Page) => page.locator('.focus-stage').getByRole('group', { name: 'Changes' });
+/** The Changes button whatever it counts, so a failure's Received names the count it shows. */
+const changesButton = (page: Page) => tools(page).getByRole('button', { name: /^Changes / });
+/** The Changes button is in view and counts exactly this many records. */
+async function expectCount(page: Page, count: number, options?: { timeout: number }) {
+  await expect(changesButton(page)).toHaveAccessibleName(`Changes ${count} records changed`, options);
+  await expect(changesButton(page)).toBeVisible();
+}
 /** Opens the toolbar's More menu when a narrower toolbar (the chat open beside the stage) folded the Changes controls there. */
 async function reachChanges(page: Page) {
   const more = page.locator('.focus-stage .stage-more');
@@ -54,11 +61,11 @@ test.describe('watching the spec change', () => {
       commitCopy();
       await openPage(page, `${RECORD}?stage=graph`);
       await graphReady(page);
-      await expect(tools(page).getByRole('button', { name: /^Changes 0/ })).toBeVisible();
+      await expectCount(page, 0);
 
       // The Agent writes; the page reloads on its own and marks what changed.
       agentChanges();
-      await expect(tools(page).getByRole('button', { name: /^Changes 2/ })).toBeVisible({ timeout: 20_000 });
+      await expectCount(page, 2, { timeout: 20_000 });
       await page.goto(`${EDITED}?stage=graph`);
       await graphReady(page);
       // A page opened after the change has no live marks; the next change lands live.
@@ -92,7 +99,8 @@ test.describe('watching the spec change', () => {
       await page.waitForURL((u) => u.pathname === first);
 
       // The panel lists both, newest first, and a click focuses the requirement; its card shows the field old → new.
-      await tools(page).getByRole('button', { name: /^Changes 2/ }).click();
+      await expectCount(page, 2);
+      await changesButton(page).click();
       const panel = page.getByRole('region', { name: 'Changes' });
       // The baseline, from the panel (the toolbar holds the picker only in its widest form).
       const picker = panel.getByRole('combobox', { name: 'Compared with' });
@@ -144,7 +152,7 @@ test.describe('watching the spec change', () => {
       await patch([user], 'running');
       // The chat's Agent writes through Lathe's command layer, as its MCP tools do.
       agentChanges();
-      await expect(tools(page).getByRole('button', { name: /^Changes 2/ })).toBeVisible({ timeout: 20_000 });
+      await expectCount(page, 2, { timeout: 20_000 });
       // Follow glides to the newest change.
       await page.waitForURL((u) => u.pathname === `/${REQUIREMENT}` || u.pathname === `/${ADDED}`, { timeout: 20_000 });
       await patch([user, { kind: 'assistant', id: 'a1', text: 'Done.', streaming: false }], 'idle');
@@ -157,7 +165,8 @@ test.describe('watching the spec change', () => {
 
       // The same records and fields in the Changes panel and the requirement's wiki card.
       await tools(page).getByRole('button', { name: 'Highlight changes' }).click();
-      await tools(page).getByRole('button', { name: /^Changes 2/ }).click();
+      await expectCount(page, 2);
+      await changesButton(page).click();
       const panel = page.getByRole('region', { name: 'Changes' });
       await expect(panel).toContainText(ADDED);
       await expect(panel.locator('ins').first()).toContainText('Changed by the Agent while the Reader watched');

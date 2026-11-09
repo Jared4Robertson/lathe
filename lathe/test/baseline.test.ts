@@ -4,7 +4,8 @@
 // repo gets its author from the environment and ignores the machine's own git config, so the test reads and writes no
 // git config.
 import { spawnSync } from 'node:child_process';
-import { rmSync } from 'node:fs';
+import { renameSync, rmSync } from 'node:fs';
+import path from 'node:path';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { configuredRoot } from './store/fixture.ts';
@@ -100,5 +101,16 @@ describe.skipIf(!hasGit)('changes since a baseline', () => {
     expect((await get(repo, '/api/record-changes/list-record-changes?product_id=EX&since=yesterday')).status).toBe(400);
     expect((await get(repo, '/api/record-changes/list-record-changes?since=commit')).status).toBe(400);
     expect((await get(repo, '/api/record-changes/list-record-changes?product_id=NOPE&since=commit')).status).toBe(422);
+
+    // A file git cannot give is no answer about the commit: nothing is compared with it, and nothing of it is kept.
+    git(repo, 'commit', '--quiet', '-am', 'Very short');
+    const blob = git(repo, 'rev-parse', 'HEAD:data/use_case.jsonl');
+    const object = path.join(repo, '.git/objects', blob.slice(0, 2), blob.slice(2));
+    renameSync(object, `${object}.away`);
+    const failed = await changes(repo, 'commit');
+    renameSync(`${object}.away`, object);
+    expect(failed.baseline).toMatchObject({ state: 'none' });
+    expect(failed.changes).toEqual([]);
+    expect(await changes(repo, 'commit')).toMatchObject({ baseline: { state: 'ok', subject: 'Very short' }, changes: [] });
   });
 });

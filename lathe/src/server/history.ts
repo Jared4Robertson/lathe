@@ -163,7 +163,7 @@ export function parseLog(text: string): Omit<HistoryCommit, 'changes' | 'truncat
  */
 export const firstColumnPattern = (id: string) => `^[{]"[a-z_]*":"${id}"[,}]`;
 
-async function inBatches<T, R>(items: T[], size: number, task: (item: T) => Promise<R>): Promise<R[]> {
+export async function inBatches<T, R>(items: T[], size: number, task: (item: T) => Promise<R>): Promise<R[]> {
   const results: R[] = [];
   for (let i = 0; i < items.length; i += size) results.push(...(await Promise.all(items.slice(i, i + size).map(task))));
   return results;
