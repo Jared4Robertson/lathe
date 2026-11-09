@@ -200,35 +200,32 @@ function NoPage({ kind }: { kind: string }) {
   return <div className="spec-body placeholder"><p>No aggregate has a page for the kind <code>{kind}</code>.</p></div>;
 }
 
-/** The whole wiki page (More): a record's page ends with its History (LA-V102-R05), read only when asked. */
+/**
+ * The whole wiki page (More): a record's page ends with its History (LA-V102-R05), read only when asked. The changes and
+ * the History go in the page's `after`, drawn once its read has answered: under the page's "Reading…" line they would be
+ * drawn in view, then pushed out of it when the page's content arrives (LA-PAT-APP-UX-R08).
+ */
 function WikiContent({ index, route }: { index: RecordIndex; route: FocusRoute }) {
   if (route.page === 'group') return <GroupWiki index={index} gid={focusOf(route)} />;
-  return (
-    <>
-      <WikiPage index={index} route={route} />
-      <div className="spec-body"><CardChanges index={index} id={focusOf(route)} /><HistorySection index={index} id={focusOf(route)} /></div>
-    </>
-  );
-}
-
-function WikiPage({ index, route }: { index: RecordIndex; route: Exclude<FocusRoute, { page: 'group' }> }) {
+  const id = focusOf(route);
+  const tail = <><CardChanges index={index} id={id} /><HistorySection index={index} id={id} /></>;
   switch (route.page) {
-    case 'product': return <ProductPage key={route.product} index={index} id={route.product} after={<OwnFacts index={index} id={route.product} />} />;
-    case 'domain': return <DomainPage key={route.domain} index={index} id={route.domain} after={<OwnFacts index={index} id={route.domain} />} />;
+    case 'product': return <ProductPage key={id} index={index} id={id} after={<OwnFacts index={index} id={id}>{tail}</OwnFacts>} />;
+    case 'domain': return <DomainPage key={id} index={index} id={id} after={<OwnFacts index={index} id={id}>{tail}</OwnFacts>} />;
     case 'record': {
       // Every kind's aggregate draws its own page.
-      const kind = index.byId.get(route.id)?.kind ?? '';
+      const kind = index.byId.get(id)?.kind ?? '';
       const Page = pageOf(index.meta, kind);
-      return Page ? <Page key={route.id} index={index} id={route.id} /> : <NoPage kind={kind} />;
+      return Page ? <Page key={id} index={index} id={id} after={tail} /> : <NoPage kind={kind} />;
     }
   }
 }
 
 /** A product's or a domain's facts after its page, as a record's follow its body (RecordContent): its kind, data file and links both ways. */
-function OwnFacts({ index, id }: { index: RecordIndex; id: string }) {
+function OwnFacts({ index, id, children }: { index: RecordIndex; id: string; children: ReactNode }) {
   const record = index.byId.get(id);
   if (!record) return null;
-  return <div className="spec-body"><aside className="record-side" aria-label="Facts"><RecordFacts index={index} record={record} /></aside></div>;
+  return <div className="spec-body"><aside className="record-side" aria-label="Facts"><RecordFacts index={index} record={record} /></aside>{children}</div>;
 }
 
 /** A group's wiki page: its parent, its kind, and its members, each with its coverage marks and its own children folded. */

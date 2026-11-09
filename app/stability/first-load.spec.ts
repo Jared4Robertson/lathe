@@ -11,6 +11,16 @@ test.describe('first load', () => {
     });
   }
 
+  // The wiki card's whole page reads after the index: held back here, what follows the page (its changes and History)
+  // must wait for it, not be drawn under "Reading…" and pushed out of view when the page arrives.
+  test('LA-V61-R27-T01 domain page with a slow read', async ({ page }) => {
+    await page.route(/\/api\/domain\/get-domain/, async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await route.continue();
+    });
+    expectStable(await firstLoad(page, 'first load: domain page, slow read', DOMAIN, { keys: [...SHELL, ...FOCUS], ready: '.header-strip h1', settle: 2500 }));
+  });
+
   // The fonts are the app's own (app/public/fonts), preloaded, with `font-display: optional`: held
   // back here, the page draws in the fallback fonts and keeps them, rather than swap and move every line.
   test('LA-V61-R27-T01 record page with slow fonts', async ({ page }) => {
