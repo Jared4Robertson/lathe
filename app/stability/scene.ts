@@ -22,6 +22,17 @@ export async function graphDrawn(page: Page, layout?: string, settle = 500) {
   await page.waitForTimeout(settle);
 }
 
+/**
+ * Waits until the graph shows `layout` (a map is laid out off the main thread, and the one before stays until then) and
+ * nothing is moving, two frames running so a framing about to start is seen: what reading where a box comes to rest needs.
+ */
+export async function graphAtRest(page: Page, layout?: string) {
+  if (layout) await page.locator(`${GRAPH}[data-layout="${layout}"]`).waitFor({ state: 'attached' });
+  await expect.poll(() => page.evaluate((sel) => new Promise<boolean>((done) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => done((document.querySelector(sel) as SceneHost).graphScene!().moving)));
+  }), GRAPH), { timeout: 15_000 }).toBe(false);
+}
+
 /** Waits until a box is drawn as the focus. */
 export const focusDrawn = (page: Page, id: string) => page.waitForFunction(({ sel, id }) => !!(document.querySelector(sel) as SceneHost).graphScene?.().boxes.some((b) => b.id === id && b.focus), { sel: GRAPH, id });
 

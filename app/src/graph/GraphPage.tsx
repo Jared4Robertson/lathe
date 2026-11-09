@@ -444,6 +444,8 @@ export interface Scene {
   /** How many times the camera has moved since the canvas was drawn first, and how many of those moves were glides. */
   moves: number;
   glides: number;
+  /** Whether the camera is gliding or the boxes are morphing to a new layout: what is read now is not yet where it will rest. */
+  moving: boolean;
   canvas: Rect;
   /** The title size on screen, in CSS pixels, under which a box is drawn as a plain block. */
   blockBelowPx: number;
@@ -1082,6 +1084,7 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
         camera: roundCamera(v),
         moves: moves.current.moves,
         glides: moves.current.glides,
+        moving: gestures.gliding() || morph.moving(performance.now()),
         canvas: { left: r.left, top: r.top, width: s.w, height: s.h },
         blockBelowPx: BLOCK_BELOW_PX,
         laidOut: lastLayout(),

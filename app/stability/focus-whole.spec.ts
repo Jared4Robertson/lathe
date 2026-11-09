@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './test';
 import { openPage } from './measure';
-import { erdDrawn, erdSceneOf, GRAPH, graphDrawn, sceneOf, traceDrawn, traceSceneOf } from './scene';
+import { erdDrawn, erdSceneOf, GRAPH, graphAtRest, sceneOf, traceDrawn, traceSceneOf } from './scene';
 
 // The focused box is always whole on screen (LA-PAT-APP-UX-R23): on every stage, framing a focus puts its whole box in
 // the frame, never cut at the canvas's edge and never under a floating panel (the nav, the wiki card, the key, the
@@ -52,27 +52,27 @@ test.describe('the focused box is always whole on screen', () => {
   test('LA-PAT-APP-UX-R23-T02 On the Graph (Tree with the minimap, Nested, Map), the Trace and the ERD, the framed focus is whole and clear of every panel', async ({ page }) => {
     // The Graph's Tree: a domain with its stages, at depths 1 to 3, with the minimap on.
     await openPage(page, `/${DOMAIN}?stage=graph`, `${GRAPH} .graph-box`);
-    await graphDrawn(page, 'tree', 900);
+    await graphAtRest(page, 'tree');
     await page.locator('.focus-stage .graph-filters summary').click();
     await page.locator('.focus-stage .graph-filters').getByRole('switch', { name: 'Minimap' }).check();
     await page.locator('.focus-stage .graph-filters summary').click();
     for (const depth of ['1', '2', '3']) {
       await page.locator('.focus-stage .graph-depth:not(.graph-layout) button', { hasText: depth }).click();
-      await page.waitForTimeout(900);
+      await graphAtRest(page, 'tree');
       expect(await graphFraming(page), `Tree depth ${depth}`).toEqual([]);
     }
     // A focus with many children: on the Tree, in Nested and on the Map, whole, or its children read beside it.
     await openPage(page, `/${MANY}?stage=graph`, `${GRAPH} .graph-box`);
-    await graphDrawn(page, 'tree', 900);
+    await graphAtRest(page, 'tree');
     expect(await graphFraming(page), 'Tree, many children').toEqual([]);
     for (const layout of ['Nested', 'Map']) {
       await page.locator('.focus-stage .graph-layout button', { hasText: layout }).click();
-      await page.waitForTimeout(900);
+      await graphAtRest(page, layout.toLowerCase());
       expect(await graphFraming(page), layout).toEqual([]);
     }
     // Then, on the Map, a use case too big for the pane at street level.
     await openPage(page, `/${USE_CASE}?stage=graph`, `${GRAPH} .graph-box`);
-    await graphDrawn(page, 'map', 900);
+    await graphAtRest(page, 'map');
     expect(await graphFraming(page), 'Map, a use case').toEqual([]);
 
     // The Trace: the use case's box in its row.

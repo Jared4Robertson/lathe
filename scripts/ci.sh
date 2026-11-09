@@ -25,9 +25,10 @@ first_errors() {
       cut = index($0, " ──"); print (cut ? substr($0, 1, cut - 1) : $0)
       state = "before"; printed = 0; next
     }
+    state == "before" && /^    Test timeout of / { sub(/^    /, ""); flush_line($0); next }
     state == "before" && /^    Error: / { sub(/^    /, ""); flush_line($0); state = "in"; next }
     state == "in" && (/^ +>? *[0-9]+ \|/ || /^    Call [Ll]og/ || /^    Error Context/ || /^ +at /) { state = "done"; next }
-    state == "in" && /^    (Locator: |Expected|Received|Timeout: |[-+] )/ { sub(/^    /, ""); flush_line($0) }
+    state == "in" && /^    (Locator: |Expected|Received|Timeout: |Error: |[-+] )/ { sub(/^    /, ""); flush_line($0) }
   ' "$1"
 }
 
