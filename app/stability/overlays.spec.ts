@@ -93,7 +93,8 @@ test.describe('overlays', () => {
   test('LA-TRC-UC26-FL-T the Dashboard pulls up by its shortcut, its figures settle in place, and a Needs attention row closes it and goes there', async ({ page }) => {
     await openPage(page, RECORD);
     const r = await step(page, 'overlays', 'Dashboard: open', { keys: ['.tool-panel', '.dashboard-status', '.dashboard-stages', '.metrics'], allow: ['.wiki-panel', '.focus-stage', 'nav#nav', '.page-bar-actions', '.header-strip'] }, async () => {
-      await page.keyboard.press('ControlOrMeta+Shift+D');
+      // Control, like the other chords here: the harness's browser reports Windows (userAgentData), so Mod is Ctrl in the page whatever machine runs it.
+      await page.keyboard.press('Control+Shift+D');
       await page.locator('.dashboard-panel .dashboard-body:not([data-reading])').waitFor();
       await page.waitForTimeout(600);
     });

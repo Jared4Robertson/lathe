@@ -1,4 +1,5 @@
 import { Link } from '../router';
+import { figureText } from '../plural';
 import { METRICS, type MetricFigure } from './metrics';
 import { Section } from './parts';
 
@@ -10,8 +11,8 @@ import { Section } from './parts';
 function Tile({ figure }: { figure: MetricFigure }) {
   const { label, unit, meaning } = METRICS[figure.key];
   const read = figure.value !== undefined;
-  const value = read ? figure.value!.toLocaleString('en-US') : '…';
-  const of = read && figure.total !== undefined ? ` of ${figure.total.toLocaleString('en-US')}${unit ? ` ${unit}` : ''}` : '';
+  const value = read ? figureText(figure.value!) : '…';
+  const of = read && figure.total !== undefined ? ` of ${figureText(figure.total)}${unit ? ` ${unit}` : ''}` : '';
   const spoken = read ? `${label}: ${value}${of}` : `${label}: reading`;
   const detail = figure.detail && read ? <>{' '}<small className="metric-detail">{figure.detail}</small></> : null;
   const number = <><span className="metric-value">{value}</span>{of && <span className="metric-of">{of}</span>}</>;

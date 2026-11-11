@@ -12,8 +12,9 @@
 .dashboard-chips a { display: inline-flex; align-items: center; min-height: 30px; padding: 3px 9px; font-size: 0.82rem; color: var(--ink); text-decoration: none; background: var(--sheet); border: 1px solid var(--rule); border-radius: 999px; }
 .dashboard-chips a:hover { background: var(--hover-bg); border-color: var(--steel); }
 .dashboard-facts { margin: 9px 0 0; font-size: 0.82rem; color: var(--muted); }
-.dashboard-facts a, .dashboard-short a, .dashboard-legend a, .dashboard-foot a { color: var(--steel); text-decoration: none; }
-.dashboard-facts a:hover, .dashboard-short a:hover, .dashboard-legend a:hover, .dashboard-foot a:hover { text-decoration: underline; }
+/* A link in running text is told apart by more than its color: underlined (WCAG link-in-text-block). */
+.dashboard-facts a, .dashboard-short a, .dashboard-legend a, .dashboard-foot a { color: var(--steel); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.dashboard-facts a:hover, .dashboard-short a:hover, .dashboard-legend a:hover, .dashboard-foot a:hover { text-decoration-thickness: 2px; }
 .dashboard-status { padding: 14px 16px; background: var(--sheet); border: 1px solid var(--rule); border-left: 4px solid var(--warn); border-radius: 6px; }
 .dashboard-status .dashboard-label { margin-bottom: 6px; }
 .dashboard-verdict { margin: 0; font: 700 1.5rem/1.2 var(--display); }
@@ -37,7 +38,8 @@
 .dashboard-stages tbody th a { display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 4px; font-size: 0.82rem; color: var(--ink); text-decoration: none; white-space: nowrap; overflow: hidden; border-radius: 4px; }
 .dashboard-stages tbody th a:hover { background: var(--hover-bg); }
 .dashboard-domain-name { overflow: hidden; text-overflow: ellipsis; }
-.dashboard-cell { padding: 0; text-align: center; }
+.dashboard-cell { position: relative; padding: 0; text-align: center; }
+.dashboard-cell > .dashboard-mark { position: absolute; top: 50%; right: 6px; transform: translateY(-50%); pointer-events: none; }
 .dashboard-cell-box { display: flex; align-items: center; justify-content: center; gap: 5px; height: 30px; font: 500 0.8rem var(--mono); color: var(--ink); text-decoration: none; border-radius: 4px; background: color-mix(in srgb, var(--stage-color, transparent) var(--dashboard-heat, 0%), var(--sheet)); }
 a.dashboard-cell-box:hover { outline: 2px solid var(--steel); outline-offset: -2px; }
 .dashboard-cell.is-none .dashboard-cell-box { background: none; color: var(--muted); }
@@ -85,4 +87,5 @@ a.dashboard-cell-box:hover { outline: 2px solid var(--steel); outline-offset: -2
   .dashboard-stages tbody th a, .dashboard-cell-box { height: var(--touch-target); }
   .dashboard-cell-box { flex-direction: column; gap: 1px; font-size: 0.74rem; }
   .dashboard-mark { height: 13px; min-width: 15px; font-size: 0.62rem; }
+  .dashboard-cell > .dashboard-mark { top: 2px; right: 2px; transform: none; }
 }

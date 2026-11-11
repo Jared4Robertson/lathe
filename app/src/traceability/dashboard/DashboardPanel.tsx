@@ -143,15 +143,16 @@ function StatusBox({ status }: { status: Status | null }) {
 function Cell({ row, cell }: { row: StageRow; cell: StageCell }) {
   if (cell.records === undefined) return <td className="dashboard-cell"><span className="dashboard-cell-box"><span aria-hidden="true">{READING}</span></span></td>;
   if (cell.records === 0) return <td className="dashboard-cell is-none"><span className="dashboard-cell-box"><span aria-hidden="true">–</span><span className="sr-only">None</span></span></td>;
-  const said = `${cell.label}, ${row.shared ? 'Shared' : row.owner}: ${cell.records} record${cell.records === 1 ? '' : 's'}`;
+  // The link's name starts with its visible number; the mark of gaps and tests not automated yet is its own image beside the link, not part of it.
+  const said = `${cell.records} record${cell.records === 1 ? '' : 's'}, ${cell.label}, ${row.shared ? 'Shared' : row.owner}`;
   const marks = cell.marks ?? 0;
   const style = { '--dashboard-heat': `${cell.heat}%` } as CSSProperties;
   return (
     <td className={`dashboard-cell stage-${cell.stage}`} style={style}>
-      <Link className="dashboard-cell-box" to={addressOf(cell.key)} aria-label={`${said}${marks ? `, ${marks} gap${marks === 1 ? '' : 's'} or test${marks === 1 ? '' : 's'} not automated yet` : ''}`}>
+      <Link className="dashboard-cell-box" to={addressOf(cell.key)} aria-label={said}>
         <span>{cell.records}</span>
-        {marks > 0 && <span className="dashboard-mark" title={`${marks} gaps or tests not automated yet here`}>{marks}</span>}
       </Link>
+      {marks > 0 && <span className="dashboard-mark" role="img" aria-label={`${marks} gap${marks === 1 ? '' : 's'} or test${marks === 1 ? '' : 's'} not automated yet`} title={`${marks} gaps or tests not automated yet here`}>{marks}</span>}
     </td>
   );
 }

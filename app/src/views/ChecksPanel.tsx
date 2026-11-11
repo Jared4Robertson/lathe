@@ -5,7 +5,7 @@ import { strictnessText } from '../checking/product-setting/LimitsSection';
 import { checkPagePath } from '../format/reference';
 import { readState } from '../record/page-parts';
 import { type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
-import { ProblemList, RecordLink, Section, gapText, useScrollToHash } from '../specs/parts';
+import { ProblemList, RecordLink, Section, gapKey, gapText, useScrollToHash } from '../specs/parts';
 import { LongList } from '../components/LongList';
 import { ToolPanelFrame } from './ToolPanel';
 
@@ -74,7 +74,7 @@ export function ChecksPanel({ index, product, focus, sheet, onClose }: ChecksPan
             <Section id={CHECKS_GAPS} level={3} title="Gaps" count={gaps.length}>
               <p className="hint">What each obligation lacks, and each record or file short of a minimum.</p>
               <LongList
-                label="Gaps" className="record-list gaps" items={gaps} itemKey={(g) => `${g.id}-${g.missing}`} searchText={(g) => g.id}
+                label="Gaps" className="record-list gaps" items={gaps} itemKey={gapKey} searchText={(g) => g.id}
                 render={(g) => (
                   <>
                     {index.byId.has(g.id) ? <RecordLink index={index} id={g.id} row /> : <code>{g.id}</code>}

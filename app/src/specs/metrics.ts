@@ -1,6 +1,7 @@
 import type { ScopeCoverage } from '../../../lathe/src/traceability/coverage/read-model';
 import type { ListedProblem, ProductProblems } from '../../../lathe/src/checking/problems/read-model';
 import { panelHref } from '../views/overlays';
+import { figureText } from '../plural';
 
 // The key metrics (LA-PAT-APP-UX-R25): each metric's label, unit and meaning written once, and worked out by one
 // function from the aggregates' own reads, so a metric reads the same on every page that shows it. Coverage and tests
@@ -66,7 +67,7 @@ export function coverageMetrics(scopes: readonly ScopeCoverage[]): MetricFigure[
     { key: 'designed', value: designed, total: askedTotal, tone: done(designed, askedTotal) },
     { key: 'built', value: built, total: askedTotal, tone: done(built, askedTotal) },
     { key: 'proved', value: proved, total: all, tone: done(proved, all) },
-    { key: 'testsAutomated', value: automated, total: automated + manual + notAutomated, detail: `${manual} manual, ${notAutomated} not automated yet` },
+    { key: 'testsAutomated', value: automated, total: automated + manual + notAutomated, detail: `${figureText(manual)} manual, ${figureText(notAutomated)} not automated yet` },
   ];
 }
 

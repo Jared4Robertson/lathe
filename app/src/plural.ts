@@ -13,6 +13,11 @@ export function lowerLabel(label: string): string {
   return /^[A-Z]{2}/.test(label) ? label : label.charAt(0).toLowerCase() + label.slice(1);
 }
 
+/** A figure with thousands separators ("2,100"), the one way a count reads wherever a page shows it (LA-PAT-APP-UX-R25). */
+export function figureText(n: number): string {
+  return n.toLocaleString('en-US');
+}
+
 /** A count with its noun, singular for one: "1 domain", "4 domains". */
 export function countOf(n: number, label: string): string {
   return `${n} ${n === 1 ? label : plural(label)}`;

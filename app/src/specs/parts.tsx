@@ -190,6 +190,8 @@ export function KindBadge({ index, kind }: { index: RecordIndex; kind: string })
 export const gapText = (missing: string) =>
   missing === 'designed' || missing === 'built' || missing === 'proved' ? `not ${missing}` : missing.replaceAll('-', ' ');
 
+/** A coverage gap's key in a list: its record, what it misses and its message, since one record can miss the same thing in several places (a product with two served routes no record has). */
+export const gapKey = (g: { id: string; missing: string; message: string }) => `${g.id}-${g.missing}-${g.message}`;
 
 /** Scrolls to the section the address's hash names, once `ready` says what holds it has been read; a link to a section of a page or a panel lands there. */
 export function useScrollToHash(ready: unknown) {

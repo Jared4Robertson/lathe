@@ -1,4 +1,4 @@
-import { lowerLabel } from '../../plural';
+import { figureText, lowerLabel } from '../../plural';
 import { METRICS, type MetricFigure, type MetricKey } from '../../specs/metrics';
 
 // A product's Status (LA-TRC-UC26-R01): the ladder over the Dashboard's six tiles, read left to right: Status is the first
@@ -40,7 +40,7 @@ function clauseOf(f: MetricFigure): Clause {
     case 'errors': return { text: many(f.value!, 'error'), to: f.to };
     case 'gaps': return { text: many(f.value!, 'gap'), to: f.to };
     case 'journeysProved': return { text: f.total ? `${f.value} of ${many(f.total, 'journey')} proved` : 'no journeys yet', to: f.to };
-    default: return { text: `${f.value!.toLocaleString('en-US')} of ${f.total!.toLocaleString('en-US')} obligations ${words}`, to: f.to };
+    default: return { text: `${figureText(f.value!)} of ${figureText(f.total!)} obligations ${words}`, to: f.to };
   }
 }
 

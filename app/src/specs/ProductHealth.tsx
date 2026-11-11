@@ -1,4 +1,4 @@
-import { plural } from '../plural';
+import { figureText, plural } from '../plural';
 import type { ObligationFigures, ScopeCoverage } from '../../../lathe/src/traceability/coverage/read-model';
 
 type TestCounts = ScopeCoverage['tests'];
@@ -59,7 +59,7 @@ function TestCountsLine({ counts }: { counts: TestCounts }) {
       <span className="test-counts-label">Tests</span>{' '}
       {TEST_STATES.map((state, i) => (
         <span key={state.key} className={`test-count ${state.mark}`} data-state={state.mark} title={state.title}>
-          {i > 0 && ', '}{counts[state.key]} {state.label}
+          {i > 0 && ', '}{figureText(counts[state.key])} {state.label}
         </span>
       ))}
     </p>

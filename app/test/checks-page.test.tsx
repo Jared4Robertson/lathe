@@ -1,8 +1,8 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { addRows } from './fixtures/load';
-import { workspace } from './fixtures/workspace';
+import { gap, workspace } from './fixtures/workspace';
 import { checksPanel, openApp } from './helpers';
 
 // The Checks panel (LA-V41): a tool over the stage at `?panel=checks` (LA-PAT-APP-UX-R20).
@@ -70,5 +70,25 @@ describe('checks panel', () => {
     await user.keyboard('{Escape}');
     expect(window.location.search).toBe('');
     expect(screen.queryByRole('region', { name: 'Checks' })).toBeNull();
+  });
+  it('LA-V41-R01-T01 A record that misses the same thing in two places lists each gap once, under keys of their own', async () => {
+    // The product served two routes no record has: two gaps on one record with one missing, told apart by their messages.
+    const data = workspace();
+    const own = data.coverage.find((c) => c.product === 'DM' && c.domain === null)!;
+    own.gaps.push(
+      { ...gap('DM', 'product', 'route-without-record'), message: 'The code serves /api/a, but no endpoint or view has that route.' },
+      { ...gap('DM', 'product', 'route-without-record'), message: 'The code serves POST /api/a, but no endpoint has that route.' },
+    );
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      await openApp('/DM?panel=checks', { data });
+      await waitFor(() => expect(checksPanel()).toBeInTheDocument());
+      const rows = await within(checksPanel()).findAllByText('route without record');
+      expect(rows.map((r) => r.getAttribute('title'))).toEqual([
+        'The code serves /api/a, but no endpoint or view has that route.',
+        'The code serves POST /api/a, but no endpoint has that route.',
+      ]);
+      expect(logged.mock.calls.filter((c) => String(c[0]).includes('same key'))).toEqual([]);
+    } finally { logged.mockRestore(); }
   });
 });

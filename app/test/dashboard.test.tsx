@@ -129,7 +129,7 @@ describe('the Dashboard', () => {
     await openApp('/DM?panel=dashboard', { data });
     const panel = await dashboard();
     const body = within(panel);
-    await waitFor(() => expect(body.getByRole('link', { name: /^Domain model, DM-SHOP: \d+ record/ })).toHaveAttribute('href', '/DM-SHOP/domain-model'));
+    await waitFor(() => expect(body.getByRole('link', { name: /^\d+ records?, Domain model, DM-SHOP$/ })).toHaveAttribute('href', '/DM-SHOP/domain-model'));
     // The Domains by stage table names every stage for a screen reader, whatever the screen shows.
     for (const { label } of STAGES) expect(body.getByRole('columnheader', { name: label })).toBeInTheDocument();
     expect(body.getByRole('link', { name: 'DM-SHOP Shopping' })).toHaveAttribute('href', '/DM-SHOP');

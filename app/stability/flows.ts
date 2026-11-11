@@ -38,8 +38,11 @@ export async function servedWorkspace(): Promise<Served> {
 /** The rows of one stored table, from every product folder. */
 export const rowsOf = (spec: Served, table: string) => spec.tables[table] ?? [];
 
+/** A count as the app writes it: thousands separated (LA-PAT-APP-UX-R25). */
+const figure = (n: number) => n.toLocaleString('en-US');
+
 /** "12 automated, 1 manual, 2 not automated yet", as the app words a domain's tests by state. */
-export const testsText = (t: { automated: number; manual: number; not_automated: number }) => `${t.automated} automated, ${t.manual} manual, ${t.not_automated} not automated yet`;
+export const testsText = (t: { automated: number; manual: number; not_automated: number }) => `${figure(t.automated)} automated, ${figure(t.manual)} manual, ${figure(t.not_automated)} not automated yet`;
 /** The Tests automated key metric as it reads: "12 of 15 tests 2 manual, 1 not automated yet". */
 export const testsMetricText = (t: { automated: number; manual: number; not_automated: number }) =>
-  `${t.automated} of ${t.automated + t.manual + t.not_automated} tests ${t.manual} manual, ${t.not_automated} not automated yet`;
+  `${figure(t.automated)} of ${figure(t.automated + t.manual + t.not_automated)} tests ${figure(t.manual)} manual, ${figure(t.not_automated)} not automated yet`;

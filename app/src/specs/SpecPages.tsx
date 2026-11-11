@@ -8,7 +8,7 @@ import { KeyMetrics } from './KeyMetrics';
 import { coverageMetrics, openQuestionsMetric, problemMetrics, productProblems } from './metrics';
 import { useProblems } from '../checking/problems/reads';
 import { LongList } from '../components/LongList';
-import { ProblemList, RecordLink, RecordTree, Section, StageMark, gapText, idText, levelBelow, recordText, type SectionLevel } from './parts';
+import { ProblemList, RecordLink, RecordTree, Section, StageMark, gapKey, gapText, idText, levelBelow, recordText, type SectionLevel } from './parts';
 import { allFolders, ownerFolders, foldedChildren, type Folder, type OwnerFolders, type StageFolders } from '../exploring/folder-tree/folders';
 import { ActionsSlotContext } from '../components/ActionsSlot';
 import { byIdOrder, kindLabel, type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
@@ -192,7 +192,7 @@ export function DomainWiki({ index, id, description = '' }: { index: RecordIndex
             label="Coverage gaps"
             className="record-list gaps"
             items={index.coverage.get(id)!.gaps}
-            itemKey={(g) => `${g.id}-${g.missing}`}
+            itemKey={gapKey}
             searchText={(g) => idText(index, g.id)}
             render={(g) => (
               <>
