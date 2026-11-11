@@ -1,1 +1,6 @@
 {"record_id":"LA-UI356","file":"app/src/specs/metrics.ts"}
+{"record_id":"LA-UI358","file":"app/src/exploring/folder-tree/stage-counts.ts"}
+{"record_id":"LA-UI358","file":"app/src/traceability/dashboard/attention.ts"}
+{"record_id":"LA-UI358","file":"app/src/traceability/dashboard/reads.ts"}
+{"record_id":"LA-UI358","file":"app/src/traceability/dashboard/stages.ts"}
+{"record_id":"LA-UI358","file":"app/src/traceability/dashboard/status.ts"}

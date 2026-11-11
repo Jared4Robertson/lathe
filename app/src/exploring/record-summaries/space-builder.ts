@@ -7,6 +7,7 @@ import { indexMetaModel, type MetaIndex } from '../../platform/meta-model/reads'
 import { emptyTree, treeChange, treeOf, type Tree } from '../../graph/tree';
 import { inputChange, productInput, type MapInput } from '../../graph/layout-input';
 import { coverageOf, indexOf, problemsOf, recordsOf, type RecordIndex, type Records } from './record-index';
+import { stageCounts } from '../folder-tree/stage-counts';
 import { checksChange, EMPTY_RECORDS, foldersChange, keep, recordsChange, type ChecksChange, type MirroredChecks, type SpaceReply, type SpaceRequest } from './space-index';
 
 // The space's index builder (space-index.ts): what the space's index worker runs, and the page runs itself where there is
@@ -53,6 +54,7 @@ export function spaceBuilder(read: <R>(address: string) => Promise<{ state: 'rea
     if (request.type === 'meta') { meta = { index: indexMetaModel(request.meta), number: request.number }; return null; }
     if (request.type === 'checked') return { type: 'checked', id: request.id, change: await check(request) };
     const was = built.get(request.product);
+    if (request.type === 'stage-counts') return { type: 'stage-counts', id: request.id, counts: was ? stageCounts(was.folders) : null };
     if (request.type === 'input') {
       if (!was || was.seq !== request.seq) return { type: 'input', id: request.id, change: null };
       const key = `${request.view}|${request.measure}|${request.root}`;

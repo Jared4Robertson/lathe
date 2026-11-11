@@ -88,4 +88,20 @@ test.describe('overlays', () => {
     expectStable(pop);
     await page.keyboard.press('Escape');
   });
+
+  // The Dashboard is the one full-window tool (LA-PAT-APP-UX-R20, its recorded deviation, LA-V157): nothing jumps as its figures come in, and a row closes it.
+  test('LA-TRC-UC26-FL-T the Dashboard pulls up by its shortcut, its figures settle in place, and a Needs attention row closes it and goes there', async ({ page }) => {
+    await openPage(page, RECORD);
+    const r = await step(page, 'overlays', 'Dashboard: open', { keys: ['.tool-panel', '.dashboard-status', '.dashboard-stages', '.metrics'], allow: ['.wiki-panel', '.focus-stage', 'nav#nav', '.page-bar-actions', '.header-strip'] }, async () => {
+      await page.keyboard.press('ControlOrMeta+Shift+D');
+      await page.locator('.dashboard-panel .dashboard-body:not([data-reading])').waitFor();
+      await page.waitForTimeout(600);
+    });
+    expectStable(r);
+    const row = page.locator('.dashboard-panel .dashboard-row').last();
+    const target = await row.getAttribute('href');
+    await row.click();
+    await expect(page.locator('.dashboard-panel')).toHaveCount(0);
+    await page.waitForURL((u) => `${u.pathname}${u.search}` === target);
+  });
 });

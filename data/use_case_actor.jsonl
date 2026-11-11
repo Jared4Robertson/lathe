@@ -150,6 +150,8 @@
 {"use_case_id":"LA-TRC-UC24","position":2,"role_name":"Agent"}
 {"use_case_id":"LA-TRC-UC25","position":1,"role_name":"Agent"}
 {"use_case_id":"LA-TRC-UC25","position":2,"role_name":"Owner"}
+{"use_case_id":"LA-TRC-UC26","position":1,"role_name":"Owner"}
+{"use_case_id":"LA-TRC-UC26","position":2,"role_name":"Reader"}
 {"use_case_id":"LA-TST-UC03","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-TST-UC03","position":2,"role_name":"Agent"}
 {"use_case_id":"LA-TST-UC13","position":1,"role_name":"Owner"}

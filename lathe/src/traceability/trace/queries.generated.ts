@@ -17,3 +17,12 @@ export const GET_JOURNEY_PROOF_IDENTITY = {
   method: 'GET',
   route: '/api/trace/get-journey-proof',
 } as const;
+
+export const LIST_JOURNEY_PROOFS_IDENTITY = {
+  id: 'LA-TRC-QRY21',
+  slice: { aggregate: 'LA-TRC-RM13', name: 'trace' },
+  name: 'list-journey-proofs',
+  description: 'Lists how far each journey of a product is proved, in ID order, in one read, each as get-journey-proof answers it: what a page that shows every journey reads, in place of one request per journey.',
+  method: 'GET',
+  route: '/api/trace/list-journey-proofs',
+} as const;

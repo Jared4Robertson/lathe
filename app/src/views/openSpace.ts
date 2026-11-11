@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type RefObject } from 'react';
 import { CARD_MIN } from '../exploring/session-settings/model';
+import type { ToolPanel } from './overlays';
 
 // The open space over the stage (LA-V96): the part of the stage no floating panel covers, where
 // the stage frames its focus. It is measured from the panels' own rectangles, never from widths
@@ -212,6 +213,12 @@ export const CARD_GAP = 28;
 /** The card's gap from the stage's tools above it and the window's foot below it, in px: the same as at its right. */
 export const CARD_GAP_Y = 28;
 /** A panel that collapses when the window is too narrow for every open panel. */
+/** Each floating tool's width, which the crowding rule counts (LA-PAT-APP-UX-R18). */
+const TOOL_WIDTHS: Record<Exclude<ToolPanel, 'dashboard'>, number> = { checks: 380, changes: 380, appearance: 360, theme: 600 };
+
+/** A tool's width in the open space, or null: the Dashboard fills the window, so it takes no width and collapses nothing (LA-PAT-APP-UX-R18, R20). */
+export const toolWidthOf = (tool: ToolPanel | null): number | null => (tool && tool !== 'dashboard' ? TOOL_WIDTHS[tool] : null);
+
 export type CrowdPanel = 'card' | 'nav';
 /** The order panels collapse in as the window narrows; they reopen in reverse. */
 const CROWD_ORDER: readonly CrowdPanel[] = ['card', 'nav'];

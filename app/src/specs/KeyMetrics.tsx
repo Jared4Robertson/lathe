@@ -10,26 +10,31 @@ import { Section } from './parts';
 function Tile({ figure }: { figure: MetricFigure }) {
   const { label, unit, meaning } = METRICS[figure.key];
   const read = figure.value !== undefined;
-  const value = read ? String(figure.value) : '…';
-  const of = read && figure.total !== undefined ? ` of ${figure.total}${unit ? ` ${unit}` : ''}` : '';
+  const value = read ? figure.value!.toLocaleString('en-US') : '…';
+  const of = read && figure.total !== undefined ? ` of ${figure.total.toLocaleString('en-US')}${unit ? ` ${unit}` : ''}` : '';
   const spoken = read ? `${label}: ${value}${of}` : `${label}: reading`;
+  const detail = figure.detail && read ? <>{' '}<small className="metric-detail">{figure.detail}</small></> : null;
   const number = <><span className="metric-value">{value}</span>{of && <span className="metric-of">{of}</span>}</>;
   return (
-    <div className={`metric${figure.tone ? ` is-${figure.tone}` : ''}`} data-metric={figure.key} title={meaning}>
+    <div className={`metric${figure.tone ? ` is-${figure.tone}` : ''}${figure.rung ? ' is-rung' : ''}`} data-metric={figure.key} title={meaning}>
       <dt>{label}</dt>
       <dd>
-        {figure.to && read ? <Link to={figure.to} className="metric-link" aria-label={spoken}>{number}</Link> : <span className="metric-figure">{number}</span>}
-        {figure.detail && read && <>{' '}<small className="metric-detail">{figure.detail}</small></>}
+        {figure.to && read ? <Link to={figure.to} className="metric-link" aria-label={figure.detail ? `${spoken}, ${figure.detail}` : spoken}>{number}{detail}</Link> : <span className="metric-figure">{number}{detail}</span>}
       </dd>
     </div>
   );
+}
+
+/** The row of tiles itself, in the order given: a page's Key metrics section, or the Dashboard's row (LA-PAT-APP-UX-R25). */
+export function MetricTiles({ figures }: { figures: readonly MetricFigure[] }) {
+  return <dl className="metrics" aria-label="Key metrics">{figures.map((f) => <Tile key={f.key} figure={f} />)}</dl>;
 }
 
 /** The page's key metrics, in the order given. */
 export function KeyMetrics({ figures }: { figures: readonly MetricFigure[] }) {
   return (
     <Section title="Key metrics" className="key-metrics">
-      <dl className="metrics">{figures.map((f) => <Tile key={f.key} figure={f} />)}</dl>
+      <MetricTiles figures={figures} />
     </Section>
   );
 }

@@ -55,6 +55,7 @@
 {"id":"LA-TRC-EP416-CL","title":"useServes","endpoint_id":"LA-TRC-EP416","file":"app/src/traceability/serves/reads.ts"}
 {"id":"LA-TRC-EP418-CL","title":"useTraceRows","endpoint_id":"LA-TRC-EP418","file":"app/src/traceability/trace/reads.ts"}
 {"id":"LA-TRC-EP420-CL","title":"useChangeReach","endpoint_id":"LA-TRC-EP420","file":"app/src/traceability/change-reach/reads.ts"}
+{"id":"LA-TRC-EP421-CL","title":"useJourneyProofs","endpoint_id":"LA-TRC-EP421","file":"app/src/traceability/trace/reads.ts"}
 {"id":"LA-TST-EP535-CL","title":"useTestDataSet","endpoint_id":"LA-TST-EP535","file":"app/src/test-planning/test-data-set/reads.ts"}
 {"id":"LA-TST-EP537-CL","title":"useNextTestDataSetId","endpoint_id":"LA-TST-EP537","file":"app/src/test-planning/test-data-set/reads.ts"}
 {"id":"LA-UCS-EP500-CL","title":"useUseCase","endpoint_id":"LA-UCS-EP500","file":"app/src/use-cases/use-case/reads.ts"}

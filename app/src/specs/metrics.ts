@@ -8,7 +8,7 @@ import { panelHref } from '../views/overlays';
 // LA-CHK-QRY02), the query the Checks panel reads; outcomes the Product read's (get-product). Every figure is of one
 // product, or of one domain in it.
 
-export type MetricKey = 'outcomesServed' | 'designed' | 'built' | 'proved' | 'testsAutomated' | 'errors' | 'warnings' | 'openQuestions';
+export type MetricKey = 'outcomesServed' | 'designed' | 'built' | 'proved' | 'testsAutomated' | 'errors' | 'warnings' | 'openQuestions' | 'journeysProved' | 'gaps';
 
 interface MetricDefinition {
   label: string;
@@ -27,6 +27,8 @@ export const METRICS: Record<MetricKey, MetricDefinition> = {
   errors: { label: 'Errors', meaning: 'Problems the checks report as errors. Open the Checks panel to work through them.' },
   warnings: { label: 'Warnings', meaning: 'Problems the checks report as warnings. Open the Checks panel to work through them.' },
   openQuestions: { label: 'Open questions', meaning: 'Questions still open, each with its owner.' },
+  journeysProved: { label: 'Journeys proved', unit: 'journeys', meaning: 'Journeys whose journey test counts and whose every step is proved.' },
+  gaps: { label: 'Gaps', meaning: 'Every coverage gap in the product: each obligation not yet designed, built or proved, and each record or file short of a minimum.' },
 };
 
 /** One metric as a page shows it: its value, its total when it has one, a line of detail, and where it leads. */
@@ -39,6 +41,8 @@ export interface MetricFigure {
   to?: string;
   /** Worth a look now (an error), worth a look (a warning), or done (every one of its total). */
   tone?: 'attention' | 'caution' | 'done';
+  /** The first tile not complete, read left to right: the one Status names (the Dashboard's tiles only). */
+  rung?: boolean;
 }
 
 const sum = (values: readonly number[]) => values.reduce((a, v) => a + v, 0);
@@ -88,3 +92,19 @@ export function outcomesServedMetric(outcomes: readonly { servedBy: readonly str
 
 /** The open questions of a product or a domain. */
 export const openQuestionsMetric = (count: number): MetricFigure => ({ key: 'openQuestions', value: count });
+
+/** The journeys proved of the product's journeys, with the steps proved under them; undefined while they are read. */
+export function journeysProvedMetric(journeys: readonly { proved: boolean; status: { steps: number; stepsProved: number } }[] | undefined, to?: string): MetricFigure {
+  if (!journeys) return { key: 'journeysProved', value: undefined };
+  const proved = journeys.filter((j) => j.proved).length;
+  const steps = sum(journeys.map((j) => j.status.steps));
+  const stepsProved = sum(journeys.map((j) => j.status.stepsProved));
+  return { key: 'journeysProved', value: proved, total: journeys.length, detail: `${stepsProved} of ${steps} steps proved`, to, tone: done(proved, journeys.length) ?? (journeys.length ? 'caution' : undefined) };
+}
+
+/** Every coverage gap over the scopes; undefined while coverage is read. */
+export function gapsMetric(scopes: readonly ScopeCoverage[] | undefined, to?: string): MetricFigure {
+  if (!scopes) return { key: 'gaps', value: undefined };
+  const gaps = sum(scopes.map((s) => s.gaps.length));
+  return { key: 'gaps', value: gaps, detail: 'Coverage gaps', to, tone: gaps ? 'caution' : undefined };
+}

@@ -73,6 +73,7 @@ export const COMMANDS: readonly Command[] = [
   { id: 'goToDefinition', title: "Go to the focused link's record", group: 'Navigate', keys: ['F12'], when: 'global' },
   { id: 'showReferences', title: 'Show incoming links in the wiki card', group: 'Navigate', keys: ['Shift+F12'], when: 'page' },
   { id: 'openChecks', title: 'Open Checks', group: 'Navigate', keys: ['Mod+Shift+M'], when: 'global' },
+  { id: 'openDashboard', title: 'Open the Dashboard', group: 'Navigate', keys: ['Mod+Shift+D'], menu: 0, when: 'global' },
   { id: 'openChanges', title: 'Open the Changes panel', group: 'Navigate', keys: ['g d'], when: 'global' },
   { id: 'nextProblem', title: 'Next problem on this page', group: 'Navigate', keys: ['F8'], when: 'global' },
   { id: 'previousProblem', title: 'Previous problem on this page', group: 'Navigate', keys: ['Shift+F8'], when: 'global' },

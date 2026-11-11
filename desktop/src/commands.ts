@@ -14,6 +14,7 @@ export interface MenuCommand {
 }
 
 export const VIEW_COMMANDS: readonly MenuCommand[] = [
+  { id: 'openDashboard', label: 'Dashboard' },
   { id: 'commandPalette', label: 'Command Palette…' },
   { id: 'quickOpen', label: 'Quick Open…' },
   { id: 'stageGraph', label: 'Graph Stage' },

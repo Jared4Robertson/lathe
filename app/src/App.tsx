@@ -26,7 +26,7 @@ import { ChecksPanel } from './views/ChecksPanel';
 import { ChangesPanel } from './changes/ChangesPanel';
 import { ChangesProvider } from './changes/ChangesProvider';
 import { ProductsPicker } from './views/ProductsPicker';
-import { carryOverlays, overlaysOf, panelHref, useEscapeClosesTopmost, type ToolPanel } from './views/overlays';
+import { carryOverlays, overlaysOf, panelHref, useEscapeClosesTopmost } from './views/overlays';
 import { useWindowVoice, VoiceContext } from './chat/voice/useVoice';
 import { pointedAt, useAppRequests } from './chat/appRequests';
 import { chatChips } from './chat/chips';
@@ -34,7 +34,7 @@ import { takeMenuRecord } from './shell/desktopRecord';
 import { CARD_MIN, CHAT_DEFAULT } from './exploring/session-settings/model';
 import { useSessionSettings } from './exploring/session-settings/use-session-settings';
 import { resizeChat } from './exploring/session-settings/commands/resize-chat';
-import { CARD_GAP, CARD_GAP_Y, crowdedLabel, RoomContext, STAGE_MIN, useRoomState } from './views/openSpace';
+import { CARD_GAP, CARD_GAP_Y, crowdedLabel, RoomContext, STAGE_MIN, useRoomState, toolWidthOf } from './views/openSpace';
 import { desktopBridge } from './shell/desktopChrome';
 import { addressOf, focusOf, HOME_PATH, isFocusRoute } from './views/address';
 import { ThemeProvider } from './theme/ThemeProvider';
@@ -42,6 +42,7 @@ import { ThemeCommands } from './theme/ThemeCommands';
 // The first load ships only the wiki (LA-PAT-APP-UX-R11): Appearance and the theme editor load when first opened,
 // as the graph and the ERD view do (views/FocusPage.tsx).
 const AppearancePopover = lazy(() => import('./theme/Appearance').then((m) => ({ default: m.AppearancePopover })));
+const DashboardPanel = lazy(() => import('./traceability/dashboard/DashboardPanel').then((m) => ({ default: m.DashboardPanel })));
 const ThemeEditorPanel = lazy(() => import('./theme/Appearance').then((m) => ({ default: m.ThemeEditorPanel })));
 // The chat panel is the desktop's alone (LA-PLT-UC19): a browser never loads its code, and the desktop loads it when the chat first shows.
 const ChatPanel = lazy(() => import('./chat/ChatPanel').then((m) => ({ default: m.ChatPanel })));
@@ -50,7 +51,6 @@ const ChatPanel = lazy(() => import('./chat/ChatPanel').then((m) => ({ default: 
 setCarry(carryOverlays);
 
 /** The width of each tool over the stage, right of the nav, in px: what the open space leaves room for (openSpace.ts). */
-const TOOL_WIDTHS: Record<ToolPanel, number> = { checks: 380, changes: 380, appearance: 360, theme: 600 };
 
 export default function App() {
   return (
@@ -91,6 +91,7 @@ function Shell() {
   const isHome = specRoute.page === 'specs';
   const overlays = overlaysOf(search);
   const tool = isHome ? null : overlays.panel;
+  const toolWidth = toolWidthOf(tool);
   const announce = useAnnounce();
   const definitionKey = useShortcutHint('goToDefinition');
 
@@ -112,7 +113,7 @@ function Shell() {
   const chatShown = !!chatBridge && !chatCollapsed;
   // Panels never crowd the page (LA-PAT-APP-UX-R18): the nav collapses to its rail for space last,
   // after the page's wiki card; the Reader's own choice (`collapsed`) stays as set.
-  const room = useRoomState({ nav: { open: !collapsed, width: navWidth, rail: NAV_RAIL }, chat: chatShown ? chat.width ?? CHAT_DEFAULT : null, tool: tool ? TOOL_WIDTHS[tool] : null }, narrow);
+  const room = useRoomState({ nav: { open: !collapsed, width: navWidth, rail: NAV_RAIL }, chat: chatShown ? chat.width ?? CHAT_DEFAULT : null, tool: toolWidth }, narrow);
   const { hold } = room;
   const navCrowded = room.crowded.has('nav');
   const navCollapsed = collapsed || navCrowded;
@@ -151,6 +152,7 @@ function Shell() {
   const space = spaces.current?.id ?? null;
   useCommand('openChecks', () => navigate(panelHref('checks')), !!space);
   useCommand('goChecks', () => navigate(panelHref('checks')), !!space);
+  useCommand('openDashboard', () => navigate(panelHref(overlaysOf(window.location.search).panel === 'dashboard' ? null : 'dashboard')), !!space);
   useCommand('openChanges', () => navigate(panelHref('changes')), !!space);
   useCommand('goFormat', () => navigate(formatPath));
   useCommand('goHome', () => navigate(HOME_PATH));
@@ -239,6 +241,8 @@ function Shell() {
     toolPanel = <ChecksPanel index={spec.index} product={product} focus={focusRoute ? focusOf(focusRoute) : null} sheet={narrow} onClose={closeTool} />;
   } else if (tool === 'changes' && spec.index && product) {
     toolPanel = <ChangesPanel index={spec.index} focus={focusRoute ? focusOf(focusRoute) : null} sheet={narrow} onClose={closeTool} />;
+  } else if (tool === 'dashboard' && spec.index && product) {
+    toolPanel = <Suspense fallback={null}><DashboardPanel index={spec.index} product={product} sheet={narrow} onClose={closeTool} /></Suspense>;
   } else if (tool === 'appearance') {
     toolPanel = <Suspense fallback={null}><AppearancePopover sheet={narrow} onClose={closeTool} /></Suspense>;
   } else if (tool === 'theme') {
@@ -257,7 +261,7 @@ function Shell() {
       style={{
         '--nav-width': `${navWidth}px`, '--rail-width': `${NAV_RAIL}px`, '--card-min': `${CARD_MIN}px`, '--stage-min': `${STAGE_MIN}px`, '--card-gap': `${CARD_GAP}px`, '--card-gap-y': `${CARD_GAP_Y}px`,
         ...(chat.width !== null ? { '--chat-width': `${chat.width}px` } : {}),
-        ...(tool && !narrow ? { '--tool-space': `${TOOL_WIDTHS[tool] + 8}px` } : {}),
+        ...(toolWidth !== null && !narrow ? { '--tool-space': `${toolWidth + 8}px` } : {}),
       } as CSSProperties}
       data-crowded={room.crowded.size > 0 ? [...room.crowded].join(' ') : undefined}
       data-specs={spec.error ? 'error' : spaces.read && (!spaces.current || spec.index) ? 'ready' : 'loading'}

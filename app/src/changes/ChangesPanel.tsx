@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Card, CardGrid } from '../shell/Card';
 import { lowerLabel } from '../plural';
-import { compareIds, kindLabel, type RecordIndex } from '../exploring/record-summaries/record-index';
+import { kindLabel, type RecordIndex } from '../exploring/record-summaries/record-index';
 import { addressOf } from '../views/address';
 import { ToolPanelFrame } from '../views/ToolPanel';
 import { CHANGE_LABEL, ChangeDetails, changeSummary, SincePicker } from './ChangeDetails';
-import { ago, countsText, useChanges, type RecordChange } from './changes';
+import { ago, changesLatestFirst, countsText, useChanges, type RecordChange } from './changes';
 import { useLiveVersion } from './marks';
 
 // The Changes panel (LA-V100), Tools › Changes: a tool over the stage (LA-PAT-APP-UX-R20) at `?panel=changes` on
@@ -32,7 +32,7 @@ export function ChangesPanel({ index, focus, sheet, onClose }: ChangesPanelProps
   const [now, setNow] = useState(Date.now);
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), TICK_MS); return () => clearInterval(t); }, []);
   const at = (c: RecordChange) => live.get(c.id)?.at ?? null;
-  const ordered = [...changes].sort((a, b) => (at(b) ?? -1) - (at(a) ?? -1) || compareIds(a.id, b.id));
+  const ordered = changesLatestFirst(changes, live);
   const counts = <p className="changes-count">{baseline.state === 'ok' ? countsText(changes) : ''}</p>;
   return (
     <ToolPanelFrame label="Changes" head={counts} className="changes-panel" sheet={sheet} onClose={onClose}>

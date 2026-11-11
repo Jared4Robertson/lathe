@@ -80,6 +80,15 @@ test.describe('big maps', () => {
     await record({ name: 'big map: a walked focus framed', value: Math.max(...times), unit: 'ms', budget: BUDGETS.bigMapFocusMs, detail: `worst of ${times.length}: ${times.map(Math.round).join(', ')} ms` });
   });
 
+  test('LA-V157-R10-T02 the Dashboard opens with its figures read within budget on the large product', async ({ page }) => {
+    await open(page, `${DOMAIN}?stage=graph`, `${GRAPH} .graph-box`);
+    await quiet(page);
+    const start = await page.evaluate(() => performance.now());
+    await page.keyboard.press('ControlOrMeta+Shift+D');
+    await page.locator('.dashboard-panel .dashboard-body:not([data-reading])').waitFor();
+    await record({ name: 'big map: the Dashboard opened', value: (await page.evaluate(() => performance.now())) - start, unit: 'ms', budget: BUDGETS.bigMapDashboardMs, detail: 'large product (about 69K records), from the shortcut to every figure read' });
+  });
+
   test('LA-STD-EXPERIENCE-R02-T01 the Graph pans at 60 Hz through a data change that lays its map out again', async ({ page }) => {
     await open(page, `/${USE_CASE}?stage=graph`, `${GRAPH} .graph-box`);
     const before = (await sceneOf(page)).laidOut!;

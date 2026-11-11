@@ -96,6 +96,7 @@
 {"id":"LA-TRC-UC23-FL","title":"Name what provides a record","use_case_id":"LA-TRC-UC23"}
 {"id":"LA-TRC-UC24-FL","title":"See what a change would touch","use_case_id":"LA-TRC-UC24"}
 {"id":"LA-TRC-UC25-FL","title":"Trace code split across helper files","use_case_id":"LA-TRC-UC25"}
+{"id":"LA-TRC-UC26-FL","title":"See where a product stands on the Dashboard","use_case_id":"LA-TRC-UC26"}
 {"id":"LA-TST-UC03-FL","title":"Plan the tests that prove a record","use_case_id":"LA-TST-UC03"}
 {"id":"LA-TST-UC13-FL","title":"Build a test data set","use_case_id":"LA-TST-UC13"}
 {"id":"LA-UCS-UC05-FL","title":"Write a pattern with its rules","use_case_id":"LA-UCS-UC05"}

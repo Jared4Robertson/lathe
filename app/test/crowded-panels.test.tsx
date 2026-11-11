@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { act, fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { CARD_MIN } from '../src/exploring/session-settings/model';
-import { crowded, crowdedLabel, openWidth, STAGE_MIN, type CrowdPanel, type Room } from '../src/views/openSpace';
+import { crowded, crowdedLabel, openWidth, STAGE_MIN, toolWidthOf, type CrowdPanel, type Room } from '../src/views/openSpace';
 import { openApp } from './helpers';
 import { testWorkspace } from './graph/workspace';
 
@@ -34,7 +34,7 @@ function sheets(dir: string): string[] {
 }
 
 describe('LA-PAT-APP-UX-R18 Panels never crowd the page', () => {
-  it('LA-PAT-APP-UX-R18-T01 Panels collapse for space wiki card first, then the nav, never the chat or a tool, and titles never break mid-word', () => {
+  it('LA-PAT-APP-UX-R18-T01 Panels collapse for space wiki card first, then the nav, never the chat or a tool, the Dashboard takes no width, and titles never break mid-word', () => {
     // With every panel open, from the widest window down.
     expect(sorted(crowded(room(1920)))).toEqual([]);
     // The card's 28 px right gap: at 1440 px with the chat open the card gives way; from 1456 px it fits.
@@ -56,6 +56,8 @@ describe('LA-PAT-APP-UX-R18 Panels never crowd the page', () => {
     // A tool over the stage never gives way: the card and the nav do instead.
     expect(sorted(crowded(room(1600, { tool: 360 })))).toEqual(['card']);
     expect(sorted(crowded(room(1280, { tool: 360 })))).toEqual(['card', 'nav']);
+    // The Dashboard fills the window: it takes no width from the open space and collapses nothing.
+    for (const width of [1024, 1280, 1440, 1920]) expect(sorted(crowded(room(width, { tool: toolWidthOf('dashboard') })))).toEqual(sorted(crowded(room(width))));
 
     // The card and the stage keep their minimums in the layout too, read from the shell's tokens.
     const css = sheets(SRC).map((f) => [f, readFileSync(f, 'utf8')] as const);

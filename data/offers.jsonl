@@ -53,6 +53,7 @@
 {"source_id":"LA-IF01","target_id":"LA-TRC-UC20"}
 {"source_id":"LA-IF01","target_id":"LA-TRC-UC22"}
 {"source_id":"LA-IF01","target_id":"LA-TRC-UC24"}
+{"source_id":"LA-IF01","target_id":"LA-TRC-UC26"}
 {"source_id":"LA-IF01","target_id":"LA-TST-UC13"}
 {"source_id":"LA-IF01","target_id":"LA-UCS-UC05"}
 {"source_id":"LA-IF01","target_id":"LA-UCS-UC06"}

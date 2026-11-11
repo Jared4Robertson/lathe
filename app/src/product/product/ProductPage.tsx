@@ -9,7 +9,7 @@ import { Card, CardGrid } from '../../shell/Card';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { Markdown } from '../../specs/Markdown';
 import { Prose } from '../../specs/mentions';
-import { ProblemBadge, ProblemList, RecordLink, Section } from '../../specs/parts';
+import { ProblemBadge, ProblemList, RecordLink, Section, useScrollToHash } from '../../specs/parts';
 import { CoverageBars } from '../../specs/ProductHealth';
 import { KeyMetrics } from '../../specs/KeyMetrics';
 import { coverageMetrics, openQuestionsMetric, outcomesServedMetric, problemMetrics, productProblems } from '../../specs/metrics';
@@ -126,12 +126,12 @@ const offered = (iface: InterfaceEntry, which: 'offers' | 'missing' = 'offers') 
 function Declarations({ index, page, actions }: { index: RecordIndex; page: Product; actions: DeclarationActions | null }) {
   return (
     <>
-      <Section title="Roles" count={page.roles.length} className="product-roles">
+      <Section id="roles" title="Roles" count={page.roles.length} className="product-roles">
         {page.roles.length === 0 ? <p className="hint">No roles yet.</p> : (
           <dl className="fields">{page.roles.map((r) => <div key={r.name}><dt>{r.name}</dt><dd>{r.description}</dd></div>)}</dl>
         )}
       </Section>
-      <Section title="Interfaces" count={page.interfaces.length} className="product-interfaces">
+      <Section id="interfaces" title="Interfaces" count={page.interfaces.length} className="product-interfaces">
         {page.interfaces.length === 0 ? <p className="hint">No interfaces yet.</p> : (
           <ul className="plain record-list">
             {page.interfaces.map((i) => (
@@ -215,6 +215,7 @@ const countJourneys = (index: RecordIndex, product: string) => [...index.byId.va
 /** The product's own page: its key metrics, outcomes, domains, shared records, declarations, open questions and problems. */
 function ProductContent({ index, page, actions }: { index: RecordIndex; page: Product; actions: DeclarationActions | null }) {
   const id = page.product.id;
+  useScrollToHash(page);
   const problems = problemsUnder(index, 'product', id);
   // Its discovery (business outcomes and journeys) has a section of its own, so Shared holds the other stages.
   const shared = ownerFolders(index, id).stages.filter((s) => s.stage !== 'discovery' && s.count > 0);
@@ -224,11 +225,11 @@ function ProductContent({ index, page, actions }: { index: RecordIndex; page: Pr
       <Text index={index} id={id} source={page.product.description} field="description" />
       <ProductMetrics index={index} page={page} />
       <Text index={index} id={id} source={page.product.notes} title="Notes" field="notes" />
-      <Section title="Discovery" count={page.outcomes.length + countJourneys(index, id)} className="product-discovery">
+      <Section id="discovery" title="Discovery" count={page.outcomes.length + countJourneys(index, id)} className="product-discovery">
         <BusinessOutcomes index={index} page={page} />
         <Journeys index={index} product={id} />
       </Section>
-      <Section title="Domains" count={page.domains.length}>
+      <Section id="domains" title="Domains" count={page.domains.length}>
         {page.domains.length === 0 && <p className="hint">No domains yet.</p>}
         <CardGrid label="Domains">
           {page.domains.map((d) => (

@@ -1,8 +1,9 @@
-import { useRef, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import { navigate } from '../router';
 import { Button } from '../components/Button';
 import { Icon } from '../components/icons';
-import { BottomSheet } from '../shell/BottomSheet';
+import { BottomSheet, type SheetSize } from '../shell/BottomSheet';
+import { inertBehind } from '../shell/useNarrow';
 import { Tooltip } from '../shell/Tooltip';
 import { PAGE_PARAM, panelHref, useOverlayFocus } from './overlays';
 
@@ -47,6 +48,17 @@ function openInCard(e: MouseEvent<HTMLElement>) {
   showCardSheet();
 }
 
+/** A full-window tool is modal: its arrow keys walk its links, never the stage underneath. */
+function walkLinks(e: KeyboardEvent<HTMLElement>) {
+  if ((e.key !== 'ArrowDown' && e.key !== 'ArrowUp') || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+  const links = [...e.currentTarget.querySelectorAll<HTMLElement>('a[href]')].filter((a) => !a.closest('[inert]'));
+  if (links.length === 0) return;
+  e.preventDefault();
+  const at = links.indexOf(e.target as HTMLElement);
+  const step = e.key === 'ArrowDown' ? 1 : -1;
+  links[(at + step + links.length) % links.length]?.focus();
+}
+
 export interface ToolPanelProps {
   /** Its name, for its heading and for screen readers: "Checks", "Appearance". */
   label: string;
@@ -57,6 +69,8 @@ export interface ToolPanelProps {
   /** On a phone: a bottom sheet. */
   sheet: boolean;
   onClose: () => void;
+  /** It fills the window and is modal, so nothing else on the page can be reached: the Dashboard, the one tool that fills the window (LA-PAT-APP-UX-R20). */
+  full?: boolean;
   children: ReactNode;
 }
 
@@ -65,9 +79,12 @@ export interface ToolPanelProps {
  * the nav, which the open space leaves room for (`data-floating`), with its name and a close button;
  * on a phone, a bottom sheet. It takes focus as it opens and gives it back as it closes.
  */
-export function ToolPanelFrame({ label, head, className, sheet, onClose, children }: ToolPanelProps) {
+export function ToolPanelFrame({ label, head, className, sheet, onClose, full = false, children }: ToolPanelProps) {
   const box = useRef<HTMLElement>(null);
   useOverlayFocus(box);
+  const [size, setSize] = useState<SheetSize>('full');
+  useEffect(() => (full && !sheet ? inertBehind(box.current) : undefined), [full, sheet]);
+  const modal = full ? { role: 'dialog', 'aria-modal': true, onKeyDown: walkLinks } as const : null;
   const close = (
     <Tooltip label={`Close ${label}`} placement="left">
       <Button variant="icon" label={`Close ${label}`} className="tool-panel-close" onClick={onClose}><Icon name="x" size={16} /></Button>
@@ -82,8 +99,8 @@ export function ToolPanelFrame({ label, head, className, sheet, onClose, childre
   );
   if (sheet) {
     return (
-      <BottomSheet label={label} className={`tool-sheet ${className}`} onClose={onClose}>
-        <section ref={box} className="tool-panel is-sheet" aria-label={label} tabIndex={-1} onClickCapture={openInCard}>
+      <BottomSheet label={label} className={`tool-sheet ${className}`} onClose={onClose} {...(full ? { size, onSize: setSize } : {})}>
+        <section ref={box} className="tool-panel is-sheet" aria-label={label} tabIndex={-1} onClickCapture={openInCard} {...modal}>
           {top}
           <div className="tool-panel-scroll">{children}</div>
         </section>
@@ -91,7 +108,7 @@ export function ToolPanelFrame({ label, head, className, sheet, onClose, childre
     );
   }
   return (
-    <section ref={box} className={`tool-panel ${className}`} aria-label={label} tabIndex={-1} data-floating="left">
+    <section ref={box} className={`tool-panel ${className}`} aria-label={label} tabIndex={-1} data-floating={full ? undefined : 'left'} {...modal}>
       {top}
       <div className="tool-panel-scroll">{children}</div>
     </section>

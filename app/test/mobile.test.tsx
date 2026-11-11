@@ -163,7 +163,7 @@ describe('Lathe on a phone', () => {
     expect(screen.queryByRole('dialog', { name: 'Wiki card' })).toBeNull();
   });
 
-  it('LA-V90-R76-T01 On a phone the nav sheet shows Checks and Changes in its footer, each opening its tool and closing the drawer', async () => {
+  it('LA-V90-R76-T01 On a phone the nav sheet shows the Dashboard, Checks and Changes in its footer, each opening its tool and closing the drawer', async () => {
     phone();
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
@@ -174,7 +174,7 @@ describe('Lathe on a phone', () => {
     const nav = screen.getByRole('navigation', { name: 'Main' });
     const foot = nav.querySelector<HTMLElement>('.nav-foot')!;
     // In the footer, always in sight, before Appearance; not in a Tools section scrolled away below the rows.
-    expect(within(foot).getAllByRole('link').map((a) => a.querySelector('.nav-label')?.textContent)).toEqual(['Checks', 'Changes', 'Appearance']);
+    expect(within(foot).getAllByRole('link').map((a) => a.querySelector('.nav-label')?.textContent)).toEqual(['Dashboard', 'Checks', 'Changes', 'Appearance']);
     expect(within(nav).queryByRole('button', { name: /^Tools/ })).toBeNull();
     expect(within(foot).getByRole('link', { name: /^Changes \d+ records? changed$/ })).toHaveAttribute('aria-expanded', 'false');
     fireEvent.click(within(foot).getByRole('link', { name: /^Changes/ }));

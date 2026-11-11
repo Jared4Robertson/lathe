@@ -1,11 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useProblems } from '../checking/problems/reads';
 import { useLimits } from '../checking/product-setting/reads';
 import { strictnessText } from '../checking/product-setting/LimitsSection';
 import { checkPagePath } from '../format/reference';
 import { readState } from '../record/page-parts';
 import { type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
-import { ProblemList, Section } from '../specs/parts';
+import { ProblemList, RecordLink, Section, gapText, useScrollToHash } from '../specs/parts';
+import { LongList } from '../components/LongList';
 import { ToolPanelFrame } from './ToolPanel';
 
 // The Checks panel (LA-V41), Tools › Checks: a tool over the stage (LA-PAT-APP-UX-R20), floating at the
@@ -16,6 +17,10 @@ import { ToolPanelFrame } from './ToolPanel';
 // its row opens its check's page in the wiki card. On a phone it is a bottom sheet. The problems are the
 // Problems read model's (list-problems, LA-CHK-QRY02), read again after every reload. When the product's check is strict,
 // the panel says so above the problems, with any warnings it accepts as a recorded deviation (get-limits, LA-CHK-QRY12).
+
+/** The sections' addresses in the panel: a link to `?panel=checks#gaps` lands on that section (the Dashboard's Gaps tile). */
+export const CHECKS_GAPS = 'gaps';
+export const CHECKS_NOT_AUTOMATED = 'not-automated';
 
 export interface ChecksPanelProps {
   /** The current space's index, so no other product's problems are in it. */
@@ -40,6 +45,9 @@ export function ChecksPanel({ index, product, focus, sheet, onClose }: ChecksPan
     </p>
   );
   const workspace = problems?.workspace.reduce((n, g) => n + g.problems.length, 0) ?? 0;
+  const gaps = useMemo(() => [...index.coverage.values()].flatMap((s) => s.gaps), [index.coverage]);
+  const notAutomated = useMemo(() => [...index.byId.values()].filter((r) => r.testState === 'not automated yet' && r.product === product.id), [index.byId, product.id]);
+  useScrollToHash(problems);
   return (
     <ToolPanelFrame label="Checks" head={counts} className="checks-panel" sheet={sheet} onClose={onClose}>
       {'shown' in read ? read.shown : null}
@@ -60,6 +68,29 @@ export function ChecksPanel({ index, product, focus, sheet, onClose }: ChecksPan
                   <ProblemList index={index} problems={group} showCheck={false} current={focus} />
                 </Section>
               ))}
+            </Section>
+          )}
+          {gaps.length > 0 && (
+            <Section id={CHECKS_GAPS} level={3} title="Gaps" count={gaps.length}>
+              <p className="hint">What each obligation lacks, and each record or file short of a minimum.</p>
+              <LongList
+                label="Gaps" className="record-list gaps" items={gaps} itemKey={(g) => `${g.id}-${g.missing}`} searchText={(g) => g.id}
+                render={(g) => (
+                  <>
+                    {index.byId.has(g.id) ? <RecordLink index={index} id={g.id} row /> : <code>{g.id}</code>}
+                    <small className="meta" title={g.message}>{gapText(g.missing)}</small>
+                  </>
+                )}
+              />
+            </Section>
+          )}
+          {notAutomated.length > 0 && (
+            <Section id={CHECKS_NOT_AUTOMATED} level={3} title="Not automated yet" count={notAutomated.length}>
+              <p className="hint">Tests no file runs yet: they do not count as proof.</p>
+              <LongList
+                label="Tests not automated yet" className="record-list" items={notAutomated} itemKey={(r) => r.id} searchText={(r) => r.id}
+                render={(r) => <RecordLink index={index} id={r.id} row />}
+              />
             </Section>
           )}
         </div>

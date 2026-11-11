@@ -1,12 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { resolveAddress } from '../src/router';
 import { parseSpecRoute } from '../src/views/spec-route';
 import { carryOverlays, closeTopmostHref, overlaysOf, pageHref, panelHref, withoutOverlays } from '../src/views/overlays';
-import { crowded, openWidth, STAGE_MIN, type CrowdPanel, type Room } from '../src/views/openSpace';
+import { crowded, openWidth, STAGE_MIN, toolWidthOf, type CrowdPanel, type Room } from '../src/views/openSpace';
 import { checksPanel, openApp } from './helpers';
 
 // Nothing replaces the stage: tools open as panels over it (LA-PAT-APP-UX-R20). The stage is what the Reader
@@ -22,7 +22,7 @@ const room = (width: number, patch: Partial<Room> = {}): Room => ({
   width, inset: 8, nav: { open: true, width: 336, rail: 56 }, card: true, chat: null, tool: null, held: NONE, ...patch });
 
 describe('LA-PAT-APP-UX-R20 Nothing replaces the stage: tools open as panels over it', () => {
-  it('LA-PAT-APP-UX-R20-T01 Every tool is an overlay in the address of the focus it is over, opened in order, closed topmost first, carried to a new focus, and counted in the open space', () => {
+  it('LA-PAT-APP-UX-R20-T01 Every tool is an overlay in the address of the focus it is over, opened in order, closed topmost first, carried to a new focus but the Dashboard, and a floating one counted in the open space', () => {
     // A patch of the current address: its parameters replace the current ones, moved to the end; empty ones go.
     expect(resolveAddress('?panel=checks', '?stage=erd')).toBe(`${window.location.pathname}?stage=erd&panel=checks`);
     expect(resolveAddress('?page=format/kinds/use_case#fields', '?panel=checks')).toBe(`${window.location.pathname}?panel=checks&page=format/kinds/use_case#fields`);
@@ -55,6 +55,12 @@ describe('LA-PAT-APP-UX-R20 Nothing replaces the stage: tools open as panels ove
     expect(openWidth(room(1920, { tool: 380 }), NONE)).toBe(openWidth(room(1920), NONE) - 388);
     expect([...crowded(room(1280))]).toEqual([]);
     expect([...crowded(room(1280, { tool: 380 }))]).toEqual(['card']);
+    // The Dashboard fills the window instead: it takes no width, and a move never carries it.
+    expect(toolWidthOf('checks')).toBe(380);
+    expect(toolWidthOf('dashboard')).toBeNull();
+    expect(openWidth(room(1280, { tool: toolWidthOf('dashboard') }), NONE)).toBe(openWidth(room(1280), NONE));
+    expect(carryOverlays('/DM-SHOP-INV01', new URLSearchParams('?panel=dashboard'))).toBe('/DM-SHOP-INV01');
+    expect(carryOverlays('/DM-SHOP-INV01?stage=trace', new URLSearchParams('?stage=erd&panel=dashboard'))).toBe('/DM-SHOP-INV01?stage=trace');
     for (const width of [1440, 1920]) expect(openWidth(room(width, { tool: 600 }), crowded(room(width, { tool: 600 }))), String(width)).toBeGreaterThanOrEqual(STAGE_MIN);
 
     // One way to take and give back focus: the dialogs (quick open, the products picker) and the tool panels share it.
@@ -63,7 +69,7 @@ describe('LA-PAT-APP-UX-R20 Nothing replaces the stage: tools open as panels ove
     expect(readFileSync(join(SRC, 'views', 'ToolPanel.tsx'), 'utf8')).toMatch(/useOverlayFocus\(box\)/);
   });
 
-  it('LA-PAT-APP-UX-R20-T02 Checks, Appearance, the theme editor, a format page and the products picker each open over the stage, which keeps its focus; Escape closes the topmost and focus returns', async () => {
+  it('LA-PAT-APP-UX-R20-T02 Checks, Appearance, the theme editor, a format page and the products picker each open over the stage, which keeps its focus; the Dashboard fills the window, modal, and closes on a click-through; Escape closes the topmost and focus returns', async () => {
     const user = userEvent.setup();
     await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
@@ -112,6 +118,26 @@ describe('LA-PAT-APP-UX-R20 Nothing replaces the stage: tools open as panels ove
     expect(checksPanel()).toBeInTheDocument();
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('region', { name: 'Checks' })).toBeNull();
+
+    // The Dashboard: the one tool that fills the window, modal, with nothing behind it reachable; a link out closes it.
+    await user.click(within(nav()).getByRole('link', { name: /^Dashboard/ }));
+    const dashboard = await screen.findByRole('dialog', { name: 'Dashboard' });
+    expect(dashboard).toHaveAttribute('aria-modal', 'true');
+    expect(dashboard).not.toHaveAttribute('data-floating');
+    expect(dashboard).toHaveFocus();
+    expect(stage()).toBeInTheDocument();
+    expect(nav().closest('[inert]')).not.toBeNull();
+    await user.click(await within(dashboard).findByRole('link', { name: 'DM-SHOP Shopping' }));
+    await waitFor(() => expect(window.location.pathname + window.location.search).toBe('/DM-SHOP'));
+    expect(screen.queryByRole('dialog', { name: 'Dashboard' })).toBeNull();
+    expect(stage()).toBeInTheDocument();
+    expect(nav().closest('[inert]')).toBeNull();
+    // Back brings it again over the focus it was opened on; Escape closes it there.
+    act(() => window.history.back());
+    expect(await screen.findByRole('dialog', { name: 'Dashboard' })).toBeInTheDocument();
+    expect(window.location.pathname + window.location.search).toBe('/DM-SHOP-UC01?panel=dashboard');
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(window.location.pathname + window.location.search).toBe('/DM-SHOP-UC01'));
 
     // The products picker: a centered card over the dimmed stage of the product the Reader was in; Escape goes back.
     await openApp('/');

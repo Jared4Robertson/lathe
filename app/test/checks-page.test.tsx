@@ -17,7 +17,8 @@ describe('checks panel', () => {
     expect(await within(checksPanel()).findByText('2 errors · 3 warnings')).toBeInTheDocument();
     expect(requests).toContain('GET /api/problems/list-problems?product_id=DM');
 
-    const groups = [...checksPanel().querySelectorAll('section')].map((s) => ({
+    // The Gaps and Not automated yet sections are the Dashboard's (LA-V157-R12): this test is about the problems.
+    const groups = [...checksPanel().querySelectorAll('section:not(#gaps, #not-automated)')].map((s) => ({
       check: s.querySelector('h3, h4')?.firstChild?.textContent,
       severities: [...s.querySelectorAll('.severity')].map((e) => e.textContent),
       records: [...s.querySelectorAll('li')].map((li) => li.querySelector('a')?.getAttribute('href') ?? li.querySelector('code')?.textContent) }));

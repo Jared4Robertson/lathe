@@ -33,6 +33,8 @@ export interface Served {
    * goes through and changes nothing. A function that returns new data serves it from then on.
    */
   command?: (sent: SentCommand) => { answer: WriteAnswer; data?: ServedData };
+  /** Holds a read back until its promise resolves, by its address: what a page shows while it reads. */
+  hold?: (url: string) => Promise<void> | undefined;
   /** True to answer as a server answers another device on the network: every answer marked read-only. */
   readOnly?: boolean;
 }
@@ -49,6 +51,7 @@ export function serve(served: Served = {}): { requests: Requests; commands: Sent
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.pathname : input.url;
     requests.push(`${init?.method ?? 'GET'} ${url}`);
+    await served.hold?.(url);
     const json = (body: unknown, status = 200) =>
       new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', ...(served.readOnly ? { [ACCESS_HEADER]: READ_ONLY } : {}) } });
     // The Reference read: the schema's kinds, tables and relations, with the check rows.

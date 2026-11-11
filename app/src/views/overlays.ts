@@ -13,8 +13,8 @@ import { isFocusPath } from './address';
 // closes the last one opened, the topmost, and focus goes back where it was before it opened.
 
 /** The tools that open as panels over the stage. */
-export type ToolPanel = 'checks' | 'changes' | 'appearance' | 'theme';
-const TOOL_PANELS: readonly ToolPanel[] = ['checks', 'changes', 'appearance', 'theme'];
+export type ToolPanel = 'checks' | 'changes' | 'appearance' | 'theme' | 'dashboard';
+const TOOL_PANELS: readonly ToolPanel[] = ['checks', 'changes', 'appearance', 'theme', 'dashboard'];
 
 /** The query parameters of the overlays: the tool panel, the theme the editor edits, and the format page in the wiki card. */
 export const PANEL_PARAM = 'panel';
@@ -52,6 +52,9 @@ export function panelHref(panel: ToolPanel | null, theme?: string): string {
   return `?${PANEL_PARAM}=${panel ?? ''}&${THEME_PARAM}=`;
 }
 
+/** The link that opens the Checks panel at one of its sections: its gaps, or its tests not automated yet. */
+export const checksSectionHref = (section: string) => `${panelHref('checks')}#${section}`;
+
 /** The link that opens a format page in the wiki card (`format`, `format/kinds/use_case`), or closes it with null. */
 export const pageHref = (page: string | null) => `?${PAGE_PARAM}=${page ?? ''}`;
 
@@ -68,7 +71,8 @@ export function closeTopmostHref(search: string): string | null {
  */
 export function carryOverlays(to: string, from: URLSearchParams): string {
   const panel = from.get(PANEL_PARAM);
-  if (!panel) return to;
+  // The Dashboard is the one tool a move closes (LA-PAT-APP-UX-R20): a click-through goes to the place itself.
+  if (!panel || panel === 'dashboard') return to;
   const hashAt = to.indexOf('#');
   const hash = hashAt < 0 ? '' : to.slice(hashAt);
   const bare = hashAt < 0 ? to : to.slice(0, hashAt);

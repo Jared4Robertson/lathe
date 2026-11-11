@@ -71,7 +71,7 @@ import { GET_TABLE, LIST_TABLES, NEXT_TABLE_ID } from './technical-specification
 import { GET_TEST_DATA_SET, LIST_TEST_DATA_SETS, NEXT_TEST_DATA_SET_ID } from './test-planning/test-data-set/queries.ts';
 import { GET_TEST_COUNTS } from './traceability/tests-by-state/queries.ts';
 import { GET_TOOLING, LIST_TOOLING, NEXT_TOOLING_ID } from './technical-specification/tooling/queries.ts';
-import { LIST_TRACED_USE_CASES, GET_JOURNEY_PROOF } from './traceability/trace/queries.ts';
+import { LIST_TRACED_USE_CASES, GET_JOURNEY_PROOF, LIST_JOURNEY_PROOFS } from './traceability/trace/queries.ts';
 import { GET_UI_COMPONENT, LIST_UI_COMPONENTS, NEXT_UI_COMPONENT_ID } from './interface-design/ui-component/queries.ts';
 import { GET_USE_CASE, LIST_USE_CASES, NEXT_USE_CASE_ID } from './use-cases/use-case/queries.ts';
 import { GET_VALUE_OBJECT, LIST_VALUE_OBJECTS, NEXT_VALUE_OBJECT_ID } from './domain-modeling/value-object/queries.ts';
@@ -203,6 +203,7 @@ export const ALL_QUERIES: readonly AnyQuery[] = [
   NEXT_TOOLING_ID,
   LIST_TRACED_USE_CASES,
   GET_JOURNEY_PROOF,
+  LIST_JOURNEY_PROOFS,
   GET_UI_COMPONENT,
   LIST_UI_COMPONENTS,
   NEXT_UI_COMPONENT_ID,

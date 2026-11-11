@@ -828,6 +828,7 @@
 {"source_id":"LA-TRC-EP416-CL","target_id":"LA-PAT-HTTP-STEPS-SL01"}
 {"source_id":"LA-TRC-EP418-CL","target_id":"LA-PAT-HTTP-STEPS-SL01"}
 {"source_id":"LA-TRC-EP420-CL","target_id":"LA-PAT-HTTP-STEPS-SL01"}
+{"source_id":"LA-TRC-EP421-CL","target_id":"LA-PAT-HTTP-STEPS-SL01"}
 {"source_id":"LA-TRC-INV01-RL","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
 {"source_id":"LA-TRC-INV02-RL","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
 {"source_id":"LA-TRC-INV03-RL","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
@@ -853,6 +854,7 @@
 {"source_id":"LA-TRC-QRY18-H","target_id":"LA-PAT-AGGREGATE-QUERIES-SL01"}
 {"source_id":"LA-TRC-QRY19-H","target_id":"LA-PAT-AGGREGATE-QUERIES-SL01"}
 {"source_id":"LA-TRC-QRY20-H","target_id":"LA-PAT-AGGREGATE-QUERIES-SL01"}
+{"source_id":"LA-TRC-QRY21-H","target_id":"LA-PAT-AGGREGATE-QUERIES-SL01"}
 {"source_id":"LA-TRC-RM01-PJ","target_id":"LA-PAT-AGGREGATE-QUERIES-SL02"}
 {"source_id":"LA-TRC-RM01-RD","target_id":"LA-PAT-AGGREGATE-QUERIES-SL03"}
 {"source_id":"LA-TRC-RM01-TB","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL08"}
@@ -1103,6 +1105,7 @@
 {"source_id":"LA-UI355","target_id":"LA-PAT-APP-CODE-SL01"}
 {"source_id":"LA-UI356","target_id":"LA-PAT-APP-CODE-SL01"}
 {"source_id":"LA-UI357","target_id":"LA-PAT-APP-CODE-SL01"}
+{"source_id":"LA-UI358","target_id":"LA-PAT-APP-CODE-SL01"}
 {"source_id":"LA-UI52","target_id":"LA-PAT-APP-CODE-SL01"}
 {"source_id":"LA-UI53","target_id":"LA-PAT-APP-CODE-SL01"}
 {"source_id":"LA-UI54","target_id":"LA-PAT-APP-CODE-SL01"}

@@ -7,6 +7,7 @@ import type { InputChange, MapInput } from '../../graph/layout-input';
 import { coverageOf, problemsOf, type ListedProblem, type RecordIndex, type Records } from './record-index';
 import type { ScopeCoverage } from '../../../../lathe/src/traceability/coverage/read-model';
 import { mapChange, patchMap, sameItems, type MapChange } from './map-change';
+import type { StageCounts } from '../folder-tree/stage-counts';
 
 // The space's index worked out off the page's main thread (LA-STD-EXPERIENCE-R02, LA-PAT-APP-UX-R11): the space's index
 // worker (space-index.worker.ts) reads the record summaries and the folder tree, works out the records, the graph's
@@ -67,11 +68,13 @@ export type SpaceRequest =
   | { type: 'meta'; meta: MetaModel; number: number }
   | { type: 'read'; id: number; product: string; base: number | null; summaries: boolean; folders: boolean }
   | { type: 'checked'; id: number; product: string; base: number | null; problems: boolean; coverage: boolean }
-  | { type: 'input'; id: number; product: string; seq: number; root: string; view: MapInput['view']; measure: string; held: boolean };
+  | { type: 'input'; id: number; product: string; seq: number; root: string; view: MapInput['view']; measure: string; held: boolean }
+  | { type: 'stage-counts'; id: number; product: string };
 export type SpaceReply =
   | { type: 'read'; id: number; change: SpaceChange | SpaceRefusal }
   | { type: 'checked'; id: number; change: ChecksChange }
-  | { type: 'input'; id: number; change: InputChange | null };
+  | { type: 'input'; id: number; change: InputChange | null }
+  | { type: 'stage-counts'; id: number; counts: StageCounts | null };
 
 export const EMPTY_RECORDS: Records = { product: '', byId: new Map(), children: new Map(), outgoing: new Map(), incoming: new Map(), domains: [], links: [] };
 const sameLinkList = (a: SummaryLink[], b: SummaryLink[]) => a === b || (a.length === b.length && a.every((l, i) => l.source === b[i].source && l.relation === b[i].relation && l.target === b[i].target));

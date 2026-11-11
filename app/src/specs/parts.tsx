@@ -1,6 +1,6 @@
 import { lowerLabel, plural as pluralOf } from '../plural';
-import { createContext, useContext, useState, type AnchorHTMLAttributes, type ReactNode } from 'react';
-import { Link } from '../router';
+import { createContext, useContext, useLayoutEffect, useState, type AnchorHTMLAttributes, type ReactNode } from 'react';
+import { Link, useLocation } from '../router';
 import { checkPagePath } from '../format/reference';
 import { gapsOf, kindLabel, problemOrder, type ListedProblem, type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
 import type { Stage } from '../../../lathe/src/platform/data/schema';
@@ -100,11 +100,11 @@ export const levelBelow = (level: SectionLevel): SectionLevel => Math.min(6, lev
  * folder) and, at the right, any actions its contents offer (such as a list's "Expand all"). A
  * part that is a record (a layer) links its title to the record's page.
  */
-export function Section({ title, titleTo, count, level = 2, className, children }: { title: string; titleTo?: string; count?: number; level?: SectionLevel; className?: string; children: ReactNode }) {
+export function Section({ id, title, titleTo, count, level = 2, className, children }: { id?: string; title: string; titleTo?: string; count?: number; level?: SectionLevel; className?: string; children: ReactNode }) {
   const [actions, setActions] = useState<HTMLDivElement | null>(null);
   const Heading = `h${level}` as 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
   return (
-    <section className={className ? `spec-section ${className}` : 'spec-section'}>
+    <section id={id} className={className ? `spec-section ${className}` : 'spec-section'}>
       <header className="spec-section-head">
         <Heading>{titleTo ? <SpecLink to={titleTo}>{title}</SpecLink> : title}{count !== undefined && <span className="section-count">{count}</span>}</Heading>
         <div className="spec-section-actions" ref={setActions} />
@@ -190,6 +190,17 @@ export function KindBadge({ index, kind }: { index: RecordIndex; kind: string })
 export const gapText = (missing: string) =>
   missing === 'designed' || missing === 'built' || missing === 'proved' ? `not ${missing}` : missing.replaceAll('-', ' ');
 
+
+/** Scrolls to the section the address's hash names, once `ready` says what holds it has been read; a link to a section of a page or a panel lands there. */
+export function useScrollToHash(ready: unknown) {
+  const { hash } = useLocation();
+  useLayoutEffect(() => {
+    if (!hash) return;
+    let id = '';
+    try { id = decodeURIComponent(hash.slice(1)); } catch { return; }
+    document.getElementById(id)?.scrollIntoView?.({ block: 'start' });
+  }, [hash, ready]);
+}
 
 /** One record as a list row: its link, its kind when asked, a test's level and what it names in code, its test state, the patterns it follows, coverage marks and problems. */
 export function RecordRowBody({ index, record, showKind = false }: { index: RecordIndex; record: RecordSummary; showKind?: boolean }) {

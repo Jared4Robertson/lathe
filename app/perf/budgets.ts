@@ -58,6 +58,8 @@ export const BUDGETS = {
   bigMapSlowFrames: 0,
   /** From the arrow walk's key press on the large product's Graph until the new focus is drawn and the camera frames it. */
   bigMapFocusMs: 200,
+  /** From the shortcut on the large product until the Dashboard's figures are all read and drawn (LA-V157-R10). */
+  bigMapDashboardMs: 2000,
   /**
    * The layout of the large product's Graph map (about 69,000 boxes) in the layout's worker, off the main thread: 2.6 s
    * measured on the dev machine; the page stays on the map before it, and answers the camera, until it arrives.

@@ -1,9 +1,9 @@
-// The Trace reads (LA-TRC-RM13, LA-TRC-QRY18, LA-TRC-QRY19): each use case of a product's space once, from the outcomes its
+// The Trace reads (LA-TRC-RM13, LA-TRC-QRY18, LA-TRC-QRY19, LA-TRC-QRY21): each use case of a product's space once, from the outcomes its
 // capability serves to its acceptance tests, with its requirements, flows, steps, technical chains, flow tests and
 // status per stage, and each journey's proof rolled up from its steps and its journey test, read from the rows and the
 // checks' run through the read model's reader, as the CLI, the MCP tools and the HTTP API read it.
 import { afterEach, describe, expect, it } from 'vitest';
-import { GET_JOURNEY_PROOF, LIST_TRACED_USE_CASES } from '../../../src/traceability/trace/queries.ts';
+import { GET_JOURNEY_PROOF, LIST_JOURNEY_PROOFS, LIST_TRACED_USE_CASES } from '../../../src/traceability/trace/queries.ts';
 import type { ProductTrace, TraceJourney } from '../../../src/traceability/trace/read-model.ts';
 import { answerQuery, runQuery } from '../../../src/platform/commands/run.ts';
 import type { CheckRun, ReadView } from '../../../src/platform/data/rules.ts';
@@ -139,6 +139,14 @@ describe('LA-TRC-UC22-R01-T01 A journey reads as proved only when its journey te
     const unlinked = await proof({ chains: [], coverage: [] }, without(withJourney(), 'carries_out', (r) => r.source_id === 'EX-JR01-S03'));
     expect(unlinked.steps[2]).toEqual({ id: 'EX-JR01-S03', path: 'main', position: 3, carriesOut: null, kind: null, actors: [], designed: false, built: false, proved: false });
     expect(unlinked).toMatchObject({ proved: false, status: { steps: 3, unlinked: 1, stepsProved: 2, designed: 2, built: 2 } });
+  });
+
+  it('lists every journey\'s proof of a product in one read (LA-TRC-QRY21), the same as each journey read on its own', async () => {
+    const data = await view({ chains: [], coverage: [] }, withJourney());
+    const proof = runQuery(data, GET_JOURNEY_PROOF, { id: 'EX-JR01' }) as TraceJourney;
+    expect(runQuery(data, LIST_JOURNEY_PROOFS, { product_id: 'EX' })).toEqual({ product: 'EX', journeys: [proof] });
+    expect(LIST_JOURNEY_PROOFS.text({ product: 'EX', journeys: [proof] }).split('\n')).toEqual(['EX: 1 of 1 journey proved', '  EX-JR01: proved · 3 steps · 3 proved · journey test proved']);
+    expect(() => runQuery(data, LIST_JOURNEY_PROOFS, { product_id: 'ZZ' })).toThrow(/there is no product ZZ/);
   });
 
   it('refuses an unknown journey and data without the checks\' run, and runs the checks first for `lathe trace get-journey-proof`', async () => {

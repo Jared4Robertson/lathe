@@ -82,6 +82,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
   const toggle = (id: SectionId) => foldOrUnfoldNavSection({ section: id, open: !isOpen(id) });
   const scroller = useRef<HTMLDivElement>(null);
   const checksKeys = useShortcutHint('openChecks');
+  const dashboardKeys = useShortcutHint('openDashboard');
   // Whether the nav is used from the keyboard: then the selected row also shows a focus outline, as in VS Code.
   const [keyboard, setKeyboard] = useState(false);
 
@@ -95,6 +96,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
   const { panel } = overlaysOf(search);
   const checksOpen = panel === 'checks';
   const changesOpen = panel === 'changes';
+  const dashboardOpen = panel === 'dashboard';
   const appearanceOpen = panel === 'appearance' || panel === 'theme';
   const current = sectionOf(panel);
   useEffect(() => {
@@ -160,6 +162,13 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
     <NavRow depth={0} selected={checksOpen}>
       <Link to={panelHref(checksOpen ? null : 'checks')} aria-expanded={checksOpen} aria-keyshortcuts={checksKeys.aria}>
         <Icon name="checks" size={16} /> <span className="nav-label">Checks</span> {checkBadges}
+      </Link>
+    </NavRow>
+  );
+  const dashboardRow = (
+    <NavRow depth={0} selected={dashboardOpen}>
+      <Link to={panelHref(dashboardOpen ? null : 'dashboard')} aria-expanded={dashboardOpen} aria-keyshortcuts={dashboardKeys.aria}>
+        <Icon name="tidy" size={16} /> <span className="nav-label">Dashboard</span>
       </Link>
     </NavRow>
   );
@@ -253,6 +262,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
           {space && !drawer && (
             <NavSection id="tools" icon="checks" title="Tools" open={isOpen('tools')} onToggle={() => toggle('tools')}>
               <ul>
+                <li>{dashboardRow}</li>
                 <li>{checksRow}</li>
               </ul>
             </NavSection>
@@ -261,7 +271,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
         </div>
         <footer className="nav-foot">
           {/* In the drawer the tools stay in sight, never scrolled away below the space's rows. */}
-          {space && drawer && <>{checksRow}{changesRow}</>}
+          {space && drawer && <>{dashboardRow}{checksRow}{changesRow}</>}
           <NavRow depth={0} selected={appearanceOpen}>
             <Link to={panelHref(appearanceOpen ? null : 'appearance')} className="appearance-button" aria-expanded={appearanceOpen}><PaletteIcon size={16} /> <span className="nav-label">Appearance</span></Link>
           </NavRow>

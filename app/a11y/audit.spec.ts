@@ -112,6 +112,7 @@ const PAGES: State[] = [
   { name: 'ERD stage on a Shared record', url: `${SHARED}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   // Nothing replaces the stage (LA-PAT-APP-UX-R20): every tool over it, and the products picker.
   { name: 'Checks panel', url: `${PRODUCT}?panel=checks`, ready: '.checks-panel .problems' },
+  { name: 'Dashboard', url: `${PRODUCT}?panel=dashboard`, ready: '.dashboard-body:not([data-reading]) .dashboard-status' },
   { name: 'Format page in the wiki card', url: `${PRODUCT}?page=format`, ready: '.wiki-panel.is-format h2' },
   { name: 'Kind page in the wiki card', url: `${RECORD}?page=format/kinds/use_case`, ready: '.wiki-panel.is-format h2' },
   // The Check aggregate's own page: a product's own check, with its actions.
@@ -364,6 +365,17 @@ for (const look of LOOKS) {
     }
   });
 }
+
+// LA-V157-R11: the Dashboard on a phone is a sheet, and its table keeps all six stages under accessible full names.
+test.describe('Dashboard on a phone', () => {
+  test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
+  test('LA-V157-R11-T01 a bottom sheet, one column, the six stages named in full', async ({ page }) => {
+    await page.goto(`${PRODUCT}?panel=dashboard`);
+    await page.locator('.bottom-sheet .dashboard-body:not([data-reading])').waitFor();
+    for (const name of ['Discovery', 'Domain model', 'Use cases', 'Interface design', 'Technical specification', 'Test plan']) await expect(page.getByRole('columnheader', { name, exact: true })).toHaveCount(1);
+    await auditAll(page, 'phone: Dashboard');
+  });
+});
 
 // LA-V96-R28-T02: the Changes controls every stage shows, with Highlight changes on, and the Changes panel over the stage, at
 // desktop and phone widths in every look. The stability suite's data has nothing changed since its last commit, so the

@@ -2,7 +2,7 @@ import { createContext, useContext } from 'react';
 import type { ProductChanges, RecordChange } from '../../../lathe/src/exploring/record-changes/read-model';
 import type { ReadRefusal } from '../../../lathe/src/server/contract';
 import { readModelChanges } from '../record/read';
-import { byIdOrder, type RecordIndex } from '../exploring/record-summaries/record-index';
+import { byIdOrder, compareIds, type RecordIndex } from '../exploring/record-summaries/record-index';
 import { rollupText } from './rollup';
 
 export type { RecordChange };
@@ -222,6 +222,12 @@ export function changeCounts(changes: readonly RecordChange[]) {
 }
 export function countsText(changes: readonly RecordChange[]): string {
   return rollupText(changeCounts(changes)) || 'No changes';
+}
+
+/** The changes newest first: those that landed while the page was open, by when they did, then the rest by ID. */
+export function changesLatestFirst(changes: readonly RecordChange[], live: { get: (id: string) => { at: number } | undefined }): RecordChange[] {
+  const at = (c: RecordChange) => live.get(c.id)?.at ?? -1;
+  return [...changes].sort((a, b) => at(b) - at(a) || compareIds(a.id, b.id));
 }
 
 /** "just now", "4 min ago", "2 h ago". */
