@@ -4,7 +4,7 @@
 {"id":"LA-CHK-UC01-FL-S04","title":"With the machine-readable option, the command prints the whole workspace instead","flow_id":"LA-CHK-UC01-FL","path":"json","position":1}
 {"id":"LA-CHK-UC01-FL-S05","title":"Data the store refuses becomes data-refused errors naming the file, the line and the rule, and nothing else is checked","flow_id":"LA-CHK-UC01-FL","path":"refused","position":1}
 {"id":"LA-CHK-UC01-FL-S06","title":"The Owner makes the product's check strict with lathe product-setting set-strict-check, accepting the warnings it has while zero cannot be reached yet","flow_id":"LA-CHK-UC01-FL","path":"strict","position":1}
-{"id":"LA-CHK-UC01-FL-S07","title":"The command fails with a strict-check error when the product has more warnings than it accepts, or fewer, and its count line says the product is strict","flow_id":"LA-CHK-UC01-FL","path":"strict","position":2}
+{"id":"LA-CHK-UC01-FL-S07","title":"The command fails with a strict-check error when the product has more warnings than it accepts, or fewer, and with a strict-gaps error when it has any gap, and its count line says the product is strict","flow_id":"LA-CHK-UC01-FL","path":"strict","position":2}
 {"id":"LA-CHK-UC02-FL-S01","title":"The Agent adds the check with lathe check add-check: a name, a position, a severity, a summary, an explanation and one SELECT","flow_id":"LA-CHK-UC02-FL","path":"main","position":1}
 {"id":"LA-CHK-UC02-FL-S02","title":"The next check runs every check in order, the new one among them, each reading the typed records and file facts","flow_id":"LA-CHK-UC02-FL","path":"main","position":2}
 {"id":"LA-CHK-UC05-FL-S01","title":"The Owner decides a rule belongs to their product, not to Lathe","flow_id":"LA-CHK-UC05-FL","path":"main","position":1}

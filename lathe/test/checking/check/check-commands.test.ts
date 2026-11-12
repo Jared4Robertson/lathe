@@ -20,6 +20,7 @@ import { StoreError } from '../../../src/platform/data/problems.ts';
 import type { Store } from '../../../src/platform/data/store.ts';
 import { SET_LIMITS } from '../../../src/checking/product-setting/commands/set-limits.ts';
 import { SET_STRICT_CHECK } from '../../../src/checking/product-setting/commands/set-strict-check.ts';
+import { strictnessOfProducts, strictProblems, strictSummary } from '../../../src/checking/product-setting/strictness.ts';
 import { SET_TECHNOLOGY_WORDS } from '../../../src/checking/product-setting/commands/set-technology-words.ts';
 import type { CheckRun } from '../../../src/platform/data/rules.ts';
 import { GET_LIMITS } from '../../../src/checking/product-setting/queries.ts';
@@ -205,17 +206,45 @@ describe("LA-PAT-AGGREGATE-COMMANDS-R10-T02 Make the product's check strict (LA-
 describe('the problems a write introduced', () => {
   const warning = (check: string, record: string | null, message: string) => ({ severity: 'warning' as const, check, record, message });
 
-  it('LA-CHK-UC08-R06-T02 are the warnings and strict-check errors after it that were not before, a warning whose words changed with the data being the same one', () => {
+  it('LA-CHK-UC08-R06-T02 are the warnings, strict-check and strict-gaps errors after it that were not before, a warning whose words changed with the data being the same one', () => {
     const before = [warning('pattern-candidate', 'TL-PAT-SL01', 'Slot has 3 fills.'), warning('not-proved', 'TL-UC01-R01', 'Not proved.')];
     const after = [
       warning('pattern-candidate', 'TL-PAT-SL01', 'Slot has 4 fills.'),
       warning('not-proved', 'TL-UC01-R01', 'Not proved.'),
       warning('not-proved', 'TL-UC01-R02', 'Not proved.'),
       { severity: 'error' as const, check: 'strict-check', record: 'TL', message: 'Fails.' },
+      { severity: 'error' as const, check: 'strict-gaps', record: 'TL', message: 'Has 1 gap.' },
       { severity: 'error' as const, check: 'missing-parent', record: 'TL-X', message: 'An error.' },
     ];
-    expect(introducedProblems(before, after)).toEqual([after[2], after[3]]);
+    expect(introducedProblems(before, after)).toEqual([after[2], after[3], after[4]]);
+    // A strict product that had gaps before has the same strict-gaps error after, whatever its count says.
+    expect(introducedProblems([{ ...after[4], message: 'Has 2 gaps.' }], [after[4]])).toEqual([]);
     expect(introducedText([])).toBe('No new warnings.');
     expect(introducedText([after[2]])).toBe('This write introduced 1 problem; fix it now:\n  [not-proved] TL-UC01-R02: Not proved.');
+  });
+});
+
+describe('a strict product\'s gaps', () => {
+  const warning = (check: string, record: string, message: string) => ({ severity: 'warning' as const, check, record, message });
+  const setting = (product: string, strict: boolean, accepted?: number) => ({ product_id: product, max_children: 15, max_entities_per_aggregate: 7, technology_words: [], ...(strict ? { strict_check: true } : {}), ...(accepted ? { accepted_warnings: accepted } : {}) });
+  const scope = (product: string, domain: string | null, gaps: number) => ({ product, domain, gaps: Array.from({ length: gaps }, (_, i) => ({ id: `${product}-R0${i}`, kind: 'uc_requirement', missing: 'proved', message: 'Not proved yet.' })) });
+  const products = (...ids: string[]) => ids.map((id) => ({ id, kind: 'product', product: id }));
+
+  it('LA-CHK-UC01-R12-T02 A strict product\'s check fails with one strict-gaps error at one gap or more and passes at none; a product that is not strict never fails on gaps', () => {
+    const settings = [setting('TL', true, 1), setting('LA', true), setting('EX', false)];
+    const warned = [warning('not-proved', 'TL-R09', 'Not proved.')];
+    const productOf = (record: string) => record.split('-')[0];
+    // TL has one gap in its own scope and none in its domain, LA none, EX three.
+    const coverage = [scope('TL', null, 1), scope('TL', 'TL-LEND', 0), scope('LA', null, 0), scope('EX', 'EX-LEND', 3)];
+    const problems = strictProblems(settings, warned, coverage, productOf);
+    expect(problems).toEqual([{ severity: 'error', check: 'strict-gaps', record: 'TL', message: expect.stringContaining("Product TL's check is strict, so any gap fails it, and it has 1 gap: list them with coverage_gaps_list_coverage_gaps") }]);
+    expect(problems[0].message).toContain('no count of gaps is ever accepted');
+    // At zero gaps TL passes.
+    expect(strictProblems(settings, warned, [scope('TL', null, 0)], productOf)).toEqual([]);
+    const judged = strictnessOfProducts(settings, { records: [...products('TL', 'LA', 'EX'), { id: 'TL-R09', kind: 'uc_requirement', product: 'TL' }], problems: [...warned, ...problems], coverage });
+    expect(judged.map(({ product, gaps, failures }) => ({ product, gaps, failures: failures.length }))).toEqual([{ product: 'TL', gaps: 1, failures: 1 }, { product: 'LA', gaps: 0, failures: 0 }, { product: 'EX', gaps: 3, failures: 0 }]);
+    expect(strictSummary(judged[0])).toBe('TL is strict: warnings and gaps fail; it accepts 1 warning (a recorded deviation), and has 1 warning and 1 gap, so its check fails: 1 gap, and no gap is accepted.');
+    expect(strictSummary(judged[1])).toBe('LA is strict: warnings and gaps fail; it accepts none, and has 0 warnings and 0 gaps.');
+    expect(strictSummary(judged[2])).toBe('');
   });
 });

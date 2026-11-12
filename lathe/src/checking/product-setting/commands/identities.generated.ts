@@ -22,7 +22,7 @@ export const SET_STRICT_CHECK_IDENTITY = {
   id: 'LA-CHK-CMD06',
   slice: { aggregate: 'LA-CHK-A2', name: 'product-setting' },
   name: 'set-strict-check',
-  description: 'Sets whether the product\'s check is strict, so that any warning fails it as an error does, and the warnings it accepts while zero cannot be reached yet, keeping its limits and technology words. Refused when the accepted count is above the warnings the product has now, or given for a check that is not strict.',
+  description: 'Sets whether the product\'s check is strict, so that any warning or gap fails it as an error does, and the warnings it accepts while zero cannot be reached yet (no gap is ever accepted), keeping its limits and technology words. Refused when the accepted count is above the warnings the product has now, or given for a check that is not strict.',
   method: 'POST',
   route: '/api/product-setting/set-strict-check',
 } as const;

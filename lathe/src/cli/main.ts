@@ -23,7 +23,8 @@ Commands:
            lists under products, each on its own. Prints errors, warnings and coverage (one line per domain
            and obligation kind) per product; exits 1 on any error. A product whose check is strict
            (lathe product-setting set-strict-check) fails on any warning beyond those it accepts too,
-           as a strict-check error, and its count line says it is strict.
+           as a strict-check error, and on any gap at all, as a strict-gaps error, and its count line
+           says it is strict.
            --json prints { products: [{ root, strictness, workspace }] } instead.
   serve    Serve the web app for the product repo and each product it lists.  --port 5330 (default)
            --network also listens on the local network and prints its addresses: other devices on it

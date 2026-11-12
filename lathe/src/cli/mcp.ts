@@ -28,7 +28,7 @@ const CHECK_TOOL: Tool = {
   description:
     'Run lathe check on the whole workspace: every error (fix them before going on), every warning (work still to do), ' +
     'and each product\'s coverage as lathe check --json gives it: per domain and obligation kind, how many are designed, built and proved, with its gaps (what each obligation still lacks, and each record short of a minimum, such as use-case-without-flow). ' +
-    'A product whose check is strict fails on any warning beyond those it accepts, as a strict-check error, and the result is then a failure; each product\'s strictness comes with its coverage.',
+    'A product whose check is strict fails on any warning beyond those it accepts, as a strict-check error, and on any gap at all, as a strict-gaps error (no count of gaps is ever accepted; list them with coverage_gaps_list_coverage_gaps), and the result is then a failure; each product\'s strictness comes with its coverage.',
   inputSchema: { type: 'object', properties: {}, additionalProperties: false },
   annotations: { readOnlyHint: true },
 };

@@ -57,7 +57,7 @@ describe('IDs in text', () => {
   it('LA-PRD-UC38-R04-T01 An ID in text that no record has is no warning: no check reads text for IDs', () => {
     expect(text('EX-LEND-UC01')).toContain('EX-LEND-INV99');
     expect(ws.problems).toEqual([]);
-    expect(ENGINE_CHECKS.map((c) => c.check)).toEqual(['data-refused', 'strict-check']);
+    expect(ENGINE_CHECKS.map((c) => c.check)).toEqual(['data-refused', 'strict-check', 'strict-gaps']);
   });
 
   it('LA-PRD-UC38-R03-T01 Only link tables link records: a link to a record that does not exist is refused, while text naming it is not', async () => {

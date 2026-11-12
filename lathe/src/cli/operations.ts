@@ -4,7 +4,7 @@
 // commits.
 import path from 'node:path';
 import { loadProducts, type Coverage, type Problem } from '../index.ts';
-import { STRICT_CHECK, strictSummary, type ProductStrictness } from '../checking/product-setting/strictness.ts';
+import { STRICT_CHECK, STRICT_GAPS, strictSummary, type ProductStrictness } from '../checking/product-setting/strictness.ts';
 import type { SchemaDescription } from '../platform/data/schema.ts';
 import { SchemaVersionError } from '../config.ts';
 import { StoreError, type StoreProblem } from '../platform/data/problems.ts';
@@ -79,8 +79,9 @@ export async function check(root: string): Promise<{ errors: number; warnings: n
 }
 
 /**
- * The problems a write introduced: each warning, and each strict-check error, in the run after it that the run before
- * it did not hold, so an Agent fixes them at once. A problem is the one before when it has the same check and record
+ * The problems a write introduced: each warning, and each strict-check or strict-gaps error, in the run after it that
+ * the run before it did not hold, so an Agent fixes them at once: a strict product's first gap shows here as its
+ * strict-gaps error. A problem is the one before when it has the same check and record
  * (a problem about no record, the same message too): a warning whose words change with the data, such as a count,
  * is not a new one.
  */
@@ -89,7 +90,7 @@ export function introducedProblems(before: readonly Problem[], after: readonly P
   const left = new Map<string, number>();
   for (const p of before) left.set(key(p), (left.get(key(p)) ?? 0) + 1);
   return after
-    .filter((p) => p.severity === 'warning' || p.check === STRICT_CHECK)
+    .filter((p) => p.severity === 'warning' || p.check === STRICT_CHECK || p.check === STRICT_GAPS)
     .filter((p) => {
       const n = left.get(key(p)) ?? 0;
       if (n > 0) left.set(key(p), n - 1);

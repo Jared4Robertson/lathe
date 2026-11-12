@@ -39,12 +39,12 @@ describe('checks panel', () => {
     const strict = (accepted?: number) => addRows(workspace(), 'product_setting', { product_id: 'DM', max_children: 15, max_entities_per_aggregate: 7, technology_words: [], strict_check: true, ...(accepted ? { accepted_warnings: accepted } : {}) });
     const { requests, unmount } = await openApp('/DM?panel=checks', { data: strict() });
     await waitFor(() => expect(checksPanel()).toBeInTheDocument());
-    expect(await within(checksPanel()).findByText('Strict: warnings fail.')).toBeInTheDocument();
+    expect(await within(checksPanel()).findByText('Strict: warnings and gaps fail.')).toBeInTheDocument();
     expect(within(checksPanel()).getByText('2 errors · 3 warnings')).toBeInTheDocument();
     expect(requests).toContain('GET /api/product-setting/get-limits?product_id=DM');
     unmount();
     const { unmount: unmount2 } = await openApp('/DM?panel=checks', { data: strict(3) });
-    expect(await within(checksPanel()).findByText('Strict: warnings fail, beyond 3 accepted (a recorded deviation).')).toBeInTheDocument();
+    expect(await within(checksPanel()).findByText('Strict: warnings and gaps fail, warnings beyond 3 accepted (a recorded deviation).')).toBeInTheDocument();
     unmount2();
     // Not strict: the counts say nothing of it.
     await openApp('/DM?panel=checks');

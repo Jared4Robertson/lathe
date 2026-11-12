@@ -10,11 +10,11 @@ import type { Limits } from '../../../../lathe/src/checking/product-setting/read
 // strict, read through the Product setting aggregate's own query (GET /api/product-setting/get-limits), its own or the
 // defaults, and Set limits, which changes the limits only through the aggregate's own command (LimitsEditor).
 
-/** Whether the product's check is strict, in words: the accepted warnings are a recorded deviation, shown as one. */
+/** Whether the product's check is strict, in words: the accepted warnings are a recorded deviation, shown as one; no gap is ever accepted. */
 export function strictnessText(limits: Pick<Limits, 'strictCheck' | 'acceptedWarnings'>): string {
-  if (!limits.strictCheck) return 'Not strict: warnings never fail it';
-  if (!limits.acceptedWarnings) return 'Strict: warnings fail';
-  return `Strict: warnings fail, beyond ${limits.acceptedWarnings} accepted (a recorded deviation)`;
+  if (!limits.strictCheck) return 'Not strict: warnings and gaps never fail it';
+  if (!limits.acceptedWarnings) return 'Strict: warnings and gaps fail';
+  return `Strict: warnings and gaps fail, warnings beyond ${limits.acceptedWarnings} accepted (a recorded deviation)`;
 }
 
 /** A product's limits: the most children of one kind a record should hold and the most entities an aggregate should hold, and whether its check is strict. */

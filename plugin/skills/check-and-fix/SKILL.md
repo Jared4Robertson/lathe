@@ -7,7 +7,7 @@ description: Run lathe check, fix every error it reports, and report warnings, g
 
 The spec is typed data, changed only with Lathe's MCP tools (or the `lathe` CLI and the app), never by editing files. Each command refuses what breaks its aggregate's rules outright, so what is left for the check is what one command cannot settle: what nothing uses yet, what a later stage still owes, and whether the code backs what the tests claim.
 
-Run the `check` tool (in a shell, `npx lathe check`, or `npm --prefix lathe run check` in the Lathe repo; it exits 1 on any error, and in a product whose check is strict on any warning beyond those it accepts). Run it before you report or commit. Each problem names its check; `lathe/REFERENCE.md` in the Lathe package (`node_modules/@jaredrob/lathe/REFERENCE.md` in a product repo) explains every check and how to fix what it reports. Read the entry before you fix.
+Run the `check` tool (in a shell, `npx lathe check`, or `npm --prefix lathe run check` in the Lathe repo; it exits 1 on any error, and in a product whose check is strict on any warning beyond those it accepts and on any gap). Run it before you report or commit. Each problem names its check; `lathe/REFERENCE.md` in the Lathe package (`node_modules/@jaredrob/lathe/REFERENCE.md` in a product repo) explains every check and how to fix what it reports. Read the entry before you fix.
 
 ## When a command is refused
 
@@ -22,11 +22,13 @@ A refusal changed nothing and lists every reason, each with the rule it broke. R
 
 An error means the workspace is broken; do not leave one behind. Fix the warnings your task is about, leave the rest and mention them. Do not raise a size setting (`max_children`, `max_entities_per_aggregate`) to silence a warning unless the Owner asks: split or merge instead.
 
-Every write's answer lists the warnings it introduced (`introduced`: each warning, and any `strict-check` error, the check before it did not report), for every product. Fix them before your next write, while you know what caused them.
+Every write's answer lists the warnings it introduced (`introduced`: each warning, and any `strict-check` or `strict-gaps` error, the check before it did not report: a strict product's first gap shows as its `strict-gaps` error), for every product. Fix them before your next write, while you know what caused them.
 
 ## Strict checks
 
 A product makes its check strict with `product_setting_set_strict_check` (`lathe product-setting set-strict-check --product_id <id> --strict_check true`): any warning of the product then fails the check as a `strict-check` error, and the count line says the product is strict. While zero cannot be reached yet, the setting accepts a count of warnings (`--accepted_warnings`), a recorded deviation the Owner agreed, shown with the setting and on the Checks panel. The check fails above the count (fix the new warnings) and below it (lower the count to the new one with the same command), so the count only moves down. A count above the warnings there now is refused. Never raise it, never turn strictness off, and never silence a warning one by one: there is no ignore list. A deviation is recorded on the record it concerns (such as a slot's `fills_vary_by_design`), or the Owner decides.
+
+A strict product's check also fails on any gap (an obligation not designed, built or proved, a record short of a minimum, an untraced file or route), as one `strict-gaps` error naming how many there are. Gaps have no accepted count: a gap is never a recorded deviation, only work to finish. List them with the Coverage gaps read model's list-coverage-gaps query (`lathe coverage-gaps list-coverage-gaps --product_id <id>`) or in the check's coverage, and close each one before you hand the work back.
 
 Never change a product's own kinds or checks to make an error go away unless asked (`extend-the-meta-model`).
 

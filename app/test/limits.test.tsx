@@ -42,14 +42,14 @@ describe('LA-V51-R10-T01 a product\'s limits are read through the Product settin
 describe("LA-V51-R14-T01 the Limits section says whether the product's check is strict", () => {
   it('says not strict by default, strict, and strict beyond the accepted warnings as a recorded deviation', async () => {
     const { unmount } = await openApp('/DM');
-    expect(fact(await limits(), 'Check')).toBe('Not strict: warnings never fail it');
+    expect(fact(await limits(), 'Check')).toBe('Not strict: warnings and gaps never fail it');
     unmount();
     const strict = (accepted?: number) => addRows(workspace(), 'product_setting', { product_id: 'DM', max_children: 15, max_entities_per_aggregate: 7, technology_words: [], strict_check: true, ...(accepted ? { accepted_warnings: accepted } : {}) });
     const plain = await openApp('/DM', { data: strict() });
-    expect(fact(await limits(), 'Check')).toBe('Strict: warnings fail');
+    expect(fact(await limits(), 'Check')).toBe('Strict: warnings and gaps fail');
     plain.unmount();
     await openApp('/DM', { data: strict(11) });
-    expect(fact(await limits(), 'Check')).toBe('Strict: warnings fail, beyond 11 accepted (a recorded deviation)');
+    expect(fact(await limits(), 'Check')).toBe('Strict: warnings and gaps fail, warnings beyond 11 accepted (a recorded deviation)');
   });
 });
 

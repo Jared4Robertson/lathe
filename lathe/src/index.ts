@@ -445,11 +445,12 @@ export async function readWorkspace(store: Store, config: Pick<LatheConfig, 'roo
   lap('files');
   const scope = new Map(read.records.map((r) => [r.id, r.product]));
   const checked = await runChecks(store, orderChecks(store.rows('check')), scope, steps);
-  // A strict product's warnings fail its check (strictness.ts), counted over every other check's problems.
-  const problems = [...checked, ...strictProblems(store.rows('product_setting'), checked, (record) => scope.get(record))];
   lap('checks');
   const [coverage, chains] = await Promise.all([computeCoverage(store), computeChains(store, read.records, order)]);
   lap('coverage');
+  // A strict product's warnings and gaps fail its check (strictness.ts): its warnings counted over every other check's
+  // problems, its gaps over the coverage.
+  const problems = [...checked, ...strictProblems(store.rows('product_setting'), checked, coverage, (record) => scope.get(record))];
   return { ...read, problems, coverage, chains };
 }
 

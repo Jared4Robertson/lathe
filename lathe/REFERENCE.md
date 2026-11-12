@@ -3307,7 +3307,7 @@ A product's typed settings for its checks. A product without a row takes the def
 | `max_children` | INTEGER | yes | The most children of one kind a record should have before too-many-children warns; the default is 15. |
 | `max_entities_per_aggregate` | INTEGER | yes | The most entities an aggregate should have before aggregate-too-large warns; the default is 7. |
 | `technology_words` | VARCHAR[] | yes | The words, besides Lathe's own, that name technology in this product's essential records, which accidental-in-essential warns of, such as the name of a framework the product is built with; none by default. |
-| `strict_check` | BOOLEAN | no | True when the product's check is strict: lathe check then fails on any warning of the product, as on an error, beyond the accepted warnings; none by default, when warnings never fail it. |
+| `strict_check` | BOOLEAN | no | True when the product's check is strict: lathe check then fails on any warning of the product beyond the accepted warnings, and on any gap of it at all, as on an error; none by default, when warnings and gaps never fail it. |
 | `accepted_warnings` | INTEGER | no | The warnings a strict check accepts while zero cannot be reached yet, a recorded deviation shown with the setting and on the check page: the check fails when the product has more, and when it has fewer, until this is lowered to the new count, so it only moves down. Never above the warnings the product has when it is set; none when every warning fails it. |
 
 - **Key:** `product_id`
@@ -4034,4 +4034,14 @@ A row that breaks the schema (a missing parent, a link to a record that does not
 
 A strict product's check has exactly the warnings it accepts: none, unless its setting records an accepted count.
 
-A product makes its check strict with `lathe product-setting set-strict-check --product_id <id> --strict_check true`: from then on any warning of the product fails the check, as an error does, so lathe check exits 1 and the check tool reports a failure. While zero cannot be reached yet, the setting may accept a count of warnings (--accepted_warnings), a recorded deviation shown with the setting and on the check page. The check fails when the product has more warnings than it accepts (fix the new ones) and when it has fewer (lower the count to the new one), so the baseline only moves down and never hides a new warning. A count above the warnings the product has is refused when it is set. No single warning is ever silenced: a deviation is recorded on the record it concerns, such as a slot's fills_vary_by_design. Not strict by default.
+A product makes its check strict with `lathe product-setting set-strict-check --product_id <id> --strict_check true`: from then on any warning of the product fails the check, as an error does, so lathe check exits 1 and the check tool reports a failure. While zero cannot be reached yet, the setting may accept a count of warnings (--accepted_warnings), a recorded deviation shown with the setting and on the check page. The check fails when the product has more warnings than it accepts (fix the new ones) and when it has fewer (lower the count to the new one), so the baseline only moves down and never hides a new warning. A count above the warnings the product has is refused when it is set. No single warning is ever silenced: a deviation is recorded on the record it concerns, such as a slot's fills_vary_by_design. A strict product's gaps fail it too, as strict-gaps. Not strict by default.
+
+<a id="check-strict-gaps"></a>
+
+### `strict-gaps`
+
+**Error** · the engine
+
+A strict product's check has no gap: no obligation left undesigned, unbuilt or unproved, no record short of a minimum, no file or route untraced.
+
+A product whose check is strict (set-strict-check) fails on any coverage gap, as an error does, so lathe check exits 1 and the check tool reports a failure. Unlike warnings, gaps have no accepted count: a gap is never a recorded deviation, only work to finish. The error names how many gaps the product has; list them with the coverage_gaps_list_coverage_gaps tool (lathe coverage-gaps list-coverage-gaps --product_id <id>) or in lathe check's coverage, and close each one. A write that gives a strict product its first gap reports this error among the problems it introduced. Not strict by default.

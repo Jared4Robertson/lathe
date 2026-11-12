@@ -6,7 +6,7 @@
 import { ALLOWED_LEVELS, GAP_RULES, OBLIGATION_COVERAGE } from './coverage.ts';
 import type { ColumnDescription, Complexity, IdScope, KindDescription, SchemaDescription, Stage, TableDescription, TableRole } from './platform/data/schema.ts';
 import type { Row } from './platform/data/rows.ts';
-import { STRICT_CHECK } from './checking/product-setting/strictness.ts';
+import { STRICT_CHECK, STRICT_GAPS } from './checking/product-setting/strictness.ts';
 
 export interface ColumnReference {
   name: string;
@@ -154,7 +154,18 @@ export const ENGINE_CHECKS: CheckReference[] = [
     severity: 'error',
     summary: "A strict product's check has exactly the warnings it accepts: none, unless its setting records an accepted count.",
     explanation:
-      "A product makes its check strict with `lathe product-setting set-strict-check --product_id <id> --strict_check true`: from then on any warning of the product fails the check, as an error does, so lathe check exits 1 and the check tool reports a failure. While zero cannot be reached yet, the setting may accept a count of warnings (--accepted_warnings), a recorded deviation shown with the setting and on the check page. The check fails when the product has more warnings than it accepts (fix the new ones) and when it has fewer (lower the count to the new one), so the baseline only moves down and never hides a new warning. A count above the warnings the product has is refused when it is set. No single warning is ever silenced: a deviation is recorded on the record it concerns, such as a slot's fills_vary_by_design. Not strict by default.",
+      "A product makes its check strict with `lathe product-setting set-strict-check --product_id <id> --strict_check true`: from then on any warning of the product fails the check, as an error does, so lathe check exits 1 and the check tool reports a failure. While zero cannot be reached yet, the setting may accept a count of warnings (--accepted_warnings), a recorded deviation shown with the setting and on the check page. The check fails when the product has more warnings than it accepts (fix the new ones) and when it has fewer (lower the count to the new one), so the baseline only moves down and never hides a new warning. A count above the warnings the product has is refused when it is set. No single warning is ever silenced: a deviation is recorded on the record it concerns, such as a slot's fills_vary_by_design. A strict product's gaps fail it too, as strict-gaps. Not strict by default.",
+    origin: 'engine',
+    product: null,
+    kinds: [],
+    stage: null,
+  },
+  {
+    check: STRICT_GAPS,
+    severity: 'error',
+    summary: "A strict product's check has no gap: no obligation left undesigned, unbuilt or unproved, no record short of a minimum, no file or route untraced.",
+    explanation:
+      "A product whose check is strict (set-strict-check) fails on any coverage gap, as an error does, so lathe check exits 1 and the check tool reports a failure. Unlike warnings, gaps have no accepted count: a gap is never a recorded deviation, only work to finish. The error names how many gaps the product has; list them with the coverage_gaps_list_coverage_gaps tool (lathe coverage-gaps list-coverage-gaps --product_id <id>) or in lathe check's coverage, and close each one. A write that gives a strict product its first gap reports this error among the problems it introduced. Not strict by default.",
     origin: 'engine',
     product: null,
     kinds: [],

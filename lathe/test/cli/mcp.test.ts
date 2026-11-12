@@ -43,7 +43,7 @@ describe('the tools', () => {
       problems: expect.any(Array),
       products: [{ root: '.', strictness, coverage: workspace.coverage }],
     });
-    expect(strictness).toEqual([{ product: 'TL', strict: false, accepted: 0, warnings: expect.any(Number), failure: null }]);
+    expect(strictness).toEqual([{ product: 'TL', strict: false, accepted: 0, warnings: expect.any(Number), gaps: expect.any(Number), failures: [] }]);
     expect(workspace.coverage.flatMap((c) => c.gaps).length).toBeGreaterThan(0);
     expect(checked.content[0].text).not.toContain('exception');
     expect(checked.content[0].text).toMatch(/\n\nCoverage:\n {2}TL-LEND [^\n]+: \d+\/\d+ designed/);
