@@ -6,7 +6,7 @@
   width: var(--chat-width, 400px); max-width: calc(100% - var(--nav-space) - var(--float-inset) - 160px); box-sizing: border-box;
   display: flex; flex-direction: column; min-height: 0;
   border: 1px solid var(--float-border); border-radius: var(--panel-radius);
-  background: var(--float-dense); backdrop-filter: blur(var(--float-blur)); -webkit-backdrop-filter: blur(var(--float-blur)); box-shadow: var(--float-shadow);
+  background: var(--float-dense); backdrop-filter: blur(var(--float-blur)); box-shadow: var(--float-shadow);
 }
 .chat-handle.resize-handle { position: absolute; z-index: 5; top: var(--panel-radius); bottom: var(--panel-radius); left: calc(-1 * var(--float-inset)); width: var(--float-inset); }
 
@@ -185,7 +185,7 @@
 .chat-mic[aria-disabled="true"], .chat-voice-button[aria-disabled="true"] { opacity: 0.5; cursor: default; }
 
 .chat-send.is-counting { position: relative; }
-.chat-send-countdown { position: absolute; inset: 2px; border-radius: 50%; background: conic-gradient(var(--steel) var(--chat-countdown, 0turn), transparent 0); -webkit-mask: radial-gradient(circle, transparent 58%, #000 60%); mask: radial-gradient(circle, transparent 58%, #000 60%); animation-name: chat-send-countdown; animation-timing-function: linear; animation-fill-mode: forwards; pointer-events: none; }
+.chat-send-countdown { position: absolute; inset: 2px; border-radius: 50%; background: conic-gradient(var(--steel) var(--chat-countdown, 0turn), transparent 0); mask: radial-gradient(circle, transparent 58%, #000 60%); animation-name: chat-send-countdown; animation-timing-function: linear; animation-fill-mode: forwards; pointer-events: none; }
 @property --chat-countdown { syntax: '<angle>'; inherits: false; initial-value: 0turn; }
 @keyframes chat-send-countdown { to { --chat-countdown: 1turn; } }
 

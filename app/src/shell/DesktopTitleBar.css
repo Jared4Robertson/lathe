@@ -21,7 +21,6 @@
   background: var(--shell);
   color: var(--muted);
   user-select: none;
-  -webkit-user-select: none;
   -webkit-app-region: drag;
   app-region: drag;
 }

@@ -171,6 +171,11 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(sheets.flatMap((file) => where(file, readFileSync(file, 'utf8'), /text-transform:\s*capitalize/))).toEqual([]);
   });
 
+  it('LA-PAT-APP-CODE-R28-T01 LA-PAT-APP-CODE-R28-T02 The build writes vendor prefixes: no stylesheet writes one but Electron\'s app region', () => {
+    const sheets = filesUnder(SRC, /\.css$/);
+    expect(sheets.flatMap((file) => where(file, readFileSync(file, 'utf8'), /(?:^|[\s;{])-(?:webkit|moz|ms)-(?!app-region)[a-z-]+\s*:/))).toEqual([]);
+  });
+
   describe('LA-PAT-APP-UX-R26-T01 LA-PAT-APP-UX-R26-T02 A label naming a Lathe concept uses that concept\'s name', () => {
     it('no source uses a synonym that stands in for a Lathe name', () => {
       const sources = [...filesUnder(SRC, /\.tsx?$/), ...filesUnder(join(ROOT, 'desktop', 'src'), /\.tsx?$/)];

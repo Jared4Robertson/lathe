@@ -121,10 +121,10 @@ body { background: var(--paper); color: var(--ink); font: var(--text-size)/var(-
 /* Frosted panels: mostly opaque, the stage showing through as shape and color behind a blur; the dense ones (the nav,
    the tab panel, a stage's tools) closer to opaque than the wiki card. Opaque under reduced transparency. */
 .app:not(.is-narrow) > .menu, .stage-layout:not(.is-phone) > .page-bar, .header-strip, .stage-tools {
-  background: var(--float-dense); backdrop-filter: blur(var(--float-blur)); -webkit-backdrop-filter: blur(var(--float-blur));
+  background: var(--float-dense); backdrop-filter: blur(var(--float-blur));
   box-shadow: var(--float-shadow);
 }
-.wiki-panel { background: var(--float-light); backdrop-filter: blur(var(--float-blur)); -webkit-backdrop-filter: blur(var(--float-blur)); box-shadow: var(--card-shadow); }
+.wiki-panel { background: var(--float-light); backdrop-filter: blur(var(--float-blur)); box-shadow: var(--card-shadow); }
 .placeholder { display: grid; place-items: center; color: var(--muted); }
 .menu { background: var(--sheet); padding: 0; display: flex; flex-direction: row; gap: 0; min-height: 0; overflow: hidden; box-sizing: border-box; }
 .brand { margin: 0; font: 700 1.3rem var(--display); display: flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; }
@@ -432,7 +432,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .focus-stage { --stage-foot: var(--float-inset); --key-clear-left: calc(4px + 38px + 8px); --key-clear-right: var(--key-clear-left); }
 .stage-key-room { position: absolute; z-index: 6; bottom: var(--stage-foot); left: calc(var(--open-left, 0px) + var(--key-clear-left)); right: calc(var(--open-right, 0px) + var(--key-clear-right)); display: flex; justify-content: center; pointer-events: none; }
 .stage-key-room[data-beside="minimap"] { --key-clear-right: calc(4px + 210px + 8px); }
-.stage-key { box-sizing: border-box; max-width: 100%; min-width: 0; padding: 4px 10px; border: 1px solid var(--float-border); border-radius: var(--panel-radius); background: var(--float-dense); backdrop-filter: blur(var(--float-blur)); -webkit-backdrop-filter: blur(var(--float-blur)); box-shadow: var(--float-shadow); pointer-events: auto; font-size: 0.75rem; line-height: 1.3; color: var(--ink); }
+.stage-key { box-sizing: border-box; max-width: 100%; min-width: 0; padding: 4px 10px; border: 1px solid var(--float-border); border-radius: var(--panel-radius); background: var(--float-dense); backdrop-filter: blur(var(--float-blur)); box-shadow: var(--float-shadow); pointer-events: auto; font-size: 0.75rem; line-height: 1.3; color: var(--ink); }
 .stage-key:focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; }
 .stage-key-list { display: flex; flex-wrap: wrap; justify-content: center; column-gap: 12px; row-gap: 2px; margin: 0; padding: 0; list-style: none; }
 .stage-key-entry { display: inline-flex; align-items: center; gap: 5px; height: 20px; white-space: nowrap; }
@@ -1006,7 +1006,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .stage-layout.is-phone > .header-strip .header-strip-focus { min-width: 0; }
 /* A long kind ("Storage requirement test") gives way with an ellipsis, its whole name in its tooltip. */
 .stage-layout.is-phone > .header-strip .header-strip-focus .kind-badge { flex: none; max-width: 9em; overflow: hidden; text-overflow: ellipsis; }
-.stage-layout.is-phone > .header-strip { position: static; flex: none; border-width: 0 0 1px; border-radius: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--sheet); }
+.stage-layout.is-phone > .header-strip { position: static; flex: none; border-width: 0 0 1px; border-radius: 0; box-shadow: none; backdrop-filter: none; background: var(--sheet); }
 .header-strip-trail { flex: 0 1 auto; min-width: 0; max-width: 45%; }
 /* On a phone the trail is the "…" button and the parent (LA-V61-R57): the parent keeps a readable name, never a letter,
    and the strip's counts give way first (their whole text is their tooltip). */
@@ -1049,7 +1049,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .wiki-panel-title h2 { margin: 2px 0 0; font: 700 1.35rem/1.25 var(--display); overflow-wrap: break-word; }
 .wiki-panel-summary { padding-bottom: 14px; }
 .wiki-panel-handle { position: absolute; z-index: 3; top: var(--sheet-radius); bottom: var(--sheet-radius); left: calc(-1 * var(--float-inset)); width: var(--float-inset); display: grid; grid-template-columns: minmax(0, 1fr); }
-.wiki-panel.is-sheet { position: static; width: auto; max-width: none; height: 100%; border: 0; border-radius: 0; background: none; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.wiki-panel.is-sheet { position: static; width: auto; max-width: none; height: 100%; border: 0; border-radius: 0; background: none; box-shadow: none; backdrop-filter: none; }
 .wiki-panel.is-sheet::before { content: none; }
 /* A stage's toolbar floats inside the open space, at its top (views/StageChrome.tsx), above everything the stage draws (its column names, camera and edge hints), so its popovers open over them. */
 .stage-tools { position: absolute; z-index: 8; box-sizing: border-box; left: var(--open-left, 0px); max-width: calc(100% - var(--open-left, 0px) - var(--open-right, 0px)); border: 1px solid var(--float-border); border-radius: var(--panel-radius); }
@@ -1101,7 +1101,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* ---------- Tools over the stage (app/src/views/ToolPanel.tsx, LA-PAT-APP-UX-R20) ----------
    Frosted panels right of the nav, below the tab panel, which the open space leaves room for (data-floating="left"):
    Checks and the theme editor the full height, Appearance a popover at the foot, level with its button in the nav. */
-.tool-panel { position: absolute; z-index: 15; left: var(--nav-space); box-sizing: border-box; display: flex; flex-direction: column; min-height: 0; border: 1px solid var(--float-border); border-radius: var(--panel-radius); background: var(--float-dense); backdrop-filter: blur(var(--float-blur)); -webkit-backdrop-filter: blur(var(--float-blur)); box-shadow: var(--float-shadow); }
+.tool-panel { position: absolute; z-index: 15; left: var(--nav-space); box-sizing: border-box; display: flex; flex-direction: column; min-height: 0; border: 1px solid var(--float-border); border-radius: var(--panel-radius); background: var(--float-dense); backdrop-filter: blur(var(--float-blur)); box-shadow: var(--float-shadow); }
 .tool-panel:focus-visible { outline: 2px solid var(--steel); outline-offset: -2px; }
 .tool-panel:focus { outline: none; }
 .tool-panel.checks-panel, .tool-panel.changes-panel, .tool-panel.theme-panel { top: calc(2 * var(--float-inset) + var(--tab-panel-height)); bottom: var(--float-inset); }
@@ -1120,7 +1120,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .tool-panel .spec-section-head h3, .tool-panel .spec-section-head h4 { font-size: 0.92rem; }
 .tool-panel .problem-text { min-width: 0; flex-basis: 100%; overflow-wrap: break-word; }
 .tool-panel li.problem.is-current { box-shadow: inset 3px 0 0 var(--steel); background: var(--steel-bg); }
-.tool-panel.is-sheet { position: static; height: 100%; border: 0; border-radius: 0; background: none; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.tool-panel.is-sheet { position: static; height: 100%; border: 0; border-radius: 0; background: none; box-shadow: none; backdrop-filter: none; }
 .tool-sheet .sheet-body { display: flex; flex-direction: column; min-height: 0; }
 /* Appearance's themes: one row each, previewed on the stage while pointed at, kept with a click. */
 .theme-rows { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
