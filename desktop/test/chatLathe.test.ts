@@ -39,7 +39,7 @@ async function askServer(root: string, env: NodeJS.ProcessEnv, call: { name: str
   return (id: number) => messages.find((m) => m.id === id)!.result;
 }
 
-describe('LA-PLT-UC19-R08-T01 The chat loads the plugin of the Lathe the window runs, and its server runs that Lathe', () => {
+describe('LA-PLT-UC44-R02-T01 The chat loads the plugin of the Lathe the window runs, and its server runs that Lathe', () => {
   const exists = (files: string[]) => (file: string) => files.includes(file);
   const appPlugin = '/apps/Lathe.app/Contents/Resources/node_modules/@jaredrob/lathe/dist/plugin';
 
@@ -68,7 +68,7 @@ describe('LA-PLT-UC19-R08-T01 The chat loads the plugin of the Lathe the window 
   });
 });
 
-describe('LA-PLT-UC19-R09-T03 A View only session cannot call a command tool', () => {
+describe('LA-PLT-UC45-R01-T03 A View only session cannot call a command tool', () => {
   it('lists no command, and refuses one called anyway, changing nothing', async () => {
     const root = product();
     const before = readFileSync(path.join(root, 'data', 'product.jsonl'), 'utf8');
@@ -82,7 +82,7 @@ describe('LA-PLT-UC19-R09-T03 A View only session cannot call a command tool', (
   });
 });
 
-describe('LA-PLT-UC19-R10-T01 The chat counts the Lathe tools a session gets, or says why they did not load', () => {
+describe('LA-PLT-UC44-R03-T01 The chat counts the Lathe tools a session gets, or says why they did not load', () => {
   it('counts every tool, and fewer in View only', async () => {
     const root = product();
     const lathe = sourceLathe(repo);

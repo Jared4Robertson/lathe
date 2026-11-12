@@ -7,7 +7,7 @@ import { openPage, showCard } from './measure';
 import { keepData } from './scenarios';
 import { clickBox, clickErdBox, erdDrawn, erdSceneOf, expectKeyWhole, focusDrawn, pointOnBox, sceneOf, traceDrawn, traceSceneOf } from './scene';
 
-// Exploring's flow tests (LA-EXP-UC01-FL to UC13-FL): one per flow, each walking its main path in
+// Exploring's flow tests (LA-EXP-UC01-FL to UC13-FL, and the flows split from them): one per flow, each walking its main path in
 // Chromium over the suite's copy of Lathe's data, as the Reader does. They prove the flow end to
 // end; the scenarios beside them hold each move to "nothing jumps".
 
@@ -65,11 +65,11 @@ test.describe('Exploring flows', () => {
     await page.keyboard.press('Escape');
     await expect(crumb.locator('.crumb-more-button')).toBeFocused();
     await expect(wiki.getByRole('table', { name: 'Steps of LA-EXP-UC03-FL, in order' })).toBeVisible();
-    // A link out, named by its relation: the first step invokes a command.
-    const invokes = wiki.getByRole('list', { name: 'LA-EXP-UC03-FL-S01 invokes' });
-    await invokes.getByRole('link', { name: 'LA-EXP-CMD01' }).click();
-    await page.waitForURL((u) => u.pathname === '/LA-EXP-CMD01');
-    // And back in: the command's page lists what invokes it.
+    // A link out, named by its relation: the second step asks a query.
+    const invokes = wiki.getByRole('list', { name: 'LA-EXP-UC03-FL-S02 invokes' });
+    await invokes.getByRole('link', { name: 'LA-EXP-QRY08' }).click();
+    await page.waitForURL((u) => u.pathname === '/LA-EXP-QRY08');
+    // And back in: the query's page lists what invokes it.
     await expect(wiki.getByRole('heading', { name: /^Invoked by/ })).toBeVisible();
     // A click anywhere on a row opens its record: here on its count of children, beside the link.
     await page.goto('/LA-EXP');
@@ -135,7 +135,7 @@ test.describe('Exploring flows', () => {
     await expect(wikiTitle(page)).toHaveText('Walk the model as a graph');
   });
 
-  test('LA-EXP-UC04-FL-T walk the graph through folder-like groups: a domain\'s stages and kinds, a group\'s address, events, a pattern\'s rules', async ({ page }) => {
+  test('LA-EXP-UC03-FL-T walk the graph through folder-like groups: a domain\'s stages and kinds, a group\'s address, events, a pattern\'s rules', async ({ page }) => {
     await openPage(page, '/LA-EXP?stage=graph');
     await graphReady(page);
     // The depth decides the levels drawn: a domain's stages are its first level, a stage's kinds its second.
@@ -215,7 +215,7 @@ test.describe('Exploring flows', () => {
     await expect(nav(page).getByRole('button', { name: 'Collapse the navigation' })).toBeVisible();
   });
 
-  test('LA-EXP-UC06-FL-T read a flow step by step: its table, a step unfolded, the graph, a requirement traced to its step', async ({ page }) => {
+  test('LA-EXP-UC05-FL-T read a flow step by step: its table, a step unfolded, the graph, a requirement traced to its step', async ({ page }) => {
     // The flow's steps as the data has them, in order: the table shows each, first to last.
     const flowSteps = readFileSync(path.join(process.env.STABILITY_ROOT!, 'data', 'flow_step.jsonl'), 'utf8')
       .split('\n').filter(Boolean).map((line) => JSON.parse(line) as { id: string; flow_id: string; path: string; position: number })
@@ -265,14 +265,14 @@ test.describe('Exploring flows', () => {
       await webApp.focus();
       await page.keyboard.press('Enter');
     }
-    await design.getByRole('link', { name: /LA-EXP-UC03-FL-S01(?!\d)/ }).focus();
+    await design.getByRole('link', { name: /LA-EXP-UC03-FL-S02(?!\d)/ }).focus();
     await page.keyboard.press('Enter');
-    await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03-FL-S01');
+    await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03-FL-S02');
     // The step's own page in the wiki card, shown again (Enter, from the page), and its box focused in its row.
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     await page.keyboard.press('Enter');
-    await expect(page.locator(WIKI).getByRole('link', { name: /LA-EXP-CMD01/ }).first()).toBeVisible();
-    await expect.poll(async () => (await traceSceneOf(page, true)).boxes.find((b) => b.focus)?.id).toBe('LA-EXP-UC03-FL-S01');
+    await expect(page.locator(WIKI).getByRole('link', { name: /LA-EXP-QRY08/ }).first()).toBeVisible();
+    await expect.poll(async () => (await traceSceneOf(page, true)).boxes.find((b) => b.focus)?.id).toBe('LA-EXP-UC03-FL-S02');
   });
 
   test('LA-EXP-UC07-FL-T work in one product at a time: the rail, its last page, Alt+1 and Switch to, find, Checks, the phone, the products page', async ({ page }) => {
@@ -334,7 +334,7 @@ test.describe('Exploring flows', () => {
     await page.unroute('**/api/product/list-products*');
   });
 
-  test('LA-EXP-UC08-FL-T read a product in stage folders: the nav\'s domains and stages, the open branch, capabilities in order, the domain page', async ({ page }) => {
+  test('LA-EXP-UC01-FL-T LA-EXP-UC18-FL-T LA-EXP-UC18-R01-T01 read a product in stage folders: the nav\'s domains and stages, the open branch, capabilities in order, the domain page', async ({ page }) => {
     await openPage(page, '/LA');
     const n = nav(page);
     await expect(n.getByRole('link', { name: 'Lathe', exact: true }).first()).toBeVisible();
@@ -366,7 +366,7 @@ test.describe('Exploring flows', () => {
       .toEqual(['Domain model', 'Use cases', 'Interface design', 'Technical specification', 'Test plan']);
   });
 
-  test('LA-EXP-UC09-FL-T read the technical specification and test plan by kind: the domain page, the nav\'s kind groups, the graph\'s groups', async ({ page }) => {
+  test('LA-EXP-UC01-FL-T read the technical specification and test plan by kind: the domain page, the nav\'s kind groups, the graph\'s groups', async ({ page }) => {
     await openPage(page, '/LA-EXP');
     const wiki = page.locator(WIKI);
     await expect(wiki.getByRole('heading', { level: 3, name: /^Repositories \d+/ })).toBeVisible();
@@ -392,7 +392,7 @@ test.describe('Exploring flows', () => {
     await page.waitForURL((u) => u.pathname.startsWith('/LA-EXP/technical-specification/'));
   });
 
-  test('LA-EXP-UC10-FL-T explore in browser tabs, each its own place: no tab strip, one entry per move, kept through a reload, Cmd+click a new browser tab', async ({ page, context }) => {
+  test('LA-EXP-UC10-FL-T LA-EXP-UC23-FL-T LA-EXP-UC23-R01-T01 LA-EXP-UC24-FL-T LA-EXP-UC24-R01-T01 explore in browser tabs, each its own place: no tab strip, one entry per move, kept through a reload, Cmd+click a new browser tab', async ({ page, context }) => {
     await openPage(page, '/LA-EXP-A1?stage=graph');
     await graphReady(page);
     // No tab strip of the app's: the browser's tabs are the places.
@@ -486,7 +486,7 @@ test.describe('Exploring flows', () => {
     }
   });
 
-  test('LA-EXP-UC13-FL-T read a domain\'s endpoints and integrations: the domain\'s Interface design, a command\'s endpoint, an integration\'s steps', async ({ page }) => {
+  test('LA-EXP-UC05-FL-T read a domain\'s endpoints and integrations: the domain\'s Interface design, a command\'s endpoint, an integration\'s steps', async ({ page }) => {
     await openPage(page, '/LA-PRD');
     const wiki = page.locator(WIKI);
     await expect(wiki.getByRole('list', { name: 'Endpoints' }).getByRole('link', { name: 'LA-PRD-EP121 POST /api/product/change-product' })).toBeVisible();

@@ -4,7 +4,7 @@ export const ADD_USE_CASE_IDENTITY = {
   id: 'LA-UCS-CMD100',
   slice: { aggregate: 'LA-UCS-A11', name: 'use-case' },
   name: 'add-use-case',
-  description: 'Adds a use case under a capability, with its actors in order, the main actor first.',
+  description: 'Adds a use case under a capability, with its result (the command or query it exists for) and its actors in order, the main actor first.',
   method: 'POST',
   route: '/api/use-case/add-use-case',
 } as const;
@@ -13,7 +13,7 @@ export const CHANGE_USE_CASE_IDENTITY = {
   id: 'LA-UCS-CMD101',
   slice: { aggregate: 'LA-UCS-A11', name: 'use-case' },
   name: 'change-use-case',
-  description: 'Changes a use case\'s title, goal or notes, or its actors (the whole list, in order). Its capability changes only by Move a use case.',
+  description: 'Changes a use case\'s title, goal, result or notes, or its actors (the whole list, in order). Its capability changes only by Move a use case.',
   method: 'POST',
   route: '/api/use-case/change-use-case',
 } as const;

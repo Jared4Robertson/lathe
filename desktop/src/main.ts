@@ -91,7 +91,7 @@ const SMOKE = smokeFile();
 const MAC = process.platform === 'darwin';
 /** How long the launch view waits for the page's specs before it says Lathe did not answer. */
 const LAUNCH_TIMEOUT = 120_000;
-/** The longest quitting waits for the windows' servers to stop (LA-PLT-UC11-R07). */
+/** The longest quitting waits for the windows' servers to stop (LA-PLT-UC41-R02). */
 const QUIT_TIMEOUT = 10_000;
 
 // Scroll bars float over the page, as the system's do.
@@ -453,7 +453,7 @@ async function openFolder(input: string) {
     refreshMenu();
     chatOf(folder)?.voice?.front(true);
   });
-  // The chat listens only while its window is in front (LA-PLT-UC26-R02).
+  // The chat listens only while its window is in front (LA-PLT-UC55-R01).
   win.on('blur', () => chatOf(folder)?.voice?.front(false));
   win.on('close', () => {
     clearTimeout(saveTimer);
@@ -486,7 +486,7 @@ async function openFolder(input: string) {
   });
   void openProductFolder(productWindows, { window: entry }, windowOpenedReactions);
   const result: SmokeResult = await smoke.catch((error: unknown) => ({ error: error instanceof Error ? error.message : String(error) }));
-  // It quits while a reload is in progress, as the reader might (LA-PLT-UC11-R07).
+  // It quits while a reload is in progress, as the reader might (LA-PLT-UC41-R02).
   const running = appServers.load().running.get(folder);
   if (running) result.reloadAtQuit = await reloadInProgress(running.server.url, entry.folder);
   writeSmoke(SMOKE, result);
@@ -697,7 +697,7 @@ async function createChatSession(entry: OpenWindow, opening: Opening, setup: { m
     if (!file) return null;
     history = transcriptItems(readFileSync(file, 'utf8').split('\n'));
   }
-  // The Lathe the window runs, its plugin loaded into every session (LA-PLT-UC19-R08), and the window's app bridge.
+  // The Lathe the window runs, its plugin loaded into every session (LA-PLT-UC44-R02), and the window's app bridge.
   const lathe = chatLatheOf(entry);
   const env = withLatheCli({ ...claudeEnvFor(claude), ...(await appBridge()).envFor(entry.key) }, lathe);
   if (entry.win.isDestroyed()) return null;
@@ -705,7 +705,7 @@ async function createChatSession(entry: OpenWindow, opening: Opening, setup: { m
     command: claude,
     cwd: entry.folder,
     env,
-    // A new chat starts in the mode the folder's last chat had (LA-PLT-UC19-R09), with the model and effort chosen.
+    // A new chat starts in the mode the folder's last chat had (LA-PLT-UC45-R01), with the model and effort chosen.
     setup: { pluginDir: lathe.pluginDir, mode: setup.mode, choice: setup.choice },
     countTools: (runEnv) => countLatheTools({ pluginDir: lathe.pluginDir, cwd: entry.folder, env: runEnv, version: lathe.version }),
     onChange: () => chatChanged(entry),
@@ -855,7 +855,7 @@ if (!SMOKE && !app.requestSingleInstanceLock()) {
     if (openWindows().size === 0) void openOnLaunch();
   });
   // Quitting waits until every window's server has stopped, so no database work outlives the process, and then
-  // quits again; a server that hangs is given up on after QUIT_TIMEOUT (LA-PLT-UC11-R07).
+  // quits again; a server that hangs is given up on after QUIT_TIMEOUT (LA-PLT-UC41-R02).
   let quit: 'running' | 'stopping' | 'stopped' = 'running';
   app.on('before-quit', (event) => {
     if (quit === 'stopped') return;

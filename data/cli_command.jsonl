@@ -152,6 +152,7 @@
 {"id":"LA-PLT-CMD24-CLI","title":"lathe upgrade","command_id":"LA-PLT-CMD24","usage":"lathe upgrade","file":"lathe/src/cli/main.ts"}
 {"id":"LA-PLT-CMD25-CLI","title":"lathe mcp","command_id":"LA-PLT-CMD25","usage":"lathe mcp (the plugin's launcher, plugin/scripts/mcp-server.mjs, starts the installed Lathe's)","file":"lathe/src/cli/main.ts"}
 {"id":"LA-PLT-CMD30-CLI","title":"lathe app open","command_id":"LA-PLT-CMD30","usage":"lathe app open <id> [--stage graph|erd|trace] [--json]","mcp_tool":"app_open","file":"lathe/src/cli/app-tools.ts"}
+{"id":"LA-PLT-CMD75-CLI","title":"lathe merge-data","command_id":"LA-PLT-CMD75","usage":"lathe merge-data <base> <ours> <theirs> <path>","file":"lathe/src/cli/main.ts"}
 {"id":"LA-PRD-CMD120-CLI","title":"lathe product add-product","command_id":"LA-PRD-CMD120","usage":"lathe product add-product --<field> <value>… | lathe product add-product --json <file|->","mcp_tool":"product_add_product","file":"lathe/src/cli/aggregates.ts"}
 {"id":"LA-PRD-CMD121-CLI","title":"lathe product change-product","command_id":"LA-PRD-CMD121","usage":"lathe product change-product --<field> <value>… | lathe product change-product --json <file|->","mcp_tool":"product_change_product","file":"lathe/src/cli/aggregates.ts"}
 {"id":"LA-PRD-CMD122-CLI","title":"lathe product declare-product-kind","command_id":"LA-PRD-CMD122","usage":"lathe product declare-product-kind --<field> <value>… | lathe product declare-product-kind --json <file|->","mcp_tool":"product_declare_product_kind","file":"lathe/src/cli/aggregates.ts"}

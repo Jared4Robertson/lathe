@@ -1,4 +1,4 @@
-// Choose the chat's permission mode (LA-PLT-CMD60, LA-PLT-UC19-R09): Ask, Accept reads, Auto, Bypass or View only. The
+// Choose the chat's permission mode (LA-PLT-CMD60, LA-PLT-UC45-R01): Ask, Accept reads, Auto, Bypass or View only. The
 // chat's session, when it has one, starts again in that mode, and the folder keeps it for its next chat. Refused while
 // a turn is under way, or for a mode Lathe does not know.
 import { isChatMode } from '../../chat.ts';

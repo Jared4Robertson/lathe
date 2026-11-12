@@ -44,7 +44,7 @@ afterEach(() => {
 const heading = () => screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
 
 describe('desktop record actions', () => {
-  it('LA-PLT-UC25-R01-T02 LA-V92-R74-T01 A record\'s facts offer Reveal, Open in editor and Copy ID in the desktop app, and nothing in a browser', async () => {
+  it('LA-PLT-UC25-R01-T02 LA-PLT-UC51-R01-T01 LA-PLT-UC52-R01-T01 LA-V92-R74-T01 A record\'s facts offer Reveal, Open in editor and Copy ID in the desktop app, and nothing in a browser', async () => {
     await openApp('/DM-SHOP-UC01');
     await heading();
     // In a browser the Data file fact shows with no actions.

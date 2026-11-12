@@ -167,7 +167,7 @@ export const LENDING: Seed[] = [
   add('domain_event', { id: 'TL-LEND-EV01', title: 'Loan opened', aggregate_id: 'TL-LEND-A1', published: false, description: 'A tool went out on loan.' }),
   link('TL-LEND-CMD01', 'raises', 'TL-LEND-EV01'),
   add('capability', { id: 'TL-LEND-CAP01', title: 'Lending', domain_id: 'TL-LEND', position: 1, description: 'Lending tools and taking them back.' }),
-  add('use_case', { id: 'TL-LEND-UC01', title: 'Borrow a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member takes a free tool home.' }),
+  add('use_case', { id: 'TL-LEND-UC01', title: 'Borrow a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member takes a free tool home.', result_id: 'TL-LEND-CMD01' }),
   add('uc_requirement', { id: 'TL-LEND-UC01-R01', title: 'A tool on loan is refused', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse to lend a tool that is on loan.' }),
 ];
 

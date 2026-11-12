@@ -1,6 +1,6 @@
 // Platform's flows that run through code, the CLI and the server, end to end along their main paths: loading the
 // workspace from a script (LA-PLT-UC01), setting Lathe up in a product repo (LA-PLT-UC02) and changing the data
-// through each aggregate's own commands (LA-PLT-UC16). `lathe serve` needs the built web app: when lathe/dist/app is missing,
+// through each aggregate's own commands (LA-PAT-HTTP-STEPS). `lathe serve` needs the built web app: when lathe/dist/app is missing,
 // the app's own Vite builds it there, as the package's build does. It is skipped, with a message, only when the app's
 // packages are not installed (app/node_modules).
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
@@ -153,7 +153,7 @@ describe('Platform flows', () => {
     // Data the store refuses ends the load: one data-refused error per refusal, and no records.
     const file = path.join(root, 'data', 'use_case.jsonl');
     const good = readFileSync(file, 'utf8');
-    writeFileSync(file, `${good}{"id":"EX-LEND-UC09","title":"Lost","capability_id":"EX-LEND-CAP09","goal":"A member finds the lost tool."}\n`);
+    writeFileSync(file, `${good}{"id":"EX-LEND-UC09","title":"Lost","capability_id":"EX-LEND-CAP09","goal":"A member finds the lost tool.","result_id":"EX-LEND-CMD01"}\n`);
     const refused = await loadWorkspace(root);
     expect(refused.records).toEqual([]);
     expect(refused.problems.length).toBeGreaterThan(0);
@@ -221,7 +221,7 @@ describe('Platform flows', () => {
     expect(child.signalCode).toBe('SIGINT');
   }, 120_000);
 
-  it.skipIf(!canServe)('LA-PLT-UC16-FL-T LA-PAT-CLI-STEPS-R01-T03 LA-PAT-CLI-STEPS-R02-T03 LA-PAT-MCP-STEPS-R01-T03 LA-PAT-MCP-STEPS-R02-T03 LA-PAT-HTTP-STEPS-R01-T01 LA-PAT-HTTP-STEPS-R02-T01 every change is one command of its aggregate: the CLI, the MCP tools and POST /api/<aggregate>/<command>, refusals change nothing, open pages reload, and git merges row by row', async () => {
+  it.skipIf(!canServe)('LA-PAT-CLI-STEPS-R01-T03 LA-PAT-CLI-STEPS-R02-T03 LA-PAT-MCP-STEPS-R01-T03 LA-PAT-MCP-STEPS-R02-T03 LA-PAT-HTTP-STEPS-R01-T01 LA-PAT-HTTP-STEPS-R02-T01 every change is one command of its aggregate: the CLI, the MCP tools and POST /api/<aggregate>/<command>, refusals change nothing, open pages reload, and git merges row by row', async () => {
     const root = temp('lathe-layer-');
     git(root, 'init', '-q');
     writeFileSync(path.join(root, '.gitattributes'), '**/data/*.jsonl merge=lathe-data\n');

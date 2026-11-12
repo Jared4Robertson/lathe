@@ -68,7 +68,7 @@ describe('LA-PAT-RECORD-DATA-FILE-R01-T01 LA-PAT-RECORD-DATA-FILE-R01-T02 LA-PAT
     expect(actions.openInNewTab).toHaveBeenCalled();
   });
 
-  it('LA-PLT-UC22-R01-T02 The record\'s right-click menu offers Ask Claude About This, which attaches the record to the chat', () => {
+  it('LA-PLT-UC19-R13-T02 The record\'s right-click menu offers Ask Claude About This, which attaches the record to the chat', () => {
     const actions = { openInNewTab: vi.fn(), askClaude: vi.fn(), reveal: vi.fn(), openInEditor: vi.fn(), copyId: vi.fn() };
     const menu = recordMenuTemplate('SMK-ORD', false, 'VS Code', actions, 'darwin');
     expect(menu[1]).toMatchObject({ label: 'Ask Claude About This' });

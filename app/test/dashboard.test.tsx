@@ -15,8 +15,8 @@ import { workspace } from './fixtures/workspace';
 import { openApp } from './helpers';
 import { recordIndexOf } from './read-view';
 
-// The Dashboard (LA-V157, LA-TRC-UC26): one product's health, full-window over the stage. The status ladder
-// (LA-TRC-UC26-R01) is tested row by row from its own table; the figures come from the fixture's own coverage and records.
+// The Dashboard (LA-V157): one product's health, full-window over the stage. The status ladder
+// (LA-V157-R05) is tested row by row from its own table; the figures come from the fixture's own coverage and records.
 
 const dashboard = () => screen.findByRole('dialog', { name: 'Dashboard' });
 const tile = (root: HTMLElement, key: string) => root.querySelector<HTMLElement>(`[data-metric="${key}"]`)!;
@@ -44,7 +44,7 @@ const journeyOf = (id: string, proved: boolean[], testProved: boolean, test: str
 
 const problem = (check: string, severity: 'error' | 'warning', record: string | null = null): ListedProblem => ({ severity, check, record, message: `${check} message` }) as ListedProblem;
 
-describe('LA-TRC-UC26-R01-T02 LA-V157-R05-T02 the status ladder', () => {
+describe('LA-V157-R05-T02 the status ladder', () => {
   const rows: [Partial<Record<MetricKey, Partial<MetricFigure>>>, string, MetricKey | null][] = [
     [{ errors: { value: 2 } }, 'Failing its own checks', 'errors'],
     [{ designed: { value: 9 } }, 'Not fully designed', 'designed'],
@@ -98,7 +98,7 @@ describe('LA-TRC-UC26-R01-T02 LA-V157-R05-T02 the status ladder', () => {
 describe('the Dashboard', () => {
   beforeEach(() => { localStorage.clear(); sessionStorage.clear(); });
 
-  it('LA-TRC-UC26-R03-T01 LA-V157-R07-T01 cells count everything folded under a stage, with gaps and tests not automated yet, and lead there', async () => {
+  it('LA-V157-R07-T01 cells count everything folded under a stage, with gaps and tests not automated yet, and lead there', async () => {
     const data = workspace();
     const index = recordIndexOf(data, 'DM');
     const counts = stageCounts(index.folders);
@@ -135,7 +135,7 @@ describe('the Dashboard', () => {
     expect(body.getByRole('link', { name: 'DM-SHOP Shopping' })).toHaveAttribute('href', '/DM-SHOP');
   });
 
-  it('LA-TRC-UC26-R04-T01 LA-V157-R08-T01 a journey shows one mark per step and one for its test, and leads to its page', async () => {
+  it('LA-V157-R08-T01 a journey shows one mark per step and one for its test, and leads to its page', async () => {
     const data = workspace();
     addRows(data, 'journey', { id: 'DM-JR01', title: 'Shop end to end', product_id: 'DM', trigger: 'Someone wants to buy.', result: 'Bought.' });
     addRows(data, 'journey_step', { id: 'DM-JR01-S01', title: 'Buy it', journey_id: 'DM-JR01', path: 'main', position: 1 });
@@ -149,7 +149,7 @@ describe('the Dashboard', () => {
     expect(within(link).getByRole('img', { name: '0 of 1 steps proved, journey test not automated yet' })).toBeInTheDocument();
   });
 
-  it('LA-TRC-UC26-R05-T01 LA-V157-R09-T01 Needs attention takes the first of each kind in turn, in fixed order, and leads to Checks', async () => {
+  it('LA-V157-R09-T01 Needs attention takes the first of each kind in turn, in fixed order, and leads to Checks', async () => {
     const data = workspace();
     const index = recordIndexOf(data, 'DM');
     const question = { id: 'DM-Q01', title: 'A question', owner: 'Owner', description: 'd', about: [] } as never;
@@ -162,7 +162,7 @@ describe('the Dashboard', () => {
     expect(await within(panel).findByRole('link', { name: 'All of it in Checks' })).toHaveAttribute('href', expect.stringContaining('panel=checks'));
   });
 
-  it('LA-TRC-UC26-R02-T01 LA-V157-R06-T01 LA-TRC-UC26-R01-T01 the six tiles are the key metrics, in order, and the Status wears the heavier border', async () => {
+  it('LA-V157-R06-T01 the six tiles are the key metrics, in order, and the Status wears the heavier border', async () => {
     const { requests } = await openApp('/DM?panel=dashboard', { data: workspace() });
     const panel = await dashboard();
     await waitFor(() => expect(tile(panel, 'gaps')).not.toHaveTextContent('…'));
@@ -209,7 +209,7 @@ describe('the Dashboard', () => {
     expect(within(facts as HTMLElement).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM#domains', '/DM#discovery', '/DM#roles', '/DM#interfaces']);
   });
 
-  it('LA-TRC-UC26-R07-T01 LA-V157-R01-T01 opens and closes with its shortcut and Escape, focus going back, and the app never opens on it', async () => {
+  it('LA-V157-R01-T01 opens and closes with its shortcut and Escape, focus going back, and the app never opens on it', async () => {
     const dashboardShut = () => expect(screen.queryByRole('dialog', { name: 'Dashboard' })).toBeNull();
     await openApp('/DM');
     dashboardShut();
@@ -241,7 +241,7 @@ describe('the Dashboard', () => {
     expect(panel.querySelector('[data-owner^="DM"]')).toBeNull();
   });
 
-  it('LA-TRC-UC26-R06-T01 LA-V157-R02-T01 following an element closes the Dashboard and goes there, Back returns, and Checks swaps', async () => {
+  it('LA-V157-R02-T01 following an element closes the Dashboard and goes there, Back returns, and Checks swaps', async () => {
     const user = userEvent.setup();
     await openApp('/DM?panel=dashboard', { data: workspace() });
     const panel = await dashboard();

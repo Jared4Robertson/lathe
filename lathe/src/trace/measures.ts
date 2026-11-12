@@ -1,4 +1,4 @@
-// How a business outcome is measured (LA-TRC-UC02-R13): the trace runs from an outcome to the capabilities that serve
+// How a business outcome is measured (LA-TRC-UC01-R18): the trace runs from an outcome to the capabilities that serve
 // it (serves) and to what measures it (measured_by), so an outcome nothing measures is as unfinished as one nothing
 // serves. Spec: the shared module LA-TRC-MOD01, used by the coverage_gap projection (LA-TRC-RM02-PJ).
 //

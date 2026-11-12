@@ -22,7 +22,7 @@ const record = (ws: Workspace, id: string) => ws.records.find((r) => r.id === id
 const shop = { id: 'EX-SHOP', title: 'Shop', product_id: 'EX', position: 2, subdomain_type: 'supporting', description: 'Selling spare parts.' };
 
 describe('capabilities', () => {
-  it("LA-MOD-UC02-R04-T01 A capability sits under a domain with a required whole-number position, and every use case sits under one of its domain's capabilities", async () => {
+  it("LA-MOD-UC32-R01-T01 A capability sits under a domain with a required whole-number position, and every use case sits under one of its domain's capabilities", async () => {
     expect(parentsOf(schema, 'capability')).toEqual(['domain.domain_id']);
     expect(requiredOf(schema, 'capability')).toEqual(['domain_id', 'position', 'description']);
     expect(schema.tables.capability.columns.find((c) => c.name === 'position')!.kind).toBe('integer');
@@ -38,11 +38,11 @@ describe('capabilities', () => {
     // A use case with no capability is refused, and so is one whose ID names another domain than its capability's.
     const { capability_id: _, ...loose } = data.use_case[0];
     expect((await refusals(withTable(data, 'use_case', [loose]))).map((p) => p.message)).toEqual(['use_case.capability_id is required']);
-    const elsewhere = adding(data, { domain: [{ id: 'TL-SHOP', title: 'Shop', product_id: 'TL', position: 2, subdomain_type: 'supporting', description: 'Selling spare parts.' }], use_case: [{ id: 'TL-SHOP-UC01', title: 'Sell a tool', capability_id: 'TL-LEND-CAP01', goal: 'A customer buys a used tool.' }] });
+    const elsewhere = adding(data, { domain: [{ id: 'TL-SHOP', title: 'Shop', product_id: 'TL', position: 2, subdomain_type: 'supporting', description: 'Selling spare parts.' }], use_case: [{ id: 'TL-SHOP-UC01', title: 'Sell a tool', capability_id: 'TL-LEND-CAP01', goal: 'A customer buys a used tool.', result_id: 'TL-LEND-CMD01' }] });
     expect(await refusals(elsewhere)).toEqual([expect.objectContaining({ rule: 'id-prefix', key: 'TL-SHOP-UC01', message: expect.stringContaining('in domain TL-LEND, so its ID starts with TL-LEND-') })]);
   });
 
-  it("LA-UCS-UC06-R17-T01 A use case under a capability, and everything under it, belongs to the capability's domain and counts in its coverage", async () => {
+  it("LA-UCS-UC13-R01-T01 A use case under a capability, and everything under it, belongs to the capability's domain and counts in its coverage", async () => {
     for (const id of ['EX-LEND-CAP01', 'EX-LEND-UC01', 'EX-LEND-UC01-R01', 'EX-LEND-UC01-FL', 'EX-LEND-UC01-FL-S01', 'EX-LEND-UC01-R01-T01']) {
       expect(record(good, id).domain, id).toBe('EX-LEND');
     }
@@ -78,7 +78,7 @@ describe('patterns', () => {
     expect((await refusals(withTable(everyKind(), 'follows', [{ source_id: 'TL-LEND-UC01-R01', target_id: 'TL-PAT-ACT' }]))).length).toBeGreaterThan(0);
   });
 
-  it('LA-UCS-UC05-R10-T01 A pattern rule is owed by each domain that follows its pattern, itself or through a use case, and proved there by one pattern rule test', async () => {
+  it('LA-UCS-UC07-R01-T01 A pattern rule is owed by each domain that follows its pattern, itself or through a use case, and proved there by one pattern rule test', async () => {
     // EX-LEND follows through its use case and proves the rule; EX-SHOP follows itself and has no test of it yet.
     const ws = await loadData(adding(complete(), { domain: [shop], follows: [{ source_id: 'EX-SHOP', target_id: 'EX-PAT-ACT' }] }));
     expect(obligation(ws, 'EX-LEND', 'pattern_rule')).toMatchObject({ total: 1, proved: 1, proof_only: true });
@@ -124,7 +124,7 @@ describe('flows', () => {
 
   it('LA-UCS-UC06-R01-T02 A well-formed flow raises no step problem; a second flow for the use case, a repeated position, a step fulfilling another use case and a second invoke are refused', async () => {
     expect(ofCheck(good, 'step-order')).toEqual([]);
-    const data = adding(everyKind(), { use_case: [{ id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a borrowed tool back.' }], uc_requirement: [{ id: 'TL-LEND-UC02-R01', title: 'Tool is lent', use_case_id: 'TL-LEND-UC02', statement: 'The library MUST refuse a tool not on loan.' }] });
+    const data = adding(everyKind(), { use_case: [{ id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a borrowed tool back.', result_id: 'TL-LEND-CMD01' }], uc_requirement: [{ id: 'TL-LEND-UC02-R01', title: 'Tool is lent', use_case_id: 'TL-LEND-UC02', statement: 'The library MUST refuse a tool not on loan.' }] });
     expect(await refusals(data)).toEqual([]);
     const flow = data.flow[0];
     const step = data.flow_step[0];
@@ -137,7 +137,7 @@ describe('flows', () => {
     expect((await refusals(adding(data, { invokes: [{ source_id: step.id, target_id: 'TL-LEND-QRY01' }] }))).map((p) => p.rule)).toEqual(['unique']);
   });
 
-  it('LA-UCS-UC06-R07-T01 A UC requirement no step of its flow fulfills is reported as not designed', async () => {
+  it('LA-UCS-UC10-R01-T01 A UC requirement no step of its flow fulfills is reported as not designed', async () => {
     const ws = await loadData(without(complete(), 'fulfills', (l) => l.target_id === 'EX-LEND-UC02-R01'));
     expect(obligation(ws, 'EX-LEND', 'uc_requirement')).toMatchObject({ total: 2, designed: 1 });
     expect(ws.coverage.flatMap((c) => c.gaps).filter((g) => g.missing === 'designed')).toEqual([
@@ -146,19 +146,19 @@ describe('flows', () => {
     expect(ofCheck(ws, 'not-designed')).toEqual([expect.objectContaining({ severity: 'warning', record: 'EX-LEND-UC02-R01', message: 'UC requirement EX-LEND-UC02-R01 is not designed yet: no step of EX-LEND-UC02-FL fulfills it.' })]);
   });
 
-  it('LA-UCS-UC06-R08-T01 A flow\'s ID is its use case\'s ID and FL', async () => {
+  it('LA-UCS-UC09-R01-T01 A flow\'s ID is its use case\'s ID and FL', async () => {
     const data = everyKind();
     const flow = data.flow[0];
     expect(flow.id).toBe('TL-LEND-UC01-FL');
     expect(await refusals(data)).toEqual([]);
-    const second = adding(data, { use_case: [{ id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a borrowed tool back.' }] });
+    const second = adding(data, { use_case: [{ id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a borrowed tool back.', result_id: 'TL-LEND-CMD01' }] });
     expect(await refusals(adding(second, { flow: [{ id: 'TL-LEND-UC02-FL', title: 'Return a tool', use_case_id: 'TL-LEND-UC02' }] }))).toEqual([]);
     expect(await refusals(adding(second, { flow: [{ id: 'TL-LEND-UC02-FL02', title: 'Return a tool', use_case_id: 'TL-LEND-UC02' }] }))).toContainEqual(
       expect.objectContaining({ rule: 'flow-id', message: 'TL-LEND-UC02-FL02 is the flow of TL-LEND-UC02, so its ID is TL-LEND-UC02-FL' }),
     );
   });
 
-  it('LA-UCS-UC06-R11-T01 An interface that offers no use case is a gap', async () => {
+  it('LA-UCS-UC09-R02-T01 An interface that offers no use case is a gap', async () => {
     const ws = await loadData(adding(complete(), { interface: [{ id: 'EX-IF02', title: 'CLI', product_id: 'EX', kind: 'CLI', description: 'The command line the librarian runs.', public: false }] }));
     expect(ws.coverage.flatMap((c) => c.gaps).filter((g) => g.missing === 'interface-offers-nothing')).toEqual([
       { id: 'EX-IF02', kind: 'interface', missing: 'interface-offers-nothing', message: 'Interface EX-IF02 offers no use case yet.' },
@@ -193,7 +193,7 @@ describe('requirements and tests', () => {
     for (const table of grouped) expect(record(ws, complete()[table][0].id as string).fields.group_name, table).toBe('Checks');
   });
 
-  it('LA-PRD-UC03-R09-T01 Each test is of the test kind named after what it tests, and sits under that one record, which it proves', async () => {
+  it('LA-STD-ENGINEERING-R07-T01 Each test is of the test kind named after what it tests, and sits under that one record, which it proves', async () => {
     // What each test kind's name says it tests: its parent, or the record its parent sits under.
     for (const kind of Object.keys(ALLOWED_LEVELS)) {
       const parents = schema.kinds[kind].parents;

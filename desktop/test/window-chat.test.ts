@@ -80,7 +80,7 @@ describe('LA-PLT-PO04-T A closed window\'s chat ends', () => {
   });
 });
 
-describe('LA-PLT-UC19-R09-T05 A folder\'s chat starts in the mode its last chat had: Accept reads at first', () => {
+describe('LA-PLT-UC45-R01-T05 A folder\'s chat starts in the mode its last chat had: Accept reads at first', () => {
   it('LA-PLT-A16-SR01-T01 keeps the mode in chat-modes.json, by folder, leaving out the default, and a new repository reads it back', () => {
     const chats = new WindowChatRepository({ modes: file('m3.json') });
     expect(startingMode(chats.load().modes, '/p/c')).toBe('accept-reads');
@@ -113,7 +113,7 @@ describe('LA-PLT-UC19-R09-T05 A folder\'s chat starts in the mode its last chat 
   });
 });
 
-describe('LA-PLT-UC22-R03-T04 The chat\'s commands take only what the page may send, and only in a window with a session', () => {
+describe('LA-PLT-UC46-R01-T04 The chat\'s commands take only what the page may send, and only in a window with a session', () => {
   it('sends only text with pictures the chat takes, and chooses only a model and effort Lathe knows, and only in a window with a session', async () => {
     const chats = new WindowChatRepository({ modes: file('m5.json') });
     expect(sendMessageToClaude(chats, { folder: '/p/f', message: { text: 'hi' } })).toBe(false);

@@ -130,7 +130,7 @@ describe('The stage domains\' flows through the MCP tools', () => {
   });
 
   it('LA-PAT-MCP-STEPS-R01-T01 LA-PAT-MCP-STEPS-R01-T05 LA-PAT-MCP-STEPS-R01-T06 LA-PAT-MCP-STEPS-R01-T07 LA-PAT-MCP-STEPS-R01-T08 LA-PAT-MCP-STEPS-R01-T09 organize a domain\'s use cases into capabilities and patterns through the MCP tools', async () => {
-    await walk([...LENDING, add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.' })], async (a) => {
+    await walk([...LENDING, add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.', result_id: 'TL-LEND-CMD01' })], async (a) => {
       // S01: the domain's capabilities in order; a repeated position is refused.
       await a.ok('domain_add_capability', { id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 2, description: 'Taking tools back from members.' });
       await a.refused('domain_add_capability', { id: 'TL-LEND-CAP03', title: 'Fees', domain_id: 'TL-LEND', position: 2, description: 'Charging members for late tools.' });
@@ -155,7 +155,7 @@ describe('The stage domains\' flows through the MCP tools', () => {
     await walk([
       ...LENDING,
       add('uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'The due date is set', use_case_id: 'TL-LEND-UC01', statement: 'The loan MUST be due two weeks after it opens.' }),
-      add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.' }),
+      add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.', result_id: 'TL-LEND-CMD01' }),
       add('uc_requirement', { id: 'TL-LEND-UC02-R01', title: 'The return is dated', use_case_id: 'TL-LEND-UC02', statement: 'The return MUST carry its date.' }),
       add('view', { id: 'TL-V01', title: 'Loan desk', description: 'Where the librarian opens and closes loans.' }),
     ], async (a) => {
@@ -510,7 +510,7 @@ describe('Checking flows through the MCP tools', () => {
       expect(found(checked, 'lone-child').sort()).toEqual([expect.stringMatching(/^TL-LEND-CAP01: /), expect.stringMatching(/^TL-LEND-UC01: .*"Dates"/)]);
       // S04: the Agent raises the limits, adds a use case, clears the group and checks again.
       await a.ok('product_setting_set_limits', { product_id: 'TL', max_children: 15, max_entities_per_aggregate: 7 });
-      await a.ok('use_case_add_use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.' });
+      await a.ok('use_case_add_use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.', result_id: 'TL-LEND-CMD01' });
       await a.ok('use_case_change_uc_requirement', { id: 'TL-LEND-UC01-R04', group_name: null });
       expect((await a.check()).problems.filter((p) => ['too-many-children', 'aggregate-too-large', 'lone-child'].includes(p.check))).toEqual([]);
     });

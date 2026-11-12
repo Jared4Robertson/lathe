@@ -1,4 +1,4 @@
-// Take a message out of the queue (LA-PLT-CMD66, LA-PLT-UC22-R04): a message sent while Claude worked is dropped before
+// Take a message out of the queue (LA-PLT-CMD66, LA-PLT-UC47-R01): a message sent while Claude worked is dropped before
 // it goes. Refused for a window with no session, or a message that has already gone.
 import type { WindowChatRepository } from '../repository.ts';
 

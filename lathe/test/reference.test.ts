@@ -177,7 +177,7 @@ describe('the reference', () => {
 });
 
 describe('the schema documents itself', () => {
-  it("LA-PRD-UC11-R06-T01 Lathe's stages, kinds, tables, checks and gaps are all documented, and a product's checks are held to the same rule", async () => {
+  it("LA-PRD-UC04-R08-T01 Lathe's stages, kinds, tables, checks and gaps are all documented, and a product's checks are held to the same rule", async () => {
     expect(defaults.stages.filter((s) => !s.description.trim())).toEqual([]);
     expect(defaults.kinds.filter((k) => k.description.trim() === '').map((k) => k.kind)).toEqual([]);
     expect(defaults.tables.filter((t) => t.description.trim() === '').map((t) => t.name)).toEqual([]);

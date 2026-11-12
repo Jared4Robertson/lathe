@@ -220,7 +220,7 @@ function BuildsTable({ index, record, builds }: { index: RecordIndex; record: Re
   );
 }
 
-/** A technical record's helper files: the other files its code is split across beside its own file (LA-TRC-UC25-R04). */
+/** A technical record's helper files: the other files its code is split across beside its own file (LA-STD-TRACEABILITY-R02). */
 function HelperFiles({ files }: { files: RecordTrace['files'] }) {
   const helpers = files.filter((f) => f.helper);
   if (helpers.length === 0) return null;

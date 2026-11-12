@@ -56,7 +56,7 @@ describe('source file tracing', () => {
     expect(isTraced('src/loans.ts', new Set(['.']))).toBe(true);
   });
 
-  it('LA-TRC-UC02-R12-T01 a source file no technical record names is a gap; tests, configs, generated files and build output are left out', async () => {
+  it('LA-TRC-UC01-R17-T01 a source file no technical record names is a gap; tests, configs, generated files and build output are left out', async () => {
     const data = {
       product: [{ id: 'EX', title: 'Example', description: 'A small library that lends tools.' }],
       domain: [{ id: 'EX-LEND', title: 'Lending', product_id: 'EX', position: 1, subdomain_type: 'core', description: 'Lending tools to members.' }],

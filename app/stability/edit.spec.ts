@@ -112,18 +112,18 @@ test.describe('editing', () => {
   test('LA-PAT-PAGE-STEPS-R01-T01 LA-PAT-PAGE-STEPS-R01-T06 LA-PAT-PAGE-STEPS-R01-T07 LA-PAT-PAGE-STEPS-R01-T08 LA-PAT-PAGE-STEPS-R01-T09 LA-PAT-PAGE-STEPS-R01-T10 on the Standard page, open a rule\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-STD-MODELING-R01', /^group name/, 'Stability'));
   // The Product, Business outcome, Entry point and Tooling pages: each saves one field as its kind's Change command, with
   // nothing jumping. Each is its aggregate's web-app flow test.
-  test('LA-PRD-UC23-FL-T on the Product page, open an interface\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-IF03', /^description/, 'The command line, as the stability suite describes it.'));
+  test('LA-PRD-UC42-FL-T on the Product page, open an interface\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-IF03', /^description/, 'The command line, as the stability suite describes it.'));
   test('LA-PAT-PAGE-STEPS-R01-T01 LA-PAT-PAGE-STEPS-R01-T06 LA-PAT-PAGE-STEPS-R01-T07 LA-PAT-PAGE-STEPS-R01-T08 LA-PAT-PAGE-STEPS-R01-T09 LA-PAT-PAGE-STEPS-R01-T10 on the Business outcome page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-BO05', /^notes/, 'Noted by the stability suite.'));
-  test('LA-TEC-UC29-FL-T on the Entry point page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-PLT-ENTRY01', /^description/, 'Starts the server, as the stability suite describes it.'));
-  test('LA-TEC-UC30-FL-T on the Tooling page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-PRD-TOOL01', /^title/, 'schema-types.ts'));
+  test('LA-TEC-UC37-FL-T on the Entry point page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-PLT-ENTRY01', /^description/, 'Starts the server, as the stability suite describes it.'));
+  test('LA-TEC-UC39-FL-T on the Tooling page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-PRD-TOOL01', /^title/, 'schema-types.ts'));
   // The View and UI component pages: each saves one field as its kind's Change command, with nothing jumping. Each is its
   // aggregate's web-app flow test.
   test('LA-PAT-PAGE-STEPS-R01-T01 LA-PAT-PAGE-STEPS-R01-T06 LA-PAT-PAGE-STEPS-R01-T07 LA-PAT-PAGE-STEPS-R01-T08 LA-PAT-PAGE-STEPS-R01-T09 LA-PAT-PAGE-STEPS-R01-T10 on the View page, open a requirement\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-V123-R04', /^group name/, 'Stability'));
-  test('LA-IXD-UC28-FL-T on the UI component page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-UI226', /^description/, 'The Standard page, as the stability suite describes it.'));
+  test('LA-IXD-UC35-FL-T on the UI component page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-UI226', /^description/, 'The Standard page, as the stability suite describes it.'));
   // The Endpoint and Integration pages: each saves one field as its kind's Change command, with nothing jumping. Each is
   // its aggregate's web-app flow test.
-  test('LA-IXD-UC26-FL-T on the Endpoint page, open an API requirement\'s form and save an edit', ({ page }) => saveAnEdit(page, '/TL-LEND-EP01-R01', /^group name/, 'Stability'));
-  test('LA-IXD-UC27-FL-T on the Integration page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-INT04', /^system/, 'git, as the stability suite names it'));
+  test('LA-PAT-PAGE-STEPS-R01-T01 LA-PAT-PAGE-STEPS-R01-T06 LA-PAT-PAGE-STEPS-R01-T07 LA-PAT-PAGE-STEPS-R01-T08 LA-PAT-PAGE-STEPS-R01-T09 LA-PAT-PAGE-STEPS-R01-T10 on the Endpoint page, open an API requirement\'s form and save an edit', ({ page }) => saveAnEdit(page, '/TL-LEND-EP01-R01', /^group name/, 'Stability'));
+  test('LA-PAT-PAGE-STEPS-R01-T01 LA-PAT-PAGE-STEPS-R01-T06 LA-PAT-PAGE-STEPS-R01-T07 LA-PAT-PAGE-STEPS-R01-T08 LA-PAT-PAGE-STEPS-R01-T09 LA-PAT-PAGE-STEPS-R01-T10 on the Integration page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-INT04', /^system/, 'git, as the stability suite names it'));
   test('LA-PAT-PAGE-STEPS-R01-T01 LA-PAT-PAGE-STEPS-R01-T06 LA-PAT-PAGE-STEPS-R01-T07 LA-PAT-PAGE-STEPS-R01-T08 LA-PAT-PAGE-STEPS-R01-T09 LA-PAT-PAGE-STEPS-R01-T10 on the Storage requirement page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-MOD-A22-SR01', /^title/, 'Every change to a storage requirement is saved whole'));
   test('LA-PAT-PAGE-STEPS-R01-T01 LA-PAT-PAGE-STEPS-R01-T06 LA-PAT-PAGE-STEPS-R01-T07 LA-PAT-PAGE-STEPS-R01-T08 LA-PAT-PAGE-STEPS-R01-T09 LA-PAT-PAGE-STEPS-R01-T10 on the Data store page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-STORE04', /^description/, 'Each process\'s own memory, as the stability suite describes it.'));
   // The Check page, the Product page's Limits and the Pattern page's Followed by: each sends one of its aggregate's
@@ -143,10 +143,10 @@ test.describe('editing', () => {
   test('LA-PAT-PAGE-STEPS-R01-T01 LA-PAT-PAGE-STEPS-R01-T06 LA-PAT-PAGE-STEPS-R01-T07 LA-PAT-PAGE-STEPS-R01-T08 LA-PAT-PAGE-STEPS-R01-T09 LA-PAT-PAGE-STEPS-R01-T10 on the Table page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-MOD-EN54-TB', /^title/, 'projections'));
   test('LA-PAT-PAGE-STEPS-R01-T01 LA-PAT-PAGE-STEPS-R01-T06 LA-PAT-PAGE-STEPS-R01-T07 LA-PAT-PAGE-STEPS-R01-T08 LA-PAT-PAGE-STEPS-R01-T09 LA-PAT-PAGE-STEPS-R01-T10 on the Specification page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-MOD-SP09', /^title/, 'Data files clash in a merge'));
   test('LA-PAT-PAGE-STEPS-R01-T01 LA-PAT-PAGE-STEPS-R01-T06 LA-PAT-PAGE-STEPS-R01-T07 LA-PAT-PAGE-STEPS-R01-T08 LA-PAT-PAGE-STEPS-R01-T09 LA-PAT-PAGE-STEPS-R01-T10 on the Read model page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-MOD-RM25', /^description/, 'A specification as the stability suite reads it.'));
-  test('LA-MOD-UC24-FL-T on the Value object page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-VO01', /^description/, 'Names one record across the store, as the stability suite describes it.'));
+  test('LA-PAT-PAGE-STEPS-R01-T01 LA-PAT-PAGE-STEPS-R01-T06 LA-PAT-PAGE-STEPS-R01-T07 LA-PAT-PAGE-STEPS-R01-T08 LA-PAT-PAGE-STEPS-R01-T09 LA-PAT-PAGE-STEPS-R01-T10 on the Value object page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-VO01', /^description/, 'Names one record across the store, as the stability suite describes it.'));
   // The Aggregate, Domain event and Command pages, likewise.
   test('LA-PAT-PAGE-STEPS-R01-T01 LA-PAT-PAGE-STEPS-R01-T06 LA-PAT-PAGE-STEPS-R01-T07 LA-PAT-PAGE-STEPS-R01-T08 LA-PAT-PAGE-STEPS-R01-T09 LA-PAT-PAGE-STEPS-R01-T10 on the Aggregate page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-MOD-A6', /^identity/, 'Stability'));
-  test('LA-MOD-UC25-FL-T on the Domain event page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-PRD-EV03', /^description/, 'Stability'));
+  test('LA-MOD-UC55-FL-T on the Domain event page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-PRD-EV03', /^description/, 'Stability'));
   test('LA-PAT-PAGE-STEPS-R01-T01 LA-PAT-PAGE-STEPS-R01-T06 LA-PAT-PAGE-STEPS-R01-T07 LA-PAT-PAGE-STEPS-R01-T08 LA-PAT-PAGE-STEPS-R01-T09 LA-PAT-PAGE-STEPS-R01-T10 on the Command page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-MOD-CMD210', /^description/, 'Stability'));
 });
 

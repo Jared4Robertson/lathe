@@ -5,13 +5,13 @@
 // permission with a `can_use_tool` control request (`--permission-prompt-tool stdio`), which the
 // panel answers with a `control_response`; Stop sends an `interrupt` control request.
 //
-// Every session loads the Lathe plugin of the Lathe the window runs (`--plugin-dir`, LA-PLT-UC19-R08;
+// Every session loads the Lathe plugin of the Lathe the window runs (`--plugin-dir`, LA-PLT-UC44-R02;
 // chatLathe.ts picks it), which takes the place of an installed plugin of the same name, so the tools
 // are there, once, whatever the Owner has installed, and is told how to work beside the window
 // (`--append-system-prompt`, LA-PLT-UC19-R12): each message may carry what the Owner is looking at
 // (a <lathe-focus> block), and app_focus and app_open answer anything else about the window.
 //
-// The chat's permission mode (LA-PLT-UC19-R09) is one of five, each mapped to the CLI's own flags and,
+// The chat's permission mode (LA-PLT-UC45-R01) is one of five, each mapped to the CLI's own flags and,
 // where the CLI has none, to the panel's answer to its permission prompts (`decide`):
 //   Ask           `--permission-mode default` and ask rules (`--settings`) for every tool, so even reads ask;
 //   Accept reads  the default: `--permission-mode default --allowedTools Read,Grep,Glob` and Lathe's check,
@@ -22,7 +22,7 @@
 //   View only     Accept reads with no writes: Lathe's server lists only its reads (LATHE_VIEW_ONLY=1),
 //                 Claude Code's tools that write files or run code are `--disallowedTools`, Claude is told
 //                 why, and a prompt for a tool that may change things is refused, saying the chat is View only.
-// A tool the Owner allows always is allowed by the panel for the rest of the chat (LA-PLT-UC19-R11).
+// A tool the Owner allows always is allowed by the panel for the rest of the chat (LA-PLT-UC43-R02).
 //
 // The items are what the panel draws: the Owner's messages, Claude's text (streamed as it is
 // written), each tool call with its input and result, each permission prompt with its answer, and
@@ -39,7 +39,7 @@ export type ChatItem =
 /** A prompt's answer: allowed once, allowed always in this chat, denied by the Owner, refused by View only, or withdrawn. */
 export type PromptAnswer = 'pending' | 'allowed' | 'always' | 'denied' | 'refused' | 'canceled';
 
-/** The chat's permission modes (LA-PLT-UC19-R09), in the order the control lists them. */
+/** The chat's permission modes (LA-PLT-UC45-R01), in the order the control lists them. */
 export const CHAT_MODES = ['ask', 'accept-reads', 'auto', 'bypass', 'view-only'] as const;
 export type ChatMode = (typeof CHAT_MODES)[number];
 /** The mode a folder's first chat starts in. */
@@ -49,7 +49,7 @@ export const isChatMode = (value: unknown): value is ChatMode => typeof value ==
 /** idle: waiting for the Owner; running: a turn is under way; closed: no process (the next message starts one). */
 export type ChatStatus = 'idle' | 'running' | 'stopping' | 'closed';
 
-/** The Lathe tools the session has (LA-PLT-UC19-R10): being counted, how many, or why they did not load; and the Lathe version they come from. */
+/** The Lathe tools the session has (LA-PLT-UC44-R03): being counted, how many, or why they did not load; and the Lathe version they come from. */
 export type LatheTools =
   | { status: 'counting'; version: string | null }
   | { status: 'loaded'; version: string | null; count: number }
@@ -65,10 +65,10 @@ export const CHAT_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
 export type ChatEffort = (typeof CHAT_EFFORTS)[number];
 export const isChatEffort = (value: unknown): value is ChatEffort => typeof value === 'string' && (CHAT_EFFORTS as readonly string[]).includes(value);
 
-/** The model and effort a session runs with (LA-PLT-UC22-R03); null leaves the choice to Claude Code. */
+/** The model and effort a session runs with (LA-PLT-UC46-R01); null leaves the choice to Claude Code. */
 export interface ChatModelChoice { model: ChatModel | null; effort: ChatEffort | null }
 
-/** A message typed while Claude works, waiting its turn (LA-PLT-UC22-R04). */
+/** A message typed while Claude works, waiting its turn (LA-PLT-UC47-R01). */
 export interface QueuedMessage { id: string; text: string; images: number }
 
 export interface ChatState {
@@ -124,7 +124,7 @@ export interface ChatSetup {
   /** The folder of the Lathe plugin the session loads (chatLathe.ts). */
   pluginDir: string;
   mode: ChatMode;
-  /** The model and effort the Owner chose, if any (LA-PLT-UC22-R03). */
+  /** The model and effort the Owner chose, if any (LA-PLT-UC46-R01). */
   choice?: ChatModelChoice;
 }
 

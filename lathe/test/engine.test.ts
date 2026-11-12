@@ -203,14 +203,14 @@ describe('loading', () => {
     expect(JSON.parse(JSON.stringify(ws))).toEqual(ws);
   });
 
-  it("LA-PRD-UC37-R01-T01 Each record's product, domain and aggregate come from its parents, or from its ID when it has no owner", () => {
+  it("LA-STD-MODELING-R16-T01 Each record's product, domain and aggregate come from its parents, or from its ID when it has no owner", () => {
     const at = (id: string) => ws.records.find((r) => r.id === id);
     expect(at('EX')).toMatchObject({ product: 'EX', domain: null, aggregate: null, parent: null });
     expect(at('EX-LEND')).toMatchObject({ product: 'EX', domain: 'EX-LEND', aggregate: null, parent: 'EX' });
     expect(at('EX-LEND-EN01-DM')).toMatchObject({ product: 'EX', domain: 'EX-LEND', aggregate: 'EX-LEND-A1', parent: 'EX-LEND-EN01' });
     expect(at('EX-LEND-UC01-R01-T01')).toMatchObject({ product: 'EX', domain: 'EX-LEND', aggregate: null, parent: 'EX-LEND-UC01-R01' });
     // A value object and a view have no owner: their product comes from their ID, a specification's domain too, and
-    // the others' domain is the one domain that uses them (LA-PRD-UC37-R02), with what sits under them.
+    // the others' domain is the one domain that uses them (LA-STD-MODELING-R16), with what sits under them.
     expect(at('EX-VO01')).toMatchObject({ product: 'EX', domain: 'EX-LEND', parent: null });
     expect(at('EX-VO01-C01-T')).toMatchObject({ product: 'EX', domain: 'EX-LEND', parent: 'EX-VO01-C01' });
     expect(at('EX-V01')).toMatchObject({ product: 'EX', domain: 'EX-LEND', parent: null });
@@ -255,7 +255,7 @@ describe('loading', () => {
     await plain.close();
   });
 
-  it('LA-PRD-UC03-R02-T01 Removing a kind while a record of it is left is refused, since its rows would have no table', async () => {
+  it('LA-STD-ENGINEERING-R02-T03 Removing a kind while a record of it is left is refused, since its rows would have no table', async () => {
     const again = await openStore(await withMemo());
     await expect(run(again, 'product remove-product-kind', { name: 'memo' })).rejects.toThrow(/memo/);
     await again.close();

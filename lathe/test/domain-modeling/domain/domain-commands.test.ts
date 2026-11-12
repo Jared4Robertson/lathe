@@ -54,7 +54,7 @@ async function refusal(store: Store, definition: AnyCommand, input: unknown): Pr
 
 const fileOf = (store: Store, table: string) => readFileSync(path.join(store.dataDir, `${table}.jsonl`), 'utf8');
 
-describe('LA-MOD-UC02-R06-T02 each Domain command (LA-MOD-A4) changes one domain through DomainRepository, held to its rules', () => {
+describe('LA-MOD-UC34-R01-T02 each Domain command (LA-MOD-A4) changes one domain through DomainRepository, held to its rules', () => {
   it('builds a domain with its own commands, and reads it whole by any record in it', async () => {
     const store = await storeOf();
     const whole = runQuery(store, GET_DOMAIN, { id: 'TL-LEND-DS01-T01' }) as ReturnType<typeof GET_DOMAIN.run>;

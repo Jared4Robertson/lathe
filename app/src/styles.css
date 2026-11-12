@@ -246,6 +246,8 @@ code { font: 0.86em var(--mono); }
 .record-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; align-items: baseline; }
 .row-tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
 .meta { color: var(--muted); font-size: 0.8rem; }
+/* A use case's kind, under its result and never broken inside (Command use case, Query use case). */
+.use-case-kind { display: block; white-space: nowrap; }
 .spec-body a.record-link, .wiki-panel-kind a.record-link { display: inline-flex; gap: 8px; align-items: baseline; color: var(--ink); text-decoration: none; }
 .spec-body a.record-link code, .wiki-panel-kind a.record-link code { color: var(--steel); white-space: nowrap; }
 .spec-body a.record-link:hover span, .wiki-panel-kind a.record-link:hover code { text-decoration: underline; }

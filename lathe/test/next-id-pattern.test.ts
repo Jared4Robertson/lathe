@@ -19,7 +19,7 @@ const SINGLE: Record<string, string> = {
   '/api/table/next-id': 'table',
 };
 
-describe('LA-UCS-UC06-R08-T02 next-id queries and the schema', () => {
+describe('LA-UCS-UC09-R01-T02 next-id queries and the schema', () => {
   it('every next-id query answers the shape its kind\'s id_pattern gives', async () => {
     const store = await openStore(REPO, { dataDir: path.join(REPO, 'data') });
     try {

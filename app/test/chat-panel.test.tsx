@@ -208,7 +208,7 @@ describe('LA-PLT-UC19-R03-T01 Tool calls are rows that expand, and a turn\'s cha
   });
 });
 
-describe('LA-PLT-UC19-R04-T02 The Owner answers a permission prompt in the chat and stops a turn', () => {
+describe('LA-PLT-UC43-R01-T02 The Owner answers a permission prompt in the chat and stops a turn', () => {
   const prompt = (answer: 'pending' | 'allowed'): ChatItem => ({ kind: 'permission', id: 'p1', tool: 'Bash', label: 'Bash', summary: 'touch notes.txt', input: '{}', reason: 'Changes files.', answer });
 
   it('allows once, always in this chat, or denies', async () => {
@@ -257,7 +257,7 @@ describe('LA-PLT-UC19-R04-T02 The Owner answers a permission prompt in the chat 
   });
 });
 
-describe('LA-PLT-UC19-R05-T02 The picker resumes, forks or starts a session, and warns of one open elsewhere', () => {
+describe('LA-PLT-UC44-R01-T02 The picker resumes, forks or starts a session, and warns of one open elsewhere', () => {
   it('lists the sessions by title and date until one is open', async () => {
     const { opened } = fakeChat();
     await openApp('/DM-SHOP-UC01');
@@ -391,7 +391,7 @@ describe('LA-V99-R03-T01 The chat\'s head shows the Lathe tools, the permission 
   });
 });
 
-describe('LA-PLT-UC19-R11-T03 A prompt offers Allow always in this chat', () => {
+describe('LA-PLT-UC43-R02-T03 A prompt offers Allow always in this chat', () => {
   it('sends always, and shows the answer', async () => {
     const { push, answers } = fakeChat();
     await openApp('/DM-SHOP-UC01');
@@ -569,7 +569,7 @@ describe('LA-V99-R04-T01 The mic button dictates into the message box; the Voice
   });
 });
 
-// ---------- Point and ask, review and undo, "/", the model, the queue and images (LA-PLT-UC22-R01..R18) ----------
+// ---------- Point and ask, review and undo, "/", the model, the queue and images (LA-PLT-UC19-R13..R18) ----------
 
 /** Answers the turn routes (snapshot, a turn's changes, undo) in front of the served fetch; the test says what undo answers. */
 function stubTurnRoutes(undo: { status: number; body: unknown } = { status: 200, body: { ok: true, tables: [], files: [], changes: [] } }) {
@@ -603,7 +603,7 @@ async function renameTurn(push: ReturnType<typeof fakeChat>['push']) {
   return done;
 }
 
-describe('LA-PLT-UC22-R01-T01 Ask Claude about this attaches the pointed-at record as a chip, sent as context', () => {
+describe('LA-PLT-UC19-R13-T01 Ask Claude about this attaches the pointed-at record as a chip, sent as context', () => {
   beforeEach(() => { chatDraft.write(''); chatChips.clear(); });
 
   it('attaches the focused record by its key, shows it as a chip with its title, and sends it with the message', async () => {
@@ -690,7 +690,7 @@ describe('LA-PLT-UC27-R01-T01 A turn is undone in one click through the server, 
   });
 });
 
-describe('LA-PLT-UC21-R03-T01 A record ID in Claude\'s reply focuses the stage, and Cmd or Ctrl+click opens it in a new tab', () => {
+describe('LA-EXP-UC10-R10-T01 A record ID in Claude\'s reply focuses the stage, and Cmd or Ctrl+click opens it in a new tab', () => {
   it('opens a mentioned record in a new place on a Cmd+click, and focuses it on a plain click', async () => {
     const { push } = fakeChat();
     await openApp('/DM-SHOP-UC01');
@@ -741,7 +741,7 @@ describe('LA-PLT-UC22-R02-T01 Typing / lists the skills and slash commands with 
   });
 });
 
-describe('LA-PLT-UC22-R03-T03 The header\'s picker chooses the model and effort', () => {
+describe('LA-PLT-UC46-R01-T03 The header\'s picker chooses the model and effort', () => {
   it('names the choice, opens a menu of models and efforts, and sends the choice; it is not offered while Claude works', async () => {
     const { push, models } = fakeChat();
     await openApp('/DM-SHOP-UC01');
@@ -757,7 +757,7 @@ describe('LA-PLT-UC22-R03-T03 The header\'s picker chooses the model and effort'
   });
 });
 
-describe('LA-PLT-UC22-R04-T02 A message typed while Claude works is queued, listed and sent in order; Stop is there while it works', () => {
+describe('LA-PLT-UC47-R01-T02 A message typed while Claude works is queued, listed and sent in order; Stop is there while it works', () => {
   beforeEach(() => chatDraft.write(''));
 
   it('sends with Enter while it works, lists what waits, and takes a message back out', async () => {

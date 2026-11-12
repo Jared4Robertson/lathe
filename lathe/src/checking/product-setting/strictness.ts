@@ -1,4 +1,4 @@
-// Whether a product's check is strict (LA-CHK-UC01-R10, R11, R12), written once: the product's setting read as strict
+// Whether a product's check is strict (LA-CHK-UC10), written once: the product's setting read as strict
 // or not with the warnings it accepts, the warnings and gaps a check's run holds for one product, and the strict-check
 // and strict-gaps errors the engine adds to every run (readWorkspace): a strict product's warnings that are not its
 // accepted count, and any gap of a strict product, which no count ever accepts. Set it only with set-strict-check; no

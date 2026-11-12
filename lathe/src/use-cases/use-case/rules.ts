@@ -34,11 +34,22 @@ function productOf(useCase: UseCase, view: ReadView): string | undefined {
   return domain?.kind === 'domain' ? String(domain.row.product_id) : undefined;
 }
 
+/** The product a command or query sits in, through its entity's aggregate or its read model, and their domain. */
+function productOfOperation(id: string, view: ReadView): string | undefined {
+  const at = (ref: unknown) => (ref === undefined || ref === null ? undefined : view.record(String(ref)));
+  const operation = at(id);
+  const aggregate = operation?.kind === 'command' ? at(at(operation.row.entity_id)?.row.aggregate_id) : undefined;
+  const owner = operation?.kind === 'query' ? at(operation.row.read_model_id) : aggregate;
+  const domain = at(owner?.row.domain_id);
+  return domain?.kind === 'domain' ? String(domain.row.product_id) : undefined;
+}
+
 /**
  * Every rule the use case breaks (LA-UCS-INV100 one each, as useCaseOneEach says; LA-UCS-INV08 a step fulfills only
  * its own use case's requirements; LA-UCS-INV42 a flow's ID is its use case's and FL; LA-UCS-INV18 each step on a path
- * has its own position; LA-UCS-INV193 each actor is one of its product's roles). The view gives what the use case
- * names outside itself: the requirements its steps fulfill and its product's roles.
+ * has its own position; LA-UCS-INV193 each actor is one of its product's roles; LA-UCS-INV194 its result is a command
+ * or query of its own product). The view gives what the use case names outside itself: the requirements its steps
+ * fulfill, its product's roles and its result.
  */
 export function useCaseProblems(useCase: UseCase, view: ReadView): RuleProblem[] {
   const problems: RuleProblem[] = [];
@@ -46,6 +57,16 @@ export function useCaseProblems(useCase: UseCase, view: ReadView): RuleProblem[]
   if (product !== undefined) {
     const actors = useCase.actors.map((role, at) => ({ use_case_id: useCase.root, position: at + 1, role_name: role }));
     problems.push(...rolesNotOfProduct(view, 'use_case_actor', `Use case ${useCase.root}`, product, actors, 'as its actor').map((p) => ({ rule: 'use-case-actor-role', ...p })));
+    const result = useCase.useCase.result_id;
+    const resultProduct = productOfOperation(result, view);
+    if (resultProduct !== undefined && resultProduct !== product) {
+      problems.push({
+        rule: 'use-case-result-in-product',
+        table: 'use_case',
+        row: useCase.useCase as unknown as Row,
+        message: `Use case ${useCase.root} has ${result} as its result, which is of ${resultProduct}, not of ${product}: a use case's result is a command or query of its own product`,
+      });
+    }
   }
   const flows = new Map(useCase.flows.map((f) => [f.id, f]));
   for (const flow of useCase.flows) {

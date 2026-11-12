@@ -130,7 +130,7 @@ describe('lathe upgrade', () => {
 });
 
 describe('the schema version', () => {
-  it('LA-PRD-UC03-R08-T01 is one whole number in schema/version.json, and each converter moves the data forward one version', async () => {
+  it('LA-STD-ENGINEERING-R04-T01 is one whole number in schema/version.json, and each converter moves the data forward one version', async () => {
     expect(JSON.parse(readFileSync(path.join(PACKAGE_DIR, 'schema', 'version.json'), 'utf8'))).toEqual({ schema: SCHEMA_VERSION });
     // Lathe's own converters chain from schema 1 to this one, one version each.
     const own = await readConverters(UPGRADES_DIR);
@@ -143,11 +143,14 @@ describe('the schema version', () => {
     writeFileSync(path.join(dir, '2-to-4.ts'), 'export default { files: () => {} };\n');
     await expect(readConverters(dir)).rejects.toThrow('a converter moves the data forward one version, such as 1-to-2.ts.');
   });
-  it("LA-PRD-UC03-R08-T02 1-to-2 puts every flow through its product's one new interface, renaming its flows, steps and tests wherever they are named", async () => {
+  it("LA-STD-ENGINEERING-R04-T02 1-to-2 puts every flow through its product's one new interface, renaming its flows, steps and tests wherever they are named", async () => {
     const line = (row: object) => `${JSON.stringify(row)}\n`;
     const root = committedProduct({ id: 'TL', title: 'Tool Library' });
     const files: Record<string, object[]> = {
       domain: [{ id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core' }],
+      aggregate: [{ id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', identity: 'Loan ID', description: 'One tool lent to one member.' }],
+      entity: [{ id: 'TL-LEND-EN01', title: 'Loan', aggregate_id: 'TL-LEND-A1', role: 'root', description: 'The loan itself.' }],
+      command: [{ id: 'TL-LEND-CMD01', title: 'Borrow a tool', aggregate_id: 'TL-LEND-A1', description: 'Lends a free tool to a member.' }],
       capability: [{ id: 'TL-LEND-CAP01', title: 'Lending', domain_id: 'TL-LEND', position: 1 }],
       use_case: [{ id: 'TL-LEND-UC01', title: 'Borrow a tool', capability_id: 'TL-LEND-CAP01' }],
       uc_requirement: [{ id: 'TL-LEND-UC01-R01', title: 'Refused', use_case_id: 'TL-LEND-UC01', statement: 'A tool on loan MUST be refused, as TL-LEND-UC01-FL-S01 shows.' }],
@@ -155,18 +158,21 @@ describe('the schema version', () => {
       flow_step: [{ id: 'TL-LEND-UC01-FL-S01', title: 'Borrow', flow_id: 'TL-LEND-UC01-FL', path: 'main', position: 1 }],
       flow_test: [{ id: 'TL-LEND-UC01-FL-T', title: 'Borrow end to end', flow_id: 'TL-LEND-UC01-FL', level: 'e2e-api', state: 'not automated yet', steps: ['Run TL-LEND-UC01-FL-S01'] }],
       fulfills: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-UC01-R01' }],
+      invokes: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-CMD01' }],
     };
     for (const [table, rows] of Object.entries(files)) writeFileSync(path.join(root, 'data', `${table}.jsonl`), rows.map(line).join(''));
     git(root, 'add', '.');
     git(root, 'commit', '-q', '-m', 'A flow before interfaces');
     // The data must load under this Lathe's schema, so every later converter runs too: 3-to-4 makes the interface internal
-    // and merges the use case's flows back into its one flow, offered through the interface.
+    // and merges the use case's flows back into its one flow, offered through the interface, and 7-to-8 gives the use case
+    // the command its step invokes as its result.
     const result = await upgradeProduct(root, { converters: await readConverters(UPGRADES_DIR) });
     expect(result.done).toBe(true);
     expect(result.todos).toEqual([
       expect.stringMatching(/^1-to-2: TL-IF01 stands for every interface TL's flows went through/),
       expect.stringMatching(/^1-to-2: Rename the flow, step and flow test IDs your code names/),
       expect.stringMatching(/^1-to-2: Write each text that starts "To write:" from the code/),
+      expect.stringMatching(/^1-to-2: A command that changes a child entity/),
       expect.stringMatching(/^3-to-4: An interface that people or programs outside the product build on is public/),
       expect.stringMatching(/^3-to-4: List the roles that use each interface/),
       expect.stringMatching(/^4-to-5: Journeys arrive in Discovery/),
@@ -181,9 +187,10 @@ describe('the schema version', () => {
     expect(read('flow_test')).toContain('"level":"system"');
     expect(read('fulfills')).toBe(line({ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-UC01-R01' }));
     expect(read('uc_requirement')).toContain('as TL-LEND-UC01-FL-S01 shows.');
+    expect(read('use_case')).toContain('"result_id":"TL-LEND-CMD01"');
     expect(readConfig(root).schema).toBe(SCHEMA_VERSION);
   });
-  it('LA-PRD-UC03-R08-T03 1-to-2 gives every test one of the five levels, and a manual test the level that fits its kind', async () => {
+  it('LA-STD-ENGINEERING-R04-T03 1-to-2 gives every test one of the five levels, and a manual test the level that fits its kind', async () => {
     const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 1);
     const manual = { state: 'manual', manual_reason: 'By hand.' };
     const tables: Record<string, Record<string, unknown>[]> = {
@@ -214,7 +221,7 @@ describe('the schema version', () => {
     ]);
     expect(todos).toEqual([expect.stringMatching(/^Each manual test now names the level a person exercises/), expect.stringMatching(/^Write each text that starts "To write:"/)]);
   });
-  it("LA-PRD-UC03-R08-T04 1-to-2 puts every repository under its aggregate's domain, persisting that aggregate, renamed wherever it is named", async () => {
+  it("LA-STD-ENGINEERING-R04-T04 1-to-2 puts every repository under its aggregate's domain, persisting that aggregate, renamed wherever it is named", async () => {
     const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 1);
     const tables: Record<string, Record<string, unknown>[]> = {
       aggregate: [
@@ -262,7 +269,7 @@ describe('the schema version', () => {
       expect.stringMatching(/^Write each text that starts "To write:"/),
     ]);
   });
-  it('LA-PRD-UC03-R08-T05 1-to-2 drops the descriptions that are gone, opens each When with its Given, and stands in for each required text a record lacks', async () => {
+  it('LA-STD-ENGINEERING-R04-T05 1-to-2 drops the descriptions that are gone, opens each When with its Given, and stands in for each required text a record lacks', async () => {
     const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 1);
     const tables: Record<string, Record<string, unknown>[]> = {
       command: [
@@ -297,7 +304,7 @@ describe('the schema version', () => {
     ]);
     expect(todos).toEqual(['Write each text that starts "To write:" from the code, saying what the title, parent and links cannot (1: TL-LEND-CMD02 description).']);
   });
-  it('LA-PRD-UC03-R08-T06 1-to-2 puts each command under its aggregate\'s root entity, and leaves a to-do for an aggregate with none', async () => {
+  it('LA-STD-ENGINEERING-R04-T06 1-to-2 puts each command under its aggregate\'s root entity, and leaves a to-do for an aggregate with none', async () => {
     const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 1);
     const tables: Record<string, Record<string, unknown>[]> = {
       entity: [
@@ -326,7 +333,7 @@ describe('the schema version', () => {
     ]);
   });
 
-  it('LA-PRD-UC03-R08-T07 1-to-2 drops every recorded exception and waiver, and leaves a to-do to change the model', async () => {
+  it('LA-STD-ENGINEERING-R04-T07 1-to-2 drops every recorded exception and waiver, and leaves a to-do to change the model', async () => {
     const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 1);
     const tables: Record<string, Record<string, unknown>[]> = {
       command_change: [{ command_id: 'TL-LEND-CMD01', aggregate_id: 'TL-LEND-A2', reason: 'Both at once.' }],
@@ -363,7 +370,7 @@ describe('the schema version', () => {
   };
   const houseCheck = { name: 'tool-without-photo', product_id: 'TL', position: 1, severity: 'warning', summary: 'A tool with no photo.', explanation: 'Add one.', query: 'SELECT 1' };
 
-  it("LA-PRD-UC03-R08-T08 2-to-3 gives each check the domain of its check_row record, removes the check_row records and kind, and leaves a to-do for a check no record names", async () => {
+  it("LA-STD-ENGINEERING-R04-T08 2-to-3 gives each check the domain of its check_row record, removes the check_row records and kind, and leaves a to-do for a check no record names", async () => {
     const tables: Record<string, Record<string, unknown>[]> = {
       check: [houseCheck, { ...houseCheck, name: 'loan-without-due-date' }],
       check_row: [{ id: 'TL-LEND-CK01', title: 'tool-without-photo', domain_id: 'TL-LEND', file: 'data/check.jsonl' }],
@@ -380,7 +387,7 @@ describe('the schema version', () => {
     expect(todos).toEqual([expect.stringContaining('add `domain_id` with the domain that owns the check, to loan-without-due-date')]);
   });
 
-  it('LA-PRD-UC03-R08-T09 2-to-3 leaves a to-do for every check of a product with no check_row records', async () => {
+  it('LA-STD-ENGINEERING-R04-T09 2-to-3 leaves a to-do for every check of a product with no check_row records', async () => {
     const tables: Record<string, Record<string, unknown>[]> = { check: [houseCheck] };
     const { changes, todos } = await run2to3(tables);
     expect(tables.check).toEqual([houseCheck]);
@@ -388,7 +395,7 @@ describe('the schema version', () => {
     expect(todos).toEqual([expect.stringContaining('tool-without-photo')]);
   });
 
-  it('LA-PRD-UC03-R08-T10 2-to-3 does nothing to data that is already upgraded', async () => {
+  it('LA-STD-ENGINEERING-R04-T10 2-to-3 does nothing to data that is already upgraded', async () => {
     const upgraded = { ...houseCheck, domain_id: 'TL-LEND' };
     const tables: Record<string, Record<string, unknown>[]> = { check: [upgraded], product_kind: [{ name: 'skill', product_id: 'TL' }] };
     const { changes, todos } = await run2to3(tables);
@@ -408,7 +415,7 @@ describe('the schema version', () => {
     return { changes, todos };
   };
 
-  it('LA-PRD-UC03-R08-T11 3-to-4 gives each product kind its complexity from its stage, makes each standard engineering with a to-do to review it, gives each product setting no technology words, and makes each interface internal with a to-do to mark the public ones', async () => {
+  it('LA-STD-ENGINEERING-R04-T11 3-to-4 gives each product kind its complexity from its stage, makes each standard engineering with a to-do to review it, gives each product setting no technology words, and makes each interface internal with a to-do to mark the public ones', async () => {
     const tables: Record<string, Record<string, unknown>[]> = {
       product_kind: [
         { name: 'report', product_id: 'TL', stage: 'technical-specification' },
@@ -432,7 +439,7 @@ describe('the schema version', () => {
     ]);
   });
 
-  it('LA-PRD-UC03-R08-T13 3-to-4 drops a product\'s declaration of a provided_by, fills or generates pair its own kind now has, as Lathe\'s kinds have them, and keeps every other', async () => {
+  it('LA-STD-ENGINEERING-R04-T13 3-to-4 drops a product\'s declaration of a provided_by, fills or generates pair its own kind now has, as Lathe\'s kinds have them, and keeps every other', async () => {
     const tables: Record<string, Record<string, unknown>[]> = {
       product_kind: [
         { name: 'report', product_id: 'TL', stage: 'technical-specification', obligation: false, complexity: 'accidental' },
@@ -451,7 +458,7 @@ describe('the schema version', () => {
     expect(changes).toEqual([expect.stringContaining('fills from report to slot, generates from tooling to report, provided_by from promise to integration were dropped')]);
   });
 
-  it("LA-PRD-UC03-R08-T14 3-to-4 merges a use case's flows into one, keeping the union of their steps, marking variants, and reports what it cannot merge", async () => {
+  it("LA-STD-ENGINEERING-R04-T14 3-to-4 merges a use case's flows into one, keeping the union of their steps, marking variants, and reports what it cannot merge", async () => {
     const tables: Record<string, Record<string, unknown>[]> = {
       interface: [
         { id: 'TL-IF01', title: 'Web app', product_id: 'TL', kind: 'web app', description: 'The desk.', public: false },
@@ -513,7 +520,7 @@ describe('the schema version', () => {
     ]);
   });
 
-  it('LA-PRD-UC03-R08-T12 3-to-4 does nothing to data that is already upgraded', async () => {
+  it('LA-STD-ENGINEERING-R04-T12 3-to-4 does nothing to data that is already upgraded', async () => {
     const tables: Record<string, Record<string, unknown>[]> = {
       product_kind: [{ name: 'report', product_id: 'TL', stage: 'technical-specification', complexity: 'essential' }],
       standard: [{ id: 'TL-STD-MONEY', title: 'Money', product_id: 'TL', type: 'quality', description: 'Amounts are exact.' }],
@@ -559,8 +566,18 @@ describe('the schema version', () => {
     );
     return { changes, todos };
   };
+  const run7to8 = async (tables: Record<string, Record<string, unknown>[]>) => {
+    const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 7);
+    const changes: string[] = [];
+    const todos: string[] = [];
+    await step!.converter.files!(
+      { tables: () => Object.keys(tables), read: (table) => tables[table] ?? [], write: (table, rows) => void (tables[table] = rows) },
+      { changed: (text) => changes.push(text), todo: (text) => todos.push(text) },
+    );
+    return { changes, todos };
+  };
 
-  it("LA-PRD-UC03-R08-T15 4-to-5 changes no row, asks to rename a product's own kind or relation that clashes with a new table, and to write the journey each duration outcome times", async () => {
+  it("LA-STD-ENGINEERING-R04-T15 4-to-5 changes no row, asks to rename a product's own kind or relation that clashes with a new table, and to write the journey each duration outcome times", async () => {
     const tables: Record<string, Record<string, unknown>[]> = {
       product_kind: [{ name: 'journey', product_id: 'TL' }, { name: 'report', product_id: 'TL' }],
       product_relation: [
@@ -584,7 +601,7 @@ describe('the schema version', () => {
     ]);
   });
 
-  it('LA-PRD-UC03-R08-T16 4-to-5 tells a product with no journeys where they go, and says nothing to one that has them', async () => {
+  it('LA-STD-ENGINEERING-R04-T16 4-to-5 tells a product with no journeys where they go, and says nothing to one that has them', async () => {
     const none: Record<string, Record<string, unknown>[]> = { business_outcome: [{ id: 'TL-BO01', measure: 'Share of members with a loan.' }] };
     expect((await run4to5(none)).todos).toEqual([expect.stringContaining('Journeys arrive in Discovery')]);
     const some: Record<string, Record<string, unknown>[]> = { ...none, journey: [{ id: 'TL-JR01', product_id: 'TL' }] };
@@ -595,7 +612,7 @@ describe('the schema version', () => {
     expect(todos).toEqual([]);
   });
 
-  it("LA-PRD-UC03-R08-T17 5-to-6 numbers each product's domains from 1 in ID order, with the numbers inside IDs compared by value, and changes nothing else", async () => {
+  it("LA-STD-ENGINEERING-R04-T17 5-to-6 numbers each product's domains from 1 in ID order, with the numbers inside IDs compared by value, and changes nothing else", async () => {
     const tables: Record<string, Record<string, unknown>[]> = {
       domain: [
         { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core' },
@@ -614,7 +631,7 @@ describe('the schema version', () => {
     expect((await run5to6({})).changes).toEqual([]);
   });
 
-  it('LA-PRD-UC03-R08-T18 6-to-7 moves each product kind in interaction-design to interface-design, keeps its other fields and every other kind, and does nothing to data already upgraded', async () => {
+  it('LA-STD-ENGINEERING-R04-T18 6-to-7 moves each product kind in interaction-design to interface-design, keeps its other fields and every other kind, and does nothing to data already upgraded', async () => {
     const tables: Record<string, Record<string, unknown>[]> = {
       product_kind: [
         { name: 'cli_command', product_id: 'TL', label: 'CLI command', stage: 'interaction-design', obligation: false },
@@ -631,5 +648,86 @@ describe('the schema version', () => {
     const before = structuredClone(tables);
     expect((await run6to7(tables)).changes).toEqual([]);
     expect(tables).toEqual(before);
+  });
+
+  it("LA-STD-ENGINEERING-R04-T19 7-to-8 gives each use case the result its flow's main path invokes, lists a split for several commands, a merge for a shared first actor and result, and a use case that invokes nothing, and does nothing to data already upgraded", async () => {
+    const useCase = (id: string, capability: string) => ({ id, title: id, capability_id: capability, goal: 'A goal.', notes: 'Kept.' });
+    const step = (id: string, path: string, position: number, interfaceId?: string) => ({ id, title: id, flow_id: id.replace(/-S\d+$/, ''), path, position, ...(interfaceId ? { interface_id: interfaceId } : {}) });
+    const tables: Record<string, Record<string, unknown>[]> = {
+      domain: [{ id: 'TL-LEND', product_id: 'TL' }, { id: 'XX-D1', product_id: 'XX' }],
+      capability: [{ id: 'TL-LEND-CAP01', domain_id: 'TL-LEND' }, { id: 'XX-D1-CAP01', domain_id: 'XX-D1' }],
+      command: [{ id: 'TL-LEND-CMD01' }, { id: 'TL-LEND-CMD02' }, { id: 'XX-D1-CMD01' }],
+      query: [{ id: 'TL-LEND-QRY01' }, { id: 'TL-LEND-QRY02' }],
+      use_case: [
+        useCase('TL-LEND-UC01', 'TL-LEND-CAP01'),
+        useCase('TL-LEND-UC02', 'TL-LEND-CAP01'),
+        useCase('TL-LEND-UC03', 'TL-LEND-CAP01'),
+        useCase('TL-LEND-UC04', 'TL-LEND-CAP01'),
+        useCase('TL-LEND-UC10', 'TL-LEND-CAP01'),
+        useCase('XX-D1-UC01', 'XX-D1-CAP01'),
+      ],
+      use_case_actor: [
+        { use_case_id: 'TL-LEND-UC01', position: 1, role_name: 'Member' },
+        { use_case_id: 'TL-LEND-UC02', position: 1, role_name: 'Librarian' },
+        { use_case_id: 'TL-LEND-UC03', position: 1, role_name: 'Librarian' },
+        { use_case_id: 'TL-LEND-UC04', position: 1, role_name: 'Librarian' },
+        { use_case_id: 'TL-LEND-UC10', position: 1, role_name: 'Librarian' },
+        { use_case_id: 'TL-LEND-UC10', position: 2, role_name: 'Member' },
+        { use_case_id: 'XX-D1-UC01', position: 1, role_name: 'Member' },
+      ],
+      flow: ['TL-LEND-UC01', 'TL-LEND-UC02', 'TL-LEND-UC03', 'TL-LEND-UC04', 'TL-LEND-UC10', 'XX-D1-UC01'].map((u) => ({ id: `${u}-FL`, title: u, use_case_id: u })),
+      flow_step: [
+        // One command after a query, and another command on a refused path: the main path's one command.
+        step('TL-LEND-UC01-FL-S01', 'main', 1), step('TL-LEND-UC01-FL-S02', 'main', 2), step('TL-LEND-UC01-FL-S03', 'main', 3), step('TL-LEND-UC01-FL-S04', 'refused', 1),
+        // Two queries, the last a variant: the last one asked.
+        step('TL-LEND-UC02-FL-S01', 'main', 1), step('TL-LEND-UC02-FL-S02', 'main', 2, 'TL-IF02'),
+        // Two commands, then a query: the later command, and a split.
+        step('TL-LEND-UC03-FL-S01', 'main', 1), step('TL-LEND-UC03-FL-S02', 'main', 2), step('TL-LEND-UC03-FL-S03', 'main', 3),
+        // Nothing on the main path, a command on another.
+        step('TL-LEND-UC04-FL-S01', 'main', 1), step('TL-LEND-UC04-FL-S02', 'clash', 1),
+        // The same first actor and result as TL-LEND-UC03: a merge.
+        step('TL-LEND-UC10-FL-S01', 'main', 1),
+        // The same first actor and result as TL-LEND-UC01 in name, in another product: no merge.
+        step('XX-D1-UC01-FL-S01', 'main', 1),
+      ],
+      invokes: [
+        { source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-QRY01' },
+        { source_id: 'TL-LEND-UC01-FL-S02', target_id: 'TL-LEND-CMD01' },
+        { source_id: 'TL-LEND-UC01-FL-S04', target_id: 'TL-LEND-CMD02' },
+        { source_id: 'TL-LEND-UC02-FL-S01', target_id: 'TL-LEND-QRY01' },
+        { source_id: 'TL-LEND-UC02-FL-S02', target_id: 'TL-LEND-QRY02' },
+        { source_id: 'TL-LEND-UC03-FL-S01', target_id: 'TL-LEND-CMD01' },
+        { source_id: 'TL-LEND-UC03-FL-S02', target_id: 'TL-LEND-CMD02' },
+        { source_id: 'TL-LEND-UC03-FL-S03', target_id: 'TL-LEND-QRY01' },
+        { source_id: 'TL-LEND-UC04-FL-S02', target_id: 'TL-LEND-CMD01' },
+        { source_id: 'TL-LEND-UC10-FL-S01', target_id: 'TL-LEND-CMD02' },
+        { source_id: 'XX-D1-UC01-FL-S01', target_id: 'XX-D1-CMD01' },
+      ],
+    };
+    const { changes, todos } = await run7to8(tables);
+    expect(tables.use_case.map((u) => `${u.id} ${u.result_id ?? '-'}`)).toEqual([
+      'TL-LEND-UC01 TL-LEND-CMD01',
+      'TL-LEND-UC02 TL-LEND-QRY02',
+      'TL-LEND-UC03 TL-LEND-CMD02',
+      'TL-LEND-UC04 -',
+      'TL-LEND-UC10 TL-LEND-CMD02',
+      'XX-D1-UC01 XX-D1-CMD01',
+    ]);
+    expect(Object.keys(tables.use_case[0])).toEqual(['id', 'title', 'capability_id', 'goal', 'result_id', 'notes']);
+    expect(todos).toEqual([
+      'split TL-LEND-UC03: its main path invokes 2 commands (TL-LEND-CMD01, TL-LEND-CMD02); its result is the last, TL-LEND-CMD02, and each other is a use case of its own or a policy.',
+      "TL-LEND-UC04 has no result: its flow's main path invokes nothing. Give it a step that invokes the command or query it exists for, or make it a rule, then run the upgrade again.",
+      "merge TL-LEND-UC10 into TL-LEND-UC03: both are the Librarian's, with the result TL-LEND-CMD02.",
+    ]);
+    expect(changes).toEqual([
+      'Each use case names its result: 5 of 6 set from their flows, 3 its one command, 1 a query and 1 the last of several commands.',
+      '`lathe check` lists the rest: a command besides the result on another path, and a use case not done at its result.',
+    ]);
+
+    // Once every use case has its result, a second run changes nothing.
+    tables.use_case = tables.use_case.map((u) => (u.id === 'TL-LEND-UC04' ? { ...u, result_id: 'TL-LEND-QRY01' } : u));
+    const upgraded = structuredClone(tables);
+    expect(await run7to8(tables)).toEqual({ changes: [], todos: [] });
+    expect(tables).toEqual(upgraded);
   });
 });

@@ -1,4 +1,4 @@
-// Helper files (LA-TRC-UC25): a technical record names the other files its code is split across beside its file
+// Helper files (LA-STD-TRACEABILITY-R02): a technical record names the other files its code is split across beside its file
 // (helper_file). A helper file traces to its record, the record builds only while every one of its files exists, and
 // the trace and the reach of a change list each helper file with its record. Each starts from the complete product,
 // which names no helper file and gives no problem and no gap.
@@ -31,7 +31,7 @@ async function checkedView(root: string): Promise<ReadView> {
 }
 
 describe('helper files', () => {
-  it('LA-TRC-UC25-R01-T01 a technical record names helper files; the store refuses one on another record, twice, as a record\'s file or not normalized', async () => {
+  it('LA-STD-TRACEABILITY-R02-T01 a technical record names helper files; the store refuses one on another record, twice, as a record\'s file or not normalized', async () => {
     const ws = await loadData(naming('EX-LEND-CMD01-H', 'src/loans_unix.ts', 'src/loans_other.ts'), { files: { 'src/loans_unix.ts': 'export {};\n', 'src/loans_other.ts': 'export {};\n' } });
     expect(ws.problems).toEqual([]);
     expect(ws.records.find((r) => r.id === 'EX-LEND-CMD01-H')?.parts.helper_file).toEqual([
@@ -56,7 +56,7 @@ describe('helper files', () => {
     }
   });
 
-  it('LA-TRC-UC25-R02-T01 a source file a record names as a helper file is not a code-file-untraced gap', async () => {
+  it('LA-STD-TRACEABILITY-R02-T02 a source file a record names as a helper file is not a code-file-untraced gap', async () => {
     const files = { 'src/loans_unix.ts': 'export {};\n', 'src/loans_other.ts': 'export {};\n' };
     expect(untraced(await loadData(complete(), { files }))).toEqual(['src/loans_other.ts', 'src/loans_unix.ts']);
     const named = await loadData(naming('EX-LEND-CMD01-H', 'src/loans_unix.ts', 'src/loans_other.ts'), { files });
@@ -64,7 +64,7 @@ describe('helper files', () => {
     expect(gaps(named)).toEqual([]);
   });
 
-  it('LA-TRC-UC25-R03-T01 a record whose helper file does not exist leaves its obligation unbuilt and is a technical-file-missing warning', async () => {
+  it('LA-STD-TRACEABILITY-R02-T03 a record whose helper file does not exist leaves its obligation unbuilt and is a technical-file-missing warning', async () => {
     const data = naming('EX-LEND-INV01-RL', 'src/loans_lock.ts');
     const written = await loadData(data, { files: { 'src/loans_lock.ts': 'export {};\n' } });
     expect(obligation(written, 'EX-LEND', 'invariant')?.built).toBe(1);
@@ -79,7 +79,7 @@ describe('helper files', () => {
     expect(obligation(fileless, 'EX-LEND', 'invariant')?.built).toBe(0);
   });
 
-  it("LA-TRC-UC25-R04-T01 an obligation's trace and a change's reach list each helper file with its record", async () => {
+  it("LA-STD-TRACEABILITY-R02-T04 an obligation's trace and a change's reach list each helper file with its record", async () => {
     const root = await build(naming('EX-LEND-INV01-RL', 'src/loans_lock.ts', 'src/loans_wait.ts'), { files: { 'src/loans_lock.ts': 'export {};\n', 'src/loans_wait.ts': 'export {};\n' } });
     const ws = await loadWorkspace(root);
     expect(ws.chains.find((c) => c.obligation === 'EX-LEND-INV01')?.files).toEqual(expect.arrayContaining([

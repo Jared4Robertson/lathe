@@ -1,89 +1,307 @@
 {"id":"LA-CHK-UC01-FL","title":"Check the workspace","use_case_id":"LA-CHK-UC01"}
 {"id":"LA-CHK-UC02-FL","title":"Add a check","use_case_id":"LA-CHK-UC02"}
 {"id":"LA-CHK-UC05-FL","title":"Add a product's own checks","use_case_id":"LA-CHK-UC05"}
-{"id":"LA-CHK-UC06-FL","title":"Keep each level of the spec a useful size","use_case_id":"LA-CHK-UC06"}
+{"id":"LA-CHK-UC06-FL","title":"Set the product's limits","use_case_id":"LA-CHK-UC06"}
 {"id":"LA-CHK-UC07-FL","title":"Review every problem of a product","use_case_id":"LA-CHK-UC07"}
-{"id":"LA-CHK-UC08-FL","title":"Keep every change to the spec checked","use_case_id":"LA-CHK-UC08"}
 {"id":"LA-CHK-UC09-FL","title":"Review the essential records with fresh eyes","use_case_id":"LA-CHK-UC09"}
-{"id":"LA-CHK-UC10-FL","title":"Land a change on main","use_case_id":"LA-CHK-UC10"}
+{"id":"LA-CHK-UC10-FL","title":"Make the product's check strict","use_case_id":"LA-CHK-UC10"}
+{"id":"LA-CHK-UC101-FL","title":"Set the product's technology words","use_case_id":"LA-CHK-UC101"}
+{"id":"LA-CHK-UC11-FL","title":"Change a check","use_case_id":"LA-CHK-UC11"}
+{"id":"LA-CHK-UC12-FL","title":"Remove a check","use_case_id":"LA-CHK-UC12"}
 {"id":"LA-EXP-UC01-FL","title":"Find a record in a domain","use_case_id":"LA-EXP-UC01"}
-{"id":"LA-EXP-UC02-FL","title":"Follow a record's links","use_case_id":"LA-EXP-UC02"}
+{"id":"LA-EXP-UC02-FL","title":"Open a record","use_case_id":"LA-EXP-UC02"}
 {"id":"LA-EXP-UC03-FL","title":"Walk the model as a graph","use_case_id":"LA-EXP-UC03"}
-{"id":"LA-EXP-UC04-FL","title":"Walk the graph through folder-like groups","use_case_id":"LA-EXP-UC04"}
-{"id":"LA-EXP-UC05-FL","title":"Explore a record from several views at once","use_case_id":"LA-EXP-UC05"}
-{"id":"LA-EXP-UC06-FL","title":"Read a flow step by step","use_case_id":"LA-EXP-UC06"}
+{"id":"LA-EXP-UC05-FL","title":"Read a record","use_case_id":"LA-EXP-UC05"}
 {"id":"LA-EXP-UC07-FL","title":"Work in one product at a time","use_case_id":"LA-EXP-UC07"}
-{"id":"LA-EXP-UC08-FL","title":"Read a product laid out in stage folders","use_case_id":"LA-EXP-UC08"}
-{"id":"LA-EXP-UC09-FL","title":"Browse a domain's records by kind","use_case_id":"LA-EXP-UC09"}
-{"id":"LA-EXP-UC10-FL","title":"Explore several places at once in tabs","use_case_id":"LA-EXP-UC10"}
+{"id":"LA-EXP-UC10-FL","title":"Open a new tab","use_case_id":"LA-EXP-UC10"}
+{"id":"LA-EXP-UC101-FL","title":"Fold or unfold a nav section","use_case_id":"LA-EXP-UC101"}
+{"id":"LA-EXP-UC102-FL","title":"Cycle through the tabs","use_case_id":"LA-EXP-UC102"}
+{"id":"LA-EXP-UC103-FL","title":"Duplicate a tab","use_case_id":"LA-EXP-UC103"}
+{"id":"LA-EXP-UC104-FL","title":"Resize the wiki card","use_case_id":"LA-EXP-UC104"}
+{"id":"LA-EXP-UC105-FL","title":"Resize the chat","use_case_id":"LA-EXP-UC105"}
+{"id":"LA-EXP-UC106-FL","title":"Turn Highlight changes on or off","use_case_id":"LA-EXP-UC106"}
+{"id":"LA-EXP-UC107-FL","title":"Choose the Changes baseline","use_case_id":"LA-EXP-UC107"}
+{"id":"LA-EXP-UC108-FL","title":"Note where a tab was","use_case_id":"LA-EXP-UC108"}
 {"id":"LA-EXP-UC11-FL","title":"Read a domain as an ERD","use_case_id":"LA-EXP-UC11"}
 {"id":"LA-EXP-UC12-FL","title":"Look up a record's history","use_case_id":"LA-EXP-UC12"}
-{"id":"LA-EXP-UC13-FL","title":"Read a domain's interface design","use_case_id":"LA-EXP-UC13"}
 {"id":"LA-EXP-UC15-FL","title":"Watch the spec change","use_case_id":"LA-EXP-UC15"}
 {"id":"LA-EXP-UC16-FL","title":"Follow a journey step by step","use_case_id":"LA-EXP-UC16"}
-{"id":"LA-EXP-UC17-FL","title":"Choose how the graph is drawn","use_case_id":"LA-EXP-UC17"}
-{"id":"LA-IXD-UC18-FL","title":"Define a view with its requirements","use_case_id":"LA-IXD-UC18"}
-{"id":"LA-IXD-UC26-FL","title":"Expose a command through an endpoint","use_case_id":"LA-IXD-UC26"}
-{"id":"LA-IXD-UC27-FL","title":"Describe an integration with its adapter","use_case_id":"LA-IXD-UC27"}
-{"id":"LA-IXD-UC28-FL","title":"Draw a view with a UI component","use_case_id":"LA-IXD-UC28"}
-{"id":"LA-MOD-UC02-FL","title":"Split a product into domains by capability","use_case_id":"LA-MOD-UC02"}
-{"id":"LA-MOD-UC10-FL","title":"Model an aggregate with its entities and invariants","use_case_id":"LA-MOD-UC10"}
-{"id":"LA-MOD-UC12-FL","title":"Model a command with its handler and policies","use_case_id":"LA-MOD-UC12"}
-{"id":"LA-MOD-UC20-FL","title":"Write a specification with its predicate","use_case_id":"LA-MOD-UC20"}
-{"id":"LA-MOD-UC21-FL","title":"Model a read model with its queries","use_case_id":"LA-MOD-UC21"}
-{"id":"LA-MOD-UC24-FL","title":"Define a value object with its constraints","use_case_id":"LA-MOD-UC24"}
-{"id":"LA-MOD-UC25-FL","title":"Model a domain event with its fields","use_case_id":"LA-MOD-UC25"}
-{"id":"LA-MOD-UC31-FL","title":"Write a storage requirement with its tests","use_case_id":"LA-MOD-UC31"}
+{"id":"LA-EXP-UC17-FL","title":"Choose the graph's layout","use_case_id":"LA-EXP-UC17"}
+{"id":"LA-EXP-UC18-FL","title":"Fold or unfold a nav entry","use_case_id":"LA-EXP-UC18"}
+{"id":"LA-EXP-UC19-FL","title":"Turn Follow on or off","use_case_id":"LA-EXP-UC19"}
+{"id":"LA-EXP-UC20-FL","title":"Show or hide the minimap","use_case_id":"LA-EXP-UC20"}
+{"id":"LA-EXP-UC21-FL","title":"Show or hide all links","use_case_id":"LA-EXP-UC21"}
+{"id":"LA-EXP-UC22-FL","title":"Activate a tab","use_case_id":"LA-EXP-UC22"}
+{"id":"LA-EXP-UC23-FL","title":"Change a tab's view","use_case_id":"LA-EXP-UC23"}
+{"id":"LA-EXP-UC24-FL","title":"Go back or forward in a tab","use_case_id":"LA-EXP-UC24"}
+{"id":"LA-EXP-UC25-FL","title":"Close a tab","use_case_id":"LA-EXP-UC25"}
+{"id":"LA-IXD-UC101-FL","title":"Change a view","use_case_id":"LA-IXD-UC101"}
+{"id":"LA-IXD-UC102-FL","title":"Change a view requirement","use_case_id":"LA-IXD-UC102"}
+{"id":"LA-IXD-UC103-FL","title":"Remove a view requirement","use_case_id":"LA-IXD-UC103"}
+{"id":"LA-IXD-UC104-FL","title":"Add a view test","use_case_id":"LA-IXD-UC104"}
+{"id":"LA-IXD-UC105-FL","title":"Change a view test","use_case_id":"LA-IXD-UC105"}
+{"id":"LA-IXD-UC106-FL","title":"Remove a view test","use_case_id":"LA-IXD-UC106"}
+{"id":"LA-IXD-UC107-FL","title":"Change an endpoint","use_case_id":"LA-IXD-UC107"}
+{"id":"LA-IXD-UC108-FL","title":"Remove an endpoint","use_case_id":"LA-IXD-UC108"}
+{"id":"LA-IXD-UC109-FL","title":"Change a requirement of an endpoint","use_case_id":"LA-IXD-UC109"}
+{"id":"LA-IXD-UC110-FL","title":"Remove a requirement of an endpoint","use_case_id":"LA-IXD-UC110"}
+{"id":"LA-IXD-UC111-FL","title":"Add an endpoint handler","use_case_id":"LA-IXD-UC111"}
+{"id":"LA-IXD-UC112-FL","title":"Change an endpoint handler","use_case_id":"LA-IXD-UC112"}
+{"id":"LA-IXD-UC113-FL","title":"Remove an endpoint handler","use_case_id":"LA-IXD-UC113"}
+{"id":"LA-IXD-UC114-FL","title":"Add an endpoint test","use_case_id":"LA-IXD-UC114"}
+{"id":"LA-IXD-UC115-FL","title":"Change an endpoint test","use_case_id":"LA-IXD-UC115"}
+{"id":"LA-IXD-UC116-FL","title":"Remove an endpoint test","use_case_id":"LA-IXD-UC116"}
+{"id":"LA-IXD-UC117-FL","title":"Change an integration","use_case_id":"LA-IXD-UC117"}
+{"id":"LA-IXD-UC118-FL","title":"Change an adapter","use_case_id":"LA-IXD-UC118"}
+{"id":"LA-IXD-UC119-FL","title":"Remove an adapter","use_case_id":"LA-IXD-UC119"}
+{"id":"LA-IXD-UC120-FL","title":"Add an integration test","use_case_id":"LA-IXD-UC120"}
+{"id":"LA-IXD-UC121-FL","title":"Change an integration test","use_case_id":"LA-IXD-UC121"}
+{"id":"LA-IXD-UC122-FL","title":"Remove an integration test","use_case_id":"LA-IXD-UC122"}
+{"id":"LA-IXD-UC18-FL","title":"Add a view","use_case_id":"LA-IXD-UC18"}
+{"id":"LA-IXD-UC26-FL","title":"Add an endpoint","use_case_id":"LA-IXD-UC26"}
+{"id":"LA-IXD-UC27-FL","title":"Add an integration","use_case_id":"LA-IXD-UC27"}
+{"id":"LA-IXD-UC28-FL","title":"Add a UI component","use_case_id":"LA-IXD-UC28"}
+{"id":"LA-IXD-UC29-FL","title":"Add a view requirement","use_case_id":"LA-IXD-UC29"}
+{"id":"LA-IXD-UC30-FL","title":"Remove a view","use_case_id":"LA-IXD-UC30"}
+{"id":"LA-IXD-UC31-FL","title":"Add a requirement to an endpoint","use_case_id":"LA-IXD-UC31"}
+{"id":"LA-IXD-UC32-FL","title":"Move an endpoint","use_case_id":"LA-IXD-UC32"}
+{"id":"LA-IXD-UC33-FL","title":"Add an adapter","use_case_id":"LA-IXD-UC33"}
+{"id":"LA-IXD-UC34-FL","title":"Remove an integration","use_case_id":"LA-IXD-UC34"}
+{"id":"LA-IXD-UC35-FL","title":"Change a UI component","use_case_id":"LA-IXD-UC35"}
+{"id":"LA-IXD-UC36-FL","title":"Remove a UI component","use_case_id":"LA-IXD-UC36"}
+{"id":"LA-MOD-UC02-FL","title":"Add a domain","use_case_id":"LA-MOD-UC02"}
+{"id":"LA-MOD-UC10-FL","title":"Add an aggregate","use_case_id":"LA-MOD-UC10"}
+{"id":"LA-MOD-UC101-FL","title":"Remove a domain","use_case_id":"LA-MOD-UC101"}
+{"id":"LA-MOD-UC102-FL","title":"Remove a capability","use_case_id":"LA-MOD-UC102"}
+{"id":"LA-MOD-UC103-FL","title":"Add a term","use_case_id":"LA-MOD-UC103"}
+{"id":"LA-MOD-UC104-FL","title":"Change a term","use_case_id":"LA-MOD-UC104"}
+{"id":"LA-MOD-UC105-FL","title":"Remove a term","use_case_id":"LA-MOD-UC105"}
+{"id":"LA-MOD-UC106-FL","title":"Add a domain service","use_case_id":"LA-MOD-UC106"}
+{"id":"LA-MOD-UC107-FL","title":"Change a domain service","use_case_id":"LA-MOD-UC107"}
+{"id":"LA-MOD-UC108-FL","title":"Remove a domain service","use_case_id":"LA-MOD-UC108"}
+{"id":"LA-MOD-UC109-FL","title":"Change a repository","use_case_id":"LA-MOD-UC109"}
+{"id":"LA-MOD-UC110-FL","title":"Remove a repository","use_case_id":"LA-MOD-UC110"}
+{"id":"LA-MOD-UC111-FL","title":"Add a service","use_case_id":"LA-MOD-UC111"}
+{"id":"LA-MOD-UC112-FL","title":"Change a service","use_case_id":"LA-MOD-UC112"}
+{"id":"LA-MOD-UC113-FL","title":"Remove a service","use_case_id":"LA-MOD-UC113"}
+{"id":"LA-MOD-UC114-FL","title":"Add a domain service test","use_case_id":"LA-MOD-UC114"}
+{"id":"LA-MOD-UC115-FL","title":"Change a domain service test","use_case_id":"LA-MOD-UC115"}
+{"id":"LA-MOD-UC116-FL","title":"Remove a domain service test","use_case_id":"LA-MOD-UC116"}
+{"id":"LA-MOD-UC117-FL","title":"Change an aggregate","use_case_id":"LA-MOD-UC117"}
+{"id":"LA-MOD-UC118-FL","title":"Remove an aggregate","use_case_id":"LA-MOD-UC118"}
+{"id":"LA-MOD-UC119-FL","title":"Change an entity","use_case_id":"LA-MOD-UC119"}
+{"id":"LA-MOD-UC12-FL","title":"Add a command","use_case_id":"LA-MOD-UC12"}
+{"id":"LA-MOD-UC120-FL","title":"Remove an entity","use_case_id":"LA-MOD-UC120"}
+{"id":"LA-MOD-UC121-FL","title":"Change an invariant","use_case_id":"LA-MOD-UC121"}
+{"id":"LA-MOD-UC122-FL","title":"Remove an invariant","use_case_id":"LA-MOD-UC122"}
+{"id":"LA-MOD-UC123-FL","title":"Add a data model","use_case_id":"LA-MOD-UC123"}
+{"id":"LA-MOD-UC124-FL","title":"Change a data model","use_case_id":"LA-MOD-UC124"}
+{"id":"LA-MOD-UC125-FL","title":"Remove a data model","use_case_id":"LA-MOD-UC125"}
+{"id":"LA-MOD-UC126-FL","title":"Add an invariant test","use_case_id":"LA-MOD-UC126"}
+{"id":"LA-MOD-UC127-FL","title":"Change an invariant test","use_case_id":"LA-MOD-UC127"}
+{"id":"LA-MOD-UC128-FL","title":"Remove an invariant test","use_case_id":"LA-MOD-UC128"}
+{"id":"LA-MOD-UC129-FL","title":"Add a rule","use_case_id":"LA-MOD-UC129"}
+{"id":"LA-MOD-UC130-FL","title":"Change a rule","use_case_id":"LA-MOD-UC130"}
+{"id":"LA-MOD-UC131-FL","title":"Remove a rule","use_case_id":"LA-MOD-UC131"}
+{"id":"LA-MOD-UC132-FL","title":"Remove a domain event","use_case_id":"LA-MOD-UC132"}
+{"id":"LA-MOD-UC133-FL","title":"Change an event type","use_case_id":"LA-MOD-UC133"}
+{"id":"LA-MOD-UC134-FL","title":"Remove an event type","use_case_id":"LA-MOD-UC134"}
+{"id":"LA-MOD-UC135-FL","title":"Change a command","use_case_id":"LA-MOD-UC135"}
+{"id":"LA-MOD-UC136-FL","title":"Remove a command","use_case_id":"LA-MOD-UC136"}
+{"id":"LA-MOD-UC137-FL","title":"Change a command handler","use_case_id":"LA-MOD-UC137"}
+{"id":"LA-MOD-UC138-FL","title":"Remove a command handler","use_case_id":"LA-MOD-UC138"}
+{"id":"LA-MOD-UC139-FL","title":"Change a policy","use_case_id":"LA-MOD-UC139"}
+{"id":"LA-MOD-UC140-FL","title":"Remove a policy","use_case_id":"LA-MOD-UC140"}
+{"id":"LA-MOD-UC141-FL","title":"Add an event handler","use_case_id":"LA-MOD-UC141"}
+{"id":"LA-MOD-UC142-FL","title":"Change an event handler","use_case_id":"LA-MOD-UC142"}
+{"id":"LA-MOD-UC143-FL","title":"Remove an event handler","use_case_id":"LA-MOD-UC143"}
+{"id":"LA-MOD-UC144-FL","title":"Add a policy test","use_case_id":"LA-MOD-UC144"}
+{"id":"LA-MOD-UC145-FL","title":"Change a policy test","use_case_id":"LA-MOD-UC145"}
+{"id":"LA-MOD-UC146-FL","title":"Remove a policy test","use_case_id":"LA-MOD-UC146"}
+{"id":"LA-MOD-UC147-FL","title":"Change a specification","use_case_id":"LA-MOD-UC147"}
+{"id":"LA-MOD-UC148-FL","title":"Add a predicate","use_case_id":"LA-MOD-UC148"}
+{"id":"LA-MOD-UC149-FL","title":"Change a predicate","use_case_id":"LA-MOD-UC149"}
+{"id":"LA-MOD-UC150-FL","title":"Remove a predicate","use_case_id":"LA-MOD-UC150"}
+{"id":"LA-MOD-UC151-FL","title":"Change a specification test","use_case_id":"LA-MOD-UC151"}
+{"id":"LA-MOD-UC152-FL","title":"Remove a specification test","use_case_id":"LA-MOD-UC152"}
+{"id":"LA-MOD-UC153-FL","title":"Change a value object","use_case_id":"LA-MOD-UC153"}
+{"id":"LA-MOD-UC154-FL","title":"Change a constraint","use_case_id":"LA-MOD-UC154"}
+{"id":"LA-MOD-UC155-FL","title":"Remove a constraint","use_case_id":"LA-MOD-UC155"}
+{"id":"LA-MOD-UC156-FL","title":"Add a value type","use_case_id":"LA-MOD-UC156"}
+{"id":"LA-MOD-UC157-FL","title":"Change a value type","use_case_id":"LA-MOD-UC157"}
+{"id":"LA-MOD-UC158-FL","title":"Remove a value type","use_case_id":"LA-MOD-UC158"}
+{"id":"LA-MOD-UC159-FL","title":"Add a constraint test","use_case_id":"LA-MOD-UC159"}
+{"id":"LA-MOD-UC160-FL","title":"Change a constraint test","use_case_id":"LA-MOD-UC160"}
+{"id":"LA-MOD-UC161-FL","title":"Remove a constraint test","use_case_id":"LA-MOD-UC161"}
+{"id":"LA-MOD-UC162-FL","title":"Change a read model","use_case_id":"LA-MOD-UC162"}
+{"id":"LA-MOD-UC163-FL","title":"Remove a read model","use_case_id":"LA-MOD-UC163"}
+{"id":"LA-MOD-UC164-FL","title":"Change a query","use_case_id":"LA-MOD-UC164"}
+{"id":"LA-MOD-UC165-FL","title":"Remove a query","use_case_id":"LA-MOD-UC165"}
+{"id":"LA-MOD-UC166-FL","title":"Change a projection","use_case_id":"LA-MOD-UC166"}
+{"id":"LA-MOD-UC167-FL","title":"Remove a projection","use_case_id":"LA-MOD-UC167"}
+{"id":"LA-MOD-UC168-FL","title":"Add a query handler","use_case_id":"LA-MOD-UC168"}
+{"id":"LA-MOD-UC169-FL","title":"Change a query handler","use_case_id":"LA-MOD-UC169"}
+{"id":"LA-MOD-UC170-FL","title":"Remove a query handler","use_case_id":"LA-MOD-UC170"}
+{"id":"LA-MOD-UC171-FL","title":"Change a reader","use_case_id":"LA-MOD-UC171"}
+{"id":"LA-MOD-UC172-FL","title":"Remove a reader","use_case_id":"LA-MOD-UC172"}
+{"id":"LA-MOD-UC20-FL","title":"Add a specification","use_case_id":"LA-MOD-UC20"}
+{"id":"LA-MOD-UC21-FL","title":"Add a read model","use_case_id":"LA-MOD-UC21"}
+{"id":"LA-MOD-UC24-FL","title":"Add a value object","use_case_id":"LA-MOD-UC24"}
+{"id":"LA-MOD-UC25-FL","title":"Add a domain event","use_case_id":"LA-MOD-UC25"}
+{"id":"LA-MOD-UC31-FL","title":"Add a storage requirement","use_case_id":"LA-MOD-UC31"}
+{"id":"LA-MOD-UC32-FL","title":"Add a capability","use_case_id":"LA-MOD-UC32"}
+{"id":"LA-MOD-UC33-FL","title":"Change a capability","use_case_id":"LA-MOD-UC33"}
+{"id":"LA-MOD-UC34-FL","title":"Add a repository","use_case_id":"LA-MOD-UC34"}
+{"id":"LA-MOD-UC35-FL","title":"Change a domain","use_case_id":"LA-MOD-UC35"}
+{"id":"LA-MOD-UC36-FL","title":"Move a capability to another domain","use_case_id":"LA-MOD-UC36"}
+{"id":"LA-MOD-UC37-FL","title":"Move a term to another domain","use_case_id":"LA-MOD-UC37"}
+{"id":"LA-MOD-UC38-FL","title":"Move a repository to another domain","use_case_id":"LA-MOD-UC38"}
+{"id":"LA-MOD-UC39-FL","title":"Move a domain service to another domain","use_case_id":"LA-MOD-UC39"}
+{"id":"LA-MOD-UC40-FL","title":"Add an entity","use_case_id":"LA-MOD-UC40"}
+{"id":"LA-MOD-UC41-FL","title":"Add an invariant","use_case_id":"LA-MOD-UC41"}
+{"id":"LA-MOD-UC42-FL","title":"Move an aggregate to another domain","use_case_id":"LA-MOD-UC42"}
+{"id":"LA-MOD-UC43-FL","title":"Add a command handler","use_case_id":"LA-MOD-UC43"}
+{"id":"LA-MOD-UC44-FL","title":"Add a policy","use_case_id":"LA-MOD-UC44"}
+{"id":"LA-MOD-UC45-FL","title":"Add a specification test","use_case_id":"LA-MOD-UC45"}
+{"id":"LA-MOD-UC46-FL","title":"Remove a specification","use_case_id":"LA-MOD-UC46"}
+{"id":"LA-MOD-UC47-FL","title":"Move a specification to another domain","use_case_id":"LA-MOD-UC47"}
+{"id":"LA-MOD-UC48-FL","title":"Add a query","use_case_id":"LA-MOD-UC48"}
+{"id":"LA-MOD-UC49-FL","title":"Add a projection","use_case_id":"LA-MOD-UC49"}
+{"id":"LA-MOD-UC50-FL","title":"Add a reader","use_case_id":"LA-MOD-UC50"}
+{"id":"LA-MOD-UC51-FL","title":"Move a read model to another domain","use_case_id":"LA-MOD-UC51"}
+{"id":"LA-MOD-UC52-FL","title":"Add a constraint","use_case_id":"LA-MOD-UC52"}
+{"id":"LA-MOD-UC53-FL","title":"Remove a value object","use_case_id":"LA-MOD-UC53"}
+{"id":"LA-MOD-UC54-FL","title":"Add an event type","use_case_id":"LA-MOD-UC54"}
+{"id":"LA-MOD-UC55-FL","title":"Change a domain event","use_case_id":"LA-MOD-UC55"}
+{"id":"LA-MOD-UC56-FL","title":"Add a storage requirement test","use_case_id":"LA-MOD-UC56"}
+{"id":"LA-MOD-UC57-FL","title":"Change a storage requirement","use_case_id":"LA-MOD-UC57"}
+{"id":"LA-MOD-UC58-FL","title":"Change a storage requirement test","use_case_id":"LA-MOD-UC58"}
+{"id":"LA-MOD-UC59-FL","title":"Remove a storage requirement test","use_case_id":"LA-MOD-UC59"}
+{"id":"LA-MOD-UC60-FL","title":"Remove a storage requirement","use_case_id":"LA-MOD-UC60"}
 {"id":"LA-PLT-UC01-FL","title":"Load the workspace","use_case_id":"LA-PLT-UC01"}
 {"id":"LA-PLT-UC02-FL","title":"Set up Lathe in a product repo","use_case_id":"LA-PLT-UC02"}
 {"id":"LA-PLT-UC03-FL","title":"See the current data","use_case_id":"LA-PLT-UC03"}
-{"id":"LA-PLT-UC06-FL","title":"Arrange the workbench","use_case_id":"LA-PLT-UC06"}
-{"id":"LA-PLT-UC07-FL","title":"Set how Lathe looks","use_case_id":"LA-PLT-UC07"}
+{"id":"LA-PLT-UC06-FL","title":"Resize a panel","use_case_id":"LA-PLT-UC06"}
+{"id":"LA-PLT-UC07-FL","title":"Choose a theme","use_case_id":"LA-PLT-UC07"}
+{"id":"LA-PLT-UC101-FL","title":"Show a record's menu","use_case_id":"LA-PLT-UC101"}
+{"id":"LA-PLT-UC102-FL","title":"Reveal a product folder","use_case_id":"LA-PLT-UC102"}
+{"id":"LA-PLT-UC103-FL","title":"Read a product's changed data files again","use_case_id":"LA-PLT-UC103"}
 {"id":"LA-PLT-UC11-FL","title":"Open a product in a window","use_case_id":"LA-PLT-UC11"}
-{"id":"LA-PLT-UC12-FL","title":"Iterate on Lathe with hot reload","use_case_id":"LA-PLT-UC12"}
-{"id":"LA-PLT-UC16-FL","title":"Accept writes only from the app","use_case_id":"LA-PLT-UC16"}
-{"id":"LA-PLT-UC17-FL","title":"Move a product to a new Lathe","use_case_id":"LA-PLT-UC17"}
+{"id":"LA-PLT-UC12-FL","title":"Start Lathe with hot reload","use_case_id":"LA-PLT-UC12"}
+{"id":"LA-PLT-UC17-FL","title":"Upgrade a product's data","use_case_id":"LA-PLT-UC17"}
 {"id":"LA-PLT-UC18-FL","title":"Start the plugin's tools in a product repo","use_case_id":"LA-PLT-UC18"}
-{"id":"LA-PLT-UC19-FL","title":"Work with Claude beside the stage","use_case_id":"LA-PLT-UC19"}
-{"id":"LA-PLT-UC20-FL","title":"Dictate a message to Claude","use_case_id":"LA-PLT-UC20"}
+{"id":"LA-PLT-UC19-FL","title":"Send a message to Claude","use_case_id":"LA-PLT-UC19"}
+{"id":"LA-PLT-UC20-FL","title":"Listen for a dictated message","use_case_id":"LA-PLT-UC20"}
 {"id":"LA-PLT-UC21-FL","title":"Review Claude's changes","use_case_id":"LA-PLT-UC21"}
-{"id":"LA-PLT-UC22-FL","title":"Compose a message with more than words","use_case_id":"LA-PLT-UC22"}
+{"id":"LA-PLT-UC22-FL","title":"Capture the stage","use_case_id":"LA-PLT-UC22"}
 {"id":"LA-PLT-UC23-FL","title":"Serve the spec from a product repo","use_case_id":"LA-PLT-UC23"}
-{"id":"LA-PLT-UC24-FL","title":"Rebind a shortcut","use_case_id":"LA-PLT-UC24"}
-{"id":"LA-PLT-UC25-FL","title":"Open a record's data file","use_case_id":"LA-PLT-UC25"}
-{"id":"LA-PLT-UC26-FL","title":"Choose how the chat listens","use_case_id":"LA-PLT-UC26"}
+{"id":"LA-PLT-UC24-FL","title":"Bind a key","use_case_id":"LA-PLT-UC24"}
+{"id":"LA-PLT-UC25-FL","title":"Open a record's data file in the editor","use_case_id":"LA-PLT-UC25"}
+{"id":"LA-PLT-UC26-FL","title":"Choose the voice phrases","use_case_id":"LA-PLT-UC26"}
 {"id":"LA-PLT-UC27-FL","title":"Undo Claude's turn","use_case_id":"LA-PLT-UC27"}
 {"id":"LA-PLT-UC28-FL","title":"Clear the recent folders","use_case_id":"LA-PLT-UC28"}
-{"id":"LA-PLT-UC29-FL","title":"Show the Owner a record","use_case_id":"LA-PLT-UC29"}
-{"id":"LA-PLT-UC30-FL","title":"Sign the chat's agent in","use_case_id":"LA-PLT-UC30"}
-{"id":"LA-PRD-UC03-FL","title":"Change Lathe's schema with a migration","use_case_id":"LA-PRD-UC03"}
-{"id":"LA-PRD-UC04-FL","title":"Declare a product's own kinds with their relations","use_case_id":"LA-PRD-UC04"}
-{"id":"LA-PRD-UC08-FL","title":"Read where each kind sits in the stages","use_case_id":"LA-PRD-UC08"}
+{"id":"LA-PLT-UC29-FL","title":"Open a record for the Owner","use_case_id":"LA-PLT-UC29"}
+{"id":"LA-PLT-UC30-FL","title":"Sign the agent in","use_case_id":"LA-PLT-UC30"}
+{"id":"LA-PLT-UC31-FL","title":"Show or hide a panel","use_case_id":"LA-PLT-UC31"}
+{"id":"LA-PLT-UC32-FL","title":"Choose a color mode","use_case_id":"LA-PLT-UC32"}
+{"id":"LA-PLT-UC33-FL","title":"Duplicate a theme","use_case_id":"LA-PLT-UC33"}
+{"id":"LA-PLT-UC34-FL","title":"Edit a theme","use_case_id":"LA-PLT-UC34"}
+{"id":"LA-PLT-UC35-FL","title":"Export a theme","use_case_id":"LA-PLT-UC35"}
+{"id":"LA-PLT-UC36-FL","title":"Reset a theme","use_case_id":"LA-PLT-UC36"}
+{"id":"LA-PLT-UC37-FL","title":"Delete a theme","use_case_id":"LA-PLT-UC37"}
+{"id":"LA-PLT-UC38-FL","title":"Import a theme file","use_case_id":"LA-PLT-UC38"}
+{"id":"LA-PLT-UC39-FL","title":"Turn scroll to zoom on or off","use_case_id":"LA-PLT-UC39"}
+{"id":"LA-PLT-UC40-FL","title":"Save a window's place","use_case_id":"LA-PLT-UC40"}
+{"id":"LA-PLT-UC41-FL","title":"Close a product window","use_case_id":"LA-PLT-UC41"}
+{"id":"LA-PLT-UC42-FL","title":"Stop Claude's turn","use_case_id":"LA-PLT-UC42"}
+{"id":"LA-PLT-UC43-FL","title":"Answer a permission prompt","use_case_id":"LA-PLT-UC43"}
+{"id":"LA-PLT-UC44-FL","title":"Open a Claude Code session","use_case_id":"LA-PLT-UC44"}
+{"id":"LA-PLT-UC45-FL","title":"Choose the chat's permission mode","use_case_id":"LA-PLT-UC45"}
+{"id":"LA-PLT-UC46-FL","title":"Choose the chat's model and effort","use_case_id":"LA-PLT-UC46"}
+{"id":"LA-PLT-UC47-FL","title":"Take a message out of the queue","use_case_id":"LA-PLT-UC47"}
+{"id":"LA-PLT-UC48-FL","title":"Remove a binding","use_case_id":"LA-PLT-UC48"}
+{"id":"LA-PLT-UC49-FL","title":"Reset a shortcut","use_case_id":"LA-PLT-UC49"}
+{"id":"LA-PLT-UC50-FL","title":"Reset all shortcuts","use_case_id":"LA-PLT-UC50"}
+{"id":"LA-PLT-UC51-FL","title":"Reveal a record's data file","use_case_id":"LA-PLT-UC51"}
+{"id":"LA-PLT-UC52-FL","title":"Copy a record's ID","use_case_id":"LA-PLT-UC52"}
+{"id":"LA-PLT-UC53-FL","title":"Choose an editor","use_case_id":"LA-PLT-UC53"}
+{"id":"LA-PLT-UC54-FL","title":"Open the settings file","use_case_id":"LA-PLT-UC54"}
+{"id":"LA-PLT-UC55-FL","title":"Turn voice activation on or off","use_case_id":"LA-PLT-UC55"}
+{"id":"LA-PLT-UC56-FL","title":"Turn Quick mode on or off","use_case_id":"LA-PLT-UC56"}
+{"id":"LA-PLT-UC57-FL","title":"Give the sign-in code","use_case_id":"LA-PLT-UC57"}
+{"id":"LA-PLT-UC58-FL","title":"Cancel the sign-in","use_case_id":"LA-PLT-UC58"}
+{"id":"LA-PLT-UC59-FL","title":"Sign the agent out","use_case_id":"LA-PLT-UC59"}
+{"id":"LA-PRD-UC04-FL","title":"Declare a product kind","use_case_id":"LA-PRD-UC04"}
+{"id":"LA-PRD-UC101-FL","title":"Add a product","use_case_id":"LA-PRD-UC101"}
+{"id":"LA-PRD-UC102-FL","title":"Change a product kind","use_case_id":"LA-PRD-UC102"}
+{"id":"LA-PRD-UC103-FL","title":"Remove a product kind","use_case_id":"LA-PRD-UC103"}
+{"id":"LA-PRD-UC104-FL","title":"Change a product relation","use_case_id":"LA-PRD-UC104"}
+{"id":"LA-PRD-UC105-FL","title":"Remove a product relation","use_case_id":"LA-PRD-UC105"}
+{"id":"LA-PRD-UC106-FL","title":"Change an open question","use_case_id":"LA-PRD-UC106"}
+{"id":"LA-PRD-UC107-FL","title":"Remove an interface","use_case_id":"LA-PRD-UC107"}
+{"id":"LA-PRD-UC108-FL","title":"Remove a business outcome","use_case_id":"LA-PRD-UC108"}
+{"id":"LA-PRD-UC109-FL","title":"Change a journey","use_case_id":"LA-PRD-UC109"}
 {"id":"LA-PRD-UC11-FL","title":"Read the reference generated from the schema","use_case_id":"LA-PRD-UC11"}
+{"id":"LA-PRD-UC110-FL","title":"Remove a journey","use_case_id":"LA-PRD-UC110"}
+{"id":"LA-PRD-UC111-FL","title":"Remove a journey step","use_case_id":"LA-PRD-UC111"}
+{"id":"LA-PRD-UC112-FL","title":"Change a journey test","use_case_id":"LA-PRD-UC112"}
+{"id":"LA-PRD-UC113-FL","title":"Remove a journey test","use_case_id":"LA-PRD-UC113"}
 {"id":"LA-PRD-UC14-FL","title":"Look up an entry in the reference","use_case_id":"LA-PRD-UC14"}
 {"id":"LA-PRD-UC19-FL","title":"Merge two branches' data","use_case_id":"LA-PRD-UC19"}
-{"id":"LA-PRD-UC22-FL","title":"Write the business outcomes the product exists to achieve","use_case_id":"LA-PRD-UC22"}
-{"id":"LA-PRD-UC23-FL","title":"Describe a product's interfaces","use_case_id":"LA-PRD-UC23"}
-{"id":"LA-PRD-UC33-FL","title":"Write a product's journeys","use_case_id":"LA-PRD-UC33"}
-{"id":"LA-PRD-UC34-FL","title":"Write a record of a product's own kind","use_case_id":"LA-PRD-UC34"}
-{"id":"LA-PRD-UC35-FL","title":"Name a product's roles","use_case_id":"LA-PRD-UC35"}
-{"id":"LA-PRD-UC36-FL","title":"Ask an open question","use_case_id":"LA-PRD-UC36"}
-{"id":"LA-PRD-UC37-FL","title":"Give each record an ID of its own under one parent","use_case_id":"LA-PRD-UC37"}
-{"id":"LA-PRD-UC38-FL","title":"Relate records only through links","use_case_id":"LA-PRD-UC38"}
-{"id":"LA-PRD-UC39-FL","title":"Keep each record as one line of its data file","use_case_id":"LA-PRD-UC39"}
-{"id":"LA-TEC-UC16-FL","title":"Write a standard with its rules","use_case_id":"LA-TEC-UC16"}
-{"id":"LA-TEC-UC17-FL","title":"Specify a table with its keys","use_case_id":"LA-TEC-UC17"}
-{"id":"LA-TEC-UC29-FL","title":"Name a product's entry points","use_case_id":"LA-TEC-UC29"}
-{"id":"LA-TEC-UC30-FL","title":"Name a product's tooling","use_case_id":"LA-TEC-UC30"}
-{"id":"LA-TEC-UC32-FL","title":"Name where a product's data lives","use_case_id":"LA-TEC-UC32"}
+{"id":"LA-PRD-UC22-FL","title":"Add a business outcome","use_case_id":"LA-PRD-UC22"}
+{"id":"LA-PRD-UC23-FL","title":"Add an interface","use_case_id":"LA-PRD-UC23"}
+{"id":"LA-PRD-UC33-FL","title":"Add a journey","use_case_id":"LA-PRD-UC33"}
+{"id":"LA-PRD-UC34-FL","title":"Add an extension record","use_case_id":"LA-PRD-UC34"}
+{"id":"LA-PRD-UC35-FL","title":"Change a product's roles","use_case_id":"LA-PRD-UC35"}
+{"id":"LA-PRD-UC36-FL","title":"Add an open question","use_case_id":"LA-PRD-UC36"}
+{"id":"LA-PRD-UC40-FL","title":"Declare a product relation","use_case_id":"LA-PRD-UC40"}
+{"id":"LA-PRD-UC41-FL","title":"Change a business outcome","use_case_id":"LA-PRD-UC41"}
+{"id":"LA-PRD-UC42-FL","title":"Change an interface","use_case_id":"LA-PRD-UC42"}
+{"id":"LA-PRD-UC43-FL","title":"Add a journey step","use_case_id":"LA-PRD-UC43"}
+{"id":"LA-PRD-UC44-FL","title":"Move a journey step","use_case_id":"LA-PRD-UC44"}
+{"id":"LA-PRD-UC45-FL","title":"Change a journey step","use_case_id":"LA-PRD-UC45"}
+{"id":"LA-PRD-UC46-FL","title":"Add a journey test","use_case_id":"LA-PRD-UC46"}
+{"id":"LA-PRD-UC47-FL","title":"Remove a use case","use_case_id":"LA-PRD-UC47"}
+{"id":"LA-PRD-UC48-FL","title":"Change an extension record","use_case_id":"LA-PRD-UC48"}
+{"id":"LA-PRD-UC49-FL","title":"Remove an extension record","use_case_id":"LA-PRD-UC49"}
+{"id":"LA-PRD-UC50-FL","title":"Move an extension record to another domain","use_case_id":"LA-PRD-UC50"}
+{"id":"LA-PRD-UC51-FL","title":"Move an open question","use_case_id":"LA-PRD-UC51"}
+{"id":"LA-PRD-UC52-FL","title":"Remove an open question","use_case_id":"LA-PRD-UC52"}
+{"id":"LA-TEC-UC101-FL","title":"Remove an entry point","use_case_id":"LA-TEC-UC101"}
+{"id":"LA-TEC-UC102-FL","title":"Remove a tooling record","use_case_id":"LA-TEC-UC102"}
+{"id":"LA-TEC-UC103-FL","title":"Change a standard","use_case_id":"LA-TEC-UC103"}
+{"id":"LA-TEC-UC104-FL","title":"Remove a standard","use_case_id":"LA-TEC-UC104"}
+{"id":"LA-TEC-UC105-FL","title":"Add a standard rule","use_case_id":"LA-TEC-UC105"}
+{"id":"LA-TEC-UC106-FL","title":"Remove a standard rule","use_case_id":"LA-TEC-UC106"}
+{"id":"LA-TEC-UC107-FL","title":"Change a standard rule test","use_case_id":"LA-TEC-UC107"}
+{"id":"LA-TEC-UC108-FL","title":"Remove a standard rule test","use_case_id":"LA-TEC-UC108"}
+{"id":"LA-TEC-UC109-FL","title":"Remove a table","use_case_id":"LA-TEC-UC109"}
+{"id":"LA-TEC-UC16-FL","title":"Add a standard","use_case_id":"LA-TEC-UC16"}
+{"id":"LA-TEC-UC17-FL","title":"Add a table","use_case_id":"LA-TEC-UC17"}
+{"id":"LA-TEC-UC29-FL","title":"Add an entry point","use_case_id":"LA-TEC-UC29"}
+{"id":"LA-TEC-UC30-FL","title":"Add a tooling record","use_case_id":"LA-TEC-UC30"}
+{"id":"LA-TEC-UC32-FL","title":"Add a data store","use_case_id":"LA-TEC-UC32"}
+{"id":"LA-TEC-UC33-FL","title":"Add a standard rule test","use_case_id":"LA-TEC-UC33"}
+{"id":"LA-TEC-UC34-FL","title":"Change a standard rule","use_case_id":"LA-TEC-UC34"}
+{"id":"LA-TEC-UC35-FL","title":"Change a table","use_case_id":"LA-TEC-UC35"}
+{"id":"LA-TEC-UC36-FL","title":"Move a table","use_case_id":"LA-TEC-UC36"}
+{"id":"LA-TEC-UC37-FL","title":"Change an entry point","use_case_id":"LA-TEC-UC37"}
+{"id":"LA-TEC-UC38-FL","title":"Move an entry point to another domain","use_case_id":"LA-TEC-UC38"}
+{"id":"LA-TEC-UC39-FL","title":"Change a tooling record","use_case_id":"LA-TEC-UC39"}
+{"id":"LA-TEC-UC40-FL","title":"Move a tooling to another domain","use_case_id":"LA-TEC-UC40"}
+{"id":"LA-TEC-UC41-FL","title":"Change a data store","use_case_id":"LA-TEC-UC41"}
+{"id":"LA-TEC-UC42-FL","title":"Remove a data store","use_case_id":"LA-TEC-UC42"}
+{"id":"LA-TEC-UC43-FL","title":"Move a data store to another domain","use_case_id":"LA-TEC-UC43"}
 {"id":"LA-TRC-UC01-FL","title":"See how complete each domain is","use_case_id":"LA-TRC-UC01"}
-{"id":"LA-TRC-UC02-FL","title":"Count coverage by the meta-model","use_case_id":"LA-TRC-UC02"}
-{"id":"LA-TRC-UC04-FL","title":"Prove the rules of the patterns a domain follows","use_case_id":"LA-TRC-UC04"}
+{"id":"LA-TRC-UC04-FL","title":"Add a pattern rule test","use_case_id":"LA-TRC-UC04"}
 {"id":"LA-TRC-UC05-FL","title":"Check that each test's file names it","use_case_id":"LA-TRC-UC05"}
 {"id":"LA-TRC-UC06-FL","title":"See each domain's tests by state","use_case_id":"LA-TRC-UC06"}
-{"id":"LA-TRC-UC07-FL","title":"Follow a pattern per domain","use_case_id":"LA-TRC-UC07"}
+{"id":"LA-TRC-UC07-FL","title":"Follow a pattern","use_case_id":"LA-TRC-UC07"}
 {"id":"LA-TRC-UC08-FL","title":"Report tests that count for nothing","use_case_id":"LA-TRC-UC08"}
 {"id":"LA-TRC-UC10-FL","title":"Trace obligations from design to tests","use_case_id":"LA-TRC-UC10"}
+{"id":"LA-TRC-UC101-FL","title":"Stop following a pattern","use_case_id":"LA-TRC-UC101"}
+{"id":"LA-TRC-UC102-FL","title":"Stop filling a slot","use_case_id":"LA-TRC-UC102"}
+{"id":"LA-TRC-UC103-FL","title":"Remove a provider","use_case_id":"LA-TRC-UC103"}
 {"id":"LA-TRC-UC11-FL","title":"See coverage of every obligation kind","use_case_id":"LA-TRC-UC11"}
 {"id":"LA-TRC-UC12-FL","title":"See a domain's owed pattern rules","use_case_id":"LA-TRC-UC12"}
 {"id":"LA-TRC-UC14-FL","title":"Trace an obligation to its proof","use_case_id":"LA-TRC-UC14"}
@@ -95,9 +313,39 @@
 {"id":"LA-TRC-UC22-FL","title":"See how far each journey is proved","use_case_id":"LA-TRC-UC22"}
 {"id":"LA-TRC-UC23-FL","title":"Name what provides a record","use_case_id":"LA-TRC-UC23"}
 {"id":"LA-TRC-UC24-FL","title":"See what a change would touch","use_case_id":"LA-TRC-UC24"}
-{"id":"LA-TRC-UC25-FL","title":"Trace code split across helper files","use_case_id":"LA-TRC-UC25"}
-{"id":"LA-TRC-UC26-FL","title":"See where a product stands on the Dashboard","use_case_id":"LA-TRC-UC26"}
-{"id":"LA-TST-UC03-FL","title":"Plan the tests that prove a record","use_case_id":"LA-TST-UC03"}
-{"id":"LA-TST-UC13-FL","title":"Build a test data set","use_case_id":"LA-TST-UC13"}
-{"id":"LA-UCS-UC05-FL","title":"Write a pattern with its rules","use_case_id":"LA-UCS-UC05"}
-{"id":"LA-UCS-UC06-FL","title":"Write a use case with its flow and tests","use_case_id":"LA-UCS-UC06"}
+{"id":"LA-TRC-UC27-FL","title":"Change the setting values","use_case_id":"LA-TRC-UC27"}
+{"id":"LA-TST-UC03-FL","title":"Add a use case test","use_case_id":"LA-TST-UC03"}
+{"id":"LA-TST-UC13-FL","title":"Add a test data set","use_case_id":"LA-TST-UC13"}
+{"id":"LA-TST-UC20-FL","title":"Change a test data set","use_case_id":"LA-TST-UC20"}
+{"id":"LA-TST-UC21-FL","title":"Remove a test data set","use_case_id":"LA-TST-UC21"}
+{"id":"LA-TST-UC22-FL","title":"Move a test data set to another domain","use_case_id":"LA-TST-UC22"}
+{"id":"LA-TST-UC30-FL","title":"Change a use case test","use_case_id":"LA-TST-UC30"}
+{"id":"LA-UCS-UC05-FL","title":"Add a pattern","use_case_id":"LA-UCS-UC05"}
+{"id":"LA-UCS-UC06-FL","title":"Add a use case","use_case_id":"LA-UCS-UC06"}
+{"id":"LA-UCS-UC07-FL","title":"Add a pattern rule","use_case_id":"LA-UCS-UC07"}
+{"id":"LA-UCS-UC08-FL","title":"Change a pattern rule","use_case_id":"LA-UCS-UC08"}
+{"id":"LA-UCS-UC09-FL","title":"Add a flow","use_case_id":"LA-UCS-UC09"}
+{"id":"LA-UCS-UC10-FL","title":"Add a flow step","use_case_id":"LA-UCS-UC10"}
+{"id":"LA-UCS-UC101-FL","title":"Change a use case","use_case_id":"LA-UCS-UC101"}
+{"id":"LA-UCS-UC102-FL","title":"Add a UC requirement","use_case_id":"LA-UCS-UC102"}
+{"id":"LA-UCS-UC103-FL","title":"Change a UC requirement","use_case_id":"LA-UCS-UC103"}
+{"id":"LA-UCS-UC104-FL","title":"Remove a UC requirement","use_case_id":"LA-UCS-UC104"}
+{"id":"LA-UCS-UC105-FL","title":"Change a flow","use_case_id":"LA-UCS-UC105"}
+{"id":"LA-UCS-UC106-FL","title":"Change a flow step","use_case_id":"LA-UCS-UC106"}
+{"id":"LA-UCS-UC107-FL","title":"Remove a flow step","use_case_id":"LA-UCS-UC107"}
+{"id":"LA-UCS-UC108-FL","title":"Remove a use case test","use_case_id":"LA-UCS-UC108"}
+{"id":"LA-UCS-UC109-FL","title":"Change a flow test","use_case_id":"LA-UCS-UC109"}
+{"id":"LA-UCS-UC11-FL","title":"Add a flow test","use_case_id":"LA-UCS-UC11"}
+{"id":"LA-UCS-UC110-FL","title":"Remove a flow test","use_case_id":"LA-UCS-UC110"}
+{"id":"LA-UCS-UC111-FL","title":"Change a pattern","use_case_id":"LA-UCS-UC111"}
+{"id":"LA-UCS-UC112-FL","title":"Remove a pattern","use_case_id":"LA-UCS-UC112"}
+{"id":"LA-UCS-UC113-FL","title":"Remove a pattern rule","use_case_id":"LA-UCS-UC113"}
+{"id":"LA-UCS-UC114-FL","title":"Change a pattern rule test","use_case_id":"LA-UCS-UC114"}
+{"id":"LA-UCS-UC115-FL","title":"Remove a pattern rule test","use_case_id":"LA-UCS-UC115"}
+{"id":"LA-UCS-UC116-FL","title":"Add a slot","use_case_id":"LA-UCS-UC116"}
+{"id":"LA-UCS-UC117-FL","title":"Change a slot","use_case_id":"LA-UCS-UC117"}
+{"id":"LA-UCS-UC118-FL","title":"Remove a slot","use_case_id":"LA-UCS-UC118"}
+{"id":"LA-UCS-UC119-FL","title":"Move a flow step","use_case_id":"LA-UCS-UC119"}
+{"id":"LA-UCS-UC12-FL","title":"Remove a flow","use_case_id":"LA-UCS-UC12"}
+{"id":"LA-UCS-UC13-FL","title":"Move a use case","use_case_id":"LA-UCS-UC13"}
+{"id":"LA-UCS-UC14-FL","title":"Move a UC requirement to another use case","use_case_id":"LA-UCS-UC14"}

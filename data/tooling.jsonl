@@ -1,3 +1,4 @@
+{"id":"LA-CHK-TOOL01","title":"check-commits.ts","domain_id":"LA-CHK","file":"lathe/scripts/check-commits.ts"}
 {"id":"LA-MOD-TOOL03","title":"generate","domain_id":"LA-MOD","file":"lathe/scripts/generate"}
 {"id":"LA-PLT-TOOL01","title":".gitattributes","domain_id":"LA-PLT","file":".gitattributes"}
 {"id":"LA-PLT-TOOL02","title":"dev.ts","domain_id":"LA-PLT","file":"desktop/scripts/dev.ts"}

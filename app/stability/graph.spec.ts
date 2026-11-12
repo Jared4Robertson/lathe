@@ -95,7 +95,7 @@ test.describe('graph', () => {
     const keys = [PANE_BAR, PANE_TITLE, GRAPH_TOOLS, GRAPH_CANVAS, DRAWING];
     for (const id of ['LA-EXP', 'LA-EXP/use-cases', 'LA-EXP-CAP03', 'LA-EXP-UC03']) {
       const before = new URL(page.url()).pathname;
-      const r = await test.step(`LA-EXP-UC04-R10-T01 the Reader reaches ${id} through the stages and kind groups the nav shows`, () =>
+      const r = await test.step(`LA-EXP-UC03-R19-T01 the Reader reaches ${id} through the stages and kind groups the nav shows`, () =>
         step(page, 'graph', `focus ${id}`, { keys, allow: ['.wiki-panel-scroll', GRAPH_BOXES] }, async () => {
           await clickBox(page, id);
           await page.waitForURL((u) => u.pathname !== before);
@@ -512,13 +512,20 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
     run: async (page) => {
       const here = path(page);
       await page.locator('.focus-stage .graph-box').first().focus();
+      const onBox = () => page.evaluate(() => (document.activeElement as HTMLElement | null)?.closest<HTMLElement>('.graph-box')?.dataset.id ?? '');
       await page.keyboard.press('Tab');
-      const id = await page.evaluate(() => (document.activeElement as HTMLElement | null)?.closest<HTMLElement>('.graph-box')?.dataset.id ?? '');
+      let id = await onBox();
       expect(id, 'keyboard focus is on a box').not.toBe('');
+      // Enter focuses another box: past the focus itself, should Tab land on it.
+      if (id === here.slice(1)) {
+        await page.keyboard.press('Tab');
+        id = await onBox();
+        expect(id, 'keyboard focus is on another box').not.toBe('');
+      }
       // The box the keyboard is on is drawn with the focus ring.
       await expect.poll(async () => (await boxOf(page, id))?.ring).toBe(true);
       await page.keyboard.press('Enter');
-      if (id !== here.slice(1)) await page.waitForURL((u) => u.pathname !== here);
+      await page.waitForURL((u) => u.pathname !== here);
       await page.goBack();
       await page.waitForURL((u) => u.pathname === here);
       await page.waitForTimeout(900);

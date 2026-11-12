@@ -28,7 +28,7 @@ const PATTERN = [
 const SHOP = [
   add('domain', { id: 'TL-SHOP', title: 'Shop', product_id: 'TL', position: 2, subdomain_type: 'supporting', description: 'Selling tools the library no longer lends.' }),
   add('capability', { id: 'TL-SHOP-CAP01', title: 'Selling', domain_id: 'TL-SHOP', position: 1, description: 'Selling tools to members.' }),
-  add('use_case', { id: 'TL-SHOP-UC01', title: 'Sell a tool', capability_id: 'TL-SHOP-CAP01', goal: 'A member buys a tool.' }),
+  add('use_case', { id: 'TL-SHOP-UC01', title: 'Sell a tool', capability_id: 'TL-SHOP-CAP01', goal: 'A member buys a tool.', result_id: 'TL-LEND-CMD01' }),
 ];
 
 /** The coverage line of one domain and obligation kind, as the check prints it. */
@@ -65,7 +65,7 @@ describe('Traceability flows from the command line', () => {
     expect(line(tl.check().stdout, 'TL-LEND', 'UC requirement')).toBe('TL-LEND UC requirement: 2/2 designed, 2/2 built, 2/2 proved');
   });
 
-  it('LA-TRC-UC02-FL-T count coverage by the meta-model', async () => {
+  it('LA-TRC-UC01-FL-T count coverage by the meta-model', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
@@ -121,7 +121,7 @@ describe('Traceability flows from the command line', () => {
     expect(tl.check().stdout).not.toContain('outcome-not-measured');
   });
 
-  it('LA-TST-UC03-FL-T record how a test is run', async () => {
+  it('LA-TST-UC03-FL-T LA-TST-UC30-FL-T LA-TST-UC30-R02-T01 record how a test is run', async () => {
     const tl = product();
     await tl.seed([...LENDING, add('uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'A member in debt is refused', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse a member who owes a fee.' }), add('uc_requirement', { id: 'TL-LEND-UC01-R03', title: 'The due date is set', use_case_id: 'TL-LEND-UC01', statement: 'The loan MUST be due two weeks after it opens.' })]);
     const addTest = (requirement: string, run: Record<string, string>) =>
@@ -252,11 +252,11 @@ describe('Traceability flows from the command line', () => {
     });
   });
 
-  it('LA-TRC-UC07-FL-T follow a pattern per domain', async () => {
+  it('LA-TRC-UC07-FL-T LA-TRC-UC27-FL-T follow a pattern per domain', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
-      add('use_case', { id: 'TL-LEND-UC02', title: 'Renew a loan', capability_id: 'TL-LEND-CAP01', goal: 'A member keeps a tool longer.' }),
+      add('use_case', { id: 'TL-LEND-UC02', title: 'Renew a loan', capability_id: 'TL-LEND-CAP01', goal: 'A member keeps a tool longer.', result_id: 'TL-LEND-CMD01' }),
       ...PATTERN,
       add('pattern', { id: 'TL-PAT-LOG', title: 'Audit log', product_id: 'TL', description: 'Every change is written to a log.' }),
       add('pattern_rule', { id: 'TL-PAT-LOG-R01', title: 'Every change is logged', pattern_id: 'TL-PAT-LOG', statement: 'Each change MUST be written to the audit log.' }),

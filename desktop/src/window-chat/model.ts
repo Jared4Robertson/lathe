@@ -1,7 +1,7 @@
 // Window chat (LA-PLT-A16): each product window's chat with Claude Code, by folder, while the shell runs: the session
 // it runs (chatSession.ts), the chat state its page last got and the timer that sends the next patch, and its listening
 // for the voice (voice.ts); the stops in progress, which quitting waits for; and each folder's chat permission mode
-// (LA-PLT-UC19-R09), kept across launches, so a new chat there starts in the mode its last one had.
+// (LA-PLT-UC45-R01), kept across launches, so a new chat there starts in the mode its last one had.
 import path from 'node:path';
 import { DEFAULT_MODE, isChatMode, type ChatMode, type ChatState } from '../chat.ts';
 import type { ChatSession } from '../chatSession.ts';

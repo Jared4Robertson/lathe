@@ -57,7 +57,7 @@ describe('LA-PRD-UC23-R01-T54 each Interface command changes one interface throu
 
   it('reads an interface with the roles that use it, the patterns it follows and the use cases it offers and does not, by capability', async () => {
     const store = await everyKindStore();
-    await runCommand(store, ADD_USE_CASE, { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'Bring a borrowed tool back.', actors: ['Member'] });
+    await runCommand(store, ADD_USE_CASE, { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'Bring a borrowed tool back.', result_id: 'TL-LEND-QRY01', actors: ['Member'] });
     await runCommand(store, CHANGE_INTERFACE, { id: 'TL-IF01', actors: ['Member', 'Librarian'] });
     const page = runQuery(store, GET_PRODUCT, { id: 'TL' }) as ReturnType<typeof GET_PRODUCT.run>;
     expect(page.interfaces).toEqual([

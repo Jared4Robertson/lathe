@@ -89,8 +89,19 @@ function productChoices(index: RecordIndex, useCase: UseCasePage, kinds: readonl
   return [...index.byId.values()].filter((r) => kinds.includes(r.kind) && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 }
 
-/** The use case's long text, shared by its Add and Change. */
-const USE_CASE_HINTS = { goal: LONG, notes: LONG };
+/**
+ * The use case's fields, shared by its Add and Change: its long text, and its required result, one of its product's
+ * commands and queries (LA-STD-MODELING-R15), named Result.
+ */
+const useCaseHints = (index: RecordIndex, product: string | null | undefined) => ({
+  goal: LONG,
+  notes: LONG,
+  result_id: {
+    label: 'Result',
+    choices: [...index.byId.values()].filter((r) => (r.kind === 'command' || r.kind === 'query') && r.product === product).map((r) => ({ id: r.id, title: r.title })),
+    description: 'The one command its actor invokes (a command use case) or the one query they ask (a query use case).',
+  },
+});
 
 /** The fields each kind's Add and Change take, from their inputs (Change leaves out the ID, Add the parent). */
 function fieldsOf(context: FormContext, kind: UseCaseKind, adding: boolean): FieldSpec[] {
@@ -99,7 +110,7 @@ function fieldsOf(context: FormContext, kind: UseCaseKind, adding: boolean): Fie
   const startsFrom = { choices: productChoices(index, useCase, ['test_data_set']) };
   switch (kind) {
     case 'use_case':
-      return addOrChangeFields(adding, F['/api/use-case/add-use-case'], 'capability_id', F['/api/use-case/change-use-case'], USE_CASE_HINTS);
+      return addOrChangeFields(adding, F['/api/use-case/add-use-case'], 'capability_id', F['/api/use-case/change-use-case'], useCaseHints(index, index.byId.get(useCase.useCase.id)?.product));
     case 'uc_requirement':
       return addOrChangeFields(adding, F['/api/use-case/add-uc-requirement'], 'use_case_id', F['/api/use-case/change-uc-requirement'], { statement: LONG });
     case 'flow':
@@ -332,7 +343,7 @@ export function AddUseCaseForm({ index, parent, onDone, title, afterAdd }: { ind
   useEffect(() => {
     if (next.state === 'read') setDraft((d) => (d.text.id ? d : { ...d, text: { ...d.text, id: next.answer } }));
   }, [next]);
-  const specs = formFields(USE_CASE_FIELDS['/api/use-case/add-use-case'], ['capability_id'], USE_CASE_HINTS);
+  const specs = formFields(USE_CASE_FIELDS['/api/use-case/add-use-case'], ['capability_id'], useCaseHints(index, index.byId.get(parent)?.product));
   const submit = async () => {
     const input = addInput(index, specs, draft, { capability_id: parent });
     const answer = await send(writer, '/api/use-case/add-use-case', input);

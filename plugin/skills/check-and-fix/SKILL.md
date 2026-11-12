@@ -48,13 +48,15 @@ Every accidental record must be derived, provided or a fill (`accidental-not-acc
 
 ## Use case line checks
 
-A use case is one goal one actor sets out to finish in one sitting, which leaves something the business cares about true (LA-STD-MODELING-R15). Three warnings read the line:
+A use case is one role invoking one command, or asking one query: its result (LA-STD-MODELING-R15). Five checks read the line:
 
-- `use-case-changes-many-aggregates`: the use case's actors' own steps send commands of more than one aggregate, counted per interface that offers it (its shared steps and that interface's variants). Queries, steps on a path named refused and another actor's writes are not counted. Split it by goal; make the later change a policy that hears the first's event; make another actor's write the trigger, not a step; write a link from the record that owns it; or make the goals a journey (`discover-outcomes`).
-- `use-case-title-joins-goals`: the title holds "and", "or" or a list outside a "with" phrase. Split it into a use case per goal, or name the parts of one thing with "with" ("Write a use case with its flow and tests").
-- `another-actor-writes-in-a-step`: a step whose subject is a role that is not one of the use case's actors sends a command. Start the flow where the use case's actors take over, or make the write a use case of its own and string the two in a journey.
+- `use-case-invokes-another-command` (error): a step, on any path or interface and whoever its subject, invokes a command that is not the use case's result. Split it: make the command its own use case, strung to this one in a journey when one waits on the other (`discover-outcomes`), or the command of a policy when the product does it on its own. The store refuses a write that adds one; unlink a step before you change the result away from its command.
+- `use-case-identity-taken` (error): two use cases of a product share their first actor and their result. Merge the later into the earlier, moving its requirements, steps and tests. The store refuses a write that makes two share both.
+- `use-case-result-not-invoked` (error): through some interface that offers it, no step of the main path invokes the result. Link the main-path step that invokes it, or make the result what the main path really ends in.
+- `use-case-not-done` (error): a query use case's last main-path step that invokes anything asks something other than its result. Unlink the trailing query, make it a use case of its own, or make it the result. A command use case may ask queries after its result.
+- `use-case-title-off-result` (warning): a command use case's title does not start with its command's verb. Retitle the use case with its command's verb, or rename the command when its verb is the one that is off.
 
-Fix the use case, not the step's wording: rewording a step so the check stops reading it hides the second goal.
+Fix the use case, not the link: unlinking a step that does invoke a second command hides the second use case.
 
 ## Journey checks
 

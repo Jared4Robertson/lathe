@@ -183,7 +183,7 @@ function Shell() {
   }, [focusChat]);
   const voice = useWindowVoice(chatBridge ? desktopBridge()?.voice ?? null : null, wakeChat, announce);
   useCommand('dictate', () => { wakeChat(); voice?.toggle(); }, !!voice && voice.unavailable === null);
-  // Point and ask (LA-PLT-UC22-R01): the box pointed at, or the one the native menu was opened on, is attached to the message.
+  // Point and ask (LA-PLT-UC19-R13): the box pointed at, or the one the native menu was opened on, is attached to the message.
   const attach = (id: string | null) => {
     if (!id) { announce('Select a box or focus a record first'); return; }
     chatChips.add(id);

@@ -9,7 +9,7 @@ import { add, gapsOf, LENDING, link, problemsOf, product, removeProducts } from 
 afterAll(removeProducts);
 
 describe('Helper files from the command line', () => {
-  it('LA-TRC-UC25-FL-T trace code split across helper files', async () => {
+  it('LA-STD-TRACEABILITY-R02-T06 trace code split across helper files', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,

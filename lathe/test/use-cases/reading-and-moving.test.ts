@@ -203,14 +203,14 @@ const LINKED: [string, string][] = [
  * and the records it links to that move with it in the same change.
  */
 const MOVES: { test: string; move: string; id: string; to: string; under?: string[]; with?: [string, string][] }[] = [
-  { test: 'LA-PRD-UC34-R03-T01', move: 'extension-record move-extension-record', id: 'TL-LEND-MOD01', to: 'TL-CAT-MOD01' },
-  { test: 'LA-MOD-UC10-R82-T01', move: 'aggregate move-aggregate', id: 'TL-LEND-A1', to: 'TL-CAT-A1', under: ['TL-CAT-EN01', 'TL-CAT-CMD01'], with: [...LINKED, ['specification move-specification', 'TL-LEND-SP01'], ['read-model move-read-model', 'TL-LEND-RM01']] },
-  { test: 'LA-MOD-UC20-R05-T01', move: 'specification move-specification', id: 'TL-LEND-SP01', to: 'TL-CAT-SP01', under: ['TL-CAT-SP01-PR'], with: [...LINKED, ['aggregate move-aggregate', 'TL-LEND-A1'], ['read-model move-read-model', 'TL-LEND-RM01']] },
-  { test: 'LA-MOD-UC21-R03-T01', move: 'read-model move-read-model', id: 'TL-LEND-RM01', to: 'TL-CAT-RM01', under: ['TL-CAT-QRY01', 'TL-CAT-RM01-PJ', 'TL-CAT-RM01-RD'], with: [...LINKED, ['aggregate move-aggregate', 'TL-LEND-A1'], ['specification move-specification', 'TL-LEND-SP01']] },
-  { test: 'LA-TEC-UC29-R03-T01', move: 'entry-point move-entry-point', id: 'TL-LEND-ENTRY01', to: 'TL-CAT-ENTRY01' },
-  { test: 'LA-TEC-UC30-R03-T01', move: 'tooling move-tooling', id: 'TL-LEND-TOOL01', to: 'TL-CAT-TOOL01' },
-  { test: 'LA-TEC-UC32-R04-T01', move: 'data-store move-data-store', id: 'TL-LEND-STORE02', to: 'TL-CAT-STORE02' },
-  { test: 'LA-TST-UC13-R11-T01', move: 'test-data-set move-test-data-set', id: 'TL-LEND-TD01', to: 'TL-CAT-TD01' },
+  { test: 'LA-PRD-UC50-R01-T01', move: 'extension-record move-extension-record', id: 'TL-LEND-MOD01', to: 'TL-CAT-MOD01' },
+  { test: 'LA-MOD-UC42-R01-T01', move: 'aggregate move-aggregate', id: 'TL-LEND-A1', to: 'TL-CAT-A1', under: ['TL-CAT-EN01', 'TL-CAT-CMD01'], with: [...LINKED, ['specification move-specification', 'TL-LEND-SP01'], ['read-model move-read-model', 'TL-LEND-RM01']] },
+  { test: 'LA-MOD-UC47-R01-T01', move: 'specification move-specification', id: 'TL-LEND-SP01', to: 'TL-CAT-SP01', under: ['TL-CAT-SP01-PR'], with: [...LINKED, ['aggregate move-aggregate', 'TL-LEND-A1'], ['read-model move-read-model', 'TL-LEND-RM01']] },
+  { test: 'LA-MOD-UC51-R01-T01', move: 'read-model move-read-model', id: 'TL-LEND-RM01', to: 'TL-CAT-RM01', under: ['TL-CAT-QRY01', 'TL-CAT-RM01-PJ', 'TL-CAT-RM01-RD'], with: [...LINKED, ['aggregate move-aggregate', 'TL-LEND-A1'], ['specification move-specification', 'TL-LEND-SP01']] },
+  { test: 'LA-TEC-UC38-R01-T01', move: 'entry-point move-entry-point', id: 'TL-LEND-ENTRY01', to: 'TL-CAT-ENTRY01' },
+  { test: 'LA-TEC-UC40-R01-T01', move: 'tooling move-tooling', id: 'TL-LEND-TOOL01', to: 'TL-CAT-TOOL01' },
+  { test: 'LA-TEC-UC43-R01-T01', move: 'data-store move-data-store', id: 'TL-LEND-STORE02', to: 'TL-CAT-STORE02' },
+  { test: 'LA-TST-UC22-R01-T01', move: 'test-data-set move-test-data-set', id: 'TL-LEND-TD01', to: 'TL-CAT-TD01' },
 ];
 
 describe('Moving a record to another domain', () => {
@@ -223,7 +223,7 @@ describe('Moving a record to another domain', () => {
     });
   }
 
-  it('LA-TST-UC13-R11-T01 the tests that start from a moved data set name its new ID', async () => {
+  it('LA-TST-UC22-R01-T01 the tests that start from a moved data set name its new ID', async () => {
     const store = await storeOf();
     await runCommand(store, command('test-data-set move-test-data-set'), { id: 'TL-LEND-TD01', domain_id: 'TL-CAT' });
     expect(store.rows('starts_from')).toContainEqual({ source_id: 'TL-INT01-T01', target_id: 'TL-CAT-TD01' });
@@ -240,7 +240,7 @@ async function refusal(store: Store, name: string, input: unknown): Promise<Stor
   throw new Error(`${name} was not refused`);
 }
 
-describe('LA-MOD-UC31-R03-T01 a storage requirement and its tests change, a test goes, and the requirement goes with its tests', () => {
+describe('LA-MOD-UC57-R01-T01 a storage requirement and its tests change, a test goes, and the requirement goes with its tests', () => {
   it('changes the statement and the test, removes a second test, then removes the requirement whole', async () => {
     const store = await storeOf();
     await runCommand(store, command('storage-requirement change-storage-requirement'), { id: 'TL-LEND-A1-SR01', statement: 'A loan MUST be saved with its event in one transaction.' });
@@ -256,7 +256,7 @@ describe('LA-MOD-UC31-R03-T01 a storage requirement and its tests change, a test
   });
 });
 
-describe('LA-TEC-UC32-R03-T01 a data store changes, one a repository is kept in cannot go, and one nothing is kept in goes', () => {
+describe('LA-TEC-UC41-R01-T01 a data store changes, one a repository is kept in cannot go, and one nothing is kept in goes', () => {
   it('changes the description, refuses removing the database, and removes the cache', async () => {
     const store = await storeOf();
     await runCommand(store, command('data-store change-data-store'), { id: 'TL-STORE01', description: "The library's PostgreSQL database." });

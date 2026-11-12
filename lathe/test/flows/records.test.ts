@@ -1,4 +1,4 @@
-// The flows of the records themselves (LA-PRD-UC37, UC38, UC39), walked through the package API (LA-IF06) as an Agent's
+// The records' own rules (LA-STD-MODELING-R16 to R19, LA-STD-ENGINEERING-R05 and R06), walked through the package API (LA-IF06) as an Agent's
 // script would: loadWorkspace on a product written as the store writes it (helpers.ts complete(), a record of nearly
 // every kind). Each record has an ID of its own under one parent, which gives it its product and domain; records are
 // related only by links the schema allows; and each record is one line of its kind's data file, whatever the order of
@@ -23,7 +23,7 @@ const linkKey = (l: SpecLink) => `${l.source} ${l.relation} ${l.target}`;
 const sortedLinks = (links: readonly SpecLink[]) => links.map(linkKey).sort();
 
 describe('The records\' own flows through the package API', () => {
-  it('LA-PRD-UC37-FL-T every record loads with an ID no other record has, under one parent that gives it its product and domain', async () => {
+  it('LA-STD-MODELING-R16-T03 every record loads with an ID no other record has, under one parent that gives it its product and domain', async () => {
     const root = await build(complete());
     // S01: the Agent's script loads the workspace.
     const ws = await loadWorkspace(root);
@@ -65,7 +65,7 @@ describe('The records\' own flows through the package API', () => {
     expect(records.get('EX-LEND-CAP01')).toMatchObject({ parent: 'EX-LEND', product: 'EX', domain: 'EX-LEND' });
   });
 
-  it('LA-PRD-UC38-FL-T records are related only by links the schema allows between two records of one product, and an ID in text stays text', async () => {
+  it('LA-STD-MODELING-R18-T04 records are related only by links the schema allows between two records of one product, and an ID in text stays text', async () => {
     const root = await build(complete());
     // S01: the Agent's script loads the workspace.
     const ws = await loadWorkspace(root);
@@ -101,7 +101,7 @@ describe('The records\' own flows through the package API', () => {
     expect(again.problems.map((p) => `${p.check} ${p.record}: ${p.message}`).sort()).toEqual(ws.problems.map((p) => `${p.check} ${p.record}: ${p.message}`).sort());
   });
 
-  it('LA-PRD-UC39-FL-T LA-PRD-UC39-R02-T01 each record is one line of its kind\'s data file, and the same data with its lines and fields reversed, next to a README, means the same', async () => {
+  it('LA-STD-ENGINEERING-R06-T01 each record is one line of its kind\'s data file, and the same data with its lines and fields reversed, next to a README, means the same', async () => {
     const root = await build(complete());
     // S01: the Agent's script loads the workspace from the data files.
     const ws = await loadWorkspace(root);

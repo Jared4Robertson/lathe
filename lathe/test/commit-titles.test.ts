@@ -1,4 +1,4 @@
-// LA-STD-ENGINEERING-R01 (Land a change on main, LA-CHK-UC10, through the Git commit-msg hook, LA-INT66): each change lands on main as one squash commit whose title carries a Conventional Commits
+// LA-STD-ENGINEERING-R01 (the commit-msg hook and lathe/scripts/check-commits.ts, LA-CHK-TOOL01): each change lands on main as one squash commit whose title carries a Conventional Commits
 // type, checked by lathe/scripts/check-commits.ts. Its rule on titles, its two entry points (--title, as scripts/ci.sh and
 // the PR title check pass it, and --message-file), and the commit-msg hook in a temporary git repo made here, which
 // gets its author from the environment, reads no machine git config and sets core.hooksPath in its own config only.
@@ -36,7 +36,7 @@ function check(cwd: string, ...args: string[]) {
   return spawnSync(process.execPath, [SCRIPT, ...args], { cwd, env: GIT_ENV, encoding: 'utf8' });
 }
 
-describe('LA-STD-ENGINEERING-R01-T01 LA-CHK-UC10-R01-T01 the squash commit a change lands on main with carries a type', () => {
+describe('LA-STD-ENGINEERING-R01-T01 the squash commit a change lands on main with carries a type', () => {
   it('passes typed titles, with or without a scope and a breaking mark', () => {
     for (const title of [
       'feat(journeys): a journey runs from a trigger to a result',
@@ -78,7 +78,7 @@ describe('LA-STD-ENGINEERING-R01-T01 LA-CHK-UC10-R01-T01 the squash commit a cha
     expect(check(dir).status).toBe(2);
   });
 
-  it('LA-INT66-T01 LA-CHK-UC10-FL-T the commit-msg hook refuses an untyped title on main and lets a branch\'s commits be free-form', () => {
+  it('the commit-msg hook refuses an untyped title on main and lets a branch\'s commits be free-form', () => {
     const repo = temp();
     mkdirSync(path.join(repo, 'lathe', 'scripts'), { recursive: true });
     cpSync(SCRIPT, path.join(repo, 'lathe', 'scripts', 'check-commits.ts'));

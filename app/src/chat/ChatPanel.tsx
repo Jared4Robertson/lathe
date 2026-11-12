@@ -47,7 +47,7 @@ import './ChatPanel.css';
 // More around the composer: records the Owner pointed at ("Ask Claude about this") are chips sent as context (chips.ts);
 // images pasted, or the stage as it is drawn, go with the message (images.ts); the model and effort picker sits beside the
 // mode (ModelMenu.tsx); typing "/" lists the skills and slash commands (slash.ts); a message typed while Claude works is
-// queued and sent in order (LA-PLT-UC22-R04); a turn's changes can be reviewed on the stage or undone (Review.tsx).
+// queued and sent in order (LA-PLT-UC47-R01); a turn's changes can be reviewed on the stage or undone (Review.tsx).
 // When Claude Code is not signed in, before a session or when a turn says so, the panel signs it in (SignIn.tsx,
 // LA-PLT-UC30); the session picker's foot signs it out, so another account can sign in.
 // The shell runs the CLI (desktop/src/chatSession.ts); the panel only draws and asks.
@@ -561,7 +561,7 @@ const ChatEntry = memo(function ChatEntry({ item, index, answer, tabIndex, onFoc
 /** Claude's text as Markdown, each record ID it names a link that opens the record on the stage. */
 function AssistantText({ text, index }: { text: string; index: RecordIndex | null }) {
   const links = useMemo(() => (index ? proseLinks(index, text, '') : undefined), [index, text]);
-  // A record ID focuses the stage on a plain click (Markdown does that); Cmd or Ctrl+click, or a middle-click, opens it in a new tab (LA-PLT-UC21-R03).
+  // A record ID focuses the stage on a plain click (Markdown does that); Cmd or Ctrl+click, or a middle-click, opens it in a new tab (LA-EXP-UC10-R10).
   const openNew = (e: React.MouseEvent<HTMLDivElement>) => {
     const a = (e.target as HTMLElement).closest?.('a.mention');
     const to = a?.getAttribute('href');

@@ -47,7 +47,7 @@ check('journey-of-one-use-case', () => {
 
 check('handoff-not-connected', () => {
   it("LA-PRD-UC33-R08-T01 a handoff whose policy hears no event the step before it leads to is a warning, once that step's use case has a flow", async () => {
-    // The fixture's handoff follows Borrow a tool, whose flow opens a loan, which raises the event its policy hears.
+    // The fixture's handoff follows Borrow a tool, whose result lends the tool, which raises the event its policy hears.
     expect(ofCheck(await loadData(withJourney()), 'handoff-not-connected')).toEqual([]);
     const deaf = changing(withJourney(), 'hears', (r) => r.source_id === 'EX-LEND-PO01', { target_id: 'EX-LEND-EV02' });
     expect(ofCheck(await loadData(deaf), 'handoff-not-connected')).toEqual([
@@ -56,9 +56,12 @@ check('handoff-not-connected', () => {
         message: 'Journey step EX-JR01-S03 hands off to policy EX-LEND-PO01, which hears no event that EX-LEND-UC01, carried out by the step before it (EX-JR01-S02), leads to; link the step to the policy that follows EX-LEND-UC01, or have EX-LEND-PO01 hear the event it raises.',
       },
     ]);
+    // What the use case before leads to is its result: its flow invoking the command is not enough once its result is a query.
+    const asking = changing(withJourney(), 'use_case', (r) => r.id === 'EX-LEND-UC01', { result_id: 'EX-LEND-QRY01' });
+    expect(records(ofCheck(await loadData(asking), 'handoff-not-connected'))).toEqual(['EX-JR01-S03']);
     // A use case with no flow yet leads nowhere to read.
     const unflowed = changing(
-      adding(deaf, { use_case: [{ id: 'EX-LEND-UC03', title: 'Renew a loan', capability_id: 'EX-LEND-CAP01', goal: 'A member keeps a tool longer.' }] }),
+      adding(deaf, { use_case: [{ id: 'EX-LEND-UC03', title: 'Renew a loan', capability_id: 'EX-LEND-CAP01', goal: 'A member keeps a tool longer.', result_id: 'EX-LEND-CMD01' }] }),
       'carries_out', (r) => r.source_id === 'EX-JR01-S02', { target_id: 'EX-LEND-UC03' },
     );
     expect(ofCheck(await loadData(unflowed), 'handoff-not-connected')).toEqual([]);

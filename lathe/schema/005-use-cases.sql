@@ -23,13 +23,15 @@ CREATE TABLE use_case (
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   capability_id VARCHAR NOT NULL REFERENCES capability (id),
   goal VARCHAR NOT NULL CHECK (trim(goal) <> ''),
+  result_id VARCHAR NOT NULL REFERENCES operation (id),
   notes VARCHAR
 );
-COMMENT ON TABLE use_case IS 'An actor''s goal: its actors (use_case_actor rows), its UC requirements and its flow, the same through every interface that offers it. It changes nothing itself; its flow''s steps invoke commands and queries.';
+COMMENT ON TABLE use_case IS 'One role invoking one command, or asking one query, with the steps that lead to it: its result names the operation, and the use case is a command use case or a query use case by the result''s kind. It has its actors (use_case_actor rows, the first its main actor), its UC requirements and its flow, the same through every interface that offers it. No two use cases of a product share their first actor and their result.';
 COMMENT ON COLUMN use_case.id IS 'The use case''s ID, such as TL-LEND-UC01.';
-COMMENT ON COLUMN use_case.title IS 'What the actor does, such as Borrow a tool.';
+COMMENT ON COLUMN use_case.title IS 'What the actor does: a command use case starts with its command''s verb (Borrow a tool); a query use case names the question (See the tools waiting for repair).';
 COMMENT ON COLUMN use_case.capability_id IS 'The capability it sits in.';
 COMMENT ON COLUMN use_case.goal IS 'What the actor wants to reach and from where they start, in a sentence or a short paragraph.';
+COMMENT ON COLUMN use_case.result_id IS 'The use case''s result: the one command its actor invokes (a command use case), which its main path invokes and after which it only asks queries, or the one query they ask (a query use case), at its main path''s last step that invokes anything. Its kind is the operation''s.';
 COMMENT ON COLUMN use_case.notes IS 'Longer notes, such as the order in which refusals are reported.';
 
 CREATE TABLE use_case_actor (

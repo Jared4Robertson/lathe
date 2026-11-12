@@ -18,9 +18,9 @@ capabilities, their use cases, the code and the tests. An outcome names what mea
 or a record of a product's own kind such as a report, or it says how it is measured outside the code.
 
 **Words.** What clean architecture calls a use case or an interactor is what Lathe calls a command handler
-(`command_handler`): the application service that carries out one command. A Lathe use case (`use_case`) is the
-actor's goal, one level up: its one flow's steps invoke commands and queries, the same through every interface that
-offers it.
+(`command_handler`): the application service that carries out one command. A Lathe use case (`use_case`) is one
+role invoking one command, or asking one query: its result. Its one flow's steps lead to it, the same through every
+interface that offers it.
 
 **Checks** are rows of the `check` table. Each holds the query that finds its problems: a SELECT over the tables
 returning `severity`, `record` and `message` for each problem. An error means the data is broken; a warning is
@@ -174,17 +174,17 @@ An outcome is a change someone would miss, with a measure and a target by a date
 
 A journey whose steps carry out fewer than two use cases.
 
-A use case is one actor's goal reached in one sitting; a journey strings several of them, with the handoffs between, from a trigger to a result (LA-PRD-UC33-R07). A journey whose steps carry out fewer than two use cases, counting each use case once and each step that carries out nothing yet as a use case still to write, is a use case: its handoffs are that use case's policies. A journey with no step is left to the journey-without-main-path gap. Remove the journey and let its use case serve the outcome through its capability, or add the steps it is missing.
+A use case is one role's command or query; a journey strings several of them, with the handoffs between, from a trigger to a result (LA-PRD-UC33-R07). A journey whose steps carry out fewer than two use cases, counting each use case once and each step that carries out nothing yet as a use case still to write, is a use case: its handoffs are that use case's policies. A journey with no step is left to the journey-without-main-path gap. Remove the journey and let its use case serve the outcome through its capability, or add the steps it is missing.
 
 <a id="check-handoff-not-connected"></a>
 
 ### `handoff-not-connected`
 
-**Warning** · Lathe's · Kinds: [`journey_step`](#kind-journey_step), [`policy`](#kind-policy), [`use_case`](#kind-use_case), [`flow`](#kind-flow)
+**Warning** · Lathe's · Kinds: [`journey_step`](#kind-journey_step), [`policy`](#kind-policy), [`use_case`](#kind-use_case), [`flow`](#kind-flow), [`command`](#kind-command)
 
 A handoff step whose policy hears no event the step before it leads to.
 
-A handoff step carries out a policy: whenever an event, then a command, with the product itself acting (LA-PRD-UC33-R08). It follows the step before it on its path only when its policy hears an event that step leads to: an event raised by a command the flow of the use case before it invokes, or by the command of the policy before it. Steps are compared by path (trimmed, in any letter case) and position. A handoff first on its path, or after a step that carries out nothing yet, is not read; nor is one after a use case with no flow yet, since records are written stage by stage. Link the step to the policy that follows, or have its policy hear the event the step before leads to.
+A handoff step carries out a policy: whenever an event, then a command, with the product itself acting (LA-PRD-UC33-R08). It follows the step before it on its path only when its policy hears an event that step leads to: an event raised by the result of the use case before it, when that is a command, or by the command of the policy before it. Steps are compared by path (trimmed, in any letter case) and position. A handoff first on its path, or after a step that carries out nothing yet, is not read; nor is one after a use case with no flow yet, since records are written stage by stage. Link the step to the policy that follows, or have its policy hear the event the step before leads to.
 
 <a id="check-outcome-duration-without-journey"></a>
 
@@ -293,7 +293,7 @@ A record the domain keeps, with an identity: its aggregate's root or one of its 
 - **Links out:** Has many ([`has_many`](#relation-has_many)), Has one ([`has_one`](#relation-has_one))
 - **Links in:** Questions about this ([`about`](#relation-about)), Part of ([`has_many`](#relation-has_many)), Part of ([`has_one`](#relation-has_one))
 - **Parts:** [`entity_field`](#table-entity_field)
-- **Checks:** [`entity-unreferenced`](#check-entity-unreferenced), [`aggregate-too-large`](#check-aggregate-too-large), [`use-case-changes-many-aggregates`](#check-use-case-changes-many-aggregates)
+- **Checks:** [`entity-unreferenced`](#check-entity-unreferenced), [`aggregate-too-large`](#check-aggregate-too-large)
 - **Gaps:** [`entity-without-fields`](#gap-entity-without-fields), [`entity-without-data-model`](#gap-entity-without-data-model), [`entity-without-table`](#gap-entity-without-table)
 
 <a id="table-entity"></a>
@@ -558,8 +558,8 @@ A request to change exactly one aggregate: the one its entity belongs to. It sit
 - **ID:** `<P>-<D>-CMD<nn>`, such as `TL-LEND-CMD01`; it starts with its domain's ID
 - **Links out:** Calls ([`calls`](#relation-calls)), Checks ([`checks`](#relation-checks)), Raises ([`raises`](#relation-raises))
 - **Links in:** Questions about this ([`about`](#relation-about)), Invoked by ([`invokes`](#relation-invokes)), Presented in ([`presents`](#relation-presents))
-- **Checks:** [`use-case-changes-many-aggregates`](#check-use-case-changes-many-aggregates), [`another-actor-writes-in-a-step`](#check-another-actor-writes-in-a-step)
-- **Gaps:** [`command-without-handler`](#gap-command-without-handler)
+- **Checks:** [`handoff-not-connected`](#check-handoff-not-connected), [`use-case-invokes-another-command`](#check-use-case-invokes-another-command), [`use-case-title-off-result`](#check-use-case-title-off-result)
+- **Gaps:** [`command-without-use-case`](#gap-command-without-use-case), [`command-without-handler`](#gap-command-without-handler)
 
 <a id="table-command"></a>
 
@@ -643,7 +643,7 @@ A question asked of one read model, its parent. It changes nothing, and may sele
 - **ID:** `<P>-<D>-QRY<nn>`, such as `TL-LEND-QRY01`; it starts with its domain's ID
 - **Links out:** Calls ([`calls`](#relation-calls)), Selects by ([`selects_by`](#relation-selects_by))
 - **Links in:** Questions about this ([`about`](#relation-about)), Invoked by ([`invokes`](#relation-invokes)), Presented in ([`presents`](#relation-presents))
-- **Checks:** [`query-title-verb`](#check-query-title-verb)
+- **Checks:** [`query-title-verb`](#check-query-title-verb), [`use-case-not-done`](#check-use-case-not-done)
 - **Gaps:** [`query-without-handler`](#gap-query-without-handler)
 
 <a id="table-query"></a>
@@ -959,7 +959,7 @@ An ordered slice of a domain that groups its use cases, such as Catalog or Lendi
 
 ### Use case (`use_case`)
 
-An actor's goal: its actors (use_case_actor rows), its UC requirements and its flow, the same through every interface that offers it. It changes nothing itself; its flow's steps invoke commands and queries.
+One role invoking one command, or asking one query, with the steps that lead to it: its result names the operation, and the use case is a command use case or a query use case by the result's kind. It has its actors (use_case_actor rows, the first its main actor), its UC requirements and its flow, the same through every interface that offers it. No two use cases of a product share their first actor and their result.
 
 - **Parents:** [`capability`](#kind-capability) (`capability_id`)
 - **Children:** [`uc_requirement`](#kind-uc_requirement), [`flow`](#kind-flow)
@@ -969,7 +969,7 @@ An actor's goal: its actors (use_case_actor rows), its UC requirements and its f
 - **Links out:** Follows ([`follows`](#relation-follows))
 - **Links in:** Questions about this ([`about`](#relation-about)), Carried out in ([`carries_out`](#relation-carries_out)), Offered through ([`offers`](#relation-offers)), Performed by ([`performs`](#relation-performs))
 - **Parts:** [`use_case_actor`](#table-use_case_actor)
-- **Checks:** [`pattern-setting-missing`](#check-pattern-setting-missing), [`pattern-not-followed`](#check-pattern-not-followed), [`title-breaks-convention`](#check-title-breaks-convention), [`flow-title-off-pattern`](#check-flow-title-off-pattern), [`journey-of-one-use-case`](#check-journey-of-one-use-case), [`handoff-not-connected`](#check-handoff-not-connected), [`use-case-changes-many-aggregates`](#check-use-case-changes-many-aggregates), [`use-case-title-joins-goals`](#check-use-case-title-joins-goals), [`another-actor-writes-in-a-step`](#check-another-actor-writes-in-a-step)
+- **Checks:** [`pattern-setting-missing`](#check-pattern-setting-missing), [`pattern-not-followed`](#check-pattern-not-followed), [`title-breaks-convention`](#check-title-breaks-convention), [`flow-title-off-pattern`](#check-flow-title-off-pattern), [`journey-of-one-use-case`](#check-journey-of-one-use-case), [`handoff-not-connected`](#check-handoff-not-connected), [`use-case-invokes-another-command`](#check-use-case-invokes-another-command), [`use-case-result-not-invoked`](#check-use-case-result-not-invoked), [`use-case-not-done`](#check-use-case-not-done), [`use-case-identity-taken`](#check-use-case-identity-taken), [`use-case-title-off-result`](#check-use-case-title-off-result)
 - **Gaps:** [`use-case-without-actor`](#gap-use-case-without-actor), [`use-case-without-requirement`](#gap-use-case-without-requirement), [`use-case-without-flow`](#gap-use-case-without-flow)
 
 <a id="table-use_case"></a>
@@ -977,9 +977,10 @@ An actor's goal: its actors (use_case_actor rows), its UC requirements and its f
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
 | `id` | VARCHAR → `record_id` | yes | The use case's ID, such as TL-LEND-UC01. |
-| `title` | VARCHAR | yes | What the actor does, such as Borrow a tool. |
+| `title` | VARCHAR | yes | What the actor does: a command use case starts with its command's verb (Borrow a tool); a query use case names the question (See the tools waiting for repair). |
 | `capability_id` | VARCHAR → [`capability`](#table-capability) | yes | The capability it sits in. |
 | `goal` | VARCHAR | yes | What the actor wants to reach and from where they start, in a sentence or a short paragraph. |
+| `result_id` | VARCHAR → `operation` | yes | The use case's result: the one command its actor invokes (a command use case), which its main path invokes and after which it only asks queries, or the one query they ask (a query use case), at its main path's last step that invokes anything. Its kind is the operation's. |
 | `notes` | VARCHAR | no | Longer notes, such as the order in which refusals are reported. |
 
 - **Key:** `id`
@@ -1047,7 +1048,7 @@ How its use case is carried out, whatever the interface: the steps on its main p
 - **ID:** `<use case>-FL`, such as `TL-LEND-UC01-FL`; it starts with its parent's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`step-order`](#check-step-order), [`flow-title-off-pattern`](#check-flow-title-off-pattern), [`handoff-not-connected`](#check-handoff-not-connected), [`use-case-changes-many-aggregates`](#check-use-case-changes-many-aggregates)
+- **Checks:** [`step-order`](#check-step-order), [`flow-title-off-pattern`](#check-flow-title-off-pattern), [`handoff-not-connected`](#check-handoff-not-connected)
 - **Gaps:** [`flow-without-main-path`](#gap-flow-without-main-path), [`flow-without-test`](#gap-flow-without-test)
 
 <a id="table-flow"></a>
@@ -1075,7 +1076,7 @@ One step of a flow, in order on its path, in the words of the people who take it
 - **ID:** `<flow>-S<nn>`, such as `TL-LEND-UC01-FL-S01`; it starts with its parent's ID
 - **Links out:** Exchanges with ([`exchanges_with`](#relation-exchanges_with)), Fulfills ([`fulfills`](#relation-fulfills)), Invokes ([`invokes`](#relation-invokes))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`step-order`](#check-step-order), [`step-unreached`](#check-step-unreached), [`use-case-changes-many-aggregates`](#check-use-case-changes-many-aggregates), [`another-actor-writes-in-a-step`](#check-another-actor-writes-in-a-step), [`step-repeated-per-interface`](#check-step-repeated-per-interface)
+- **Checks:** [`step-order`](#check-step-order), [`step-unreached`](#check-step-unreached), [`use-case-invokes-another-command`](#check-use-case-invokes-another-command), [`use-case-result-not-invoked`](#check-use-case-result-not-invoked), [`use-case-not-done`](#check-use-case-not-done), [`step-repeated-per-interface`](#check-step-repeated-per-interface)
 - **Gaps:** [`record-untraced`](#gap-record-untraced)
 
 <a id="table-flow_step"></a>
@@ -1266,9 +1267,9 @@ A use case's flow is the same through every interface that offers it, and each i
 
 **Warning** · Lathe's · Kinds: [`capability`](#kind-capability), [`use_case`](#kind-use_case), [`journey`](#kind-journey), [`interface`](#kind-interface)
 
-A capability, use case or journey title that breaks its naming convention: an interface named in it, a capability starting with The or an -ing word, or a list in a capability or journey.
+A capability, use case or journey title that breaks its naming convention: an interface named in it, a capability starting with The or an -ing word, a list in a capability or journey, or a journey's CRUD verb over a record.
 
-A capability is named as a noun phrase for a lasting ability of the business, two to four words: subject and activity noun, such as Invoice management or Member registration, or a single noun when the area is clear on its own, such as Catalog or Lending. A use case is named for one goal of its actor, verb first: verb and object, such as Borrow a tool or Approve an invoice, two to six words. A journey is named the same way for the summary goal its steps reach together, verb first, such as Get a damaged tool back in lending. None names a screen, a tool or a technology: a use case happens through interfaces, with one flow each, so the interface belongs to its flows, not its title, and a journey's steps are use cases. The check reads only the mechanical parts, in any letter case and as whole words: a use case, journey or capability title that holds one of its product's interface titles or the words command line, CLI, desktop app, web app, MCP, API, agent tools, command layer or page (or their plurals); a capability title of two or more words that starts with "The" or with an -ing word (a word of five or more letters ending in -ing, other than the few that are not verbs, such as thing, string and evening), so a single noun such as Lending passes; a capability or journey title that holds a list, a comma followed later by "and" or "or" (a use case that joins goals, with a list or with "and" alone, is use-case-title-joins-goals's); and a use case or journey title that starts with a CRUD verb (create, read, update, delete, change or edit) and holds the word record, records or data, since a use case names the domain's own verb for its goal (Borrow a tool, Model an aggregate), never a verb over a record or data. A journey strings goals, so its "and" with no comma is not read, nor is a use case or journey title that does not start with a verb. Rename the capability, use case or journey by the convention.
+A capability is named as a noun phrase for a lasting ability of the business, two to four words: subject and activity noun, such as Invoice management or Member registration, or a single noun when the area is clear on its own, such as Catalog or Lending. A use case is named for its result, verb first, two to six words: a command use case with its command's verb (Borrow a tool), which use-case-title-off-result reads, and a query use case for the question (See the tools waiting for repair). A journey is named the same way for the summary goal its steps reach together, verb first, such as Get a damaged tool back in lending. None names a screen, a tool or a technology: a use case happens through interfaces, with one flow each, so the interface belongs to its flows, not its title, and a journey's steps are use cases. The check reads only the mechanical parts, in any letter case and as whole words: a use case, journey or capability title that holds one of its product's interface titles or the words command line, CLI, desktop app, web app, MCP, API, agent tools, command layer or page (or their plurals); a capability title of two or more words that starts with "The" or with an -ing word (a word of five or more letters ending in -ing, other than the few that are not verbs, such as thing, string and evening), so a single noun such as Lending passes; a capability or journey title that holds a list, a comma followed later by "and" or "or"; and a journey title that starts with a CRUD verb (create, read, update, delete, change or edit) and holds the word record, records or data, since a journey names the domain's own verb for its goal (Get a damaged tool back in lending), never a verb over a record or data; a command use case's verb is its command's (Change a check). A journey strings goals, so its "and" with no comma is not read, nor is a journey title that does not start with a verb. Rename the capability, use case or journey by the convention.
 
 <a id="check-flow-title-off-pattern"></a>
 
@@ -1290,35 +1291,35 @@ A pattern's slot with three or more fills, unless it says why its fills vary by 
 
 A fill is accidental complexity written by hand at a slot, against the slot's contract, and counted as accidental debt. Three fills of one slot are the same decision made three times: what they share can be stated once, in the pattern's fixed part or as a setting, and the code derived from it. One or two fills are not reported, since a pattern drawn from too few examples overfits. A slot whose fills are each its own record's business logic, such as a UI component, says so with the reason its fills vary by design, and is not reported; its page shows the reason. Make the pattern express what the fills repeat and generate them, split the slot where they truly differ, or, when no fill repeats another, give the slot the reason its fills vary by design.
 
-<a id="check-use-case-changes-many-aggregates"></a>
+<a id="check-use-case-invokes-another-command"></a>
 
-### `use-case-changes-many-aggregates`
+### `use-case-invokes-another-command`
 
-**Warning** · Lathe's · Kinds: [`use_case`](#kind-use_case), [`flow`](#kind-flow), [`flow_step`](#kind-flow_step), [`command`](#kind-command), [`entity`](#kind-entity)
+**Error** · Lathe's · Kinds: [`use_case`](#kind-use_case), [`flow_step`](#kind-flow_step), [`command`](#kind-command)
 
-A use case whose actors' own steps send commands of more than one aggregate.
+A flow step that invokes a command other than its use case's result.
 
-A use case is one goal one actor sets out to finish in one sitting, which leaves something the business cares about true, so it changes at most one aggregate, and reading changes none (LA-STD-MODELING-R15). The check counts the aggregates whose commands the steps of the use case's flow invoke, a command counting for the aggregate its entity belongs to, through each interface that offers the use case: the steps every interface takes and that interface's own variants (all the steps when no interface offers it). Three kinds of step are not counted: a query, which changes nothing; a step on a path named refused (trimmed, in any letter case), whose write is refused and changes nothing; and a step whose subject is a role of the product that is not one of the use case's actors (the title starts with, or has a clause starting with, the, a or an and the role's name), since another actor's write is what starts the use case, not part of it, and another-actor-writes-in-a-step reports it. The use case is reported once, naming the aggregates of the interface's version that changes most. Split the use case by goal; make the later change a policy that hears the event of the first; make another actor's write the trigger rather than a step; when a step only links two records, write the link from the record that owns it; or, when the goals wait on each other, make them a journey of use cases.
+A use case is one role invoking one command, or asking one query: its result (LA-STD-MODELING-R15). So the only command its flow invokes is its result, on any path (main, alternate or refused), in any interface's variant, and whoever the step's subject is; its other steps only ask queries or invoke nothing, and a query use case invokes no command at all. The check reads every step of every flow with an invokes link to a command that is not its use case's result. A second command is a second use case, strung to this one in a journey when one waits on the other, or the command of a policy when the product does it on its own. A write that adds such a link, or changes a result so a step has one, is refused; data already written is reported here.
 
-<a id="check-use-case-title-joins-goals"></a>
+<a id="check-use-case-result-not-invoked"></a>
 
-### `use-case-title-joins-goals`
+### `use-case-result-not-invoked`
 
-**Warning** · Lathe's · Kinds: [`use_case`](#kind-use_case)
+**Error** · Lathe's · Kinds: [`use_case`](#kind-use_case), [`flow_step`](#kind-flow_step)
 
-A use case title that joins goals with and, or, or a list.
+A use case whose main path, through some interface that offers it, never invokes its result.
 
-A use case is one goal of one actor (LA-STD-MODELING-R15), so its title names one goal, verb first (LA-STD-MODELING-R03), with no "and" and no list. The check reads each use case title, in any letter case, for the words and or or as whole words, or a comma, semicolon, ampersand, plus or slash, leaving out what follows the word with: a with phrase names the parts of the one thing the goal makes (Write a use case with its flow and tests), not a second goal. Split the use case into one per goal, each with its own requirements and flow, string them in a journey when one waits on the other, or name the parts with with when they are one thing. Capability and journey titles holding a list are title-breaks-convention's.
+A use case is done when its result is invoked (LA-STD-MODELING-R15), so through each interface that offers it, a step of its main path invokes the result. The main path is read per interface version: the steps every interface takes and that interface's own variants, or all the steps when no interface offers the use case. A path is compared trimmed and in any letter case. A use case with no flow, or a flow with no main path, is left to the use-case-without-flow and flow-without-main-path gaps. Link the main-path step where the actor invokes the result, or name as the result the operation the use case really ends in.
 
-<a id="check-another-actor-writes-in-a-step"></a>
+<a id="check-use-case-not-done"></a>
 
-### `another-actor-writes-in-a-step`
+### `use-case-not-done`
 
-**Warning** · Lathe's · Kinds: [`flow_step`](#kind-flow_step), [`use_case`](#kind-use_case), [`command`](#kind-command)
+**Error** · Lathe's · Kinds: [`use_case`](#kind-use_case), [`flow_step`](#kind-flow_step), [`query`](#kind-query)
 
-A flow step in which a role that is not one of its use case's actors sends a command.
+A query use case whose main path's last step that invokes anything asks something other than its result.
 
-A use case is the goal of its own actors (LA-STD-MODELING-R15). When a step's subject is another role of the product, and the step sends a command, another actor's write sits inside the use case: it is what starts the use case, or a use case of its own, not a step. The check reads each flow step that invokes a command for a role of the use case's product that is not one of its actors, as the step's subject: the title starting with, or holding a clause (after a comma, semicolon or colon) starting with, the, a or an and the role's name, in any letter case. Start the flow where the use case's actors take over and say what started it in the goal, or make the write a use case of its own actor and string the two in a journey. The write is not counted by use-case-changes-many-aggregates.
+A use case is done when its result is invoked (LA-STD-MODELING-R15). A command use case is done when its main path invokes its result, and the steps after it may only ask queries, such as one confirming the result: a command after it is use-case-invokes-another-command's. A query use case is done when it asks its result, so through each interface that offers it, the main path's last step that invokes anything asks the result. The main path is read per interface version: the steps every interface takes and that interface's own variants, or all the steps when no interface offers the use case; the last step is the one with the highest position. A version whose main path never asks the result is use-case-result-not-invoked's. Unlink the steps after the result, make them a use case of their own, or name as the result the query the use case really ends in.
 
 <a id="check-step-repeated-per-interface"></a>
 
@@ -1329,6 +1330,26 @@ A use case is the goal of its own actors (LA-STD-MODELING-R15). When a step's su
 Variant steps of one flow, on two or more interfaces, that invoke the same command or query.
 
 A use case's flow is the same through every interface that offers it: a step says what the actor does or learns, and each interface's version of the flow, derived from the steps, says how that interface carries it out. A variant step is for something only one interface does. Variant steps of two or more interfaces that invoke the same command or query are the same step written once per interface, each naming its interface's mechanism. Make them one step every interface does, saying what the actor does or learns, with the requirements each fulfilled; keep a variant only for what that one interface alone does.
+
+<a id="check-use-case-identity-taken"></a>
+
+### `use-case-identity-taken`
+
+**Error** · Lathe's · Kinds: [`use_case`](#kind-use_case)
+
+Two use cases of a product with the same first actor and the same result.
+
+A use case is one role invoking one command, or asking one query, so its identity is its first actor and its result (LA-STD-MODELING-R15): no two use cases of a product share both. Two that do are one use case written twice. The check reports the later ID, naming the earliest. Merge them: move the later one's requirements, steps and tests into the earlier and remove it. A write that adds a use case or an actor, or changes a result, so that two share both, is refused; data already written is reported here. Two use cases with the same result and different first actors are two use cases.
+
+<a id="check-use-case-title-off-result"></a>
+
+### `use-case-title-off-result`
+
+**Warning** · Lathe's · Kinds: [`use_case`](#kind-use_case), [`command`](#kind-command)
+
+A command use case whose title does not start with its command's verb.
+
+A command use case's title starts with its command's verb (LA-STD-MODELING-R15, LA-STD-NAMING-R02): Borrow a tool, for the command Borrow a tool. The check compares the first word of the use case's title with the first word of its result's title, trimmed and in any letter case. A query use case is titled for the question, with a verb of its own, and is not read. Retitle the use case with its command's verb, or rename the command when its verb is the one that is off.
 
 ### Coverage gaps: use cases
 
@@ -1341,6 +1362,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | <a id="gap-use-case-without-actor"></a>`use-case-without-actor` | [`use_case`](#kind-use_case), `use_case_actor` | A use case with no actor. |
 | <a id="gap-use-case-without-requirement"></a>`use-case-without-requirement` | [`use_case`](#kind-use_case), [`uc_requirement`](#kind-uc_requirement) | A use case with no UC requirement that follows no pattern. |
 | <a id="gap-journey-step-unlinked"></a>`journey-step-unlinked` | [`journey_step`](#kind-journey_step), [`use_case`](#kind-use_case), [`policy`](#kind-policy) | A journey step that carries out no use case or policy yet. |
+| <a id="gap-command-without-use-case"></a>`command-without-use-case` | [`command`](#kind-command), [`use_case`](#kind-use_case), [`policy`](#kind-policy) | A command no use case has as its result and no policy invokes. |
 | <a id="gap-use-case-without-flow"></a>`use-case-without-flow` | [`use_case`](#kind-use_case), [`flow`](#kind-flow) | A use case with no flow. |
 | <a id="gap-flow-without-main-path"></a>`flow-without-main-path` | [`flow`](#kind-flow), [`flow_step`](#kind-flow_step) | A flow with no step on its main path. |
 | <a id="gap-pattern-without-rule"></a>`pattern-without-rule` | [`pattern`](#kind-pattern), [`pattern_rule`](#kind-pattern_rule) | A pattern with no rule. |

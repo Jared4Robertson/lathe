@@ -57,7 +57,7 @@ describe('format reference pages', () => {
 
   const proveLaV01R02T01 = async () => {
     await openPage('format/kinds/use_case', 'Use case');
-    expect(within(card()).getByText(/^An actor's goal:/)).toBeInTheDocument();
+    expect(within(card()).getByText(/^One role invoking one command, or asking one query/)).toBeInTheDocument();
 
     const where = section('Where it sits');
     expect(fact(where, 'Stage')).toMatch(/^Use cases/);

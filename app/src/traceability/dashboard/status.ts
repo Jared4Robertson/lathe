@@ -1,7 +1,7 @@
 import { figureText, lowerLabel } from '../../plural';
 import { METRICS, type MetricFigure, type MetricKey } from '../../specs/metrics';
 
-// A product's Status (LA-TRC-UC26-R01): the ladder over the Dashboard's six tiles, read left to right: Status is the first
+// A product's Status (LA-V157-R05): the ladder over the Dashboard's six tiles, read left to right: Status is the first
 // tile that is not complete, and that tile wears the heavier border. There is no score and no weighting, so anyone can
 // check it against the row beneath it. Warnings do not move it; they are suggestions, shown on the Errors tile.
 

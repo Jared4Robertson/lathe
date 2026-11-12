@@ -1,4 +1,4 @@
-// What a write of an essential record is refused for (write-rules.ts, LA-CHK-UC08): naming technology its kind's group
+// What a write of an essential record is refused for (write-rules.ts, LA-STD-PRINCIPLES-R05): naming technology its kind's group
 // has no business with, and linking to an accidental record. Records already in the data are not refused until they
 // are written; accidental-in-essential keeps reporting them. Each starts from the complete product.
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
@@ -30,7 +30,7 @@ const essentialKind: Data = {
 };
 
 describe('a write of an essential record keeps accidental complexity out', () => {
-  it("LA-CHK-UC08-R04-T01 A write that adds an essential record, or changes its title or lead, naming technology its kind's group has no business with is refused with the word; one that leaves its text as it was is not", async () => {
+  it("LA-STD-PRINCIPLES-R05-T05 A write that adds an essential record, or changes its title or lead, naming technology its kind's group has no business with is refused with the word; one that leaves its text as it was is not", async () => {
     const store = await storeOf(complete());
     // Lathe's words for the domain model and use cases, and the product's own interfaces.
     expect(await reasons(store, 'use-case change-use-case', { id: 'EX-LEND-UC01', goal: 'A member clicks the borrow button.' })).toEqual([
@@ -76,7 +76,7 @@ describe('a write of an essential record keeps accidental complexity out', () =>
     await run(store, 'use-case change-use-case', { id: 'EX-LEND-UC02', actors: ['Librarian', 'Member'] });
   });
 
-  it('LA-CHK-UC08-R04-T02 The write refusal and accidental-in-essential read one list: every record the check reports is refused when the text it names the word in is written again', async () => {
+  it('LA-STD-PRINCIPLES-R05-T06 The write refusal and accidental-in-essential read one list: every record the check reports is refused when the text it names the word in is written again', async () => {
     let data = changing(complete(), 'use_case', (r) => r.id === 'EX-LEND-UC01', { goal: 'A member clicks the borrow button.' });
     data = changing(data, 'uc_requirement', (r) => r.id === 'EX-LEND-UC01-R01', { statement: 'The Web app MUST refuse a tool whose row says it is on loan.' });
     data = changing(data, 'view', () => true, { title: 'Catalog page', description: 'Every tool in a row, read from the JSON the database keeps.' });
@@ -103,7 +103,7 @@ describe('a write of an essential record keeps accidental complexity out', () =>
     }
   });
 
-  it('LA-CHK-UC08-R04-T03 A change is refused only for the text it sets: a record whose title names technology can still have its lead text changed', async () => {
+  it('LA-STD-PRINCIPLES-R05-T07 A change is refused only for the text it sets: a record whose title names technology can still have its lead text changed', async () => {
     let data = adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 15, max_entities_per_aggregate: 7, technology_words: ['Postgres'] }] });
     data = changing(data, 'use_case', (r) => r.id === 'EX-LEND-UC01', { title: 'Borrow a tool from Postgres' });
     const root = await build(data);
@@ -119,12 +119,12 @@ describe('a write of an essential record keeps accidental complexity out', () =>
       ['essential-names-technology', 'EX-LEND-UC01', 'Use case EX-LEND-UC01 is essential, and its title says "postgres"'],
     ]);
     // An add sets every text it is given.
-    expect(await reasons(store, 'use-case add-use-case', { id: 'EX-LEND-UC03', title: 'Return a tool', capability_id: 'EX-LEND-CAP01', goal: 'A member returns a tool and Postgres records it.', actors: ['Member'] })).toEqual([
+    expect(await reasons(store, 'use-case add-use-case', { id: 'EX-LEND-UC03', title: 'Return a tool', capability_id: 'EX-LEND-CAP01', goal: 'A member returns a tool and Postgres records it.', result_id: 'EX-LEND-QRY01', actors: ['Member'] })).toEqual([
       ['essential-names-technology', 'EX-LEND-UC03', 'Use case EX-LEND-UC03 is essential, and its goal says "postgres"'],
     ]);
   });
 
-  it('LA-CHK-UC08-R05-T01 A write that links an essential record to an accidental one, or declares a relation that would, is refused; an outcome may still be measured by a record of an accidental kind', async () => {
+  it('LA-STD-PRINCIPLES-R05-T08 A write that links an essential record to an accidental one, or declares a relation that would, is refused; an outcome may still be measured by a record of an accidental kind', async () => {
     const store = await storeOf(adding(complete(), essentialKind));
     expect(await reasons(store, 'product declare-product-relation', { name: 'cites', source_kind: 'notice', target_kind: 'table', product_id: 'EX', forward_label: 'Cites', reverse_label: 'Cited by', description: 'The notice cites the table.' })).toEqual([
       ['essential-links-accidental', 'name cites, source_kind notice, target_kind table', 'The relation cites would link the essential notice to the accidental table: an essential record never points at how it is built; link the other way, from the technical record to what it implements, builds or fills.'],

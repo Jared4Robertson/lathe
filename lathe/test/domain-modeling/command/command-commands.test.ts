@@ -54,7 +54,7 @@ describe('LA-MOD-INV70-T a policy hearing another domain\'s unpublished event is
   });
 });
 
-describe('LA-MOD-UC12-R07-T01 a policy names the integrations it exchanges with', () => {
+describe('LA-MOD-UC44-R01-T01 a policy names the integrations it exchanges with', () => {
   it('adds and changes a policy\'s exchanges, writing only that link, and reads them with its command', async () => {
     const store = await commandDataSet();
     await runCommand(store, ADD_INTEGRATION, { id: 'TL-INT01', title: 'Mail', system: 'The library\'s mail service', description: 'Reminders sent to members.' });

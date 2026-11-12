@@ -56,7 +56,7 @@ export function everyKind(): Data {
     journey: [{ id: 'TL-JR01', title: 'Borrow a tool and bring it back', product_id: 'TL', trigger: 'A member wants a tool.', result: 'The tool is back on the shelf.' }],
     journey_step: [{ id: 'TL-JR01-S01', title: 'The library reminds the borrower', journey_id: 'TL-JR01', path: 'main', position: 1 }],
     capability: [{ id: 'TL-LEND-CAP01', title: 'Lending', domain_id: 'TL-LEND', position: 1, description: 'Lending tools and taking them back.' }],
-    use_case: [{ id: 'TL-LEND-UC01', title: 'Borrow a tool', capability_id: 'TL-LEND-CAP01', goal: 'Take a tool home.' }],
+    use_case: [{ id: 'TL-LEND-UC01', title: 'Borrow a tool', capability_id: 'TL-LEND-CAP01', goal: 'Take a tool home.', result_id: 'TL-LEND-CMD01' }],
     use_case_actor: [{ use_case_id: 'TL-LEND-UC01', position: 1, role_name: 'Member' }],
     uc_requirement: [{ id: 'TL-LEND-UC01-R01', title: 'Tool is free', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse a tool on loan.', group_name: 'Validation' }],
     pattern: [{ id: 'TL-PAT-ACT', title: 'Librarian action', product_id: 'TL', description: 'An action the librarian takes at the desk.' }],

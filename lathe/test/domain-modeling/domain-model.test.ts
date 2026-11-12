@@ -129,7 +129,7 @@ describe('entities and value objects', () => {
     ]);
   });
 
-  it("LA-MOD-UC10-R08-T01 Another aggregate is referenced by a field typed by it: a foreign key in its own domain, a plain ID from another domain", async () => {
+  it("LA-MOD-UC40-R01-T01 Another aggregate is referenced by a field typed by it: a foreign key in its own domain, a plain ID from another domain", async () => {
     // A field typed by another aggregate of its domain, held by a foreign key to that aggregate's table.
     expect(fieldsOf(good, 'EX-LEND-EN01', 'entity_field').find((f) => f.name === 'Tool')).toMatchObject({ type_aggregate_id: 'EX-LEND-A2' });
     const data = adding(everyKind(), {
@@ -240,7 +240,7 @@ describe('rules', () => {
     expect((await refusals(withTable(everyKind(), 'invariant', [bare]))).map((p) => p.message)).toEqual(['invariant.statement is required']);
   });
 
-  it('LA-MOD-UC10-R09-T01 Uniqueness is an invariant that a unique key may name and back up, built only by its rule, and only a unique key may name one', async () => {
+  it('LA-MOD-UC41-R01-T01 Uniqueness is an invariant that a unique key may name and back up, built only by its rule, and only a unique key may name one', async () => {
     // The unique key names the invariant, but the rule's file does not exist: the key builds nothing.
     const keyed = adding(complete(), { table_key: [{ table_id: 'EX-LEND-EN01-TB', position: 2, type: 'unique', columns: ['tool_id'], invariant_id: 'EX-LEND-INV01' }] });
     const [withKey, withRule] = await Promise.all([build(keyed, { missing: ['src/loans.ts'] }).then(loadWorkspace), build(keyed).then(loadWorkspace)]);
@@ -256,7 +256,7 @@ describe('rules', () => {
 });
 
 describe('read models, queries, domain services and terms', () => {
-  it('LA-MOD-UC21-R01-T01 LA-MOD-UC02-R07-T01 Read models with their fields and reads, queries of one read model, domain services that commands and queries call, and terms are in the schema', () => {
+  it('LA-MOD-UC21-R01-T01 LA-MOD-UC32-R02-T01 Read models with their fields and reads, queries of one read model, domain services that commands and queries call, and terms are in the schema', () => {
     expect(parentsOf(schema, 'read_model')).toEqual(['domain.domain_id']);
     expect(schema.tables.read_model_field).toMatchObject({ role: 'part', ownerColumn: 'read_model_id' });
     expect(pairsOf(schema, 'reads')).toContain('read_model>aggregate');

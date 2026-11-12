@@ -725,16 +725,18 @@ export interface FillsRow {
   target_id: string;
 }
 
-/** An actor's goal: its actors (use_case_actor rows), its UC requirements and its flow, the same through every interface that offers it. It changes nothing itself; its flow's steps invoke commands and queries. */
+/** One role invoking one command, or asking one query, with the steps that lead to it: its result names the operation, and the use case is a command use case or a query use case by the result's kind. It has its actors (use_case_actor rows, the first its main actor), its UC requirements and its flow, the same through every interface that offers it. No two use cases of a product share their first actor and their result. */
 export interface UseCaseRow {
   /** The use case's ID, such as TL-LEND-UC01. */
   id: string;
-  /** What the actor does, such as Borrow a tool. */
+  /** What the actor does: a command use case starts with its command's verb (Borrow a tool); a query use case names the question (See the tools waiting for repair). */
   title: string;
   /** The capability it sits in. */
   capability_id: string;
   /** What the actor wants to reach and from where they start, in a sentence or a short paragraph. */
   goal: string;
+  /** The use case's result: the one command its actor invokes (a command use case), which its main path invokes and after which it only asks queries, or the one query they ask (a query use case), at its main path's last step that invokes anything. Its kind is the operation's. */
+  result_id: string;
   /** Longer notes, such as the order in which refusals are reported. */
   notes?: string;
 }

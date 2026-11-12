@@ -54,6 +54,8 @@ export interface FlowOnPage {
 /** A use case whole, as its page shows it. */
 export interface UseCaseTree {
   useCase: UseCaseRow;
+  /** Its result and the kind that makes it a command use case or a query use case, from the operation's own kind. */
+  result: { id: string; kind: 'command' | 'query' };
   /** Its actors' role names, in order: the first is the main actor. */
   actors: string[];
   /** Its UC requirements, by ID. */
@@ -141,6 +143,7 @@ export function useCaseTableFrom(view: ReadView): UseCaseTable {
     const ownActors = [...(actors.get(root) ?? [])].sort((a, b) => Number(a.position) - Number(b.position)).map((a) => String(a.role_name));
     const tree: UseCaseTree = {
       useCase,
+      result: { id: useCase.result_id, kind: view.record(useCase.result_id)?.kind === 'query' ? 'query' : 'command' },
       actors: ownActors,
       requirements: [...(requirements.get(root) ?? [])].sort(byRecordId).map((requirement) => ({
         requirement,

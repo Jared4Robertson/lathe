@@ -222,6 +222,11 @@ WHERE NOT EXISTS (SELECT 1 FROM uc_requirement r WHERE r.use_case_id = u.id) AND
   gap('journey-step-unlinked', 'use-cases', ['journey_step', 'use_case', 'policy'], 'A journey step that carries out no use case or policy yet.',
     `SELECT s.id, 'Journey step ' || s.id || ' carries out no use case or policy yet: write the use case (or the policy, for a handoff) and link the step.' AS message FROM journey_step s
 WHERE NOT EXISTS (SELECT 1 FROM carries_out c WHERE c.source_id = s.id)`),
+  // A command a person invokes is the result of a use case (LA-STD-MODELING-R15): why it exists is a record. One the
+  // product invokes on its own is a policy's command.
+  gap('command-without-use-case', 'use-cases', ['command', 'use_case', 'policy'], 'A command no use case has as its result and no policy invokes.',
+    `SELECT c.id, 'Command ' || c.id || ' is the result of no use case and the command of no policy: write the use case whose actor invokes it, or the policy by which the product invokes it.' AS message FROM command c
+WHERE NOT EXISTS (SELECT 1 FROM use_case u WHERE u.result_id = c.id) AND NOT EXISTS (SELECT 1 FROM policy p WHERE p.command_id = c.id)`),
   gap('use-case-without-flow', 'use-cases', ['use_case', 'flow'], 'A use case with no flow.',
     `SELECT u.id, 'Use case ' || u.id || ' has no flow.' AS message FROM use_case u WHERE NOT EXISTS (SELECT 1 FROM flow f WHERE f.use_case_id = u.id)`),
   gap('flow-without-main-path', 'use-cases', ['flow', 'flow_step'], 'A flow with no step on its main path.',

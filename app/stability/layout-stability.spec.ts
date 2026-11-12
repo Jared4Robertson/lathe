@@ -63,7 +63,7 @@ test.describe('the map stays where the Reader left it', () => {
       await page.waitForTimeout(900);
       const traceBefore = await traceRows(page);
       const added = 'LA-EXP-UC98';
-      lathe('use-case', 'add-use-case', '--id', added, '--title', 'Watch a use case appear', '--capability_id', 'LA-EXP-CAP02', '--goal', 'The Reader sees a new use case appear while following the trace.', '--actors', 'Reader');
+      lathe('use-case', 'add-use-case', '--id', added, '--title', 'Watch a use case appear', '--capability_id', 'LA-EXP-CAP02', '--goal', 'The Reader sees a new use case appear while following the trace.', '--result_id', 'LA-EXP-QRY14', '--actors', 'Reader');
       await expect.poll(async () => (await traceRows(page)).rows.includes(added), { timeout: 20_000 }).toBe(true);
       await page.waitForTimeout(900);
       const traceAfter = await traceRows(page);

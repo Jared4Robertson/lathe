@@ -31,7 +31,7 @@ async function writeSome(store: Store, reverse: boolean): Promise<string[]> {
 }
 
 describe('data files', () => {
-  it('LA-PRD-UC39-R02-T02 are the same bytes whatever order the rows were written in, and after a reload and a rewrite', async () => {
+  it('LA-STD-ENGINEERING-R06-T02 are the same bytes whatever order the rows were written in, and after a reload and a rewrite', async () => {
     const first = writeData(everyKind());
     const a = await openStore(first);
     await writeSome(a, false);
@@ -51,7 +51,7 @@ describe('data files', () => {
     expect(files(first)).toEqual(before);
   });
 
-  it('LA-PRD-UC39-R01-T02 hold one JSON object per line, sorted by key, columns in table order, with a trailing newline', async () => {
+  it('LA-STD-ENGINEERING-R05-T02 hold one JSON object per line, sorted by key, columns in table order, with a trailing newline', async () => {
     const root = writeData(everyKind());
     const store = await openStore(root);
     const written = await writeSome(store, true);
@@ -83,7 +83,7 @@ describe('data files', () => {
     await store.close();
   });
 
-  it('LA-PRD-UC39-R01-T03 keep text as UTF-8, and drop a table file when its last row goes', async () => {
+  it('LA-STD-ENGINEERING-R05-T03 keep text as UTF-8, and drop a table file when its last row goes', async () => {
     const root = writeData(everyKind());
     const store = await openStore(root);
     await run(store, 'product change-product', { id: 'TL', icon: '🧰', description: 'Café “quotes”, naïve' });

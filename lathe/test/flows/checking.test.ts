@@ -1,6 +1,6 @@
 // Checking's flows, each walked through the real `lathe` command on a temporary product: checking the workspace,
-// adding a check, finding structural problems, a product's own checks, keeping each level a useful size and keeping
-// every change checked. Checking's other flows through the MCP tools are in agent-tools.test.ts.
+// adding, changing and removing a check, making the check strict, finding structural problems, a product's own checks,
+// keeping each level a useful size and keeping every change checked. Checking's other flows through the MCP tools are in agent-tools.test.ts.
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -139,6 +139,50 @@ describe('Checking flows', () => {
     expect(`${config.stdout}${config.stderr}`).toContain('unknown setting "checks"');
   });
 
+  it("LA-CHK-UC10-FL-T make the product's check strict", async () => {
+    const tl = product();
+    await tl.seed([...LENDING]);
+    const warnings = tl.workspace().problems.filter((p) => p.severity === 'warning').length;
+    expect(warnings).toBeGreaterThan(0);
+    // S01: the Owner makes the check strict, accepting the warnings the product has now; a count above them is refused.
+    expect(tl.refuse('product-setting set-strict-check', { product_id: 'TL', strict_check: true, accepted_warnings: warnings + 1 })).toContain('accepted-above-warnings');
+    tl.command('product-setting set-strict-check', { product_id: 'TL', strict_check: true, accepted_warnings: warnings });
+    // S02: at the accepted count no warning fails it, but a gap does, whatever it accepts: the lending domain has gaps.
+    const at = tl.check();
+    expect(at.status).toBe(1);
+    expect(at.stdout).toContain('TL is strict: warnings and gaps fail');
+    expect(at.stdout).toContain('[strict-gaps] TL:');
+    expect(at.stdout).not.toContain('[strict-check] TL:');
+    // S02: accepting fewer warnings than it has fails it too, saying how many are beyond the accepted count.
+    tl.command('product-setting set-strict-check', { product_id: 'TL', strict_check: true, accepted_warnings: warnings - 1 });
+    expect(tl.check().stdout).toContain('[strict-check] TL:');
+  });
+
+  it('LA-CHK-UC11-FL-T LA-CHK-UC11-R01-T01 LA-CHK-UC11-R02-T01 change a check', async () => {
+    const tl = product();
+    await tl.seed([...LENDING, add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND', identity: 'Tool ID', description: 'A tool the library holds.' })]);
+    tl.command('check add-check', NO_COMMAND);
+    expect(problemsOf(tl.workspace(), 'aggregate-without-command')).toHaveLength(1);
+    // S01: the Owner changes the check, and the next check reports it as changed.
+    tl.command('check change-check', { name: NO_COMMAND.name, severity: 'error' });
+    expect(tl.workspace().problems.filter((p) => p.check === NO_COMMAND.name).map((p) => p.severity)).toEqual(['error']);
+    // S02: one of Lathe's own checks is refused, and the product's data holds no row for it.
+    expect(tl.refuse('check change-check', { name: 'view-unused', severity: 'warning' })).toContain('view-unused');
+    expect(tl.read('data/check.jsonl')).not.toContain('view-unused');
+  });
+
+  it('LA-CHK-UC12-FL-T LA-CHK-UC12-R01-T01 LA-CHK-UC12-R02-T01 remove a check', async () => {
+    const tl = product();
+    await tl.seed([...LENDING, add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND', identity: 'Tool ID', description: 'A tool the library holds.' })]);
+    tl.command('check add-check', NO_COMMAND);
+    expect(problemsOf(tl.workspace(), 'aggregate-without-command')).toHaveLength(1);
+    // S01: the Owner removes the check, and the next check no longer runs it.
+    tl.command('check remove-check', { name: NO_COMMAND.name });
+    expect(problemsOf(tl.workspace(), 'aggregate-without-command')).toEqual([]);
+    // S02: one of Lathe's own checks is refused.
+    expect(tl.refuse('check remove-check', { name: 'view-unused' })).toContain('view-unused');
+  });
+
   it('LA-CHK-UC06-FL-T keep each level of the spec a useful size', async () => {
     const tl = product();
     await tl.seed([
@@ -160,13 +204,13 @@ describe('Checking flows', () => {
     expect(problemsOf(ws, 'lone-child').sort()).toEqual([expect.stringMatching(/^TL-LEND-CAP01: /), expect.stringMatching(/^TL-LEND-UC01: .*"Dates"/)]);
     // S04: they add a level, merge one and raise nothing, then check again.
     tl.command('product-setting set-limits', { product_id: 'TL', max_children: 15, max_entities_per_aggregate: 7 });
-    tl.command('use-case add-use-case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.' });
+    tl.command('use-case add-use-case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.', result_id: 'TL-LEND-CMD01' });
     tl.command('use-case change-uc-requirement', { id: 'TL-LEND-UC01-R04', group_name: '' });
     const fixed = tl.workspace();
     expect(fixed.problems.filter((p) => ['too-many-children', 'aggregate-too-large', 'lone-child'].includes(p.check))).toEqual([]);
   });
 
-  it('LA-CHK-UC08-FL-T keep every change to the spec checked', async () => {
+  it('LA-STD-PRINCIPLES-R01-T08 keep every change to the spec checked', async () => {
     // S01: the plugin declares the guard hook on every tool that edits a file by hand.
     const hooks = JSON.parse(readFileSync(path.join(PLUGIN, 'hooks', 'hooks.json'), 'utf8'));
     const [entry] = hooks.hooks.PreToolUse;

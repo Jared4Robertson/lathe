@@ -2,17 +2,41 @@
 {"id":"LA-EXP-CAP01","title":"Spec reading","domain_id":"LA-EXP","position":1,"description":"Product, domain and record pages: coverage, obligation kinds and test states, finding a record and following its links."}
 {"id":"LA-EXP-CAP02","title":"Workspace navigation","domain_id":"LA-EXP","position":2,"description":"One address per record, its Graph, ERD and Trace stages behind floating panels, the wiki card, the nav, quick find and keyboard shortcuts."}
 {"id":"LA-EXP-CAP03","title":"Graph exploration","domain_id":"LA-EXP","position":3,"description":"Walking the model as a left-to-right graph with folder-like groups."}
+{"id":"LA-EXP-CAP04","title":"Workspace tabs","domain_id":"LA-EXP","position":4,"description":"Several places open at once, each a tab with its own address and history: opening, activating, cycling, duplicating and closing them."}
 {"id":"LA-IXD-CAP06","title":"Interface design","domain_id":"LA-IXD","position":1,"description":"What a flow reaches: views and their requirements, endpoints and their API requirements, integrations and the UI components that draw the views."}
-{"id":"LA-MOD-CAP03","title":"Domain modeling","domain_id":"LA-MOD","position":1,"description":"Domains by capability, and each domain's model: aggregates with their entities and invariants, value objects, commands, domain events, specifications and read models."}
+{"id":"LA-IXD-CAP101","title":"View design","domain_id":"LA-IXD","position":2,"description":"Keeping a view, its view requirements and its view tests."}
+{"id":"LA-IXD-CAP102","title":"Endpoint design","domain_id":"LA-IXD","position":3,"description":"Keeping an endpoint, its API requirements, its handler and its endpoint tests."}
+{"id":"LA-IXD-CAP103","title":"Integration design","domain_id":"LA-IXD","position":4,"description":"Keeping an integration, its adapter and its integration tests."}
+{"id":"LA-MOD-CAP03","title":"Domain modeling","domain_id":"LA-MOD","position":1,"description":"A product split into domains by capability: adding, changing and moving its domains and their capabilities."}
+{"id":"LA-MOD-CAP101","title":"Domain upkeep","domain_id":"LA-MOD","position":2,"description":"Removing domains and capabilities, and keeping the terms and repositories of a domain."}
+{"id":"LA-MOD-CAP102","title":"Domain services","domain_id":"LA-MOD","position":3,"description":"Keeping a domain's domain services, the services that implement them and their tests."}
+{"id":"LA-MOD-CAP103","title":"Aggregates and their parts","domain_id":"LA-MOD","position":4,"description":"Keeping an aggregate with its entities and their data models."}
+{"id":"LA-MOD-CAP104","title":"Domain behavior","domain_id":"LA-MOD","position":5,"description":"Keeping commands and their handlers, policies, the event handlers that carry them out and policy tests."}
+{"id":"LA-MOD-CAP105","title":"Specifications and predicates","domain_id":"LA-MOD","position":6,"description":"Keeping specifications with their predicates and tests."}
+{"id":"LA-MOD-CAP106","title":"Value objects","domain_id":"LA-MOD","position":7,"description":"Keeping value objects with their constraints, value types and constraint tests."}
+{"id":"LA-MOD-CAP107","title":"Read models","domain_id":"LA-MOD","position":8,"description":"Keeping read models with their queries and query handlers."}
+{"id":"LA-MOD-CAP108","title":"Domain events","domain_id":"LA-MOD","position":9,"description":"Keeping domain events with their event types."}
+{"id":"LA-MOD-CAP109","title":"Invariants and their rules","domain_id":"LA-MOD","position":10,"description":"Keeping an aggregate's invariants with the rules that hold them and their invariant tests."}
+{"id":"LA-MOD-CAP110","title":"Projections and readers","domain_id":"LA-MOD","position":11,"description":"Keeping the projections that fill read models and the readers that read them."}
+{"id":"LA-MOD-CAP111","title":"Storage requirements","domain_id":"LA-MOD","position":12,"description":"Keeping what an aggregate or read model needs of its storage, with the storage requirement tests."}
 {"id":"LA-PLT-CAP01","title":"Workbench","domain_id":"LA-PLT","position":1,"description":"Panels, themes, phones, stability and accessibility: what every view stands on."}
 {"id":"LA-PLT-CAP03","title":"Live loading","domain_id":"LA-PLT","position":3,"description":"Loading a workspace from the data files, from code or a view, fast enough to reload live, and views that follow the data files as they change."}
 {"id":"LA-PLT-CAP04","title":"Desktop hosting","domain_id":"LA-PLT","position":4,"description":"Opening products in windows, iterating on Lathe in the shell with hot reload, using Lathe from the native menus, a window that looks like part of Lathe, and an app that feels native on a Mac."}
 {"id":"LA-PLT-CAP05","title":"Repo setup","domain_id":"LA-PLT","position":5,"description":"Setting Lathe up in a product's repo, moving a product to a new Lathe, and starting the plugin's tools there."}
+{"id":"LA-PLT-CAP06","title":"Chat with Claude","domain_id":"LA-PLT","position":6,"description":"Talking with the Owner's own Claude Code beside the stage: sending messages, answering prompts, choosing how it works, reviewing and undoing what it changed."}
+{"id":"LA-PLT-CAP07","title":"Dictation","domain_id":"LA-PLT","position":7,"description":"Speaking a message to the chat: listening, the wake phrase and Quick mode."}
+{"id":"LA-PLT-CAP08","title":"Claude sign-in","domain_id":"LA-PLT","position":8,"description":"Signing the chat's agent in and out of its Claude account from the product."}
 {"id":"LA-PRD-CAP02","title":"Product customization","domain_id":"LA-PRD","position":2,"description":"The product itself, its roles and interfaces, the kinds and relations it declares and their records, the stages and order of kinds, the reference that shows them, and merging two branches' changes to its data."}
-{"id":"LA-PRD-CAP05","title":"Discovery","domain_id":"LA-PRD","position":1,"description":"Who the product is for and why: its business outcomes, each with its measure and target, the journeys that reach them, its roles and the interfaces they work through."}
-{"id":"LA-TEC-CAP07","title":"Technical specification","domain_id":"LA-TEC","position":1,"description":"How the design is built: tables and their keys, the product's entry points and tooling, and the standards its code follows."}
+{"id":"LA-PRD-CAP05","title":"Discovery","domain_id":"LA-PRD","position":1,"description":"Who the product is for and why: its business outcomes, each with its measure and target, its roles, the interfaces they work through and its open questions."}
+{"id":"LA-PRD-CAP06","title":"Journeys","domain_id":"LA-PRD","position":3,"description":"The journeys that reach a product's business outcomes: their steps and handoffs, the use cases the steps carry out and the journey tests that prove them."}
+{"id":"LA-TEC-CAP07","title":"Technical specification","domain_id":"LA-TEC","position":1,"description":"How the product is run and built: its entry points and its tooling."}
+{"id":"LA-TEC-CAP08","title":"Standards","domain_id":"LA-TEC","position":2,"description":"The rules the product's code and models follow: its standards, their rules and the standard rule tests that prove them."}
+{"id":"LA-TEC-CAP09","title":"Tables and data stores","domain_id":"LA-TEC","position":3,"description":"Where the product keeps its records: its data stores, and the tables in them with their keys."}
 {"id":"LA-TRC-CAP01","title":"Coverage measurement","domain_id":"LA-TRC","position":1,"description":"How much of each obligation is designed, built and proved, what is proved only by tests not automated yet, and what is still missing."}
 {"id":"LA-TRC-CAP02","title":"Test evidence","domain_id":"LA-TRC","position":2,"description":"How a test is run, and how its file names it."}
 {"id":"LA-TRC-CAP03","title":"Coverage reporting","domain_id":"LA-TRC","position":3,"description":"Coverage, tests by state, the patterns a domain owes and each record's traces, as the app shows them."}
 {"id":"LA-TST-CAP08","title":"Test planning","domain_id":"LA-TST","position":1,"description":"The tests that prove each record: the test of its kind, how it runs, and the test data sets tests start from."}
 {"id":"LA-UCS-CAP04","title":"Use case writing","domain_id":"LA-UCS","position":1,"description":"Use cases with their requirements, flows and tests, and the patterns they follow."}
+{"id":"LA-UCS-CAP101","title":"Requirement writing","domain_id":"LA-UCS","position":2,"description":"Keeping a use case's UC requirements and the use case tests that prove them."}
+{"id":"LA-UCS-CAP102","title":"Flow writing","domain_id":"LA-UCS","position":3,"description":"Keeping a use case's flow, its steps and its flow test."}
+{"id":"LA-UCS-CAP103","title":"Pattern writing","domain_id":"LA-UCS","position":4,"description":"Keeping a pattern, its rules and rule tests, and its slots."}

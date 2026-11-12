@@ -24,7 +24,7 @@ import type { AddFlowTest } from './add-flow-test.ts';
 import type { ChangeFlowTest } from './change-flow-test.ts';
 import type { RemoveFlowTest } from './remove-flow-test.ts';
 
-/** Adds a use case under a capability, with its actors in order, the main actor first. */
+/** Adds a use case under a capability, with its result (the command or query it exists for) and its actors in order, the main actor first. */
 export function addUseCase(tx: Transaction, input: AddUseCase): void {
   const useCases = new UseCaseRepository(tx);
   if (tx.record(input.capability_id)?.kind !== 'capability') tx.refuse('missing', `there is no capability ${input.capability_id}`);
@@ -34,11 +34,11 @@ export function addUseCase(tx: Transaction, input: AddUseCase): void {
   useCases.save(useCase);
 }
 
-/** Changes a use case's title, goal or notes, or its actors (the whole list, in order). Its capability changes only by Move a use case. */
+/** Changes a use case's title, goal, result or notes, or its actors (the whole list, in order). Its capability changes only by Move a use case. */
 export function changeUseCase(tx: Transaction, input: ChangeUseCase): void {
   const useCases = new UseCaseRepository(tx);
   const useCase = useCases.load(input.id) ?? tx.refuse('missing', `there is no use case ${input.id}`);
-  useCase.useCase = changed(useCase.useCase, input, ['title', 'goal', 'notes']);
+  useCase.useCase = changed(useCase.useCase, input, ['title', 'goal', 'result_id', 'notes']);
   useCase.actors = input.actors ?? useCase.actors;
   holdToRules(tx, useCase);
   useCases.save(useCase);

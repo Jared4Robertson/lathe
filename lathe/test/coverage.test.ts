@@ -16,7 +16,7 @@ beforeAll(async () => {
 });
 
 describe('coverage of the complete product', () => {
-  it('LA-TRC-UC02-R01-T01 counts every obligation kind, in kind order, per domain and for what the product shares', () => {
+  it('LA-TRC-UC01-R07-T01 counts every obligation kind, in kind order, per domain and for what the product shares', () => {
     expect(clean.coverage.map((c) => [c.product, c.domain])).toEqual([['EX', 'EX-LEND'], ['EX', null]]);
     const lending = clean.coverage[0];
     expect(lending.obligations.map((o) => o.kind)).toEqual(['constraint', 'invariant', 'specification', 'policy', 'domain_service', 'storage_requirement', 'uc_requirement', 'pattern_rule', 'view_requirement', 'api_requirement', 'standard_rule']);
@@ -34,7 +34,7 @@ describe('coverage of the complete product', () => {
     expect(gaps(clean)).toEqual([]);
   });
 
-  it("LA-TRC-UC02-R08-T01 A constraint counts in its value object's domain, or in Shared when two domains use it", async () => {
+  it("LA-TRC-UC01-R13-T01 A constraint counts in its value object's domain, or in Shared when two domains use it", async () => {
     expect(obligation(clean, 'EX-LEND', 'constraint')).toMatchObject(covered(1));
     // A second domain's entity has a field typed by the value object: the product shares it, with its constraint.
     const shared = await loadData(
@@ -103,7 +103,7 @@ describe('designed and built', () => {
     expect(obligation(await loadData(complete(), { missing: ['src/loans.ts'] }), 'EX-LEND', 'invariant')).toMatchObject({ designed: 1, built: 0 });
   });
 
-  it('LA-TRC-UC02-R02-T02 an obligation is built only when every record that implements it names a file that exists, a UC requirement through what its commands check and call', async () => {
+  it('LA-TRC-UC01-R08-T02 an obligation is built only when every record that implements it names a file that exists, a UC requirement through what its commands check and call', async () => {
     // UC01-R01 is carried out by two handlers; the query handler's file is missing, though the command handler's exists.
     expect(gaps(await loadData(complete(), { missing: ['src/tools.ts'] }))).toContain('built EX-LEND-UC01-R01');
     // The command its first step invokes checks SP01 and calls DS01: with no predicate, or the service's file missing,
@@ -132,7 +132,7 @@ describe('designed and built', () => {
     expect(obligation(await loadData(alone), 'EX-LEND', 'uc_requirement')).toMatchObject(covered(2));
   });
 
-  it('LA-TRC-UC02-R06-T02 a view requirement is built only by a UI component that builds it, not by one that only renders its view', async () => {
+  it('LA-TRC-UC01-R11-T02 a view requirement is built only by a UI component that builds it, not by one that only renders its view', async () => {
     expect(obligation(clean, 'EX-LEND', 'view_requirement')).toMatchObject(covered(1));
     const rendered = await loadData(without(complete(), 'builds', () => true));
     // The component that only renders the view builds nothing, so no obligation's chain reaches it either.
@@ -140,7 +140,7 @@ describe('designed and built', () => {
     expect(obligation(await loadData(complete(), { missing: ['web/catalog.tsx'] }), 'EX-LEND', 'view_requirement')).toMatchObject({ designed: 1, built: 0 });
   });
 
-  it("LA-TRC-UC02-R10-T01 a UC requirement is built by the adapter of an integration its step exchanges with; a product kind's record under it builds nothing", async () => {
+  it("LA-TRC-UC01-R15-T01 a UC requirement is built by the adapter of an integration its step exchanges with; a product kind's record under it builds nothing", async () => {
     // The one step that fulfills UC01-R01 invokes nothing; it exchanges with the mail integration.
     let alone = without(complete(), 'fulfills', (r) => r.source_id === 'EX-LEND-UC01-FL-S02');
     alone = without(alone, 'invokes', (r) => r.source_id === 'EX-LEND-UC01-FL-S01');
@@ -157,7 +157,7 @@ describe('designed and built', () => {
     expect(gaps(await loadData(alone))).toContain('built EX-LEND-UC01-R01');
   });
 
-  it('LA-TRC-UC02-R15-T01 a policy that exchanges with an integration is built by its event handler and that integration\'s adapter', async () => {
+  it('LA-TRC-UC01-R20-T01 a policy that exchanges with an integration is built by its event handler and that integration\'s adapter', async () => {
     const exchanging = adding(complete(), { exchanges_with: [{ source_id: 'EX-LEND-PO01', target_id: 'EX-INT01' }] });
     const ws = await loadData(exchanging);
     expect(obligation(ws, 'EX-LEND', 'policy')).toMatchObject(covered(1));
@@ -258,13 +258,13 @@ describe('proved', () => {
     ws = await loadData(data, { silent: ['EX-LEND-PO01-T'] });
   });
 
-  it('LA-TRC-UC02-R03-T01 only an automated or manual test at an allowed level, whose file names it, proves', () => {
+  it('LA-TRC-UC01-R09-T01 only an automated or manual test at an allowed level, whose file names it, proves', () => {
     expect(gaps(ws)).toEqual(['proved EX-LEND-PO01', 'proved EX-LEND-SP01', 'proved EX-STD-CODE-R01', 'proved EX-VO01-C01']);
     // A manual test proves.
     expect(obligation(ws, 'EX-LEND', 'view_requirement')).toMatchObject(covered(1));
   });
 
-  it('LA-TRC-UC02-R07-T01 a test at a level its kind does not allow proves nothing', () => {
+  it('LA-TRC-UC01-R12-T01 a test at a level its kind does not allow proves nothing', () => {
     // The constraint's test runs at api, which a constraint test does not allow.
     expect(obligation(ws, 'EX-LEND', 'constraint')).toMatchObject({ total: 1, proved: 0 });
     expect(ws.coverage.find((c) => c.domain === 'EX-LEND')?.gaps.find((g) => g.id === 'EX-VO01-C01')?.missing).toBe('proved');
@@ -274,13 +274,13 @@ describe('proved', () => {
     expect(ws.coverage[0].gaps.find((g) => g.id === 'EX-LEND-PO01')).toEqual({ id: 'EX-LEND-PO01', kind: 'policy', missing: 'proved', message: 'Policy EX-LEND-PO01 is not proved yet.' });
   });
 
-  it('LA-TRC-UC02-R03-T01 a test not automated yet leaves its obligation unproved, counted and named as such', () => {
+  it('LA-TRC-UC01-R09-T01 a test not automated yet leaves its obligation unproved, counted and named as such', () => {
     expect(obligation(ws, 'EX-LEND', 'specification')).toMatchObject({ total: 1, proved: 0, not_automated: 1 });
     expect(ws.coverage[0].gaps.find((g) => g.id === 'EX-LEND-SP01')?.message).toBe('Specification EX-LEND-SP01 is not proved yet: its test is not automated yet.');
     expect(ws.coverage[0].tests).toEqual({ automated: 10, manual: 3, not_automated: 1 });
   });
 
-  it('LA-TEC-UC16-R02-T03 a standard rule with no standard rule test is not proved', () => {
+  it('LA-TEC-UC33-R01-T03 a standard rule with no standard rule test is not proved', () => {
     expect(obligation(ws, null, 'standard_rule')).toMatchObject({ total: 1, designed: 1, built: 1, proved: 0 });
   });
 });
@@ -290,7 +290,7 @@ describe('pattern rules', () => {
     adding(data, {
       domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', position: 2, subdomain_type: 'supporting', description: 'Selling spare parts.' }],
       capability: [{ id: 'EX-SHOP-CAP01', title: 'Selling', domain_id: 'EX-SHOP', position: 1, description: 'Selling tools.' }],
-      use_case: [{ id: 'EX-SHOP-UC01', title: 'Sell a tool', capability_id: 'EX-SHOP-CAP01', goal: 'A customer buys a used tool.' }],
+      use_case: [{ id: 'EX-SHOP-UC01', title: 'Sell a tool', capability_id: 'EX-SHOP-CAP01', goal: 'A customer buys a used tool.', result_id: 'EX-LEND-CMD01' }],
     });
 
   it("LA-TRC-SP04-T each domain that follows a pattern owes its rules, proved only by its own pattern rule test", async () => {
@@ -362,7 +362,7 @@ describe('LA-TRC-UC01-R05-T01 minimums', () => {
     expect(gaps(await loadData(byJourneyAlone))).toEqual(['outcome-not-served EX-BO02']);
   });
 
-  it('LA-PRD-UC33-R05-T02 a journey test proves only at the service, system or browser level', async () => {
+  it('LA-PRD-UC46-R01-T02 a journey test proves only at the service, system or browser level', async () => {
     expect(ALLOWED_LEVELS.journey_test).toEqual(['service', 'system', 'browser']);
     const unit = changing(withJourney(), 'journey_test', () => true, { level: 'unit' });
     expect(records(ofCheck(await loadData(unit), 'test-level-not-allowed'))).toEqual(['EX-JR01-T']);
@@ -401,12 +401,12 @@ describe("a product's own obligation kinds", () => {
       checks_rule: [{ source_id: 'EX-LEND-UC01-R01-T01', target_id: 'EX-LEND-HR01' }],
     });
 
-  it('LA-TRC-UC02-R02-T01 are designed, built and proved through its design and proof links', async () => {
+  it('LA-TRC-UC01-R08-T01 are designed, built and proved through its design and proof links', async () => {
     const ws = await loadData(houseRules());
     expect(obligation(ws, 'EX-LEND', 'house_rule')).toMatchObject({ label: 'House rule', total: 2, designed: 1, built: 1, proved: 1 });
   });
 
-  it("LA-TRC-UC02-R06-T01 are obligations as the product's kind declares, counted after Lathe's", async () => {
+  it("LA-TRC-UC01-R11-T01 are obligations as the product's kind declares, counted after Lathe's", async () => {
     const ws = await loadData(houseRules());
     expect(ws.kinds.find((k) => k.kind === 'house_rule')?.obligation).toBe(true);
     expect(ws.kinds.find((k) => k.kind === 'script')?.obligation).toBe(false);
@@ -414,7 +414,7 @@ describe("a product's own obligation kinds", () => {
     expect(obligation(ws, 'EX-LEND', 'script')).toBeUndefined();
   });
 
-  it('LA-TRC-UC02-R09-T01 are proved by a product kind that names a file only when the file names it', async () => {
+  it('LA-TRC-UC01-R14-T01 are proved by a product kind that names a file only when the file names it', async () => {
     const data = adding(houseRules(), {
       product_kind: [
         { name: 'rule_check', product_id: 'EX', label: 'Rule check', description: 'A script that checks a rule.', parent_kind: 'domain', stage: 'test-plan', obligation: false, complexity: 'as-parent' },
@@ -447,7 +447,7 @@ describe("a product's relations with a role, on Lathe's own obligation kinds", (
     script: [{ id: 'EX-LEND-SC01', title: 'quiet.sh', domain_id: 'EX-LEND', file: 'bin/quiet.sh' }],
   };
 
-  it('LA-TRC-UC02-R14-T01 a design link designs the rule and builds nothing', async () => {
+  it('LA-TRC-UC01-R19-T01 a design link designs the rule and builds nothing', async () => {
     expect(obligation(await loadData(bareRule()), null, 'standard_rule')).toMatchObject({ total: 1, designed: 0, built: 0, proved: 0 });
     const data = adding(bareRule(), {
       ...script,
@@ -459,7 +459,7 @@ describe("a product's relations with a role, on Lathe's own obligation kinds", (
     expect(ofCheck(ws, 'not-designed').map((p) => p.record)).not.toContain('EX-STD-CODE-R01');
   });
 
-  it('LA-TRC-UC02-R14-T02 a build link builds the rule once its source names a file that exists', async () => {
+  it('LA-TRC-UC01-R19-T02 a build link builds the rule once its source names a file that exists', async () => {
     const data = adding(bareRule(), {
       ...script,
       product_relation: [{ name: 'runs_as', source_kind: 'script', target_kind: 'standard_rule', product_id: 'EX', role: 'build', forward_label: 'Runs as', reverse_label: 'Run by', description: 'The script is the code that follows the rule.' }],
@@ -469,7 +469,7 @@ describe("a product's relations with a role, on Lathe's own obligation kinds", (
     expect(obligation(await loadData(data, { missing: ['bin/quiet.sh'] }), null, 'standard_rule')).toMatchObject({ total: 1, designed: 1, built: 0 });
   });
 
-  it('LA-TRC-UC02-R14-T03 a proof link proves the rule', async () => {
+  it('LA-TRC-UC01-R19-T03 a proof link proves the rule', async () => {
     const data = adding(bareRule(), {
       product_relation: [{ name: 'checks_rule', source_kind: 'use_case_test', target_kind: 'standard_rule', product_id: 'EX', role: 'proof', forward_label: 'Checks', reverse_label: 'Checked by', description: 'The test checks the rule.' }],
       checks_rule: [{ source_id: 'EX-LEND-UC01-R01-T01', target_id: 'EX-STD-CODE-R01' }],
@@ -484,8 +484,8 @@ describe('pattern rules, domain by domain', () => {
       domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', position: 2, subdomain_type: 'supporting', description: 'Selling spare parts.' }],
       capability: [{ id: 'EX-SHOP-CAP01', title: 'Selling', domain_id: 'EX-SHOP', position: 1, description: 'Selling tools.' }],
       use_case: [
-        { id: 'EX-SHOP-UC01', title: 'Sell a tool', capability_id: 'EX-SHOP-CAP01', goal: 'A customer buys a used tool.' },
-        { id: 'EX-SHOP-UC02', title: 'Price a tool', capability_id: 'EX-SHOP-CAP01', goal: 'The clerk sets the price of a used tool.' },
+        { id: 'EX-SHOP-UC01', title: 'Sell a tool', capability_id: 'EX-SHOP-CAP01', goal: 'A customer buys a used tool.', result_id: 'EX-LEND-CMD01' },
+        { id: 'EX-SHOP-UC02', title: 'Price a tool', capability_id: 'EX-SHOP-CAP01', goal: 'The clerk sets the price of a used tool.', result_id: 'EX-LEND-CMD01' },
       ],
     });
   /** A second pattern of the complete product, with no settings and one rule. */
@@ -575,7 +575,7 @@ describe('pattern rules, domain by domain', () => {
     expect(idle.coverage.find((c) => c.domain === 'EX-LEND')?.pattern_rules).toEqual(['EX-PAT-ACT-R01']);
   });
 
-  it('LA-TRC-UC07-R03-T01 a pattern may have no settings: its followers give none, and its rules are owed wherever it is followed', async () => {
+  it('LA-TRC-UC27-R01-T01 a pattern may have no settings: its followers give none, and its rules are owed wherever it is followed', async () => {
     const data = adding(logged(), { follows: [{ source_id: 'EX-LEND-UC01', target_id: 'EX-PAT-LOG' }, { source_id: 'EX-LEND', target_id: 'EX-PAT-LOG' }] });
     const ws = await loadData(data);
     expect(ofCheck(ws, 'pattern-setting-missing')).toEqual([]);
@@ -598,7 +598,7 @@ describe('pattern rules, domain by domain', () => {
     }
   });
 
-  it('LA-TRC-UC07-R03-T01 a follower of two patterns with a setting of the same name gives each its own value', async () => {
+  it('LA-TRC-UC27-R01-T01 a follower of two patterns with a setting of the same name gives each its own value', async () => {
     const data = adding(complete(), {
       pattern: [{ id: 'EX-PAT-AUD', title: 'Audited action', product_id: 'EX', description: 'An action the audit log records.' }],
       pattern_setting: [{ pattern_id: 'EX-PAT-AUD', position: 1, name: 'record', meaning: 'The record audited.' }],
@@ -622,10 +622,10 @@ describe('pattern rules, domain by domain', () => {
 });
 
 describe('the other obligation kinds and their gaps', () => {
-  it('LA-UCS-UC06-R15-T01 a use case with no flow is a use-case-without-flow gap in its domain, never an error', async () => {
+  it('LA-UCS-UC09-R03-T01 a use case with no flow is a use-case-without-flow gap in its domain, never an error', async () => {
     const data = adding(complete(), {
-      use_case: [{ id: 'EX-LEND-UC03', title: 'Renew a loan', capability_id: 'EX-LEND-CAP01', goal: 'A member keeps a tool longer.' }],
-      use_case_actor: [{ use_case_id: 'EX-LEND-UC03', position: 1, role_name: 'Member' }],
+      use_case: [{ id: 'EX-LEND-UC03', title: 'Borrow a tool for a member', capability_id: 'EX-LEND-CAP01', goal: 'The librarian lends a tool at the desk.', result_id: 'EX-LEND-CMD01' }],
+      use_case_actor: [{ use_case_id: 'EX-LEND-UC03', position: 1, role_name: 'Librarian' }],
     });
     const ws = await loadData(data);
     expect(ws.coverage.find((c) => c.domain === 'EX-LEND')?.gaps.filter((g) => g.id === 'EX-LEND-UC03').map((g) => g.missing)).toContain('use-case-without-flow');

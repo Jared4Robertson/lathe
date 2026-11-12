@@ -42,7 +42,7 @@ function login(mode: 'ok' | 'code' | 'fail' | 'wait') {
   return { run, states, args, marker, env, until };
 }
 
-describe('LA-PLT-UC30-R01-T01 The sign-in runs Claude Code\'s own login, passes on its link and code, and asks again when it ends', () => {
+describe('LA-PLT-UC30-R01-T01 LA-PLT-UC57-R01-T01 The sign-in runs Claude Code\'s own login, passes on its link and code, and asks again when it ends', () => {
   it('runs `auth login` with the method\'s flag only, and nothing else on the command line', () => {
     expect(signInArgs('claudeai')).toEqual(['auth', 'login', '--claudeai']);
     expect(signInArgs('console')).toEqual(['auth', 'login', '--console']);
@@ -100,7 +100,7 @@ describe('LA-PLT-UC30-R01-T01 The sign-in runs Claude Code\'s own login, passes 
   });
 });
 
-describe('LA-PLT-UC30-R03-T01 Cancel stops the sign-in under way, and nothing changes', () => {
+describe('LA-PLT-UC58-R01-T01 Cancel stops the sign-in under way, and nothing changes', () => {
   it('stops the CLI, goes back to no sign-in, and keeps the CLI signed out', async () => {
     const { run, until, marker } = login('wait');
     run.start('claudeai');
@@ -114,7 +114,7 @@ describe('LA-PLT-UC30-R03-T01 Cancel stops the sign-in under way, and nothing ch
   });
 });
 
-describe('LA-PLT-UC30-R04-T01 Signing out runs Claude Code\'s own logout', () => {
+describe('LA-PLT-UC59-R01-T01 Signing out runs Claude Code\'s own logout', () => {
   it('signs the CLI out, so its status says it is not signed in', async () => {
     const { marker, env, run, until } = login('ok');
     run.start('claudeai');

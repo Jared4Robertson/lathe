@@ -90,7 +90,7 @@ test.describe('overlays', () => {
   });
 
   // The Dashboard is the one full-window tool (LA-PAT-APP-UX-R20, its recorded deviation, LA-V157): nothing jumps as its figures come in, and a row closes it.
-  test('LA-TRC-UC26-FL-T the Dashboard pulls up by its shortcut, its figures settle in place, and a Needs attention row closes it and goes there', async ({ page }) => {
+  test('LA-V157-R02-T02 the Dashboard pulls up by its shortcut, its figures settle in place, and a Needs attention row closes it and goes there', async ({ page }) => {
     await openPage(page, RECORD);
     const r = await step(page, 'overlays', 'Dashboard: open', { keys: ['.tool-panel', '.dashboard-status', '.dashboard-stages', '.metrics'], allow: ['.wiki-panel', '.focus-stage', 'nav#nav', '.page-bar-actions', '.header-strip'] }, async () => {
       // Control, like the other chords here: the harness's browser reports Windows (userAgentData), so Mod is Ctrl in the page whatever machine runs it.

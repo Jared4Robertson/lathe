@@ -50,7 +50,7 @@ async function refusal(store: Store, name: string, input: unknown): Promise<Stor
 /** Every data file's text. */
 const files = (store: Store) => readdirSync(store.dataDir).map((f) => readFileSync(path.join(store.dataDir, f), 'utf8')).join('');
 
-describe('LA-MOD-UC02-R09-T01 each record moved to another domain takes its IDs, with everything under it, and nothing names an old ID', () => {
+describe('LA-MOD-UC36-R01-T01 each record moved to another domain takes its IDs, with everything under it, and nothing names an old ID', () => {
   it('moves the whole of a domain\'s records to another, renaming each and every mention', async () => {
     const store = await storeOf();
     const moves: [string, string][] = [
@@ -102,10 +102,10 @@ describe('LA-MOD-UC02-R09-T01 each record moved to another domain takes its IDs,
   });
 });
 
-describe('LA-UCS-UC06-R81-T01 a requirement moved to another use case takes its next number, its tests follow, and one a step fulfills stays', () => {
+describe('LA-UCS-UC14-R01-T01 a requirement moved to another use case takes its next number, its tests follow, and one a step fulfills stays', () => {
   it('renumbers the requirement under its new use case, with its tests, and refuses one a step fulfills', async () => {
     const store = await storeOf();
-    await runCommand(store, command('use-case add-use-case'), { id: 'TL-CAT-UC01', title: 'List a tool', capability_id: 'TL-CAT-CAP02', goal: 'Put a tool on the shelf.', actors: ['Librarian'] });
+    await runCommand(store, command('use-case add-use-case'), { id: 'TL-CAT-UC01', title: 'List a tool', capability_id: 'TL-CAT-CAP02', goal: 'Put a tool on the shelf.', result_id: 'TL-LEND-CMD01', actors: ['Librarian'] });
     await runCommand(store, command('use-case add-uc-requirement'), { id: 'TL-LEND-UC01-R09', title: 'Tool has a name', use_case_id: 'TL-LEND-UC01', statement: 'A tool MUST have a name; see TL-LEND-UC01-R09.' });
     await runCommand(store, command('use-case add-use-case-test'), { id: 'TL-LEND-UC01-R09-T01', title: 'A tool with no name is refused', uc_requirement_id: 'TL-LEND-UC01-R09', level: 'unit', state: 'not automated yet', when: 'Adds a tool.', then: 'Expects a refusal.' });
     await runCommand(store, command('use-case move-uc-requirement'), { id: 'TL-LEND-UC01-R09', use_case_id: 'TL-CAT-UC01' });
