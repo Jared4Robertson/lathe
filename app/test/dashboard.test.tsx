@@ -173,6 +173,9 @@ describe('the Dashboard', () => {
     expect(within(tile(panel, 'journeysProved')).getByRole('link')).toHaveAttribute('href', '/DM?stage=trace');
     expect(within(tile(panel, 'designed')).getByRole('link')).toHaveAttribute('href', '/DM#domains');
     expect(panel.querySelectorAll('.metric.is-rung')).toHaveLength(1);
+    // The tiles come first: before the header and the Status.
+    const first = (selector: string) => panel.querySelector(selector)!;
+    for (const later of ['.dashboard-who', '.dashboard-status']) expect(first('.metrics').compareDocumentPosition(first(later)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(requests.some((u) => u.includes('list-journey-proofs') && u.includes('DM'))).toBe(true);
     expect(panel.textContent).not.toMatch(/\d+%/);
   });

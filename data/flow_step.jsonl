@@ -438,7 +438,7 @@
 {"id":"LA-TRC-UC25-FL-S03","title":"A helper file not written yet keeps what the record implements unbuilt, and the check reports it as a missing file","flow_id":"LA-TRC-UC25-FL","path":"main","position":3}
 {"id":"LA-TRC-UC25-FL-S04","title":"The Owner reads the trace and sees each helper file beside its record's file","flow_id":"LA-TRC-UC25-FL","path":"main","position":4}
 {"id":"LA-TRC-UC26-FL-S01","title":"The Reader pulls up the Dashboard for the product in focus","flow_id":"LA-TRC-UC26-FL","path":"main","position":1}
-{"id":"LA-TRC-UC26-FL-S02","title":"They read the Status and the six tiles","flow_id":"LA-TRC-UC26-FL","path":"main","position":2}
+{"id":"LA-TRC-UC26-FL-S02","title":"They read the six tiles and the Status","flow_id":"LA-TRC-UC26-FL","path":"main","position":2}
 {"id":"LA-TRC-UC26-FL-S03","title":"They read Domains by stage","flow_id":"LA-TRC-UC26-FL","path":"main","position":3}
 {"id":"LA-TRC-UC26-FL-S04","title":"They read each journey and its marks","flow_id":"LA-TRC-UC26-FL","path":"main","position":4}
 {"id":"LA-TRC-UC26-FL-S05","title":"They read the top Changes","flow_id":"LA-TRC-UC26-FL","path":"main","position":5}

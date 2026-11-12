@@ -22,8 +22,8 @@ import { statusOf, type Status } from './status';
 import './dashboard.css';
 
 // The Dashboard (LA-V157): one product's health, pulled up by a shortcut and full-window over the stage, its focus kept
-// underneath, at `?panel=dashboard`. Its header says what the product is and what it is for; Status is the first tile
-// of the row of six that is not complete (status.ts); Domains by stage and Journeys show the shape of what is built
+// underneath, at `?panel=dashboard`. The six tiles come first; its header says what the product is and what it is for; Status is the first tile
+// of the six that is not complete (status.ts); Domains by stage and Journeys show the shape of what is built
 // and proved; Changes and Needs attention lead to what moved and what to do next. Every figure is one product's, read
 // through the aggregates' own queries, and a row or cell closes the Dashboard and goes there. On a phone it is a bottom
 // sheet. Where each thing leads follows the health draft's table, recorded as this view's requirements. A figure not
@@ -83,13 +83,13 @@ export function DashboardPanel({ index, product, sheet, onClose }: DashboardProp
   return (
     <ToolPanelFrame label="Dashboard" head={head} className="dashboard-panel" sheet={sheet} onClose={onClose} full>
       <div className="dashboard-body" data-reading={status ? undefined : 'true'}>
-        <div className="dashboard-top">
-          <Identity index={index} product={product} description={page?.product.description ?? null} outcomes={page?.outcomes ?? null} counts={page ? { domains: page.domains.length, journeys: index.children.get(id)?.filter((r) => r.kind === 'journey').length ?? 0, roles: page.roles.length, interfaces: page.interfaces.length } : null} />
-          <StatusBox status={status} />
-        </div>
         <div>
           <MetricTiles figures={figures} />
           <p className="dashboard-how">Status is the first tile not complete, read left to right.</p>
+        </div>
+        <div className="dashboard-top">
+          <Identity index={index} product={product} description={page?.product.description ?? null} outcomes={page?.outcomes ?? null} counts={page ? { domains: page.domains.length, journeys: index.children.get(id)?.filter((r) => r.kind === 'journey').length ?? 0, roles: page.roles.length, interfaces: page.interfaces.length } : null} />
+          <StatusBox status={status} />
         </div>
         <div className="dashboard-columns">
           <DomainsByStage table={table} />
