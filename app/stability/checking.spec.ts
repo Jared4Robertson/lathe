@@ -14,8 +14,13 @@ import type { LatheDesktop } from '../src/shell/desktop-bridge';
 const CHECKS = `${PRODUCT}?panel=checks`;
 /** The Checks panel over the stage. */
 const PANEL = '.tool-panel.checks-panel';
-/** A view the suite adds while the page is open; nothing uses it, so it is an error. */
+/**
+ * A view the suite adds while the page is open; nothing uses it, so it is a view-unused error, and no UI component
+ * renders it, so it opens a gap, which fails the strict product as a strict-gaps error. It adds exactly those two errors.
+ */
 const ADDED = 'LA-V990';
+/** The errors the added view causes: view-unused, and strict-gaps for the gap it opens. */
+const ADDED_ERRORS = 2;
 const ADDED_ROW = `${JSON.stringify({ id: ADDED, title: 'A page nothing reaches', description: 'A view that presents nothing.' })}\n`;
 /**
  * How long the server's checks' run over the whole of Lathe's own spec may take: about 17 s on an idle machine, the
@@ -55,7 +60,8 @@ test.describe('Checking flows', () => {
       // S02: a data file changes while the page is open; the page shows the problems as they are now.
       appendFileSync(path.join(process.env.STABILITY_ROOT!, 'data', 'view.jsonl'), ADDED_ROW);
       await expect(main.getByRole('heading', { name: /^view-unused \d+$/, level: 3 })).toBeVisible({ timeout: CHECK_RUN_MS });
-      await expect(main.getByText(new RegExp(`^${errors + 1} errors? · \\d+ warnings?$`))).toBeVisible();
+      await expect(main.getByRole('heading', { name: /^strict-gaps 1$/, level: 3 })).toBeVisible();
+      await expect(main.getByText(new RegExp(`^${errors + ADDED_ERRORS} errors? · \\d+ warnings?$`))).toBeVisible();
       // S03: they select a problem: its record takes the stage and the wiki card, and the panel stays open.
       await main.getByRole('link', { name: ADDED, exact: true }).first().click();
       await page.waitForURL((u) => u.pathname === `/${ADDED}` && u.search === '?panel=checks');
@@ -85,7 +91,7 @@ test.describe('Checking flows', () => {
       const main = page.locator(PANEL);
       await expect(main.getByText(new RegExp(`^${errors} errors? · \\d+ warnings?$`))).toBeVisible({ timeout: CHECK_RUN_MS });
       appendFileSync(path.join(process.env.STABILITY_ROOT!, 'data', 'view.jsonl'), ADDED_ROW);
-      await expect(main.getByText(new RegExp(`^${errors + 1} errors? · \\d+ warnings?$`))).toBeVisible({ timeout: CHECK_RUN_MS });
+      await expect(main.getByText(new RegExp(`^${errors + ADDED_ERRORS} errors? · \\d+ warnings?$`))).toBeVisible({ timeout: CHECK_RUN_MS });
     } finally {
       restore();
     }
@@ -105,7 +111,7 @@ test.describe('Checking flows', () => {
       // S02, S05: a data file changes while the page is open; the page shows the new error and the badge counts it.
       appendFileSync(path.join(process.env.STABILITY_ROOT!, 'data', 'view.jsonl'), ADDED_ROW);
       await expect(main.getByRole('heading', { name: /^view-unused \d+$/, level: 3 })).toBeVisible({ timeout: CHECK_RUN_MS });
-      await expect.poll(badge, { timeout: CHECK_RUN_MS }).toBe(errors + 1);
+      await expect.poll(badge, { timeout: CHECK_RUN_MS }).toBe(errors + ADDED_ERRORS);
     } finally {
       restore();
     }

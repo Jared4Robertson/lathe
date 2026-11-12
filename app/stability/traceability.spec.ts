@@ -4,6 +4,7 @@ import { rowsOf, servedWorkspace, testsMetricText, testsText } from './flows';
 import { keepData, PRODUCT } from './scenarios';
 import { expectKeyWhole, traceDrawn, traceSceneOf } from './scene';
 import { execFileSync } from 'node:child_process';
+import { appendFileSync } from 'node:fs';
 import path from 'node:path';
 import { openStore } from '../../lathe/src/platform/data/index';
 import { servesOf } from '../../lathe/src/trace/serves';
@@ -20,6 +21,8 @@ const TRC = 'LA-TRC';
 const EXP = 'LA-EXP';
 /** A UC requirement with a flow step that fulfills it, in a view, and a test. */
 const REQUIREMENT = 'LA-TRC-UC10-R03';
+/** An aggregate with no root entity, command or repository: it opens gaps in its domain, which Lathe's own data has none of. */
+const GAPPED_AGGREGATE = { id: 'LA-TRC-A90', title: 'An aggregate nothing roots', domain_id: TRC, description: 'An aggregate with no root entity.', identity: 'Name' };
 const WIKI = '.wiki-panel';
 const repo = path.resolve(import.meta.dirname, '../..');
 /** An Agent's write to the suite's copy, through the command layer. */
@@ -97,6 +100,7 @@ test.describe('Traceability flows', () => {
   });
 
   test('LA-TRC-UC11-FL-T see every obligation kind and test state', async ({ page }) => {
+    test.setTimeout(180_000);
     const spec = await servedWorkspace();
     const coverage = spec.coverage.find((c) => c.domain === TRC)!;
     // S01: a product, then a domain, with one coverage group per obligation kind it has.
@@ -106,15 +110,22 @@ test.describe('Traceability flows', () => {
     const section = page.locator(`${WIKI} .coverage`).last();
     await expect(section.locator('.coverage-group')).toHaveCount(coverage.obligations.filter((o) => o.total > 0).length);
     for (const o of coverage.obligations.filter((x) => x.total > 0)) await expect(section.locator(`.coverage-group[data-kind="${o.kind}"] .coverage-heading`)).toContainText(String(o.total));
-    // S02: they open a gap on its record page, on a domain of the product that has one.
-    const gapped = spec.coverage.find((c) => c.product === 'LA' && c.domain !== null && c.gaps.length > 0);
-    expect(gapped, 'a domain of Lathe has a coverage gap').toBeDefined();
-    await openPage(page, `/${gapped!.domain}`);
-    const gap = page.getByRole('list', { name: 'Coverage gaps' }).getByRole('link').first();
-    const gapId = (await gap.locator('code').textContent())!;
-    await gap.click();
-    await page.waitForURL((u) => u.pathname === `/${gapId}`);
-    await expect(page.locator(".header-strip-id")).toHaveText(gapId);
+    // S02: they open a gap on its record page, on a domain that has one. Lathe has no gaps of its own, so the test adds an
+    // aggregate no entity, command or repository serves to this domain, and puts the data back after.
+    const restore = keepData();
+    try {
+      appendFileSync(path.join(process.env.STABILITY_ROOT!, 'data', 'aggregate.jsonl'), `${JSON.stringify(GAPPED_AGGREGATE)}\n`);
+      await expect.poll(async () => (await servedWorkspace()).coverage.find((c) => c.domain === TRC)!.gaps.some((g) => g.id === GAPPED_AGGREGATE.id), { timeout: 60_000 }).toBe(true);
+      // The domain's page is open from S01; it shows the data's change as the server reads it, without a reload.
+      const gap = page.getByRole('list', { name: 'Coverage gaps' }).getByRole('link').filter({ hasText: GAPPED_AGGREGATE.id }).first();
+      await expect(gap).toBeVisible({ timeout: 60_000 });
+      const gapId = (await gap.locator('code').textContent())!;
+      await gap.click();
+      await page.waitForURL((u) => u.pathname === `/${gapId}`);
+      await expect(page.locator(".header-strip-id")).toHaveText(gapId);
+    } finally {
+      restore();
+    }
     // S03: on a record page each test shows its state.
     await openPage(page, `/${REQUIREMENT}`);
     const proved = page.locator(WIKI).getByRole('list', { name: 'Proved by' });
