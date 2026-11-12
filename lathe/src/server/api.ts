@@ -33,7 +33,7 @@ import { baseline, parseSince } from './baseline.ts';
 import { ALL_COMMANDS, ALL_QUERIES } from '../commands.ts';
 import { flagValue, InputError, type AnyCommand, type AnyQuery } from '../platform/commands/definition.ts';
 import { answerQuery, runCommand, runConditionally, runQuery } from '../platform/commands/run.ts';
-import { recordChanges } from '../changes.ts';
+import { recordChanges, type RecordChange } from '../changes.ts';
 import { planUndo, UndoRefusal } from './undo.ts';
 import type { CheckRun, ReadView } from '../platform/data/rules.ts';
 import { recordHistory } from './history.ts';
@@ -539,6 +539,13 @@ async function takeSnapshot(workspace: string, productId: string): Promise<strin
   return token;
 }
 
+/** The records changed since a snapshot (the one record diff, changes.ts), or null when the server no longer keeps it. */
+async function turnChanges(token: string): Promise<RecordChange[] | null> {
+  const kept = snapshots.get(token);
+  if (!kept) return null;
+  return withStore(kept.root, async (opened) => recordChanges(opened.store.schema, kept.tables, tablesOf(opened.store)));
+}
+
 /** Rolls the product back to a snapshot through the aggregates' own commands (undo.ts): 200 with the rows changed, 422 with every reason when it cannot. */
 async function runUndo(workspace: string, token: string, order: string[]): Promise<{ status: number; answer: WriteAnswer | { error: string } }> {
   const kept = snapshots.get(token);
@@ -620,20 +627,26 @@ export async function handleApi(root: string, req: IncomingMessage, res: ServerR
       return (send(res, 400, { error: 'The body is a JSON object.' }), true);
     }
     try {
-      if (pathname === '/api/snapshot') {
-        if (typeof body.product_id !== 'string') return (send(res, 400, { error: 'Give the product as product_id.' }), true);
-        send(res, 200, { snapshot: await takeSnapshot(root, body.product_id) }, { 'cache-control': 'no-store' });
-      } else if (pathname === '/api/turn-changes') {
-        const kept = typeof body.snapshot === 'string' ? snapshots.get(body.snapshot) : undefined;
-        if (!kept) return (send(res, 404, { error: 'The data from before that turn is no longer kept.' }), true);
-        const changes = await withStore(kept.root, async (opened) => recordChanges(opened.store.schema, kept.tables, tablesOf(opened.store)));
-        send(res, 200, changes, { 'cache-control': 'no-store' });
-      } else {
-        if (typeof body.snapshot !== 'string' || !Array.isArray(body.order) || !body.order.every((id) => typeof id === 'string')) {
-          return (send(res, 400, { error: 'Give the snapshot as snapshot and the IDs the turn touched, in order, as order.' }), true);
+      // One route each, matched once above with its method: the branches below pick which of the three it is.
+      switch (pathname) {
+        case '/api/snapshot': {
+          if (typeof body.product_id !== 'string') return (send(res, 400, { error: 'Give the product as product_id.' }), true);
+          send(res, 200, { snapshot: await takeSnapshot(root, body.product_id) }, { 'cache-control': 'no-store' });
+          break;
         }
-        const { status, answer } = await runUndo(root, body.snapshot, body.order as string[]);
-        send(res, status, answer, { 'cache-control': 'no-store' });
+        case '/api/turn-changes': {
+          const changes = typeof body.snapshot === 'string' ? await turnChanges(body.snapshot) : null;
+          if (!changes) return (send(res, 404, { error: 'The data from before that turn is no longer kept.' }), true);
+          send(res, 200, changes, { 'cache-control': 'no-store' });
+          break;
+        }
+        default: {
+          if (typeof body.snapshot !== 'string' || !Array.isArray(body.order) || !body.order.every((id) => typeof id === 'string')) {
+            return (send(res, 400, { error: 'Give the snapshot as snapshot and the IDs the turn touched, in order, as order.' }), true);
+          }
+          const { status, answer } = await runUndo(root, body.snapshot, body.order as string[]);
+          send(res, status, answer, { 'cache-control': 'no-store' });
+        }
       }
     } catch (error) {
       send(res, 500, { error: storeMessage(error) });

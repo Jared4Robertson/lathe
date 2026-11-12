@@ -20,8 +20,6 @@ export interface DictationSettings {
   /** Quick mode: send a dictated message by itself after the pause end-of-turn detection judges. */
   quick: boolean;
   phrases: Phrases;
-  /** Whether end-of-turn detection can read the voice; without it, Quick mode waits a fixed pause. */
-  endOfTurn: boolean;
 }
 
 export interface DictationView {
@@ -273,7 +271,7 @@ export class Dictation {
   #recount() {
     const c = this.#countdown;
     if (!c) return;
-    const total = turnDelay(this.#host.readDraft(), this.#pitch, this.#settings.endOfTurn);
+    const total = turnDelay(this.#host.readDraft(), this.#pitch);
     if (c.handle !== null && c.total === total) return;
     this.#clock.clearTimeout(c.handle);
     const until = c.since + total;

@@ -140,8 +140,7 @@ contextBridge.exposeInMainWorld('latheDesktop', {
     },
   },
   voice: {
-    support: () => ipcRenderer.invoke('lathe:voice-support'),
-    listen: (on: unknown) => ipcRenderer.invoke('lathe:voice-listen', on === true),
+    listen: (on: unknown, ask: unknown) => ipcRenderer.invoke('lathe:voice-listen', on === true, ask === true),
     onEvent(listener: VoiceListener) {
       if (typeof listener !== 'function') return () => {};
       voiceListeners.add(listener);

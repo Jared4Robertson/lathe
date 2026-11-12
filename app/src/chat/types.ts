@@ -136,14 +136,15 @@ export interface ChatBridge {
 
 // ---------- Voice (LA-PLT-UC20), as desktop/src/voice.ts sends it ----------
 
-/** Whether the window can dictate: on-device recognition there (macOS 26 or later), the microphone's permission, and end-of-turn detection. */
-export interface VoiceSupport {
-  available: boolean;
-  /** Why it cannot, said to the Owner; null when it can. */
+/**
+ * What asking the shell to listen came to: listening (or waiting for the window to come in front), stopped, the
+ * microphone denied, unavailable with why the Mac cannot dictate, or unasked: macOS has not asked for the microphone yet
+ * and the page did not let it ask.
+ */
+export interface ListenAnswer {
+  listening: 'listening' | 'background' | 'denied' | 'unavailable' | 'unasked' | 'stopped';
+  /** Why the Mac cannot dictate, said to the Owner; null otherwise. */
   reason: string | null;
-  microphone: 'granted' | 'denied' | 'restricted' | 'not-determined' | 'unknown';
-  /** Whether the helper reads the voice's pitch for Quick mode; without it, a fixed pause sends. */
-  endOfTurn: boolean;
 }
 
 /** A word heard, with its times in seconds since listening began. */
@@ -165,8 +166,10 @@ export type VoiceEvent =
   | { type: 'silence'; at: number; pitch: 'falling' | 'rising' | 'level' | null };
 
 export interface VoiceBridge {
-  support: () => Promise<VoiceSupport>;
-  /** Asks the shell to listen, or to stop; it asks macOS for the microphone the first time, and listens only while the window is in front. */
-  listen: (on: boolean) => Promise<'listening' | 'background' | 'denied' | 'unavailable' | 'stopped'>;
+  /**
+   * Asks the shell to listen, or to stop; it listens only while the window is in front. With `ask`, macOS may ask for
+   * the microphone the first time; without it, that first time is answered unasked.
+   */
+  listen: (on: boolean, ask: boolean) => Promise<ListenAnswer>;
   onEvent: (listener: (event: VoiceEvent) => void) => () => void;
 }

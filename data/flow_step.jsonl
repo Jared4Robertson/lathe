@@ -186,8 +186,9 @@
 {"id":"LA-PLT-UC02-FL-S03","title":"They run lathe check, which loads the records in the data folder the config names, with the product's own kinds","flow_id":"LA-PLT-UC02-FL","path":"main","position":3}
 {"id":"LA-PLT-UC02-FL-S06","title":"The Owner lists the other products in the workspace's Lathe configuration file, and lathe check checks each in its own folder","flow_id":"LA-PLT-UC02-FL","path":"workspace","position":1}
 {"id":"LA-PLT-UC03-FL-S01","title":"A record is changed with its own command while the Reader keeps its page open","flow_id":"LA-PLT-UC03-FL","path":"main","position":1}
-{"id":"LA-PLT-UC03-FL-S02","title":"The open page loads the data again at the same address and shows the change","flow_id":"LA-PLT-UC03-FL","path":"main","position":2}
+{"id":"LA-PLT-UC03-FL-S02","title":"The open page loads the data again at the same address and shows the change","flow_id":"LA-PLT-UC03-FL","path":"main","position":3}
 {"id":"LA-PLT-UC03-FL-S05","title":"When the data cannot be loaded, the view says what is wrong rather than showing other data","flow_id":"LA-PLT-UC03-FL","path":"refused","position":1}
+{"id":"LA-PLT-UC03-FL-S06","title":"The changed data files are read again and the change is announced","flow_id":"LA-PLT-UC03-FL","path":"main","position":2}
 {"id":"LA-PLT-UC06-FL-S01","title":"The Reader drags the gap between two panels, or focuses it and steps it with the keys","flow_id":"LA-PLT-UC06-FL","path":"main","position":1}
 {"id":"LA-PLT-UC06-FL-S02","title":"Lathe remembers the sizes; a double press on the divider resets one","flow_id":"LA-PLT-UC06-FL","path":"main","position":2}
 {"id":"LA-PLT-UC06-FL-S03","title":"Dragging the navigation small folds it to its rail","flow_id":"LA-PLT-UC06-FL","path":"main","position":3}
@@ -242,7 +243,7 @@
 {"id":"LA-PLT-UC19-FL-S14","title":"They choose a permission mode (Ask, Accept reads, Auto, Bypass after a warning, or View only); the session starts again in it, and the folder keeps it","flow_id":"LA-PLT-UC19-FL","path":"main","position":11}
 {"id":"LA-PLT-UC19-FL-S15","title":"Each message goes with what they are looking at, a chip they can remove; Claude starts from it, and uses the app tools for anything else about the window","flow_id":"LA-PLT-UC19-FL","path":"main","position":12}
 {"id":"LA-PLT-UC20-FL-S01","title":"The Owner dictates with the mic control or its key; the words appear in the message box as they speak, to edit and send","flow_id":"LA-PLT-UC20-FL","path":"main","position":1}
-{"id":"LA-PLT-UC20-FL-S05","title":"The chat offers the mic and the Voice menu only where the Mac can recognize speech on-device, and says why not elsewhere","flow_id":"LA-PLT-UC20-FL","path":"main","position":2}
+{"id":"LA-PLT-UC20-FL-S05","title":"Where the Mac cannot recognize speech on-device, listening is refused with why, which the chat says, and the window's mic is disabled with it","flow_id":"LA-PLT-UC20-FL","path":"main","position":2}
 {"id":"LA-PLT-UC21-FL-S01","title":"After a turn that wrote, they review its changes: the stage lights those records alone and next and previous walk through them with their diffs","flow_id":"LA-PLT-UC21-FL","path":"main","position":1}
 {"id":"LA-PLT-UC21-FL-S03","title":"Cmd or Ctrl with a press on a record ID in Claude's answer opens the record in a new tab","flow_id":"LA-PLT-UC21-FL","path":"main","position":2}
 {"id":"LA-PLT-UC22-FL-S01","title":"They point at a box on the stage and choose Ask Claude About This (menu or key): the record joins the message as a chip, sent as context","flow_id":"LA-PLT-UC22-FL","path":"main","position":1}

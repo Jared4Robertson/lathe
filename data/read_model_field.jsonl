@@ -161,10 +161,6 @@
 {"read_model_id":"LA-PLT-RM08","position":2,"name":"Stage","meaning":"A stage with its label and description, in order.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM08","position":3,"name":"Relation","meaning":"A pair of kinds a relation may link, with its role and its words read from each end.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM08","position":4,"name":"Columns","meaning":"Each table's columns, as their fields' inputs take them.","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM09","position":1,"name":"Available","meaning":"Whether the Mac can recognize speech on-device here.","type":"yes/no","required":true,"example":"yes"}
-{"read_model_id":"LA-PLT-RM09","position":2,"name":"Reason","meaning":"Why not, said to the Owner, when it cannot.","type":"text","required":false,"example":"On-device dictation needs macOS 26 or later."}
-{"read_model_id":"LA-PLT-RM09","position":3,"name":"Microphone","meaning":"macOS's answer for the microphone: granted, denied, restricted, not determined or unknown.","type":"text","required":true,"example":"not-determined"}
-{"read_model_id":"LA-PLT-RM09","position":4,"name":"End of turn","meaning":"Whether Quick mode can read the voice's pitch, or waits a fixed pause.","type":"yes/no","required":true,"example":"yes"}
 {"read_model_id":"LA-PLT-RM10","position":1,"name":"Name","meaning":"What the Owner types after the slash, with its plugin prefix.","type":"text","required":true,"example":"lathe:check-and-fix"}
 {"read_model_id":"LA-PLT-RM10","position":2,"name":"Description","meaning":"The first sentence of the skill's or command's description.","type":"text","required":false,"example":"Run lathe check, fix every error it reports."}
 {"read_model_id":"LA-PLT-RM10","position":3,"name":"Kind","meaning":"skill or command.","type":"text","required":true,"example":"skill"}

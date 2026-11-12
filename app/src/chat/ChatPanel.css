@@ -181,6 +181,8 @@
 .chat-mic.is-waiting { color: var(--steel); }
 .chat-mic.is-dictating { color: var(--sheet); background: var(--error); }
 .chat-mic.is-dictating:hover { background: var(--error); opacity: 0.9; }
+/* Where this Mac cannot dictate, the mic and the Voice menu stay in place, dimmed, and say why. */
+.chat-mic[aria-disabled="true"], .chat-voice-button[aria-disabled="true"] { opacity: 0.5; cursor: default; }
 
 .chat-send.is-counting { position: relative; }
 .chat-send-countdown { position: absolute; inset: 2px; border-radius: 50%; background: conic-gradient(var(--steel) var(--chat-countdown, 0turn), transparent 0); -webkit-mask: radial-gradient(circle, transparent 58%, #000 60%); mask: radial-gradient(circle, transparent 58%, #000 60%); animation-name: chat-send-countdown; animation-timing-function: linear; animation-fill-mode: forwards; pointer-events: none; }

@@ -1,17 +1,15 @@
 // End-of-turn detection for Quick mode (LA-PLT-UC26-R03): whether the Owner has finished their message, judged on the
 // Mac from two things: the words (does the message end as a complete thought?) and the voice (did its pitch fall at
 // the end, as a statement's does?), the helper reading the pitch (desktop/native/speech). A finished thought sends
-// after a short pause, an unfinished one waits longer, and when unsure it waits in between. Where the helper cannot
-// read the voice, a fixed pause stands in for both, and the chat says so.
+// after a short pause, an unfinished one waits longer, and when unsure it waits in between.
 
 /** How the words end: a complete thought, one cut off ("zoom into the"), or no telling. */
 export type Completeness = 'finished' | 'unfinished' | 'unsure';
 /** How the voice's pitch moved over its last half second; null when it could not tell (a whisper, noise). */
 export type Pitch = 'falling' | 'rising' | 'level' | null;
 
-/** The pauses before sending, in ms: after a finished thought, mid-thought, when unsure, and the fixed one without detection. */
+/** The pauses before sending, in ms: after a finished thought, mid-thought, and when unsure. */
 export const TURN_DELAY = { finished: 500, unfinished: 3500, unsure: 2000 } as const;
-export const FALLBACK_DELAY = 2000;
 
 /**
  * Words a complete thought does not end on: articles, prepositions, conjunctions, possessives, auxiliaries and the
@@ -45,10 +43,8 @@ export function completeness(text: string): Completeness {
 /**
  * How long a pause sends the message: the words decide when they are cut off; otherwise a falling voice confirms a
  * finished thought, and a rising or level one (a question still being asked, a list), or none heard, makes it unsure.
- * `detect` false: the fixed pause, whatever was said.
  */
-export function turnDelay(text: string, pitch: Pitch, detect: boolean): number {
-  if (!detect) return FALLBACK_DELAY;
+export function turnDelay(text: string, pitch: Pitch): number {
   const words = completeness(text);
   if (words === 'unfinished') return TURN_DELAY.unfinished;
   return words === 'finished' && pitch === 'falling' ? TURN_DELAY.finished : TURN_DELAY.unsure;

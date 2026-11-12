@@ -12,13 +12,6 @@ import { createInterface } from 'node:readline';
 
 export type Microphone = 'granted' | 'denied' | 'restricted' | 'not-determined' | 'unknown';
 
-export interface VoiceSupport {
-  available: boolean;
-  reason: string | null;
-  microphone: Microphone;
-  endOfTurn: boolean;
-}
-
 export interface VoiceWord { text: string; start: number; end: number }
 
 export type VoiceEvent =

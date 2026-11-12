@@ -4,7 +4,7 @@ import { PANEL_STORAGE } from '../src/platform/panel/model';
 import { focusAnswer, focusContext, openAnswer } from '../src/chat/appRequests';
 import { reloadChanges } from '../src/changes/changes';
 import { sessionDate } from '../src/chat/ChatPanel';
-import type { ChatBridge, ChatItem, ChatMode, ChatPatch, ChatSessions, ChatSkill, ChatStatus, LatheTools, OpenChoice, PromptAnswer, SignInMethod, SignInState, VoiceBridge, VoiceEvent, VoiceSupport } from '../src/chat/types';
+import type { ChatBridge, ChatItem, ChatMode, ChatPatch, ChatSessions, ChatSkill, ChatStatus, LatheTools, OpenChoice, PromptAnswer, SignInMethod, SignInState, VoiceBridge, VoiceEvent } from '../src/chat/types';
 import { chatDraft } from '../src/chat/draft';
 import { chatChips } from '../src/chat/chips';
 import { setRow } from './fixtures/load';
@@ -433,16 +433,25 @@ describe('LA-PLT-UC19-R12-T04 The chat knows where the Owner is: a chip above th
 
 // ---------- Voice (LA-V99-R04) ----------
 
-/** A stand-in for the shell's voice: the test says what it hears. */
-function fakeVoice(support: Partial<VoiceSupport> = {}) {
+/** A stand-in for the shell's voice: the test says what it hears, whether macOS has asked for the microphone, and why this Mac cannot dictate. */
+function fakeVoice({ unasked = false, unavailable = null }: { unasked?: boolean; unavailable?: string | null } = {}) {
   let listener: ((event: VoiceEvent) => void) | null = null;
+  /** Each time the shell listened or stopped. */
   const listens: boolean[] = [];
+  /** Each time it was asked, with whether macOS may ask for the microphone. */
+  const asked: { on: boolean; ask: boolean }[] = [];
   const voice: VoiceBridge = {
-    support: async () => ({ available: true, reason: null, microphone: 'granted', endOfTurn: true, ...support }),
-    listen: async (on) => { listens.push(on); return on ? 'listening' : 'stopped'; },
+    listen: async (on, ask) => {
+      asked.push({ on, ask });
+      if (on && unavailable) return { listening: 'unavailable', reason: unavailable };
+      if (on && unasked && !ask) return { listening: 'unasked', reason: null };
+      // A stop while not listening changes nothing.
+      if (on || listens.at(-1) === true) listens.push(on);
+      return { listening: on ? 'listening' : 'stopped', reason: null };
+    },
     onEvent: (l) => { listener = l; return () => { listener = null; }; } };
   const hear = (event: VoiceEvent) => act(() => listener?.(event));
-  return { voice, listens, hear };
+  return { voice, listens, asked, hear };
 }
 
 describe('LA-V99-R04-T01 The mic button dictates into the message box; the Voice menu turns on voice activation and Quick mode', () => {
@@ -496,18 +505,20 @@ describe('LA-V99-R04-T01 The mic button dictates into the message box; the Voice
 
   it('says what listening means before macOS first asks for the microphone', async () => {
     fakeChat();
-    const { voice, listens } = fakeVoice({ microphone: 'not-determined' });
+    const { voice, listens, asked } = fakeVoice({ unasked: true });
     host.latheDesktop = { ...host.latheDesktop!, voice };
     await openApp('/DM-SHOP-UC01');
     fireEvent.click(await within(chat()).findByRole('button', { name: 'Dictate' }));
-    const intro = within(chat()).getByRole('alertdialog', { name: 'Talk to Claude?' });
+    const intro = await within(chat()).findByRole('alertdialog', { name: 'Talk to Claude?' });
     expect(intro).toHaveTextContent('the audio never leaves this Mac, and nothing is recorded or saved');
     expect(listens).toEqual([]);
+    expect(asked[0]).toEqual({ on: true, ask: false });
     fireEvent.click(within(intro).getByRole('button', { name: 'Continue' }));
     await waitFor(() => expect(listens).toEqual([true]));
+    expect(asked.at(-1)).toEqual({ on: true, ask: true });
   });
 
-  it('shows Quick mode\'s countdown on Send, and hides the mic where the Mac cannot recognize speech on-device', async () => {
+  it('shows Quick mode\'s countdown on Send', async () => {
     fakeChat();
     const { voice, hear } = fakeVoice();
     host.latheDesktop = { ...host.latheDesktop!, voice };
@@ -524,12 +535,37 @@ describe('LA-V99-R04-T01 The mic button dictates into the message box; the Voice
     expect(within(chat()).getByRole('button', { name: 'Send' })).not.toHaveClass('is-counting');
   });
 
-  it('has no mic where on-device dictation is not available', async () => {
+  it('offers the mic, and where this Mac cannot dictate says why when listening is refused and disables the mic and the Voice menu with the reason', async () => {
     fakeChat();
+    const reason = 'On-device dictation needs macOS 26 or later.';
+    const { voice, listens, asked } = fakeVoice({ unavailable: reason });
+    host.latheDesktop = { ...host.latheDesktop!, voice };
+    await openApp('/DM-SHOP-UC01');
+    const mic = await within(chat()).findByRole('button', { name: 'Dictate' });
+    expect(mic).not.toHaveAttribute('aria-disabled');
+    fireEvent.click(mic);
+    // Refused: the reason is said, and the window's mic and Voice menu stay where they were, disabled with it.
+    expect(await screen.findByText(reason)).toBeInTheDocument();
+    const off = await within(chat()).findByRole('button', { name: `Dictate: ${reason}` });
+    expect(off).toHaveAttribute('aria-disabled', 'true');
+    expect(off).not.toHaveAttribute('aria-pressed', 'true');
+    expect(listens).toEqual([]);
+    const menu = within(chat()).getByRole('button', { name: `Voice: ${reason}` });
+    expect(menu).toHaveAttribute('aria-disabled', 'true');
+    fireEvent.click(menu);
+    expect(within(chat()).queryByRole('group', { name: 'Voice' })).toBeNull();
+    // Neither a click nor the key asks the shell again.
+    fireEvent.click(off);
+    fireEvent.keyDown(off, { key: 'Enter' });
+    expect(asked.filter((a) => a.on)).toEqual([{ on: true, ask: false }]);
+  });
+
+  it('offers no mic outside the desktop app', async () => {
+    fakeChat();
+    host.latheDesktop = { ...host.latheDesktop!, voice: undefined as never };
     await openApp('/DM-SHOP-UC01');
     await within(chat()).findByRole('textbox', { name: 'Message Claude' });
-    expect(within(chat()).queryByRole('button', { name: 'Dictate' })).toBeNull();
-    expect(within(chat()).queryByRole('button', { name: 'Voice' })).toBeNull();
+    expect(within(chat()).queryByRole('button', { name: /Dictate/ })).toBeNull();
   });
 });
 

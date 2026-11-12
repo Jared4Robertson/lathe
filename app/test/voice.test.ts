@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Dictation, IDLE_MS, type Clock, type DictationSettings, type DictationView } from '../src/chat/voice/dictation';
-import { completeness, FALLBACK_DELAY, TURN_DELAY, turnDelay } from '../src/chat/voice/endOfTurn';
+import { completeness, TURN_DELAY, turnDelay } from '../src/chat/voice/endOfTurn';
 import { appendText, newParagraph, readTokens, scratchLast, withPauses, type HeardWord, type Phrases, type Token } from '../src/chat/voice/grammar';
 import type { VoiceEvent } from '../src/chat/types';
 import { DEFAULT_COMMANDS, DEFAULT_VOICE_SETTINGS, STRICT_WAKE } from '../src/platform/voice-settings/model';
@@ -133,7 +133,7 @@ function setUp(over: Partial<DictationSettings> = {}) {
     listen: (on) => listens.push(on),
     say: (m) => notes.push(m),
     changed: (v) => { view = v; },
-  }, { activation: false, quick: false, phrases: PHRASES, endOfTurn: true, ...over }, clock);
+  }, { activation: false, quick: false, phrases: PHRASES, ...over }, clock);
   const hear = (e: VoiceEvent) => d.event(e);
   /** An utterance: the voice starts, the guesses, the settled words, the voice stops. */
   const utter = (text: string, at: number, pitch: 'falling' | 'rising' | 'level' | null = 'falling') => {
@@ -254,10 +254,10 @@ describe('LA-PLT-UC26-R03-T01 Quick mode sends after the pause end-of-turn detec
     expect(completeness('show me the payments and')).toBe('unfinished');
     expect(completeness('rename it to')).toBe('unfinished');
     expect(completeness('payments')).toBe('unsure');
-    expect(turnDelay('zoom into this', 'falling', true)).toBe(TURN_DELAY.finished);
-    expect(turnDelay('zoom into the', 'falling', true)).toBe(TURN_DELAY.unfinished);
-    expect(turnDelay('can you zoom into this', 'rising', true)).toBe(TURN_DELAY.unsure);
-    expect(turnDelay('zoom into this', null, true)).toBe(TURN_DELAY.unsure);
+    expect(turnDelay('zoom into this', 'falling')).toBe(TURN_DELAY.finished);
+    expect(turnDelay('zoom into the', 'falling')).toBe(TURN_DELAY.unfinished);
+    expect(turnDelay('can you zoom into this', 'rising')).toBe(TURN_DELAY.unsure);
+    expect(turnDelay('zoom into this', null)).toBe(TURN_DELAY.unsure);
     expect([TURN_DELAY.finished, TURN_DELAY.unfinished, TURN_DELAY.unsure]).toEqual([500, 3500, 2000]);
   });
 
@@ -307,16 +307,8 @@ describe('LA-PLT-UC26-R03-T01 Quick mode sends after the pause end-of-turn detec
     expect(v.sent).toEqual([]);
   });
 
-  it('falls back to a fixed 2-second pause where the voice cannot be read, and "Lathe, send" still sends at once', () => {
-    const v = setUp({ quick: true, endOfTurn: false });
-    v.d.start();
-    v.utter('zoom into this.', 0, 'falling');
-    expect(v.view().countdown?.total).toBe(FALLBACK_DELAY);
-    v.advance(1999);
-    expect(v.sent).toEqual([]);
-    v.advance(1);
-    expect(v.sent).toEqual(['Zoom into this.']);
-    const w = setUp({ quick: true, endOfTurn: false });
+  it('sends at once on "Lathe, send", mid-thought or not', () => {
+    const w = setUp({ quick: true });
     w.d.start();
     w.utter('zoom into the', 0, 'falling');
     w.utter('| Lathe, send.', 1.5);

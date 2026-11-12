@@ -68,7 +68,7 @@ describe('LA-PLT-PO04-T A closed window\'s chat ends', () => {
     const { session, calls } = fakeSession();
     await openChatSession(chats, { folder: '/p/a', request: { mode: 'new' }, create: async () => ({ session, history: [] }) });
     const voice = { want: vi.fn(() => 'listening'), close: vi.fn(async () => {}) };
-    expect(await listenForVoice(chats, { folder: '/p/a', on: true, allowed: async () => 'allowed', listener: () => voice as unknown as VoiceListener })).toBe('listening');
+    expect(await listenForVoice(chats, { folder: '/p/a', on: true, ask: true, allowed: async () => ({ may: 'allowed', reason: null }), listener: () => voice as unknown as VoiceListener })).toEqual({ listening: 'listening', reason: null });
     const ending = onWindowClosedEndChat({ folder: '/p/a' }, chats);
     expect(chats.load().stopping.size).toBe(1);
     await ending;
@@ -125,5 +125,31 @@ describe('LA-PLT-UC22-R03-T04 The chat\'s commands take only what the page may s
     expect(chooseChatModel(chats, { folder: '/p/f', choice: { model: 'sonnet', effort: null } })).toBe(true);
     expect(chooseChatModel(chats, { folder: '/p/f', choice: { model: 'gpt', effort: null } })).toBe(false);
     expect(fake.setChoice).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('LA-PLT-UC20-R01-T02 Listening is refused with why where this Mac cannot dictate, and answered unasked until macOS may ask for the microphone', () => {
+  const voice = () => ({ want: vi.fn(() => 'listening'), close: vi.fn(async () => {}) });
+
+  it('refuses with the reason, making no listener, where the Mac cannot recognize on-device', async () => {
+    const chats = new WindowChatRepository({ modes: file('m3.json') });
+    const listener = vi.fn(() => voice() as unknown as VoiceListener);
+    const reason = 'On-device dictation needs macOS 26 or later.';
+    expect(await listenForVoice(chats, { folder: '/p/a', on: true, ask: true, allowed: async () => ({ may: 'unavailable', reason }), listener })).toEqual({ listening: 'unavailable', reason });
+    expect(listener).not.toHaveBeenCalled();
+    expect(chats.load().open.has('/p/a')).toBe(false);
+  });
+
+  it('passes on whether macOS may ask, answers unasked or denied without listening, and listens once allowed', async () => {
+    const chats = new WindowChatRepository({ modes: file('m4.json') });
+    const asks: boolean[] = [];
+    const listener = vi.fn(() => voice() as unknown as VoiceListener);
+    const allowed = async (ask: boolean) => { asks.push(ask); return ask ? { may: 'allowed' as const, reason: null } : { may: 'unasked' as const, reason: null }; };
+    expect(await listenForVoice(chats, { folder: '/p/a', on: true, ask: false, allowed, listener })).toEqual({ listening: 'unasked', reason: null });
+    expect(await listenForVoice(chats, { folder: '/p/a', on: true, ask: true, allowed: async () => ({ may: 'denied', reason: null }), listener })).toEqual({ listening: 'denied', reason: null });
+    expect(listener).not.toHaveBeenCalled();
+    expect(await listenForVoice(chats, { folder: '/p/a', on: true, ask: true, allowed, listener })).toEqual({ listening: 'listening', reason: null });
+    expect(asks).toEqual([false, true]);
+    expect(listener).toHaveBeenCalledTimes(1);
   });
 });

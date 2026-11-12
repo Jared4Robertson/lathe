@@ -14,13 +14,14 @@ import type { Voice } from './useVoice';
 // activation, Quick mode, the wake phrase and the commands' words), and what the Owner reads before macOS first asks
 // for the microphone.
 
-/** The mic button: start dictating, or stop and leave the draft. */
+/** The mic button: start dictating, or stop and leave the draft; disabled, saying why, once this Mac is found unable to dictate. */
 export function MicButton({ voice }: { voice: Voice }) {
   const dictating = voice.view.state === 'dictating';
-  const label = dictating ? 'Stop dictating' : 'Dictate';
+  const off = voice.unavailable !== null;
+  const label = dictating ? 'Stop dictating' : off ? `Dictate: ${voice.unavailable}` : 'Dictate';
   return (
-    <Tooltip label={label} command="dictate" placement="left">
-      <Button variant="icon" label={label} aria-pressed={dictating} className={`chat-mic is-${voice.view.state}`} onClick={voice.toggle}>
+    <Tooltip label={voice.unavailable ?? label} command={off ? undefined : 'dictate'} placement="left">
+      <Button variant="icon" label={label} aria-pressed={dictating} aria-disabled={off || undefined} className={`chat-mic is-${voice.view.state}`} onClick={voice.toggle}>
         <Icon name="mic" size={16} />
       </Button>
     </Tooltip>
@@ -98,8 +99,8 @@ export function VoiceMenu({ voice }: { voice: Voice }) {
 
   return (
     <div className="chat-voice">
-      <Tooltip label={on ? `Voice: ${[settings.activation && 'voice activation', settings.quick && 'Quick mode'].filter(Boolean).join(' and ')} on` : 'Voice'} placement="bottom">
-        <Button ref={button} label="Voice" className={`chat-voice-button${on ? ' is-on' : ''}`} aria-expanded={open} aria-controls={open ? id : undefined} onClick={() => setOpen(!open)}>
+      <Tooltip label={voice.unavailable ?? (on ? `Voice: ${[settings.activation && 'voice activation', settings.quick && 'Quick mode'].filter(Boolean).join(' and ')} on` : 'Voice')} placement="bottom">
+        <Button ref={button} label={voice.unavailable === null ? 'Voice' : `Voice: ${voice.unavailable}`} className={`chat-voice-button${on ? ' is-on' : ''}`} aria-disabled={voice.unavailable !== null || undefined} aria-expanded={open} aria-controls={open ? id : undefined} onClick={() => setOpen(!open && voice.unavailable === null)}>
           <Icon name="mic" size={14} />
           <Icon name="chevron-down" size={14} />
         </Button>
@@ -118,9 +119,7 @@ export function VoiceMenu({ voice }: { voice: Voice }) {
             <span className="chat-voice-switch-text">
               <span className="chat-voice-switch-name">Quick mode</span>
               <span className="chat-voice-switch-detail">
-                {voice.support.endOfTurn
-                  ? 'Send a dictated message by itself when you have finished, judged on this Mac from your words and voice.'
-                  : 'Send a dictated message by itself after a 2-second pause (this Mac cannot judge when you have finished).'}
+                Send a dictated message by itself when you have finished, judged on this Mac from your words and voice.
               </span>
             </span>
           </label>

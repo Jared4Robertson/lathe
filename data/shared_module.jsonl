@@ -102,6 +102,7 @@
 {"id":"LA-PLT-MOD53","title":"lathe/src/server/undo.ts","domain_id":"LA-PLT","file":"lathe/src/server/undo.ts","group_name":"Desktop hosting"}
 {"id":"LA-PLT-MOD54","title":"desktop/src/claudeLogin.ts","domain_id":"LA-PLT","file":"desktop/src/claudeLogin.ts","group_name":"Window chat"}
 {"id":"LA-PLT-MOD55","title":"desktop/native/speech","domain_id":"LA-PLT","file":"desktop/native/speech","group_name":"Window chat"}
+{"id":"LA-PLT-MOD56","title":"app/src/components/useNoFling.ts","domain_id":"LA-PLT","file":"app/src/components/useNoFling.ts","group_name":"Workbench"}
 {"id":"LA-PRD-MOD20","title":"lathe/src/product/product/rules.ts","domain_id":"LA-PRD","file":"lathe/src/product/product/rules.ts","group_name":"Product"}
 {"id":"LA-PRD-MOD21","title":"lathe/src/product/product/commands/index.ts","domain_id":"LA-PRD","file":"lathe/src/product/product/commands/index.ts","group_name":"Product"}
 {"id":"LA-PRD-MOD22","title":"lathe/src/product/extension-record/rules.ts","domain_id":"LA-PRD","file":"lathe/src/product/extension-record/rules.ts","group_name":"Extension record"}
@@ -142,6 +143,7 @@
 {"id":"LA-TRC-MOD05","title":"lathe/src/trace/packages.ts","domain_id":"LA-TRC","file":"lathe/src/trace/packages.ts"}
 {"id":"LA-TRC-MOD06","title":"lathe/src/traceability/provision/model.ts","domain_id":"LA-TRC","file":"lathe/src/traceability/provision/model.ts"}
 {"id":"LA-TRC-MOD07","title":"lathe/src/traceability/slot-filling/model.ts","domain_id":"LA-TRC","file":"lathe/src/traceability/slot-filling/model.ts"}
+{"id":"LA-TRC-MOD08","title":"lathe/src/trace/file-texts.ts","domain_id":"LA-TRC","file":"lathe/src/trace/file-texts.ts"}
 {"id":"LA-TST-MOD33","title":"lathe/src/test-planning/test-data-set/model.ts","domain_id":"LA-TST","file":"lathe/src/test-planning/test-data-set/model.ts","group_name":"Test data set"}
 {"id":"LA-TST-MOD34","title":"lathe/src/test-planning/test-data-set/commands/index.ts","domain_id":"LA-TST","file":"lathe/src/test-planning/test-data-set/commands/index.ts","group_name":"Test data set"}
 {"id":"LA-TST-MOD35","title":"lathe/src/test-planning/test-data-set/commands","domain_id":"LA-TST","file":"lathe/src/test-planning/test-data-set/commands","group_name":"Test data set"}

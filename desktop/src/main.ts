@@ -47,7 +47,7 @@ import { answerPermissionPrompt } from './window-chat/commands/answer-permission
 import { chooseChatMode } from './window-chat/commands/choose-chat-mode.ts';
 import { chooseChatModel } from './window-chat/commands/choose-chat-model.ts';
 import { endWindowChat } from './window-chat/commands/end-window-chat.ts';
-import { listenForVoice } from './window-chat/commands/listen-for-voice.ts';
+import { listenForVoice, type MayListen } from './window-chat/commands/listen-for-voice.ts';
 import { openChatSession, type Opening } from './window-chat/commands/open-chat-session.ts';
 import { sendMessageToClaude } from './window-chat/commands/send-message-to-claude.ts';
 import { stopClaudesTurn } from './window-chat/commands/stop-claudes-turn.ts';
@@ -80,7 +80,7 @@ import { optOutOfWindowRestoration } from './persistence.ts';
 import { recordDataFile, recordMenuTemplate } from './records.ts';
 import { latheFor, latheLabel, packageVersion, serveModulePath, settleWithin, startDev, startServe } from './servers.ts';
 import { reloadInProgress, runSmoke, smokeFile, writeSmoke, type SmokeResult } from './smoke.ts';
-import { helperBuilt, parseHelperLine, speechHelperPath, voicePlatform, VoiceListener, type Microphone, type VoiceSupport } from './voice.ts';
+import { helperBuilt, parseHelperLine, speechHelperPath, voicePlatform, VoiceListener, type Microphone } from './voice.ts';
 
 const DESKTOP_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const REPO_ROOT = path.resolve(DESKTOP_DIR, '..');
@@ -585,22 +585,22 @@ function probeSpeech() {
 const SPEECH_FIXTURE = process.env.LATHE_DESKTOP_SPEECH_FIXTURE;
 const microphone = (): Microphone => (SPEECH_FIXTURE ? 'granted' : MAC ? systemPreferences.getMediaAccessStatus('microphone') : 'unknown') as Microphone;
 
-/** Whether the window can dictate (LA-PLT-UC20-R01): macOS 26 or later with the helper built, the Mac able to recognize on-device, and the microphone's permission. */
-async function voiceSupport(): Promise<VoiceSupport> {
+/**
+ * Whether a window may listen (LA-PLT-UC20-R01): macOS 26 or later with the helper built and the Mac able to recognize
+ * on-device, or why not; then macOS's microphone permission, which macOS asks for only when the page says it may.
+ */
+async function voiceAllowed(ask: boolean): Promise<MayListen> {
   const platform = voicePlatform(process.platform, os.release(), helperBuilt(SPEECH_HELPER()));
-  if (!platform.available) return { available: false, reason: platform.reason, microphone: 'unknown', endOfTurn: false };
+  if (!platform.available) return { may: 'unavailable', reason: platform.reason ?? 'Dictation is not available.' };
   const probe = await probeSpeech();
-  if (!probe.onDevice) return { available: false, reason: probe.reason, microphone: microphone(), endOfTurn: false };
-  return { available: true, reason: null, microphone: microphone(), endOfTurn: true };
-}
-
-/** Whether a window may listen: the voice support, and macOS's microphone permission, asked the first time. */
-async function voiceAllowed(): Promise<'allowed' | 'denied' | 'unavailable'> {
-  const support = await voiceSupport();
-  if (!support.available) return 'unavailable';
-  if (support.microphone === 'not-determined' && !(await systemPreferences.askForMediaAccess('microphone'))) return 'denied';
-  if (support.microphone === 'denied' || support.microphone === 'restricted') return 'denied';
-  return 'allowed';
+  if (!probe.onDevice) return { may: 'unavailable', reason: probe.reason ?? 'This Mac cannot recognize speech on-device.' };
+  const mic = microphone();
+  if (mic === 'not-determined') {
+    if (!ask) return { may: 'unasked', reason: null };
+    if (!(await systemPreferences.askForMediaAccess('microphone'))) return { may: 'denied', reason: null };
+  }
+  if (mic === 'denied' || mic === 'restricted') return { may: 'denied', reason: null };
+  return { may: 'allowed', reason: null };
 }
 
 /** A window's listener, which runs the speech helper and tells the page what it hears; none once the window has gone. */
@@ -969,10 +969,9 @@ if (!SMOKE && !app.requestSingleInstanceLock()) {
   ipcMain.handle('lathe:chat-sign-in-cancel', (event) => (fromPageCall(event) ? cancelSignIn(agentSignIns) : false));
   ipcMain.handle('lathe:chat-sign-out', (event) => (fromPageCall(event) ? signAgentOut(agentSignIns, { signOut: claudeSignOutFor() }) : false));
   // The chat's voice (the preload's voice): each call from a product window's own page, about that window.
-  ipcMain.handle('lathe:voice-support', (event) => (fromPageCall(event) ? voiceSupport() : null));
-  ipcMain.handle('lathe:voice-listen', (event, on: unknown) => {
+  ipcMain.handle('lathe:voice-listen', (event, on: unknown, ask: unknown) => {
     const entry = fromPageCall(event);
-    return entry ? listenForVoice(windowChats, { folder: entry.folder, on, allowed: voiceAllowed, listener: () => voiceListener(entry) }) : 'unavailable';
+    return entry ? listenForVoice(windowChats, { folder: entry.folder, on, ask, allowed: voiceAllowed, listener: () => voiceListener(entry) }) : { listening: 'stopped', reason: null };
   });
   // A page that (re)loads asks for the whole chat.
   ipcMain.handle('lathe:chat-state', (event) => {

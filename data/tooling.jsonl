@@ -13,5 +13,6 @@
 {"id":"LA-PLT-TOOL16","title":"knip.json","domain_id":"LA-PLT","file":"lathe/knip.json"}
 {"id":"LA-PLT-TOOL17","title":"upgrades","domain_id":"LA-PLT","file":"lathe/upgrades"}
 {"id":"LA-PLT-TOOL19","title":"measure.ts","domain_id":"LA-PLT","file":"app/mobile/measure.ts"}
+{"id":"LA-PLT-TOOL20","title":"speech.ts","domain_id":"LA-PLT","file":"desktop/scripts/speech.ts"}
 {"id":"LA-PRD-TOOL01","title":"schema-types.ts","domain_id":"LA-PRD","file":"lathe/scripts/schema-types.ts"}
 {"id":"LA-PRD-TOOL02","title":"reference.ts","domain_id":"LA-PRD","file":"lathe/scripts/reference.ts"}

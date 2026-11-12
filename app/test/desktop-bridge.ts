@@ -37,8 +37,7 @@ export function desktopStandIn(): LatheDesktop {
       onPatch: () => () => {},
     },
     voice: {
-      support: async () => ({ available: false, reason: 'Not in tests.', microphone: 'unknown', endOfTurn: false }),
-      listen: async () => 'unavailable',
+      listen: async () => ({ listening: 'unavailable', reason: 'Not in tests.' }),
       onEvent: () => () => {},
     },
     onAppRequest: () => () => {},

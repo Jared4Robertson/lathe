@@ -189,6 +189,7 @@
 {"source_id":"LA-PRD-EN29-TB","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-PRD-EN76-TB","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-PRD-EN80-TB","target_id":"LA-PLT-STORE01"}
+{"source_id":"LA-PRD-EN81-TB","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-PRD-REPO01","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-PRD-REPO16","target_id":"LA-PLT-STORE01"}
 {"source_id":"LA-PRD-REPO19","target_id":"LA-PLT-STORE01"}

@@ -160,7 +160,7 @@ function dictate(events: VoiceEvent[], activation: boolean) {
     listen: () => {},
     say: () => {},
     changed: (v) => { view = v; },
-  }, { activation, quick: false, phrases: { wake: 'Lathe', commands: DEFAULT_COMMANDS }, endOfTurn: true });
+  }, { activation, quick: false, phrases: { wake: 'Lathe', commands: DEFAULT_COMMANDS } });
   d.event({ type: 'listening', on: true, why: 'started', message: null });
   for (const e of asHeard(events)) d.event(e);
   d.dispose();
