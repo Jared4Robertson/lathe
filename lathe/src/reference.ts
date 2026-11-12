@@ -323,9 +323,9 @@ capabilities, their use cases, the code and the tests. An outcome names what mea
 or a record of a product's own kind such as a report, or it says how it is measured outside the code.
 
 **Words.** What clean architecture calls a use case or an interactor is what Lathe calls a command handler
-(\`command_handler\`): the application service that carries out one command. A Lathe use case (\`use_case\`) is the
-actor's goal, one level up: its one flow's steps invoke commands and queries, the same through every interface that
-offers it.
+(\`command_handler\`): the application service that carries out one command. A Lathe use case (\`use_case\`) is one
+role invoking one command, or asking one query: its result. Its one flow's steps lead to it, the same through every
+interface that offers it.
 
 **Checks** are rows of the \`check\` table. Each holds the query that finds its problems: a SELECT over the tables
 returning \`severity\`, \`record\` and \`message\` for each problem. An error means the data is broken; a warning is

@@ -3,7 +3,7 @@ import { Button } from '../components/Button';
 import { Icon } from '../components/icons';
 import { CHAT_MODES, type ChatMode } from './types';
 
-// The chat's permission mode control (LA-V99-R03, LA-PLT-UC19-R09): one button under the chat's head naming the
+// The chat's permission mode control (LA-V99-R03, LA-PLT-UC45-R01): one button under the chat's head naming the
 // mode, opening a menu of the five, each with what it lets Claude do. Bypass asks first, with a clear warning
 // (BypassWarning), and shows a badge in the head while it is on (ChatPanel).
 

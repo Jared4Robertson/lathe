@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import type { ServedData } from './read-view';
 import { chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
@@ -112,9 +114,53 @@ describe('LA-V101-R02-T01 the Use case editor writes only through the aggregate\
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-SHOP-UC02'));
     await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'Empty the basket');
     await user.type(within(form).getByRole('textbox', { name: /^goal/ }), 'A shopper empties the basket.');
+    await user.selectOptions(within(form).getByRole('combobox', { name: /^Result/ }), 'DM-SHOP-CMD01');
     await user.type(within(form).getByRole('textbox', { name: /^Actors/ }), 'Shopper');
     await user.click(within(form).getByRole('button', { name: 'Add use case' }));
-    await waitFor(() => expect(commands).toEqual([{ route: '/api/use-case/add-use-case', input: { capability_id: 'DM-SHOP-CAP01', id: 'DM-SHOP-UC02', title: 'Empty the basket', goal: 'A shopper empties the basket.', actors: ['Shopper'] } }]));
+    await waitFor(() => expect(commands).toEqual([{ route: '/api/use-case/add-use-case', input: { capability_id: 'DM-SHOP-CAP01', id: 'DM-SHOP-UC02', title: 'Empty the basket', goal: 'A shopper empties the basket.', result_id: 'DM-SHOP-CMD01', actors: ['Shopper'] } }]));
+  });
+
+  it('Edit offers its product\'s commands and queries as Result (LA-PAT-FIELD-INPUTS), and sends a new one as result_id', async () => {
+    const user = userEvent.setup();
+    const { commands } = await openApp('/DM-SHOP-UC01', { command: () => ({ answer: ok }) });
+    await within(main()).findByText('A shopper adds an item.');
+    await user.click(within(toolbar('DM-SHOP-UC01')).getByRole('button', { name: 'Edit' }));
+    const form = screen.getByRole('form', { name: 'Edit DM-SHOP-UC01' });
+    const picker = within(form).getByRole('combobox', { name: /^Result/ });
+    expect(picker).toHaveValue('DM-SHOP-CMD01');
+    expect(within(picker).getAllByRole('option').map((o) => o.getAttribute('value'))).toEqual(expect.arrayContaining(['DM-SHOP-CMD01', 'DM-SHOP-QRY01']));
+    await user.selectOptions(picker, 'DM-SHOP-QRY01');
+    await user.click(within(form).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(commands).toEqual([{ route: '/api/use-case/change-use-case', input: { id: 'DM-SHOP-UC01', result_id: 'DM-SHOP-QRY01' } }]));
+  });
+});
+
+describe('LA-V101-R15-T01 a use case\'s page shows its result, and whether it is a command use case or a query use case', () => {
+  /** The value of the page's Result fact, under its goal (the Links out name the same link apart). */
+  const result = async () => (await within(main()).findByText('Result', { selector: '.use-case-facts dt' })).nextElementSibling as HTMLElement;
+
+  it('links a command use case\'s command, and a query use case\'s query, with the kind beside it', async () => {
+    await openApp('/DM-SHOP-UC01');
+    const command = await result();
+    expect(within(command).getByRole('link', { name: /DM-SHOP-CMD01/ })).toBeInTheDocument();
+    expect(command).toHaveTextContent('Command use case');
+    // The kind is its own line under the result, its words kept together, on a phone as on a desktop.
+    const kind = within(command).getByText('Command use case');
+    expect(kind).toHaveClass('use-case-kind');
+    expect(readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8')).toMatch(/\.use-case-kind \{ display: block; white-space: nowrap; \}/);
+  });
+
+  it('says Query use case for a use case whose result is a query', async () => {
+    await openApp('/DM-PAY-UC01');
+    const query = await result();
+    expect(within(query).getByRole('link', { name: /DM-SHOP-QRY01/ })).toBeInTheDocument();
+    expect(query).toHaveTextContent('Query use case');
+  });
+
+  it('names the use case under Result of in its command\'s Links in', async () => {
+    await openApp('/DM-SHOP-CMD01');
+    const term = await screen.findByText('Result of', { selector: 'dt' });
+    expect(within(term.nextElementSibling as HTMLElement).getByRole('link', { name: /DM-SHOP-UC01/ })).toBeInTheDocument();
   });
 });
 

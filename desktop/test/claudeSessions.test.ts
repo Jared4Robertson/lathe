@@ -22,7 +22,7 @@ function transcript(id: string, lines: object[], ageMs: number) {
 }
 const prompt = (text: string) => ({ type: 'user', message: { role: 'user', content: text } });
 
-describe('LA-PLT-UC19-R05-T01 The picker lists the folder\'s saved sessions by title and date, and warns of one open elsewhere', () => {
+describe('LA-PLT-UC44-R01-T01 The picker lists the folder\'s saved sessions by title and date, and warns of one open elsewhere', () => {
   it('names the store\'s folder as the CLI does', () => {
     expect(projectDirName('/Users/person/Product_one.x')).toBe('-Users-person-Product-one-x');
   });
@@ -85,7 +85,7 @@ describe('LA-PLT-UC19-R01-T03 The chat finds the Owner\'s own claude', () => {
   });
 });
 
-describe('LA-PLT-UC19-R10-T02 The chat asks the CLI itself whether it is signed in', () => {
+describe('LA-PLT-UC44-R03-T02 The chat asks the CLI itself whether it is signed in', () => {
   it('reads `claude auth status --json`: signed in, not signed in with no other way in, or cannot tell', () => {
     expect(signedInFrom(JSON.stringify({ loggedIn: true, authMethod: 'claude.ai' }))).toBe(true);
     expect(signedInFrom(JSON.stringify({ loggedIn: false, authMethod: 'none' }))).toBe(false);

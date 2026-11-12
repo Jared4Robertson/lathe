@@ -177,7 +177,7 @@ describe.skipIf(process.platform !== 'darwin')('The desktop app opens a product 
     expect(result.dockIcon).toEqual({ file: path.join(desktop, 'build', 'icon.png'), width: 1024, height: 1024 });
   });
 
-  it('LA-PLT-UC11-R07-T01 quits cleanly, with exit code 0, while a reload is in progress', () => {
+  it('LA-PLT-UC41-R02-T01 quits cleanly, with exit code 0, while a reload is in progress', () => {
     expect(result.reloadAtQuit).toBe(true);
     // Before quitting waited for the servers, the engine's work outlived the process now and then, which ended it
     // with no exit code ("terminating due to uncaught exception of type Napi::Error").

@@ -88,7 +88,7 @@ describe('LA-PLT-UC19-R01-T01 The chat runs the Owner\'s own Claude Code in the 
   });
 });
 
-describe('LA-PLT-UC19-R04-T01 A permission prompt waits for the Owner, and Stop ends the turn', () => {
+describe('LA-PLT-UC43-R01-T01 LA-PLT-UC42-R01-T01 A permission prompt waits for the Owner, and Stop ends the turn', () => {
   it('runs the tool once allowed', async () => {
     const { chat, until } = session();
     chat.open({}, []);
@@ -139,7 +139,7 @@ describe('LA-PLT-UC19-R04-T01 A permission prompt waits for the Owner, and Stop 
   });
 });
 
-describe('LA-PLT-UC19-R09-T04 The mode changes on the open session, and the panel answers prompts by it', () => {
+describe('LA-PLT-UC45-R01-T04 The mode changes on the open session, and the panel answers prompts by it', () => {
   it('starts in the mode it is given, View only with only the reads counted, and loads Lathe\'s plugin either way', async () => {
     const { chat, until } = session('view-only');
     chat.open({}, []);
@@ -209,7 +209,7 @@ describe('LA-PLT-UC19-R09-T04 The mode changes on the open session, and the pane
   });
 });
 
-describe('LA-PLT-UC19-R11-T02 Allow always in this chat: one approval per tool', () => {
+describe('LA-PLT-UC43-R02-T02 Allow always in this chat: one approval per tool', () => {
   it('allows the tool, and its next prompt in the chat runs without asking', async () => {
     const { chat, until } = session();
     chat.open({}, []);
@@ -235,7 +235,7 @@ describe('LA-PLT-UC19-R12-T03 A message goes with what the Owner is looking at',
   });
 });
 
-describe('LA-PLT-UC22-R04-T01 A message typed while Claude works is queued and sent in order', () => {
+describe('LA-PLT-UC47-R01-T01 A message typed while Claude works is queued and sent in order', () => {
   it('queues messages while a turn is under way, lists them, and sends each as the turn before it ends', async () => {
     const { chat, until } = session();
     chat.open({}, []);
@@ -253,7 +253,7 @@ describe('LA-PLT-UC22-R04-T01 A message typed while Claude works is queued and s
   });
 });
 
-describe('LA-PLT-UC22-R03-T01 The model and effort the Owner chooses are the CLI\'s flags, on the same session', () => {
+describe('LA-PLT-UC46-R01-T01 The model and effort the Owner chooses are the CLI\'s flags, on the same session', () => {
   it('starts the CLI again with --model and --effort, says so, and refuses while a turn is under way', async () => {
     const { chat, until } = session();
     chat.open({}, []);

@@ -1,1 +1,1 @@
-{"id":"P-D-UC01","title":"Lend a thing","capability_id":"P-D-CAP01","goal":"A member takes a thing home."}
+{"id":"P-D-UC01","title":"Lend a thing","capability_id":"P-D-CAP01","goal":"A member takes a thing home.","result_id":"P-D-CMD01"}

@@ -1,6 +1,6 @@
 import type { RecordChange } from './changes';
 
-// Roll-ups of the changes (LA-EXP-UC15-R05): every container (a domain, a stage, a folder, an aggregate) says how many
+// Roll-ups of the changes (LA-EXP-UC15-R07): every container (a domain, a stage, a folder, an aggregate) says how many
 // records under it are new, changed or removed, on its box and in the nav, so changes are findable zoomed out. A record
 // no longer in the data has no box, so a removed record counts under the nearest container its ID names (its ID,
 // without its last parts, until one is a record), as the IDs nest: LA-EXP-UC15-R03-T01 under LA-EXP-UC15-R03.

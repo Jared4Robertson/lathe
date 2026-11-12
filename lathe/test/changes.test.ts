@@ -19,9 +19,14 @@ beforeAll(async () => {
   await run(store, 'product add-product', { id: 'EX', title: 'Example', description: 'A small product for writing notes.', roles: [{ name: 'Writer', description: 'Someone who writes notes.' }] });
   await run(store, 'domain add-domain', { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', position: 2, subdomain_type: 'core', description: 'Writing and keeping notes.' });
   await run(store, 'domain add-capability', { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1, description: 'Writing notes down.' });
+  await run(store, 'aggregate add-aggregate', { id: 'EX-NOTE-A1', title: 'Note', domain_id: 'EX-NOTE', identity: 'Note ID', description: 'One note a writer keeps.' });
+  await run(store, 'aggregate add-entity', { id: 'EX-NOTE-EN01', title: 'Note', aggregate_id: 'EX-NOTE-A1', role: 'root', description: 'The note itself.' });
+  await run(store, 'command add-command', { id: 'EX-NOTE-CMD01', title: 'Write a note', entity_id: 'EX-NOTE-EN01', description: 'Keeps a new note.' });
+  await run(store, 'command add-command', { id: 'EX-NOTE-CMD02', title: 'Throw a note away', entity_id: 'EX-NOTE-EN01', description: 'Drops a note.' });
+  await run(store, 'command add-command', { id: 'EX-NOTE-CMD03', title: 'Share a note', entity_id: 'EX-NOTE-EN01', description: 'Lets someone else read a note.' });
   await run(store, 'pattern add-pattern', { id: 'EX-PAT-NOTE', title: 'A note action', product_id: 'EX', description: 'An action on one note.' });
-  await run(store, 'use-case add-use-case', { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a thought.' });
-  await run(store, 'use-case add-use-case', { id: 'EX-NOTE-UC02', title: 'Throw a note away', capability_id: 'EX-NOTE-CAP01', goal: 'A writer drops a note they no longer need.' });
+  await run(store, 'use-case add-use-case', { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a thought.', result_id: 'EX-NOTE-CMD01' });
+  await run(store, 'use-case add-use-case', { id: 'EX-NOTE-UC02', title: 'Throw a note away', capability_id: 'EX-NOTE-CAP01', goal: 'A writer drops a note they no longer need.', result_id: 'EX-NOTE-CMD02' });
 }, 60_000);
 
 afterAll(async () => {
@@ -35,7 +40,7 @@ describe('the record diff', () => {
     await run(store, 'use-case change-use-case', { id: 'EX-NOTE-UC01', title: 'Write a short note', goal: 'A writer keeps a short thought.', actors: ['Writer'] });
     await run(store, 'pattern-following follow-pattern', { follower_id: 'EX-NOTE-UC01', pattern_id: 'EX-PAT-NOTE' });
     await run(store, 'use-case remove-use-case', { id: 'EX-NOTE-UC02' });
-    await run(store, 'use-case add-use-case', { id: 'EX-NOTE-UC03', title: 'Share a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer lets someone else read a note.' });
+    await run(store, 'use-case add-use-case', { id: 'EX-NOTE-UC03', title: 'Share a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer lets someone else read a note.', result_id: 'EX-NOTE-CMD03' });
     const after = tablesOf(store);
     const changes = recordChanges(store.schema, before, after);
     expect(changes.map((c) => [c.id, c.change])).toEqual([['EX-NOTE-UC01', 'changed'], ['EX-NOTE-UC02', 'removed'], ['EX-NOTE-UC03', 'added']]);

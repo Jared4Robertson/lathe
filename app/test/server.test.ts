@@ -80,7 +80,10 @@ beforeAll(async () => {
   await runCommand(store, commandAt('/api/product/add-product'), { id: 'EX', title: 'Example', description: 'A small product for keeping notes.' });
   await runCommand(store, commandAt('/api/domain/add-domain'), { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', position: 2, subdomain_type: 'core', description: 'Notes a writer keeps.' });
   await runCommand(store, commandAt('/api/domain/add-capability'), { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1, description: 'Writing and keeping notes.' });
-  await runCommand(store, commandAt('/api/use-case/add-use-case'), { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer writes a note.' });
+  await runCommand(store, commandAt('/api/aggregate/add-aggregate'), { id: 'EX-NOTE-A1', title: 'Note', domain_id: 'EX-NOTE', identity: 'Note ID', description: 'One note a writer keeps.' });
+  await runCommand(store, commandAt('/api/aggregate/add-entity'), { id: 'EX-NOTE-EN01', title: 'Note', aggregate_id: 'EX-NOTE-A1', role: 'root', description: 'The note itself.' });
+  await runCommand(store, commandAt('/api/command/add-command'), { id: 'EX-NOTE-CMD01', title: 'Write a note', entity_id: 'EX-NOTE-EN01', description: 'Keeps a new note.' });
+  await runCommand(store, commandAt('/api/use-case/add-use-case'), { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer writes a note.', result_id: 'EX-NOTE-CMD01' });
   await store.close();
 });
 
@@ -100,7 +103,7 @@ describe('dev API plugin', () => {
       return { fake, changed, added };
     })());
 
-  it('LA-PLT-UC16-R01-T01 writes through the aggregate\'s commands, each in one write, which the reads then show', async () => {
+  it('LA-PAT-HTTP-STEPS-R09-T01 writes through the aggregate\'s commands, each in one write, which the reads then show', async () => {
     const { fake, changed, added } = await writeOnce();
     expect(changed.status).toBe(200);
     expect(added.status).toBe(200);
@@ -116,7 +119,7 @@ describe('dev API plugin', () => {
 
   const change = { id: 'EX-NOTE-UC01', goal: 'x' };
 
-  it('LA-PLT-UC16-R02-T01 refuses a write from another site, and one not sent as JSON, before the store sees it', async () => {
+  it('LA-PAT-HTTP-STEPS-R08-T01 refuses a write from another site, and one not sent as JSON, before the store sees it', async () => {
     const m = (await start(async () => realApi, root)).middlewares[0];
     expect((await post(m, '/api/use-case/change-use-case', change, { origin: 'https://elsewhere.example' })).status).toBe(403);
     expect((await post(m, '/api/use-case/change-use-case', change, { 'sec-fetch-site': 'cross-site' })).status).toBe(403);

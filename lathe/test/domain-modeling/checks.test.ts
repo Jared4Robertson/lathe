@@ -15,7 +15,7 @@ beforeAll(async () => {
 const check = (name: string, body: () => void) => describe(name, body);
 
 check('repository-persists-nothing', () => {
-  it('LA-MOD-UC02-R06-T03 a repository that persists no aggregate is an error until its link is written, and its aggregate has no repository', async () => {
+  it('LA-MOD-UC34-R01-T03 a repository that persists no aggregate is an error until its link is written, and its aggregate has no repository', async () => {
     expect(ofCheck(clean, 'repository-persists-nothing')).toEqual([]);
     const ws = await loadData(without(complete(), 'persists', (r) => r.source_id === 'EX-LEND-REPO02'));
     expect(ofCheck(ws, 'repository-persists-nothing')).toEqual([
@@ -31,14 +31,14 @@ check('repository-persists-nothing', () => {
 });
 
 check('entity-unreferenced', () => {
-  it("LA-MOD-UC10-R80-T01 a child entity its root does not reach by has_one or has_many is a warning", async () => {
+  it("LA-MOD-UC40-R02-T01 a child entity its root does not reach by has_one or has_many is a warning", async () => {
     const ws = await loadData(without(complete(), 'has_one', () => true));
     expect(ofCheck(ws, 'entity-unreferenced')).toEqual([expect.objectContaining({ severity: 'warning', record: 'EX-LEND-EN02' })]);
   });
 });
 
 check('event-tense', () => {
-  it('LA-STD-MODELING-R07-T02 a title with no past form as its last word or after its first is a warning', async () => {
+  it('LA-STD-NAMING-R06-T02 a title with no past form as its last word or after its first is a warning', async () => {
     const data = adding(complete(), {
       domain_event: [
         { id: 'EX-LEND-EV03', title: 'Return tool', aggregate_id: 'EX-LEND-A1', published: false, description: 'A tool came back.' },
@@ -52,7 +52,7 @@ check('event-tense', () => {
 });
 
 check('domain-named-for-technology', () => {
-  it('LA-STD-MODELING-R05-T02 a domain whose title or code names a technology is a warning; one only described so is not', async () => {
+  it('LA-STD-NAMING-R04-T02 a domain whose title or code names a technology is a warning; one only described so is not', async () => {
     const data = adding(complete(), {
       domain: [
         { id: 'EX-WEB', title: 'Web app', product_id: 'EX', position: 2, subdomain_type: 'generic', description: 'Pages members see.' },
@@ -68,7 +68,7 @@ check('domain-named-for-technology', () => {
 });
 
 check('query-title-verb', () => {
-  it('LA-STD-MODELING-R06-T01 a query not starting with Get, List or Find is a warning', async () => {
+  it('LA-STD-NAMING-R05-T01 a query not starting with Get, List or Find is a warning', async () => {
     expect(ofCheck(clean, 'query-title-verb')).toEqual([]);
     const data = adding(complete(), {
       query: [
@@ -121,7 +121,7 @@ check('term-used-unlinked', () => {
 });
 
 check('specification-title-article', () => {
-  it('LA-STD-MODELING-R08-T01 a specification starting with A, An or The is a warning; a condition with no article is not', async () => {
+  it('LA-STD-NAMING-R07-T01 a specification starting with A, An or The is a warning; a condition with no article is not', async () => {
     expect(ofCheck(clean, 'specification-title-article')).toEqual([]);
     const data = adding(complete(), {
       specification: [

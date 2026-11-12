@@ -11,7 +11,9 @@ import type { TraceHost } from '../src/trace/TraceCanvas';
 // follow the focus to another row (LA-V98-R22), and the camera frames them with the focused box.
 
 const USE_CASE = 'LA-UCS-UC06';
-const STEP = 'LA-UCS-UC06-FL-S04';
+const STEP = 'LA-UCS-UC06-FL-S02';
+/** A use case a journey's step carries out, among rows of others that journeys carry out too (LA-PLT-UC17 to UC19). */
+const CARRIED = 'LA-PLT-UC18';
 /** Lathe's own journey "Take an idea to proof": its first steps carry out LA-UCS-UC06, then LA-MOD-UC12. */
 const JOURNEY = 'LA-JR01';
 
@@ -73,11 +75,11 @@ test.describe('the Trace stage stays where the Reader left it', () => {
     const lit = await sceneOf(page);
     expect(lit.boxes.find((b) => b.id === STEP && b.column === 3)).toMatchObject({ focus: true, lit: true });
     expect(lit.boxes.some((b) => b.column === 4 && b.lit && b.role === 'record')).toBe(true);
-    await expect(page.locator('.wiki-panel-title h2')).toContainText('flow\'s steps');
+    await expect(page.locator('.wiki-panel-title h2')).toContainText('adds a use case');
   });
 
   test('LA-V98-R22-T03 The outcomes a focused row serves and the journeys carrying it out sit beside it, framed with it, and follow the focus to another row', async ({ page }) => {
-    await openPage(page, `/${USE_CASE}?stage=trace`);
+    await openPage(page, `/${CARRIED}?stage=trace`);
     await page.locator(`${TRACE}[data-ready] canvas`).waitFor();
     /** What sits beside a row as drawn now: the outcomes it serves, the journeys' boxes carrying it out, and its use case's box. */
     const beside = async (u: string) => {
@@ -100,13 +102,13 @@ test.describe('the Trace stage stays where the Reader left it', () => {
         expect(r.top + r.height).toBeLessThanOrEqual(s.canvas.top + s.canvas.height + 1);
       }
     };
-    await expect.poll(async () => { try { await level(USE_CASE); return true; } catch { return false; } }, { timeout: 5000 }).toBe(true);
-    await level(USE_CASE);
+    await expect.poll(async () => { try { await level(CARRIED); return true; } catch { return false; } }, { timeout: 5000 }).toBe(true);
+    await level(CARRIED);
 
     // Another row's use case, served by an outcome and carried out by a journey, clicked where it is drawn: its outcomes
     // and journeys glide to it.
     const s = await sceneOf(page, false);
-    const candidates = s.boxes.filter((b) => b.column === 2 && b.depth === 0 && b.row !== USE_CASE && b.row !== null
+    const candidates = s.boxes.filter((b) => b.column === 2 && b.depth === 0 && b.row !== CARRIED && b.row !== null
       && s.lines.some((l) => l.kind === 'serves' && l.to === b.key) && s.lines.some((l) => l.kind === 'carries' && l.to === b.key));
     // One whose middle the canvas hits as that box, in the open space: not under a panel or the columns' names, not past
     // the canvas's edge.

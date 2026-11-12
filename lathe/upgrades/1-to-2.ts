@@ -18,7 +18,7 @@
 // code persisting several aggregates only the Owner knows: splitting that code into one repository per aggregate, and
 // the IDs in code, are the to-dos.
 //
-// And every kind's text is required or absent (LA-STD-MODELING-R10). The descriptions of flows, flow steps, data models,
+// And every kind's text is required or absent (LA-STD-NAMING-R09). The descriptions of flows, flow steps, data models,
 // value types, predicates, event types, services and tables go, and a test's Given opens its When. A lead or scenario
 // the schema now requires and a record lacks gets a stand-in that starts "To write:" and says what belongs there; writing
 // each from the code is a to-do.

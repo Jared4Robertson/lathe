@@ -247,7 +247,7 @@ describe('LA-PLT-UC20-R01-T01 Dictation shows the words as they are heard, settl
   });
 });
 
-describe('LA-PLT-UC26-R03-T01 Quick mode sends after the pause end-of-turn detection judges: short when finished, long mid-thought, between when unsure', () => {
+describe('LA-PLT-UC56-R01-T01 Quick mode sends after the pause end-of-turn detection judges: short when finished, long mid-thought, between when unsure', () => {
   it('judges the words: a complete thought, one cut off, or no telling', () => {
     expect(completeness('zoom into this')).toBe('finished');
     expect(completeness('zoom into the')).toBe('unfinished');

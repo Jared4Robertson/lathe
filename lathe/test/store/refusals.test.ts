@@ -56,7 +56,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
   it('LA-UCS-INV08-T refuses a step fulfilling another use case\'s requirement', async () => {
     const problems = await refusal(
       adding({
-        use_case: [{ id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.' }],
+        use_case: [{ id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.', result_id: 'TL-LEND-CMD01' }],
         uc_requirement: [{ id: 'TL-LEND-UC02-R01', title: 'On time', use_case_id: 'TL-LEND-UC02', statement: 'A return MUST be dated.' }],
         fulfills: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-UC02-R01' }],
       }),
@@ -179,7 +179,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     // A link from it would cross products too, so the prefix rule is the one reported for a lone record.
   });
 
-  it("LA-PRD-UC37-R05-T01 refuses an ID that does not start with its parent's or domain's ID", async () => {
+  it("LA-STD-MODELING-R17-T06 refuses an ID that does not start with its parent's or domain's ID", async () => {
     const problems = await refusal(adding({ uc_requirement: [{ id: 'TL-LEND-UC09-R01', title: 'Lost', use_case_id: 'TL-LEND-UC01', statement: 'x' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'id-prefix', message: 'TL-LEND-UC09-R01 is a UC requirement under TL-LEND-UC01, so its ID starts with TL-LEND-UC01-' })]);
   });
@@ -254,7 +254,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     }
   });
 
-  it('LA-STD-MODELING-R04-T01 refuses a title another record of its kind and product has, or one ending with a period', async () => {
+  it('LA-STD-NAMING-R03-T01 refuses a title another record of its kind and product has, or one ending with a period', async () => {
     await loads(everyKind());
     const twice = adding({ aggregate: [{ id: 'TL-LEND-A9', title: ' loan ', domain_id: 'TL-LEND', identity: 'Loan ID', description: 'One tool lent to one member.' }] });
     const found = await refusal(twice);
@@ -272,7 +272,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     expect(await refusal(period)).toEqual([expect.objectContaining({ rule: 'title-period', file: 'data/invariant.jsonl', line: 1 })]);
   });
 
-  it('LA-STD-MODELING-R04-T02 loads two rules of one function in one file, and refuses two rules of one name in two files', async () => {
+  it('LA-STD-NAMING-R03-T02 loads two rules of one function in one file, and refuses two rules of one name in two files', async () => {
     // A second invariant, enforced by the same function as the first.
     const second = (file: string): Data =>
       adding({
@@ -301,7 +301,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     );
   });
 
-  it('LA-STD-MODELING-R09-T01 refuses a code-bound title that is not one identifier, and an endpoint not titled by its method and route', async () => {
+  it('LA-STD-NAMING-R08-T01 refuses a code-bound title that is not one identifier, and an endpoint not titled by its method and route', async () => {
     const spaced = everyKind();
     spaced.command_handler[0] = { ...spaced.command_handler[0], title: 'the loan opener' };
     spaced.table[1] = { ...spaced.table[1], title: 'Loans by member' };
@@ -322,7 +322,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     await loads(cased);
   });
 
-  it("LA-STD-MODELING-R10-T02 refuses a product kind whose lead text is optional, or which has two", async () => {
+  it("LA-STD-NAMING-R09-T02 refuses a product kind whose lead text is optional, or which has two", async () => {
     const optional = everyKind();
     optional.product_kind_field.push({ kind: 'cli_command', position: 2, name: 'description', type: 'text', required: false, description: 'What it does.' });
     expect(await refusal(optional)).toEqual([

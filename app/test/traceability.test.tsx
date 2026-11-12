@@ -133,7 +133,7 @@ describe('traceability', () => {
     expect(groupIds(trace, 'Offered through')).toEqual(['DM-IF01']);
   });
 
-  it('LA-TRC-UC25-R04-T02 A technical record lists its helper files under Traceability, and a record with none shows no such list', async () => {
+  it('LA-STD-TRACEABILITY-R02-T05 A technical record lists its helper files under Traceability, and a record with none shows no such list', async () => {
     const data = workspace();
     data.sources[0].tables.helper_file = [
       { record_id: 'DM-SHOP-CMD01-H', file: 'src/basket_unix.ts' },

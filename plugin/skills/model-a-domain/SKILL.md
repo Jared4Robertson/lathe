@@ -29,7 +29,7 @@ Write a product stage by stage, so each record's links point at records written 
 
 1. **Discovery** (`discover-outcomes`): business outcomes, each measurable, and the journeys that reach them.
 2. **Domain model** (this skill), in event storming order: aggregates with entities and fields; commands and the events they raise; then invariants, value objects and constraints, specifications, policies, read models and queries, domain services, storage requirements, terms.
-3. **Use cases** (`write-use-cases`): capabilities, use cases with actors and UC requirements, each use case's flow and its steps, shared patterns.
+3. **Use cases** (`write-use-cases`): capabilities, use cases with actors and UC requirements, each use case's flow and its steps, shared patterns. A use case is written after the command or query that is its result.
 4. **Interface design** (`design-interfaces`): interfaces, views, endpoints, integrations.
 5. **Technical specification** (`write-the-technical-spec`): one technical record per design record, tables, standards.
 6. **Test plan** (`plan-tests`): one test kind per thing tested.

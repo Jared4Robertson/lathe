@@ -256,7 +256,7 @@ check('pattern-rule-test-outside-followers', () => {
 });
 
 check('pattern-setting-missing', () => {
-  it("LA-TRC-UC07-R03-T02 a use case that answers each setting of its pattern is in place; one that gives no value for a setting is an error naming it", async () => {
+  it("LA-TRC-UC27-R01-T02 a use case that answers each setting of its pattern is in place; one that gives no value for a setting is an error naming it", async () => {
     expect(ofCheck(clean, 'pattern-setting-missing')).toEqual([]);
     const ws = await loadData(without(complete(), 'setting_value', () => true));
     expect(ofCheck(ws, 'pattern-setting-missing')).toEqual([

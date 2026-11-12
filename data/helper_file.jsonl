@@ -3,6 +3,7 @@
 {"record_id":"LA-EXP-RM01-IX","file":"app/src/exploring/record-summaries/space-client.ts"}
 {"record_id":"LA-EXP-RM01-IX","file":"app/src/exploring/record-summaries/space-index.ts"}
 {"record_id":"LA-EXP-RM01-IX","file":"app/src/exploring/record-summaries/space-index.worker.ts"}
+{"record_id":"LA-EXP-RM01-PJ","file":"lathe/src/exploring/record-summaries/column-links.ts"}
 {"record_id":"LA-PLT-MOD45","file":"app/src/record/query.ts"}
 {"record_id":"LA-UI350","file":"app/src/graph/map-input.ts"}
 {"record_id":"LA-UI356","file":"app/src/specs/metrics.ts"}

@@ -1,11 +1,11 @@
 ---
 name: write-use-cases
-description: Write or change Lathe use cases - the capabilities that group a domain's use cases, each use case's actors and goal, its UC requirements, its one flow and the flow's steps (which fulfill the requirements, invoke a command or query, exchange with integrations and may be one interface's variant), the product's roles, and the patterns use cases share with their settings and rules. Use when adding what an actor does with the product, splitting a use case, writing how a use case is carried out step by step, grouping use cases into capabilities, naming or renaming a capability or use case, or writing behavior several use cases share as a pattern, in a repo with lathe.config.json.
+description: Write or change Lathe use cases - the capabilities that group a domain's use cases, each use case's actors, goal and result (the one command or query it invokes), its UC requirements, its one flow and the flow's steps (which fulfill the requirements, invoke a command or query, exchange with integrations and may be one interface's variant), the product's roles, and the patterns use cases share with their settings and rules. Use when adding what an actor does with the product, picking a use case's result, splitting a use case, writing how a use case is carried out step by step, grouping use cases into capabilities, naming or renaming a capability or use case, or writing behavior several use cases share as a pattern, in a repo with lathe.config.json.
 ---
 
 # Write use cases
 
-A use case is an actor's goal: who acts, what they want, the rules the product must follow while they reach it, and its flow: the steps the actor and the product take, once, whatever the interface. It changes nothing itself and names no aggregate or event; what it changes follows from the commands its flow's steps invoke. Each interface that offers it carries the same flow out its own way (`design-interfaces`). Write use cases after the domain model (`model-a-domain`), whose commands, queries and terms they use.
+A use case is one role invoking one command, or asking one query, its result: who acts, what they want, the rules the product must follow while they reach it, and its flow: the steps the actor and the product take to reach the result, once, whatever the interface. It names no aggregate or event; what it changes follows from its result. Each interface that offers it carries the same flow out its own way (`design-interfaces`). Write use cases after the domain model (`model-a-domain`), whose commands, queries and terms they use.
 
 Change the spec only with Lathe's MCP tools (or the `lathe` CLI), never by editing files. Fields, ID patterns and checks are in `lathe/REFERENCE.md` in the Lathe package (`node_modules/@jaredrob/lathe/REFERENCE.md` in a product repo). Before you write, read the domain's terms, commands and queries, its capabilities and use cases (so you do not repeat one), and the product's patterns.
 
@@ -21,23 +21,20 @@ Every use case sits in a capability: an ordered slice of its domain. Add the dom
 
 ## Use cases
 
-**A use case is one goal one actor sets out to finish in one sitting, which leaves something the business cares about true** (LA-STD-MODELING-R15): not a step of a bigger goal (a journey's step), nor a journey of several. Its title names the goal verb first, two to six words, in the domain's own verb (Borrow, Approve, Refund) over Create, Read, Update or Delete unless that really is the goal, and names no interface or mechanism: "Approve an invoice", not "Approve an invoice from the web app".
+**A use case is one role invoking one command, or asking one query, with the steps that lead to it** (LA-STD-MODELING-R15). That operation is its **result** (`result_id`): a command makes it a **command use case**, a query a **query use case**. The kind follows from the result and is never stored. Pick the result first, from the domain model's commands and queries, then write the steps that lead to it. Which operation is the result is the one judgment left; everything else is checked:
 
-**The line.** Every use case is drawn at the same level, so "should this be two, or is this part of another?" has one answer. Test each against:
-
-- **Done**: when it ends, something the business cares about is true (a tool is lent, an outcome is written), or the actor has the answer they came for.
-- **One sitting**: one session, no waiting on another actor or on time. A goal that waits, or reads "... and later ...", is a journey (`discover-outcomes`): split it into use cases and write the journey that strings them.
-- **One change**: its actors' own steps change at most one aggregate; reading changes none (`use-case-changes-many-aggregates`). A second change is a second goal, a policy hearing the first's event, another actor's write that is the trigger rather than a step, or a link written from the wrong record.
-- **No "and", no list** in the title (`use-case-title-joins-goals`). Parts of one thing go after "with": "Write a use case with its flow and tests".
+- **Identity**: no two use cases of a product share their first actor and their result (`use-case-identity-taken`). Two that do are one use case: merge them. The same result with another first actor is another use case.
+- **One command**: a command use case's flow invokes no command but its result, on any path (main, alternate, refused), through any interface, whoever the step's subject is; its other steps only ask queries or invoke nothing (`use-case-invokes-another-command`). A query use case invokes no command at all, and is anchored on its query, never on the read model, which serves several questions. A second command is a second use case, strung to the first in a journey when one waits on the other (`discover-outcomes`), or the command of a policy when the product does it on its own. Another actor's write is that actor's own use case.
+- **Done**: through each interface that offers it, the main path invokes the result (`use-case-result-not-invoked`). A command use case may ask queries after its result, such as one confirming it; a query use case's last main step that invokes anything asks its result (`use-case-not-done`).
+- **Title**: a command use case's title starts with its command's verb: Borrow a tool, for the command Borrow a tool (`use-case-title-off-result`). A query use case is titled for the question, with a verb of its own: See the tools waiting for repair. Two to six words, naming no interface or mechanism: "Approve an invoice", not "Approve an invoice from the web app".
+- **Not a quality**: "Read without anything jumping" or "Work by keyboard" result in no operation. Write them as rules of a quality standard (`write-the-technical-spec`), never as use cases.
 - **Shared rules**: requirements that hold only on some paths are two use cases; two use cases that differ only by an interface or a value are one (an interface offers it; a value is a rule of it).
-- **A goal, not a quality**: "Read without anything jumping" or "Work by keyboard" are properties every use case keeps. Write them as rules of a quality standard (`write-the-technical-spec`), not as use cases.
-- **On its own**: a goal nobody ever starts alone is a step of the use case it sits in; the same steps in three or more use cases are a pattern.
+
+The other half of identity: every command is the result of a use case whose actor invokes it, or the command of a policy when the product invokes it on its own; one that is neither is the gap `command-without-use-case`, so why each command exists is a record.
 
 A use case's **goal** says who acts and what they want, and ends with one plain sentence of the value it gives that actor, why it matters to them, so a goal reads as more than mechanics. Mechanics only: "A member reserves a tool for a date." With the value: "A member reserves a tool for a date, so the tool is waiting when they come and nobody makes a wasted trip."
 
-Another actor's write is what starts a use case, never a step of it (`another-actor-writes-in-a-step`): a Reader's use case starts when an Agent's change lands; the Agent's write is the Agent's own use case.
-
-When a use case fails a test, split it, fold it into the use case it is a step of, make it a journey, a policy or a quality standard's rule, and move its requirements, tests and flow steps with what they prove, in one change.
+When a use case invokes a second command, split it: the use case keeps its ID and the command its title names, and each other command becomes a use case of its own in the same capability, with its steps, requirements and tests moved with what they prove, in one change.
 
 **Actors are roles, never people.** A role is a part of the product (Member, Librarian; Owner, Reader, Agent in Lathe's own specs). Add a new role to the product with a description of what it does; write the same roles in prose.
 

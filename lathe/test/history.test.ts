@@ -42,8 +42,11 @@ async function seed(root: string) {
   await run(s, 'product add-product', { id: 'EX', title: 'Example', description: 'A small product for writing notes.', roles: [{ name: 'Writer', description: 'Someone who writes notes.' }] });
   await run(s, 'domain add-domain', { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', position: 2, subdomain_type: 'core', description: 'Writing and keeping notes.' });
   await run(s, 'domain add-capability', { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1, description: 'Writing notes down.' });
+  await run(s, 'aggregate add-aggregate', { id: 'EX-NOTE-A1', title: 'Note', domain_id: 'EX-NOTE', identity: 'Note ID', description: 'One note a writer keeps.' });
+  await run(s, 'aggregate add-entity', { id: 'EX-NOTE-EN01', title: 'Note', aggregate_id: 'EX-NOTE-A1', role: 'root', description: 'The note itself.' });
+  await run(s, 'command add-command', { id: 'EX-NOTE-CMD01', title: 'Write a note', entity_id: 'EX-NOTE-EN01', description: 'Keeps a new note.' });
   await run(s, 'pattern add-pattern', { id: 'EX-PAT-NOTE', title: 'A note action', product_id: 'EX', description: 'An action on one note.', settings: [{ name: 'record', meaning: 'The record the action changes.' }] });
-  await run(s, 'use-case add-use-case', { id: UC, title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a note.' });
+  await run(s, 'use-case add-use-case', { id: UC, title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a note.', result_id: 'EX-NOTE-CMD01' });
   return s;
 }
 
@@ -108,7 +111,7 @@ describe.skipIf(!hasGit)('record history', () => {
     expect(older.more).toBe(false);
     expect(older.commits.map((c) => c.subject)).toEqual(['Add the example product']);
     expect(older.commits[0].changes).toEqual([
-      { table: 'use_case', key: UC, change: 'added', fields: [{ name: 'id', after: UC }, { name: 'title', after: 'Write a note' }, { name: 'capability_id', after: 'EX-NOTE-CAP01' }, { name: 'goal', after: 'A writer keeps a note.' }] },
+      { table: 'use_case', key: UC, change: 'added', fields: [{ name: 'id', after: UC }, { name: 'title', after: 'Write a note' }, { name: 'capability_id', after: 'EX-NOTE-CAP01' }, { name: 'goal', after: 'A writer keeps a note.' }, { name: 'result_id', after: 'EX-NOTE-CMD01' }] },
     ]);
     const parts = answer.commits.find((c) => c.subject === 'Give UC01 its pattern')!;
     expect(parts.changes).toEqual([

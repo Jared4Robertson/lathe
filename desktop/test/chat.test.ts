@@ -18,7 +18,7 @@ const READS = 'Read,Grep,Glob,mcp__plugin_lathe_lathe__check,mcp__plugin_lathe_l
 const ACCEPT_READS = ['--permission-mode', 'default', '--allowedTools', READS];
 
 describe('LA-PLT-UC19-R01-T02 The chat runs the CLI headless, with structured input and output', () => {
-  it('LA-PLT-UC22-R03-T02 passes the model and effort the Owner chose, and nothing when they left them to Claude Code', () => {
+  it('LA-PLT-UC46-R01-T02 passes the model and effort the Owner chose, and nothing when they left them to Claude Code', () => {
     const setup = { pluginDir: PLUGIN, mode: 'accept-reads' as const };
     expect(claudeArgs({}, setup)).not.toContain('--model');
     expect(claudeArgs({}, { ...setup, choice: { model: 'sonnet', effort: null } })).toEqual(expect.arrayContaining(['--model', 'sonnet']));
@@ -64,7 +64,7 @@ const CLI_READS = new Set(['Task', 'CronList', 'ListAgents', 'PushNotification',
 // Writes of other platforms and versions of the CLI: PowerShell on Windows, MultiEdit before Edit took its place.
 const OTHER_WRITES = ['PowerShell', 'MultiEdit'];
 
-describe('LA-PLT-UC19-R09-T01 Each permission mode runs the CLI with its own flags; View only takes every write away', () => {
+describe('LA-PLT-UC45-R01-T01 Each permission mode runs the CLI with its own flags; View only takes every write away', () => {
   it('maps each mode to the CLI\'s flags', () => {
     const args = (mode: 'ask' | 'accept-reads' | 'auto' | 'bypass' | 'view-only') => claudeArgs({}, { pluginDir: PLUGIN, mode }).slice(BASE.length + 1);
     expect(args('ask')).toEqual(['--permission-mode', 'default', '--settings', expect.stringContaining('"ask":["Read","Grep","Glob","Bash","Edit","Write"')]);
@@ -99,7 +99,7 @@ describe('LA-PLT-UC19-R09-T01 Each permission mode runs the CLI with its own fla
   });
 });
 
-describe('LA-PLT-UC19-R09-T06 The panel answers a prompt by the mode before asking the Owner', () => {
+describe('LA-PLT-UC45-R01-T06 The panel answers a prompt by the mode before asking the Owner', () => {
   const reads = new Set(['mcp__plugin_lathe_lathe__use_case_get_use_case']);
   const none = new Set<string>();
   const query = 'mcp__plugin_lathe_lathe__use_case_get_use_case';
@@ -121,7 +121,7 @@ describe('LA-PLT-UC19-R09-T06 The panel answers a prompt by the mode before aski
   });
 });
 
-describe('LA-PLT-UC19-R11-T01 A tool allowed always is not asked about again', () => {
+describe('LA-PLT-UC43-R02-T01 A tool allowed always is not asked about again', () => {
   it('allows it in every mode but View only\'s refusals', () => {
     const always = new Set(['Bash']);
     for (const mode of ['ask', 'accept-reads', 'auto'] as const) expect(decide(mode, 'Bash', new Set(), always)).toEqual({ kind: 'allow' });
@@ -235,7 +235,7 @@ describe('LA-PLT-UC30-R02-T01 A turn that finds Claude Code not signed in marks 
   });
 });
 
-describe('LA-PLT-UC19-R05-T03 A resumed session shows its saved conversation', () => {
+describe('LA-PLT-UC44-R01-T03 A resumed session shows its saved conversation', () => {
   const entry = (o: object) => JSON.stringify({ uuid: Math.random().toString(36), ...o });
   it('reads the main thread\'s prompts, text and tool calls, and skips the CLI\'s own lines', () => {
     const items = transcriptItems([

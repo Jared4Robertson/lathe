@@ -15,7 +15,7 @@ const read = async (): Promise<MetaModel> => {
   return runQuery({ schema: store.schema, rows: (t) => store.rows(t), record: (id) => store.record(id) }, GET_META_MODEL, {}) as MetaModel;
 };
 
-describe('LA-PRD-UC08-R05-T02 The meta model read gives the kinds in the schema\'s reading order, the stages, the relations\' words and each table\'s columns', () => {
+describe('LA-PRD-UC11-R10-T02 The meta model read gives the kinds in the schema\'s reading order, the stages, the relations\' words and each table\'s columns', () => {
   it('reads the kinds in order, each with its stage, parents and ID scope', async () => {
     const model = await read();
     const kinds = model.kinds.map((k) => k.kind);

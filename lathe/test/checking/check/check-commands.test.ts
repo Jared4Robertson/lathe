@@ -165,7 +165,7 @@ const runWith = (warnings: number): CheckRun => ({
 });
 
 describe("LA-PAT-AGGREGATE-COMMANDS-R10-T02 Make the product's check strict (LA-CHK-CMD06) writes the product's one settings through its repository, reading the warnings it has now", () => {
-  it('LA-CHK-UC01-R11-T02 sets strictness with an accepted count no higher than the warnings now, keeping the limits, and refuses a higher count or a count without strictness', async () => {
+  it('LA-CHK-UC10-R02-T02 sets strictness with an accepted count no higher than the warnings now, keeping the limits, and refuses a higher count or a count without strictness', async () => {
     const store = await productSettingDataSet();
     await runCommand(store, SET_STRICT_CHECK, { product_id: 'TL', strict_check: true, accepted_warnings: 2 }, runWith(2));
     expect(store.rows('product_setting')).toEqual([{ product_id: 'TL', max_children: 20, max_entities_per_aggregate: 9, technology_words: [], strict_check: true, accepted_warnings: 2 }]);
@@ -186,7 +186,7 @@ describe("LA-PAT-AGGREGATE-COMMANDS-R10-T02 Make the product's check strict (LA-
     expect(store.rows('product_setting')[0]).toEqual({ product_id: 'TL', max_children: 12, max_entities_per_aggregate: 9, technology_words: [] });
   });
 
-  it('LA-CHK-UC08-R06-T01 `lathe product-setting set-strict-check` runs the checks first, and its answer lists the problems the write introduced', async () => {
+  it('LA-STD-PRINCIPLES-R01-T03 `lathe product-setting set-strict-check` runs the checks first, and its answer lists the problems the write introduced', async () => {
     const store = await productBesideLathesChecks();
     const root = path.dirname(store.dataDir);
     await closeCheckingStores();
@@ -206,7 +206,7 @@ describe("LA-PAT-AGGREGATE-COMMANDS-R10-T02 Make the product's check strict (LA-
 describe('the problems a write introduced', () => {
   const warning = (check: string, record: string | null, message: string) => ({ severity: 'warning' as const, check, record, message });
 
-  it('LA-CHK-UC08-R06-T02 are the warnings, strict-check and strict-gaps errors after it that were not before, a warning whose words changed with the data being the same one', () => {
+  it('LA-STD-PRINCIPLES-R01-T04 are the warnings, strict-check and strict-gaps errors after it that were not before, a warning whose words changed with the data being the same one', () => {
     const before = [warning('pattern-candidate', 'TL-PAT-SL01', 'Slot has 3 fills.'), warning('not-proved', 'TL-UC01-R01', 'Not proved.')];
     const after = [
       warning('pattern-candidate', 'TL-PAT-SL01', 'Slot has 4 fills.'),
@@ -230,7 +230,7 @@ describe('a strict product\'s gaps', () => {
   const scope = (product: string, domain: string | null, gaps: number) => ({ product, domain, gaps: Array.from({ length: gaps }, (_, i) => ({ id: `${product}-R0${i}`, kind: 'uc_requirement', missing: 'proved', message: 'Not proved yet.' })) });
   const products = (...ids: string[]) => ids.map((id) => ({ id, kind: 'product', product: id }));
 
-  it('LA-CHK-UC01-R12-T02 A strict product\'s check fails with one strict-gaps error at one gap or more and passes at none; a product that is not strict never fails on gaps', () => {
+  it('LA-CHK-UC10-R03-T02 A strict product\'s check fails with one strict-gaps error at one gap or more and passes at none; a product that is not strict never fails on gaps', () => {
     const settings = [setting('TL', true, 1), setting('LA', true), setting('EX', false)];
     const warned = [warning('not-proved', 'TL-R09', 'Not proved.')];
     const productOf = (record: string) => record.split('-')[0];

@@ -41,8 +41,11 @@ const base = (): Data => {
     role: [...(data.role ?? []), { product_id: 'XX', name: 'Member', description: 'Someone of the other product.' }],
     domain: [...data.domain, { id: 'XX-DOM', title: 'Other domain', product_id: 'XX', position: 1, subdomain_type: 'core', description: 'Another domain.' }],
     business_outcome: [...data.business_outcome, { id: 'XX-BO01', title: 'Elsewhere', product_id: 'XX', statement: 'Something elsewhere.', measure: 'A count.', target: 'Ten.' }],
+    aggregate: [...data.aggregate, { id: 'XX-DOM-A1', title: 'Thing', domain_id: 'XX-DOM', identity: 'Thing ID', description: 'Something of the other product.' }],
+    entity: [...data.entity, { id: 'XX-DOM-EN01', title: 'Thing', aggregate_id: 'XX-DOM-A1', role: 'root', description: 'The thing itself.' }],
+    command: [...data.command, { id: 'XX-DOM-CMD01', title: 'Do something', entity_id: 'XX-DOM-EN01', description: 'Does it.' }],
     capability: [...data.capability, { id: 'XX-DOM-CAP01', title: 'Other capability', domain_id: 'XX-DOM', position: 1, description: 'Another capability.' }],
-    use_case: [...data.use_case, { id: 'XX-DOM-UC01', title: 'Do something', capability_id: 'XX-DOM-CAP01', goal: 'Do it.' }],
+    use_case: [...data.use_case, { id: 'XX-DOM-UC01', title: 'Do something', capability_id: 'XX-DOM-CAP01', goal: 'Do it.', result_id: 'XX-DOM-CMD01' }],
     use_case_actor: [...data.use_case_actor, { use_case_id: 'XX-DOM-UC01', position: 1, role_name: 'Member' }],
   };
 };
@@ -88,7 +91,7 @@ describe('LA-PRD-UC33-R01-T01 a journey without its trigger or its result, or un
   });
 });
 
-describe('LA-PRD-UC33-R03-T01 moving a step keeps every path of its journey numbered 1, 2, 3', () => {
+describe('LA-PRD-UC43-R02-T01 moving a step keeps every path of its journey numbered 1, 2, 3', () => {
   it('moves a step within its path and onto another, renumbering both, and refuses a position off the path', async () => {
     const store = await storeOf();
     await runCommand(store, ADD_JOURNEY_STEP, step('TL-JR01-S02', { carries_out: 'TL-LEND-UC01' }));
@@ -146,7 +149,7 @@ describe('LA-PRD-INV188-T a journey test with an ID that is not its journey\'s a
   });
 });
 
-describe('LA-PRD-UC33-R05-T01 a second journey test of a journey is refused', () => {
+describe('LA-PRD-UC46-R01-T01 a second journey test of a journey is refused', () => {
   it('adds the first with its ID the journey\'s and T, and refuses a second', async () => {
     const store = await storeOf();
     await runCommand(store, ADD_JOURNEY, { id: 'TL-JR02', title: 'Return a tool', product_id: 'TL', trigger: 'A tool comes back.', result: 'The shelf has it.' });
@@ -185,15 +188,15 @@ describe('LA-PRD-INV192-T a step carrying out a record that does not exist is re
   });
 });
 
-describe('LA-PRD-UC33-R02-T01 a step carries out a use case of another domain, a policy, or nothing yet, and never a record of another product', () => {
+describe('LA-PRD-UC43-R01-T01 a step carries out a use case of another domain, a policy, or nothing yet, and never a record of another product', () => {
   it('adds four steps and refuses a use case of another product and a command, naming the step', async () => {
     const data = base();
     const store = await storeOf({
       ...data,
       domain: [...data.domain, { id: 'TL-OTH', title: 'Other', product_id: 'TL', position: 2, subdomain_type: 'core', description: 'Another domain of the product.' }],
       capability: [...data.capability, { id: 'TL-OTH-CAP01', title: 'Other capability', domain_id: 'TL-OTH', position: 1, description: 'A capability of the other domain.' }],
-      use_case: [...data.use_case, { id: 'TL-OTH-UC01', title: 'Do something else', capability_id: 'TL-OTH-CAP01', goal: 'Do it.' }],
-      use_case_actor: [...data.use_case_actor, { use_case_id: 'TL-OTH-UC01', position: 1, role_name: 'Member' }],
+      use_case: [...data.use_case, { id: 'TL-OTH-UC01', title: 'Do something else', capability_id: 'TL-OTH-CAP01', goal: 'Do it.', result_id: 'TL-LEND-CMD01' }],
+      use_case_actor: [...data.use_case_actor, { use_case_id: 'TL-OTH-UC01', position: 1, role_name: 'Librarian' }],
     });
     await runCommand(store, ADD_JOURNEY_STEP, step('TL-JR01-S02', { carries_out: 'TL-LEND-UC01' }));
     await runCommand(store, ADD_JOURNEY_STEP, step('TL-JR01-S03', { position: 3, carries_out: 'TL-OTH-UC01' }));
@@ -208,10 +211,10 @@ describe('LA-PRD-UC33-R02-T01 a step carries out a use case of another domain, a
   });
 });
 
-describe('LA-PRD-UC33-R06-T01 removing a use case a step carries out is refused naming the step, and removing the journey keeps it', () => {
+describe('LA-PRD-UC47-R01-T01 removing a use case a step carries out is refused naming the step, and removing the journey keeps it', () => {
   it('refuses the use case and the policy, removes the journey with its steps and test, then the use case', async () => {
     const store = await storeOf();
-    await runCommand(store, ADD_USE_CASE, { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'Bring a tool back.', actors: ['Member'] });
+    await runCommand(store, ADD_USE_CASE, { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'Bring a tool back.', result_id: 'TL-LEND-CMD01', actors: ['Librarian'] });
     await runCommand(store, ADD_JOURNEY_STEP, step('TL-JR01-S02', { carries_out: 'TL-LEND-UC02' }));
     const useCase = await refusal(store, REMOVE_USE_CASE, { id: 'TL-LEND-UC02' });
     expect(useCase.problems.map((p) => p.message).join(' ')).toContain('TL-JR01-S02');

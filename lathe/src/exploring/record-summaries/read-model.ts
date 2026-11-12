@@ -4,6 +4,7 @@
 // reload tells which records changed), and the links among them both ways. It holds no column of a record beyond
 // these: a page reads its record's fields through its aggregate's own query. The projection is the only code that reads
 // the source rows for the query and the only code that writes the read model's table.
+import { COLUMN_LINKS } from './column-links.ts';
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import { inSpace, placementOf } from '../placement.ts';
@@ -120,6 +121,10 @@ export function recordSummariesTableFrom(view: ReadView): RecordSummariesTable {
         own(link.source, [table.name, row]);
       }
     }
+  }
+  // A column reference's link is its record's own row, already in its digest.
+  for (const c of COLUMN_LINKS) {
+    for (const row of view.rows(c.table)) if (row[c.column] != null) links.push({ source: String(row.id), relation: c.relation, target: String(row[c.column]) });
   }
   const stageOf = (kind: string) => schema.kinds[kind]?.stage ?? null;
   // A test: a test-plan kind with a run by, whose state says how it runs.

@@ -136,7 +136,7 @@ describe('moving through the graph keeps how it is drawn', () => {
     });
   }
 
-  it('LA-EXP-UC17-R01-T01 LA-EXP-UC17-FL-T The layout, the minimap and all links chosen in the graph hold on another record and after a reload', async () => {
+  it('LA-EXP-UC17-R01-T01 LA-EXP-UC17-FL-T LA-EXP-UC20-R01-T01 LA-EXP-UC20-FL-T LA-EXP-UC21-R01-T01 LA-EXP-UC21-FL-T The layout, the minimap and all links chosen in the graph hold on another record and after a reload', async () => {
     await openApp('/DM-SHOP-UC01?stage=graph');
     // S01 the minimap; S02 the layout, Nested then the Map; S03 all links in the Map.
     fireEvent.click(await screen.findByRole('switch', { name: 'Minimap' }));

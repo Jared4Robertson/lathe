@@ -197,7 +197,7 @@
   .chat-voice-status.is-dictating .chat-voice-dot { animation: none; }
 }
 
-/* Point and ask, images, the queue, the "/" list, the model picker and the review bar (LA-PLT-UC22-R01..R18). */
+/* Point and ask, images, the queue, the "/" list, the model picker and the review bar (LA-PLT-UC19-R13..R18). */
 .chat-focus { flex-wrap: wrap; gap: 6px; }
 .chat-pointed { list-style: none; margin: 0; padding: 0; display: contents; }
 .chat-pointed-chip { background: var(--sheet); }

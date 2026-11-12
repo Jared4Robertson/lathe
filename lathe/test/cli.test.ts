@@ -38,7 +38,7 @@ describe('lathe check', () => {
     expect(stdout.slice(warnings, coverage)).toContain('[technical-file-missing] EX-LEND-DS01-SV:');
   });
 
-  it('LA-TRC-UC02-R05-T01 The check prints one coverage line per domain and obligation kind, with designed, built and proved, and the gaps', () => {
+  it('LA-TRC-UC01-R10-T01 The check prints one coverage line per domain and obligation kind, with designed, built and proved, and the gaps', () => {
     const { stdout } = lathe('check', '--root', broken);
     const lines = stdout.slice(stdout.indexOf('\nCoverage:'));
     expect(lines).toContain('  EX-LEND invariant: 1/1 designed, 1/1 built, 0/1 proved\n    gap: Invariant EX-LEND-INV01 is not proved yet.');
@@ -98,7 +98,7 @@ describe('lathe check', () => {
   // warnings, under a strictness setting.
   const gapped = (more: Record<string, unknown>) => build(adding(complete(), setting(more)), { missing: ['src/dates.ts'] });
 
-  it('LA-CHK-UC01-R10-T01 A strict check fails on any warning, saying it is strict and why; a check that is not strict passes', async () => {
+  it('LA-CHK-UC10-R01-T01 A strict check fails on any warning, saying it is strict and why; a check that is not strict passes', async () => {
     const lax = lathe('check', '--root', await strictly({}));
     expect(lax.status).toBe(0);
     expect(lax.stdout).toContain('0 errors, 3 warnings.\n');
@@ -116,7 +116,7 @@ describe('lathe check', () => {
     expect(tool.content[0].text).toMatch(/1 error, 3 warnings\. EX is strict: warnings and gaps fail; [^\n]+, so its check fails: 3 warnings beyond the accepted count\.$/);
   });
 
-  it('LA-CHK-UC01-R11-T01 A strict check passes at its accepted count, and fails above it and below it, saying to lower the count', async () => {
+  it('LA-CHK-UC10-R02-T01 A strict check passes at its accepted count, and fails above it and below it, saying to lower the count', async () => {
     const at = lathe('check', '--root', await strictly({ strict_check: true, accepted_warnings: 3 }));
     expect(at.status).toBe(0);
     expect(at.stdout).toContain('0 errors, 3 warnings. EX is strict: warnings and gaps fail; it accepts 3 warnings (a recorded deviation), and has 3 warnings and 0 gaps.');
@@ -125,7 +125,7 @@ describe('lathe check', () => {
     expect(below.stdout).toContain('[strict-check] EX: Product EX\'s check is strict and accepts 5 warnings, a recorded deviation, and it now has only 3 warnings: lower the accepted count to 3 with set-strict-check');
   });
 
-  it('LA-CHK-UC01-R12-T01 A strict check fails on any gap, whatever warnings it accepts, saying how many and how to list them; a check that is not strict passes', async () => {
+  it('LA-CHK-UC10-R03-T01 A strict check fails on any gap, whatever warnings it accepts, saying how many and how to list them; a check that is not strict passes', async () => {
     const lax = lathe('check', '--root', await gapped({}));
     expect(lax.status).toBe(0);
     expect(lax.stdout).not.toContain('strict');

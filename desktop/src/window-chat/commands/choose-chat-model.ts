@@ -1,4 +1,4 @@
-// Choose the chat's model and effort (LA-PLT-CMD65, LA-PLT-UC22-R03): the session starts again with them. Refused for a
+// Choose the chat's model and effort (LA-PLT-CMD65, LA-PLT-UC46-R01): the session starts again with them. Refused for a
 // window with no session, while a turn is under way, or for a model or effort Lathe does not know.
 import { isChatEffort, isChatModel, type ChatEffort, type ChatModel } from '../../chat.ts';
 import type { WindowChatRepository } from '../repository.ts';

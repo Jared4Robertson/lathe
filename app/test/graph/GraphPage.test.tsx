@@ -98,6 +98,15 @@ describe('graph page', () => {
     await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
   });
 
+  it('LA-V93-R74-T01 The Map draws a use case\'s result as a link line to its command', async () => {
+    await showGraph('/P-D-UC01');
+    fireEvent.click(within(screen.getByRole('group', { name: 'Layout' })).getByRole('button', { name: 'Map' }));
+    await waitFor(() => expect(graphHost()).toHaveAttribute('data-layout', 'map'));
+    const line = () => scene().lines.find((l) => l.source === 'P-D-UC01' && l.target === 'P-D-CMD01');
+    await waitFor(() => expect(line()).toBeDefined());
+    expect(line()).toMatchObject({ link: true, style: 'link' });
+  });
+
   it('LA-V93-R10-T05 The graph opens at depth 1, framing the parent and the children, and depth 2 and 3 draw more levels below; only parent lines are drawn', async () => {
     await showGraph('/P-D/use-cases');
     const depth = within(screen.getByRole('group', { name: 'Depth' }));

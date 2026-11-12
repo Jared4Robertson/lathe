@@ -159,7 +159,7 @@ export function findClaude(configured: string | undefined, home: string, pathVar
 }
 
 /**
- * Whether `claude auth status --json` says the CLI is signed in (LA-PLT-UC19-R10): false only when it says it is not
+ * Whether `claude auth status --json` says the CLI is signed in (LA-PLT-UC44-R03): false only when it says it is not
  * and has no other way in (no API key or helper), null when its answer cannot be read.
  */
 export function signedInFrom(output: string): boolean | null {

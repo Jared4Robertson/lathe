@@ -1,5 +1,5 @@
-// Authoring the schema's kinds, stages and obligations, and a product's own kinds and relations (LA-PRD-UC03,
-// LA-PRD-UC04, LA-PRD-UC08), proved through the store and the engine's load.
+// Authoring the schema's kinds, stages and obligations, and a product's own kinds and relations (LA-PRD-UC04,
+// LA-PRD-UC11, LA-STD-ENGINEERING-R03), proved through the store and the engine's load.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { loadWorkspace, openStore, type Workspace } from '../../src/index.ts';
 import { everyKind } from '../store/fixture.ts';
@@ -55,7 +55,7 @@ beforeAll(async () => {
 });
 
 describe('obligations and link roles', () => {
-  it('LA-PRD-UC03-R06-T01 Which kinds are obligations, and which links design or prove a product\'s own obligation, come from the schema', async () => {
+  it('LA-STD-ENGINEERING-R03-T04 Which kinds are obligations, and which links design or prove a product\'s own obligation, come from the schema', async () => {
     const ws = await loadData(withAuditRules());
     // Coverage counts exactly the kinds whose obligation flag is yes, Lathe's and the product's own alike.
     const flagged = ws.kinds.filter((k) => k.obligation).map((k) => k.kind);
@@ -79,7 +79,7 @@ describe('a product\'s own kinds', () => {
     expect(report.records.find((r) => r.id === 'EX-LEND-REP01')).toMatchObject({ kind: 'report', parent: 'EX-LEND', domain: 'EX-LEND', fields: { paper: 'A4' } });
   });
 
-  it('LA-PRD-UC08-R02-T01 A product places its own kind in one of the six stages, or none, and cannot add a stage or change one of Lathe\'s kinds', async () => {
+  it('LA-PRD-UC04-R09-T01 A product places its own kind in one of the six stages, or none, and cannot add a stage or change one of Lathe\'s kinds', async () => {
     expect(report.stages).toEqual(plain.stages);
     expect(report.kinds.find((k) => k.kind === 'report')!.stage).toBe('domain-model');
     const kind = everyKind().product_kind[0];
@@ -109,7 +109,7 @@ describe('a product\'s own kinds', () => {
 });
 
 describe('a product\'s own relations', () => {
-  it('LA-PRD-UC04-R03-T01 A product relation with a new name gets a link table of its own; one with Lathe\'s name adds only its pair', async () => {
+  it('LA-PRD-UC40-R01-T01 A product relation with a new name gets a link table of its own; one with Lathe\'s name adds only its pair', async () => {
     const pairs = (ws: Workspace, relation: string) => ws.relations.filter((r) => r.relation === relation);
     // Lathe's about gains exactly the declared pair, and its own pairs, labels and role stay as they were.
     expect(pairs(report, 'about')).toEqual([
@@ -140,7 +140,7 @@ describe('a product\'s own interface design kind presents', () => {
       ],
     });
 
-  it('LA-PRD-UC04-R06-T01 A product\'s interface design kind may present commands and queries; any other kind may not', async () => {
+  it('LA-PRD-UC40-R02-T01 A product\'s interface design kind may present commands and queries; any other kind may not', async () => {
     const root = await build(withInvocations());
     const store = await openStore(root, { latheDataDir: null });
     await run(store, 'extension-record add-extension-record', { kind: 'invocation', id: 'EX-INV01', parent_id: 'EX', values: { title: 'library lend' }, links: { presents: ['EX-LEND-CMD01', 'EX-LEND-QRY01'] } });
@@ -167,7 +167,7 @@ describe('a product\'s own interface design kind presents', () => {
 });
 
 describe('stages', () => {
-  it('LA-PRD-UC08-R01-T01 The engine loads the six stages in order and each kind\'s stage and position, with the product and open questions outside them', () => {
+  it('LA-PRD-UC11-R08-T01 The engine loads the six stages in order and each kind\'s stage and position, with the product and open questions outside them', () => {
     expect(plain.stages.map((s) => [s.position, s.stage, s.label])).toEqual([
       [1, 'discovery', 'Discovery'],
       [2, 'domain-model', 'Domain model'],
@@ -185,7 +185,7 @@ describe('stages', () => {
     expect(plain.kinds.filter((k) => k.stage === null).map((k) => k.kind)).toEqual(['product', 'question']);
   });
 
-  it('LA-PRD-UC08-R01-T02 Every kind\'s stage is one of the schema\'s stages, and a product kind with no stage sits in none', async () => {
+  it('LA-PRD-UC11-R08-T02 Every kind\'s stage is one of the schema\'s stages, and a product kind with no stage sits in none', async () => {
     const stages = new Set(plain.stages.map((s) => s.stage));
     for (const k of plain.kinds) if (k.stage !== null) expect(stages.has(k.stage), k.kind).toBe(true);
     const ws = await loadData(adding(complete(), {

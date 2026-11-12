@@ -168,7 +168,7 @@ export function marksOf(index: RecordIndex, id: string) {
 
 
 
-/** Where a title's word too wide for a line breaks: after a hyphen, or a code identifier's punctuation (LA-STD-MODELING-R09 titles code-bound records by their identifiers). */
+/** Where a title's word too wide for a line breaks: after a hyphen, or a code identifier's punctuation (LA-STD-NAMING-R08 titles code-bound records by their identifiers). */
 const TITLE_BREAKS = '-._:/(';
 
 /** A label's lines, as the canvas draws them: it wraps nothing itself. */

@@ -223,7 +223,7 @@ describe('LA-EXP-UC15 the Reader watches the spec change', () => {
     ]);
   });
 
-  it('LA-EXP-UC15-R05-T01 Follow glides to each change as it lands, and the Reader\'s own camera move or focus turns it off with a note', async () => {
+  it('LA-EXP-UC19-R01-T01 Follow glides to each change as it lands, and the Reader\'s own camera move or focus turns it off with a note', async () => {
     await openAt('/DM-SHOP-A1');
     fireEvent.click(within(tools()).getByRole('button', { name: 'Follow' }));
     expect(settings().follow).toBe(true);

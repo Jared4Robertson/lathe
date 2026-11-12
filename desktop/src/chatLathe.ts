@@ -1,8 +1,8 @@
-// The Lathe a window's chat brings (LA-PLT-UC19-R08): every session loads the Lathe plugin of the Lathe the window
+// The Lathe a window's chat brings (LA-PLT-UC44-R02): every session loads the Lathe plugin of the Lathe the window
 // runs, as servers.ts picks it (the product's own installed Lathe, else the app's bundled copy, or Lathe from source in
 // development), and its MCP server runs that same Lathe (LATHE_CLI), so the tools always match the window. The Lathe
 // package ships the plugin in dist/plugin; a product's own Lathe from before that uses the app's plugin, which still
-// runs the product's own Lathe. Before the chat says how many tools a session has (LA-PLT-UC19-R10), it asks the
+// runs the product's own Lathe. Before the chat says how many tools a session has (LA-PLT-UC44-R03), it asks the
 // plugin's own MCP server, started as Claude Code starts it, with the session's environment, View only included; the
 // tools it marks read only (readOnlyHint) are those Accept reads lets run without asking.
 import { spawn } from 'node:child_process';

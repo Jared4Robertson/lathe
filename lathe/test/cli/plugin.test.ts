@@ -38,7 +38,7 @@ const TOOL_NAME = /`([a-z]+(?:_[a-z]+)*_(?:add|change|remove|move|get|list|next_
 const guard = (input: object) => spawnSync(process.execPath, [path.join(pluginDir, 'scripts', 'guard-data-files.mjs')], { input: JSON.stringify(input), encoding: 'utf8' });
 
 describe('the plugin', () => {
-  it('LA-CHK-UC08-R03-T01 declares the MCP server and the guard hook, and every script they name exists', () => {
+  it('LA-STD-PRINCIPLES-R01-T07 declares the MCP server and the guard hook, and every script they name exists', () => {
     const mcp = JSON.parse(readFileSync(path.join(pluginDir, '.mcp.json'), 'utf8'));
     expect(mcp.mcpServers.lathe).toEqual({ command: 'node', args: ['${CLAUDE_PLUGIN_ROOT}/scripts/mcp-server.mjs'] });
     const hooks = JSON.parse(readFileSync(path.join(pluginDir, 'hooks', 'hooks.json'), 'utf8'));
@@ -66,7 +66,7 @@ describe('the plugin', () => {
 });
 
 describe('the guard hook', () => {
-  it('LA-CHK-UC08-R01-T01 refuses an edit of a data file and points at the tools', () => {
+  it('LA-STD-PRINCIPLES-R01-T05 refuses an edit of a data file and points at the tools', () => {
     const root = productRepo();
     const result = guard({ tool_name: 'Edit', tool_input: { file_path: path.join(root, 'data', 'product.jsonl') } });
     expect(result.status).toBe(0);
@@ -78,7 +78,7 @@ describe('the guard hook', () => {
     expect(guard({ tool_name: 'Write', cwd: root, tool_input: { file_path: 'spec-data/view.jsonl' } }).stdout).toContain('"deny"');
   });
 
-  it('LA-CHK-UC08-R02-T01 lets every other edit through, silently', () => {
+  it('LA-STD-PRINCIPLES-R01-T06 lets every other edit through, silently', () => {
     const root = productRepo();
     for (const file of [path.join(root, 'src', 'app.ts'), path.join(root, 'notes', 'rows.jsonl'), path.join(tmpdir(), 'elsewhere', 'data', 'x.jsonl')]) {
       const result = guard({ tool_name: 'Write', tool_input: { file_path: file } });
@@ -139,7 +139,7 @@ describe('the MCP launcher', () => {
     expect((await results(`${major}.9.1`)).calls).toEqual([['Product TL: Tool Library\n  description: A neighborhood tool library.'], ['Product TL: Tool Library\n  description: A neighborhood tool library.']]);
   });
 
-  it('LA-PLT-UC19-R08-T02 runs the Lathe LATHE_CLI names, as the desktop chat sets it, though the repo has none installed', async () => {
+  it('LA-PLT-UC44-R02-T02 runs the Lathe LATHE_CLI names, as the desktop chat sets it, though the repo has none installed', async () => {
     const root = productRepo();
     rmSync(path.join(root, 'node_modules'), { recursive: true, force: true });
     const server = spawn(process.execPath, [path.join(pluginDir, 'scripts', 'mcp-server.mjs')], { env: { ...process.env, CLAUDE_PROJECT_DIR: root, LATHE_CLI: bin }, stdio: ['pipe', 'pipe', 'pipe'] });

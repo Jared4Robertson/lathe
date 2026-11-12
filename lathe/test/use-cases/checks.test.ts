@@ -1,8 +1,8 @@
 // Lathe's checks of the Use cases domain, one at a time: each starts from the complete product, which gives no
 // problem, and changes one thing to break the rule. LA-PAT-AGGREGATE-TESTS-R04: each of the domain's check rows is tested here.
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { Workspace } from '../../src/index.ts';
-import { adding, changing, complete, loadData, ofCheck, records, removeData, withJourney } from '../helpers.ts';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { openStore, type Store, type Workspace } from '../../src/index.ts';
+import { adding, build, changing, complete, loadData, ofCheck, records, refusedBy, removeData, run, withJourney, type Data } from '../helpers.ts';
 
 afterAll(removeData);
 
@@ -14,10 +14,14 @@ beforeAll(async () => {
 /** A check row's tests, under its name. */
 const check = (name: string, body: () => void) => describe(name, body);
 
-const withFlow = (title: string, actors: string[], steps: { title: string; path?: string; interface_id?: string; invokes?: string }[]) =>
+/**
+ * The complete product with a third use case whose flow is given, offered through the web app: its result, the member's
+ * unless another first actor is given (the member already borrows a tool in EX-LEND-UC01).
+ */
+const withFlow = (title: string, actors: string[], steps: { title: string; path?: string; interface_id?: string; invokes?: string }[], result_id = 'EX-LEND-QRY01', first?: string) =>
   adding(complete(), {
-    use_case: [{ id: 'EX-LEND-UC03', title, capability_id: 'EX-LEND-CAP01', goal: 'A member gets something done.' }],
-    use_case_actor: actors.map((role_name, i) => ({ use_case_id: 'EX-LEND-UC03', position: i + 1, role_name })),
+    use_case: [{ id: 'EX-LEND-UC03', title, capability_id: 'EX-LEND-CAP01', goal: 'A member gets something done.', result_id }],
+    use_case_actor: [...(first ? [first] : []), ...actors].map((role_name, i) => ({ use_case_id: 'EX-LEND-UC03', position: i + 1, role_name })),
     uc_requirement: [{ id: 'EX-LEND-UC03-R01', title: 'It is done', use_case_id: 'EX-LEND-UC03', statement: 'The library MUST do it.' }],
     offers: [{ source_id: 'EX-IF01', target_id: 'EX-LEND-UC03' }],
     flow: [{ id: 'EX-LEND-UC03-FL', title, use_case_id: 'EX-LEND-UC03' }],
@@ -31,7 +35,7 @@ const withFlow = (title: string, actors: string[], steps: { title: string; path?
   });
 
 check('flow-title-off-pattern', () => {
-  it("LA-STD-MODELING-R06-T02 a flow not titled as its use case's title is a warning", async () => {
+  it("LA-STD-NAMING-R05-T02 a flow not titled as its use case's title is a warning", async () => {
     expect(ofCheck(clean, 'flow-title-off-pattern')).toEqual([]);
     const titled = (title: string) => changing(complete(), 'flow', (r) => r.id === 'EX-LEND-UC01-FL', { title });
     expect(ofCheck(await loadData(titled('  borrow A tool ')), 'flow-title-off-pattern')).toEqual([]);
@@ -54,12 +58,12 @@ check('title-breaks-convention', () => {
     const data = adding(complete(), {
       interface: [{ id: 'EX-IF02', title: 'Member portal', product_id: 'EX', kind: 'web app', description: 'The pages members use from home.', public: false }],
       capability: capabilities.map((title, i) => ({ id: `EX-LEND-CAP${String(i + 2).padStart(2, '0')}`, title, domain_id: 'EX-LEND', position: i + 2, description: 'A part of lending.' })),
-      use_case: useCases.map((title, i) => ({ id: `EX-LEND-UC${String(i + 3).padStart(2, '0')}`, title, capability_id: 'EX-LEND-CAP01', goal: 'A member gets something done.' })),
+      use_case: useCases.map((title, i) => ({ id: `EX-LEND-UC${String(i + 3).padStart(2, '0')}`, title, capability_id: 'EX-LEND-CAP01', goal: 'A member gets something done.', result_id: 'EX-LEND-CMD01' })),
     });
     return ofCheck(await loadData(data), 'title-breaks-convention');
   };
 
-  it('LA-STD-MODELING-R02-T01 a capability starting with The or an -ing word, naming an interface or holding a list is a warning; a noun phrase or a single -ing noun is not', async () => {
+  it('LA-STD-NAMING-R01-T01 a capability starting with The or an -ing word, naming an interface or holding a list is a warning; a noun phrase or a single -ing noun is not', async () => {
     expect(ofCheck(clean, 'title-breaks-convention')).toEqual([]);
     const found = await named(
       ['Invoice management', 'Billing', 'The catalog', 'Writing invoices', 'Web app', 'Tools, members and loans', 'String lending'],
@@ -72,7 +76,7 @@ check('title-breaks-convention', () => {
     );
   });
 
-  it("LA-STD-MODELING-R03-T01 a use case naming one of its product's interfaces or an interface word is a warning; one goal of verb and object, or a list (use-case-title-joins-goals's), is not", async () => {
+  it("LA-STD-NAMING-R02-T01 a use case naming one of its product's interfaces or an interface word is a warning; verb and object, or a list, is not", async () => {
     const found = await named([], [
       'Check the workspace from the command line',
       'Approve an invoice in the member portal',
@@ -90,14 +94,11 @@ check('title-breaks-convention', () => {
     );
   });
 
-  it('LA-STD-MODELING-R03-T02 a use case titled with a CRUD verb over a record or data is a warning', async () => {
-    const found = await named([], ["Change a product's data", 'Edit a record', 'Update the data', "Change Lathe's schema with a migration"]);
-    expect(records(found)).toEqual(['EX-LEND-UC03', 'EX-LEND-UC04', 'EX-LEND-UC05']);
-    expect(found.every((p) => p.severity === 'warning')).toBe(true);
-    expect(found.map((p) => /uses the CRUD verb "(\w+)" over a record or data/.exec(p.message)?.[1])).toEqual(['change', 'edit', 'update']);
+  it("LA-STD-NAMING-R02-T02 a use case titled with a CRUD verb over a record or data is not a warning: a command use case's verb is its command's", async () => {
+    expect(await named([], ["Change a product's data", 'Edit a record', 'Update the data', 'Change a check'])).toEqual([]);
   });
 
-  it('LA-STD-MODELING-R03-T03 a journey naming an interface, holding a list or titled with a CRUD verb over a record is a warning, as a use case', async () => {
+  it('LA-STD-NAMING-R02-T03 a journey naming an interface, holding a list or titled with a CRUD verb over a record is a warning, as a use case', async () => {
     const titled = (titles: string[]) =>
       adding(withJourney(), { journey: titles.map((title, i) => ({ id: `EX-JR${String(i + 2).padStart(2, '0')}`, title, product_id: 'EX', trigger: 'A member asks.', result: 'The member is answered.' })) });
     const found = ofCheck(await loadData(titled(['Lend a tool through the web app', 'Borrow, use and return a tool', 'Update the loan data', 'Bring a new neighbor to their first loan'])), 'title-breaks-convention');
@@ -108,93 +109,153 @@ check('title-breaks-convention', () => {
   });
 });
 
-/** The complete product with a third use case whose flow is given: the member's, offered through the web app. */
+/** A store over the data, closed after the test. */
+const opened: Store[] = [];
+afterEach(async () => {
+  for (const store of opened.splice(0)) await store.close();
+});
+const storeOf = async (data: Data) => {
+  const store = await openStore(await build(data), { latheDataDir: null });
+  opened.push(store);
+  return store;
+};
 
-check('use-case-changes-many-aggregates', () => {
-  it("LA-STD-MODELING-R15-T01 a use case whose actors' own steps change two aggregates is a warning; queries, refused paths and another actor's write are not counted", async () => {
-    expect(ofCheck(clean, 'use-case-changes-many-aggregates')).toEqual([]);
-    // Open a loan (Loan) and Add a tool (Tool): two aggregates through the member's own steps.
-    const two = withFlow('Borrow a new tool', ['Member'], [
-      { title: 'The member borrows a tool', invokes: 'EX-LEND-CMD01' },
-      { title: 'The member adds a tool', invokes: 'EX-LEND-CMD02' },
-    ]);
-    expect(ofCheck(await loadData(two), 'use-case-changes-many-aggregates')).toEqual([
-      {
-        severity: 'warning', check: 'use-case-changes-many-aggregates', record: 'EX-LEND-UC03',
-        message: "Use case EX-LEND-UC03 changes 2 aggregates through its actors' own steps (EX-LEND-A1 (Loan), EX-LEND-A2 (Tool)), but a use case changes at most one: split it by goal, make the later change a policy that hears the first's event, make another actor's write its trigger rather than a step, write a link from the record that owns it, or make the goals a journey.",
-      },
-    ]);
-    // A query, a refused write and the librarian's write (not the use case's actor) change nothing of the member's.
-    const one = withFlow('Borrow a tool again', ['Member'], [
+/** A refusal's rules and messages. */
+const refusals = async (store: Store, command: string, input: Record<string, unknown>) => (await refusedBy(store, command, input)).map((p) => [p.rule, p.message]);
+
+/** A second query of the read model, for a query use case that asks two. */
+const LIST_LOANS = { query: [{ id: 'EX-LEND-QRY02', title: 'List open loans', read_model_id: 'EX-LEND-RM01', description: 'The loans not yet returned.' }] };
+
+check('use-case-invokes-another-command', () => {
+  it("LA-STD-MODELING-R15-T01 a step that invokes a command other than its use case's result is an error on any path and whoever its subject is, and a write that adds one is refused; a query is not", async () => {
+    expect(ofCheck(clean, 'use-case-invokes-another-command')).toEqual([]);
+    const data = withFlow('Borrow a tool at the desk', ['Member'], [
       { title: 'The librarian adds a tool', invokes: 'EX-LEND-CMD02' },
       { title: 'The member borrows it', invokes: 'EX-LEND-CMD01' },
-      { title: 'The member sees the loan', invokes: 'EX-LEND-QRY01' },
+      { title: 'The member sees the free tools', invokes: 'EX-LEND-QRY01' },
       { title: 'The member adds a tool, and is refused', path: 'Refused', invokes: 'EX-LEND-CMD02' },
-    ]);
-    expect(ofCheck(await loadData(one), 'use-case-changes-many-aggregates')).toEqual([]);
-  });
-
-  it("LA-STD-MODELING-R15-T02 aggregates are counted per interface that offers the use case: one interface's variant and another's change one each", async () => {
-    const twoInterfaces = (data: ReturnType<typeof complete>) =>
-      adding(data, {
-        interface: [{ id: 'EX-IF02', title: 'Kiosk', product_id: 'EX', kind: 'web app', description: 'The self-service kiosk.', public: false }],
-        offers: [{ source_id: 'EX-IF02', target_id: 'EX-LEND-UC03' }],
-      });
-    const variants = twoInterfaces(withFlow('Borrow a tool at the desk', ['Member'], [
-      { title: 'The member borrows a tool', interface_id: 'EX-IF01', invokes: 'EX-LEND-CMD01' },
-      { title: 'The member adds a tool', interface_id: 'EX-IF02', invokes: 'EX-LEND-CMD02' },
-    ]));
-    expect(ofCheck(await loadData(variants), 'use-case-changes-many-aggregates')).toEqual([]);
-    const shared = twoInterfaces(withFlow('Borrow a tool at the desk', ['Member'], [
-      { title: 'The member borrows a tool', invokes: 'EX-LEND-CMD01' },
-      { title: 'The member adds a tool', interface_id: 'EX-IF02', invokes: 'EX-LEND-CMD02' },
-    ]));
-    expect(records(ofCheck(await loadData(shared), 'use-case-changes-many-aggregates'))).toEqual(['EX-LEND-UC03']);
-  });
-});
-
-check('use-case-title-joins-goals', () => {
-  it('LA-STD-MODELING-R15-T03 a use case titled with "and", "or" or a list is a warning; parts named after "with" are not', async () => {
-    const titled = (titles: string[]) =>
-      adding(complete(), { use_case: titles.map((title, i) => ({ id: `EX-LEND-UC${String(i + 3).padStart(2, '0')}`, title, capability_id: 'EX-LEND-CAP01', goal: 'A member gets something done.' })) });
-    const found = ofCheck(await loadData(titled([
-      'Borrow and return a tool',
-      'Renew or return a loan',
-      'Read tools, members, loans',
-      'Borrow a tool with its case and charger',
-      'Return a tool',
-      'Borrow a sander',
-    ])), 'use-case-title-joins-goals');
-    expect(records(found)).toEqual(['EX-LEND-UC03', 'EX-LEND-UC04', 'EX-LEND-UC05']);
-    expect(found.every((p) => p.severity === 'warning')).toBe(true);
-    expect(found.map((p) => p.message)).toEqual([
-      'Use case EX-LEND-UC03 is titled "Borrow and return a tool", which joins two goals with "and"; a use case is one goal of one actor: split it into a use case per goal, or name the parts of one thing with "with", such as "Write a use case with its flow and tests".',
-      'Use case EX-LEND-UC04 is titled "Renew or return a loan", which joins two goals with "or"; a use case is one goal of one actor: split it into a use case per goal, or name the parts of one thing with "with", such as "Write a use case with its flow and tests".',
-      'Use case EX-LEND-UC05 is titled "Read tools, members, loans", which joins a list; a use case is one goal of one actor: split it into a use case per goal, or name the parts of one thing with "with", such as "Write a use case with its flow and tests".',
-    ]);
-  });
-});
-
-check('another-actor-writes-in-a-step', () => {
-  it("LA-STD-MODELING-R15-T04 a step whose subject is a role that is not one of its use case's actors and that sends a command is a warning; a query, an actor's own step or a role as an object is not", async () => {
-    const data = withFlow('Borrow a free tool', ['Member'], [
-      { title: 'The librarian adds a tool', invokes: 'EX-LEND-CMD02' },
-      { title: 'While the tool is new, a Librarian adds another', invokes: 'EX-LEND-CMD02' },
-      { title: 'The librarian shows the free tools', invokes: 'EX-LEND-QRY01' },
-      { title: 'The member borrows a tool from the librarian', invokes: 'EX-LEND-CMD01' },
-    ]);
-    expect(ofCheck(await loadData(data), 'another-actor-writes-in-a-step')).toEqual([
+    ], 'EX-LEND-CMD01', 'Librarian');
+    expect(ofCheck(await loadData(data), 'use-case-invokes-another-command')).toEqual([
       {
-        severity: 'warning', check: 'another-actor-writes-in-a-step', record: 'EX-LEND-UC03-FL-S01',
-        message: "Flow step EX-LEND-UC03-FL-S01 has the Librarian send EX-LEND-CMD02, but the Librarian is not one of EX-LEND-UC03's actors: another actor's write starts a use case rather than being a step of it; start the flow where its actors take over, or make the write a use case of its own and string the two in a journey.",
+        severity: 'error', check: 'use-case-invokes-another-command', record: 'EX-LEND-UC03-FL-S01',
+        message: "Flow step EX-LEND-UC03-FL-S01 of EX-LEND-UC03 invokes the command EX-LEND-CMD02 (Add a tool), but the use case's result is EX-LEND-CMD01: a use case invokes no command but its result; make EX-LEND-CMD02 its own use case, joined to this one in a journey, or the command of a policy.",
       },
-      expect.objectContaining({ record: 'EX-LEND-UC03-FL-S02' }),
+      expect.objectContaining({ record: 'EX-LEND-UC03-FL-S04' }),
     ]);
+    // A query use case invokes no command at all.
+    const asking = withFlow('See the free tools', ['Member'], [
+      { title: 'The member borrows a tool', invokes: 'EX-LEND-CMD01' },
+      { title: 'The member sees the free tools', invokes: 'EX-LEND-QRY01' },
+    ], 'EX-LEND-QRY01');
+    expect(records(ofCheck(await loadData(asking), 'use-case-invokes-another-command'))).toEqual(['EX-LEND-UC03-FL-S01']);
+    // A write that links a second command, or sets a result another command's step is left invoking, is refused.
+    const store = await storeOf(complete());
+    expect(await refusals(store, 'use-case change-flow-step', { id: 'EX-LEND-UC01-FL-S02', invokes: 'EX-LEND-CMD02' })).toEqual([
+      ['use-case-invokes-another-command', "Flow step EX-LEND-UC01-FL-S02 of EX-LEND-UC01 would invoke the command EX-LEND-CMD02, but the use case's result is EX-LEND-CMD01: a use case invokes no command but its result; make EX-LEND-CMD02 its own use case, joined to this one in a journey, or the command of a policy."],
+    ]);
+    expect((await refusals(store, 'use-case change-use-case', { id: 'EX-LEND-UC01', result_id: 'EX-LEND-QRY01' })).map(([rule]) => rule)).toEqual(['use-case-invokes-another-command']);
+  });
+});
+
+check('use-case-result-not-invoked', () => {
+  it("LA-STD-MODELING-R15-T02 a use case whose main path, through an interface that offers it, never invokes its result is an error; another path's step does not count, and a use case with no flow is left to its gap", async () => {
+    expect(ofCheck(clean, 'use-case-result-not-invoked')).toEqual([]);
+    const unasked = withFlow('Borrow a tool at the desk', ['Member'], [
+      { title: 'The member sees the free tools', invokes: 'EX-LEND-QRY01' },
+      { title: 'The member borrows a tool', path: 'Late', invokes: 'EX-LEND-CMD01' },
+    ], 'EX-LEND-CMD01', 'Librarian');
+    expect(ofCheck(await loadData(unasked), 'use-case-result-not-invoked')).toEqual([
+      {
+        severity: 'error', check: 'use-case-result-not-invoked', record: 'EX-LEND-UC03',
+        message: "Use case EX-LEND-UC03 has EX-LEND-CMD01 as its result, but no step of its main path through EX-IF01 invokes it: link the main-path step that invokes it, or make the use case's result what its main path invokes.",
+      },
+    ]);
+    // Read per interface: the result invoked only in the web app's variant is not invoked through the kiosk.
+    const variant = adding(withFlow('Borrow a tool at the desk', ['Member'], [
+      { title: 'The member sees the free tools', invokes: 'EX-LEND-QRY01' },
+      { title: 'The member borrows a tool', interface_id: 'EX-IF01', invokes: 'EX-LEND-CMD01' },
+    ], 'EX-LEND-CMD01', 'Librarian'), {
+      interface: [{ id: 'EX-IF02', title: 'Kiosk', product_id: 'EX', kind: 'web app', description: 'The self-service kiosk.', public: false }],
+      interface_actor: [{ interface_id: 'EX-IF02', position: 1, role_name: 'Member' }],
+      offers: [{ source_id: 'EX-IF02', target_id: 'EX-LEND-UC03' }],
+    });
+    expect(ofCheck(await loadData(variant), 'use-case-result-not-invoked').map((p) => p.message)).toEqual([
+      expect.stringContaining('but no step of its main path through EX-IF02 invokes it'),
+    ]);
+    const flowless = adding(complete(), {
+      use_case: [{ id: 'EX-LEND-UC03', title: 'Add a donated tool', capability_id: 'EX-LEND-CAP01', goal: 'A member gives the library a tool.', result_id: 'EX-LEND-CMD02' }],
+    });
+    expect(ofCheck(await loadData(flowless), 'use-case-result-not-invoked')).toEqual([]);
+  });
+});
+
+check('use-case-not-done', () => {
+  it("LA-STD-MODELING-R15-T03 a query use case whose main path's last invoking step asks something other than its result is an error; a command use case may ask queries after its result", async () => {
+    expect(ofCheck(clean, 'use-case-not-done')).toEqual([]);
+    const trailing = adding(withFlow('See the free tools', ['Member'], [
+      { title: 'The member sees the free tools', invokes: 'EX-LEND-QRY01' },
+      { title: 'The member sees the open loans', invokes: 'EX-LEND-QRY02' },
+    ], 'EX-LEND-QRY01'), LIST_LOANS);
+    expect(ofCheck(await loadData(trailing), 'use-case-not-done')).toEqual([
+      {
+        severity: 'error', check: 'use-case-not-done', record: 'EX-LEND-UC03',
+        message: 'Use case EX-LEND-UC03 asks its result EX-LEND-QRY01, but the last step of its main path that invokes anything through EX-IF01, EX-LEND-UC03-FL-S02, invokes EX-LEND-QRY02: a query use case is done when it asks its result; unlink the steps after it, make them a use case of their own, or make EX-LEND-QRY02 the result.',
+      },
+    ]);
+    // The same steps with the second query as the result end where they should; a result never asked is result-not-invoked's.
+    const done = changing(trailing, 'use_case', (r) => r.id === 'EX-LEND-UC03', { result_id: 'EX-LEND-QRY02' });
+    expect(ofCheck(await loadData(done), 'use-case-not-done')).toEqual([]);
+    const unasked = changing(trailing, 'invokes', (r) => r.target_id === 'EX-LEND-QRY01' && r.source_id === 'EX-LEND-UC03-FL-S01', { target_id: 'EX-LEND-QRY02' });
+    expect(ofCheck(await loadData(unasked), 'use-case-not-done')).toEqual([]);
+  });
+});
+
+check('use-case-identity-taken', () => {
+  it('LA-STD-MODELING-R15-T04 two use cases of a product with the same first actor and result are an error on the later, and a write that makes them so is refused; another first actor is another use case', async () => {
+    expect(ofCheck(clean, 'use-case-identity-taken')).toEqual([]);
+    const twice = adding(complete(), {
+      use_case: [
+        { id: 'EX-LEND-UC03', title: 'Borrow a tool again', capability_id: 'EX-LEND-CAP01', goal: 'A member takes another tool home.', result_id: 'EX-LEND-CMD01' },
+        { id: 'EX-LEND-UC04', title: 'Borrow a tool for a member', capability_id: 'EX-LEND-CAP01', goal: 'The librarian lends a tool at the desk.', result_id: 'EX-LEND-CMD01' },
+      ],
+      use_case_actor: [
+        { use_case_id: 'EX-LEND-UC03', position: 1, role_name: 'Member' },
+        { use_case_id: 'EX-LEND-UC04', position: 1, role_name: 'Librarian' },
+        { use_case_id: 'EX-LEND-UC04', position: 2, role_name: 'Member' },
+      ],
+    });
+    expect(ofCheck(await loadData(twice), 'use-case-identity-taken')).toEqual([
+      {
+        severity: 'error', check: 'use-case-identity-taken', record: 'EX-LEND-UC03',
+        message: 'Use case EX-LEND-UC03 has the same first actor (Member) and result (EX-LEND-CMD01) as EX-LEND-UC01: no two use cases of a product share both; merge EX-LEND-UC03 into EX-LEND-UC01.',
+      },
+    ]);
+    const store = await storeOf(complete());
+    expect(await refusals(store, 'use-case add-use-case', { id: 'EX-LEND-UC03', title: 'Borrow a tool again', capability_id: 'EX-LEND-CAP01', goal: 'A member takes another tool home.', result_id: 'EX-LEND-CMD01', actors: ['Member'] })).toEqual([
+      ['use-case-identity-taken', 'Use case EX-LEND-UC03 would have the same first actor (Member) and result (EX-LEND-CMD01) as EX-LEND-UC01: no two use cases of a product share both; change EX-LEND-UC01 instead.'],
+    ]);
+    await run(store, 'use-case add-use-case', { id: 'EX-LEND-UC03', title: 'Borrow a tool for a member', capability_id: 'EX-LEND-CAP01', goal: 'The librarian lends a tool at the desk.', result_id: 'EX-LEND-CMD01', actors: ['Librarian', 'Member'] });
+    expect((await refusals(store, 'use-case change-use-case', { id: 'EX-LEND-UC03', actors: ['Member', 'Librarian'] })).map(([rule]) => rule)).toEqual(['use-case-identity-taken']);
+  });
+});
+
+check('use-case-title-off-result', () => {
+  it("LA-STD-MODELING-R15-T05 a command use case whose title does not start with its command's verb is a warning; a query use case is not read", async () => {
+    expect(ofCheck(clean, 'use-case-title-off-result')).toEqual([]);
+    const titled = (title: string, result_id = 'EX-LEND-CMD01') => changing(complete(), 'use_case', (r) => r.id === 'EX-LEND-UC01', { title, result_id });
+    expect(ofCheck(await loadData(titled('  borrow A tool ')), 'use-case-title-off-result')).toEqual([]);
+    expect(ofCheck(await loadData(titled('Lend a tool')), 'use-case-title-off-result')).toEqual([
+      {
+        severity: 'warning', check: 'use-case-title-off-result', record: 'EX-LEND-UC01',
+        message: 'Use case EX-LEND-UC01 is titled "Lend a tool", but its result EX-LEND-CMD01 is "Borrow a tool": a command use case starts with its command\'s verb; start its title with "Borrow", or rename the command.',
+      },
+    ]);
+    expect(ofCheck(await loadData(titled('See the free tools', 'EX-LEND-QRY01')), 'use-case-title-off-result')).toEqual([]);
   });
 });
 
 check('step-order', () => {
-  it('LA-UCS-UC06-R80-T01 a path whose positions skip a number is reported once, on the first step after the gap', async () => {
+  it('LA-UCS-UC10-R03-T01 a path whose positions skip a number is reported once, on the first step after the gap', async () => {
     const data = adding(complete(), {
       flow_step: [
         { id: 'EX-LEND-UC01-FL-S03', title: 'Refused', flow_id: 'EX-LEND-UC01-FL', path: 'refused', position: 2 },
@@ -209,7 +270,7 @@ check('step-order', () => {
     ]);
   });
 
-  it("LA-PRD-UC33-R03-T02 a journey path whose positions skip a number is reported once, on the first step after the gap, as a flow's is", async () => {
+  it("LA-PRD-UC43-R02-T02 a journey path whose positions skip a number is reported once, on the first step after the gap, as a flow's is", async () => {
     expect(ofCheck(await loadData(withJourney()), 'step-order')).toEqual([]);
     const data = changing(withJourney(), 'journey_step', (r) => r.id === 'EX-JR01-S03', { position: 5 });
     expect(ofCheck(await loadData(data), 'step-order')).toEqual([

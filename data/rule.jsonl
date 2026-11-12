@@ -77,4 +77,5 @@
 {"id":"LA-UCS-INV105-RL","title":"pattern-rule-test-per-domain","invariant_id":"LA-UCS-INV105","file":"lathe/src/use-cases/pattern/rules.ts"}
 {"id":"LA-UCS-INV18-RL","title":"step-position","invariant_id":"LA-UCS-INV18","file":"lathe/src/use-cases/use-case/rules.ts"}
 {"id":"LA-UCS-INV193-RL","title":"use-case-actor-role","invariant_id":"LA-UCS-INV193","file":"lathe/src/use-cases/use-case/rules.ts"}
+{"id":"LA-UCS-INV194-RL","title":"use-case-result-in-product","invariant_id":"LA-UCS-INV194","file":"lathe/src/use-cases/use-case/rules.ts"}
 {"id":"LA-UCS-INV42-RL","title":"flow-id","invariant_id":"LA-UCS-INV42","file":"lathe/src/use-cases/use-case/rules.ts"}

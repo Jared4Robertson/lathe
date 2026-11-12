@@ -7,12 +7,12 @@ import type { ChatItem, ChatSkill } from '../src/chat/types';
 import { workspace } from './fixtures/workspace';
 import { recordIndexOf } from './read-view';
 
-// The chat's smaller parts (LA-PLT-UC22-R01..R17): what a chip and the pointed-at context say, which turn commands undo
+// The chat's smaller parts (LA-PLT-UC19-R13..R17): what a chip and the pointed-at context say, which turn commands undo
 // names in order, the "/" list's matching, and the image types sent.
 
 const tool = (name: string, input: string, status: 'done' | 'error' = 'done'): ChatItem => ({ kind: 'tool', id: name + input, name, label: name, summary: '', input, result: '', status });
 
-describe('LA-PLT-UC22-R01-T03 the chips say the record and its title, and the context lists each record pointed at', () => {
+describe('LA-PLT-UC19-R13-T03 the chips say the record and its title, and the context lists each record pointed at', () => {
   const index = recordIndexOf(workspace());
   it('names a record by ID and title, and a record the index lacks by its ID', () => {
     expect(chipLabel(index, 'DM-SHOP-UC01')).toBe('DM-SHOP-UC01 Add an item to the basket');

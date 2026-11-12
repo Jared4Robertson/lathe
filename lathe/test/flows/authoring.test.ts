@@ -44,7 +44,7 @@ const recordOf = (tl: Product, id: string) => tl.workspace().records.find((r) =>
 const linksOf = (tl: Product, id: string) => tl.workspace().links.filter((l) => l.source === id).map((l) => `${l.relation} ${l.target}`);
 
 describe('The stage domains\' flows', () => {
-  it('LA-MOD-UC02-FL-T split a product into domains by capability', () => {
+  it('LA-MOD-UC02-FL-T LA-MOD-UC35-FL-T split a product into domains by capability', () => {
     const tl = product();
     // S01: the modeling skill's first step is to find the product's business capabilities.
     const skill = readFileSync(path.join(LATHE_DIR, '..', 'plugin', 'skills', 'model-a-domain', 'SKILL.md'), 'utf8');
@@ -60,7 +60,7 @@ describe('The stage domains\' flows', () => {
     expect(problemsOf(tl.workspace(), 'domain-named-for-technology')).toEqual([]);
   });
 
-  it('LA-PRD-UC03-FL-T change Lathe\'s schema with a migration', async () => {
+  it('LA-STD-ENGINEERING-R02-T05 change Lathe\'s schema with a migration', async () => {
     // A copy of the lathe package, so the migration changes only the copy.
     const dir = mkdtempSync(path.join(tmpdir(), 'lathe-flow-schema-'));
     temps.push(dir);
@@ -93,7 +93,7 @@ describe('The stage domains\' flows', () => {
     expect(node(path.join(LATHE_DIR, 'bin', 'lathe.ts'), ['check', '--root', tl.root]).stdout).toContain('[data-refused]');
   });
 
-  it('LA-PRD-UC04-FL-T declare a product\'s own kinds with their relations', async () => {
+  it('LA-PRD-UC04-FL-T LA-PRD-UC40-FL-T declare a product\'s own kinds with their relations', async () => {
     const tl = product();
     await tl.seed(LENDING);
     const launcher = { kind: 'launcher', id: 'TL-LEND-EP1', parent_id: 'TL-LEND', values: { title: 'Start the lending service', file: 'src/main.ts' } };
@@ -112,7 +112,7 @@ describe('The stage domains\' flows', () => {
     expect(twice.join('\n')).toMatch(/data\/product_kind\.jsonl:2:.*line 1/);
   });
 
-  it('LA-PRD-UC34-FL-T write a record of a product\'s own kind', async () => {
+  it('LA-PRD-UC34-FL-T LA-PRD-UC48-FL-T LA-PRD-UC49-FL-T write a record of a product\'s own kind', async () => {
     const tl = product();
     await tl.seed(LENDING);
     tl.command('product declare-product-kind', { ...HOUSE_KIND, fields: [{ name: 'file', type: 'text', required: true, description: 'The file it starts from.' }] });
@@ -141,11 +141,11 @@ describe('The stage domains\' flows', () => {
     tl.command('product change-product', { id: 'TL', roles: [{ name: 'Librarian', description: 'Lends tools at the desk.' }, { name: 'Member', description: 'Borrows tools.' }] });
     expect(tl.command('product get-product', { id: 'TL' })).toMatch(/Librarian/);
     expect(tl.command('product get-product', { id: 'TL' })).toMatch(/Borrows tools/);
-    tl.command('use-case add-use-case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.', actors: ['Member'] });
+    tl.command('use-case add-use-case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.', result_id: 'TL-LEND-CMD01', actors: ['Member'] });
     expect(tl.read('data/use_case_actor.jsonl')).toContain('"role_name":"Member"');
   });
 
-  it('LA-PRD-UC36-FL-T ask an open question', async () => {
+  it('LA-PRD-UC36-FL-T LA-PRD-UC51-FL-T LA-PRD-UC52-FL-T ask an open question', async () => {
     const tl = product();
     await tl.seed(LENDING);
     tl.command('product change-product', { id: 'TL', roles: [{ name: 'Librarian', description: 'Lends tools at the desk.' }] });
@@ -160,9 +160,9 @@ describe('The stage domains\' flows', () => {
     expect(linksOf(tl, 'TL-LEND-Q01')).toEqual([]);
   });
 
-  it('LA-UCS-UC05-FL-T organize a domain\'s use cases into capabilities and patterns', async () => {
+  it('LA-UCS-UC05-FL-T LA-UCS-UC07-FL-T organize a domain\'s use cases into capabilities and patterns', async () => {
     const tl = product();
-    await tl.seed([...LENDING, add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.' })]);
+    await tl.seed([...LENDING, add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.', result_id: 'TL-LEND-CMD01' })]);
     // S01: the domain's capabilities in order; a repeated position is refused.
     tl.command('domain add-capability', { id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 2, description: 'Taking tools back from members.' });
     tl.refuse('domain add-capability', { id: 'TL-LEND-CAP03', title: 'Fees', domain_id: 'TL-LEND', position: 2, description: 'Charging members for late tools.' });
@@ -184,12 +184,12 @@ describe('The stage domains\' flows', () => {
     expect(gapsOf(ws, 'TL-LEND')).toContain('proved TL-PAT-ACT-R01');
   });
 
-  it('LA-UCS-UC06-FL-T write a use case\'s flow as ordered steps', async () => {
+  it('LA-UCS-UC09-FL-T LA-UCS-UC10-FL-T write a use case\'s flow as ordered steps', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
       add('uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'The due date is set', use_case_id: 'TL-LEND-UC01', statement: 'The loan MUST be due two weeks after it opens.' }),
-      add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.' }),
+      add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.', result_id: 'TL-LEND-CMD01' }),
       add('uc_requirement', { id: 'TL-LEND-UC02-R01', title: 'The return is dated', use_case_id: 'TL-LEND-UC02', statement: 'The return MUST carry its date.' }),
       add('view', { id: 'TL-V01', title: 'Loan desk', description: 'Where the librarian opens and closes loans.' }),
     ]);
@@ -229,7 +229,7 @@ describe('The stage domains\' flows', () => {
     expect(tl.refuse('use-case change-flow-step', { id: 'TL-LEND-UC01-FL-S01', fulfills: ['TL-LEND-UC02-R01'] })).toContain('TL-LEND-UC02-R01');
   });
 
-  it('LA-PRD-UC08-FL-T read each kind\'s stage and order from the schema', () => {
+  it('LA-PRD-UC11-FL-T read each kind\'s stage and order from the schema', () => {
     const tl = product();
     tl.command('domain add-domain', LENDING_DOMAIN);
     // S01: each kind's stage and place, in the reference and in the workspace, in the schema's one order.
@@ -246,7 +246,7 @@ describe('The stage domains\' flows', () => {
     expect(tl.workspace().kinds.filter((k) => k.stage === 'use-cases').map((k) => k.kind)).toEqual([...kinds, 'house_rule']);
   });
 
-  it('LA-MOD-UC10-FL-T model each aggregate\'s entities and value objects', async () => {
+  it('LA-MOD-UC40-FL-T model each aggregate\'s entities and value objects', async () => {
     const tl = product();
     await tl.seed([
       add('domain', LENDING_DOMAIN),
@@ -303,7 +303,7 @@ describe('The stage domains\' flows', () => {
     tl.refuse('check add-check', { name: 'blank', product_id: 'TL', domain_id: 'LA-CHK', position: 2, severity: 'warning', summary: 'Blank.', explanation: ' ', query: 'SELECT 1' });
   });
 
-  it('LA-MOD-UC12-FL-T model commands and their events', async () => {
+  it('LA-MOD-UC12-FL-T LA-MOD-UC44-FL-T model commands and their events', async () => {
     const tl = product();
     await tl.seed([
       add('domain', LENDING_DOMAIN),
@@ -378,7 +378,7 @@ describe('The stage domains\' flows', () => {
     expect(problemsOf(tl.workspace(), 'test-data-set-file-missing')).toEqual([]);
   });
 
-  it('LA-PRD-UC22-FL-T write the business outcomes the product exists to achieve', async () => {
+  it('LA-PRD-UC22-FL-T LA-PRD-UC41-FL-T write the business outcomes the product exists to achieve', async () => {
     const tl = product();
     await tl.seed([...LENDING]);
     // S01: a measurable outcome under the product; one without its measure is refused.
@@ -405,7 +405,7 @@ describe('The stage domains\' flows', () => {
     expect(tl.command('business-outcome get-business-outcome', { id: 'TL-BO01' })).toContain('TL-LEND-UC01-R01-T01');
   });
 
-  it('LA-TEC-UC16-FL-T write the engineering standards the code follows', async () => {
+  it('LA-TEC-UC16-FL-T LA-TEC-UC33-FL-T write the engineering standards the code follows', async () => {
     const tl = product();
     await tl.seed([...LENDING, add('command_handler', { id: 'TL-LEND-CMD01-H', title: 'openLoan', command_id: 'TL-LEND-CMD01', file: 'src/loans.ts', description: 'Opens the loan in one transaction.' })]);
     tl.write('src/loans.ts', '// TL-LEND-CMD01-H\n');
@@ -424,7 +424,7 @@ describe('The stage domains\' flows', () => {
     expect(ws.coverage.find((c) => c.domain === null)?.obligations.find((o) => o.kind === 'standard_rule')).toMatchObject({ total: 1, designed: 1, built: 1, proved: 1 });
   });
 
-  it('LA-TEC-UC17-FL-T write the technical records that build the design', async () => {
+  it('LA-TEC-UC17-FL-T LA-TEC-UC35-FL-T write the technical records that build the design', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
@@ -453,7 +453,7 @@ describe('The stage domains\' flows', () => {
     expect(ws.coverage.find((c) => c.domain === 'TL-LEND')?.obligations.find((o) => o.kind === 'invariant')).toMatchObject({ designed: 1, built: 1 });
   });
 
-  it('LA-IXD-UC18-FL-T write what a flow reaches', async () => {
+  it('LA-IXD-UC18-FL-T LA-IXD-UC29-FL-T write what a flow reaches', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
@@ -550,7 +550,7 @@ describe('The stage domains\' flows', () => {
     expect(ws.coverage.find((c) => c.domain === 'TL-LEND')?.obligations.filter((o) => o.total).map((o) => [o.kind, o.total])).toEqual([['constraint', 1], ['invariant', 1], ['specification', 1], ['uc_requirement', 1]]);
   });
 
-  it('LA-MOD-UC21-FL-T model read models and queries', async () => {
+  it('LA-MOD-UC21-FL-T LA-MOD-UC48-FL-T model read models and queries', async () => {
     const tl = product();
     await tl.seed(LENDING);
     // S01: each read model with its fields, the aggregates it reads, and its queries.

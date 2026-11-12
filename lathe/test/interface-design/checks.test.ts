@@ -31,7 +31,7 @@ const unreached = (step: string, operation: string, interface_: string, kind: st
 });
 
 check('step-unreached', () => {
-  it('LA-UCS-UC06-R09-T02 an interface that offers a use case reaches what each of its steps invokes: a web app or desktop through a view that presents it, an API through an endpoint, a CLI or agent tools through a record of the product\'s own; else the step is reported', async () => {
+  it('LA-UCS-UC10-R02-T02 an interface that offers a use case reaches what each of its steps invokes: a web app or desktop through a view that presents it, an API through an endpoint, a CLI or agent tools through a record of the product\'s own; else the step is reported', async () => {
     expect(ofCheck(clean, 'step-unreached')).toEqual([]);
     // A web app or desktop: a view presents the command or query.
     const bare = await loadData(without(complete(), 'presents', (l) => l.target_id === 'EX-LEND-QRY01'));
@@ -78,7 +78,7 @@ check('step-unreached', () => {
   const both = ['EX-LEND-CMD01', 'EX-LEND-QRY01'];
   const otherCli = { interface: [{ id: 'EX-IF03', title: 'Shell', product_id: 'EX', kind: 'CLI', description: 'The shell the librarian runs.', public: false }] };
 
-  it('LA-UCS-UC06-R09-T06 a CLI or agent tools reaches a step through a record of the product\'s own that presents its command or query, scoped as a view is', async () => {
+  it('LA-UCS-UC10-R02-T06 a CLI or agent tools reaches a step through a record of the product\'s own that presents its command or query, scoped as a view is', async () => {
     // Under no interface, it reaches every CLI and agent tools of the product.
     const anywhere = withInvocation('product', { product_id: 'EX' }, both);
     expect(ofCheck(await loadData(anywhere), 'step-unreached')).toEqual([]);
@@ -107,7 +107,7 @@ check('step-unreached', () => {
 });
 
 check('variant-not-offered', () => {
-  it('LA-UCS-UC06-R09-T03 a step that is a variant of an interface that does not offer its use case is an error', async () => {
+  it('LA-UCS-UC10-R02-T03 a step that is a variant of an interface that does not offer its use case is an error', async () => {
     expect(ofCheck(clean, 'variant-not-offered')).toEqual([]);
     const data = adding(complete(), { interface: [{ id: 'EX-IF02', title: 'CLI', product_id: 'EX', kind: 'other', description: 'The command line the librarian runs.', public: false }] });
     const variant = changing(data, 'flow_step', (r) => r.id === 'EX-LEND-UC01-FL-S01', { interface_id: 'EX-IF02' });
@@ -123,7 +123,7 @@ check('variant-not-offered', () => {
 });
 
 check('step-repeated-per-interface', () => {
-  it('LA-UCS-UC06-R82-T01 variant steps of one flow on two interfaces that invoke the same command or query are an error', async () => {
+  it('LA-UCS-UC10-R04-T01 variant steps of one flow on two interfaces that invoke the same command or query are an error', async () => {
     expect(ofCheck(clean, 'step-repeated-per-interface')).toEqual([]);
     // The web app borrows in one step, and the CLI's variant borrows again: the same step written per interface.
     const twice = adding(changing(withCli(), 'flow_step', (r) => r.id === 'EX-LEND-UC01-FL-S01', { interface_id: 'EX-IF01' }), {
@@ -148,7 +148,7 @@ check('step-repeated-per-interface', () => {
 });
 
 check('flow-not-offered', () => {
-  it('LA-UCS-UC06-R09-T04 a use case with a flow that no interface offers is a warning', async () => {
+  it('LA-UCS-UC10-R02-T04 a use case with a flow that no interface offers is a warning', async () => {
     expect(ofCheck(clean, 'flow-not-offered')).toEqual([]);
     const ws = await loadData(without(complete(), 'offers', (l) => l.target_id === 'EX-LEND-UC02'));
     expect(ofCheck(ws, 'flow-not-offered')).toEqual([
@@ -177,7 +177,7 @@ check('flow-not-offered', () => {
 });
 
 check('interface-actor-not-the-use-case', () => {
-  it('LA-UCS-UC06-R09-T05 an interface that lists roles and offers a use case none of whose actors is among them is a warning', async () => {
+  it('LA-UCS-UC10-R02-T05 an interface that lists roles and offers a use case none of whose actors is among them is a warning', async () => {
     expect(ofCheck(clean, 'interface-actor-not-the-use-case')).toEqual([]);
     // The interface lists only the Librarian, but Borrow a tool is the Member's.
     const only = without(complete(), 'interface_actor', (r) => r.role_name === 'Member');

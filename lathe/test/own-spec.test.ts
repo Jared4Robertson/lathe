@@ -12,7 +12,7 @@ const REPO = path.join(here, '..', '..');
 /** The kinds whose statement states a rule: everything owed but specifications, policies and domain services, which define or react. */
 const RULE_KINDS = ['constraint', 'invariant', 'uc_requirement', 'view_requirement', 'api_requirement', 'pattern_rule', 'standard_rule'];
 
-/** The kinds titled by a name (LA-STD-MODELING-R05): a proper name or a noun phrase, one to four words. */
+/** The kinds titled by a name (LA-STD-NAMING-R04): a proper name or a noun phrase, one to four words. */
 const NAME_KINDS = ['product', 'integration', 'interface', 'domain', 'capability', 'aggregate', 'entity', 'value_object', 'term', 'read_model', 'pattern', 'standard', 'domain_service', 'view', 'ui_component', 'test_data_set', 'business_outcome'];
 
 /** Lathe's own spec and the Tool Library's. */
@@ -36,7 +36,7 @@ async function titles(kinds: string[]): Promise<{ id: string; title: string }[]>
 }
 
 describe("Lathe's own spec", () => {
-  it('LA-STD-MODELING-R05-T01 Every name in Lathe and the Tool Library is one to four words with no article first', async () => {
+  it('LA-STD-NAMING-R04-T01 Every name in Lathe and the Tool Library is one to four words with no article first', async () => {
     const named = await titles(NAME_KINDS);
     expect(named.length).toBeGreaterThan(100);
     const off = named.filter(({ title }) => {
@@ -47,7 +47,7 @@ describe("Lathe's own spec", () => {
     // The first test loads both products whole on a cold engine: seconds alone, past vitest's 5 s on a busy machine.
   }, 30_000);
 
-  it('LA-STD-MODELING-R07-T01 Every policy in Lathe and the Tool Library reads "When" an event, then its reaction', async () => {
+  it('LA-STD-NAMING-R06-T01 Every policy in Lathe and the Tool Library reads "When" an event, then its reaction', async () => {
     const policies = await titles(['policy']);
     expect(policies.length).toBeGreaterThan(1);
     expect(policies.filter(({ title }) => !/^When [^,]+, \S/.test(title))).toEqual([]);
@@ -75,7 +75,7 @@ describe("Lathe's own spec", () => {
     expect(step.match(/^- .+\?/gm)?.length ?? 0).toBeGreaterThanOrEqual(4);
   });
 
-  it("LA-STD-MODELING-R10-T01 Every kind's text is required or absent: at most one lead column, required, and a test's When and Then with no Given", async () => {
+  it("LA-STD-NAMING-R09-T01 Every kind's text is required or absent: at most one lead column, required, and a test's When and Then with no Given", async () => {
     const store = await openStore(REPO, { dataDir: path.join(REPO, 'data') });
     try {
       const tables = Object.values(store.schema.tables).filter((t) => t.role === 'kind' || t.role === 'part' || t.role === 'declaration');

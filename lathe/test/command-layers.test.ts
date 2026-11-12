@@ -83,7 +83,7 @@ describe('LA-UCS-UC06-R12-T02 only repositories write data files, each handler l
   });
 });
 
-describe('LA-STD-MODELING-R09-T02 each rule record is a rule in its aggregate\'s rules.ts, by the name its refusal carries, and each rule there has its record', () => {
+describe('LA-STD-NAMING-R08-T02 each rule record is a rule in its aggregate\'s rules.ts, by the name its refusal carries, and each rule there has its record', () => {
   /** Every rules.ts under a directory, from the repo root: the app's and the desktop's aggregates keep their rules there too. */
   const rulesFiles = (dir: string): { file: string; text: string; imports: string[] }[] =>
     readdirSync(dir).flatMap((name) => {

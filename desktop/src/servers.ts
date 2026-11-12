@@ -12,7 +12,7 @@ export interface AppServer {
   url: string;
   /** How the window got its app: "serve", "own dev server" or "shared dev server". */
   label: string;
-  /** Stops it; resolves once it has stopped, and the process may exit (LA-PLT-UC11-R07). */
+  /** Stops it; resolves once it has stopped, and the process may exit (LA-PLT-UC41-R02). */
   stop: () => Promise<void>;
 }
 

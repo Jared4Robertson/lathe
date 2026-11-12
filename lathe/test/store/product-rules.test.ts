@@ -17,7 +17,7 @@ function changingRow(table: string, at: number, changes: Record<string, Row[stri
 const one = (rule: string, extra: Partial<StoreProblem> = {}) => [expect.objectContaining({ rule, ...extra })];
 
 describe("The stage domains' specifications", () => {
-  it('LA-PRD-UC37-R03-T03 A missing, unknown or disallowed parent is refused, as is a second parent or a parent column on a kind with no owner', async () => {
+  it('LA-STD-MODELING-R17-T03 A missing, unknown or disallowed parent is refused, as is a second parent or a parent column on a kind with no owner', async () => {
     // Missing: the parent column is required.
     expect(await refusals(changingRow('aggregate', 1, { domain_id: undefined }))).toEqual(one('required', { table: 'aggregate', file: 'data/aggregate.jsonl', line: 2, message: 'aggregate.domain_id is required' }));
     // Unknown, or a record of a kind the aggregate may not sit under: the foreign key names no domain.

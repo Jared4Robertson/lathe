@@ -71,7 +71,7 @@ describe('the interface design', () => {
     expect(await refusals(adding(everyKind(), { view: [{ id: 'XX-V09', title: 'Lost', description: 'A page of no product.' }] }))).toEqual([expect.objectContaining({ rule: 'id-prefix', key: 'XX-V09' })]);
   });
 
-  it('LA-IXD-UC18-R06-T01 LA-IXD-UC26-R02-T01 A rule of the interface design is a view requirement under its view or an API requirement under its endpoint', () => {
+  it('LA-IXD-UC29-R01-T01 LA-IXD-UC31-R01-T01 A rule of the interface design is a view requirement under its view or an API requirement under its endpoint', () => {
     expect(parentsOf(schema, 'view_requirement')).toEqual(['view.view_id']);
     expect(parentsOf(schema, 'api_requirement')).toEqual(['endpoint.endpoint_id']);
     const rules = Object.values(schema.kinds).filter((k) => k.stage === 'interface-design' && k.obligation).map((k) => k.name).sort();
@@ -130,7 +130,7 @@ describe('the technical specification', () => {
     expect(gaps(ws)).toEqual(['built EX-LEND-DS01', 'built EX-LEND-UC01-R01']);
   });
 
-  it('LA-MOD-UC02-R06-T01 A repository persists exactly one aggregate, and an aggregate no repository persists is a gap', async () => {
+  it('LA-MOD-UC34-R01-T01 A repository persists exactly one aggregate, and an aggregate no repository persists is a gap', async () => {
     expect(Object.keys(schema.tables).filter((t) => t.startsWith('repository_'))).toEqual([]);
     const one = without(without(without(complete(), 'persists', (r) => r.source_id === 'EX-LEND-REPO02'), 'stored_in', (r) => r.source_id === 'EX-LEND-REPO02'), 'repository', (r) => r.id === 'EX-LEND-REPO02');
     expect(gaps(await loadData(one)).filter((g) => g.startsWith('aggregate-without-repository'))).toEqual(['aggregate-without-repository EX-LEND-A2']);
@@ -188,7 +188,7 @@ describe('standards', () => {
     ]);
   });
 
-  it('LA-TEC-UC16-R02-T01 A standard rule is owed by the product, designed and built by the technical records that meet it and proved by its standard rule tests', async () => {
+  it('LA-TEC-UC33-R01-T01 A standard rule is owed by the product, designed and built by the technical records that meet it and proved by its standard rule tests', async () => {
     expect(record(good, 'EX-STD-CODE-R01')).toMatchObject({ product: 'EX', domain: null });
     expect(record(good, 'EX-STD-CODE-R01-T01')).toMatchObject({ parent: 'EX-STD-CODE-R01', product: 'EX', domain: null });
     expect(obligation(good, null, 'standard_rule')).toMatchObject({ total: 1, designed: 1, built: 1, proved: 1 });
@@ -204,7 +204,7 @@ describe('standards', () => {
     expect(obligation(silent, null, 'standard_rule')).toMatchObject({ proved: 0 });
   });
 
-  it('LA-TEC-UC16-R02-T02 A standard rule that nothing meets is reported as not designed, not built and not proved; naming it in text does not meet it', async () => {
+  it('LA-TEC-UC33-R01-T02 A standard rule that nothing meets is reported as not designed, not built and not proved; naming it in text does not meet it', async () => {
     const ws = await loadData(adding(complete(), {
       standard_rule: [{ id: 'EX-STD-CODE-R02', title: 'Typed errors', standard_id: 'EX-STD-CODE', statement: 'Code MUST throw typed errors.' }],
       ui_component: [{ id: 'EX-UI02', title: 'ErrorBanner', file: 'web/errors.tsx', description: 'Shows errors as EX-STD-CODE-R02 asks.' }],

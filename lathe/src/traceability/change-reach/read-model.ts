@@ -12,7 +12,8 @@
 // - builds it or proves it, as its chain says (the checks' run: an obligation's technical records and tests); or
 // - sits under a record it reached and is not an obligation itself (a command's handler and endpoint, a query's CLI
 //   query), since those carry out what they sit under.
-// It never follows a link upward to the purpose a record serves (serves, measured by, follows, offers, performs):
+// It never follows a link upward to the purpose a record serves (serves, measured by, follows, offers, performs, and
+// a use case's result):
 // those are named apart, as its purposes, by the Serves reach (LA-TRC-DS06). The chains are the checks' run's
 // (`ReadView.checked`); the rest is the rows'. The projection is the only code that reads them for the query and the only code that writes
 // the read model's table; the query handler reads it only through the reader.
@@ -74,6 +75,8 @@ export interface ChangeReachTable {
 
 /** Links that point up to a record's purpose or its context, never to what it depends on: the reach does not follow them. */
 const UPWARD = new Set(['serves', 'measured_by', 'follows', 'offers', 'performs']);
+/** Columns that point up to a record's purpose: a use case's result is the operation that use case exists for, so the operation's reach stops there. */
+const UPWARD_COLUMNS = new Set(['use_case.result_id']);
 /** Links whose target depends on their source (the tooling record writes the generated record). */
 const FORWARD = new Set(['generates']);
 
@@ -118,7 +121,7 @@ export function changeReachTableFrom(view: ReadView): ChangeReachTable {
       const kind = schema.kinds[table.name];
       if (!(kind || (table.role === 'part' && table.ownerColumn))) continue;
       const skip = new Set(['id', ...(kind?.parents.map((p) => p.column) ?? []), ...(table.ownerColumn ? [table.ownerColumn] : [])]);
-      const columns = table.foreignKeys.filter((f) => f.columns.length === 1 && !skip.has(f.columns[0])).map((f) => f.columns[0]);
+      const columns = table.foreignKeys.filter((f) => f.columns.length === 1 && !skip.has(f.columns[0]) && !UPWARD_COLUMNS.has(`${table.name}.${f.columns[0]}`)).map((f) => f.columns[0]);
       if (columns.length === 0) continue;
       for (const row of view.rows(table.name)) {
         const self = kind ? str(row.id) : str(row[table.ownerColumn!]);

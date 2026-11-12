@@ -2,11 +2,10 @@
 {"id":"LA-JR01-S02","title":"The Owner hands the use case to an Agent, who builds from its records","journey_id":"LA-JR01","path":"main","position":2}
 {"id":"LA-JR01-S03","title":"An Agent models the commands the use case needs, with their handlers and policies","journey_id":"LA-JR01","path":"main","position":3}
 {"id":"LA-JR01-S04","title":"An Agent records how each of its tests is run","journey_id":"LA-JR01","path":"main","position":4}
-{"id":"LA-JR01-S05","title":"An Agent's wrong write is refused with its reasons, and it writes again within the rules","journey_id":"LA-JR01","path":"main","position":5}
-{"id":"LA-JR01-S06","title":"An Agent checks the workspace and fixes what the check finds before handing the work back","journey_id":"LA-JR01","path":"main","position":6}
-{"id":"LA-JR01-S07","title":"The Owner reviews every problem the check still finds","journey_id":"LA-JR01","path":"main","position":7}
-{"id":"LA-JR01-S08","title":"The Owner traces each requirement to its proof","journey_id":"LA-JR01","path":"main","position":8}
-{"id":"LA-JR01-S09","title":"The Owner merges the Agent's work, its data merged record by record","journey_id":"LA-JR01","path":"main","position":9}
+{"id":"LA-JR01-S06","title":"An Agent checks the workspace and fixes what the check finds before handing the work back","journey_id":"LA-JR01","path":"main","position":5}
+{"id":"LA-JR01-S07","title":"The Owner reviews every problem the check still finds","journey_id":"LA-JR01","path":"main","position":6}
+{"id":"LA-JR01-S08","title":"The Owner traces each requirement to its proof","journey_id":"LA-JR01","path":"main","position":7}
+{"id":"LA-JR01-S09","title":"The Owner merges the Agent's work, its data merged record by record","journey_id":"LA-JR01","path":"main","position":8}
 {"id":"LA-JR01-S10","title":"The Owner sends the work back with the requirement it misses","journey_id":"LA-JR01","path":"sent back","position":1}
 {"id":"LA-JR01-S11","title":"An Agent builds what was missed and checks the workspace again","journey_id":"LA-JR01","path":"sent back","position":2}
 {"id":"LA-JR02-S01","title":"The Owner sets up Lathe in the product's repo","journey_id":"LA-JR02","path":"main","position":1}
@@ -24,10 +23,9 @@
 {"id":"LA-JR04-S01","title":"The Owner finds the part to change and opens its record","journey_id":"LA-JR04","path":"main","position":1}
 {"id":"LA-JR04-S02","title":"The Owner sees everything the change would touch","journey_id":"LA-JR04","path":"main","position":2}
 {"id":"LA-JR04-S03","title":"The Owner asks an Agent for the change, naming what it may touch","journey_id":"LA-JR04","path":"main","position":3}
-{"id":"LA-JR04-S04","title":"An Agent makes the change through Lathe's own commands, each checked","journey_id":"LA-JR04","path":"main","position":4}
-{"id":"LA-JR04-S05","title":"An Agent reads the essential records it changed with fresh eyes","journey_id":"LA-JR04","path":"main","position":5}
-{"id":"LA-JR04-S06","title":"An Agent checks the workspace and fixes what it finds","journey_id":"LA-JR04","path":"main","position":6}
-{"id":"LA-JR04-S07","title":"The Owner reviews the change, sees nothing else moved, and keeps it","journey_id":"LA-JR04","path":"main","position":7}
+{"id":"LA-JR04-S05","title":"An Agent reads the essential records it changed with fresh eyes","journey_id":"LA-JR04","path":"main","position":4}
+{"id":"LA-JR04-S06","title":"An Agent checks the workspace and fixes what it finds","journey_id":"LA-JR04","path":"main","position":5}
+{"id":"LA-JR04-S07","title":"The Owner reviews the change, sees nothing else moved, and keeps it","journey_id":"LA-JR04","path":"main","position":6}
 {"id":"LA-JR04-S08","title":"The Owner narrows the change and sees what it touches now","journey_id":"LA-JR04","path":"touches more than meant","position":1}
 {"id":"LA-JR04-S09","title":"The Owner reviews the change and undoes it","journey_id":"LA-JR04","path":"sent back","position":1}
 {"id":"LA-JR04-S10","title":"The Owner sends the change back with its reason","journey_id":"LA-JR04","path":"sent back","position":2}

@@ -49,7 +49,10 @@ beforeAll(async () => {
   await run(store, 'product add-product', { id: 'EX', title: 'Example', description: 'A small product for writing notes.' });
   await run(store, 'domain add-domain', { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', position: 2, subdomain_type: 'core', description: 'Writing and keeping notes.' });
   await run(store, 'domain add-capability', { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1, description: 'Writing notes down.' });
-  await run(store, 'use-case add-use-case', { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a note.' });
+  await run(store, 'aggregate add-aggregate', { id: 'EX-NOTE-A1', title: 'Note', domain_id: 'EX-NOTE', identity: 'Note ID', description: 'One note a writer keeps.' });
+  await run(store, 'aggregate add-entity', { id: 'EX-NOTE-EN01', title: 'Note', aggregate_id: 'EX-NOTE-A1', role: 'root', description: 'The note itself.' });
+  await run(store, 'command add-command', { id: 'EX-NOTE-CMD01', title: 'Write a note', entity_id: 'EX-NOTE-EN01', description: 'Keeps a new note.' });
+  await run(store, 'use-case add-use-case', { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a note.', result_id: 'EX-NOTE-CMD01' });
   await store.close();
   running = serve({ root, port: PORT, appDir });
   await new Promise<void>((resolve, reject) => {
@@ -149,7 +152,7 @@ describe.skipIf(!prebuilt && !canBuild)('lathe serve', () => {
     expect(await readEvents(events, ': connected', 5000)).toMatch(/^: connected\n\n/);
   });
 
-  it('LA-PRD-UC03-R05-T01 The server has no way to change the meta-model', async () => {
+  it('LA-STD-ENGINEERING-R02-T04 The server has no way to change the meta-model', async () => {
     const schemaFiles = readdirSync(SCHEMA_DIR).map((name) => path.join(SCHEMA_DIR, name));
     const before = schemaFiles.map((file) => readFileSync(file, 'utf8'));
     const send = async (method: string, url: string, body = '{"kind":"memo"}') =>

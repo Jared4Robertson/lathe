@@ -86,7 +86,7 @@ describe('LA-PLT-INV43-T Only the app\'s own shortcuts can be bound: not the bro
   });
 });
 
-describe('LA-PLT-UC24-R01-T01 LA-V61-R10-T01 A person binds, removes and resets keys, and the keymap follows at once', () => {
+describe('LA-PLT-UC24-R01-T01 LA-PLT-UC48-R01-T01 LA-PLT-UC49-R01-T01 LA-PLT-UC50-R01-T01 LA-V61-R10-T01 A person binds, removes and resets keys, and the keymap follows at once', () => {
   it('binds a second key, changes one in place, and resets it to its own keys', () => {
     bindKey({ shortcut: 'toggleNav', key: 'Ctrl+J', mac: false });
     expect(keysOf('toggleNav')).toEqual(['Ctrl+B', 'Ctrl+J']);

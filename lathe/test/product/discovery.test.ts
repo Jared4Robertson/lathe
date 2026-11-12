@@ -1,4 +1,4 @@
-// Discovery and test data (LA-PRD-UC22, LA-TST-UC13, LA-TRC-UC02, LA-TST-UC03): a product's business outcomes, the
+// Discovery and test data (LA-PRD-UC22, LA-TST-UC13, LA-TRC-UC01, LA-TST-UC03, LA-TST-UC30): a product's business outcomes, the
 // capabilities that serve them and what measures them, the test data sets tests start from, and a test's size and markers, proved
 // through the store and the engine's load.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -31,7 +31,7 @@ describe('business outcomes', () => {
     expect(await rules(withTable(withTable(withTable(data, 'serves', []), 'measured_by', []), 'business_outcome', [{ ...outcome, id: 'XX-BO01' }]))).toEqual(['id-prefix']);
   });
 
-  it('LA-MOD-UC02-R08-T01 A capability serves any number of business outcomes, and an outcome is served by any number of capabilities, of its own product', async () => {
+  it('LA-MOD-UC33-R01-T01 A capability serves any number of business outcomes, and an outcome is served by any number of capabilities, of its own product', async () => {
     expect(schema.relations.serves).toMatchObject({ scope: 'product', role: null, forwardLabel: 'Serves', reverseLabel: 'Served by' });
     expect(schema.relations.serves.pairs.map((p) => `${p.source}>${p.target}`)).toEqual(['capability>business_outcome', 'journey>business_outcome']);
     const two = adding(everyKind(), {
@@ -50,7 +50,7 @@ describe('business outcomes', () => {
     expect(await rules(other)).toEqual(['link-crosses-product']);
   });
 
-  it('LA-PRD-UC22-R04-T01 An outcome is measured by tests of any kind, or by records of the product\'s own kinds it allows, or says how it is measured outside the code', async () => {
+  it('LA-PRD-UC41-R01-T01 An outcome is measured by tests of any kind, or by records of the product\'s own kinds it allows, or says how it is measured outside the code', async () => {
     expect(schema.relations.measured_by).toMatchObject({ scope: 'product', role: null, forwardLabel: 'Measured by', reverseLabel: 'Measures', sourceTable: 'business_outcome', targetTable: 'record_id' });
     // Every test kind, and nothing else of Lathe's, measures an outcome.
     const testKinds = Object.values(schema.kinds).filter((k) => k.stage === 'test-plan' && k.name !== 'test_data_set').map((k) => k.name).sort();
@@ -93,7 +93,7 @@ describe('business outcomes', () => {
     expect(ordered.slice(0, 5)).toEqual(['product', 'business_outcome', 'journey', 'journey_step', 'domain']);
   });
 
-  it('LA-TRC-UC02-R11-T01 A business outcome no capability serves, and a capability that serves no outcome, are coverage gaps', async () => {
+  it('LA-TRC-UC01-R16-T01 A business outcome no capability serves, and a capability that serves no outcome, are coverage gaps', async () => {
     expect(gaps(await loadData(complete()))).toEqual([]);
     const unlinked = await loadData(without(complete(), 'serves', () => true));
     expect(gaps(unlinked)).toEqual(['capability-serves-no-outcome EX-LEND-CAP01', 'outcome-not-served EX-BO01']);
@@ -106,7 +106,7 @@ describe('business outcomes', () => {
 });
 
 describe('measuring outcomes', () => {
-  it('LA-TRC-UC02-R13-T01 A business outcome nothing that runs measures, and that names no measure outside the code, is a coverage gap', async () => {
+  it('LA-TRC-UC01-R18-T01 A business outcome nothing that runs measures, and that names no measure outside the code, is a coverage gap', async () => {
     expect(gaps(await loadData(complete()))).toEqual([]);
     const unmeasured = await loadData(without(complete(), 'measured_by', () => true));
     expect(gaps(unmeasured)).toEqual(['outcome-not-measured EX-BO01']);
@@ -153,7 +153,7 @@ describe('test data sets', () => {
 });
 
 describe('a test\'s size and markers', () => {
-  it('LA-TST-UC03-R07-T01 A test is small unless it says volume or worst case, and marks itself smoke or external only by saying yes', async () => {
+  it('LA-TST-UC30-R01-T01 A test is small unless it says volume or worst case, and marks itself smoke or external only by saying yes', async () => {
     for (const kind of Object.values(schema.kinds).filter((k) => k.stage === 'test-plan' && k.name !== 'test_data_set')) {
       const columns = Object.fromEntries(schema.tables[kind.name].columns.map((c) => [c.name, c]));
       expect(columns.size, kind.name).toMatchObject({ required: false, kind: 'enum', values: ['volume', 'worst case'] });

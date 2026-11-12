@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
 
-// Point and ask (LA-PLT-UC22-R01): "Ask Claude about this" attaches the box the Owner is pointing at to the message as a chip
+// Point and ask (LA-PLT-UC19-R13): "Ask Claude about this" attaches the box the Owner is pointing at to the message as a chip
 // (record ID and title), sent as context beside what the Owner is looking at. The chips are kept outside the panel so a
 // command can add one while the chat is hidden; like the draft they are never stored.
 

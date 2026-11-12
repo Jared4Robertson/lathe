@@ -2,10 +2,10 @@
 // window's folder (chat.ts says how), writes the Owner's messages, permission answers and Stop to it,
 // and reads what it prints into the chat's state. A session continues with `--resume`; when the
 // process ends, the next message starts it again on the same session. Choosing another permission
-// mode (LA-PLT-UC19-R09) starts the CLI again on the same session with that mode's flags. The panel
+// mode (LA-PLT-UC45-R01) starts the CLI again on the same session with that mode's flags. The panel
 // answers a permission prompt itself when the mode decides it (chat.ts `decide`): allowed without a
 // row, or, in View only, refused at once, saying why; a tool the Owner allowed always is allowed for
-// the rest of the chat (LA-PLT-UC19-R11). Each message may carry what the Owner is looking at
+// the rest of the chat (LA-PLT-UC43-R02). Each message may carry what the Owner is looking at
 // (LA-PLT-UC19-R12). A turn that finds the CLI not signed in marks the chat signed out (LA-PLT-UC30-R02) and ends the
 // process, so the next message, once the Owner has signed in, starts it again with the new sign-in.
 import { spawn as nodeSpawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
@@ -136,7 +136,7 @@ export class ChatSession {
   }
 
   /**
-   * Chooses the model and effort (LA-PLT-UC22-R03): the CLI starts again on the same session with them, and the log says
+   * Chooses the model and effort (LA-PLT-UC46-R01): the CLI starts again on the same session with them, and the log says
    * so. Refused while a turn is under way; the same choice again changes nothing.
    */
   setChoice(choice: ChatModelChoice): boolean {
@@ -232,7 +232,7 @@ export class ChatSession {
 
   /**
    * Sends the Owner's message, with what they are looking at as context and any images, starting the CLI again on the
-   * session when it has ended. While Claude works the message is queued (LA-PLT-UC22-R04), and goes when the turn ends.
+   * session when it has ended. While Claude works the message is queued (LA-PLT-UC47-R01), and goes when the turn ends.
    */
   send(text: string, focus: string | null = null, images: readonly ChatImage[] = []): boolean {
     const message = text.trim();

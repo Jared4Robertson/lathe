@@ -134,7 +134,7 @@ async function exchange(root: string, messages: object[], app: Parameters<typeof
   return (id: number) => all.find((m) => m.id === id);
 }
 
-describe('LA-PLT-UC19-R09-T02 In View only, the server lists only the reads and refuses every command', () => {
+describe('LA-PLT-UC45-R01-T02 In View only, the server lists only the reads and refuses every command', () => {
   it('marks every query and the check read only, lists only them in View only, and refuses a command there, changing nothing', async () => {
     const root = writeData(everyKind());
     const all = tools(await schemaOf(root));

@@ -20,7 +20,8 @@ import { useInterfaces } from '../../product/product/reads';
 
 // The Use case page (LA-UCS-A11's page): any record of a use case, at its address (/<id>), drawn from the use case read whole
 // (GET /api/use-case/get-use-case) and changed only through its own commands (UseCaseEditor). A use case shows its
-// goal, actors and notes, its flow and the interfaces that offer it, and its UC requirements with their tests; a UC
+// goal, its result (the one command or query it invokes, and so whether it is a command or a query use case), actors
+// and notes, its flow and the interfaces that offer it, and its UC requirements with their tests; a UC
 // requirement its statement, its tests and the steps that fulfill it; a flow a tab per offering interface (the flow as
 // written, then each interface's derived version, FlowInterfaces); a step what it links to and the interface it is a
 // variant of; a test its scenario and what it starts from. What every record's page holds
@@ -104,6 +105,15 @@ function Facts({ facts }: { facts: { label: string; value: ReactNode }[] }) {
   return <dl className="fields use-case-facts">{facts.map((f) => <div key={f.label}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}</dl>;
 }
 
+/** The words for a use case by its result's kind: the Owner's terms. */
+const USE_CASE_KIND_WORDS = { command: 'Command use case', query: 'Query use case' } as const;
+
+/** The "Result" fact: the use case's one command or query, linked, and the kind of use case it makes it. */
+const resultFact = (index: RecordIndex, useCase: UseCaseRead): { label: string; value: ReactNode } => ({
+  label: 'Result',
+  value: <><RecordLink index={index} id={useCase.result.id} /> <small className="meta use-case-kind">{USE_CASE_KIND_WORDS[useCase.result.kind]}</small></>,
+});
+
 /** The "In journeys" fact: where the use case sits in time, each journey it is a step of; none when it is in none. */
 const inJourneys = (index: RecordIndex, useCase: UseCaseRead): { label: string; value: ReactNode }[] =>
   useCase.journeys.length ? [{ label: 'In journeys', value: <InJourneys index={index} journeys={useCase.journeys} id={useCase.useCase.id} /> }] : [];
@@ -116,6 +126,7 @@ function Content({ index, useCase, id, kind }: { index: RecordIndex; useCase: Us
         <>
           <Text index={index} id={id} source={useCase.useCase.goal} field="goal" />
           <Facts facts={[
+            resultFact(index, useCase),
             ...(useCase.actors.length ? [{ label: useCase.actors.length === 1 ? 'Actor' : 'Actors', value: useCase.actors.join(', ') }] : []),
             ...inJourneys(index, useCase),
           ]} />
@@ -217,9 +228,8 @@ function Summary({ index, useCase, id, kind }: { index: RecordIndex; useCase: Us
           lead: useCase.useCase.goal,
           facts: [
             { label: 'Capability', value: <RecordLink index={index} id={useCase.useCase.capability_id} /> },
+            resultFact(index, useCase),
             ...(useCase.actors.length ? [{ label: useCase.actors.length === 1 ? 'Actor' : 'Actors', value: useCase.actors.join(', ') }] : []),
-            { label: 'Holds', value: `${useCase.flows.length ? 'its flow' : 'no flow'}, ${count(useCase.requirements.length, 'UC requirement', 'UC requirements')}` },
-            ...inJourneys(index, useCase),
           ],
         };
       case 'uc_requirement': {

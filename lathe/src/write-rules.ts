@@ -12,6 +12,13 @@
 // - essential-links-accidental: a link the write adds from an essential record to an accidental one, or a product
 //   relation it declares from an essential kind to an accidental kind. Only measured_by may: what measures an
 //   outcome may be a report or a script.
+//
+// A use case is one role invoking one command, or asking one query: its result (LA-STD-MODELING-R15):
+// - use-case-invokes-another-command: an invokes link the write adds from a step to a command that is not its use
+//   case's result, or a result it sets that leaves a step of the flow invoking another command;
+// - use-case-identity-taken: a use case the write adds, or whose result or first actor it changes, that has the same
+//   first actor and result as another use case of its product.
+// The check rows of the same names report what data already written holds.
 import type { RowChange } from './server/contract.ts';
 import { ESSENTIAL_WORDS, placementOf, wordGroupOf, wordNamed, type Placement, type WordGroup } from './essential.ts';
 import { isLeadColumn } from './lead.ts';
@@ -135,5 +142,83 @@ const essentialLinksAccidental: WriteRule = {
   },
 };
 
+/** A use case's result, by use case ID, and its flow's steps' use case, by step ID, as the write leaves them. */
+function useCaseLinks(view: ReadView) {
+  const results = new Map(view.rows('use_case').map((u) => [String(u.id), String(u.result_id)]));
+  const useCaseOfFlow = new Map(view.rows('flow').map((f) => [String(f.id), String(f.use_case_id)]));
+  const useCaseOfStep = new Map(view.rows('flow_step').map((s) => [String(s.id), useCaseOfFlow.get(String(s.flow_id))]));
+  const commands = new Set(view.rows('command').map((c) => String(c.id)));
+  return { results, useCaseOfStep, commands };
+}
+
+const useCaseInvokesAnotherCommand: WriteRule = {
+  name: 'use-case-invokes-another-command',
+  check: (view, changes) => {
+    const { results, useCaseOfStep, commands } = useCaseLinks(view);
+    const refused = (row: Row, table: string, step: string, command: string, useCase: string): RuleProblem => ({
+      rule: 'use-case-invokes-another-command',
+      table,
+      row,
+      message: `Flow step ${step} of ${useCase} would invoke the command ${command}, but the use case's result is ${results.get(useCase)}: a use case invokes no command but its result; make ${command} its own use case, joined to this one in a journey, or the command of a policy.`,
+    });
+    return changes.flatMap((change): RuleProblem[] => {
+      const { table, before, after } = change;
+      if (!after) return [];
+      if (table === 'invokes') {
+        const step = String(after.source_id);
+        const command = String(after.target_id);
+        const useCase = useCaseOfStep.get(step);
+        if (!useCase || !commands.has(command) || results.get(useCase) === command) return [];
+        return [refused(after, table, step, command, useCase)];
+      }
+      if (table === 'use_case' && before?.result_id !== after.result_id) {
+        const useCase = String(after.id);
+        return view
+          .rows('invokes')
+          .filter((i) => useCaseOfStep.get(String(i.source_id)) === useCase && commands.has(String(i.target_id)) && String(i.target_id) !== String(after.result_id))
+          .map((i) => refused(after, table, String(i.source_id), String(i.target_id), useCase));
+      }
+      return [];
+    });
+  },
+};
+
+const useCaseIdentityTaken: WriteRule = {
+  name: 'use-case-identity-taken',
+  check: (view, changes) => {
+    // The use cases whose identity the write sets: added, or with a new result or first actor.
+    const touched = new Map<string, { table: string; row: Row }>();
+    for (const { table, before, after } of changes) {
+      if (!after) continue;
+      if (table === 'use_case' && before?.result_id !== after.result_id) touched.set(String(after.id), { table, row: after });
+      if (table === 'use_case_actor' && Number(after.position) === 1 && before?.role_name !== after.role_name && !touched.has(String(after.use_case_id))) {
+        touched.set(String(after.use_case_id), { table, row: after });
+      }
+    }
+    if (touched.size === 0) return [];
+    const placement = placementOf(view);
+    const firstActor = new Map(view.rows('use_case_actor').filter((a) => Number(a.position) === 1).map((a) => [String(a.use_case_id), String(a.role_name)]));
+    const identity = (useCase: Row) => {
+      const id = String(useCase.id);
+      const actor = firstActor.get(id);
+      return actor === undefined ? undefined : `${placement.productOf(id) ?? ''} ${actor} ${String(useCase.result_id)}`;
+    };
+    const useCases = view.rows('use_case');
+    return [...touched].flatMap(([id, { table, row }]): RuleProblem[] => {
+      const own = useCases.find((u) => String(u.id) === id);
+      const key = own && identity(own);
+      if (!own || key === undefined) return [];
+      const other = useCases.filter((u) => String(u.id) !== id && identity(u) === key).map((u) => String(u.id)).sort()[0];
+      if (!other) return [];
+      return [{
+        rule: 'use-case-identity-taken',
+        table,
+        row,
+        message: `Use case ${id} would have the same first actor (${firstActor.get(id)}) and result (${String(own.result_id)}) as ${other}: no two use cases of a product share both; change ${other} instead.`,
+      }];
+    });
+  },
+};
+
 /** Every rule a write is held to on the rows it writes. */
-export const WRITE_RULES: readonly WriteRule[] = [essentialNamesTechnology, essentialLinksAccidental];
+export const WRITE_RULES: readonly WriteRule[] = [essentialNamesTechnology, essentialLinksAccidental, useCaseInvokesAnotherCommand, useCaseIdentityTaken];

@@ -4,7 +4,7 @@
 // JSON-RPC 2.0 over stdio, one message per line. A tool's result is the rows its command changed, or what its query
 // read, or the refusal with every reason. Writes never commit: the Agent commits per task.
 //
-// View only (LA-PLT-UC19-R09): when the desktop app's chat runs with View only on, it sets LATHE_VIEW_ONLY=1 in the
+// View only (LA-PLT-UC45-R01): when the desktop app's chat runs with View only on, it sets LATHE_VIEW_ONLY=1 in the
 // CLI's environment, which this server inherits; then it lists only the reads (the check, every aggregate's queries
 // and the app tools) and refuses a command, saying the chat is View only, before anything is read or written.
 import { createInterface } from 'node:readline';

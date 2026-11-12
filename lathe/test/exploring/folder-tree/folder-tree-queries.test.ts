@@ -37,7 +37,7 @@ async function tree(data: Data = DATA): Promise<FolderTree> {
 
 const stage = (owner: OwnerFolders, name: string) => owner.stages.find((s) => s.stage === name)!;
 
-describe('LA-EXP-UC08-R06-T02 The folder tree read gives Shared and each domain its stages, a folder per kind and what folds under each record', () => {
+describe('LA-EXP-UC01-R06-T02 The folder tree read gives Shared and each domain its stages, a folder per kind and what folds under each record', () => {
   it('lists Shared and the product\'s domains, nothing of another product', async () => {
     const t = await tree();
     expect(t.product).toBe('EX');

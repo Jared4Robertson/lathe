@@ -15,7 +15,7 @@ beforeAll(async () => {
 const check = (name: string, body: () => void) => describe(name, body);
 
 check('test-title-not-a-result', () => {
-  it('LA-STD-MODELING-R08-T02 a test titled "Tests that…" or "Should…" is a warning; a result, or the noun Tests first, is not', async () => {
+  it('LA-STD-NAMING-R07-T02 a test titled "Tests that…" or "Should…" is a warning; a result, or the noun Tests first, is not', async () => {
     expect(ofCheck(clean, 'test-title-not-a-result')).toEqual([]);
     const titled = (titles: string[]) =>
       adding(complete(), {

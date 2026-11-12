@@ -122,7 +122,7 @@ function domainSteps(d: number, useCases: string[]): Step[] {
     for (let u = 0; u < 4; u++) {
       const uc = `${domain}-UC${pad(++useCase)}`;
       const title = `${pick(VERBS)} ${noun} ${d + 1}.${useCase}`;
-      steps.push([ADD_USE_CASE, { id: uc, title, capability_id: capability, goal: `The Owner gets a ${noun} through step ${useCase}.`, actors: ['Owner'] }]);
+      steps.push([ADD_USE_CASE, { id: uc, title, capability_id: capability, goal: `The Owner gets a ${noun} through step ${useCase}.`, result_id: `${domain}-CMD${pad(((useCase - 1) % command) + 1)}`, actors: ['Owner'] }]);
       const requirements: string[] = [];
       for (let q = 1; q <= 3; q++) {
         const id = `${uc}-R${pad(q)}`;

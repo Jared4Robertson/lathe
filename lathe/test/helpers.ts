@@ -207,7 +207,7 @@ export function complete(): Data {
       { domain_event_id: 'EX-LEND-EV02', position: 1, name: 'Tool', meaning: 'Which tool.', type_aggregate_id: 'EX-LEND-A2', required: true },
     ],
     command: [
-      { id: 'EX-LEND-CMD01', title: 'Open a loan', entity_id: 'EX-LEND-EN01', description: 'Lends a free tool to a member.' },
+      { id: 'EX-LEND-CMD01', title: 'Borrow a tool', entity_id: 'EX-LEND-EN01', description: 'Lends a free tool to a member.' },
       { id: 'EX-LEND-CMD02', title: 'Add a tool', entity_id: 'EX-LEND-EN03', description: 'Puts a named tool in the catalog.' },
       { id: 'EX-LEND-CMD03', title: 'Remind the borrower', entity_id: 'EX-LEND-EN01', description: 'Mails the borrower their due date.' },
     ],
@@ -223,8 +223,8 @@ export function complete(): Data {
     serves: [{ source_id: 'EX-LEND-CAP01', target_id: 'EX-BO01' }],
     measured_by: [{ source_id: 'EX-BO01', target_id: 'EX-LEND-UC01-R01-T01' }],
     use_case: [
-      { id: 'EX-LEND-UC01', title: 'Borrow a tool', capability_id: 'EX-LEND-CAP01', goal: 'A member takes a free tool home.' },
-      { id: 'EX-LEND-UC02', title: 'Add a tool', capability_id: 'EX-LEND-CAP01', goal: 'The librarian puts a new tool in the catalog.' },
+      { id: 'EX-LEND-UC01', title: 'Borrow a tool', capability_id: 'EX-LEND-CAP01', goal: 'A member takes a free tool home.', result_id: 'EX-LEND-CMD01' },
+      { id: 'EX-LEND-UC02', title: 'Add a tool', capability_id: 'EX-LEND-CAP01', goal: 'The librarian puts a new tool in the catalog.', result_id: 'EX-LEND-CMD02' },
     ],
     use_case_actor: [
       { use_case_id: 'EX-LEND-UC01', position: 1, role_name: 'Member' },
@@ -442,7 +442,11 @@ export function sparse(): Data {
     entity: [{ id: 'SP-D-EN01', title: 'Return', aggregate_id: 'SP-D-A1', role: 'child', description: 'The tool coming back.' }],
     value_object: [{ id: 'SP-VO01', title: 'Email address', description: 'Where a member gets mail.' }],
     domain_event: [{ id: 'SP-D-EV01', title: 'Tool added', aggregate_id: 'SP-D-A2', published: false, description: 'A tool joined the catalog.' }],
-    command: [{ id: 'SP-D-CMD01', title: 'Add a tool', entity_id: 'SP-D-EN01', description: 'Puts a tool in the catalog.' }],
+    // The second is the result of no use case and the command of no policy.
+    command: [
+      { id: 'SP-D-CMD01', title: 'Add a tool', entity_id: 'SP-D-EN01', description: 'Puts a tool in the catalog.' },
+      { id: 'SP-D-CMD02', title: 'Take a tool back', entity_id: 'SP-D-EN01', description: 'Marks a lent tool returned.' },
+    ],
     read_model: [
       { id: 'SP-D-RM01', title: 'Free tools', domain_id: 'SP-D', description: 'The tools on no loan.' },
       { id: 'SP-D-RM02', title: 'Loans', domain_id: 'SP-D', description: 'Every loan.' },
@@ -458,8 +462,8 @@ export function sparse(): Data {
       { id: 'SP-D-CAP02', title: 'Lending', domain_id: 'SP-D', position: 2, description: 'Lending tools.' },
     ],
     use_case: [
-      { id: 'SP-D-UC01', title: 'Borrow a tool', capability_id: 'SP-D-CAP02', goal: 'A member takes a tool home.' },
-      { id: 'SP-D-UC02', title: 'Return a tool', capability_id: 'SP-D-CAP02', goal: 'A member brings a tool back.' },
+      { id: 'SP-D-UC01', title: 'Add a tool', capability_id: 'SP-D-CAP02', goal: 'A member gives the library a tool.', result_id: 'SP-D-CMD01' },
+      { id: 'SP-D-UC02', title: 'Return a tool', capability_id: 'SP-D-CAP02', goal: 'A member brings a tool back.', result_id: 'SP-D-QRY01' },
     ],
     pattern: [{ id: 'SP-PAT-X', title: 'Ruleless', product_id: 'SP', description: 'A pattern with no rules.' }],
     interface: [

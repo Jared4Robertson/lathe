@@ -66,7 +66,7 @@ describe('adding', () => {
 });
 
 describe('record_scope', () => {
-  it('LA-PRD-UC37-R02-T01 a record with no owner belongs to the one domain that uses it, with what sits under it, and is shared when two or none do', async () => {
+  it('LA-STD-MODELING-R16-T02 a record with no owner belongs to the one domain that uses it, with what sits under it, and is shared when two or none do', async () => {
     const { store } = await fresh();
     const domains = async (ids: string[]) =>
       Object.fromEntries(
@@ -80,7 +80,7 @@ describe('record_scope', () => {
     // object; a third value object is used by no one.
     await run(store, 'domain add-domain', { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', position: 2, subdomain_type: 'supporting', description: 'The tools the library holds.' });
     await run(store, 'domain add-capability', { id: 'TL-CAT-CAP01', title: 'Browsing', domain_id: 'TL-CAT', position: 1, description: 'Browsing the tools on the shelf.' });
-    await run(store, 'use-case add-use-case', { id: 'TL-CAT-UC01', title: 'Browse the tools', capability_id: 'TL-CAT-CAP01', goal: 'A member finds a tool to borrow.' });
+    await run(store, 'use-case add-use-case', { id: 'TL-CAT-UC01', title: 'Browse the tools', capability_id: 'TL-CAT-CAP01', goal: 'A member finds a tool to borrow.', result_id: 'TL-LEND-CMD01' });
     await run(store, 'use-case add-flow', { id: 'TL-CAT-UC01-FL', title: 'Browse', use_case_id: 'TL-CAT-UC01' });
     await run(store, 'use-case add-flow-step', { id: 'TL-CAT-UC01-FL-S01', title: 'Open the catalog', flow_id: 'TL-CAT-UC01-FL', path: 'main', position: 1 });
     await run(store, 'value-object add-value-object', { id: 'TL-VO02', title: 'Tool size', description: 'How big a tool is.' });
@@ -153,7 +153,7 @@ describe('links', () => {
     await store.close();
   });
 
-  it('LA-PRD-UC38-R01-T02 refuses a link its ends allow but its relation does not, and a wrong kind at an end', async () => {
+  it('LA-STD-MODELING-R18-T02 refuses a link its ends allow but its relation does not, and a wrong kind at an end', async () => {
     const { store } = await fresh();
     // A second pair widens documents to a link table whose target is any record, so its pairs are what hold.
     await run(store, 'product declare-product-relation', { name: 'documents', source_kind: 'cli_command', target_kind: 'integration', product_id: 'TL', forward_label: 'Documents', reverse_label: 'Documented by', description: 'The CLI command is documented with the integration.' });

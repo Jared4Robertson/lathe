@@ -8,7 +8,7 @@ import { expectStable, openPage, step } from './measure';
 import { FOCUS, GRAPH_CANVAS, keepData, RECORD, SHELL } from './scenarios';
 import { cameraOf, focusDrawn, graphDrawn, sceneOf } from './scene';
 
-// Platform's flow tests that happen in the app (LA-PLT-UC03-FL to UC10-FL): one per flow, each
+// Platform's flow tests that happen in the app (LA-PLT-UC03-FL, UC06-FL, UC07-FL and UC24-FL, with the flows split from them): one per flow, each
 // walking its main path in Chromium over the suite's copy of Lathe's data. The flows run through
 // the CLI or the server alone are proved in lathe/test/cli/platform-flows.test.ts, and the native
 // menus in the desktop smoke test.
@@ -67,7 +67,7 @@ test.describe('Platform flows in the app', () => {
       await expect(page.locator(`.header-strip h1`)).toHaveText('Walk the model as a graph, retitled by an Agent', { timeout: 20_000 });
       expect(new URL(page.url()).pathname).toBe('/LA-EXP-UC03');
       // A data file the store refuses: the page says what is wrong, not other data.
-      appendFileSync(path.join(process.env.STABILITY_ROOT!, 'data', 'use_case.jsonl'), '{"id":"LA-EXP-UC99","title":"Under no capability","goal":"A use case whose capability is not there.","capability_id":"LA-EXP-CAP99"}\n');
+      appendFileSync(path.join(process.env.STABILITY_ROOT!, 'data', 'use_case.jsonl'), '{"id":"LA-EXP-UC99","title":"Under no capability","goal":"A use case whose capability is not there.","capability_id":"LA-EXP-CAP99","result_id":"LA-EXP-QRY14"}\n');
       await expect(page.getByText(/Couldn.t (re)?load the specs/).first()).toBeVisible({ timeout: 20_000 });
       await expect(page.getByText(/LA-EXP-CAP99/).first()).toBeVisible();
     } finally {
@@ -186,7 +186,7 @@ test.describe('Platform flows in the app', () => {
     await page.waitForURL((u) => u.pathname !== start);
   });
 
-  test('LA-PLT-UC06-FL-T arrange the panels: drag and step an edge, sizes kept, reset by double-click, fold by dragging small, collapse the wiki card', async ({ page }) => {
+  test('LA-PLT-UC06-FL-T LA-PLT-UC31-FL-T LA-PLT-UC31-R01-T01 arrange the panels: drag and step an edge, sizes kept, reset by double-click, fold by dragging small, collapse the wiki card', async ({ page }) => {
     await openPage(page, RECORD);
     const handle = page.getByRole('separator', { name: 'Resize the navigation' });
     const start = Number(await handle.getAttribute('aria-valuenow'));
@@ -219,7 +219,7 @@ test.describe('Platform flows in the app', () => {
     await expect(page.locator('.wiki-panel')).toBeVisible();
   });
 
-  test('LA-PLT-UC07-FL-T set how Lathe looks: g t, Escape, the palette, Appearance, duplicate, change, reset, delete, export, import', async ({ page, browser }) => {
+  test('LA-PLT-UC07-FL-T LA-PLT-UC32-FL-T LA-PLT-UC32-R01-T01 LA-PLT-UC33-FL-T LA-PLT-UC33-R01-T01 LA-PLT-UC34-FL-T LA-PLT-UC34-R01-T01 LA-PLT-UC35-FL-T LA-PLT-UC35-R01-T01 LA-PLT-UC36-FL-T LA-PLT-UC36-R01-T01 LA-PLT-UC37-FL-T LA-PLT-UC37-R01-T01 LA-PLT-UC38-FL-T LA-PLT-UC38-R01-T01 set how Lathe looks: g t, Escape, the palette, Appearance, duplicate, change, reset, delete, export, import', async ({ page, browser }) => {
     await openPage(page, RECORD);
     const html = page.locator('html');
     const before = await html.getAttribute('data-theme');
