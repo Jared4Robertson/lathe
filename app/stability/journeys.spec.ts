@@ -11,7 +11,7 @@ import type { TraceScene } from '../src/trace/TraceCanvas';
 
 // The journey pages in a real browser (LA-V156, LA-V101-R13): open a journey, follow a step to the use case it carries
 // out and back through the use case's In journeys fact, and move a step up and down; the data is put back.
-// Following a journey step by step (LA-EXP-UC16) and seeing how far it is proved (LA-TRC-UC22-R02), over the suite's
+// Following a journey step by step (LA-PRD-UC16) and seeing how far it is proved (LA-TRC-UC22-R02), over the suite's
 // copy of Lathe's spec: Lathe's own journeys carry out use cases only, so the scenarios that need a handoff write a
 // journey of their own through the real CLI first, and put the data back after.
 
@@ -39,13 +39,15 @@ function stepsOf(journey: string): { id: string; path: string; position: number 
   return paths.flatMap((p) => steps.filter((s) => s.path === p).sort(byPosition).map((s) => ({ id: String(s.id), path: p, position: Number(s.position) })));
 }
 
-/** Who acts in a use case, in its capability and domain, as its records say. */
+/** Who acts in a use case, in its group (its result's aggregate or read model) and domain, as its records say. */
 function useCaseOf(id: string) {
   const useCase = rows('use_case').find((u) => u.id === id)!;
-  const capability = rows('capability').find((c) => c.id === useCase.capability_id)!;
-  const domain = rows('domain').find((d) => d.id === capability.domain_id)!;
+  const query = rows('query').find((q) => q.id === useCase.result_id);
+  const entity = rows('entity').find((e) => e.id === rows('command').find((c) => c.id === useCase.result_id)?.entity_id);
+  const group = query ? { title: rows('read_model').find((r) => r.id === query.read_model_id)!.title, kind: 'read model' } : { title: rows('aggregate').find((a) => a.id === entity!.aggregate_id)!.title, kind: 'aggregate' };
+  const domain = rows('domain').find((d) => d.id === useCase.domain_id)!;
   const actors = rows('use_case_actor').filter((a) => a.use_case_id === id).sort(byPosition).map((a) => String(a.role_name));
-  return { actors, capability: String(capability.title), domain: String(domain.title) };
+  return { actors, group: `${String(group.title)} ${group.kind}`, domain: String(domain.title) };
 }
 
 /** Each journey step that carries the record out, with its journey, path, position and the steps before and after it on its path. */
@@ -148,7 +150,7 @@ test.describe('Journeys', () => {
     await expect(page.locator(`${WIKI} .in-journeys`).first()).toBeVisible();
   });
 
-  test('LA-EXP-UC16-R01-T01 The Reader reads a journey step by step, and where the acting role changes', async ({ page }) => {
+  test('LA-PRD-UC16-R01-T01 The Reader reads a journey step by step, and where the acting role changes', async ({ page }) => {
     const restore = keepData();
     try {
       writeHandoffJourney();
@@ -188,7 +190,7 @@ test.describe('Journeys', () => {
           const useCase = useCaseOf(s.carries);
           await expect(kind).toHaveText(/^use case$/i);
           await expect(actors).toHaveText(useCase.actors.join(', '));
-          await expect(place).toHaveText(`${useCase.capability} · ${useCase.domain}`);
+          await expect(place).toHaveText(`${useCase.group} · ${useCase.domain}`);
         }
       }
 
@@ -212,7 +214,7 @@ test.describe('Journeys', () => {
     }
   });
 
-  test('LA-EXP-UC16-R02-T01 A use case names the journeys it is a step of, with the steps before and after it', async ({ page }) => {
+  test('LA-PRD-UC16-R02-T01 A use case names the journeys it is a step of, with the steps before and after it', async ({ page }) => {
     const restore = keepData();
     try {
       writeHandoffJourney();
@@ -260,7 +262,7 @@ test.describe('Journeys', () => {
     }
   });
 
-  test('LA-EXP-UC16-R03-T01 In the graph a journey\'s steps sit under it, in order on each path', async ({ page }) => {
+  test('LA-PRD-UC16-R03-T01 In the graph a journey\'s steps sit under it, in order on each path', async ({ page }) => {
     const restore = keepData();
     try {
       const journey = JOURNEY.slice(1);

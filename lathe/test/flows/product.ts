@@ -156,7 +156,7 @@ export const link = (source: string, relation: string, target: string): Seed => 
 
 /**
  * The lending domain most flows start from: a domain with a loan aggregate, its root entity, a command raising an
- * event, and a capability with a use case and one requirement.
+ * event, and a use case with one requirement.
  */
 export const LENDING: Seed[] = [
   add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }),
@@ -166,8 +166,7 @@ export const LENDING: Seed[] = [
   add('command', { id: 'TL-LEND-CMD01', title: 'Open a loan', entity_id: 'TL-LEND-EN01', description: 'Lends a free tool to a member.' }),
   add('domain_event', { id: 'TL-LEND-EV01', title: 'Loan opened', aggregate_id: 'TL-LEND-A1', published: false, description: 'A tool went out on loan.' }),
   link('TL-LEND-CMD01', 'raises', 'TL-LEND-EV01'),
-  add('capability', { id: 'TL-LEND-CAP01', title: 'Lending', domain_id: 'TL-LEND', position: 1, description: 'Lending tools and taking them back.' }),
-  add('use_case', { id: 'TL-LEND-UC01', title: 'Borrow a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member takes a free tool home.', result_id: 'TL-LEND-CMD01' }),
+  add('use_case', { id: 'TL-LEND-UC01', title: 'Borrow a tool', domain_id: 'TL-LEND', goal: 'A member takes a free tool home.', result_id: 'TL-LEND-CMD01' }),
   add('uc_requirement', { id: 'TL-LEND-UC01-R01', title: 'A tool on loan is refused', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse to lend a tool that is on loan.' }),
 ];
 

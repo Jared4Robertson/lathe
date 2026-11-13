@@ -24,17 +24,17 @@ import type { AddFlowTest } from './add-flow-test.ts';
 import type { ChangeFlowTest } from './change-flow-test.ts';
 import type { RemoveFlowTest } from './remove-flow-test.ts';
 
-/** Adds a use case under a capability, with its result (the command or query it exists for) and its actors in order, the main actor first. */
+/** Adds a use case to a domain, with its result (the command or query it exists for) and its actors in order, the main actor first. */
 export function addUseCase(tx: Transaction, input: AddUseCase): void {
   const useCases = new UseCaseRepository(tx);
-  if (tx.record(input.capability_id)?.kind !== 'capability') tx.refuse('missing', `there is no capability ${input.capability_id}`);
+  if (tx.record(input.domain_id)?.kind !== 'domain') tx.refuse('missing', `there is no domain ${input.domain_id}`);
   const { actors = [], ...row } = input;
   const useCase = useCases.create({ root: row.id, useCase: row, actors: actors, requirements: [], useCaseTests: [], flows: [], steps: [], flowTests: [] });
   holdToRules(tx, useCase);
   useCases.save(useCase);
 }
 
-/** Changes a use case's title, goal, result or notes, or its actors (the whole list, in order). Its capability changes only by Move a use case. */
+/** Changes a use case's title, goal, result or notes, or its actors (the whole list, in order). Its domain changes only by Move a use case. */
 export function changeUseCase(tx: Transaction, input: ChangeUseCase): void {
   const useCases = new UseCaseRepository(tx);
   const useCase = useCases.load(input.id) ?? tx.refuse('missing', `there is no use case ${input.id}`);

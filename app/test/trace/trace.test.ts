@@ -11,20 +11,20 @@ import { traced } from './rows';
 // The Trace stage (LA-V98), pure: its rows from the Trace read (list-traced-use-cases, LA-TRC-RM13), its
 // stage statuses, what each open box shows, a selection's path across its row, the walk, and the layout's stability.
 
-/** The model product with an HTTP API that also offers its use case, a second use case, two outcomes its capability serves, and a use case of a capability serving none. */
+/** The model product with an HTTP API that also offers its use case, a second use case of the Loan aggregate, two outcomes the Loan aggregate serves, and a use case of the Shelf aggregate, which serves none. */
 function product() {
   const data = modelWorkspace();
   addRows(data, 'interface', { id: 'P-IF02', title: 'HTTP API', product_id: 'P', kind: 'API', description: 'The fixture\'s API.', public: true });
   addRows(data, 'offers', { source_id: 'P-IF02', target_id: 'P-D-UC01' });
   addRows(data, 'use_case',
-    { id: 'P-D-UC02', title: 'Return a thing', capability_id: 'P-D-CAP01', goal: 'A member brings a thing back.' });
+    { id: 'P-D-UC02', title: 'Return a thing', domain_id: 'P-D', goal: 'A member brings a thing back.', result_id: 'P-D-CMD02' });
   addRows(data, 'uc_requirement', { id: 'P-D-UC02-R01', title: 'The return is recorded', use_case_id: 'P-D-UC02', statement: 'The return MUST be recorded.' });
-  addRows(data, 'capability', { id: 'P-D-CAP02', title: 'Housekeeping', domain_id: 'P-D', description: 'Keeping the shelves.' });
-  addRows(data, 'use_case', { id: 'P-D-UC03', title: 'Dust the shelves', capability_id: 'P-D-CAP02', goal: 'The shelves stay clean.' });
+  addRows(data, 'command', { id: 'P-D-CMD06', title: 'Dust shelf', entity_id: 'P-D-EN06', description: 'Dusts a shelf.' });
+  addRows(data, 'use_case', { id: 'P-D-UC03', title: 'Dust the shelves', domain_id: 'P-D', goal: 'The shelves stay clean.', result_id: 'P-D-CMD06' });
   addRows(data, 'business_outcome',
     { id: 'P-BO01', title: 'More things lent', product_id: 'P', statement: 'Members borrow more.', measure: 'Loans a month', target: 'Up a tenth' },
     { id: 'P-BO02', title: 'Fewer lost things', product_id: 'P', statement: 'Fewer things go missing.', measure: 'Things lost a year', target: 'Down a half' });
-  return addRows(data, 'serves', { source_id: 'P-D-CAP01', target_id: 'P-BO01' }, { source_id: 'P-D-CAP01', target_id: 'P-BO02' });
+  return addRows(data, 'serves', { source_id: 'P-D-A3', target_id: 'P-BO01' }, { source_id: 'P-D-A3', target_id: 'P-BO02' });
 }
 
 /**
@@ -49,7 +49,7 @@ export function withJourney() {
 const NOTHING: Openness = { open: new Set(), step: null };
 const opened = (keys: string[], step: string | null = null): Openness => ({ open: new Set(keys), step });
 
-describe('LA-V98-R15-T02 The Trace stage has one row per use case, each once, with a line from each outcome its capability serves', () => {
+describe('LA-V98-R15-T02 The Trace stage has one row per use case, each once, with a line from each outcome its aggregate or read model serves', () => {
   it('rows every use case of the space once, links each outcome to the rows it serves, and sets the rows serving none after the rest', () => {
     const { graph } = traced(product());
     expect(graph.rows.map((r) => r.useCase)).toEqual(['P-D-UC01', 'P-D-UC02', 'P-D-UC03']);
@@ -234,7 +234,7 @@ describe('LA-V98-R20-T01 Opening a box moves only its row and the rows below it,
     const { graph } = traced(product());
     const shown = orderGraph(graph, null);
     const data = product();
-    addRows(data, 'use_case', { id: 'P-D-UC04', title: 'Lend a set', capability_id: 'P-D-CAP01', goal: 'A member borrows several things.' });
+    addRows(data, 'use_case', { id: 'P-D-UC04', title: 'Lend a set', domain_id: 'P-D', goal: 'A member borrows several things.', result_id: 'P-D-CMD01' });
     const next = orderGraph(traced(data).graph, shown);
     expect(next.rows.filter((u) => shown.rows.includes(u))).toEqual(shown.rows);
     expect(next.rows).toContain('P-D-UC04');
@@ -412,7 +412,7 @@ describe('LA-V98-R24-T01 The Journey column joins outcomes to use cases through 
     expect(graph.journeys.map((j) => j.id)).toEqual(['P-JR01']);
     expect(graph.journeyServes).toEqual([['P-BO01', 'P-JR01']]);
     expect(graph.carries.map((c) => `${c.step}>${c.useCase} ${c.label}`)).toEqual(['P-JR01-S01>P-D-UC01 1', 'P-JR01-S03>P-D-UC02 3', 'P-JR01-S04>P-D-UC02 alt 1']);
-    // Rows stay one per use case; the outcome lines through the capability stay.
+    // Rows stay one per use case; the outcome lines through the aggregate stay.
     expect(graph.rows.map((r) => r.useCase)).toEqual(['P-D-UC01', 'P-D-UC02', 'P-D-UC03']);
     expect(graph.serves).toContainEqual(['P-BO01', 'P-D-UC01']);
     const order = orderGraph(graph, null);

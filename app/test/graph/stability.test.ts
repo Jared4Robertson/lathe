@@ -134,17 +134,17 @@ describe.each([
 
 // ---------- On a product's own data: the Graph's Tree and Nested maps and the Trace stage ----------
 
-/** The model product with a second use case of two requirements, and two outcomes its capability serves. */
+/** The model product with a second use case of two requirements, and two outcomes its Loan aggregate serves. */
 function product(): ServedData {
   const data = modelWorkspace();
-  addRows(data, 'use_case', { id: 'P-D-UC02', title: 'Return a thing', capability_id: 'P-D-CAP01', goal: 'A member brings a thing back.' });
+  addRows(data, 'use_case', { id: 'P-D-UC02', title: 'Return a thing', domain_id: 'P-D', goal: 'A member brings a thing back.', result_id: 'P-D-CMD02' });
   addRows(data, 'uc_requirement',
     { id: 'P-D-UC02-R01', title: 'The return is recorded', use_case_id: 'P-D-UC02', statement: 'The return MUST be recorded.' },
     { id: 'P-D-UC02-R02', title: 'A late return is noted', use_case_id: 'P-D-UC02', statement: 'A late return MUST be noted.' });
   addRows(data, 'business_outcome',
     { id: 'P-BO01', title: 'More things lent', product_id: 'P', statement: 'Members borrow more.', measure: 'Loans a month', target: 'Up a tenth' },
     { id: 'P-BO02', title: 'Fewer lost things', product_id: 'P', statement: 'Fewer things go missing.', measure: 'Things lost a year', target: 'Down a half' });
-  return addRows(data, 'serves', { source_id: 'P-D-CAP01', target_id: 'P-BO01' }, { source_id: 'P-D-CAP01', target_id: 'P-BO02' });
+  return addRows(data, 'serves', { source_id: 'P-D-A3', target_id: 'P-BO01' }, { source_id: 'P-D-A3', target_id: 'P-BO02' });
 }
 
 /**
@@ -310,12 +310,12 @@ describe('LA-V98-R20-T02 on the Trace stage a use case added or removed moves no
     removeRows(less, 'use_case', (r) => r.id === 'P-D-UC02');
     const removed = rowsOf(less, first.order);
     for (const [u, band] of removed.laid.rows) expect(band, u).toEqual(first.laid.rows.get(u));
-    addRows(less, 'use_case', { id: 'P-D-UC09', title: 'Renew a loan', capability_id: 'P-D-CAP01', goal: 'A member keeps a thing longer.' });
+    addRows(less, 'use_case', { id: 'P-D-UC09', title: 'Renew a loan', domain_id: 'P-D', goal: 'A member keeps a thing longer.', result_id: 'P-D-CMD02' });
     const added = rowsOf(less, removed.order);
     for (const [u, band] of removed.laid.rows) expect(added.laid.rows.get(u), u).toEqual(band);
     expect(added.laid.rows.get('P-D-UC09')).toEqual(first.laid.rows.get('P-D-UC02'));
     // A second new one finds no room: at the end of its section, every other row still.
-    addRows(less, 'use_case', { id: 'P-D-UC10', title: 'Reserve a thing', capability_id: 'P-D-CAP01', goal: 'A member holds a thing for later.' });
+    addRows(less, 'use_case', { id: 'P-D-UC10', title: 'Reserve a thing', domain_id: 'P-D', goal: 'A member holds a thing for later.', result_id: 'P-D-CMD02' });
     const more = rowsOf(less, added.order);
     for (const [u, band] of added.laid.rows) expect(more.laid.rows.get(u), u).toEqual(band);
     const ends = [...added.laid.rows.values()].map((b) => b.y + b.h);
@@ -335,7 +335,7 @@ describe('LA-V98-R20-T02 on the Trace stage a use case added or removed moves no
     // A new outcome: the others stay, and it sits a box clear of them.
     const more = product();
     addRows(more, 'business_outcome', { id: 'P-BO03', title: 'Members come back', product_id: 'P', statement: 'Members return.', measure: 'Visits a month', target: 'Up a fifth' });
-    addRows(more, 'serves', { source_id: 'P-D-CAP01', target_id: 'P-BO03' });
+    addRows(more, 'serves', { source_id: 'P-D-A3', target_id: 'P-BO03' });
     const added = rowsOf(more, first.order);
     expect([outcomeTop(added.laid, 'P-BO01'), outcomeTop(added.laid, 'P-BO02')]).toEqual([tops.P_BO01, tops.P_BO02]);
     const y3 = outcomeTop(added.laid, 'P-BO03')!;

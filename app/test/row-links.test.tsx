@@ -39,20 +39,20 @@ describe('the whole row is clickable', () => {
   it('LA-PAT-RECORD-PAGE-R12-T01 LA-PAT-RECORD-PAGE-R12-T02 LA-PAT-RECORD-PAGE-R12-T03 LA-PAT-RECORD-PAGE-R12-T04 LA-PAT-RECORD-PAGE-R12-T05 LA-PAT-RECORD-PAGE-R12-T06 A click on a row opens its record, and a click on its chevron or second link does what that control does', async () => {
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
-    const uc = rowOf(stageOf('use-cases'), 'DM-SHOP-CAP01');
+    const uc = rowOf(stageOf('use-cases'), 'DM-SHOP-UC01');
     expect(uc).toHaveClass('tree-row');
 
     // The chevron folds the row and stays on the page.
-    const toggle = within(uc).getByRole('button', { name: 'Expand DM-SHOP-CAP01' });
+    const toggle = within(uc).getByRole('button', { name: 'Expand DM-SHOP-UC01' });
     clickAt(toggle.querySelector('svg') ?? toggle);
-    expect(within(uc).getByRole('button', { name: 'Collapse DM-SHOP-CAP01' })).toHaveAttribute('aria-expanded', 'true');
+    expect(within(uc).getByRole('button', { name: 'Collapse DM-SHOP-UC01' })).toHaveAttribute('aria-expanded', 'true');
     expect(window.location.pathname).toBe('/DM-SHOP');
 
     // The arrow keys still fold it from its link.
     const link = uc.querySelector<HTMLAnchorElement>('.row-link')!;
-    expect(link).toHaveAttribute('href', '/DM-SHOP-CAP01');
+    expect(link).toHaveAttribute('href', '/DM-SHOP-UC01');
     fireEvent.keyDown(link, { key: 'ArrowLeft' });
-    expect(within(uc).getByRole('button', { name: 'Expand DM-SHOP-CAP01' })).toHaveAttribute('aria-expanded', 'false');
+    expect(within(uc).getByRole('button', { name: 'Expand DM-SHOP-UC01' })).toHaveAttribute('aria-expanded', 'false');
 
     // Cmd/Ctrl-click is left to the browser (a new tab): the app does not navigate.
     expect(clickAt(uc, { metaKey: true })).toBe(true);
@@ -61,8 +61,8 @@ describe('the whole row is clickable', () => {
 
     // A plain click on the row's padding, or on its plain text, opens the record.
     clickAt(uc);
-    expect(window.location.pathname).toBe('/DM-SHOP-CAP01');
-    expect(await screen.findByRole('heading', { level: 1, name: 'Buying' })).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/DM-SHOP-UC01');
+    expect(await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' })).toBeInTheDocument();
 
     // A second link in a row opens what it names, not the row's record.
     await openApp('/DM-SHOP', { data: patternWorkspace() });

@@ -2,8 +2,8 @@ import type { FolderEntry, FolderTree, OwnerFolders } from '../../../../lathe/sr
 import type { Stage } from '../../../../lathe/src/platform/data/schema';
 
 // How many records each domain, and Shared, holds in each stage, counting everything folded under a stage's entries:
-// the Folder tree read (LA-EXP-QRY05) counts a stage's entries alone, so a stage whose capabilities fold 148 records
-// reads 2 there. Worked out by the space's index builder (space-builder.ts), off the page's main thread, since a large
+// the Folder tree read (LA-EXP-QRY05) counts a stage's entries alone, so a stage whose aggregates fold 148 records
+// reads 6 there. Worked out by the space's index builder (space-builder.ts), off the page's main thread, since a large
 // product's tree has tens of thousands of entries.
 
 /** Each owner's records by stage: the domain's ID, or the product's for Shared. */

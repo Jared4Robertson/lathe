@@ -1,9 +1,9 @@
 // Generated from data/ by `npm run generate`. Do not edit.
 // ReadModelRepository (LA-MOD-REPO10): Loads a read model whole (its fields, queries with their handlers, its
-// projection, and the links they start) from the transaction's draft and saves exactly the rows that changed, in its
-// aggregate's own tables only; a write to any other table is refused when it is made (`DataFiles`). A record inside a
-// read model is loaded through the read model that holds it (`loadHolding`), and a removal is refused, naming what
-// references it, while anything left references it.
+// projection, the business outcomes it serves, and the links they start) from the transaction's draft and saves exactly
+// the rows that changed, in its aggregate's own tables only; a write to any other table is refused when it is made
+// (`DataFiles`). A record inside a read model is loaded through the read model that holds it (`loadHolding`), and a
+// removal is refused, naming what references it, while anything left references it.
 import { AggregateRepository as Repository, type InstanceRows } from '../../platform/data/repository.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
 import { READ_MODEL_TABLES, readModelRows, readModelsFrom, type ReadModel, type ReadModelKind } from './model.ts';

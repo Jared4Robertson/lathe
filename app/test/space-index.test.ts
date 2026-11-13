@@ -66,7 +66,7 @@ describe('the space\'s index from its builder\'s changes', () => {
     const edits: ((d: ServedData) => void)[] = [
       () => undefined,
       (d) => { setRow(d, 'use_case', String(uc.id), { title: 'Renewed title' }); d.problems = [...d.problems, { severity: 'warning', check: 'lone-child', record: String(uc.id), message: 'A new warning.' }]; },
-      (d) => { addRows(d, 'use_case', { id: 'P-D-UC09', title: 'A new use case', capability_id: uc.capability_id as string }); },
+      (d) => { addRows(d, 'use_case', { id: 'P-D-UC09', title: 'A new use case', domain_id: uc.domain_id as string, goal: 'A member does something new.', result_id: uc.result_id as string }); },
       (d) => { setRow(d, 'use_case', 'P-D-UC09', { title: 'A new use case, renamed' }); },
       (d) => { d.sources[0].tables.use_case = (d.sources[0].tables.use_case as Row[]).filter((r) => r.id !== 'P-D-UC09'); d.problems = d.problems.slice(1); },
     ];

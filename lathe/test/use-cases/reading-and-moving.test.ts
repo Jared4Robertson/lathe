@@ -41,7 +41,8 @@ function ask(store: Store, id: string, input: Record<string, unknown>): any {
   return answerQuery(store, query, input);
 }
 
-const ids = (rows: { id: string }[]) => rows.map((r) => r.id);
+/** The IDs of the records listed, or of the use cases listed under each group. */
+const ids = (rows: { id?: string; useCases?: { id: string }[] }[]) => rows.flatMap((r) => (r.useCases ? r.useCases.map((u) => u.id) : [r.id]));
 
 /**
  * Each use case test that finds a record among its parent's and reads it whole: the listing query and its input (none
@@ -58,7 +59,7 @@ const READS: { test: string; list?: [string, Record<string, unknown>]; listed?: 
   },
   {
     test: 'LA-PRD-UC22-R05-T01', list: ['LA-PRD-QRY116', { product_id: 'TL' }], listed: 'TL-BO01', read: ['LA-PRD-QRY115', { id: 'TL-BO01' }],
-    holds: (w) => expect(w).toMatchObject({ outcome: { id: 'TL-BO01' }, servedBy: ['TL-LEND-CAP01'], measuredBy: ['TL-LEND-DS01-T01'] }),
+    holds: (w) => expect(w).toMatchObject({ outcome: { id: 'TL-BO01' }, servedBy: [{ id: 'TL-LEND-A1', kind: 'aggregate', title: 'Loan' }], measuredBy: ['TL-LEND-DS01-T01'] }),
   },
   { test: 'LA-PRD-UC23-R02-T01', read: ['LA-PRD-QRY110', { id: 'TL' }], holds: (w) => expect(ids(w.interfaces)).toContain('TL-IF01') },
   {
@@ -77,7 +78,7 @@ const READS: { test: string; list?: [string, Record<string, unknown>]; listed?: 
   {
     test: 'LA-MOD-UC02-R11-T01', read: ['LA-MOD-QRY130', { id: 'TL-LEND' }],
     holds: (w) => {
-      expect(w.capabilities[0]).toMatchObject({ capability: { id: 'TL-LEND-CAP01' }, useCases: ['TL-LEND-UC01'] });
+      expect(w.useCases[0]).toMatchObject({ group: { id: 'TL-LEND-A1', kind: 'aggregate' }, useCases: ['TL-LEND-UC01'] });
       expect(w.terms.map((t: any) => t.term.id)).toEqual(['TL-LEND-TM01', 'TL-LEND-TM02']);
       expect(w.domainServices[0]).toMatchObject({ domainService: { id: 'TL-LEND-DS01' } });
     },
@@ -129,7 +130,7 @@ const READS: { test: string; list?: [string, Record<string, unknown>]; listed?: 
     },
   },
   {
-    test: 'LA-UCS-UC06-R83-T01', list: ['LA-UCS-QRY101', { capability_id: 'TL-LEND-CAP01' }], listed: 'TL-LEND-UC01', read: ['LA-UCS-QRY100', { id: 'TL-LEND-UC01' }],
+    test: 'LA-UCS-UC06-R83-T01', list: ['LA-UCS-QRY101', { domain_id: 'TL-LEND' }], listed: 'TL-LEND-UC01', read: ['LA-UCS-QRY100', { id: 'TL-LEND-UC01' }],
     holds: (w) => {
       expect(w.requirements[0]).toMatchObject({ requirement: { id: 'TL-LEND-UC01-R01' }, tests: [{ test: { id: 'TL-LEND-UC01-R01-T01' } }] });
       expect(JSON.stringify(w)).toContain('TL-LEND-UC01-FL-S01');

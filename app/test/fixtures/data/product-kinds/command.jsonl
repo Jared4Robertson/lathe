@@ -1,1 +1,2 @@
+{"id":"DM-PAY-CMD01","title":"Take payment","entity_id":"DM-PAY-EN01","description":"Takes the basket's payment by card."}
 {"id":"DM-SHOP-CMD01","title":"Add item","entity_id":"DM-SHOP-EN01","description":"Puts an item in the basket."}

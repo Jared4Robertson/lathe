@@ -273,7 +273,7 @@ export const isGroup = (index: RecordIndex, id: string) => treeOf(index).groups.
 /** Whether the graph can center on an ID: a record or a group. */
 export const isGraphNode = (index: RecordIndex, id: string) => index.byId.has(id) || isGroup(index, id);
 
-/** A kind's label in the plural: "Use cases", "Open questions", "Capabilities". */
+/** A kind's label in the plural: "Use cases", "Open questions", "Entities". */
 export function pluralLabel(index: RecordIndex, kind: string): string {
   return plural(kindLabel(index, kind));
 }
@@ -287,9 +287,13 @@ export const groupName = (index: RecordIndex, gid: string) => treeGroup(index, g
 /** The nearest record above a group: the domain of a stage or folder, the record of a kind group. */
 export const groupOwner = (index: RecordIndex, gid: string) => treeGroup(index, gid)?.owner ?? parseGroupId(gid)?.parent ?? gid;
 
-/** What a group is, as its box's kind line names it: "Folder" (a product's Shared folder), "Stage", or a folder of its kind ("Aggregate folder", "Command folder"). */
+/**
+ * What a group is, as its box's kind line names it: "Folder" (a product's Shared folder), "Stage", the kind of the
+ * aggregate or read model a use case group is ("Aggregate", "Read model"), or a folder of its kind ("Aggregate folder").
+ */
 export function groupKindLabel(index: RecordIndex, gid: string): string {
   const g = treeGroup(index, gid);
+  if (g?.heads) return kindLabel(index, g.heads.kind);
   if (g?.role === 'shared') return 'Folder';
   if (g?.role === 'stage') return 'Stage';
   return g?.kind ? `${kindLabel(index, g.kind)} folder` : 'Folder';

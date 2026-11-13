@@ -1,3 +1,4 @@
+import { lowerLabel } from '../../plural';
 import type { ReactNode } from 'react';
 import type { JourneyKind } from '../../../../lathe/src/product/journey/model';
 import type { JourneyPage as JourneyRead, PathOnPage, StepOnPage } from '../../../../lathe/src/product/journey/read-model';
@@ -83,7 +84,7 @@ function CarriesOut({ index, step }: { index: RecordIndex; step: StepOnPage }) {
       </span>
       <small className="meta journey-place" data-meta="place">
         {out.kind === 'use_case'
-          ? <>{out.capability.title} · {out.domain.title}</>
+          ? <>{out.group ? `${out.group.title} ${lowerLabel(kindLabel(index, out.group.kind))} · ` : ''}{out.domain.title}</>
           : <>{out.hears ? <>hears <RecordLink index={index} id={out.hears.id} showTitle={false} /></> : 'hears nothing yet'} → sends <RecordLink index={index} id={out.sends.id} showTitle={false} /> · {out.domain.title}</>}
       </small>
     </>

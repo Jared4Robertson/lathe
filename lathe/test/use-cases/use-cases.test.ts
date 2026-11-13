@@ -1,4 +1,4 @@
-// Authoring use cases and flows (LA-UCS-UC05, LA-UCS-UC06, LA-TST-UC13): capabilities, patterns and their rules,
+// Authoring use cases and flows (LA-UCS-UC05, LA-UCS-UC06, LA-TST-UC13): use cases in a domain, patterns and their rules,
 // flows and their steps, groups and tests, proved through the store and the engine's load.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ALLOWED_LEVELS, loadWorkspace, openStore, type SchemaDescription, type Workspace } from '../../src/index.ts';
@@ -21,43 +21,41 @@ afterAll(removeData);
 const record = (ws: Workspace, id: string) => ws.records.find((r) => r.id === id)!;
 const shop = { id: 'EX-SHOP', title: 'Shop', product_id: 'EX', position: 2, subdomain_type: 'supporting', description: 'Selling spare parts.' };
 
-describe('capabilities', () => {
-  it("LA-MOD-UC32-R01-T01 A capability sits under a domain with a required whole-number position, and every use case sits under one of its domain's capabilities", async () => {
-    expect(parentsOf(schema, 'capability')).toEqual(['domain.domain_id']);
-    expect(requiredOf(schema, 'capability')).toEqual(['domain_id', 'position', 'description']);
-    expect(schema.tables.capability.columns.find((c) => c.name === 'position')!.kind).toBe('integer');
-    expect(schema.tables.capability.checks).toContainEqual('("position" >= 1)');
-    expect(schema.tables.capability.unique).toContainEqual(['domain_id', 'position']);
-    expect(parentsOf(schema, 'use_case')).toEqual(['capability.capability_id']);
+describe('use cases in a domain', () => {
+  it("LA-UCS-UC06-R84-T01 A use case sits under a domain, and its ID names that domain", async () => {
+    expect(parentsOf(schema, 'use_case')).toEqual(['domain.domain_id']);
+    expect(requiredOf(schema, 'use_case')).toContain('domain_id');
     const data = everyKind();
-    const capability = data.capability[0];
-    const { position: _position, ...unplaced } = capability;
-    expect((await refusals(withTable(data, 'capability', [unplaced]))).map((p) => p.message)).toEqual(['capability.position is required']);
-    expect((await refusals(withTable(data, 'capability', [{ ...capability, position: 0 }]))).map((p) => p.rule)).toEqual(['check']);
-    expect((await refusals(withTable(data, 'capability', [capability, { ...capability, id: 'TL-LEND-CAP02' }]))).map((p) => p.line)).toEqual([2]);
-    // A use case with no capability is refused, and so is one whose ID names another domain than its capability's.
-    const { capability_id: _, ...loose } = data.use_case[0];
-    expect((await refusals(withTable(data, 'use_case', [loose]))).map((p) => p.message)).toEqual(['use_case.capability_id is required']);
-    const elsewhere = adding(data, { domain: [{ id: 'TL-SHOP', title: 'Shop', product_id: 'TL', position: 2, subdomain_type: 'supporting', description: 'Selling spare parts.' }], use_case: [{ id: 'TL-SHOP-UC01', title: 'Sell a tool', capability_id: 'TL-LEND-CAP01', goal: 'A customer buys a used tool.', result_id: 'TL-LEND-CMD01' }] });
+    // A use case with no domain is refused, and so is one whose ID names another domain than its own.
+    const { domain_id: _, ...loose } = data.use_case[0];
+    expect((await refusals(withTable(data, 'use_case', [loose]))).map((p) => p.message)).toEqual(['use_case.domain_id is required']);
+    const elsewhere = adding(data, { domain: [{ id: 'TL-SHOP', title: 'Shop', product_id: 'TL', position: 2, subdomain_type: 'supporting', description: 'Selling spare parts.' }], use_case: [{ id: 'TL-SHOP-UC01', title: 'Sell a tool', domain_id: 'TL-LEND', goal: 'A customer buys a used tool.', result_id: 'TL-LEND-CMD01' }] });
     expect(await refusals(elsewhere)).toEqual([expect.objectContaining({ rule: 'id-prefix', key: 'TL-SHOP-UC01', message: expect.stringContaining('in domain TL-LEND, so its ID starts with TL-LEND-') })]);
   });
 
-  it("LA-UCS-UC13-R01-T01 A use case under a capability, and everything under it, belongs to the capability's domain and counts in its coverage", async () => {
-    for (const id of ['EX-LEND-CAP01', 'EX-LEND-UC01', 'EX-LEND-UC01-R01', 'EX-LEND-UC01-FL', 'EX-LEND-UC01-FL-S01', 'EX-LEND-UC01-R01-T01']) {
+  it("LA-UCS-UC13-R01-T01 A use case, and everything under it, belongs to its domain and counts in its coverage", async () => {
+    for (const id of ['EX-LEND-UC01', 'EX-LEND-UC01-R01', 'EX-LEND-UC01-FL', 'EX-LEND-UC01-FL-S01', 'EX-LEND-UC01-R01-T01']) {
       expect(record(good, id).domain, id).toBe('EX-LEND');
     }
     expect(record(good, 'EX-PAT-ACT').domain).toBeNull();
     expect(obligation(good, 'EX-LEND', 'uc_requirement')).toMatchObject({ total: 2, designed: 2, built: 2, proved: 2 });
     expect(obligation(good, null, 'uc_requirement')).toMatchObject({ total: 0 });
-    // Moved under another capability of the domain, the use case keeps its domain and its coverage.
-    const root = await build(adding(complete(), { capability: [{ id: 'EX-LEND-CAP02', title: 'Stock', domain_id: 'EX-LEND', position: 2, description: 'Keeping the tools in stock.' }] }));
+    // Moved to another domain with a result there, the use case and what is in it keep their coverage in the new domain.
+    const data = adding(complete(), {
+      domain: [shop],
+      aggregate: [{ id: 'EX-SHOP-A1', title: 'Part', domain_id: 'EX-SHOP', identity: 'Part ID', description: 'A spare part.' }],
+      entity: [{ id: 'EX-SHOP-EN01', title: 'Part', aggregate_id: 'EX-SHOP-A1', role: 'root', description: 'A spare part for sale.' }],
+      command: [{ id: 'EX-SHOP-CMD01', title: 'Stock a part', entity_id: 'EX-SHOP-EN01', description: 'Puts a part on the shelf.' }],
+    });
+    const root = await build(data);
     const store = await openStore(root, { latheDataDir: null });
-    await run(store, 'use-case move-use-case', { id: 'EX-LEND-UC02', capability_id: 'EX-LEND-CAP02' });
+    await run(store, 'use-case move-use-case', { id: 'EX-LEND-UC02', domain_id: 'EX-SHOP', result_id: 'EX-SHOP-CMD01' });
     await store.close();
     const moved = await loadWorkspace(root);
-    expect(record(moved, 'EX-LEND-UC02')).toMatchObject({ parent: 'EX-LEND-CAP02', domain: 'EX-LEND' });
-    expect(record(moved, 'EX-LEND-UC02-R01').domain).toBe('EX-LEND');
-    expect(obligation(moved, 'EX-LEND', 'uc_requirement')).toEqual(obligation(good, 'EX-LEND', 'uc_requirement'));
+    expect(record(moved, 'EX-SHOP-UC02')).toMatchObject({ parent: 'EX-SHOP', domain: 'EX-SHOP' });
+    expect(record(moved, 'EX-SHOP-UC02-R01').domain).toBe('EX-SHOP');
+    expect(obligation(moved, 'EX-SHOP', 'uc_requirement')).toMatchObject({ total: 1 });
+    expect(obligation(moved, 'EX-LEND', 'uc_requirement')).toMatchObject({ total: 1 });
   });
 });
 
@@ -124,7 +122,7 @@ describe('flows', () => {
 
   it('LA-UCS-UC06-R01-T02 A well-formed flow raises no step problem; a second flow for the use case, a repeated position, a step fulfilling another use case and a second invoke are refused', async () => {
     expect(ofCheck(good, 'step-order')).toEqual([]);
-    const data = adding(everyKind(), { use_case: [{ id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a borrowed tool back.', result_id: 'TL-LEND-CMD01' }], uc_requirement: [{ id: 'TL-LEND-UC02-R01', title: 'Tool is lent', use_case_id: 'TL-LEND-UC02', statement: 'The library MUST refuse a tool not on loan.' }] });
+    const data = adding(everyKind(), { use_case: [{ id: 'TL-LEND-UC02', title: 'Return a tool', domain_id: 'TL-LEND', goal: 'A member brings a borrowed tool back.', result_id: 'TL-LEND-CMD01' }], uc_requirement: [{ id: 'TL-LEND-UC02-R01', title: 'Tool is lent', use_case_id: 'TL-LEND-UC02', statement: 'The library MUST refuse a tool not on loan.' }] });
     expect(await refusals(data)).toEqual([]);
     const flow = data.flow[0];
     const step = data.flow_step[0];
@@ -151,7 +149,7 @@ describe('flows', () => {
     const flow = data.flow[0];
     expect(flow.id).toBe('TL-LEND-UC01-FL');
     expect(await refusals(data)).toEqual([]);
-    const second = adding(data, { use_case: [{ id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a borrowed tool back.', result_id: 'TL-LEND-CMD01' }] });
+    const second = adding(data, { use_case: [{ id: 'TL-LEND-UC02', title: 'Return a tool', domain_id: 'TL-LEND', goal: 'A member brings a borrowed tool back.', result_id: 'TL-LEND-CMD01' }] });
     expect(await refusals(adding(second, { flow: [{ id: 'TL-LEND-UC02-FL', title: 'Return a tool', use_case_id: 'TL-LEND-UC02' }] }))).toEqual([]);
     expect(await refusals(adding(second, { flow: [{ id: 'TL-LEND-UC02-FL02', title: 'Return a tool', use_case_id: 'TL-LEND-UC02' }] }))).toContainEqual(
       expect.objectContaining({ rule: 'flow-id', message: 'TL-LEND-UC02-FL02 is the flow of TL-LEND-UC02, so its ID is TL-LEND-UC02-FL' }),

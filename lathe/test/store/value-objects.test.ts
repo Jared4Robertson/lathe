@@ -61,17 +61,17 @@ describe("Lathe's value objects", () => {
 
   it('LA-VO04-C01-T A position that is not a whole number from 1 is refused', async () => {
     for (const position of [1.5, '1', true]) {
-      expect(await refusals(firstRow('capability', { position })), JSON.stringify(position)).toEqual(
-        one('column', 'capability', { file: 'data/capability.jsonl', line: 1, message: expect.stringContaining('is not a whole number') }),
+      expect(await refusals(firstRow('domain', { position })), JSON.stringify(position)).toEqual(
+        one('column', 'domain', { file: 'data/domain.jsonl', line: 1, message: expect.stringContaining('is not a whole number') }),
       );
     }
     for (const position of [0, -1]) {
-      const problems = await refusals(firstRow('capability', { position }));
-      expect(problems, String(position)).toEqual(one('check', 'capability', { file: 'data/capability.jsonl', line: 1 }));
+      const problems = await refusals(firstRow('domain', { position }));
+      expect(problems, String(position)).toEqual(one('check', 'domain', { file: 'data/domain.jsonl', line: 1 }));
       expect(problems[0].message).toContain('position" >= 1');
     }
     expect(await refusals(firstRow('flow_step', { position: 0 }))).toEqual(one('check', 'flow_step'));
-    expect(await refusals(firstRow('capability', { position: 7 }))).toEqual([]);
+    expect(await refusals(firstRow('domain', { position: 7 }))).toEqual([]);
   });
 
   it("LA-VO05-C01-T An empty or blank flow step's path is refused", async () => {

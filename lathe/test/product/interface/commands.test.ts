@@ -55,9 +55,9 @@ describe('LA-PRD-UC23-R01-T54 each Interface command changes one interface throu
     expect(runQuery(store, NEXT_PRODUCT_ID, { kind: 'interface', parent: 'TL' })).toBe('TL-IF03');
   });
 
-  it('reads an interface with the roles that use it, the patterns it follows and the use cases it offers and does not, by capability', async () => {
+  it('reads an interface with the roles that use it, the patterns it follows and the use cases it offers and does not, by group', async () => {
     const store = await everyKindStore();
-    await runCommand(store, ADD_USE_CASE, { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'Bring a borrowed tool back.', result_id: 'TL-LEND-QRY01', actors: ['Member'] });
+    await runCommand(store, ADD_USE_CASE, { id: 'TL-LEND-UC02', title: 'Return a tool', domain_id: 'TL-LEND', goal: 'Bring a borrowed tool back.', result_id: 'TL-LEND-QRY01', actors: ['Member'] });
     await runCommand(store, CHANGE_INTERFACE, { id: 'TL-IF01', actors: ['Member', 'Librarian'] });
     const page = runQuery(store, GET_PRODUCT, { id: 'TL' }) as ReturnType<typeof GET_PRODUCT.run>;
     expect(page.interfaces).toEqual([
@@ -65,13 +65,13 @@ describe('LA-PRD-UC23-R01-T54 each Interface command changes one interface throu
         id: 'TL-IF01',
         actors: ['Member', 'Librarian'],
         patterns: [],
-        offers: [{ capability: expect.objectContaining({ id: 'TL-LEND-CAP01' }), items: [{ id: 'TL-LEND-UC01', title: 'Borrow a tool' }] }],
-        missing: [{ capability: expect.objectContaining({ id: 'TL-LEND-CAP01' }), items: [{ id: 'TL-LEND-UC02', title: 'Return a tool' }] }],
+        offers: [{ group: expect.objectContaining({ id: 'TL-LEND-A1' }), items: [{ id: 'TL-LEND-UC01', title: 'Borrow a tool' }] }],
+        missing: [{ group: expect.objectContaining({ id: 'TL-LEND-RM01' }), items: [{ id: 'TL-LEND-UC02', title: 'Return a tool' }] }],
       }),
     ]);
     await runCommand(store, CHANGE_INTERFACE, { id: 'TL-IF01', offers: ['TL-LEND-UC02', 'TL-LEND-UC01'] });
     const offering = (runQuery(store, GET_PRODUCT, { id: 'TL' }) as ReturnType<typeof GET_PRODUCT.run>).interfaces[0];
-    expect(offering.offers[0].items.map((u) => u.id)).toEqual(['TL-LEND-UC01', 'TL-LEND-UC02']);
+    expect(offering.offers.map((o) => [o.group.id, o.items.map((u) => u.id)])).toEqual([['TL-LEND-A1', ['TL-LEND-UC01']], ['TL-LEND-RM01', ['TL-LEND-UC02']]]);
     expect(offering.missing).toEqual([]);
   });
 

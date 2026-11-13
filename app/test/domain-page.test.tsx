@@ -28,8 +28,8 @@ describe('domain page', () => {
     const user = userEvent.setup();
     expect(stages()).toEqual([
       ['Domain model', ['Aggregates', 'Specifications', 'Read models', 'Terms']],
-      // Use cases holds only capabilities, so it lists them itself, with no folder heading.
-      ['Use cases', []],
+      // Use cases holds only use cases, so it lists them itself, with no folder heading: under their aggregates' headings.
+      ['Use cases', ['Basket']],
       ['Interface design', ['Views', 'Endpoints']],
       ['Technical specification', ['Tables', 'Command handlers']],
       ['Test plan', ['Invariant tests', 'Use case tests']],
@@ -50,12 +50,12 @@ describe('domain page', () => {
     // The read model folds its query.
     expect(within(section(/^Read models/)).getByRole('link', { name: /^DM-SHOP-RM01/ }).closest('li')).toHaveTextContent('1 query');
 
-    // Use cases: the capability folds its use case.
-    const buying = within(stageOf('use-cases')).getByRole('link', { name: /^DM-SHOP-CAP01\s*Buying/ }).closest('li') as HTMLElement;
-    expect(buying).toHaveTextContent('1 use case');
-    await user.click(within(buying).getByRole('button', { name: 'Expand DM-SHOP-CAP01' }));
-    const add = within(buying).getByRole('link', { name: /^DM-SHOP-UC01\s*Add/ }).closest('li') as HTMLElement;
-    expect(add).toHaveTextContent('Add an item to the basket');
+    // Use cases: the use case under its aggregate's heading, folding its requirements and its flow.
+    const add = within(stageOf('use-cases')).getByRole('link', { name: /^DM-SHOP-UC01\s*Add/ }).closest('li') as HTMLElement;
+    expect(add.closest('section.record-group')!.querySelector('h3')).toHaveTextContent(/^Basket\s*Aggregate\s*1$/);
+    expect(add).toHaveTextContent('3 children');
+    await user.click(within(add).getByRole('button', { name: 'Expand DM-SHOP-UC01' }));
+    expect(ids(add.querySelector('ul.nested') as HTMLElement)).toEqual(['DM-SHOP-UC01-R01', 'DM-SHOP-UC01-R02', 'DM-SHOP-UC01-FL']);
 
     // Interface design, technical specification and test plan list what starts a branch of their stage; a technical
     // record with what it names in code, a test with its level and file.
@@ -98,7 +98,7 @@ describe('domain page', () => {
     await user.clear(search);
     expect(ids(section(/^Use case tests/))).toEqual(['DM-SHOP-UC01-R01-T01']);
     expect(ids(section(/^Aggregates/))).toEqual(['DM-SHOP-A1']);
-    expect(ids(stageOf('use-cases'))).toEqual(['DM-SHOP-CAP01']);
+    expect(ids(stageOf('use-cases'))).toEqual(['DM-SHOP-UC01']);
   });
 
   it('LA-V91-R04-T01 The domain page lists its coverage gaps, each with the missing link, and its problems', async () => {

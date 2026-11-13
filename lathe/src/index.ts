@@ -350,9 +350,13 @@ async function readRecords(store: Store, order: string[]): Promise<{ kinds: Kind
   );
 
   // Each record's product, domain and aggregate come from the store's record_scope view: through its parents, or for
-  // a record with no owner from its ID.
+  // a record with no owner from its ID; a use case's group (and that of what sits under it) from its result.
   const scopes = new Map(
-    (await store.query<{ id: string; product_id: string | null; domain_id: string | null; aggregate_id: string | null }>('SELECT id, product_id, domain_id, aggregate_id FROM record_scope')).map((s) => [s.id, s]),
+    (
+      await store.query<{ id: string; product_id: string | null; domain_id: string | null; aggregate_id: string | null; group_id: string | null }>(
+        'SELECT id, product_id, domain_id, aggregate_id, group_id FROM record_scope',
+      )
+    ).map((s) => [s.id, s]),
   );
   const parts = new Map<string, Record<string, Row[]>>();
   for (const table of Object.values(schema.tables)) {
@@ -377,6 +381,7 @@ async function readRecords(store: Store, order: string[]): Promise<{ kinds: Kind
         product: scope?.product_id ?? null,
         domain: scope?.domain_id ?? null,
         aggregate: scope?.aggregate_id ?? null,
+        group: scope?.group_id ?? null,
         fields: fields as Row,
         parts: parts.get(String(id)) ?? {},
       };
@@ -432,7 +437,7 @@ export async function readWorkspace(store: Store, config: Pick<LatheConfig, 'roo
   await connection.run(FACT_TABLES_SQL);
   await append(connection, 'file_facts', facts.map((f) => [f.record, f.kind, f.file, f.path, f.file_exists, f.contains_id, f.helper]));
   await append(connection, 'source_file', sources.map((f) => [f.file, f.traced]));
-  const served = await step('serves', async () => servesOf({ schema: store.schema, rows: (table) => store.rows(table) }));
+  const served = await step('serves', async () => servesOf({ schema: store.schema, rows: (table) => store.rows(table), readerOf: (make) => store.readerOf(make) }));
   await append(connection, 'record_serves', [...served].flatMap(([record, s]) => s.outcomes.map((outcome) => [record, outcome])));
   await append(connection, 'test_case', cases.map((c) => [c.file, c.position, c.line, c.name]));
   await append(connection, 'test_case_id', cases.flatMap((c) => c.ids.map((id) => [c.file, c.position, id])));

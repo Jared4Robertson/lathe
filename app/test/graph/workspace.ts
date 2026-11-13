@@ -10,10 +10,10 @@ export const testWorkspace = (): ServedData => modelWorkspace();
 
 export const testIndex = () => recordIndexOf(testWorkspace());
 
-/** A second use case, P-D-UC02, in P-D-CAP01, with `count` UC requirements. */
+/** A second use case, P-D-UC02, of the Loan aggregate, with `count` UC requirements. */
 function withReturns(count: number): ServedData {
   const w = testWorkspace();
-  addRows(w, 'use_case', { id: 'P-D-UC02', title: 'Return a thing', capability_id: 'P-D-CAP01' });
+  addRows(w, 'use_case', { id: 'P-D-UC02', title: 'Return a thing', domain_id: 'P-D', goal: 'A member brings a thing back.', result_id: 'P-D-CMD02' });
   for (let i = 1; i <= count; i++) addRows(w, 'uc_requirement', { id: `P-D-UC02-R0${i}`, title: `Return rule ${i}`, use_case_id: 'P-D-UC02', statement: `Return rule ${i} MUST hold.` });
   return w;
 }

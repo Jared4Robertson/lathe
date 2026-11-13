@@ -4,7 +4,7 @@ export const GET_BUSINESS_OUTCOME_IDENTITY = {
   id: 'LA-PRD-QRY115',
   slice: { aggregate: 'LA-PRD-A16', name: 'business-outcome' },
   name: 'get-business-outcome',
-  description: 'Reads a business outcome whole, by its ID: its statement, measure and target, the tests and records that measure it, and the capabilities and journeys that serve it.',
+  description: 'Reads a business outcome whole, by its ID: its statement, measure and target, the tests and records that measure it, and the aggregates, read models and journeys that serve it.',
   method: 'GET',
   route: '/api/business-outcome/get-business-outcome',
 } as const;

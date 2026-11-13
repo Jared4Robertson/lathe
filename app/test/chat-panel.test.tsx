@@ -634,7 +634,7 @@ describe('LA-PLT-UC19-R13-T01 Ask Claude about this attaches the pointed-at reco
   });
 });
 
-describe('LA-PLT-UC21-R01-T01 After a turn that writes, its records can be put under review: lit on the stage and walked through with their diffs', () => {
+describe('LA-EXP-UC109-R01-T01 After a turn that writes, its records can be put under review: lit on the stage and walked through with their diffs', () => {
   it('starts the review from the turn\'s changes, shows the diff, and ends it with Done', async () => {
     const { push } = fakeChat();
     await openApp('/DM-SHOP-UC01');

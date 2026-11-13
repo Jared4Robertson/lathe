@@ -24,11 +24,10 @@ afterEach(async () => {
   for (const store of open.splice(0)) await store.close();
 });
 
-/** What the outcomes need from other aggregates: a product, a domain whose capability will serve one, and a test. */
+/** What the outcomes need from other aggregates: a product, a domain whose aggregate will serve one, and a test. */
 const base = (): Data => ({
   product: [{ id: 'TL', title: 'Tool Library', description: 'A neighborhood tool library.' }],
   domain: [{ id: 'TL-LEND', title: 'Lending', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'Lending tools.' }],
-  capability: [{ id: 'TL-LEND-CAP01', title: 'Lending', domain_id: 'TL-LEND', position: 1, description: 'Lending tools and taking them back.' }],
   domain_service: [{ id: 'TL-LEND-DS01', title: 'Late fee', domain_id: 'TL-LEND', statement: 'The fee MUST be a day rate times the days late.' }],
   domain_service_test: [{ id: 'TL-LEND-DS01-T01', title: 'Fee for three days', domain_service_id: 'TL-LEND-DS01', level: 'unit', state: 'automated', file: 'test/fee.test.ts', when: 'Three days late.', then: 'Three day rates.' }],
 });
@@ -81,17 +80,17 @@ describe('LA-PRD-UC22-R01-T51 each Business outcome command changes one outcome 
   });
 });
 
-describe('LA-PRD-UC22-R01-T52 a business outcome goes with its measured_by links, refused while a capability serves it', () => {
-  it('removes an outcome with its links, and refuses one a capability serves, naming it', async () => {
+describe('LA-PRD-UC22-R01-T52 a business outcome goes with its measured_by links, refused while an aggregate serves it', () => {
+  it('removes an outcome with its links, and refuses one an aggregate serves, naming it', async () => {
     const data = base();
     const store = await businessOutcomeDataSet(data);
     const removed = await runCommand(store, REMOVE_BUSINESS_OUTCOME, { id: 'TL-BO01' });
     expect(removed.changes.map((c) => `${c.table} ${c.key}`).sort()).toEqual(['business_outcome TL-BO01', 'measured_by source_id TL-BO01, target_id TL-LEND-DS01-T01']);
-    // A capability serving TL-BO02 is A4's link, written as data.
-    const served = await openStore(writeData({ ...data, business_outcome: [store.record('TL-BO02')!.row], serves: [{ source_id: 'TL-LEND-CAP01', target_id: 'TL-BO02' }] }), { latheDataDir: null });
+    // An aggregate serving TL-BO02 is A4's link, written as data.
+    const served = await openStore(writeData({ ...data, business_outcome: [store.record('TL-BO02')!.row], aggregate: [{ id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', identity: 'Loan ID', description: 'One tool lent to one member.' }], serves: [{ source_id: 'TL-LEND-A1', target_id: 'TL-BO02' }] }), { latheDataDir: null });
     open.push(served);
     const refused = await refusal(served, REMOVE_BUSINESS_OUTCOME, { id: 'TL-BO02' });
-    expect(refused.problems[0]).toMatchObject({ rule: 'referenced', message: 'Business outcome TL-BO02 is referenced, so it stays: TL-LEND-CAP01 serves TL-BO02' });
+    expect(refused.problems[0]).toMatchObject({ rule: 'referenced', message: 'Business outcome TL-BO02 is referenced, so it stays: TL-LEND-A1 serves TL-BO02' });
   });
 });
 

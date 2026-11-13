@@ -24,7 +24,7 @@ export function moveUcRequirement(tx: Transaction, input: MoveUcRequirement): vo
   const from = useCases.loadHolding('uc_requirement', input.id) ?? tx.refuse('missing', `there is no UC requirement ${input.id}`);
   if (from.root === input.use_case_id) tx.refuse('parent', `${input.id} is already under ${input.use_case_id}`);
   const to = useCases.load(input.use_case_id) ?? tx.refuse('missing', `there is no use case ${input.use_case_id} to move ${input.id} to`);
-  if (productOf(tx, from.useCase.capability_id) !== productOf(tx, to.useCase.capability_id)) tx.refuse('parent', `${input.use_case_id} is a use case of another product: ${input.id} moves only within its own`);
+  if (productOf(tx, from.useCase.domain_id) !== productOf(tx, to.useCase.domain_id)) tx.refuse('parent', `${input.use_case_id} is a use case of another product: ${input.id} moves only within its own`);
   const fulfilling = from.steps.filter((s) => s.fulfills.includes(input.id)).map((s) => s.row.id);
   if (fulfilling.length) tx.refuse('fulfilled', `${input.id} is fulfilled by ${fulfilling.join(', ')} of its own use case; change the step first, since a step fulfills only its own use case's requirements`);
   const highest = Math.max(0, ...to.requirements.map((r) => Number(/-R(\d+)$/.exec(r.id)?.[1] ?? 0)));
@@ -35,8 +35,7 @@ export function moveUcRequirement(tx: Transaction, input: MoveUcRequirement): vo
   useCases.carryRenames(renamesUnder(tx, input.id, input.id, newId));
 }
 
-// The product a capability's domain belongs to.
-function productOf(tx: Transaction, capabilityId: string): unknown {
-  const domain = tx.record(capabilityId)?.row.domain_id;
-  return typeof domain === 'string' ? tx.record(domain)?.row.product_id : undefined;
+// The product a domain belongs to.
+function productOf(tx: Transaction, domainId: string): unknown {
+  return tx.record(domainId)?.row.product_id;
 }

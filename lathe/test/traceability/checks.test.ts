@@ -37,7 +37,7 @@ check('test-file-missing', () => {
     expect(ofCheck(ws, 'test-file-missing')[2].message).toBe('Constraint test EX-VO01-C01-T names the file test/email.test.ts, which does not exist.');
   });
 
-  it('LA-TST-UC03-R03-T01 only an automated test needs a file and only a manual test gives a reason; a test not automated yet may name a file to come', async () => {
+  it('LA-UCS-UC03-R03-T01 only an automated test needs a file and only a manual test gives a reason; a test not automated yet may name a file to come', async () => {
     const test = (changes: Record<string, string | undefined>) => changing(complete(), 'use_case_test', (r) => r.id === 'EX-LEND-UC01-R01-T01', changes);
     const refused = async (changes: Record<string, string | undefined>) => (await refusals(test(changes))).map((p) => p.rule);
     expect(await refused({ file: undefined })).toEqual(['check']);
@@ -64,7 +64,7 @@ check('test-file-missing-id', () => {
     ]);
   });
 
-  it('LA-TST-UC03-R01-T01 an automated test whose file does not name it proves nothing', async () => {
+  it('LA-UCS-UC03-R01-T01 an automated test whose file does not name it proves nothing', async () => {
     const ws = await loadData(complete(), { silent: ['EX-LEND-INV01-T'] });
     expect(gaps(ws)).toEqual(['proved EX-LEND-INV01']);
     expect(gaps(clean)).toEqual([]);
@@ -173,7 +173,7 @@ check('test-case-unnamed', () => {
 });
 
 check('manual-test-file-silent', () => {
-  it('LA-TRC-UC08-R03-T01 a manual test whose file exists but never names it is a warning', async () => {
+  it('LA-CHK-UC08-R03-T01 a manual test whose file exists but never names it is a warning', async () => {
     const data = changing(complete(), 'integration_test', () => true, { file: 'manual/mail.md' });
     const ws = await loadData(data, { files: { 'manual/mail.md': 'Send a mail and look for it.\n' } });
     expect(ofCheck(ws, 'manual-test-file-silent')).toEqual([expect.objectContaining({ severity: 'warning', record: 'EX-INT01-T01' })]);
@@ -240,7 +240,7 @@ describe('coverage gaps as warnings', () => {
 });
 
 check('pattern-rule-test-outside-followers', () => {
-  it('LA-TRC-UC08-R02-T01 a pattern rule test naming a domain that does not follow the pattern is an error', async () => {
+  it('LA-CHK-UC08-R02-T01 a pattern rule test naming a domain that does not follow the pattern is an error', async () => {
     let data = adding(complete(), { domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', position: 2, subdomain_type: 'supporting', description: 'Selling spare parts.' }] });
     data = adding(data, { pattern_rule_test: [{ id: 'EX-PAT-ACT-R01-T02', title: 'In the shop', pattern_rule_id: 'EX-PAT-ACT-R01', domain_id: 'EX-SHOP', level: 'service', state: 'not automated yet', when: 'The clerk saves a sale.', then: 'The sale reads the same everywhere.' }] });
     const ws = await loadData(data);
@@ -266,7 +266,7 @@ check('pattern-setting-missing', () => {
 });
 
 check('pattern-not-followed', () => {
-  it('LA-TRC-UC04-R07-T01 a pattern no use case or domain follows is a warning', async () => {
+  it('LA-UCS-UC04-R07-T01 a pattern no use case or domain follows is a warning', async () => {
     const data = without(without(complete(), 'setting_value', () => true), 'follows', () => true);
     const ws = await loadData(without(data, 'pattern_rule_test', () => true));
     expect(ofCheck(ws, 'pattern-not-followed')).toEqual([
@@ -364,7 +364,7 @@ check('serves-no-outcome', () => {
       'EX-LEND-SP01', 'EX-LEND-UC01-R01', 'EX-LEND-UC02-R01', 'EX-PAT-ACT-R01', 'EX-STD-CODE-R01', 'EX-V01-R01', 'EX-VO01-C01',
     ]);
     expect(found.find((p) => p.record === 'EX-LEND-A2')!.message).toBe(
-      'Aggregate EX-LEND-A2 serves no outcome: no use case whose capability serves a business outcome reaches it. Write the use case that needs it, or remove it.',
+      'Aggregate EX-LEND-A2 serves no outcome: no use case whose aggregate or read model serves a business outcome, and no journey serving one, reaches it. Write the use case that needs it, or remove it.',
     );
   });
 
@@ -537,7 +537,7 @@ check('outcome-duration-without-journey', () => {
     const measures = ['Hours from a report to a repair.', 'TIME FROM sign-up to a first loan.', 'How long a loan stays out.', 'Weeks from order to shelf.', 'Loans from members to neighbors.', 'Loans opened per tool per month.', 'Share of tools fromage-free.'];
     const outcomes = adding(complete(), {
       business_outcome: measures.map((measure, i) => ({ id: `EX-BO${String(i + 2).padStart(2, '0')}`, title: `Outcome ${i + 2}`, product_id: 'EX', statement: 'Members get tools.', measure, target: 'Better by 2027.', measured_outside: 'Counted by hand.' })),
-      serves: measures.map((_, i) => ({ source_id: 'EX-LEND-CAP01', target_id: `EX-BO${String(i + 2).padStart(2, '0')}` })),
+      serves: measures.map((_, i) => ({ source_id: 'EX-LEND-A1', target_id: `EX-BO${String(i + 2).padStart(2, '0')}` })),
     });
     expect(records(ofCheck(await loadData(outcomes), 'outcome-duration-without-journey'))).toEqual(['EX-BO02', 'EX-BO03', 'EX-BO04', 'EX-BO05', 'EX-BO06']);
   });

@@ -360,7 +360,7 @@ describe('one address, one stage', () => {
     window.sessionStorage.clear();
     await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    // The summary: the box's kind line, the title, the whole lead text, and at most three key facts, its parent first.
+    // The summary: the box's kind line, the title, the whole lead text, and at most three key facts, its aggregate or read model first.
     expect(card()).not.toHaveClass('is-expanded');
     expect(card().querySelector('.wiki-panel-kind')).toHaveTextContent('Use case · P-D-UC01');
     expect(within(card()).getByRole('heading', { level: 2, name: 'Lend a thing' })).toBeInTheDocument();
@@ -368,7 +368,7 @@ describe('one address, one stage', () => {
     const facts = [...card().querySelectorAll('.wiki-panel-summary .fields dt')].map((d) => d.textContent);
     expect(facts.length).toBeGreaterThan(0);
     expect(facts.length).toBeLessThanOrEqual(3);
-    expect(facts[0]).toBe('Capability');
+    expect(facts[0]).toBe('Aggregate');
     // Edit stays in reach; the whole page's sections do not show yet.
     expect(within(card()).getByRole('button', { name: 'Edit' })).toBeInTheDocument();
     expect(within(card()).queryByRole('heading', { name: /^Flow\s*1/ })).toBeNull();

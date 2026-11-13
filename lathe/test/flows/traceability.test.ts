@@ -24,11 +24,13 @@ const PATTERN = [
   add('pattern_rule', { id: 'TL-PAT-ACT-R01', title: 'A saved record reads the same', pattern_id: 'TL-PAT-ACT', statement: 'A record MUST read back as it was saved.' }),
 ];
 
-/** A shop domain beside lending, with one use case. */
+/** A shop domain beside lending, with one aggregate and one use case of its command. */
 const SHOP = [
   add('domain', { id: 'TL-SHOP', title: 'Shop', product_id: 'TL', position: 2, subdomain_type: 'supporting', description: 'Selling tools the library no longer lends.' }),
-  add('capability', { id: 'TL-SHOP-CAP01', title: 'Selling', domain_id: 'TL-SHOP', position: 1, description: 'Selling tools to members.' }),
-  add('use_case', { id: 'TL-SHOP-UC01', title: 'Sell a tool', capability_id: 'TL-SHOP-CAP01', goal: 'A member buys a tool.', result_id: 'TL-LEND-CMD01' }),
+  add('aggregate', { id: 'TL-SHOP-A1', title: 'Sale', domain_id: 'TL-SHOP', identity: 'Sale ID', description: 'One tool sold to one member.' }),
+  add('entity', { id: 'TL-SHOP-EN01', title: 'Sale', aggregate_id: 'TL-SHOP-A1', role: 'root', description: 'The sale itself.' }),
+  add('command', { id: 'TL-SHOP-CMD01', title: 'Sell a tool', entity_id: 'TL-SHOP-EN01', description: 'Sells a tool the library no longer lends to a member.' }),
+  add('use_case', { id: 'TL-SHOP-UC01', title: 'Sell a tool', domain_id: 'TL-SHOP', goal: 'A member buys a tool.', result_id: 'TL-SHOP-CMD01' }),
 ];
 
 /** The coverage line of one domain and obligation kind, as the check prints it. */
@@ -104,12 +106,12 @@ describe('Traceability flows from the command line', () => {
       'TL-LEND UC requirement: 1/1 designed, 1/1 built, 1/1 proved',
       'TL-LEND house rule: 0/1 designed, 0/1 built, 1/1 proved',
     ]);
-    // S05: the report lists, as gaps, a capability that serves no business outcome until it serves one.
-    expect(out).toContain('[capability-serves-no-outcome] Capability TL-LEND-CAP01 serves no business outcome.');
+    // S05: the report lists, as gaps, an aggregate a use case sits with that serves no business outcome, until it serves one.
+    expect(out).toContain('[use-case-group-serves-no-outcome] Aggregate TL-LEND-A1 serves no business outcome, but use cases sit with it: TL-LEND-UC01.');
     tl.command('business-outcome add-business-outcome', { id: 'TL-BO01', title: 'More tools in use', product_id: 'TL', statement: 'Members borrow more tools.', measure: 'Loans per tool per month.', target: 'Two within a year.' });
-    expect(tl.check().stdout).toContain('[outcome-not-served] Business outcome TL-BO01 is served by no capability.');
-    tl.command('domain change-capability', { id: 'TL-LEND-CAP01', serves: ['TL-BO01'] });
-    expect(tl.check().stdout).not.toMatch(/outcome-not-served|capability-serves-no-outcome/);
+    expect(tl.check().stdout).toContain('[outcome-not-served] Business outcome TL-BO01 is served by no aggregate or read model.');
+    tl.command('aggregate change-aggregate', { id: 'TL-LEND-A1', serves: ['TL-BO01'] });
+    expect(tl.check().stdout).not.toMatch(/outcome-not-served|use-case-group-serves-no-outcome/);
     // S06: a source file no technical record names is a gap, until a record names its folder.
     tl.write('src/lending/rules.ts', 'export const LOAN_DAYS = 14;\n');
     expect(tl.check().stdout).toContain('[code-file-untraced] Source file src/lending/rules.ts is named by no technical record, directly or through a folder.');
@@ -121,7 +123,7 @@ describe('Traceability flows from the command line', () => {
     expect(tl.check().stdout).not.toContain('outcome-not-measured');
   });
 
-  it('LA-TST-UC03-FL-T LA-TST-UC30-FL-T LA-TST-UC30-R02-T01 record how a test is run', async () => {
+  it('LA-UCS-UC03-FL-T LA-UCS-UC30-FL-T LA-UCS-UC30-R02-T01 record how a test is run', async () => {
     const tl = product();
     await tl.seed([...LENDING, add('uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'A member in debt is refused', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse a member who owes a fee.' }), add('uc_requirement', { id: 'TL-LEND-UC01-R03', title: 'The due date is set', use_case_id: 'TL-LEND-UC01', statement: 'The loan MUST be due two weeks after it opens.' })]);
     const addTest = (requirement: string, run: Record<string, string>) =>
@@ -154,7 +156,7 @@ describe('Traceability flows from the command line', () => {
     expect(tl.refuse('use-case change-use-case-test', { id: 'TL-LEND-UC01-R01-T01', external: false })).toContain('external');
   });
 
-  it('LA-TRC-UC04-FL-T prove the rules of the patterns a domain follows', async () => {
+  it('LA-UCS-UC04-FL-T prove the rules of the patterns a domain follows', async () => {
     const tl = product();
     await tl.seed([...LENDING, ...SHOP, add('pattern', { id: 'TL-PAT-ACT', title: 'Librarian action', product_id: 'TL', description: 'An action a librarian takes that saves a record.' }), add('pattern_setting', { pattern_id: 'TL-PAT-ACT', position: 1, name: 'record', meaning: 'The record the action saves.' })]);
     // S01: the pattern's rules, each owed by every follower.
@@ -189,8 +191,6 @@ describe('Traceability flows from the command line', () => {
       add('value_object', { id: 'TL-VO01', title: 'Email address', description: 'Where a member gets mail.' }),
       add('entity_field', { entity_id: 'TL-LEND-EN01', position: 2, name: 'Borrower email', meaning: 'Where reminders go.', type_value_object_id: 'TL-VO01', required: true }),
       add('entity_field', { entity_id: 'TL-LEND-EN01', position: 3, name: 'Shop email', meaning: 'Where receipts go.', type_value_object_id: 'TL-VO01', required: false }),
-      add('aggregate', { id: 'TL-SHOP-A1', title: 'Sale', domain_id: 'TL-SHOP', identity: 'Sale ID', description: 'One tool sold to one member.' }),
-      add('entity', { id: 'TL-SHOP-EN01', title: 'Sale', aggregate_id: 'TL-SHOP-A1', role: 'root', description: 'The sale itself.' }),
       add('entity_field', { entity_id: 'TL-SHOP-EN01', position: 1, name: 'Buyer email', meaning: 'Where the receipt goes.', type_value_object_id: 'TL-VO01', required: true }),
       add('constraint', { id: 'TL-VO01-C01', title: 'One at sign', value_object_id: 'TL-VO01', statement: 'An email address MUST hold exactly one @.' }),
     ]);
@@ -256,7 +256,7 @@ describe('Traceability flows from the command line', () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
-      add('use_case', { id: 'TL-LEND-UC02', title: 'Renew a loan', capability_id: 'TL-LEND-CAP01', goal: 'A member keeps a tool longer.', result_id: 'TL-LEND-CMD01' }),
+      add('use_case', { id: 'TL-LEND-UC02', title: 'Renew a loan', domain_id: 'TL-LEND', goal: 'A member keeps a tool longer.', result_id: 'TL-LEND-CMD01' }),
       ...PATTERN,
       add('pattern', { id: 'TL-PAT-LOG', title: 'Audit log', product_id: 'TL', description: 'Every change is written to a log.' }),
       add('pattern_rule', { id: 'TL-PAT-LOG-R01', title: 'Every change is logged', pattern_id: 'TL-PAT-LOG', statement: 'Each change MUST be written to the audit log.' }),
@@ -308,7 +308,7 @@ describe('Traceability flows from the command line', () => {
     expect(tl.refuse('slot-filling fill-slot', { record_id: 'TL-LEND-TOOL02', slot_id: 'TL-PAT-ACT-SL01' })).toContain('a fill is written by hand');
   });
 
-  it('LA-TRC-UC08-FL-T report tests that count for nothing', async () => {
+  it('LA-CHK-UC08-FL-T report tests that count for nothing', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
@@ -338,7 +338,7 @@ describe('Traceability flows from the command line', () => {
       ...LENDING,
       ...DESIGNED,
       add('business_outcome', { id: 'TL-BO01', title: 'More tools in use', product_id: 'TL', statement: 'Members borrow the library\'s tools more often.', measure: 'Loans opened per tool per month.', target: 'Two per tool per month within a year of opening.', measured_outside: 'The librarian counts loans each month.' }),
-      link('TL-LEND-CAP01', 'serves', 'TL-BO01'),
+      link('TL-LEND-A1', 'serves', 'TL-BO01'),
       // An aggregate no step reaches.
       add('aggregate', { id: 'TL-LEND-A2', title: 'Fee', domain_id: 'TL-LEND', identity: 'Fee ID', description: 'A fee a member owes.' }),
     ]);
@@ -353,7 +353,7 @@ describe('Traceability flows from the command line', () => {
     const result = tl.check();
     expect(result.status).toBe(0);
     expect(problemsOf(tl.workspace(), 'serves-no-outcome')).toEqual([
-      'TL-LEND-A2: Aggregate TL-LEND-A2 serves no outcome: no use case whose capability serves a business outcome reaches it. Write the use case that needs it, or remove it.',
+      'TL-LEND-A2: Aggregate TL-LEND-A2 serves no outcome: no use case whose aggregate or read model serves a business outcome, and no journey serving one, reaches it. Write the use case that needs it, or remove it.',
     ]);
   });
 

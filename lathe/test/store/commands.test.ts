@@ -49,9 +49,9 @@ describe('adding', () => {
     await run(store, 'endpoint add-endpoint', { id: 'TL-LEND-EP02', title: 'GET /tools/free', query_id: 'TL-LEND-QRY01', method: 'GET', route: '/tools/free', description: 'Answers 200 with the free tools.' });
     await run(store, 'specification add-specification-test', { id: 'TL-LEND-SP02-T', title: 'Good standing', specification_id: 'TL-LEND-SP02', level: 'unit', state: 'manual', manual_reason: 'Not yet coded.', when: 'Checks a member who owes nothing', then: 'They are in good standing' });
     expect(await sql(store, "SELECT * FROM record_scope WHERE id IN ('TL-LEND-SP02', 'TL-LEND-EP02', 'TL-LEND-SP02-T') ORDER BY id")).toEqual([
-      { id: 'TL-LEND-EP02', product_id: 'TL', domain_id: 'TL-LEND', aggregate_id: null },
-      { id: 'TL-LEND-SP02', product_id: 'TL', domain_id: 'TL-LEND', aggregate_id: null },
-      { id: 'TL-LEND-SP02-T', product_id: 'TL', domain_id: 'TL-LEND', aggregate_id: null },
+      { id: 'TL-LEND-EP02', product_id: 'TL', domain_id: 'TL-LEND', aggregate_id: null, group_id: null },
+      { id: 'TL-LEND-SP02', product_id: 'TL', domain_id: 'TL-LEND', aggregate_id: null, group_id: null },
+      { id: 'TL-LEND-SP02-T', product_id: 'TL', domain_id: 'TL-LEND', aggregate_id: null, group_id: null },
     ]);
     expect(await sql(store, "SELECT parent_id FROM record_parent WHERE id = 'TL-LEND-EP02'")).toEqual([{ parent_id: 'TL-LEND-QRY01' }]);
     await store.close();
@@ -79,10 +79,6 @@ describe('record_scope', () => {
     // A second domain's query is presented in the same view, and its read model has a field typed by a new value
     // object; a third value object is used by no one.
     await run(store, 'domain add-domain', { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', position: 2, subdomain_type: 'supporting', description: 'The tools the library holds.' });
-    await run(store, 'domain add-capability', { id: 'TL-CAT-CAP01', title: 'Browsing', domain_id: 'TL-CAT', position: 1, description: 'Browsing the tools on the shelf.' });
-    await run(store, 'use-case add-use-case', { id: 'TL-CAT-UC01', title: 'Browse the tools', capability_id: 'TL-CAT-CAP01', goal: 'A member finds a tool to borrow.', result_id: 'TL-LEND-CMD01' });
-    await run(store, 'use-case add-flow', { id: 'TL-CAT-UC01-FL', title: 'Browse', use_case_id: 'TL-CAT-UC01' });
-    await run(store, 'use-case add-flow-step', { id: 'TL-CAT-UC01-FL-S01', title: 'Open the catalog', flow_id: 'TL-CAT-UC01-FL', path: 'main', position: 1 });
     await run(store, 'value-object add-value-object', { id: 'TL-VO02', title: 'Tool size', description: 'How big a tool is.' });
     await run(store, 'value-object add-value-object', { id: 'TL-VO03', title: 'Postcode', description: 'Where a member lives.' });
     await run(store, 'read-model add-read-model', {
@@ -120,7 +116,6 @@ describe('moving', () => {
     expect(ALL_COMMANDS.filter((c) => c.name.startsWith('move-')).map((c) => `${c.slice.name} ${c.name}`).sort()).toEqual([
       'aggregate move-aggregate',
       'data-store move-data-store',
-      'domain move-capability',
       'domain move-domain-service',
       'domain move-repository',
       'domain move-term',

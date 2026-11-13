@@ -25,9 +25,11 @@ import { runCommand, runQuery } from '../../src/platform/commands/run.ts';
 import { DataFiles } from '../../src/platform/data/data-files.ts';
 import { StoreError } from '../../src/platform/data/problems.ts';
 import { openStore, type Store } from '../../src/platform/data/store.ts';
+import { ALL_COMMANDS } from '../../src/commands.ts';
 import { everyKind, type Data } from '../store/fixture.ts';
-import { writeData } from '../helpers.ts';
+import { adding, writeData } from '../helpers.ts';
 
+const command = (name: string) => ALL_COMMANDS.find((c) => `${c.slice.name} ${c.name}` === name)!;
 const open: Store[] = [];
 afterEach(async () => {
   for (const store of open.splice(0)) await store.close();
@@ -37,7 +39,7 @@ afterEach(async () => {
 async function storeOf(data: Data = everyKind()): Promise<Store> {
   const store = await openStore(writeData(data), { latheDataDir: null });
   open.push(store);
-  await runCommand(store, ADD_USE_CASE, { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'Bring a borrowed tool back.', result_id: 'TL-LEND-QRY01', actors: ['Member'] });
+  await runCommand(store, ADD_USE_CASE, { id: 'TL-LEND-UC02', title: 'Return a tool', domain_id: 'TL-LEND', goal: 'Bring a borrowed tool back.', result_id: 'TL-LEND-QRY01', actors: ['Member'] });
   return store;
 }
 
@@ -65,7 +67,7 @@ describe('LA-UCS-UC06-R12-T01 each Use case command (LA-UCS-A11) changes one use
     ]);
     // null clears an optional column; a field left out keeps its value.
     await runCommand(store, CHANGE_USE_CASE, { id: 'TL-LEND-UC02', notes: null });
-    expect(store.record('TL-LEND-UC02')?.row).toEqual({ id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'Bring a borrowed tool back.', result_id: 'TL-LEND-QRY01' });
+    expect(store.record('TL-LEND-UC02')?.row).toEqual({ id: 'TL-LEND-UC02', title: 'Return a tool', domain_id: 'TL-LEND', goal: 'Bring a borrowed tool back.', result_id: 'TL-LEND-QRY01' });
   });
 
   it('adds a requirement, a flow and a step with its links, and reads the use case whole by any record in it', async () => {
@@ -81,12 +83,12 @@ describe('LA-UCS-UC06-R12-T01 each Use case command (LA-UCS-A11) changes one use
     const added = { step: { id: step.id, title: step.title, flow_id: step.flow_id, path: 'main', position: 1, interface_id: 'TL-IF01' }, fulfills: ['TL-LEND-UC02-R01'], invokes: null, exchangesWith: [] };
     expect(whole.flows).toEqual([{ flow: expect.objectContaining({ id: 'TL-LEND-UC02-FL' }), paths: [{ name: 'main', steps: [added] }], test: null, through: [], performedBy: [] }]);
     expect(whole.requirements).toEqual([{ requirement: expect.objectContaining({ id: 'TL-LEND-UC02-R01' }), tests: [], fulfilledBy: [step.id] }]);
-    expect(runQuery(store, LIST_USE_CASES, { capability_id: 'TL-LEND-CAP01' })).toEqual([
-      { id: 'TL-LEND-UC01', title: 'Borrow a tool' },
-      { id: 'TL-LEND-UC02', title: 'Return a tool' },
+    expect(runQuery(store, LIST_USE_CASES, { domain_id: 'TL-LEND' })).toEqual([
+      { group: { id: 'TL-LEND-A1', kind: 'aggregate', title: 'Loan' }, useCases: [{ id: 'TL-LEND-UC01', title: 'Borrow a tool' }] },
+      { group: { id: 'TL-LEND-RM01', kind: 'read_model', title: 'Loans by member' }, useCases: [{ id: 'TL-LEND-UC02', title: 'Return a tool' }] },
     ]);
     expect(runQuery(store, NEXT_USE_CASE_ID, { kind: 'flow_step', parent: 'TL-LEND-UC02-FL' })).toBe('TL-LEND-UC02-FL-S02');
-    expect(runQuery(store, NEXT_USE_CASE_ID, { kind: 'use_case', parent: 'TL-LEND-CAP01' })).toBe('TL-LEND-UC03');
+    expect(runQuery(store, NEXT_USE_CASE_ID, { kind: 'use_case', parent: 'TL-LEND' })).toBe('TL-LEND-UC03');
     expect(runQuery(store, NEXT_USE_CASE_ID, { kind: 'flow_test', parent: 'TL-LEND-UC02-FL' })).toBe('TL-LEND-UC02-FL-T');
     expect(() => runQuery(store, NEXT_USE_CASE_ID, { kind: 'flow', parent: 'TL-LEND-UC02' })).toThrow(/TL-LEND-UC02 already has its flow, TL-LEND-UC02-FL/);
   });
@@ -158,7 +160,7 @@ describe('LA-UCS-UC06-R12-T01 each Use case command (LA-UCS-A11) changes one use
     expect((await refusal(store, CHANGE_USE_CASE, { id: 'TL-LEND-UC02', actors: ['Member', 'Mayor'] })).problems).toEqual([
       expect.objectContaining({ rule: 'use-case-actor-role', message: 'Use case TL-LEND-UC02 names Mayor as its actor, which is not a role of TL; its roles are Librarian, Member: name one of them, or add the role to TL' }),
     ]);
-    expect((await refusal(store, ADD_USE_CASE, { id: 'TL-LEND-UC03', title: 'Repair a tool', capability_id: 'TL-LEND-CAP01', goal: 'Mend a damaged tool.', result_id: 'TL-LEND-CMD01', actors: ['Repairer'] })).problems.map((p) => p.rule)).toEqual(['use-case-actor-role']);
+    expect((await refusal(store, ADD_USE_CASE, { id: 'TL-LEND-UC03', title: 'Repair a tool', domain_id: 'TL-LEND', goal: 'Mend a damaged tool.', result_id: 'TL-LEND-CMD01', actors: ['Repairer'] })).problems.map((p) => p.rule)).toEqual(['use-case-actor-role']);
     expect(fileOf(store, 'use_case_actor')).toBe(before);
     // Dropping the role the use cases name, through the product, is refused the same way.
     expect((await refusal(store, CHANGE_PRODUCT, { id: 'TL', roles: [{ name: 'Librarian', description: 'Lends tools.' }] })).problems.map((p) => p.rule)).toContain('use-case-actor-role');
@@ -190,23 +192,78 @@ describe('LA-UCS-UC06-R12-T01 each Use case command (LA-UCS-A11) changes one use
     expect(refused.problems).toEqual([expect.objectContaining({ rule: 'flow-id', message: 'TL-LEND-UC02-FL02 is the flow of TL-LEND-UC02, so its ID is TL-LEND-UC02-FL' })]);
   });
 
-  it('moves a use case under another capability, with what is in it', async () => {
+  it('LA-STD-MODELING-R20-T03 a use case\'s group is its result\'s aggregate or read model; it moves to a domain that holds its result, and with the aggregate its result is in', async () => {
+    const domainOf = (code: string, n = 9) => {
+      const id = `TL-${code}`;
+      return {
+        domain: { id, title: code, product_id: 'TL', position: ['LEND', 'CAT'].indexOf(code) + 1 || 3, subdomain_type: 'supporting', description: `The ${code} domain.` },
+        aggregate: { id: `${id}-A${n}`, title: `${code} thing`, domain_id: id, identity: 'Thing ID', description: 'A thing.' },
+        entity: { id: `${id}-EN0${n}`, title: `${code} thing`, aggregate_id: `${id}-A${n}`, role: 'root', description: 'The thing itself.' },
+        command: { id: `${id}-CMD0${n}`, title: `Change ${code} thing`, entity_id: `${id}-EN0${n}`, description: 'Changes a thing.' },
+      };
+    };
+    const [cat, shop, lend] = [domainOf('CAT'), domainOf('SHOP', 8), domainOf('LEND')];
     const data = everyKind();
-    data.capability = [...data.capability, { id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 2, description: 'Taking tools back.' }];
+    const withDomains = adding(data, { domain: [cat.domain, shop.domain], aggregate: [cat.aggregate, shop.aggregate, lend.aggregate], entity: [cat.entity, shop.entity, lend.entity], command: [cat.command, shop.command, lend.command] });
+    const store = await storeOf(withDomains);
+    await runCommand(store, ADD_UC_REQUIREMENT, { id: 'TL-LEND-UC02-R01', title: 'Tool is on loan', use_case_id: 'TL-LEND-UC02', statement: 'The library MUST refuse a tool not on loan.' });
+    const groups = async (ids: string[]) => (await store.query(`SELECT id, group_id FROM record_scope WHERE id IN (${ids.map((id) => `'${id}'`).join(', ')}) ORDER BY id`)).map((r) => [r.id, r.group_id]);
+    // A command use case is grouped by its result's aggregate, a query use case by its read model, and a requirement under either has the same group.
+    expect(await groups(['TL-LEND-UC01', 'TL-LEND-UC01-R01', 'TL-LEND-UC02', 'TL-LEND-UC02-R01'])).toEqual([
+      ['TL-LEND-UC01', 'TL-LEND-A1'],
+      ['TL-LEND-UC01-R01', 'TL-LEND-A1'],
+      ['TL-LEND-UC02', 'TL-LEND-RM01'],
+      ['TL-LEND-UC02-R01', 'TL-LEND-RM01'],
+    ]);
+    // Moved to CAT, a result of SHOP is refused and a result of CAT is accepted: the use case takes CAT's ID and domain, and CAT's aggregate as its group.
+    expect((await refusal(store, MOVE_USE_CASE, { id: 'TL-LEND-UC01', domain_id: 'TL-CAT', result_id: 'TL-SHOP-CMD08' })).problems[0].rule).toBe('use-case-result-in-domain');
+    await runCommand(store, MOVE_USE_CASE, { id: 'TL-LEND-UC01', domain_id: 'TL-CAT', result_id: 'TL-CAT-CMD09' });
+    expect(store.record('TL-LEND-UC01')).toBeUndefined();
+    expect(store.record('TL-CAT-UC01')?.row).toMatchObject({ domain_id: 'TL-CAT', result_id: 'TL-CAT-CMD09' });
+    expect(await groups(['TL-CAT-UC01', 'TL-CAT-UC01-R01'])).toEqual([['TL-CAT-UC01', 'TL-CAT-A9'], ['TL-CAT-UC01-R01', 'TL-CAT-A9']]);
+    // Move the aggregate of a use case's result, and the use case goes with it.
+    await runCommand(store, ADD_USE_CASE, { id: 'TL-LEND-UC03', title: 'Lend again', domain_id: 'TL-LEND', goal: 'Lend a tool once more.', result_id: 'TL-LEND-CMD09', actors: ['Member'] });
+    await runCommand(store, command('aggregate move-aggregate'), { id: 'TL-LEND-A9', domain_id: 'TL-SHOP' });
+    expect(store.record('TL-LEND-UC03')).toBeUndefined();
+    const carried = store.rows('use_case').find((u) => u.title === 'Lend again');
+    expect(carried).toMatchObject({ domain_id: 'TL-SHOP', id: expect.stringMatching(/^TL-SHOP-UC\d+$/) });
+    expect(store.record(String(carried?.result_id))?.kind).toBe('command');
+    expect(String(carried?.result_id)).toMatch(/^TL-SHOP-CMD\d+$/);
+    expect(store.rows('use_case').find((u) => u.title === 'Return a tool')).toMatchObject({ domain_id: 'TL-LEND' });
+  });
+
+  it('LA-UCS-UC13-R02-T02 a use case moved to a domain where its ID is taken takes the next free number there, with everything in it', async () => {
+    const cat = { id: 'TL-CAT', title: 'CAT', product_id: 'TL', position: 3, subdomain_type: 'supporting', description: 'The CAT domain.' };
+    const data = adding(everyKind(), {
+      domain: [cat],
+      aggregate: [{ id: 'TL-CAT-A9', title: 'CAT thing', domain_id: 'TL-CAT', identity: 'Thing ID', description: 'A thing.' }],
+      entity: [{ id: 'TL-CAT-EN09', title: 'CAT thing', aggregate_id: 'TL-CAT-A9', role: 'root', description: 'The thing itself.' }],
+      command: [
+        { id: 'TL-CAT-CMD08', title: 'Change CAT thing', entity_id: 'TL-CAT-EN09', description: 'Changes a thing.' },
+        { id: 'TL-CAT-CMD09', title: 'Keep CAT thing', entity_id: 'TL-CAT-EN09', description: 'Keeps a thing.' },
+      ],
+    });
     const store = await storeOf(data);
-    const committed = await runCommand(store, MOVE_USE_CASE, { id: 'TL-LEND-UC02', capability_id: 'TL-LEND-CAP02' });
-    expect(committed.changes).toEqual([expect.objectContaining({ table: 'use_case', key: 'TL-LEND-UC02', after: expect.objectContaining({ capability_id: 'TL-LEND-CAP02' }) })]);
-    expect((await refusal(store, MOVE_USE_CASE, { id: 'TL-LEND-UC02', capability_id: 'TL-LEND-CAP02' })).problems[0].rule).toBe('parent');
+    // CAT already has UC02 and UC07, so LEND's UC02 cannot keep its number there: it takes UC08, one past CAT's highest.
+    await runCommand(store, ADD_USE_CASE, { id: 'TL-CAT-UC02', title: 'Change a thing', domain_id: 'TL-CAT', goal: 'Change a thing.', result_id: 'TL-CAT-CMD08', actors: ['Member'] });
+    await runCommand(store, ADD_USE_CASE, { id: 'TL-CAT-UC07', title: 'Keep a thing', domain_id: 'TL-CAT', goal: 'Keep a thing.', result_id: 'TL-CAT-CMD09', actors: ['Librarian'] });
+    await runCommand(store, ADD_UC_REQUIREMENT, { id: 'TL-LEND-UC02-R01', title: 'Tool is on loan', use_case_id: 'TL-LEND-UC02', statement: 'The library MUST refuse a tool not on loan.' });
+    await runCommand(store, MOVE_USE_CASE, { id: 'TL-LEND-UC02', domain_id: 'TL-CAT', result_id: 'TL-CAT-CMD09' });
+    expect(store.record('TL-LEND-UC02')).toBeUndefined();
+    expect(store.record('TL-CAT-UC02')?.row).toMatchObject({ title: 'Change a thing', result_id: 'TL-CAT-CMD08' });
+    expect(store.record('TL-CAT-UC08')?.row).toMatchObject({ title: 'Return a tool', domain_id: 'TL-CAT', result_id: 'TL-CAT-CMD09' });
+    expect(store.record('TL-CAT-UC08-R01')?.row).toMatchObject({ use_case_id: 'TL-CAT-UC08' });
+    expect(store.rows('use_case_actor').filter((a) => a.use_case_id === 'TL-CAT-UC08').map((a) => a.role_name)).toEqual(['Member']);
   });
 
   it('refuses an input that is not the command\'s: an unknown field, a missing one, a wrong type, or a field that cannot be cleared', async () => {
     const store = await storeOf();
     await expect(runCommand(store, ADD_UC_REQUIREMENT, { id: 'TL-LEND-UC02-R01', title: 'x', use_case_id: 'TL-LEND-UC02' })).rejects.toThrow(new InputError('add-uc-requirement needs statement'));
-    await expect(runCommand(store, CHANGE_USE_CASE, { id: 'TL-LEND-UC02', capability_id: 'TL-LEND-CAP01' })).rejects.toThrow(/change-use-case takes no capability_id/);
+    await expect(runCommand(store, CHANGE_USE_CASE, { id: 'TL-LEND-UC02', domain_id: 'TL-LEND' })).rejects.toThrow(/change-use-case takes no domain_id/);
     await expect(runCommand(store, CHANGE_USE_CASE_TEST, { id: 'TL-LEND-UC01-R01-T01', level: 'sometimes' })).rejects.toThrow(/level "sometimes" is not one of/);
     await expect(runCommand(store, CHANGE_USE_CASE, { id: 'TL-LEND-UC02', goal: null })).rejects.toThrow(/goal cannot be cleared/);
     expect((await refusal(store, CHANGE_USE_CASE, { id: 'TL-LEND-UC09', title: 'Nothing' })).problems[0]).toMatchObject({ rule: 'missing', message: 'there is no use case TL-LEND-UC09' });
-    expect((await refusal(store, ADD_USE_CASE, { id: 'TL-LEND-UC02', title: 'Again', capability_id: 'TL-LEND-CAP01', goal: 'Twice.', result_id: 'TL-LEND-CMD01' })).problems[0].rule).toBe('primary-key');
+    expect((await refusal(store, ADD_USE_CASE, { id: 'TL-LEND-UC02', title: 'Again', domain_id: 'TL-LEND', goal: 'Twice.', result_id: 'TL-LEND-CMD01' })).problems[0].rule).toBe('primary-key');
   });
 
   it('refuses a repository\'s write to a table it does not own, when it is made', async () => {

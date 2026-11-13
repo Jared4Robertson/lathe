@@ -4,7 +4,7 @@ export const ADD_USE_CASE_IDENTITY = {
   id: 'LA-UCS-CMD100',
   slice: { aggregate: 'LA-UCS-A11', name: 'use-case' },
   name: 'add-use-case',
-  description: 'Adds a use case under a capability, with its result (the command or query it exists for) and its actors in order, the main actor first.',
+  description: 'Adds a use case to a domain, with its result (the command or query it exists for) and its actors in order, the main actor first.',
   method: 'POST',
   route: '/api/use-case/add-use-case',
 } as const;
@@ -13,7 +13,7 @@ export const CHANGE_USE_CASE_IDENTITY = {
   id: 'LA-UCS-CMD101',
   slice: { aggregate: 'LA-UCS-A11', name: 'use-case' },
   name: 'change-use-case',
-  description: 'Changes a use case\'s title, goal, result or notes, or its actors (the whole list, in order). Its capability changes only by Move a use case.',
+  description: 'Changes a use case\'s title, goal, result or notes, or its actors (the whole list, in order). Its domain changes only by Move a use case.',
   method: 'POST',
   route: '/api/use-case/change-use-case',
 } as const;
@@ -22,7 +22,7 @@ export const MOVE_USE_CASE_IDENTITY = {
   id: 'LA-UCS-CMD102',
   slice: { aggregate: 'LA-UCS-A11', name: 'use-case' },
   name: 'move-use-case',
-  description: 'Moves a use case, with everything in it, under another capability of its product: under another domain\'s, it and everything in it take that domain\'s ID in place of the old one\'s, and every record that names one of them names the new ID.',
+  description: 'Moves a use case, with everything in it, to another domain of its product, with a result of that domain (the one it has, or a new one): it and everything in it take that domain\'s ID in place of the old one\'s, or the next free number there when another use case has that ID, and every record that names one of them names the new ID.',
   method: 'POST',
   route: '/api/use-case/move-use-case',
 } as const;

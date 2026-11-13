@@ -6,10 +6,10 @@ import { treeParent } from '../graph/tree';
 import { LatheLogo } from '../LatheLogo';
 import { Link, useLocation } from '../router';
 import { parseSpecRoute } from '../views/spec-route';
-import { type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
+import { kindLabel, type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
 import { type DataState } from '../exploring/record-summaries/reads';
 import type { Stage } from '../../../lathe/src/platform/data/schema';
-import { branchOf, ownerFolders, sharedKey, type Folder, type StageFolders } from '../exploring/folder-tree/folders';
+import { branchOf, navGroupKey, ownerFolders, sharedKey, type Folder, type FolderGroup, type StageFolders } from '../exploring/folder-tree/folders';
 import { StageMark } from '../specs/parts';
 import { useProblems } from '../checking/problems/reads';
 import { changeCounts, useChanges } from '../changes/changes';
@@ -385,29 +385,58 @@ function SpaceItems({ index, space, path, reveal }: { index: RecordIndex; space:
   }, [branch, reveal]);
 
   // A folder lists all its records plainly, in the nav's one scroll: no filter box and no scroll box of its own
-  // (quick find and the nav's Go to… find a record among many).
-  const recordRows = (records: RecordSummary[], label: string, depth: number) => (
+  // (quick find and the nav's Go to… find a record among many). A domain's use cases are listed under a heading per
+  // group, one level in: the aggregate or read model of their results, by its title and kind, linked to its page. Each
+  // heading folds its use cases, as a domain row folds its stages; the one that holds the current page opens itself.
+  const recordRow = (r: RecordSummary, depth: number) => (
+    <li key={r.id}>
+      <NavRow depth={depth} selected={path === addressOf(r.id)}>
+        <Link to={addressOf(r.id)} aria-current={here(path, addressOf(r.id))} title={`${r.id} ${r.title}`}>
+          <span className="nav-label">{r.title}</span>
+        </Link>
+      </NavRow>
+    </li>
+  );
+  const groupRow = ({ group, records }: FolderGroup & { group: NonNullable<FolderGroup['group']> }, label: string, depth: number) => {
+    const key = navGroupKey(group.id);
+    const open = isOpen(key);
+    const bodyId = `nav-group-${group.id.replace(/[^A-Za-z0-9_-]/g, '-')}`;
+    return (
+      <li key={group.id} className="nav-group">
+        <NavRow
+          depth={depth}
+          selected={path === addressOf(group.id)}
+          holds={holds(key)}
+          chevron={(
+            <button type="button" className="nav-chevron" aria-expanded={open} aria-controls={bodyId} aria-label={`${open ? 'Fold' : 'Unfold'} ${group.title}`} onClick={() => toggle(key)}>
+              <Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} />
+            </button>
+          )}
+        >
+          <Link to={addressOf(group.id)} aria-current={here(path, addressOf(group.id))} title={`${group.id} ${group.title}`}>
+            <span className="nav-label">{group.title}</span><small className="nav-group-kind">{kindLabel(index, group.kind)}</small>
+          </Link>
+        </NavRow>
+        {open && <ul className="nav-records" id={bodyId} aria-label={`${label} of ${group.title}`}>{records.map((r) => recordRow(r, depth + 1))}</ul>}
+      </li>
+    );
+  };
+  const recordRows = (folder: Folder, label: string, depth: number) => (
     <ul className="nav-records" aria-label={label}>
-      {records.map((r) => (
-        <li key={r.id}>
-          <NavRow depth={depth} selected={path === addressOf(r.id)}>
-            <Link to={addressOf(r.id)} aria-current={here(path, addressOf(r.id))} title={`${r.id} ${r.title}`}>
-              <span className="nav-label">{r.title}</span>
-            </Link>
-          </NavRow>
-        </li>
-      ))}
+      {folder.groups
+        ? folder.groups.map((g) => (g.group ? groupRow({ ...g, group: g.group }, folder.label, depth) : g.records.map((r) => recordRow(r, depth))))
+        : folder.records.map((r) => recordRow(r, depth))}
     </ul>
   );
   const folderRow = (folder: Folder, owner: string, depth: number) => (
     <NavFolder key={folder.key} id={folder.key} depth={depth} label={folder.label} count={folder.count} changes={rolled?.ofRecords(folder.records.map((r) => r.id))} open={isOpen(folder.key)} holds={holds(folder.key)} onToggle={() => toggle(folder.key)}>
-      {recordRows(folder.records, `${folder.label} of ${owner}`, depth + 1)}
+      {recordRows(folder, `${folder.label} of ${owner}`, depth + 1)}
     </NavFolder>
   );
   // An owner's stages with records, each folding its folders with records, or a stage with one folder its records.
   const stageRows = (stages: StageFolders[], owner: string, depth: number) => stages.filter((stage) => stage.count > 0).map((stage) => (
     <NavFolder key={stage.key} id={stage.key} depth={depth} label={stage.label} count={stage.count} changes={rolled?.ofRecords(stage.folders.flatMap((f) => f.records.map((r) => r.id)))} open={isOpen(stage.key)} holds={holds(stage.key)} onToggle={() => toggle(stage.key)} stage={stage.stage}>
-      {stage.direct ? recordRows(stage.direct.records, `${stage.label} of ${owner}`, depth + 1) : (
+      {stage.direct ? recordRows(stage.direct, `${stage.label} of ${owner}`, depth + 1) : (
         <ul className="nav-tree" aria-label={`${stage.label} of ${owner}`}>
           {stage.folders.filter((f) => f.count > 0).map((f) => folderRow(f, owner, depth + 1))}
         </ul>

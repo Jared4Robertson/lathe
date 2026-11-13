@@ -243,7 +243,7 @@ describe("LA-PLT-UC03-R04-T02 a command's commit refuses what the whole build wo
       await run(store, 'view add-view', { id: 'TL-V03', title: 'Bench', route: '/bench', description: 'The tools on the bench.' });
       expect((await refusedBy(store, 'view add-view', { id: 'TL-V04', title: 'shelf', route: '/shelf-2', description: 'Another shelf.' })).map((p) => p.rule)).toEqual(['title-unique', 'title-unique']);
       for (const name of Object.keys(steps)) delete steps[name];
-      expect((await refusedBy(store, 'domain add-capability', { id: 'TL-LEND-CAP09', title: 'Repairs', domain_id: 'TL-LEND', position: 0, description: 'Mending tools.' })).map((p) => p.rule)).toEqual(['check']);
+      expect((await refusedBy(store, 'domain add-domain', { id: 'TL-REP', title: 'Repairs', product_id: 'TL', position: 0, subdomain_type: 'supporting', description: 'Mending tools.' })).map((p) => p.rule)).toEqual(['check']);
       expect(built('copy schema')).toBe(true);
       expect(store.rows('view').map((v) => v.id)).toEqual(['TL-V01', 'TL-V02', 'TL-V03']);
 

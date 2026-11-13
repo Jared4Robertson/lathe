@@ -219,12 +219,11 @@ export function complete(): Data {
     storage_requirement: [{ id: 'EX-LEND-A1-SR01', title: 'A loan survives a restart', aggregate_id: 'EX-LEND-A1', statement: 'A saved loan MUST survive a restart, and a failed save MUST leave nothing behind.' }],
     term: [{ id: 'EX-LEND-TM01', title: 'Loan', domain_id: 'EX-LEND', meaning: 'One tool lent to one member until it is returned.' }],
 
-    capability: [{ id: 'EX-LEND-CAP01', title: 'Lending', domain_id: 'EX-LEND', position: 1, description: 'Lending tools and taking them back.' }],
-    serves: [{ source_id: 'EX-LEND-CAP01', target_id: 'EX-BO01' }],
+    serves: [{ source_id: 'EX-LEND-A1', target_id: 'EX-BO01' }, { source_id: 'EX-LEND-A2', target_id: 'EX-BO01' }],
     measured_by: [{ source_id: 'EX-BO01', target_id: 'EX-LEND-UC01-R01-T01' }],
     use_case: [
-      { id: 'EX-LEND-UC01', title: 'Borrow a tool', capability_id: 'EX-LEND-CAP01', goal: 'A member takes a free tool home.', result_id: 'EX-LEND-CMD01' },
-      { id: 'EX-LEND-UC02', title: 'Add a tool', capability_id: 'EX-LEND-CAP01', goal: 'The librarian puts a new tool in the catalog.', result_id: 'EX-LEND-CMD02' },
+      { id: 'EX-LEND-UC01', title: 'Borrow a tool', domain_id: 'EX-LEND', goal: 'A member takes a free tool home.', result_id: 'EX-LEND-CMD01' },
+      { id: 'EX-LEND-UC02', title: 'Add a tool', domain_id: 'EX-LEND', goal: 'The librarian puts a new tool in the catalog.', result_id: 'EX-LEND-CMD02' },
     ],
     use_case_actor: [
       { use_case_id: 'EX-LEND-UC01', position: 1, role_name: 'Member' },
@@ -405,7 +404,7 @@ export function complete(): Data {
 export function withJourney(): Data {
   return adding(complete(), {
     business_outcome: [{ id: 'EX-BO02', title: 'New tools lent soon', product_id: 'EX', statement: 'A new tool goes out on its first loan soon after it arrives.', measure: 'Median days from adding a tool to its first loan.', target: 'Under a week by 2027.', measured_outside: 'The librarian reads the catalog dates.' }],
-    serves: [{ source_id: 'EX-LEND-CAP01', target_id: 'EX-BO02' }, { source_id: 'EX-JR01', target_id: 'EX-BO02' }],
+    serves: [{ source_id: 'EX-LEND-A1', target_id: 'EX-BO02' }, { source_id: 'EX-LEND-A2', target_id: 'EX-BO02' }, { source_id: 'EX-JR01', target_id: 'EX-BO02' }],
     journey: [{ id: 'EX-JR01', title: 'Get a new tool to its first borrower', product_id: 'EX', trigger: 'A new tool arrives at the library.', result: 'A member has borrowed it and knows when it is due.' }],
     journey_step: [
       { id: 'EX-JR01-S01', title: 'The librarian adds the tool', journey_id: 'EX-JR01', path: 'main', position: 1 },
@@ -457,13 +456,9 @@ export function sparse(): Data {
     specification: [{ id: 'SP-D-SP01', title: 'Tool is free', statement: 'A tool is free when no loan names it.' }],
     policy: [{ id: 'SP-D-PO01', title: 'React', command_id: 'SP-D-CMD01', statement: 'Whenever something happens, the library MUST add a tool.' }],
     domain_service: [{ id: 'SP-D-DS01', title: 'Late fee', domain_id: 'SP-D', statement: 'The fee MUST be a day rate times the days late.' }],
-    capability: [
-      { id: 'SP-D-CAP01', title: 'Empty', domain_id: 'SP-D', position: 1, description: 'Nothing yet.' },
-      { id: 'SP-D-CAP02', title: 'Lending', domain_id: 'SP-D', position: 2, description: 'Lending tools.' },
-    ],
     use_case: [
-      { id: 'SP-D-UC01', title: 'Add a tool', capability_id: 'SP-D-CAP02', goal: 'A member gives the library a tool.', result_id: 'SP-D-CMD01' },
-      { id: 'SP-D-UC02', title: 'Return a tool', capability_id: 'SP-D-CAP02', goal: 'A member brings a tool back.', result_id: 'SP-D-QRY01' },
+      { id: 'SP-D-UC01', title: 'Add a tool', domain_id: 'SP-D', goal: 'A member gives the library a tool.', result_id: 'SP-D-CMD01' },
+      { id: 'SP-D-UC02', title: 'Return a tool', domain_id: 'SP-D', goal: 'A member brings a tool back.', result_id: 'SP-D-QRY01' },
     ],
     pattern: [{ id: 'SP-PAT-X', title: 'Ruleless', product_id: 'SP', description: 'A pattern with no rules.' }],
     interface: [

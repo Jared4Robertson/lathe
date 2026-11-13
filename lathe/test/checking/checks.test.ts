@@ -173,6 +173,21 @@ check('too-many-children', () => {
     expect(ofCheck(ws, 'too-many-children').map((p) => p.message)).toEqual([expect.stringContaining('has 3 children of kind uc_requirement in group Limits')]);
   });
 
+  it('LA-CHK-UC06-R06-T03 a domain\'s use cases are counted per aggregate or read model they sit with, and the warning says to split it', async () => {
+    const limit = { product_setting: [{ product_id: 'EX', max_children: 2, max_entities_per_aggregate: 7, technology_words: [] }] };
+    // Two use cases sit with the Loan (EX-LEND-A1), one with the Tool, one with the Free tools read model: four in the domain, none over 2.
+    const loan = { id: 'EX-LEND-UC03', title: 'Remind the borrower', domain_id: 'EX-LEND', goal: 'The librarian reminds a borrower of the due date.', result_id: 'EX-LEND-CMD03' };
+    const free = { id: 'EX-LEND-UC04', title: 'See the free tools', domain_id: 'EX-LEND', goal: 'A member sees which tools are free.', result_id: 'EX-LEND-QRY01' };
+    expect(ofCheck(await loadData(adding(complete(), { ...limit, use_case: [loan, free] })), 'too-many-children')).toEqual([]);
+    const third = { id: 'EX-LEND-UC05', title: 'Remind every borrower', domain_id: 'EX-LEND', goal: 'The librarian reminds each borrower of a loan due.', result_id: 'EX-LEND-CMD03' };
+    expect(ofCheck(await loadData(adding(complete(), { ...limit, use_case: [loan, free, third], use_case_actor: [{ use_case_id: 'EX-LEND-UC05', position: 1, role_name: 'Librarian' }] })), 'too-many-children')).toEqual([
+      expect.objectContaining({
+        severity: 'warning', record: 'EX-LEND',
+        message: "Domain EX-LEND has 3 children of kind use_case sitting with EX-LEND-A1, more than the 2 that the product's max_children setting allows; split the aggregate or read model they sit with.",
+      }),
+    ]);
+  });
+
   it("LA-CHK-UC06-R06-T02 a product kind's records are counted per group_name", async () => {
     const under = ['Noise', 'Noise', 'Tools', 'tools '];
     expect(ofCheck(await loadData(houseRules(under)), 'too-many-children')).toEqual([]);
@@ -209,35 +224,23 @@ check('aggregate-too-large', () => {
 });
 
 check('lone-child', () => {
-  it('LA-CHK-UC06-R03-T01 a capability with exactly one use case is a warning naming it', async () => {
-    const data = changing(complete(), 'use_case', (r) => r.id === 'EX-LEND-UC02', { capability_id: 'EX-LEND-CAP02' });
-    const ws = await loadData(adding(data, { capability: [{ id: 'EX-LEND-CAP02', title: 'Catalog', domain_id: 'EX-LEND', position: 2, description: 'Keeping the list of tools.' }] }));
-    expect(ofCheck(ws, 'lone-child').map((p) => p.message)).toEqual([
-      'Capability EX-LEND-CAP01 has only one use case, EX-LEND-UC01; merge it into a neighboring capability, or give it more.',
-      'Capability EX-LEND-CAP02 has only one use case, EX-LEND-UC02; merge it into a neighboring capability, or give it more.',
-    ]);
+  it("LA-CHK-UC06-R03-T01 an aggregate or read model with one use case is not a lone child, nor is a flow's path with one step", async () => {
+    // Each of the complete product's two use cases sits alone with its aggregate (Loan, Tool); each flow has one main step at least.
+    expect(ofCheck(await loadData(complete()), 'lone-child')).toEqual([]);
+    const asking = adding(complete(), {
+      use_case: [{ id: 'EX-LEND-UC03', title: 'See the free tools', domain_id: 'EX-LEND', goal: 'A member sees which tools are free.', result_id: 'EX-LEND-QRY01' }],
+      flow_step: [{ id: 'EX-LEND-UC01-FL-S03', title: 'Tool is on loan', flow_id: 'EX-LEND-UC01-FL', path: 'refused', position: 1 }],
+    });
+    expect(ofCheck(await loadData(asking), 'lone-child')).toEqual([]);
   });
 
-  it("LA-CHK-UC06-R04-T01 a capability's own children of every kind are counted, not theirs; none or two are not reported", async () => {
-    // CAP02 holds one use case with two requirements: one child of its own.
-    let data = changing(complete(), 'use_case', (r) => r.id === 'EX-LEND-UC02', { capability_id: 'EX-LEND-CAP02' });
-    data = adding(data, {
-      capability: [
-        { id: 'EX-LEND-CAP02', title: 'Catalog', domain_id: 'EX-LEND', position: 2, description: 'Keeping the list of tools.' },
-        { id: 'EX-LEND-CAP03', title: 'Repairs', domain_id: 'EX-LEND', position: 3, description: 'Fixing broken tools.' },
-      ],
-      uc_requirement: [{ id: 'EX-LEND-UC02-R02', title: 'Tool is priced', use_case_id: 'EX-LEND-UC02', statement: 'The library MUST refuse a tool with no price.' }],
-    });
-    expect(ofCheck(await loadData(data), 'lone-child').map((p) => p.record)).toEqual(['EX-LEND-CAP01', 'EX-LEND-CAP02']);
-    // A record of a product's own kind under CAP02 is a second child of it; CAP03 has none.
-    const noted = adding(data, {
-      product_kind: [{ name: 'note', product_id: 'EX', label: 'Note', description: 'A note.', parent_kind: 'capability', stage: 'use-cases', obligation: false, complexity: 'essential' }],
-      note: [
-        { id: 'EX-LEND-CAP01-N01', title: 'Lending is busy', capability_id: 'EX-LEND-CAP01' },
-        { id: 'EX-LEND-CAP02-N01', title: 'Prices change', capability_id: 'EX-LEND-CAP02' },
-      ],
-    });
-    expect(ofCheck(await loadData(noted), 'lone-child')).toEqual([]);
+  it("LA-CHK-UC06-R04-T01 a group's members are counted among their parent's children of one kind; a group of two, and children with no group, are not reported", async () => {
+    const grouped = (groups: (string | undefined)[]) =>
+      adding(complete(), { uc_requirement: groups.map((group_name, i) => ({ id: `EX-LEND-UC01-R0${i + 2}`, title: `Limit ${i + 2}`, use_case_id: 'EX-LEND-UC01', statement: 'The library MUST hold to it.', ...(group_name ? { group_name } : {}) })) });
+    expect(ofCheck(await loadData(grouped(['Limits', 'limits ', undefined])), 'lone-child')).toEqual([]);
+    expect(ofCheck(await loadData(grouped(['Limits', 'limits ', 'Fees'])), 'lone-child').map((p) => p.message)).toEqual([
+      'Use case EX-LEND-UC01\'s group "Fees" has only one uc requirement, EX-LEND-UC01-R04; merge it into a neighboring group, or give it more.',
+    ]);
   });
 
   it('LA-CHK-UC06-R07-T01 a group with one member is a warning on its parent, standard rules included', async () => {

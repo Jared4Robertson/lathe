@@ -12,7 +12,7 @@ import { TWO_PRODUCTS } from '../../checking/problems/data-set.ts';
 const open: Store[] = [];
 afterEach(async () => { for (const s of open.splice(0)) await s.close(); });
 
-/** The two products, with three terms of EX-LEND, one building on another, and a capability. */
+/** The two products, with three terms of EX-LEND, one building on another. */
 const DATA: Data = {
   ...TWO_PRODUCTS,
   term: [
@@ -73,6 +73,23 @@ describe('LA-EXP-UC01-R06-T02 The folder tree read gives Shared and each domain 
     const [journey] = journeys.entries;
     expect(journey.path).toBeUndefined();
     expect(journey.folded.map((e) => [e.id, e.path])).toEqual([['EX-JR01-S02', 'main'], ['EX-JR01-S01', 'main'], ['EX-JR01-S03', 'found outside a return']]);
+  });
+
+  it('lists a domain\'s use cases directly in its Use cases stage, by their group (aggregates, then read models) and ID, each naming its group', async () => {
+    const t = await tree({
+      ...DATA,
+      command: [{ id: 'EX-LEND-CMD01', title: 'Borrow a tool', entity_id: 'EX-LEND-EN01', description: 'Lends a free tool to a member.' }],
+      read_model: [{ id: 'EX-LEND-RM01', title: 'Free tools', domain_id: 'EX-LEND', description: 'The tools on no active loan.' }],
+      query: [{ id: 'EX-LEND-QRY01', title: 'List free tools', read_model_id: 'EX-LEND-RM01', description: 'The free tools, by name.' }],
+      use_case: [
+        { id: 'EX-LEND-UC01', title: 'See free tools', domain_id: 'EX-LEND', goal: 'A member sees what is free.', result_id: 'EX-LEND-QRY01' },
+        { id: 'EX-LEND-UC02', title: 'Borrow a tool', domain_id: 'EX-LEND', goal: 'A member takes a tool home.', result_id: 'EX-LEND-CMD01' },
+        { id: 'EX-LEND-UC03', title: 'Extend a loan', domain_id: 'EX-LEND', goal: 'A member keeps a tool longer.', result_id: 'EX-LEND-CMD01' },
+      ],
+    });
+    const useCases = stage(t.domains[0], 'use-cases').folders.find((f) => f.kind === 'use_case')!;
+    expect(useCases.entries.map((e) => [e.id, e.group?.id])).toEqual([['EX-LEND-UC02', 'EX-LEND-A1'], ['EX-LEND-UC03', 'EX-LEND-A1'], ['EX-LEND-UC01', 'EX-LEND-RM01']]);
+    expect(useCases.entries[0].group).toEqual({ id: 'EX-LEND-A1', kind: 'aggregate', title: 'Loan' });
   });
 
   it('shows a stage\'s one folder directly, and puts what the product shares under Shared', async () => {

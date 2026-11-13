@@ -8,9 +8,6 @@ import { holdToRules } from '../rules.ts';
 import type { AddDomain } from './add-domain.ts';
 import type { ChangeDomain } from './change-domain.ts';
 import type { RemoveDomain } from './remove-domain.ts';
-import type { AddCapability } from './add-capability.ts';
-import type { ChangeCapability } from './change-capability.ts';
-import type { RemoveCapability } from './remove-capability.ts';
 import type { AddTerm } from './add-term.ts';
 import type { ChangeTerm } from './change-term.ts';
 import type { RemoveTerm } from './remove-term.ts';
@@ -31,7 +28,7 @@ import type { RemoveDomainServiceTest } from './remove-domain-service-test.ts';
 export function addDomain(tx: Transaction, input: AddDomain): void {
   const domains = new DomainRepository(tx);
   if (tx.record(input.product_id)?.kind !== 'product') tx.refuse('missing', `there is no product ${input.product_id}`);
-  const domain = domains.create({ root: input.id, domain: input, capabilities: [], terms: [], domainServices: [], services: [], domainServiceTests: [], repositories: [] });
+  const domain = domains.create({ root: input.id, domain: input, terms: [], domainServices: [], services: [], domainServiceTests: [], repositories: [] });
   holdToRules(tx, domain);
   domains.save(domain);
 }
@@ -45,38 +42,11 @@ export function changeDomain(tx: Transaction, input: ChangeDomain): void {
   domains.save(domain);
 }
 
-/** Removes a domain whole: its capabilities, terms, domain services with their services and tests, repositories, and the links they start. Refused while anything outside it references what is in it. */
+/** Removes a domain whole: its terms, domain services with their services and tests, repositories, and the links they start. Refused while anything outside it references what is in it. */
 export function removeDomain(tx: Transaction, input: RemoveDomain): void {
   const domains = new DomainRepository(tx);
   const domain = domains.load(input.id) ?? tx.refuse('missing', `there is no domain ${input.id}`);
   domains.remove(domain);
-}
-
-/** Adds a capability to its domain, at a position, with the business outcomes it serves. */
-export function addCapability(tx: Transaction, input: AddCapability): void {
-  const domains = new DomainRepository(tx);
-  const domain = domains.load(input.domain_id) ?? tx.refuse('missing', `there is no domain ${input.domain_id}`);
-  const { serves = [], ...row } = input;
-  domain.capabilities.push({ row, serves: serves });
-  holdToRules(tx, domain);
-  domains.save(domain);
-}
-
-/** Changes a capability's title, position or description, or the business outcomes it serves (the whole list). */
-export function changeCapability(tx: Transaction, input: ChangeCapability): void {
-  const domains = new DomainRepository(tx);
-  const domain = domains.loadHolding('capability', input.id) ?? tx.refuse('missing', `there is no capability ${input.id}`);
-  domain.capabilities = domain.capabilities.map((x) => (x.row.id === input.id ? { row: changed(x.row, input, ['title', 'position', 'description']), serves: input.serves ?? x.serves } : x));
-  holdToRules(tx, domain);
-  domains.save(domain);
-}
-
-/** Removes a capability and the links it starts. Refused while a use case sits under it or anything else references it. */
-export function removeCapability(tx: Transaction, input: RemoveCapability): void {
-  const domains = new DomainRepository(tx);
-  const domain = domains.loadHolding('capability', input.id) ?? tx.refuse('missing', `there is no capability ${input.id}`);
-  domain.capabilities = domain.capabilities.filter((x) => x.row.id !== input.id);
-  domains.save(domain);
 }
 
 /** Adds a term to its domain's glossary, with what it means there and the terms it builds on. */

@@ -12,7 +12,6 @@ export const SHAPE_PATHS: Readonly<Record<Shape, string | readonly string[]>> = 
   product: 'M3.2 0.8h9.6a2.2 2.2 0 0 1 2.2 2.2v5a2.2 2.2 0 0 1-2.2 2.2H3.2A2.2 2.2 0 0 1 1 8V3a2.2 2.2 0 0 1 2.2-2.2z M3.6 3h8.8',
   hexagon: 'M4.5 1h7L15 5.5 11.5 10h-7L1 5.5z',
   folder: 'M1 1h6l1.5 1.8H15V10H1z',
-  slice: 'M1 1.5h10l4 4-4 4H1z',
   double: 'M1 1h14v9H1z M3 3h10v5H3z',
   octagon: 'M4 1h8l3 3v3l-3 3H4L1 7V4z',
   flag: 'M1 1.5h14l-3.5 4 3.5 4H1z',

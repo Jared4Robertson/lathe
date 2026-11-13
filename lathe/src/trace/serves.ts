@@ -1,5 +1,6 @@
 // Serves reach (LA-TRC-DS06): the outcomes each record serves, worked out from the rows and never stored. A record
-// serves a business outcome when a use case whose capability serves that outcome reaches it. A use case reaches:
+// serves a business outcome when a use case whose group serves that outcome reaches it: its group is the aggregate of
+// its result command, or the read model of its result query (LA-STD-MODELING-R20). A use case reaches:
 // - itself, its UC requirements, its flows and their steps;
 // - what its steps invoke: a command, and through it its entity's aggregate, the specifications it checks, the domain
 //   services it calls and the events it raises, with each policy that hears one and that policy's command, reached in
@@ -16,15 +17,16 @@
 // product's own records under a reached one, a product's own obligation a reached record designs or builds, what a
 // reached record links to through one of the product's own relations, and the product's own records that link to a
 // reached one through one (a component listed in an aggregate, a CLI command exposing a command).
-// The capability serves its outcomes directly.
+// An aggregate or read model serves its own outcomes directly, with or without use cases.
 // A journey serves its outcomes directly too, and through it: its steps and its journey test, each use case a step
-// carries out with all that use case reaches (as if its capability served them), and each policy a handoff step carries
+// carries out with all that use case reaches (as if its group served them), and each policy a handoff step carries
 // out with what the policy reaches (its command and that command's chain). Each record keeps the use cases and the
 // journeys it serves through. The engine fills record_serves with it before the checks run (the serves-no-outcome
 // check reads it), and the Serves read model's projection (LA-TRC-RM12-PJ) answers from it.
 import type { ReadView } from '../platform/data/rules.ts';
 import type { Row } from '../platform/data/rows.ts';
 import { compareIds } from '../platform/data/ids.ts';
+import { placementOf } from '../exploring/placement.ts';
 
 /** What a record serves: the outcomes, and the use cases and journeys through which it serves them. */
 export interface Served {
@@ -49,14 +51,14 @@ function index(rows: readonly Row[], key: string, value: string): Map<string, st
   return by;
 }
 
-/** What a use case reaches (itself included), and the outcomes its capability serves: none when it serves none. */
+/** What a use case reaches (itself included), and the outcomes its group serves: none when it serves none. */
 export interface UseCaseReach {
   outcomes: readonly string[];
   reached: ReadonlySet<string>;
 }
 
 /** Each record a use case or a journey reaches, with the outcomes it serves and the use cases and journeys through which it serves them. */
-export function servesOf(view: Pick<ReadView, 'schema' | 'rows'>): Map<string, Served> {
+export function servesOf(view: Pick<ReadView, 'schema' | 'rows' | 'readerOf'>): Map<string, Served> {
   const served = new Map<string, { outcomes: Set<string>; useCases: Set<string>; journeys: Set<string> }>();
   const mark = (id: string, outcomes: readonly string[], useCase: string | null, journey: string | null) => {
     const entry = served.get(id) ?? { outcomes: new Set<string>(), useCases: new Set<string>(), journeys: new Set<string>() };
@@ -67,10 +69,10 @@ export function servesOf(view: Pick<ReadView, 'schema' | 'rows'>): Map<string, S
   };
   const rows = (table: string): Row[] => (view.schema.tables[table] ? view.rows(table) : []);
   const servesOutcomes = index(rows('serves'), 'source_id', 'target_id');
-  // A capability serves its own outcomes.
-  for (const capability of rows('capability').map((c) => String(c.id))) {
-    const outcomes = servesOutcomes.get(capability);
-    if (outcomes) mark(capability, outcomes, null, null);
+  // An aggregate or read model serves its own outcomes.
+  for (const group of [...rows('aggregate'), ...rows('read_model')].map((g) => String(g.id))) {
+    const outcomes = servesOutcomes.get(group);
+    if (outcomes) mark(group, outcomes, null, null);
   }
   const { reach, useCases } = reachOf(view);
   for (const [useCase, { outcomes, reached }] of useCases) {
@@ -98,13 +100,13 @@ export function servesOf(view: Pick<ReadView, 'schema' | 'rows'>): Map<string, S
   return new Map([...served].map(([id, s]) => [id, { outcomes: byId(s.outcomes), useCases: byId(s.useCases), journeys: byId(s.journeys) }]));
 }
 
-/** What each use case reaches by the Serves reach, with the outcomes its capability serves: every use case, serving an outcome or not. */
-export function useCaseReaches(view: Pick<ReadView, 'schema' | 'rows'>): Map<string, UseCaseReach> {
+/** What each use case reaches by the Serves reach, with the outcomes its group serves: every use case, serving an outcome or not. */
+export function useCaseReaches(view: Pick<ReadView, 'schema' | 'rows' | 'readerOf'>): Map<string, UseCaseReach> {
   return reachOf(view).useCases;
 }
 
 /** The Serves reach over the rows: what any records reach together (themselves included), and what each use case reaches. */
-function reachOf(view: Pick<ReadView, 'schema' | 'rows'>): { reach: (from: readonly string[]) => Set<string>; useCases: Map<string, UseCaseReach> } {
+function reachOf(view: Pick<ReadView, 'schema' | 'rows' | 'readerOf'>): { reach: (from: readonly string[]) => Set<string>; useCases: Map<string, UseCaseReach> } {
   const { schema } = view;
   const rows = (table: string): Row[] => (schema.tables[table] ? view.rows(table) : []);
   const links = (relation: string) => rows(relation);
@@ -115,8 +117,7 @@ function reachOf(view: Pick<ReadView, 'schema' | 'rows'>): { reach: (from: reado
 
   // The rows, read once and indexed.
   const servesOutcomes = out('serves');
-  const capabilityOf = one('use_case', 'capability_id');
-  const domainOf = one('capability', 'domain_id');
+  const domainOf = one('use_case', 'domain_id');
   const requirementsOf = under('uc_requirement', 'use_case_id');
   const flowsOf = under('flow', 'use_case_id');
   const stepsOf = under('flow_step', 'flow_id');
@@ -229,8 +230,7 @@ function reachOf(view: Pick<ReadView, 'schema' | 'rows'>): { reach: (from: reado
             }
           }
         }
-        const capability = capabilityOf.get(id);
-        const followed = [id, domainOf.get(capability ?? '') ?? '', ...(offeredBy.get(id) ?? [])].flatMap((follower) => follows.get(follower) ?? []);
+        const followed = [id, domainOf.get(id) ?? '', ...(offeredBy.get(id) ?? [])].flatMap((follower) => follows.get(follower) ?? []);
         for (const pattern of followed) reach(rulesOf.get(pattern));
       }
       const entity = entityOfCommand.get(id);
@@ -268,10 +268,12 @@ function reachOf(view: Pick<ReadView, 'schema' | 'rows'>): { reach: (from: reado
     return reached;
   };
 
+  // A use case's group: its result command's aggregate, or its result query's read model, as the placement has it.
+  const placed = placementOf(view);
   const reaches = new Map<string, UseCaseReach>();
   for (const useCase of useCases) {
-    const capability = capabilityOf.get(useCase);
-    reaches.set(useCase, { outcomes: byId(capability ? (servesOutcomes.get(capability) ?? []) : []), reached: reachFrom([useCase]) });
+    const group = placed.get(useCase)?.group;
+    reaches.set(useCase, { outcomes: byId(group ? (servesOutcomes.get(group) ?? []) : []), reached: reachFrom([useCase]) });
   }
   return { reach: reachFrom, useCases: reaches };
 }

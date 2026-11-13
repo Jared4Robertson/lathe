@@ -25,7 +25,6 @@ const data = (): Data =>
       { id: 'NX-E', title: 'Elsewhere', product_id: 'NX', position: 1, subdomain_type: 'generic', description: 'Work done in the second product.' },
     ],
     product: [{ id: 'NX', title: 'Next product', description: 'A second product beside the first.' }],
-    capability: [{ id: 'TL-CAT-CAP02', title: 'Listing', domain_id: 'TL-CAT', position: 2, description: 'Listing the tools on the shelf.' }],
     product_kind: [{ name: 'shared_module', product_id: 'TL', label: 'Shared module', description: 'Code several records use.', parent_kind: 'domain', stage: 'technical-specification', obligation: false, complexity: 'accidental', id_pattern: '<P>-<D>-MOD<nn>' }],
     shared_module: [{ id: 'TL-LEND-MOD01', title: 'dates.ts', domain_id: 'TL-LEND' }],
     data_store: [{ id: 'TL-LEND-STORE02', title: 'loanCache', domain_id: 'TL-LEND', kind: 'memory', description: 'Loans kept while the desk app runs.' }],
@@ -50,13 +49,12 @@ async function refusal(store: Store, name: string, input: unknown): Promise<Stor
 /** Every data file's text. */
 const files = (store: Store) => readdirSync(store.dataDir).map((f) => readFileSync(path.join(store.dataDir, f), 'utf8')).join('');
 
-describe('LA-MOD-UC36-R01-T01 each record moved to another domain takes its IDs, with everything under it, and nothing names an old ID', () => {
+describe('LA-UCS-UC13-R02-T01 each record moved to another domain takes its IDs, with everything under it, and nothing names an old ID', () => {
   it('moves the whole of a domain\'s records to another, renaming each and every mention', async () => {
     const store = await storeOf();
     const moves: [string, string][] = [
       ['aggregate move-aggregate', 'TL-LEND-A1'],
       ['aggregate move-aggregate', 'TL-LEND-A2'],
-      ['domain move-capability', 'TL-LEND-CAP01'],
       ['domain move-term', 'TL-LEND-TM01'],
       ['domain move-term', 'TL-LEND-TM02'],
       ['domain move-domain-service', 'TL-LEND-DS01'],
@@ -79,12 +77,19 @@ describe('LA-MOD-UC36-R01-T01 each record moved to another domain takes its IDs,
     expect(files(store)).not.toMatch(/TL-LEND-/);
     expect(store.rows('builds_on')).toEqual([{ source_id: 'TL-CAT-TM02', target_id: 'TL-CAT-TM01' }]);
     expect(store.rows('starts_from')).toContainEqual({ source_id: 'TL-INT01-T01', target_id: 'TL-CAT-TD01' });
-    expect(store.record('TL-CAT-UC01')?.row.capability_id).toBe('TL-CAT-CAP01');
+    expect(store.record('TL-CAT-UC01')?.row.domain_id).toBe('TL-CAT');
   });
 
-  it('moves a use case under another domain\'s capability with that domain\'s IDs, so none is left outside its domain', async () => {
-    const store = await storeOf();
-    await runCommand(store, command('use-case move-use-case'), { id: 'TL-LEND-UC01', capability_id: 'TL-CAT-CAP02' });
+  it('moves a use case to another domain with that domain\'s IDs and a result there, so none is left outside its domain', async () => {
+    const other = adding(data(), {
+      aggregate: [{ id: 'TL-CAT-A9', title: 'Listing', domain_id: 'TL-CAT', identity: 'Listing ID', description: 'A tool on the shelf.' }],
+      entity: [{ id: 'TL-CAT-EN09', title: 'Listing', aggregate_id: 'TL-CAT-A9', role: 'root', description: 'The listing itself.' }],
+      command: [{ id: 'TL-CAT-CMD09', title: 'List a tool', entity_id: 'TL-CAT-EN09', description: 'Puts a tool on the shelf.' }],
+    });
+    const store = await openStore(writeData(other), { latheDataDir: null });
+    open.push(store);
+    expect((await refusal(store, 'use-case move-use-case', { id: 'TL-LEND-UC01', domain_id: 'TL-CAT' })).problems[0]).toMatchObject({ rule: 'use-case-result-in-domain' });
+    await runCommand(store, command('use-case move-use-case'), { id: 'TL-LEND-UC01', domain_id: 'TL-CAT', result_id: 'TL-CAT-CMD09' });
     for (const id of ['TL-CAT-UC01', 'TL-CAT-UC01-FL', 'TL-CAT-UC01-FL-S01', 'TL-CAT-UC01-FL-T', 'TL-CAT-UC01-R01', 'TL-CAT-UC01-R01-T01']) expect(store.record(id), id).toBeDefined();
     expect(files(store)).not.toMatch(/TL-LEND-UC01/);
   });
@@ -105,14 +110,14 @@ describe('LA-MOD-UC36-R01-T01 each record moved to another domain takes its IDs,
 describe('LA-UCS-UC14-R01-T01 a requirement moved to another use case takes its next number, its tests follow, and one a step fulfills stays', () => {
   it('renumbers the requirement under its new use case, with its tests, and refuses one a step fulfills', async () => {
     const store = await storeOf();
-    await runCommand(store, command('use-case add-use-case'), { id: 'TL-CAT-UC01', title: 'List a tool', capability_id: 'TL-CAT-CAP02', goal: 'Put a tool on the shelf.', result_id: 'TL-LEND-CMD01', actors: ['Librarian'] });
+    await runCommand(store, command('use-case add-use-case'), { id: 'TL-LEND-UC02', title: 'List a tool', domain_id: 'TL-LEND', goal: 'Put a tool on the shelf.', result_id: 'TL-LEND-CMD01', actors: ['Librarian'] });
     await runCommand(store, command('use-case add-uc-requirement'), { id: 'TL-LEND-UC01-R09', title: 'Tool has a name', use_case_id: 'TL-LEND-UC01', statement: 'A tool MUST have a name; see TL-LEND-UC01-R09.' });
     await runCommand(store, command('use-case add-use-case-test'), { id: 'TL-LEND-UC01-R09-T01', title: 'A tool with no name is refused', uc_requirement_id: 'TL-LEND-UC01-R09', level: 'unit', state: 'not automated yet', when: 'Adds a tool.', then: 'Expects a refusal.' });
-    await runCommand(store, command('use-case move-uc-requirement'), { id: 'TL-LEND-UC01-R09', use_case_id: 'TL-CAT-UC01' });
-    expect(store.record('TL-CAT-UC01-R01')?.row).toMatchObject({ use_case_id: 'TL-CAT-UC01', statement: 'A tool MUST have a name; see TL-CAT-UC01-R01.' });
-    expect(store.record('TL-CAT-UC01-R01-T01')?.row.uc_requirement_id).toBe('TL-CAT-UC01-R01');
+    await runCommand(store, command('use-case move-uc-requirement'), { id: 'TL-LEND-UC01-R09', use_case_id: 'TL-LEND-UC02' });
+    expect(store.record('TL-LEND-UC02-R01')?.row).toMatchObject({ use_case_id: 'TL-LEND-UC02', statement: 'A tool MUST have a name; see TL-LEND-UC02-R01.' });
+    expect(store.record('TL-LEND-UC02-R01-T01')?.row.uc_requirement_id).toBe('TL-LEND-UC02-R01');
     expect(files(store)).not.toMatch(/TL-LEND-UC01-R09/);
-    const fulfilled = await refusal(store, 'use-case move-uc-requirement', { id: 'TL-LEND-UC01-R01', use_case_id: 'TL-CAT-UC01' });
+    const fulfilled = await refusal(store, 'use-case move-uc-requirement', { id: 'TL-LEND-UC01-R01', use_case_id: 'TL-LEND-UC02' });
     expect(fulfilled.problems[0]).toMatchObject({ rule: 'fulfilled' });
   });
 });

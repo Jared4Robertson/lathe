@@ -21,11 +21,12 @@ import type { AddReader } from './add-reader.ts';
 import type { ChangeReader } from './change-reader.ts';
 import type { RemoveReader } from './remove-reader.ts';
 
-/** Changes a read model's title or description, its fields (the whole list, in order), or the aggregates it reads, the domain services it calls or the events that feed it (each the whole list). Its domain never changes. */
+/** Changes a read model's title or description, the business outcomes it serves, its fields (the whole list, in order), or the aggregates it reads, the domain services it calls or the events that feed it (each the whole list). Its domain never changes. */
 export function changeReadModel(tx: Transaction, input: ChangeReadModel): void {
   const readModels = new ReadModelRepository(tx);
   const readModel = readModels.load(input.id) ?? tx.refuse('missing', `there is no read model ${input.id}`);
   readModel.readModel = changed(readModel.readModel, input, ['title', 'description']);
+  readModel.serves = input.serves ?? readModel.serves;
   readModel.reads = input.reads ?? readModel.reads;
   readModel.calls = input.calls ?? readModel.calls;
   readModel.fedBy = input.fed_by ?? readModel.fedBy;

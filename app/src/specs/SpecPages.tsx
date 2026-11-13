@@ -13,7 +13,7 @@ import { allFolders, ownerFolders, foldedChildren, type Folder, type OwnerFolder
 import { ActionsSlotContext } from '../components/ActionsSlot';
 import { byIdOrder, kindLabel, type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
 import { type DataState } from '../exploring/record-summaries/reads';
-import { HOME_PATH } from '../views/address';
+import { addressOf, HOME_PATH } from '../views/address';
 import { Prose } from './mentions';
 
 // The wiki content of a domain, which the wiki card (app/src/views) shows over the stage; and what an address that is
@@ -93,22 +93,34 @@ function StageBlock({ stage, level, children }: { stage: StageFolders; level: 2 
  * A domain's or a product's records in its stages, as the side nav reads them: each stage under its
  * heading and color (Domain model, Use cases, Interface design, Technical specification, Test plan),
  * and in it one section per kind with records (or, for a stage with one folder, its records directly), each record a
- * row whose children of the same stage fold under it. A stage with nothing yet says so. Then the folders outside the stages, except open
+ * row whose children of the same stage fold under it; a domain's use cases sit in a section per group, headed by the
+ * aggregate or read model of their results. A stage with nothing yet says so. Then the folders outside the stages, except open
  * questions, which the page lists itself.
  */
 export function StageSections({ index, folders, query, level = 2 }: { index: RecordIndex; folders: OwnerFolders; query: string; level?: 2 | 3 }) {
   const q = query.trim().toLowerCase();
   const matches = (r: RecordSummary) => !q || recordText(r).toLowerCase().includes(q);
   const nested = (r: RecordSummary) => foldedChildren(index, r);
+  // A row shows when it, or anything folded under it at any depth, matches.
+  const deep = (r: RecordSummary): boolean => matches(r) || nested(r).some(deep);
   const tree = (records: RecordSummary[], label: string) => {
-    // A row shows when it, or anything folded under it at any depth, matches.
-    const deep = (r: RecordSummary): boolean => matches(r) || nested(r).some(deep);
     const visible = records.filter(deep).length;
     return visible === 0 ? <p className="hint">Nothing matches.</p> : <RecordTree index={index} records={records} label={label} query={query} nested={nested} />;
   };
+  // A folder of use cases lists them under their groups, each a section headed by its aggregate or read model; a group
+  // with no row that matches the filter is left out.
+  const listed = (folder: Folder, label: string, at: SectionLevel) => {
+    if (!folder.groups) return tree(folder.records, label);
+    const shown = folder.groups.filter((g) => g.records.some(deep));
+    return shown.length === 0 ? <p className="hint">Nothing matches.</p> : shown.map(({ group, records }) => (group ? (
+    <Section key={group.id} level={at} title={group.title} titleTo={addressOf(group.id)} kind={kindLabel(index, group.kind)} count={records.length} className="record-group">
+      {tree(records, `${label} of ${group.id}`)}
+    </Section>
+  ) : <div key="">{tree(records, label)}</div>));
+  };
   const folderSection = (folder: Folder, at: SectionLevel) => (
     <Section key={folder.key} level={at} title={folder.label} count={folder.count} className="folder">
-      {tree(folder.records, folder.label)}
+      {listed(folder, folder.label, levelBelow(at))}
     </Section>
   );
   return (
@@ -116,7 +128,7 @@ export function StageSections({ index, folders, query, level = 2 }: { index: Rec
       {folders.stages.map((stage) => (
         <StageBlock key={stage.key} stage={stage} level={level}>
           {stage.count === 0 ? <p className="hint">Nothing yet.</p>
-            : stage.direct ? tree(stage.direct.records, stage.direct.label)
+            : stage.direct ? listed(stage.direct, stage.direct.label, levelBelow(level))
             : stage.folders.filter((f) => f.count > 0).map((f) => folderSection(f, levelBelow(level)))}
         </StageBlock>
       ))}

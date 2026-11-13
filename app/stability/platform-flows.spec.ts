@@ -67,9 +67,9 @@ test.describe('Platform flows in the app', () => {
       await expect(page.locator(`.header-strip h1`)).toHaveText('Walk the model as a graph, retitled by an Agent', { timeout: 20_000 });
       expect(new URL(page.url()).pathname).toBe('/LA-EXP-UC03');
       // A data file the store refuses: the page says what is wrong, not other data.
-      appendFileSync(path.join(process.env.STABILITY_ROOT!, 'data', 'use_case.jsonl'), '{"id":"LA-EXP-UC99","title":"Under no capability","goal":"A use case whose capability is not there.","capability_id":"LA-EXP-CAP99","result_id":"LA-EXP-QRY14"}\n');
+      appendFileSync(path.join(process.env.STABILITY_ROOT!, 'data', 'use_case.jsonl'), '{"id":"LA-EXP-UC99","title":"In no domain","goal":"A use case whose domain is not there.","domain_id":"LA-ZZZ","result_id":"LA-EXP-QRY14"}\n');
       await expect(page.getByText(/Couldn.t (re)?load the specs/).first()).toBeVisible({ timeout: 20_000 });
-      await expect(page.getByText(/LA-EXP-CAP99/).first()).toBeVisible();
+      await expect(page.getByText(/LA-ZZZ/).first()).toBeVisible();
     } finally {
       restore();
     }
@@ -247,7 +247,7 @@ test.describe('Platform flows in the app', () => {
     await page.keyboard.press('Enter');
     await expect(html).toHaveAttribute('data-mode', 'dark');
     // Appearance, a popover from the nav's footer over the stage: every theme with a preview, live on the stage when pointed at.
-    await nav(page).getByRole('link', { name: 'Appearance' }).click();
+    await nav(page).getByRole('link', { name: 'Appearance', exact: true }).click();
     await page.waitForURL((u) => u.search.endsWith('panel=appearance'));
     await expect(page.locator('.focus-stage')).toBeVisible();
     await page.getByRole('radio', { name: 'System' }).check();

@@ -1,5 +1,6 @@
 import { gapsOf, kindLabel, type RecordIndex } from '../exploring/record-summaries/record-index';
 import { filterKind, groupKindLabel, groupLabel, groupMarks, groupOwner } from './model';
+import { treeGroup } from './tree';
 import { NODE_WIDTH, nodeShape, SHAPES, type Room, type Shape } from './shapes';
 
 // A box's label as part of the map (LA-EXP-DS06): its lines, the eyebrow (kind and ID) and the
@@ -139,13 +140,14 @@ export function wrapText(text: string, width: number, measure: (s: string) => nu
 
 /**
  * What a box's label says: its title and its eyebrow ("Use case · LA-EXP-UC03"; a group's "Stage · LA-EXP", "Aggregate
- * folder · LA-EXP"). With `kindNamed`, an enclosing band already names the record's kind for every box in it (a Nested or
+ * folder · LA-EXP", a use case group's "Aggregate · LA-EXP-A1"). With `kindNamed`, an enclosing band already names the record's kind for every box in it (a Nested or
  * Map folder of one kind), so the eyebrow is its ID alone; its accessible name still says its kind (plate.ts plateName).
  */
 export function labelLines(index: RecordIndex, id: string, kindNamed = false): { title: string; meta: string } {
   const record = index.byId.get(id);
   if (record) return { title: record.title, meta: kindNamed ? id : `${kindLabel(index, record.kind)} · ${id}` };
-  return { title: groupLabel(index, id), meta: `${groupKindLabel(index, id)} · ${groupOwner(index, id)}` };
+  // A use case group's eyebrow names the aggregate or read model it is; any other group's, the record it sits under.
+  return { title: groupLabel(index, id), meta: `${groupKindLabel(index, id)} · ${treeGroup(index, id)?.heads?.id ?? groupOwner(index, id)}` };
 }
 
 /** The marks of a node, records' and groups' (summed over the members), cached per index: a group's sum walks everything beneath it. */

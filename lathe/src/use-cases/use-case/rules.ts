@@ -27,10 +27,9 @@ export function useCaseOneEach(flows: readonly FlowRow[], flowTests: readonly Fl
   ];
 }
 
-/** The product a use case sits in, through its capability and domain, or undefined while either is missing. */
+/** The product a use case sits in, through its domain, or undefined while it is missing. */
 function productOf(useCase: UseCase, view: ReadView): string | undefined {
-  const capability = view.record(useCase.useCase.capability_id);
-  const domain = capability?.kind === 'capability' ? view.record(String(capability.row.domain_id)) : undefined;
+  const domain = view.record(useCase.useCase.domain_id);
   return domain?.kind === 'domain' ? String(domain.row.product_id) : undefined;
 }
 

@@ -13,7 +13,7 @@ export const LIST_USE_CASES_IDENTITY = {
   id: 'LA-UCS-QRY101',
   slice: { aggregate: 'LA-UCS-A11', name: 'use-case' },
   name: 'list-use-cases',
-  description: 'Lists the use cases of a capability, by ID, with their titles.',
+  description: 'Lists the use cases of a domain by group, each the aggregate or read model of their results, and by ID within each, with their titles.',
   method: 'GET',
   route: '/api/use-case/list-use-cases',
 } as const;
@@ -22,7 +22,7 @@ export const NEXT_USE_CASE_ID_IDENTITY = {
   id: 'LA-UCS-QRY102',
   slice: { aggregate: 'LA-UCS-A11', name: 'use-case' },
   name: 'next-id',
-  description: 'The next free ID for a use case (under a capability), UC requirement or flow (under a use case), use case test (under a requirement), or flow step or flow test (under a flow): one past the highest in use; a use case\'s one flow is its ID and FL, and a flow\'s one test its ID and T.',
+  description: 'The next free ID for a use case (under a domain), UC requirement or flow (under a use case), use case test (under a requirement), or flow step or flow test (under a flow): one past the highest in use; a use case\'s one flow is its ID and FL, and a flow\'s one test its ID and T.',
   method: 'GET',
   route: '/api/use-case/next-id',
 } as const;

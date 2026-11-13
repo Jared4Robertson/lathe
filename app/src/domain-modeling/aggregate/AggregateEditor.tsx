@@ -44,7 +44,7 @@ function fieldsOf(index: RecordIndex, page: AggregatePage | null, product: strin
   const meets = { choices: choices(index, product, ['standard_rule']) };
   switch (kind) {
     case 'aggregate':
-      return addOrChangeFields(adding, F['/api/aggregate/add-aggregate'], 'domain_id', F['/api/aggregate/change-aggregate'], { description: LONG, identity: LONG, notes: LONG });
+      return addOrChangeFields(adding, F['/api/aggregate/add-aggregate'], 'domain_id', F['/api/aggregate/change-aggregate'], { description: LONG, identity: LONG, notes: LONG, serves: { choices: choices(index, product, ['business_outcome']) } });
     case 'entity': {
       // The entities it may hold: the others of its own aggregate.
       const siblings: Choice[] = (page?.entities ?? []).filter((e) => e.entity.id !== self).map((e) => ({ id: e.entity.id, title: e.entity.title }));
@@ -67,7 +67,7 @@ function fieldsOf(index: RecordIndex, page: AggregatePage | null, product: strin
 function currentOf(page: AggregatePage, kind: AggregateKind, id: string): Record<string, unknown> {
   switch (kind) {
     case 'aggregate':
-      return { ...page.aggregate };
+      return { ...page.aggregate, serves: page.serves };
     case 'entity': {
       const e = page.entities.find((x) => x.entity.id === id)!;
       return { ...e.entity, fields: e.fields, has_one: e.hasOne, has_many: e.hasMany };

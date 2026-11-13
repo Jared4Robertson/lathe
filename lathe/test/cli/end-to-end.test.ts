@@ -1,6 +1,6 @@
 // End to end, as the Agent works: the `lathe mcp` server, run as a child process, writes a small product through one
 // tool per aggregate command: a domain, an aggregate with its root entity and fields, a command raising an event,
-// then a capability, a use case and its requirement, the product's interface, the use case's flow through it with a
+// then a use case and its requirement, the product's interface, the use case's flow through it with a
 // step that invokes the command and fulfills the requirement, and a use case test under the requirement. The data
 // files change line by line as expected, a refused command changes nothing, and the data loads with every key and check.
 import { spawn } from 'node:child_process';
@@ -39,8 +39,7 @@ const FIELDS: Record<string, string | number | boolean>[] = [
 ];
 const COMMAND = { id: 'TL-LEND-CMD01', title: 'Borrow a tool', entity_id: 'TL-LEND-EN01', description: 'Lends a free tool to a member.' };
 const EVENT = { id: 'TL-LEND-EV01', title: 'Loan opened', aggregate_id: 'TL-LEND-A1', published: false, description: 'A tool went out on loan.' };
-const CAPABILITY = { id: 'TL-LEND-CAP01', title: 'Lending', domain_id: 'TL-LEND', position: 1, description: 'Lending tools and taking them back.' };
-const USE_CASE = { id: 'TL-LEND-UC01', title: 'Borrow a tool', capability_id: 'TL-LEND-CAP01', goal: 'Take a tool home for the loan period.', result_id: 'TL-LEND-CMD01' };
+const USE_CASE = { id: 'TL-LEND-UC01', title: 'Borrow a tool', domain_id: 'TL-LEND', goal: 'Take a tool home for the loan period.', result_id: 'TL-LEND-CMD01' };
 const REQUIREMENT = { id: 'TL-LEND-UC01-R01', title: 'A tool on loan is refused', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse to lend a tool that is on loan.' };
 const INTERFACE = { id: 'TL-IF01', title: 'HTTP API', product_id: 'TL', kind: 'API', description: 'The API the desk app calls.', public: false };
 const FLOW = { id: 'TL-LEND-UC01-FL', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01' };
@@ -50,7 +49,6 @@ const TEST = { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', u
 const line = (row: object) => `${JSON.stringify(row)}\n`;
 const EXPECTED = {
   'aggregate.jsonl': line(AGGREGATE),
-  'capability.jsonl': line(CAPABILITY),
   'command.jsonl': line(COMMAND),
   'domain.jsonl': line(DOMAIN),
   'domain_event.jsonl': line(EVENT),
@@ -129,7 +127,6 @@ describe('writing a spec end to end', () => {
       expect(await call('command_next_id', { kind: 'command', parent: 'TL-LEND-EN01' })).toBe('TL-LEND-CMD01');
       await call('domain_event_add_domain_event', EVENT);
       await call('command_add_command', { ...COMMAND, raises: ['TL-LEND-EV01'] });
-      await call('domain_add_capability', CAPABILITY);
       await call('use_case_add_use_case', USE_CASE);
       await call('use_case_add_uc_requirement', REQUIREMENT);
       await call('interface_add_interface', INTERFACE);

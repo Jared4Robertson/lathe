@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { workspace } from './fixtures/workspace';
 import { facts, openApp } from './helpers';
@@ -27,8 +27,8 @@ describe('list titles', () => {
     noListInFacts(/^UC requirements/);
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
-    fireEvent.click(within(wiki()).getByRole('button', { name: 'Expand DM-SHOP-CAP01' }));
-    expect(within(wiki()).getByRole('list', { name: 'Use cases of DM-SHOP-CAP01' })).toBeInTheDocument();
+    // The use cases under their aggregate's heading are named by the kind and the aggregate.
+    expect(within(wiki()).getByRole('list', { name: 'Use cases of DM-SHOP-A1' })).toBeInTheDocument();
 
     // A group's members are titled by their kind, in the wiki only.
     await openApp('/DM-SHOP/interface-design/view');

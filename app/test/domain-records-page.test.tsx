@@ -15,11 +15,11 @@ import { main, openApp } from './helpers';
 const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.findByRole('toolbar', { name: `Change ${id}` });
 
-/** The demo shop with an outcome its capability serves, a domain service with its service and test, and a repository. */
+/** The demo shop with an outcome its Basket aggregate serves, a domain service with its service and test, and a repository. */
 function withDomain(): ServedData {
   const w = workspace();
   addRows(w, 'business_outcome', { id: 'DM-BO01', title: 'More baskets checked out', product_id: 'DM', statement: 'More baskets are checked out.', measure: 'Baskets checked out each week.', target: 'Two in three.' });
-  addRows(w, 'serves', { source_id: 'DM-SHOP-CAP01', target_id: 'DM-BO01' });
+  addRows(w, 'serves', { source_id: 'DM-SHOP-A1', target_id: 'DM-BO01' });
   addRows(w, 'domain_service', { id: 'DM-SHOP-DS01', title: 'Basket total', domain_id: 'DM-SHOP', statement: 'The total of a basket is the sum of its lines.' });
   addRows(w, 'service', { id: 'DM-SHOP-DS01-SV', title: 'basketTotal', domain_service_id: 'DM-SHOP-DS01', file: 'src/total.ts' });
   addRows(w, 'domain_service_test', { id: 'DM-SHOP-DS01-T01', title: 'Two lines add up', domain_service_id: 'DM-SHOP-DS01', level: 'unit', state: 'automated', file: 'test/total.test.ts', when: 'A basket has two lines.', then: 'Its total is their sum.' });
@@ -31,12 +31,10 @@ function withDomain(): ServedData {
 }
 
 describe('LA-V120-R01-T01 a domain\'s records are read through the Domain aggregate\'s own query, never a generic record read', () => {
-  it('reads GET /api/domain/get-domain for a capability, and shows its description, position and use cases', async () => {
-    const { requests } = await openApp('/DM-SHOP-CAP01', { data: withDomain() });
-    expect(await within(main()).findByText('The fixture\'s capability Buying.')).toBeInTheDocument();
-    expect(requests).toContain('GET /api/domain/get-domain?id=DM-SHOP-CAP01');
-    const useCases = within(main()).getByRole('heading', { level: 2, name: /^Use cases/ }).closest('section')!;
-    expect([...useCases.querySelectorAll('a.row-link')].map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-UC01']);
+  it('reads GET /api/domain/get-domain for a term, and shows its meaning', async () => {
+    const { requests } = await openApp('/DM-SHOP-TM01', { data: withDomain() });
+    expect(await within(main()).findByText('What a shopper collects items in before paying.')).toBeInTheDocument();
+    expect(requests).toContain('GET /api/domain/get-domain?id=DM-SHOP-TM01');
   });
 
   it('shows a domain service with its service and tests, and a repository with its description', async () => {
@@ -75,7 +73,7 @@ describe('LA-V120-R02-T01 the Domain editor writes only through the aggregate\'s
     const { commands } = await openApp('/DM-SHOP', { data: withDomain(), command: () => ({ answer: ok }) });
     const actions = await toolbar('DM-SHOP');
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add…', 'Remove']);
-    expect(await addChoices(user, actions)).toEqual(['Capability', 'Term', 'Domain service', 'Repository', 'Aggregate', 'Specification', 'Read model', 'Data store', 'Table', 'Entry point', 'Tooling', 'Test data set', 'Open question']);
+    expect(await addChoices(user, actions)).toEqual(['Term', 'Domain service', 'Repository', 'Aggregate', 'Specification', 'Read model', 'Use case', 'Data store', 'Table', 'Entry point', 'Tooling', 'Test data set', 'Open question']);
     await chooseAdd(user, actions, 'Repository');
     const form = screen.getByRole('form', { name: 'Add a repository' });
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-SHOP-REPO02'));
@@ -101,9 +99,8 @@ describe('LA-V120-R02-T01 the Domain editor writes only through the aggregate\'s
   });
 });
 
-describe('LA-V120-R05-T01 a capability, term, domain service or repository moves to another domain of its product, then to its new address', () => {
+describe('LA-V120-R05-T01 a term, domain service or repository moves to another domain of its product, then to its new address', () => {
   it.each([
-    ['capability', 'DM-SHOP-CAP01', '/api/domain/move-capability', '/DM-PAY-CAP01'],
     ['term', 'DM-SHOP-TM01', '/api/domain/move-term', '/DM-PAY-TM01'],
     ['domain service', 'DM-SHOP-DS01', '/api/domain/move-domain-service', '/DM-PAY-DS01'],
     ['repository', 'DM-SHOP-REPO01', '/api/domain/move-repository', '/DM-PAY-REPO01'],
@@ -136,19 +133,19 @@ describe('LA-V120-R05-T01 a capability, term, domain service or repository moves
 });
 
 describe('LA-V120-R03-T01 a refused Domain command shows every reason, keeps what was entered, and changes nothing', () => {
-  it('Remove sends Remove a capability and shows the refusal naming what still references it', async () => {
+  it('Remove sends Remove a domain and shows the refusal naming what still sits in it', async () => {
     const user = userEvent.setup();
-    const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'referenced', table: 'capability', key: 'DM-SHOP-CAP01', message: 'Capability DM-SHOP-CAP01 is referenced, so it stays: use case DM-SHOP-UC01 sits under it' }] };
-    const { commands } = await openApp('/DM-SHOP-CAP01', { data: withDomain(), command: () => ({ answer: refusal }) });
-    await user.click(within(await toolbar('DM-SHOP-CAP01')).getByRole('button', { name: 'Remove' }));
-    const panel = screen.getByRole('region', { name: 'Remove DM-SHOP-CAP01?' });
-    await user.click(within(panel).getByRole('button', { name: 'Remove DM-SHOP-CAP01' }));
+    const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'referenced', table: 'domain', key: 'DM-PAY', message: 'Domain DM-PAY is referenced, so it stays: use case DM-PAY-UC01 sits in it' }] };
+    const { commands } = await openApp('/DM-PAY', { data: withDomain(), command: () => ({ answer: refusal }) });
+    await user.click(within(await toolbar('DM-PAY')).getByRole('button', { name: 'Remove' }));
+    const panel = screen.getByRole('region', { name: 'Remove DM-PAY?' });
+    await user.click(within(panel).getByRole('button', { name: 'Remove DM-PAY' }));
     const alert = await within(panel).findByRole('alert');
     expect(alert).toHaveTextContent('The removal was refused. Nothing was changed.');
-    expect(alert).toHaveTextContent('use case DM-SHOP-UC01 sits under it');
+    expect(alert).toHaveTextContent('use case DM-PAY-UC01 sits in it');
     expect(alert).toHaveFocus();
-    expect(commands).toEqual([{ route: '/api/domain/remove-capability', input: { id: 'DM-SHOP-CAP01' } }]);
-    expect(window.location.pathname).toBe('/DM-SHOP-CAP01');
+    expect(commands).toEqual([{ route: '/api/domain/remove-domain', input: { id: 'DM-PAY' } }]);
+    expect(window.location.pathname).toBe('/DM-PAY');
   });
 
   it('a refused Change keeps the form open with what was entered and every reason at its top', async () => {
@@ -168,12 +165,25 @@ describe('LA-V120-R03-T01 a refused Domain command shows every reason, keeps wha
   });
 });
 
-describe('LA-V120-R04-T01 a capability lists the business outcomes it serves and its use cases', () => {
-  it('lists Serves in its Traceability and its use cases in their own section', async () => {
-    await openApp('/DM-SHOP-CAP01', { data: withDomain() });
-    const trace = (await within(main()).findByRole('heading', { level: 2, name: 'Traceability' })).closest('section') as HTMLElement;
-    expect(within(trace).getByRole('heading', { level: 3, name: /^Serves/ })).toBeInTheDocument();
-    expect(within(trace).getByRole('link', { name: /DM-BO01/ })).toBeInTheDocument();
-    expect(within(main()).getByRole('heading', { level: 2, name: /^Use cases/ })).toHaveTextContent(/1$/);
+describe('LA-V120-R04-T01 a domain lists its use cases under their aggregates and read models', () => {
+  it('heads each group with its aggregate or read model, linked, with its kind: aggregates first, then read models', async () => {
+    const data = addRows(withDomain(), 'use_case', { id: 'DM-SHOP-UC02', title: 'See the basket', domain_id: 'DM-SHOP', goal: 'A shopper sees what is in the basket.', result_id: 'DM-SHOP-QRY01' });
+    await openApp('/DM-SHOP', { data });
+    const useCases = (await within(main()).findByRole('heading', { level: 2, name: /^Use cases/ })).closest('.stage') as HTMLElement;
+    expect(within(useCases).getByRole('heading', { level: 2 })).toHaveTextContent(/2$/);
+    const headings = within(useCases).getAllByRole('heading', { level: 3 });
+    expect(headings.map((h) => h.textContent)).toEqual(['BasketAggregate1', 'Basket summaryRead model1']);
+    expect(within(headings[0]).getByRole('link', { name: 'Basket' })).toHaveAttribute('href', '/DM-SHOP-A1');
+    expect(within(headings[1]).getByRole('link', { name: 'Basket summary' })).toHaveAttribute('href', '/DM-SHOP-RM01');
+    const under = (h: HTMLElement) => [...h.closest('section')!.querySelectorAll('a.row-link')].map((a) => a.getAttribute('href'));
+    expect(under(headings[0])).toEqual(['/DM-SHOP-UC01']);
+    expect(under(headings[1])).toEqual(['/DM-SHOP-UC02']);
+  });
+
+  it('says in its summary that it holds its use cases and terms, counted', async () => {
+    // The wiki card's default, a summary, as a new session has it.
+    window.sessionStorage.clear();
+    await openApp('/DM-SHOP?stage=graph', { data: withDomain() });
+    expect(await screen.findByText('1 use case, 1 term')).toBeInTheDocument();
   });
 });

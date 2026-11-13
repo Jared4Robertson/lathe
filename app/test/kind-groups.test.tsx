@@ -35,7 +35,7 @@ async function shoppingUnfolded() {
 }
 
 describe('groups by stage and kind', () => {
-  it('LA-V90-R02-T01 In the nav, a capability is a link heading its use cases, and a stage or kind folder only folds', async () => {
+  it('LA-V90-R02-T01 In the nav, an aggregate or read model is a link heading its use cases, and a stage or kind folder only folds', async () => {
     const { user, folders } = await shoppingUnfolded();
     // A stage and a kind folder are buttons that fold, with no link.
     const stage = head(folders, /^Use cases/);
@@ -43,20 +43,24 @@ describe('groups by stage and kind', () => {
     expect(stage).toHaveAttribute('aria-expanded', 'false');
     expect(stage.closest('li')!.querySelector(':scope > a')).toBeNull();
     await user.click(stage);
-    // The capability, a record, links to its own page; Use cases holds only capabilities, so lists them itself.
-    expect(within(list('Use cases of Shopping')).getByRole('link', { name: 'Buying' })).toHaveAttribute('href', '/DM-SHOP-CAP01');
+    // The aggregate, a record, links to its own page over its use cases; Use cases holds only use cases, so lists them itself.
+    const useCases = list('Use cases of Shopping');
+    expect(within(useCases).getByRole('link', { name: /^Basket/ })).toHaveAttribute('href', '/DM-SHOP-A1');
+    // Its heading folds its use cases, as a domain row folds its stages.
+    await user.click(within(useCases).getByRole('button', { name: 'Unfold Basket' }));
+    expect(within(list('Use cases of Basket')).getByRole('link', { name: 'Add an item to the basket' })).toHaveAttribute('href', '/DM-SHOP-UC01');
     await user.click(head(folders, /^Interface design/));
     const kind = head(list('Interface design of Shopping'), /^Views/);
     expect(kind.tagName).toBe('BUTTON');
     expect(kind.closest('li')!.querySelector(':scope > a')).toBeNull();
   });
 
-  it('LA-V90-R02-T02 On the domain page, a capability heading its use cases links to its page, and the stage and kind headings are not links', async () => {
+  it('LA-V90-R02-T02 On the domain page, an aggregate heading its use cases links to its page, and the stage and kind headings are not links', async () => {
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
-    for (const h of main().querySelectorAll('h2.stage-title, h3')) expect(h.querySelector('a'), h.textContent!).toBeNull();
-    const capabilities = stageOf('use-cases');
-    expect(within(capabilities).getByRole('link', { name: /DM-SHOP-CAP01/ })).toHaveAttribute('href', '/DM-SHOP-CAP01');
+    for (const h of main().querySelectorAll('h2.stage-title, section.folder > .spec-section-head > *')) expect(h.querySelector('a'), h.textContent!).toBeNull();
+    const group = within(stageOf('use-cases')).getByRole('heading', { level: 3, name: /^Basket/ });
+    expect(within(group).getByRole('link', { name: 'Basket' })).toHaveAttribute('href', '/DM-SHOP-A1');
   });
 
   it('LA-V90-R20-T01 In the nav, Technical specification and Test plan fold into kind folders with counts, one level at a time, folded for the session', async () => {

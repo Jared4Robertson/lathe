@@ -89,7 +89,8 @@ test.describe('Exploring flows', () => {
     await expect(page.locator(WIKI)).toHaveCount(0);
     await graphReady(page);
     await focusDrawn(page, 'LA-EXP-UC03');
-    const parent = (await sceneOf(page)).boxes.find((b) => b.id === 'LA-EXP-CAP03')!;
+    // Its parent: its result's read model's group in Use cases.
+    const parent = (await sceneOf(page)).boxes.find((b) => b.id === 'LA-EXP/use-cases/LA-EXP-RM03')!;
     const focus = (await sceneOf(page)).boxes.find((b) => b.id === 'LA-EXP-UC03')!;
     expect(parent.map.x, 'the parent at the left').toBeLessThan(focus.map.x);
     // Nodes carry stage and kind; the key bar along the bottom names the stages' colors and the kinds' shapes.
@@ -97,7 +98,7 @@ test.describe('Exploring flows', () => {
     expect(focus.kind).toBe('use_case');
     const key = page.locator(STAGE_BOX).getByRole('region', { name: 'Key' });
     await expect(key).toBeVisible();
-    await expect(key.locator('[data-key-entry="stage-use-cases"]')).toHaveAttribute('title', /capability, use case/);
+    await expect(key.locator('[data-key-entry="stage-use-cases"]')).toHaveAttribute('title', /use case, UC requirement/);
     await expect(key.locator('[data-key-entry="shape-stadium"]')).toContainText('Use case');
     await expectKeyWhole(page);
     // Hovering spotlights; clicking focuses, and the address and the header strip follow (the wiki card, shown again below, too):
@@ -334,7 +335,7 @@ test.describe('Exploring flows', () => {
     await page.unroute('**/api/product/list-products*');
   });
 
-  test('LA-EXP-UC01-FL-T LA-EXP-UC18-FL-T LA-EXP-UC18-R01-T01 read a product in stage folders: the nav\'s domains and stages, the open branch, capabilities in order, the domain page', async ({ page }) => {
+  test('LA-EXP-UC01-FL-T LA-EXP-UC18-FL-T LA-EXP-UC18-R01-T01 read a product in stage folders: the nav\'s domains and stages, the open branch, use cases under their aggregates and read models, the domain page', async ({ page }) => {
     await openPage(page, '/LA');
     const n = nav(page);
     await expect(n.getByRole('link', { name: 'Lathe', exact: true }).first()).toBeVisible();
@@ -349,15 +350,19 @@ test.describe('Exploring flows', () => {
     await expect(n.getByRole('button', { name: 'Fold Platform' })).toHaveAttribute('aria-expanded', 'true');
     const platform = n.getByRole('list', { name: 'Folders of Platform' });
     await expect(platform.getByRole('button', { name: /^Use cases \d+$/ })).toHaveAttribute('aria-expanded', 'true');
-    // Use cases holds only capabilities, so it lists them itself, with no Capabilities folder between.
-    await expect(n.getByRole('list', { name: 'Use cases of Platform' }).getByRole('link', { name: /\S/ }).first()).toBeVisible();
-    await expect(n.getByRole('list', { name: 'Use cases of Platform' }).getByRole('button', { name: /^Capabilities \d+$/ })).toHaveCount(0);
-    // Use cases lists the capabilities in order.
+    // Use cases holds only use cases, so it lists them itself, with no Use cases folder between, under a heading per
+    // aggregate or read model, each a link to its page.
+    const platformUseCases = n.getByRole('list', { name: 'Use cases of Platform' });
+    await expect(platformUseCases.getByRole('link', { name: /\S/ }).first()).toBeVisible();
+    await expect(platformUseCases.getByRole('button', { name: /^Use cases \d+$/ })).toHaveCount(0);
+    await expect(platformUseCases.locator('.nav-group > .nav-row a[href^="/LA-PLT-A"]').first()).toBeVisible();
+    // The stage's page heads its use cases with their aggregates by ID, then their read models by ID.
     await page.goto('/LA-EXP/use-cases');
-    const caps = page.locator(WIKI).getByRole('link', { name: /^LA-EXP-CAP\d+/ });
-    await expect(caps.first()).toBeVisible();
-    const ids = await caps.evaluateAll((as) => as.map((a) => a.querySelector('code')?.textContent ?? ''));
-    expect(ids.slice(0, 3)).toEqual(['LA-EXP-CAP01', 'LA-EXP-CAP02', 'LA-EXP-CAP03']);
+    const heads = page.locator(WIKI).locator('section.record-group h3 a');
+    await expect(heads.first()).toBeVisible();
+    const groups = (await heads.evaluateAll((as) => as.map((a) => a.getAttribute('href') ?? ''))).map((h) => h.slice(1));
+    const rank = (id: string) => [id.includes('-RM') ? 1 : 0, Number(/\d+$/.exec(id)![0])];
+    expect(groups).toEqual([...groups].sort((a, b) => rank(a)[0] - rank(b)[0] || rank(a)[1] - rank(b)[1]));
     // The domain page heads its records with the same stages.
     await page.goto('/LA-EXP');
     await expect(page.locator(WIKI).getByRole('heading', { level: 2, name: /^Test plan \d+/ })).toBeVisible();
@@ -490,6 +495,8 @@ test.describe('Exploring flows', () => {
     await openPage(page, '/LA-PRD');
     const wiki = page.locator(WIKI);
     await expect(wiki.getByRole('list', { name: 'Endpoints' }).getByRole('link', { name: 'LA-PRD-EP121 POST /api/product/change-product' })).toBeVisible();
+    // Platform's Interface design lists the integrations its flows exchange with (Product's flows exchange with none).
+    await openPage(page, '/LA-PLT');
     await expect(wiki.getByRole('list', { name: 'Integrations' }).getByRole('listitem').first()).toBeVisible();
     // The command and its endpoint, method and route.
     await page.goto('/LA-PRD-CMD121');

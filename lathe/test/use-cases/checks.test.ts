@@ -20,7 +20,7 @@ const check = (name: string, body: () => void) => describe(name, body);
  */
 const withFlow = (title: string, actors: string[], steps: { title: string; path?: string; interface_id?: string; invokes?: string }[], result_id = 'EX-LEND-QRY01', first?: string) =>
   adding(complete(), {
-    use_case: [{ id: 'EX-LEND-UC03', title, capability_id: 'EX-LEND-CAP01', goal: 'A member gets something done.', result_id }],
+    use_case: [{ id: 'EX-LEND-UC03', title, domain_id: 'EX-LEND', goal: 'A member gets something done.', result_id }],
     use_case_actor: [...(first ? [first] : []), ...actors].map((role_name, i) => ({ use_case_id: 'EX-LEND-UC03', position: i + 1, role_name })),
     uc_requirement: [{ id: 'EX-LEND-UC03-R01', title: 'It is done', use_case_id: 'EX-LEND-UC03', statement: 'The library MUST do it.' }],
     offers: [{ source_id: 'EX-IF01', target_id: 'EX-LEND-UC03' }],
@@ -54,30 +54,17 @@ check('flow-title-off-pattern', () => {
 });
 
 check('title-breaks-convention', () => {
-  const named = async (capabilities: string[], useCases: string[]) => {
+  const named = async (useCases: string[]) => {
     const data = adding(complete(), {
       interface: [{ id: 'EX-IF02', title: 'Member portal', product_id: 'EX', kind: 'web app', description: 'The pages members use from home.', public: false }],
-      capability: capabilities.map((title, i) => ({ id: `EX-LEND-CAP${String(i + 2).padStart(2, '0')}`, title, domain_id: 'EX-LEND', position: i + 2, description: 'A part of lending.' })),
-      use_case: useCases.map((title, i) => ({ id: `EX-LEND-UC${String(i + 3).padStart(2, '0')}`, title, capability_id: 'EX-LEND-CAP01', goal: 'A member gets something done.', result_id: 'EX-LEND-CMD01' })),
+      use_case: useCases.map((title, i) => ({ id: `EX-LEND-UC${String(i + 3).padStart(2, '0')}`, title, domain_id: 'EX-LEND', goal: 'A member gets something done.', result_id: 'EX-LEND-CMD01' })),
     });
     return ofCheck(await loadData(data), 'title-breaks-convention');
   };
 
-  it('LA-STD-NAMING-R01-T01 a capability starting with The or an -ing word, naming an interface or holding a list is a warning; a noun phrase or a single -ing noun is not', async () => {
-    expect(ofCheck(clean, 'title-breaks-convention')).toEqual([]);
-    const found = await named(
-      ['Invoice management', 'Billing', 'The catalog', 'Writing invoices', 'Web app', 'Tools, members and loans', 'String lending'],
-      [],
-    );
-    expect(records(found)).toEqual(['EX-LEND-CAP04', 'EX-LEND-CAP05', 'EX-LEND-CAP06', 'EX-LEND-CAP07']);
-    expect(found.every((p) => p.severity === 'warning')).toBe(true);
-    expect(found.find((p) => p.record === 'EX-LEND-CAP05')?.message).toBe(
-      'Capability EX-LEND-CAP05 is titled "Writing invoices", which starts with the -ing word "writing"; name a capability as a noun phrase for a lasting ability of the business, such as "Payment processing" or "Lending".',
-    );
-  });
-
   it("LA-STD-NAMING-R02-T01 a use case naming one of its product's interfaces or an interface word is a warning; verb and object, or a list, is not", async () => {
-    const found = await named([], [
+    expect(ofCheck(clean, 'title-breaks-convention')).toEqual([]);
+    const found = await named([
       'Check the workspace from the command line',
       'Approve an invoice in the member portal',
       'Change a record on its page',
@@ -95,7 +82,7 @@ check('title-breaks-convention', () => {
   });
 
   it("LA-STD-NAMING-R02-T02 a use case titled with a CRUD verb over a record or data is not a warning: a command use case's verb is its command's", async () => {
-    expect(await named([], ["Change a product's data", 'Edit a record', 'Update the data', 'Change a check'])).toEqual([]);
+    expect(await named(["Change a product's data", 'Edit a record', 'Update the data', 'Change a check'])).toEqual([]);
   });
 
   it('LA-STD-NAMING-R02-T03 a journey naming an interface, holding a list or titled with a CRUD verb over a record is a warning, as a use case', async () => {
@@ -183,7 +170,7 @@ check('use-case-result-not-invoked', () => {
       expect.stringContaining('but no step of its main path through EX-IF02 invokes it'),
     ]);
     const flowless = adding(complete(), {
-      use_case: [{ id: 'EX-LEND-UC03', title: 'Add a donated tool', capability_id: 'EX-LEND-CAP01', goal: 'A member gives the library a tool.', result_id: 'EX-LEND-CMD02' }],
+      use_case: [{ id: 'EX-LEND-UC03', title: 'Add a donated tool', domain_id: 'EX-LEND', goal: 'A member gives the library a tool.', result_id: 'EX-LEND-CMD02' }],
     });
     expect(ofCheck(await loadData(flowless), 'use-case-result-not-invoked')).toEqual([]);
   });
@@ -215,8 +202,8 @@ check('use-case-identity-taken', () => {
     expect(ofCheck(clean, 'use-case-identity-taken')).toEqual([]);
     const twice = adding(complete(), {
       use_case: [
-        { id: 'EX-LEND-UC03', title: 'Borrow a tool again', capability_id: 'EX-LEND-CAP01', goal: 'A member takes another tool home.', result_id: 'EX-LEND-CMD01' },
-        { id: 'EX-LEND-UC04', title: 'Borrow a tool for a member', capability_id: 'EX-LEND-CAP01', goal: 'The librarian lends a tool at the desk.', result_id: 'EX-LEND-CMD01' },
+        { id: 'EX-LEND-UC03', title: 'Borrow a tool again', domain_id: 'EX-LEND', goal: 'A member takes another tool home.', result_id: 'EX-LEND-CMD01' },
+        { id: 'EX-LEND-UC04', title: 'Borrow a tool for a member', domain_id: 'EX-LEND', goal: 'The librarian lends a tool at the desk.', result_id: 'EX-LEND-CMD01' },
       ],
       use_case_actor: [
         { use_case_id: 'EX-LEND-UC03', position: 1, role_name: 'Member' },
@@ -231,11 +218,45 @@ check('use-case-identity-taken', () => {
       },
     ]);
     const store = await storeOf(complete());
-    expect(await refusals(store, 'use-case add-use-case', { id: 'EX-LEND-UC03', title: 'Borrow a tool again', capability_id: 'EX-LEND-CAP01', goal: 'A member takes another tool home.', result_id: 'EX-LEND-CMD01', actors: ['Member'] })).toEqual([
+    expect(await refusals(store, 'use-case add-use-case', { id: 'EX-LEND-UC03', title: 'Borrow a tool again', domain_id: 'EX-LEND', goal: 'A member takes another tool home.', result_id: 'EX-LEND-CMD01', actors: ['Member'] })).toEqual([
       ['use-case-identity-taken', 'Use case EX-LEND-UC03 would have the same first actor (Member) and result (EX-LEND-CMD01) as EX-LEND-UC01: no two use cases of a product share both; change EX-LEND-UC01 instead.'],
     ]);
-    await run(store, 'use-case add-use-case', { id: 'EX-LEND-UC03', title: 'Borrow a tool for a member', capability_id: 'EX-LEND-CAP01', goal: 'The librarian lends a tool at the desk.', result_id: 'EX-LEND-CMD01', actors: ['Librarian', 'Member'] });
+    await run(store, 'use-case add-use-case', { id: 'EX-LEND-UC03', title: 'Borrow a tool for a member', domain_id: 'EX-LEND', goal: 'The librarian lends a tool at the desk.', result_id: 'EX-LEND-CMD01', actors: ['Librarian', 'Member'] });
     expect((await refusals(store, 'use-case change-use-case', { id: 'EX-LEND-UC03', actors: ['Member', 'Librarian'] })).map(([rule]) => rule)).toEqual(['use-case-identity-taken']);
+  });
+});
+
+/** A second domain of the product, with an aggregate its command changes and a read model its query asks. */
+const SHOP = {
+  domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', position: 2, subdomain_type: 'supporting', description: 'Selling spare parts.' }],
+  aggregate: [{ id: 'EX-SHOP-A1', title: 'Sale', domain_id: 'EX-SHOP', identity: 'Sale ID', description: 'One part sold to one member.' }],
+  entity: [{ id: 'EX-SHOP-EN01', title: 'Sale', aggregate_id: 'EX-SHOP-A1', role: 'root', description: 'The sale itself.' }],
+  command: [{ id: 'EX-SHOP-CMD01', title: 'Sell a part', entity_id: 'EX-SHOP-EN01', description: 'Sells a spare part to a member.' }],
+  read_model: [{ id: 'EX-SHOP-RM01', title: 'Parts for sale', domain_id: 'EX-SHOP', description: 'The spare parts on the shelf.' }],
+  query: [{ id: 'EX-SHOP-QRY01', title: 'List parts for sale', read_model_id: 'EX-SHOP-RM01', description: 'The parts for sale, by name.' }],
+};
+
+check('use-case-result-in-domain', () => {
+  it("LA-STD-MODELING-R20-T01 a use case in a domain other than its result's aggregate's or read model's is an error naming that domain; one in its result's domain is not", async () => {
+    expect(ofCheck(clean, 'use-case-result-in-domain')).toEqual([]);
+    const data = adding(complete(), {
+      ...SHOP,
+      use_case: [
+        { id: 'EX-LEND-UC03', title: 'Sell a part', domain_id: 'EX-LEND', goal: 'A member buys a spare part.', result_id: 'EX-SHOP-CMD01' },
+        { id: 'EX-LEND-UC04', title: 'See the parts for sale', domain_id: 'EX-LEND', goal: 'A member sees what parts are for sale.', result_id: 'EX-SHOP-QRY01' },
+        { id: 'EX-SHOP-UC01', title: 'Sell a part at the desk', domain_id: 'EX-SHOP', goal: 'The clerk sells a spare part.', result_id: 'EX-SHOP-CMD01' },
+      ],
+    });
+    expect(ofCheck(await loadData(data), 'use-case-result-in-domain')).toEqual([
+      {
+        severity: 'error', check: 'use-case-result-in-domain', record: 'EX-LEND-UC03',
+        message: 'Use case EX-LEND-UC03 is in EX-LEND, but its result EX-SHOP-CMD01 is of EX-SHOP (its aggregate EX-SHOP-A1): move it to EX-SHOP with Move a use case, or give it a result of its own domain.',
+      },
+      {
+        severity: 'error', check: 'use-case-result-in-domain', record: 'EX-LEND-UC04',
+        message: 'Use case EX-LEND-UC04 is in EX-LEND, but its result EX-SHOP-QRY01 is of EX-SHOP (its read model EX-SHOP-RM01): move it to EX-SHOP with Move a use case, or give it a result of its own domain.',
+      },
+    ]);
   });
 });
 

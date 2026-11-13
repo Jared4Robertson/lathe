@@ -18,7 +18,7 @@ const toolbar = () => document.querySelector<HTMLElement>('.focus-stage .stage-t
 
 // From a stage, which has a parent, a first child and a sibling either side.
 const FROM = 'P-D/use-cases';
-const TARGETS = { Previous: 'P-D/domain-model', Out: 'P-D', In: 'P-D-CAP01', Next: 'P-D/interface-design' };
+const TARGETS = { Previous: 'P-D/domain-model', Out: 'P-D', In: 'P-D/use-cases/P-D-A3', Next: 'P-D/interface-design' };
 const NAMES = ['Step to the previous sibling', 'Out to the parent', 'In to the first child', 'Step to the next sibling'];
 
 describe('the walk on a phone', () => {

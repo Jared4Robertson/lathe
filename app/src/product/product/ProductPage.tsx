@@ -1,15 +1,15 @@
 import type { ReactNode } from 'react';
-import type { ByCapability, InterfaceEntry, ProductPage as Product, QuestionEntry } from '../../../../lathe/src/product/product/read-model';
+import type { ByGroup, InterfaceEntry, ProductPage as Product, QuestionEntry } from '../../../../lathe/src/product/product/read-model';
 import { LimitsSection } from '../../checking/product-setting/LimitsSection';
 import { Button } from '../../components/Button';
 import { LongList } from '../../components/LongList';
 import { Refusal, problemText } from '../../edit/fields';
 import type { AggregatePageProps } from '../../record/pages';
 import { Card, CardGrid } from '../../shell/Card';
-import { type RecordIndex } from '../../exploring/record-summaries/record-index';
+import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { Markdown } from '../../specs/Markdown';
 import { Prose } from '../../specs/mentions';
-import { ProblemBadge, ProblemList, RecordLink, Section, useScrollToHash } from '../../specs/parts';
+import { GroupLink, ProblemBadge, ProblemList, RecordLink, Section, useScrollToHash } from '../../specs/parts';
 import { CoverageBars } from '../../specs/ProductHealth';
 import { KeyMetrics } from '../../specs/KeyMetrics';
 import { coverageMetrics, openQuestionsMetric, outcomesServedMetric, problemMetrics, productProblems } from '../../specs/metrics';
@@ -29,7 +29,7 @@ import { useProduct } from './reads';
 // its discovery (business outcomes and journeys), its key metrics, its domains as cards with their coverage, what it shares in its stages, its roles,
 // its interfaces, the kinds and relations it declares as its own, its open questions and its problems; an open question
 // its description, owner, where it sits and what it is about; an interface its kind, its description, the roles that
-// use it, the patterns it follows, the use cases it offers and those it does not, by capability. The coverage, the stages' folders and problems still come from the
+// use it, the patterns it follows, the use cases it offers and those it does not, by aggregate or read model. The coverage, the stages' folders and problems still come from the
 // workspace's index until the stage reads land; what every record's page holds around its content is the Record page's.
 
 /** A text of the record, read as Markdown with the IDs it names as links, under its heading or as the page's lead. */
@@ -45,11 +45,11 @@ function Facts({ facts }: { facts: { label: string; value: ReactNode }[] }) {
   return <dl className="fields product-facts">{facts.map((f) => <div key={f.label}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}</dl>;
 }
 
-/** The product's business outcomes: each with its statement, measure, target and the capabilities that serve it. */
+/** The product's business outcomes: each with its statement, measure, target and the aggregates and read models that serve it. */
 function BusinessOutcomes({ index, page }: { index: RecordIndex; page: Product }) {
   return (
     <Section title="Business outcomes" count={page.outcomes.length} level={3} className="stage stage-discovery product-outcomes">
-      <p className="hint">What the product exists to achieve, each measurable, and the capabilities that serve it.</p>
+      <p className="hint">What the product exists to achieve, each measurable, and the aggregates and read models that serve it.</p>
       {page.outcomes.length === 0 && <p className="hint">No business outcomes yet.</p>}
       <CardGrid stack label="Business outcomes">
         {page.outcomes.map((o) => (
@@ -61,8 +61,8 @@ function BusinessOutcomes({ index, page }: { index: RecordIndex; page: Product }
               <div>
                 <dt>Served by</dt>
                 <dd>
-                  {o.servedBy.length === 0 ? <span className="hint">No capability yet.</span> : (
-                    <ul className="plain served-by">{o.servedBy.map((c) => <li key={c}><RecordLink index={index} id={c} /></li>)}</ul>
+                  {o.servedBy.length === 0 ? <span className="hint">No aggregate or read model yet.</span> : (
+                    <ul className="plain served-by">{o.servedBy.map((g) => <li key={g.id}><GroupLink index={index} group={g} /></li>)}</ul>
                   )}
                 </dd>
               </div>
@@ -261,26 +261,26 @@ function ProductContent({ index, page, actions }: { index: RecordIndex; page: Pr
   );
 }
 
-/** Records grouped under the capabilities of the product, each group a section linked to its capability. */
-function ByCapabilities<T extends { id: string }>({ groups, label, render }: { groups: ByCapability<T>[]; label: string; render: (item: T) => ReactNode }) {
+/** Use cases under their groups, each group a section linked to its aggregate or read model, with its kind. */
+function ByGroups<T extends { id: string }>({ index, groups, label, render }: { index: RecordIndex; groups: ByGroup<T>[]; label: string; render: (item: T) => ReactNode }) {
   return (
     <>
-      {groups.map(({ capability, items }) => (
-        <Section key={capability.id} title={capability.title} titleTo={addressOf(capability.id)} count={items.length} level={3} className="record-group">
-          <LongList label={`${label}: ${capability.title}`} className="record-list" items={items} itemKey={(r) => r.id} searchText={(r) => r.id} render={render} />
+      {groups.map(({ group, items }) => (
+        <Section key={group.id} title={group.title} titleTo={addressOf(group.id)} kind={kindLabel(index, group.kind)} count={items.length} level={3} className="record-group">
+          <LongList label={`${label}: ${group.title}`} className="record-list" items={items} itemKey={(r) => r.id} searchText={(r) => r.id} render={render} />
         </Section>
       ))}
     </>
   );
 }
 
-/** The use cases an interface offers by capability, and the product's use cases it does not offer (LA-V51-R09). */
+/** The use cases an interface offers by aggregate or read model, and the product's use cases it does not offer (LA-V51-R09). */
 function InterfaceOffers({ index, iface }: { index: RecordIndex; iface: InterfaceEntry }) {
   return (
     <>
       <Section title="Use cases it offers" count={offered(iface)} className="interface-offers">
         {iface.offers.length === 0 ? <p className="hint">It offers no use case yet.</p> : (
-          <ByCapabilities groups={iface.offers} label={`Use cases ${iface.id} offers`} render={(useCase) => (
+          <ByGroups index={index} groups={iface.offers} label={`Use cases ${iface.id} offers`} render={(useCase) => (
             <div className="record-row">
               <RecordLink index={index} id={useCase.id} row />
               <span className="row-tags"><ProblemBadge problems={index.problemsFor.get(useCase.id) ?? []} /></span>
@@ -290,7 +290,7 @@ function InterfaceOffers({ index, iface }: { index: RecordIndex; iface: Interfac
       </Section>
       <Section title="Use cases it does not offer" count={offered(iface, 'missing')} className="interface-missing">
         {iface.missing.length === 0 ? <p className="hint">It offers every use case of the product.</p> : (
-          <ByCapabilities groups={iface.missing} label={`Use cases ${iface.id} does not offer`} render={(useCase) => (
+          <ByGroups index={index} groups={iface.missing} label={`Use cases ${iface.id} does not offer`} render={(useCase) => (
             <div className="record-row"><RecordLink index={index} id={useCase.id} row /></div>
           )} />
         )}

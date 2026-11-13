@@ -9,6 +9,7 @@ import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { JourneyRow, JourneyStepRow, JourneyTestRow } from '../../platform/data/tables.ts';
 import { inPathOrder, pathOf } from './appearances.ts';
+import { placementOf, useCaseGroupOf, type UseCaseGroup } from '../../exploring/placement.ts';
 import type { JourneyKind } from './model.ts';
 
 /** A record named by its ID and title. */
@@ -17,9 +18,9 @@ export interface Named {
   title: string;
 }
 
-/** What a step carries out: a use case with its actors, capability and domain, or a policy (a handoff) with the event it hears, the command it sends and its domain. */
+/** What a step carries out: a use case with its actors, group (its result's aggregate or read model) and domain, or a policy (a handoff) with the event it hears, the command it sends and its domain. */
 export type CarriedOut =
-  | { kind: 'use_case'; id: string; title: string; actors: string[]; capability: Named; domain: Named }
+  | { kind: 'use_case'; id: string; title: string; actors: string[]; group: UseCaseGroup | null; domain: Named }
   | { kind: 'policy'; id: string; title: string; hears: Named | null; sends: Named; domain: Named };
 
 /** A step as the page shows it: its row and what it carries out, or none yet. */
@@ -106,17 +107,17 @@ export function journeyTableFrom(view: ReadView): JourneyTable {
     return { id: String(id), title: String(found?.row.title ?? id) };
   };
   const domainOfAggregate = (aggregateId: unknown): Named => named(view.record(String(aggregateId))?.row.domain_id);
+  const placed = placementOf(view);
   const carried = (id: string): CarriedOut | null => {
     const target = view.record(id);
     if (target?.kind === 'use_case') {
-      const capability = view.record(String(target.row.capability_id));
       return {
         kind: 'use_case',
         id,
         title: String(target.row.title),
         actors: [...(actors.get(id) ?? [])].sort((a, b) => Number(a.position) - Number(b.position)).map((a) => String(a.role_name)),
-        capability: named(target.row.capability_id),
-        domain: named(capability?.row.domain_id),
+        group: useCaseGroupOf(placed, id),
+        domain: named(target.row.domain_id),
       };
     }
     if (target?.kind === 'policy') {

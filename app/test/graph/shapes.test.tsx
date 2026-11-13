@@ -19,7 +19,7 @@ const TABLE: Record<string, [Shape, string?]> = {
   product: ['product'], business_outcome: ['box', 'target'], journey: ['box', 'route'], journey_step: ['tab'], journey_test: ['shield'], test_data_set: ['box', 'data'], domain: ['hexagon'], aggregate: ['double'], entity: ['box'], value_object: ['box', 'value'],
   constraint: ['octagon'], invariant: ['octagon'], specification: ['octagon'], domain_event: ['flag'], command: ['parallelogram'],
   read_model: ['box', 'lens'], query: ['parallelogram', 'lens'], policy: ['octagon', 'gear'], domain_service: ['box', 'gear'], storage_requirement: ['page', 'data'],
-  term: ['box', 'marker'], capability: ['slice'], use_case: ['stadium'], uc_requirement: ['page'], pattern: ['stack'],
+  term: ['box', 'marker'], use_case: ['stadium'], uc_requirement: ['page'], pattern: ['stack'],
   pattern_rule: ['octagon'], slot: ['stack', 'port'], interface: ['window', 'plug'], flow: ['chevron-bar'], flow_step: ['chevron'], view: ['window'], view_requirement: ['page'],
   endpoint: ['port'], api_requirement: ['page'], integration: ['box', 'port'], data_store: ['stripes', 'data'], repository: ['component'], data_model: ['component'],
   table: ['stripes'], value_type: ['component'], rule: ['component'], predicate: ['component'], event_type: ['component'], projection: ['component'], reader: ['component'],

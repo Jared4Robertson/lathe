@@ -19,7 +19,6 @@
 {"id":"LA-IXD-EN71-DM","title":"EndpointTestRow","entity_id":"LA-IXD-EN71","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-IXD-EN73-DM","title":"IntegrationTestRow","entity_id":"LA-IXD-EN73","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-MOD-EN04-DM","title":"DomainRow","entity_id":"LA-MOD-EN04","file":"lathe/src/platform/data/tables.ts"}
-{"id":"LA-MOD-EN05-DM","title":"CapabilityRow","entity_id":"LA-MOD-EN05","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-MOD-EN06-DM","title":"AggregateRow","entity_id":"LA-MOD-EN06","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-MOD-EN07-DM","title":"EntityFieldRow","entity_id":"LA-MOD-EN07","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-MOD-EN08-DM","title":"EntityRow","entity_id":"LA-MOD-EN08","file":"lathe/src/platform/data/tables.ts"}

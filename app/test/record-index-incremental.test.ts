@@ -11,7 +11,7 @@ import type { MetaModel } from '../src/platform/meta-model/reads';
 
 const COLUMNS = ['id', 'kind', 'title', 'parent', 'product', 'domain', 'group', 'testState', 'names', 'level', 'file', 'line', 'digest'] as const;
 
-/** A small space of one product P: two domains of 6 use cases each, each under a capability, and a link from each use case to the next. */
+/** A small space of one product P: two domains of 6 use cases each, and a link from each use case to the next. */
 function space(): { records: Record<string, unknown>[]; links: SummaryLink[] } {
   const records: Record<string, unknown>[] = [];
   const add = (id: string, kind: string, parent: string | null, domain: string | null, title = id) =>
@@ -19,8 +19,7 @@ function space(): { records: Record<string, unknown>[]; links: SummaryLink[] } {
   add('P', 'product', null, null);
   for (const d of ['P-D1', 'P-D2']) {
     add(d, 'domain', 'P', null);
-    add(`${d}-CAP1`, 'capability', d, d);
-    for (let n = 1; n <= 6; n++) add(`${d}-UC${n}`, 'use_case', `${d}-CAP1`, d);
+    for (let n = 1; n <= 6; n++) add(`${d}-UC${n}`, 'use_case', d, d);
   }
   const ucs = records.filter((r) => r.kind === 'use_case').map((r) => r.id as string);
   return { records, links: ucs.slice(1).map((target, at) => ({ source: ucs[at], relation: 'follows', target })) };
@@ -58,8 +57,8 @@ describe('the record index by what changed', () => {
           switch (next(5)) {
             case 0: r.title = `${r.title}+`; r.digest = `${r.id}:${r.title}`; break;
             case 1: if (r.kind === 'use_case') records.splice(at, 1); break;
-            case 2: records.push({ ...records[next(records.length)], id: `P-NEW${next(1000)}${step}`, kind: 'use_case', parent: 'P-D1-CAP1', domain: 'P-D1' }); break;
-            case 3: if (r.kind === 'use_case') r.parent = r.parent === 'P-D1-CAP1' ? 'P-D2-CAP1' : 'P-D1-CAP1'; break;
+            case 2: records.push({ ...records[next(records.length)], id: `P-NEW${next(1000)}${step}`, kind: 'use_case', parent: 'P-D1', domain: 'P-D1' }); break;
+            case 3: if (r.kind === 'use_case') r.parent = r.domain = r.parent === 'P-D1' ? 'P-D2' : 'P-D1'; break;
             default: r.line = (r.line as number) + 1;
           }
         }
@@ -80,7 +79,7 @@ describe('the record index by what changed', () => {
     const edited = records.map((r) => (r.id === 'P-D1-UC2' ? { ...r, title: 'Renamed', digest: 'x' } : r));
     const second = recordsOf(answerOf(edited, links), first);
     expect(second.byId.get('P-D1-UC2')!.title).toBe('Renamed');
-    expect(second.children.get('P-D1-CAP1')!.find((r) => r.id === 'P-D1-UC2')).toBe(second.byId.get('P-D1-UC2'));
+    expect(second.children.get('P-D1')!.find((r) => r.id === 'P-D1-UC2')).toBe(second.byId.get('P-D1-UC2'));
     for (const [id, record] of first.byId) if (id !== 'P-D1-UC2') expect(second.byId.get(id)).toBe(record);
     expect(second.outgoing).toBe(first.outgoing);
     expect(first.byId.get('P-D1-UC2')!.title).toBe('P-D1-UC2');

@@ -6,7 +6,7 @@
 {"id":"LA-CHK-TM06","title":"Product check","domain_id":"LA-CHK","meaning":"A check a product adds for its own house rule, kept in its own data."}
 {"id":"LA-CHK-TM07","title":"Refused record","domain_id":"LA-CHK","meaning":"Something Lathe will not load or save, reported once as a data-refused error naming the file, the line and the rule."}
 {"id":"LA-CHK-TM08","title":"Children limit","domain_id":"LA-CHK","meaning":"The most children of one kind a record of a product should hold: its `max_children` setting, 15 by default."}
-{"id":"LA-CHK-TM09","title":"Lone child","domain_id":"LA-CHK","meaning":"The one record a capability or a group holds, which makes the level group nothing."}
+{"id":"LA-CHK-TM09","title":"Lone child","domain_id":"LA-CHK","meaning":"The one record a group holds, which makes the level group nothing."}
 {"id":"LA-CHK-TM10","title":"Entities limit","domain_id":"LA-CHK","meaning":"The most entities an aggregate of a product should hold: its `max_entities_per_aggregate` setting, 7 by default."}
 {"id":"LA-EXP-TM01","title":"Page","domain_id":"LA-EXP","meaning":"One display of the app at its own address, showing one focus."}
 {"id":"LA-EXP-TM02","title":"Address","domain_id":"LA-EXP","meaning":"A path in the app and its `view` parameter, such as `/TL-LEND?view=graph`."}
@@ -38,7 +38,6 @@
 {"id":"LA-MOD-TM39","title":"Entity","domain_id":"LA-MOD","meaning":"A thing the domain keeps track of, with an identity of its own; its fields are typed by a basic type, a value object or the ID of another cluster's root.","group_name":"Domain model"}
 {"id":"LA-MOD-TM40","title":"Invariant","domain_id":"LA-MOD","meaning":"A rule an aggregate always keeps, enforced by its rule before every save and shown to hold by its test.","group_name":"Domain model"}
 {"id":"LA-MOD-TM41","title":"Repository","domain_id":"LA-MOD","meaning":"The one way an aggregate is loaded and saved whole, one per aggregate.","group_name":"Domain model"}
-{"id":"LA-MOD-TM42","title":"Capability","domain_id":"LA-MOD","meaning":"A lasting ability of the business that groups a domain's use cases, in order, and names the business outcomes it is for.","group_name":"Domain model"}
 {"id":"LA-MOD-TM43","title":"Policy","domain_id":"LA-MOD","meaning":"A reaction under the command it runs, which hears one event: when that happens, run this command.","group_name":"Domain model"}
 {"id":"LA-MOD-TM44","title":"Query","domain_id":"LA-MOD","meaning":"A question asked of one read model; it changes nothing.","group_name":"Domain model"}
 {"id":"LA-MOD-TM49","title":"Reader","domain_id":"LA-MOD","meaning":"How a query reaches its read model's stored data: the one code that knows where it is stored.","group_name":"Build and test"}
@@ -97,7 +96,7 @@
 {"id":"LA-TRC-TM08","title":"Follower","domain_id":"LA-TRC","meaning":"A domain or use case that follows a pattern."}
 {"id":"LA-TRC-TM09","title":"Owed","domain_id":"LA-TRC","meaning":"A pattern rule a domain must prove for itself, because it follows the rule's pattern."}
 {"id":"LA-TRC-TM12","title":"Trace","domain_id":"LA-TRC","meaning":"The records that design, build and prove one obligation, and the files they name."}
-{"id":"LA-TRC-TM13","title":"Serves","domain_id":"LA-TRC","meaning":"What a record does for a business outcome when a use case whose capability is for that outcome reaches it: worked out from the records on every read, never written down. A capability serves the outcomes it names."}
+{"id":"LA-TRC-TM13","title":"Serves","domain_id":"LA-TRC","meaning":"What a record does for a business outcome when a use case whose aggregate or read model is for that outcome reaches it: worked out from the records on every read, never written down. An aggregate or read model serves the outcomes it names."}
 {"id":"LA-TRC-TM14","title":"Change reach","domain_id":"LA-TRC","meaning":"Everything a change of some records would touch, read before it is made: each record that sits under them or depends on them, followed on through what builds and proves it, with the files and tests among them and the purposes they serve. It never follows a link up to a purpose; those are named apart."}
 {"id":"LA-TRC-TM15","title":"Status","domain_id":"LA-TRC","meaning":"The one sentence that says how far a product stands: the first of its six Dashboard tiles that is not complete, read left to right, with what is still short beneath it. It is worked out from the records, and never a score."}
 {"id":"LA-TRC-TM17","title":"Needs attention","domain_id":"LA-TRC","meaning":"The few things a person can act on now, in fixed order: errors by check, open questions, journeys not proved and records with gaps. The rest is in Checks."}
@@ -110,3 +109,4 @@
 {"id":"LA-UCS-TM46","title":"Flow","domain_id":"LA-UCS","meaning":"How a use case is carried out, whatever the interface, as ordered steps on their paths, each invoking at most one command or query; each interface that offers the use case has its own version of it, derived.","group_name":"Use cases and design"}
 {"id":"LA-UCS-TM64","title":"Slot","domain_id":"LA-UCS","meaning":"A point in shared behavior where what varies is open-ended, so no setting can choose it: code written by hand against a contract stated in one sentence goes there.","group_name":"Complexity"}
 {"id":"LA-UCS-TM65","title":"Fill","domain_id":"LA-UCS","meaning":"Code written by hand at a slot, against its contract: accidental complexity recorded where it is needed, and debt until what the fills of one slot repeat is stated once and derived.","group_name":"Complexity"}
+{"id":"LA-UCS-TM66","title":"Use case group","domain_id":"LA-UCS","meaning":"The aggregate of a use case's result command, or the read model of its result query: where the use case is listed, worked out and never stored.","group_name":"Use cases and design"}

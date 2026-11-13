@@ -1,5 +1,6 @@
 import { kindLabel, type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
 import { foldedChildren, ownerFolders, sharedKey, type Folder } from '../exploring/folder-tree/folders';
+import type { UseCaseGroup } from '../../../lathe/src/exploring/placement';
 import { plural } from '../plural';
 import { mapChange, patchMap, sameItems, type MapChange } from '../exploring/record-summaries/map-change';
 
@@ -11,7 +12,8 @@ import { mapChange, patchMap, sameItems, type MapChange } from '../exploring/rec
 // group node in the graph with an address of its own ("DM-SHOP/domain-model",
 // "DM-SHOP/domain-model/aggregate"). A record's children of its own stage fold under it, through one
 // group per kind when they are of more than one kind ("DM-SHOP-A1/command"); its children of a
-// later stage are listed in that stage's folder.
+// later stage are listed in that stage's folder. A folder of use cases holds one group per aggregate or read model
+// their results belong to ("DM-SHOP/use-cases/DM-SHOP-A1"), as the nav heads them, each holding its use cases.
 //
 // The tree is built once per index (it is pure data) and every lookup is a map read.
 
@@ -28,9 +30,12 @@ export interface TreeGroup {
   owner: string;
   /**
    * 'shared' (a product's Shared folder, holding its own stages), 'stage', 'folder' (a stage's folder of one kind) or
-   * 'kind' (a record's group of one kind of child, or a folder outside the stages).
+   * 'kind' (a record's group of one kind of child, or a folder outside the stages) or 'use-case-group' (a folder's use
+   * cases whose results belong to one aggregate or read model).
    */
-  role: 'shared' | 'stage' | 'folder' | 'kind';
+  role: 'shared' | 'stage' | 'folder' | 'kind' | 'use-case-group';
+  /** For a use case group, the aggregate or read model it is, with its kind and title. */
+  heads?: UseCaseGroup;
 }
 
 export interface Tree {
@@ -96,10 +101,28 @@ export function treeOf(index: RecordIndex): Tree {
     }
   };
 
+  /** A folder's records under `under`: a folder of use cases through one group per aggregate or read model (Folder.groups). */
+  const addRecords = (under: string, folder: Folder, owner: string) => {
+    if (!folder.groups) {
+      for (const r of folder.records) { if (add(under, r.id)) addRecord(r); }
+      return;
+    }
+    for (const { group: heads, records } of folder.groups) {
+      if (!heads) {
+        for (const r of records) { if (add(under, r.id)) addRecord(r); }
+        continue;
+      }
+      const gid = `${under}/${heads.id}`;
+      add(under, gid);
+      group(gid, { label: heads.title, kind: folder.kind, count: records.length, members: records, owner, role: 'use-case-group', heads });
+      for (const r of records) { if (add(gid, r.id)) addRecord(r); }
+    }
+  };
+
   const addFolder = (parent: string, folder: Folder, owner: string, role: TreeGroup['role']) => {
     add(parent, folder.key);
     group(folder.key, { label: folder.label, kind: folder.kind, count: folder.count, members: folder.records, owner, role });
-    for (const r of folder.records) { if (add(folder.key, r.id)) addRecord(r); }
+    addRecords(folder.key, folder, owner);
   };
 
   /** A domain's or a product's stages with records, each with its folders with records, under `under` (the owner, or the product's Shared folder). */
@@ -111,7 +134,7 @@ export function treeOf(index: RecordIndex): Tree {
       const shown = stage.folders.filter((f) => f.count > 0);
       group(stage.key, { label: stage.label, kind: null, count: stage.count, members: shown.flatMap((f) => f.records), owner: ownerId, role: 'stage' });
       // A stage with one folder holds that folder's records itself, the folder no level of the tree.
-      if (stage.direct) for (const r of stage.direct.records) { if (add(stage.key, r.id)) addRecord(r); }
+      if (stage.direct) addRecords(stage.key, stage.direct, ownerId);
       else for (const f of shown) addFolder(stage.key, f, ownerId, 'folder');
     }
   };
@@ -160,7 +183,8 @@ export interface TreeChange {
 }
 type SentGroup = Omit<TreeGroup, 'members'> & { members: (string | RecordSummary)[] };
 
-const sameGroup = (a: TreeGroup, b: TreeGroup) => a.label === b.label && a.kind === b.kind && a.count === b.count && a.owner === b.owner && a.role === b.role && sameItems(a.members, b.members);
+const sameGroup = (a: TreeGroup, b: TreeGroup) =>
+  a.label === b.label && a.kind === b.kind && a.count === b.count && a.owner === b.owner && a.role === b.role && a.heads?.id === b.heads?.id && a.heads?.kind === b.heads?.kind && sameItems(a.members, b.members);
 
 /** What changed from `before` to `next`, a tree of the records `byId` (which name the members). */
 export function treeChange(before: Tree, next: Tree, byId: ReadonlyMap<string, RecordSummary>): TreeChange {
@@ -194,5 +218,5 @@ export const treeParent = (index: RecordIndex, id: string): string | null => tre
 /** A node's children in the tree, in the nav's order. */
 export const treeChildren = (index: RecordIndex, id: string): readonly string[] => treeOf(index).children.get(id) ?? [];
 
-/** The stage, folder or kind group the tree has at an ID, or undefined. */
+/** The stage, folder, kind group or use case group the tree has at an ID, or undefined. */
 export const treeGroup = (index: RecordIndex, id: string): TreeGroup | undefined => treeOf(index).groups.get(id);

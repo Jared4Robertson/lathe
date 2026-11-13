@@ -21,7 +21,6 @@
 {"id":"LA-MOD-INV12","title":"An aggregate has at most one root","aggregate_id":"LA-MOD-A6","statement":"An aggregate MUST NOT have more than one entity whose role is root. One with none is work still to do."}
 {"id":"LA-MOD-INV15","title":"An entity field has exactly one type","aggregate_id":"LA-MOD-A6","statement":"An entity's field MUST be typed by exactly one of a basic type, a value object or an aggregate."}
 {"id":"LA-MOD-INV16","title":"An entity field's name is unique in its entity","aggregate_id":"LA-MOD-A6","statement":"No two fields of one entity MAY have the same name, compared trimmed and in any letter case."}
-{"id":"LA-MOD-INV17","title":"Each capability of a domain has its own position","aggregate_id":"LA-MOD-A4","statement":"No two capabilities in one domain MAY have the same position. Capabilities in different domains MAY."}
 {"id":"LA-MOD-INV180","title":"A value object field has exactly one type","aggregate_id":"LA-MOD-A9","statement":"A value object's field MUST be typed by exactly one of a basic type, a value object or an aggregate, and MUST NOT be typed by its own value object."}
 {"id":"LA-MOD-INV181","title":"A value object field's name is unique in its value object","aggregate_id":"LA-MOD-A9","statement":"No two fields of one value object MAY have the same name, compared trimmed and in any letter case."}
 {"id":"LA-MOD-INV182","title":"An event field has exactly one type","aggregate_id":"LA-MOD-A7","statement":"A domain event's field MUST be typed by exactly one of a basic type, a value object or an aggregate."}

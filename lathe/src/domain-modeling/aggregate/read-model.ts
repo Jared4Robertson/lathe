@@ -67,6 +67,8 @@ export interface EventOnPage {
 /** An aggregate whole, as its page shows it. */
 export interface AggregateTree {
   aggregate: AggregateRow;
+  /** The business outcomes it serves, by ID. */
+  serves: string[];
   /** Its entities, the root first, then by ID. */
   entities: EntityOnPage[];
   /** Its invariants, by ID, each with its rule and test. */
@@ -113,7 +115,7 @@ function linked(view: ReadView, table: string, by: string, to: string): (id: str
 
 /** The projection: the read model's table, built from the rows on each read (in memory; nothing keeps it). */
 export function aggregateTableFrom(view: ReadView): AggregateTable {
-  const [hasOne, hasMany, meets, startsFrom] = ['has_one', 'has_many', 'meets', 'starts_from'].map((t) => linked(view, t, 'source_id', 'target_id'));
+  const [hasOne, hasMany, meets, startsFrom, serves] = ['has_one', 'has_many', 'meets', 'starts_from', 'serves'].map((t) => linked(view, t, 'source_id', 'target_id'));
   const raisedBy = linked(view, 'raises', 'target_id', 'source_id');
   const heardBy = linked(view, 'hears', 'target_id', 'source_id');
   const packages = linked(view, 'package_use', 'record_id', 'package');
@@ -137,6 +139,7 @@ export function aggregateTableFrom(view: ReadView): AggregateTable {
     hold(root, 'aggregate');
     const tree: AggregateTree = {
       aggregate,
+      serves: serves(root),
       entities: [...(entities.get(root) ?? [])]
         .sort((a, b) => Number(b.role === 'root') - Number(a.role === 'root') || compareIds(a.id, b.id))
         .map((entity) => {

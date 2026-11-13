@@ -3,7 +3,7 @@ import { countOf, plural } from '../src/plural';
 
 describe('LA-V92-R09-T04 plural', () => {
   it('pluralises kind labels as English does', () => {
-    expect(plural('Capability')).toBe('Capabilities');
+    expect(plural('Entity')).toBe('Entities');
     expect(plural('Use case')).toBe('Use cases');
     expect(plural('UC requirement')).toBe('UC requirements');
     expect(plural('Open question')).toBe('Open questions');

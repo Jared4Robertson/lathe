@@ -5,7 +5,7 @@
 import type { ReadView } from '../../platform/data/rules.ts';
 import { idShapeOf, type IdShape } from '../../platform/data/id-shape.ts';
 import type { SchemaDescription } from '../../platform/data/schema.ts';
-import { useCaseTableFrom, type UseCasePage, type UseCaseSummary, type UseCaseTable } from './read-model.ts';
+import { useCaseTableFrom, type UseCasePage, type UseCasesOfGroup, type UseCaseTable } from './read-model.ts';
 
 /** What the Use case queries read, and all they read. */
 export interface UseCaseReader {
@@ -13,10 +13,8 @@ export interface UseCaseReader {
   kindOf(id: string): string | undefined;
   /** The page of a record inside a use case, or undefined when no use case holds it. */
   page(id: string): UseCasePage | undefined;
-  /** A capability's use cases, by ID, or undefined when there is no such capability. */
-  useCasesOf(capabilityId: string): UseCaseSummary[] | undefined;
-  /** A capability's domain and product, or undefined when there is no such capability. */
-  capability(id: string): { domain: string; product: string } | undefined;
+  /** A domain's use cases by group, or undefined when there is no such domain. */
+  useCasesOf(domainId: string): UseCasesOfGroup[] | undefined;
   /** The highest number in use after the prefix, as in <prefix>07, or 0 when none is. */
   highestAfter(prefix: string): number;
   /** How the IDs of a kind are written, read from the schema: its parents, and the letters and digits its ID ends in. */
@@ -42,13 +40,8 @@ export class InMemoryUseCaseReader implements UseCaseReader {
     return holding && { record: { id, kind: holding.kind }, ...this.table.useCases.get(holding.root)! };
   }
 
-  useCasesOf(capabilityId: string): UseCaseSummary[] | undefined {
-    return this.table.capabilities.get(capabilityId)?.useCases;
-  }
-
-  capability(id: string): { domain: string; product: string } | undefined {
-    const found = this.table.capabilities.get(id);
-    return found && { domain: found.domain, product: found.product };
+  useCasesOf(domainId: string): UseCasesOfGroup[] | undefined {
+    return this.table.domains.get(domainId);
   }
 
   idShape(kind: string): IdShape {

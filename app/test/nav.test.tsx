@@ -175,8 +175,8 @@ describe('side navigation', () => {
     expect(row.style.getPropertyValue('--depth')).toBe('0');
     expect(row.closest('ul')).not.toBeNull();
     // A record's row, deeper in: also one selected row, holding the link, indented deeper.
-    await openApp('/DM-SHOP-CAP01');
-    await screen.findByRole('heading', { level: 1, name: 'Buying' });
+    await openApp('/DM-SHOP-UC01');
+    await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const deep = nav().querySelector<HTMLElement>('.nav-row.is-selected')!;
     expect(within(deep).getByRole('link')).toHaveAttribute('aria-current', 'page');
     expect(Number(deep.style.getPropertyValue('--depth'))).toBeGreaterThan(0);

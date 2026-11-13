@@ -24,7 +24,7 @@ function productOf(view: ReadView, id: string): string | undefined {
   const found = view.record(id);
   if (!found) return undefined;
   const domainOf = (domain: unknown) => view.record(String(domain))?.row.product_id as string | undefined;
-  if (found.kind === 'use_case') return domainOf(view.record(String(found.row.capability_id))?.row.domain_id);
+  if (found.kind === 'use_case') return domainOf(found.row.domain_id);
   if (found.kind === 'policy') {
     const entity = view.record(String(view.record(String(found.row.command_id))?.row.entity_id));
     return domainOf(view.record(String(entity?.row.aggregate_id))?.row.domain_id);

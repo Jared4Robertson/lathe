@@ -318,8 +318,9 @@ lines it changed, or is refused with every reason; git is the history. Each aggr
 The model is drawn from domain-driven design, CQRS and event storming, in six stages: discovery (the business
 outcomes the product exists to achieve), the domain model, use cases on top of it, their interface design, the
 technical records that implement each design record, and the test plan. Links run from what is defined first to
-what is defined later. A capability names the outcomes it serves, so the trace runs from an outcome to its
-capabilities, their use cases, the code and the tests. An outcome names what measures it (\`measured_by\`): a test,
+what is defined later. An aggregate or read model names the outcomes its use cases serve, so the trace runs from an
+outcome to its aggregates and read models, their use cases, the code and the tests. A use case sits with the
+aggregate of its result command or the read model of its result query, in that record's domain. An outcome names what measures it (\`measured_by\`): a test,
 or a record of a product's own kind such as a report, or it says how it is measured outside the code.
 
 **Words.** What clean architecture calls a use case or an interactor is what Lathe calls a command handler

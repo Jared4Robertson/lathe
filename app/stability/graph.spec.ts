@@ -93,7 +93,8 @@ test.describe('graph', () => {
     };
     await check('the product');
     const keys = [PANE_BAR, PANE_TITLE, GRAPH_TOOLS, GRAPH_CANVAS, DRAWING];
-    for (const id of ['LA-EXP', 'LA-EXP/use-cases', 'LA-EXP-CAP03', 'LA-EXP-UC03']) {
+    // Down to a use case through its stage and its read model's group, as the nav heads it.
+    for (const id of ['LA-EXP', 'LA-EXP/use-cases', 'LA-EXP/use-cases/LA-EXP-RM03', 'LA-EXP-UC03', 'LA-EXP-UC03/uc_requirement']) {
       const before = new URL(page.url()).pathname;
       const r = await test.step(`LA-EXP-UC03-R19-T01 the Reader reaches ${id} through the stages and kind groups the nav shows`, () =>
         step(page, 'graph', `focus ${id}`, { keys, allow: ['.wiki-panel-scroll', GRAPH_BOXES] }, async () => {
@@ -111,11 +112,11 @@ test.describe('graph', () => {
       await check(move);
     }
     // The camera moved at every step; the map never did.
-    // Four focuses, then Back, Back and Forward: eight cameras over five places, each unlike the one before it.
+    // Five focuses, then Back, Back and Forward: nine cameras over six places, each unlike the one before it.
     await test.step('LA-V93-R07-T03 the camera moved at every focus, Back and Forward', () => {
-      expect(cameras).toHaveLength(8);
+      expect(cameras).toHaveLength(9);
       for (let i = 1; i < cameras.length; i++) expect(cameras[i], `the camera at step ${i}`).not.toBe(cameras[i - 1]);
-      expect(new Set(cameras).size).toBeGreaterThanOrEqual(5);
+      expect(new Set(cameras).size).toBeGreaterThanOrEqual(6);
     });
     await test.step('LA-V93-R16-T03 focusing moved the camera only: no box of the map changed its place or size', () => expect(seen.size).toBeGreaterThan(50));
   });
@@ -356,7 +357,7 @@ test.describe('graph', () => {
     await expect(page.locator('.stage-key [data-key-entry="scroll"]')).toHaveText('Scroll pans');
 
     // On, from Appearance: scroll zooms in on scrolling up, and the key says so.
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Appearance' }).click();
+    await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Appearance', exact: true }).click();
     await page.getByRole('switch', { name: 'Scroll to zoom' }).check();
     await page.keyboard.press('Escape');
     await expect(page.locator('.stage-key [data-key-entry="scroll"]')).toHaveText('Scroll zooms');

@@ -8,11 +8,11 @@ import { facts, openApp } from './helpers';
 // A record's Serves line (LA-TRC-UC20): the business outcomes it serves, read through the Serves read model's own
 // query and worked out from the use cases that reach it, never typed in.
 
-/** The demo shop with an outcome its Buying capability serves, and a storage requirement on the basket. */
+/** The demo shop with an outcome its Basket aggregate serves, and a storage requirement on the basket. */
 function withOutcome(): ServedData {
   const w = workspace();
   addRows(w, 'business_outcome', { id: 'DM-BO01', title: 'More baskets checked out', product_id: 'DM', statement: 'More of the baskets shoppers fill are checked out.', measure: 'Baskets checked out over baskets started, each week.', target: 'Two in three within a quarter.' });
-  addRows(w, 'serves', { source_id: 'DM-SHOP-CAP01', target_id: 'DM-BO01' });
+  addRows(w, 'serves', { source_id: 'DM-SHOP-A1', target_id: 'DM-BO01' });
   addRows(w, 'storage_requirement', { id: 'DM-SHOP-A1-SR01', title: 'A basket survives a restart', aggregate_id: 'DM-SHOP-A1', statement: 'A saved basket MUST survive a restart.' });
   return w;
 }

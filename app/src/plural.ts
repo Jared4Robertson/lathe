@@ -1,5 +1,5 @@
 // English plurals for kind labels, in one place so every page and the graph agree:
-// "Capability" -> "Capabilities", "Use case" -> "Use cases", "Status" stays "Status".
+// "Entity" -> "Entities", "Use case" -> "Use cases", "Status" stays "Status".
 // Only the end of the label changes ("UC requirement" -> "UC requirements").
 export function plural(label: string): string {
   if (/s$/i.test(label)) return label; // a label already plural, or one ending in s

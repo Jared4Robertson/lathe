@@ -48,12 +48,13 @@ Every accidental record must be derived, provided or a fill (`accidental-not-acc
 
 ## Use case line checks
 
-A use case is one role invoking one command, or asking one query: its result (LA-STD-MODELING-R15). Five checks read the line:
+A use case is one role invoking one command, or asking one query: its result (LA-STD-MODELING-R15). Six checks read the line:
 
 - `use-case-invokes-another-command` (error): a step, on any path or interface and whoever its subject, invokes a command that is not the use case's result. Split it: make the command its own use case, strung to this one in a journey when one waits on the other (`discover-outcomes`), or the command of a policy when the product does it on its own. The store refuses a write that adds one; unlink a step before you change the result away from its command.
 - `use-case-identity-taken` (error): two use cases of a product share their first actor and their result. Merge the later into the earlier, moving its requirements, steps and tests. The store refuses a write that makes two share both.
 - `use-case-result-not-invoked` (error): through some interface that offers it, no step of the main path invokes the result. Link the main-path step that invokes it, or make the result what the main path really ends in.
 - `use-case-not-done` (error): a query use case's last main-path step that invokes anything asks something other than its result. Unlink the trailing query, make it a use case of its own, or make it the result. A command use case may ask queries after its result.
+- `use-case-result-in-domain` (error): a use case's domain is not its result's aggregate's or read model's domain. Fix it with Move a use case: give it the result's domain, or a result of its own domain. The store refuses a write that makes it.
 - `use-case-title-off-result` (warning): a command use case's title does not start with its command's verb. Retitle the use case with its command's verb, or rename the command when its verb is the one that is off.
 
 Fix the use case, not the link: unlinking a step that does invoke a second command hides the second use case.

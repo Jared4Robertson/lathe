@@ -86,7 +86,7 @@ function journeyText(page: JourneyPage): string {
   for (const path of page.paths) {
     lines.push(`Path ${path.name}:`);
     for (const { step, carriesOut } of path.steps) {
-      const what = carriesOut === null ? 'carries out nothing yet' : carriesOut.kind === 'use_case' ? `carries out ${carriesOut.id} ${carriesOut.title} (${carriesOut.actors.join(', ')}; ${carriesOut.capability.title}, ${carriesOut.domain.title})` : `hands off by ${carriesOut.id} ${carriesOut.title} (${carriesOut.hears ? `hears ${carriesOut.hears.title}, ` : ''}sends ${carriesOut.sends.title}; ${carriesOut.domain.title})`;
+      const what = carriesOut === null ? 'carries out nothing yet' : carriesOut.kind === 'use_case' ? `carries out ${carriesOut.id} ${carriesOut.title} (${carriesOut.actors.join(', ')}; ${carriesOut.group ? `${carriesOut.group.title}, ` : ''}${carriesOut.domain.title})` : `hands off by ${carriesOut.id} ${carriesOut.title} (${carriesOut.hears ? `hears ${carriesOut.hears.title}, ` : ''}sends ${carriesOut.sends.title}; ${carriesOut.domain.title})`;
       lines.push(`  ${step.position}. ${step.id}: ${step.title} [${what}]`);
     }
   }

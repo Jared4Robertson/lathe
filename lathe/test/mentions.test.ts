@@ -31,7 +31,7 @@ describe('IDs in text', () => {
     expect(text('EX-LEND-UC01')).toContain('It follows EX-LEND-UC02, then\nEX-LEND-UC01-R01');
     expect(ws.links).toEqual(clean.links);
     // A record carries its typed fields and parts, and no list of the IDs its text names.
-    expect(Object.keys(ws.records.find((r) => r.id === 'EX-LEND-UC01')!).sort()).toEqual(['aggregate', 'domain', 'fields', 'id', 'kind', 'parent', 'parts', 'product', 'title']);
+    expect(Object.keys(ws.records.find((r) => r.id === 'EX-LEND-UC01')!).sort()).toEqual(['aggregate', 'domain', 'fields', 'group', 'id', 'kind', 'parent', 'parts', 'product', 'title']);
   });
 
   it('LA-STD-MODELING-R19-T01 IDs in code spans and fenced code blocks are kept with the text as written', () => {

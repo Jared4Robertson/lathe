@@ -55,7 +55,7 @@ CREATE TABLE business_outcome (
   measured_outside VARCHAR CHECK (trim(measured_outside) <> ''),
   notes VARCHAR
 );
-COMMENT ON TABLE business_outcome IS 'A business outcome: a measurable change the product exists to bring about, which its capabilities and journeys serve and its tests or records measure (measured_by). The trace runs from it to a capability or a journey, a use case, the code and the tests.';
+COMMENT ON TABLE business_outcome IS 'A business outcome: a measurable change the product exists to bring about, which the aggregates and read models its use cases sit with, and its journeys, serve and its tests or records measure (measured_by). The trace runs from it to an aggregate, read model or journey, a use case, the code and the tests.';
 COMMENT ON COLUMN business_outcome.id IS 'The outcome''s ID: its product''s ID and BO<nn>, such as TL-BO01.';
 COMMENT ON COLUMN business_outcome.title IS 'The outcome in a few words, such as More tools in use.';
 COMMENT ON COLUMN business_outcome.product_id IS 'The product it belongs to.';
@@ -67,8 +67,8 @@ COMMENT ON COLUMN business_outcome.notes IS 'Longer notes, such as where the mea
 
 -- A journey is the summary-level goal: an ordered string of steps from a trigger to a result, each step a use case of
 -- any actor and any domain, or a handoff (a policy: whenever an event, then a command), on a main path and any
--- alternate paths. A use case stays the one-sitting goal of one actor; a capability says what the business can do, a
--- journey in what order it happens.
+-- alternate paths. A use case stays the one-sitting goal of one actor; a use case's aggregate or read model says what the
+-- business can do, a journey in what order it happens.
 CREATE TABLE journey (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
@@ -77,7 +77,7 @@ CREATE TABLE journey (
   result VARCHAR NOT NULL CHECK (trim(result) <> ''),
   notes VARCHAR
 );
-COMMENT ON TABLE journey IS 'A journey: the use cases and handoffs, in order, that take the product''s people from a trigger to a result a business outcome measures, across actors and domains. It serves business outcomes as a capability does, and its journey test drives it end to end.';
+COMMENT ON TABLE journey IS 'A journey: the use cases and handoffs, in order, that take the product''s people from a trigger to a result a business outcome measures, across actors and domains. It serves business outcomes as an aggregate or read model does, and its journey test drives it end to end.';
 COMMENT ON COLUMN journey.id IS 'The journey''s ID: its product''s ID and JR<nn>, such as TL-JR01.';
 COMMENT ON COLUMN journey.title IS 'The summary goal, verb first, naming no interface, such as Get a damaged tool back in lending.';
 COMMENT ON COLUMN journey.product_id IS 'The product it belongs to. A journey crosses domains, never products.';

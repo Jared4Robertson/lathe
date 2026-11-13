@@ -10,6 +10,7 @@ export const AGGREGATE_FIELDS = {
     description: { kind: 'column', table: 'aggregate', column: 'description', required: true, clearable: false },
     identity: { kind: 'column', table: 'aggregate', column: 'identity', required: true, clearable: false },
     notes: { kind: 'column', table: 'aggregate', column: 'notes', required: false, clearable: false },
+    serves: { kind: 'ids', description: 'The business outcomes of its product it serves: those its use cases are for.', required: false, clearable: false },
   },
   '/api/aggregate/change-aggregate': {
     id: { kind: 'column', table: 'aggregate', column: 'id', required: true, clearable: false },
@@ -17,6 +18,7 @@ export const AGGREGATE_FIELDS = {
     description: { kind: 'column', table: 'aggregate', column: 'description', required: false, clearable: false },
     identity: { kind: 'column', table: 'aggregate', column: 'identity', required: false, clearable: false },
     notes: { kind: 'column', table: 'aggregate', column: 'notes', required: false, clearable: true },
+    serves: { kind: 'ids', description: 'The business outcomes of its product it serves: those its use cases are for.', required: false, clearable: false },
   },
   '/api/aggregate/remove-aggregate': {
     id: { kind: 'column', table: 'aggregate', column: 'id', required: true, clearable: false },

@@ -158,8 +158,8 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
   it('LA-PAT-APP-CODE-R01-T01 LA-PAT-APP-CODE-R01-T02 Layout lives in the markup: no stylesheet rule moves or restyles an element from outside its component', async () => {
     expect(where('app/src/styles.css', CSS, /display:\s*contents|:has\(/)).toEqual([]);
     // A section's own header row holds its list's Expand all: the button sits inside the header.
-    await openApp('/DM-SHOP-CAP01');
-    const children = (await screen.findByRole('heading', { level: 2, name: /^Use cases/ })).closest('section')!;
+    await openApp('/DM-SHOP-UC01');
+    const children = (await screen.findByRole('heading', { level: 2, name: /^UC requirements/ })).closest('section')!;
     const header = children.querySelector(':scope > header.spec-section-head')!;
     expect(header).not.toBeNull();
     const bulk = within(children).queryByRole('button', { name: /Expand all|Collapse all/ });

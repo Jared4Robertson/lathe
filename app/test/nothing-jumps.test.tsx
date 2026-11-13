@@ -118,11 +118,11 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
   it('LA-V61-R38-T02 the graph canvas stays mounted when the graph re-centers', async () => {
     startAtDepth(1);
     await openApp('/P-D-UC01?stage=graph', { data: testWorkspace() });
-    await waitFor(() => expect(boxElement('P-D-CAP01')).not.toBeNull());
+    await waitFor(() => expect(boxElement('P-D/use-cases/P-D-A3')).not.toBeNull());
     const canvas = document.querySelector('.graph-flow');
     const drawing = document.querySelector('.graph-flow canvas');
-    fireEvent.click(boxElement('P-D-CAP01')!);
-    await waitFor(() => expect(window.location.pathname).toBe('/P-D-CAP01'));
+    fireEvent.click(boxElement('P-D/use-cases/P-D-A3')!);
+    await waitFor(() => expect(window.location.pathname).toBe('/P-D/use-cases/P-D-A3'));
     await waitFor(() => expect(boxElement('P-D-UC01')).not.toBeNull());
     expect(document.querySelector('.graph-flow')).toBe(canvas);
     expect(document.querySelector('.graph-flow canvas')).toBe(drawing);
@@ -152,7 +152,7 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     expect(unfold().closest('.nav-row')).toHaveClass('holds-current');
     // Opening the marked row opens the branch down to the page.
     fireEvent.click(unfold());
-    expect(within(await within(panel()).findByRole('list', { name: 'Use cases of Shopping' })).getByRole('link', { name: 'Buying' })).toBeInTheDocument();
+    expect(within(await within(panel()).findByRole('list', { name: 'Use cases of Shopping' })).getByRole('link', { name: 'Add an item to the basket' })).toBeInTheDocument();
   });
 
   it('LA-V61-R38-T02 the fonts are the app\'s own, preloaded, and never swap in', () => {

@@ -17,20 +17,20 @@ const list = (items: Item[]) => (
 const pad = (n: number) => String(n).padStart(2, '0');
 
 /**
- * A product with 12 domains; its first domain has 12 capabilities (the first holding 12 use cases, the first of them
- * with 12 UC requirements), a specification 12 commands check, and 12 problems.
+ * A product with 12 domains; its first domain has 12 use cases of its Ledger aggregate's 12 commands (the first of them
+ * with 12 UC requirements), a specification the 12 commands check, and 12 problems.
  */
 function bigWorkspace(): ServedData {
   const ws = baseWorkspace();
   addRows(ws, 'product', { id: 'BG', title: 'Big product' });
   for (let d = 1; d <= 12; d++) addRows(ws, 'domain', { id: `BG-D${pad(d)}`, title: `Domain ${d}`, product_id: 'BG', position: d, subdomain_type: 'core' });
   addRows(ws, 'aggregate', { id: 'BG-D01-A1', title: 'Ledger', domain_id: 'BG-D01' });
+  addRows(ws, 'entity', { id: 'BG-D01-EN01', title: 'Ledger', aggregate_id: 'BG-D01-A1', role: 'root' });
   addRows(ws, 'specification', { id: 'BG-D01-SP01', title: 'A ledger balances', statement: 'A ledger balances when its debits equal its credits.' });
   for (let u = 1; u <= 12; u++) {
-    addRows(ws, 'capability', { id: `BG-D01-CAP${pad(u)}`, title: u === 9 ? 'Close the month' : `Capability ${u}`, domain_id: 'BG-D01', position: u });
-    addRows(ws, 'use_case', { id: `BG-D01-UC${pad(u)}`, title: `Use case ${u}`, capability_id: 'BG-D01-CAP01' });
+    addRows(ws, 'use_case', { id: `BG-D01-UC${pad(u)}`, title: u === 9 ? 'Close the month' : `Use case ${u}`, domain_id: 'BG-D01', result_id: `BG-D01-CMD${pad(u)}` });
     addRows(ws, 'use_case_actor', { use_case_id: `BG-D01-UC${pad(u)}`, position: 1, role_name: 'Clerk' });
-    addRows(ws, 'command', { id: `BG-D01-CMD${pad(u)}`, title: `Command ${u}`, aggregate_id: 'BG-D01-A1' });
+    addRows(ws, 'command', { id: `BG-D01-CMD${pad(u)}`, title: `Command ${u}`, entity_id: 'BG-D01-EN01' });
     addRows(ws, 'checks', { source_id: `BG-D01-CMD${pad(u)}`, target_id: 'BG-D01-SP01' });
     addRows(ws, 'uc_requirement', { id: `BG-D01-UC01-R${pad(u)}`, title: `Requirement ${u}`, use_case_id: 'BG-D01-UC01', statement: `Requirement ${u} MUST hold.` });
   }
@@ -96,15 +96,15 @@ describe('long lists', () => {
     // The domain page: groups, a long nested list, gaps and problems.
     await openApp('/BG-D01', served);
     await screen.findByRole('heading', { level: 1, name: 'Domain 1' });
-    // Use cases holds only capabilities, so it lists them itself.
+    // Use cases holds only use cases, so it lists them itself, under their aggregate.
     const useCases = stageOf('use-cases');
-    const search = await within(useCases).findByRole('searchbox', { name: 'Filter capabilities' });
-    await user.click(await within(useCases).findByRole('button', { name: 'Expand BG-D01-CAP01' }));
-    expect(await within(useCases).findByRole('searchbox', { name: 'Filter use cases of BG-D01-CAP01' })).toBeInTheDocument();
+    const search = await within(useCases).findByRole('searchbox', { name: 'Filter use cases of BG-D01-A1' });
+    await user.click(await within(useCases).findByRole('button', { name: 'Expand BG-D01-UC01' }));
+    expect(await within(useCases).findByRole('searchbox', { name: /^Filter UC requirements of BG-D01-UC01$/i })).toBeInTheDocument();
     await user.type(search, 'close the month');
-    const region = within(useCases).getByRole('region', { name: 'Capabilities (scrolls)' });
+    const region = within(useCases).getByRole('region', { name: 'Use cases of BG-D01-A1 (scrolls)' });
     expect(await within(useCases).findByText('1 of 12')).toBeInTheDocument();
-    expect(within(region).getAllByRole('listitem').map((li) => li.textContent)).toEqual([expect.stringMatching(/^BG-D01-CAP09\s*Close the month/)]);
+    expect(within(region).getAllByRole('listitem').map((li) => li.textContent)).toEqual([expect.stringMatching(/^BG-D01-UC09\s*Close the month/)]);
     expect(within(section(/^Coverage/)).getByRole('searchbox', { name: 'Filter coverage gaps' })).toBeInTheDocument();
     expect(within(section(/^Problems in this domain/)).getByRole('searchbox', { name: 'Filter problems' })).toBeInTheDocument();
 

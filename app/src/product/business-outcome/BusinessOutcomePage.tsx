@@ -66,7 +66,7 @@ function Summary({ index, page }: { index: RecordIndex; page: Outcome }) {
   const facts: { label: string; value: ReactNode }[] = [
     { label: 'Product', value: <RecordLink index={index} id={page.outcome.product_id} /> },
     { label: 'Target', value: page.outcome.target },
-    { label: 'Holds', value: `${count(page.servedBy.length, 'capability serving it', 'capabilities serving it')}, ${count(page.journeys.length, 'journey', 'journeys')}, ${count(page.measuredBy.length, 'measure', 'measures')}` },
+    { label: 'Holds', value: `${count(page.servedBy.length, 'aggregate or read model serving it', 'aggregates and read models serving it')}, ${count(page.journeys.length, 'journey', 'journeys')}, ${count(page.measuredBy.length, 'measure', 'measures')}` },
   ];
   return (
     <>

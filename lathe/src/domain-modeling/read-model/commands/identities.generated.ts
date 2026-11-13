@@ -4,7 +4,7 @@ export const ADD_READ_MODEL_IDENTITY = {
   id: 'LA-MOD-CMD285',
   slice: { aggregate: 'LA-MOD-A10', name: 'read-model' },
   name: 'add-read-model',
-  description: 'Adds a read model to its domain, with its fields in order, the aggregates it reads, the domain services its projection calls and the events that feed it.',
+  description: 'Adds a read model to its domain, with the business outcomes it serves, its fields in order, the aggregates it reads, the domain services its projection calls and the events that feed it.',
   method: 'POST',
   route: '/api/read-model/add-read-model',
 } as const;
@@ -13,7 +13,7 @@ export const CHANGE_READ_MODEL_IDENTITY = {
   id: 'LA-MOD-CMD286',
   slice: { aggregate: 'LA-MOD-A10', name: 'read-model' },
   name: 'change-read-model',
-  description: 'Changes a read model\'s title or description, its fields (the whole list, in order), or the aggregates it reads, the domain services it calls or the events that feed it (each the whole list). Its domain never changes.',
+  description: 'Changes a read model\'s title or description, the business outcomes it serves, its fields (the whole list, in order), or the aggregates it reads, the domain services it calls or the events that feed it (each the whole list). Its domain never changes.',
   method: 'POST',
   route: '/api/read-model/change-read-model',
 } as const;
@@ -139,7 +139,7 @@ export const MOVE_READ_MODEL_IDENTITY = {
   id: 'LA-MOD-CMD391',
   slice: { aggregate: 'LA-MOD-A10', name: 'read-model' },
   name: 'move-read-model',
-  description: 'Moves a read model, with its queries, projection, reader and tables, to another domain of its product: each takes the new domain\'s ID in place of the old one\'s, and every record that names one of them names the new ID. Refused for a domain of another product, or a new ID another record has.',
+  description: 'Moves a read model, with its queries, projection, reader and tables and the use cases whose result is one of its queries, to another domain of its product: each takes the new domain\'s ID in place of the old one\'s, and every record that names one of them names the new ID. Refused for a domain of another product, or a new ID another record has.',
   method: 'POST',
   route: '/api/read-model/move-read-model',
 } as const;

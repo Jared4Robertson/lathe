@@ -20,7 +20,7 @@ interface MetricDefinition {
 }
 
 export const METRICS: Record<MetricKey, MetricDefinition> = {
-  outcomesServed: { label: 'Outcomes served', unit: 'outcomes', meaning: 'Business outcomes that some capability serves.' },
+  outcomesServed: { label: 'Outcomes served', unit: 'outcomes', meaning: 'Business outcomes that some aggregate or read model serves.' },
   designed: { label: 'Designed', unit: 'obligations', meaning: 'Obligations whose implementation is specified: a flow step fulfills a UC requirement, a technical record carries out anything else. A pattern rule asks for proof only, so it is not counted here.' },
   built: { label: 'Built', unit: 'obligations', meaning: 'Obligations whose technical record names a file that exists. A pattern rule asks for proof only, so it is not counted here.' },
   proved: { label: 'Proved', unit: 'obligations', meaning: 'Obligations an automated or manual test proves, at a level its test kind allows.' },
@@ -85,8 +85,8 @@ export function problemMetrics(problems: readonly ListedProblem[] | undefined): 
 export const productProblems = (read: ProductProblems | null): ListedProblem[] | undefined =>
   read ? [...read.own, ...read.workspace].flatMap((g) => g.problems) : undefined;
 
-/** The product's business outcomes some capability serves, of its outcomes. */
-export function outcomesServedMetric(outcomes: readonly { servedBy: readonly string[] }[]): MetricFigure {
+/** The product's business outcomes some aggregate or read model serves, of its outcomes. */
+export function outcomesServedMetric(outcomes: readonly { servedBy: readonly unknown[] }[]): MetricFigure {
   const served = outcomes.filter((o) => o.servedBy.length > 0).length;
   return { key: 'outcomesServed', value: served, total: outcomes.length, tone: done(served, outcomes.length) };
 }

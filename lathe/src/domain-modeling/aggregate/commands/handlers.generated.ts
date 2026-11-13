@@ -24,20 +24,22 @@ import type { AddRule } from './add-rule.ts';
 import type { ChangeRule } from './change-rule.ts';
 import type { RemoveRule } from './remove-rule.ts';
 
-/** Adds an aggregate under a domain, with nothing in it yet. */
+/** Adds an aggregate under a domain, with the business outcomes it serves and nothing in it yet. */
 export function addAggregate(tx: Transaction, input: AddAggregate): void {
   const aggregates = new AggregateRepository(tx);
   if (tx.record(input.domain_id)?.kind !== 'domain') tx.refuse('missing', `there is no domain ${input.domain_id}`);
-  const aggregate = aggregates.create({ root: input.id, aggregate: input, entities: [], invariants: [], dataModels: [], rules: [], invariantTests: [] });
+  const { serves = [], ...row } = input;
+  const aggregate = aggregates.create({ root: row.id, aggregate: row, serves: serves, entities: [], invariants: [], dataModels: [], rules: [], invariantTests: [] });
   holdToRules(tx, aggregate);
   aggregates.save(aggregate);
 }
 
-/** Changes an aggregate's title, description, identity or notes. Its domain does not change. */
+/** Changes an aggregate's title, description, identity or notes, or the business outcomes it serves (the whole list). Its domain does not change. */
 export function changeAggregate(tx: Transaction, input: ChangeAggregate): void {
   const aggregates = new AggregateRepository(tx);
   const aggregate = aggregates.load(input.id) ?? tx.refuse('missing', `there is no aggregate ${input.id}`);
   aggregate.aggregate = changed(aggregate.aggregate, input, ['title', 'description', 'identity', 'notes']);
+  aggregate.serves = input.serves ?? aggregate.serves;
   holdToRules(tx, aggregate);
   aggregates.save(aggregate);
 }

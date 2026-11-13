@@ -1,9 +1,9 @@
-// The Serves reach (LA-TRC-DS06): which records each use case whose capability serves an outcome reaches, and so the
-// outcomes each record serves, worked out from the rows alone.
+// The Serves reach (LA-TRC-DS06): which records each use case whose aggregate or read model serves an outcome reaches,
+// and so the outcomes each record serves, worked out from the rows alone.
 import { describe, expect, it } from 'vitest';
 import { servesOf } from '../../src/trace/serves.ts';
 import { openStore } from '../../src/platform/data/store.ts';
-import { adding, changing, complete, withJourney, without, writeData, type Data } from '../helpers.ts';
+import { adding, complete, withJourney, without, writeData, type Data } from '../helpers.ts';
 
 /** What the reach finds over the data: each record with its outcomes and use cases. */
 async function reach(data: Data) {
@@ -15,7 +15,7 @@ async function reach(data: Data) {
   }
 }
 
-describe('LA-TRC-DS06-T01 a record serves the outcomes of the capabilities of the use cases that reach it, and nothing else', () => {
+describe('LA-TRC-DS06-T01 a record serves the outcomes of the aggregates and read models of the use cases that reach it, and nothing else', () => {
   it('reaches from each use case through its steps to the design, technical records, rules and tests behind them', async () => {
     const served = await reach(complete());
     const through = (id: string) => served.get(id)?.useCases;
@@ -34,20 +34,18 @@ describe('LA-TRC-DS06-T01 a record serves the outcomes of the capabilities of th
     for (const id of ['EX-LEND-CMD01-H', 'EX-LEND-REPO01', 'EX-LEND-INV01-RL', 'EX-STD-CODE-R01', 'EX-LEND-INV01-T', 'EX-LEND-UC01-FL-T']) expect(through(id), id).toEqual(['EX-LEND-UC01']);
     // The rules of a pattern the use case follows.
     expect(through('EX-PAT-ACT-R01')).toEqual(['EX-LEND-UC02']);
-    // The capability serves its own outcomes; the outcome, the product, the domain and the interface serve none.
-    expect(served.get('EX-LEND-CAP01')).toEqual({ outcomes: ['EX-BO01'], useCases: [], journeys: [] });
+    // The outcome, the product, the domain and the interface serve none.
     for (const id of ['EX-BO01', 'EX', 'EX-LEND', 'EX-IF01']) expect(served.has(id), id).toBe(false);
   });
 
   it('serves the union of every reaching use case\'s outcomes, follows a domain\'s patterns, and reaches nothing from a use case that serves none', async () => {
     let data = adding(complete(), {
       business_outcome: [{ id: 'EX-BO02', title: 'Fewer lost tools', product_id: 'EX', statement: 'Fewer tools go missing.', measure: 'Tools lost a year.', target: 'Under two a year by 2027.', measured_outside: 'The librarian counts them.' }],
-      capability: [{ id: 'EX-LEND-CAP02', title: 'Cataloging', domain_id: 'EX-LEND', position: 2, description: 'Keeping the catalog.' }],
-      serves: [{ source_id: 'EX-LEND-CAP02', target_id: 'EX-BO02' }],
+      serves: [{ source_id: 'EX-LEND-A2', target_id: 'EX-BO02' }],
       follows: [{ source_id: 'EX-LEND', target_id: 'EX-PAT-ACT' }],
       setting_value: [{ follower_id: 'EX-LEND', pattern_id: 'EX-PAT-ACT', setting: 'record', value: 'Loan' }],
     });
-    data = changing(data, 'use_case', (r) => r.id === 'EX-LEND-UC02', { capability_id: 'EX-LEND-CAP02' });
+    data = without(data, 'serves', (r) => r.source_id === 'EX-LEND-A2' && r.target_id === 'EX-BO01');
     const served = await reach(data);
     expect(served.get('EX-LEND-A2')).toEqual({ outcomes: ['EX-BO01', 'EX-BO02'], useCases: ['EX-LEND-UC01', 'EX-LEND-UC02'], journeys: [] });
     expect(served.get('EX-LEND-CMD02')).toEqual({ outcomes: ['EX-BO02'], useCases: ['EX-LEND-UC02'], journeys: [] });
@@ -59,21 +57,48 @@ describe('LA-TRC-DS06-T01 a record serves the outcomes of the capabilities of th
 
   it('serves a journey\'s outcomes through its steps: each use case one carries out with all it reaches, and a handoff\'s policy with its command\'s chain', async () => {
     // EX-BO02 is served by the journey alone: Add a tool, then Borrow a tool, then the reminder policy as a handoff.
-    const data = without(withJourney(), 'serves', (r) => r.source_id === 'EX-LEND-CAP01' && r.target_id === 'EX-BO02');
+    const data = without(withJourney(), 'serves', (r) => (r.source_id === 'EX-LEND-A1' || r.source_id === 'EX-LEND-A2') && r.target_id === 'EX-BO02');
     const served = await reach(data);
     expect(served.get('EX-JR01')).toEqual({ outcomes: ['EX-BO02'], useCases: [], journeys: [] });
     for (const id of ['EX-JR01-S01', 'EX-JR01-S03', 'EX-JR01-T']) expect(served.get(id), id).toEqual({ outcomes: ['EX-BO02'], useCases: [], journeys: ['EX-JR01'] });
-    // A use case a step carries out serves the journey's outcomes beside its capability's, with all it reaches.
+    // A use case a step carries out serves the journey's outcomes beside its aggregate's or read model's, with all it reaches.
     expect(served.get('EX-LEND-UC02')).toEqual({ outcomes: ['EX-BO01', 'EX-BO02'], useCases: ['EX-LEND-UC02'], journeys: ['EX-JR01'] });
     expect(served.get('EX-LEND-CMD02')).toEqual({ outcomes: ['EX-BO01', 'EX-BO02'], useCases: ['EX-LEND-UC02'], journeys: ['EX-JR01'] });
     expect(served.get('EX-PAT-ACT-R01')?.journeys).toEqual(['EX-JR01']);
     // The handoff's policy, its command and that command's handler and tests serve through the journey.
     for (const id of ['EX-LEND-PO01', 'EX-LEND-PO01-H', 'EX-LEND-PO01-T', 'EX-LEND-CMD03', 'EX-LEND-CMD03-H']) expect(served.get(id)?.journeys, id).toEqual(['EX-JR01']);
-    // With no capability serving any outcome, the journey alone reaches what its steps carry out.
-    const alone = await reach(without(withJourney(), 'serves', (r) => r.source_id === 'EX-LEND-CAP01'));
+    // With no aggregate or read model serving any outcome, the journey alone reaches what its steps carry out.
+    const alone = await reach(without(withJourney(), 'serves', (r) => r.source_id !== 'EX-JR01'));
     expect(alone.get('EX-LEND-A2')).toEqual({ outcomes: ['EX-BO02'], useCases: ['EX-LEND-UC01', 'EX-LEND-UC02'], journeys: ['EX-JR01'] });
     expect(alone.get('EX-LEND-CMD03')).toEqual({ outcomes: ['EX-BO02'], useCases: ['EX-LEND-UC01'], journeys: ['EX-JR01'] });
-    expect(alone.has('EX-LEND-CAP01')).toBe(false);
+  });
+});
+
+describe('LA-STD-MODELING-R20-T04 a use case serves the outcomes its aggregate or read model serves', () => {
+  it("serves its result query's read model's outcomes, every use case of a group serves all of the group's, and a group serves its own with or without use cases", async () => {
+    const outcome = { business_outcome: [{ id: 'EX-BO02', title: 'Fewer lost tools', product_id: 'EX', statement: 'Fewer tools go missing.', measure: 'Tools lost a year.', target: 'Under two a year by 2027.', measured_outside: 'The librarian counts them.' }] };
+    // The read model serves an outcome, but no use case sits with it: it serves it alone, and passes it to nothing.
+    const alone = await reach(adding(complete(), { ...outcome, serves: [{ source_id: 'EX-LEND-RM01', target_id: 'EX-BO02' }] }));
+    expect(alone.get('EX-LEND-RM01')).toEqual({ outcomes: ['EX-BO01', 'EX-BO02'], useCases: ['EX-LEND-UC01'], journeys: [] });
+    expect(alone.get('EX-LEND-QRY01')?.outcomes).toEqual(['EX-BO01']);
+    // A use case asking the read model's query sits with it, and serves its outcomes with all it reaches.
+    const asked = await reach(adding(complete(), {
+      ...outcome,
+      serves: [{ source_id: 'EX-LEND-RM01', target_id: 'EX-BO02' }],
+      use_case: [{ id: 'EX-LEND-UC03', title: 'See the free tools', domain_id: 'EX-LEND', goal: 'A member sees which tools are free.', result_id: 'EX-LEND-QRY01' }],
+      flow: [{ id: 'EX-LEND-UC03-FL', title: 'See the free tools', use_case_id: 'EX-LEND-UC03' }],
+      flow_step: [{ id: 'EX-LEND-UC03-FL-S01', title: 'See the free tools', flow_id: 'EX-LEND-UC03-FL', path: 'main', position: 1 }],
+      invokes: [{ source_id: 'EX-LEND-UC03-FL-S01', target_id: 'EX-LEND-QRY01' }],
+    }));
+    expect(asked.get('EX-LEND-UC03')).toEqual({ outcomes: ['EX-BO02'], useCases: ['EX-LEND-UC03'], journeys: [] });
+    expect(asked.get('EX-LEND-QRY01')).toEqual({ outcomes: ['EX-BO01', 'EX-BO02'], useCases: ['EX-LEND-UC01', 'EX-LEND-UC03'], journeys: [] });
+    // Two use cases whose results are commands of one aggregate both serve each outcome it serves.
+    const both = await reach(adding(complete(), {
+      ...outcome,
+      serves: [{ source_id: 'EX-LEND-A1', target_id: 'EX-BO02' }],
+      use_case: [{ id: 'EX-LEND-UC03', title: 'Remind the borrower', domain_id: 'EX-LEND', goal: 'The librarian reminds a borrower of the due date.', result_id: 'EX-LEND-CMD03' }],
+    }));
+    for (const id of ['EX-LEND-UC01', 'EX-LEND-UC03']) expect(both.get(id)?.outcomes, id).toEqual(['EX-BO01', 'EX-BO02']);
   });
 });
 

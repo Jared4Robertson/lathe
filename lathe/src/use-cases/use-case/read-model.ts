@@ -1,7 +1,7 @@
 // The Use case aggregate's read model (LA-UCS-RM11), shaped for its readers: the Use case page reads a use case as a
 // tree (its requirements each with their tests and the steps that fulfill them; its flow with its steps path by path in
 // order, its flow test, each offering interface's version of it, derived by through.ts, and the integrations that
-// perform it on its own), a capability's list reads each use case's ID and title, and the editor's next ID reads the
+// perform it on its own), a domain's list reads its use cases' IDs and titles by group, and the editor's next ID reads the
 // IDs in use. The projection (useCaseTableFrom) is the only code that reads the source rows and the only code that
 // writes the read model's table; the query handlers read that table only through the reader (reader.ts). Nothing here
 // is the aggregate's own instance type.
@@ -9,7 +9,8 @@ import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { FlowRow, FlowStepRow, FlowTestRow, UcRequirementRow, UseCaseRow, UseCaseTestRow } from '../../platform/data/tables.ts';
 import type { UseCaseKind } from './model.ts';
-import { byRecordId } from '../../platform/data/ids.ts';
+import { byRecordId, compareIds } from '../../platform/data/ids.ts';
+import { compareGroups, placementOf, useCaseGroupOf, type UseCaseGroup } from '../../exploring/placement.ts';
 import { interfaceVersions, type FlowThrough } from './through.ts';
 import { journeyAppearances, type JourneyAppearance } from '../../product/journey/appearances.ts';
 
@@ -56,6 +57,8 @@ export interface UseCaseTree {
   useCase: UseCaseRow;
   /** Its result and the kind that makes it a command use case or a query use case, from the operation's own kind. */
   result: { id: string; kind: 'command' | 'query' };
+  /** Its group: its result's aggregate (a command use case) or read model (a query use case), with its kind and title; null while its result is neither. */
+  group: UseCaseGroup | null;
   /** Its actors' role names, in order: the first is the main actor. */
   actors: string[];
   /** Its UC requirements, by ID. */
@@ -72,10 +75,16 @@ export interface UseCasePage extends UseCaseTree {
   record: { id: string; kind: UseCaseKind };
 }
 
-/** A use case as a capability's list reads it. */
+/** A use case as a domain's list reads it. */
 export interface UseCaseSummary {
   id: string;
   title: string;
+}
+
+/** A domain's use cases of one group: the aggregate or read model they sit with, and the use cases by ID. */
+export interface UseCasesOfGroup {
+  group: UseCaseGroup;
+  useCases: UseCaseSummary[];
 }
 
 /** The read model's table, kept in memory: what the reader reads, and all it reads. */
@@ -84,8 +93,8 @@ export interface UseCaseTable {
   useCases: Map<string, UseCaseTree>;
   /** Each record inside a use case: the use case that holds it and its kind there. */
   holding: Map<string, { root: string; kind: UseCaseKind }>;
-  /** Each capability's use cases, by ID, with the capability's domain and product. */
-  capabilities: Map<string, { domain: string; product: string; useCases: UseCaseSummary[] }>;
+  /** Each domain's use cases by group (aggregates by ID, then read models by ID), by ID within each; a domain with none has an empty list. */
+  domains: Map<string, UseCasesOfGroup[]>;
   /** Every record ID in use, with its kind: what a next ID is one past, and what a refusal names. */
   kinds: Map<string, string>;
 }
@@ -129,6 +138,7 @@ export function useCaseTableFrom(view: ReadView): UseCaseTable {
   const flowTests = grouped<FlowTestRow>(view.rows('flow_test'), 'flow_id');
   const performers = grouped<{ source_id: string }>(view.rows('performs'), 'target_id');
   const tested = <T extends { id: string }>(test: T): TestOnPage<T> => ({ test, startsFrom: startsFrom(test.id) });
+  const placed = placementOf(view);
 
   const useCases = new Map<string, UseCaseTree>();
   const holding = new Map<string, { root: string; kind: UseCaseKind }>();
@@ -144,6 +154,7 @@ export function useCaseTableFrom(view: ReadView): UseCaseTable {
     const tree: UseCaseTree = {
       useCase,
       result: { id: useCase.result_id, kind: view.record(useCase.result_id)?.kind === 'query' ? 'query' : 'command' },
+      group: useCaseGroupOf(placed, root),
       actors: ownActors,
       requirements: [...(requirements.get(root) ?? [])].sort(byRecordId).map((requirement) => ({
         requirement,
@@ -170,15 +181,15 @@ export function useCaseTableFrom(view: ReadView): UseCaseTable {
     useCases.set(root, tree);
   }
 
-  const productOf = new Map(view.rows('domain').map((d) => [String(d.id), String(d.product_id)]));
-  const listed = grouped<UseCaseRow>(view.rows('use_case'), 'capability_id');
-  const capabilities = new Map(
-    view.rows('capability').map((c) => [
-      String(c.id),
-      { domain: String(c.domain_id), product: productOf.get(String(c.domain_id)) ?? '', useCases: (listed.get(String(c.id)) ?? []).map((u) => ({ id: u.id, title: u.title })).sort(byRecordId) },
-    ]),
-  );
+  const domains = new Map<string, UseCasesOfGroup[]>(view.rows('domain').map((d) => [String(d.id), []]));
+  for (const tree of [...useCases.values()].sort((a, b) => compareIds(a.useCase.id, b.useCase.id))) {
+    const groups = domains.get(tree.useCase.domain_id);
+    if (!groups || !tree.group) continue;
+    const at = groups.find((g) => g.group.id === tree.group!.id) ?? groups[groups.push({ group: tree.group, useCases: [] }) - 1];
+    at.useCases.push({ id: tree.useCase.id, title: tree.useCase.title });
+  }
+  for (const groups of domains.values()) groups.sort((a, b) => compareGroups(a.group, b.group));
   const kinds = new Map<string, string>();
   for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
-  return { useCases, holding, capabilities, kinds };
+  return { useCases, holding, domains, kinds };
 }

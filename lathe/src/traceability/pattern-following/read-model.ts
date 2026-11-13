@@ -6,7 +6,7 @@
 // table only through the reader (reader.ts). Nothing here is the aggregate's own instance type.
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
-import type { CapabilityRow, SettingValueRow, UseCaseRow } from '../../platform/data/tables.ts';
+import type { SettingValueRow, UseCaseRow } from '../../platform/data/tables.ts';
 import { compareIds } from '../../platform/data/ids.ts';
 import { domainOrder } from '../../platform/data/domain-order.ts';
 
@@ -63,16 +63,14 @@ const lineOf = (v: SettingValueRow): SettingLine => ({ setting: v.setting, value
 /** The projection: the read model's table, built from the rows on each read (in memory; nothing keeps it). */
 export function followingTableFrom(view: ReadView): FollowingTable {
   const values = grouped<SettingValueRow>(view.rows('setting_value'), 'follower_id', 'pattern_id');
-  const capabilityDomain = new Map((view.rows('capability') as unknown as CapabilityRow[]).map((c) => [c.id, c.domain_id]));
-  // The domain each follower sits in: a domain is its own, a use case its capability's.
+  // The domain each follower sits in: a domain is its own, a use case its domain_id.
   const domainOf = new Map<string, string>(view.rows('domain').map((d) => [String(d.id), String(d.id)]));
   const domainRank = domainOrder(view.rows('domain'));
   const domains = new Set(domainOf.keys());
   const followers = new Set(domains);
   for (const uc of view.rows('use_case') as unknown as UseCaseRow[]) {
     followers.add(uc.id);
-    const domain = capabilityDomain.get(uc.capability_id);
-    if (domain) domainOf.set(uc.id, domain);
+    if (domains.has(uc.domain_id)) domainOf.set(uc.id, uc.domain_id);
   }
   const followings = new Map<string, Map<string, FollowingPage>>();
   const patterns = new Map<string, Map<string, FollowingDomain>>(view.rows('pattern').map((p) => [String(p.id), new Map()]));

@@ -1,5 +1,5 @@
-// The Trace read model (LA-TRC-RM13), shaped for the Trace stage: one row per use case of a product's
-// space, from the business outcomes its capability serves to its acceptance tests. Each row holds the use case's UC
+// The Trace read model (LA-TRC-RM13), shaped for the Trace stage: one row per use case of a product's space, from the
+// business outcomes its aggregate or read model serves to its acceptance tests. Each row holds the use case's UC
 // requirements (with their gaps and tests), the aggregates its steps change and the read models they read (from the
 // Serves reach, trace/serves.ts), its flow with its steps, each step with what it fulfills, the integrations it
 // exchanges with and its technical chain (the UI components rendering the views that present what it invokes, the
@@ -113,7 +113,7 @@ export interface TraceStatus {
 /** One use case's row, from its outcomes to its acceptance tests. */
 export interface TraceRow {
   useCase: string;
-  /** The business outcomes its capability serves, in ID order. */
+  /** The business outcomes its aggregate or read model serves, in ID order. */
   outcomes: string[];
   requirements: TraceObligation[];
   /** The aggregates its steps change and the read models they read, by the Serves reach, in ID order. */

@@ -5,13 +5,14 @@
 // or is none (a kind with no owner). What sits under a record in the same stage folds under it (an aggregate's
 // entities, commands and events); what sits under it in a later stage is listed in that stage's folder. So every record
 // has one place. A stage with only one folder shows that folder's records directly (LA-PAT-APP-UX-R15). Within a kind,
-// records with a position come in its order (capabilities, and flow steps path by path, the main path first), then by
-// ID; terms bottom-up, each after the terms it builds on. The projection is the only code that reads the source rows
+// records with a position come in its order (flow steps path by path, the main path first), then by ID; use cases by
+// their group (their result's aggregate or read model: aggregates by ID, then read models by ID), each entry naming
+// its group, then by ID; terms bottom-up, each after the terms it builds on. The projection is the only code that reads the source rows
 // for the query and the only code that writes the read model's table.
 import { termsBottomUp } from '../../domain-modeling/domain/read-model.ts';
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { Stage } from '../../platform/data/schema.ts';
-import { inSpace, placementOf, type Placed } from '../placement.ts';
+import { compareGroups, inSpace, placementOf, useCaseGroupOf, type Placed, type UseCaseGroup } from '../placement.ts';
 import { groupBy, groupOf } from '../../platform/data/grouped.ts';
 import { idOrder } from '../../platform/data/ids.ts';
 import { domainOrder } from '../../platform/data/domain-order.ts';
@@ -24,6 +25,8 @@ export interface FolderEntry {
   title: string;
   /** A step's path (a flow's or a journey's), lower case, main when it names none; absent for a record with no path. */
   path?: string;
+  /** A use case's group: its result's aggregate or read model, the heading it is listed under; absent for any other record. */
+  group?: UseCaseGroup;
   /** What sits under it in its own stage, kind by kind. */
   folded: FolderEntry[];
 }
@@ -90,9 +93,14 @@ export function folderTreeTableFrom(view: ReadView): FolderTreeTable {
   const path = (r: Placed) => (typeof r.row.path === 'string' && r.row.path.trim() ? r.row.path.trim().toLowerCase() : 'main');
   const order = idOrder(placed.keys());
   const pathRank = (a: Placed, b: Placed) => { const pa = path(a); const pb = path(b); return pa === pb ? 0 : pa === 'main' ? -1 : pb === 'main' ? 1 : pa.localeCompare(pb); };
-  /** Kind by kind in the schema's order; within a kind by path, then position, then ID; terms bottom-up. */
+  const useCaseGroup = (r: Placed) => (r.kind === 'use_case' ? useCaseGroupOf(placed, r.id) : null);
+  const groupRank = (a: Placed, b: Placed) => {
+    const [ga, gb] = [useCaseGroup(a), useCaseGroup(b)];
+    return ga && gb ? compareGroups(ga, gb) : Number(!ga) - Number(!gb);
+  };
+  /** Kind by kind in the schema's order; within a kind by path, then position, then use case group, then ID; terms bottom-up. */
   const sorted = (records: readonly Placed[]): Placed[] => {
-    const out = [...records].sort((a, b) => (kindRank.get(a.kind) ?? Infinity) - (kindRank.get(b.kind) ?? Infinity) || (a.kind === b.kind ? pathRank(a, b) || position(a) - position(b) : 0) || order.get(a.id)! - order.get(b.id)!);
+    const out = [...records].sort((a, b) => (kindRank.get(a.kind) ?? Infinity) - (kindRank.get(b.kind) ?? Infinity) || (a.kind === b.kind ? pathRank(a, b) || position(a) - position(b) || groupRank(a, b) : 0) || order.get(a.id)! - order.get(b.id)!);
     const first = out.findIndex((r) => r.kind === 'term');
     if (first === -1) return out;
     const terms = out.filter((r) => r.kind === 'term');
@@ -103,7 +111,8 @@ export function folderTreeTableFrom(view: ReadView): FolderTreeTable {
     seen.add(r.id);
     const stage = stageOf(r.kind);
     const folded = sorted(groupOf(children, r.id).filter((c) => !seen.has(c.id) && (stage === null || stageOf(c.kind) === stage)));
-    return { id: r.id, kind: r.kind, title: r.title, ...('path' in r.row ? { path: path(r) } : {}), folded: folded.map((c) => entry(c, seen)) };
+    const group = useCaseGroup(r);
+    return { id: r.id, kind: r.kind, title: r.title, ...('path' in r.row ? { path: path(r) } : {}), ...(group ? { group } : {}), folded: folded.map((c) => entry(c, seen)) };
   };
   const startsBranch = (r: Placed) => {
     if (CONTAINERS.has(r.kind)) return false;

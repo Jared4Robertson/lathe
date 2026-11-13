@@ -19,7 +19,6 @@
 {"id":"LA-IXD-EN71","title":"Endpoint test","aggregate_id":"LA-IXD-A13","role":"child","description":"Proves its API requirement at the endpoint: the request and the response."}
 {"id":"LA-IXD-EN73","title":"Integration test","aggregate_id":"LA-IXD-A14","role":"child","description":"Proves an exchange with its integration's outside system."}
 {"id":"LA-MOD-EN04","title":"Domain","aggregate_id":"LA-MOD-A4","role":"root","description":"A part of the product with its own model, language and owner, for one business capability: what DDD calls a bounded context. Domains meet only through published events."}
-{"id":"LA-MOD-EN05","title":"Capability","aggregate_id":"LA-MOD-A4","role":"child","description":"An ordered slice of a domain that groups its use cases, such as Catalog or Lending."}
 {"id":"LA-MOD-EN06","title":"Aggregate","aggregate_id":"LA-MOD-A6","role":"root","description":"The consistency boundary: a cluster of entities changed together as one unit, by one command at a time. Other aggregates follow its changes through events, and refer to it by ID only."}
 {"id":"LA-MOD-EN07","title":"Entity field","aggregate_id":"LA-MOD-A6","role":"child","description":"One field of an entity, in order."}
 {"id":"LA-MOD-EN08","title":"Entity","aggregate_id":"LA-MOD-A6","role":"child","description":"A record the domain keeps, with an identity: its aggregate's root or one of its children. Its fields are its entity fields, in order; the value objects it has are the ones its fields are typed with."}

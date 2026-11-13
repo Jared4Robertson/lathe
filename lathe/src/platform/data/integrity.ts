@@ -23,7 +23,8 @@ export interface IntegrityQuery {
  *   owner;
  * - link (relation, source_id, target_id): every link of every relation;
  * - record_group (id, label): every record that names a group among its siblings, with the group as written: a flow
- *   step's path, and the group_name of every kind that has one, Lathe's and a product's own alike;
+ *   step's path, and the group_name of every kind that has one, Lathe's and a product's own alike; once record_scope is
+ *   made, also each use case with its group's ID (useCaseGroupsSql), so its domain's use cases count per group;
  * - record_text (id, kind, title, lead_column, lead): every record's title and lead text, with the lead's column
  *   (statement, goal, meaning or description), or nulls for a kind with none;
  * - record_complexity (id, kind, complexity): every record but an open question, essential or accidental: by its kind
@@ -43,12 +44,6 @@ export function storeViewsSql(schema: SchemaDescription): string {
   const links = Object.keys(schema.relations)
     .sort()
     .map((r) => `SELECT ${sqlString(r)} AS relation, source_id, target_id FROM ${sqlName(r)}`);
-  const groups = [
-    'SELECT id, path AS label FROM flow_step',
-    ...kinds
-      .filter((k) => schema.tables[k.name].columns.some((c) => c.name === 'group_name'))
-      .map((k) => `SELECT id, group_name::VARCHAR FROM ${sqlName(k.name)} WHERE group_name IS NOT NULL`),
-  ];
   const texts = kinds.map((k) => {
     const lead = schema.tables[k.name].columns.find((c) => isLeadColumn(c.name));
     return `SELECT id, ${sqlString(k.name)} AS kind, title, ${lead ? sqlString(lead.name) : 'NULL'}::VARCHAR AS lead_column, ${lead ? sqlName(lead.name) : 'NULL'}::VARCHAR AS lead FROM ${sqlName(k.name)}`;
@@ -67,8 +62,7 @@ CREATE OR REPLACE VIEW record_parent AS
 ${parents.join('\nUNION ALL ')};
 CREATE OR REPLACE VIEW link AS
 ${links.join('\nUNION ALL ')};
-CREATE OR REPLACE VIEW record_group AS
-${groups.join('\nUNION ALL ')};
+${recordGroupSql(schema)}
 CREATE OR REPLACE VIEW record_text AS
 ${texts.join('\nUNION ALL ')};
 CREATE OR REPLACE VIEW record_complexity AS
@@ -98,6 +92,27 @@ WHERE k.complexity IS NOT NULL AND k.complexity <> 'as-parent';
 `;
 }
 
+// The record_group view: every record that names a group among its siblings, as written; with the use cases' groups
+// from record_scope when it is made (useCaseGroupsSql).
+function recordGroupSql(schema: SchemaDescription, useCases = false): string {
+  const kinds = Object.values(schema.kinds).sort((a, b) => a.name.localeCompare(b.name));
+  const groups = [
+    'SELECT id, path AS label FROM flow_step',
+    ...kinds
+      .filter((k) => schema.tables[k.name].columns.some((c) => c.name === 'group_name'))
+      .map((k) => `SELECT id, group_name::VARCHAR FROM ${sqlName(k.name)} WHERE group_name IS NOT NULL`),
+    ...(useCases ? ['SELECT u.id, s.group_id FROM use_case u JOIN record_scope s ON s.id = u.id WHERE s.group_id IS NOT NULL'] : []),
+  ];
+  return `CREATE OR REPLACE VIEW record_group AS\n${groups.join('\nUNION ALL ')};`;
+}
+
+/**
+ * The record_group view again once record_scope is made, now with each use case and its group's ID (record_scope's
+ * group_id: its result's aggregate or read model) as its label, so too-many-children counts a domain's use cases per
+ * group as it counts every other group. The view reads record_scope, so it is made after it.
+ */
+export const useCaseGroupsSql = (schema: SchemaDescription): string => recordGroupSql(schema, true);
+
 /** The store's views that read many tables, made tables once a data database's rows are in (materializeViewsSql). */
 const MATERIALIZED_VIEWS = ['record_parent', 'link', 'record_text', 'record_complexity'] as const;
 
@@ -112,8 +127,11 @@ export const materializeViewsSql = (): string =>
   MATERIALIZED_VIEWS.map((v) => `CREATE TABLE ${v}__made AS SELECT * FROM ${v}; DROP VIEW ${v}; ALTER TABLE ${v}__made RENAME TO ${v};`).join('\n');
 
 /**
- * The record_scope table (id, product_id, domain_id, aggregate_id), made once the data is in, in the same
- * transaction: every record with the product, domain and aggregate it sits in, through its parents. A record of a
+ * The record_scope table (id, product_id, domain_id, aggregate_id, group_id), made once the data is in, in the same
+ * transaction: every record with the product, domain and aggregate it sits in, through its parents. A use case's
+ * group_id is its group: its result's aggregate (a command use case: the command's entity's aggregate) or read model (a
+ * query use case), and what sits under a use case (its requirements, flow, steps and tests) has the same group. This is
+ * the one place the group is worked out; it is never stored. A record of a
  * kind with no owner takes its product, or for a specification its domain, from the longest product or domain ID its
  * own ID starts with (followed by a hyphen). The other kinds with no owner take the domain that uses them, worked out
  * from the links and fields and never stored (USED_BY): a view the domains of the flow steps that happen in it, an
@@ -166,15 +184,23 @@ derived (id, domain_id) AS (
 ),
 inherited (id, domain_id) AS (
   SELECT up.id, max(d.domain_id) FROM up JOIN derived d ON d.id = up.ancestor GROUP BY up.id
+),
+use_case_group (id, group_id) AS (
+  SELECT u.id, coalesce(e.aggregate_id, q.read_model_id) FROM use_case u
+  LEFT JOIN command c ON c.id = u.result_id LEFT JOIN entity e ON e.id = c.entity_id LEFT JOIN query q ON q.id = u.result_id
+),
+grouped (id, group_id) AS (
+  SELECT up.id, max(g.group_id) FROM up JOIN use_case_group g ON g.id = up.ancestor GROUP BY up.id
 )
-SELECT p.id, p.product_id, coalesce(p.domain_id, i.domain_id) AS domain_id, p.aggregate_id
-FROM placed p LEFT JOIN inherited i ON i.id = p.id;
+SELECT p.id, p.product_id, coalesce(p.domain_id, i.domain_id) AS domain_id, p.aggregate_id, g.group_id
+FROM placed p LEFT JOIN inherited i ON i.id = p.id LEFT JOIN grouped g ON g.id = p.id;
 `;
 }
 
 /**
- * The columns record_scope reads, by table (recordScopeSql): each kind's ID and parent columns, a domain's product, and
- * the user and used columns of the tables that tell which domain uses a record with no owner. A change that leaves
+ * The columns record_scope reads, by table (recordScopeSql): each kind's ID and parent columns, a domain's product, the
+ * user and used columns of the tables that tell which domain uses a record with no owner, and the columns that give a
+ * use case its group (its result, a command's entity, an entity's aggregate, a query's read model). A change that leaves
  * every one of them as it was leaves record_scope as it was.
  */
 export function recordScopeColumns(schema: SchemaDescription): Map<string, string[]> {
@@ -186,6 +212,10 @@ export function recordScopeColumns(schema: SchemaDescription): Map<string, strin
   };
   for (const kind of Object.values(schema.kinds)) read(kind.name, 'id', ...kind.parents.map((p) => p.column));
   read('domain', 'product_id');
+  read('use_case', 'result_id');
+  read('command', 'entity_id');
+  read('entity', 'aggregate_id');
+  read('query', 'read_model_id');
   for (const u of USED_BY) read(u.table, u.user, u.used);
   read('renders', 'source_id', 'target_id');
   read('presents', 'source_id', 'target_id');

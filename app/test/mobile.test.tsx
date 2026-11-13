@@ -40,7 +40,7 @@ describe('Lathe on a phone', () => {
     // The top bar: the menu, the title on one line under a link one step up, and quick find.
     expect(within(topbar()).getByRole('button', { name: 'Open the navigation' })).toBeInTheDocument();
     expect(topbar().querySelector('.topbar-title')).toHaveTextContent('Lend a thing');
-    expect(within(topbar()).getByRole('link', { name: 'Up to Lending' })).toHaveAttribute('href', '/P-D-CAP01?stage=graph');
+    expect(within(topbar()).getByRole('link', { name: 'Up to Domain' })).toHaveAttribute('href', '/P-D?stage=graph');
     expect(within(topbar()).getByRole('button', { name: 'Quick find' })).toBeInTheDocument();
     // Under it the compact page bar and the header strip; the stage fills the rest. No panels float, no handles.
     expect(document.querySelector('.stage-layout.is-phone > .header-strip')).not.toBeNull();
@@ -332,9 +332,9 @@ describe('Lathe on a phone', () => {
     phone();
     window.sessionStorage.setItem('lathe:place', JSON.stringify({ depth: 1, hiddenKinds: [], card: { open: true, expanded: true } }));
     await openApp('/P-D-UC01?stage=graph', served());
-    // The use case's capability, its parent, is drawn beside it.
-    await waitFor(() => expect(boxElement('P-D-CAP01')).not.toBeNull());
-    const at = pointOn('P-D-CAP01');
+    // The use case's group, its result's aggregate, its parent, is drawn beside it.
+    await waitFor(() => expect(boxElement('P-D/use-cases/P-D-A3')).not.toBeNull());
+    const at = pointOn('P-D/use-cases/P-D-A3');
     const canvas = canvasOf();
     // A drag that starts on the box pans: it opens nothing. So does a pinch.
     const finger = (id: number, x: number, y: number) => ({ clientX: x, clientY: y, pointerType: 'touch', pointerId: id, button: 0 });
@@ -354,7 +354,7 @@ describe('Lathe on a phone', () => {
     fireEvent.pointerMove(canvas, finger(7, at.x + 4, at.y + 3));
     expect(cameraOf()).toBe(pan);
     fireEvent.pointerUp(canvas, finger(7, at.x + 4, at.y + 3));
-    await waitFor(() => expect(window.location.pathname).toBe('/P-D-CAP01'));
+    await waitFor(() => expect(window.location.pathname).toBe('/P-D/use-cases/P-D-A3'));
     // No card stands in for the record sheet: nothing is left selected.
     expect(document.querySelector('.card[role="status"]')).toBeNull();
     // On the ERD a tap opens a box at once too.

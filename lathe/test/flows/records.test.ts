@@ -61,8 +61,7 @@ describe('The records\' own flows through the package API', () => {
 
     // A record deep in a domain has the product and domain of the chain above it.
     expect(records.get('EX-LEND-UC01-R01')).toMatchObject({ parent: 'EX-LEND-UC01', product: 'EX', domain: 'EX-LEND' });
-    expect(records.get('EX-LEND-UC01')).toMatchObject({ parent: 'EX-LEND-CAP01', product: 'EX', domain: 'EX-LEND' });
-    expect(records.get('EX-LEND-CAP01')).toMatchObject({ parent: 'EX-LEND', product: 'EX', domain: 'EX-LEND' });
+    expect(records.get('EX-LEND-UC01')).toMatchObject({ parent: 'EX-LEND', product: 'EX', domain: 'EX-LEND' });
   });
 
   it('LA-STD-MODELING-R18-T04 records are related only by links the schema allows between two records of one product, and an ID in text stays text', async () => {

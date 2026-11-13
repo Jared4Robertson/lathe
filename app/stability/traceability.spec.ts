@@ -63,8 +63,12 @@ test.describe('Traceability flows', () => {
   test('LA-TRC-UC10-FL-T trace a use case\'s row from its outcome to its tests on the Trace stage', async ({ page }) => {
     const spec = await servedWorkspace();
     const useCase = String(rowsOf(spec, 'uc_requirement').find((r) => r.id === REQUIREMENT)!.use_case_id);
-    const capability = String(rowsOf(spec, 'use_case').find((u) => u.id === useCase)!.capability_id);
-    const outcomes = rowsOf(spec, 'serves').filter((l) => l.source_id === capability).map((l) => String(l.target_id));
+    // The outcomes its group serves: its result's aggregate (a command's entity's) or read model (a query's).
+    const result = String(rowsOf(spec, 'use_case').find((u) => u.id === useCase)!.result_id);
+    const query = rowsOf(spec, 'query').find((q) => q.id === result);
+    const entity = rowsOf(spec, 'entity').find((e) => e.id === rowsOf(spec, 'command').find((c) => c.id === result)?.entity_id);
+    const group = String(query ? query.read_model_id : entity!.aggregate_id);
+    const outcomes = rowsOf(spec, 'serves').filter((l) => l.source_id === group).map((l) => String(l.target_id));
     const flows = rowsOf(spec, 'flow').filter((f) => f.use_case_id === useCase).map((f) => String(f.id));
     const tests = rowsOf(spec, 'use_case_test').filter((t) => t.uc_requirement_id === REQUIREMENT).map((t) => String(t.id));
     expect(outcomes.length && flows.length && tests.length).toBeTruthy();

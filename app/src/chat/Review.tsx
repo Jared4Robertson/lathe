@@ -12,7 +12,7 @@ import type { Turn } from './useChat';
 import type { ChatItem } from './types';
 import { touchedInOrder, turnChanges, undoTurn } from './undo';
 
-// Claude's changes on the map (LA-PLT-UC21-R01, R02): after a turn that writes, the turn's changed records can be put under
+// Claude's changes on the map (LA-EXP-UC109-R01, R02): after a turn that writes, the turn's changed records can be put under
 // review: the stage lights them alone (Highlight changes scoped to that turn, changes/ChangesProvider.tsx), and the review
 // bar walks through them, next and previous, each with its diff. A turn can also be undone in one click, through the
 // aggregates' own commands (undo.ts); the server refuses, with every reason, what something since depends on.

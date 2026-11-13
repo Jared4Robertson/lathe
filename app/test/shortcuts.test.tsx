@@ -326,11 +326,11 @@ describe('keyboard shortcuts', () => {
     const card = () => screen.getByRole('region', { name: 'Wiki card' });
 
     // F12 on a focused link opens its record.
-    const link = within(card()).getAllByRole('link').find((a) => a.getAttribute('href') === '/P-D-CAP01')!;
+    const link = within(card()).getAllByRole('link').find((a) => a.getAttribute('href') === '/P-D-CMD01')!;
     link.focus();
     press(link, 'F12', 'F12');
-    expect(window.location.pathname).toBe('/P-D-CAP01');
-    await screen.findByRole('heading', { level: 1, name: 'Lending' });
+    expect(window.location.pathname).toBe('/P-D-CMD01');
+    await screen.findByRole('heading', { level: 1, name: 'Open loan' });
 
     // Shift+F12 opens the wiki card's whole page at what links to the record.
     press(document.body, 'F12', 'F12', { shiftKey: true });

@@ -98,7 +98,8 @@ export async function reachableBoxes(page: Page): Promise<{ id: string; at: { x:
 
 /**
  * The label lines that do not fit their box (LA-PAT-APP-UX-R12): a line wider as drawn than its
- * place, or outside its box, on the boxes on screen. Lines drawn as bars are measured as placed.
+ * place, or outside its box, on the boxes on screen, and a box with no line though it holds one of 5 pixels or more
+ * (LA-EXP-DS09). Lines drawn as bars are measured as placed.
  */
 export const clippedLabels = (page: Page) => page.evaluate((sel) => {
   const s = (document.querySelector(sel) as SceneHost).graphScene!();
@@ -107,7 +108,9 @@ export const clippedLabels = (page: Page) => page.evaluate((sel) => {
   for (const b of s.boxes) {
     const r = b.rect;
     if (r.top + r.height < c.top || r.top > c.top + c.height || r.left + r.width < c.left || r.left > c.left + c.width) continue;
-    if (b.lines.length === 0) out.push(`${b.id}: no label`);
+    // A box draws its title unless its line would fall under 5 pixels, as large as its box holds (LA-EXP-DS09): a box
+    // that could hold a line of 5 pixels or more and draws none is a missing label.
+    if (b.lines.length === 0 && b.linePx >= 5) out.push(`${b.id}: no label, though its box holds a line of ${b.linePx.toFixed(1)} px`);
     // Half a map unit to spare, on screen, and half a pixel: the bar the page's own text was held to.
     const tol = 0.5 * s.camera.zoom + 0.5;
     for (const l of b.lines) {

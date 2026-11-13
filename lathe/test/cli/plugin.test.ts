@@ -32,7 +32,7 @@ function productRepo(): string {
 
 const SKILLS = ['discover-outcomes', 'model-a-domain', 'write-use-cases', 'design-interfaces', 'write-the-technical-spec', 'plan-tests', 'check-and-fix', 'extend-the-meta-model'];
 
-// Every tool a skill names in backticks, such as `domain_add_capability`.
+// Every tool a skill names in backticks, such as `domain_add_term`.
 const TOOL_NAME = /`([a-z]+(?:_[a-z]+)*_(?:add|change|remove|move|get|list|next_id|follow|stop)(?:_[a-z]+)*)`/g;
 
 const guard = (input: object) => spawnSync(process.execPath, [path.join(pluginDir, 'scripts', 'guard-data-files.mjs')], { input: JSON.stringify(input), encoding: 'utf8' });

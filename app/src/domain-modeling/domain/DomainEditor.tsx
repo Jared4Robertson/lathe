@@ -20,19 +20,19 @@ import { kindWord, addedUnder } from '../../platform/meta-model/reads';
 
 // The Domain editor (LA-MOD-A4): the actions on a record of a domain, each sending one of the aggregate's own commands,
 // POST /api/domain/<command>, and nothing else. Edit sends its kind's Change with only what changed; Add opens an empty
-// form for a kind that sits under the record in the domain (a capability, term, domain service or repository under the
-// domain; a service or test under a domain service), with the next free ID read from the aggregate (next-id), and sends
-// its Add; Move, offered for a kind the aggregate has a Move command for (a capability, term, domain service or
-// repository: to another domain of its product), sends that command and goes to the record's new address, the new
+// form for a kind that sits under the record in the domain (a term, domain service or repository under the domain; a
+// service or test under a domain service), with the next free ID read from the aggregate (next-id), and sends
+// its Add; Move, offered for a kind the aggregate has a Move command for (a term, domain service or repository: to
+// another domain of its product), sends that command and goes to the record's new address, the new
 // domain's ID in place of the old one's; Remove says what goes with the record and sends its Remove. Another aggregate's
-// root that sits under a domain or a capability (a test data set, a use case) is added through that aggregate's own
+// root that sits under a domain (a test data set, a use case) is added through that aggregate's own
 // Add form, from the Record page's list (adderOf). A domain is added from its product's page (AddDomainForm). A refusal
 // shows every reason the command gave, in its own words, keeps what was entered, and changes nothing.
 
 type Inside = Exclude<DomainKind, 'domain'>;
 
 /** The kinds a record of another kind has under it inside the domain; the meta model says which sit under which. */
-const INSIDE: readonly Inside[] = ['capability', 'term', 'domain_service', 'repository', 'service', 'domain_service_test'];
+const INSIDE: readonly Inside[] = ['term', 'domain_service', 'repository', 'service', 'domain_service_test'];
 
 /** The product's records of these kinds, as choices; `domain` narrows them to its own. */
 function choices(index: RecordIndex, product: string, kinds: readonly string[], domain?: string): Choice[] {
@@ -48,8 +48,6 @@ function fieldsOf(index: RecordIndex, page: DomainPage | null, product: string, 
   switch (kind) {
     case 'domain':
       return addOrChangeFields(adding, F['/api/domain/add-domain'], 'product_id', F['/api/domain/change-domain'], { description: LONG, notes: LONG });
-    case 'capability':
-      return addOrChangeFields(adding, F['/api/domain/add-capability'], 'domain_id', F['/api/domain/change-capability'], { description: LONG, serves: { choices: choices(index, product, ['business_outcome']) } });
     case 'term': {
       const builds = { choices: choices(index, product, ['term']).filter((c) => c.id !== page?.record.id || adding) };
       return addOrChangeFields(adding, F['/api/domain/add-term'], 'domain_id', F['/api/domain/change-term'], { meaning: LONG, builds_on: builds });
@@ -73,10 +71,6 @@ function currentOf(page: DomainPage, kind: DomainKind, id: string): Record<strin
   switch (kind) {
     case 'domain':
       return { ...page.domain };
-    case 'capability': {
-      const c = page.capabilities.find((x) => x.capability.id === id)!;
-      return { ...c.capability, serves: c.serves };
-    }
     case 'term': {
       const t = page.terms.find((x) => x.term.id === id)!;
       return { ...t.term, builds_on: t.buildsOn };
@@ -101,7 +95,6 @@ function currentOf(page: DomainPage, kind: DomainKind, id: string): Record<strin
 /** Each kind's Change command. */
 const CHANGE: Record<DomainKind, CommandRoute> = {
   domain: '/api/domain/change-domain',
-  capability: '/api/domain/change-capability',
   term: '/api/domain/change-term',
   domain_service: '/api/domain/change-domain-service',
   service: '/api/domain/change-service',
@@ -112,7 +105,6 @@ const CHANGE: Record<DomainKind, CommandRoute> = {
 /** Each kind's Add command, and the field that names its parent. */
 const ADD: Record<DomainKind, { route: CommandRoute; parent: string }> = {
   domain: { route: '/api/domain/add-domain', parent: 'product_id' },
-  capability: { route: '/api/domain/add-capability', parent: 'domain_id' },
   term: { route: '/api/domain/add-term', parent: 'domain_id' },
   domain_service: { route: '/api/domain/add-domain-service', parent: 'domain_id' },
   service: { route: '/api/domain/add-service', parent: 'domain_service_id' },
@@ -123,7 +115,6 @@ const ADD: Record<DomainKind, { route: CommandRoute; parent: string }> = {
 /** Each kind's Remove command. */
 const REMOVE: Record<DomainKind, CommandRoute> = {
   domain: '/api/domain/remove-domain',
-  capability: '/api/domain/remove-capability',
   term: '/api/domain/remove-term',
   domain_service: '/api/domain/remove-domain-service',
   service: '/api/domain/remove-service',
@@ -133,7 +124,6 @@ const REMOVE: Record<DomainKind, CommandRoute> = {
 
 /** The kinds the aggregate has a Move command for, each with it: a record of another kind is never moved on its own. */
 const MOVE: Partial<Record<DomainKind, CommandRoute>> = {
-  capability: '/api/domain/move-capability',
   term: '/api/domain/move-term',
   domain_service: '/api/domain/move-domain-service',
   repository: '/api/domain/move-repository',
@@ -150,7 +140,6 @@ function goesWith(page: DomainPage, kind: DomainKind, id: string): string[] {
   const ofService = (s: DomainPage['domainServices'][number]) => [...(s.service ? [s.service.service.id] : []), ...s.tests.map((t) => t.test.id)];
   if (kind === 'domain') {
     return [
-      ...page.capabilities.map((c) => c.capability.id),
       ...page.terms.map((t) => t.term.id),
       ...page.domainServices.flatMap((s) => [s.domainService.id, ...ofService(s)]),
       ...page.repositories.map((r) => r.repository.id),
@@ -276,9 +265,7 @@ function AddForm({ index, page, kind, parent, onDone }: { index: RecordIndex; pa
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextDomainId(kind, parent, index);
-  // A new capability goes last.
-  const text: Record<string, string> = kind === 'capability' ? { position: String(Math.max(0, ...page.capabilities.map((c) => c.capability.position)) + 1) } : {};
-  const [draft, setDraft] = useState<Draft>(() => ({ ...emptyDraft(), text }));
+  const [draft, setDraft] = useState<Draft>(emptyDraft);
   useEffect(() => {
     if (next.state === 'read') setDraft((d) => (d.text.id ? d : { ...d, text: { ...d.text, id: next.answer } }));
   }, [next]);

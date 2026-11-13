@@ -80,23 +80,23 @@ describe('LA-V156-R01-T01 a journey\'s page reads it through its own query', () 
 });
 
 describe('LA-V156-R04-T01 a journey\'s steps show in order a list per path, with who acts and what each carries out', () => {
-  it('lists the main path first, each row with its number, title, link, actors and capability and domain or event and command', async () => {
+  it('lists the main path first, each row with its number, title, link, actors and aggregate or read model and domain or event and command', async () => {
     await openApp('/DM-JR01', { data: withJourneys() });
     await within(main()).findByRole('list', { name: 'Steps of the main path' });
     expect(stepIds(mainSteps())).toEqual(['DM-JR01-S01', 'DM-JR01-S02', 'DM-JR01-S03', 'DM-JR01-S04']);
     const headings = within(main()).getAllByRole('region').map((r) => r.getAttribute('aria-label')).filter((n) => n?.endsWith(' path'));
     expect(headings).toEqual(['Main path', 'Pays later path']);
     const [first, handoff, pay] = within(mainSteps()).getAllByRole('listitem');
-    // A use case step: its kind, link, actor, capability and domain.
+    // A use case step: its kind, link, actor, aggregate or read model and domain.
     expect(first).toHaveTextContent('The shopper adds an item');
     expect(within(first).getByRole('link', { name: /DM-SHOP-UC01/ })).toHaveAttribute('href', '/DM-SHOP-UC01');
     expect(first.querySelector('[data-meta="actors"]')).toHaveTextContent('Shopper');
-    expect(first.querySelector('[data-meta="place"]')).toHaveTextContent('Buying');
+    expect(first.querySelector('[data-meta="place"]')).toHaveTextContent('Basket aggregate · Shopping');
     // A handoff: the product acts; it hears an event and sends a command.
     expect(handoff.querySelector('[data-meta="carries-out-kind"]')).toHaveTextContent('Handoff');
     expect(handoff.querySelector('[data-meta="actors"]')).toHaveTextContent('The product');
     expect(handoff.querySelector('[data-meta="place"]')).toHaveTextContent('hears DM-SHOP-EV01 → sends DM-SHOP-CMD01');
-    expect(pay).toHaveTextContent('Paying');
+    expect(pay).toHaveTextContent('Payment aggregate · Paying');
     // The lane strip is for the eye: hidden from assistive technology, and the list is the order.
     const lanes = main().querySelector('.journey-lanes');
     expect(lanes).toHaveAttribute('aria-hidden', 'true');
@@ -198,14 +198,17 @@ describe('LA-V156-R05-T01 a step with nothing yet offers Add use case, which add
     const unlinked = within(mainSteps()).getAllByRole('listitem')[3];
     expect(unlinked).toHaveTextContent('No use case yet');
     await user.click(within(unlinked).getByRole('button', { name: 'Add a use case for DM-JR01-S04' }));
-    await user.selectOptions(screen.getByRole('combobox', { name: /^Capability/ }), 'DM-PAY-CAP01');
+    // It asks for the result first: the new use case sits in that result's domain.
+    await user.selectOptions(screen.getByRole('combobox', { name: /^Result/ }), 'DM-PAY-CMD01');
     await user.click(screen.getByRole('button', { name: 'Continue' }));
     const form = await screen.findByRole('form', { name: 'Add a use case' });
     expect(within(form).getByRole('textbox', { name: /^title/ })).toHaveValue('The shop sends a receipt');
+    expect(within(form).getByRole('combobox', { name: /^Result/ })).toHaveValue('DM-PAY-CMD01');
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-PAY-UC02'));
     await user.type(within(form).getByRole('textbox', { name: /^goal/ }), 'The shop sends the receipt.');
     await user.click(within(form).getByRole('button', { name: 'Add use case' }));
     await waitFor(() => expect(commands.map((c) => c.route)).toEqual(['/api/use-case/add-use-case', '/api/journey/change-journey-step']));
+    expect(commands[0].input).toMatchObject({ domain_id: 'DM-PAY', id: 'DM-PAY-UC02', result_id: 'DM-PAY-CMD01' });
     expect(commands[1].input).toEqual({ id: 'DM-JR01-S04', carries_out: 'DM-PAY-UC02' });
   });
 });

@@ -1,10 +1,10 @@
 // Generated from data/ by `npm run generate`. Do not edit.
 // AggregateRepository (LA-MOD-REPO06): Loads an aggregate whole from the transaction's draft (its entities with their
-// fields and the entities they hold, their data models with the standard rules they meet and the packages they use, and
-// its invariants with their tests) and saves exactly the rows that changed, in the Aggregate aggregate's own tables
-// only; a write to any other table is refused when it is made (`DataFiles`). A record inside one is loaded through the
-// root that holds it (`loadHolding`), and a removal is refused, naming the referrers, while anything outside what goes
-// references it.
+// fields and the entities they hold, their data models with the standard rules they meet and the packages they use, its
+// invariants with their tests, and the business outcomes it serves) and saves exactly the rows that changed, in the
+// Aggregate aggregate's own tables only; a write to any other table is refused when it is made (`DataFiles`). A record
+// inside one is loaded through the root that holds it (`loadHolding`), and a removal is refused, naming the referrers,
+// while anything outside what goes references it.
 import { AggregateRepository as Repository, type InstanceRows } from '../../platform/data/repository.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
 import { AGGREGATE_TABLES, aggregateRows, aggregatesFrom, type Aggregate, type AggregateKind } from './model.ts';

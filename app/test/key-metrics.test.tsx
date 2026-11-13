@@ -15,7 +15,7 @@ import { readViewOf, recordIndexOf } from './read-view';
 // Key metrics (LA-V51-R03, LA-V91-R55, LA-PAT-APP-UX-R25): every number is worked out here from the fixture's own
 // coverage, problems and rows, never written down, so a change to the fixture moves the expectation with it.
 
-/** The demo shop with two business outcomes, one of them served by a capability. */
+/** The demo shop with two business outcomes, one of them served by the Basket aggregate. */
 function withOutcomes(): ServedData {
   const w = workspace();
   addRows(
@@ -24,7 +24,7 @@ function withOutcomes(): ServedData {
     { id: 'DM-BO01', title: 'More baskets checked out', product_id: 'DM', statement: 'More baskets are checked out.', measure: 'Baskets checked out each week.', target: 'Two in three within a quarter.' },
     { id: 'DM-BO02', title: 'Fewer refunds', product_id: 'DM', statement: 'Fewer refunds.', measure: 'Refunds per hundred orders.', target: 'Under two within a year.' },
   );
-  addRows(w, 'serves', { source_id: 'DM-SHOP-CAP01', target_id: 'DM-BO01' });
+  addRows(w, 'serves', { source_id: 'DM-SHOP-A1', target_id: 'DM-BO01' });
   return w;
 }
 

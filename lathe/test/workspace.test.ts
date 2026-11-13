@@ -151,10 +151,10 @@ describe('a workspace of several products', () => {
     expect((listed.json() as { id: string }[]).map((p) => p.id)).toEqual(['SH', 'WS']);
 
     // A new record under the shop's domain goes to the shop's folder, a new product to the workspace's.
-    const added = await request(root, '/api/domain/add-capability', { id: 'SH-SELL-CAP01', title: 'Checkout', domain_id: 'SH-SELL', position: 1, description: 'Paying for a basket.' });
+    const added = await request(root, '/api/domain/add-term', { id: 'SH-SELL-TM01', title: 'Checkout', domain_id: 'SH-SELL', meaning: 'Paying for a basket.' });
     expect(added.status).toBe(200);
-    expect(existsSync(path.join(root, SHOP, 'data/capability.jsonl'))).toBe(true);
-    expect(existsSync(path.join(root, 'data/capability.jsonl'))).toBe(false);
+    expect(existsSync(path.join(root, SHOP, 'data/term.jsonl'))).toBe(true);
+    expect(existsSync(path.join(root, 'data/term.jsonl'))).toBe(false);
     expect((await request(root, '/api/product/add-product', { id: 'NP', title: 'New product', description: 'A product added through the API.' })).status).toBe(200);
     expect(readFileSync(path.join(root, 'data/product.jsonl'), 'utf8')).toContain('"NP"');
 

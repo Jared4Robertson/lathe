@@ -13,8 +13,9 @@ lines it changed, or is refused with every reason; git is the history. Each aggr
 The model is drawn from domain-driven design, CQRS and event storming, in six stages: discovery (the business
 outcomes the product exists to achieve), the domain model, use cases on top of it, their interface design, the
 technical records that implement each design record, and the test plan. Links run from what is defined first to
-what is defined later. A capability names the outcomes it serves, so the trace runs from an outcome to its
-capabilities, their use cases, the code and the tests. An outcome names what measures it (`measured_by`): a test,
+what is defined later. An aggregate or read model names the outcomes its use cases serve, so the trace runs from an
+outcome to its aggregates and read models, their use cases, the code and the tests. A use case sits with the
+aggregate of its result command or the read model of its result query, in that record's domain. An outcome names what measures it (`measured_by`): a test,
 or a record of a product's own kind such as a report, or it says how it is measured outside the code.
 
 **Words.** What clean architecture calls a use case or an interactor is what Lathe calls a command handler
@@ -52,13 +53,13 @@ one of its rules is. Coverage lists each fill as accidental debt.
 
 ## Discovery
 
-The business outcomes the product exists to achieve, each a measurable statement with its measure and target, which its capabilities serve, and the journeys that reach them: the use cases and handoffs, in order, from a trigger to a result.
+The business outcomes the product exists to achieve, each a measurable statement with its measure and target, which the aggregates and read models serve, and the journeys that reach them: the use cases and handoffs, in order, from a trigger to a result.
 
 <a id="kind-business_outcome"></a>
 
 ### Business outcome (`business_outcome`)
 
-A business outcome: a measurable change the product exists to bring about, which its capabilities and journeys serve and its tests or records measure (measured_by). The trace runs from it to a capability or a journey, a use case, the code and the tests.
+A business outcome: a measurable change the product exists to bring about, which the aggregates and read models its use cases sit with, and its journeys, serve and its tests or records measure (measured_by). The trace runs from it to an aggregate, read model or journey, a use case, the code and the tests.
 
 - **Parents:** [`product`](#kind-product) (`product_id`)
 - **Children:** none
@@ -94,7 +95,7 @@ A business outcome: a measurable change the product exists to bring about, which
 
 ### Journey (`journey`)
 
-A journey: the use cases and handoffs, in order, that take the product's people from a trigger to a result a business outcome measures, across actors and domains. It serves business outcomes as a capability does, and its journey test drives it end to end.
+A journey: the use cases and handoffs, in order, that take the product's people from a trigger to a result a business outcome measures, across actors and domains. It serves business outcomes as an aggregate or read model does, and its journey test drives it end to end.
 
 - **Parents:** [`product`](#kind-product) (`product_id`)
 - **Children:** [`journey_step`](#kind-journey_step), [`journey_test`](#kind-journey_test)
@@ -174,7 +175,7 @@ An outcome is a change someone would miss, with a measure and a target by a date
 
 A journey whose steps carry out fewer than two use cases.
 
-A use case is one role's command or query; a journey strings several of them, with the handoffs between, from a trigger to a result (LA-PRD-UC33-R07). A journey whose steps carry out fewer than two use cases, counting each use case once and each step that carries out nothing yet as a use case still to write, is a use case: its handoffs are that use case's policies. A journey with no step is left to the journey-without-main-path gap. Remove the journey and let its use case serve the outcome through its capability, or add the steps it is missing.
+A use case is one role's command or query; a journey strings several of them, with the handoffs between, from a trigger to a result (LA-PRD-UC33-R07). A journey whose steps carry out fewer than two use cases, counting each use case once and each step that carries out nothing yet as a use case still to write, is a use case: its handoffs are that use case's policies. A journey with no step is left to the journey-without-main-path gap. Remove the journey and let its use case serve the outcome through its aggregate or read model, or add the steps it is missing.
 
 <a id="check-handoff-not-connected"></a>
 
@@ -202,7 +203,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 
 | Gap | Kinds | What it reports |
 | --- | --- | --- |
-| <a id="gap-outcome-not-served"></a>`outcome-not-served` | [`business_outcome`](#kind-business_outcome), [`capability`](#kind-capability) | A business outcome no capability serves. |
+| <a id="gap-outcome-not-served"></a>`outcome-not-served` | [`business_outcome`](#kind-business_outcome), [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model) | A business outcome no aggregate or read model serves. |
 | <a id="gap-journey-serves-no-outcome"></a>`journey-serves-no-outcome` | [`journey`](#kind-journey), [`business_outcome`](#kind-business_outcome) | A journey that serves no business outcome. |
 | <a id="gap-journey-without-main-path"></a>`journey-without-main-path` | [`journey`](#kind-journey), [`journey_step`](#kind-journey_step) | A journey with no step on its main path. |
 | <a id="gap-outcome-not-measured"></a>`outcome-not-measured` | [`business_outcome`](#kind-business_outcome) | A business outcome no running test or record measures, and that names no measure outside the code. |
@@ -220,7 +221,7 @@ Domains and their aggregates, entities, value objects, rules (constraints, invar
 A part of the product with its own model, language and owner, for one business capability: what DDD calls a bounded context. Domains meet only through published events.
 
 - **Parents:** [`product`](#kind-product) (`product_id`)
-- **Children:** [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model), [`domain_service`](#kind-domain_service), [`term`](#kind-term), [`capability`](#kind-capability), [`data_store`](#kind-data_store), [`repository`](#kind-repository), [`table`](#kind-table), [`entry_point`](#kind-entry_point), [`tooling`](#kind-tooling), [`test_data_set`](#kind-test_data_set), [`question`](#kind-question)
+- **Children:** [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model), [`domain_service`](#kind-domain_service), [`term`](#kind-term), [`use_case`](#kind-use_case), [`data_store`](#kind-data_store), [`repository`](#kind-repository), [`table`](#kind-table), [`entry_point`](#kind-entry_point), [`tooling`](#kind-tooling), [`test_data_set`](#kind-test_data_set), [`question`](#kind-question)
 - **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-<D>`, such as `TL-LEND`; it starts with its parent's ID
@@ -251,17 +252,17 @@ A part of the product with its own model, language and owner, for one business c
 
 ### Aggregate (`aggregate`)
 
-The consistency boundary: a cluster of entities changed together as one unit, by one command at a time. Other aggregates follow its changes through events, and refer to it by ID only.
+The consistency boundary: a cluster of entities changed together as one unit, by one command at a time. Other aggregates follow its changes through events, and refer to it by ID only. It serves the business outcomes its use cases are for (serves).
 
 - **Parents:** [`domain`](#kind-domain) (`domain_id`)
 - **Children:** [`entity`](#kind-entity), [`invariant`](#kind-invariant), [`domain_event`](#kind-domain_event), [`storage_requirement`](#kind-storage_requirement)
 - **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-<D>-A<n>`, such as `TL-LEND-A1`; it starts with its domain's ID
-- **Links out:** none
+- **Links out:** Serves ([`serves`](#relation-serves))
 - **Links in:** Questions about this ([`about`](#relation-about)), Persisted by ([`persists`](#relation-persists)), Read by ([`reads`](#relation-reads))
 - **Checks:** [`aggregate-too-large`](#check-aggregate-too-large), [`serves-no-outcome`](#check-serves-no-outcome)
-- **Gaps:** [`aggregate-without-root`](#gap-aggregate-without-root), [`aggregate-without-command`](#gap-aggregate-without-command), [`aggregate-without-repository`](#gap-aggregate-without-repository)
+- **Gaps:** [`aggregate-without-root`](#gap-aggregate-without-root), [`aggregate-without-command`](#gap-aggregate-without-command), [`use-case-group-serves-no-outcome`](#gap-use-case-group-serves-no-outcome), [`aggregate-without-repository`](#gap-aggregate-without-repository)
 
 <a id="table-aggregate"></a>
 
@@ -558,7 +559,7 @@ A request to change exactly one aggregate: the one its entity belongs to. It sit
 - **ID:** `<P>-<D>-CMD<nn>`, such as `TL-LEND-CMD01`; it starts with its domain's ID
 - **Links out:** Calls ([`calls`](#relation-calls)), Checks ([`checks`](#relation-checks)), Raises ([`raises`](#relation-raises))
 - **Links in:** Questions about this ([`about`](#relation-about)), Invoked by ([`invokes`](#relation-invokes)), Presented in ([`presents`](#relation-presents))
-- **Checks:** [`handoff-not-connected`](#check-handoff-not-connected), [`use-case-invokes-another-command`](#check-use-case-invokes-another-command), [`use-case-title-off-result`](#check-use-case-title-off-result)
+- **Checks:** [`handoff-not-connected`](#check-handoff-not-connected), [`use-case-invokes-another-command`](#check-use-case-invokes-another-command), [`use-case-title-off-result`](#check-use-case-title-off-result), [`use-case-result-in-domain`](#check-use-case-result-in-domain)
 - **Gaps:** [`command-without-use-case`](#gap-command-without-use-case), [`command-without-handler`](#gap-command-without-handler)
 
 <a id="table-command"></a>
@@ -578,14 +579,14 @@ A request to change exactly one aggregate: the one its entity belongs to. It sit
 
 ### Read model (`read_model`)
 
-A view of its domain's data shaped for reading, which reads one or more of the domain's aggregates. Its fields are read_model_field rows, and it is stored in a table of its own.
+A view of its domain's data shaped for reading, which reads one or more of the domain's aggregates. Its fields are read_model_field rows, and it is stored in a table of its own. It serves the business outcomes its use cases are for (serves).
 
 - **Parents:** [`domain`](#kind-domain) (`domain_id`)
 - **Children:** [`query`](#kind-query), [`storage_requirement`](#kind-storage_requirement), [`table`](#kind-table), [`projection`](#kind-projection), [`reader`](#kind-reader)
 - **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-<D>-RM<nn>`, such as `TL-LEND-RM01`; it starts with its domain's ID
-- **Links out:** Calls ([`calls`](#relation-calls)), Fed by ([`fed_by`](#relation-fed_by)), Reads ([`reads`](#relation-reads))
+- **Links out:** Calls ([`calls`](#relation-calls)), Fed by ([`fed_by`](#relation-fed_by)), Reads ([`reads`](#relation-reads)), Serves ([`serves`](#relation-serves))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Parts:** [`read_model_field`](#table-read_model_field)
 - **Checks:** [`serves-no-outcome`](#check-serves-no-outcome)
@@ -643,7 +644,7 @@ A question asked of one read model, its parent. It changes nothing, and may sele
 - **ID:** `<P>-<D>-QRY<nn>`, such as `TL-LEND-QRY01`; it starts with its domain's ID
 - **Links out:** Calls ([`calls`](#relation-calls)), Selects by ([`selects_by`](#relation-selects_by))
 - **Links in:** Questions about this ([`about`](#relation-about)), Invoked by ([`invokes`](#relation-invokes)), Presented in ([`presents`](#relation-presents))
-- **Checks:** [`query-title-verb`](#check-query-title-verb), [`use-case-not-done`](#check-use-case-not-done)
+- **Checks:** [`query-title-verb`](#check-query-title-verb), [`use-case-not-done`](#check-use-case-not-done), [`use-case-result-in-domain`](#check-use-case-result-in-domain)
 - **Gaps:** [`query-without-handler`](#gap-query-without-handler)
 
 <a id="table-query"></a>
@@ -893,9 +894,9 @@ A query asks for data and changes nothing, so its title starts with the verb tha
 
 **Warning** · Lathe's · Kinds: [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model), [`constraint`](#kind-constraint), [`invariant`](#kind-invariant), [`specification`](#kind-specification), [`policy`](#kind-policy), [`domain_service`](#kind-domain_service), [`storage_requirement`](#kind-storage_requirement), [`uc_requirement`](#kind-uc_requirement), [`view_requirement`](#kind-view_requirement), [`api_requirement`](#kind-api_requirement), [`pattern_rule`](#kind-pattern_rule), [`standard_rule`](#kind-standard_rule)
 
-An aggregate, read model or obligation no business outcome reaches: no use case whose capability serves an outcome reaches it.
+An aggregate, read model or obligation no business outcome reaches: no use case whose aggregate or read model serves an outcome, and no journey serving one, reaches it.
 
-Everything in a product serves at least one business outcome (LA-STD-MODELING-R13). A record serves an outcome when a use case whose capability serves that outcome reaches it: through its steps, the commands and queries they invoke and what those change, check, call and read, the views they happen in, the endpoints that expose them, the integrations they exchange with and the patterns it follows (the Serves reach, LA-TRC-DS06, worked out on every load and never stored). An aggregate, read model or obligation none reaches is built for no one the product exists for: write the use case that needs it, with a step that invokes what reaches it, or remove it.
+Everything in a product serves at least one business outcome (LA-STD-MODELING-R13). A record serves an outcome when a use case whose aggregate or read model serves that outcome, or a journey serving it, reaches it: a use case through its steps, the commands and queries they invoke and what those change, check, call and read, the views they happen in, the endpoints that expose them, the integrations they exchange with and the patterns it follows; a journey through its steps and the use cases and policies they carry out (the Serves reach, LA-TRC-DS06, worked out on every load and never stored). An aggregate, read model or obligation none reaches is built for no one the product exists for: write the use case that needs it, with a step that invokes what reaches it, or remove it.
 
 ### Coverage gaps: domain model
 
@@ -921,47 +922,15 @@ Each is reported in coverage, under the record that falls short, never as a prob
 
 ## Use cases
 
-Capabilities, the use cases in them with their actors and UC requirements, each use case's flow and its steps (how it is carried out, whatever the interface), and the patterns use cases and domains follow.
-
-<a id="kind-capability"></a>
-
-### Capability (`capability`)
-
-An ordered slice of a domain that groups its use cases, such as Catalog or Lending.
-
-- **Parents:** [`domain`](#kind-domain) (`domain_id`)
-- **Children:** [`use_case`](#kind-use_case)
-- **Complexity:** essential: what the problem itself demands, decided once per product
-- **Obligation:** no
-- **ID:** `<P>-<D>-CAP<nn>`, such as `TL-LEND-CAP01`; it starts with its domain's ID
-- **Links out:** Serves ([`serves`](#relation-serves))
-- **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`lone-child`](#check-lone-child), [`title-breaks-convention`](#check-title-breaks-convention)
-- **Gaps:** [`capability-serves-no-outcome`](#gap-capability-serves-no-outcome), [`capability-without-use-case`](#gap-capability-without-use-case)
-
-<a id="table-capability"></a>
-
-| Column | Type | Required | Meaning |
-| --- | --- | --- | --- |
-| `id` | VARCHAR → `record_id` | yes | The capability's ID, such as TL-LEND-CAP01. |
-| `title` | VARCHAR | yes | The capability's name, such as Catalog. |
-| `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The domain it belongs to. |
-| `position` | INTEGER | yes | Its place in the domain, from 1. |
-| `description` | VARCHAR | yes | What the capability covers, in a sentence or two. |
-
-- **Key:** `id`
-- **Unique:** `domain_id`, `position`
-- **Rule:** `("trim"(title) != '')`
-- **Rule:** `("position" >= 1)`
-- **Rule:** `("trim"(description) != '')`
+The use cases of each domain, grouped by their results' aggregates and read models, with their actors and UC requirements, each use case's flow and its steps (how it is carried out, whatever the interface), and the patterns use cases and domains follow.
 
 <a id="kind-use_case"></a>
 
 ### Use case (`use_case`)
 
-One role invoking one command, or asking one query, with the steps that lead to it: its result names the operation, and the use case is a command use case or a query use case by the result's kind. It has its actors (use_case_actor rows, the first its main actor), its UC requirements and its flow, the same through every interface that offers it. No two use cases of a product share their first actor and their result.
+One role invoking one command, or asking one query, with the steps that lead to it: its result names the operation, and the use case is a command use case or a query use case by the result's kind. It has its actors (use_case_actor rows, the first its main actor), its UC requirements and its flow, the same through every interface that offers it. No two use cases of a product share their first actor and their result. It sits with its result's aggregate (a command use case) or read model (a query use case), in that record's domain: its group, worked out and never stored.
 
-- **Parents:** [`capability`](#kind-capability) (`capability_id`)
+- **Parents:** [`domain`](#kind-domain) (`domain_id`)
 - **Children:** [`uc_requirement`](#kind-uc_requirement), [`flow`](#kind-flow)
 - **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
@@ -969,7 +938,7 @@ One role invoking one command, or asking one query, with the steps that lead to 
 - **Links out:** Follows ([`follows`](#relation-follows))
 - **Links in:** Questions about this ([`about`](#relation-about)), Carried out in ([`carries_out`](#relation-carries_out)), Offered through ([`offers`](#relation-offers)), Performed by ([`performs`](#relation-performs))
 - **Parts:** [`use_case_actor`](#table-use_case_actor)
-- **Checks:** [`pattern-setting-missing`](#check-pattern-setting-missing), [`pattern-not-followed`](#check-pattern-not-followed), [`title-breaks-convention`](#check-title-breaks-convention), [`flow-title-off-pattern`](#check-flow-title-off-pattern), [`journey-of-one-use-case`](#check-journey-of-one-use-case), [`handoff-not-connected`](#check-handoff-not-connected), [`use-case-invokes-another-command`](#check-use-case-invokes-another-command), [`use-case-result-not-invoked`](#check-use-case-result-not-invoked), [`use-case-not-done`](#check-use-case-not-done), [`use-case-identity-taken`](#check-use-case-identity-taken), [`use-case-title-off-result`](#check-use-case-title-off-result)
+- **Checks:** [`pattern-setting-missing`](#check-pattern-setting-missing), [`pattern-not-followed`](#check-pattern-not-followed), [`title-breaks-convention`](#check-title-breaks-convention), [`flow-title-off-pattern`](#check-flow-title-off-pattern), [`journey-of-one-use-case`](#check-journey-of-one-use-case), [`handoff-not-connected`](#check-handoff-not-connected), [`use-case-invokes-another-command`](#check-use-case-invokes-another-command), [`use-case-result-not-invoked`](#check-use-case-result-not-invoked), [`use-case-not-done`](#check-use-case-not-done), [`use-case-identity-taken`](#check-use-case-identity-taken), [`use-case-title-off-result`](#check-use-case-title-off-result), [`use-case-result-in-domain`](#check-use-case-result-in-domain)
 - **Gaps:** [`use-case-without-actor`](#gap-use-case-without-actor), [`use-case-without-requirement`](#gap-use-case-without-requirement), [`use-case-without-flow`](#gap-use-case-without-flow)
 
 <a id="table-use_case"></a>
@@ -978,7 +947,7 @@ One role invoking one command, or asking one query, with the steps that lead to 
 | --- | --- | --- | --- |
 | `id` | VARCHAR → `record_id` | yes | The use case's ID, such as TL-LEND-UC01. |
 | `title` | VARCHAR | yes | What the actor does: a command use case starts with its command's verb (Borrow a tool); a query use case names the question (See the tools waiting for repair). |
-| `capability_id` | VARCHAR → [`capability`](#table-capability) | yes | The capability it sits in. |
+| `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The domain it belongs to: its result's, whose ID its own starts with. |
 | `goal` | VARCHAR | yes | What the actor wants to reach and from where they start, in a sentence or a short paragraph. |
 | `result_id` | VARCHAR → `operation` | yes | The use case's result: the one command its actor invokes (a command use case), which its main path invokes and after which it only asks queries, or the one query they ask (a query use case), at its main path's last step that invokes anything. Its kind is the operation's. |
 | `notes` | VARCHAR | no | Longer notes, such as the order in which refusals are reported. |
@@ -1245,11 +1214,11 @@ A flow's steps, and a journey's, are read in `position` within their `path`, a s
 
 ### `lone-child`
 
-**Warning** · Lathe's · Kinds: [`capability`](#kind-capability), [`uc_requirement`](#kind-uc_requirement), [`view_requirement`](#kind-view_requirement), [`api_requirement`](#kind-api_requirement), [`pattern_rule`](#kind-pattern_rule), [`standard_rule`](#kind-standard_rule)
+**Warning** · Lathe's · Kinds: [`uc_requirement`](#kind-uc_requirement), [`view_requirement`](#kind-view_requirement), [`api_requirement`](#kind-api_requirement), [`pattern_rule`](#kind-pattern_rule), [`standard_rule`](#kind-standard_rule)
 
-A capability or a group with exactly one child.
+A group with exactly one child.
 
-A level that holds one record groups nothing. A capability with exactly one child is reported, counting its own children of every kind (its use cases, and the records of a product's own kinds under it) but not theirs; one with none is a coverage gap instead. A group (the `group_name` of every kind that has one, read from the record_group view: terms, UC requirements, view requirements, API requirements, pattern rules, standard rules and a product's own kinds) is counted among its parent's children of one kind, compared trimmed and in any letter case, and reported on that parent. Merge it into a neighbor, or give it more.
+A level that holds one record groups nothing. A group (the `group_name` of every kind that has one, read from the record_group view: terms, UC requirements, view requirements, API requirements, pattern rules, standard rules and a product's own kinds) is counted among its parent's children of one kind, compared trimmed and in any letter case, and reported on that parent. A flow's steps per path and a domain's use cases per their result's aggregate or read model are not read: a path may hold one step, and an aggregate or read model with one use case has nothing to merge with. Merge the group into a neighbor, or give it more.
 
 <a id="check-step-unreached"></a>
 
@@ -1265,11 +1234,11 @@ A use case's flow is the same through every interface that offers it, and each i
 
 ### `title-breaks-convention`
 
-**Warning** · Lathe's · Kinds: [`capability`](#kind-capability), [`use_case`](#kind-use_case), [`journey`](#kind-journey), [`interface`](#kind-interface)
+**Warning** · Lathe's · Kinds: [`use_case`](#kind-use_case), [`journey`](#kind-journey), [`interface`](#kind-interface)
 
-A capability, use case or journey title that breaks its naming convention: an interface named in it, a capability starting with The or an -ing word, a list in a capability or journey, or a journey's CRUD verb over a record.
+A use case or journey title that breaks its naming convention: an interface named in it, a list in a journey, or a journey's CRUD verb over a record.
 
-A capability is named as a noun phrase for a lasting ability of the business, two to four words: subject and activity noun, such as Invoice management or Member registration, or a single noun when the area is clear on its own, such as Catalog or Lending. A use case is named for its result, verb first, two to six words: a command use case with its command's verb (Borrow a tool), which use-case-title-off-result reads, and a query use case for the question (See the tools waiting for repair). A journey is named the same way for the summary goal its steps reach together, verb first, such as Get a damaged tool back in lending. None names a screen, a tool or a technology: a use case happens through interfaces, with one flow each, so the interface belongs to its flows, not its title, and a journey's steps are use cases. The check reads only the mechanical parts, in any letter case and as whole words: a use case, journey or capability title that holds one of its product's interface titles or the words command line, CLI, desktop app, web app, MCP, API, agent tools, command layer or page (or their plurals); a capability title of two or more words that starts with "The" or with an -ing word (a word of five or more letters ending in -ing, other than the few that are not verbs, such as thing, string and evening), so a single noun such as Lending passes; a capability or journey title that holds a list, a comma followed later by "and" or "or"; and a journey title that starts with a CRUD verb (create, read, update, delete, change or edit) and holds the word record, records or data, since a journey names the domain's own verb for its goal (Get a damaged tool back in lending), never a verb over a record or data; a command use case's verb is its command's (Change a check). A journey strings goals, so its "and" with no comma is not read, nor is a journey title that does not start with a verb. Rename the capability, use case or journey by the convention.
+A use case is named for its result, verb first, two to six words: a command use case with its command's verb (Borrow a tool), which use-case-title-off-result reads, and a query use case for the question (See the tools waiting for repair). A journey is named the same way for the summary goal its steps reach together, verb first, such as Get a damaged tool back in lending. Neither names a screen, a tool or a technology: a use case happens through interfaces, with one flow each, so the interface belongs to its flows, not its title, and a journey's steps are use cases. The check reads only the mechanical parts, in any letter case and as whole words: a use case or journey title that holds one of its product's interface titles or the words command line, CLI, desktop app, web app, MCP, API, agent tools, command layer or page (or their plurals); a journey title that holds a list, a comma followed later by "and" or "or"; and a journey title that starts with a CRUD verb (create, read, update, delete, change or edit) and holds the word record, records or data, since a journey names the domain's own verb for its goal (Get a damaged tool back in lending), never a verb over a record or data; a command use case's verb is its command's (Change a check). A journey strings goals, so its "and" with no comma is not read, nor is a journey title that does not start with a verb. Rename the use case or journey by the convention.
 
 <a id="check-flow-title-off-pattern"></a>
 
@@ -1351,14 +1320,23 @@ A command use case whose title does not start with its command's verb.
 
 A command use case's title starts with its command's verb (LA-STD-MODELING-R15, LA-STD-NAMING-R02): Borrow a tool, for the command Borrow a tool. The check compares the first word of the use case's title with the first word of its result's title, trimmed and in any letter case. A query use case is titled for the question, with a verb of its own, and is not read. Retitle the use case with its command's verb, or rename the command when its verb is the one that is off.
 
+<a id="check-use-case-result-in-domain"></a>
+
+### `use-case-result-in-domain`
+
+**Error** · Lathe's · Kinds: [`use_case`](#kind-use_case), [`command`](#kind-command), [`query`](#kind-query)
+
+A use case in a domain other than its result's.
+
+A use case sits with its result (LA-STD-MODELING-R20): with the aggregate of its result command, or the read model of its result query, in that record's domain. That aggregate or read model is where the use case is listed, worked out from the result and never stored. A use case in another domain would be listed in one domain under another domain's aggregate or read model, and its domain would no longer be the vertical slice that owns its use cases. The check reads each use case whose domain is not its result's aggregate's or read model's domain. Move it to that domain with Move a use case, or give it a result of its own domain. A write that adds a use case, or changes its domain or result, so that its result is of another domain, is refused; data already written is reported here.
+
 ### Coverage gaps: use cases
 
 Each is reported in coverage, under the record that falls short, never as a problem.
 
 | Gap | Kinds | What it reports |
 | --- | --- | --- |
-| <a id="gap-capability-serves-no-outcome"></a>`capability-serves-no-outcome` | [`capability`](#kind-capability), [`business_outcome`](#kind-business_outcome) | A capability that serves no business outcome. |
-| <a id="gap-capability-without-use-case"></a>`capability-without-use-case` | [`capability`](#kind-capability), [`use_case`](#kind-use_case) | A capability with no use case. |
+| <a id="gap-use-case-group-serves-no-outcome"></a>`use-case-group-serves-no-outcome` | [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model), [`use_case`](#kind-use_case), [`business_outcome`](#kind-business_outcome) | An aggregate or read model that a use case sits with, and that serves no business outcome. |
 | <a id="gap-use-case-without-actor"></a>`use-case-without-actor` | [`use_case`](#kind-use_case), `use_case_actor` | A use case with no actor. |
 | <a id="gap-use-case-without-requirement"></a>`use-case-without-requirement` | [`use_case`](#kind-use_case), [`uc_requirement`](#kind-uc_requirement) | A use case with no UC requirement that follows no pattern. |
 | <a id="gap-journey-step-unlinked"></a>`journey-step-unlinked` | [`journey_step`](#kind-journey_step), [`use_case`](#kind-use_case), [`policy`](#kind-policy) | A journey step that carries out no use case or policy yet. |
@@ -3874,15 +3852,16 @@ The query selects the records that satisfy the specification, of its own domain.
 
 ### `serves`
 
-The capability or journey serves the business outcome: what it is for. A capability or journey may serve several outcomes, and an outcome be served by several capabilities and journeys.
+The aggregate, read model or journey serves the business outcome: what it is for. Each may serve several outcomes, and an outcome be served by several aggregates, read models and journeys.
 
 - **Reads:** Serves / Served by
 - **Role:** none
 
 | From | To | Meaning |
 | --- | --- | --- |
-| [`capability`](#kind-capability) | [`business_outcome`](#kind-business_outcome) | The capability serves the business outcome. |
+| [`aggregate`](#kind-aggregate) | [`business_outcome`](#kind-business_outcome) | The aggregate serves the business outcome: the use cases whose result is one of its commands are for it. |
 | [`journey`](#kind-journey) | [`business_outcome`](#kind-business_outcome) | The journey serves the business outcome: its result is what the outcome measures. |
+| [`read_model`](#kind-read_model) | [`business_outcome`](#kind-business_outcome) | The read model serves the business outcome: the use cases whose result is one of its queries are for it. |
 
 <a id="relation-starts_from"></a>
 
@@ -3967,7 +3946,7 @@ Coverage counts an obligation as proved once a test of it is automated or manual
 
 A record with more children of one kind than its product's max_children setting.
 
-The setting is the product's product_setting row (15 when it has none). A parent with that many children of one kind is missing a level between them, such as a capability or another aggregate. It counts a parent's children of each kind of the five design stages, discovery to the technical specification, since those are read as lists under their parent; a test is read under what it proves. Children are also counted per group, read from the record_group view, since each group reads under its own heading: a flow's steps per path, since each path reads as its own list, and the records of every kind with a `group_name` (terms, UC requirements, view requirements, API requirements, pattern rules, standard rules and a product's own kinds) per `group_name`; the ungrouped ones are one list. Paths and groups are compared trimmed and in any letter case. Add a level, or a group, and move the children into it.
+The setting is the product's product_setting row (15 when it has none). A parent with that many children of one kind is missing a level between them, such as another aggregate. It counts a parent's children of each kind of the five design stages, discovery to the technical specification, since those are read as lists under their parent; a test is read under what it proves. Children are also counted per group, read from the record_group view, since each group reads under its own heading: a flow's steps per path, since each path reads as its own list; a domain's use cases per group, their result's aggregate or read model, since each is listed under it; and the records of every kind with a `group_name` (terms, UC requirements, view requirements, API requirements, pattern rules, standard rules and a product's own kinds) per `group_name`; the ungrouped ones are one list. Paths and groups are compared trimmed and in any letter case. Add a level, or a group, and move the children into it; for use cases, split the aggregate or read model.
 
 <a id="check-flow-not-offered"></a>
 

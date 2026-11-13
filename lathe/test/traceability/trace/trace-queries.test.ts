@@ -1,5 +1,5 @@
 // The Trace reads (LA-TRC-RM13, LA-TRC-QRY18, LA-TRC-QRY19, LA-TRC-QRY21): each use case of a product's space once, from the outcomes its
-// capability serves to its acceptance tests, with its requirements, flows, steps, technical chains, flow tests and
+// aggregate or read model serves to its acceptance tests, with its requirements, flows, steps, technical chains, flow tests and
 // status per stage, and each journey's proof rolled up from its steps and its journey test, read from the rows and the
 // checks' run through the read model's reader, as the CLI, the MCP tools and the HTTP API read it.
 import { afterEach, describe, expect, it } from 'vitest';

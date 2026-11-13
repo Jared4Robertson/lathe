@@ -79,11 +79,10 @@ beforeAll(async () => {
   const store = await openStore(root);
   await runCommand(store, commandAt('/api/product/add-product'), { id: 'EX', title: 'Example', description: 'A small product for keeping notes.' });
   await runCommand(store, commandAt('/api/domain/add-domain'), { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', position: 2, subdomain_type: 'core', description: 'Notes a writer keeps.' });
-  await runCommand(store, commandAt('/api/domain/add-capability'), { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1, description: 'Writing and keeping notes.' });
   await runCommand(store, commandAt('/api/aggregate/add-aggregate'), { id: 'EX-NOTE-A1', title: 'Note', domain_id: 'EX-NOTE', identity: 'Note ID', description: 'One note a writer keeps.' });
   await runCommand(store, commandAt('/api/aggregate/add-entity'), { id: 'EX-NOTE-EN01', title: 'Note', aggregate_id: 'EX-NOTE-A1', role: 'root', description: 'The note itself.' });
   await runCommand(store, commandAt('/api/command/add-command'), { id: 'EX-NOTE-CMD01', title: 'Write a note', entity_id: 'EX-NOTE-EN01', description: 'Keeps a new note.' });
-  await runCommand(store, commandAt('/api/use-case/add-use-case'), { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer writes a note.', result_id: 'EX-NOTE-CMD01' });
+  await runCommand(store, commandAt('/api/use-case/add-use-case'), { id: 'EX-NOTE-UC01', title: 'Write a note', domain_id: 'EX-NOTE', goal: 'A writer writes a note.', result_id: 'EX-NOTE-CMD01' });
   await store.close();
 });
 

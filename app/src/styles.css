@@ -178,6 +178,8 @@ code { font: 0.86em var(--mono); }
 .spec-section-actions { display: flex; gap: 8px; align-items: center; flex: none; }
 .spec-section-actions:empty { display: none; }
 .section-count { font: 500 0.75rem var(--mono); color: var(--muted); }
+/* A group's kind after its linked title: the aggregate or read model a domain's use cases sit with. */
+.section-kind { font-weight: 400; }
 /* A stage on a domain's or product's page: a rule in its stage's color above it, and its color mark beside its title. */
 .stage { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; padding-top: 6px; border-top: 2px solid var(--stage-color, var(--rule)); }
 .stage-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
@@ -189,7 +191,7 @@ code { font: 0.86em var(--mono); }
 .stage-interface-design { --stage-color: var(--g-interface-design); --stage-fill: var(--g-interface-design-bg); }
 .stage-technical-specification { --stage-color: var(--g-technical-specification); --stage-fill: var(--g-technical-specification-bg); }
 .stage-test-plan { --stage-color: var(--g-test-plan); --stage-fill: var(--g-test-plan-bg); }
-/* A product's business outcomes: each a block, its statement, then its measure, target and the capabilities serving it. */
+/* A product's business outcomes: each a block, its statement, then its measure, target and the aggregates and read models serving it. */
 .outcome-statement p, .outcome-fields dd p { margin: 0; }
 .served-by { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
 .stage-mark { flex: none; display: inline-block; width: 10px; height: 10px; border-radius: 2px; border: 1.5px solid var(--stage-color, var(--g-structural)); background: var(--stage-fill, var(--g-structural-bg)); }
@@ -799,6 +801,9 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .nav-folder.is-stage > .nav-folder-head .nav-label { font-weight: 500; }
 .menu .nav-records .nav-row { color: var(--muted); font-size: 0.84rem; }
 .menu .nav-records .nav-row:hover { color: var(--ink); }
+/* A domain's use cases under a heading per group: the aggregate or read model of their results, by title and kind. */
+.menu .nav-group > .nav-row { color: var(--ink); font-weight: 500; }
+.nav-group-kind { flex: none; color: var(--muted); font-size: 0.72rem; font-weight: 400; }
 .menu .nav-groups { margin-top: 2px; }
 /* The checks page's space filter. */
 /* Tooltips: a name and the keys, after a short hover or on keyboard focus. */

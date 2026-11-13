@@ -56,7 +56,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
   it('LA-UCS-INV08-T refuses a step fulfilling another use case\'s requirement', async () => {
     const problems = await refusal(
       adding({
-        use_case: [{ id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.', result_id: 'TL-LEND-CMD01' }],
+        use_case: [{ id: 'TL-LEND-UC02', title: 'Return a tool', domain_id: 'TL-LEND', goal: 'A member brings a tool back.', result_id: 'TL-LEND-CMD01' }],
         uc_requirement: [{ id: 'TL-LEND-UC02-R01', title: 'On time', use_case_id: 'TL-LEND-UC02', statement: 'A return MUST be dated.' }],
         fulfills: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-UC02-R01' }],
       }),

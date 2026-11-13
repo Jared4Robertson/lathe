@@ -1,13 +1,13 @@
 ---
 name: discover-outcomes
-description: Write or change a Lathe product's business outcomes and journeys - the discovery stage, first in the order - each outcome a measurable statement with its measure and target, each journey the ordered use cases and handoffs from a trigger to a result, and link the capabilities and journeys that serve outcomes and what measures them. Use when starting a product's spec, asking what a product is for or how its success is measured, adding a capability, writing how use cases follow one another over time, or closing the coverage gaps outcome-not-served, outcome-not-measured, capability-serves-no-outcome, journey-serves-no-outcome, journey-without-main-path and journey-step-unlinked and the warnings serves-no-outcome, outcome-target-undated, outcome-duration-without-journey and journey-of-one-use-case, in a repo with lathe.config.json.
+description: Write or change a Lathe product's business outcomes and journeys - the discovery stage, first in the order - each outcome a measurable statement with its measure and target, each journey the ordered use cases and handoffs from a trigger to a result, and link the aggregates, read models and journeys that serve outcomes and what measures them. Use when starting a product's spec, asking what a product is for or how its success is measured, adding an aggregate or read model, writing how use cases follow one another over time, or closing the coverage gaps outcome-not-served, outcome-not-measured, use-case-group-serves-no-outcome, journey-serves-no-outcome, journey-without-main-path and journey-step-unlinked and the warnings serves-no-outcome, outcome-target-undated, outcome-duration-without-journey and journey-of-one-use-case, in a repo with lathe.config.json.
 ---
 
 # Discover outcomes
 
-Discovery is the first stage: before the domain model, write down what the product exists to achieve, as a handful of **business outcomes**, each measurable. Every capability then names the outcomes it serves, and every outcome names what measures it, so the trace runs from why to proof: outcome, journey or capability, use case, code, test.
+Discovery is the first stage: before the domain model, write down what the product exists to achieve, as a handful of **business outcomes**, each measurable. Every aggregate and read model then names the outcomes its use cases are for, and every outcome names what measures it, so the trace runs from why to proof: outcome, journey or aggregate or read model, use case, code, test.
 
-Change the spec only with Lathe's MCP tools (or the `lathe` CLI), never by editing files. Fields, ID patterns and checks are in `lathe/REFERENCE.md` in the Lathe package (`node_modules/@jaredrob/lathe/REFERENCE.md` in a product repo). Outcomes sit under the product, never a domain: one outcome is usually served by capabilities of several domains.
+Change the spec only with Lathe's MCP tools (or the `lathe` CLI), never by editing files. Fields, ID patterns and checks are in `lathe/REFERENCE.md` in the Lathe package (`node_modules/@jaredrob/lathe/REFERENCE.md` in a product repo). Outcomes sit under the product, never a domain: one outcome is usually served by aggregates and read models of several domains.
 
 ## The test: would someone miss it?
 
@@ -21,17 +21,17 @@ Shape of a good one: a title naming the state wanted (More tools in use, not a t
 
 An outcome's notes say how it serves the product's headline outcome, the one the product exists for: "Fewer lost tools keeps the shelves full, which is what brings members back to borrow." An outcome whose notes cannot say this is a candidate to drop or restate.
 
-Write a handful, not dozens: three to six cover most products. Two outcomes with the same measure are one outcome. An outcome no capability could move is a wish; leave it out or say what would serve it.
+Write a handful, not dozens: three to six cover most products. Two outcomes with the same measure are one outcome. An outcome no aggregate or read model could move is a wish; leave it out or say what would serve it.
 
-Everything else in the product serves at least one outcome, and Lathe works that out: a record serves an outcome when a use case whose capability serves it, or that a step of a journey serving it carries out, reaches the record. You never type that link. A record that serves nothing is a warning: write the use case that needs it, or remove the record.
+Everything else in the product serves at least one outcome, and Lathe works that out: a record serves an outcome when a use case whose aggregate or read model serves it, or that a step of a journey serving it carries out, reaches the record. You never type that link. A record that serves nothing is a warning: write the use case that needs it, or remove the record.
 
-## Capabilities serve outcomes
+## Aggregates and read models serve outcomes
 
-It is many to many. Name every outcome each capability serves; coverage reports an outcome no capability serves, and a capability that serves no outcome. Do not invent an outcome to quiet either: for the first, ask whether the outcome belongs to this product; for the second, ask the Owner what the capability is for, since a capability that serves nothing is a candidate to drop. When you add a capability later (`write-use-cases`), name the outcomes it serves.
+It is many to many. Name every outcome each aggregate and read model serves, whether or not use cases sit with it yet; coverage reports an outcome no aggregate or read model serves (`outcome-not-served`), and an aggregate or read model that a use case sits with and that serves no outcome (`use-case-group-serves-no-outcome`). Do not invent an outcome to quiet either: for the first, ask whether the outcome belongs to this product; for the second, ask the Owner what the aggregate or read model is for, since one that serves nothing is a candidate to drop. When you add an aggregate or read model later (`model-a-domain`), name the outcomes it serves. A use case serves the outcomes its aggregate or read model serves, and those of each journey that carries it out.
 
 ## Journeys
 
-A capability says *what* the business can do; a **journey** says *in what order* it happens. A journey is an ordered string of steps from a **trigger** to a **result**, each step a use case (any actor, any domain) or a handoff, and it serves the outcomes that result moves. It is the product's, never a domain's: a journey crosses domains.
+An aggregate or read model says *what* the business can do; a **journey** says *in what order* it happens. A journey is an ordered string of steps from a **trigger** to a **result**, each step a use case (any actor, any domain) or a handoff, and it serves the outcomes that result moves. It is the product's, never a domain's: a journey crosses domains.
 
 **When an outcome's measure is a duration** ("median days from a damage report to a repair"), that time is the length of a journey. Write the journey the measure times, and let it serve the outcome. Coverage warns `outcome-duration-without-journey` for a duration measure no journey serves. A duration inside one sitting by one actor (minutes to find the code behind a requirement) is a use case, not a journey. A count with no time order needs no journey.
 
@@ -61,4 +61,4 @@ Name what measures each outcome. What can:
 - Outcomes are the Owner's to decide: propose them from what the product's README and description say it is for, and ask when the purpose is unclear.
 - Specs name roles (Owner, Reader, Agent, or a product's own), never people.
 - Journeys are for time order across use cases; never write one for a single use case or a count.
-- Finish with `check-and-fix`: no unserved or unmeasured outcome, no capability or journey serving nothing and no undated target should be left.
+- Finish with `check-and-fix`: no unserved or unmeasured outcome, no aggregate, read model or journey serving nothing and no undated target should be left.
