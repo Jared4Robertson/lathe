@@ -22,6 +22,7 @@
 {"source_id":"LA-CHK-UC01-R06-T01","target_id":"LA-TST-TD02"}
 {"source_id":"LA-CHK-UC01-R09-T01","target_id":"LA-TST-TD02"}
 {"source_id":"LA-CHK-UC01-R09-T02","target_id":"LA-TST-TD02"}
+{"source_id":"LA-CHK-UC01-R09-T03","target_id":"LA-TST-TD02"}
 {"source_id":"LA-CHK-UC02-FL-T","target_id":"LA-TST-TD03"}
 {"source_id":"LA-CHK-UC02-R01-T01","target_id":"LA-EXP-TD03"}
 {"source_id":"LA-CHK-UC02-R01-T01","target_id":"LA-TST-TD02"}

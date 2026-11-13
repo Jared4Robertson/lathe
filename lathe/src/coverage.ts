@@ -51,6 +51,16 @@ export const ALLOWED_LEVELS: Readonly<Record<string, readonly string[]>> = {
   standard_rule_test: ['unit', 'integration', 'service', 'system', 'browser'],
 };
 
+/**
+ * The levels below its allowed levels at which a test of a kind supports its parent: such a test gets no
+ * test-level-not-allowed warning while its parent has another test at an allowed level that counts, and it still
+ * proves nothing. A use case test at unit or integration proves the edge cases of a requirement that a test through
+ * the product's interface proves.
+ */
+const SUPPORTING_LEVELS: Readonly<Record<string, readonly string[]>> = {
+  use_case_test: ['unit', 'integration'],
+};
+
 /** The kinds whose records are tests: Lathe's kinds with a run by. */
 export const TEST_KINDS = Object.keys(ALLOWED_LEVELS);
 
@@ -110,7 +120,8 @@ const list = (items: readonly string[]) => items.map(sqlString).join(', ');
  * record's own ID; test_case, each test case read from the product's
  * test files (its file as a path from the root, its place among the file's test cases, its line, and its name after
  * its describes' names), with test_case_id, each ID it or its describes name; test_level_allowed, the levels each test
- * kind allows (typed by the schema's test_level, so a level it does not know fails the load); source_file, each of
+ * kind allows (typed by the schema's test_level, so a level it does not know fails the load); test_level_supporting,
+ * the levels below them at which a test of a kind supports its parent (SUPPORTING_LEVELS); source_file, each of
  * the product's source files and whether a technical record names it or a folder holding it (trace/source-files.ts);
  * record_serves, each record a use case or a journey's handoff reaches with each outcome it serves through it (trace/serves.ts);
  * and package_facts, the packages the product's package.json files list (trace/packages.ts).
@@ -120,10 +131,12 @@ CREATE OR REPLACE TABLE file_facts (record VARCHAR NOT NULL, kind VARCHAR NOT NU
 CREATE OR REPLACE TABLE test_case (file VARCHAR NOT NULL, position INTEGER NOT NULL, line INTEGER NOT NULL, name VARCHAR NOT NULL);
 CREATE OR REPLACE TABLE test_case_id (file VARCHAR NOT NULL, position INTEGER NOT NULL, id VARCHAR NOT NULL);
 CREATE OR REPLACE TABLE test_level_allowed (kind VARCHAR NOT NULL, level test_level NOT NULL);
+CREATE OR REPLACE TABLE test_level_supporting (kind VARCHAR NOT NULL, level test_level NOT NULL);
 CREATE OR REPLACE TABLE source_file (file VARCHAR NOT NULL, traced BOOLEAN NOT NULL);
 CREATE OR REPLACE TABLE record_serves (record VARCHAR NOT NULL, outcome VARCHAR NOT NULL);
 ${PACKAGE_FACTS_SQL}
-INSERT INTO test_level_allowed VALUES ${Object.entries(ALLOWED_LEVELS).flatMap(([kind, levels]) => levels.map((l) => `(${sqlString(kind)}, ${sqlString(l)})`)).join(', ')};`;
+INSERT INTO test_level_allowed VALUES ${Object.entries(ALLOWED_LEVELS).flatMap(([kind, levels]) => levels.map((l) => `(${sqlString(kind)}, ${sqlString(l)})`)).join(', ')};
+INSERT INTO test_level_supporting VALUES ${Object.entries(SUPPORTING_LEVELS).flatMap(([kind, levels]) => levels.map((l) => `(${sqlString(kind)}, ${sqlString(l)})`)).join(', ')};`;
 
 /** One minimum the schema leaves to coverage: the records that fall short of it, each with a message. */
 export interface GapRule {
@@ -313,8 +326,11 @@ WHERE NOT EXISTS (SELECT 1 FROM journey_test t WHERE t.journey_id = j.id)`),
 /**
  * The coverage tables and views, for the schema's kinds, made once the file facts are in (a table is worked out once
  * per load, so the checks and the coverage queries that read it share the work):
- * - test_run (id, kind, parent_id, domain_id, level, state, file, level_allowed, backed): every test with its run by;
- *   backed says an automated test's file exists and names the test's ID (true for any other state).
+ * - test_run (id, kind, parent_id, domain_id, level, state, file, level_allowed, backed, supporting): every test with
+ *   its run by; backed says an automated test's file exists and names the test's ID (true for any other state);
+ *   supporting says it runs at a level below its kind's (SUPPORTING_LEVELS) and its parent has another test at an
+ *   allowed level, automated or manual and backed. A supporting test gets no test-level-not-allowed warning and
+ *   still proves nothing.
  * - owed_pattern_rules (domain, id): the rules a domain owes. A domain follows a pattern when the domain itself follows
  *   it, one of its use cases does, or an interface that offers one of its use cases does (an interface's pattern says
  *   how each step is carried out through it), and then owes every rule of the pattern, with no exception. The one answer to
@@ -351,10 +367,16 @@ export function coverageViewsSql(schema: SchemaDescription): string {
   const lathe = list(LATHE_OBLIGATIONS);
   return `
 CREATE OR REPLACE TABLE test_run AS
-SELECT t.*, EXISTS (SELECT 1 FROM test_level_allowed a WHERE a.kind = t.kind AND a.level = t.level) AS level_allowed,
-  t.state <> 'automated' OR coalesce(f.file_exists AND f.contains_id, false) AS backed
-FROM (${testRun}) t
-LEFT JOIN file_facts f ON f.record = t.id AND NOT f.helper;
+WITH run AS (
+  SELECT t.*, EXISTS (SELECT 1 FROM test_level_allowed a WHERE a.kind = t.kind AND a.level = t.level) AS level_allowed,
+    t.state <> 'automated' OR coalesce(f.file_exists AND f.contains_id, false) AS backed
+  FROM (${testRun}) t
+  LEFT JOIN file_facts f ON f.record = t.id AND NOT f.helper
+)
+SELECT r.*, EXISTS (SELECT 1 FROM test_level_supporting s WHERE s.kind = r.kind AND s.level = r.level)
+  AND EXISTS (SELECT 1 FROM run p WHERE p.kind = r.kind AND p.parent_id = r.parent_id AND p.id <> r.id
+    AND p.level_allowed AND p.backed AND p.state IN ('automated', 'manual')) AS supporting
+FROM run r;
 
 CREATE OR REPLACE TABLE owed_pattern_rules AS
 WITH followers AS (
