@@ -66,13 +66,15 @@ export function Breadcrumb({ items, label = 'Breadcrumb', className, onFollow }:
   );
 }
 
-/** The stage and the floating panels a menu lies over, not those that hold it. */
-function coveredBy(menu: HTMLElement | null): HTMLElement[] {
-  if (!menu) return [];
+/**
+ * The stage and the floating panels a menu lies over now: not those that hold it, nor those something else has made
+ * inert (`mine` are the ones this menu made inert, still counted).
+ */
+function coveredBy(menu: HTMLElement, mine: ReadonlySet<HTMLElement>): HTMLElement[] {
   const m = menu.getBoundingClientRect();
   const over = (r: DOMRect) => r.left < m.right && r.right > m.left && r.top < m.bottom && r.bottom > m.top;
   return [...document.querySelectorAll<HTMLElement>('[data-stage-tools], [data-floating]')]
-    .filter((el) => !el.contains(menu) && !el.inert && over(el.getBoundingClientRect()));
+    .filter((el) => !el.contains(menu) && (mine.has(el) || !el.inert) && over(el.getBoundingClientRect()));
 }
 
 /** The "…" button and its menu of the levels a long trail hides. */
@@ -94,12 +96,27 @@ function HiddenLevels({ items, onFollow }: { items: readonly Crumb[]; onFollow?:
     };
     document.addEventListener('pointerdown', away, true);
     // What the menu covers is inert while it is open, as under any popover: a press there only closes the menu, and
-    // nothing half hidden under it is a target (WCAG 2.5.8).
-    const covered = coveredBy(menu.current);
-    for (const el of covered) el.inert = true;
+    // nothing half hidden under it is a target (WCAG 2.5.8). That holds for as long as it is open, not only at the
+    // moment it opens: a stage or panel drawn under it later (a stage still loading), or a page laid out anew (a
+    // resize, a font arriving), is covered or released again.
+    const mine = new Set<HTMLElement>();
+    const cover = () => {
+      if (!menu.current) return;
+      const now = new Set(coveredBy(menu.current, mine));
+      for (const el of mine) if (!now.has(el)) { el.inert = false; mine.delete(el); }
+      for (const el of now) if (!mine.has(el)) { el.inert = true; mine.add(el); }
+    };
+    cover();
+    const drawn = new MutationObserver(cover);
+    drawn.observe(document.body, { childList: true, subtree: true });
+    window.addEventListener('resize', cover);
+    document.fonts?.addEventListener('loadingdone', cover);
     return () => {
       document.removeEventListener('pointerdown', away, true);
-      for (const el of covered) el.inert = false;
+      drawn.disconnect();
+      window.removeEventListener('resize', cover);
+      document.fonts?.removeEventListener('loadingdone', cover);
+      for (const el of mine) el.inert = false;
     };
   }, [open]);
 

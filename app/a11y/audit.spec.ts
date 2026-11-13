@@ -230,10 +230,14 @@ const DESKTOP: State[] = [
   // Each stage with the panels collapsed, and with them open under reduced transparency.
   ...STAGES.map((s): State => ({ name: `${s.name}, panels collapsed`, run: async (page) => { await open(page, s.url, s.ready, 'state' in s ? s.state : 'visible'); await collapsePanels(page); } })),
   ...STAGES.map((s): State => ({ name: `${s.name}, reduced transparency`, run: async (page) => { await reduceTransparency(page); await open(page, s.url, s.ready, 'state' in s ? s.state : 'visible'); } })),
+  // Opened as soon as its button shows, before the stage below has drawn its toolbar, then audited once the stage is
+  // drawn: what the menu covers stays inert whatever draws under it later (LA-V61-R47).
   { name: 'a deep breadcrumb with its hidden levels open', run: async (page) => {
-    await open(page, EDITED, '.header-strip .crumb-more-button');
+    await page.goto(EDITED);
     await page.locator('.header-strip .crumb-more-button').click();
     await page.locator('.header-strip .crumb-menu').waitFor();
+    await page.locator('.stage-tools .stage-frame').waitFor({ state: 'attached' });
+    await page.waitForTimeout(400);
   } },
   // The desktop app's chat (LA-V99), with a stand-in for the shell: a conversation with a tool call open and a
   // permission prompt, and the session picker with its warning about a session open in another client.

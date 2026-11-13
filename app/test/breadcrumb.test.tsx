@@ -2,7 +2,7 @@ import './setup';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Breadcrumb, collapseCrumbs, CRUMBS_SHOWN_ON_A_PHONE, type Crumb } from '../src/shell/Breadcrumb';
 import { openApp } from './helpers';
 import { testWorkspace } from './graph/workspace';
@@ -72,5 +72,34 @@ describe('the one breadcrumb', () => {
     expect(others).toEqual([]);
     const users = filesUnder(SRC).filter((f) => /<Breadcrumb\b/.test(readFileSync(f, 'utf8'))).map((f) => f.slice(SRC.length + 1)).sort();
     expect(users).toEqual(['shell/MobileBar.tsx', 'views/HeaderStrip.tsx', 'views/WikiCard.tsx']);
+  });
+  it('LA-V61-R47-T02 What the hidden levels\' menu covers is inert while it is open, a stage drawn under it after it opens too', async () => {
+    // jsdom lays nothing out: the menu, and anything marked as the stage below it, are given boxes that overlap.
+    const box = (l: number, t: number, r: number, b: number) => ({ left: l, top: t, right: r, bottom: b, width: r - l, height: b - t, x: l, y: t, toJSON: () => ({}) }) as DOMRect;
+    const boxes = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      if (this.classList.contains('crumb-menu')) return box(400, 44, 600, 180);
+      if (this.dataset.stageTools) return box(352, 56, 1200, 98);
+      if (this.dataset.floating) return box(1300, 56, 1400, 98);
+      return box(0, 0, 0, 0);
+    });
+    try {
+      render(<Breadcrumb items={crumbs(5)} />);
+      const aside = document.body.appendChild(Object.assign(document.createElement('div'), { className: 'aside' }));
+      aside.dataset.floating = 'right';
+      fireEvent.click(screen.getByRole('button', { name: '3 hidden levels' }));
+      await screen.findByRole('list', { name: 'Hidden levels' });
+      // The stage's toolbar is drawn only after the menu opened, under it: it turns inert; the panel clear of it does not.
+      const tools = document.body.appendChild(document.createElement('div'));
+      tools.dataset.stageTools = 'top';
+      await waitFor(() => expect(tools.inert).toBe(true));
+      expect(aside.inert).toBeFalsy();
+      // Closed, nothing it covered stays inert.
+      fireEvent.keyDown(screen.getByRole('list', { name: 'Hidden levels' }), { key: 'Escape' });
+      expect(tools.inert).toBe(false);
+      tools.remove();
+      aside.remove();
+    } finally {
+      boxes.mockRestore();
+    }
   });
 });
