@@ -28,7 +28,7 @@ export interface GraphDrawn {
 const STAGE_KINDS: Readonly<Record<Stage, string>> = {
   discovery: 'business outcome, journey, journey step',
   'domain-model': 'domain, aggregate, entity, value object, constraint, invariant, specification, domain event, command, read model, query, policy, domain service, term',
-  'use-cases': 'capability, use case, UC requirement, flow, flow step, pattern and its rules',
+  'use-cases': 'use case, UC requirement, flow, flow step, pattern and its rules',
   'interface-design': 'interface, view, view requirement, endpoint, API requirement, integration',
   'technical-specification': 'the technical record that implements each design record, a table, a UI component, a standard and its rules',
   'test-plan': 'every kind of test, and the test data sets tests start from',
@@ -37,7 +37,7 @@ const STAGE_KINDS: Readonly<Record<Stage, string>> = {
 /** A shape's word in the key: the kind it is first drawn for. */
 const SHAPE_WORDS: Readonly<Record<Shape, string>> = {
   product: 'Product', hexagon: 'Domain', folder: 'Folder', double: 'Aggregate', box: 'Entity', octagon: 'Rule', flag: 'Event',
-  parallelogram: 'Command', slice: 'Capability', stadium: 'Use case', page: 'Requirement', stack: 'Pattern', 'chevron-bar': 'Flow',
+  parallelogram: 'Command', stadium: 'Use case', page: 'Requirement', stack: 'Pattern', 'chevron-bar': 'Flow',
   chevron: 'Flow step', tab: 'Journey step', window: 'View', port: 'Endpoint', component: 'Technical', stripes: 'Table', shield: 'Test', diamond: 'Question',
 };
 

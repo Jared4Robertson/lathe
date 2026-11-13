@@ -22,7 +22,7 @@ export const REMOVE_BUSINESS_OUTCOME_IDENTITY = {
   id: 'LA-PRD-CMD142',
   slice: { aggregate: 'LA-PRD-A16', name: 'business-outcome' },
   name: 'remove-business-outcome',
-  description: 'Removes a business outcome with the measured_by links it starts. Refused while a capability serves it, or anything else references it.',
+  description: 'Removes a business outcome with the measured_by links it starts. Refused while an aggregate, read model or journey serves it, or anything else references it.',
   method: 'POST',
   route: '/api/business-outcome/remove-business-outcome',
 } as const;

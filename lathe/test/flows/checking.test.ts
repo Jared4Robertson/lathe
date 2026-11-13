@@ -197,14 +197,13 @@ describe('Checking flows', () => {
     ]);
     // S01: the Owner sets the product's limits.
     tl.command('product-setting set-limits', { product_id: 'TL', max_children: 2, max_entities_per_aggregate: 2 });
-    // S02, S03: too many children, too many entities, and a capability and a group with one child.
+    // S02, S03: too many children, too many entities, and a group with one child.
     const ws = tl.workspace();
     expect(problemsOf(ws, 'too-many-children').sort()).toEqual([expect.stringMatching(/^TL-LEND-A1: .*3 children of kind entity/), expect.stringMatching(/^TL-LEND-UC01: .*3 /)]);
     expect(problemsOf(ws, 'aggregate-too-large')).toEqual([expect.stringMatching(/^TL-LEND-A1: /)]);
-    expect(problemsOf(ws, 'lone-child').sort()).toEqual([expect.stringMatching(/^TL-LEND-CAP01: /), expect.stringMatching(/^TL-LEND-UC01: .*"Dates"/)]);
-    // S04: they add a level, merge one and raise nothing, then check again.
+    expect(problemsOf(ws, 'lone-child')).toEqual([expect.stringMatching(/^TL-LEND-UC01: .*"Dates"/)]);
+    // S04: they raise the limits, merge the lone group, then check again.
     tl.command('product-setting set-limits', { product_id: 'TL', max_children: 15, max_entities_per_aggregate: 7 });
-    tl.command('use-case add-use-case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.', result_id: 'TL-LEND-CMD01' });
     tl.command('use-case change-uc-requirement', { id: 'TL-LEND-UC01-R04', group_name: '' });
     const fixed = tl.workspace();
     expect(fixed.problems.filter((p) => ['too-many-children', 'aggregate-too-large', 'lone-child'].includes(p.check))).toEqual([]);

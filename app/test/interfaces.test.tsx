@@ -84,20 +84,22 @@ describe('a flow through its interfaces', () => {
     expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('LA-V51-R09-T01 An interface lists its roles, patterns, the use cases it offers by capability and the ones it does not', async () => {
+  it('LA-V51-R09-T01 An interface lists its roles, patterns, the use cases it offers by aggregate or read model and the ones it does not', async () => {
     await openApp(`${addressOf('DM-IF02')}?stage=graph`, served());
     await screen.findByRole('heading', { level: 1, name: 'Terminal' });
     expect(within(main()).getByText('Roles').nextElementSibling).toHaveTextContent('Clerk, Shopper');
     expect(within(main()).getByText('Patterns').nextElementSibling!.querySelector('a')).toHaveAttribute('href', addressOf('DM-PAT-AUDIT'));
     const offers = section(/^Use cases it offers/);
-    expect(within(offers).getByRole('heading', { level: 3, name: /^Buying/ })).toBeInTheDocument();
-    expect(within(offers).queryByRole('heading', { level: 3, name: /^Paying/ })).toBeNull();
-    const rows = within(within(offers).getByRole('list', { name: 'Use cases DM-IF02 offers: Buying' })).getAllByRole('listitem');
+    // Each group headed by its aggregate, linked, with its kind.
+    const basket = within(offers).getByRole('heading', { level: 3, name: /^Basket\s*Aggregate/ });
+    expect(within(basket).getByRole('link', { name: 'Basket' })).toHaveAttribute('href', addressOf('DM-SHOP-A1'));
+    expect(within(offers).queryByRole('heading', { level: 3, name: /^Payment/ })).toBeNull();
+    const rows = within(within(offers).getByRole('list', { name: 'Use cases DM-IF02 offers: Basket' })).getAllByRole('listitem');
     expect(rows.map((r) => r.querySelector('a')!.getAttribute('href'))).toEqual([addressOf('DM-SHOP-UC01')]);
     const missing = section(/^Use cases it does not offer/);
-    const without = within(within(missing).getByRole('list', { name: 'Use cases DM-IF02 does not offer: Paying' })).getAllByRole('listitem');
+    const without = within(within(missing).getByRole('list', { name: 'Use cases DM-IF02 does not offer: Payment' })).getAllByRole('listitem');
     expect(without.map((r) => r.textContent)).toEqual(['DM-PAY-UC01Pay by card']);
-    expect(within(missing).queryByRole('heading', { level: 3, name: /^Buying/ })).toBeNull();
+    expect(within(missing).queryByRole('heading', { level: 3, name: /^Basket/ })).toBeNull();
 
     // The web app offers every use case, and names no role.
     await openApp(`${addressOf('DM-IF01')}?stage=graph`, served());

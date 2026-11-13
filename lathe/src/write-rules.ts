@@ -18,6 +18,10 @@
 //   case's result, or a result it sets that leaves a step of the flow invoking another command;
 // - use-case-identity-taken: a use case the write adds, or whose result or first actor it changes, that has the same
 //   first actor and result as another use case of its product.
+//
+// A use case sits with its result (LA-STD-MODELING-R20):
+// - use-case-result-in-domain: a use case the write adds, or whose domain or result it changes, whose result is of
+//   another domain than its own. Move a use case carries it to its result's domain.
 // The check rows of the same names report what data already written holds.
 import type { RowChange } from './server/contract.ts';
 import { ESSENTIAL_WORDS, placementOf, wordGroupOf, wordNamed, type Placement, type WordGroup } from './essential.ts';
@@ -220,5 +224,28 @@ const useCaseIdentityTaken: WriteRule = {
   },
 };
 
+const useCaseResultInDomain: WriteRule = {
+  name: 'use-case-result-in-domain',
+  check: (view, changes) => {
+    const touched = changes.filter(
+      (c): c is RowChange & { after: Row } => c.table === 'use_case' && !!c.after && (c.before?.domain_id !== c.after.domain_id || c.before?.result_id !== c.after.result_id),
+    );
+    if (touched.length === 0) return [];
+    const placement = placementOf(view);
+    return touched.flatMap(({ table, after }): RuleProblem[] => {
+      const result = String(after.result_id);
+      const domain = String(after.domain_id);
+      const resultDomain = placement.domainOf(result);
+      if (resultDomain === undefined || resultDomain === domain) return [];
+      return [{
+        rule: 'use-case-result-in-domain',
+        table,
+        row: after,
+        message: `Use case ${String(after.id)} would be in ${domain}, but its result ${result} is of ${resultDomain}: a use case sits in its result's domain; move it to ${resultDomain} with Move a use case, or give it a result of its own domain.`,
+      }];
+    });
+  },
+};
+
 /** Every rule a write is held to on the rows it writes. */
-export const WRITE_RULES: readonly WriteRule[] = [essentialNamesTechnology, essentialLinksAccidental, useCaseInvokesAnotherCommand, useCaseIdentityTaken];
+export const WRITE_RULES: readonly WriteRule[] = [essentialNamesTechnology, essentialLinksAccidental, useCaseInvokesAnotherCommand, useCaseIdentityTaken, useCaseResultInDomain];

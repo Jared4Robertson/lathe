@@ -1,4 +1,4 @@
-// LA-TRC-TD02 Followed librarian action: product TL with domain TL-LEND, a capability with use case
+// LA-TRC-TD02 Followed librarian action: product TL with domain TL-LEND, a use case
 // TL-LEND-UC01, and patterns TL-PAT-ACT (settings record and required_input) and TL-PAT-LOG (no settings), written as
 // their rows; then TL-LEND-UC01 follows TL-PAT-ACT, giving each setting, with the Pattern following aggregate's own
 // command.
@@ -18,8 +18,7 @@ export async function patternFollowingDataSet(): Promise<Store> {
       aggregate: [{ id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', identity: 'Loan ID', description: 'One tool lent to one member.' }],
       entity: [{ id: 'TL-LEND-EN01', title: 'Loan', aggregate_id: 'TL-LEND-A1', role: 'root', description: 'The loan itself.' }],
       command: [{ id: 'TL-LEND-CMD01', title: 'Lend a tool', entity_id: 'TL-LEND-EN01', description: 'Lends a free tool to a member.' }],
-      capability: [{ id: 'TL-LEND-CAP01', title: 'Loans', domain_id: 'TL-LEND', position: 1, description: 'Lending a tool and taking it back.' }],
-      use_case: [{ id: 'TL-LEND-UC01', title: 'Lend a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member takes a tool home.', result_id: 'TL-LEND-CMD01' }],
+      use_case: [{ id: 'TL-LEND-UC01', title: 'Lend a tool', domain_id: 'TL-LEND', goal: 'A member takes a tool home.', result_id: 'TL-LEND-CMD01' }],
       pattern: [
         { id: 'TL-PAT-ACT', title: 'Librarian action', product_id: 'TL', description: 'An action the librarian takes at the desk.' },
         { id: 'TL-PAT-LOG', title: 'Logged action', product_id: 'TL', description: 'An action written to the log.' },

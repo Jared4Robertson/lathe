@@ -81,7 +81,7 @@ test.describe('overlays', () => {
     await page.keyboard.press('Escape');
     await expect(page.locator('.tool-panel')).toHaveCount(0);
     const pop = await step(page, 'overlays', 'Appearance popover: open', { keys: ['nav#nav', '.page-bar-actions', '.header-strip', '.tool-panel'], allow: ['.wiki-panel', '.focus-stage'] }, async () => {
-      await page.locator('nav#nav').getByRole('link', { name: 'Appearance' }).click();
+      await page.locator('nav#nav').getByRole('link', { name: 'Appearance', exact: true }).click();
       await page.locator('.tool-panel.appearance-popover .theme-rows').waitFor();
       await page.waitForTimeout(400);
     });

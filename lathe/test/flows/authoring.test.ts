@@ -141,7 +141,7 @@ describe('The stage domains\' flows', () => {
     tl.command('product change-product', { id: 'TL', roles: [{ name: 'Librarian', description: 'Lends tools at the desk.' }, { name: 'Member', description: 'Borrows tools.' }] });
     expect(tl.command('product get-product', { id: 'TL' })).toMatch(/Librarian/);
     expect(tl.command('product get-product', { id: 'TL' })).toMatch(/Borrows tools/);
-    tl.command('use-case add-use-case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.', result_id: 'TL-LEND-CMD01', actors: ['Member'] });
+    tl.command('use-case add-use-case', { id: 'TL-LEND-UC02', title: 'Return a tool', domain_id: 'TL-LEND', goal: 'A member brings a tool back.', result_id: 'TL-LEND-CMD01', actors: ['Member'] });
     expect(tl.read('data/use_case_actor.jsonl')).toContain('"role_name":"Member"');
   });
 
@@ -160,15 +160,13 @@ describe('The stage domains\' flows', () => {
     expect(linksOf(tl, 'TL-LEND-Q01')).toEqual([]);
   });
 
-  it('LA-UCS-UC05-FL-T LA-UCS-UC07-FL-T organize a domain\'s use cases into capabilities and patterns', async () => {
+  it('LA-UCS-UC05-FL-T LA-UCS-UC07-FL-T organize a domain\'s use cases by aggregate and patterns', async () => {
     const tl = product();
-    await tl.seed([...LENDING, add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.', result_id: 'TL-LEND-CMD01' })]);
-    // S01: the domain's capabilities in order; a repeated position is refused.
-    tl.command('domain add-capability', { id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 2, description: 'Taking tools back from members.' });
-    tl.refuse('domain add-capability', { id: 'TL-LEND-CAP03', title: 'Fees', domain_id: 'TL-LEND', position: 2, description: 'Charging members for late tools.' });
-    // S02: each use case under its capability.
-    tl.command('use-case move-use-case', { id: 'TL-LEND-UC02', capability_id: 'TL-LEND-CAP02' });
-    expect(recordOf(tl, 'TL-LEND-UC02')?.parent).toBe('TL-LEND-CAP02');
+    await tl.seed([...LENDING, add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', domain_id: 'TL-LEND', goal: 'A member brings a tool back.', result_id: 'TL-LEND-CMD01' })]);
+    // S01: the domain's use cases by the aggregate their results sit in.
+    expect(tl.command('use-case list-use-cases', { domain_id: 'TL-LEND' }).trim()).toBe('Aggregate TL-LEND-A1  Loan\n  TL-LEND-UC01  Borrow a tool\n  TL-LEND-UC02  Return a tool');
+    // S02: a use case moved to a result in a domain that is not its own is refused.
+    tl.refuse('use-case move-use-case', { id: 'TL-LEND-UC02', domain_id: 'TL-LEND', result_id: 'TL-NOPE-CMD01' });
     // S03: shared behavior once, as a pattern with its rules and settings; a setting name not in lower case is refused.
     const pattern = { id: 'TL-PAT-ACT', title: 'Librarian action', product_id: 'TL', description: 'An action a librarian takes that saves a record.' };
     tl.refuse('pattern add-pattern', { ...pattern, settings: [{ name: 'Record', meaning: 'The record the action saves.' }] });
@@ -189,7 +187,7 @@ describe('The stage domains\' flows', () => {
     await tl.seed([
       ...LENDING,
       add('uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'The due date is set', use_case_id: 'TL-LEND-UC01', statement: 'The loan MUST be due two weeks after it opens.' }),
-      add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.', result_id: 'TL-LEND-CMD01' }),
+      add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', domain_id: 'TL-LEND', goal: 'A member brings a tool back.', result_id: 'TL-LEND-CMD01' }),
       add('uc_requirement', { id: 'TL-LEND-UC02-R01', title: 'The return is dated', use_case_id: 'TL-LEND-UC02', statement: 'The return MUST carry its date.' }),
       add('view', { id: 'TL-V01', title: 'Loan desk', description: 'Where the librarian opens and closes loans.' }),
     ]);
@@ -237,7 +235,7 @@ describe('The stage domains\' flows', () => {
     const stages = [...before.matchAll(/^## (.+)$/gm)].map((m) => m[1]);
     expect(stages.slice(0, 6)).toEqual(['Discovery', 'Domain model', 'Use cases', 'Interface design', 'Technical specification', 'Test plan']);
     const kinds = [...section(before, '## Use cases').matchAll(/^### (.+) \(`(\w+)`\)$/gm)].map((m) => m[2]);
-    expect(kinds).toEqual(['capability', 'use_case', 'uc_requirement', 'flow', 'flow_step', 'pattern', 'pattern_rule', 'slot']);
+    expect(kinds).toEqual(['use_case', 'uc_requirement', 'flow', 'flow_step', 'pattern', 'pattern_rule', 'slot']);
     const ws = tl.workspace();
     expect(ws.kinds.filter((k) => k.stage === 'use-cases').map((k) => k.kind)).toEqual(kinds);
     // S02: a product kind declared in one of the stages joins it, after Lathe's kinds.
@@ -386,15 +384,15 @@ describe('The stage domains\' flows', () => {
     tl.refuse('business-outcome add-business-outcome', { id: 'TL-BO01', title: 'More tools in use', product_id: 'TL', statement: 'Members borrow more tools.', target: 'Twice as many.' });
     tl.command('business-outcome add-business-outcome', { id: 'TL-BO01', title: 'More tools in use', product_id: 'TL', statement: 'Members borrow the library\'s tools more often.', measure: 'Loans opened per tool per month.', target: 'Two per tool per month within a year.' });
     const before = tl.workspace();
-    expect(gapsOf(before, 'TL-LEND')).toContain('capability-serves-no-outcome TL-LEND-CAP01');
+    expect(gapsOf(before, 'TL-LEND')).toContain('use-case-group-serves-no-outcome TL-LEND-A1');
     expect(gapsOf(before, null)).toContain('outcome-not-served TL-BO01');
     expect(before.kinds.find((k) => k.kind === 'business_outcome')).toMatchObject({ stage: 'discovery' });
     expect(gapsOf(before, null)).toContain('outcome-not-measured TL-BO01');
-    // S02: each capability linked to the outcomes it serves closes both of those gaps.
-    tl.command('domain change-capability', { id: 'TL-LEND-CAP01', serves: ['TL-BO01'] });
+    // S02: each aggregate linked to the outcomes it serves closes both of those gaps.
+    tl.command('aggregate change-aggregate', { id: 'TL-LEND-A1', serves: ['TL-BO01'] });
     const served = tl.workspace();
     expect([...gapsOf(served, 'TL-LEND'), ...gapsOf(served, null)].filter((g) => g.includes('outcome'))).toEqual(['outcome-not-measured TL-BO01']);
-    expect(tl.command('business-outcome get-business-outcome', { id: 'TL-BO01' })).toContain('TL-LEND-CAP01');
+    expect(tl.command('business-outcome get-business-outcome', { id: 'TL-BO01' })).toContain('TL-LEND-A1');
     // S03: each outcome linked to the test that measures it; a test not automated yet measures nothing.
     tl.command('use-case add-use-case-test', { id: 'TL-LEND-UC01-R01-T01', title: 'Loans are counted per tool', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'not automated yet', when: 'Members borrow tools for a month', then: 'The loans are counted per tool' });
     tl.command('business-outcome change-business-outcome', { id: 'TL-BO01', measured_by: ['TL-LEND-UC01-R01-T01'] });
@@ -481,7 +479,7 @@ describe('The stage domains\' flows', () => {
     expect(['TL-LEND-EP01', 'TL-V01', 'TL-INT01'].map(domainOf)).toEqual(['TL-LEND', 'TL-LEND', 'TL-LEND']);
   });
 
-  it('LA-PRD-UC19-FL-T merge two branches\' data', async () => {
+  it('LA-PLT-UC104-FL-T merge two branches\' data', async () => {
     const tl = product();
     await tl.seed(LENDING);
     const git = (...args: string[]) => {

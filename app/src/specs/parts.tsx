@@ -55,6 +55,11 @@ export function RecordLink({ index, id, showTitle = true, row = false }: { index
   );
 }
 
+/** An aggregate or read model as a use case group, or as what serves a business outcome: its link, then its kind. */
+export function GroupLink({ index, group }: { index: RecordIndex; group: { id: string; kind: string } }) {
+  return <><RecordLink index={index} id={group.id} /> <small className="meta">{kindLabel(index, group.kind)}</small></>;
+}
+
 /** A list of problems; with `current`, the rows of that record's problems are marked as the one in focus. */
 export function ProblemList({ index, problems, showRecord = true, showCheck = true, current = null }: { index: RecordIndex; problems: ListedProblem[]; showRecord?: boolean; showCheck?: boolean; current?: string | null }) {
   if (problems.length === 0) return <p className="hint">No problems.</p>;
@@ -98,15 +103,16 @@ export const levelBelow = (level: SectionLevel): SectionLevel => Math.min(6, lev
  * A titled part of a page. Its header row holds the heading (h2, or h3 and h4 for a part within
  * a part, such as a folder of a domain page and a kind within it, down to h6 for groups within a
  * folder) and, at the right, any actions its contents offer (such as a list's "Expand all"). A
- * part that is a record (a layer) links its title to the record's page.
+ * part that is a record (a layer) links its title to the record's page, and may say the record's kind after it (a
+ * use case group: the aggregate or read model the use cases under it sit with).
  */
-export function Section({ id, title, titleTo, count, level = 2, className, children }: { id?: string; title: string; titleTo?: string; count?: number; level?: SectionLevel; className?: string; children: ReactNode }) {
+export function Section({ id, title, titleTo, kind, count, level = 2, className, children }: { id?: string; title: string; titleTo?: string; kind?: string; count?: number; level?: SectionLevel; className?: string; children: ReactNode }) {
   const [actions, setActions] = useState<HTMLDivElement | null>(null);
   const Heading = `h${level}` as 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
   return (
     <section id={id} className={className ? `spec-section ${className}` : 'spec-section'}>
       <header className="spec-section-head">
-        <Heading>{titleTo ? <SpecLink to={titleTo}>{title}</SpecLink> : title}{count !== undefined && <span className="section-count">{count}</span>}</Heading>
+        <Heading>{titleTo ? <SpecLink to={titleTo}>{title}</SpecLink> : title}{kind && <small className="meta section-kind">{kind}</small>}{count !== undefined && <span className="section-count">{count}</span>}</Heading>
         <div className="spec-section-actions" ref={setActions} />
       </header>
       <ActionsSlotContext.Provider value={actions}>{children}</ActionsSlotContext.Provider>

@@ -62,7 +62,7 @@ describe('a map\'s layout input', () => {
     const input = productInput(index, 'P', 'tree', MEASURE());
     placeTree(input.shape, (i) => input.labels[i], cache);
     const data = testWorkspace();
-    addRows(data, 'use_case', { id: 'P-D-UC09', title: 'Lend a thing to a neighbor for a week', capability_id: 'P-D-CAP01', goal: 'A member lends a thing.' });
+    addRows(data, 'use_case', { id: 'P-D-UC09', title: 'Lend a thing to a neighbor for a week', domain_id: 'P-D', goal: 'A member lends a thing.', result_id: 'P-D-CMD02' });
     const next = mapInput('tree', ['P'], (id) => treeChildren(recordIndexOf(data), id), (id) => treeLabel(recordIndexOf(data), id), MEASURE());
     expect([...placeTree(next.shape, (i) => next.labels[i], cache).boxes]).toEqual([...placeTree(next.shape, (i) => next.labels[i]).boxes]);
   });
@@ -115,7 +115,7 @@ describe('the layout\'s worker', () => {
     expect(lastLayout()?.thread).toBe('worker');
     // New data that changes the map: the old map stays, with its own index, while the new one is laid out.
     const data = testWorkspace();
-    addRows(data, 'use_case', { id: 'P-D-UC09', title: 'Lend a thing to a neighbor for a week', capability_id: 'P-D-CAP01', goal: 'A member lends a thing.' });
+    addRows(data, 'use_case', { id: 'P-D-UC09', title: 'Lend a thing to a neighbor for a week', domain_id: 'P-D', goal: 'A member lends a thing.', result_id: 'P-D-CMD02' });
     const second = recordIndexOf(data);
     view.rerender(<Probe index={second} />);
     await act(async () => { await new Promise((r) => setTimeout(r, 10)); });

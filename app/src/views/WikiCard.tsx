@@ -12,9 +12,9 @@ import { pageHref } from './overlays';
 import { HistorySection } from './RecordHistory';
 import { Tooltip } from '../shell/Tooltip';
 import { kindLabel, type ListedProblem, type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
-import { foldedChildren } from '../exploring/folder-tree/folders';
+import { folderGroups, foldedChildren } from '../exploring/folder-tree/folders';
 import { Markdown } from '../specs/Markdown';
-import { ProblemBadge, RecordTree, Section, listTitle } from '../specs/parts';
+import { ProblemBadge, RecordTree, Section, levelBelow, listTitle } from '../specs/parts';
 import { RecordFacts } from '../specs/RecordContent';
 import { problemsUnder } from '../specs/SpecPages';
 import { ProductPage } from '../product/product/ProductPage';
@@ -228,7 +228,11 @@ function OwnFacts({ index, id, children }: { index: RecordIndex; id: string; chi
   return <div className="spec-body"><aside className="record-side" aria-label="Facts"><RecordFacts index={index} record={record} /></aside>{children}</div>;
 }
 
-/** A group's wiki page: its parent, its kind, and its members, each with its coverage marks and its own children folded. */
+/**
+ * A group's wiki page: its parent, its kind, and its members, each with its coverage marks and its own children folded;
+ * a domain's use cases under a section per group, headed by the aggregate or read model of their results. A use case
+ * group's page names the aggregate or read model it is.
+ */
 function GroupWiki({ index, gid }: { index: RecordIndex; gid: string }) {
   const parent = groupOwner(index, gid);
   const kind = treeGroup(index, gid)?.kind;
@@ -242,10 +246,16 @@ function GroupWiki({ index, gid }: { index: RecordIndex; gid: string }) {
   // A list of one kind is titled by that kind ("Use cases", "Commands"); a mixed one stays "Members".
   const membersTitle = listTitle(index, members, 'Members');
   const kinds = [...new Set(members.map((m) => m.kind))];
+  const byGroup = folderGroups(index, parent, gid);
   return (
     <div className="spec-body">
       <p className="group-intro">
-        {groupName(index, gid)} of <Link to={addressOf(parent)} className="record-link"><code>{parent}</code> <span>{parentRecord.title}</span></Link>
+        {group?.heads ? (
+          // A use case group: the use cases whose results belong to an aggregate or read model.
+          <>{membersTitle} of {kindLabel(index, group.heads.kind)} <Link to={addressOf(group.heads.id)} className="record-link"><code>{group.heads.id}</code> <span>{group.heads.title}</span></Link></>
+        ) : (
+          <>{groupName(index, gid)} of <Link to={addressOf(parent)} className="record-link"><code>{parent}</code> <span>{parentRecord.title}</span></Link></>
+        )}
       </p>
       {kind && (
         <dl className="fields">
@@ -254,7 +264,15 @@ function GroupWiki({ index, gid }: { index: RecordIndex; gid: string }) {
       )}
       {description && <Markdown source={description} />}
       {/* A stage lists its folders, one section per kind. */}
-      {kinds.length > 1 ? kinds.map((k) => {
+      {byGroup ? (
+        <Section title={membersTitle} count={members.length}>
+          {byGroup.map(({ group, records }) => (group ? (
+            <Section key={group.id} level={levelBelow(2)} title={group.title} titleTo={addressOf(group.id)} kind={kindLabel(index, group.kind)} count={records.length} className="record-group">
+              <RecordTree index={index} records={records} label={`${membersTitle} of ${group.id}`} nested={nested} />
+            </Section>
+          ) : <RecordTree key="" index={index} records={records} label={`${membersTitle} of ${gid}`} nested={nested} />))}
+        </Section>
+      ) : kinds.length > 1 ? kinds.map((k) => {
         const records = members.filter((m) => m.kind === k);
         const title = listTitle(index, records, 'Members');
         return (

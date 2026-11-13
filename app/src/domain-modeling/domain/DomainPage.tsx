@@ -11,13 +11,12 @@ import { useDomain } from './reads';
 
 // The Domain page (LA-MOD-A4's page, LA-V120): any record of a domain, at its address (/<id>), drawn from the domain
 // read whole (GET /api/domain/get-domain) and changed only through its own commands (DomainEditor). The domain itself
-// shows its wiki (its records in the nav's stages and folders, the patterns it follows, coverage and problems); a
-// capability its description, position and use cases (what it serves is in its Traceability); a term its meaning; a
+// shows its wiki (its records in the nav's stages and folders, its use cases under their aggregates and read models,
+// the patterns it follows, coverage and problems); a term its meaning; a
 // domain service its statement, its service and its tests; a service its file and packages; a repository its
 // description, the aggregate it persists, its file and packages; a domain service test its scenario. What every
 // record's page holds around that (traceability, problems, facts and links) is the Record page's (RecordFrame).
 
-const capabilityOf = (page: Domain, id: string) => page.capabilities.find((c) => c.capability.id === id)!;
 const termOf = (page: Domain, id: string) => page.terms.find((t) => t.term.id === id)!;
 const domainServiceOf = (page: Domain, id: string) => page.domainServices.find((s) => s.domainService.id === id)!;
 const serviceOf = (page: Domain, id: string) => page.domainServices.find((s) => s.service?.service.id === id)!;
@@ -36,15 +35,6 @@ function Content({ index, page }: { index: RecordIndex; page: Domain }) {
   switch (kind) {
     case 'domain':
       return null;
-    case 'capability': {
-      const c = capabilityOf(page, id);
-      return (
-        <>
-          <Text index={index} id={id} source={c.capability.description} field="description" />
-          <RowsSection index={index} title="Use cases" ids={c.useCases} label={`Use cases of ${id}`} empty="No use case under this capability yet." className="capability-use-cases" />
-        </>
-      );
-    }
     case 'term': {
       const { term } = termOf(page, id);
       return <Text index={index} id={id} source={term.meaning} field="meaning" />;
@@ -86,13 +76,9 @@ function summaryOf(index: RecordIndex, page: Domain): { lead?: string; facts: Fa
           { label: 'Product', value: <RecordLink index={index} id={page.domain.product_id} /> },
           { label: 'Position', value: page.domain.position },
           { label: 'Subdomain', value: page.domain.subdomain_type },
-          { label: 'Holds', value: `${count(page.capabilities.length, 'capability', 'capabilities')}, ${count(page.terms.length, 'term', 'terms')}` },
+          { label: 'Holds', value: `${count(page.useCases.reduce((n, g) => n + g.useCases.length, 0), 'use case', 'use cases')}, ${count(page.terms.length, 'term', 'terms')}` },
         ],
       };
-    case 'capability': {
-      const c = capabilityOf(page, id);
-      return { lead: c.capability.description, facts: [inDomain, { label: 'Use cases', value: c.useCases.length }, { label: 'Serves', value: count(c.serves.length, 'outcome', 'outcomes') }] };
-    }
     case 'term': {
       const { term, buildsOn } = termOf(page, id);
       const builds: Fact[] = buildsOn.length ? [{ label: 'Builds on', value: buildsOn.map((on, i) => <Fragment key={on}>{i > 0 && ', '}<RecordLink index={index} id={on} /></Fragment>) }] : [];

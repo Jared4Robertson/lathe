@@ -66,6 +66,15 @@ function wrapCut(title: string, size: number, room: number, most: number): strin
 }
 /** Where a focus's child's whole label sits: in its box's middle, or at its top (a Nested or Map box that holds others, over them). */
 export type WholePlace = 'middle' | 'top';
+/** The room a focus's child's title alone keeps from its box's edges, in map units (wholeLabel). */
+const wholePad = (p: Pick<Plate, 'border' | 'h'>, zoom: number) => p.border + Math.min(CHILD_PAD_PX / zoom, p.h / 8);
+/**
+ * The size on screen, in CSS pixels, of the one line a focus's direct child's title alone takes in its box at a zoom
+ * (wholeLabel): CHILD_TITLE_PX, or as large as its box holds; under BLOCK_BELOW_PX it draws no line (LA-EXP-DS09). The
+ * same for every box, a record's or a group's.
+ */
+export const wholeLinePx = (p: Pick<Plate, 'border' | 'h'>, zoom: number) =>
+  Math.min(CHILD_TITLE_PX / zoom, Math.max(0, p.h - 2 * wholePad(p, zoom) - 2 * p.border) / LINE_HEIGHT) * zoom;
 /**
  * The label a focus's direct child draws at a zoom (LA-V93-R77): its own (labelPlate) where its title reads at
  * CHILD_TITLE_PX or more there; else its title alone at CHILD_TITLE_PX on screen, wrapped on whole words to two lines
@@ -78,8 +87,8 @@ export type WholePlace = 'middle' | 'top';
 function wholeLabel(p: Plate, zoom: number, place: WholePlace): { plate: Plate; floor: boolean } {
   const shown = labelPlate(p, zoom);
   if (shown.text * TITLE_FONT * zoom >= CHILD_TITLE_PX - 1e-9) return { plate: shown, floor: false };
-  const pad = p.border + Math.min(CHILD_PAD_PX / zoom, p.h / 8);
-  const size = Math.min(CHILD_TITLE_PX / zoom, Math.max(0, p.h - 2 * pad - 2 * p.border) / LINE_HEIGHT);
+  const pad = wholePad(p, zoom);
+  const size = wholeLinePx(p, zoom) / zoom;
   const lh = size * LINE_HEIGHT;
   const texts = size * zoom < BLOCK_BELOW_PX ? [] : wrapCut(p.title, size, p.w - 2 * pad, p.h - 2 * pad >= 2 * lh ? 2 : 1);
   const { ascent, descent } = textMeasure().metrics('title');

@@ -69,7 +69,7 @@ import { type RecordIndex } from '../exploring/record-summaries/record-index';
 // <aggregate>/), which reads the aggregate whole and changes it only through the aggregate's own commands. The list is
 // total over Lathe's kinds: a test holds it to the schema's kinds, so a kind with no page fails. The Record page shell (the wiki card) finds a
 // kind's page here. Adding an aggregate's root from the page it sits under (a use
-// case from its capability's page) goes through its aggregate's own Add form, listed in ADDERS. A kind a product declares
+// case from its domain's page) goes through its aggregate's own Add form, listed in ADDERS. A kind a product declares
 // as its own is the Extension record aggregate's, whatever its name: its page and Add form are that aggregate's, found
 // by the schema's declaration rather than by name.
 
@@ -95,7 +95,6 @@ const PAGES: { readonly [K in PagedKind]: ComponentType<AggregatePageProps> } = 
   flow_step: UseCasePage,
   flow_test: UseCasePage,
   domain: DomainPage,
-  capability: DomainPage,
   term: DomainPage,
   domain_service: DomainPage,
   service: DomainPage,

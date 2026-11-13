@@ -35,7 +35,7 @@ CREATE TABLE aggregate (
   identity VARCHAR NOT NULL CHECK (trim(identity) <> ''),
   notes VARCHAR
 );
-COMMENT ON TABLE aggregate IS 'The consistency boundary: a cluster of entities changed together as one unit, by one command at a time. Other aggregates follow its changes through events, and refer to it by ID only.';
+COMMENT ON TABLE aggregate IS 'The consistency boundary: a cluster of entities changed together as one unit, by one command at a time. Other aggregates follow its changes through events, and refer to it by ID only. It serves the business outcomes its use cases are for (serves).';
 COMMENT ON COLUMN aggregate.id IS 'The aggregate''s ID, such as TL-LEND-A1.';
 COMMENT ON COLUMN aggregate.title IS 'The aggregate''s name, such as Loan.';
 COMMENT ON COLUMN aggregate.domain_id IS 'The domain it belongs to.';
@@ -136,7 +136,7 @@ CREATE TABLE read_model (
   domain_id VARCHAR NOT NULL REFERENCES domain (id),
   description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
-COMMENT ON TABLE read_model IS 'A view of its domain''s data shaped for reading, which reads one or more of the domain''s aggregates. Its fields are read_model_field rows, and it is stored in a table of its own.';
+COMMENT ON TABLE read_model IS 'A view of its domain''s data shaped for reading, which reads one or more of the domain''s aggregates. Its fields are read_model_field rows, and it is stored in a table of its own. It serves the business outcomes its use cases are for (serves).';
 COMMENT ON COLUMN read_model.id IS 'The read model''s ID, such as TL-LEND-RM01.';
 COMMENT ON COLUMN read_model.title IS 'The read model''s name, such as Overdue loans.';
 COMMENT ON COLUMN read_model.domain_id IS 'The domain it belongs to.';

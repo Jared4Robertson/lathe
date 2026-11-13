@@ -26,7 +26,7 @@ COMMENT ON TABLE test IS 'Every test, of each test kind: what may start from a t
 COMMENT ON TABLE technical_record IS 'The records of the technical specification: Lathe''s technical kinds and a product''s own kinds of that stage. Only they meet a standard rule, showing where the rule is applied, and only they name the packages they use.';
 
 CREATE TABLE serves_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
-COMMENT ON TABLE serves_source IS 'The records that serve business outcomes: capabilities, which say what the business can do, and journeys, which say in what order it happens.';
+COMMENT ON TABLE serves_source IS 'The records that serve business outcomes: aggregates and read models, through the use cases that sit with them, and journeys, which say in what order it happens.';
 CREATE TABLE carries_out_target (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
 COMMENT ON TABLE carries_out_target IS 'What a journey step carries out: a use case, or a policy (a handoff, where the product itself acts).';
 CREATE TABLE exchanges_with_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
@@ -59,7 +59,7 @@ INSERT INTO meta_supertype_member
   UNION ALL SELECT 'test', kind FROM (VALUES ('constraint_test'), ('invariant_test'), ('specification_test'), ('policy_test'),
     ('domain_service_test'), ('storage_requirement_test'), ('use_case_test'), ('view_test'), ('endpoint_test'), ('flow_test'), ('journey_test'),
     ('integration_test'), ('pattern_rule_test'), ('standard_rule_test')) AS t (kind)
-  UNION ALL SELECT 'serves_source', kind FROM (VALUES ('capability'), ('journey')) AS t (kind)
+  UNION ALL SELECT 'serves_source', kind FROM (VALUES ('aggregate'), ('read_model'), ('journey')) AS t (kind)
   UNION ALL SELECT 'carries_out_target', kind FROM (VALUES ('use_case'), ('policy')) AS t (kind)
   UNION ALL SELECT 'exchanges_with_source', kind FROM (VALUES ('flow_step'), ('policy')) AS t (kind)
   UNION ALL SELECT 'stored_in_source', kind FROM (VALUES ('repository'), ('reader'), ('table')) AS t (kind)

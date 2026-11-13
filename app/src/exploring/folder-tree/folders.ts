@@ -1,5 +1,6 @@
 import type { FolderEntry, FolderTree, Folder as TreeFolder, OwnerFolders as TreeOwner } from '../../../../lathe/src/exploring/folder-tree/read-model';
 import type { Stage } from '../../../../lathe/src/platform/data/schema';
+import type { UseCaseGroup } from '../../../../lathe/src/exploring/placement';
 import { plural } from '../../plural';
 import { kindLabel, type RecordIndex, type RecordSummary } from '../record-summaries/record-index';
 
@@ -7,7 +8,15 @@ import { kindLabel, type RecordIndex, type RecordSummary } from '../record-summa
 // six stages, in each one folder per kind, the records that start a branch of the stage, and what folds under each.
 // The side nav, the domain and product pages, the group pages, Quick open and the graph's tree all read this one tree,
 // so they name and order things the same way. Here it is looked up: the records of a folder as their summaries, a
-// stage and a folder named by the meta model, a record's folded children, and the branch of the nav a record sits in.
+// stage and a folder named by the meta model, a record's folded children, a domain's use cases under their groups (the
+// aggregate or read model of each one's result), and the branch of the nav a record sits in.
+
+/** A run of a folder's records listed under one use case group: the aggregate or read model of their results. */
+export interface FolderGroup {
+  /** The aggregate or read model, with its kind and title; null for use cases whose result is neither. */
+  group: UseCaseGroup | null;
+  records: RecordSummary[];
+}
 
 export interface Folder {
   /** A stable key, also the folder's address in the graph's tree: "DM-SHOP/domain-model/aggregate", or "DM-SHOP/question" outside the stages. */
@@ -17,6 +26,8 @@ export interface Folder {
   label: string;
   description: string;
   records: RecordSummary[];
+  /** Its records under their use case groups, in the tree's order, for a folder of use cases; null for any other folder. */
+  groups: FolderGroup[] | null;
   count: number;
 }
 
@@ -79,7 +90,8 @@ function lookOwner(index: RecordIndex, owner: TreeOwner): Looked {
   };
   const folderOf = (f: TreeFolder): Folder => {
     f.entries.forEach(walk);
-    return { key: f.key, kind: f.kind, label: plural(kindLabel(index, f.kind)), description: index.meta.kinds.get(f.kind)?.description ?? '', records: f.entries.map(summaryOf), count: f.count };
+    const records = f.entries.map(summaryOf);
+    return { key: f.key, kind: f.kind, label: plural(kindLabel(index, f.kind)), description: index.meta.kinds.get(f.kind)?.description ?? '', records, groups: groupsOf(f.entries, records), count: f.count };
   };
   const folders: OwnerFolders = {
     stages: owner.stages.map((s) => {
@@ -92,6 +104,19 @@ function lookOwner(index: RecordIndex, owner: TreeOwner): Looked {
   const looked: Looked = { folders, folded, ids, read, holds: new WeakSet([index.byId]) };
   owners.set(owner, { meta: index.meta, looked });
   return looked;
+}
+
+/** A folder's records in runs by the use case group the tree lists each under (the entries come sorted by it); null when no entry names one. */
+function groupsOf(entries: readonly FolderEntry[], records: readonly RecordSummary[]): FolderGroup[] | null {
+  if (!entries.some((e) => e.group)) return null;
+  const runs: FolderGroup[] = [];
+  entries.forEach((e, at) => {
+    const group = e.group ?? null;
+    const last = runs.at(-1);
+    if (last && last.group?.id === group?.id) last.records.push(records[at]);
+    else runs.push({ group, records: [records[at]] });
+  });
+  return runs;
 }
 
 /** Each owner of a tree answer by its ID. */
@@ -128,6 +153,17 @@ export function foldedChildren(index: RecordIndex, record: { id: string }): Reco
   return [];
 }
 
+/** The use case groups of the folder with this key, or of the stage with this key that shows its one folder directly; null for any other. */
+export function folderGroups(index: RecordIndex, owner: string, key: string): FolderGroup[] | null {
+  const { stages, loose } = ownerFolders(index, owner);
+  const stage = stages.find((s) => s.key === key);
+  if (stage) return stage.direct?.groups ?? null;
+  return [...stages.flatMap((s) => s.folders), ...loose].find((f) => f.key === key)?.groups ?? null;
+}
+
+/** The key of the nav row that heads a use case group, the aggregate or read model with this ID: "group:DM-SHOP-A1". */
+export const navGroupKey = (id: string) => `group:${id}`;
+
 /** Every folder of an owner, the stages' then the loose ones. */
 export const allFolders = (folders: OwnerFolders): Folder[] => [...folders.stages.flatMap((s) => s.folders), ...folders.loose];
 
@@ -148,8 +184,8 @@ export function folderPath(index: RecordIndex, kind: string): string[] {
 
 /**
  * The keys of the nav rows that hold a record, from the outside in: its domain (for a record in a domain), its stage
- * and its folder (none for a stage that shows its records directly). A record folded under another opens the branch
- * of the one listed.
+ * and its folder (none for a stage that shows its records directly), and for a use case the heading of its aggregate or
+ * read model. A record folded under another opens the branch of the one listed.
  */
 export function branchOf(index: RecordIndex, id: string): string[] {
   const record = index.byId.get(id);
@@ -164,7 +200,11 @@ export function branchOf(index: RecordIndex, id: string): string[] {
     seen.add(r.id);
     const at = r.id;
     const stage = folders.stages.find((s) => s.folders.some((f) => f.records.some((x) => x.id === at)));
-    if (stage) return stage.direct ? [...head, stage.key] : [...head, stage.key, stage.folders.find((f) => f.records.some((x) => x.id === at))!.key];
+    if (stage) {
+      const folder = stage.folders.find((f) => f.records.some((x) => x.id === at))!;
+      const group = folder.groups?.find((g) => g.records.some((x) => x.id === at))?.group;
+      return [...head, stage.key, ...(stage.direct ? [] : [folder.key]), ...(group ? [navGroupKey(group.id)] : [])];
+    }
     const loose = folders.loose.find((f) => f.records.some((x) => x.id === at));
     if (loose) return [...head, loose.key];
   }

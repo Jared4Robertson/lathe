@@ -90,15 +90,15 @@ export function useCaseLayerCases(): void {
 
       const next = await fetch(`${base}/api/use-case/next-id?kind=uc_requirement&parent=TL-LEND-UC01`);
       expect(await next.json()).toBe('TL-LEND-UC01-R02');
-      const listed = await fetch(`${base}/api/use-case/list-use-cases?capability_id=TL-LEND-CAP01`);
-      expect(await listed.json()).toEqual([{ id: 'TL-LEND-UC01', title: expect.any(String) }]);
+      const listed = await fetch(`${base}/api/use-case/list-use-cases?domain_id=TL-LEND`);
+      expect(await listed.json()).toEqual([{ group: { id: 'TL-LEND-A1', kind: 'aggregate', title: expect.any(String) }, useCases: [{ id: 'TL-LEND-UC01', title: expect.any(String) }] }]);
 
       const missing = await fetch(`${base}/api/use-case/get-use-case`);
       expect(missing.status).toBe(400);
       expect(await missing.json()).toEqual({ error: 'get-use-case needs id' });
       expect((await fetch(`${base}/api/use-case/get-use-case?id=TL-LEND-UC01&colour=red`)).status).toBe(400);
 
-      const other = await fetch(`${base}/api/use-case/get-use-case?id=TL-LEND-CAP01`);
+      const other = await fetch(`${base}/api/use-case/get-use-case?id=TL-LEND-A1`);
       expect(other.status).toBe(422);
       expect(await other.json()).toMatchObject({ problems: [{ rule: 'kind' }] });
 

@@ -1,6 +1,6 @@
 // The Serves read model (LA-TRC-RM12): the business outcomes each record serves, as a record page's Serves line and the
-// Trace's branches read them. A record serves an outcome when a use case whose capability serves that outcome reaches
-// it, or a use case or policy a step of a journey serving it carries out (the Serves reach, LA-TRC-DS06, in
+// Trace's branches read them. A record serves an outcome when a use case whose aggregate or read model serves that
+// outcome reaches it, or a use case or policy a step of a journey serving it carries out (the Serves reach, LA-TRC-DS06, in
 // trace/serves.ts): worked out from the rows on every read, never stored, so there is no link to keep in step. A
 // product's list holds each record of its space that serves an outcome, with the use cases and journeys it serves them
 // through, and the aggregates, read models and obligations of its space no outcome reaches
@@ -14,7 +14,7 @@ import { compareIds } from '../../platform/data/ids.ts';
 /** What one record serves. */
 export interface RecordServes {
   id: string;
-  /** The business outcomes it serves, in ID order: none when no use case whose capability serves one reaches it. */
+  /** The business outcomes it serves, in ID order: none when no use case whose aggregate or read model serves one, and no journey serving one, reaches it. */
   outcomes: string[];
   /** The use cases that reach it, through which it serves them, in ID order. */
   useCases: string[];

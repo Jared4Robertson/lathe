@@ -1,5 +1,5 @@
 // The Domain aggregate's read model (LA-MOD-RM24), shaped for its readers: the Domain page reads a domain whole (its
-// capabilities in order, each with the outcomes it serves and its use cases; its terms bottom-up, each with the terms
+// use cases by group, each group its use cases' result's aggregate or read model; its terms bottom-up, each with the terms
 // it builds on; its domain services, each with its service and tests; its repositories, each with the aggregate it
 // persists) with the record the page is about, a product's list reads each domain's ID and title, and the editor's
 // next ID reads the IDs in use. The projection (domainTableFrom) is the only code that reads the source rows and the
@@ -8,15 +8,15 @@
 // shows terms in, the app's included.
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
-import type { CapabilityRow, DomainRow, DomainServiceRow, DomainServiceTestRow, RepositoryRow, ServiceRow, TermRow } from '../../platform/data/tables.ts';
+import type { DomainRow, DomainServiceRow, DomainServiceTestRow, RepositoryRow, ServiceRow, TermRow } from '../../platform/data/tables.ts';
 import type { DomainKind } from './model.ts';
 import { domainOrder } from '../../platform/data/domain-order.ts';
-import { byRecordId } from '../../platform/data/ids.ts';
+import { byRecordId, compareIds } from '../../platform/data/ids.ts';
+import { compareGroups, placementOf, useCaseGroupOf, type UseCaseGroup } from '../../exploring/placement.ts';
 
-/** A capability as the page shows it: its row, the business outcomes it serves, and its use cases by ID. */
-export interface CapabilityOnPage {
-  capability: CapabilityRow;
-  serves: string[];
+/** A group of the domain's use cases as the page shows it: the aggregate or read model they sit with, and their IDs in ID order. */
+export interface UseCasesOfGroup {
+  group: UseCaseGroup;
   useCases: string[];
 }
 
@@ -61,8 +61,8 @@ export interface TermOnPage {
 /** A domain whole, as its page shows it. */
 export interface DomainTree {
   domain: DomainRow;
-  /** Its capabilities, by position, then ID. */
-  capabilities: CapabilityOnPage[];
+  /** Its use cases by group: aggregates by ID, then read models by ID, and the use cases of each by ID. */
+  useCases: UseCasesOfGroup[];
   /** Its terms, bottom-up: each after every term it builds on (termsBottomUp). */
   terms: TermOnPage[];
   /** Its domain services, by ID. */
@@ -143,11 +143,22 @@ export function termsBottomUp<T extends { id: string; title: string }>(terms: re
 
 /** The projection: the read model's table, built from the rows on each read (in memory; nothing keeps it). */
 export function domainTableFrom(view: ReadView): DomainTable {
-  const [serves, persists, meets, startsFrom, buildsOn] = ['serves', 'persists', 'meets', 'starts_from', 'builds_on'].map((t) => targets(view, t));
+  const [persists, meets, startsFrom, buildsOn] = ['persists', 'meets', 'starts_from', 'builds_on'].map((t) => targets(view, t));
   const packages = targets(view, 'package_use', 'record_id', 'package');
   const helpers = targets(view, 'helper_file', 'record_id', 'file');
-  const capabilities = grouped<CapabilityRow>(view.rows('capability'), 'domain_id');
-  const useCases = grouped<{ id: string }>(view.rows('use_case'), 'capability_id');
+  const useCases = grouped<{ id: string }>(view.rows('use_case'), 'domain_id');
+  const placed = placementOf(view);
+  const byGroup = (ids: readonly { id: string }[]): UseCasesOfGroup[] => {
+    const groups = new Map<string, UseCasesOfGroup>();
+    for (const { id } of ids) {
+      const group = useCaseGroupOf(placed, id);
+      if (!group) continue;
+      const at = groups.get(group.id) ?? { group, useCases: [] };
+      at.useCases.push(id);
+      groups.set(group.id, at);
+    }
+    return [...groups.values()].sort((a, b) => compareGroups(a.group, b.group)).map((g) => ({ ...g, useCases: g.useCases.sort(compareIds) }));
+  };
   const terms = grouped<TermRow>(view.rows('term'), 'domain_id');
   const domainServices = grouped<DomainServiceRow>(view.rows('domain_service'), 'domain_id');
   const services = grouped<ServiceRow>(view.rows('service'), 'domain_service_id');
@@ -163,9 +174,7 @@ export function domainTableFrom(view: ReadView): DomainTable {
     hold(root, 'domain');
     const tree: DomainTree = {
       domain,
-      capabilities: [...(capabilities.get(root) ?? [])]
-        .sort((a, b) => a.position - b.position || byRecordId(a, b))
-        .map((capability) => ({ capability, serves: serves(capability.id), useCases: (useCases.get(capability.id) ?? []).map((u) => u.id).sort() })),
+      useCases: byGroup(useCases.get(root) ?? []),
       terms: termsBottomUp(terms.get(root) ?? [], buildsOn).map((term) => ({ term, buildsOn: buildsOn(term.id) })),
       domainServices: [...(domainServices.get(root) ?? [])].sort(byRecordId).map((domainService) => {
         const service = (services.get(domainService.id) ?? [])[0];
@@ -183,7 +192,6 @@ export function domainTableFrom(view: ReadView): DomainTable {
         helpers: helpers(repository.id),
       })),
     };
-    for (const c of tree.capabilities) hold(c.capability.id, 'capability');
     for (const t of tree.terms) hold(t.term.id, 'term');
     for (const s of tree.domainServices) {
       hold(s.domainService.id, 'domain_service');

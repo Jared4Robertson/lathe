@@ -1,23 +1,21 @@
 ---
 name: write-use-cases
-description: Write or change Lathe use cases - the capabilities that group a domain's use cases, each use case's actors, goal and result (the one command or query it invokes), its UC requirements, its one flow and the flow's steps (which fulfill the requirements, invoke a command or query, exchange with integrations and may be one interface's variant), the product's roles, and the patterns use cases share with their settings and rules. Use when adding what an actor does with the product, picking a use case's result, splitting a use case, writing how a use case is carried out step by step, grouping use cases into capabilities, naming or renaming a capability or use case, or writing behavior several use cases share as a pattern, in a repo with lathe.config.json.
+description: Write or change Lathe use cases - where each sits (its result's domain and aggregate or read model), each use case's actors, goal and result (the one command or query it invokes), its UC requirements, its one flow and the flow's steps (which fulfill the requirements, invoke a command or query, exchange with integrations and may be one interface's variant), the product's roles, and the patterns use cases share with their settings and rules. Use when adding what an actor does with the product, picking a use case's result, splitting a use case, writing how a use case is carried out step by step, moving a use case to another domain or result, naming or renaming a use case, or writing behavior several use cases share as a pattern, in a repo with lathe.config.json.
 ---
 
 # Write use cases
 
 A use case is one role invoking one command, or asking one query, its result: who acts, what they want, the rules the product must follow while they reach it, and its flow: the steps the actor and the product take to reach the result, once, whatever the interface. It names no aggregate or event; what it changes follows from its result. Each interface that offers it carries the same flow out its own way (`design-interfaces`). Write use cases after the domain model (`model-a-domain`), whose commands, queries and terms they use.
 
-Change the spec only with Lathe's MCP tools (or the `lathe` CLI), never by editing files. Fields, ID patterns and checks are in `lathe/REFERENCE.md` in the Lathe package (`node_modules/@jaredrob/lathe/REFERENCE.md` in a product repo). Before you write, read the domain's terms, commands and queries, its capabilities and use cases (so you do not repeat one), and the product's patterns.
+Change the spec only with Lathe's MCP tools (or the `lathe` CLI), never by editing files. Fields, ID patterns and checks are in `lathe/REFERENCE.md` in the Lathe package (`node_modules/@jaredrob/lathe/REFERENCE.md` in a product repo). Before you write, read the domain's terms, commands and queries, its use cases by aggregate and read model (so you do not repeat one), and the product's patterns.
 
 ## Essential, not accidental
 
 **Essential complexity** comes from the problem itself: the rules, distinctions and relationships any correct solution must capture, however it is built. **Accidental complexity** comes from the means used to build it: tools, structure and conventions the problem does not require, which other means could change or remove. What is accidental to one product is essential to another (TLS to a tool library, but not to a security product), and a platform is a product that takes on as essential what others want to stop deciding. A use case, its actors and its requirements are essential: ask of each whether a domain expert would recognize it and care. Leaks: a use case for a generic subdomain (sign in, reset a password) is provided by someone else, not written; a requirement that states how the product is built (a route, a table, a library) belongs in the technical specification; and rules repeated across use cases are a pattern in disguise.
 
-## Capabilities
+## Where a use case sits
 
-Every use case sits in a capability: an ordered slice of its domain. Add the domain's capabilities first, then each use case under its capability. A capability with one use case, or none, is a gap; a capability that serves no business outcome is too (`discover-outcomes`).
-
-**A capability is a noun phrase naming a lasting ability of the business**, two to four words. It says what, not how: no -ing start, no "The", no screen, tool or technology. It would still be true if the product were rebuilt on other technology. Good: Invoice management, Member registration, Lending. Not: Managing invoices, The payment screen, Lending through the web app, "Members, sign-up and profiles" (a list).
+A use case belongs to a domain, and its domain and group follow from its result: it sits in its result's domain (`use-case-result-in-domain`), with its result's aggregate (a command use case) or its read model (a query use case). The group is worked out from the result and never stored, so there is nothing to choose, name or keep in step. Add a use case under its domain and pick its result from that domain's commands and queries; to put it elsewhere, Move a use case to another domain and a result there. Which business outcomes the use case is for comes from its aggregate or read model, which name the outcomes they serve (`discover-outcomes`). The working term for this grouping, where one is needed, is "use case group"; the UI shows each group by its aggregate's or read model's own title.
 
 ## Use cases
 
@@ -34,11 +32,11 @@ The other half of identity: every command is the result of a use case whose acto
 
 A use case's **goal** says who acts and what they want, and ends with one plain sentence of the value it gives that actor, why it matters to them, so a goal reads as more than mechanics. Mechanics only: "A member reserves a tool for a date." With the value: "A member reserves a tool for a date, so the tool is waiting when they come and nobody makes a wasted trip."
 
-When a use case invokes a second command, split it: the use case keeps its ID and the command its title names, and each other command becomes a use case of its own in the same capability, with its steps, requirements and tests moved with what they prove, in one change.
+When a use case invokes a second command, split it: the use case keeps its ID and the command its title names, and each other command becomes a use case of its own in the same domain, with its steps, requirements and tests moved with what they prove, in one change.
 
 **Actors are roles, never people.** A role is a part of the product (Member, Librarian; Owner, Reader, Agent in Lathe's own specs). Add a new role to the product with a description of what it does; write the same roles in prose.
 
-**Journey steps.** When a journey has an unlinked step (`journey-step-unlinked`), it is a use case to write: write it, then link the step to it. A use case's "why" is its capability's outcomes and the journeys it is in (its page lists them as "In journeys"). A use case in no journey is fine; many stand alone.
+**Journey steps.** When a journey has an unlinked step (`journey-step-unlinked`), it is a use case to write: write it, then link the step to it. A use case's "why" is its aggregate's or read model's outcomes and the journeys it is in (its page lists them as "In journeys"). A use case in no journey is fine; many stand alone.
 
 ## UC requirements
 

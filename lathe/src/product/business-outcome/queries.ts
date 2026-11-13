@@ -66,7 +66,7 @@ function outcomeText(outcome: BusinessOutcomePage): string {
   if (row.measured_outside) lines.push(`  measured outside: ${row.measured_outside}`);
   if (row.notes) lines.push(`  notes: ${row.notes}`);
   if (outcome.measuredBy.length) lines.push(`  measured by: ${outcome.measuredBy.join(', ')}`);
-  if (outcome.servedBy.length) lines.push(`  served by: ${outcome.servedBy.join(', ')}`);
+  if (outcome.servedBy.length) lines.push(`  served by: ${outcome.servedBy.map((g) => `${g.id} ${g.title} (${g.kind === 'aggregate' ? 'aggregate' : 'read model'})`).join(', ')}`);
   if (outcome.journeys.length) lines.push(`  journeys: ${outcome.journeys.map((j) => `${j.id} ${j.title}`).join(', ')}`);
   return lines.join('\n');
 }

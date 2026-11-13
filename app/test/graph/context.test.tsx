@@ -30,20 +30,20 @@ async function showGraph(path: string, workspace: ServedData = testWorkspace(), 
 describe('the graph tree, its depth and its camera', () => {
   it('LA-EXP-DS09-T06 LA-V93-R10-T06 Depth counts levels below a domain and a use case, as a file explorer does', () => {
     const index = testIndex();
-    // From the domain: depth 1 its stages, depth 2 their folders (or, in a stage with one folder, its records), depth 3
+    // From the domain: depth 1 its stages, depth 2 their folders (or, in Use cases, its use case groups), depth 3
     // what is in them.
     const one = ids(neighborhood(index, 'P-D', 1));
     expect(one).toEqual(expect.arrayContaining(STAGES));
     expect(one.some((id) => id.split('/').length > 2)).toBe(false);
     const two = ids(neighborhood(index, 'P-D', 2));
-    expect(two).toEqual(expect.arrayContaining(['P-D/domain-model/aggregate', 'P-D-CAP01', 'P-D/technical-specification/table', 'P-D/test-plan/use_case_test']));
+    expect(two).toEqual(expect.arrayContaining(['P-D/domain-model/aggregate', 'P-D/use-cases/P-D-A3', 'P-D/technical-specification/table', 'P-D/test-plan/use_case_test']));
     expect(two).not.toContain('P-D-A1');
     const three = ids(neighborhood(index, 'P-D', 3));
     expect(three).toEqual(expect.arrayContaining(['P-D-A1', 'P-D-UC01', 'P-V01', 'P-D-EP01', 'P-D-EN03-TB', 'P-D-INV01-T']));
-    expect(three).not.toContain('P-D-UC01-R01');
-    // From a use case in a capability: its capability is the parent at every depth; nothing further up.
+    expect(three).not.toContain('P-D-UC01/uc_requirement');
+    // From a use case in its domain: its aggregate's group in Use cases is the parent at every depth; nothing further up.
     for (const depth of [1, 2, 3]) {
-      expect(ids(neighborhood(index, 'P-D-UC01', depth)).filter((id) => !id.startsWith('P-D-UC01'))).toEqual(['P-D-CAP01']);
+      expect(ids(neighborhood(index, 'P-D-UC01', depth)).filter((id) => !id.startsWith('P-D-UC01'))).toEqual(['P-D/use-cases/P-D-A3']);
     }
   });
 
@@ -53,13 +53,14 @@ describe('the graph tree, its depth and its camera', () => {
     expect(treeChildren(index, 'P-D')).toEqual([...STAGES, 'P-D/question']);
     expect(groupLabel(index, 'P-D/technical-specification')).toBe(`Technical specification (${stages.find((s) => s.stage === 'technical-specification')!.count})`);
     expect(treeChildren(index, 'P-D/domain-model')).toEqual(stages.find((s) => s.stage === 'domain-model')!.folders.filter((f) => f.count > 0).map((f) => f.key));
-    // Use cases holds only capabilities, so it holds them itself: its folder is no level of the tree.
-    expect(treeChildren(index, 'P-D/use-cases')).toEqual(['P-D-CAP01']);
-    expect(treeParent(index, 'P-D-CAP01')).toBe('P-D/use-cases');
-    expect(isGraphNode(index, 'P-D/use-cases/capability')).toBe(false);
-    // A capability's children are its use cases; a use case's are its UC requirements and its flow, both of the use
-    // cases stage, through a group per kind, while its tests are listed in the Test plan.
-    expect(treeChildren(index, 'P-D-CAP01')).toEqual(['P-D-UC01']);
+    // Use cases holds only use cases, so it holds them itself, its folder no level of the tree: under one group per
+    // aggregate or read model their results belong to, as the nav heads them.
+    expect(treeChildren(index, 'P-D/use-cases')).toEqual(['P-D/use-cases/P-D-A3']);
+    expect(treeChildren(index, 'P-D/use-cases/P-D-A3')).toEqual(['P-D-UC01']);
+    expect(treeParent(index, 'P-D-UC01')).toBe('P-D/use-cases/P-D-A3');
+    expect(isGraphNode(index, 'P-D/use-cases/use_case')).toBe(false);
+    // A use case's children are its UC requirements and its flow, both of the use cases stage, through a group per
+    // kind, while its tests are listed in the Test plan.
     expect(treeChildren(index, 'P-D-UC01')).toEqual(['P-D-UC01/uc_requirement', 'P-D-UC01/flow']);
     expect(treeChildren(index, 'P-D-UC01/uc_requirement')).toEqual(['P-D-UC01-R01', 'P-D-UC01-R02']);
     expect(treeParent(index, 'P-D-UC01-FL')).toBe('P-D-UC01/flow');
@@ -123,7 +124,7 @@ describe('the graph tree, its depth and its camera', () => {
     // The summary counts the framed picture: the domain, its parent and three levels below it.
     const n = neighborhood(recordIndexOf(w), 'P-D', 3);
     await waitFor(() => expect(document.querySelector('.header-strip-counts')!.textContent).toBe(graphSummary(n)));
-    expect(graphSummary(n)).toBe('32 records · 26 groups · 57 links');
+    expect(graphSummary(n)).toBe('31 records · 27 groups · 57 links');
   });
 
   it('LA-V93-R20-T01 Filters have a Minimap switch, off by default and kept while walking, and the minimap is an overview of the whole map', async () => {
@@ -151,8 +152,8 @@ describe('the graph tree, its depth and its camera', () => {
 
   it('LA-V93-R19-T01 In the Tree view the plain arrow keys step through the tree from the page, and buttons step too, naming their keys', async () => {
     const index = testIndex();
-    expect(graphTarget(index, 'P-D-UC01', 'tree', 'left')).toBe('P-D-CAP01');
-    expect(graphTarget(index, 'P-D-UC01', 'tree', 'out')).toBe('P-D-CAP01');
+    expect(graphTarget(index, 'P-D-UC01', 'tree', 'left')).toBe('P-D/use-cases/P-D-A3');
+    expect(graphTarget(index, 'P-D-UC01', 'tree', 'out')).toBe('P-D/use-cases/P-D-A3');
     expect(graphTarget(index, 'P-D-UC01', 'tree', 'right')).toBe('P-D-UC01/uc_requirement');
     expect(graphTarget(index, 'P-D-UC01', 'tree', 'in')).toBe('P-D-UC01/uc_requirement');
     expect(graphTarget(index, 'P-D/domain-model/aggregate', 'tree', 'down')).toBe('P-D/domain-model/specification');
@@ -165,7 +166,7 @@ describe('the graph tree, its depth and its camera', () => {
       const to = graphTarget(index, 'P-D-UC01', 'tree', move);
       if (to === null) continue;
       expect(to).not.toBe('P-D-UC01');
-      expect(levels.parent(to)).not.toBe('P-D-CAP01');
+      expect(levels.parent(to)).not.toBe('P-D/use-cases/P-D-A3');
       expect(depth(to)).toBe(depth('P-D-UC01'));
     }
 
@@ -185,12 +186,12 @@ describe('the graph tree, its depth and its camera', () => {
     fireEvent.keyDown(document.body, { key: 'ArrowLeft', code: 'ArrowLeft' });
     await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC01'));
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
-    for (const to of ['/P-D-CAP01', '/P-D/use-cases']) {
+    for (const to of ['/P-D/use-cases/P-D-A3', '/P-D/use-cases', '/P-D']) {
       fireEvent.click(within(screen.getByRole('group', { name: 'Walk the stage' })).getByRole('button', { name: 'Step out to the parent' }));
       await waitFor(() => expect(window.location.pathname).toBe(to));
     }
-    await waitFor(() => expect(isCenter('P-D/use-cases')).toBe(true));
-    fireEvent.keyDown(graphHost()!, { key: 'ArrowUp', code: 'ArrowUp' });
+    await waitFor(() => expect(isCenter('P-D')).toBe(true));
+    fireEvent.keyDown(graphHost()!, { key: 'ArrowRight', code: 'ArrowRight' });
     await waitFor(() => expect(window.location.pathname).toBe('/P-D/domain-model'));
   });
 
@@ -198,7 +199,7 @@ describe('the graph tree, its depth and its camera', () => {
   // in, Up and Down across; in the Nested view (children drawn inside their parent) Up out, Down in, Left and Right
   // across. From a stage, which has a parent, a first child and a sibling either side.
   const FROM = 'P-D/use-cases';
-  const TARGETS = { out: 'P-D', in: 'P-D-CAP01', previous: 'P-D/domain-model', next: 'P-D/interface-design' };
+  const TARGETS = { out: 'P-D', in: 'P-D/use-cases/P-D-A3', previous: 'P-D/domain-model', next: 'P-D/interface-design' };
   const NESTED_KEYS = { ArrowUp: 'out', ArrowDown: 'in', ArrowLeft: 'previous', ArrowRight: 'next' } as const;
   const ARROWS = {
     tree: { ArrowLeft: 'out', ArrowRight: 'in', ArrowUp: 'previous', ArrowDown: 'next' },

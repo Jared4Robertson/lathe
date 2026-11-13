@@ -289,8 +289,10 @@ describe('pattern rules', () => {
   const shop = (data = complete()) =>
     adding(data, {
       domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', position: 2, subdomain_type: 'supporting', description: 'Selling spare parts.' }],
-      capability: [{ id: 'EX-SHOP-CAP01', title: 'Selling', domain_id: 'EX-SHOP', position: 1, description: 'Selling tools.' }],
-      use_case: [{ id: 'EX-SHOP-UC01', title: 'Sell a tool', capability_id: 'EX-SHOP-CAP01', goal: 'A customer buys a used tool.', result_id: 'EX-LEND-CMD01' }],
+      aggregate: [{ id: 'EX-SHOP-A1', title: 'Sale', domain_id: 'EX-SHOP', identity: 'Sale ID', description: 'One used tool sold.' }],
+      entity: [{ id: 'EX-SHOP-EN01', title: 'Sale', aggregate_id: 'EX-SHOP-A1', role: 'root', description: 'The sale itself.' }],
+      command: [{ id: 'EX-SHOP-CMD01', title: 'Sell a tool', entity_id: 'EX-SHOP-EN01', description: 'Sells a used tool to a customer.' }],
+      use_case: [{ id: 'EX-SHOP-UC01', title: 'Sell a tool', domain_id: 'EX-SHOP', goal: 'A customer buys a used tool.', result_id: 'EX-SHOP-CMD01' }],
     });
 
   it("LA-TRC-SP04-T each domain that follows a pattern owes its rules, proved only by its own pattern rule test", async () => {
@@ -304,7 +306,7 @@ describe('pattern rules', () => {
     expect(ws.coverage.find((c) => c.domain === 'EX-SHOP')?.gaps.find((g) => g.missing === 'proved')?.message).toBe('Pattern rule EX-PAT-ACT-R01 is not proved yet in EX-SHOP.');
   });
 
-  it('LA-TRC-UC04-R02-T01 a domain that does not follow the pattern owes none of its rules', async () => {
+  it('LA-UCS-UC04-R02-T01 a domain that does not follow the pattern owes none of its rules', async () => {
     const ws = await loadData(shop());
     expect(obligation(ws, 'EX-SHOP', 'pattern_rule')).toMatchObject({ total: 0 });
   });
@@ -331,6 +333,12 @@ describe('LA-TRC-UC01-R05-T01 minimums', () => {
     // A view's gap is the domain's whose command or query it presents, as a use case's is its domain's.
     expect(ws.coverage.find((c) => c.domain === 'SP-D')?.gaps).toContainEqual({ id: 'SP-V01', kind: 'view', missing: 'view-without-ui-component', message: 'View SP-V01 is rendered by no UI component.' });
     expect(ws.coverage.find((c) => c.domain === 'SP-D')?.gaps).toContainEqual({ id: 'SP-D-UC01', kind: 'use_case', missing: 'use-case-without-flow', message: 'Use case SP-D-UC01 has no flow.' });
+    // An aggregate or read model a use case sits with, serving no outcome, is a gap naming its use cases (LA-STD-MODELING-R20).
+    const groupGaps = ws.coverage.flatMap((c) => c.gaps).filter((g) => g.missing === 'use-case-group-serves-no-outcome');
+    expect(groupGaps).toEqual([
+      { id: 'SP-D-A1', kind: 'aggregate', missing: 'use-case-group-serves-no-outcome', message: 'Aggregate SP-D-A1 serves no business outcome, but use cases sit with it: SP-D-UC01.' },
+      { id: 'SP-D-RM02', kind: 'read_model', missing: 'use-case-group-serves-no-outcome', message: 'Read model SP-D-RM02 serves no business outcome, but use cases sit with it: SP-D-UC02.' },
+    ]);
     expect(ws.coverage.find((c) => c.domain === 'SP-E')?.gaps).toEqual([{ id: 'SP-E', kind: 'domain', missing: 'domain-without-aggregate', message: 'Domain SP-E has no aggregate.' }]);
     // An endpoint owes an API requirement only where its product has a public API: without one, its endpoints are
     // held to their pattern's rules alone.
@@ -357,8 +365,9 @@ describe('LA-TRC-UC01-R05-T01 minimums', () => {
       { id: 'EX-JR02', kind: 'journey', missing: 'journey-without-main-path', message: 'Journey EX-JR02 has no step on its main path: write the steps from its trigger to its result.' },
       { id: 'EX-JR02-S01', kind: 'journey_step', missing: 'journey-step-unlinked', message: 'Journey step EX-JR02-S01 carries out no use case or policy yet: write the use case (or the policy, for a handoff) and link the step.' },
     ]);
-    // A journey serving an outcome no capability serves leaves that outcome unserved: capabilities group, journeys order.
-    const byJourneyAlone = without(withJourney(), 'serves', (r) => r.source_id === 'EX-LEND-CAP01' && r.target_id === 'EX-BO02');
+    // A journey serving an outcome no aggregate or read model serves leaves that outcome unserved: the use cases sitting
+    // with them say what the business can do, journeys put it in order.
+    const byJourneyAlone = without(withJourney(), 'serves', (r) => r.source_id !== 'EX-JR01' && r.target_id === 'EX-BO02');
     expect(gaps(await loadData(byJourneyAlone))).toEqual(['outcome-not-served EX-BO02']);
   });
 
@@ -482,10 +491,12 @@ describe('pattern rules, domain by domain', () => {
   const shop = (data = complete()) =>
     adding(data, {
       domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', position: 2, subdomain_type: 'supporting', description: 'Selling spare parts.' }],
-      capability: [{ id: 'EX-SHOP-CAP01', title: 'Selling', domain_id: 'EX-SHOP', position: 1, description: 'Selling tools.' }],
+      aggregate: [{ id: 'EX-SHOP-A1', title: 'Sale', domain_id: 'EX-SHOP', identity: 'Sale ID', description: 'One used tool sold.' }],
+      entity: [{ id: 'EX-SHOP-EN01', title: 'Sale', aggregate_id: 'EX-SHOP-A1', role: 'root', description: 'The sale itself.' }],
+      command: [{ id: 'EX-SHOP-CMD01', title: 'Sell a tool', entity_id: 'EX-SHOP-EN01', description: 'Sells a used tool to a customer.' }],
       use_case: [
-        { id: 'EX-SHOP-UC01', title: 'Sell a tool', capability_id: 'EX-SHOP-CAP01', goal: 'A customer buys a used tool.', result_id: 'EX-LEND-CMD01' },
-        { id: 'EX-SHOP-UC02', title: 'Price a tool', capability_id: 'EX-SHOP-CAP01', goal: 'The clerk sets the price of a used tool.', result_id: 'EX-LEND-CMD01' },
+        { id: 'EX-SHOP-UC01', title: 'Sell a tool', domain_id: 'EX-SHOP', goal: 'A customer buys a used tool.', result_id: 'EX-SHOP-CMD01' },
+        { id: 'EX-SHOP-UC02', title: 'Price a tool', domain_id: 'EX-SHOP', goal: 'The clerk sets the price of a used tool.', result_id: 'EX-SHOP-CMD01' },
       ],
     });
   /** A second pattern of the complete product, with no settings and one rule. */
@@ -501,7 +512,7 @@ describe('pattern rules, domain by domain', () => {
   });
   const merge = (...parts: Data[]) => parts.reduce((all, part) => adding(all, part), {} as Data);
 
-  it('LA-TRC-UC04-R01-T01 a pattern rule sits under a pattern and is an obligation counted for proof alone', async () => {
+  it('LA-UCS-UC04-R01-T01 a pattern rule sits under a pattern and is an obligation counted for proof alone', async () => {
     expect(clean.kinds.find((k) => k.kind === 'pattern_rule')).toMatchObject({ obligation: true });
     const ws = await loadData(without(complete(), 'pattern_rule_test', () => true));
     // Nothing designs or builds a pattern rule, and it is still designed and built: only its proof is missing.
@@ -509,7 +520,7 @@ describe('pattern rules, domain by domain', () => {
     expect(gaps(ws)).toEqual(['proved EX-PAT-ACT-R01']);
   });
 
-  it("LA-TRC-UC04-R03-T01 a domain's own pattern rule test proves the rule there and nowhere else; one not automated yet leaves it not automated", async () => {
+  it("LA-UCS-UC04-R03-T01 a domain's own pattern rule test proves the rule there and nowhere else; one not automated yet leaves it not automated", async () => {
     const data = adding(shop(), sale('EX-SHOP-UC01', 'Sale'));
     const ws = await loadData(data);
     expect(obligation(ws, 'EX-LEND', 'pattern_rule')).toMatchObject(covered(1));
@@ -518,7 +529,7 @@ describe('pattern rules, domain by domain', () => {
     expect(obligation(await loadData(planned), 'EX-SHOP', 'pattern_rule')).toMatchObject({ total: 1, proved: 0, not_automated: 1 });
   });
 
-  it('LA-TRC-UC04-R05-T01 a not-proved warning names the pattern rule and each domain that owes it, and says when its test there is not automated yet', async () => {
+  it('LA-UCS-UC04-R05-T01 a not-proved warning names the pattern rule and each domain that owes it, and says when its test there is not automated yet', async () => {
     const data = adding(shop(), merge(sale('EX-SHOP-UC01', 'Sale'), sale('EX-SHOP', 'Sale')));
     const unproved = without(data, 'pattern_rule_test', () => true);
     expect(ofCheck(await loadData(unproved), 'not-proved').map((p) => p.message)).toEqual([
@@ -532,7 +543,7 @@ describe('pattern rules, domain by domain', () => {
     ]);
   });
 
-  it("LA-TRC-UC04-R08-T01 an obligation outside every domain counts in the product's Shared coverage, and a pattern rule never does", async () => {
+  it("LA-UCS-UC04-R08-T01 an obligation outside every domain counts in the product's Shared coverage, and a pattern rule never does", async () => {
     const data = adding(complete(), {
       product_kind: [{ name: 'house_rule', product_id: 'EX', label: 'House rule', description: 'A rule of the house.', parent_kind: 'product', stage: 'use-cases', obligation: true, complexity: 'essential' }],
       house_rule: [{ id: 'EX-HR01', title: 'Quiet', product_id: 'EX' }],
@@ -624,7 +635,7 @@ describe('pattern rules, domain by domain', () => {
 describe('the other obligation kinds and their gaps', () => {
   it('LA-UCS-UC09-R03-T01 a use case with no flow is a use-case-without-flow gap in its domain, never an error', async () => {
     const data = adding(complete(), {
-      use_case: [{ id: 'EX-LEND-UC03', title: 'Borrow a tool for a member', capability_id: 'EX-LEND-CAP01', goal: 'The librarian lends a tool at the desk.', result_id: 'EX-LEND-CMD01' }],
+      use_case: [{ id: 'EX-LEND-UC03', title: 'Borrow a tool for a member', domain_id: 'EX-LEND', goal: 'The librarian lends a tool at the desk.', result_id: 'EX-LEND-CMD01' }],
       use_case_actor: [{ use_case_id: 'EX-LEND-UC03', position: 1, role_name: 'Librarian' }],
     });
     const ws = await loadData(data);

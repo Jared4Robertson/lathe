@@ -112,15 +112,17 @@ describe('graph page', () => {
     const depth = within(screen.getByRole('group', { name: 'Depth' }));
     expect(depth.getAllByRole('button').map((b) => b.textContent)).toEqual(['1', '2', '3']);
     expect(depth.getByRole('button', { name: '1' })).toHaveAttribute('aria-pressed', 'true');
-    await waitFor(() => expect(node('P-D-CAP01')).not.toBeNull());
+    // Depth 1: the use cases' groups, one per aggregate or read model their results belong to, and no use case yet.
+    await waitFor(() => expect(node('P-D/use-cases/P-D-A3')).not.toBeNull());
+    expect(node('P-D-UC01')).toBeNull();
     expect(scene().lines.filter((l) => l.style !== 'structure')).toEqual([]);
     const count = () => document.querySelector('.header-strip-counts')!.textContent;
     const viewport = () => scene().camera;
     const one = count();
-    // Depth 2 frames the capability's use cases too: more in the picture, and the camera takes them in.
+    // Depth 2 frames the group's use case too: more in the picture, and the camera takes it in.
     fireEvent.click(depth.getByRole('button', { name: '2' }));
     await waitFor(() => expect(count()).not.toBe(one));
-    expect(count()).toBe('3 records · 1 group · 3 links');
+    expect(count()).toBe('2 records · 2 groups · 3 links');
     expect(viewport().zoom).toBeGreaterThan(0);
     // A record that links to others draws no line to them: what the step fulfills, invokes and happens in are the Trace
     // stage's and the wiki card's, and there is no switch to draw them.
@@ -139,10 +141,11 @@ describe('graph page', () => {
     expect(drawnBox('P-D-UC01-FL')!.stage).toBe('use-cases');
     expect(screen.getByRole('region', { name: 'Key' })).toBeTruthy();
     expect(scene().lines.map((l) => l.style)).toContain('structure');
-    // A capability in the use cases' colors, its use case beside it.
-    await showGraph('/P-D-CAP01');
+    // A use case in the use cases' colors, framed from its aggregate's group, which takes them too.
+    await showGraph('/P-D/use-cases/P-D-A3');
     await waitFor(() => expect(node('P-D-UC01')).not.toBeNull());
     expect(drawnBox('P-D-UC01')!.stage).toBe('use-cases');
+    expect(drawnBox('P-D/use-cases/P-D-A3')!.stage).toBe('use-cases');
     // An aggregate in the domain model's.
     await showGraph('/P-D-A4');
     await waitFor(() => expect(node('P-D-A4')).not.toBeNull());
@@ -300,7 +303,7 @@ describe('graph groups on the page', () => {
     await waitFor(() => expect(title()).toBe(stageTitle));
 
     // A stage with one folder (Use cases) holds its records itself; its folder has no address.
-    await openApp('/P-D/use-cases/capability', { data: testWorkspace() });
+    await openApp('/P-D/use-cases/use_case', { data: testWorkspace() });
     await screen.findByText(/There's no record or group/);
 
     // An address for a group that does not exist says so.

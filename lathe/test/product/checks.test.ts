@@ -61,7 +61,7 @@ check('handoff-not-connected', () => {
     expect(records(ofCheck(await loadData(asking), 'handoff-not-connected'))).toEqual(['EX-JR01-S03']);
     // A use case with no flow yet leads nowhere to read.
     const unflowed = changing(
-      adding(deaf, { use_case: [{ id: 'EX-LEND-UC03', title: 'Renew a loan', capability_id: 'EX-LEND-CAP01', goal: 'A member keeps a tool longer.', result_id: 'EX-LEND-CMD01' }] }),
+      adding(deaf, { use_case: [{ id: 'EX-LEND-UC03', title: 'Renew a loan', domain_id: 'EX-LEND', goal: 'A member keeps a tool longer.', result_id: 'EX-LEND-CMD01' }] }),
       'carries_out', (r) => r.source_id === 'EX-JR01-S02', { target_id: 'EX-LEND-UC03' },
     );
     expect(ofCheck(await loadData(unflowed), 'handoff-not-connected')).toEqual([]);

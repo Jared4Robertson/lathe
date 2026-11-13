@@ -31,7 +31,7 @@ import { type GroundMap, type GroundNode } from './ground';
 import { treeParent } from './tree';
 import { CARRIES_OUT, linkLine, linksOf, MOST_LINKS, THEN } from './map-links';
 import { thenPairs } from './sequence';
-import { setTextMeasure, type TextMeasure } from './text';
+import { setTextMeasure, TITLE_FONT, type TextMeasure } from './text';
 import { BLOCK_BELOW_PX, drawnFor, drawnKey, drawnNested, frameGround, frameNested, frameOnMap, frameRect, keptBox, maxZoomFor, mergeDrawn, MIN_ZOOM, wholeIn, type Drawn, type Viewport } from './camera';
 import { useCameraGestures } from './gestures';
 import { readMotion } from './motion';
@@ -43,7 +43,7 @@ import { PLAIN_LOOK, readLook, useThemeVersion, type Look } from './look';
 import { plateName, plateOf, plateTip, type Plate, type PlateSource } from './plate';
 import { keepLabel } from './sticky';
 import { focusStrength } from './fade';
-import { boxColors, drawnLabel, paint, type WholePlace, type Bar, type Camera, type Line, type PaintState } from './paint';
+import { boxColors, drawnLabel, paint, wholeLinePx, type WholePlace, type Bar, type Camera, type Line, type PaintState } from './paint';
 import { hitPlate } from './hit';
 import { frameIn, useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
 import { drawLeaderLine, openIn, useLeaderFollow } from '../views/leaderLine';
@@ -429,6 +429,11 @@ export interface SceneBox {
   label: Rect;
   /** Whether it is drawn as a plain block, its title under the readable size on screen (LA-EXP-DS10): then no line, icon or badge of it is drawn. */
   block: boolean;
+  /**
+   * The size on screen, in CSS pixels, its title's line takes: a focus's direct child's title alone as large as its box
+   * holds (paint.ts wholeLinePx), any other box's title at its drawn size. Under 5 pixels it draws no line (LA-EXP-DS09).
+   */
+  linePx: number;
   /** Each line of its label: its text, face, font size in the map and on screen, the font it is drawn in, its place, and its width as the canvas measures it at its drawn font. */
   lines: { text: string; face: string; level: string; mapPx: number; fontPx: number; font: string; rect: Rect; drawnWidth: number }[];
   icons: { draw: string; name: string; rect: Rect }[];
@@ -1103,6 +1108,7 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
           polygon: p.outline.kind === 'polygon' ? p.outline.points.map(([x, y]) => [X(x), Y(y)] as [number, number]) : null,
           label: ((l) => rect(l.x, l.y, l.w, l.h))(label.plate.label),
           block: label.block,
+          linePx: whole.has(p.id) ? wholeLinePx(p, v.zoom) : p.text * TITLE_FONT * v.zoom,
           lines: label.plate.lines.map((l) => {
             const fontPx = l.size * v.zoom;
             const font = fontFor(fonts, l.face, fontPx);

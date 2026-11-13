@@ -22,36 +22,9 @@ export const REMOVE_DOMAIN_IDENTITY = {
   id: 'LA-MOD-CMD162',
   slice: { aggregate: 'LA-MOD-A4', name: 'domain' },
   name: 'remove-domain',
-  description: 'Removes a domain whole: its capabilities, terms, domain services with their services and tests, repositories, and the links they start. Refused while anything outside it references what is in it.',
+  description: 'Removes a domain whole: its terms, domain services with their services and tests, repositories, and the links they start. Refused while anything outside it references what is in it.',
   method: 'POST',
   route: '/api/domain/remove-domain',
-} as const;
-
-export const ADD_CAPABILITY_IDENTITY = {
-  id: 'LA-MOD-CMD163',
-  slice: { aggregate: 'LA-MOD-A4', name: 'domain' },
-  name: 'add-capability',
-  description: 'Adds a capability to its domain, at a position, with the business outcomes it serves.',
-  method: 'POST',
-  route: '/api/domain/add-capability',
-} as const;
-
-export const CHANGE_CAPABILITY_IDENTITY = {
-  id: 'LA-MOD-CMD164',
-  slice: { aggregate: 'LA-MOD-A4', name: 'domain' },
-  name: 'change-capability',
-  description: 'Changes a capability\'s title, position or description, or the business outcomes it serves (the whole list).',
-  method: 'POST',
-  route: '/api/domain/change-capability',
-} as const;
-
-export const REMOVE_CAPABILITY_IDENTITY = {
-  id: 'LA-MOD-CMD165',
-  slice: { aggregate: 'LA-MOD-A4', name: 'domain' },
-  name: 'remove-capability',
-  description: 'Removes a capability and the links it starts. Refused while a use case sits under it or anything else references it.',
-  method: 'POST',
-  route: '/api/domain/remove-capability',
 } as const;
 
 export const ADD_TERM_IDENTITY = {
@@ -187,15 +160,6 @@ export const REMOVE_DOMAIN_SERVICE_TEST_IDENTITY = {
   description: 'Removes a domain service test and the links it starts. Refused while anything references it.',
   method: 'POST',
   route: '/api/domain/remove-domain-service-test',
-} as const;
-
-export const MOVE_CAPABILITY_IDENTITY = {
-  id: 'LA-MOD-CMD388',
-  slice: { aggregate: 'LA-MOD-A4', name: 'domain' },
-  name: 'move-capability',
-  description: 'Moves a capability, with its use cases and everything in them, to another domain of its product: each takes the new domain\'s ID in place of the old one\'s, and every record that names one of them names the new ID. Refused for a domain of another product, or a new ID another record has.',
-  method: 'POST',
-  route: '/api/domain/move-capability',
 } as const;
 
 export const MOVE_TERM_IDENTITY = {

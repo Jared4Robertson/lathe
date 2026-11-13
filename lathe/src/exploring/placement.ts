@@ -3,10 +3,13 @@
 // as the store's record_scope places it (platform/data/integrity.ts): up its parents to a product and a domain; a
 // record of a kind with no owner by the longest product (or, for a kind placed by domain, domain) its ID starts with;
 // and a view, integration, value object or UI component in the one domain that uses it, or in none when two or more
-// do, or none. What sits under such a record follows it. It reads each source table once.
+// do, or none. What sits under such a record follows it. A use case, and what sits under it, has its group as
+// record_scope.group_id has it: its result's aggregate (a command's entity's aggregate) or read model (a query's). It
+// reads each source table once.
 import { groupBy, groupOf } from '../platform/data/grouped.ts';
 import type { ReadView } from '../platform/data/rules.ts';
 import type { Row } from '../platform/data/rows.ts';
+import { compareIds } from '../platform/data/ids.ts';
 
 /** One record as the projections place it. */
 export interface Placed {
@@ -17,6 +20,8 @@ export interface Placed {
   parent: string | null;
   product: string | null;
   domain: string | null;
+  /** For a use case and what sits under it, its group: its result's aggregate or read model; null for any other record. */
+  group: string | null;
   /** Its row, for the projection that reads it; never part of an answer. */
   row: Row;
   /** Its line in its kind's data file, from 1: the rows are kept sorted by key, as the files hold them. */
@@ -43,12 +48,12 @@ const text = (value: unknown): string | null => (typeof value === 'string' && va
  * holder keeps (Store.readerOf) until a table it read changes, shared by every projection that reads it, or else worked
  * out on this view. Nothing changes what it gives.
  */
-export function placementOf(view: ReadView): ReadonlyMap<string, Placed> {
+export function placementOf(view: Pick<ReadView, 'schema' | 'rows' | 'readerOf'>): ReadonlyMap<string, Placed> {
   return view.readerOf ? view.readerOf(placeRecords) : placeRecords(view);
 }
 
 // Every record of the data, placed (placementOf).
-function placeRecords(view: ReadView): Map<string, Placed> {
+function placeRecords(view: Pick<ReadView, 'schema' | 'rows'>): Map<string, Placed> {
   const { schema } = view;
   const placed = new Map<string, Placed>();
   for (const kind of Object.keys(schema.kinds)) {
@@ -56,7 +61,7 @@ function placeRecords(view: ReadView): Map<string, Placed> {
     view.rows(kind).forEach((row, at) => {
       const id = String(row.id);
       const parent = parents.map((p) => text(row[p.column])).find((v) => v !== null) ?? null;
-      placed.set(id, { id, kind, title: String(row.title ?? ''), parent, product: null, domain: null, row, line: at + 1 });
+      placed.set(id, { id, kind, title: String(row.title ?? ''), parent, product: null, domain: null, group: null, row, line: at + 1 });
     });
   }
   const products = [...placed.values()].filter((r) => r.kind === 'product').map((r) => r.id);
@@ -146,7 +151,52 @@ function placeRecords(view: ReadView): Map<string, Placed> {
     const used = users.get(tops.get(r.id) ?? r.id);
     if (used?.size === 1) r.domain = [...used][0];
   }
+
+  // A use case's group, from its result; what sits under a use case has its group.
+  if (schema.tables.use_case) {
+    const groupOfResult = (result: string | null): string | null => {
+      const operation = result ? placed.get(result) : undefined;
+      if (operation?.kind === 'query') return text(operation.row.read_model_id);
+      if (operation?.kind !== 'command') return null;
+      return text(placed.get(text(operation.row.entity_id) ?? '')?.row.aggregate_id);
+    };
+    for (const r of placed.values()) {
+      const seen = new Set<string>();
+      for (let at: Placed | undefined = r; at && !seen.has(at.id); at = at.parent ? placed.get(at.parent) : undefined) {
+        seen.add(at.id);
+        if (at.kind === 'use_case') {
+          r.group = groupOfResult(text(at.row.result_id));
+          break;
+        }
+      }
+    }
+  }
   return placed;
+}
+
+/** A use case's group as a page shows it: the aggregate or read model, with its kind and title. */
+export interface UseCaseGroup {
+  id: string;
+  kind: 'aggregate' | 'read_model';
+  title: string;
+}
+
+/** The aggregate or read model with this ID as a group, with its kind and title; null for a record of any other kind, or none. */
+export function asGroup(placed: ReadonlyMap<string, Placed>, id: string): UseCaseGroup | null {
+  const group = placed.get(id);
+  if (group?.kind !== 'aggregate' && group?.kind !== 'read_model') return null;
+  return { id: group.id, kind: group.kind, title: group.title };
+}
+
+/** The group of a use case (or of what sits under one), with its kind and title; null when it has none. */
+export function useCaseGroupOf(placed: ReadonlyMap<string, Placed>, id: string): UseCaseGroup | null {
+  return asGroup(placed, placed.get(id)?.group ?? '');
+}
+
+/** Use case groups in the one order every list shows them: aggregates by ID, then read models by ID. */
+export function compareGroups(a: UseCaseGroup, b: UseCaseGroup): number {
+  if (a.kind !== b.kind) return a.kind === 'aggregate' ? -1 : 1;
+  return compareIds(a.id, b.id);
 }
 
 /** Whether a placed record is in a product's space: its own, or of no product. */

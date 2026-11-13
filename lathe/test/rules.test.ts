@@ -7,7 +7,6 @@ import { CHANGE_ENTITY } from '../src/domain-modeling/aggregate/commands/change-
 import { CHANGE_VALUE_OBJECT } from '../src/domain-modeling/value-object/commands/change-value-object.ts';
 import { CHANGE_DOMAIN_EVENT } from '../src/domain-modeling/domain-event/commands/change-domain-event.ts';
 import { CHANGE_READ_MODEL } from '../src/domain-modeling/read-model/commands/change-read-model.ts';
-import { ADD_CAPABILITY } from '../src/domain-modeling/domain/commands/add-capability.ts';
 import { ADD_DOMAIN } from '../src/domain-modeling/domain/commands/add-domain.ts';
 import { CHANGE_DOMAIN } from '../src/domain-modeling/domain/commands/change-domain.ts';
 import { ADD_FLOW_STEP } from '../src/use-cases/use-case/commands/add-flow-step.ts';
@@ -187,30 +186,6 @@ describe('LA-MOD-INV185-T a read model field named like another of its read mode
 
   it('is refused on load by the unique key under it', async () => {
     expect(await namedOnLoad('read_model_field', 'days overdue')).toEqual([expect.objectContaining({ table: 'read_model_field', line: 2 })]);
-  });
-});
-
-describe('LA-MOD-INV17-T a second capability at a position of its domain is refused by capability-position; another domain may use it', () => {
-  it('refuses it, and adds one at the next position', async () => {
-    const on = await store();
-    const capability = { id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 1, description: 'Taking tools back.' };
-    expect(await refused(on, ADD_CAPABILITY, capability, 'capability')).toEqual([
-      { rule: 'capability-position', message: 'capability TL-LEND-CAP01 is at position 1 of domain TL-LEND, so TL-LEND-CAP02 cannot be too: each capability of a domain has its own position' },
-    ]);
-    await runCommand(on, ADD_CAPABILITY, { ...capability, position: 2 });
-    expect(on.rows('capability').map((c) => `${c.id} ${c.position}`)).toContain('TL-LEND-CAP02 2');
-  });
-
-  it('is refused on load by the unique key under it; another domain may use the position', async () => {
-    const second = { id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 1, description: 'Taking tools back.' };
-    const problems = await refusals(adding(everyKind(), { capability: [second] }));
-    expect(problems).toEqual([expect.objectContaining({ rule: 'unique', table: 'capability', key: 'TL-LEND-CAP02', file: 'data/capability.jsonl', line: 2 })]);
-    expect(problems[0].message).toBe('capability TL-LEND-CAP02 has the same domain_id, position as capability TL-LEND-CAP01: TL-LEND, 1');
-    const catalog = { domain: [{ id: 'TL-CAT', title: 'Catalog', product_id: 'TL', position: 2, subdomain_type: 'supporting', description: 'The tools the library holds.' }] };
-    expect(await refusals(adding(everyKind(), {
-      ...catalog,
-      capability: [{ id: 'TL-CAT-CAP01', title: 'Listing', domain_id: 'TL-CAT', position: 1, description: 'Listing the tools on the shelf.' }, { ...second, position: 2 }],
-    }))).toEqual([]);
   });
 });
 

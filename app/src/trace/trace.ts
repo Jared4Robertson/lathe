@@ -6,8 +6,8 @@ import { kindLabel, type RecordIndex } from '../exploring/record-summaries/recor
 //
 //   Outcome | Journey | Use case | Flow | Technical flow | Acceptance test suite
 //
-// - Outcome: each business outcome once, with a line to every use case its capability serves (serves.ts's reach) and
-//   to every journey serving it.
+// - Outcome: each business outcome once, with a line to every use case whose aggregate or read model serves it
+//   (serves.ts's reach) and to every journey serving it.
 // - Journey: each journey of the product once, beside the rows, not in them (rows stay one per use case), with a line
 //   to each use case row its steps carry out, labeled with the steps' numbers ("1", "3, alt 2"). Closed, its proof
 //   ("3 steps · 2 proved · test ✓"); open, its steps in order (main path first, each alternate path under a

@@ -22,7 +22,7 @@ export const NODE_WIDTH = 190;
 export const NODE_HEIGHT = 56;
 
 export type Shape =
-  | 'box' | 'product' | 'hexagon' | 'folder' | 'slice'
+  | 'box' | 'product' | 'hexagon' | 'folder'
   | 'double' | 'octagon' | 'flag' | 'parallelogram' | 'stadium' | 'page' | 'stack'
   | 'chevron-bar' | 'chevron' | 'tab' | 'window' | 'port' | 'stripes' | 'component' | 'shield'
   | 'diamond';
@@ -58,7 +58,6 @@ export const SHAPES: Readonly<Record<Shape, ShapeSpec>> = {
   octagon: { name: 'an octagon', kinds: 'Constraint, invariant, specification, pattern rule (a policy with a gear, a standard rule with a ruler)', room: NO_ROOM, draw: 'clipped', centered: false },
   flag: { name: 'a flag, notched on the right', kinds: 'Domain event', room: { l: 0, r: 10, t: 0, b: 0 }, draw: 'clipped', centered: false },
   parallelogram: { name: 'a slanted box', kinds: 'Command (a query with a lens)', room: { l: 8, r: 8, t: 0, b: 0 }, draw: 'clipped', centered: false },
-  slice: { name: 'a slice pointing right', kinds: 'Capability', room: { l: 0, r: 8, t: 0, b: 0 }, draw: 'clipped', centered: false },
   stadium: { name: 'a stadium', kinds: 'Use case', room: { l: 4, r: 8, t: 0, b: 0 }, draw: 'radius', centered: true },
   page: { name: 'a page with a folded corner', kinds: 'UC requirement, view requirement, API requirement', room: { l: 0, r: 10, t: 0, b: 0 }, draw: 'clipped', centered: false },
   stack: { name: 'stacked boxes', kinds: 'Pattern (a standard with a ruler)', room: { l: 0, r: 5, t: 5, b: 0 }, draw: 'clipped', centered: false },
@@ -110,7 +109,6 @@ const KIND_SHAPES: Readonly<Record<string, KindShape>> = {
   domain_service: { shape: 'box', mark: 'gear' },
   storage_requirement: { shape: 'page', mark: 'data' },
   term: { shape: 'box', mark: 'marker' },
-  capability: { shape: 'slice' },
   use_case: { shape: 'stadium' },
   uc_requirement: { shape: 'page' },
   pattern: { shape: 'stack' },
@@ -192,10 +190,6 @@ function polygonOf(shape: Shape, w: number, h: number, scale: number): Pt[] | nu
       const t = notch(8, scale, h, 0.25);
       const x = notch(64, scale, w, 0.4);
       return [[0, 0, 0, 0], [0, x, 0, 0], [0, x + t, 0, t], [1, 0, 0, t], [1, 0, 1, 0], [0, 0, 1, 0]];
-    }
-    case 'slice': {
-      const p = notch(16, scale, w, 0.25);
-      return [[0, 0, 0, 0], [1, -p, 0, 0], [1, 0, 0.5, 0], [1, -p, 1, 0], [0, 0, 1, 0]];
     }
     case 'octagon': {
       const c = Math.min(notch(8, scale, w, 0.25), notch(8, scale, h, 0.25));

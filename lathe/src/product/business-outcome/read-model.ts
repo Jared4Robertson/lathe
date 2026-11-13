@@ -2,16 +2,17 @@
 // their readers (the outcome's page and a list of a product's outcomes) and built from rows by its projection. It
 // shares no types with the aggregate's model.
 import { byRecordId } from '../../platform/data/ids.ts';
+import { asGroup, compareGroups, placementOf, type UseCaseGroup } from '../../exploring/placement.ts';
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { BusinessOutcomeRow } from '../../platform/data/tables.ts';
 
-/** One business outcome's page: its row, the tests and records that measure it, and the capabilities and journeys that serve it. */
+/** One business outcome's page: its row, the tests and records that measure it, and the aggregates, read models and journeys that serve it. */
 export interface BusinessOutcomePage {
   outcome: BusinessOutcomeRow;
   /** The tests and records that measure it, sorted. */
   measuredBy: string[];
-  /** The capabilities that serve it, sorted. */
-  servedBy: string[];
+  /** The aggregates and read models that serve it, with their kinds and titles: aggregates by ID, then read models by ID. */
+  servedBy: UseCaseGroup[];
   /** The journeys that serve it, by ID, with their titles. */
   journeys: { id: string; title: string }[];
 }
@@ -29,10 +30,14 @@ function businessOutcomePagesFrom(view: ReadView): BusinessOutcomePage[] {
   const measures = view.rows('measured_by');
   const serves = view.rows('serves');
   const journeys = new Map((view.rows('journey') as unknown as { id: string; title: string }[]).map((j) => [j.id, j.title]));
+  const placed = placementOf(view);
   return outcomes.map((outcome) => ({
     outcome,
     measuredBy: measures.filter((m) => m.source_id === outcome.id).map((m) => String(m.target_id)).sort(),
-    servedBy: serves.filter((s) => s.target_id === outcome.id && !journeys.has(String(s.source_id))).map((s) => String(s.source_id)).sort(),
+    servedBy: serves
+      .filter((s) => s.target_id === outcome.id)
+      .flatMap((s) => asGroup(placed, String(s.source_id)) ?? [])
+      .sort(compareGroups),
     journeys: serves.filter((s) => s.target_id === outcome.id && journeys.has(String(s.source_id))).map((s) => ({ id: String(s.source_id), title: journeys.get(String(s.source_id))! })).sort(byRecordId),
   }));
 }

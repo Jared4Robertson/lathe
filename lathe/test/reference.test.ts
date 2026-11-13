@@ -100,7 +100,7 @@ describe('the reference', () => {
     expect(useCase).toMatchObject({
       label: 'Use case',
       stage: 'use-cases',
-      parents: [{ kind: 'capability', column: 'capability_id' }],
+      parents: [{ kind: 'domain', column: 'domain_id' }],
       obligation: false,
       coverage: null,
       levels: null,

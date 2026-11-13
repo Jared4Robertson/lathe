@@ -78,7 +78,7 @@ Each decision lists the options weighed, the choice and why.
 ├──────────────────────────────────────┤      │  ☑•   │ ⌄  Browsing                  │
 │ The aggregates of Browsing and …     │      │       │ │ ⌄ DEFINE              13  │
 │   ┌────┐                             │      │       │ │ │ › Domain model       9  │
-│   │Page│──┐   ┌──────┐   ┌───────┐   │      │       │ │ │ ⌄ Capabilities       4  │
+│   │Page│──┐   ┌──────┐   ┌───────┐   │      │       │ │ │ ⌄ Use cases          4  │
 │   └────┘  └──▶│Space │──▶│Folder │   │      │       │ │ │ │ ▓ Views and naviga… ▓ │  the selected row: the whole row
 │        ↑ pinch, pan                  │      │       │ │ › DESIGN             337  │
 ├──────── ▬▬▬ ─────────────────────────┤      │       │ ›  Checking                  │

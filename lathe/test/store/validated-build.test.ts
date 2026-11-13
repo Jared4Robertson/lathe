@@ -136,7 +136,7 @@ describe('validated builds', () => {
     expect(stamps(dir)).toHaveLength(1);
     expect(await cli(dir)).toEqual(whole);
 
-    appendFileSync(path.join(root, 'data', 'use_case.jsonl'), `${JSON.stringify({ id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-NONE', goal: 'Bring it back.' })}\n`);
+    appendFileSync(path.join(root, 'data', 'use_case.jsonl'), `${JSON.stringify({ id: 'TL-LEND-UC02', title: 'Return a tool', domain_id: 'TL-NONE', goal: 'Bring it back.' })}\n`);
     const refused = await cli(dir);
     expect(refused.code).not.toBe(0);
     expect(refused).toEqual(await cli(cacheFolder()));

@@ -4,7 +4,7 @@ export const GET_JOURNEY_IDENTITY = {
   id: 'LA-PRD-QRY228',
   slice: { aggregate: 'LA-PRD-A25', name: 'journey' },
   name: 'get-journey',
-  description: 'Reads a journey whole as its readers read it, by its ID or the ID of any record in it: the record asked for and its kind, the journey\'s own details, the outcomes it serves, its steps path by path with what each carries out (a use case with its actors, capability and domain, or a policy with the event it hears, the command it sends and its domain), and its journey test with the test data sets it starts from.',
+  description: 'Reads a journey whole as its readers read it, by its ID or the ID of any record in it: the record asked for and its kind, the journey\'s own details, the outcomes it serves, its steps path by path with what each carries out (a use case with its actors, its result\'s aggregate or read model and domain, or a policy with the event it hears, the command it sends and its domain), and its journey test with the test data sets it starts from.',
   method: 'GET',
   route: '/api/journey/get-journey',
 } as const;

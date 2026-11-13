@@ -5,8 +5,8 @@ import { fixture } from './load';
 // A small workspace for the component tests (data/workspace/). Two products:
 // - DM (Demo shop): a value object and a view both domains use, so DM shares them; DM-SHOP with an
 //   aggregate, its entities, invariant, event and command, a specification, a read model and query, a
-//   use case with its flow, an endpoint, a handler, a table and two tests; DM-PAY with a use case, its
-//   flow's one step in the view, and an event with a field typed by the value object; questions; problems.
+//   use case with its flow, an endpoint, a handler, a table and two tests; DM-PAY with an aggregate and its command, a use
+//   case whose result it is, its flow's one step in the view, and an event with a field typed by the value object; questions; problems.
 // - NF (Notebook): one domain.
 
 /** One obligation kind's coverage line. */

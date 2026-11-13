@@ -9,12 +9,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { ADD_DOMAIN } from '../../../src/domain-modeling/domain/commands/add-domain.ts';
 import { ADD_REPOSITORY } from '../../../src/domain-modeling/domain/commands/add-repository.ts';
 import { ADD_TERM } from '../../../src/domain-modeling/domain/commands/add-term.ts';
-import { CHANGE_CAPABILITY } from '../../../src/domain-modeling/domain/commands/change-capability.ts';
 import { CHANGE_DOMAIN } from '../../../src/domain-modeling/domain/commands/change-domain.ts';
 import { CHANGE_REPOSITORY } from '../../../src/domain-modeling/domain/commands/change-repository.ts';
 import { CHANGE_SERVICE } from '../../../src/domain-modeling/domain/commands/change-service.ts';
 import { CHANGE_TERM } from '../../../src/domain-modeling/domain/commands/change-term.ts';
-import { REMOVE_CAPABILITY } from '../../../src/domain-modeling/domain/commands/remove-capability.ts';
 import { REMOVE_DOMAIN } from '../../../src/domain-modeling/domain/commands/remove-domain.ts';
 import { REMOVE_DOMAIN_SERVICE } from '../../../src/domain-modeling/domain/commands/remove-domain-service.ts';
 import { GET_DOMAIN, LIST_DOMAINS, NEXT_DOMAIN_ID } from '../../../src/domain-modeling/domain/queries.ts';
@@ -60,21 +58,19 @@ describe('LA-MOD-UC34-R01-T02 each Domain command (LA-MOD-A4) changes one domain
     const whole = runQuery(store, GET_DOMAIN, { id: 'TL-LEND-DS01-T01' }) as ReturnType<typeof GET_DOMAIN.run>;
     expect(whole.record).toEqual({ id: 'TL-LEND-DS01-T01', kind: 'domain_service_test' });
     expect(whole.domain.id).toBe('TL-LEND');
-    expect(whole.capabilities.map((c) => c.capability.id)).toEqual(['TL-LEND-CAP01']);
+    expect(whole.useCases).toEqual([]);
     expect(whole.domainServices.map((s) => s.service)).toEqual([{ service: { id: 'TL-LEND-DS01-SV', title: 'lateFee', domain_service_id: 'TL-LEND-DS01', file: 'src/fees.ts' }, meets: [], packages: [], helpers: [] }]);
     expect(whole.domainServices[0].tests.map((t) => t.test.id)).toEqual(['TL-LEND-DS01-T01']);
     expect(whole.repositories).toEqual([expect.objectContaining({ persists: null, meets: [], packages: [], helpers: [] })]);
     expect(whole.repositories[0]).not.toHaveProperty('alsoPersists');
     expect(runQuery(store, LIST_DOMAINS, { product_id: 'TL' })).toEqual([{ id: 'TL-LEND', title: 'Lending' }]);
-    expect(runQuery(store, NEXT_DOMAIN_ID, { kind: 'capability', parent: 'TL-LEND' })).toBe('TL-LEND-CAP02');
     expect(runQuery(store, NEXT_DOMAIN_ID, { kind: 'domain_service_test', parent: 'TL-LEND-DS01' })).toBe('TL-LEND-DS01-T02');
     expect(() => runQuery(store, NEXT_DOMAIN_ID, { kind: 'service', parent: 'TL-LEND-DS01' })).toThrow(/already has its service, TL-LEND-DS01-SV/);
     expect(() => runQuery(store, NEXT_DOMAIN_ID, { kind: 'domain', parent: 'TL' })).toThrow(/has no next ID/);
   });
 
-  it('changes a domain and a capability\'s links, writing only its own tables; null clears an optional column', async () => {
+  it('changes a domain, writing only its own tables; null clears an optional column', async () => {
     const store = await storeOf(everyKind());
-    expect((await runCommand(store, CHANGE_CAPABILITY, { id: 'TL-LEND-CAP01', serves: [] })).tables).toEqual(['serves']);
     await runCommand(store, CHANGE_DOMAIN, { id: 'TL-LEND', notes: 'Fines are kept low.' });
     expect((await runCommand(store, CHANGE_DOMAIN, { id: 'TL-LEND', notes: null })).tables).toEqual(['domain']);
     expect(store.record('TL-LEND')?.row).not.toHaveProperty('notes');
@@ -104,7 +100,6 @@ describe('LA-MOD-UC34-R01-T02 each Domain command (LA-MOD-A4) changes one domain
     await runCommand(own, REMOVE_DOMAIN, { id: 'TL-LEND' });
     expect(own.rows('domain')).toEqual([]);
     const store = await storeOf(everyKind());
-    expect((await refusal(store, REMOVE_CAPABILITY, { id: 'TL-LEND-CAP01' })).problems[0].message).toMatch(/^Capability TL-LEND-CAP01 is referenced, so it stays: .*TL-LEND-UC01/);
     expect((await refusal(store, REMOVE_DOMAIN, { id: 'TL-LEND' })).problems[0].rule).toBe('referenced');
   });
 
@@ -127,7 +122,7 @@ describe('LA-MOD-UC34-R01-T02 each Domain command (LA-MOD-A4) changes one domain
     try {
       const post = (route: string, body: unknown) => fetch(`http://127.0.0.1:${(server.address() as AddressInfo).port}${route}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
       expect((await post('/api/domain/remove-term', { id: 'TL-LEND-TM03' })).status).toBe(200);
-      expect((await post('/api/domain/remove-capability', { id: 'TL-LEND-CAP01' })).status).toBe(422);
+      expect((await post('/api/domain/remove-domain', { id: 'TL-LEND' })).status).toBe(422);
     } finally {
       await closeStores(root);
       await new Promise((resolve) => server.close(resolve));

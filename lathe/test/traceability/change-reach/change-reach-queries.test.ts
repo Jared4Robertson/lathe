@@ -46,8 +46,8 @@ describe('LA-TRC-UC24-R01-T01 The reach of a change lists every record that sits
     expect(record(r, 'EX-UI01')?.path).toEqual([{ id: 'EX-LEND-CMD01', via: null }, { id: 'EX-V01', via: 'Presents' }, { id: 'EX-UI01', via: 'Renders' }]);
     // A view reached through what it presents brings its components, not its own requirements.
     expect(ids(r)).not.toContain('EX-V01-R01');
-    // Never up to the use case, capability or outcome it serves: those are its purposes.
-    expect(ids(r).some((id) => /UC\d+$|CAP|BO/.test(id))).toBe(false);
+    // Never up to the use case or outcome it serves: those are its purposes.
+    expect(ids(r).some((id) => /UC\d+$|BO/.test(id))).toBe(false);
   });
 
   it('follows a value object to the entity typed by it and on through what carries it out', async () => {

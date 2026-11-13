@@ -3,9 +3,6 @@ import type { AnyCommand } from '../../../platform/commands/definition.ts';
 import { ADD_DOMAIN } from './add-domain.ts';
 import { CHANGE_DOMAIN } from './change-domain.ts';
 import { REMOVE_DOMAIN } from './remove-domain.ts';
-import { ADD_CAPABILITY } from './add-capability.ts';
-import { CHANGE_CAPABILITY } from './change-capability.ts';
-import { REMOVE_CAPABILITY } from './remove-capability.ts';
 import { ADD_TERM } from './add-term.ts';
 import { CHANGE_TERM } from './change-term.ts';
 import { REMOVE_TERM } from './remove-term.ts';
@@ -21,7 +18,6 @@ import { REMOVE_SERVICE } from './remove-service.ts';
 import { ADD_DOMAIN_SERVICE_TEST } from './add-domain-service-test.ts';
 import { CHANGE_DOMAIN_SERVICE_TEST } from './change-domain-service-test.ts';
 import { REMOVE_DOMAIN_SERVICE_TEST } from './remove-domain-service-test.ts';
-import { MOVE_CAPABILITY } from './move-capability.ts';
 import { MOVE_TERM } from './move-term.ts';
 import { MOVE_REPOSITORY } from './move-repository.ts';
 import { MOVE_DOMAIN_SERVICE } from './move-domain-service.ts';
@@ -30,9 +26,6 @@ export const DOMAIN_COMMANDS = [
   ADD_DOMAIN,
   CHANGE_DOMAIN,
   REMOVE_DOMAIN,
-  ADD_CAPABILITY,
-  CHANGE_CAPABILITY,
-  REMOVE_CAPABILITY,
   ADD_TERM,
   CHANGE_TERM,
   REMOVE_TERM,
@@ -48,7 +41,6 @@ export const DOMAIN_COMMANDS = [
   ADD_DOMAIN_SERVICE_TEST,
   CHANGE_DOMAIN_SERVICE_TEST,
   REMOVE_DOMAIN_SERVICE_TEST,
-  MOVE_CAPABILITY,
   MOVE_TERM,
   MOVE_REPOSITORY,
   MOVE_DOMAIN_SERVICE,

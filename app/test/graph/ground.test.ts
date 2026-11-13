@@ -22,7 +22,7 @@ describe('the composition rule', () => {
       ['uc_requirement', 'use_case_test'], ['constraint', 'constraint_test'], ['flow', 'flow_test'], ['standard_rule', 'standard_rule_test'],
     ]) expect(composes(parent, child), `${child} in ${parent}`).toBe(true);
     for (const [parent, child] of [
-      ['domain', 'aggregate'], ['aggregate', 'invariant'], ['aggregate', 'domain_event'], ['command', 'policy'], ['capability', 'use_case'],
+      ['domain', 'aggregate'], ['aggregate', 'invariant'], ['aggregate', 'domain_event'], ['command', 'policy'], ['domain', 'use_case'],
       ['command', 'endpoint'], ['entity', 'table'], ['command', 'command_handler'], ['product', 'pattern'], ['invariant', 'rule'],
     ]) expect(composes(parent, child), `${child} in ${parent}`).toBe(false);
   });

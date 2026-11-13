@@ -29,7 +29,7 @@ Write a product stage by stage, so each record's links point at records written 
 
 1. **Discovery** (`discover-outcomes`): business outcomes, each measurable, and the journeys that reach them.
 2. **Domain model** (this skill), in event storming order: aggregates with entities and fields; commands and the events they raise; then invariants, value objects and constraints, specifications, policies, read models and queries, domain services, storage requirements, terms.
-3. **Use cases** (`write-use-cases`): capabilities, use cases with actors and UC requirements, each use case's flow and its steps, shared patterns. A use case is written after the command or query that is its result.
+3. **Use cases** (`write-use-cases`): use cases with actors, results and UC requirements, each use case's flow and its steps, shared patterns. A use case is written after the command or query that is its result.
 4. **Interface design** (`design-interfaces`): interfaces, views, endpoints, integrations.
 5. **Technical specification** (`write-the-technical-spec`): one technical record per design record, tables, standards.
 6. **Test plan** (`plan-tests`): one test kind per thing tested.
@@ -73,7 +73,7 @@ A product that already has specs in prose (markdown requirements, design documen
 
 1. **Sort before you copy.** Read each prose document and assign every rule to a record kind by the tests above. Do not copy whole sections into one description; one rule per record.
 2. **Keep the reasoning, not the document.** Rationale belongs in the record's own text, a standard rule or a decision, written for the record. Do not cite the prose by file or commit; a citation to a retired document is a dead link.
-3. **Work by capability.** Move one domain at a time, in the order above, and delete that domain's prose in the same change that completes it, so the prose and the records never both hold the rule.
+3. **Work by domain.** Move one domain at a time, in the order above, and delete that domain's prose in the same change that completes it, so the prose and the records never both hold the rule.
 4. **Undecided prose becomes a question.** "Not written yet", TBD and open points become questions with owners, not empty records.
 5. **Final sweep.** When the last document is gone, search the whole repo (code comments, tests, READMEs, scripts, CI, other docs) for the retired files' names, section numbers and paths, and replace each hit with the record's ID or remove it. Then run `check-and-fix` and confirm no rule exists only in prose.
 

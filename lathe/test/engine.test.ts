@@ -185,7 +185,7 @@ describe('loading', () => {
     expect(ws.stages.map((s) => s.stage)).toEqual(['discovery', 'domain-model', 'use-cases', 'interface-design', 'technical-specification', 'test-plan']);
     expect(Object.keys(ws.stages[0]).sort()).toEqual(['description', 'label', 'position', 'stage']);
     expect(Object.keys(ws.relations[0]).sort()).toEqual(['description', 'forward_label', 'relation', 'reverse_label', 'role', 'source_kind', 'target_kind']);
-    expect(Object.keys(ws.records[0]).sort()).toEqual(['aggregate', 'domain', 'fields', 'id', 'kind', 'parent', 'parts', 'product', 'title']);
+    expect(Object.keys(ws.records[0]).sort()).toEqual(['aggregate', 'domain', 'fields', 'group', 'id', 'kind', 'parent', 'parts', 'product', 'title']);
     expect(Object.keys(ws.links[0]).sort()).toEqual(['relation', 'source', 'target']);
     expect(Object.keys(ws.coverage[0]).sort()).toEqual(['debt', 'domain', 'gaps', 'obligations', 'pattern_rules', 'product', 'proved_by', 'tests']);
     expect(Object.keys(ws.coverage[0].obligations[0]).sort()).toEqual(['built', 'designed', 'kind', 'label', 'not_automated', 'proof_only', 'proved', 'total']);
@@ -217,6 +217,14 @@ describe('loading', () => {
     expect(at('EX-LEND-SP01')).toMatchObject({ product: 'EX', domain: 'EX-LEND', parent: null });
     // An endpoint sits under the one of its two parent columns that holds a value.
     expect(at('EX-LEND-EP01')).toMatchObject({ parent: 'EX-LEND-CMD01', aggregate: 'EX-LEND-A1' });
+    // A use case's group is its result's aggregate (a command's entity's) or read model (a query's); what sits under the use case has it, and a record outside a use case has none.
+    const useCaseGroup = (id: string) => ws.records.find((r) => r.id === id)!.group;
+    expect(useCaseGroup('EX-LEND-UC01')).toBe('EX-LEND-A1');
+    expect(useCaseGroup('EX-LEND-UC01-R01-T01')).toBe('EX-LEND-A1');
+    expect(useCaseGroup('EX-LEND-UC01-FL-S01')).toBe('EX-LEND-A1');
+    expect(useCaseGroup('EX-LEND-CMD01')).toBeNull();
+    expect(useCaseGroup('EX-LEND-SP01')).toBeNull();
+    expect(useCaseGroup('EX')).toBeNull();
   });
 
   it('LA-CHK-UC01-R04-T01 A product whose data the store refuses loads no records, and each refusal is a data-refused error', async () => {

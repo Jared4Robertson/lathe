@@ -20,8 +20,9 @@ import { kindWord, addedUnder } from '../../platform/meta-model/reads';
 // commands, POST /api/use-case/<command>, and nothing else. Edit sends its kind's Change with only what changed; Add
 // opens an empty form for a kind that sits under the record in the use case, with the next free ID read from the
 // aggregate (next-id), and sends its Add; Move, offered only for a kind the aggregate has a Move command for (a use
-// case: Move a use case, to another capability; a UC requirement: Move a UC requirement, to another use case of its
-// product, then to its new address, the next free number there), sends that command; Remove
+// case: Move a use case, to another domain of its product with a result there, then to its new address, that domain's
+// ID in place of the old one's; a UC requirement: Move a UC requirement, to another use case of its product, then to
+// its new address, the next free number there), sends that command; Remove
 // says what goes with the record and sends its Remove. Each form is the shared command form (edit/command-form.tsx),
 // its fields those of its command's input. A refusal shows every reason the command gave, in its own words, keeps what was
 // entered, and changes nothing.
@@ -89,17 +90,21 @@ function productChoices(index: RecordIndex, useCase: UseCasePage, kinds: readonl
   return [...index.byId.values()].filter((r) => kinds.includes(r.kind) && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 }
 
+/** A domain's commands and queries, as choices: what a use case of that domain may name as its result. */
+const resultChoices = (index: RecordIndex, domain: string): Choice[] =>
+  [...index.byId.values()].filter((r) => (r.kind === 'command' || r.kind === 'query') && r.domain === domain).map((r) => ({ id: r.id, title: r.title }));
+
 /**
- * The use case's fields, shared by its Add and Change: its long text, and its required result, one of its product's
- * commands and queries (LA-STD-MODELING-R15), named Result.
+ * The use case's fields, shared by its Add and Change: its long text, and its required result, one of its domain's
+ * commands and queries (LA-STD-MODELING-R15, R20), named Result.
  */
-const useCaseHints = (index: RecordIndex, product: string | null | undefined) => ({
+const useCaseHints = (index: RecordIndex, domain: string) => ({
   goal: LONG,
   notes: LONG,
   result_id: {
     label: 'Result',
-    choices: [...index.byId.values()].filter((r) => (r.kind === 'command' || r.kind === 'query') && r.product === product).map((r) => ({ id: r.id, title: r.title })),
-    description: 'The one command its actor invokes (a command use case) or the one query they ask (a query use case).',
+    choices: resultChoices(index, domain),
+    description: 'The one command its actor invokes (a command use case) or the one query they ask (a query use case), of its domain: the use case is listed with its aggregate or read model.',
   },
 });
 
@@ -110,7 +115,7 @@ function fieldsOf(context: FormContext, kind: UseCaseKind, adding: boolean): Fie
   const startsFrom = { choices: productChoices(index, useCase, ['test_data_set']) };
   switch (kind) {
     case 'use_case':
-      return addOrChangeFields(adding, F['/api/use-case/add-use-case'], 'capability_id', F['/api/use-case/change-use-case'], useCaseHints(index, index.byId.get(useCase.useCase.id)?.product));
+      return addOrChangeFields(adding, F['/api/use-case/add-use-case'], 'domain_id', F['/api/use-case/change-use-case'], useCaseHints(index, useCase.useCase.domain_id));
     case 'uc_requirement':
       return addOrChangeFields(adding, F['/api/use-case/add-uc-requirement'], 'use_case_id', F['/api/use-case/change-uc-requirement'], { statement: LONG });
     case 'flow':
@@ -170,7 +175,7 @@ const CHANGE: Record<UseCaseKind, CommandRoute> = {
 
 /** Each kind's Add command, and the field that names its parent. */
 const ADD: Record<UseCaseKind, { route: CommandRoute; parent: string }> = {
-  use_case: { route: '/api/use-case/add-use-case', parent: 'capability_id' },
+  use_case: { route: '/api/use-case/add-use-case', parent: 'domain_id' },
   uc_requirement: { route: '/api/use-case/add-uc-requirement', parent: 'use_case_id' },
   flow: { route: '/api/use-case/add-flow', parent: 'use_case_id' },
   flow_step: { route: '/api/use-case/add-flow-step', parent: 'flow_id' },
@@ -235,24 +240,44 @@ function AddForm({ context, parent, kind }: { context: FormContext; parent: stri
 /** One past the highest position on the main path, for a new step. */
 const nextPosition = (steps: readonly StepOnPage[]) => Math.max(0, ...steps.filter((s) => (s.step.path || 'main') === 'main').map((s) => s.step.position)) + 1;
 
-/** Move: the use case to another capability of its product, as its own command. */
+/**
+ * Move: the use case to another domain of its product, as its own command: first the domain, then its result there, one
+ * of that domain's commands and queries, since a use case sits in its result's domain. Then to its new address.
+ */
 function MoveForm({ context }: { context: FormContext }) {
   const { index, useCase, writer, onDone } = context;
   const announce = useAnnounce();
-  const [capability, setCapability] = useState(useCase.useCase.capability_id);
+  const { id, domain_id: from, result_id: result } = useCase.useCase;
+  const [domain, setDomain] = useState(from);
+  const [target, setTarget] = useState(result);
   const formId = useId();
-  const choices = productChoices(index, useCase, ['capability']);
+  const product = index.byId.get(id)?.product;
+  const domains = index.domains.filter((d) => d.product === product).map((d) => ({ id: d.id, title: d.title }));
+  const results = resultChoices(index, domain);
+  const pickDomain = (next: string) => {
+    setDomain(next);
+    // The result it has stays chosen only where it is one of the domain's own.
+    setTarget(index.byId.get(result)?.domain === next ? result : '');
+  };
   const submit = async () => {
-    if (capability === useCase.useCase.capability_id) { announce('Nothing changed'); onDone(); return null; }
-    const answer = await writer.command(MOVE.use_case, { id: useCase.useCase.id, capability_id: capability });
-    if (answer.ok) { announce(`Moved ${useCase.useCase.id}`); onDone(); }
+    if (domain === from) { announce('Nothing changed'); onDone(); return null; }
+    const answer = await writer.command(MOVE.use_case, { id, domain_id: domain, ...(target ? { result_id: target } : {}) });
+    if (answer.ok) {
+      const moved = `${domain}${id.slice(from.length)}`;
+      announce(`Moved ${id} to ${moved}`);
+      navigate(addressOf(moved));
+    }
     return answer;
   };
   return (
-    <CommandForm eyebrow="Use case" title={`Move ${useCase.useCase.id}`} submit={submit} saveLabel="Move" onCancel={onDone}>
+    <CommandForm eyebrow="Use case" title={`Move ${id}`} submit={submit} saveLabel="Move" onCancel={onDone}>
       {(first) => (
-        <IdField id={`${formId}-capability`} label="Capability" required inputRef={first} choices={choices} value={capability} onChange={setCapability}
-          description="The capability of its product it moves to; everything in the use case moves with it." />
+        <>
+          <IdField id={`${formId}-domain`} label="Domain" required inputRef={first} choices={domains} value={domain} onChange={pickDomain}
+            description={`The domain of its product it moves to; it takes that domain's ID in place of ${from}, and everything in the use case moves with it.`} />
+          <IdField id={`${formId}-result`} label="Result" required choices={results} value={target} onChange={setTarget}
+            description="Its result there: one of that domain's commands and queries, since a use case sits in its result's domain." />
+        </>
       )}
     </CommandForm>
   );
@@ -321,7 +346,7 @@ const REMOVE: Record<UseCaseKind, CommandRoute> = {
 /** The record a removed one's page gives way to: what it sits under. */
 function parentOf(useCase: UseCasePage, kind: UseCaseKind, id: string): string {
   switch (kind) {
-    case 'use_case': return useCase.useCase.capability_id;
+    case 'use_case': return useCase.useCase.domain_id;
     case 'uc_requirement':
     case 'flow': return useCase.useCase.id;
     case 'flow_step': return stepsOfUseCase(useCase).find((s) => s.step.id === id)!.step.flow_id;
@@ -331,21 +356,21 @@ function parentOf(useCase: UseCasePage, kind: UseCaseKind, id: string): string {
 }
 
 /**
- * Add a use case to a capability (from the capability's page): the aggregate's own Add, its ID the next free one. From a
- * journey step that carries out nothing yet it opens with the step's words as `title`, and `afterAdd` links the step
- * to the use case once it is added.
+ * Add a use case to a domain (from the domain's Use cases): the aggregate's own Add, its ID the next free one, its result
+ * one of the domain's commands and queries. From a journey step that carries out nothing yet it opens with the step's
+ * words as `title` and the result chosen there as `result`, and `afterAdd` links the step to the use case once it is added.
  */
-export function AddUseCaseForm({ index, parent, onDone, title, afterAdd }: { index: RecordIndex; parent: string; onDone: () => void; title?: string; afterAdd?: (id: string) => Promise<void> }) {
+export function AddUseCaseForm({ index, parent, onDone, title, result, afterAdd }: { index: RecordIndex; parent: string; onDone: () => void; title?: string; result?: string; afterAdd?: (id: string) => Promise<void> }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextId('use_case', parent, index);
-  const [draft, setDraft] = useState<Draft>(() => ({ ...emptyDraft(), text: title ? { title } as Record<string, string> : {} }));
+  const [draft, setDraft] = useState<Draft>(() => ({ ...emptyDraft(), text: { ...(title ? { title } : {}), ...(result ? { result_id: result } : {}) } }));
   useEffect(() => {
     if (next.state === 'read') setDraft((d) => (d.text.id ? d : { ...d, text: { ...d.text, id: next.answer } }));
   }, [next]);
-  const specs = formFields(USE_CASE_FIELDS['/api/use-case/add-use-case'], ['capability_id'], useCaseHints(index, index.byId.get(parent)?.product));
+  const specs = formFields(USE_CASE_FIELDS['/api/use-case/add-use-case'], ['domain_id'], useCaseHints(index, parent));
   const submit = async () => {
-    const input = addInput(index, specs, draft, { capability_id: parent });
+    const input = addInput(index, specs, draft, { domain_id: parent });
     const answer = await send(writer, '/api/use-case/add-use-case', input);
     if (answer.ok) {
       announce(`Added ${String(input.id)}`);

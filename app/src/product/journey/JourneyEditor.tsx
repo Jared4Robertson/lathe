@@ -23,9 +23,9 @@ import { kindWord, addedUnder } from '../../platform/meta-model/reads';
 // opens an empty form for a kind that sits under the record (a step or the journey test under the journey), with the
 // next free ID read from the aggregate (next-id), a new step on the main path after the last, and sends its Add; Remove
 // says what goes with the record and sends its Remove. A step moves up and down from the page's list (StepMoves,
-// Move a journey step); a step that carries out nothing yet offers Add use case, which asks for the capability, opens
-// the use case's Add with the step's words as its title and then links the step to it (Add a use case, then Change a
-// journey step). The aggregate has no Move for a journey. A journey is added from its product's page (AddJourneyForm).
+// Move a journey step); a step that carries out nothing yet offers Add use case, which asks for its result (a command or
+// query of the product), opens the use case's Add in the result's domain with the step's words as its title and then
+// links the step to it (Add a use case, then Change a journey step). The aggregate has no Move for a journey. A journey is added from its product's page (AddJourneyForm).
 // What a step may carry out is the product's use cases and policies, grouped by domain; what a journey may serve is the
 // product's business outcomes. A refusal shows every reason the command gave, keeps what was entered, and changes nothing.
 
@@ -230,34 +230,35 @@ export function AddJourneyForm({ index, parent, onDone }: { index: RecordIndex; 
 }
 
 /**
- * Add use case on a step that carries out nothing yet, in one gesture: choose the capability, then the use case's own
- * Add opens with the step's words as its title; once it is added the step is linked to it (Change a journey step).
+ * Add use case on a step that carries out nothing yet, in one gesture: choose its result, a command or query of the
+ * product, then the use case's own Add opens in the result's domain with the step's words as its title and that result;
+ * once it is added the step is linked to it (Change a journey step).
  */
 function WriteUseCaseForm({ index, step, title, onDone }: { index: RecordIndex; step: string; title: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const formId = useId();
   const product = index.byId.get(step)?.product ?? index.product;
-  const choices = productChoices(index, product, ['capability'], (r) => `${r.title} (${index.byId.get(r.domain ?? '')?.title ?? ''})`);
-  const [capability, setCapability] = useState('');
+  const choices = productChoices(index, product, ['command', 'query'], (r) => `${r.title} (${index.byId.get(r.domain ?? '')?.title ?? ''})`);
+  const [result, setResult] = useState('');
   const [chosen, setChosen] = useState<string | null>(null);
   if (chosen !== null) {
     const link = async (useCase: string) => {
       const answer = await send(writer, '/api/journey/change-journey-step', { id: step, carries_out: useCase });
       if (!answer.ok) announce(`Added ${useCase}, but linking ${step} to it was refused: ${answer.problems[0]?.message ?? answer.error}`);
     };
-    return <AddUseCaseForm index={index} parent={chosen} onDone={onDone} title={title} afterAdd={link} />;
+    return <AddUseCaseForm index={index} parent={index.byId.get(chosen)?.domain ?? ''} onDone={onDone} title={title} result={chosen} afterAdd={link} />;
   }
   return (
     <CommandForm eyebrow={`Step ${step}`} title={`Add a use case for ${step}`} saveLabel="Continue" onCancel={onDone}
       submit={async () => {
-        if (capability === '') { announce('Choose a capability'); return null; }
-        setChosen(capability);
+        if (result === '') { announce('Choose a result'); return null; }
+        setChosen(result);
         return null;
       }}>
       {(first) => (
-        <IdField id={`${formId}-capability`} label="Capability" required inputRef={first} choices={choices} value={capability} onChange={setCapability}
-          description={`The capability of the product the new use case belongs to. The use case starts with the step's words as its title, and ${step} then carries it out.`} />
+        <IdField id={`${formId}-result`} label="Result" required inputRef={first} choices={choices} value={result} onChange={setResult}
+          description={`The command its actor invokes or the query they ask, of the product: the new use case sits in its domain, with its aggregate or read model. It starts with the step's words as its title, and ${step} then carries it out.`} />
       )}
     </CommandForm>
   );

@@ -25,8 +25,7 @@ async function data(run: Partial<CheckRun> = {}): Promise<ReadView> {
   const store = await openStore(writeData({
     ...TWO_PRODUCTS,
     command: [{ id: 'EX-LEND-CMD01', title: 'Lend a tool', entity_id: 'EX-LEND-EN01', description: 'Lends a free tool to a member.' }],
-    capability: [{ id: 'EX-LEND-CAP01', title: 'Lending', domain_id: 'EX-LEND', position: 1, description: 'Lend tools.' }],
-    use_case: [{ id: 'EX-LEND-UC01', title: 'Lend a tool', capability_id: 'EX-LEND-CAP01', goal: 'A member takes a tool home.', result_id: 'EX-LEND-CMD01' }],
+    use_case: [{ id: 'EX-LEND-UC01', title: 'Lend a tool', domain_id: 'EX-LEND', goal: 'A member takes a tool home.', result_id: 'EX-LEND-CMD01' }],
     uc_requirement: [
       { id: 'EX-LEND-UC01-R01', title: 'A lent tool is out', use_case_id: 'EX-LEND-UC01', statement: 'A lent tool MUST read as out.', group_name: 'Lending' },
     ],

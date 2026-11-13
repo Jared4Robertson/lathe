@@ -12,35 +12,35 @@ describe('one level deep', () => {
   const proveLaV92R21T01 = async () => {
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
-    // Use cases holds only capabilities, so it lists them itself.
-    const capabilities = stageOf('use-cases');
-    const cap = row(capabilities, 'DM-SHOP-CAP01');
+    // Use cases holds only use cases, so it lists them itself, each folding its requirements and flow.
+    const useCases = stageOf('use-cases');
+    const cap = row(useCases, 'DM-SHOP-UC01');
     // Folded by default, with the count of what it holds.
-    const toggle = within(cap).getByRole('button', { name: 'Expand DM-SHOP-CAP01' });
+    const toggle = within(cap).getByRole('button', { name: 'Expand DM-SHOP-UC01' });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    expect(cap).toHaveTextContent('1 use case');
+    expect(cap).toHaveTextContent('3 children');
     expect(cap.querySelector('ul.nested')).toBeNull();
     // An aggregate folds what sits under it in the domain model: its entities, invariant and event.
     const aggregates = section(/^Aggregates/);
     expect(row(aggregates, 'DM-SHOP-A1')).toHaveTextContent('4 children');
 
-    // The button opens and closes it, showing the use case within with its title.
+    // The button opens and closes it, showing the requirement within with its title.
     fireEvent.click(toggle);
-    expect(within(cap).getByRole('button', { name: 'Collapse DM-SHOP-CAP01' })).toHaveAttribute('aria-expanded', 'true');
-    expect(row(cap, 'DM-SHOP-UC01')).toHaveTextContent('Add an item to the basket');
+    expect(within(cap).getByRole('button', { name: 'Collapse DM-SHOP-UC01' })).toHaveAttribute('aria-expanded', 'true');
+    expect(row(cap, 'DM-SHOP-UC01-R01')).toHaveTextContent('The basket shows the new item');
 
     // Left closes it (focus on the row), Right opens it, Right again moves into it, Left goes back up.
-    const open = within(cap).getByRole('button', { name: 'Collapse DM-SHOP-CAP01' });
+    const open = within(cap).getByRole('button', { name: 'Collapse DM-SHOP-UC01' });
     open.focus();
     fireEvent.keyDown(open, { key: 'ArrowLeft' });
     expect(cap.querySelector('ul.nested')).toBeNull();
-    fireEvent.keyDown(within(cap).getByRole('button', { name: 'Expand DM-SHOP-CAP01' }), { key: 'ArrowRight' });
+    fireEvent.keyDown(within(cap).getByRole('button', { name: 'Expand DM-SHOP-UC01' }), { key: 'ArrowRight' });
     expect(cap.querySelector('ul.nested')).not.toBeNull();
-    fireEvent.keyDown(within(cap).getByRole('button', { name: 'Collapse DM-SHOP-CAP01' }), { key: 'ArrowRight' });
+    fireEvent.keyDown(within(cap).getByRole('button', { name: 'Collapse DM-SHOP-UC01' }), { key: 'ArrowRight' });
     const child = document.activeElement as HTMLElement;
-    expect(child.textContent).toContain('DM-SHOP-UC01');
+    expect(child.textContent).toContain('DM-SHOP-UC01-R01');
     fireEvent.keyDown(child, { key: 'ArrowLeft' });
-    expect(within(cap).getByRole('button', { name: 'Collapse DM-SHOP-CAP01' })).toHaveFocus();
+    expect(within(cap).getByRole('button', { name: 'Collapse DM-SHOP-UC01' })).toHaveFocus();
 
     // Expand all and Collapse all, per section.
     const user = userEvent.setup();
@@ -53,7 +53,7 @@ describe('one level deep', () => {
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     expect(row(section(/^Aggregates/), 'DM-SHOP-A1').querySelector('ul.nested')).not.toBeNull();
-    expect(row(stageOf('use-cases'), 'DM-SHOP-CAP01').querySelector('ul.nested')).not.toBeNull();
+    expect(row(stageOf('use-cases'), 'DM-SHOP-UC01').querySelector('ul.nested')).not.toBeNull();
   };
   it('LA-PAT-RECORD-PAGE-R16-T01 LA-PAT-RECORD-PAGE-R16-T02 LA-PAT-RECORD-PAGE-R16-T03 LA-PAT-RECORD-PAGE-R16-T04 LA-PAT-RECORD-PAGE-R16-T05 LA-PAT-RECORD-PAGE-R16-T06 Folded rows keep their counts and marks, open and close by button, Expand all or arrow keys, and stay open while moving around', proveLaV92R21T01);
   it('LA-PAT-RECORD-PAGE-R02-T01 LA-PAT-RECORD-PAGE-R02-T02 LA-PAT-RECORD-PAGE-R02-T03 LA-PAT-RECORD-PAGE-R02-T04 LA-PAT-RECORD-PAGE-R02-T05 LA-PAT-RECORD-PAGE-R02-T06 Folded rows keep counts and marks and open by button, Expand all or arrow keys', proveLaV92R21T01);
@@ -65,15 +65,15 @@ describe('one level deep', () => {
     const wiki = screen.getByRole('region', { name: 'Wiki card' });
     // A domain's one page lists its records in their stages and folders, each with its own children folded.
     const children = stageOf('use-cases', wiki);
-    const cap = row(children, 'DM-SHOP-CAP01');
-    expect(cap).toHaveTextContent('1 use case');
-    expect(cap.querySelector('ul.nested')).toBeNull();
-    expect(within(children).queryByRole('link', { name: /DM-SHOP-UC01/ })).toBeNull();
+    const uc = row(children, 'DM-SHOP-UC01');
+    expect(uc).toHaveTextContent('3 children');
+    expect(uc.querySelector('ul.nested')).toBeNull();
+    expect(within(children).queryByRole('link', { name: /DM-SHOP-UC01-R01/ })).toBeNull();
 
     // A record's page: the wiki lists its children.
-    await openApp('/DM-SHOP-CAP01');
-    await screen.findByRole('heading', { level: 1, name: 'Buying' });
-    expect(within(main()).getByRole('list', { name: 'Use cases of DM-SHOP-CAP01' })).toBeInTheDocument();
+    await openApp('/DM-SHOP-UC01');
+    await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
+    expect(within(main()).getByRole('list', { name: 'UC requirements of DM-SHOP-UC01' })).toBeInTheDocument();
 
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });

@@ -96,6 +96,7 @@ function aggregateText(page: AggregatePage): string {
   const { aggregate: row } = page;
   const lines = [`Aggregate ${row.id}: ${row.title}`, `  domain: ${row.domain_id}`, `  identity: ${row.identity}`, `  description: ${row.description}`];
   if (row.notes) lines.push(`  notes: ${row.notes}`);
+  if (page.serves.length) lines.push(`  serves: ${page.serves.join(', ')}`);
   for (const e of page.entities) {
     const links = [...e.hasOne.map((x) => `has one ${x}`), ...e.hasMany.map((x) => `has many ${x}`)];
     lines.push(`Entity ${e.entity.id}: ${e.entity.title} (${e.entity.role}${e.entity.in_root_table ? ', in its root\'s table' : ''})${links.length ? ` [${links.join('; ')}]` : ''}`);

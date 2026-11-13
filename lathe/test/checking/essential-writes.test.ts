@@ -119,7 +119,7 @@ describe('a write of an essential record keeps accidental complexity out', () =>
       ['essential-names-technology', 'EX-LEND-UC01', 'Use case EX-LEND-UC01 is essential, and its title says "postgres"'],
     ]);
     // An add sets every text it is given.
-    expect(await reasons(store, 'use-case add-use-case', { id: 'EX-LEND-UC03', title: 'Return a tool', capability_id: 'EX-LEND-CAP01', goal: 'A member returns a tool and Postgres records it.', result_id: 'EX-LEND-QRY01', actors: ['Member'] })).toEqual([
+    expect(await reasons(store, 'use-case add-use-case', { id: 'EX-LEND-UC03', title: 'Return a tool', domain_id: 'EX-LEND', goal: 'A member returns a tool and Postgres records it.', result_id: 'EX-LEND-QRY01', actors: ['Member'] })).toEqual([
       ['essential-names-technology', 'EX-LEND-UC03', 'Use case EX-LEND-UC03 is essential, and its goal says "postgres"'],
     ]);
   });
@@ -137,5 +137,32 @@ describe('a write of an essential record keeps accidental complexity out', () =>
     // measured_by may: what measures an outcome may be a report.
     await run(store, 'product declare-product-kind', { name: 'report', product_id: 'EX', label: 'Report', description: 'A script that measures the outcomes.', parent_kind: 'domain', stage: 'technical-specification', obligation: false, complexity: 'accidental', id_pattern: '<domain>-RP<nn>', id_example: 'EX-LEND-RP01' });
     await run(store, 'product declare-product-relation', { name: 'measured_by', source_kind: 'business_outcome', target_kind: 'report', product_id: 'EX', forward_label: 'Measured by', reverse_label: 'Measures', description: 'The report measures the business outcome.' });
+  });
+});
+
+/** A second domain of the product, with an aggregate its command changes and a read model its query asks. */
+const shop: Data = {
+  domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', position: 2, subdomain_type: 'supporting', description: 'Selling spare parts.' }],
+  aggregate: [{ id: 'EX-SHOP-A1', title: 'Sale', domain_id: 'EX-SHOP', identity: 'Sale ID', description: 'One part sold to one member.' }],
+  entity: [{ id: 'EX-SHOP-EN01', title: 'Sale', aggregate_id: 'EX-SHOP-A1', role: 'root', description: 'The sale itself.' }],
+  command: [{ id: 'EX-SHOP-CMD01', title: 'Sell a part', entity_id: 'EX-SHOP-EN01', description: 'Sells a spare part to a member.' }],
+  read_model: [{ id: 'EX-SHOP-RM01', title: 'Parts for sale', domain_id: 'EX-SHOP', description: 'The spare parts on the shelf.' }],
+  query: [{ id: 'EX-SHOP-QRY01', title: 'List parts for sale', read_model_id: 'EX-SHOP-RM01', description: 'The parts for sale, by name.' }],
+};
+
+describe('a write keeps a use case with its result', () => {
+  it("LA-STD-MODELING-R20-T02 A write that adds a use case, or changes its result, so that its result is of another domain is refused, naming Move a use case; one in its result's domain is not", async () => {
+    const store = await storeOf(adding(complete(), shop));
+    expect(await reasons(store, 'use-case add-use-case', { id: 'EX-LEND-UC03', title: 'Sell a part', domain_id: 'EX-LEND', goal: 'A member buys a spare part.', result_id: 'EX-SHOP-CMD01', actors: ['Member'] })).toEqual([
+      ['use-case-result-in-domain', 'EX-LEND-UC03', "Use case EX-LEND-UC03 would be in EX-LEND, but its result EX-SHOP-CMD01 is of EX-SHOP: a use case sits in its result's domain; move it to EX-SHOP with Move a use case, or give it a result of its own domain."],
+    ]);
+    await run(store, 'use-case add-use-case', { id: 'EX-SHOP-UC01', title: 'Sell a part', domain_id: 'EX-SHOP', goal: 'A member buys a spare part.', result_id: 'EX-SHOP-CMD01', actors: ['Member'] });
+    await run(store, 'use-case add-use-case', { id: 'EX-LEND-UC03', title: 'See the free tools', domain_id: 'EX-LEND', goal: 'A member sees which tools are free.', result_id: 'EX-LEND-QRY01', actors: ['Member'] });
+    expect(await reasons(store, 'use-case change-use-case', { id: 'EX-LEND-UC03', result_id: 'EX-SHOP-QRY01' })).toEqual([
+      ['use-case-result-in-domain', 'EX-LEND-UC03', "Use case EX-LEND-UC03 would be in EX-LEND, but its result EX-SHOP-QRY01 is of EX-SHOP: a use case sits in its result's domain; move it to EX-SHOP with Move a use case, or give it a result of its own domain."],
+    ]);
+    // Data already written stays loadable: the check reports it.
+    const written = adding(complete(), { ...shop, use_case: [{ id: 'EX-LEND-UC03', title: 'Sell a part', domain_id: 'EX-LEND', goal: 'A member buys a spare part.', result_id: 'EX-SHOP-CMD01' }] });
+    expect(ofCheck(await loadData(written), 'use-case-result-in-domain').map((p) => p.record)).toEqual(['EX-LEND-UC03']);
   });
 });

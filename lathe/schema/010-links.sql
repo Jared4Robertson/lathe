@@ -52,7 +52,7 @@ COMMENT ON TABLE fills IS 'The accidental record (a technical record, an endpoin
 CREATE TABLE generates (source_id VARCHAR NOT NULL REFERENCES tooling (id), target_id VARCHAR NOT NULL REFERENCES accidental_record (id), PRIMARY KEY (source_id, target_id), CHECK (source_id <> target_id));
 COMMENT ON TABLE generates IS 'The tooling record (a generator) writes the accidental record (a technical record''s code, or an endpoint''s route) from the spec: the record is derived, never written by hand. A record of a product''s own accidental kind, such as a shared module, is generated the same way, with no declaration.';
 CREATE TABLE serves (source_id VARCHAR NOT NULL REFERENCES serves_source (id), target_id VARCHAR NOT NULL REFERENCES business_outcome (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE serves IS 'The capability or journey serves the business outcome: what it is for. A capability or journey may serve several outcomes, and an outcome be served by several capabilities and journeys.';
+COMMENT ON TABLE serves IS 'The aggregate, read model or journey serves the business outcome: what it is for. Each may serve several outcomes, and an outcome be served by several aggregates, read models and journeys.';
 CREATE TABLE carries_out (source_id VARCHAR NOT NULL UNIQUE REFERENCES journey_step (id), target_id VARCHAR NOT NULL REFERENCES carries_out_target (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE carries_out IS 'The journey step carries out the use case or the policy, of its own product: at most one per step. A step that carries out nothing yet is a use case still to write.';
 CREATE TABLE measured_by (source_id VARCHAR NOT NULL REFERENCES business_outcome (id), target_id VARCHAR NOT NULL REFERENCES record_id (id), PRIMARY KEY (source_id, target_id));
@@ -145,7 +145,8 @@ INSERT INTO meta_relation_pair VALUES
   ('stored_in', 'repository', 'data_store', 'The repository loads and saves its aggregate in the data store.'),
   ('stored_in', 'reader', 'data_store', 'The reader reads its read model''s table in the data store.'),
   ('stored_in', 'table', 'data_store', 'The table is kept in the data store.'),
-  ('serves', 'capability', 'business_outcome', 'The capability serves the business outcome.'),
+  ('serves', 'aggregate', 'business_outcome', 'The aggregate serves the business outcome: the use cases whose result is one of its commands are for it.'),
+  ('serves', 'read_model', 'business_outcome', 'The read model serves the business outcome: the use cases whose result is one of its queries are for it.'),
   ('serves', 'journey', 'business_outcome', 'The journey serves the business outcome: its result is what the outcome measures.'),
   ('carries_out', 'journey_step', 'use_case', 'The step is the use case, taken by its actors.'),
   ('carries_out', 'journey_step', 'policy', 'The step is a handoff: the product itself acts, by the policy.'),

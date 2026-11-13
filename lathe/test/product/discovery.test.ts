@@ -1,5 +1,5 @@
-// Discovery and test data (LA-PRD-UC22, LA-TST-UC13, LA-TRC-UC01, LA-TST-UC03, LA-TST-UC30): a product's business outcomes, the
-// capabilities that serve them and what measures them, the test data sets tests start from, and a test's size and markers, proved
+// Discovery and test data (LA-PRD-UC22, LA-TST-UC13, LA-TRC-UC01, LA-UCS-UC03, LA-UCS-UC30): a product's business outcomes, the
+// aggregates and read models that serve them and what measures them, the test data sets tests start from, and a test's size and markers, proved
 // through the store and the engine's load.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { SchemaDescription } from '../../src/index.ts';
@@ -31,21 +31,20 @@ describe('business outcomes', () => {
     expect(await rules(withTable(withTable(withTable(data, 'serves', []), 'measured_by', []), 'business_outcome', [{ ...outcome, id: 'XX-BO01' }]))).toEqual(['id-prefix']);
   });
 
-  it('LA-MOD-UC33-R01-T01 A capability serves any number of business outcomes, and an outcome is served by any number of capabilities, of its own product', async () => {
+  it('LA-MOD-UC117-R02-T01 LA-MOD-UC162-R02-T01 An aggregate or read model serves any number of business outcomes, and an outcome is served by any number of them, of its own product', async () => {
     expect(schema.relations.serves).toMatchObject({ scope: 'product', role: null, forwardLabel: 'Serves', reverseLabel: 'Served by' });
-    expect(schema.relations.serves.pairs.map((p) => `${p.source}>${p.target}`)).toEqual(['capability>business_outcome', 'journey>business_outcome']);
+    expect(schema.relations.serves.pairs.map((p) => `${p.source}>${p.target}`)).toEqual(['aggregate>business_outcome', 'journey>business_outcome', 'read_model>business_outcome']);
     const two = adding(everyKind(), {
       business_outcome: [{ id: 'TL-BO02', title: 'Tools back on time', product_id: 'TL', statement: 'Members return tools by their due date.', measure: 'Late returns per month.', target: 'Under one in twenty.' }],
-      capability: [{ id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 2, description: 'Taking tools back.' }],
-      serves: [{ source_id: 'TL-LEND-CAP01', target_id: 'TL-BO02' }, { source_id: 'TL-LEND-CAP02', target_id: 'TL-BO01' }, { source_id: 'TL-LEND-CAP02', target_id: 'TL-BO02' }],
+      serves: [{ source_id: 'TL-LEND-A1', target_id: 'TL-BO02' }, { source_id: 'TL-LEND-RM01', target_id: 'TL-BO01' }, { source_id: 'TL-LEND-RM01', target_id: 'TL-BO02' }],
     });
     expect(await refusals(two)).toEqual([]);
-    // Only a capability serves, only an outcome is served, and never one of another product.
+    // Only an aggregate, read model or journey serves, only an outcome is served, and never one of another product.
     expect(await rules(adding(everyKind(), { serves: [{ source_id: 'TL-LEND-UC01', target_id: 'TL-BO01' }] }))).toEqual(['foreign-key']);
     const other = adding(everyKind(), {
       product: [{ id: 'XX', title: 'Other', description: 'Another product beside the library.' }],
       business_outcome: [{ id: 'XX-BO01', title: 'Other', product_id: 'XX', statement: 'Something else happens.', measure: 'How often.', target: 'Often.' }],
-      serves: [{ source_id: 'TL-LEND-CAP01', target_id: 'XX-BO01' }],
+      serves: [{ source_id: 'TL-LEND-A1', target_id: 'XX-BO01' }],
     });
     expect(await rules(other)).toEqual(['link-crosses-product']);
   });
@@ -93,14 +92,16 @@ describe('business outcomes', () => {
     expect(ordered.slice(0, 5)).toEqual(['product', 'business_outcome', 'journey', 'journey_step', 'domain']);
   });
 
-  it('LA-TRC-UC01-R16-T01 A business outcome no capability serves, and a capability that serves no outcome, are coverage gaps', async () => {
+  it('LA-TRC-UC01-R16-T01 A business outcome no aggregate or read model serves, and an aggregate or read model with use cases that serves no outcome, are coverage gaps', async () => {
     expect(gaps(await loadData(complete()))).toEqual([]);
     const unlinked = await loadData(without(complete(), 'serves', () => true));
-    expect(gaps(unlinked)).toEqual(['capability-serves-no-outcome EX-LEND-CAP01', 'outcome-not-served EX-BO01']);
-    // The outcome's gap is the product's, outside every domain; the capability's is its domain's.
-    expect(unlinked.coverage.find((c) => c.domain === null)?.gaps).toEqual([{ id: 'EX-BO01', kind: 'business_outcome', missing: 'outcome-not-served', message: 'Business outcome EX-BO01 is served by no capability.' }]);
-    expect(unlinked.coverage.find((c) => c.domain === 'EX-LEND')?.gaps).toEqual([{ id: 'EX-LEND-CAP01', kind: 'capability', missing: 'capability-serves-no-outcome', message: 'Capability EX-LEND-CAP01 serves no business outcome.' }]);
-    // Gaps, never problems; with no outcome served, what the use cases reach serves none (serves-no-outcome, LA-TRC-UC20-R02).
+    expect(gaps(unlinked)).toEqual(['outcome-not-served EX-BO01', 'use-case-group-serves-no-outcome EX-LEND-A1', 'use-case-group-serves-no-outcome EX-LEND-A2']);
+    // The outcome's gap is the product's, outside every domain; the group's is its domain's.
+    expect(unlinked.coverage.find((c) => c.domain === null)?.gaps).toEqual([{ id: 'EX-BO01', kind: 'business_outcome', missing: 'outcome-not-served', message: 'Business outcome EX-BO01 is served by no aggregate or read model.' }]);
+    expect(unlinked.coverage.find((c) => c.domain === 'EX-LEND')?.gaps).toEqual([
+      { id: 'EX-LEND-A1', kind: 'aggregate', missing: 'use-case-group-serves-no-outcome', message: 'Aggregate EX-LEND-A1 serves no business outcome, but use cases sit with it: EX-LEND-UC01.' },
+      { id: 'EX-LEND-A2', kind: 'aggregate', missing: 'use-case-group-serves-no-outcome', message: 'Aggregate EX-LEND-A2 serves no business outcome, but use cases sit with it: EX-LEND-UC02.' },
+    ]);
     expect(unlinked.problems.filter((p) => p.check !== 'serves-no-outcome')).toEqual([]);
   });
 });
@@ -153,7 +154,7 @@ describe('test data sets', () => {
 });
 
 describe('a test\'s size and markers', () => {
-  it('LA-TST-UC30-R01-T01 A test is small unless it says volume or worst case, and marks itself smoke or external only by saying yes', async () => {
+  it('LA-UCS-UC30-R01-T01 A test is small unless it says volume or worst case, and marks itself smoke or external only by saying yes', async () => {
     for (const kind of Object.values(schema.kinds).filter((k) => k.stage === 'test-plan' && k.name !== 'test_data_set')) {
       const columns = Object.fromEntries(schema.tables[kind.name].columns.map((c) => [c.name, c]));
       expect(columns.size, kind.name).toMatchObject({ required: false, kind: 'enum', values: ['volume', 'worst case'] });

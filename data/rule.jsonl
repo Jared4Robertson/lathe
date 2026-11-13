@@ -21,7 +21,6 @@
 {"id":"LA-MOD-INV12-RL","title":"aggregate-root","invariant_id":"LA-MOD-INV12","file":"lathe/src/domain-modeling/aggregate/rules.ts"}
 {"id":"LA-MOD-INV15-RL","title":"entity-field-one-type","invariant_id":"LA-MOD-INV15","file":"lathe/src/domain-modeling/aggregate/rules.ts"}
 {"id":"LA-MOD-INV16-RL","title":"entity-field-name","invariant_id":"LA-MOD-INV16","file":"lathe/src/domain-modeling/aggregate/rules.ts"}
-{"id":"LA-MOD-INV17-RL","title":"capability-position","invariant_id":"LA-MOD-INV17","file":"lathe/src/domain-modeling/domain/rules.ts"}
 {"id":"LA-MOD-INV180-RL","title":"value-object-field-one-type","invariant_id":"LA-MOD-INV180","file":"lathe/src/domain-modeling/value-object/rules.ts"}
 {"id":"LA-MOD-INV181-RL","title":"value-object-field-name","invariant_id":"LA-MOD-INV181","file":"lathe/src/domain-modeling/value-object/rules.ts"}
 {"id":"LA-MOD-INV182-RL","title":"event-field-one-type","invariant_id":"LA-MOD-INV182","file":"lathe/src/domain-modeling/domain-event/rules.ts"}

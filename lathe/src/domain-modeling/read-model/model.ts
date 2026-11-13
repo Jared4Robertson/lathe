@@ -1,5 +1,5 @@
-// The Read model aggregate (LA-MOD-A10): a shape of a domain's data for reading, with its fields in order, the
-// aggregates it reads, the domain services it calls and the events that feed it; its queries (each with the
+// The Read model aggregate (LA-MOD-A10): a shape of a domain's data for reading, with the business outcomes it serves,
+// its fields in order, the aggregates it reads, the domain services it calls and the events that feed it; its queries (each with the
 // specifications it selects by and the domain services it calls), its projection and its query handlers (each with the
 // standard rules it meets and the packages it uses), and its reader, through which the query handlers read it (with the
 // standard rules it meets and the packages it uses). One instance is one read model, whole; it holds only the links its
@@ -39,6 +39,8 @@ export interface ReadModel {
   /** The read model's ID: the aggregate's root. */
   readonly root: string;
   readModel: ReadModelRow;
+  /** The business outcomes it serves: those its use cases are for, sorted. */
+  serves: string[];
   /** Its fields, in order. */
   fields: ReadModelField[];
   /** The aggregates it reads. */
@@ -56,11 +58,11 @@ export interface ReadModel {
 }
 
 /** The tables the Read model aggregate keeps its rows in: its kinds, its part, and the relations and parts its records start. */
-export const READ_MODEL_TABLES = ['read_model', 'read_model_field', 'query', 'projection', 'reader', 'query_handler', 'reads', 'calls', 'fed_by', 'selects_by', 'meets', 'package_use', 'helper_file', 'stored_in'] as const;
+export const READ_MODEL_TABLES = ['read_model', 'read_model_field', 'query', 'projection', 'reader', 'query_handler', 'reads', 'calls', 'fed_by', 'selects_by', 'serves', 'meets', 'package_use', 'helper_file', 'stored_in'] as const;
 
 /** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
 export const READ_MODEL_SHAPE = {
-  read_model: { at: 'readModel', lists: { reads: 'reads', calls: 'calls', fed_by: 'fedBy' }, given: { fields: 'fields' } },
+  read_model: { at: 'readModel', lists: { serves: 'serves', reads: 'reads', calls: 'calls', fed_by: 'fedBy' }, given: { fields: 'fields' } },
   query: { at: 'queries', lists: { selects_by: 'selectsBy', calls: 'calls' } },
   projection: { at: 'projection', one: true, refusedBy: 'oneProjection', lists: { meets: 'meets', packages: 'packages', helpers: 'helpers' } },
   reader: { at: 'reader', one: true, refusedBy: 'oneReader', lists: { meets: 'meets', packages: 'packages', helpers: 'helpers' }, links: { stored_in: 'storedIn' } },
@@ -70,7 +72,7 @@ export const READ_MODEL_SHAPE = {
 export type ReadModelKind = keyof typeof READ_MODEL_SHAPE;
 
 /** A new read model with its fields and links, and no queries or projection yet. */
-export function newReadModel(readModel: ReadModelRow, parts: Pick<ReadModel, 'fields' | 'reads' | 'calls' | 'fedBy'>): ReadModel {
+export function newReadModel(readModel: ReadModelRow, parts: Pick<ReadModel, 'serves' | 'fields' | 'reads' | 'calls' | 'fedBy'>): ReadModel {
   return { root: readModel.id, readModel, ...parts, queries: [], projection: null, reader: null, queryHandlers: [] };
 }
 
@@ -87,7 +89,7 @@ export function readModelsFrom(rows: (table: string) => Row[], only?: string): R
   const handlersOf = groupBy((rows('query_handler') as unknown as QueryHandlerRow[]).filter((h) => readModelOf.has(h.query_id)), (h) => readModelOf.get(h.query_id));
   const fieldsOf = groupBy(fields, (f) => f.read_model_id);
   const queriesOf = groupBy(queries, (q) => q.read_model_id);
-  const [reads, calls, fedBy, selectsBy, meets, storedIn] = ['reads', 'calls', 'fed_by', 'selects_by', 'meets', 'stored_in'].map((table) => bySource(rows(table)));
+  const [serves, reads, calls, fedBy, selectsBy, meets, storedIn] = ['serves', 'reads', 'calls', 'fed_by', 'selects_by', 'meets', 'stored_in'].map((table) => bySource(rows(table)));
   const packages = bySource(rows('package_use'), 'record_id', 'package');
   const helpers = bySource(rows('helper_file'), 'record_id', 'file');
   const technical = <T extends { id: string }>(row: T): Technical<T> => ({ row, meets: groupOf(meets, row.id), packages: groupOf(packages, row.id), helpers: groupOf(helpers, row.id) });
@@ -97,6 +99,7 @@ export function readModelsFrom(rows: (table: string) => Row[], only?: string): R
     return {
       root: readModel.id,
       readModel,
+      serves: groupOf(serves, readModel.id),
       fields: [...groupOf(fieldsOf, readModel.id)]
         .sort((a, b) => a.position - b.position)
         .map(({ read_model_id: _owner, position: _at, ...field }) => field),
@@ -125,6 +128,7 @@ export function readModelRows(readModel: ReadModel): Map<string, Row[]> {
     ['reader', readModel.reader ? [asRow(readModel.reader.row)] : []],
     ['stored_in', readModel.reader?.storedIn ? links(readModel.reader.row.id, [readModel.reader.storedIn]) : []],
     ['query_handler', readModel.queryHandlers.map((h) => asRow(h.row))],
+    ['serves', links(readModel.root, readModel.serves)],
     ['reads', links(readModel.root, readModel.reads)],
     ['calls', [...links(readModel.root, readModel.calls), ...readModel.queries.flatMap((q) => links(q.row.id, q.calls))]],
     ['fed_by', links(readModel.root, readModel.fedBy)],

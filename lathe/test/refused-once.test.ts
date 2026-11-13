@@ -49,10 +49,10 @@ describe('one problem per mistake', () => {
   });
 
   it('LA-STD-MODELING-R17-T01 A parent that names no record is refused once, as a foreign key naming the record and the kind it must be', async () => {
-    const lost = { id: 'EX-LEND-UC03', title: 'Lost', capability_id: 'EX-LEND-CAP09', goal: 'A member finds a lost tool.', result_id: 'EX-LEND-CMD01' };
+    const lost = { id: 'EX-LEND-UC03', title: 'Lost', domain_id: 'EX-LEND9', goal: 'A member finds a lost tool.', result_id: 'EX-LEND-CMD01' };
     const actor = { use_case_id: 'EX-LEND-UC03', position: 1, role_name: 'Member' };
     expect(await refusals(adding(complete(), { use_case: [lost], use_case_actor: [actor] }))).toEqual([
-      expect.objectContaining({ rule: 'foreign-key', file: 'data/use_case.jsonl', line: 3, message: 'use_case EX-LEND-UC03: capability_id "EX-LEND-CAP09" names no capability' }),
+      expect.objectContaining({ rule: 'foreign-key', file: 'data/use_case.jsonl', line: 3, message: 'use_case EX-LEND-UC03: domain_id "EX-LEND9" names no domain' }),
     ]);
   });
 
@@ -68,7 +68,7 @@ describe('one problem per mistake', () => {
 });
 
 describe("a test's run by", () => {
-  it('LA-TST-UC03-R02-T01 A state other than automated, manual and not automated yet, in any letter case, or none, is refused', async () => {
+  it('LA-UCS-UC03-R02-T01 A state other than automated, manual and not automated yet, in any letter case, or none, is refused', async () => {
     for (const state of ['someday', 'Manual']) {
       expect(await refusals(test({ state })), state).toEqual([
         expect.objectContaining({ rule: 'column', file: 'data/use_case_test.jsonl', message: `use_case_test.state "${state}" is not one of automated, manual, not automated yet` }),
@@ -77,7 +77,7 @@ describe("a test's run by", () => {
     expect(await refusals(test({ state: undefined }))).toEqual([expect.objectContaining({ rule: 'required', message: 'use_case_test.state is required' })]);
   });
 
-  it('LA-TST-UC03-R06-T01 A level outside the five, or none, is refused', async () => {
+  it('LA-UCS-UC03-R06-T01 A level outside the five, or none, is refused', async () => {
     expect(await refusals(test({ level: 'smoke' }))).toEqual([
       expect.objectContaining({ rule: 'column', message: 'use_case_test.level "smoke" is not one of unit, integration, service, system, browser' }),
     ]);

@@ -21,7 +21,6 @@ afterEach(async () => {
 const base = (): Data => ({
   product: [{ id: 'TL', title: 'Tool Library', description: 'A neighborhood tool library.' }],
   domain: [{ id: 'TL-LEND', title: 'Lending', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'Lending tools.' }],
-  capability: [{ id: 'TL-LEND-CAP01', title: 'Lending', domain_id: 'TL-LEND', position: 1, description: 'Lending tools and taking them back.' }],
   domain_service: [{ id: 'TL-LEND-DS01', title: 'Late fee', domain_id: 'TL-LEND', statement: 'The fee MUST be a day rate times the days late.' }],
   domain_service_test: [{ id: 'TL-LEND-DS01-T01', title: 'Fee for three days', domain_service_id: 'TL-LEND-DS01', level: 'unit', state: 'automated', file: 'test/fee.test.ts', when: 'Three days late.', then: 'Three day rates.' }],
 });

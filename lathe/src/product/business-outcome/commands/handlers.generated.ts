@@ -26,7 +26,7 @@ export function changeBusinessOutcome(tx: Transaction, input: ChangeBusinessOutc
   businessOutcomes.save(businessOutcome);
 }
 
-/** Removes a business outcome with the measured_by links it starts. Refused while a capability serves it, or anything else references it. */
+/** Removes a business outcome with the measured_by links it starts. Refused while an aggregate, read model or journey serves it, or anything else references it. */
 export function removeBusinessOutcome(tx: Transaction, input: RemoveBusinessOutcome): void {
   const businessOutcomes = new BusinessOutcomeRepository(tx);
   const businessOutcome = businessOutcomes.load(input.id) ?? tx.refuse('missing', `there is no business outcome ${input.id}`);

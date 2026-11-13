@@ -23,24 +23,6 @@ export const DOMAIN_FIELDS = {
   '/api/domain/remove-domain': {
     id: { kind: 'column', table: 'domain', column: 'id', required: true, clearable: false },
   },
-  '/api/domain/add-capability': {
-    id: { kind: 'column', table: 'capability', column: 'id', required: true, clearable: false },
-    title: { kind: 'column', table: 'capability', column: 'title', required: true, clearable: false },
-    domain_id: { kind: 'column', table: 'capability', column: 'domain_id', required: true, clearable: false },
-    position: { kind: 'column', table: 'capability', column: 'position', required: true, clearable: false },
-    description: { kind: 'column', table: 'capability', column: 'description', required: true, clearable: false },
-    serves: { kind: 'ids', description: 'The business outcomes it serves.', required: false, clearable: false },
-  },
-  '/api/domain/change-capability': {
-    id: { kind: 'column', table: 'capability', column: 'id', required: true, clearable: false },
-    title: { kind: 'column', table: 'capability', column: 'title', required: false, clearable: false },
-    position: { kind: 'column', table: 'capability', column: 'position', required: false, clearable: false },
-    description: { kind: 'column', table: 'capability', column: 'description', required: false, clearable: false },
-    serves: { kind: 'ids', description: 'The business outcomes it serves.', required: false, clearable: false },
-  },
-  '/api/domain/remove-capability': {
-    id: { kind: 'column', table: 'capability', column: 'id', required: true, clearable: false },
-  },
   '/api/domain/add-term': {
     id: { kind: 'column', table: 'term', column: 'id', required: true, clearable: false },
     title: { kind: 'column', table: 'term', column: 'title', required: true, clearable: false },
@@ -152,10 +134,6 @@ export const DOMAIN_FIELDS = {
   },
   '/api/domain/remove-domain-service-test': {
     id: { kind: 'column', table: 'domain_service_test', column: 'id', required: true, clearable: false },
-  },
-  '/api/domain/move-capability': {
-    id: { kind: 'column', table: 'capability', column: 'id', required: true, clearable: false },
-    domain_id: { kind: 'column', table: 'capability', column: 'domain_id', required: true, clearable: false },
   },
   '/api/domain/move-term': {
     id: { kind: 'column', table: 'term', column: 'id', required: true, clearable: false },

@@ -9,12 +9,11 @@ import { compareIds } from '../../platform/data/ids.ts';
 
 /**
  * Every rule the domain breaks (LA-MOD-INV112 a domain service has at most one service; LA-MOD-INV41 an aggregate has
- * one repository; LA-MOD-INV60 a term never builds on itself; LA-MOD-INV17 each capability has its own position;
- * LA-MOD-INV186 each domain has its own position). The view gives the persists links of the other domains'
+ * one repository; LA-MOD-INV60 a term never builds on itself; LA-MOD-INV186 each domain has its own position). The view gives the persists links of the other domains'
  * repositories, the builds_on links of the other domains' terms and the other domains of the product.
  */
 export function domainProblems(domain: Domain, view: ReadView): RuleProblem[] {
-  return [...oneEach(domain, view), ...buildsOnLoops(domain, view), ...capabilityPositions(domain), ...domainPosition(domain, view)];
+  return [...oneEach(domain, view), ...buildsOnLoops(domain, view), ...domainPosition(domain, view)];
 }
 
 /** LA-MOD-INV186: no other domain of the product has the domain's position. Both domains are named, in ID order, so a run over all data names the pair once. */
@@ -32,25 +31,6 @@ function domainPosition(domain: Domain, view: ReadView): RuleProblem[] {
         message: `domains ${first} and ${second} are both at position ${position} of product ${product}: each domain of a product has its own position`,
       };
     });
-}
-
-/** LA-MOD-INV17: no two capabilities of the domain have the same position; each after the first at one is refused. */
-function capabilityPositions(domain: Domain): RuleProblem[] {
-  const first = new Map<number, string>();
-  const problems: RuleProblem[] = [];
-  for (const { row } of domain.capabilities) {
-    const holder = first.get(row.position);
-    if (holder === undefined) first.set(row.position, row.id);
-    else {
-      problems.push({
-        rule: 'capability-position',
-        table: 'capability',
-        row: row as unknown as Row,
-        message: `capability ${holder} is at position ${row.position} of domain ${domain.root}, so ${row.id} cannot be too: each capability of a domain has its own position`,
-      });
-    }
-  }
-  return problems;
 }
 
 /**

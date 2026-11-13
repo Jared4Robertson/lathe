@@ -11,7 +11,7 @@ import { RecordLink, RecordRowBody, Section, nestedCount, recordText } from '../
 import { RecordFrame } from '../../specs/RecordContent';
 import { saysKind } from '../../specs/InterfaceParts';
 import { groupRecords } from '../../specs/groups';
-import { type RecordIndex, type RecordSummary } from '../../exploring/record-summaries/record-index';
+import { kindLabel, type RecordIndex, type RecordSummary } from '../../exploring/record-summaries/record-index';
 import { InJourneys } from '../../product/journey/InJourneys';
 import { FlowInterfaces } from './FlowInterfaces';
 import { UseCaseEditor } from './UseCaseEditor';
@@ -20,7 +20,8 @@ import { useInterfaces } from '../../product/product/reads';
 
 // The Use case page (LA-UCS-A11's page): any record of a use case, at its address (/<id>), drawn from the use case read whole
 // (GET /api/use-case/get-use-case) and changed only through its own commands (UseCaseEditor). A use case shows its
-// goal, its result (the one command or query it invokes, and so whether it is a command or a query use case), actors
+// goal, its domain, its result (the one command or query it invokes, and so whether it is a command or a query use
+// case) and the aggregate or read model of that result it is listed with, its actors
 // and notes, its flow and the interfaces that offer it, and its UC requirements with their tests; a UC
 // requirement its statement, its tests and the steps that fulfill it; a flow a tab per offering interface (the flow as
 // written, then each interface's derived version, FlowInterfaces); a step what it links to and the interface it is a
@@ -114,6 +115,13 @@ const resultFact = (index: RecordIndex, useCase: UseCaseRead): { label: string; 
   value: <><RecordLink index={index} id={useCase.result.id} /> <small className="meta use-case-kind">{USE_CASE_KIND_WORDS[useCase.result.kind]}</small></>,
 });
 
+/**
+ * Where the use case is listed: its group, the aggregate (a command use case) or read model (a query use case) of its
+ * result, labeled by its kind. Worked out from the result, never chosen.
+ */
+const groupFacts = (index: RecordIndex, useCase: UseCaseRead): { label: string; value: ReactNode }[] =>
+  useCase.group ? [{ label: kindLabel(index, useCase.group.kind), value: <RecordLink index={index} id={useCase.group.id} /> }] : [];
+
 /** The "In journeys" fact: where the use case sits in time, each journey it is a step of; none when it is in none. */
 const inJourneys = (index: RecordIndex, useCase: UseCaseRead): { label: string; value: ReactNode }[] =>
   useCase.journeys.length ? [{ label: 'In journeys', value: <InJourneys index={index} journeys={useCase.journeys} id={useCase.useCase.id} /> }] : [];
@@ -126,7 +134,9 @@ function Content({ index, useCase, id, kind }: { index: RecordIndex; useCase: Us
         <>
           <Text index={index} id={id} source={useCase.useCase.goal} field="goal" />
           <Facts facts={[
+            { label: 'Domain', value: <RecordLink index={index} id={useCase.useCase.domain_id} /> },
             resultFact(index, useCase),
+            ...groupFacts(index, useCase),
             ...(useCase.actors.length ? [{ label: useCase.actors.length === 1 ? 'Actor' : 'Actors', value: useCase.actors.join(', ') }] : []),
             ...inJourneys(index, useCase),
           ]} />
@@ -227,7 +237,7 @@ function Summary({ index, useCase, id, kind }: { index: RecordIndex; useCase: Us
         return {
           lead: useCase.useCase.goal,
           facts: [
-            { label: 'Capability', value: <RecordLink index={index} id={useCase.useCase.capability_id} /> },
+            ...groupFacts(index, useCase),
             resultFact(index, useCase),
             ...(useCase.actors.length ? [{ label: useCase.actors.length === 1 ? 'Actor' : 'Actors', value: useCase.actors.join(', ') }] : []),
           ],

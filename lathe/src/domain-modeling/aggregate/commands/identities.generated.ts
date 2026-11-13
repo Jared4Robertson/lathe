@@ -4,7 +4,7 @@ export const ADD_AGGREGATE_IDENTITY = {
   id: 'LA-MOD-CMD210',
   slice: { aggregate: 'LA-MOD-A6', name: 'aggregate' },
   name: 'add-aggregate',
-  description: 'Adds an aggregate under a domain, with nothing in it yet.',
+  description: 'Adds an aggregate under a domain, with the business outcomes it serves and nothing in it yet.',
   method: 'POST',
   route: '/api/aggregate/add-aggregate',
 } as const;
@@ -13,7 +13,7 @@ export const CHANGE_AGGREGATE_IDENTITY = {
   id: 'LA-MOD-CMD211',
   slice: { aggregate: 'LA-MOD-A6', name: 'aggregate' },
   name: 'change-aggregate',
-  description: 'Changes an aggregate\'s title, description, identity or notes. Its domain does not change.',
+  description: 'Changes an aggregate\'s title, description, identity or notes, or the business outcomes it serves (the whole list). Its domain does not change.',
   method: 'POST',
   route: '/api/aggregate/change-aggregate',
 } as const;
@@ -166,7 +166,7 @@ export const MOVE_AGGREGATE_IDENTITY = {
   id: 'LA-MOD-CMD387',
   slice: { aggregate: 'LA-MOD-A6', name: 'aggregate' },
   name: 'move-aggregate',
-  description: 'Moves an aggregate, with everything under it, to another domain of its product: it and each record under it take the new domain\'s ID in place of the old one\'s, and every record that names one of them names the new ID. Refused for a domain of another product, or a new ID another record has.',
+  description: 'Moves an aggregate, with everything under it and the use cases whose result is one of its commands, to another domain of its product: it and each record under it take the new domain\'s ID in place of the old one\'s, and every record that names one of them names the new ID. Refused for a domain of another product, or a new ID another record has.',
   method: 'POST',
   route: '/api/aggregate/move-aggregate',
 } as const;

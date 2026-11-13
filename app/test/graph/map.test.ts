@@ -138,7 +138,7 @@ describe('columns and text', () => {
       }
     }
     // The plain measure (no canvas, in the tests): a title is at least its characters at 0.45 em; an eyebrow its kind's words in the eyebrow face and its ID 0.6 em a character.
-    expect(titleWidth('Capabilities')).toBeGreaterThan(12 * 0.45 * TITLE_FONT);
+    expect(titleWidth('Repositories')).toBeGreaterThan(12 * 0.45 * TITLE_FONT);
     expect(eyebrowWidth('Use case · LA-EXP-UC03')).toBeCloseTo((PLAIN_MEASURE.em('Use case · ', 'eyebrow') + 11 * 0.6) * EYEBROW_FONT, 9);
     // Wrapping breaks only after a space; a word too wide for a line breaks after a hyphen, then between characters.
     const chars = (s: string) => s.length;

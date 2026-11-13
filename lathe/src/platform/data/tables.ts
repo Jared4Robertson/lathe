@@ -83,7 +83,7 @@ export interface AdapterRow {
   description: string;
 }
 
-/** The consistency boundary: a cluster of entities changed together as one unit, by one command at a time. Other aggregates follow its changes through events, and refer to it by ID only. */
+/** The consistency boundary: a cluster of entities changed together as one unit, by one command at a time. Other aggregates follow its changes through events, and refer to it by ID only. It serves the business outcomes its use cases are for (serves). */
 export interface AggregateRow {
   /** The aggregate's ID, such as TL-LEND-A1. */
   id: string;
@@ -127,7 +127,7 @@ export interface CommandRow {
   description: string;
 }
 
-/** A view of its domain's data shaped for reading, which reads one or more of the domain's aggregates. Its fields are read_model_field rows, and it is stored in a table of its own. */
+/** A view of its domain's data shaped for reading, which reads one or more of the domain's aggregates. Its fields are read_model_field rows, and it is stored in a table of its own. It serves the business outcomes its use cases are for (serves). */
 export interface ReadModelRow {
   /** The read model's ID, such as TL-LEND-RM01. */
   id: string;
@@ -269,7 +269,7 @@ export interface BuildsOnRow {
   target_id: string;
 }
 
-/** A business outcome: a measurable change the product exists to bring about, which its capabilities and journeys serve and its tests or records measure (measured_by). The trace runs from it to a capability or a journey, a use case, the code and the tests. */
+/** A business outcome: a measurable change the product exists to bring about, which the aggregates and read models its use cases sit with, and its journeys, serve and its tests or records measure (measured_by). The trace runs from it to an aggregate, read model or journey, a use case, the code and the tests. */
 export interface BusinessOutcomeRow {
   /** The outcome's ID: its product's ID and BO<nn>, such as TL-BO01. */
   id: string;
@@ -307,21 +307,7 @@ export interface CallsRow {
   target_id: string;
 }
 
-/** An ordered slice of a domain that groups its use cases, such as Catalog or Lending. */
-export interface CapabilityRow {
-  /** The capability's ID, such as TL-LEND-CAP01. */
-  id: string;
-  /** The capability's name, such as Catalog. */
-  title: string;
-  /** The domain it belongs to. */
-  domain_id: string;
-  /** Its place in the domain, from 1. */
-  position: number;
-  /** What the capability covers, in a sentence or two. */
-  description: string;
-}
-
-/** A journey: the use cases and handoffs, in order, that take the product's people from a trigger to a result a business outcome measures, across actors and domains. It serves business outcomes as a capability does, and its journey test drives it end to end. */
+/** A journey: the use cases and handoffs, in order, that take the product's people from a trigger to a result a business outcome measures, across actors and domains. It serves business outcomes as an aggregate or read model does, and its journey test drives it end to end. */
 export interface JourneyRow {
   /** The journey's ID: its product's ID and JR<nn>, such as TL-JR01. */
   id: string;
@@ -725,14 +711,14 @@ export interface FillsRow {
   target_id: string;
 }
 
-/** One role invoking one command, or asking one query, with the steps that lead to it: its result names the operation, and the use case is a command use case or a query use case by the result's kind. It has its actors (use_case_actor rows, the first its main actor), its UC requirements and its flow, the same through every interface that offers it. No two use cases of a product share their first actor and their result. */
+/** One role invoking one command, or asking one query, with the steps that lead to it: its result names the operation, and the use case is a command use case or a query use case by the result's kind. It has its actors (use_case_actor rows, the first its main actor), its UC requirements and its flow, the same through every interface that offers it. No two use cases of a product share their first actor and their result. It sits with its result's aggregate (a command use case) or read model (a query use case), in that record's domain: its group, worked out and never stored. */
 export interface UseCaseRow {
   /** The use case's ID, such as TL-LEND-UC01. */
   id: string;
   /** What the actor does: a command use case starts with its command's verb (Borrow a tool); a query use case names the question (See the tools waiting for repair). */
   title: string;
-  /** The capability it sits in. */
-  capability_id: string;
+  /** The domain it belongs to: its result's, whose ID its own starts with. */
+  domain_id: string;
   /** What the actor wants to reach and from where they start, in a sentence or a short paragraph. */
   goal: string;
   /** The use case's result: the one command its actor invokes (a command use case), which its main path invokes and after which it only asks queries, or the one query they ask (a query use case), at its main path's last step that invokes anything. Its kind is the operation's. */
@@ -1343,7 +1329,7 @@ export interface SelectsByRow {
   target_id: string;
 }
 
-/** The capability or journey serves the business outcome: what it is for. A capability or journey may serve several outcomes, and an outcome be served by several capabilities and journeys. */
+/** The aggregate, read model or journey serves the business outcome: what it is for. Each may serve several outcomes, and an outcome be served by several aggregates, read models and journeys. */
 export interface ServesRow {
   source_id: string;
   target_id: string;
@@ -1712,7 +1698,6 @@ export interface TableRows {
   business_outcome: BusinessOutcomeRow;
   domain_service: DomainServiceRow;
   calls: CallsRow;
-  capability: CapabilityRow;
   journey: JourneyRow;
   journey_step: JourneyStepRow;
   carries_out: CarriesOutRow;

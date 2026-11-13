@@ -6,7 +6,7 @@ export const USE_CASE_FIELDS = {
   '/api/use-case/add-use-case': {
     id: { kind: 'column', table: 'use_case', column: 'id', required: true, clearable: false },
     title: { kind: 'column', table: 'use_case', column: 'title', required: true, clearable: false },
-    capability_id: { kind: 'column', table: 'use_case', column: 'capability_id', required: true, clearable: false },
+    domain_id: { kind: 'column', table: 'use_case', column: 'domain_id', required: true, clearable: false },
     goal: { kind: 'column', table: 'use_case', column: 'goal', required: true, clearable: false },
     result_id: { kind: 'column', table: 'use_case', column: 'result_id', required: true, clearable: false },
     notes: { kind: 'column', table: 'use_case', column: 'notes', required: false, clearable: false },
@@ -22,7 +22,8 @@ export const USE_CASE_FIELDS = {
   },
   '/api/use-case/move-use-case': {
     id: { kind: 'column', table: 'use_case', column: 'id', required: true, clearable: false },
-    capability_id: { kind: 'column', table: 'use_case', column: 'capability_id', required: true, clearable: false },
+    domain_id: { kind: 'column', table: 'use_case', column: 'domain_id', required: true, clearable: false },
+    result_id: { kind: 'column', table: 'use_case', column: 'result_id', required: false, clearable: false },
   },
   '/api/use-case/remove-use-case': {
     id: { kind: 'column', table: 'use_case', column: 'id', required: true, clearable: false },

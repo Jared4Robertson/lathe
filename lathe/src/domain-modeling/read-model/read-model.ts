@@ -31,6 +31,8 @@ export interface QueryOnPage {
 /** A read model whole, as its page shows it. */
 export interface ReadModelTree {
   readModel: ReadModelRow;
+  /** The business outcomes it serves, by ID. */
+  serves: string[];
   /** Its fields, in order. */
   fields: ReadModelFieldRow[];
   /** The aggregates it reads, the domain services its projection calls and the events that feed it, by ID. */
@@ -87,7 +89,7 @@ function byParent<T>(rows: Row[], column: string): Map<string, T> {
 
 /** The projection: the read model's table, built from the rows on each read (in memory; nothing keeps it). */
 export function readModelTableFrom(view: ReadView): ReadModelTable {
-  const [reads, calls, fedBy, selectsBy, meets] = ['reads', 'calls', 'fed_by', 'selects_by', 'meets'].map((t) => linked(view.rows(t), 'source_id', 'target_id'));
+  const [serves, reads, calls, fedBy, selectsBy, meets] = ['serves', 'reads', 'calls', 'fed_by', 'selects_by', 'meets'].map((t) => linked(view.rows(t), 'source_id', 'target_id'));
   const packages = linked(view.rows('package_use'), 'record_id', 'package');
   const helpers = linked(view.rows('helper_file'), 'record_id', 'file');
   const code = <T extends { id: string }>(row: T | undefined): CodeOnPage<T> | null => (row ? { code: row, meets: meets(row.id), packages: packages(row.id), helpers: helpers(row.id) } : null);
@@ -103,6 +105,7 @@ export function readModelTableFrom(view: ReadView): ReadModelTable {
     const root = readModel.id;
     const tree: ReadModelTree = {
       readModel,
+      serves: serves(root),
       fields: [...(fields.get(root) ?? [])].sort((a, b) => a.position - b.position),
       reads: reads(root),
       calls: calls(root),

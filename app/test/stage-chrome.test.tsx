@@ -183,9 +183,9 @@ describe('the stage key bar', () => {
     expect(key().closest('.stage-tools')).toBeNull();
     expect(stage().querySelector('.stage-tools details.stage-key, .stage-tools [aria-label="Key"]')).toBeNull();
     // Each entry a sample and a word or two, its whole meaning in its tooltip.
-    // Only what the graph draws around the focus: a capability, the use case and its groups of requirements and of
-    // flows (folders, one with an error beneath it), in the use cases' color.
-    expect(entries()).toEqual(['stage-use-cases', 'stage-group', 'focus', 'shape-folder', 'shape-slice', 'shape-stadium', 'line', 'bar', 'badge-error', 'badge-gap', 'scroll']);
+    // Only what the graph draws around the focus: its Use cases stage, the use case and its groups of requirements and
+    // of flows (folders, one with an error beneath it), in the use cases' color.
+    expect(entries()).toEqual(['stage-use-cases', 'stage-group', 'focus', 'shape-folder', 'shape-stadium', 'line', 'bar', 'badge-error', 'badge-gap', 'scroll']);
     const useCase = key().querySelector('[data-key-entry="shape-stadium"]')!;
     expect(useCase).toHaveTextContent('Use case');
     expect(useCase).toHaveAttribute('title', expect.stringMatching(/^Use case: a stadium$/));
@@ -208,8 +208,8 @@ describe('the stage key bar', () => {
   it('LA-V96-R30-T01 A kind the filters hide leaves the Graph\'s key, and the live marks show only while there are any', () => {
     const index = recordIndexOf(modelWorkspace());
     const ids = (focus: string, hidden: string[]) => graphKeyEntries(graphDrawn(index, neighborhood(index, focus, 3, hidden.length ? { hiddenKinds: new Set(hidden) } : NO_FILTERS), 'tree')).map((e) => e.id);
-    expect(ids('P-D-CAP01', [])).toContain('shape-stadium');
-    expect(ids('P-D-CAP01', ['use_case'])).not.toContain('shape-stadium');
+    expect(ids('P-D/use-cases', [])).toContain('shape-stadium');
+    expect(ids('P-D/use-cases', ['use_case'])).not.toContain('shape-stadium');
     // The focus is never hidden, so its entries stay.
     expect(ids('P-D-UC01', ['use_case'])).toContain('shape-stadium');
     expect(changesKeyEntries(new Set())).toEqual([]);

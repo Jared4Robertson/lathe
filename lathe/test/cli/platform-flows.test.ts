@@ -153,12 +153,12 @@ describe('Platform flows', () => {
     // Data the store refuses ends the load: one data-refused error per refusal, and no records.
     const file = path.join(root, 'data', 'use_case.jsonl');
     const good = readFileSync(file, 'utf8');
-    writeFileSync(file, `${good}{"id":"EX-LEND-UC09","title":"Lost","capability_id":"EX-LEND-CAP09","goal":"A member finds the lost tool.","result_id":"EX-LEND-CMD01"}\n`);
+    writeFileSync(file, `${good}{"id":"EX-LEND-UC09","title":"Lost","domain_id":"EX-NOPE","goal":"A member finds the lost tool.","result_id":"EX-LEND-CMD01"}\n`);
     const refused = await loadWorkspace(root);
     expect(refused.records).toEqual([]);
     expect(refused.problems.length).toBeGreaterThan(0);
     expect(refused.problems.every((p) => p.check === 'data-refused' && p.severity === 'error')).toBe(true);
-    expect(refused.problems.map((p) => p.message).join('\n')).toContain('EX-LEND-CAP09');
+    expect(refused.problems.map((p) => p.message).join('\n')).toContain('EX-NOPE');
     writeFileSync(file, good);
 
     // After a write through the Use case aggregate's own command, the next load sees it. Its timings are what the performance budgets

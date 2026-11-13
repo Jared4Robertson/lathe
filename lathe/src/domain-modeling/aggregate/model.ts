@@ -1,7 +1,7 @@
-// The Aggregate aggregate (LA-MOD-A6): an aggregate with its entities (each with its fields and the entities it holds
-// by has_one and has_many), its entities' data models (with the standard rules they meet and the packages they use),
-// and its invariants with the rule that enforces each (built the same way) and their tests. One instance is one aggregate, whole; it holds only the links its own records
-// start.
+// The Aggregate aggregate (LA-MOD-A6): an aggregate with the business outcomes it serves, its entities (each with its
+// fields and the entities it holds by has_one and has_many), its entities' data models (with the standard rules they
+// meet and the packages they use), and its invariants with the rule that enforces each (built the same way) and their
+// tests. One instance is one aggregate, whole; it holds only the links its own records start.
 import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { AggregateShape } from '../../platform/data/repository.ts';
 import type { Row } from '../../platform/data/rows.ts';
@@ -43,6 +43,8 @@ export interface Aggregate {
   /** The aggregate's ID: the instance's root. */
   readonly root: string;
   aggregate: AggregateRow;
+  /** The business outcomes it serves: those its use cases are for, sorted. */
+  serves: string[];
   entities: Entity[];
   invariants: InvariantRow[];
   dataModels: Built<DataModelRow>[];
@@ -62,6 +64,7 @@ export const AGGREGATE_TABLES = [
   'invariant_test',
   'has_one',
   'has_many',
+  'serves',
   'meets',
   'package_use', 'helper_file',
   'starts_from',
@@ -69,7 +72,7 @@ export const AGGREGATE_TABLES = [
 
 /** How each of the aggregate's kinds sits in an instance, the root first: its repository and pattern commands' handlers are generated from it. @public (read by `npm run generate`) */
 export const AGGREGATE_SHAPE = {
-  aggregate: { at: 'aggregate' },
+  aggregate: { at: 'aggregate', lists: { serves: 'serves' } },
   entity: { at: 'entities', lists: { fields: 'fields', has_one: 'hasOne', has_many: 'hasMany' } },
   invariant: { at: 'invariants' },
   data_model: { at: 'dataModels', lists: { meets: 'meets', packages: 'packages', helpers: 'helpers' } },
@@ -92,7 +95,7 @@ export function aggregatesFrom(rows: (table: string) => Row[], only?: string): A
   const dataModels = (rows('data_model') as unknown as DataModelRow[]).filter((d) => entityIds.has(d.entity_id));
   const rules = (rows('rule') as unknown as RuleRow[]).filter((r) => invariantIds.has(r.invariant_id));
   const invariantTests = (rows('invariant_test') as unknown as InvariantTestRow[]).filter((t) => invariantIds.has(t.invariant_id));
-  const [hasOne, hasMany, meets, startsFrom] = ['has_one', 'has_many', 'meets', 'starts_from'].map((table) => bySource(rows(table)));
+  const [hasOne, hasMany, meets, startsFrom, serves] = ['has_one', 'has_many', 'meets', 'starts_from', 'serves'].map((table) => bySource(rows(table)));
   const packages = bySource(rows('package_use'), 'record_id', 'package');
   const helpers = bySource(rows('helper_file'), 'record_id', 'file');
   // Each table's rows by the aggregate they sit in, grouped once.
@@ -107,6 +110,7 @@ export function aggregatesFrom(rows: (table: string) => Row[], only?: string): A
   return aggregates.map((aggregate) => ({
     root: aggregate.id,
     aggregate,
+    serves: groupOf(serves, aggregate.id),
     entities: groupOf(entitiesOf, aggregate.id).map((row) => ({ row, fields: groupOf(fieldsOf, row.id), hasOne: groupOf(hasOne, row.id), hasMany: groupOf(hasMany, row.id) })),
     invariants: groupOf(invariantsOf, aggregate.id),
     dataModels: groupOf(dataModelsOf, aggregate.id).map((row) => ({ row, meets: groupOf(meets, row.id), packages: groupOf(packages, row.id), helpers: groupOf(helpers, row.id) })),
@@ -130,6 +134,7 @@ export function aggregateRows(aggregate: Aggregate): Map<string, Row[]> {
     ['invariant_test', aggregate.invariantTests.map((t) => asRow(t.row))],
     ['has_one', aggregate.entities.flatMap((e) => links(e.row.id, e.hasOne))],
     ['has_many', aggregate.entities.flatMap((e) => links(e.row.id, e.hasMany))],
+    ['serves', links(aggregate.root, aggregate.serves)],
     ['meets', [...aggregate.dataModels, ...aggregate.rules].flatMap((d) => links(d.row.id, d.meets))],
     ['package_use', [...aggregate.dataModels, ...aggregate.rules].flatMap((d) => d.packages.map((p) => ({ record_id: d.row.id, package: p })))],
     ['helper_file', [...aggregate.dataModels, ...aggregate.rules].flatMap((d) => d.helpers.map((p) => ({ record_id: d.row.id, file: p })))],

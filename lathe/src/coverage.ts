@@ -163,12 +163,12 @@ const UNTRACED_KINDS = ['flow_step', 'command', 'query', 'ui_component'] as cons
 
 /** The "at least one" and "exactly one" minimums, by stage, reported as coverage gaps. */
 export const GAP_RULES: GapRule[] = [
-  // Discovery: the trace runs from a business outcome through the capabilities that serve it.
-  // A capability must serve each outcome even when a journey does: capabilities group what the business can do,
-  // journeys put it in order.
-  gap('outcome-not-served', 'discovery', ['business_outcome', 'capability'], 'A business outcome no capability serves.',
-    `SELECT o.id, 'Business outcome ' || o.id || ' is served by no capability.' AS message FROM business_outcome o
-WHERE NOT EXISTS (SELECT 1 FROM serves s JOIN capability c ON c.id = s.source_id WHERE s.target_id = o.id)`),
+  // Discovery: the trace runs from a business outcome through the aggregates and read models that serve it.
+  // An aggregate or read model must serve each outcome even when a journey does: the use cases that sit with them say
+  // what the business can do, journeys put it in order.
+  gap('outcome-not-served', 'discovery', ['business_outcome', 'aggregate', 'read_model'], 'A business outcome no aggregate or read model serves.',
+    `SELECT o.id, 'Business outcome ' || o.id || ' is served by no aggregate or read model.' AS message FROM business_outcome o
+WHERE NOT EXISTS (SELECT 1 FROM serves s JOIN record_id r ON r.id = s.source_id WHERE s.target_id = o.id AND r.kind IN ('aggregate', 'read_model'))`),
   gap('journey-serves-no-outcome', 'discovery', ['journey', 'business_outcome'], 'A journey that serves no business outcome.',
     `SELECT j.id, 'Journey ' || j.id || ' serves no business outcome: link the outcome its result moves.' AS message FROM journey j
 WHERE NOT EXISTS (SELECT 1 FROM serves s WHERE s.source_id = j.id)`),
@@ -208,10 +208,13 @@ WHERE NOT EXISTS (SELECT 1 FROM reads r WHERE r.source_id = m.id)${schema.relati
   gap('domain-service-not-called', 'domain-model', ['domain_service', 'command', 'query'], 'A domain service no command or query calls.',
     `SELECT s.id, 'Domain service ' || s.id || ' is called by no command or query.' AS message FROM domain_service s WHERE NOT EXISTS (SELECT 1 FROM calls c WHERE c.target_id = s.id)`),
   // Use cases.
-  gap('capability-serves-no-outcome', 'use-cases', ['capability', 'business_outcome'], 'A capability that serves no business outcome.',
-    `SELECT c.id, 'Capability ' || c.id || ' serves no business outcome.' AS message FROM capability c WHERE NOT EXISTS (SELECT 1 FROM serves s WHERE s.source_id = c.id)`),
-  gap('capability-without-use-case', 'use-cases', ['capability', 'use_case'], 'A capability with no use case.',
-    `SELECT c.id, 'Capability ' || c.id || ' has no use case.' AS message FROM capability c WHERE NOT EXISTS (SELECT 1 FROM use_case u WHERE u.capability_id = c.id)`),
+  // A use case sits with its group, its result's aggregate or read model (record_scope.group_id), which names the
+  // outcomes its use cases are for (LA-STD-MODELING-R20).
+  gap('use-case-group-serves-no-outcome', 'use-cases', ['aggregate', 'read_model', 'use_case', 'business_outcome'], 'An aggregate or read model that a use case sits with, and that serves no business outcome.',
+    `SELECT g.group_id AS id, k.label || ' ' || g.group_id || ' serves no business outcome, but use cases sit with it: ' || string_agg(g.id, ', ' ORDER BY g.id) || '.' AS message
+FROM record_scope g JOIN use_case u ON u.id = g.id JOIN record_id r ON r.id = g.group_id JOIN meta_kind k ON k.name = r.kind
+WHERE NOT EXISTS (SELECT 1 FROM serves s WHERE s.source_id = g.group_id)
+GROUP BY g.group_id, k.label`),
   gap('use-case-without-actor', 'use-cases', ['use_case', 'use_case_actor'], 'A use case with no actor.',
     `SELECT u.id, 'Use case ' || u.id || ' names no actor.' AS message FROM use_case u WHERE NOT EXISTS (SELECT 1 FROM use_case_actor a WHERE a.use_case_id = u.id)`),
   // A use case that follows a pattern owes the pattern's rules instead of requirements of its own.

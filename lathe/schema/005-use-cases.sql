@@ -1,35 +1,20 @@
--- Use cases: capabilities, use cases with their actors, UC requirements, each use case's one flow and its steps, and the
+-- Use cases: use cases with their actors, UC requirements, each use case's one flow and its steps, and the
 -- patterns use cases and domains follow, with their settings, rules and slots. The flow and flow step tables are created
 -- in 006-interface-design.sql, after interface: a variant step names its interface, one of the two references that run
 -- from use cases forward to interface design, deliberately (meta_stage).
 
-CREATE TABLE capability (
-  id VARCHAR PRIMARY KEY REFERENCES record_id (id),
-  title VARCHAR NOT NULL CHECK (trim(title) <> ''),
-  domain_id VARCHAR NOT NULL REFERENCES domain (id),
-  position INTEGER NOT NULL CHECK (position >= 1),
-  description VARCHAR NOT NULL CHECK (trim(description) <> ''),
-  UNIQUE (domain_id, position)
-);
-COMMENT ON TABLE capability IS 'An ordered slice of a domain that groups its use cases, such as Catalog or Lending.';
-COMMENT ON COLUMN capability.id IS 'The capability''s ID, such as TL-LEND-CAP01.';
-COMMENT ON COLUMN capability.title IS 'The capability''s name, such as Catalog.';
-COMMENT ON COLUMN capability.domain_id IS 'The domain it belongs to.';
-COMMENT ON COLUMN capability.position IS 'Its place in the domain, from 1.';
-COMMENT ON COLUMN capability.description IS 'What the capability covers, in a sentence or two.';
-
 CREATE TABLE use_case (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
-  capability_id VARCHAR NOT NULL REFERENCES capability (id),
+  domain_id VARCHAR NOT NULL REFERENCES domain (id),
   goal VARCHAR NOT NULL CHECK (trim(goal) <> ''),
   result_id VARCHAR NOT NULL REFERENCES operation (id),
   notes VARCHAR
 );
-COMMENT ON TABLE use_case IS 'One role invoking one command, or asking one query, with the steps that lead to it: its result names the operation, and the use case is a command use case or a query use case by the result''s kind. It has its actors (use_case_actor rows, the first its main actor), its UC requirements and its flow, the same through every interface that offers it. No two use cases of a product share their first actor and their result.';
+COMMENT ON TABLE use_case IS 'One role invoking one command, or asking one query, with the steps that lead to it: its result names the operation, and the use case is a command use case or a query use case by the result''s kind. It has its actors (use_case_actor rows, the first its main actor), its UC requirements and its flow, the same through every interface that offers it. No two use cases of a product share their first actor and their result. It sits with its result''s aggregate (a command use case) or read model (a query use case), in that record''s domain: its group, worked out and never stored.';
 COMMENT ON COLUMN use_case.id IS 'The use case''s ID, such as TL-LEND-UC01.';
 COMMENT ON COLUMN use_case.title IS 'What the actor does: a command use case starts with its command''s verb (Borrow a tool); a query use case names the question (See the tools waiting for repair).';
-COMMENT ON COLUMN use_case.capability_id IS 'The capability it sits in.';
+COMMENT ON COLUMN use_case.domain_id IS 'The domain it belongs to: its result''s, whose ID its own starts with.';
 COMMENT ON COLUMN use_case.goal IS 'What the actor wants to reach and from where they start, in a sentence or a short paragraph.';
 COMMENT ON COLUMN use_case.result_id IS 'The use case''s result: the one command its actor invokes (a command use case), which its main path invokes and after which it only asks queries, or the one query they ask (a query use case), at its main path''s last step that invokes anything. Its kind is the operation''s.';
 COMMENT ON COLUMN use_case.notes IS 'Longer notes, such as the order in which refusals are reported.';
@@ -119,19 +104,17 @@ COMMENT ON COLUMN slot.statement IS 'Its contract: what every fill MUST do, in o
 COMMENT ON COLUMN slot.fills_vary_by_design IS 'Why its fills are written per record by design, in one sentence, such as Each UI component builds its own view''s requirements. Given only when every fill holds what is its own record''s alone, never what fills repeat; pattern-candidate then skips the slot and its page says so. None when its fills should repeat, so three of them are a pattern candidate.';
 
 INSERT INTO meta_kind VALUES
-  ('capability', 'Capability', 'use-cases', 20, false, '<P>-<D>-CAP<nn>', 'TL-LEND-CAP01', 'domain', NULL, 'essential'),
-  ('use_case', 'Use case', 'use-cases', 21, false, '<P>-<D>-UC<nn>', 'TL-LEND-UC01', 'domain', NULL, 'essential'),
-  ('uc_requirement', 'UC requirement', 'use-cases', 22, true, '<use case>-R<nn>', 'TL-LEND-UC01-R01', 'parent', NULL, 'essential'),
-  ('pattern', 'Pattern', 'use-cases', 25, false, '<P>-PAT-<name>', 'TL-PAT-LIBRARIAN-ACTION', 'parent', NULL, 'essential'),
-  ('pattern_rule', 'Pattern rule', 'use-cases', 26, true, '<pattern>-R<nn>', 'TL-PAT-LIBRARIAN-ACTION-R01', 'parent', NULL, 'essential'),
-  ('slot', 'Slot', 'use-cases', 27, false, '<pattern>-SL<nn>', 'TL-PAT-LIBRARIAN-ACTION-SL01', 'parent', NULL, 'essential');
+  ('use_case', 'Use case', 'use-cases', 20, false, '<P>-<D>-UC<nn>', 'TL-LEND-UC01', 'domain', NULL, 'essential'),
+  ('uc_requirement', 'UC requirement', 'use-cases', 21, true, '<use case>-R<nn>', 'TL-LEND-UC01-R01', 'parent', NULL, 'essential'),
+  ('pattern', 'Pattern', 'use-cases', 24, false, '<P>-PAT-<name>', 'TL-PAT-LIBRARIAN-ACTION', 'parent', NULL, 'essential'),
+  ('pattern_rule', 'Pattern rule', 'use-cases', 25, true, '<pattern>-R<nn>', 'TL-PAT-LIBRARIAN-ACTION-R01', 'parent', NULL, 'essential'),
+  ('slot', 'Slot', 'use-cases', 26, false, '<pattern>-SL<nn>', 'TL-PAT-LIBRARIAN-ACTION-SL01', 'parent', NULL, 'essential');
 INSERT INTO meta_kind_parent VALUES
-  ('capability', 'domain', 1, 'domain_id'),
-  ('use_case', 'capability', 1, 'capability_id'),
+  ('use_case', 'domain', 1, 'domain_id'),
   ('uc_requirement', 'use_case', 1, 'use_case_id'),
   ('pattern', 'product', 1, 'product_id'),
   ('pattern_rule', 'pattern', 1, 'pattern_id'),
   ('slot', 'pattern', 1, 'pattern_id');
 INSERT INTO meta_table VALUES
-  ('capability', 'kind', NULL), ('use_case', 'kind', NULL), ('use_case_actor', 'part', 'use_case_id'), ('uc_requirement', 'kind', NULL),
+  ('use_case', 'kind', NULL), ('use_case_actor', 'part', 'use_case_id'), ('uc_requirement', 'kind', NULL),
   ('pattern', 'kind', NULL), ('pattern_setting', 'part', 'pattern_id'), ('pattern_rule', 'kind', NULL), ('slot', 'kind', NULL);

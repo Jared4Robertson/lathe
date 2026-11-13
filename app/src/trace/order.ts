@@ -4,7 +4,7 @@ import type { TraceGraph } from './trace';
 
 // The order of the Trace stage's outcomes, journeys and rows (LA-V98), worked out off the page's main thread in its
 // worker (order.worker.ts) by the barycenter ordering (columns.ts orderColumns) over three columns, the outcomes, the
-// journeys and the use cases: an outcome is linked to the rows its capabilities serve and to the journeys serving it, a
+// journeys and the use cases: an outcome is linked to the rows whose aggregates and read models serve it and to the journeys serving it, a
 // journey to the rows its steps carry out, so an outcome sits by its rows and journeys, a journey between its outcomes and
 // its rows, and a row by both, and the lines between them stay short. The rows serving an outcome come first, those
 // serving none after them; likewise the journeys. A change moves only what it changed (LA-PAT-APP-UX-R22): given the
@@ -42,14 +42,14 @@ function inputOf(graph: TraceGraph, previous: TraceOrder | null): { input: Order
   const columnOf = new Int32Array(keys.length);
   const under = new Uint8Array(keys.length);
   columns.forEach((boxes, c) => boxes.forEach((b) => { columnOf[b] = c; under[b] = c === 0 ? 1 : 0; }));
-  // Each link once: an outcome to a row its capability serves and to a journey serving it, a journey to a row it carries out.
+  // Each link once: an outcome to a row whose aggregate or read model serves it and to a journey serving it, a journey to a row it carries out.
   const pairs = new Map<string, [string, string]>();
   for (const [o, u] of graph.serves) pairs.set(`${o}>${u}`, [o, u]);
   for (const [o, j] of graph.journeyServes) pairs.set(`${o}>${j}`, [o, j]);
   for (const c of graph.carries) pairs.set(`${c.journey}>${c.useCase}`, [c.journey, c.useCase]);
   const links = new Int32Array(pairs.size * 2);
   [...pairs.values()].forEach(([a, b], i) => { links[2 * i] = number.get(a)!; links[2 * i + 1] = number.get(b)!; });
-  // Under an outcome: a row its capability serves, a journey serving one.
+  // Under an outcome: a row whose aggregate or read model serves one, a journey serving one.
   for (const [, u] of graph.serves) under[number.get(u)!] = 1;
   for (const [, j] of graph.journeyServes) under[number.get(j)!] = 1;
   // The key: FNV-1a over every outcome, journey and row and every link.

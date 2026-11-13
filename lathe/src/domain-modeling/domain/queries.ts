@@ -15,7 +15,7 @@ const refuse = (rule: string, message: string): never => {
 
 const article = (kind: string) => (/^[aeiou]/.test(kind) ? 'an' : 'a');
 
-/** The domain that holds the record, as its page reads it: the domain itself, or a capability, term, domain service, service, test or repository in it. */
+/** The domain that holds the record, as its page reads it: the domain itself, or a term, domain service, service, test or repository in it. */
 export function getDomain(reader: DomainReader, input: { id: string }): DomainPage {
   const kind = reader.kindOf(input.id) ?? refuse('missing', `no record has the ID ${input.id}`);
   return reader.page(input.id) ?? refuse('kind', `${input.id} is ${article(kind)} ${kind}, not a domain or a record in one`);
@@ -24,7 +24,7 @@ export function getDomain(reader: DomainReader, input: { id: string }): DomainPa
 /** GET a domain whole (LA-MOD-QRY130). */
 export const GET_DOMAIN: QueryDefinition<{ id: string }, DomainPage, DomainReader> = {
   ...GET_DOMAIN_IDENTITY,
-  input: { id: id('The domain, or a capability, term, domain service, service, test or repository in it.', 'required') },
+  input: { id: id('The domain, or a term, domain service, service, test or repository in it.', 'required') },
   reader: domainReader,
   run: getDomain,
   text: domainText,
@@ -45,7 +45,7 @@ export const LIST_DOMAINS: QueryDefinition<{ product_id: string }, DomainSummary
 };
 
 /** The kinds of the aggregate with an ID under a parent; how each is written the schema says (`idShape`). */
-const KINDS: readonly string[] = ['capability', 'term', 'domain_service', 'repository', 'service', 'domain_service_test'];
+const KINDS: readonly string[] = ['term', 'domain_service', 'repository', 'service', 'domain_service_test'];
 
 /**
  * The next free ID for a record of one of the aggregate's numbered kinds under its parent: one past the highest in
@@ -71,7 +71,7 @@ export function nextDomainId(reader: DomainReader, input: { kind: string; parent
 export const NEXT_DOMAIN_ID: QueryDefinition<{ kind: string; parent: string }, string, DomainReader> = {
   ...NEXT_DOMAIN_ID_IDENTITY,
   input: {
-    kind: id('The kind: capability, term, domain_service, repository, service or domain_service_test.', 'required'),
+    kind: id('The kind: term, domain_service, repository, service or domain_service_test.', 'required'),
     parent: id('The record it will sit under.', 'required'),
   },
   reader: domainReader,
@@ -86,7 +86,7 @@ function domainText(page: DomainPage): string {
   if (row.notes) lines.push(`  notes: ${row.notes}`);
   const technical = (t: { meets: string[]; packages: string[]; helpers: string[] }) => [...t.meets.map((x) => `meets ${x}`), ...t.packages.map((x) => `uses ${x}`), ...t.helpers.map((x) => `helper file ${x}`)];
   const listed = (links: string[]) => (links.length ? ` [${links.join('; ')}]` : '');
-  for (const c of page.capabilities) lines.push(`Capability ${c.capability.id}: ${c.capability.title} (position ${c.capability.position})${listed(c.serves.map((x) => `serves ${x}`))}`);
+  for (const g of page.useCases) lines.push(`${g.group.kind === 'aggregate' ? 'Aggregate' : 'Read model'} ${g.group.id}: ${g.group.title} [${g.useCases.map((x) => `use case ${x}`).join('; ')}]`);
   for (const t of page.terms) lines.push(`Term ${t.term.id}: ${t.term.title}${listed(t.buildsOn.map((x) => `builds on ${x}`))}`);
   for (const s of page.domainServices) {
     lines.push(`Domain service ${s.domainService.id}: ${s.domainService.title}`);

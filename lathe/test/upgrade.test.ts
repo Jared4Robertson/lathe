@@ -577,6 +577,17 @@ describe('the schema version', () => {
     return { changes, todos };
   };
 
+  const run8to9 = async (tables: Record<string, Record<string, unknown>[]>) => {
+    const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 8);
+    const changes: string[] = [];
+    const todos: string[] = [];
+    await step!.converter.files!(
+      { tables: () => Object.keys(tables), read: (table) => tables[table] ?? [], write: (table, rows) => void (tables[table] = rows) },
+      { changed: (text) => changes.push(text), todo: (text) => todos.push(text) },
+    );
+    return { changes, todos };
+  };
+
   it("LA-STD-ENGINEERING-R04-T15 4-to-5 changes no row, asks to rename a product's own kind or relation that clashes with a new table, and to write the journey each duration outcome times", async () => {
     const tables: Record<string, Record<string, unknown>[]> = {
       product_kind: [{ name: 'journey', product_id: 'TL' }, { name: 'report', product_id: 'TL' }],
@@ -729,5 +740,83 @@ describe('the schema version', () => {
     const upgraded = structuredClone(tables);
     expect(await run7to8(tables)).toEqual({ changes: [], todos: [] });
     expect(tables).toEqual(upgraded);
+  });
+  it("LA-STD-ENGINEERING-R04-T20 8-to-9 puts each use case in its capability's domain, gives each capability's outcomes to its use cases' aggregates and read models, removes the capabilities, lists what only a person can settle, and does nothing to data already upgraded", async () => {
+    const tables: Record<string, Record<string, unknown>[]> = {
+      domain: [{ id: 'TL-LEND', product_id: 'TL' }, { id: 'TL-CAT', product_id: 'TL' }],
+      aggregate: [{ id: 'TL-LEND-A1', domain_id: 'TL-LEND' }, { id: 'TL-LEND-A2', domain_id: 'TL-LEND' }, { id: 'TL-CAT-A1', domain_id: 'TL-CAT' }],
+      entity: [{ id: 'TL-LEND-EN01', aggregate_id: 'TL-LEND-A1' }, { id: 'TL-LEND-EN02', aggregate_id: 'TL-LEND-A2' }, { id: 'TL-CAT-EN01', aggregate_id: 'TL-CAT-A1' }],
+      command: [{ id: 'TL-LEND-CMD01', entity_id: 'TL-LEND-EN01' }, { id: 'TL-LEND-CMD02', entity_id: 'TL-LEND-EN02' }, { id: 'TL-CAT-CMD01', entity_id: 'TL-CAT-EN01' }],
+      read_model: [{ id: 'TL-LEND-RM01', domain_id: 'TL-LEND' }],
+      query: [{ id: 'TL-LEND-QRY01', read_model_id: 'TL-LEND-RM01' }],
+      capability: [
+        { id: 'TL-LEND-CAP01', title: 'Lending', domain_id: 'TL-LEND', position: 1 },
+        { id: 'TL-LEND-CAP02', title: 'Reminders', domain_id: 'TL-LEND', position: 2 },
+        { id: 'TL-LEND-CAP03', title: 'Empty', domain_id: 'TL-LEND', position: 3 },
+      ],
+      use_case: [
+        { id: 'TL-LEND-UC01', title: 'Borrow a tool', capability_id: 'TL-LEND-CAP01', goal: 'A goal.', result_id: 'TL-LEND-CMD01' },
+        { id: 'TL-LEND-UC02', title: 'See free tools', capability_id: 'TL-LEND-CAP01', goal: 'A goal.', result_id: 'TL-LEND-QRY01' },
+        { id: 'TL-LEND-UC03', title: 'Renew a loan', capability_id: 'TL-LEND-CAP02', goal: 'A goal.', result_id: 'TL-LEND-CMD01' },
+        { id: 'TL-LEND-UC04', title: 'Mend a tool', capability_id: 'TL-LEND-CAP02', goal: 'A goal.', result_id: 'TL-LEND-CMD02' },
+        // Its result is another domain's: a move by hand.
+        { id: 'TL-LEND-UC05', title: 'Add a tool', capability_id: 'TL-LEND-CAP02', goal: 'A goal.', result_id: 'TL-CAT-CMD01' },
+      ],
+      serves: [
+        { source_id: 'TL-JR01', target_id: 'TL-BO01' },
+        { source_id: 'TL-LEND-CAP01', target_id: 'TL-BO01' },
+        { source_id: 'TL-LEND-CAP02', target_id: 'TL-BO01' },
+        { source_id: 'TL-LEND-CAP02', target_id: 'TL-BO02' },
+        { source_id: 'TL-LEND-CAP03', target_id: 'TL-BO03' },
+      ],
+      about: [{ source_id: 'TL-LEND-Q01', target_id: 'TL-LEND-CAP01' }, { source_id: 'TL-LEND-Q01', target_id: 'TL-LEND-UC01' }],
+      check: [{ name: 'own-groups', query: 'SELECT id AS record, title AS message FROM capability' }, { name: 'own-other', query: 'SELECT 1' }],
+      uc_requirement: [{ id: 'TL-LEND-UC01-R01', use_case_id: 'TL-LEND-UC01', statement: 'As TL-LEND-CAP01 says, a tool on loan MUST be refused.' }],
+    };
+    const { changes, todos } = await run8to9(tables);
+    expect(tables.use_case.map((u) => `${u.id} ${u.domain_id}`)).toEqual(['TL-LEND-UC01 TL-LEND', 'TL-LEND-UC02 TL-LEND', 'TL-LEND-UC03 TL-LEND', 'TL-LEND-UC04 TL-LEND', 'TL-LEND-UC05 TL-LEND']);
+    // The column takes the old one's place.
+    expect(Object.keys(tables.use_case[0])).toEqual(['id', 'title', 'domain_id', 'goal', 'result_id']);
+    // Each capability's outcomes go to each distinct group of its use cases, once; the journey's stay.
+    expect(tables.serves.map((l) => `${l.source_id} ${l.target_id}`)).toEqual([
+      'TL-CAT-A1 TL-BO01', 'TL-CAT-A1 TL-BO02',
+      'TL-JR01 TL-BO01',
+      'TL-LEND-A1 TL-BO01', 'TL-LEND-A1 TL-BO02',
+      'TL-LEND-A2 TL-BO01', 'TL-LEND-A2 TL-BO02',
+      'TL-LEND-RM01 TL-BO01',
+    ]);
+    expect(tables.capability).toEqual([]);
+    expect(tables.about).toEqual([{ source_id: 'TL-LEND-Q01', target_id: 'TL-LEND-UC01' }]);
+    expect(changes).toEqual([
+      "Each use case's parent is its domain: 5 use cases take their capability's domain.",
+      "Aggregates and read models serve the outcomes their use cases' capabilities served: serves 5 → 8 rows (4 from capabilities became 7; 1 from journeys kept).",
+      'The capability kind is gone: 3 capabilities removed.',
+    ]);
+    expect(todos).toEqual([
+      'TL-LEND-CAP03 had no use case and served TL-BO03: name the aggregate or read model that serves each (serves on Add or Change an aggregate or read model).',
+      '1 about link to a capability went: TL-LEND-Q01 → TL-LEND-CAP01. Point each question at the aggregate or read model it is about.',
+      'Your check own-groups reads the capability table, which is gone: read the use cases\' aggregates and read models instead.',
+      '1 record names a capability ID in its text: reword each to name the aggregate or read model instead.',
+      'move TL-LEND-UC05 to TL-CAT: its result TL-CAT-CMD01 is of that domain (Move a use case).',
+    ]);
+
+    // Data already upgraded is left as it is.
+    const upgraded = structuredClone(tables);
+    expect(await run8to9(tables)).toEqual({ changes: [], todos: [] });
+    expect(tables).toEqual(upgraded);
+  });
+
+  it('LA-STD-ENGINEERING-R04-T20 8-to-9 stops at a product kind or relation built on capabilities, changing nothing', async () => {
+    const tables: Record<string, Record<string, unknown>[]> = {
+      capability: [{ id: 'TL-LEND-CAP01', domain_id: 'TL-LEND', position: 1 }],
+      use_case: [{ id: 'TL-LEND-UC01', capability_id: 'TL-LEND-CAP01', result_id: 'TL-LEND-CMD01' }],
+      product_kind: [{ name: 'epic', product_id: 'TL', parent_kind: 'capability' }],
+      product_relation: [{ name: 'owns', source_kind: 'role_card', target_kind: 'capability' }],
+    };
+    const before = structuredClone(tables);
+    const { changes, todos } = await run8to9(tables);
+    expect(changes).toEqual([]);
+    expect(todos).toEqual(['Schema 9 has no capability kind. Your own kind epic (and its records), relation owns names it: put it under a domain, an aggregate or a read model instead, then run `npx lathe upgrade` again.']);
+    expect(tables).toEqual(before);
   });
 });

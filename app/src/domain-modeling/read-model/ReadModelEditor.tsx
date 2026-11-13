@@ -47,7 +47,7 @@ function fieldsOf(index: RecordIndex, domain: string, kind: ReadModelKind, addin
   switch (kind) {
     case 'read_model':
       return addOrChangeFields(adding, F['/api/read-model/add-read-model'], 'domain_id', F['/api/read-model/change-read-model'], {
-        description: LONG, reads: { choices: choices(index, domain, 'aggregate') }, calls: { choices: choices(index, domain, 'domain_service') }, fed_by: { choices: ofProduct('domain_event') },
+        description: LONG, reads: { choices: choices(index, domain, 'aggregate') }, calls: { choices: choices(index, domain, 'domain_service') }, fed_by: { choices: ofProduct('domain_event') }, serves: { choices: ofProduct('business_outcome') },
       });
     case 'query':
       return addOrChangeFields(adding, F['/api/read-model/add-query'], 'read_model_id', F['/api/read-model/change-query'], {
@@ -78,7 +78,7 @@ function codeOf(page: ReadModelPage, kind: Code, id: string) {
 function currentOf(page: ReadModelPage, kind: ReadModelKind, id: string): Record<string, unknown> {
   switch (kind) {
     case 'read_model':
-      return { ...page.readModel, fields: page.fields, reads: page.reads, calls: page.calls, fed_by: page.fedBy };
+      return { ...page.readModel, serves: page.serves, fields: page.fields, reads: page.reads, calls: page.calls, fed_by: page.fedBy };
     case 'query': {
       const q = queryOf(page, id);
       return { ...q.query, selects_by: q.selectsBy, calls: q.calls };

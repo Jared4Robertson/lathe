@@ -1,12 +1,12 @@
 // The Use case aggregate's own reads, each answered from its read model (LA-UCS-RM11) through its reader (reader.ts),
-// which the query runner gives each handler: a use case whole as its page reads it, the use cases of a capability, and
+// which the query runner gives each handler: a use case whole as its page reads it, a domain's use cases by group, and
 // the next free ID for a record of one of its kinds. A handler never sees the data, a repository or the aggregate's
 // model; each changes nothing.
 import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { onePast } from '../../platform/data/id-shape.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import type { UseCaseKind } from './model.ts';
-import type { UseCasePage, UseCaseSummary } from './read-model.ts';
+import type { UseCasePage, UseCasesOfGroup } from './read-model.ts';
 import { useCaseReader, type UseCaseReader } from './reader.ts';
 import { GET_USE_CASE_IDENTITY, LIST_USE_CASES_IDENTITY, NEXT_USE_CASE_ID_IDENTITY } from './queries.generated.ts';
 
@@ -29,18 +29,21 @@ export const GET_USE_CASE: QueryDefinition<{ id: string }, UseCasePage, UseCaseR
   text: useCaseText,
 };
 
-/** The use cases of a capability, by ID. */
-export function listUseCases(reader: UseCaseReader, input: { capability_id: string }): UseCaseSummary[] {
-  return reader.useCasesOf(input.capability_id) ?? refuse('missing', `there is no capability ${input.capability_id}`);
+/** A domain's use cases by group: aggregates by ID, then read models by ID, and the use cases of each by ID. */
+export function listUseCases(reader: UseCaseReader, input: { domain_id: string }): UseCasesOfGroup[] {
+  return reader.useCasesOf(input.domain_id) ?? refuse('missing', `there is no domain ${input.domain_id}`);
 }
 
-/** List the use cases of a capability (LA-UCS-QRY101). */
-export const LIST_USE_CASES: QueryDefinition<{ capability_id: string }, UseCaseSummary[], UseCaseReader> = {
+/** List a domain's use cases (LA-UCS-QRY101). */
+export const LIST_USE_CASES: QueryDefinition<{ domain_id: string }, UseCasesOfGroup[], UseCaseReader> = {
   ...LIST_USE_CASES_IDENTITY,
-  input: { capability_id: id('The capability.', 'required') },
+  input: { domain_id: id('The domain.', 'required') },
   reader: useCaseReader,
   run: listUseCases,
-  text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No use cases.'),
+  text: (groups) =>
+    groups.length
+      ? groups.map((g) => [`${g.group.kind === 'aggregate' ? 'Aggregate' : 'Read model'} ${g.group.id}  ${g.group.title}`, ...g.useCases.map((r) => `  ${r.id}  ${r.title}`)].join('\n')).join('\n')
+      : 'No use cases.',
 };
 
 /** The kinds of the aggregate with an ID under a parent; how each is written the schema says (`idShape`). */
@@ -48,7 +51,7 @@ const KINDS: readonly string[] = ['use_case', 'uc_requirement', 'use_case_test',
 
 /**
  * The next free ID for a record of one of the aggregate's kinds under its parent: one past the highest in use. A use
- * case's starts with its capability's domain; a use case has one flow, whose ID is the use case's and FL, and a flow
+ * case's starts with its domain's; a use case has one flow, whose ID is the use case's and FL, and a flow
  * one flow test, whose ID is the flow's and T.
  */
 export function nextUseCaseId(reader: UseCaseReader, input: { kind: string; parent: string }): string {
@@ -59,7 +62,7 @@ export function nextUseCaseId(reader: UseCaseReader, input: { kind: string; pare
   if (parentKind !== shape.parents[0]) refuse('parent', `a ${kind} sits under a ${shape.parents[0]}, and ${input.parent} is ${parentKind ? `a ${parentKind}` : 'no record'}`);
   switch (kind) {
     case 'use_case':
-      return onePast(reader, `${reader.capability(input.parent)!.domain}-${shape.letters}`, shape);
+      return onePast(reader, `${input.parent}-${shape.letters}`, shape);
     case 'uc_requirement':
       return onePast(reader, `${input.parent}-${shape.letters}`, shape);
     case 'use_case_test':
@@ -90,7 +93,8 @@ export const NEXT_USE_CASE_ID: QueryDefinition<{ kind: string; parent: string },
 /** A use case as text: its row, its actors, then each requirement and flow with what is under it. */
 function useCaseText(page: UseCasePage): string {
   const { useCase: row } = page;
-  const lines = [`Use case ${row.id}: ${row.title}`, `  capability: ${row.capability_id}`, `  goal: ${row.goal}`];
+  const group = page.group ? [`  ${page.group.kind === 'aggregate' ? 'aggregate' : 'read model'}: ${page.group.id} ${page.group.title}`] : [];
+  const lines = [`Use case ${row.id}: ${row.title}`, `  domain: ${row.domain_id}`, ...group, `  result: ${page.result.id} (${page.result.kind})`, `  goal: ${row.goal}`];
   if (row.notes) lines.push(`  notes: ${row.notes}`);
   if (page.actors.length) lines.push(`  actors: ${page.actors.join(', ')}`);
   for (const r of page.requirements) {

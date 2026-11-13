@@ -7,6 +7,7 @@ import type { ReadView } from '../../platform/data/rules.ts';
 import type { InterfaceRow, ProductKindFieldRow, ProductKindRow, ProductRelationRow, ProductRow, QuestionRow, RoleRow } from '../../platform/data/tables.ts';
 import { byRecordId } from '../../platform/data/ids.ts';
 import { domainOrder } from '../../platform/data/domain-order.ts';
+import { asGroup, compareGroups, placementOf, useCaseGroupOf, type UseCaseGroup } from '../../exploring/placement.ts';
 
 /** A record the page names: its ID and title. */
 export interface Named {
@@ -20,22 +21,23 @@ export type QuestionEntry = QuestionRow & { about: string[] };
 /** A product kind the product declares, with its fields in order. */
 export type KindEntry = ProductKindRow & { fields: ProductKindFieldRow[] };
 
-/** A business outcome as the product's page shows it: its statement, measure and target, and the capabilities that serve it. */
+/** A business outcome as the product's page shows it: its statement, measure and target, and the aggregates and read models that serve it. */
 export interface OutcomeCard extends Named {
   statement: string;
   measure: string;
   target: string;
-  servedBy: string[];
+  /** The aggregates and read models that serve it: aggregates by ID, then read models by ID. */
+  servedBy: UseCaseGroup[];
 }
 
-/** Records grouped under one capability of the product. */
-export interface ByCapability<T> {
-  capability: Named;
+/** Use cases listed under one group of the product: the aggregate or read model they sit with. */
+export interface ByGroup<T> {
+  group: UseCaseGroup;
   items: T[];
 }
 
-/** An interface with the roles that use it, the patterns it follows, the use cases it offers and the product's use cases it does not, each by capability. */
-export type InterfaceEntry = InterfaceRow & { actors: string[]; patterns: string[]; offers: ByCapability<Named>[]; missing: ByCapability<Named>[] };
+/** An interface with the roles that use it, the patterns it follows, the use cases it offers and the product's use cases it does not, each by domain, then group. */
+export type InterfaceEntry = InterfaceRow & { actors: string[]; patterns: string[]; offers: ByGroup<Named>[]; missing: ByGroup<Named>[] };
 
 /** One product's page: its row and roles, outcomes and domains, declarations, open questions and interfaces. */
 export interface ProductPage {
@@ -66,33 +68,43 @@ function productPagesFrom(view: ReadView): ProductPage[] {
   const productOfDomain = new Map(domains.map((d) => [String(d.id), String(d.product_id)]));
   const domainRank = domainOrder(domains);
   const about = bySource(view.rows('about'));
-  const serves = new Map<string, string[]>();
-  for (const l of view.rows('serves')) serves.set(String(l.target_id), [...(serves.get(String(l.target_id)) ?? []), String(l.source_id)].sort());
+  const placed = placementOf(view);
+  const serves = new Map<string, UseCaseGroup[]>();
+  for (const l of view.rows('serves')) {
+    const group = asGroup(placed, String(l.source_id));
+    if (group) serves.set(String(l.target_id), [...(serves.get(String(l.target_id)) ?? []), group].sort(compareGroups));
+  }
   const fields = view.rows('product_kind_field') as unknown as ProductKindFieldRow[];
-  const capabilities = view.rows('capability');
   const useCases = view.rows('use_case');
   const offers = new Set(view.rows('offers').map((l) => `${String(l.source_id)} ${String(l.target_id)}`));
   const follows = bySource(view.rows('follows'));
   const actors = view.rows('interface_actor');
   return products.map((product) => {
     const own = (r: Row) => r.product_id === product.id;
-    // The product's capabilities by domain, then place, each with its use cases by ID.
+    // The product's use cases by domain, in the domains' order, then by group (aggregates by ID, then read models by
+    // ID), each group's use cases by ID.
     const ownDomains = new Set(domains.filter(own).map((d) => String(d.id)));
-    const ownCapabilities = capabilities
-      .filter((c) => ownDomains.has(String(c.domain_id)))
-      .sort((a, b) => domainRank.get(String(a.domain_id))! - domainRank.get(String(b.domain_id))! || Number(a.position) - Number(b.position))
-      .map((c) => ({
-        capability: { id: String(c.id), title: String(c.title) },
-        useCases: useCases.filter((u) => u.capability_id === c.id).map((u) => ({ id: String(u.id), title: String(u.title) })).sort(byRecordId),
-      }));
+    const byGroup = new Map<string, { domain: string; group: UseCaseGroup; useCases: Named[] }>();
+    for (const u of useCases) {
+      const domain = String(u.domain_id);
+      const group = useCaseGroupOf(placed, String(u.id));
+      if (!ownDomains.has(domain) || !group) continue;
+      const key = `${domain} ${group.id}`;
+      const at = byGroup.get(key) ?? { domain, group, useCases: [] };
+      at.useCases.push({ id: String(u.id), title: String(u.title) });
+      byGroup.set(key, at);
+    }
+    const ownGroups = [...byGroup.values()]
+      .sort((a, b) => domainRank.get(a.domain)! - domainRank.get(b.domain)! || compareGroups(a.group, b.group))
+      .map((g) => ({ group: g.group, useCases: g.useCases.sort(byRecordId) }));
     const interfaceOf = (iface: InterfaceRow): InterfaceEntry => {
       const offered = (useCase: Named) => offers.has(`${iface.id} ${useCase.id}`);
       return {
         ...iface,
         actors: actors.filter((a) => a.interface_id === iface.id).sort((a, b) => Number(a.position) - Number(b.position)).map((a) => String(a.role_name)),
         patterns: [...(follows.get(iface.id) ?? [])].sort(),
-        offers: ownCapabilities.map(({ capability, useCases: list }) => ({ capability, items: list.filter(offered) })).filter((g) => g.items.length > 0),
-        missing: ownCapabilities.map(({ capability, useCases: list }) => ({ capability, items: list.filter((u) => !offered(u)) })).filter((g) => g.items.length > 0),
+        offers: ownGroups.map(({ group, useCases: list }) => ({ group, items: list.filter(offered) })).filter((g) => g.items.length > 0),
+        missing: ownGroups.map(({ group, useCases: list }) => ({ group, items: list.filter((u) => !offered(u)) })).filter((g) => g.items.length > 0),
       };
     };
     return {

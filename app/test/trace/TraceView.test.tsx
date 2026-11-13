@@ -10,12 +10,12 @@ import { openApp } from '../helpers';
 // camera, its accessible layer, and on a phone its walk's bar. It works on every focus (LA-PAT-APP-UX-R17) and
 // is ordered once (LA-PAT-APP-UX-R19).
 
-/** The model product with an outcome its capability serves, and a second use case of no flow. */
+/** The model product with an outcome its Loan aggregate serves, and a second use case of no flow. */
 const withOutcome = () => {
   const data = modelWorkspace();
   addRows(data, 'business_outcome', { id: 'P-BO01', title: 'More things lent', product_id: 'P', statement: 'Members borrow more.', measure: 'Loans a month', target: 'Up a tenth' });
-  addRows(data, 'serves', { source_id: 'P-D-CAP01', target_id: 'P-BO01' });
-  addRows(data, 'use_case', { id: 'P-D-UC02', title: 'Return a thing', capability_id: 'P-D-CAP01', goal: 'A member brings a thing back.' });
+  addRows(data, 'serves', { source_id: 'P-D-A3', target_id: 'P-BO01' });
+  addRows(data, 'use_case', { id: 'P-D-UC02', title: 'Return a thing', domain_id: 'P-D', goal: 'A member brings a thing back.', result_id: 'P-D-CMD02' });
   return data;
 };
 /** The product with a journey serving its outcome: lending (P-D-UC01), then returning (P-D-UC02). */
@@ -245,7 +245,8 @@ describe('the Trace stage', () => {
     await waitFor(async () => expect(box(await drawn(), 'P-D-UC02|use-case')?.pill).toBe('added'));
     const scene = await drawn();
     expect(box(scene, 'outcome/P-BO01')!.pill).toBe('added');
-    expect(scene.columns[2].rollup).toBe('1 new');
+    // The new use case, and the Loan aggregate its row reaches, which now serves the new outcome.
+    expect(scene.columns[2].rollup).toBe('1 new · 1 changed');
     await waitFor(async () => expect(box(await drawn(), 'P-D-UC01|flow')!.strength).toBeLessThanOrEqual(0.2 + 1e-9));
   });
   it('LA-V98-R01-T01 Trace works on every focus: Ctrl+3 or the switch shows it, never disabled, on a use case, a requirement and a record no row shows', async () => {

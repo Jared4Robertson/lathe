@@ -129,14 +129,12 @@ describe('The stage domains\' flows through the MCP tools', () => {
     });
   });
 
-  it('LA-PAT-MCP-STEPS-R01-T01 LA-PAT-MCP-STEPS-R01-T05 LA-PAT-MCP-STEPS-R01-T06 LA-PAT-MCP-STEPS-R01-T07 LA-PAT-MCP-STEPS-R01-T08 LA-PAT-MCP-STEPS-R01-T09 organize a domain\'s use cases into capabilities and patterns through the MCP tools', async () => {
-    await walk([...LENDING, add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.', result_id: 'TL-LEND-CMD01' })], async (a) => {
-      // S01: the domain's capabilities in order; a repeated position is refused.
-      await a.ok('domain_add_capability', { id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 2, description: 'Taking tools back from members.' });
-      await a.refused('domain_add_capability', { id: 'TL-LEND-CAP03', title: 'Fees', domain_id: 'TL-LEND', position: 2, description: 'Charging members for late tools.' });
-      // S02: each use case under its capability.
-      await a.ok('use_case_move_use_case', { id: 'TL-LEND-UC02', capability_id: 'TL-LEND-CAP02' });
-      expect(data(a.tl, 'use_case').find((u) => u.id === 'TL-LEND-UC02').capability_id).toBe('TL-LEND-CAP02');
+  it('LA-PAT-MCP-STEPS-R01-T01 LA-PAT-MCP-STEPS-R01-T05 LA-PAT-MCP-STEPS-R01-T06 LA-PAT-MCP-STEPS-R01-T07 LA-PAT-MCP-STEPS-R01-T08 LA-PAT-MCP-STEPS-R01-T09 organize a domain\'s use cases by aggregate and patterns through the MCP tools', async () => {
+    await walk([...LENDING, add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', domain_id: 'TL-LEND', goal: 'A member brings a tool back.', result_id: 'TL-LEND-CMD01' })], async (a) => {
+      // S01: the domain's use cases by the aggregate their results sit in.
+      expect((await a.ok('use_case_list_use_cases', { domain_id: 'TL-LEND' })).trim()).toBe('Aggregate TL-LEND-A1  Loan\n  TL-LEND-UC01  Borrow a tool\n  TL-LEND-UC02  Return a tool');
+      // S02: a use case moved to a result in a domain that is not its own is refused.
+      await a.refused('use_case_move_use_case', { id: 'TL-LEND-UC02', domain_id: 'TL-LEND', result_id: 'TL-NOPE-CMD01' });
       // S03: shared behavior once, as a pattern with its setting and rule.
       const pattern = { id: 'TL-PAT-ACT', title: 'Librarian action', product_id: 'TL', description: 'An action a librarian takes that saves a record.' };
       await a.refused('pattern_add_pattern', { ...pattern, settings: [{ name: 'Record', meaning: 'The record the action saves.' }] });
@@ -155,7 +153,7 @@ describe('The stage domains\' flows through the MCP tools', () => {
     await walk([
       ...LENDING,
       add('uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'The due date is set', use_case_id: 'TL-LEND-UC01', statement: 'The loan MUST be due two weeks after it opens.' }),
-      add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.', result_id: 'TL-LEND-CMD01' }),
+      add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', domain_id: 'TL-LEND', goal: 'A member brings a tool back.', result_id: 'TL-LEND-CMD01' }),
       add('uc_requirement', { id: 'TL-LEND-UC02-R01', title: 'The return is dated', use_case_id: 'TL-LEND-UC02', statement: 'The return MUST carry its date.' }),
       add('view', { id: 'TL-V01', title: 'Loan desk', description: 'Where the librarian opens and closes loans.' }),
     ], async (a) => {
@@ -401,13 +399,13 @@ describe('The stage domains\' flows through the MCP tools', () => {
       expect(await a.ok('business_outcome_next_id', { product_id: 'TL' })).toBe('TL-BO01');
       await a.refused('business_outcome_add_business_outcome', { id: 'TL-BO01', title: 'More tools in use', product_id: 'TL', statement: 'Members borrow more tools.', target: 'Twice as many.' });
       await a.ok('business_outcome_add_business_outcome', { id: 'TL-BO01', title: 'More tools in use', product_id: 'TL', statement: 'Members borrow the library\'s tools more often.', measure: 'Loans opened per tool per month.', target: 'Two per tool per month within a year.' });
-      // S02: the capability that serves it.
-      await a.ok('domain_change_capability', { id: 'TL-LEND-CAP01', serves: ['TL-BO01'] });
+      // S02: the aggregate that serves it.
+      await a.ok('aggregate_change_aggregate', { id: 'TL-LEND-A1', serves: ['TL-BO01'] });
       // S03: the test that measures it.
       await a.ok('use_case_add_use_case_test', { id: 'TL-LEND-UC01-R01-T01', title: 'Loans are counted per tool', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'not automated yet', when: 'Members borrow tools for a month', then: 'The loans are counted per tool' });
       await a.ok('business_outcome_change_business_outcome', { id: 'TL-BO01', measured_by: ['TL-LEND-UC01-R01-T01'] });
       const shown = await a.ok('business_outcome_get_business_outcome', { id: 'TL-BO01' });
-      expect(shown).toContain('TL-LEND-CAP01');
+      expect(shown).toContain('TL-LEND-A1');
       expect(shown).toContain('TL-LEND-UC01-R01-T01');
     });
   });
@@ -503,14 +501,14 @@ describe('Checking flows through the MCP tools', () => {
     ], async (a) => {
       // S01: the product's limits.
       await a.ok('product_setting_set_limits', { product_id: 'TL', max_children: 2, max_entities_per_aggregate: 2 });
-      // S02, S03: too many children, too many entities, and a capability and a group with one child.
+      // S02, S03: too many children, too many entities, and a group with one child.
       const checked = await a.check();
       expect(found(checked, 'too-many-children').sort()).toEqual([expect.stringMatching(/^TL-LEND-A1: .*3 children of kind entity/), expect.stringMatching(/^TL-LEND-UC01: .*3 /)]);
       expect(found(checked, 'aggregate-too-large')).toEqual([expect.stringMatching(/^TL-LEND-A1: /)]);
-      expect(found(checked, 'lone-child').sort()).toEqual([expect.stringMatching(/^TL-LEND-CAP01: /), expect.stringMatching(/^TL-LEND-UC01: .*"Dates"/)]);
+      expect(found(checked, 'lone-child').sort()).toEqual([expect.stringMatching(/^TL-LEND-UC01: .*"Dates"/)]);
       // S04: the Agent raises the limits, adds a use case, clears the group and checks again.
       await a.ok('product_setting_set_limits', { product_id: 'TL', max_children: 15, max_entities_per_aggregate: 7 });
-      await a.ok('use_case_add_use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.', result_id: 'TL-LEND-CMD01' });
+      await a.ok('use_case_add_use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', domain_id: 'TL-LEND', goal: 'A member brings a tool back.', result_id: 'TL-LEND-CMD01' });
       await a.ok('use_case_change_uc_requirement', { id: 'TL-LEND-UC01-R04', group_name: null });
       expect((await a.check()).problems.filter((p) => ['too-many-children', 'aggregate-too-large', 'lone-child'].includes(p.check))).toEqual([]);
     });

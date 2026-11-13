@@ -62,7 +62,7 @@ describe('format reference pages', () => {
     const where = section('Where it sits');
     expect(fact(where, 'Stage')).toMatch(/^Use cases/);
     expect(fact(where, 'Parent')).toBe('Exactly one, of the kind below.');
-    expect(within(section(/^Allowed parents/)).getByRole('link', { name: /capability/ })).toHaveAttribute('href', over('format/kinds/capability'));
+    expect(within(section(/^Allowed parents/)).getByRole('link', { name: /domain/ })).toHaveAttribute('href', over('format/kinds/domain'));
 
     const fields = document.getElementById('fields')!;
     // Each column of its table, with its type, whether it is required and its meaning.
@@ -70,7 +70,7 @@ describe('format reference pages', () => {
     expect(goal).toHaveAttribute('id', 'field-goal');
     expect(goal).toHaveTextContent(/goaltextyes/);
     expect(within(fields).getByText('notes').closest('tr')).toHaveTextContent(/notestextno/);
-    expect(within(fields).getByText('capability_id').closest('tr')).toHaveTextContent(/capability_idtextyes/);
+    expect(within(fields).getByText('domain_id').closest('tr')).toHaveTextContent(/domain_idtextyes/);
     expect(fact(fields, 'ID')).toBe('<P>-<D>-UC<nn>, such as TL-LEND-UC01');
     expect(fact(fields, 'ID starts with')).toBe("Its domain's ID and a hyphen");
     expect(fact(fields, 'Obligation')).toMatch(/^Not an obligation/);
@@ -92,8 +92,8 @@ describe('format reference pages', () => {
 
     const records = section(/^Records/);
     expect(records).toHaveTextContent('2 use cases in Demo shop, under:');
-    expect(within(records).getByRole('link', { name: /DM-SHOP-CAP01\s*Buying/ })).toHaveAttribute('href', '/DM-SHOP-CAP01');
-    expect(within(records).getByRole('link', { name: /DM-PAY-CAP01\s*Paying/ })).toHaveAttribute('href', '/DM-PAY-CAP01');
+    expect(within(records).getByRole('link', { name: /DM-SHOP\s*Shopping/ })).toHaveAttribute('href', '/DM-SHOP');
+    expect(within(records).getByRole('link', { name: /DM-PAY\s*Paying/ })).toHaveAttribute('href', '/DM-PAY');
 
     // A link back to the focus closes the page; the card shows the focus's own page again.
     await userEvent.click(within(card()).getByRole('link', { name: /Back to/ }));

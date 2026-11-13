@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import type { KindDescription } from '../../lathe/src/platform/data/schema';
@@ -99,11 +99,13 @@ describe('folders by stage', () => {
   });
 
   it("LA-EXP-DS03-T01 The current page's branch opens itself: a record's domain, stage and folder, or a group's folder", async () => {
-    // A UC requirement is not listed; the capability it sits under is, so that capability's branch opens (Use cases
-    // holds only capabilities, so they are listed in the stage itself).
+    // A UC requirement is not listed; the use case it sits under is, so that use case's branch opens (Use cases holds
+    // only use cases, so they are listed in the stage itself, under their aggregate's heading).
     await openApp('/DM-SHOP-UC01-R01');
     await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
-    expect(within(await findList('Use cases of Shopping')).getByRole('link', { name: 'Buying' })).toHaveAttribute('href', '/DM-SHOP-CAP01');
+    const useCases = await findList('Use cases of Shopping');
+    expect(within(useCases).getByRole('link', { name: 'Add an item to the basket' })).toHaveAttribute('href', '/DM-SHOP-UC01');
+    expect(within(useCases).getByRole('link', { name: /^Basket/ })).toHaveAttribute('href', '/DM-SHOP-A1');
     expect(within(panel()).queryByRole('list', { name: 'Interface design of Shopping' })).toBeNull();
   });
 
@@ -180,10 +182,10 @@ describe('folders by stage', () => {
     expect(within(await findList('Use cases of Demo shop')).getByRole('link', { name: 'Audited action' })).toBeInTheDocument();
   });
 
-  /** The demo shop with a second use case under the capability, and its flow. */
+  /** The demo shop with a second use case of the Basket aggregate, and its flow. */
   const twoUseCases = () => {
     const w = workspace();
-    addRows(w, 'use_case', { id: 'DM-SHOP-UC02', title: 'Empty the basket', capability_id: 'DM-SHOP-CAP01' });
+    addRows(w, 'use_case', { id: 'DM-SHOP-UC02', title: 'Empty the basket', domain_id: 'DM-SHOP', goal: 'A shopper empties the basket.', result_id: 'DM-SHOP-CMD01' });
     addRows(w, 'flow', { id: 'DM-SHOP-UC02-FL', title: 'Empty a basket', use_case_id: 'DM-SHOP-UC02' });
     return w;
   };
@@ -210,7 +212,7 @@ describe('folders by stage', () => {
       specification: ['DM-SHOP-SP01'],
       read_model: ['DM-SHOP-RM01'],
       term: ['DM-SHOP-TM01'],
-      capability: ['DM-SHOP-CAP01'],
+      use_case: ['DM-SHOP-UC01', 'DM-SHOP-UC02'],
       view: ['DM-V01'],
       endpoint: ['DM-SHOP-EP01'],
       table: ['DM-SHOP-EN01-TB'],
@@ -218,13 +220,13 @@ describe('folders by stage', () => {
       invariant_test: ['DM-SHOP-INV01-T'],
       use_case_test: ['DM-SHOP-UC01-R01-T01'] });
     expect(loose.map((f) => [f.label, f.records.map((r) => r.id)])).toEqual([['Open questions', ['DM-SHOP-Q01']]]);
-    // A use case folds under its capability, in Use cases (which lists its capabilities itself, with no folder); a
-    // command under its aggregate, in Domain model.
-    expect(branchOf(index, 'DM-SHOP-UC02')).toEqual(['domain:DM-SHOP', 'DM-SHOP/use-cases']);
+    // A use case is listed in Use cases (which lists its use cases itself, with no folder); a command folds under its
+    // aggregate, in Domain model.
+    expect(branchOf(index, 'DM-SHOP-UC02')).toEqual(['domain:DM-SHOP', 'DM-SHOP/use-cases', 'group:DM-SHOP-A1']);
     expect(branchOf(index, 'DM-SHOP-CMD01')).toEqual(['domain:DM-SHOP', 'DM-SHOP/domain-model', 'DM-SHOP/domain-model/aggregate']);
     // A flow folds under its use case and a flow step under its flow, in Use cases.
-    expect(branchOf(index, 'DM-SHOP-UC02-FL')).toEqual(['domain:DM-SHOP', 'DM-SHOP/use-cases']);
-    expect(branchOf(index, 'DM-SHOP-UC01-FL-S02')).toEqual(['domain:DM-SHOP', 'DM-SHOP/use-cases']);
+    expect(branchOf(index, 'DM-SHOP-UC02-FL')).toEqual(['domain:DM-SHOP', 'DM-SHOP/use-cases', 'group:DM-SHOP-A1']);
+    expect(branchOf(index, 'DM-SHOP-UC01-FL-S02')).toEqual(['domain:DM-SHOP', 'DM-SHOP/use-cases', 'group:DM-SHOP-A1']);
     // In Shared: a constraint folds under its value object, which both domains use (Shared's Domain model holds only
     // value objects, so lists them itself); the product's interface sits there too.
     expect(branchOf(index, 'DM-VO01-C01')).toEqual(['DM/shared', 'DM/domain-model']);
@@ -234,18 +236,24 @@ describe('folders by stage', () => {
     ]);
   });
 
-  it("LA-V91-R05-T03 The domain page lists a capability's use cases under it, as the nav does", async () => {
+  it('LA-V91-R05-T03 The domain page heads its use cases with their aggregates, then their read models, as the nav does', async () => {
     await openApp('/DM-SHOP', { data: twoUseCases() });
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const useCases = stageOf('use-cases');
-    expect(within(useCases).getByRole('link', { name: /DM-SHOP-CAP01/ })).toBeInTheDocument();
-    expect(within(useCases).queryByRole('link', { name: /DM-SHOP-UC02/ })).toBeNull();
+    const headings = within(useCases).getAllByRole('heading', { level: 3 });
+    expect(headings.map((h) => h.textContent)).toEqual(['BasketAggregate2']);
+    expect(within(headings[0]).getByRole('link', { name: 'Basket' })).toHaveAttribute('href', '/DM-SHOP-A1');
+    const listed = within(useCases).getByRole('list', { name: 'Use cases of DM-SHOP-A1' });
+    expect(within(listed).getAllByRole('link', { name: /^DM-SHOP-UC0\d/ }).map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-UC01', '/DM-SHOP-UC02']);
   });
 
-  it("LA-V90-R19-T01 Use cases lists capabilities, and a capability's use case opens its capability's branch", async () => {
+  it("LA-V90-R19-T01 Use cases lists its use cases under their aggregates and read models, and a use case opens its heading's branch", async () => {
     await openApp('/DM-SHOP-UC02', { data: twoUseCases() });
     await screen.findByRole('heading', { level: 1, name: 'Empty the basket' });
-    await waitFor(() => expect(list('Use cases of Shopping').textContent).toBe('Buying'));
+    const basket = await findList('Use cases of Basket');
+    expect(basket.closest('li')!.querySelector(':scope > .nav-row a')).toHaveTextContent('BasketAggregate');
+    expect(within(basket).getAllByRole('link').map((a) => a.textContent)).toEqual(['Add an item to the basket', 'Empty the basket']);
+    expect(within(basket).getByRole('link', { name: 'Empty the basket' })).toHaveAttribute('aria-current', 'page');
   });
 
   it('LA-EXP-DS03-T09 A record with no owner sits in the one domain that uses it, in its stage and folder, with what sits under it, and in Shared otherwise', () => {
@@ -303,16 +311,18 @@ describe('folders by stage', () => {
     // The folder model: a stage with one folder shows that folder's records directly; with two or more it keeps them.
     const index = recordIndexOf(patternWorkspace());
     const stage = (owner: string, name: string) => ownerFolders(index, owner).stages.find((s) => s.stage === name)!;
-    expect(stage('DM-SHOP', 'use-cases').direct?.records.map((r) => r.id)).toEqual(['DM-SHOP-CAP01']);
+    expect(stage('DM-SHOP', 'use-cases').direct?.records.map((r) => r.id)).toEqual(['DM-SHOP-UC01']);
     expect(stage('DM', 'use-cases').direct?.records.map((r) => r.id)).toEqual(['DM-PAT-AUDIT']);
     expect(stage('DM-SHOP', 'interface-design').direct).toBeNull();
     // An empty one-folder stage is still a stage with no records.
     expect(ownerFolders(recordIndexOf(patternWorkspace(), 'NF'), 'NF-NOTE').stages.find((s) => s.stage === 'use-cases')).toMatchObject({ count: 0, direct: { count: 0 } });
 
-    // The graph's tree: the stage holds the records, and the skipped folder is no group and has no address.
-    expect(treeChildren(index, 'DM-SHOP/use-cases')).toEqual(['DM-SHOP-CAP01']);
+    // The graph's tree: the stage holds the records (use cases through their aggregates' groups, as the nav heads them),
+    // and the skipped folder is no group and has no address.
+    expect(treeChildren(index, 'DM-SHOP/use-cases')).toEqual(['DM-SHOP/use-cases/DM-SHOP-A1']);
+    expect(treeChildren(index, 'DM-SHOP/use-cases/DM-SHOP-A1')).toEqual(['DM-SHOP-UC01']);
     expect(treeChildren(index, 'DM/use-cases')).toEqual(['DM-PAT-AUDIT']);
-    expect(isGraphNode(index, 'DM-SHOP/use-cases/capability')).toBe(false);
+    expect(isGraphNode(index, 'DM-SHOP/use-cases/use_case')).toBe(false);
     expect(isGraphNode(index, 'DM/use-cases/pattern')).toBe(false);
     expect(treeChildren(index, 'DM-SHOP/interface-design')).toEqual(['DM-SHOP/interface-design/view', 'DM-SHOP/interface-design/endpoint']);
     expect(branchOf(index, 'DM-PAT-AUDIT-R01')).toEqual(['DM/shared', 'DM/use-cases']);
@@ -322,21 +332,24 @@ describe('folders by stage', () => {
     await user.click(head(folders, /^Use cases/));
     const useCases = list('Use cases of Shopping');
     expect(rows(useCases)).toEqual([]);
-    expect(within(useCases).getByRole('link', { name: 'Buying' })).toHaveAttribute('href', '/DM-SHOP-CAP01');
+    // Each aggregate's heading folds its use cases; unfolded, they are listed under it.
+    expect(within(useCases).queryByRole('link', { name: 'Add an item to the basket' })).toBeNull();
+    await user.click(within(useCases).getByRole('button', { name: 'Unfold Basket' }));
+    expect(within(useCases).getByRole('link', { name: 'Add an item to the basket' })).toHaveAttribute('href', '/DM-SHOP-UC01');
     await user.click(head(folders, /^Interface design/));
     expect(rows(list('Interface design of Shopping'))).toEqual(['Views1', 'Endpoints1']);
 
     // The domain page: the stage lists the records under its own heading, with no folder heading.
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
-    expect(stageOf('use-cases').querySelector('h3')).toBeNull();
-    expect(within(stageOf('use-cases')).getByRole('link', { name: /DM-SHOP-CAP01/ })).toHaveAttribute('href', '/DM-SHOP-CAP01');
+    expect(within(stageOf('use-cases')).queryByRole('heading', { name: /^Use cases/, level: 3 })).toBeNull();
+    expect(within(stageOf('use-cases')).getByRole('link', { name: /DM-SHOP-UC01/ })).toHaveAttribute('href', '/DM-SHOP-UC01');
     await openApp('/NF-NOTE');
     await screen.findByRole('heading', { level: 1, name: 'Notes' });
     expect(within(stageOf('use-cases')).getByText('Nothing yet.')).toBeInTheDocument();
 
     // The skipped folder's address names nothing.
-    await openApp('/DM-SHOP/use-cases/capability');
+    await openApp('/DM-SHOP/use-cases/use_case');
     await screen.findByText(/There's no record or group/);
   };
   it('LA-PAT-APP-UX-R15-T01 A stage with one folder lists its records directly in the folder model, the nav, the graph\'s tree and the domain page, and the folder has no address', proveLaPatAppUxR15);

@@ -12,10 +12,17 @@ import {
   pluralLabel,
   type Filters,
   type Neighborhood } from '../../src/graph/model';
-import { boxColors } from '../../src/graph/paint';
+import { boxColors, drawnLabel, wholeLinePx } from '../../src/graph/paint';
+import { plateOf } from '../../src/graph/plate';
+import { BLOCK_BELOW_PX } from '../../src/graph/camera';
 import { PLAIN_LOOK } from '../../src/graph/look';
 import { addressOf } from '../../src/views/address';
 import { groupedWorkspace, testIndex } from './workspace';
+import { workspace } from '../fixtures/workspace';
+import { addRows } from '../fixtures/load';
+import { labelLines } from '../../src/graph/text';
+import { treeChildren } from '../../src/graph/tree';
+import { ownerFolders } from '../../src/exploring/folder-tree/folders';
 import { graphMap } from './maps';
 
 const ids = (n: Neighborhood) => n.nodes.map((x) => x.id).sort();
@@ -30,7 +37,7 @@ describe('graph groups', () => {
   const grouped = recordIndexOf(groupedWorkspace());
 
   it('LA-EXP-DS04-T01 LA-V93-R23-T01 A record with several kinds of child in its stage has a group per child kind, labeled with the plural and a count', () => {
-    expect(childKinds(index, 'P-D')).toEqual(['aggregate', 'read_model', 'domain_service', 'term', 'capability', 'repository', 'question']);
+    expect(childKinds(index, 'P-D')).toEqual(['aggregate', 'read_model', 'domain_service', 'term', 'use_case', 'repository', 'question']);
     // An aggregate with entities, invariants and events reaches them through a group each.
     expect(groupLabel(index, 'P-D-A3/entity')).toBe('Entities (3)');
     expect(groupLabel(index, 'P-D-A3/domain_event')).toBe('Domain events (2)');
@@ -63,9 +70,11 @@ describe('graph groups', () => {
     expect(groups(domain)).toEqual([...STAGES, 'P-D/question'].sort());
     expect(domain.nodes.find((x) => x.id === 'P-D/use-cases')).toMatchObject({ title: 'Use cases (1)', distance: 1, group: { parent: 'P-D', owner: 'P-D', count: 1 } });
     expect(groups(neighborhood(index, 'P-D', 2))).toEqual(expect.arrayContaining(['P-D/domain-model/aggregate', 'P-D/technical-specification/table']));
-    // Use cases holds only capabilities, so it holds them itself: no folder between.
-    expect(groups(neighborhood(index, 'P-D', 2))).not.toContain('P-D/use-cases/capability');
-    expect(spine(neighborhood(index, 'P-D', 2))).toContain('P-D/use-cases > P-D-CAP01');
+    // Use cases holds only use cases, so it holds them itself, no folder between: under a group for each aggregate or
+    // read model their results belong to.
+    expect(groups(neighborhood(index, 'P-D', 2))).not.toContain('P-D/use-cases/use_case');
+    expect(spine(neighborhood(index, 'P-D', 2))).toContain('P-D/use-cases > P-D/use-cases/P-D-A3');
+    expect(spine(neighborhood(index, 'P-D', 3))).toContain('P-D/use-cases/P-D-A3 > P-D-UC01');
     // The spine runs through a group: the domain to its questions' group, the group to the question.
     const two = neighborhood(index, 'P-D', 2);
     expect(spine(two)).toContain('P-D > P-D/question');
@@ -89,16 +98,16 @@ describe('graph groups', () => {
 
   it('LA-V93-R10-T04 At depth 1 the graph frames the tree around the focus: its parent or folder at the left edge, its children or their groups, and no other links', () => {
     const at = (focus: string) => neighborhood(grouped, focus, 1);
-    // A capability in its stage (Use cases holds only capabilities): the stage at the left edge, its use cases beside
-    // it; no siblings.
-    expect(ids(at('P-D-CAP01'))).toEqual(['P-D-CAP01', 'P-D-UC01', 'P-D-UC02', 'P-D/use-cases']);
+    // A use case in its stage (Use cases holds only use cases): its aggregate's group at the left edge, its groups of
+    // requirements and of flows beside it; no siblings.
+    expect(ids(at('P-D-UC01'))).toEqual(['P-D-UC01', 'P-D-UC01/flow', 'P-D-UC01/uc_requirement', 'P-D/use-cases/P-D-A3']);
     // A domain: its product, its stages and the open questions' group.
     expect(ids(at('P-D'))).toEqual(['P', 'P-D', ...STAGES, 'P-D/question'].sort());
     // A record with several kinds of children reaches them through their groups.
     expect(ids(at('P-D-A4'))).toEqual(['P-D-A4', 'P-D-A4/domain_event', 'P-D-A4/entity', 'P-D/domain-model/aggregate']);
     // A leaf frames only itself and its parent: here its use case's UC requirements group (the use case holds its flow too).
     expect(ids(at('P-D-UC01-R01'))).toEqual(['P-D-UC01-R01', 'P-D-UC01/uc_requirement']);
-    for (const id of ['P-D-CAP01', 'P-D', 'P-D-UC01-R01']) expect(new Set(at(id).edges.map((e) => e.relation))).toEqual(new Set([PARENT]));
+    for (const id of ['P-D-UC01', 'P-D', 'P-D-UC01-R01']) expect(new Set(at(id).edges.map((e) => e.relation))).toEqual(new Set([PARENT]));
   });
 
   it('LA-EXP-DS04-T02 LA-V93-R25-T01 A group can be the focus: its parent and all its members are shown, and depth counts levels from it', () => {
@@ -163,9 +172,55 @@ describe('graph groups', () => {
     expect(ids(neighborhood(index, 'P-D', 1, filters(['question'])))).not.toContain('P-D/question');
     expect(ids(neighborhood(index, 'P-D', 2, filters(['aggregate'])))).not.toContain('P-D/domain-model/aggregate');
     expect(ids(neighborhood(index, 'P-D', 2, filters(['aggregate'])))).toContain('P-D/domain-model');
-    expect(ids(neighborhood(index, 'P-D', 2, filters(['capability'])))).toContain('P-D/use-cases');
+    expect(ids(neighborhood(index, 'P-D', 2, filters(['uc_requirement'])))).toContain('P-D/use-cases');
     expect(ids(neighborhood(index, 'P-D', 4, filters(['use_case'])))).not.toContain('P-D-UC01');
     // The same graph every time.
     expect(neighborhood(grouped, 'P-D-UC01', 3)).toEqual(neighborhood(grouped, 'P-D-UC01', 3));
+  });
+
+  it("LA-V93-R23-T08 A domain's use cases sit under a group per aggregate or read model, labeled with its title and kind, in the nav's order", () => {
+    // The demo shop's command use case, and a query use case of the Basket summary read model.
+    const index = recordIndexOf(addRows(workspace(), 'use_case', { id: 'DM-SHOP-UC02', title: 'See the basket', domain_id: 'DM-SHOP', goal: 'A shopper sees the basket.', result_id: 'DM-SHOP-QRY01' }));
+    const a1 = 'DM-SHOP/use-cases/DM-SHOP-A1';
+    const rm1 = 'DM-SHOP/use-cases/DM-SHOP-RM01';
+    // The stage holds the groups, aggregates then read models, as the nav heads them (one derivation, Folder.groups).
+    const headed = ownerFolders(index, 'DM-SHOP').stages.find((s) => s.stage === 'use-cases')!.direct!.groups!.map((g) => g.group!.id);
+    expect(treeChildren(index, 'DM-SHOP/use-cases')).toEqual(headed.map((id) => `DM-SHOP/use-cases/${id}`));
+    expect(treeChildren(index, 'DM-SHOP/use-cases')).toEqual([a1, rm1]);
+    expect(treeChildren(index, a1)).toEqual(['DM-SHOP-UC01']);
+    expect(treeChildren(index, rm1)).toEqual(['DM-SHOP-UC02']);
+    // Each group's label: the aggregate's or read model's title and its count, its kind and ID above it.
+    expect(labelLines(index, a1)).toEqual({ title: 'Basket (1)', meta: 'Aggregate · DM-SHOP-A1' });
+    expect(labelLines(index, rm1)).toEqual({ title: 'Basket summary (1)', meta: 'Read model · DM-SHOP-RM01' });
+    // A group like the others: a node with its address, its use cases one level below it.
+    expect(isGraphNode(index, a1)).toBe(true);
+    expect(addressOf(a1)).toBe(`/${a1}`);
+    expect(spine(neighborhood(index, 'DM-SHOP/use-cases', 2))).toEqual(expect.arrayContaining([`DM-SHOP/use-cases > ${a1}`, `${a1} > DM-SHOP-UC01`, `${rm1} > DM-SHOP-UC02`]));
+  });
+
+  it("LA-V93-R23-T09 A use case group, a folder and a record of one height draw a focus's child's title the same, and none only under 5 pixels", () => {
+    const index = recordIndexOf(addRows(workspace(), 'use_case', { id: 'DM-SHOP-UC02', title: 'See the basket', domain_id: 'DM-SHOP', goal: 'A shopper sees the basket.', result_id: 'DM-SHOP-QRY01' }));
+    const map = graphMap(index, 'DM');
+    // The same box for each: a use case group, a stage's folder and a record, one plate code path.
+    const ids = ['DM-SHOP/use-cases/DM-SHOP-A1', 'DM-SHOP/domain-model/aggregate', 'DM-SHOP-UC01'];
+    for (const id of ids) expect(map.nodes.has(id), id).toBe(true);
+    // One box for each, the same size and border: a hundred borders tall, four hundred wide.
+    const border = plateOf(index, ids[0], { view: 'tree', node: map.nodes.get(ids[0])! }).border;
+    const plates = ids.map((id) => ({ ...plateOf(index, id, { view: 'tree', node: map.nodes.get(id)! }), x: 0, y: 0, w: 400 * border, h: 100 * border, border, text: 1e-6 }));
+    // Its own label too small to read at every zoom here, so each draws its title alone (wholeLabel).
+    const zooms = [4, 6, 10, 14, 20, 40].map((px) => px / plates[0].h);
+    // Zooms on both sides of the floor: a line under 5 pixels at the first, a line at the last.
+    expect(wholeLinePx(plates[0], zooms[0])).toBeLessThan(BLOCK_BELOW_PX);
+    expect(wholeLinePx(plates[0], zooms.at(-1)!)).toBeGreaterThanOrEqual(BLOCK_BELOW_PX);
+    for (const zoom of zooms) {
+      const sizes = plates.map((p) => wholeLinePx(p, zoom));
+      expect(new Set(sizes.map((x) => x.toFixed(6))).size, `zoom ${zoom}`).toBe(1);
+      for (const p of plates) {
+        const lines = drawnLabel(p, zoom, 'middle').plate.lines;
+        // A line as large as the box holds, or none where that would fall under 5 pixels (LA-EXP-DS09).
+        expect(lines.length > 0, `${p.id} at ${zoom}`).toBe(sizes[0] >= BLOCK_BELOW_PX);
+        for (const l of lines) expect(l.size * zoom, `${p.id} at ${zoom}`).toBeCloseTo(sizes[0], 6);
+      }
+    }
   });
 });

@@ -44,8 +44,7 @@ const base = (): Data => {
     aggregate: [...data.aggregate, { id: 'XX-DOM-A1', title: 'Thing', domain_id: 'XX-DOM', identity: 'Thing ID', description: 'Something of the other product.' }],
     entity: [...data.entity, { id: 'XX-DOM-EN01', title: 'Thing', aggregate_id: 'XX-DOM-A1', role: 'root', description: 'The thing itself.' }],
     command: [...data.command, { id: 'XX-DOM-CMD01', title: 'Do something', entity_id: 'XX-DOM-EN01', description: 'Does it.' }],
-    capability: [...data.capability, { id: 'XX-DOM-CAP01', title: 'Other capability', domain_id: 'XX-DOM', position: 1, description: 'Another capability.' }],
-    use_case: [...data.use_case, { id: 'XX-DOM-UC01', title: 'Do something', capability_id: 'XX-DOM-CAP01', goal: 'Do it.', result_id: 'XX-DOM-CMD01' }],
+    use_case: [...data.use_case, { id: 'XX-DOM-UC01', title: 'Do something', domain_id: 'XX-DOM', goal: 'Do it.', result_id: 'XX-DOM-CMD01' }],
     use_case_actor: [...data.use_case_actor, { use_case_id: 'XX-DOM-UC01', position: 1, role_name: 'Member' }],
   };
 };
@@ -194,8 +193,7 @@ describe('LA-PRD-UC43-R01-T01 a step carries out a use case of another domain, a
     const store = await storeOf({
       ...data,
       domain: [...data.domain, { id: 'TL-OTH', title: 'Other', product_id: 'TL', position: 2, subdomain_type: 'core', description: 'Another domain of the product.' }],
-      capability: [...data.capability, { id: 'TL-OTH-CAP01', title: 'Other capability', domain_id: 'TL-OTH', position: 1, description: 'A capability of the other domain.' }],
-      use_case: [...data.use_case, { id: 'TL-OTH-UC01', title: 'Do something else', capability_id: 'TL-OTH-CAP01', goal: 'Do it.', result_id: 'TL-LEND-CMD01' }],
+      use_case: [...data.use_case, { id: 'TL-OTH-UC01', title: 'Do something else', domain_id: 'TL-OTH', goal: 'Do it.', result_id: 'TL-LEND-CMD01' }],
       use_case_actor: [...data.use_case_actor, { use_case_id: 'TL-OTH-UC01', position: 1, role_name: 'Librarian' }],
     });
     await runCommand(store, ADD_JOURNEY_STEP, step('TL-JR01-S02', { carries_out: 'TL-LEND-UC01' }));
@@ -211,10 +209,10 @@ describe('LA-PRD-UC43-R01-T01 a step carries out a use case of another domain, a
   });
 });
 
-describe('LA-PRD-UC47-R01-T01 removing a use case a step carries out is refused naming the step, and removing the journey keeps it', () => {
+describe('LA-UCS-UC47-R01-T01 removing a use case a step carries out is refused naming the step, and removing the journey keeps it', () => {
   it('refuses the use case and the policy, removes the journey with its steps and test, then the use case', async () => {
     const store = await storeOf();
-    await runCommand(store, ADD_USE_CASE, { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'Bring a tool back.', result_id: 'TL-LEND-CMD01', actors: ['Librarian'] });
+    await runCommand(store, ADD_USE_CASE, { id: 'TL-LEND-UC02', title: 'Return a tool', domain_id: 'TL-LEND', goal: 'Bring a tool back.', result_id: 'TL-LEND-CMD01', actors: ['Librarian'] });
     await runCommand(store, ADD_JOURNEY_STEP, step('TL-JR01-S02', { carries_out: 'TL-LEND-UC02' }));
     const useCase = await refusal(store, REMOVE_USE_CASE, { id: 'TL-LEND-UC02' });
     expect(useCase.problems.map((p) => p.message).join(' ')).toContain('TL-JR01-S02');
@@ -238,7 +236,7 @@ describe('LA-PRD-UC33-R04-T01 a journey serves its product\'s outcomes, and what
     expect(fileOf(store, 'serves')).toBe(before);
     await runCommand(store, CHANGE_JOURNEY, { id: 'TL-JR01', serves: ['TL-BO01', 'TL-BO02'] });
     await runCommand(store, ADD_JOURNEY_STEP, step('TL-JR01-S02', { carries_out: 'TL-LEND-UC01' }));
-    // The use case serves TL-BO01 through its capability too; TL-BO02 only through the journey.
+    // The use case serves TL-BO01 through its aggregate too; TL-BO02 only through the journey.
     expect(runQuery(store, GET_SERVES, { id: 'TL-LEND-UC01' })).toEqual({ id: 'TL-LEND-UC01', outcomes: ['TL-BO01', 'TL-BO02'], useCases: ['TL-LEND-UC01'], journeys: ['TL-JR01'] });
     // The handoff's policy serves them through the journey alone.
     expect(runQuery(store, GET_SERVES, { id: 'TL-LEND-PO01' })).toMatchObject({ outcomes: ['TL-BO01', 'TL-BO02'], journeys: ['TL-JR01'] });
@@ -253,12 +251,12 @@ describe('LA-PRD-UC33-R04-T02 a journey serves its product\'s outcomes, and its 
     const appearance = { journey: { id: 'TL-JR01', title: 'Borrow a tool and bring it back' } };
     expect(runQuery(store, GET_USE_CASE, { id: 'TL-LEND-UC01' }).journeys).toEqual([{ ...appearance, step: { id: 'TL-JR01-S02', title: 'Step TL-JR01-S02' }, path: 'main', position: 2, before: { id: 'TL-JR01-S01', title: 'The library reminds the borrower' }, after: null }]);
     expect(runQuery(store, GET_COMMAND, { id: 'TL-LEND-CMD01' }).policies[0].journeys).toMatchObject([{ ...appearance, step: { id: 'TL-JR01-S01' }, before: null, after: { id: 'TL-JR01-S02' } }]);
-    expect(runQuery(store, GET_BUSINESS_OUTCOME, { id: 'TL-BO01' })).toMatchObject({ servedBy: ['TL-LEND-CAP01'], journeys: [{ id: 'TL-JR01', title: 'Borrow a tool and bring it back' }] });
+    expect(runQuery(store, GET_BUSINESS_OUTCOME, { id: 'TL-BO01' })).toMatchObject({ servedBy: [{ id: 'TL-LEND-A1', kind: 'aggregate', title: 'Loan' }], journeys: [{ id: 'TL-JR01', title: 'Borrow a tool and bring it back' }] });
     const page = runQuery(store, GET_JOURNEY, { id: 'TL-JR01-S01' });
     expect(page.record).toEqual({ id: 'TL-JR01-S01', kind: 'journey_step' });
     expect(page.paths[0].steps.map((s) => s.carriesOut)).toMatchObject([
       { kind: 'policy', id: 'TL-LEND-PO01', hears: { id: 'TL-LEND-EV01' }, sends: { id: 'TL-LEND-CMD01' }, domain: { id: 'TL-LEND' } },
-      { kind: 'use_case', id: 'TL-LEND-UC01', actors: ['Member'], capability: { id: 'TL-LEND-CAP01' }, domain: { id: 'TL-LEND' } },
+      { kind: 'use_case', id: 'TL-LEND-UC01', actors: ['Member'], group: { id: 'TL-LEND-A1' }, domain: { id: 'TL-LEND' } },
     ]);
   });
 });

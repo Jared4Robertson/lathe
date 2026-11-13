@@ -98,6 +98,7 @@ export const NEXT_READ_MODEL_ID: QueryDefinition<{ kind: string; parent: string 
 function readModelText(page: ReadModelPage): string {
   const { readModel: row } = page;
   const lines = [`Read model ${row.id}: ${row.title}`, `  domain: ${row.domain_id}`, `  description: ${row.description}`];
+  if (page.serves.length) lines.push(`  serves: ${page.serves.join(', ')}`);
   const listed = (links: string[]) => (links.length ? ` [${links.join('; ')}]` : '');
   const technical = (t: { meets: string[]; packages: string[]; helpers: string[] }) => [...t.meets.map((x) => `meets ${x}`), ...t.packages.map((x) => `uses ${x}`), ...t.helpers.map((x) => `helper file ${x}`)];
   const code = (label: string, c: { code: { id: string; title: string }; meets: string[]; packages: string[]; helpers: string[] }) => `${label} ${c.code.id}: ${c.code.title}${listed(technical(c))}`;

@@ -16,7 +16,7 @@ import { loadConfig, PACKAGE_DIR } from '../../config.ts';
 import { attachCached, baseKey, copyDatabase, isValidated, markValidated, productKey, validatedKey, writeCached } from './cache.ts';
 import { appendRows, insertRows } from './insert.ts';
 import { settleWrite, type Settled } from './journal.ts';
-import { integrityQueries, materializeViewsSql, recordScopeColumns, recordScopeSql, storeViewsSql, type IntegrityQuery } from './integrity.ts';
+import { integrityQueries, materializeViewsSql, recordScopeColumns, recordScopeSql, storeViewsSql, useCaseGroupsSql, type IntegrityQuery } from './integrity.ts';
 import { problemAt, StoreError, type Origin, type StoreProblem } from './problems.ts';
 import { productKindSql, type DeclarationProblem } from './product-kinds.ts';
 import type { Located } from './references.ts';
@@ -703,6 +703,7 @@ export class Store {
       await connection.run(storeViewsSql(schema));
       await this.step('write holds: record_scope', () =>
         connection.run(sameScope ? `CREATE VIEW record_scope AS SELECT * FROM ${sqlName(this.dataDb)}.record_scope` : recordScopeSql(schema)));
+      await connection.run(useCaseGroupsSql(schema));
       // The integrity queries only read, so they run side by side on a few connections.
       const queries = allIntegrityQueries(schema);
       const extra = await Promise.all(
@@ -928,6 +929,7 @@ export class Store {
         throw error;
       });
       await this.step('record_scope', () => builder.run(recordScopeSql(schema)));
+      await builder.run(useCaseGroupsSql(schema));
       await this.step('views made tables', () => builder.run(materializeViewsSql()));
       // The integrity queries only read, so they run side by side on a few connections; their problems keep the
       // queries' order.

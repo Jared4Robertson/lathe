@@ -13,11 +13,11 @@ const stageButton = (name: string) => within(screen.getByRole('group', { name: '
 const at = () => decodeURIComponent(window.location.pathname);
 const press = (target: Element, key: string, mods: { altKey?: boolean } = {}) => fireEvent.keyDown(target, { key, code: key, ...mods });
 
-/** Left steps from the use case out to its capability and Right back in to it, each announced. */
+/** Left steps from the use case out to its Use cases stage and Right back in to it, each announced. */
 async function walksOutAndIn(target: () => Element) {
   press(target(), 'ArrowLeft');
-  await waitFor(() => expect(at()).toBe('/P-D-CAP01'));
-  await waitFor(() => expect(announcer()).toHaveTextContent('Capability Lending'));
+  await waitFor(() => expect(at()).toBe('/P-D/use-cases'));
+  await waitFor(() => expect(announcer()).toHaveTextContent(/Use cases/));
   press(target(), 'ArrowRight');
   await waitFor(() => expect(at()).toBe('/P-D-UC01'));
   await waitFor(() => expect(announcer()).toHaveTextContent('Use case Lend a thing'));
@@ -101,10 +101,10 @@ describe('the walking letters', () => {
   it('LA-V61-R49-T07 W, A, S and D walk the Graph, ERD and Trace stages as the arrows do, plain only, and stay with a text field', async () => {
     await openApp('/P-D-UC01?stage=graph', { data: modelWorkspace() });
     await waitFor(() => expect(document.querySelector('.focus-stage .graph-box')).not.toBeNull());
-    // The Tree view: A out to the capability, D back in, each announced.
+    // The Tree view: A out to the Use cases stage, D back in, each announced.
     letter(document.body, 'a');
-    await waitFor(() => expect(at()).toBe('/P-D-CAP01'));
-    await waitFor(() => expect(announcer()).toHaveTextContent('Capability Lending'));
+    await waitFor(() => expect(at()).toBe('/P-D/use-cases'));
+    await waitFor(() => expect(announcer()).toHaveTextContent(/Use cases/));
     letter(document.body, 'd');
     await waitFor(() => expect(at()).toBe('/P-D-UC01'));
     // With Ctrl, Alt or Shift held, the letter keeps its own meaning: nothing steps, and the card stays.
@@ -150,12 +150,12 @@ describe('out and in', () => {
     await waitFor(() => expect(document.querySelector('.focus-stage .graph-box')).not.toBeNull());
     // The Graph, in every view: out to the parent, in to its first child.
     shift('ArrowUp');
-    await waitFor(() => expect(at()).toBe('/P-D-CAP01'));
-    await waitFor(() => expect(announcer()).toHaveTextContent('Capability Lending'));
+    await waitFor(() => expect(at()).toBe('/P-D/use-cases'));
+    await waitFor(() => expect(announcer()).toHaveTextContent(/Use cases/));
     shift('S');
     await waitFor(() => expect(at()).toBe('/P-D-UC01'));
     fireEvent.click(toolbarButton('Out to the parent'));
-    await waitFor(() => expect(at()).toBe('/P-D-CAP01'));
+    await waitFor(() => expect(at()).toBe('/P-D/use-cases'));
     fireEvent.click(toolbarButton('In to the first child'));
     await waitFor(() => expect(at()).toBe('/P-D-UC01'));
     // Shift with Left or Right, or with A or D, does nothing.

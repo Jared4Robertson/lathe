@@ -22,7 +22,6 @@ const files = (root: string) => Object.fromEntries(readdirSync(path.join(root, '
 describe('Record keeping in Domain modeling', () => {
   it.each<[string, string, Input, Step[]?]>([
     ['LA-MOD-UC101-R01-T01 LA-MOD-UC101-FL-T', 'domain remove-domain', { id: 'TL-CAT' }, [['domain add-domain', { id: 'TL-CAT', title: 'Cataloging', product_id: 'TL', position: 2, subdomain_type: 'supporting', description: 'Which tools the library holds.' }]]],
-    ['LA-MOD-UC102-R01-T01 LA-MOD-UC102-FL-T', 'domain remove-capability', { id: 'TL-LEND-CAP02' }, [['domain add-capability', { id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 2, description: 'Taking tools back.' }]]],
     ['LA-MOD-UC103-R01-T01 LA-MOD-UC103-FL-T', 'domain add-term', { id: 'TL-LEND-TM03', title: 'Late fee', domain_id: 'TL-LEND', meaning: 'What a member owes for a late return.' }],
     ['LA-MOD-UC104-R01-T01 LA-MOD-UC104-FL-T', 'domain change-term', { id: 'TL-LEND-TM01', meaning: 'One tool lent to one member, kept as a loan.' }],
     ['LA-MOD-UC105-R01-T01 LA-MOD-UC105-FL-T', 'domain remove-term', { id: 'TL-LEND-TM02' }],

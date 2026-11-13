@@ -10,12 +10,12 @@ import { productKindWorkspace } from './fixtures/product-kinds';
 describe('LA-EXP-UC02-R08-T03 the space\'s record index, from the record summaries and the meta model', () => {
   it('reads a record per row of each kind table, with its one parent, and its product and domain up the chain', () => {
     const index = recordIndexOf(workspace(), 'DM');
-    expect(index.byId.get('DM-SHOP-UC01')).toMatchObject({ kind: 'use_case', parent: 'DM-SHOP-CAP01', product: 'DM', domain: 'DM-SHOP', file: 'use_case.jsonl' });
+    expect(index.byId.get('DM-SHOP-UC01')).toMatchObject({ kind: 'use_case', parent: 'DM-SHOP', product: 'DM', domain: 'DM-SHOP', file: 'use_case.jsonl' });
     expect(index.byId.get('DM-SHOP-EP01')).toMatchObject({ parent: 'DM-SHOP-CMD01', product: 'DM', domain: 'DM-SHOP' });
     expect(index.byId.get('DM-SHOP-Q01')).toMatchObject({ parent: 'DM-SHOP', product: 'DM', domain: 'DM-SHOP' });
     expect(index.byId.get('DM-Q01')).toMatchObject({ parent: 'DM', product: 'DM', domain: null });
     expect(index.byId.get('DM')).toMatchObject({ parent: null, product: 'DM', domain: null });
-    expect(index.children.get('DM-SHOP-CAP01')!.map((r) => r.id)).toEqual(['DM-SHOP-UC01']);
+    expect(index.children.get('DM-SHOP')!.map((r) => r.id)).toContain('DM-SHOP-UC01');
   });
 
   it('gives a kind with no owner its product from its ID, and a specification its domain too', () => {

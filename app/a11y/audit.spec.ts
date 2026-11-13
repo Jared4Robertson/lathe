@@ -79,7 +79,7 @@ const PAGES: State[] = [
   { name: 'entry point page', url: '/LA-PLT-ENTRY01', ready: '[data-aggregate="entry-point"]' },
   { name: 'tooling page', url: '/LA-PRD-TOOL01', ready: '[data-aggregate="tooling"]' },
   // The Domain, Test data set, Pattern and Standard aggregates' own pages.
-  { name: 'capability page', url: '/LA-PRD-CAP02', ready: '[data-aggregate="domain"] .capability-use-cases' },
+  { name: 'domain page, use cases by aggregate and read model', url: '/LA-PRD', ready: '[data-aggregate="domain"] .record-group h3 a' },
   { name: 'test data set page', url: '/LA-MOD-TD30', ready: '[data-aggregate="test-data-set"] .record-lead' },
   { name: 'pattern page', url: '/LA-PAT-RECORD-PAGE', ready: '[data-aggregate="pattern"] .pattern-rules' },
   { name: 'standard page', url: '/LA-STD-MODELING', ready: '[data-aggregate="standard"] .standard-rules' },

@@ -73,15 +73,23 @@ describe('LA-V101-R02-T01 the Use case editor writes only through the aggregate\
     await waitFor(() => expect(window.location.pathname).toBe('/DM-SHOP-UC01-FL-S04'));
   });
 
-  it('Move is its own action: it sends Move a use case to the capability chosen', async () => {
+  it('Move is its own action: it sends Move a use case to the domain chosen, with a result there, and goes to its new ID', async () => {
     const user = userEvent.setup();
-    const { commands } = await openApp('/DM-SHOP-UC01', { command: () => ({ answer: ok }) });
-    await within(main()).findByText('A shopper adds an item.');
-    await user.click(within(toolbar('DM-SHOP-UC01')).getByRole('button', { name: 'Move' }));
-    const form = screen.getByRole('form', { name: 'Move DM-SHOP-UC01' });
-    await user.selectOptions(within(form).getByRole('combobox', { name: /^Capability/ }), 'DM-PAY-CAP01');
+    const data = addRows(workspace(), 'use_case', { id: 'DM-SHOP-UC02', title: 'Empty the basket', domain_id: 'DM-SHOP', goal: 'A shopper empties the basket.', result_id: 'DM-SHOP-CMD01' });
+    const { commands } = await openApp('/DM-SHOP-UC02', { data, command: () => ({ answer: ok }) });
+    await within(main()).findByText('A shopper empties the basket.');
+    await user.click(within(toolbar('DM-SHOP-UC02')).getByRole('button', { name: 'Move' }));
+    const form = screen.getByRole('form', { name: 'Move DM-SHOP-UC02' });
+    const result = within(form).getByRole('combobox', { name: /^Result/ });
+    expect(result).toHaveValue('DM-SHOP-CMD01');
+    // Choosing a domain offers its own commands and queries as the result, the old one no longer chosen.
+    await user.selectOptions(within(form).getByRole('combobox', { name: /^Domain/ }), 'DM-PAY');
+    expect(result).toHaveValue('');
+    expect(within(result).getAllByRole('option').map((o) => o.getAttribute('value')).filter(Boolean)).toEqual(['DM-PAY-CMD01']);
+    await user.selectOptions(result, 'DM-PAY-CMD01');
     await user.click(within(form).getByRole('button', { name: 'Move' }));
-    await waitFor(() => expect(commands).toEqual([{ route: '/api/use-case/move-use-case', input: { id: 'DM-SHOP-UC01', capability_id: 'DM-PAY-CAP01' } }]));
+    await waitFor(() => expect(commands).toEqual([{ route: '/api/use-case/move-use-case', input: { id: 'DM-SHOP-UC02', domain_id: 'DM-PAY', result_id: 'DM-PAY-CMD01' } }]));
+    await waitFor(() => expect(window.location.pathname).toBe('/DM-PAY-UC02'));
   });
 
   it('LA-V101-R14-T01 Move sends Move a UC requirement to the use case chosen, and goes to its next free number there', async () => {
@@ -102,11 +110,11 @@ describe('LA-V101-R02-T01 the Use case editor writes only through the aggregate\
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(expect.arrayContaining(['Edit', 'Add…', 'Remove']));
   });
 
-  it('adds a use case from its capability\'s page through the aggregate\'s own Add', async () => {
+  it('adds a use case from its domain\'s page through the aggregate\'s own Add, its result one of the domain\'s', async () => {
     const user = userEvent.setup();
-    const { commands } = await openApp('/DM-SHOP-CAP01', { command: () => ({ answer: ok }) });
-    // The capability's page is the Domain aggregate's, read before its actions show.
-    const actions = await screen.findByRole('toolbar', { name: 'Change DM-SHOP-CAP01' });
+    const { commands } = await openApp('/DM-SHOP', { command: () => ({ answer: ok }) });
+    // The domain's page is the Domain aggregate's, read before its actions show.
+    const actions = await screen.findByRole('toolbar', { name: 'Change DM-SHOP' });
     const add = within(actions).queryByRole('button', { name: 'Add use case' }) ?? within(actions).getByRole('button', { name: 'Add…' });
     await user.click(add);
     if (add.textContent === 'Add…') await user.click(screen.getByRole('button', { name: 'Use case' }));
@@ -114,13 +122,15 @@ describe('LA-V101-R02-T01 the Use case editor writes only through the aggregate\
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-SHOP-UC02'));
     await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'Empty the basket');
     await user.type(within(form).getByRole('textbox', { name: /^goal/ }), 'A shopper empties the basket.');
-    await user.selectOptions(within(form).getByRole('combobox', { name: /^Result/ }), 'DM-SHOP-CMD01');
+    const result = within(form).getByRole('combobox', { name: /^Result/ });
+    expect(within(result).getAllByRole('option').map((o) => o.getAttribute('value')).filter(Boolean)).toEqual(['DM-SHOP-CMD01', 'DM-SHOP-QRY01']);
+    await user.selectOptions(result, 'DM-SHOP-CMD01');
     await user.type(within(form).getByRole('textbox', { name: /^Actors/ }), 'Shopper');
     await user.click(within(form).getByRole('button', { name: 'Add use case' }));
-    await waitFor(() => expect(commands).toEqual([{ route: '/api/use-case/add-use-case', input: { capability_id: 'DM-SHOP-CAP01', id: 'DM-SHOP-UC02', title: 'Empty the basket', goal: 'A shopper empties the basket.', result_id: 'DM-SHOP-CMD01', actors: ['Shopper'] } }]));
+    await waitFor(() => expect(commands).toEqual([{ route: '/api/use-case/add-use-case', input: { domain_id: 'DM-SHOP', id: 'DM-SHOP-UC02', title: 'Empty the basket', goal: 'A shopper empties the basket.', result_id: 'DM-SHOP-CMD01', actors: ['Shopper'] } }]));
   });
 
-  it('Edit offers its product\'s commands and queries as Result (LA-PAT-FIELD-INPUTS), and sends a new one as result_id', async () => {
+  it('Edit offers its domain\'s commands and queries as Result (LA-PAT-FIELD-INPUTS), and sends a new one as result_id', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/DM-SHOP-UC01', { command: () => ({ answer: ok }) });
     await within(main()).findByText('A shopper adds an item.');
@@ -128,7 +138,7 @@ describe('LA-V101-R02-T01 the Use case editor writes only through the aggregate\
     const form = screen.getByRole('form', { name: 'Edit DM-SHOP-UC01' });
     const picker = within(form).getByRole('combobox', { name: /^Result/ });
     expect(picker).toHaveValue('DM-SHOP-CMD01');
-    expect(within(picker).getAllByRole('option').map((o) => o.getAttribute('value'))).toEqual(expect.arrayContaining(['DM-SHOP-CMD01', 'DM-SHOP-QRY01']));
+    expect(within(picker).getAllByRole('option').map((o) => o.getAttribute('value')).filter(Boolean)).toEqual(['DM-SHOP-CMD01', 'DM-SHOP-QRY01']);
     await user.selectOptions(picker, 'DM-SHOP-QRY01');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/use-case/change-use-case', input: { id: 'DM-SHOP-UC01', result_id: 'DM-SHOP-QRY01' } }]));
@@ -150,11 +160,25 @@ describe('LA-V101-R15-T01 a use case\'s page shows its result, and whether it is
     expect(readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8')).toMatch(/\.use-case-kind \{ display: block; white-space: nowrap; \}/);
   });
 
+  /** The demo shop with a query use case: its result the Basket summary's query. */
+  const withQueryUseCase = () => addRows(workspace(), 'use_case', { id: 'DM-SHOP-UC02', title: 'See the basket', domain_id: 'DM-SHOP', goal: 'A shopper sees the basket.', result_id: 'DM-SHOP-QRY01' });
+  /** The value of one of the page's facts by its label. */
+  const fact = async (label: string) => (await within(main()).findByText(label, { selector: '.use-case-facts dt' })).nextElementSibling as HTMLElement;
+
   it('says Query use case for a use case whose result is a query', async () => {
-    await openApp('/DM-PAY-UC01');
+    await openApp('/DM-SHOP-UC02', { data: withQueryUseCase() });
     const query = await result();
     expect(within(query).getByRole('link', { name: /DM-SHOP-QRY01/ })).toBeInTheDocument();
     expect(query).toHaveTextContent('Query use case');
+  });
+
+  it('names its domain, and beside its result the aggregate or read model it sits with, by its kind', async () => {
+    await openApp('/DM-SHOP-UC01');
+    expect(within(await fact('Domain')).getByRole('link', { name: /DM-SHOP\s*Shopping/ })).toHaveAttribute('href', '/DM-SHOP');
+    expect(within(await fact('Aggregate')).getByRole('link', { name: /DM-SHOP-A1\s*Basket/ })).toHaveAttribute('href', '/DM-SHOP-A1');
+    await openApp('/DM-SHOP-UC02', { data: withQueryUseCase() });
+    expect(within(await fact('Read model')).getByRole('link', { name: /DM-SHOP-RM01\s*Basket summary/ })).toHaveAttribute('href', '/DM-SHOP-RM01');
+    expect(within(main()).queryByText('Aggregate', { selector: '.use-case-facts dt' })).toBeNull();
   });
 
   it('names the use case under Result of in its command\'s Links in', async () => {

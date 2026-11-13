@@ -13,7 +13,7 @@ import { main, openApp } from './helpers';
 const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.getByRole('toolbar', { name: `Change ${id}` });
 
-/** The demo shop with two outcomes: the first served by a capability and measured by a test, the second measured outside the code. */
+/** The demo shop with two outcomes: the first served by the Basket aggregate and measured by a test, the second measured outside the code. */
 function withOutcomes(): ServedData {
   const w = workspace();
   addRows(
@@ -22,7 +22,7 @@ function withOutcomes(): ServedData {
     { id: 'DM-BO01', title: 'More baskets checked out', product_id: 'DM', statement: 'More of the baskets shoppers fill are checked out.', measure: 'Baskets checked out over baskets started, each week.', target: 'Two in three within a quarter.' },
     { id: 'DM-BO02', title: 'Fewer refunds', product_id: 'DM', statement: 'Shoppers ask for fewer refunds.', measure: 'Refunds per hundred orders, each month.', target: 'Under two within a year.' },
   );
-  addRows(w, 'serves', { source_id: 'DM-SHOP-CAP01', target_id: 'DM-BO01' });
+  addRows(w, 'serves', { source_id: 'DM-SHOP-A1', target_id: 'DM-BO01' });
   addRows(w, 'measured_by', { source_id: 'DM-BO01', target_id: 'DM-SHOP-UC01-R01-T01' });
   setRow(w, 'business_outcome', 'DM-BO02', { measured_outside: 'Counted from the payment provider\'s refund report each month.' });
   return w;
@@ -75,7 +75,7 @@ describe('LA-V110-R02-T01 the Business outcome editor writes only through the ag
 describe('LA-V110-R03-T01 a refused Business outcome command shows every reason, keeps what was entered, and changes nothing', () => {
   it('Remove sends Remove a business outcome and shows the refusal naming what still references it', async () => {
     const user = userEvent.setup();
-    const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'referenced', table: 'business_outcome', key: 'DM-BO01', message: 'Business outcome DM-BO01 is referenced, so it stays: capability DM-SHOP-CAP01 serves it' }] };
+    const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'referenced', table: 'business_outcome', key: 'DM-BO01', message: 'Business outcome DM-BO01 is referenced, so it stays: aggregate DM-SHOP-A1 serves it' }] };
     const { commands } = await openApp('/DM-BO01', { data: withOutcomes(), command: () => ({ answer: refusal }) });
     await within(main()).findByText('More of the baskets shoppers fill are checked out.');
     await user.click(within(toolbar('DM-BO01')).getByRole('button', { name: 'Remove' }));
@@ -83,7 +83,7 @@ describe('LA-V110-R03-T01 a refused Business outcome command shows every reason,
     await user.click(within(panel).getByRole('button', { name: 'Remove DM-BO01' }));
     const alert = await within(panel).findByRole('alert');
     expect(alert).toHaveTextContent('The removal was refused. Nothing was changed.');
-    expect(alert).toHaveTextContent('capability DM-SHOP-CAP01 serves it');
+    expect(alert).toHaveTextContent('aggregate DM-SHOP-A1 serves it');
     expect(alert).toHaveFocus();
     expect(commands).toEqual([{ route: '/api/business-outcome/remove-business-outcome', input: { id: 'DM-BO01' } }]);
     expect(window.location.pathname).toBe('/DM-BO01');

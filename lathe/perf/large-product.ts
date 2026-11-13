@@ -6,8 +6,8 @@
 //   node lathe/perf/large-product.ts [folder]    writes it to the folder (default: the cache, below) and prints where
 //
 // Building it takes minutes, so it is kept in the cache folder under a name made of a hash of this file and the schema's
-// migrations (largeProduct() builds it again only when either changes). Its shape, per domain: four capabilities of four
-// use cases each (three requirements with a test each, a flow of four steps fulfilling them, offered through both
+// migrations (largeProduct() builds it again only when either changes). Its shape, per domain: sixteen use cases
+// (three requirements with a test each, a flow of four steps fulfilling them, offered through both
 // interfaces, and a flow test), four aggregates (three entities, two invariants with tests, four commands with handlers), two read models
 // (three queries with handlers), and ten terms. DOMAINS domains make about 64,000 records.
 import { createHash } from 'node:crypto';
@@ -20,7 +20,6 @@ import { ADD_INVARIANT } from '../src/domain-modeling/aggregate/commands/add-inv
 import { ADD_INVARIANT_TEST } from '../src/domain-modeling/aggregate/commands/add-invariant-test.ts';
 import { ADD_COMMAND } from '../src/domain-modeling/command/commands/add-command.ts';
 import { ADD_COMMAND_HANDLER } from '../src/domain-modeling/command/commands/add-command-handler.ts';
-import { ADD_CAPABILITY } from '../src/domain-modeling/domain/commands/add-capability.ts';
 import { ADD_DOMAIN } from '../src/domain-modeling/domain/commands/add-domain.ts';
 import { ADD_TERM } from '../src/domain-modeling/domain/commands/add-term.ts';
 import { ADD_INTERFACE } from '../src/product/interface/commands/add-interface.ts';
@@ -114,15 +113,13 @@ function domainSteps(d: number, useCases: string[]): Step[] {
       steps.push([ADD_QUERY_HANDLER, { id: `${id}-H`, title: `list${domainCode(d)}x${query}`, query_id: id, file: `src/${domainCode(d)}/queries.ts`, description: 'Reads from its reader.' }]);
     }
   }
-  // Capabilities, each with its use cases.
+  // The domain's use cases, four at a time.
   let useCase = 0;
   for (let c = 1; c <= 4; c++) {
-    const capability = `${domain}-CAP${pad(c)}`;
-    steps.push([ADD_CAPABILITY, { id: capability, title: `${noun[0].toUpperCase()}${noun.slice(1)} ${['intake', 'care', 'billing', 'records'][c - 1]} ${d + 1}`, domain_id: domain, position: c, description: `Area ${d + 1}, capability ${c}.` }]);
     for (let u = 0; u < 4; u++) {
       const uc = `${domain}-UC${pad(++useCase)}`;
       const title = `${pick(VERBS)} ${noun} ${d + 1}.${useCase}`;
-      steps.push([ADD_USE_CASE, { id: uc, title, capability_id: capability, goal: `The Owner gets a ${noun} through step ${useCase}.`, result_id: `${domain}-CMD${pad(((useCase - 1) % command) + 1)}`, actors: ['Owner'] }]);
+      steps.push([ADD_USE_CASE, { id: uc, title, domain_id: domain, goal: `The Owner gets a ${noun} through step ${useCase}.`, result_id: `${domain}-CMD${pad(((useCase - 1) % command) + 1)}`, actors: ['Owner'] }]);
       const requirements: string[] = [];
       for (let q = 1; q <= 3; q++) {
         const id = `${uc}-R${pad(q)}`;

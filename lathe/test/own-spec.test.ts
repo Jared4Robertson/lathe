@@ -13,7 +13,7 @@ const REPO = path.join(here, '..', '..');
 const RULE_KINDS = ['constraint', 'invariant', 'uc_requirement', 'view_requirement', 'api_requirement', 'pattern_rule', 'standard_rule'];
 
 /** The kinds titled by a name (LA-STD-NAMING-R04): a proper name or a noun phrase, one to four words. */
-const NAME_KINDS = ['product', 'integration', 'interface', 'domain', 'capability', 'aggregate', 'entity', 'value_object', 'term', 'read_model', 'pattern', 'standard', 'domain_service', 'view', 'ui_component', 'test_data_set', 'business_outcome'];
+const NAME_KINDS = ['product', 'integration', 'interface', 'domain', 'aggregate', 'entity', 'value_object', 'term', 'read_model', 'pattern', 'standard', 'domain_service', 'view', 'ui_component', 'test_data_set', 'business_outcome'];
 
 /** Lathe's own spec and the Tool Library's. */
 const PRODUCTS = [

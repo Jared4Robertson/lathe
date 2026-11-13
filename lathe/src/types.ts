@@ -65,6 +65,8 @@ export interface SpecRecord {
   domain: string | null;
   /** The aggregate it sits in (itself for an aggregate), or null. */
   aggregate: string | null;
+  /** For a use case and what sits under it, its group: its result's aggregate or read model; null for any other record. */
+  group: string | null;
   /** The record's typed columns besides id and title, as stored, parent columns included: a requirement's statement, a test's level and state. */
   fields: Row;
   /** The rows of the part tables the record owns, by table, in key order: an entity's entity_field rows, a table's table_key rows. */
