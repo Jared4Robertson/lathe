@@ -332,9 +332,9 @@ describe('Lathe on a phone', () => {
     phone();
     window.sessionStorage.setItem('lathe:place', JSON.stringify({ depth: 1, hiddenKinds: [], card: { open: true, expanded: true } }));
     await openApp('/P-D-UC01?stage=graph', served());
-    // The use case's Use cases stage, its parent, is drawn beside it.
-    await waitFor(() => expect(boxElement('P-D/use-cases')).not.toBeNull());
-    const at = pointOn('P-D/use-cases');
+    // The use case's group, its result's aggregate, its parent, is drawn beside it.
+    await waitFor(() => expect(boxElement('P-D/use-cases/P-D-A3')).not.toBeNull());
+    const at = pointOn('P-D/use-cases/P-D-A3');
     const canvas = canvasOf();
     // A drag that starts on the box pans: it opens nothing. So does a pinch.
     const finger = (id: number, x: number, y: number) => ({ clientX: x, clientY: y, pointerType: 'touch', pointerId: id, button: 0 });
@@ -354,7 +354,7 @@ describe('Lathe on a phone', () => {
     fireEvent.pointerMove(canvas, finger(7, at.x + 4, at.y + 3));
     expect(cameraOf()).toBe(pan);
     fireEvent.pointerUp(canvas, finger(7, at.x + 4, at.y + 3));
-    await waitFor(() => expect(window.location.pathname).toBe('/P-D/use-cases'));
+    await waitFor(() => expect(window.location.pathname).toBe('/P-D/use-cases/P-D-A3'));
     // No card stands in for the record sheet: nothing is left selected.
     expect(document.querySelector('.card[role="status"]')).toBeNull();
     // On the ERD a tap opens a box at once too.

@@ -59,7 +59,7 @@ describe('record page', () => {
     expect(within(card()).getByText('A shopper adds an item.').closest('.markdown')).not.toBeNull();
     // The facts: its data file and line; its parent is the breadcrumb's last step.
     expect(fact('Data file')).toHaveTextContent('use_case.jsonl:2');
-    expect([...card().querySelector('.breadcrumb')!.querySelectorAll('a')].at(-1)).toHaveAttribute('href', '/DM-SHOP/use-cases');
+    expect([...card().querySelector('.breadcrumb')!.querySelectorAll('a')].at(-1)).toHaveAttribute('href', '/DM-SHOP/use-cases/DM-SHOP-A1');
 
     // The children are the wiki's: its UC requirements, and its flow.
     const children = within(card()).getByRole('heading', { name: /^UC requirements/ });

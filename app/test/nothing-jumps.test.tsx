@@ -118,11 +118,11 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
   it('LA-V61-R38-T02 the graph canvas stays mounted when the graph re-centers', async () => {
     startAtDepth(1);
     await openApp('/P-D-UC01?stage=graph', { data: testWorkspace() });
-    await waitFor(() => expect(boxElement('P-D/use-cases')).not.toBeNull());
+    await waitFor(() => expect(boxElement('P-D/use-cases/P-D-A3')).not.toBeNull());
     const canvas = document.querySelector('.graph-flow');
     const drawing = document.querySelector('.graph-flow canvas');
-    fireEvent.click(boxElement('P-D/use-cases')!);
-    await waitFor(() => expect(window.location.pathname).toBe('/P-D/use-cases'));
+    fireEvent.click(boxElement('P-D/use-cases/P-D-A3')!);
+    await waitFor(() => expect(window.location.pathname).toBe('/P-D/use-cases/P-D-A3'));
     await waitFor(() => expect(boxElement('P-D-UC01')).not.toBeNull());
     expect(document.querySelector('.graph-flow')).toBe(canvas);
     expect(document.querySelector('.graph-flow canvas')).toBe(drawing);
