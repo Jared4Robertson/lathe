@@ -64,22 +64,28 @@ describe('side navigation', () => {
     await waitFor(() => expect(screen.queryByRole('navigation', { name: 'Main' })).toBeNull());
   });
 
-  it('LA-V90-R06-T01 Sections fold on their own, the current place is marked and its section opens itself, counts are quiet badges, and the footer says where the specs come from', async () => {
+  it('LA-V90-R06-T01 Section headings are labels that never fold, the current place is marked, counts are quiet badges, and the footer says where the specs come from', async () => {
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
-    const head = (name: RegExp) => within(nav()).getByRole('button', { name });
-    expect(head(/^Tools/)).toHaveAttribute('aria-expanded', 'true');
+    // Health, Domains and Shared, in that order, each a heading and never a control.
+    const sections = within(nav()).getAllByRole('heading', { level: 2 });
+    expect(sections.map((h) => h.textContent)).toEqual(['Health', 'Domains', 'Shared']);
+    for (const h of sections) expect(h.closest('button, a')).toBeNull();
+    expect(within(nav()).queryByRole('button', { name: /^(Health|Domains|Shared|Tools)$/ })).toBeNull();
+    // Health holds the Dashboard, Checks and the product's open questions, each with what it opens today.
+    const health = within(nav()).getByRole('list', { name: 'Health of Demo shop' });
+    expect(within(health).getAllByRole('link').map((a) => a.querySelector('.nav-label')?.textContent)).toEqual(['Dashboard', 'Checks', 'Open questions']);
+    expect(within(health).getByRole('link', { name: /^Open questions 1$/ })).toHaveAttribute('href', '/DM/question');
+    // Each domain shows its count of records beside its link, whose name stays the domain's.
+    const domains = within(nav()).getByRole('list', { name: 'Domains of Demo shop' });
+    expect(within(domains).getByRole('link', { name: 'Shopping' }).closest('.nav-row')!.querySelector('.nav-badge')).toHaveTextContent(/^\d+ records$/);
     // The current space has no heading of its own: its overview is its first row.
     expect(within(nav()).queryByRole('button', { name: /^Demo shop/ })).toBeNull();
     expect(nav().querySelector('.nav-space a')).toHaveAttribute('href', '/DM');
-    fireEvent.click(head(/^Tools/));
-    expect(head(/^Tools/)).toHaveAttribute('aria-expanded', 'false');
-    expect(within(nav()).queryByRole('link', { name: /^Checks \d+/ })).toBeNull();
 
-    // Opening a tool in a folded section opens it, and marks the tool open.
+    // A tool open over the page is marked open in Health.
     await openApp('/DM?panel=checks');
     await screen.findByRole('region', { name: 'Checks' });
-    expect(head(/^Tools/)).toHaveAttribute('aria-expanded', 'true');
     expect(within(nav()).getByRole('link', { name: /^Checks \d+/ })).toHaveAttribute('aria-expanded', 'true');
     await openApp('/DM-PAY');
     await screen.findByRole('heading', { level: 1, name: 'Paying' });

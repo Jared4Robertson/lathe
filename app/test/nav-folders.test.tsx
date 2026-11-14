@@ -154,10 +154,12 @@ describe('folders by stage', () => {
     expect([...main().querySelectorAll('h2.stage-title')].map((h) => h.childNodes[1]?.textContent)).toEqual(['Tests and checks', 'Domain model', 'Use cases', 'Interface design', 'Technical specification']);
   });
 
-  it('LA-V90-R16-T02 The product shows Shared only when it holds anything, before its domains', async () => {
+  it('LA-V90-R16-T02 The product shows Shared under Shared only when it holds anything, after its domains', async () => {
     await openApp('/DM', { data: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    // One Shared folder before the domains holds the product's own stages, as the graph's tree has it.
+    // Health, Domains, then Shared, whose one Shared folder holds the product's own stages, as the graph's tree has it.
+    expect(within(panel()).getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual(['Health', 'Domains', 'Shared']);
+    expect(within(within(panel()).getByRole('region', { name: 'Shared' })).getByRole('list', { name: 'Shared in Demo shop' })).toBeInTheDocument();
     expect(rows(list('Shared in Demo shop'))).toEqual(['Shared4']);
     const user = userEvent.setup();
     await user.click(head(list('Shared in Demo shop'), /^Shared/));
@@ -167,8 +169,8 @@ describe('folders by stage', () => {
     // Shared's Use cases holds only patterns, so it lists them itself.
     await user.click(head(own, /^Use cases/));
     expect(within(list('Use cases of Demo shop')).getByRole('link', { name: 'Audited action' })).toHaveAttribute('href', '/DM-PAT-AUDIT');
-    // The product's open questions are a group of their own.
-    expect(within(list('Groups of Demo shop')).getByRole('link', { name: /Open questions/ })).toHaveAttribute('href', '/DM/question');
+    // The product's open questions are in Health.
+    expect(within(list('Health of Demo shop')).getByRole('link', { name: /Open questions/ })).toHaveAttribute('href', '/DM/question');
 
     // Notebook shares nothing.
     await openApp('/NF');

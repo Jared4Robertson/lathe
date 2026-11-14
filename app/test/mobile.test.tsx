@@ -173,9 +173,13 @@ describe('Lathe on a phone', () => {
     fireEvent.click(within(topbar()).getByRole('button', { name: 'Open the navigation' }));
     const nav = screen.getByRole('navigation', { name: 'Main' });
     const foot = nav.querySelector<HTMLElement>('.nav-foot')!;
-    // In the footer, always in sight, before Appearance; not in a Tools section scrolled away below the rows.
+    // In the footer, always in sight, before Appearance; not in a section scrolled away below the rows.
     expect(within(foot).getAllByRole('link').map((a) => a.querySelector('.nav-label')?.textContent)).toEqual(['Dashboard', 'Checks', 'Changes', 'Appearance']);
     expect(within(nav).queryByRole('button', { name: /^Tools/ })).toBeNull();
+    // The wide screen's sections above it; Health does not list again what the footer holds, so with no open
+    // questions it has no rows and is left out.
+    expect(within(nav).getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual(['Domains', 'Shared']);
+    expect(within(nav.querySelector<HTMLElement>('.nav-scroll')!).queryByRole('link', { name: /^(Dashboard|Checks)/ })).toBeNull();
     expect(within(foot).getByRole('link', { name: /^Changes \d+ records? changed$/ })).toHaveAttribute('aria-expanded', 'false');
     fireEvent.click(within(foot).getByRole('link', { name: /^Changes/ }));
     expect(window.location.search).toBe('?panel=changes');

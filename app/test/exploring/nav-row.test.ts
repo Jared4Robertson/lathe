@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { RuleBroken } from '../../src/shell/prefs';
 import { foldOrUnfoldNavEntry } from '../../src/exploring/nav-row/commands/fold-or-unfold-nav-entry';
-import { foldOrUnfoldNavSection } from '../../src/exploring/nav-row/commands/fold-or-unfold-nav-section';
 import { openNavBranch } from '../../src/exploring/nav-row/commands/open-nav-branch';
 import { navRowRepository } from '../../src/exploring/nav-row/repository';
 import { holdToRules } from '../../src/exploring/nav-row/rules';
 
-// The Nav row's commands (LA-EXP-CMD03, CMD21, CMD22), each saved through NavRowRepository.
+// The Nav row's commands (LA-EXP-CMD03, CMD21), each saved through NavRowRepository.
 
 const folders = () => JSON.parse(window.sessionStorage.getItem('lathe:nav-folders') ?? 'null');
 
@@ -20,13 +19,10 @@ describe('LA-EXP-INV21-T the Nav row commands keep the rows through NavRowReposi
     expect(folders()).toEqual({ b: false, c: true, x: true });
   });
 
-  it('opens the branch to the page, and a section folds and opens, kept from one launch to the next', () => {
+  it('opens the branch to the page', () => {
     openNavBranch({ branch: ['a', 'b'] });
     expect(folders()).toEqual({ a: true, b: true });
-    foldOrUnfoldNavSection({ section: 'tools', open: false });
-    expect(window.localStorage.getItem('lathe:nav-sections')).toBe('{"tools":false}');
-    foldOrUnfoldNavSection({ section: 'tools', open: true });
-    expect(navRowRepository.load().sections).toEqual({ tools: true });
+    expect(navRowRepository.load().folders).toEqual({ a: true, b: true });
   });
 
   it('drops a stored value of any other form', () => {
@@ -37,9 +33,9 @@ describe('LA-EXP-INV21-T the Nav row commands keep the rows through NavRowReposi
 
 describe('LA-EXP-INV21-T A nav row has a key and is open or folded', () => {
   it('refuses a row without a key, and one neither open nor folded, with their reasons', () => {
-    expect(() => holdToRules({ folders: { '': true }, sections: {} })).toThrow(RuleBroken);
-    expect(() => holdToRules({ folders: { '': true }, sections: {} })).toThrow('A folder row has no key.');
-    expect(() => holdToRules({ folders: {}, sections: { tools: 'yes' as unknown as boolean } })).toThrow('The section tools is neither open nor folded.');
+    expect(() => holdToRules({ folders: { '': true } })).toThrow(RuleBroken);
+    expect(() => holdToRules({ folders: { '': true } })).toThrow('A folder row has no key.');
+    expect(() => holdToRules({ folders: { a: 'yes' as unknown as boolean } })).toThrow('The folder row a is neither open nor folded.');
     expect(() => openNavBranch({ branch: [''] })).toThrow(RuleBroken);
     expect(window.sessionStorage.getItem('lathe:nav-folders')).toBeNull();
   });

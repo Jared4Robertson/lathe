@@ -49,10 +49,11 @@ describe('routing', () => {
     expect(heading()).toHaveTextContent('Shopping');
   });
 
-  it('LA-V90-R04-T01 The menu lists each product and its domains beside the Tools section', async () => {
+  it('LA-V90-R04-T01 The menu lists each product and its domains under Domains', async () => {
     await openApp('/DM');
     const nav = menu();
-    expect(await within(nav).findByText('Tools')).toBeInTheDocument();
+    expect((await within(nav).findAllByRole('heading', { level: 2 })).map((h) => h.textContent)).toEqual(['Health', 'Domains', 'Shared']);
+    expect(within(nav).queryByText('Tools')).toBeNull();
     expect(within(nav).queryByText('Diagrams')).toBeNull();
 
     // The current space's section: its product, then its domains; another product is only in the rail.
@@ -60,7 +61,7 @@ describe('routing', () => {
     const demo = within(items).getByRole('link', { name: 'Demo shop' });
     expect(demo).toHaveAttribute('href', '/DM');
     expect(demo).toHaveAttribute('aria-current', 'page');
-    const domains = within(within(items).getByRole('list', { name: 'Domains of Demo shop' })).getAllByRole('link');
+    const domains = within(within(within(items).getByRole('region', { name: 'Domains' })).getByRole('list', { name: 'Domains of Demo shop' })).getAllByRole('link');
     expect(domains.map((a) => [a.textContent, a.getAttribute('href')])).toEqual([
       ['Paying', '/DM-PAY'],
       ['Shopping', '/DM-SHOP'],

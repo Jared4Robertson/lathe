@@ -546,19 +546,17 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 a.button.button { text-decoration: none; }
 a.button-ghost.button-ghost { color: var(--steel); }
 a.button-primary.button-primary { color: var(--on-mark); }
-:is(.icon-button, .button, .nav-section-head, .nav-chevron, .rail-item, .tree-toggle, .menu a, .menu button):focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
+:is(.icon-button, .button, .nav-chevron, .rail-item, .tree-toggle, .menu a, .menu button):focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
 
 /* The nav */
 .app.is-narrow { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); padding: 0; }
 .app.is-narrow > main { grid-row: 2; }
 .nav-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 2px 4px 6px; }
 .nav-scroll { flex: 1; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; align-content: start; margin: 0 -10px; }
-.nav-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
-.nav-section-head { gap: 6px; color: var(--muted); cursor: pointer; }
-.nav-section-head:hover, .nav-folder-head:hover { color: var(--ink); }
-.nav-section-head .eyebrow { margin: 0; flex: 1; }
-.nav-section-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
-.menu .nav-section-body > .error { margin-inline: 10px; }
+/* The nav's sections (Health, Domains, Shared) under headings that are labels and never fold (LA-V90-R06). */
+.nav-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; margin-top: 8px; }
+.menu .nav-heading.eyebrow { margin: 0; padding: 2px 10px 2px calc(var(--nav-pad) + 6px); color: var(--muted); }
+.nav-folder-head:hover { color: var(--ink); }
 .nav-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
 /* Nav rows, as in VS Code's explorer (LA-V90-R03). Each row is as wide as the nav panel, indented by padding for its
    depth (--depth, set by the row), with its indent guides drawn inside it, one under each ancestor's chevron. The
@@ -577,7 +575,7 @@ a.button-primary.button-primary { color: var(--on-mark); }
 .nav-chevron { display: inline-grid; place-items: center; width: var(--nav-twistie); height: var(--nav-row-height); padding: 0; border: 0; border-radius: 3px; background: none; color: var(--muted); cursor: pointer; flex: none; }
 .nav-chevron:hover { color: var(--ink); }
 .nav-chevron-space { width: var(--nav-twistie); flex: none; }
-.menu .nav-row:is(.nav-folder-head, .nav-section-head):focus-visible, .menu .nav-row > a:focus-visible::after, .menu.is-keyboard:focus-within .nav-row.is-selected { outline: 1px solid var(--steel); outline-offset: -1px; border-radius: 3px; }
+.menu .nav-row.nav-folder-head:focus-visible, .menu .nav-row > a:focus-visible::after, .menu.is-keyboard:focus-within .nav-row.is-selected { outline: 1px solid var(--steel); outline-offset: -1px; border-radius: 3px; }
 .menu .nav-row > a:focus-visible { outline: none; }
 .menu .nav-row > .nav-chevron:focus-visible { outline: 1px solid var(--steel); outline-offset: -1px; }
 @media (prefers-reduced-motion: reduce) { .nav-row { transition: none; } }
@@ -796,7 +794,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 /* A space's own lists (its own stages and its domains) sit side by side at the top level; only what is inside them is indented. */
 .menu .nav-tree { margin: 0; padding: 0; }
 .nav-folder-head { gap: 6px; color: var(--muted); cursor: pointer; font-size: 0.84rem; }
-:is(.nav-folder-head, .nav-section-head) > .icon:first-child { width: var(--nav-twistie); }
+.nav-folder-head > .icon:first-child { width: var(--nav-twistie); }
 .nav-folder.is-stage > .nav-folder-head { color: var(--ink); }
 .nav-folder.is-stage > .nav-folder-head .nav-label { font-weight: 500; }
 .menu .nav-records .nav-row { color: var(--muted); font-size: 0.84rem; }
@@ -1279,7 +1277,7 @@ a.row-link.row-link:focus-visible { outline: none; }
   /* A gap between panels keeps its look, and its target reaches over the panels' edges. */
   .resize-handle { z-index: 5; margin-inline: calc((var(--panel-gap) - var(--touch-target)) / 2); }
   /* As specific as the most specific rule for a control's size it lists, so no wide-screen size wins on a touch screen. */
-  :is(.icon-button, .button, .rail-item, .menu a, .nav-row, .nav-chevron, .nav-folder-head, .nav-section-head,
+  :is(.icon-button, .button, .rail-item, .menu a, .nav-row, .nav-chevron, .nav-folder-head,
     .graph-depth button, .graph-layout-pick, .graph-filters > summary, .quick-find-button, .stage-toolbar[data-names] :is(.stage-frame, .stage-tidy),
     .palette-list li, .tab, .long-list-tools input, .quick-open-box input, .dialog-search, .segment, .setting-switch, .file-button, .crumb-more-button,
     .theme-row .theme-pick, .changes-since select, .search input) { min-width: var(--touch-target); min-height: var(--touch-target); }

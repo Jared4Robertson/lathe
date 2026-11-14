@@ -268,7 +268,7 @@ test.describe('Traceability flows', () => {
     await whole();
     await expect(wiki.locator('dt', { hasText: /^Kind$/ })).toBeVisible();
     await expect(servesLine()).toHaveCount(0);
-    // S04: Tools › Checks lists each serves-no-outcome warning the engine finds; an Agent adds a read model nothing reaches.
+    // S04: Health › Checks lists each serves-no-outcome warning the engine finds; an Agent adds a read model nothing reaches.
     const restore = keepData();
     try {
       lathe('read-model', 'add-read-model', '--id', 'LA-TRC-RM99', '--title', 'Unread counts', '--domain_id', TRC, '--description', 'A read model nothing queries, added by the stability suite.');
