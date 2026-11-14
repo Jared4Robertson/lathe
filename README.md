@@ -79,7 +79,7 @@ Lathe's schema has a version (in [lathe/schema/version.json](lathe/schema/versio
 - **Quick find and the palette.** Mod+P (or Mod+K) opens one centered box that jumps to any record, domain or product of the current space by ID or title; the stage previews the highlighted record, Enter goes there and Escape puts everything back. Typing `>` (or Mod+Shift+P) turns it into the command palette, which runs any command by name.
 - **Shortcuts.** Press `?` for the shortcuts sheet. Others: Mod+B hides the nav, `g c` opens Checks, `g f` the reference, `g h` home, F8 the next problem on the page, F12 the focused link's record. Mod is Cmd on a Mac and Ctrl elsewhere.
 - **Themes.** Five built-in themes (Lathe, Graphite, Midnight, Workshop, High contrast), each light, dark or following the system, and themes of your own, made and edited in Appearance, a popover at the foot of the nav (`g t` picks one).
-- **Checks and the reference.** Checks (Tools › Checks, `g c`) is a panel over the stage listing the space's problems; selecting one focuses its record. The reference (`g f`) opens in the wiki card: a page per kind and per check, generated from the schema and the check rows.
+- **Checks and the reference.** Checks (Health › Checks in the nav, `g c`) is a panel over the stage listing the space's problems; selecting one focuses its record. The reference (`g f`) opens in the wiki card: a page per kind and per check, generated from the schema and the check rows.
 - **Mobile.** Below 900 px wide the app shows one view at a time, with a compact top bar, the nav as a drawer, and the wiki card and the tools as bottom sheets. On a touch screen, targets are at least 44 px and one tap on a graph box opens it, as a click does.
 
 ## The data model
