@@ -86,7 +86,6 @@
 {"id":"LA-EXP-UC10-FL-S02","title":"The Reader opens a box, a link or a found record in a new tab","flow_id":"LA-EXP-UC10-FL","path":"main","position":2}
 {"id":"LA-EXP-UC10-FL-S07","title":"A reload brings back each tab with its place and history","flow_id":"LA-EXP-UC10-FL","path":"main","position":3}
 {"id":"LA-EXP-UC10-FL-S08","title":"Cmd or Ctrl with a press on a record ID in Claude's answer opens the record in a new tab","flow_id":"LA-EXP-UC10-FL","path":"main","position":4,"interface_id":"LA-IF02"}
-{"id":"LA-EXP-UC101-FL-S01","title":"The Reader folds or unfolds a section of the nav","flow_id":"LA-EXP-UC101-FL","path":"main","position":1}
 {"id":"LA-EXP-UC102-FL-S01","title":"The Reader cycles to the next or the previous tab","flow_id":"LA-EXP-UC102-FL","path":"main","position":1}
 {"id":"LA-EXP-UC103-FL-S01","title":"The Reader duplicates the active tab","flow_id":"LA-EXP-UC103-FL","path":"main","position":1}
 {"id":"LA-EXP-UC104-FL-S01","title":"The Reader drags the wiki card's edge, or resets it to its default width","flow_id":"LA-EXP-UC104-FL","path":"main","position":1}
