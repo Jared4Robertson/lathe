@@ -18,9 +18,8 @@ import { useRunCommand, useShortcutHint } from './commands';
 import { SPACE_KEYS, spaceCommandId } from './keymap';
 import { useAggregate } from './prefs';
 import { foldOrUnfoldNavEntry } from '../exploring/nav-row/commands/fold-or-unfold-nav-entry';
-import { foldOrUnfoldNavSection } from '../exploring/nav-row/commands/fold-or-unfold-nav-section';
 import { openNavBranch } from '../exploring/nav-row/commands/open-nav-branch';
-import { isFolderOpen, isSectionOpen } from '../exploring/nav-row/model';
+import { isFolderOpen } from '../exploring/nav-row/model';
 import { navRowRepository } from '../exploring/nav-row/repository';
 import { noteSpacesListed } from '../exploring/space/commands/note-spaces-listed';
 import { spaceRepository } from '../exploring/space/repository';
@@ -34,9 +33,9 @@ import { overlaysOf, panelHref } from '../views/overlays';
 // rail: one square icon per product (each product is its own space); with one product there is no
 // rail, the panel takes its width, and the product's name and icon head the panel. The panel is all
 // the current space's: a Go to button that opens quick find (QuickOpen.tsx) on
-// the space, its overview, its own stages (its business outcomes and what it shares, in Shared), its domains (each
-// folded into its stages and their folders) and its groups, then Tools (the space's Checks), a section that folds on its
-// own, and a footer with Appearance and where the specs come from (the record format is a command and a
+// the space, its overview, then three sections under headings that never fold (LA-V90-R16): Health (the Dashboard, Checks
+// and the product's open questions), Domains (each folded into its stages and their folders) and Shared (what the
+// product shares, in Shared, and its other groups), and a footer with Appearance and where the specs come from (the record format is a command and a
 // link in the shortcuts sheet). The nav
 // collapses to the rail alone (remembered; with one product it holds no spaces), and on a narrow
 // screen it is a drawer that keeps the rail, with Checks and Changes in its footer, always in sight above Appearance
@@ -63,12 +62,7 @@ export interface NavProps {
   onCloseDrawer: () => void;
 }
 
-type SectionId = 'tools';
-
 const here = (path: string, to: string) => (path === to ? 'page' : undefined);
-
-/** Which section holds the tool open over the stage. */
-const sectionOf = (panel: string | null): SectionId | null => (panel === 'checks' ? 'tools' : null);
 
 export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
   const { spec, path, collapsed, onToggleCollapsed, expandLabel, drawer, drawerOpen, onCloseDrawer } = props;
@@ -77,9 +71,6 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
   const { index } = spec;
   const spaces = useSpaces();
   const space = spaces?.current ?? null;
-  const rows = useAggregate(navRowRepository);
-  const isOpen = (id: SectionId) => isSectionOpen(rows, id);
-  const toggle = (id: SectionId) => foldOrUnfoldNavSection({ section: id, open: !isOpen(id) });
   const scroller = useRef<HTMLDivElement>(null);
   const checksKeys = useShortcutHint('openChecks');
   const dashboardKeys = useShortcutHint('openDashboard');
@@ -90,7 +81,6 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
   // drawer and its backdrop (a tap there closes it) can be reached; Tab stays in it and Escape closes it (below).
   useEffect(() => (drawer && drawerOpen ? inertBehind(document.getElementById('nav'), '.drawer-backdrop') : undefined), [drawer, drawerOpen]);
 
-  // The section holding the current page opens itself.
   // The tools open over the stage (views/overlays.ts): their nav rows open and close them, and say whether they are open.
   const { search } = useLocation();
   const { panel } = overlaysOf(search);
@@ -98,10 +88,6 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
   const changesOpen = panel === 'changes';
   const dashboardOpen = panel === 'dashboard';
   const appearanceOpen = panel === 'appearance' || panel === 'theme';
-  const current = sectionOf(panel);
-  useEffect(() => {
-    if (current) foldOrUnfoldNavSection({ section: current, open: true });
-  }, [current]);
 
   // The nav's lists wait for the specs, so nothing is drawn and then pushed down.
   const loaded = index !== null || !!spec.error;
@@ -256,17 +242,10 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
           {/* The current space needs no heading of its own: its first row, its name and icon, is its overview. */}
           <div className="nav-space">
             {spec.error && !index && <p className="error">{spec.error}</p>}
-            {index && space && <SpaceItems index={index} space={space} path={path} reveal={fromNav} />}
+            {/* In the drawer the Dashboard and Checks are in its footer, so Health does not list them again. */}
+            {index && space && <SpaceItems index={index} space={space} path={path} reveal={fromNav} tools={drawer ? [] : [dashboardRow, checksRow]} />}
             {index && !space && <p className="hint">No products yet.</p>}
           </div>
-          {space && !drawer && (
-            <NavSection id="tools" icon="checks" title="Tools" open={isOpen('tools')} onToggle={() => toggle('tools')}>
-              <ul>
-                <li>{dashboardRow}</li>
-                <li>{checksRow}</li>
-              </ul>
-            </NavSection>
-          )}
           </>}
         </div>
         <footer className="nav-foot">
@@ -352,15 +331,16 @@ function currentBranch(index: RecordIndex, path: string): string[] {
 }
 
 /**
- * The current space in the panel: its overview; its own stages (Shared: its business outcomes and what it shares, such
- * as patterns, standards, and the value objects and views two or more domains use); its domains, each folding its stages
- * (Domain model, Use cases, Interface design, Technical specification, Test plan) and its open questions;
- * then the product's open questions. Each stage holds one folder per kind, each listing the records
+ * The current space in the panel: its overview, then its three sections. Health: the tools given (the Dashboard and
+ * Checks) and the product's open questions. Domains: each domain with its count, folding its stages (Domain model, Use
+ * cases, Interface design, Technical specification, Test plan) and its open questions. Shared: its own stages (its
+ * business outcomes and what it shares, such as patterns, standards, and the value objects and views two or more
+ * domains use), then its other groups. A section with no rows is left out. Each stage holds one folder per kind, each listing the records
  * that start a branch of the stage; a stage with one folder lists its records itself. One level shows by default; every stage and folder folds on its
  * own (remembered for the session) and shows its count, and the current page's branch opens itself.
  * A stage or folder with no records is left out. Names and order come from the schema's stages and kinds.
  */
-function SpaceItems({ index, space, path, reveal }: { index: RecordIndex; space: Space; path: string; reveal: boolean }) {
+function SpaceItems({ index, space, path, reveal, tools }: { index: RecordIndex; space: Space; path: string; reveal: boolean; tools: ReactNode[] }) {
   const domains = index.product === space.id ? index.domains : [];
   const own = ownerFolders(index, space.id);
   // With Highlight changes on, each row counts the records under it that are new, changed or removed (changes/rollup.ts).
@@ -444,6 +424,23 @@ function SpaceItems({ index, space, path, reveal }: { index: RecordIndex; space:
     </NavFolder>
   ));
   const ownStages = own.stages.filter((s) => s.count > 0);
+  // The product's open questions sit in Health; any other group of the product's own children, in Shared.
+  const questions = own.loose.find((f) => f.kind === 'question') ?? null;
+  const groups = own.loose.filter((f) => f !== questions);
+  const groupRowOf = (folder: Folder, icon?: string) => {
+    const to = addressOf(folder.key);
+    return (
+      <li key={folder.key}>
+        <NavRow depth={0} selected={path === to}>
+          <Link to={to} aria-current={here(path, to)}>
+            {icon && <><Icon name={icon} size={16} />{' '}</>}<span className="nav-label">{folder.label}</span> <span className="nav-badge quiet">{folder.count}</span>
+          </Link>
+        </NavRow>
+        <NavChanges depth={0} counts={rolled?.ofRecords(folder.records.map((r) => r.id))} />
+      </li>
+    );
+  };
+  const health = [...tools.map((row, i) => <li key={i}>{row}</li>), ...(questions ? [groupRowOf(questions, 'help')] : [])];
 
   return (
     <div className="space-items" data-space={space.id}>
@@ -456,67 +453,66 @@ function SpaceItems({ index, space, path, reveal }: { index: RecordIndex; space:
           </NavRow>
         </li>
       </ul>
-      {ownStages.length > 0 && (
-        // What the product shares, in one folder before the domains, as the graph's tree has it.
-        <ul className="nav-tree nav-shared" aria-label={`Shared in ${space.title}`}>
-          <NavFolder id={sharedKey(space.id)} depth={0} label="Shared" count={ownStages.reduce((n, s) => n + s.count, 0)} changes={rolled?.ofRecords(ownStages.flatMap((s) => s.folders.flatMap((f) => f.records.map((r) => r.id))))} open={isOpen(sharedKey(space.id))} holds={holds(sharedKey(space.id))} onToggle={() => toggle(sharedKey(space.id))}>
-            <ul className="nav-tree" aria-label={`Stages of ${space.title}`}>
-              {stageRows(ownStages, space.title, 1)}
-            </ul>
-          </NavFolder>
-        </ul>
+      {health.length > 0 && (
+        <NavSection id="health" title="Health">
+          <ul className="nav-tree nav-health" aria-label={`Health of ${space.title}`}>{health}</ul>
+        </NavSection>
       )}
       {domains.length > 0 && (
-        <ul className="nav-tree nav-domains" aria-label={`Domains of ${space.title}`}>
-          {domains.map((domain) => {
-            const key = `domain:${domain.id}`;
-            const open = isOpen(key);
-            const bodyId = `nav-domain-${domain.id.replace(/[^A-Za-z0-9_-]/g, '-')}`;
-            const { stages, loose } = open ? ownerFolders(index, domain.id) : { stages: [], loose: [] };
-            return (
-              <li key={domain.id}>
-                <NavRow
-                  depth={0}
-                  selected={path === addressOf(domain.id)}
-                  holds={holds(key)}
-                  chevron={(
-                    <button type="button" className="nav-chevron" aria-expanded={open} aria-controls={bodyId} aria-label={`${open ? 'Fold' : 'Unfold'} ${domain.title}`} onClick={() => toggle(key)}>
-                      <Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} />
-                    </button>
+        <NavSection id="domains" title="Domains">
+          <ul className="nav-tree nav-domains" aria-label={`Domains of ${space.title}`}>
+            {domains.map((domain) => {
+              const key = `domain:${domain.id}`;
+              const open = isOpen(key);
+              const bodyId = `nav-domain-${domain.id.replace(/[^A-Za-z0-9_-]/g, '-')}`;
+              // The folders are looked up once per tree answer, so each domain's count costs nothing after the first draw.
+              const { stages, loose } = ownerFolders(index, domain.id);
+              const count = stages.reduce((n, s) => n + s.count, 0) + loose.reduce((n, f) => n + f.count, 0);
+              return (
+                <li key={domain.id}>
+                  <NavRow
+                    depth={0}
+                    selected={path === addressOf(domain.id)}
+                    holds={holds(key)}
+                    chevron={(
+                      <button type="button" className="nav-chevron" aria-expanded={open} aria-controls={bodyId} aria-label={`${open ? 'Fold' : 'Unfold'} ${domain.title}`} onClick={() => toggle(key)}>
+                        <Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} />
+                      </button>
+                    )}
+                  >
+                    <Link to={addressOf(domain.id)} aria-current={here(path, addressOf(domain.id))} title={domain.title}>
+                      <span className="nav-label">{domain.title}</span>
+                    </Link>
+                    {/* Beside the link, so the link's name stays the domain's; the word is for a screen reader. */}
+                    <span className="nav-badge quiet">{count}<span className="sr-only"> {count === 1 ? 'record' : 'records'}</span></span>
+                  </NavRow>
+                  <NavChanges depth={0} counts={rolled?.ofDomain(domain.id)} />
+                  {open && (
+                    <ul className="nav-tree" id={bodyId} aria-label={`Folders of ${domain.title}`}>
+                      {stageRows(stages, domain.title, 1)}
+                      {loose.map((f) => folderRow(f, domain.title, 1))}
+                    </ul>
                   )}
-                >
-                  <Link to={addressOf(domain.id)} aria-current={here(path, addressOf(domain.id))} title={domain.title}>
-                    <span className="nav-label">{domain.title}</span>
-                  </Link>
-                </NavRow>
-                <NavChanges depth={0} counts={rolled?.ofDomain(domain.id)} />
-                {open && (
-                  <ul className="nav-tree" id={bodyId} aria-label={`Folders of ${domain.title}`}>
-                    {stageRows(stages, domain.title, 1)}
-                    {loose.map((f) => folderRow(f, domain.title, 1))}
-                  </ul>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                </li>
+              );
+            })}
+          </ul>
+        </NavSection>
       )}
-      {own.loose.length > 0 && (
-        <ul className="nav-groups" aria-label={`Groups of ${space.title}`}>
-          {own.loose.map((folder) => {
-            const to = addressOf(folder.key);
-            return (
-              <li key={folder.key}>
-                <NavRow depth={0} selected={path === to}>
-                  <Link to={to} aria-current={here(path, to)}>
-                    <span className="nav-label">{folder.label}</span> <span className="nav-badge quiet">{folder.count}</span>
-                  </Link>
-                </NavRow>
-                <NavChanges depth={0} counts={rolled?.ofRecords(folder.records.map((r) => r.id))} />
-              </li>
-            );
-          })}
-        </ul>
+      {(ownStages.length > 0 || groups.length > 0) && (
+        <NavSection id="shared" title="Shared">
+          {ownStages.length > 0 && (
+            // What the product shares, in one folder, as the graph's tree has it.
+            <ul className="nav-tree nav-shared" aria-label={`Shared in ${space.title}`}>
+              <NavFolder id={sharedKey(space.id)} depth={0} label="Shared" count={ownStages.reduce((n, s) => n + s.count, 0)} changes={rolled?.ofRecords(ownStages.flatMap((s) => s.folders.flatMap((f) => f.records.map((r) => r.id))))} open={isOpen(sharedKey(space.id))} holds={holds(sharedKey(space.id))} onToggle={() => toggle(sharedKey(space.id))}>
+                <ul className="nav-tree" aria-label={`Stages of ${space.title}`}>
+                  {stageRows(ownStages, space.title, 1)}
+                </ul>
+              </NavFolder>
+            </ul>
+          )}
+          {groups.length > 0 && <ul className="nav-groups" aria-label={`Groups of ${space.title}`}>{groups.map((f) => groupRowOf(f))}</ul>}
+        </NavSection>
       )}
     </div>
   );
@@ -572,17 +568,13 @@ function NavFolder({ id, depth, label, count, changes, open, holds = false, onTo
   );
 }
 
-function NavSection({ id, icon, title, count, open, onToggle, children }: { id: string; icon: string; title: string; count?: number; open: boolean; onToggle: () => void; children: ReactNode }) {
-  const bodyId = `nav-section-${id}`;
+/** A section of the nav under its heading: a label, never a control, and it never folds (LA-V90-R06). */
+function NavSection({ id, title, children }: { id: string; title: string; children: ReactNode }) {
+  const headId = `nav-section-${id}`;
   return (
-    <section className="nav-section" aria-labelledby={`${bodyId}-head`}>
-      <button type="button" id={`${bodyId}-head`} className="nav-section-head nav-row" aria-expanded={open} aria-controls={bodyId} onClick={onToggle}>
-        <Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} />
-        <Icon name={icon} size={16} />
-        <span className="eyebrow">{title}</span>
-        {count !== undefined && <span className="nav-badge quiet">{count}</span>}
-      </button>
-      {open && <div id={bodyId} className="nav-section-body">{children}</div>}
+    <section className="nav-section" aria-labelledby={headId}>
+      <h2 id={headId} className="nav-heading eyebrow">{title}</h2>
+      {children}
     </section>
   );
 }

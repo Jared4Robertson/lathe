@@ -9,7 +9,7 @@ import { ProblemList, RecordLink, Section, gapKey, gapText, useScrollToHash } fr
 import { LongList } from '../components/LongList';
 import { ToolPanelFrame } from './ToolPanel';
 
-// The Checks panel (LA-V41), Tools › Checks: a tool over the stage (LA-PAT-APP-UX-R20), floating at the
+// The Checks panel (LA-V41), Health › Checks: a tool over the stage (LA-PAT-APP-UX-R20), floating at the
 // left of the open space, at `?panel=checks` on whatever focus the stage shows. It lists the space's
 // problems by check, errors first, then the workspace's. A problem's
 // row focuses its record on the stage, which the wiki card then shows, and the panel stays open to

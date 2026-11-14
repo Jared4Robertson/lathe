@@ -538,7 +538,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
       }))
       .filter(Boolean));
     // The nav's rows take their height from --nav-row-height, which the coarse pointer sets to the touch target.
-    for (const k of ['.nav-row', '.nav-chevron', '.nav-folder-head', '.nav-section-head']) covered.add(k);
+    for (const k of ['.nav-row', '.nav-chevron', '.nav-folder-head']) covered.add(k);
     // Canvas nodes are sized by the layout and grow with pinch-zoom; a card's title is stretched over the whole card.
     const exempt = new Set(['.graph-node', '.card-title']);
     const missing = rules
@@ -621,7 +621,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     // fold chevrons, the nav's rows and rail, the sheet handle, the open-pages list, the title bar's command center and a
     // card's title, stretched over its card (LA-PAT-APP-UX-R14), and the chat's session rows and tool rows.
     // In the source no raw <button> may take the Button's own classes; on the page they are allowed.
-    const ALLOWED = ['tab-close', 'tree-toggle', 'nav-chevron', 'nav-row', 'nav-folder-head', 'nav-section-head', 'rail-item',
+    const ALLOWED = ['tab-close', 'tree-toggle', 'nav-chevron', 'nav-row', 'nav-folder-head', 'rail-item',
       'view-segment', 'page-bar-pages', 'pages-open', 'sheet-handle', 'command-center', 'card-title',
       'chat-session-open', 'chat-tool-row'];
     const allowed = `.button, .icon-button, ${ALLOWED.map((c) => `.${c}`).join(', ')}, [role="group"] button[aria-pressed]`;

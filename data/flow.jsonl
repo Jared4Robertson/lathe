@@ -15,7 +15,6 @@
 {"id":"LA-EXP-UC05-FL","title":"Read a record","use_case_id":"LA-EXP-UC05"}
 {"id":"LA-EXP-UC07-FL","title":"Work in one product at a time","use_case_id":"LA-EXP-UC07"}
 {"id":"LA-EXP-UC10-FL","title":"Open a new tab","use_case_id":"LA-EXP-UC10"}
-{"id":"LA-EXP-UC101-FL","title":"Fold or unfold a nav section","use_case_id":"LA-EXP-UC101"}
 {"id":"LA-EXP-UC102-FL","title":"Cycle through the tabs","use_case_id":"LA-EXP-UC102"}
 {"id":"LA-EXP-UC103-FL","title":"Duplicate a tab","use_case_id":"LA-EXP-UC103"}
 {"id":"LA-EXP-UC104-FL","title":"Resize the wiki card","use_case_id":"LA-EXP-UC104"}

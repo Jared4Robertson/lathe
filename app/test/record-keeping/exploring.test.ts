@@ -7,7 +7,6 @@ import { noteInTab } from '../../src/exploring/tab-set/commands/note-in-tab';
 import { rememberStage } from '../../src/exploring/tab-set/commands/remember-stage';
 import { replaceInTab } from '../../src/exploring/tab-set/commands/replace-in-tab';
 import { activeTab, emptyTabs, NO_TABS, setOf, type TabSets } from '../../src/exploring/tab-set/model';
-import { foldOrUnfoldNavSection } from '../../src/exploring/nav-row/commands/fold-or-unfold-nav-section';
 import { openNavBranch } from '../../src/exploring/nav-row/commands/open-nav-branch';
 import { navRowRepository } from '../../src/exploring/nav-row/repository';
 import { noteSpacesListed } from '../../src/exploring/space/commands/note-spaces-listed';
@@ -30,17 +29,6 @@ const on = <I,>(tabs: TabSets, command: (tabs: TabSets, input: I & { space: stri
 const open = (tabs: TabSets, address: string) => on(tabs, newTab, { address, view: DEFAULT_VIEW });
 const three = () => open(open(open({ ...NO_TABS, sets: { [S]: emptyTabs() } }, '/A'), '/B'), '/C');
 const keys = (tabs: TabSets) => setOf(tabs, S).tabs.map((t) => t.key);
-
-describe('Fold or unfold a nav section', () => {
-  it('LA-EXP-UC101-R01-T01 LA-EXP-UC101-FL-T A nav section the Reader folds stays folded, and unfolds again', () => {
-    foldOrUnfoldNavSection({ section: 'tools', open: false });
-    expect(navRowRepository.load().sections).toEqual({ tools: false });
-    // Kept from one launch to the next: it is read back from the browser's storage.
-    expect(window.localStorage.getItem('lathe:nav-sections')).toContain('tools');
-    foldOrUnfoldNavSection({ section: 'tools', open: true });
-    expect(navRowRepository.load().sections.tools).toBe(true);
-  });
-});
 
 describe('Cycle through the tabs', () => {
   it('LA-EXP-UC102-R01-T01 LA-EXP-UC102-FL-T Cycling activates the next or previous tab and wraps around', () => {
@@ -138,7 +126,7 @@ describe("The policies' reactions", () => {
   });
 
   it('LA-EXP-PO21-T The branch to the page opens, and rows already open stay open', () => {
-    navRowRepository.save({ folders: { 'dom:LA-MOD': true }, sections: {} });
+    navRowRepository.save({ folders: { 'dom:LA-MOD': true } });
     openNavBranch({ branch: ['dom:LA-EXP', 'kind:LA-EXP:command'] });
     expect(navRowRepository.load().folders).toEqual({ 'dom:LA-MOD': true, 'dom:LA-EXP': true, 'kind:LA-EXP:command': true });
   });

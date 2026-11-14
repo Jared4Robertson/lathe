@@ -16,7 +16,6 @@
 {"id":"LA-EXP-CMD10","title":"Go back or forward in a tab","entity_id":"LA-EXP-EN09","description":"stepTab (stepPlace): Back and Forward step through the active tab's own history, never another tab's."}
 {"id":"LA-EXP-CMD20","title":"Note how many spaces there are","entity_id":"LA-EXP-EN02","description":"Remembers whether two or more spaces are listed, so the rail shows as it did before the products are read."}
 {"id":"LA-EXP-CMD21","title":"Open the nav's branch to the page","entity_id":"LA-EXP-EN03","description":"Opens every nav entry that holds the current page, down to it."}
-{"id":"LA-EXP-CMD22","title":"Fold or unfold a nav section","entity_id":"LA-EXP-EN03","description":"Folds or unfolds one of the nav's own sections, kept from one launch to the next."}
 {"id":"LA-EXP-CMD23","title":"Cycle through the tabs","entity_id":"LA-EXP-EN09","description":"Activates the next or the previous tab of the space, wrapping around."}
 {"id":"LA-EXP-CMD24","title":"Duplicate a tab","entity_id":"LA-EXP-EN09","description":"Opens a copy of a tab beside it, with its whole place and history and its cameras, and activates it."}
 {"id":"LA-EXP-CMD25","title":"Change the active tab's address in place","entity_id":"LA-EXP-EN10","description":"Replaces the active tab's current entry with another address, as a stage switched in place does."}

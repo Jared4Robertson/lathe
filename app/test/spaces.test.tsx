@@ -130,9 +130,9 @@ describe('product spaces', () => {
     await user.click(within(panel()).getByRole('button', { name: 'Unfold Basket' }));
     await user.click(within(panel()).getByRole('button', { name: 'Unfold Basket summary' }));
     expect(within(panel()).getByRole('list', { name: 'Use cases of Shopping' }).textContent).toBe('BasketAggregateAdd an item to the basketEmpty the basketBasket summaryRead modelSee the basket');
-    // The product's groups: its open questions.
-    const groups = within(panel()).getByRole('list', { name: 'Groups of Demo shop' });
-    expect(within(groups).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM/question']);
+    // The product's open questions, in Health beside its tools.
+    const health = within(panel()).getByRole('list', { name: 'Health of Demo shop' });
+    expect(within(health).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM?panel=dashboard', '/DM?panel=checks', '/DM/question']);
     expect(within(nav()).queryByRole('link', { name: 'Notes' })).toBeNull();
 
     await userEvent.setup().click(spaceLink('Notebook'));
@@ -140,7 +140,7 @@ describe('product spaces', () => {
     expect(within(nav().querySelector<HTMLElement>('.nav-space')!).getByRole('link', { name: 'Notebook' })).toHaveAttribute('href', '/NF');
     expect(within(panel()).getByRole('link', { name: 'Notes' })).toBeInTheDocument();
     expect(within(nav()).queryByRole('link', { name: 'Shopping' })).toBeNull();
-    expect(within(nav()).queryByRole('list', { name: 'Groups of Demo shop' })).toBeNull();
+    expect(within(nav()).queryByRole('list', { name: 'Health of Demo shop' })).toBeNull();
   });
 
   /** A page in Demo shop, then Notebook's product page and a page in it. */
