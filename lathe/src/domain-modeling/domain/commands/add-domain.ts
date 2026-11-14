@@ -4,7 +4,7 @@ import { ADD_DOMAIN_IDENTITY } from './identities.generated.ts';
 import { addDomain } from './handlers.generated.ts';
 
 /** A new domain: its row. */
-export type AddDomain = Pick<DomainRow, 'id' | 'title' | 'product_id' | 'position' | 'subdomain_type' | 'description' | 'notes'>;
+export type AddDomain = Pick<DomainRow, 'id' | 'title' | 'product_id' | 'position' | 'subdomain_type' | 'platform' | 'description' | 'notes'>;
 
 export const ADD_DOMAIN = {
   ...ADD_DOMAIN_IDENTITY,
@@ -14,6 +14,7 @@ export const ADD_DOMAIN = {
     product_id: column('domain', 'product_id', 'required'),
     position: column('domain', 'position', 'required'),
     subdomain_type: column('domain', 'subdomain_type', 'required'),
+    platform: column('domain', 'platform', 'optional'),
     description: column('domain', 'description', 'required'),
     notes: column('domain', 'notes', 'optional'),
   },

@@ -1,5 +1,5 @@
 {
-  "schema": 9,
+  "schema": 10,
   "data": "data",
   "products": [
     "examples/tool-library"

@@ -29,6 +29,8 @@ export interface DomainRow {
   position: number;
   /** core: the product's edge; supporting: needed for the core but not its edge; generic: solved the same way everywhere. It guides how much modeling the domain deserves. */
   subdomain_type: "core" | "supporting" | "generic";
+  /** Yes when it is a platform domain: the plumbing the business domains stand on (the app shell, the store, the commands), rather than a business capability of its own; the nav lists it under Platform, after the business domains. Left out otherwise. It says what the domain is for, apart from its subdomain type, which says how much the business gains from it. */
+  platform?: boolean;
   /** What the domain covers, in a paragraph. */
   description: string;
   /** Longer notes on the domain. */

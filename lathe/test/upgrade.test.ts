@@ -176,6 +176,7 @@ describe('the schema version', () => {
       expect.stringMatching(/^3-to-4: An interface that people or programs outside the product build on is public/),
       expect.stringMatching(/^3-to-4: List the roles that use each interface/),
       expect.stringMatching(/^4-to-5: Journeys arrive in Discovery/),
+      expect.stringMatching(/^9-to-10: Mark each domain that is plumbing/),
     ]);
     const read =(table: string) => readFileSync(path.join(root, 'data', `${table}.jsonl`), 'utf8');
     expect(read('interface')).toBe(line({ id: 'TL-IF01', title: 'Interface', product_id: 'TL', kind: 'other', description: 'Every flow written before interfaces were declared goes through this one.', public: false }));
@@ -588,6 +589,17 @@ describe('the schema version', () => {
     return { changes, todos };
   };
 
+  const run9to10 = async (tables: Record<string, Record<string, unknown>[]>) => {
+    const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 9);
+    const changes: string[] = [];
+    const todos: string[] = [];
+    await step!.converter.files!(
+      { tables: () => Object.keys(tables), read: (table) => tables[table] ?? [], write: (table, rows) => void (tables[table] = rows) },
+      { changed: (text) => changes.push(text), todo: (text) => todos.push(text) },
+    );
+    return { changes, todos };
+  };
+
   it("LA-STD-ENGINEERING-R04-T15 4-to-5 changes no row, asks to rename a product's own kind or relation that clashes with a new table, and to write the journey each duration outcome times", async () => {
     const tables: Record<string, Record<string, unknown>[]> = {
       product_kind: [{ name: 'journey', product_id: 'TL' }, { name: 'report', product_id: 'TL' }],
@@ -818,5 +830,26 @@ describe('the schema version', () => {
     expect(changes).toEqual([]);
     expect(todos).toEqual(['Schema 9 has no capability kind. Your own kind epic (and its records), relation owns names it: put it under a domain, an aggregate or a read model instead, then run `npx lathe upgrade` again.']);
     expect(tables).toEqual(before);
+  });
+
+  it('LA-STD-ENGINEERING-R04-T21 9-to-10 changes no row, says no domain is marked platform yet, asks the Owner to mark the platform domains, and does nothing to data already upgraded', async () => {
+    const tables: Record<string, Record<string, unknown>[]> = {
+      domain: [
+        { id: 'TL-LEND', title: 'Lending', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'Lending tools.' },
+        { id: 'TL-PLT', title: 'Platform', product_id: 'TL', position: 2, subdomain_type: 'supporting', description: 'The shell.' },
+      ],
+    };
+    const before = structuredClone(tables);
+    const { changes, todos } = await run9to10(tables);
+    expect(tables).toEqual(before);
+    expect(changes).toEqual(['A domain may be marked platform: none of the 2 domains is yet, so the nav lists every one under Domains.']);
+    expect(todos).toEqual(['Mark each domain that is plumbing the business domains stand on, rather than a business capability, as platform (`lathe domain change-domain --id <domain> --platform true`): the nav then lists it under Platform.']);
+    expect(await run9to10({})).toEqual({ changes: [], todos: [] });
+
+    // Data already upgraded, a domain marked, is left as it is.
+    tables.domain[1].platform = true;
+    const upgraded = structuredClone(tables);
+    expect(await run9to10(tables)).toEqual({ changes: [], todos: [] });
+    expect(tables).toEqual(upgraded);
   });
 });
