@@ -1,5 +1,56 @@
 # Changelog
 
+## [9.0.0](https://github.com/Jared4Robertson/lathe/compare/v8.0.0...v9.0.0) (2026-11-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* **use-cases:** a use case sits with its result's aggregate or read model, and capabilities are gone ([#15](https://github.com/Jared4Robertson/lathe/issues/15))
+* **use-cases:** a use case is one role's command or query, its result ([#14](https://github.com/Jared4Robertson/lathe/issues/14))
+
+### Features
+
+* **app:** a label naming a Lathe concept uses that concept's name ([3d6af38](https://github.com/Jared4Robertson/lathe/commit/3d6af38e3c2f9c7e49f94a3f2fda20ed143c1c9c))
+* **app:** clear Lathe's own check warnings, with Move actions and the chat as a panel ([3a3bcd1](https://github.com/Jared4Robertson/lathe/commit/3a3bcd176d7e079a19eb9e31aaa48dea92b6fa3e))
+* **app:** key metrics on the pages where they answer a question ([20db6c0](https://github.com/Jared4Robertson/lathe/commit/20db6c03b244d9564d17a4a8b1631fb836352eac))
+* **check:** a product may make its check strict, so any warning fails it ([82b15d3](https://github.com/Jared4Robertson/lathe/commit/82b15d381c7c8a54514efb143b028d63d6572741))
+* **checking:** a lower-level use case test may support its requirement ([#16](https://github.com/Jared4Robertson/lathe/issues/16)) ([4f40135](https://github.com/Jared4Robertson/lathe/commit/4f401351a5b26af05f18a952d01e8c6c00d8292a))
+* **checking:** a strict product's check fails on any gap ([b38f17a](https://github.com/Jared4Robertson/lathe/commit/b38f17a7d5d9943e0ecb0436d190a42b4d9b900b))
+* **checking:** a use case test below service level may support its requirement ([4f40135](https://github.com/Jared4Robertson/lathe/commit/4f401351a5b26af05f18a952d01e8c6c00d8292a))
+* close every coverage gap, and a refused mic says why ([04790dc](https://github.com/Jared4Robertson/lathe/commit/04790dc05fecd5797fe408485e9cc9256455b023))
+* **dashboard:** add the Dashboard, one product's health over the stage ([1f39921](https://github.com/Jared4Robertson/lathe/commit/1f39921e4013432460d5024237c918b900356d41))
+* **dashboard:** the six tiles come first, above the header and Status ([ed809bf](https://github.com/Jared4Robertson/lathe/commit/ed809bf97c973c76fd36b5c5976aa7efbcd0ba11))
+* **traceability:** a slot may say its fills vary by design, and pattern-candidate skips it ([75c54c6](https://github.com/Jared4Robertson/lathe/commit/75c54c6b48e43a23610d0fd0400ea09b49dd5eca))
+* **use-cases:** a use case is one role's command or query, its result ([#14](https://github.com/Jared4Robertson/lathe/issues/14)) ([8ce672d](https://github.com/Jared4Robertson/lathe/commit/8ce672d883398ed150ae437e76db1fb8000945ee))
+* **use-cases:** a use case sits with its result's aggregate or read model, and capabilities are gone ([#15](https://github.com/Jared4Robertson/lathe/issues/15)) ([ad68983](https://github.com/Jared4Robertson/lathe/commit/ad68983e04f6f0aecc17d431ae6d98f4fc260d66))
+
+
+### Bug Fixes
+
+* **app:** a flick on a sheet, handle or canvas no longer swallows the next tap ([edf3970](https://github.com/Jared4Robertson/lathe/commit/edf39704e0fe947e6c8386952d94dcf4d5eeddab))
+* **app:** frosted panels blur in the built app, so the Dashboard hides what is under it ([f1ab3dc](https://github.com/Jared4Robertson/lathe/commit/f1ab3dc73d95d10261144662c8c107c3909fd551))
+* **app:** tables scroll by keyboard, a layout switch keeps focus, and browser tests hold on Linux ([cf4e714](https://github.com/Jared4Robertson/lathe/commit/cf4e714a87ba9c2087994ec100e70c4143c9e6ee))
+* **app:** the breadcrumb's menu keeps what it covers inert while open, a stage drawn later too ([0a9b82b](https://github.com/Jared4Robertson/lathe/commit/0a9b82b8fc2dea05efa67ce3b065c2cd5c943175))
+* **app:** the Changes count follows every announced change, and a failed baseline read is not kept ([3f0616e](https://github.com/Jared4Robertson/lathe/commit/3f0616e55e9c71445f0131e7d4682fbb1ec85cf6))
+* **app:** the wiki card's changes and history wait for the page above them ([46b42a7](https://github.com/Jared4Robertson/lathe/commit/46b42a75d78b9dde571bc98a2fa74a00c1988050))
+* **dashboard:** unique gap keys, one count format, and Dashboard markup that passes axe ([e7aa5ee](https://github.com/Jared4Robertson/lathe/commit/e7aa5ee038499ba5271012550a16e425f48f553a))
+
+
+### Performance
+
+* **app:** first load, ERD and reload back under budget; frames judged by clock time ([98859b8](https://github.com/Jared4Robertson/lathe/commit/98859b81f0aae3eb8fc2012b4240437914ddb88a))
+* **app:** the space's index built in a worker; reloads read and check only what changed ([daa9880](https://github.com/Jared4Robertson/lathe/commit/daa9880bb9c91e82b33ba7836f5cedafea90eeb7))
+
+
+### Specification
+
+* **tool-library:** clear the serves-no-outcome and unaccounted-for warnings ([0ee7c23](https://github.com/Jared4Robertson/lathe/commit/0ee7c237c15f8535998e201547b818cb8cfa53a9))
+
+
+### Documentation
+
+* **reference:** a use case has one flow, the same through every interface ([0333833](https://github.com/Jared4Robertson/lathe/commit/033383340b989e8a7516e56d7d8640aadaf86b38))
+
 ## [8.0.0](https://github.com/Jared4Robertson/lathe/compare/v7.0.0...v8.0.0) (2026-11-04)
 
 
