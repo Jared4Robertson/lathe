@@ -2,7 +2,7 @@
 // problem, and changes one thing to break the rule. LA-PAT-AGGREGATE-TESTS-R04: each of the domain's check rows is tested here.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Workspace } from '../../src/index.ts';
-import { adding, changing, complete, loadData, ofCheck, removeData, without } from '../helpers.ts';
+import { adding, changing, complete, gaps, loadData, ofCheck, records, removeData, without } from '../helpers.ts';
 
 afterAll(removeData);
 
@@ -34,6 +34,20 @@ check('test-level-not-allowed', () => {
     ]);
     // A constraint enforced by a SQL CHECK is tested at integration level, against the database, which a constraint test allows.
     expect(ofCheck(await loadData(changing(complete(), 'constraint_test', () => true, { level: 'integration' })), 'test-level-not-allowed')).toEqual([]);
+  });
+
+  it('LA-CHK-UC01-R09-T03 a use case test below service level supports a requirement that a test at an allowed level proves', async () => {
+    const unit = { id: 'EX-LEND-UC01-R01-T02', title: 'A lent tool is refused in the loan rules', uc_requirement_id: 'EX-LEND-UC01-R01', level: 'unit', state: 'automated', file: 'test/loans.test.ts', when: 'Borrows a tool on loan', then: 'Expects a refusal' };
+    const supported = await loadData(adding(complete(), { use_case_test: [unit] }));
+    expect(ofCheck(supported, 'test-level-not-allowed')).toEqual([]);
+    expect(gaps(supported)).not.toContain('proved EX-LEND-UC01-R01');
+    // The service test is not proof yet, so the unit test stands alone and is reported.
+    const unproved = await loadData(changing(adding(complete(), { use_case_test: [unit] }), 'use_case_test', (r) => r.id === 'EX-LEND-UC01-R01-T01', { state: 'not automated yet' }));
+    expect(records(ofCheck(unproved, 'test-level-not-allowed'))).toEqual(['EX-LEND-UC01-R01-T02']);
+    // A test below service level proves nothing: with only such tests, each is reported and the requirement is not proved.
+    const alone = await loadData(changing(adding(complete(), { use_case_test: [unit] }), 'use_case_test', (r) => r.id === 'EX-LEND-UC01-R01-T01', { level: 'unit' }));
+    expect(records(ofCheck(alone, 'test-level-not-allowed'))).toEqual(['EX-LEND-UC01-R01-T01', 'EX-LEND-UC01-R01-T02']);
+    expect(gaps(alone)).toContain('proved EX-LEND-UC01-R01');
   });
 
   it('LA-CHK-UC01-R09-T01 a pattern rule test may run at any level', async () => {
