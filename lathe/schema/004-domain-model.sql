@@ -19,7 +19,7 @@ CREATE TABLE domain (
   notes VARCHAR,
   UNIQUE (product_id, position)
 );
-COMMENT ON TABLE domain IS 'A part of the product with its own model, language and owner, for one business capability: what DDD calls a bounded context. Domains meet only through published events.';
+COMMENT ON TABLE domain IS 'A part of the product with its own model, language and owner, for one business capability: what DDD calls a bounded context, or, marked platform, the plumbing the business domains stand on. Domains meet only through published events.';
 COMMENT ON COLUMN domain.id IS 'The domain''s ID: the product prefix and the domain code, such as TL-LEND.';
 COMMENT ON COLUMN domain.title IS 'The domain''s name, such as Lending.';
 COMMENT ON COLUMN domain.product_id IS 'The product it belongs to.';

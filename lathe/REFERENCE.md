@@ -218,7 +218,7 @@ Domains and their aggregates, entities, value objects, rules (constraints, invar
 
 ### Domain (`domain`)
 
-A part of the product with its own model, language and owner, for one business capability: what DDD calls a bounded context. Domains meet only through published events.
+A part of the product with its own model, language and owner, for one business capability: what DDD calls a bounded context, or, marked platform, the plumbing the business domains stand on. Domains meet only through published events.
 
 - **Parents:** [`product`](#kind-product) (`product_id`)
 - **Children:** [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model), [`domain_service`](#kind-domain_service), [`term`](#kind-term), [`use_case`](#kind-use_case), [`data_store`](#kind-data_store), [`repository`](#kind-repository), [`table`](#kind-table), [`entry_point`](#kind-entry_point), [`tooling`](#kind-tooling), [`test_data_set`](#kind-test_data_set), [`question`](#kind-question)
@@ -239,6 +239,7 @@ A part of the product with its own model, language and owner, for one business c
 | `product_id` | VARCHAR → [`product`](#table-product) | yes | The product it belongs to. |
 | `position` | INTEGER | yes | Its place among the product's domains, from 1: the order the nav, the product page and the graph list them in. |
 | `subdomain_type` | ENUM('core', 'supporting', 'generic') | yes | core: the product's edge; supporting: needed for the core but not its edge; generic: solved the same way everywhere. It guides how much modeling the domain deserves. |
+| `platform` | BOOLEAN | no | Yes when it is a platform domain: the plumbing the business domains stand on (the app shell, the store, the commands), rather than a business capability of its own; the nav lists it under Platform, after the business domains. Left out otherwise. It says what the domain is for, apart from its subdomain type, which says how much the business gains from it. |
 | `description` | VARCHAR | yes | What the domain covers, in a paragraph. |
 | `notes` | VARCHAR | no | Longer notes on the domain. |
 
@@ -246,6 +247,7 @@ A part of the product with its own model, language and owner, for one business c
 - **Unique:** `product_id`, `position`
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `("position" >= 1)`
+- **Rule:** `platform`
 - **Rule:** `("trim"(description) != '')`
 
 <a id="kind-aggregate"></a>

@@ -47,6 +47,19 @@ describe('domains', () => {
       expect.objectContaining({ rule: 'column', file: 'data/domain.jsonl', line: 1, message: expect.stringContaining('is not one of core, supporting, generic') }),
     ]);
   });
+
+  it('LA-MOD-UC02-R12-T01 A domain may be marked platform: yes, or left out for a business domain, never no', async () => {
+    const column = schema.tables.domain.columns.find((c) => c.name === 'platform')!;
+    expect(column).toMatchObject({ required: false });
+    expect(column.description).toContain('the plumbing the business domains stand on');
+    expect(column.description).toContain('Left out otherwise');
+    expect(good.records.find((r) => r.id === 'EX-LEND')!.fields.platform).toBeUndefined();
+    const domain = everyKind().domain[0];
+    expect(await refusals(withTable(everyKind(), 'domain', [{ ...domain, platform: true }]))).toEqual([]);
+    expect(await refusals(withTable(everyKind(), 'domain', [{ ...domain, platform: false }]))).toEqual([
+      expect.objectContaining({ file: 'data/domain.jsonl', line: 1 }),
+    ]);
+  });
 });
 
 describe('entities and value objects', () => {

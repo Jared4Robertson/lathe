@@ -17,7 +17,7 @@ export interface ProductRow {
   notes?: string;
 }
 
-/** A part of the product with its own model, language and owner, for one business capability: what DDD calls a bounded context. Domains meet only through published events. */
+/** A part of the product with its own model, language and owner, for one business capability: what DDD calls a bounded context, or, marked platform, the plumbing the business domains stand on. Domains meet only through published events. */
 export interface DomainRow {
   /** The domain's ID: the product prefix and the domain code, such as TL-LEND. */
   id: string;

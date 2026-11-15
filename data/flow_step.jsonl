@@ -40,7 +40,7 @@
 {"id":"LA-EXP-UC01-FL-S02","title":"They open a domain: its records by stage, its coverage gaps and problems","flow_id":"LA-EXP-UC01-FL","path":"main","position":2}
 {"id":"LA-EXP-UC01-FL-S03","title":"The Reader types in the search box, and the records filter by ID or title","flow_id":"LA-EXP-UC01-FL","path":"main","position":3}
 {"id":"LA-EXP-UC01-FL-S05","title":"They open the record they found","flow_id":"LA-EXP-UC01-FL","path":"main","position":4}
-{"id":"LA-EXP-UC01-FL-S06","title":"Under the current space the nav lists the product page, Shared and each domain, which unfolds into its five stages with counts","flow_id":"LA-EXP-UC01-FL","path":"main","position":5}
+{"id":"LA-EXP-UC01-FL-S06","title":"Under the current space the nav lists the product page, Discovery, each domain (the business ones, then Platform's), which unfolds into its five stages with counts, and Shared","flow_id":"LA-EXP-UC01-FL","path":"main","position":5}
 {"id":"LA-EXP-UC01-FL-S07","title":"The nav lists the use cases under Use cases, under a heading for the aggregate or read model of their results","flow_id":"LA-EXP-UC01-FL","path":"main","position":6}
 {"id":"LA-EXP-UC01-FL-S08","title":"The domain page heads its records with the same stages","flow_id":"LA-EXP-UC01-FL","path":"main","position":7}
 {"id":"LA-EXP-UC01-FL-S09","title":"The domain page lists Technical specification by technical kind","flow_id":"LA-EXP-UC01-FL","path":"main","position":8}
@@ -201,7 +201,7 @@
 {"id":"LA-IXD-UC35-FL-S01","title":"The Owner changes the views a UI component renders","flow_id":"LA-IXD-UC35-FL","path":"main","position":1}
 {"id":"LA-IXD-UC36-FL-S01","title":"The Owner removes a UI component that renders no view","flow_id":"LA-IXD-UC36-FL","path":"main","position":1}
 {"id":"LA-MOD-UC02-FL-S01","title":"The Owner reads the domain whole, with what it holds, before changing it","flow_id":"LA-MOD-UC02-FL","path":"main","position":1}
-{"id":"LA-MOD-UC02-FL-S02","title":"The Owner adds a domain for each business capability, at its position and with its subdomain type","flow_id":"LA-MOD-UC02-FL","path":"main","position":2}
+{"id":"LA-MOD-UC02-FL-S02","title":"The Owner adds a domain for each business capability, at its position and with its subdomain type, marking a platform domain","flow_id":"LA-MOD-UC02-FL","path":"main","position":2}
 {"id":"LA-MOD-UC10-FL-S01","title":"The Owner reads the aggregate whole, with its entities and invariants, before changing it","flow_id":"LA-MOD-UC10-FL","path":"main","position":1}
 {"id":"LA-MOD-UC10-FL-S02","title":"The Owner adds an aggregate with its root entity and the root's fields","flow_id":"LA-MOD-UC10-FL","path":"main","position":2}
 {"id":"LA-MOD-UC101-FL-S01","title":"The Owner removes a domain whole: its terms, domain services with their services and tests, repositories, and the links they start (LA-MOD-CMD162)","flow_id":"LA-MOD-UC101-FL","path":"main","position":1}
