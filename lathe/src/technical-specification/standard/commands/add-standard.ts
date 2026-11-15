@@ -20,7 +20,6 @@ export const ADD_STANDARD = {
   handler: addStandard,
 } satisfies CommandDefinition<AddStandard>;
 
-/** Adds a standard to its product, or to a platform domain of it, with no rules yet. */
 export function addStandard(tx: Transaction, input: AddStandard): void {
   const standards = new StandardRepository(tx);
   if ((input.product_id === undefined) === (input.domain_id === undefined)) {

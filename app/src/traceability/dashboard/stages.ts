@@ -1,6 +1,7 @@
 import type { Stage } from '../../../../lathe/src/platform/data/schema';
 import type { StageCounts } from '../../exploring/folder-tree/stage-counts';
 import type { RecordIndex } from '../../exploring/record-summaries/record-index';
+import { ownerFolders } from '../../exploring/folder-tree/folders';
 
 // The Domains by stage table (LA-TRC-QRY02 and LA-EXP-QRY05): one row per domain and one for Shared, a cell per stage
 // counting every record folded under it, with its gaps and tests not automated yet. A gap names a record's kind, so
@@ -26,7 +27,7 @@ export interface StageCell {
   records: number | undefined;
   /** Its gaps and tests not automated yet; undefined while coverage is read. */
   marks: number | undefined;
-  /** "DM-SHOP/domain-model": the address of the stage in this domain or Shared. */
+  /** "DM-SHOP/domain-model": the address of the stage in this domain or Shared; a platform domain's section that holds it, "DM-PLAT/guarantees". */
   key: string;
   /** How dark to draw it, as a share of the stage's color: darker means more. */
   heat: number;
@@ -78,7 +79,9 @@ export function stageTable(index: RecordIndex, counts: StageCounts | undefined, 
     const cells = STAGES.map(({ stage, label }): StageCell => {
       const records = counts ? counts[owner]?.[stage] ?? 0 : undefined;
       const marks = covered ? (gaps.get(stage) ?? 0) + (stage === TESTS ? notAutomated : 0) : undefined;
-      return { stage, label, records, marks, key: `${owner}/${stage}`, heat: heatOf(records ?? 0, most) };
+      // A platform domain's stage is read in its section of that stage (the first, for Building blocks and Standards).
+      const key = ownerFolders(index, owner).stages.find((s) => s.stage === stage)?.key ?? `${owner}/${stage}`;
+      return { stage, label, records, marks, key, heat: heatOf(records ?? 0, most) };
     });
     return { owner, shared, title, cells, marks: covered ? sum(cells.map((c) => c.marks!)) : undefined };
   });
