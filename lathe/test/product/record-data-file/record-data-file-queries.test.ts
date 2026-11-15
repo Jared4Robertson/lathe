@@ -37,7 +37,7 @@ async function get(root: string, url: string): Promise<{ status: number; answer:
   return { status: res.statusCode, answer: JSON.parse(text) as unknown };
 }
 
-describe("LA-PLT-UC11-R08-T02 A record's data file is found by the engine, in its own product's data folder", () => {
+describe("LA-WBN-UC11-R08-T02 A record's data file is found by the engine, in its own product's data folder", () => {
   it("answers the record's kind's file in the store's data folder", async () => {
     const s = await store();
     expect(runQuery(s, FIND_RECORD_DATA_FILE, { id: 'EX-LEND-A1' })).toEqual({ id: 'EX-LEND-A1', file: path.join(s.dataDir, 'aggregate.jsonl') });

@@ -5,7 +5,7 @@ import type { LookMark, Since } from '../../changes/changes';
 
 // Session settings (LA-EXP-A6): how the Reader likes to see things, for the window's session, shared by every tab and
 // every page (LA-V93-R72): the graph's layout, minimap and the Map's All links, how wide the wiki card is, how wide the desktop app's chat
-// panel is (LA-PLT-UC19; whether it shows is a Panel's, platform/panel), and Highlight changes (LA-EXP-UC15): whether it is on, the baseline it
+// panel is (LA-PLT-UC19; whether it shows is a Panel's, workbench/panel), and Highlight changes (LA-EXP-UC15): whether it is on, the baseline it
 // compares with, whether Follow is on, and the moment the Reader last looked at each product. Where the Reader is (the
 // focus, the stage, the depth, the kind filters, the wiki card's open and expanded state) is not here: it is the
 // place's (views/place.ts). Moving through the stage never changes it; only the person's own commands do.
@@ -27,7 +27,7 @@ export const DEFAULT_CARD: CardSettings = { width: null };
 export const CARD_MIN = 360;
 export const CARD_MAX = 900;
 
-/** The desktop app's chat panel's width in px (null: its default). Whether it shows is a Panel's (platform/panel). */
+/** The desktop app's chat panel's width in px (null: its default). Whether it shows is a Panel's (workbench/panel). */
 export interface ChatSettings { width: number | null }
 export const DEFAULT_CHAT: ChatSettings = { width: null };
 /** The chat's narrowest, default and widest, in px. */

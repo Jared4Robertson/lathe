@@ -1,4 +1,4 @@
-// The Recent folders' repository (LA-PLT-REPO06): recent-folders.json in the shell's user data folder, read once,
+// The Recent folders' repository (LA-WBN-REPO06): recent-folders.json in the shell's user data folder, read once,
 // on the first load, and rewritten whole on each save.
 import { readJson, writeJson } from '../store.ts';
 import { parseRecent, type RecentFolders } from './model.ts';

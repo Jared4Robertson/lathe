@@ -43,7 +43,7 @@ export const spaceCommandId = (n: number) => `switchSpace${n}`;
  * The default keys of each move of the stage walk (LA-V61-R49, views/levels.ts), from anywhere on the page: the plain
  * arrows; as a game's keys, W Up, A Left, S Down and D Right; as vim's, H Left, J Down, K Up and L Right; Shift+Up
  * (Shift+W, Shift+K) out to the container and Shift+Down (Shift+S, Shift+J) in to the first node inside it. The arrow
- * comes first: it is the key a move is shown by. A person can bind others (platform/key-bindings).
+ * comes first: it is the key a move is shown by. A person can bind others (workbench/key-bindings).
  */
 const WALK_KEYS: Readonly<Record<Move, readonly string[]>> = {
   left: ['ArrowLeft', 'A', 'H'], right: ['ArrowRight', 'D', 'L'], up: ['ArrowUp', 'W', 'K'], down: ['ArrowDown', 'S', 'J'],

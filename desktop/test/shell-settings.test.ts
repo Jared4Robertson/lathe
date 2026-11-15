@@ -1,4 +1,4 @@
-// The Shell settings aggregate (LA-PLT-A11): its repository keeps them in settings.json, its commands go through it,
+// The Shell settings aggregate (LA-WBN-A11): its repository keeps them in settings.json, its commands go through it,
 // and its rules refuse an editor Lathe does not know and a custom editor without its command.
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
@@ -15,7 +15,7 @@ afterAll(() => rmSync(temp, { recursive: true, force: true }));
 const file = (name: string) => () => path.join(temp, name);
 const json = (name: string): unknown => JSON.parse(readFileSync(path.join(temp, name), 'utf8'));
 
-describe('LA-PLT-INV31-T A custom editor has its command', () => {
+describe('LA-WBN-INV31-T A custom editor has its command', () => {
   it('chooses an editor, keeping the rest of the file, and refuses a custom editor with no command', () => {
     const settings = new ShellSettingsRepository(file('settings.json'));
     writeFileSync(path.join(temp, 'settings.json'), JSON.stringify({ editor: 'zed', claudePath: '/opt/claude' }));
@@ -34,7 +34,7 @@ describe('LA-PLT-INV31-T A custom editor has its command', () => {
   });
 });
 
-describe('LA-PLT-INV32-T The editor is one Lathe knows', () => {
+describe('LA-WBN-INV32-T The editor is one Lathe knows', () => {
   it('refuses an editor Lathe does not know, with its reason, and saves nothing', () => {
     const settings = new ShellSettingsRepository(file('unknown-settings.json'));
     writeFileSync(path.join(temp, 'unknown-settings.json'), JSON.stringify({ editor: 'zed' }));
@@ -44,8 +44,8 @@ describe('LA-PLT-INV32-T The editor is one Lathe knows', () => {
   });
 });
 
-describe('LA-PLT-A11-SR01 The shell settings are kept across launches, as the person last wrote them', () => {
-  it('LA-PLT-A11-SR01-T01 settings saved read back through a new repository, a hand edit is read on the next load, and a broken file gives the defaults', () => {
+describe('LA-WBN-A11-SR01 The shell settings are kept across launches, as the person last wrote them', () => {
+  it('LA-WBN-A11-SR01-T01 settings saved read back through a new repository, a hand edit is read on the next load, and a broken file gives the defaults', () => {
     new ShellSettingsRepository(file('kept.json')).save({ editor: 'zed' });
     expect(new ShellSettingsRepository(file('kept.json')).load()).toEqual({ editor: 'zed' });
     writeFileSync(path.join(temp, 'kept.json'), JSON.stringify({ editor: 'cursor' }));

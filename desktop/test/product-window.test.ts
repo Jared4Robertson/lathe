@@ -1,4 +1,4 @@
-// The Product window aggregate (LA-PLT-A6): its repository keeps the open windows in memory and the places and chrome
+// The Product window aggregate (LA-WBN-A6): its repository keeps the open windows in memory and the places and chrome
 // in their files, its commands go through it, and its rule refuses a second window for a folder.
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import os from 'node:os';
@@ -23,7 +23,7 @@ const json = (name: string): unknown => JSON.parse(readFileSync(path.join(temp, 
 const window = (folder: string, extra: Partial<OpenWindow> = {}): OpenWindow =>
   ({ folder, product: path.basename(folder), win: { id: folder } as unknown as OpenWindow['win'], errors: 0, launchRun: 0, key: folder, ...extra });
 
-describe('LA-PLT-INV05-T Each folder has one window: the Product window\'s repository keeps the open windows in memory and the places and chrome in their files', () => {
+describe('LA-WBN-INV05-T Each folder has one window: the Product window\'s repository keeps the open windows in memory and the places and chrome in their files', () => {
   it('opens a folder once, raising Product window opened to the recent folders and then the server, and closing raises Product window closed to the server and the chat', async () => {
     const windows = new ProductWindowRepository({ places: file('window-state.json'), chrome: file('chrome.json') });
     const heard: string[] = [];
@@ -76,7 +76,7 @@ describe('LA-PLT-INV05-T Each folder has one window: the Product window\'s repos
     expect(productWindowProblems({ open, places: {}, chrome: {} })).toEqual([{ rule: 'one-window-per-folder', message: 'The window for /p/b is kept under /p/a.' }]);
   });
 
-  it('LA-PLT-INV05-T finds the open window of a folder however it is spelled, so it is focused and not opened twice', () => {
+  it('LA-WBN-INV05-T finds the open window of a folder however it is spelled, so it is focused and not opened twice', () => {
     const open = new Map([['/work/shop', 'window 1']]);
     expect(windowForFolder(open, '/work/shop/')).toBe('window 1');
     expect(windowForFolder(open, '/work/./shop')).toBe('window 1');

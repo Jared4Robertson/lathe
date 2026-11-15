@@ -1,4 +1,4 @@
-// Show a record's menu (LA-PLT-CMD45): the native menu of a record (open in a new tab, reveal and open its data file
+// Show a record's menu (LA-WBN-CMD45): the native menu of a record (open in a new tab, reveal and open its data file
 // when it has one, copy its ID), from the record's ID alone (LA-PAT-SHELL-ACTIONS-R01).
 import { parseRecordId } from '../../records.ts';
 import type { OpenWindow } from '../model.ts';

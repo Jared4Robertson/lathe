@@ -253,7 +253,7 @@ describe('loading', () => {
     expect(added.problems).toEqual([]);
   });
 
-  it("LA-PLT-UC02-R03-T01 A product's own kind is a row of its own data, adding a table for that product only", async () => {
+  it("LA-PRD-UC02-R03-T01 A product's own kind is a row of its own data, adding a table for that product only", async () => {
     const own = await openStore(await withMemo());
     expect(own.rows('product_kind').map((r) => r.name)).toContain('memo');
     expect(own.schema.tables.memo).toBeDefined();

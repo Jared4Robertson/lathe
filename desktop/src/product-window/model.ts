@@ -1,4 +1,4 @@
-// Product window (LA-PLT-A6): the desktop windows open on product folders, one per folder, while the shell runs;
+// Product window (LA-WBN-A6): the desktop windows open on product folders, one per folder, while the shell runs;
 // each folder's window place (size and position), remembered between launches; and the chrome colors the pages
 // last sent, so a new window opens in the theme's shell color (LA-V68-R01). Each window's chat is the Window chat's
 // (window-chat/). The places are pure functions over a plain object, so they are unit-tested.

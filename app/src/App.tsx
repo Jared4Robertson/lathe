@@ -16,10 +16,10 @@ import { pageHeading, TopBar } from './shell/MobileBar';
 import { QuickOpen } from './shell/QuickOpen';
 import { useThemeColor } from './shell/themeColor';
 import { useAggregate } from './shell/prefs';
-import { PANEL_LIMITS } from './platform/panel/model';
-import { panelRepository } from './platform/panel/repository';
-import { resizePanel } from './platform/panel/commands/resize-panel';
-import { showOrHidePanel } from './platform/panel/commands/show-or-hide-panel';
+import { PANEL_LIMITS } from './workbench/panel/model';
+import { panelRepository } from './workbench/panel/repository';
+import { resizePanel } from './workbench/panel/commands/resize-panel';
+import { showOrHidePanel } from './workbench/panel/commands/show-or-hide-panel';
 import { useNarrow } from './shell/useNarrow';
 import { FocusPage, StageBackdrop } from './views/FocusPage';
 import { ChecksPanel } from './views/ChecksPanel';
@@ -106,7 +106,7 @@ function Shell() {
   const closeDrawer = useCallback(() => { setDrawerOpen(false); setTimeout(() => menuButton.current?.focus(), 0); }, []);
   // An opened drawer takes focus (its Go to button); closing it gives focus back to the menu button.
   useEffect(() => { if (narrow && drawerOpen) setTimeout(() => navRef.current?.querySelector<HTMLElement>('.quick-find-button')?.focus(), 0); }, [narrow, drawerOpen]);
-  // The chat panel (LA-PLT-UC19): desktop only, never on a phone. Whether it shows is a Panel's (LA-PLT-UC06), kept
+  // The chat panel (LA-PLT-UC19): desktop only, never on a phone. Whether it shows is a Panel's (LA-WBN-UC06), kept
   // from one launch to the next; its width is the session's setting.
   const chatBridge = narrow ? null : desktopBridge()?.chat ?? null;
   const { chat } = useSessionSettings();

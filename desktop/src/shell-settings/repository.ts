@@ -1,4 +1,4 @@
-// The Shell settings' repository (LA-PLT-REPO20): settings.json in the shell's user data folder, read whole on each
+// The Shell settings' repository (LA-WBN-REPO20): settings.json in the shell's user data folder, read whole on each
 // load (the person may have edited it by hand since) and written whole on each save.
 import { existsSync } from 'node:fs';
 import { readJson, writeJson } from '../store.ts';

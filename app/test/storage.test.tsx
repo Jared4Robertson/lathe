@@ -4,10 +4,10 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SESSION_SETTINGS_STORAGE } from '../src/exploring/session-settings/model';
 import { SessionSettingsRepository } from '../src/exploring/session-settings/repository';
-import { KeyBindingsRepository } from '../src/platform/key-bindings/repository';
-import { APPEARANCE_STORAGE } from '../src/platform/appearance/model';
-import { AppearanceRepository } from '../src/platform/appearance/repository';
-import { PanelRepository } from '../src/platform/panel/repository';
+import { KeyBindingsRepository } from '../src/workbench/key-bindings/repository';
+import { APPEARANCE_STORAGE } from '../src/workbench/appearance/model';
+import { AppearanceRepository } from '../src/workbench/appearance/repository';
+import { PanelRepository } from '../src/workbench/panel/repository';
 import { VoiceSettingsRepository, voiceSettingsRepository } from '../src/platform/voice-settings/repository';
 import { useVoiceSettings } from '../src/platform/voice-settings/use-voice-settings';
 import { DEFAULT_VOICE_SETTINGS } from '../src/platform/voice-settings/model';
@@ -22,8 +22,8 @@ import type { LatheDesktop } from '../src/shell/desktop-bridge';
 
 afterEach(() => vi.restoreAllMocks());
 
-describe('LA-PLT-A2-SR01 a panel\'s size and whether it shows are kept in this browser, and losing them is acceptable', () => {
-  it('LA-PLT-A2-SR01-T01 a panel\'s width reads back from local storage, and the app works on when storage refuses', () => {
+describe('LA-WBN-A2-SR01 a panel\'s size and whether it shows are kept in this browser, and losing them is acceptable', () => {
+  it('LA-WBN-A2-SR01-T01 a panel\'s width reads back from local storage, and the app works on when storage refuses', () => {
     const panels = new PanelRepository().load();
     new PanelRepository().save({ ...panels, nav: { width: 312, collapsed: true } });
     expect(window.localStorage.getItem('lathe:nav-width')).toBe('312');
@@ -35,8 +35,8 @@ describe('LA-PLT-A2-SR01 a panel\'s size and whether it shows are kept in this b
   });
 });
 
-describe('LA-PLT-A4-SR01 the person\'s themes, chosen theme, color mode and Scroll to zoom are kept in this browser', () => {
-  it('LA-PLT-A4-SR01-T01 the themes and choices saved read back from local storage, and a blocked storage loses only the choice', () => {
+describe('LA-WBN-A4-SR01 the person\'s themes, chosen theme, color mode and Scroll to zoom are kept in this browser', () => {
+  it('LA-WBN-A4-SR01-T01 the themes and choices saved read back from local storage, and a blocked storage loses only the choice', () => {
     const appearance = new AppearanceRepository().load();
     expect(appearance.scrollToZoom).toBe(false);
     new AppearanceRepository().save({ ...appearance, mode: 'dark', scrollToZoom: true });
@@ -48,8 +48,8 @@ describe('LA-PLT-A4-SR01 the person\'s themes, chosen theme, color mode and Scro
   });
 });
 
-describe('LA-PLT-A14-SR01 the person\'s key bindings are kept in this browser', () => {
-  it('LA-PLT-A14-SR01-T01 the bindings saved read back from local storage, and a blocked storage loses only the bindings', () => {
+describe('LA-WBN-A14-SR01 the person\'s key bindings are kept in this browser', () => {
+  it('LA-WBN-A14-SR01-T01 the bindings saved read back from local storage, and a blocked storage loses only the bindings', () => {
     new KeyBindingsRepository().save({ changed: [{ shortcut: 'toggleNav', keys: ['Ctrl+J'], unbound: false }, { shortcut: 'goHome', keys: [], unbound: true }] });
     expect(JSON.parse(window.localStorage.getItem('lathe:keybindings')!)).toEqual({ toggleNav: ['Ctrl+J'], goHome: null });
     expect(new KeyBindingsRepository().load().changed).toEqual([{ shortcut: 'toggleNav', keys: ['Ctrl+J'], unbound: false }, { shortcut: 'goHome', keys: [], unbound: true }]);

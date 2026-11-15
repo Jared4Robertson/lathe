@@ -1,4 +1,4 @@
-// The Recent folders' policy (LA-PLT-PO03): when a folder opens, put it first in the recent folders.
+// The Recent folders' policy (LA-WBN-PO03): when a folder opens, put it first in the recent folders.
 import type { ProductWindowOpened } from '../product-window/events.ts';
 import { addRecentFolder } from './commands/add-recent-folder.ts';
 import type { RecentFolderRepository } from './repository.ts';

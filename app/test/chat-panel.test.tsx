@@ -1,6 +1,6 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { PANEL_STORAGE } from '../src/platform/panel/model';
+import { PANEL_STORAGE } from '../src/workbench/panel/model';
 import { focusAnswer, focusContext, openAnswer } from '../src/chat/appRequests';
 import { reloadChanges } from '../src/changes/changes';
 import { sessionDate } from '../src/chat/ChatPanel';
@@ -300,7 +300,7 @@ describe('LA-PLT-UC44-R01-T02 The picker resumes, forks or starts a session, and
   });
 });
 
-describe('LA-PLT-UC29-R01-T03 The page answers the app bridge: what the Reader is looking at, and opening a record', () => {
+describe('LA-WBN-UC29-R01-T03 The page answers the app bridge: what the Reader is looking at, and opening a record', () => {
   it('names the focused record and stage, and opens a record by its address', async () => {
     fakeChat();
     await openApp('/DM-SHOP-UC01?stage=erd');
@@ -481,7 +481,7 @@ describe('LA-V99-R04-T01 The mic button dictates into the message box; the Voice
     await waitFor(() => expect(chatFake.sent).toEqual(['What does this need?']));
   });
 
-  it('turns on voice activation and Quick mode from the Voice menu, kept from one launch to the next, and refuses clashing phrases', async () => {
+  it('LA-PAT-PAGE-STEPS-R02-T11 turns on voice activation and Quick mode from the Voice menu, kept from one launch to the next, and refuses clashing phrases', async () => {
     fakeChat();
     const { voice, listens } = fakeVoice();
     host.latheDesktop = { ...host.latheDesktop!, voice };

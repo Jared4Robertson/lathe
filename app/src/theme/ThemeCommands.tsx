@@ -7,8 +7,8 @@ import { QuickPick } from './QuickPick';
 import { useThemes } from './ThemeProvider';
 import { MODE_CHOICES, MODE_LABELS, type ModeChoice, type Theme } from './theme';
 import { panelHref } from '../views/overlays';
-import { turnScrollToZoomOnOrOff } from '../platform/appearance/commands/handlers.generated';
-import { useScrollToZoom } from '../platform/appearance/use-scroll-to-zoom';
+import { turnScrollToZoomOnOrOff } from '../workbench/appearance/commands/handlers.generated';
+import { useScrollToZoom } from '../workbench/appearance/use-scroll-to-zoom';
 
 /** A palette, drawn like the shared icons (app/src/components/icons.tsx): 24 x 24 lines, 2 px stroke. */
 export function PaletteIcon({ size = 16 }: { size?: number }) {

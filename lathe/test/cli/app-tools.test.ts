@@ -40,7 +40,7 @@ afterAll(() => {
 
 const app = (window: string): AppBridge => ({ url: `${base}/${window}`, token: TOKEN });
 
-describe('LA-PLT-UC29-R01-T01 Claude asks what the Reader is looking at and opens a record, only with an app window connected', () => {
+describe('LA-WBN-UC29-R01-T01 LA-PAT-MCP-STEPS-R01-T10 LA-PAT-MCP-STEPS-R02-T10 Claude asks what the Reader is looking at and opens a record, only with an app window connected', () => {
   it('lists the app tools only under the desktop app\'s chat', async () => {
     const root = writeData(everyKind());
     const list = async (bridge: AppBridge | null) => {
@@ -90,7 +90,7 @@ describe('LA-PLT-UC29-R01-T01 Claude asks what the Reader is looking at and open
   });
 });
 
-describe('LA-PLT-UC29-R02-T01 LA-PLT-UC29-FL-T lathe app focus and lathe app open reach the window as the app tools do, and refuse with none', () => {
+describe('LA-WBN-UC29-R02-T01 LA-WBN-UC29-FL-T LA-PAT-CLI-STEPS-R01-T10 LA-PAT-CLI-STEPS-R02-T10 lathe app focus and lathe app open reach the window as the app tools do, and refuse with none', () => {
   async function lathe(bridge: AppBridge | null, ...args: string[]) {
     let out = '';
     let err = '';

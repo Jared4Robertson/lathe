@@ -1,4 +1,4 @@
-// Choose an editor (LA-PLT-CMD40): File › Open Records In keeps the editor "Open in editor" uses.
+// Choose an editor (LA-WBN-CMD40): File › Open Records In keeps the editor "Open in editor" uses.
 import type { Editor } from '../model.ts';
 import type { ShellSettingsRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';

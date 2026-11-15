@@ -6,25 +6,25 @@
 {"domain_event_id":"LA-EXP-EV02","position":1,"name":"Space","meaning":"The space whose tab is now active.","type_aggregate_id":"LA-EXP-A2","required":true}
 {"domain_event_id":"LA-EXP-EV02","position":2,"name":"Page","meaning":"That tab's place's page.","type_value_object_id":"LA-VO90","required":true}
 {"domain_event_id":"LA-EXP-EV02","position":3,"name":"Stage","meaning":"That tab's place's stage.","type_value_object_id":"LA-VO91","required":true}
-{"domain_event_id":"LA-PLT-EV01","position":1,"name":"Theme","meaning":"The theme now chosen.","type":"text","required":true,"example":"Workshop"}
-{"domain_event_id":"LA-PLT-EV01","position":2,"name":"Previous theme","meaning":"The theme it replaced.","type":"text","required":true,"example":"Lathe"}
-{"domain_event_id":"LA-PLT-EV01","position":3,"name":"Chosen at","meaning":"When it was kept.","type":"date and time","required":true,"example":"2026-10-24T14:40:00Z"}
-{"domain_event_id":"LA-PLT-EV02","position":1,"name":"Mode","meaning":"The choice now kept.","type":"text","required":true,"example":"dark"}
-{"domain_event_id":"LA-PLT-EV02","position":2,"name":"Previous mode","meaning":"The choice it replaced.","type":"text","required":true,"example":"system"}
-{"domain_event_id":"LA-PLT-EV02","position":3,"name":"Chosen at","meaning":"When it was kept.","type":"date and time","required":true,"example":"2026-10-24T14:41:00Z"}
-{"domain_event_id":"LA-PLT-EV03","position":1,"name":"Theme","meaning":"The new theme's name.","type":"text","required":true,"example":"Workshop copy"}
-{"domain_event_id":"LA-PLT-EV03","position":2,"name":"Made from","meaning":"The theme it copies, or the file it came from.","type":"text","required":true,"example":"Workshop"}
-{"domain_event_id":"LA-PLT-EV03","position":3,"name":"Made at","meaning":"When it was made.","type":"date and time","required":true,"example":"2026-10-24T14:45:00Z"}
-{"domain_event_id":"LA-PLT-EV04","position":1,"name":"Folder","meaning":"The product folder the window shows.","type":"text","required":true,"example":"~/Development/Lathe"}
-{"domain_event_id":"LA-PLT-EV04","position":2,"name":"Products","meaning":"The names in the window's title.","type":"text","required":true,"example":"Lathe"}
-{"domain_event_id":"LA-PLT-EV04","position":3,"name":"Opened at","meaning":"When the window opened.","type":"date and time","required":true,"example":"2026-10-24T08:30:00Z"}
-{"domain_event_id":"LA-PLT-EV05","position":1,"name":"Folder","meaning":"The product folder the window showed.","type":"text","required":true,"example":"~/Development/Lathe"}
-{"domain_event_id":"LA-PLT-EV05","position":2,"name":"Bounds","meaning":"Where the window was and how big.","type_value_object_id":"LA-VO64","required":true,"example":"120, 80, 1440 by 900, not maximized"}
-{"domain_event_id":"LA-PLT-EV05","position":3,"name":"Closed at","meaning":"When the window closed.","type":"date and time","required":true,"example":"2026-10-24T18:00:00Z"}
 {"domain_event_id":"LA-PLT-EV06","position":1,"name":"Tables","meaning":"The tables whose rows changed; none when only the checks' run is new.","type":"text","required":true,"example":"use_case, flow_step"}
 {"domain_event_id":"LA-PLT-EV06","position":2,"name":"Read models","meaning":"The read models whose answers may have changed, each by the slice of its queries' routes; or every read model, when the data loaded afresh or was refused.","type":"text","required":true,"example":"use-case, record-summaries, folder-tree"}
-{"domain_event_id":"LA-PLT-EV07","position":1,"name":"Bindings","meaning":"The shortcuts the person changed, each with its keys now.","type":"text","required":true,"example":"Graph stage: Ctrl+9"}
-{"domain_event_id":"LA-PLT-EV07","position":2,"name":"Changed at","meaning":"When the change was kept.","type":"date and time","required":true,"example":"2026-11-04T10:00:00Z"}
 {"domain_event_id":"LA-PRD-EV03","position":1,"name":"File","meaning":"The migration or declaration file that changed.","type":"text","required":true,"example":"lathe/schema/004-domain-model.sql"}
 {"domain_event_id":"LA-PRD-EV03","position":2,"name":"Product","meaning":"The product whose declaration changed, or none for Lathe's schema.","type_value_object_id":"LA-VO01","required":false,"example":"none"}
 {"domain_event_id":"LA-PRD-EV03","position":3,"name":"Changed at","meaning":"When the change was seen.","type":"date and time","required":true,"example":"2026-10-24T23:24:05Z"}
+{"domain_event_id":"LA-WBN-EV01","position":1,"name":"Theme","meaning":"The theme now chosen.","type":"text","required":true,"example":"Workshop"}
+{"domain_event_id":"LA-WBN-EV01","position":2,"name":"Previous theme","meaning":"The theme it replaced.","type":"text","required":true,"example":"Lathe"}
+{"domain_event_id":"LA-WBN-EV01","position":3,"name":"Chosen at","meaning":"When it was kept.","type":"date and time","required":true,"example":"2026-10-24T14:40:00Z"}
+{"domain_event_id":"LA-WBN-EV02","position":1,"name":"Mode","meaning":"The choice now kept.","type":"text","required":true,"example":"dark"}
+{"domain_event_id":"LA-WBN-EV02","position":2,"name":"Previous mode","meaning":"The choice it replaced.","type":"text","required":true,"example":"system"}
+{"domain_event_id":"LA-WBN-EV02","position":3,"name":"Chosen at","meaning":"When it was kept.","type":"date and time","required":true,"example":"2026-10-24T14:41:00Z"}
+{"domain_event_id":"LA-WBN-EV03","position":1,"name":"Theme","meaning":"The new theme's name.","type":"text","required":true,"example":"Workshop copy"}
+{"domain_event_id":"LA-WBN-EV03","position":2,"name":"Made from","meaning":"The theme it copies, or the file it came from.","type":"text","required":true,"example":"Workshop"}
+{"domain_event_id":"LA-WBN-EV03","position":3,"name":"Made at","meaning":"When it was made.","type":"date and time","required":true,"example":"2026-10-24T14:45:00Z"}
+{"domain_event_id":"LA-WBN-EV04","position":1,"name":"Folder","meaning":"The product folder the window shows.","type":"text","required":true,"example":"~/Development/Lathe"}
+{"domain_event_id":"LA-WBN-EV04","position":2,"name":"Products","meaning":"The names in the window's title.","type":"text","required":true,"example":"Lathe"}
+{"domain_event_id":"LA-WBN-EV04","position":3,"name":"Opened at","meaning":"When the window opened.","type":"date and time","required":true,"example":"2026-10-24T08:30:00Z"}
+{"domain_event_id":"LA-WBN-EV05","position":1,"name":"Folder","meaning":"The product folder the window showed.","type":"text","required":true,"example":"~/Development/Lathe"}
+{"domain_event_id":"LA-WBN-EV05","position":2,"name":"Bounds","meaning":"Where the window was and how big.","type_value_object_id":"LA-VO64","required":true,"example":"120, 80, 1440 by 900, not maximized"}
+{"domain_event_id":"LA-WBN-EV05","position":3,"name":"Closed at","meaning":"When the window closed.","type":"date and time","required":true,"example":"2026-10-24T18:00:00Z"}
+{"domain_event_id":"LA-WBN-EV07","position":1,"name":"Bindings","meaning":"The shortcuts the person changed, each with its keys now.","type":"text","required":true,"example":"Graph stage: Ctrl+9"}
+{"domain_event_id":"LA-WBN-EV07","position":2,"name":"Changed at","meaning":"When the change was kept.","type":"date and time","required":true,"example":"2026-11-04T10:00:00Z"}

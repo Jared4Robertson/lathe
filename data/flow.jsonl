@@ -175,58 +175,29 @@
 {"id":"LA-MOD-UC59-FL","title":"Remove a storage requirement test","use_case_id":"LA-MOD-UC59"}
 {"id":"LA-MOD-UC60-FL","title":"Remove a storage requirement","use_case_id":"LA-MOD-UC60"}
 {"id":"LA-PLT-UC01-FL","title":"Load the workspace","use_case_id":"LA-PLT-UC01"}
-{"id":"LA-PLT-UC02-FL","title":"Set up Lathe in a product repo","use_case_id":"LA-PLT-UC02"}
 {"id":"LA-PLT-UC03-FL","title":"See the current data","use_case_id":"LA-PLT-UC03"}
-{"id":"LA-PLT-UC06-FL","title":"Resize a panel","use_case_id":"LA-PLT-UC06"}
-{"id":"LA-PLT-UC07-FL","title":"Choose a theme","use_case_id":"LA-PLT-UC07"}
-{"id":"LA-PLT-UC101-FL","title":"Show a record's menu","use_case_id":"LA-PLT-UC101"}
-{"id":"LA-PLT-UC102-FL","title":"Reveal a product folder","use_case_id":"LA-PLT-UC102"}
 {"id":"LA-PLT-UC103-FL","title":"Read a product's changed data files again","use_case_id":"LA-PLT-UC103"}
-{"id":"LA-PLT-UC104-FL","title":"Merge two branches' data","use_case_id":"LA-PLT-UC104"}
-{"id":"LA-PLT-UC11-FL","title":"Open a product in a window","use_case_id":"LA-PLT-UC11"}
 {"id":"LA-PLT-UC12-FL","title":"Start Lathe with hot reload","use_case_id":"LA-PLT-UC12"}
-{"id":"LA-PLT-UC17-FL","title":"Upgrade a product's data","use_case_id":"LA-PLT-UC17"}
 {"id":"LA-PLT-UC18-FL","title":"Start the plugin's tools in a product repo","use_case_id":"LA-PLT-UC18"}
 {"id":"LA-PLT-UC19-FL","title":"Send a message to Claude","use_case_id":"LA-PLT-UC19"}
 {"id":"LA-PLT-UC20-FL","title":"Listen for a dictated message","use_case_id":"LA-PLT-UC20"}
 {"id":"LA-PLT-UC22-FL","title":"Capture the stage","use_case_id":"LA-PLT-UC22"}
 {"id":"LA-PLT-UC23-FL","title":"Serve the spec from a product repo","use_case_id":"LA-PLT-UC23"}
-{"id":"LA-PLT-UC24-FL","title":"Bind a key","use_case_id":"LA-PLT-UC24"}
-{"id":"LA-PLT-UC25-FL","title":"Open a record's data file in the editor","use_case_id":"LA-PLT-UC25"}
 {"id":"LA-PLT-UC26-FL","title":"Choose the voice phrases","use_case_id":"LA-PLT-UC26"}
 {"id":"LA-PLT-UC27-FL","title":"Undo Claude's turn","use_case_id":"LA-PLT-UC27"}
-{"id":"LA-PLT-UC28-FL","title":"Clear the recent folders","use_case_id":"LA-PLT-UC28"}
-{"id":"LA-PLT-UC29-FL","title":"Open a record for the Owner","use_case_id":"LA-PLT-UC29"}
 {"id":"LA-PLT-UC30-FL","title":"Sign the agent in","use_case_id":"LA-PLT-UC30"}
-{"id":"LA-PLT-UC31-FL","title":"Show or hide a panel","use_case_id":"LA-PLT-UC31"}
-{"id":"LA-PLT-UC32-FL","title":"Choose a color mode","use_case_id":"LA-PLT-UC32"}
-{"id":"LA-PLT-UC33-FL","title":"Duplicate a theme","use_case_id":"LA-PLT-UC33"}
-{"id":"LA-PLT-UC34-FL","title":"Edit a theme","use_case_id":"LA-PLT-UC34"}
-{"id":"LA-PLT-UC35-FL","title":"Export a theme","use_case_id":"LA-PLT-UC35"}
-{"id":"LA-PLT-UC36-FL","title":"Reset a theme","use_case_id":"LA-PLT-UC36"}
-{"id":"LA-PLT-UC37-FL","title":"Delete a theme","use_case_id":"LA-PLT-UC37"}
-{"id":"LA-PLT-UC38-FL","title":"Import a theme file","use_case_id":"LA-PLT-UC38"}
-{"id":"LA-PLT-UC39-FL","title":"Turn scroll to zoom on or off","use_case_id":"LA-PLT-UC39"}
-{"id":"LA-PLT-UC40-FL","title":"Save a window's place","use_case_id":"LA-PLT-UC40"}
-{"id":"LA-PLT-UC41-FL","title":"Close a product window","use_case_id":"LA-PLT-UC41"}
 {"id":"LA-PLT-UC42-FL","title":"Stop Claude's turn","use_case_id":"LA-PLT-UC42"}
 {"id":"LA-PLT-UC43-FL","title":"Answer a permission prompt","use_case_id":"LA-PLT-UC43"}
 {"id":"LA-PLT-UC44-FL","title":"Open a Claude Code session","use_case_id":"LA-PLT-UC44"}
 {"id":"LA-PLT-UC45-FL","title":"Choose the chat's permission mode","use_case_id":"LA-PLT-UC45"}
 {"id":"LA-PLT-UC46-FL","title":"Choose the chat's model and effort","use_case_id":"LA-PLT-UC46"}
 {"id":"LA-PLT-UC47-FL","title":"Take a message out of the queue","use_case_id":"LA-PLT-UC47"}
-{"id":"LA-PLT-UC48-FL","title":"Remove a binding","use_case_id":"LA-PLT-UC48"}
-{"id":"LA-PLT-UC49-FL","title":"Reset a shortcut","use_case_id":"LA-PLT-UC49"}
-{"id":"LA-PLT-UC50-FL","title":"Reset all shortcuts","use_case_id":"LA-PLT-UC50"}
-{"id":"LA-PLT-UC51-FL","title":"Reveal a record's data file","use_case_id":"LA-PLT-UC51"}
-{"id":"LA-PLT-UC52-FL","title":"Copy a record's ID","use_case_id":"LA-PLT-UC52"}
-{"id":"LA-PLT-UC53-FL","title":"Choose an editor","use_case_id":"LA-PLT-UC53"}
-{"id":"LA-PLT-UC54-FL","title":"Open the settings file","use_case_id":"LA-PLT-UC54"}
 {"id":"LA-PLT-UC55-FL","title":"Turn voice activation on or off","use_case_id":"LA-PLT-UC55"}
 {"id":"LA-PLT-UC56-FL","title":"Turn Quick mode on or off","use_case_id":"LA-PLT-UC56"}
 {"id":"LA-PLT-UC57-FL","title":"Give the sign-in code","use_case_id":"LA-PLT-UC57"}
 {"id":"LA-PLT-UC58-FL","title":"Cancel the sign-in","use_case_id":"LA-PLT-UC58"}
 {"id":"LA-PLT-UC59-FL","title":"Sign the agent out","use_case_id":"LA-PLT-UC59"}
+{"id":"LA-PRD-UC02-FL","title":"Set up Lathe in a product repo","use_case_id":"LA-PRD-UC02"}
 {"id":"LA-PRD-UC04-FL","title":"Declare a product kind","use_case_id":"LA-PRD-UC04"}
 {"id":"LA-PRD-UC101-FL","title":"Add a product","use_case_id":"LA-PRD-UC101"}
 {"id":"LA-PRD-UC102-FL","title":"Change a product kind","use_case_id":"LA-PRD-UC102"}
@@ -242,8 +213,10 @@
 {"id":"LA-PRD-UC111-FL","title":"Remove a journey step","use_case_id":"LA-PRD-UC111"}
 {"id":"LA-PRD-UC112-FL","title":"Change a journey test","use_case_id":"LA-PRD-UC112"}
 {"id":"LA-PRD-UC113-FL","title":"Remove a journey test","use_case_id":"LA-PRD-UC113"}
+{"id":"LA-PRD-UC114-FL","title":"Merge two branches' data","use_case_id":"LA-PRD-UC114"}
 {"id":"LA-PRD-UC14-FL","title":"Look up an entry in the reference","use_case_id":"LA-PRD-UC14"}
 {"id":"LA-PRD-UC16-FL","title":"Follow a journey step by step","use_case_id":"LA-PRD-UC16"}
+{"id":"LA-PRD-UC17-FL","title":"Upgrade a product's data","use_case_id":"LA-PRD-UC17"}
 {"id":"LA-PRD-UC22-FL","title":"Add a business outcome","use_case_id":"LA-PRD-UC22"}
 {"id":"LA-PRD-UC23-FL","title":"Add an interface","use_case_id":"LA-PRD-UC23"}
 {"id":"LA-PRD-UC33-FL","title":"Add a journey","use_case_id":"LA-PRD-UC33"}
@@ -344,3 +317,30 @@
 {"id":"LA-UCS-UC14-FL","title":"Move a UC requirement to another use case","use_case_id":"LA-UCS-UC14"}
 {"id":"LA-UCS-UC30-FL","title":"Change a use case test","use_case_id":"LA-UCS-UC30"}
 {"id":"LA-UCS-UC47-FL","title":"Remove a use case","use_case_id":"LA-UCS-UC47"}
+{"id":"LA-WBN-UC06-FL","title":"Resize a panel","use_case_id":"LA-WBN-UC06"}
+{"id":"LA-WBN-UC07-FL","title":"Choose a theme","use_case_id":"LA-WBN-UC07"}
+{"id":"LA-WBN-UC101-FL","title":"Show a record's menu","use_case_id":"LA-WBN-UC101"}
+{"id":"LA-WBN-UC102-FL","title":"Reveal a product folder","use_case_id":"LA-WBN-UC102"}
+{"id":"LA-WBN-UC11-FL","title":"Open a product in a window","use_case_id":"LA-WBN-UC11"}
+{"id":"LA-WBN-UC24-FL","title":"Bind a key","use_case_id":"LA-WBN-UC24"}
+{"id":"LA-WBN-UC25-FL","title":"Open a record's data file in the editor","use_case_id":"LA-WBN-UC25"}
+{"id":"LA-WBN-UC28-FL","title":"Clear the recent folders","use_case_id":"LA-WBN-UC28"}
+{"id":"LA-WBN-UC29-FL","title":"Open a record for the Owner","use_case_id":"LA-WBN-UC29"}
+{"id":"LA-WBN-UC31-FL","title":"Show or hide a panel","use_case_id":"LA-WBN-UC31"}
+{"id":"LA-WBN-UC32-FL","title":"Choose a color mode","use_case_id":"LA-WBN-UC32"}
+{"id":"LA-WBN-UC33-FL","title":"Duplicate a theme","use_case_id":"LA-WBN-UC33"}
+{"id":"LA-WBN-UC34-FL","title":"Edit a theme","use_case_id":"LA-WBN-UC34"}
+{"id":"LA-WBN-UC35-FL","title":"Export a theme","use_case_id":"LA-WBN-UC35"}
+{"id":"LA-WBN-UC36-FL","title":"Reset a theme","use_case_id":"LA-WBN-UC36"}
+{"id":"LA-WBN-UC37-FL","title":"Delete a theme","use_case_id":"LA-WBN-UC37"}
+{"id":"LA-WBN-UC38-FL","title":"Import a theme file","use_case_id":"LA-WBN-UC38"}
+{"id":"LA-WBN-UC39-FL","title":"Turn scroll to zoom on or off","use_case_id":"LA-WBN-UC39"}
+{"id":"LA-WBN-UC40-FL","title":"Save a window's place","use_case_id":"LA-WBN-UC40"}
+{"id":"LA-WBN-UC41-FL","title":"Close a product window","use_case_id":"LA-WBN-UC41"}
+{"id":"LA-WBN-UC48-FL","title":"Remove a binding","use_case_id":"LA-WBN-UC48"}
+{"id":"LA-WBN-UC49-FL","title":"Reset a shortcut","use_case_id":"LA-WBN-UC49"}
+{"id":"LA-WBN-UC50-FL","title":"Reset all shortcuts","use_case_id":"LA-WBN-UC50"}
+{"id":"LA-WBN-UC51-FL","title":"Reveal a record's data file","use_case_id":"LA-WBN-UC51"}
+{"id":"LA-WBN-UC52-FL","title":"Copy a record's ID","use_case_id":"LA-WBN-UC52"}
+{"id":"LA-WBN-UC53-FL","title":"Choose an editor","use_case_id":"LA-WBN-UC53"}
+{"id":"LA-WBN-UC54-FL","title":"Open the settings file","use_case_id":"LA-WBN-UC54"}

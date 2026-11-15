@@ -2,19 +2,19 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { applyTheme } from './apply';
 import { useDesktopChrome } from '../shell/desktopChrome';
 import { useAggregate } from '../shell/prefs';
-import { appearanceRepository } from '../platform/appearance/repository';
-import { themesReader } from '../platform/appearance/reader';
-import { getThemeFile, listThemes } from '../platform/appearance/queries';
-import { chooseColorMode, chooseTheme } from '../platform/appearance/commands/handlers.generated';
-import { duplicateTheme } from '../platform/appearance/commands/duplicate-theme';
-import { importThemeFile } from '../platform/appearance/commands/import-theme-file';
-import { editTheme } from '../platform/appearance/commands/edit-theme';
-import { resetTheme } from '../platform/appearance/commands/reset-theme';
-import { deleteTheme } from '../platform/appearance/commands/delete-theme';
+import { appearanceRepository } from '../workbench/appearance/repository';
+import { themesReader } from '../workbench/appearance/reader';
+import { getThemeFile, listThemes } from '../workbench/appearance/queries';
+import { chooseColorMode, chooseTheme } from '../workbench/appearance/commands/handlers.generated';
+import { duplicateTheme } from '../workbench/appearance/commands/duplicate-theme';
+import { importThemeFile } from '../workbench/appearance/commands/import-theme-file';
+import { editTheme } from '../workbench/appearance/commands/edit-theme';
+import { resetTheme } from '../workbench/appearance/commands/reset-theme';
+import { deleteTheme } from '../workbench/appearance/commands/delete-theme';
 import { BUILT_IN_THEMES, LATHE, type ModeChoice, type Theme, type ThemeFile } from './theme';
 
 // The person's themes: the built-ins and their own, the one chosen, and the Light, Dark or System
-// choice, read through the Themes read model (platform/appearance). Every change is one of the Appearance's commands,
+// choice, read through the Themes read model (workbench/appearance). Every change is one of the Appearance's commands,
 // which keeps it, and applies at once (no reload). A preview (the theme picker arrowing through its list) applies
 // without being kept, until it is kept or undone.
 

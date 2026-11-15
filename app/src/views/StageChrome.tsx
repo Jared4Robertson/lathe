@@ -9,7 +9,7 @@ import { BottomSheet } from '../shell/BottomSheet';
 import { useNarrow } from '../shell/useNarrow';
 import { MOVES, type Direction, type Move } from './levels';
 import { ChangesTools } from '../changes/ChangesTools';
-import { useScrollToZoom } from '../platform/appearance/use-scroll-to-zoom';
+import { useScrollToZoom } from '../workbench/appearance/use-scroll-to-zoom';
 
 // One stage chrome (LA-PAT-APP-UX-R21): every stage (Graph, ERD, Trace) has the same controls in the same places, built
 // from these three components, so no stage can drift.

@@ -230,7 +230,7 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
   // A page opened from a tool's sheet shows in the wiki card's sheet (ToolPanel.tsx).
   useEffect(() => (narrow ? onCardSheetAsked(() => setSheet(true)) : undefined), [narrow]);
 
-  // What the page shows, for Claude's app_focus tool in the desktop chat (LA-PLT-UC29-R01).
+  // What the page shows, for Claude's app_focus tool in the desktop chat (LA-WBN-UC29-R01).
   useViewState({ focus, stage, wikiCard: cardShown });
 
   const [counts, setCounts] = useState('');
