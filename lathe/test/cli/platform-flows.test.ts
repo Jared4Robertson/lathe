@@ -1,5 +1,5 @@
-// Platform's and Product's flows that run through code, the CLI and the server, end to end along their main paths: loading the
-// workspace from a script (LA-PLT-UC01), setting Lathe up in a product repo (LA-PRD-UC02) and changing the data
+// Platform's flows that run through code, the CLI and the server, end to end along their main paths: loading the
+// workspace from a script (LA-PLT-UC01), setting Lathe up in a product repo (LA-PLT-UC02) and changing the data
 // through each aggregate's own commands (LA-PAT-HTTP-STEPS). `lathe serve` needs the built web app: when lathe/dist/app is missing,
 // the app's own Vite builds it there, as the package's build does. It is skipped, with a message, only when the app's
 // packages are not installed (app/node_modules).
@@ -175,7 +175,7 @@ describe('Platform flows', () => {
     expect(timings.total).toBeGreaterThan(0);
   }, 120_000);
 
-  it('LA-PRD-UC02-FL-T the Owner sets Lathe up in a product repo: init, the merge driver, the first records and a check', () => {
+  it('LA-PLT-UC02-FL-T the Owner sets Lathe up in a product repo: init, the merge driver, the first records and a check', () => {
     const root = temp('lathe-setup-');
     git(root, 'init', '-q');
 

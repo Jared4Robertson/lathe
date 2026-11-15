@@ -97,7 +97,7 @@ describe('the server', () => {
     // 5 s on a busy machine.
   }, 30_000);
 
-  it('LA-PRD-UC17-R01-T02 for a product whose data is for another schema, offers only check, and every tool says what to do', async () => {
+  it('LA-PLT-UC17-R01-T02 for a product whose data is for another schema, offers only check, and every tool says what to do', async () => {
     const root = writeData(everyKind());
     writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ schema: SCHEMA_VERSION + 1 }));
     const message = `This product's data is for schema ${SCHEMA_VERSION + 1}; this Lathe uses schema ${SCHEMA_VERSION}. It needs a newer Lathe: update @jaredrob/lathe.`;

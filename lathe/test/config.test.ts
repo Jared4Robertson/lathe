@@ -1,16 +1,16 @@
-// lathe.config.json (LA-PRD-REPO07): it names the schema version and the data folder, and a setting Lathe does not
+// lathe.config.json (LA-PLT-REPO07): it names the schema version and the data folder, and a setting Lathe does not
 // know is an error, never silently ignored.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { DEFAULT_TESTS, loadConfig, loadWorkspace, openStore, readConfig, SCHEMA_VERSION, SchemaVersionError, schemaVersionMessage } from '../src/index.ts';
-import { ProductRepoConfigRepository } from '../src/product/product-repo/repository.ts';
+import { ProductRepoConfigRepository } from '../src/platform/product-repo/repository.ts';
 import { removeData, writeData } from './helpers.ts';
 
 afterAll(removeData);
 
 describe('product configuration', () => {
-  it('LA-PRD-UC02-R02-T02 a config with an unknown setting is refused and names it', async () => {
+  it('LA-PLT-UC02-R02-T02 a config with an unknown setting is refused and names it', async () => {
     const root = writeData({});
     writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ data: 'data', diagrams: 'model' }));
     expect(() => loadConfig(root)).toThrow(/unknown setting "diagrams"/);
@@ -20,13 +20,13 @@ describe('product configuration', () => {
     expect(() => loadConfig(root)).toThrow(/unknown settings "specs", "checks", "metaExtensions"/);
   });
 
-  it("LA-PRD-UC02-R02-T01 a product's lathe.config.json chooses the data folder", () => {
+  it("LA-PLT-UC02-R02-T01 a product's lathe.config.json chooses the data folder", () => {
     const root = writeData({});
     writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ schema: SCHEMA_VERSION, data: 'spec-data' }));
     expect(loadConfig(root).dataDir).toBe(path.join(root, 'spec-data'));
   });
 
-  it("LA-PRD-UC02-R07-T01 the config's tests globs choose the test files; node_modules, dist and another product's folder are never read", async () => {
+  it("LA-PLT-UC02-R07-T01 the config's tests globs choose the test files; node_modules, dist and another product's folder are never read", async () => {
     const root = writeData({ product: [{ id: 'TL', title: 'Tool Library', description: 'A library that lends tools to its members.' }] });
     const unnamed = "it('proves nothing anyone can find', () => {});\n";
     for (const file of ['test/a.test.ts', 'checks/b.check.ts', 'node_modules/x/c.test.ts', 'dist/d.test.ts', 'other/test/e.test.ts']) {
@@ -45,7 +45,7 @@ describe('product configuration', () => {
     }
   });
 
-  it('LA-PRD-UC17-R01-T01 a product whose data is for another schema version stops every load with what to do', async () => {
+  it('LA-PLT-UC17-R01-T01 a product whose data is for another schema version stops every load with what to do', async () => {
     const root = writeData({ product: [{ id: 'TL', title: 'Tool Library', description: 'A library that lends tools to its members.' }] });
     // No schema version is version 1, the first versioned schema.
     writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ data: 'data' }));
@@ -71,8 +71,8 @@ describe('product configuration', () => {
   });
 });
 
-describe('LA-PRD-A10-SR01 the product repo\'s config is kept at its root, whole, beside the data it names', () => {
-  it('LA-PRD-A10-SR01-T01 a config saved reads back whole through a new repository, a repo without one reads none, and a broken one is refused', () => {
+describe('LA-PLT-A10-SR01 the product repo\'s config is kept at its root, whole, beside the data it names', () => {
+  it('LA-PLT-A10-SR01-T01 a config saved reads back whole through a new repository, a repo without one reads none, and a broken one is refused', () => {
     const root = writeData({});
     new ProductRepoConfigRepository(root).save({ schema: SCHEMA_VERSION, data: 'spec-data' });
     expect(new ProductRepoConfigRepository(root).load()).toEqual({ schema: SCHEMA_VERSION, data: 'spec-data' });

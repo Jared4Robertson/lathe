@@ -56,6 +56,7 @@
 {"id":"LA-MOD-EN90-DM","title":"ReaderRow","entity_id":"LA-MOD-EN90","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-MOD-EN96-DM","title":"RuleRow","entity_id":"LA-MOD-EN96","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-PLT-EN10-DM","title":"AppServer","entity_id":"LA-PLT-EN10","file":"desktop/src/servers.ts"}
+{"id":"LA-PLT-EN16-DM","title":"LatheConfig","entity_id":"LA-PLT-EN16","file":"lathe/src/config.ts"}
 {"id":"LA-PLT-EN26-DM","title":"VoiceSettings","entity_id":"LA-PLT-EN26","file":"app/src/platform/voice-settings/model.ts"}
 {"id":"LA-PLT-EN27-DM","title":"WindowChat","entity_id":"LA-PLT-EN27","file":"desktop/src/window-chat/model.ts"}
 {"id":"LA-PLT-EN28-DM","title":"AgentSignIn","entity_id":"LA-PLT-EN28","file":"desktop/src/agent-sign-in/model.ts"}
@@ -66,7 +67,6 @@
 {"id":"LA-PRD-EN115-DM","title":"JourneyRow","entity_id":"LA-PRD-EN115","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-PRD-EN116-DM","title":"JourneyStepRow","entity_id":"LA-PRD-EN116","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-PRD-EN117-DM","title":"JourneyTestRow","entity_id":"LA-PRD-EN117","file":"lathe/src/platform/data/tables.ts"}
-{"id":"LA-PRD-EN16-DM","title":"LatheConfig","entity_id":"LA-PRD-EN16","file":"lathe/src/config.ts"}
 {"id":"LA-PRD-EN23-DM","title":"QuestionRow","entity_id":"LA-PRD-EN23","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-PRD-EN28-DM","title":"ProductKindFieldRow","entity_id":"LA-PRD-EN28","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-PRD-EN29-DM","title":"ProductRelationRow","entity_id":"LA-PRD-EN29","file":"lathe/src/platform/data/tables.ts"}

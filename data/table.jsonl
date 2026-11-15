@@ -94,6 +94,7 @@
 {"id":"LA-MOD-TB48","title":"fed_by","domain_id":"LA-MOD","name":"fed_by","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-MOD-TB88","title":"builds_on","domain_id":"LA-MOD","name":"builds_on","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-PLT-EN10-TB","title":"running","entity_id":"LA-PLT-EN10","name":"running","storage":"in memory","file":"desktop/src/app-server/repository.ts"}
+{"id":"LA-PLT-EN16-TB","title":"lathe.config.json","entity_id":"LA-PLT-EN16","name":"lathe.config.json","storage":"file","file":"lathe/src/platform/product-repo/repository.ts"}
 {"id":"LA-PLT-EN26-TB","title":"lathe:voice","entity_id":"LA-PLT-EN26","name":"lathe:voice","storage":"browser storage","file":"app/src/platform/voice-settings/model.ts"}
 {"id":"LA-PLT-EN27-TB","title":"chat-modes.json","entity_id":"LA-PLT-EN27","name":"chat-modes.json","storage":"file","file":"desktop/src/window-chat/repository.ts"}
 {"id":"LA-PLT-EN28-TB","title":"kept","entity_id":"LA-PLT-EN28","name":"kept","storage":"in memory","file":"desktop/src/agent-sign-in/repository.ts"}
@@ -109,7 +110,6 @@
 {"id":"LA-PRD-EN115-TB","title":"journey","entity_id":"LA-PRD-EN115","name":"journey","storage":"table","file":"lathe/schema/003-product.sql"}
 {"id":"LA-PRD-EN116-TB","title":"journey_step","entity_id":"LA-PRD-EN116","name":"journey_step","storage":"table","file":"lathe/schema/003-product.sql"}
 {"id":"LA-PRD-EN117-TB","title":"journey_test","entity_id":"LA-PRD-EN117","name":"journey_test","storage":"table","file":"lathe/schema/008-test-plan.sql"}
-{"id":"LA-PRD-EN16-TB","title":"lathe.config.json","entity_id":"LA-PRD-EN16","name":"lathe.config.json","storage":"file","file":"lathe/src/product/product-repo/repository.ts"}
 {"id":"LA-PRD-EN23-TB","title":"question","entity_id":"LA-PRD-EN23","name":"question","storage":"table","file":"lathe/schema/009-questions.sql"}
 {"id":"LA-PRD-EN28-TB","title":"product_kind_field","entity_id":"LA-PRD-EN28","name":"product_kind_field","storage":"table","file":"lathe/schema/012-product-kinds.sql"}
 {"id":"LA-PRD-EN29-TB","title":"product_relation","entity_id":"LA-PRD-EN29","name":"product_relation","storage":"table","file":"lathe/schema/012-product-kinds.sql"}

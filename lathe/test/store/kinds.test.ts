@@ -106,7 +106,7 @@ describe('loading files', () => {
     }
   });
 
-  it('LA-PRD-UC02-R02-T03 reads the data folder lathe.config.json names', async () => {
+  it('LA-PLT-UC02-R02-T03 reads the data folder lathe.config.json names', async () => {
     const root = writeData({});
     const { renameSync, writeFileSync } = await import('node:fs');
     const elsewhere = writeData(data);

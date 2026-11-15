@@ -12,7 +12,7 @@ import type { TraceHost } from '../src/trace/TraceCanvas';
 
 const USE_CASE = 'LA-UCS-UC06';
 const STEP = 'LA-UCS-UC06-FL-S02';
-/** A use case a journey's step carries out, among rows of others that journeys carry out too (LA-PRD-UC17 to UC19). */
+/** A use case a journey's step carries out, among rows of others that journeys carry out too (LA-PLT-UC17 to UC19). */
 const CARRIED = 'LA-PLT-UC18';
 /** Lathe's own journey "Take an idea to proof": its first steps carry out LA-UCS-UC06, then LA-MOD-UC12. */
 const JOURNEY = 'LA-JR01';

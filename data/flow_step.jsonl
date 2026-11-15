@@ -319,16 +319,26 @@
 {"id":"LA-PLT-UC01-FL-S01","title":"The Agent's script calls loadWorkspace(root) and reads the records, links, problems and coverage","flow_id":"LA-PLT-UC01-FL","path":"main","position":1}
 {"id":"LA-PLT-UC01-FL-S02","title":"After a write, the script loads again within the budgets","flow_id":"LA-PLT-UC01-FL","path":"main","position":2}
 {"id":"LA-PLT-UC01-FL-S03","title":"Data the store refuses ends the load with one data-refused error per refusal and no records","flow_id":"LA-PLT-UC01-FL","path":"refused","position":1}
+{"id":"LA-PLT-UC02-FL-S01","title":"The Owner installs the package and runs lathe init with the product's name and prefix, and names the test files in the product's Lathe configuration file when they differ from the common names","flow_id":"LA-PLT-UC02-FL","path":"main","position":1}
+{"id":"LA-PLT-UC02-FL-S02","title":"They set up the merge driver once per clone, as the README says, so git merges the data files through it","flow_id":"LA-PLT-UC02-FL","path":"main","position":2}
+{"id":"LA-PLT-UC02-FL-S03","title":"They run lathe check, which loads the records in the data folder the config names, with the product's own kinds","flow_id":"LA-PLT-UC02-FL","path":"main","position":3}
+{"id":"LA-PLT-UC02-FL-S06","title":"The Owner lists the other products in the workspace's Lathe configuration file, and lathe check checks each in its own folder","flow_id":"LA-PLT-UC02-FL","path":"workspace","position":1}
 {"id":"LA-PLT-UC03-FL-S01","title":"A record is changed with its own command while the Reader keeps its page open","flow_id":"LA-PLT-UC03-FL","path":"main","position":1}
 {"id":"LA-PLT-UC03-FL-S02","title":"The open page loads the data again at the same address and shows the change","flow_id":"LA-PLT-UC03-FL","path":"main","position":3}
 {"id":"LA-PLT-UC03-FL-S05","title":"When the data cannot be loaded, the view says what is wrong rather than showing other data","flow_id":"LA-PLT-UC03-FL","path":"refused","position":1}
 {"id":"LA-PLT-UC03-FL-S06","title":"The changed data files are read again and the change is announced","flow_id":"LA-PLT-UC03-FL","path":"main","position":2}
 {"id":"LA-PLT-UC103-FL-S01","title":"The Owner's change to the data files is noticed and the changed files are read again, and the kinds that changed announced","flow_id":"LA-PLT-UC103-FL","path":"main","position":1}
+{"id":"LA-PLT-UC104-FL-S01","title":"Git merges two branches and runs the merge driver for each data file","flow_id":"LA-PLT-UC104-FL","path":"main","position":1}
+{"id":"LA-PLT-UC104-FL-S02","title":"A real clash stops the merge, naming the key and both versions","flow_id":"LA-PLT-UC104-FL","path":"clash","position":1}
+{"id":"LA-PLT-UC104-FL-S03","title":"A driver whose lathe is not installed stops the merge, saying the file was not merged and how to merge it again","flow_id":"LA-PLT-UC104-FL","path":"not installed","position":1}
 {"id":"LA-PLT-UC12-FL-S01","title":"The Owner runs npm --prefix desktop run dev; a window loads the 5199 dev server when it serves the opened folder","flow_id":"LA-PLT-UC12-FL","path":"main","position":1}
 {"id":"LA-PLT-UC12-FL-S02","title":"A change to the main process or a preload restarts Electron","flow_id":"LA-PLT-UC12-FL","path":"main","position":2}
 {"id":"LA-PLT-UC12-FL-S03","title":"A change to a record reloads the view in every mode","flow_id":"LA-PLT-UC12-FL","path":"main","position":3}
 {"id":"LA-PLT-UC12-FL-S04","title":"They build the app as it ships, locally and unsigned","flow_id":"LA-PLT-UC12-FL","path":"main","position":4}
 {"id":"LA-PLT-UC12-FL-S05","title":"Otherwise the shell starts a dev server of its own for the folder","flow_id":"LA-PLT-UC12-FL","path":"alternate","position":1}
+{"id":"LA-PLT-UC17-FL-S01","title":"The Owner updates Lathe in the product repo, and the next load stops with what to do","flow_id":"LA-PLT-UC17-FL","path":"main","position":1}
+{"id":"LA-PLT-UC17-FL-S02","title":"With the work committed, they run lathe upgrade, which converts the data one version at a time and says what changed","flow_id":"LA-PLT-UC17-FL","path":"main","position":2}
+{"id":"LA-PLT-UC17-FL-S03","title":"They finish what it lists to do by hand, run lathe check, and commit the upgrade as one commit","flow_id":"LA-PLT-UC17-FL","path":"main","position":3}
 {"id":"LA-PLT-UC18-FL-S01","title":"Claude Code starts the plugin's launcher, which finds the product repo and starts its installed Lathe's tools","flow_id":"LA-PLT-UC18-FL","path":"main","position":1}
 {"id":"LA-PLT-UC18-FL-S02","title":"The Agent calls a tool; when the skills were written for another major version, the first result alone carries one warning naming both","flow_id":"LA-PLT-UC18-FL","path":"main","position":2}
 {"id":"LA-PLT-UC18-FL-S03","title":"The launcher says why it cannot start outside a Lathe repo","flow_id":"LA-PLT-UC18-FL","path":"refused","position":1}
@@ -367,10 +377,6 @@
 {"id":"LA-PLT-UC57-FL-S01","title":"When the sign-in asks for the code the browser shows, they give it","flow_id":"LA-PLT-UC57-FL","path":"main","position":1}
 {"id":"LA-PLT-UC58-FL-S01","title":"They cancel the sign-in under way, which leaves everything as it was","flow_id":"LA-PLT-UC58-FL","path":"main","position":1}
 {"id":"LA-PLT-UC59-FL-S01","title":"They sign the agent out, so another account can sign in","flow_id":"LA-PLT-UC59-FL","path":"main","position":1}
-{"id":"LA-PRD-UC02-FL-S01","title":"The Owner installs the package and runs lathe init with the product's name and prefix, and names the test files in the product's Lathe configuration file when they differ from the common names","flow_id":"LA-PRD-UC02-FL","path":"main","position":1}
-{"id":"LA-PRD-UC02-FL-S02","title":"They set up the merge driver once per clone, as the README says, so git merges the data files through it","flow_id":"LA-PRD-UC02-FL","path":"main","position":2}
-{"id":"LA-PRD-UC02-FL-S03","title":"They run lathe check, which loads the records in the data folder the config names, with the product's own kinds","flow_id":"LA-PRD-UC02-FL","path":"main","position":3}
-{"id":"LA-PRD-UC02-FL-S06","title":"The Owner lists the other products in the workspace's Lathe configuration file, and lathe check checks each in its own folder","flow_id":"LA-PRD-UC02-FL","path":"workspace","position":1}
 {"id":"LA-PRD-UC04-FL-S01","title":"The Owner declares a product kind with its fields, in a stage","flow_id":"LA-PRD-UC04-FL","path":"main","position":1}
 {"id":"LA-PRD-UC04-FL-S03","title":"The Owner reads the product's own kind whole, with its fields and relations, before declaring more","flow_id":"LA-PRD-UC04-FL","path":"main","position":2}
 {"id":"LA-PRD-UC04-FL-S05","title":"The Owner declares a kind or a relation a second time, and is refused naming the file and line of each","flow_id":"LA-PRD-UC04-FL","path":"refused","position":1}
@@ -417,9 +423,6 @@
 {"id":"LA-PRD-UC113-FL-S01","title":"The Owner removes a journey's test","flow_id":"LA-PRD-UC113-FL","path":"main","position":1}
 {"id":"LA-PRD-UC113-FL-S02","title":"The Owner reads the journey without its test","flow_id":"LA-PRD-UC113-FL","path":"main","position":2}
 {"id":"LA-PRD-UC113-FL-S03","title":"A removal of a test a business outcome measures is refused with every reason, and nothing changes","flow_id":"LA-PRD-UC113-FL","path":"refused","position":1}
-{"id":"LA-PRD-UC114-FL-S01","title":"Git merges two branches and runs the merge driver for each data file","flow_id":"LA-PRD-UC114-FL","path":"main","position":1}
-{"id":"LA-PRD-UC114-FL-S02","title":"A real clash stops the merge, naming the key and both versions","flow_id":"LA-PRD-UC114-FL","path":"clash","position":1}
-{"id":"LA-PRD-UC114-FL-S03","title":"A driver whose lathe is not installed stops the merge, saying the file was not merged and how to merge it again","flow_id":"LA-PRD-UC114-FL","path":"not installed","position":1}
 {"id":"LA-PRD-UC14-FL-S01","title":"The Reader opens the record format from the palette or the shortcuts sheet","flow_id":"LA-PRD-UC14-FL","path":"main","position":1}
 {"id":"LA-PRD-UC14-FL-S02","title":"They open a kind from the kind line of a wiki card or from a list's heading","flow_id":"LA-PRD-UC14-FL","path":"main","position":2}
 {"id":"LA-PRD-UC14-FL-S03","title":"They open a check from a problem's code","flow_id":"LA-PRD-UC14-FL","path":"main","position":3}
@@ -428,9 +431,6 @@
 {"id":"LA-PRD-UC16-FL-S02","title":"They follow a step to the use case it carries out, whose page names the journeys it is a step of with the steps before and after it","flow_id":"LA-PRD-UC16-FL","path":"alternate","position":1}
 {"id":"LA-PRD-UC16-FL-S03","title":"From a handoff they open its policy, which names the journeys it is a handoff in","flow_id":"LA-PRD-UC16-FL","path":"alternate","position":2}
 {"id":"LA-PRD-UC16-FL-S04","title":"In the Graph stage the journey's steps sit under it, in order, each linked to what it carries out","flow_id":"LA-PRD-UC16-FL","path":"alternate","position":3}
-{"id":"LA-PRD-UC17-FL-S01","title":"The Owner updates Lathe in the product repo, and the next load stops with what to do","flow_id":"LA-PRD-UC17-FL","path":"main","position":1}
-{"id":"LA-PRD-UC17-FL-S02","title":"With the work committed, they run lathe upgrade, which converts the data one version at a time and says what changed","flow_id":"LA-PRD-UC17-FL","path":"main","position":2}
-{"id":"LA-PRD-UC17-FL-S03","title":"They finish what it lists to do by hand, run lathe check, and commit the upgrade as one commit","flow_id":"LA-PRD-UC17-FL","path":"main","position":3}
 {"id":"LA-PRD-UC22-FL-S01","title":"The Owner reads the business outcome with what serves and measures it, before changing it","flow_id":"LA-PRD-UC22-FL","path":"main","position":1}
 {"id":"LA-PRD-UC22-FL-S02","title":"The Owner adds each business outcome under the product, with its statement, measure and target","flow_id":"LA-PRD-UC22-FL","path":"main","position":2}
 {"id":"LA-PRD-UC23-FL-S01","title":"The Owner reads the product whole, with its interfaces, before changing them","flow_id":"LA-PRD-UC23-FL","path":"main","position":1}

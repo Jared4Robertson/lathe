@@ -1,4 +1,4 @@
-// `lathe upgrade` (LA-PRD-UC17, upgradeProduct in src/upgrade.ts): converters run in order from the product's schema
+// `lathe upgrade` (LA-PLT-UC17, upgradeProduct in src/upgrade.ts): converters run in order from the product's schema
 // version to the target on the raw rows, the converted data must load under the new schema, and only then is the
 // config's schema raised. What they cannot convert is a to-do; a working tree with changes is refused.
 import { spawnSync } from 'node:child_process';
@@ -40,7 +40,7 @@ function committedProduct(product: Record<string, unknown>): string {
 const productFile = (root: string) => readFileSync(path.join(root, 'data', 'product.jsonl'), 'utf8');
 
 describe('lathe upgrade', () => {
-  it('LA-PRD-UC17-R02-T01 runs the converters in order on the raw rows, checks the data loads, and raises the schema', async () => {
+  it('LA-PLT-UC17-R02-T01 runs the converters in order on the raw rows, checks the data loads, and raises the schema', async () => {
     // "blurb" is a column the current schema does not have: only a converter can move it.
     const root = committedProduct({ title: 'Tool Library', id: 'TL', blurb: 'Lends tools to members.' });
     const ran: string[] = [];
@@ -87,7 +87,7 @@ describe('lathe upgrade', () => {
     await expect(upgradeProduct(root, { converters, target: 2 })).rejects.toThrow('It needs a newer Lathe: update @jaredrob/lathe.');
   });
 
-  it('LA-PRD-UC17-R03-T01 lists what a converter cannot convert, and stops without raising the schema when the data no longer loads', async () => {
+  it('LA-PLT-UC17-R03-T01 lists what a converter cannot convert, and stops without raising the schema when the data no longer loads', async () => {
     const root = committedProduct({ id: 'TL', title: 'Tool Library', description: 'Lends tools to members.', notes: 'Delivered weekly.' });
     const todo: ConverterStep = {
       from: 1, to: 2, name: '1-to-2',
@@ -113,7 +113,7 @@ describe('lathe upgrade', () => {
     expect(git(gap, 'status', '--porcelain')).toBe('');
   });
 
-  it('LA-PRD-UC17-R04-T01 refuses a working tree with changes, or no git', async () => {
+  it('LA-PLT-UC17-R04-T01 refuses a working tree with changes, or no git', async () => {
     const converters: ConverterStep[] = [{ from: 1, to: 2, name: '1-to-2', converter: { files: () => {} } }];
     const root = committedProduct({ id: 'TL', title: 'Tool Library', description: 'Lends tools to members.' });
     writeFileSync(path.join(root, 'notes.md'), 'Unsaved work\n');

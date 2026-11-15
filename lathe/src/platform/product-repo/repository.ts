@@ -1,6 +1,6 @@
-// The Product repo's repository (LA-PRD-REPO07): a product repo's lathe.config.json at its root, read and written
+// The Product repo's repository (LA-PLT-REPO07): a product repo's lathe.config.json at its root, read and written
 // whole. It is the only code that reads or writes the file: loadConfig and readConfig (config.ts) read it through
-// load, and `lathe init` (LA-PRD-CMD21) and `lathe upgrade` (LA-PRD-CMD24) write it through save.
+// load, and `lathe init` (LA-PLT-CMD21) and `lathe upgrade` (LA-PLT-CMD24) write it through save.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 

@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { CONFIG_FILE, ProductRepoConfigRepository } from './product/product-repo/repository.ts';
+import { CONFIG_FILE, ProductRepoConfigRepository } from './platform/product-repo/repository.ts';
 
 // The config file's name, kept by the Product repo's repository.
 export { CONFIG_FILE };

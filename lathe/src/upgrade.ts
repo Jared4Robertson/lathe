@@ -8,7 +8,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { ProductRepoConfigRepository, type StoredConfig } from './product/product-repo/repository.ts';
+import { ProductRepoConfigRepository, type StoredConfig } from './platform/product-repo/repository.ts';
 import { readConfig, SCHEMA_VERSION, schemaVersionMessage } from './config.ts';
 import { formatProblem, StoreError } from './platform/data/problems.ts';
 import { openStore, type Store } from './platform/data/store.ts';
