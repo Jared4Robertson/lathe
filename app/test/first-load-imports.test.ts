@@ -1,7 +1,6 @@
 // The wiki's first load leaves out what a record page doesn't need (LA-V61-R37, within LA-PAT-APP-UX-R11's budget), checked at the
 // source: no module that app/src/main.tsx reaches through static imports imports it. ELK: the graph,
-// the ERD view and the theme editor are loaded with import() when first used. The chat panel: the desktop's alone
-// (LA-PLT-UC19), loaded with import() when the chat first shows, so a browser never fetches it.
+// the ERD view and the theme editor are loaded with import() when first used.
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -56,9 +55,4 @@ describe('the first load', () => {
     expect(firstLoad().filter((i) => HEAVY.some((h) => h.test(i.spec))).map(where)).toEqual([]);
   });
 
-  it('LA-V61-R37-T06 reaches no chat panel through static imports', () => {
-    const panel = path.join(src, 'chat', 'ChatPanel.tsx');
-    expect(existsSync(panel)).toBe(true);
-    expect(firstLoad().filter((i) => i.next === panel).map(where)).toEqual([]);
-  });
 });

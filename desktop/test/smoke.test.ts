@@ -135,7 +135,7 @@ describe.skipIf(process.platform !== 'darwin')('The desktop app opens a product 
   });
 
   it('LA-PLT-UC11-R05-T01 bridges only window.latheDesktop, with no Node in the page', () => {
-    expect(result.bridge?.keys).toEqual(['chat', 'copyRecordId', 'isDesktop', 'onAppRequest', 'onCommand', 'onFullScreen', 'openRecordInEditor', 'platform', 'revealRecord', 'setChrome', 'setErrorCount', 'setMenuKeys', 'showRecordMenu', 'voice']);
+    expect(result.bridge?.keys).toEqual(['copyRecordId', 'isDesktop', 'onCommand', 'onFullScreen', 'openRecordInEditor', 'platform', 'revealRecord', 'setChrome', 'setErrorCount', 'setMenuKeys', 'showRecordMenu']);
     expect(result.bridge?.hasOnCommand).toBe(true);
     expect(result.bridge?.nodeInPage).toBe(false);
   });
@@ -147,7 +147,7 @@ describe.skipIf(process.platform !== 'darwin')('The desktop app opens a product 
   it('LA-STD-EXPERIENCE-R08-T03 the Reader uses Lathe from the native menus: File, Edit, View, Window and Help, a View item run by its command ID, in the desktop app', () => {
     // The app menu (named after the app) comes first on macOS.
     expect(result.menu?.top.slice(1)).toEqual(['File', 'Edit', 'View', 'Window', 'Help']);
-    expect(result.menu?.view).toEqual(expect.arrayContaining(['Command Palette…', 'Graph Stage', 'ERD Stage', 'Trace Stage', 'Show or Collapse Wiki Card', 'Show or Hide Navigation', 'Show or Hide Chat']));
+    expect(result.menu?.view).toEqual(expect.arrayContaining(['Command Palette…', 'Graph Stage', 'ERD Stage', 'Trace Stage', 'Show or Collapse Wiki Card', 'Show or Hide Navigation']));
     // View › Show or Hide Navigation, sent as its command ID, ran as if its keys had been pressed: the navigation folded away.
     expect(result.navShown).toEqual({ before: true, after: false });
     expect(result.bridge?.isDesktop).toBe(true);
@@ -161,7 +161,7 @@ describe.skipIf(process.platform !== 'darwin')('The desktop app opens a product 
     expect(result.titleBarStyle).toBe('hidden');
     expect(result.titleBar?.height).toBe(38);
     expect(result.titleBar?.center).toMatch(/^Lathe/);
-    expect(result.titleBar?.buttons).toEqual(['Go back', 'Go forward', expect.stringMatching(/^Lathe.*Quick find$/), 'Show or hide the navigation', 'Show or hide the chat with Claude']);
+    expect(result.titleBar?.buttons).toEqual(['Go back', 'Go forward', expect.stringMatching(/^Lathe.*Quick find$/), 'Show or hide the navigation']);
   });
 
   it("LA-V67-R06-T01 sends the theme's chrome colors, which the main process applies", () => {

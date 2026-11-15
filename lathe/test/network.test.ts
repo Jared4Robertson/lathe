@@ -100,11 +100,9 @@ describe('LA-PLT-UC23-R05-T01 only this machine writes; another device is refuse
   });
 
   it('refuses every write from another device on the network, in domain words, and marks it read-only', async () => {
-    for (const pathname of [ROUTE, '/api/snapshot', '/api/undo', '/api/turn-changes']) {
-      const { res, headers, sent } = response();
-      expect(await handleApi('/nowhere', request('192.168.1.20', 'POST', pathname, 'application/json'), res, pathname)).toBe(true);
-      expect(sent()).toEqual({ status: 403, body: { error: 'Changes come only from the machine Lathe runs on; other devices on the network can read.' } });
-      expect(headers.get(ACCESS_HEADER)).toBe(READ_ONLY);
-    }
+    const { res, headers, sent } = response();
+    expect(await handleApi('/nowhere', request('192.168.1.20', 'POST', ROUTE, 'application/json'), res, ROUTE)).toBe(true);
+    expect(sent()).toEqual({ status: 403, body: { error: 'Changes come only from the machine Lathe runs on; other devices on the network can read.' } });
+    expect(headers.get(ACCESS_HEADER)).toBe(READ_ONLY);
   });
 });

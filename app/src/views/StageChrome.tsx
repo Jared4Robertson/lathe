@@ -117,7 +117,7 @@ export function StageToolbar({ can, walkLabels = {}, own, measureKey, bar }: Sta
     needs.current[tier] = el.scrollWidth;
     setTier(tier + 1);
   });
-  // The room is the open space's width at the top (right of the nav, left of the chat), not the toolbar's own width, so
+  // The room is the open space's width at the top (right of the nav), not the toolbar's own width, so
   // the toolbar widens again when the window grows or a panel collapses.
   useEffect(() => {
     const box = room.current;

@@ -192,9 +192,8 @@ const noValue = () => null;
 // Every panel has a readable width: the wiki card shrinks to CARD_MIN and no further, the nav keeps
 // the width it was given, and the stage's open space keeps at least STAGE_MIN. When the window can't
 // hold every open panel at its readable width, panels collapse for space, in a set order: the wiki
-// card first, then the nav. The chat is the Reader's task at hand
-// and never collapses for space, nor does a tool open over the stage (Checks, Appearance, the theme
-// editor, LA-PAT-APP-UX-R20), which floats right of the nav. They reopen in reverse order as the window grows. A collapse for
+// card first, then the nav. A tool open over the stage never collapses for space (Checks, Appearance, the theme
+// editor, LA-PAT-APP-UX-R20), which floats right of the nav. Panels reopen in reverse order as the window grows. A collapse for
 // space is never the Reader's choice: their open or closed setting stays as they set it, and the
 // panel's toggle shows it is collapsed for space. A panel the Reader opens while it is collapsed for
 // space is held open (the next panel in the order gives way instead) until it would fit anyway, or
@@ -206,7 +205,7 @@ const noValue = () => null;
  */
 export const STAGE_MIN = 300;
 /**
- * The wiki card's gap from what is at its right (the chat or the window), in px: well wider than the
+ * The wiki card's gap from what is at its right (the window's edge), in px: well wider than the
  * panels' own gap (`--float-inset`), so the card floats in the map with room to its right.
  */
 export const CARD_GAP = 28;
@@ -234,8 +233,6 @@ export interface Room {
   nav: { open: boolean; width: number; rail: number };
   /** Whether the page has a wiki card the Reader has open. */
   card: boolean;
-  /** The chat's width while it shows; null when hidden. */
-  chat: number | null;
   /** The width of the tool open over the stage, right of the nav; null when none is. */
   tool: number | null;
   /** The panels the Reader opened while they were collapsed for space. */
@@ -251,11 +248,8 @@ export function openWidth(room: Room, collapsed: ReadonlySet<CrowdPanel>): numbe
   const navRight = inset + (navShown ? room.nav.width : room.nav.rail);
   const card = room.card && !collapsed.has('card');
   const left = navRight + (room.tool !== null ? inset + room.tool : 0) + OPEN_GAP;
-  // On the right, from the window's edge inward: the chat, then the wiki card.
-  const chatSpace = room.chat !== null ? room.chat + 2 * inset : inset;
-  let right = 0;
-  if (card) right = chatSpace - inset + CARD_GAP + CARD_MIN + OPEN_GAP;
-  else if (room.chat !== null) right = chatSpace - inset + OPEN_GAP;
+  // On the right, the wiki card, its gap from the window's edge included.
+  const right = card ? CARD_GAP + CARD_MIN + OPEN_GAP : 0;
   return room.width - left - right;
 }
 
@@ -301,7 +295,7 @@ const sameSet = (a: ReadonlySet<CrowdPanel>, b: ReadonlySet<CrowdPanel>) => a.si
  * The shell's side of the rule: follows the window's width, takes the page's panels, and works out
  * which panels collapse for space. Off (nothing collapses) on a phone, where panels are sheets.
  */
-export function useRoomState(shell: Pick<Room, 'nav' | 'chat' | 'tool'>, off: boolean): RoomApi {
+export function useRoomState(shell: Pick<Room, 'nav' | 'tool'>, off: boolean): RoomApi {
   const [width, setWidth] = useState(() => window.innerWidth);
   useEffect(() => {
     const update = () => setWidth(window.innerWidth);

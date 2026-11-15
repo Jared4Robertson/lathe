@@ -120,7 +120,6 @@ describe('one address, one stage', () => {
       { side: 'left', rect: rect(8, 8, 344, 892) }, // the nav
       { side: 'top', rect: rect(352, 8, 1432, 76) }, // the tab panel
       { side: 'right', rect: rect(732, 84, 1084, 892) }, // the wiki card
-      { side: 'right', rect: rect(1092, 84, 1432, 892) }, // the chat
       { side: 'left', rect: rect(0, 0, 0, 0) }, // a collapsed panel leaves nothing
     ];
     const open = openInsets(stage, panels);
@@ -143,11 +142,11 @@ describe('one address, one stage', () => {
     await waitFor(() => expect(el.querySelector('[data-stage-tools="top"]')).not.toBeNull());
     await waitFor(() => expect(el.parentElement!.style.getPropertyValue('--tools-foot')).toBe(`${parseFloat(el.style.getPropertyValue('--frame-top')) - OPEN_GAP}px`));
     const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
-    // Its room is the open space's width at the top, right of the nav and left of the chat (the card sits below its row).
+    // Its room is the open space's width at the top, right of the nav (the card sits below its row).
     expect(el.querySelector('[data-stage-tools="top"]')!.parentElement).toHaveClass('stage-tools-room');
-    expect(css).toMatch(/\.stage-tools-room \{[^}]*top: var\(--open-top, 0px\); left: var\(--open-left, 0px\); right: var\(--chat-space, 0px\);[^}]*container-type: inline-size/);
+    expect(css).toMatch(/\.stage-tools-room \{[^}]*top: var\(--open-top, 0px\); left: var\(--open-left, 0px\); right: var\(--float-inset\);[^}]*container-type: inline-size/);
     // Centered on the whole stage while it fits there, whatever panels are open; wider, it stays inside its room.
-    expect(css).toMatch(/\.stage-tools\[data-stage-tools="top"\] \{[^}]*max-width: 100cqw; translate: clamp\(0px, 50cqw \+ \(var\(--chat-space, 0px\) - var\(--open-left, 0px\)\) \/ 2 - 50%, 100cqw - 100%\) 0/);
+    expect(css).toMatch(/\.stage-tools\[data-stage-tools="top"\] \{[^}]*max-width: 100cqw; translate: clamp\(0px, 50cqw \+ \(var\(--float-inset\) - var\(--open-left, 0px\)\) \/ 2 - 50%, 100cqw - 100%\) 0/);
     // On a phone on its side the camera and the Key chip sit in the walk's bar, never over the open space (LA-V93-R76).
     expect(css).toMatch(/@media \(orientation: landscape\) \{[^@]*\.stage-walk-bar \{ padding-right: calc\([^;]*var\(--camera-row\) \+ var\(--key-slot\)/);
   });
@@ -395,7 +394,7 @@ describe('one address, one stage', () => {
     expect(panel).toMatch(/--card-top: calc\(var\(--tools-foot, calc\(var\(--below-strip\) \+ var\(--tools-row\)\)\) \+ var\(--card-gap-y\)\)/);
     expect(panel).toMatch(/top: var\(--card-top\)/);
     expect(panel).not.toMatch(/transition|bottom:/);
-    expect(panel).toMatch(/right: calc\(var\(--chat-space\) - var\(--float-inset\) \+ var\(--card-gap\)\)/);
+    expect(panel).toMatch(/right: var\(--card-gap\)/);
     // A steady share of the stage, never its content's height: 60% as a summary, 85% expanded, above the foot.
     expect(panel).toMatch(/(?:^|;)\s*height: min\(60%, 100% - var\(--card-top\) - var\(--card-gap-y\)\)/);
     expect(panel).not.toMatch(/max-height/);

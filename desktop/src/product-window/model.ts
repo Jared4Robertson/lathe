@@ -1,7 +1,6 @@
 // Product window (LA-PLT-A6): the desktop windows open on product folders, one per folder, while the shell runs;
 // each folder's window place (size and position), remembered between launches; and the chrome colors the pages
-// last sent, so a new window opens in the theme's shell color (LA-V68-R01). Each window's chat is the Window chat's
-// (window-chat/). The places are pure functions over a plain object, so they are unit-tested.
+// last sent, so a new window opens in the theme's shell color (LA-V68-R01). The places are pure functions over a plain object, so they are unit-tested.
 import type { BrowserWindow, WebContentsView } from 'electron';
 import path from 'node:path';
 import type { Chrome, SavedChrome } from '../chrome.ts';
@@ -24,8 +23,6 @@ export interface OpenWindow {
   menuKeys?: MenuKeys;
   /** Bumped on each launch, so an old watch stops. */
   launchRun: number;
-  /** The window's name on the app bridge. */
-  key: string;
 }
 
 /** The whole aggregate: the open windows by folder, the saved places by folder, and the saved chrome. */

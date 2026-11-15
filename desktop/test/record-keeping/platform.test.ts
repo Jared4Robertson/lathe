@@ -19,7 +19,7 @@ afterAll(() => rmSync(temp, { recursive: true, force: true }));
 const repository = (name: string) => new ProductWindowRepository({ places: () => path.join(temp, `${name}-places.json`), chrome: () => path.join(temp, `${name}-chrome.json`) });
 const background = vi.fn();
 const window = (folder: string): OpenWindow =>
-  ({ folder, product: path.basename(folder), win: { id: folder, setBackgroundColor: background } as unknown as OpenWindow['win'], errors: 0, launchRun: 0, key: folder });
+  ({ folder, product: path.basename(folder), win: { id: folder, setBackgroundColor: background } as unknown as OpenWindow['win'], errors: 0, launchRun: 0 });
 const opened = async (name: string, folder: string) => {
   const windows = repository(name);
   await openProductFolder(windows, { window: window(folder) }, { onWindowOpenedAddRecentFolder: () => {}, onWindowOpenedStartAppServer: async () => {} });

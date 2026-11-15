@@ -4,10 +4,9 @@
 // and changed when any of its rows is, each changed column with its value before and after, each part row added,
 // removed or changed, and each link added or removed.
 //
-// It reads only rows and the schema, never a file or git, so the server, the web app's stages and the desktop chat
-// all use it: Highlight changes and panel against a baseline (since the last commit, since the branch left the
-// default branch, since the Reader last looked), the live marks against the data before a reload, and the chat
-// against the data before a turn.
+// It reads only rows and the schema, never a file or git, so the server and the web app's stages both use it:
+// Highlight changes and panel against a baseline (since the last commit, since the branch left the default branch,
+// since the Reader last looked), and the live marks against the data before a reload.
 import type { FieldChange, HistoryChange } from './server/contract.ts';
 import { describeKey, rowKey, type Row, type Value } from './platform/data/rows.ts';
 import type { SchemaDescription, TableDescription } from './platform/data/schema.ts';
