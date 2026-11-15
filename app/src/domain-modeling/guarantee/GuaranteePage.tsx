@@ -9,9 +9,9 @@ import { useGuarantee } from './reads';
 
 // The Guarantee page (LA-MOD-A24's page, LA-V158): a guarantee or one of its tests, at its address (/<id>), drawn from
 // the guarantee read whole (GET /api/guarantee/get-guarantee) and changed only through its own commands
-// (GuaranteeEditor). A guarantee shows its statement, the building blocks that keep it and its guarantee tests (or
-// that none is written yet); a guarantee test its scenario and what it starts from. What every record's page holds
-// around that (traceability, problems, facts and links) is the Record page's (RecordFrame).
+// (GuaranteeEditor). A guarantee shows its statement and its guarantee tests (or that none is written yet), the
+// building blocks that keep it among its links (Kept by); a guarantee test its scenario and what it starts from. What
+// every record's page holds around that (traceability, problems, facts and links) is the Record page's (RecordFrame).
 
 /** What one record of the guarantee shows on its page, by the kind it is in the guarantee. */
 function Content({ index, page }: { index: RecordIndex; page: Guarantee }) {
@@ -23,7 +23,6 @@ function Content({ index, page }: { index: RecordIndex; page: Guarantee }) {
   return (
     <>
       <Text index={index} id={id} source={page.guarantee.statement} field="statement" />
-      <RowsSection index={index} title="Kept by" ids={page.keptBy} label={`The building blocks that keep ${id}`} empty="No building block keeps it yet." />
       <RowsSection index={index} title="Guarantee tests" ids={page.tests.map((t) => t.test.id)} label={`The guarantee tests of ${id}`} empty="Its guarantee tests are not written yet." />
     </>
   );

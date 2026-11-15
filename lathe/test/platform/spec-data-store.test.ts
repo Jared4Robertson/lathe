@@ -42,7 +42,12 @@ interface Kept {
   table: string;
   key: Record<string, unknown>;
   column: string;
+  /** Commands run first, so the change can name what they write: [slice, command, input]. */
+  setup?: [string, string, Record<string, unknown>][];
 }
+
+/** A platform domain for the Tool Library, which has none: where a guarantee sits. */
+const PLATFORM: [string, string, Record<string, unknown>] = ['domain', 'add-domain', { id: 'TL-PLAT', title: 'Platform', product_id: 'TL', position: 9, subdomain_type: 'generic', platform: true, description: 'What every domain stands on.' }];
 
 const change = (slice: string, kind: string, id: string, column = 'title', value = 'Kept through a restart'): Kept => ({
   slice, command: `change-${kind.replaceAll('_', '-')}`, input: { id, [column]: value }, refused: { id: `${id}-NOPE`, [column]: value }, table: kind, key: { id }, column,
@@ -67,6 +72,7 @@ describe('the spec data store keeps every change through a restart, and a refuse
   ['LA-TEC-A3-SR01-T01', add('standard', 'standard', { id: 'TL-STD-KEPT', title: 'Kept', product_id: 'TL', type: 'engineering', description: 'A standard kept through a restart.' })],
   ['LA-MOD-A4-SR01-T01', change('domain', 'domain', 'TL-LEND')],
   ['LA-MOD-A5-SR01-T01', change('specification', 'specification', 'TL-LEND-SP01')],
+  ['LA-MOD-A24-SR01-T01', { ...add('guarantee', 'guarantee', { id: 'TL-PLAT-GU01', title: 'Kept', domain_id: 'TL-PLAT', statement: 'Every change MUST be kept through a restart.' }), setup: [PLATFORM] }],
   ['LA-MOD-A6-SR01-T01', change('aggregate', 'aggregate', 'TL-LEND-A1')],
   ['LA-MOD-A7-SR01-T01', change('domain-event', 'domain_event', 'TL-LEND-EV01', 'title', 'Member kept')],
   ['LA-MOD-A8-SR01-T01', change('command', 'command', 'TL-LEND-CMD01')],
@@ -104,6 +110,7 @@ describe('the spec data store keeps every change through a restart, and a refuse
     expect(definition, `${kept.slice} ${kept.command}`).toBeDefined();
     const store = await openStore(root, { latheDataDir: null });
     try {
+      for (const [slice, command, input] of kept.setup ?? []) await runCommand(store, ALL_COMMANDS.find((d) => d.slice.name === slice && d.name === command)!, input);
       await runCommand(store, definition, kept.input);
       const before = files(root);
       await expect(runCommand(store, definition, kept.refused)).rejects.toBeInstanceOf(StoreError);

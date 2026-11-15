@@ -852,4 +852,41 @@ describe('the schema version', () => {
     expect(await run9to10(tables)).toEqual({ changes: [], todos: [] });
     expect(tables).toEqual(upgraded);
   });
+
+  it('LA-STD-ENGINEERING-R04-T22 10-to-11 changes no row, says the platform domains make no guarantee yet, asks to turn what each holds into guarantees, and does nothing to data already upgraded', async () => {
+    const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 10);
+    const run10to11 = async (data: Record<string, Record<string, unknown>[]>) => {
+      const changes: string[] = [];
+      const todos: string[] = [];
+      await step!.converter.files!(
+        { tables: () => Object.keys(data), read: (table) => data[table] ?? [], write: (table, rows) => void (data[table] = rows) },
+        { changed: (text) => changes.push(text), todo: (text) => todos.push(text) },
+      );
+      return { changes, todos };
+    };
+    const tables: Record<string, Record<string, unknown>[]> = {
+      domain: [
+        { id: 'TL-LEND', title: 'Lending', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'Lending tools.' },
+        { id: 'TL-PLT', title: 'Platform', product_id: 'TL', position: 2, subdomain_type: 'supporting', platform: true, description: 'The shell.' },
+        { id: 'TL-STORE', title: 'Store', product_id: 'TL', position: 3, subdomain_type: 'generic', platform: true, description: 'The data store.' },
+      ],
+      use_case: [{ id: 'TL-PLT-UC01', domain_id: 'TL-PLT' }, { id: 'TL-PLT-UC02', domain_id: 'TL-PLT' }, { id: 'TL-LEND-UC01', domain_id: 'TL-LEND' }],
+      aggregate: [{ id: 'TL-PLT-A1', domain_id: 'TL-PLT' }],
+    };
+    const before = structuredClone(tables);
+    const { changes, todos } = await run10to11(tables);
+    expect(tables).toEqual(before);
+    expect(changes).toEqual(['A platform domain is described by its guarantees, each proved by its guarantee tests and kept by its building blocks: TL-PLT and TL-STORE have none yet.']);
+    expect(todos).toEqual([
+      'TL-PLT is a platform domain and holds 2 use cases and 1 aggregate: write each promise the other domains rely on as a guarantee (`lathe guarantee add-guarantee`) with its guarantee tests and the building blocks that keep it, then remove them.',
+      'Write each promise TL-STORE makes to the other domains as a guarantee (`lathe guarantee add-guarantee`), with its guarantee tests and the building blocks that keep it.',
+    ]);
+    expect(await run10to11({ domain: [tables.domain[0]] })).toEqual({ changes: [], todos: [] });
+
+    // Data already upgraded, a guarantee written, is left as it is.
+    tables.guarantee = [{ id: 'TL-STORE-GU01', domain_id: 'TL-STORE' }];
+    const upgraded = structuredClone(tables);
+    expect(await run10to11(tables)).toEqual({ changes: [], todos: [] });
+    expect(tables).toEqual(upgraded);
+  });
 });

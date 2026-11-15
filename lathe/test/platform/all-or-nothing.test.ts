@@ -118,6 +118,10 @@ describe('the spec data store saves each change whole or not at all, through a c
   ['LA-TEC-A3-SR01-T02', { steps: [['standard', 'add-standard', { ...product('TL-STD-KEPT'), type: 'engineering', description: 'A standard kept whole.' }], ['standard', 'add-standard-rule', { id: 'TL-STD-KEPT-R01', title: 'Kept whole', standard_id: 'TL-STD-KEPT', statement: 'Code MUST be kept whole.' }]] }],
   ['LA-MOD-A4-SR01-T02', { steps: [['domain', 'remove-term', { id: 'TL-LEND-TM02' }]] }],
   ['LA-MOD-A5-SR01-T02', { steps: [['specification', 'remove-specification-test', { id: 'TL-LEND-SP01-T' }]] }],
+  ['LA-MOD-A24-SR01-T02', {
+    setup: [['domain', 'add-domain', { id: 'TL-PLAT', title: 'Platform', product_id: 'TL', position: 9, subdomain_type: 'generic', platform: true, description: 'What every domain stands on.' }]],
+    steps: [['guarantee', 'add-guarantee', { id: 'TL-PLAT-GU01', title: 'Kept whole', domain_id: 'TL-PLAT', statement: 'Every change MUST be kept whole.', kept_by: ['TL-LEND-TOOL01'] }], ['guarantee', 'add-guarantee-test', { id: 'TL-PLAT-GU01-T01', title: 'Kept whole', guarantee_id: 'TL-PLAT-GU01', level: 'integration', state: 'not automated yet', when: 'Writes a change.', then: 'Expects it whole.' }]],
+  }],
   ['LA-MOD-A6-SR01-T02', { setup: [['slot-filling', 'stop-filling-slot', { record_id: 'TL-LEND-INV02-RL', slot_id: 'TL-PAT-LIBRARIAN-ACTION-SL03' }]], steps: [['aggregate', 'remove-invariant', { id: 'TL-LEND-INV02' }]] }],
   ['LA-MOD-A7-SR01-T02', { steps: [['domain-event', 'add-domain-event', { id: 'TL-LEND-EV90', title: 'Member kept', aggregate_id: 'TL-LEND-A1', published: false, description: 'A member was kept whole.', fields: [{ name: 'Member ID', meaning: 'The member kept.', type_aggregate_id: 'TL-LEND-A1', required: true, example: '12' }] }]] }],
   ['LA-MOD-A8-SR01-T02', { setup: [['journey', 'change-journey-step', { id: 'TL-JR01-S02', carries_out: null }], ['slot-filling', 'stop-filling-slot', { record_id: 'TL-LEND-PO01-H', slot_id: 'TL-PAT-LIBRARIAN-ACTION-SL01' }]], steps: [['command', 'remove-policy', { id: 'TL-LEND-PO01' }]] }],
