@@ -26,8 +26,8 @@ async function boxesInView(page: Page, except = ''): Promise<{ id: string; at: {
 test.describe('navigate', () => {
   test('LA-V61-R28-T01 through the nav', async ({ page }) => {
     await openPage(page, DOMAIN);
-    // Another domain of the product, from the nav.
-    const link = page.locator('nav#nav .nav-space a[href^="/LA-"]:not([aria-current])').first();
+    // Another domain of the product, from the nav: a row of its Domains (Health's rows open a panel on this page).
+    const link = page.locator('nav#nav .nav-domains > li > .nav-row > a[href^="/LA-"]:not([aria-current])').first();
     await expect(link).toBeVisible();
     const href = await link.getAttribute('href');
     const r = await step(page, 'navigate', 'through the nav', { keys: KEYS, allow: CONTENT, resizes: TITLE }, async () => {
