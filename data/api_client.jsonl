@@ -30,6 +30,8 @@
 {"id":"LA-MOD-EP581-CL","title":"useNextReadModelId","endpoint_id":"LA-MOD-EP581","file":"app/src/domain-modeling/read-model/reads.ts"}
 {"id":"LA-MOD-EP620-CL","title":"useStorageRequirement","endpoint_id":"LA-MOD-EP620","file":"app/src/domain-modeling/storage-requirement/reads.ts"}
 {"id":"LA-MOD-EP622-CL","title":"useNextStorageRequirementId","endpoint_id":"LA-MOD-EP622","file":"app/src/domain-modeling/storage-requirement/reads.ts"}
+{"id":"LA-MOD-EP628-CL","title":"useGuarantee","endpoint_id":"LA-MOD-EP628","file":"app/src/domain-modeling/guarantee/reads.ts"}
+{"id":"LA-MOD-EP630-CL","title":"useNextGuaranteeId","endpoint_id":"LA-MOD-EP630","file":"app/src/domain-modeling/guarantee/reads.ts"}
 {"id":"LA-PLT-EP02-CL","title":"onLatheEvent","endpoint_id":"LA-PLT-EP02","file":"app/src/events.ts"}
 {"id":"LA-PLT-EP411-CL","title":"useDataState('/api/meta-model/get-meta-model')","endpoint_id":"LA-PLT-EP411","file":"app/src/exploring/record-summaries/reads.tsx"}
 {"id":"LA-PRD-EP510-CL","title":"useProduct","endpoint_id":"LA-PRD-EP510","file":"app/src/product/product/reads.ts"}

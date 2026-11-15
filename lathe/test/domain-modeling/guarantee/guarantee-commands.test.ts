@@ -51,7 +51,7 @@ describe('the Guarantee aggregate', () => {
     await store.close();
   });
 
-  it('changes and removes a guarantee and its tests through its own commands only', async () => {
+  it('LA-MOD-UC174-R01-T02 LA-MOD-UC175-R01-T02 LA-MOD-UC177-R01-T02 LA-MOD-UC178-R01-T02 changes and removes a guarantee and its tests through its own commands only', async () => {
     const store = await openStore(writeData(everyKind()));
     await run(store, 'guarantee change-guarantee', { id: 'TL-PLAT-GU01', title: 'Every change is kept whole', kept_by: ['TL-LEND-ENTRY01', 'TL-LEND-TOOL01'] });
     expect(store.rows('kept_by')).toEqual([{ source_id: 'TL-PLAT-GU01', target_id: 'TL-LEND-ENTRY01' }, { source_id: 'TL-PLAT-GU01', target_id: 'TL-LEND-TOOL01' }]);

@@ -32,6 +32,7 @@
 {"source_id":"LA-CHK-TB01","target_id":"LA-PAT-AGGREGATE-COMMANDS-R07"}
 {"source_id":"LA-CHK-TOOL01","target_id":"LA-STD-ENGINEERING-R01"}
 {"source_id":"LA-CHK-TOOL01","target_id":"LA-STD-PRINCIPLES-R01"}
+{"source_id":"LA-EXP-DS03-SV","target_id":"LA-STD-MODELING-R21"}
 {"source_id":"LA-EXP-DS12-SV","target_id":"LA-STD-MODELING-R14"}
 {"source_id":"LA-EXP-EP401-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
 {"source_id":"LA-EXP-EP405-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
@@ -418,6 +419,7 @@
 {"source_id":"LA-MOD-EP628-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
 {"source_id":"LA-MOD-EP629-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
 {"source_id":"LA-MOD-EP630-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
+{"source_id":"LA-MOD-INV187-RL","target_id":"LA-STD-MODELING-R21"}
 {"source_id":"LA-MOD-INV41-RL","target_id":"LA-STD-PRINCIPLES-R03"}
 {"source_id":"LA-MOD-MOD31","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-MOD-MOD41","target_id":"LA-STD-PRINCIPLES-R01"}
@@ -627,6 +629,7 @@
 {"source_id":"LA-TEC-CMD157-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R13"}
 {"source_id":"LA-TEC-CMD157-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R14"}
 {"source_id":"LA-TEC-CMD200-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R14"}
+{"source_id":"LA-TEC-CMD200-H","target_id":"LA-STD-MODELING-R23"}
 {"source_id":"LA-TEC-CMD201-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R14"}
 {"source_id":"LA-TEC-CMD202-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R14"}
 {"source_id":"LA-TEC-CMD203-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R14"}
@@ -710,6 +713,7 @@
 {"source_id":"LA-TRC-DS02-SV","target_id":"LA-PAT-AGGREGATE-TESTS-R05"}
 {"source_id":"LA-TRC-DS03-SV","target_id":"LA-STD-TRACEABILITY-R02"}
 {"source_id":"LA-TRC-DS06-SV","target_id":"LA-STD-MODELING-R13"}
+{"source_id":"LA-TRC-DS06-SV","target_id":"LA-STD-MODELING-R22"}
 {"source_id":"LA-TRC-EP01-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
 {"source_id":"LA-TRC-EP02-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
 {"source_id":"LA-TRC-EP10-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
@@ -740,6 +744,8 @@
 {"source_id":"LA-TRC-RM01-PJ","target_id":"LA-STD-NAMING-R05"}
 {"source_id":"LA-TRC-RM01-PJ","target_id":"LA-STD-NAMING-R06"}
 {"source_id":"LA-TRC-RM01-PJ","target_id":"LA-STD-NAMING-R07"}
+{"source_id":"LA-TRC-RM02-TB","target_id":"LA-STD-MODELING-R21"}
+{"source_id":"LA-TRC-RM02-TB","target_id":"LA-STD-MODELING-R22"}
 {"source_id":"LA-TRC-RM04-PJ","target_id":"LA-STD-PRINCIPLES-R03"}
 {"source_id":"LA-TRC-RM06-PJ","target_id":"LA-PAT-AGGREGATE-COMMANDS-R12"}
 {"source_id":"LA-TRC-RM06-PJ","target_id":"LA-STD-MODELING-R01"}
@@ -881,6 +887,7 @@
 {"source_id":"LA-UI145","target_id":"LA-PAT-APP-CODE-R25"}
 {"source_id":"LA-UI149","target_id":"LA-PAT-APP-CODE-R01"}
 {"source_id":"LA-UI149","target_id":"LA-PAT-APP-UX-R20"}
+{"source_id":"LA-UI221","target_id":"LA-STD-MODELING-R21"}
 {"source_id":"LA-UI345","target_id":"LA-PAT-FIELD-INPUTS-R03"}
 {"source_id":"LA-UI345","target_id":"LA-PAT-PAGE-STEPS-R02"}
 {"source_id":"LA-UI346","target_id":"LA-PAT-FIELD-INPUTS-R03"}

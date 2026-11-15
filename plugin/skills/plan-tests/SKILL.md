@@ -1,6 +1,6 @@
 ---
 name: plan-tests
-description: Write or change Lathe test records and the tests they name - one test kind per thing tested (constraint, invariant, specification, policy, domain service, use case, view, endpoint, flow, journey, integration, pattern rule and standard rule tests), each under what it proves, with its run by (level, state, a file or a manual reason, size and markers), and the test data sets tests start from. Use when planning which tests prove which obligations, writing a test for a Lathe test record, or deciding whether a test is automated, manual or not automated yet, in a repo with lathe.config.json.
+description: Write or change Lathe test records and the tests they name - one test kind per thing tested (constraint, invariant, specification, policy, domain service, guarantee, use case, view, endpoint, flow, journey, integration, pattern rule and standard rule tests), each under what it proves, with its run by (level, state, a file or a manual reason, size and markers), and the test data sets tests start from. Use when planning which tests prove which obligations, writing a test for a Lathe test record, or deciding whether a test is automated, manual or not automated yet, in a repo with lathe.config.json.
 ---
 
 # Plan tests

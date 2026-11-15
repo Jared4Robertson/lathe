@@ -54,7 +54,7 @@ describe('LA-V158-R03-T01 the Guarantee editor writes only through the aggregate
     await waitFor(() => expect(within(add).getByRole('textbox', { name: /^ID/ })).toHaveValue('P-PLT-GU01-T02'));
   });
 
-  it('a guarantee is added from its platform domain\'s page, and a business domain offers none', async () => {
+  it('LA-V158-R03-T02 a guarantee is added from its platform domain\'s page, and a business domain offers none', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/P-PLT', { data: withGuarantee(), command: () => ({ answer: ok }) });
     await chooseAdd(user, await toolbar('P-PLT'), 'Guarantee');

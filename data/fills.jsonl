@@ -294,6 +294,8 @@
 {"source_id":"LA-MOD-EP581-CL","target_id":"LA-PAT-HTTP-STEPS-SL01"}
 {"source_id":"LA-MOD-EP620-CL","target_id":"LA-PAT-HTTP-STEPS-SL01"}
 {"source_id":"LA-MOD-EP622-CL","target_id":"LA-PAT-HTTP-STEPS-SL01"}
+{"source_id":"LA-MOD-EP628-CL","target_id":"LA-PAT-HTTP-STEPS-SL01"}
+{"source_id":"LA-MOD-EP630-CL","target_id":"LA-PAT-HTTP-STEPS-SL01"}
 {"source_id":"LA-MOD-INV101-RL","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
 {"source_id":"LA-MOD-INV102-RL","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
 {"source_id":"LA-MOD-INV103-RL","target_id":"LA-PAT-AGGREGATE-COMMANDS-SL02"}
@@ -1132,6 +1134,8 @@
 {"source_id":"LA-UI356","target_id":"LA-PAT-APP-CODE-SL01"}
 {"source_id":"LA-UI357","target_id":"LA-PAT-APP-CODE-SL01"}
 {"source_id":"LA-UI358","target_id":"LA-PAT-APP-CODE-SL01"}
+{"source_id":"LA-UI359","target_id":"LA-PAT-RECORD-PAGE-SL01"}
+{"source_id":"LA-UI360","target_id":"LA-PAT-FIELD-INPUTS-SL01"}
 {"source_id":"LA-UI52","target_id":"LA-PAT-APP-CODE-SL01"}
 {"source_id":"LA-UI53","target_id":"LA-PAT-APP-CODE-SL01"}
 {"source_id":"LA-UI54","target_id":"LA-PAT-APP-CODE-SL01"}

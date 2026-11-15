@@ -212,7 +212,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 
 ## Domain model
 
-Domains and their aggregates, entities, value objects, rules (constraints, invariants, specifications and policies), events, commands, read models, queries, domain services and glossary terms.
+Domains and their aggregates, entities, value objects, rules (constraints, invariants, specifications and policies), events, commands, read models, queries, domain services and glossary terms, and the guarantees a platform domain makes to every other domain.
 
 <a id="kind-domain"></a>
 
@@ -221,14 +221,14 @@ Domains and their aggregates, entities, value objects, rules (constraints, invar
 A part of the product with its own model, language and owner, for one business capability: what DDD calls a bounded context, or, marked platform, the plumbing the business domains stand on. Domains meet only through published events.
 
 - **Parents:** [`product`](#kind-product) (`product_id`)
-- **Children:** [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model), [`domain_service`](#kind-domain_service), [`term`](#kind-term), [`use_case`](#kind-use_case), [`data_store`](#kind-data_store), [`repository`](#kind-repository), [`table`](#kind-table), [`entry_point`](#kind-entry_point), [`tooling`](#kind-tooling), [`test_data_set`](#kind-test_data_set), [`question`](#kind-question)
+- **Children:** [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model), [`domain_service`](#kind-domain_service), [`guarantee`](#kind-guarantee), [`term`](#kind-term), [`use_case`](#kind-use_case), [`data_store`](#kind-data_store), [`repository`](#kind-repository), [`table`](#kind-table), [`entry_point`](#kind-entry_point), [`tooling`](#kind-tooling), [`standard`](#kind-standard), [`test_data_set`](#kind-test_data_set), [`question`](#kind-question)
 - **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-<D>`, such as `TL-LEND`; it starts with its parent's ID
 - **Links out:** Follows ([`follows`](#relation-follows))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`pattern-rule-test-outside-followers`](#check-pattern-rule-test-outside-followers), [`pattern-not-followed`](#check-pattern-not-followed), [`domain-named-for-technology`](#check-domain-named-for-technology)
-- **Gaps:** [`domain-without-aggregate`](#gap-domain-without-aggregate)
+- **Checks:** [`pattern-rule-test-outside-followers`](#check-pattern-rule-test-outside-followers), [`pattern-not-followed`](#check-pattern-not-followed), [`domain-named-for-technology`](#check-domain-named-for-technology), [`platform-holds-business-record`](#check-platform-holds-business-record), [`standard-in-business-domain`](#check-standard-in-business-domain)
+- **Gaps:** [`domain-without-aggregate`](#gap-domain-without-aggregate), [`platform-without-guarantee`](#gap-platform-without-guarantee)
 
 <a id="table-domain"></a>
 
@@ -263,7 +263,7 @@ The consistency boundary: a cluster of entities changed together as one unit, by
 - **ID:** `<P>-<D>-A<n>`, such as `TL-LEND-A1`; it starts with its domain's ID
 - **Links out:** Serves ([`serves`](#relation-serves))
 - **Links in:** Questions about this ([`about`](#relation-about)), Persisted by ([`persists`](#relation-persists)), Read by ([`reads`](#relation-reads))
-- **Checks:** [`aggregate-too-large`](#check-aggregate-too-large), [`serves-no-outcome`](#check-serves-no-outcome)
+- **Checks:** [`aggregate-too-large`](#check-aggregate-too-large), [`serves-no-outcome`](#check-serves-no-outcome), [`platform-holds-business-record`](#check-platform-holds-business-record)
 - **Gaps:** [`aggregate-without-root`](#gap-aggregate-without-root), [`aggregate-without-command`](#gap-aggregate-without-command), [`use-case-group-serves-no-outcome`](#gap-use-case-group-serves-no-outcome), [`aggregate-without-repository`](#gap-aggregate-without-repository)
 
 <a id="table-aggregate"></a>
@@ -591,7 +591,7 @@ A view of its domain's data shaped for reading, which reads one or more of the d
 - **Links out:** Calls ([`calls`](#relation-calls)), Fed by ([`fed_by`](#relation-fed_by)), Reads ([`reads`](#relation-reads)), Serves ([`serves`](#relation-serves))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Parts:** [`read_model_field`](#table-read_model_field)
-- **Checks:** [`serves-no-outcome`](#check-serves-no-outcome)
+- **Checks:** [`serves-no-outcome`](#check-serves-no-outcome), [`platform-holds-business-record`](#check-platform-holds-business-record)
 - **Gaps:** [`read-model-without-fields`](#gap-read-model-without-fields), [`read-model-reads-nothing`](#gap-read-model-reads-nothing), [`read-model-without-query`](#gap-read-model-without-query), [`read-model-without-projection`](#gap-read-model-without-projection), [`read-model-without-reader`](#gap-read-model-without-reader), [`read-model-without-table`](#gap-read-model-without-table)
 
 <a id="table-read_model"></a>
@@ -721,6 +721,38 @@ Domain logic that belongs to no single entity and is not a yes-or-no check, such
 | `title` | VARCHAR | yes | What it works out, such as Late fee. |
 | `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The domain it belongs to. |
 | `statement` | VARCHAR | yes | What it must work out, from what, stated with MUST, SHOULD or MAY. |
+
+- **Key:** `id`
+- **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"("statement") != '')`
+
+<a id="kind-guarantee"></a>
+
+### Guarantee (`guarantee`)
+
+A promise a platform domain makes to every other domain of its product, such as every change being refused with every reason it breaks: what the other domains rely on and could not run without, and what would work unchanged in another product. A platform domain has no goals of its own, so it is described by its guarantees rather than by use cases and aggregates. The building blocks that keep it are named with kept_by, and its guarantee tests prove it.
+
+- **Parents:** [`domain`](#kind-domain) (`domain_id`)
+- **Children:** [`guarantee_test`](#kind-guarantee_test)
+- **Complexity:** essential: what the problem itself demands, decided once per product
+- **Obligation:** yes: designed, built and proved
+  - **Designed:** By construction, under its platform domain.
+  - **Built:** Every technical record that keeps it names a file that exists, and there is at least one; a data store that keeps it builds nothing a file shows.
+  - **Proved:** One of its guarantee tests.
+- **ID:** `<P>-<D>-GU<nn>`, such as `TL-PLAT-GU01`; it starts with its domain's ID
+- **Links out:** Kept by ([`kept_by`](#relation-kept_by)), Provided by ([`provided_by`](#relation-provided_by))
+- **Links in:** Questions about this ([`about`](#relation-about))
+- **Checks:** [`guarantee-without-test`](#check-guarantee-without-test), [`guarantee-without-building-block`](#check-guarantee-without-building-block)
+- **Gaps:** [`guarantee-relied-on-by-nothing`](#gap-guarantee-relied-on-by-nothing), [`building-block-keeps-no-guarantee`](#gap-building-block-keeps-no-guarantee)
+
+<a id="table-guarantee"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The guarantee's ID: its domain's ID and GU<nn>, such as TL-PLAT-GU01. |
+| `title` | VARCHAR | yes | The promise in a few words, such as Every change is checked whole. |
+| `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The platform domain that makes it. |
+| `statement` | VARCHAR | yes | What every other domain can rely on, stated with MUST, MUST NOT, SHOULD or MAY. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
@@ -900,13 +932,35 @@ An aggregate, read model or obligation no business outcome reaches: no use case 
 
 Everything in a product serves at least one business outcome (LA-STD-MODELING-R13). A record serves an outcome when a use case whose aggregate or read model serves that outcome, or a journey serving it, reaches it: a use case through its steps, the commands and queries they invoke and what those change, check, call and read, the views they happen in, the endpoints that expose them, the integrations they exchange with and the patterns it follows; a journey through its steps and the use cases and policies they carry out (the Serves reach, LA-TRC-DS06, worked out on every load and never stored). An aggregate, read model or obligation none reaches is built for no one the product exists for: write the use case that needs it, with a step that invokes what reaches it, or remove it.
 
+<a id="check-guarantee-without-test"></a>
+
+### `guarantee-without-test`
+
+**Error** · Lathe's · Kinds: [`guarantee`](#kind-guarantee), [`guarantee_test`](#kind-guarantee_test)
+
+A guarantee with no guarantee test.
+
+Every other domain relies on a guarantee, so it is proved from their side by at least one guarantee test (LA-STD-MODELING-R22); a promise nothing shows holds is not one to rely on. Add the guarantee test that shows it, automated where it can be.
+
+<a id="check-guarantee-without-building-block"></a>
+
+### `guarantee-without-building-block`
+
+**Error** · Lathe's · Kinds: [`guarantee`](#kind-guarantee)
+
+A guarantee no building block keeps.
+
+A guarantee holds because of code or setup the platform domain owns, so it names at least one building block that keeps it: a technical record or a data store (LA-STD-MODELING-R22). Name the building blocks that make the promise hold with kept_by.
+
 ### Coverage gaps: domain model
 
 Each is reported in coverage, under the record that falls short, never as a problem.
 
 | Gap | Kinds | What it reports |
 | --- | --- | --- |
-| <a id="gap-domain-without-aggregate"></a>`domain-without-aggregate` | [`domain`](#kind-domain), [`aggregate`](#kind-aggregate) | A domain with no aggregate. |
+| <a id="gap-domain-without-aggregate"></a>`domain-without-aggregate` | [`domain`](#kind-domain), [`aggregate`](#kind-aggregate) | A business domain with no aggregate. |
+| <a id="gap-platform-without-guarantee"></a>`platform-without-guarantee` | [`domain`](#kind-domain), [`guarantee`](#kind-guarantee) | A platform domain with no guarantee. |
+| <a id="gap-guarantee-relied-on-by-nothing"></a>`guarantee-relied-on-by-nothing` | [`guarantee`](#kind-guarantee) | A guarantee no other domain relies on: none of its building blocks is linked to a record of another domain. |
 | <a id="gap-aggregate-without-root"></a>`aggregate-without-root` | [`aggregate`](#kind-aggregate), [`entity`](#kind-entity) | An aggregate with no root entity. |
 | <a id="gap-aggregate-without-command"></a>`aggregate-without-command` | [`aggregate`](#kind-aggregate), [`command`](#kind-command) | An aggregate no command changes. |
 | <a id="gap-entity-without-fields"></a>`entity-without-fields` | [`entity`](#kind-entity), `entity_field` | An entity with no fields. |
@@ -940,7 +994,7 @@ One role invoking one command, or asking one query, with the steps that lead to 
 - **Links out:** Follows ([`follows`](#relation-follows))
 - **Links in:** Questions about this ([`about`](#relation-about)), Carried out in ([`carries_out`](#relation-carries_out)), Offered through ([`offers`](#relation-offers)), Performed by ([`performs`](#relation-performs))
 - **Parts:** [`use_case_actor`](#table-use_case_actor)
-- **Checks:** [`pattern-setting-missing`](#check-pattern-setting-missing), [`pattern-not-followed`](#check-pattern-not-followed), [`title-breaks-convention`](#check-title-breaks-convention), [`flow-title-off-pattern`](#check-flow-title-off-pattern), [`journey-of-one-use-case`](#check-journey-of-one-use-case), [`handoff-not-connected`](#check-handoff-not-connected), [`use-case-invokes-another-command`](#check-use-case-invokes-another-command), [`use-case-result-not-invoked`](#check-use-case-result-not-invoked), [`use-case-not-done`](#check-use-case-not-done), [`use-case-identity-taken`](#check-use-case-identity-taken), [`use-case-title-off-result`](#check-use-case-title-off-result), [`use-case-result-in-domain`](#check-use-case-result-in-domain)
+- **Checks:** [`pattern-setting-missing`](#check-pattern-setting-missing), [`pattern-not-followed`](#check-pattern-not-followed), [`title-breaks-convention`](#check-title-breaks-convention), [`flow-title-off-pattern`](#check-flow-title-off-pattern), [`journey-of-one-use-case`](#check-journey-of-one-use-case), [`handoff-not-connected`](#check-handoff-not-connected), [`use-case-invokes-another-command`](#check-use-case-invokes-another-command), [`use-case-result-not-invoked`](#check-use-case-result-not-invoked), [`use-case-not-done`](#check-use-case-not-done), [`use-case-identity-taken`](#check-use-case-identity-taken), [`use-case-title-off-result`](#check-use-case-title-off-result), [`use-case-result-in-domain`](#check-use-case-result-in-domain), [`platform-holds-business-record`](#check-platform-holds-business-record)
 - **Gaps:** [`use-case-without-actor`](#gap-use-case-without-actor), [`use-case-without-requirement`](#gap-use-case-without-requirement), [`use-case-without-flow`](#gap-use-case-without-flow)
 
 <a id="table-use_case"></a>
@@ -1332,6 +1386,16 @@ A use case in a domain other than its result's.
 
 A use case sits with its result (LA-STD-MODELING-R20): with the aggregate of its result command, or the read model of its result query, in that record's domain. That aggregate or read model is where the use case is listed, worked out from the result and never stored. A use case in another domain would be listed in one domain under another domain's aggregate or read model, and its domain would no longer be the vertical slice that owns its use cases. The check reads each use case whose domain is not its result's aggregate's or read model's domain. Move it to that domain with Move a use case, or give it a result of its own domain. A write that adds a use case, or changes its domain or result, so that its result is of another domain, is refused; data already written is reported here.
 
+<a id="check-platform-holds-business-record"></a>
+
+### `platform-holds-business-record`
+
+**Error** · Lathe's · Kinds: [`use_case`](#kind-use_case), [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model), [`view`](#kind-view), [`domain`](#kind-domain)
+
+A use case, aggregate, read model or view in a platform domain.
+
+A platform domain is what every other domain stands on and could not run without, and would work unchanged in another product: it has no goals of its own, so it holds no use case, aggregate, read model or view and is described by its guarantees instead (LA-STD-MODELING-R21). A view is in a domain when the steps that happen in it are. Move the record to the business domain whose goal it serves, or write the promise it keeps for the other domains as a guarantee, with its tests and the building blocks that keep it, and remove the record.
+
 ### Coverage gaps: use cases
 
 Each is reported in coverage, under the record that falls short, never as a problem.
@@ -1414,7 +1478,7 @@ A screen or page a person uses. It has no owner: it exists because it presents c
 - **ID:** `<P>-V<nn>`, such as `TL-V01`; it starts with its product's ID
 - **Links out:** Presents ([`presents`](#relation-presents))
 - **Links in:** Questions about this ([`about`](#relation-about)), Rendered by ([`renders`](#relation-renders))
-- **Checks:** [`view-unused`](#check-view-unused), [`view-route-not-in-file`](#check-view-route-not-in-file)
+- **Checks:** [`view-unused`](#check-view-unused), [`view-route-not-in-file`](#check-view-route-not-in-file), [`platform-holds-business-record`](#check-platform-holds-business-record)
 - **Gaps:** [`view-without-ui-component`](#gap-view-without-ui-component)
 
 <a id="table-view"></a>
@@ -1633,7 +1697,7 @@ Where data actually lives: a database, a bucket, a folder of files, browser stor
 - **ID:** `<P>-STORE<nn> or <P>-<D>-STORE<nn>`, such as `TL-STORE01`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Fills ([`fills`](#relation-fills)), Provided by ([`provided_by`](#relation-provided_by))
-- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates)), Stores ([`stored_in`](#relation-stored_in))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates)), Keeps ([`kept_by`](#relation-kept_by)), Stores ([`stored_in`](#relation-stored_in))
 - **Gaps:** [`data-store-unused`](#gap-data-store-unused)
 
 <a id="table-data_store"></a>
@@ -1665,7 +1729,7 @@ Loads and saves its aggregate, whole: the way command handlers reach the aggrega
 - **ID:** `<domain>-REPO<nn>`, such as `TL-LEND-REPO01`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Persists ([`persists`](#relation-persists)), Provided by ([`provided_by`](#relation-provided_by)), Stored in ([`stored_in`](#relation-stored_in))
-- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates)), Keeps ([`kept_by`](#relation-kept_by))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest), [`repository-persists-nothing`](#check-repository-persists-nothing)
 - **Gaps:** [`stored-nowhere`](#gap-stored-nowhere)
 
@@ -1696,7 +1760,7 @@ Its entity in code: the entity's data, behavior and mapping to its table. A comm
 - **ID:** `<entity>-DM`, such as `TL-LEND-EN01-DM`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
-- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates)), Keeps ([`kept_by`](#relation-kept_by))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-data_model"></a>
@@ -1725,7 +1789,7 @@ Where an entity or a read model, its parent, is stored, in a database or not; or
 - **ID:** `<entity or read model>-TB, or <domain>-TB<nn>`, such as `TL-LEND-EN01-TB`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by)), Stored in ([`stored_in`](#relation-stored_in))
-- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates)), Keeps ([`kept_by`](#relation-kept_by))
 - **Parts:** [`table_key`](#table-table_key)
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`table-schema-mismatch`](#check-table-schema-mismatch), [`package-not-in-manifest`](#check-package-not-in-manifest)
 - **Gaps:** [`table-without-file`](#gap-table-without-file)
@@ -1789,7 +1853,7 @@ Its value object in code, which checks the value object's constraints when a val
 - **ID:** `<value object>-VT`, such as `TL-VO01-VT`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
-- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates)), Keeps ([`kept_by`](#relation-kept_by))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-value_type"></a>
@@ -1818,7 +1882,7 @@ Enforces its invariant: the rule in its aggregate's code, run by the aggregate's
 - **ID:** `<invariant>-RL`, such as `TL-LEND-INV01-RL`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
-- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates)), Keeps ([`kept_by`](#relation-kept_by))
 
 <a id="table-rule"></a>
 
@@ -1846,7 +1910,7 @@ Its specification in code: a yes-or-no test over the records it is given.
 - **ID:** `<specification>-PR`, such as `TL-LEND-SP01-PR`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
-- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates)), Keeps ([`kept_by`](#relation-kept_by))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-predicate"></a>
@@ -1875,7 +1939,7 @@ Its domain event's shape in code; a contract with other domains when the event i
 - **ID:** `<domain event>-ET`, such as `TL-LEND-EV01-ET`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
-- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates)), Keeps ([`kept_by`](#relation-kept_by))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`event-not-by-outbox`](#check-event-not-by-outbox), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-event_type"></a>
@@ -1905,7 +1969,7 @@ Fills its read model's table and keeps it current, from events or as a view's qu
 - **ID:** `<read model>-PJ`, such as `TL-LEND-RM01-PJ`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
-- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates)), Keeps ([`kept_by`](#relation-kept_by))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-projection"></a>
@@ -1936,7 +2000,7 @@ Reads its read model's table for its query handlers: the way query handlers reac
 - **ID:** `<read model>-RD`, such as `TL-LEND-RM01-RD`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by)), Stored in ([`stored_in`](#relation-stored_in))
-- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates)), Keeps ([`kept_by`](#relation-kept_by))
 
 <a id="table-reader"></a>
 
@@ -1966,7 +2030,7 @@ Carries out its command: an application service that owns the transaction, loads
 - **ID:** `<command>-H`, such as `TL-LEND-CMD01-H`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
-- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates)), Keeps ([`kept_by`](#relation-kept_by))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-command_handler"></a>
@@ -1997,7 +2061,7 @@ Answers its query from its read model's table: an application service that chang
 - **ID:** `<query>-H`, such as `TL-LEND-QRY01-H`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
-- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates)), Keeps ([`kept_by`](#relation-kept_by))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-query_handler"></a>
@@ -2028,7 +2092,7 @@ Carries out its policy: hears the policy's event and sends its command.
 - **ID:** `<policy>-H`, such as `TL-LEND-PO01-H`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
-- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates)), Keeps ([`kept_by`](#relation-kept_by))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-event_handler"></a>
@@ -2059,7 +2123,7 @@ Its domain service in code. It never uses a repository or an outside system: its
 - **ID:** `<domain service>-SV`, such as `TL-LEND-DS01-SV`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
-- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates)), Keeps ([`kept_by`](#relation-kept_by))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-service"></a>
@@ -2087,7 +2151,7 @@ A piece of the user interface that renders one or more views and builds the view
 - **Obligation:** no
 - **ID:** `<P>-UI<nn>`, such as `TL-UI01`; it starts with its product's ID
 - **Links out:** Builds ([`builds`](#relation-builds)), Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by)), Renders ([`renders`](#relation-renders))
-- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates)), Keeps ([`kept_by`](#relation-kept_by))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`ui-component-unused`](#check-ui-component-unused), [`view-route-not-in-file`](#check-view-route-not-in-file), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-ui_component"></a>
@@ -2116,7 +2180,7 @@ Serves its endpoint: reads the request, calls the command or query handler and w
 - **ID:** `<endpoint>-H`, such as `TL-LEND-EP01-H`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
-- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates)), Keeps ([`kept_by`](#relation-kept_by))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`endpoint-route-not-in-file`](#check-endpoint-route-not-in-file), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-endpoint_handler"></a>
@@ -2147,7 +2211,7 @@ Talks to its integration's outside system, so the rest of the code does not.
 - **ID:** `<integration>-AD`, such as `TL-INT01-AD`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
-- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates)), Keeps ([`kept_by`](#relation-kept_by))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-adapter"></a>
@@ -2178,7 +2242,7 @@ A start-up file: what runs first and wires the rest together, such as a server's
 - **ID:** `<domain>-ENTRY<nn>`, such as `TL-LEND-ENTRY01`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Fills ([`fills`](#relation-fills)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
-- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates)), Keeps ([`kept_by`](#relation-kept_by))
 
 <a id="table-entry_point"></a>
 
@@ -2207,7 +2271,7 @@ A dev script or config file outside the running product: a build, a generator, a
 - **ID:** `<domain>-TOOL<nn>`, such as `TL-LEND-TOOL01`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Fills ([`fills`](#relation-fills)), Generates ([`generates`](#relation-generates)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
-- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates))
+- **Links in:** Questions about this ([`about`](#relation-about)), Generated by ([`generates`](#relation-generates)), Keeps ([`kept_by`](#relation-kept_by))
 
 <a id="table-tooling"></a>
 
@@ -2227,27 +2291,30 @@ A dev script or config file outside the running product: a build, a generator, a
 
 A library of rules that holds across the product, such as exact money, a latency budget, logging, error handling or naming. Its type says whether its rules are essential (a quality) or accidental (engineering). What follows one of its rules meets it. A standard is the rules that code follows, not code, so it fills no slot: an engineering standard is accounted for through the records that meet its rules.
 
-- **Parents:** [`product`](#kind-product) (`product_id`)
+- **Parents:** [`product`](#kind-product) (`product_id`), [`domain`](#kind-domain) (`domain_id`)
 - **Children:** [`standard_rule`](#kind-standard_rule)
 - **Complexity:** by its type: a quality is essential, engineering accidental
 - **Obligation:** no
-- **ID:** `<P>-STD-<name>`, such as `TL-STD-CODE`; it starts with its parent's ID
+- **ID:** `<P>-STD-<name>`, such as `TL-STD-CODE`; it starts with its product's ID
 - **Links out:** Provided by ([`provided_by`](#relation-provided_by))
 - **Links in:** Questions about this ([`about`](#relation-about))
+- **Checks:** [`standard-in-business-domain`](#check-standard-in-business-domain)
 
 <a id="table-standard"></a>
 
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
-| `id` | VARCHAR → `record_id` | yes | The standard's ID, such as TL-STD-CODE. |
+| `id` | VARCHAR → `record_id` | yes | The standard's ID: its product's ID, STD and its name, such as TL-STD-CODE, under its product or a platform domain alike. |
 | `title` | VARCHAR | yes | The standard's name. |
-| `product_id` | VARCHAR → [`product`](#table-product) | yes | The product it belongs to. |
+| `product_id` | VARCHAR → [`product`](#table-product) | no | The product it sits under, as its own; exactly one of product and domain is given. |
+| `domain_id` | VARCHAR → [`domain`](#table-domain) | no | The platform domain that holds it, beside the guarantees its rules help keep: a standard still holds across the whole product wherever it sits; exactly one of product and domain is given. |
 | `type` | ENUM('quality', 'engineering') | yes | quality: what the product's people need of it whatever it is built with, such as exact money, auditability or a latency budget (essential); engineering: how it is built, such as logging, naming or how code is laid out (accidental). |
 | `description` | VARCHAR | yes | What the standard covers, in a paragraph. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `("trim"(description) != '')`
+- **Rule:** `((product_id IS NULL) != (domain_id IS NULL))`
 
 <a id="kind-standard_rule"></a>
 
@@ -2333,6 +2400,16 @@ A repository that persists no aggregate.
 
 A repository exists to load and save its aggregate, whole, and says which with its one persists link. One that persists none is a leftover, or its link is missing. Link the aggregate it persists with persists, or remove it.
 
+<a id="check-standard-in-business-domain"></a>
+
+### `standard-in-business-domain`
+
+**Error** · Lathe's · Kinds: [`standard`](#kind-standard), [`domain`](#kind-domain)
+
+A standard that sits under a domain not marked platform.
+
+A standard holds across the whole product, so it sits under its product, or under a platform domain beside the guarantees its rules help keep; a business domain holds none (LA-STD-MODELING-R23). Move it to its product or to a platform domain, or mark its domain platform if that is what it is.
+
 ### Coverage gaps: technical specification
 
 Each is reported in coverage, under the record that falls short, never as a problem.
@@ -2352,6 +2429,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | <a id="gap-endpoint-without-handler"></a>`endpoint-without-handler` | [`endpoint`](#kind-endpoint), [`endpoint_handler`](#kind-endpoint_handler) | An endpoint with no endpoint handler. |
 | <a id="gap-integration-without-adapter"></a>`integration-without-adapter` | [`integration`](#kind-integration), [`adapter`](#kind-adapter) | An integration with no adapter. |
 | <a id="gap-stored-nowhere"></a>`stored-nowhere` | [`repository`](#kind-repository), [`reader`](#kind-reader), [`table`](#kind-table), [`data_store`](#kind-data_store) | A repository, reader or table that names no data store. |
+| <a id="gap-building-block-keeps-no-guarantee"></a>`building-block-keeps-no-guarantee` | [`guarantee`](#kind-guarantee) | A technical record or data store of a platform domain that keeps none of its guarantees. |
 | <a id="gap-data-store-unused"></a>`data-store-unused` | [`data_store`](#kind-data_store), [`repository`](#kind-repository), [`reader`](#kind-reader), [`table`](#kind-table) | A data store no repository, reader or table is stored in. |
 | <a id="gap-package-not-accounted-for"></a>`package-not-accounted-for` | [`product`](#kind-product), `package_use` | A product whose package.json files list a package no record of it uses. |
 | <a id="gap-table-without-file"></a>`table-without-file` | [`table`](#kind-table) | A table stored in a database table that names no file creating it. |
@@ -2601,6 +2679,49 @@ Proves its domain service: from the inputs given, the value or decision it retur
 | `id` | VARCHAR → `record_id` | yes | The test's ID: its domain service's ID and T<nn>, such as TL-LEND-DS01-T01. |
 | `title` | VARCHAR | yes | What the test shows, in a sentence. |
 | `domain_service_id` | VARCHAR → [`domain_service`](#table-domain_service) | yes | The domain service it proves. |
+| `level` | ENUM('unit', 'integration', 'service', 'system', 'browser') | yes | How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. |
+| `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
+| `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
+| `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
+| `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
+| `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
+| `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
+| `when` | VARCHAR | yes | What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from). |
+| `then` | VARCHAR | yes | What the test expects. |
+| `notes` | VARCHAR | no | Longer notes on the test, such as when to run it. |
+
+- **Key:** `id`
+- **Rule:** `("trim"(title) != '')`
+- **Rule:** `smoke`
+- **Rule:** `"external"`
+- **Rule:** `("trim"("when") != '')`
+- **Rule:** `("trim"("then") != '')`
+- **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
+- **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
+
+<a id="kind-guarantee_test"></a>
+
+### Guarantee test (`guarantee_test`)
+
+Proves its guarantee: from another domain's side, what it can rely on holds, such as a change that breaks a rule being refused with every reason and no data file changed.
+
+- **Parents:** [`guarantee`](#kind-guarantee) (`guarantee_id`)
+- **Children:** none
+- **Complexity:** as the record it sits under
+- **Obligation:** no
+- **Run by levels:** `unit`, `integration`, `service`, `system`, `browser`
+- **ID:** `<guarantee>-T<nn>`, such as `TL-PLAT-GU01-T01`; it starts with its parent's ID
+- **Links out:** Starts from ([`starts_from`](#relation-starts_from))
+- **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
+- **Checks:** [`guarantee-without-test`](#check-guarantee-without-test)
+
+<a id="table-guarantee_test"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The test's ID: its guarantee's ID and T<nn>, such as TL-PLAT-GU01-T01. |
+| `title` | VARCHAR | yes | What the test shows, in a sentence. |
+| `guarantee_id` | VARCHAR → [`guarantee`](#table-guarantee) | yes | The guarantee it proves. |
 | `level` | ENUM('unit', 'integration', 'service', 'system', 'browser') | yes | How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. |
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
@@ -3626,6 +3747,37 @@ The flow step invokes the command or query: at most one per step.
 | [`flow_step`](#kind-flow_step) | [`command`](#kind-command) | The step sends the command. |
 | [`flow_step`](#kind-flow_step) | [`query`](#kind-query) | The step asks the query. |
 
+<a id="relation-kept_by"></a>
+
+### `kept_by`
+
+The guarantee is kept by the building block: a technical record or a data store whose code or setup makes the promise hold for every other domain, such as the runner every command goes through. A guarantee is built through the building blocks that keep it, and a building block of a platform domain keeps at least one of its guarantees. A record of a product's own technical kind, such as a shared module, keeps a guarantee the same way, with no declaration; another of the product's own kinds, once the product adds the pair with a product_relation named kept_by.
+
+- **Reads:** Kept by / Keeps
+- **Role:** none
+
+| From | To | Meaning |
+| --- | --- | --- |
+| [`guarantee`](#kind-guarantee) | [`adapter`](#kind-adapter) | The guarantee is kept by the adapter. |
+| [`guarantee`](#kind-guarantee) | [`command_handler`](#kind-command_handler) | The guarantee is kept by the command handler. |
+| [`guarantee`](#kind-guarantee) | [`data_model`](#kind-data_model) | The guarantee is kept by the data model. |
+| [`guarantee`](#kind-guarantee) | [`data_store`](#kind-data_store) | The guarantee is kept by the data store. |
+| [`guarantee`](#kind-guarantee) | [`endpoint_handler`](#kind-endpoint_handler) | The guarantee is kept by the endpoint handler. |
+| [`guarantee`](#kind-guarantee) | [`entry_point`](#kind-entry_point) | The guarantee is kept by the entry point. |
+| [`guarantee`](#kind-guarantee) | [`event_handler`](#kind-event_handler) | The guarantee is kept by the event handler. |
+| [`guarantee`](#kind-guarantee) | [`event_type`](#kind-event_type) | The guarantee is kept by the event type. |
+| [`guarantee`](#kind-guarantee) | [`predicate`](#kind-predicate) | The guarantee is kept by the predicate. |
+| [`guarantee`](#kind-guarantee) | [`projection`](#kind-projection) | The guarantee is kept by the projection. |
+| [`guarantee`](#kind-guarantee) | [`query_handler`](#kind-query_handler) | The guarantee is kept by the query handler. |
+| [`guarantee`](#kind-guarantee) | [`reader`](#kind-reader) | The guarantee is kept by the reader. |
+| [`guarantee`](#kind-guarantee) | [`repository`](#kind-repository) | The guarantee is kept by the repository. |
+| [`guarantee`](#kind-guarantee) | [`rule`](#kind-rule) | The guarantee is kept by the rule. |
+| [`guarantee`](#kind-guarantee) | [`service`](#kind-service) | The guarantee is kept by the service. |
+| [`guarantee`](#kind-guarantee) | [`table`](#kind-table) | The guarantee is kept by the table. |
+| [`guarantee`](#kind-guarantee) | [`tooling`](#kind-tooling) | The guarantee is kept by the tooling. |
+| [`guarantee`](#kind-guarantee) | [`ui_component`](#kind-ui_component) | The guarantee is kept by the UI component. |
+| [`guarantee`](#kind-guarantee) | [`value_type`](#kind-value_type) | The guarantee is kept by the value type. |
+
 <a id="relation-measured_by"></a>
 
 ### `measured_by`
@@ -3641,6 +3793,7 @@ The business outcome is measured by the test or record: a test of any kind, or a
 | [`business_outcome`](#kind-business_outcome) | [`domain_service_test`](#kind-domain_service_test) | The business outcome is measured by the domain service test. |
 | [`business_outcome`](#kind-business_outcome) | [`endpoint_test`](#kind-endpoint_test) | The business outcome is measured by the endpoint test. |
 | [`business_outcome`](#kind-business_outcome) | [`flow_test`](#kind-flow_test) | The business outcome is measured by the flow test. |
+| [`business_outcome`](#kind-business_outcome) | [`guarantee_test`](#kind-guarantee_test) | The business outcome is measured by the guarantee test. |
 | [`business_outcome`](#kind-business_outcome) | [`integration_test`](#kind-integration_test) | The business outcome is measured by the integration test. |
 | [`business_outcome`](#kind-business_outcome) | [`invariant_test`](#kind-invariant_test) | The business outcome is measured by the invariant test. |
 | [`business_outcome`](#kind-business_outcome) | [`journey_test`](#kind-journey_test) | The business outcome is measured by the journey test. |
@@ -3776,6 +3929,7 @@ The record is provided by something outside the product, which decides it once f
 | [`entry_point`](#kind-entry_point) | [`integration`](#kind-integration) | The entry point is provided by what the integration reaches, outside the product. |
 | [`event_handler`](#kind-event_handler) | [`integration`](#kind-integration) | The event handler is provided by what the integration reaches, outside the product. |
 | [`event_type`](#kind-event_type) | [`integration`](#kind-integration) | The event type is provided by what the integration reaches, outside the product. |
+| [`guarantee`](#kind-guarantee) | [`integration`](#kind-integration) | The guarantee is provided by what the integration reaches, outside the product. |
 | [`invariant`](#kind-invariant) | [`integration`](#kind-integration) | The invariant is provided by what the integration reaches, outside the product. |
 | [`pattern_rule`](#kind-pattern_rule) | [`integration`](#kind-integration) | The pattern rule is provided by what the integration reaches, outside the product. |
 | [`policy`](#kind-policy) | [`integration`](#kind-integration) | The policy is provided by what the integration reaches, outside the product. |
@@ -3880,6 +4034,7 @@ The test starts from the test data set: it is prepared before the test and reset
 | [`domain_service_test`](#kind-domain_service_test) | [`test_data_set`](#kind-test_data_set) | The domain service test starts from the test data set. |
 | [`endpoint_test`](#kind-endpoint_test) | [`test_data_set`](#kind-test_data_set) | The endpoint test starts from the test data set. |
 | [`flow_test`](#kind-flow_test) | [`test_data_set`](#kind-test_data_set) | The flow test starts from the test data set. |
+| [`guarantee_test`](#kind-guarantee_test) | [`test_data_set`](#kind-test_data_set) | The guarantee test starts from the test data set. |
 | [`integration_test`](#kind-integration_test) | [`test_data_set`](#kind-test_data_set) | The integration test starts from the test data set. |
 | [`invariant_test`](#kind-invariant_test) | [`test_data_set`](#kind-test_data_set) | The invariant test starts from the test data set. |
 | [`journey_test`](#kind-journey_test) | [`test_data_set`](#kind-test_data_set) | The journey test starts from the test data set. |
