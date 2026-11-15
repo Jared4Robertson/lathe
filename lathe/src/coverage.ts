@@ -1,14 +1,15 @@
 // Coverage as views over the typed tables, and the facts the engine gathers from the code before the checks run.
 //
 // Every obligation (a member of the obligation supertype: constraints, invariants, specifications, policies, domain
-// services, storage requirements, UC requirements, view requirements, API requirements, pattern rules, standard rules
+// services, guarantees, storage requirements, UC requirements, view requirements, API requirements, pattern rules, standard rules
 // and a product's own obligation kinds) is counted as:
 // - designed: its implementation is specified. A UC requirement is designed once a step of each of its use case's
 //   flows (one per interface) fulfills it, a standard rule once a technical record meets it, a product's own
 //   obligation once a design or build link targets it; the others by construction (DESIGNED_BY_CONSTRUCTION);
 // - built: every one of the specific technical records that implement it names a file that exists, and there is at
 //   least one; never any other code near it: an invariant's rule, a constraint's value type, a specification's
-//   predicate, a policy's event handler, a domain service's service, a storage requirement's repository (its
+//   predicate, a policy's event handler, a domain service's service, a guarantee's building blocks (each technical
+//   record that keeps it; a data store keeps one through its setup, which no file shows), a storage requirement's repository (its
 //   aggregate's) or reader (its read model's) once that names the data store it is stored in, an API requirement's
 //   endpoint handler, the UI
 //   components that build a view requirement, a standard rule's meeting records, a product's own obligation's design
@@ -40,6 +41,7 @@ export const ALLOWED_LEVELS: Readonly<Record<string, readonly string[]>> = {
   specification_test: ['unit', 'integration'],
   policy_test: ['integration', 'service', 'system', 'browser'],
   domain_service_test: ['unit'],
+  guarantee_test: ['unit', 'integration', 'service', 'system', 'browser'],
   storage_requirement_test: ['integration', 'service', 'system', 'browser'],
   use_case_test: ['service', 'system', 'browser'],
   view_test: ['unit', 'browser'],
@@ -76,6 +78,11 @@ export const OBLIGATION_COVERAGE: Readonly<Record<string, { designed: string; bu
   specification: { designed: 'By construction.', built: 'Its predicate names a file that exists.', proved: 'Its specification test.' },
   policy: { designed: 'By construction, under its command.', built: 'Its event handler names a file that exists.', proved: 'Its policy test.' },
   domain_service: { designed: 'By construction, under its domain.', built: 'Its service names a file that exists.', proved: 'One of its domain service tests.' },
+  guarantee: {
+    designed: 'By construction, under its platform domain.',
+    built: 'Every technical record that keeps it names a file that exists, and there is at least one; a data store that keeps it builds nothing a file shows.',
+    proved: 'One of its guarantee tests.',
+  },
   storage_requirement: {
     designed: 'By construction, under its aggregate or read model.',
     built: "Its aggregate's repository, or its read model's reader, names a file that exists and the data store it is stored in.",
@@ -109,7 +116,7 @@ const PROOF_ONLY = ['pattern_rule'];
  * domain or use case follows its pattern. A UC requirement, a standard rule and a product's own obligation are designed
  * by links.
  */
-const DESIGNED_BY_CONSTRUCTION = ['constraint', 'invariant', 'specification', 'policy', 'domain_service', 'storage_requirement', 'view_requirement', 'api_requirement', 'pattern_rule'];
+const DESIGNED_BY_CONSTRUCTION = ['constraint', 'invariant', 'specification', 'policy', 'domain_service', 'guarantee', 'storage_requirement', 'view_requirement', 'api_requirement', 'pattern_rule'];
 
 const list = (items: readonly string[]) => items.map(sqlString).join(', ');
 
@@ -190,8 +197,22 @@ WHERE NOT EXISTS (SELECT 1 FROM serves s WHERE s.source_id = j.id)`),
 WHERE NOT EXISTS (SELECT 1 FROM journey_step s WHERE s.journey_id = j.id AND s.path = 'main')`),
   ...MEASURE_GAPS,
   // Domain model.
-  gap('domain-without-aggregate', 'domain-model', ['domain', 'aggregate'], 'A domain with no aggregate.',
-    `SELECT d.id, 'Domain ' || d.id || ' has no aggregate.' AS message FROM domain d WHERE NOT EXISTS (SELECT 1 FROM aggregate a WHERE a.domain_id = d.id)`),
+  // A business domain is described by its aggregates; a platform domain, which has no goals of its own, by its
+  // guarantees (LA-STD-MODELING-R21).
+  gap('domain-without-aggregate', 'domain-model', ['domain', 'aggregate'], 'A business domain with no aggregate.',
+    `SELECT d.id, 'Domain ' || d.id || ' has no aggregate.' AS message FROM domain d WHERE d.platform IS NOT TRUE AND NOT EXISTS (SELECT 1 FROM aggregate a WHERE a.domain_id = d.id)`),
+  gap('platform-without-guarantee', 'domain-model', ['domain', 'guarantee'], 'A platform domain with no guarantee.',
+    `SELECT d.id, 'Platform domain ' || d.id || ' makes no guarantee: write each promise the other domains rely on as a guarantee.' AS message FROM domain d
+WHERE d.platform AND NOT EXISTS (SELECT 1 FROM guarantee g WHERE g.domain_id = d.id)`),
+  // A guarantee is there because another domain relies on it: one of its building blocks is linked to a record of
+  // another domain (a repository stored in its data store, a requirement its shared module implements, a handler its
+  // generator writes), in either direction, by any relation but kept_by.
+  gap('guarantee-relied-on-by-nothing', 'domain-model', ['guarantee'], 'A guarantee no other domain relies on: none of its building blocks is linked to a record of another domain.',
+    `SELECT g.id, 'Guarantee ' || g.id || ' is relied on by no other domain: none of the building blocks that keep it is linked to a record of another domain. Link what uses them, or remove the guarantee.' AS message FROM guarantee g
+WHERE NOT EXISTS (
+  SELECT 1 FROM kept_by k JOIN link l ON l.relation <> 'kept_by' AND k.target_id IN (l.source_id, l.target_id)
+  JOIN record_scope o ON o.id = CASE WHEN l.source_id = k.target_id THEN l.target_id ELSE l.source_id END
+  WHERE k.source_id = g.id AND o.domain_id IS NOT NULL AND o.domain_id <> g.domain_id)`),
   gap('aggregate-without-root', 'domain-model', ['aggregate', 'entity'], 'An aggregate with no root entity.',
     `SELECT a.id, 'Aggregate ' || a.id || ' has no root entity.' AS message FROM aggregate a WHERE NOT EXISTS (SELECT 1 FROM entity e WHERE e.aggregate_id = a.id AND e.role = 'root')`),
   // A command changes its own aggregate only.
@@ -283,6 +304,13 @@ WHERE NOT EXISTS (SELECT 1 FROM persists p WHERE p.target_id = a.id)`),
   gap('stored-nowhere', 'technical-specification', ['repository', 'reader', 'table', 'data_store'], 'A repository, reader or table that names no data store.',
     `SELECT s.id, k.label || ' ' || s.id || ' names no data store: nothing says where its data lives.' AS message FROM stored_in_source s JOIN meta_kind k ON k.name = s.kind
 WHERE NOT EXISTS (SELECT 1 FROM stored_in i WHERE i.source_id = s.id)`),
+  // Nothing outlives its purpose: a building block of a platform domain (a technical record or a data store sitting in
+  // it) keeps one of its guarantees.
+  gap('building-block-keeps-no-guarantee', 'technical-specification', ['guarantee'], 'A technical record or data store of a platform domain that keeps none of its guarantees.',
+    `SELECT r.id, k.label || ' ' || r.id || ' is a building block of platform domain ' || s.domain_id || ' and keeps none of its guarantees: name it on the guarantee it keeps (kept_by), or remove it.' AS message
+FROM record_id r JOIN meta_kind k ON k.name = r.kind JOIN record_scope s ON s.id = r.id JOIN domain d ON d.id = s.domain_id
+WHERE d.platform AND (r.kind = 'data_store' OR EXISTS (SELECT 1 FROM technical_record t WHERE t.id = r.id))
+  AND NOT EXISTS (SELECT 1 FROM kept_by b JOIN guarantee g ON g.id = b.source_id WHERE b.target_id = r.id AND g.domain_id = s.domain_id)`),
   gap('data-store-unused', 'technical-specification', ['data_store', 'repository', 'reader', 'table'], 'A data store no repository, reader or table is stored in.',
     `SELECT d.id, 'Data store ' || d.id || ' stores nothing: no repository, reader or table is stored in it.' AS message FROM data_store d WHERE NOT EXISTS (SELECT 1 FROM stored_in i WHERE i.target_id = d.id)`),
   gap('package-not-accounted-for', 'technical-specification', ['product', 'package_use'], 'A product whose package.json files list a package no record of it uses.', PACKAGE_GAP_SQL),
@@ -399,6 +427,8 @@ UNION ALL SELECT policy_id, id, NULL FROM event_handler
 -- A policy: also the adapter of each integration it exchanges with as it acts.
 UNION ALL SELECT x.source_id, a.id, x.target_id FROM exchanges_with x JOIN policy p ON p.id = x.source_id JOIN adapter a ON a.integration_id = x.target_id
 UNION ALL SELECT domain_service_id, id, NULL FROM service
+-- A guarantee: each technical record that keeps it; a data store keeps it through its setup, which no file shows.
+UNION ALL SELECT k.source_id, k.target_id, NULL FROM kept_by k WHERE NOT EXISTS (SELECT 1 FROM data_store d WHERE d.id = k.target_id)
 -- A storage requirement: its aggregate's repository, or its read model's reader, once it names its data store.
 UNION ALL SELECT s.id, p.source_id, s.aggregate_id FROM storage_requirement s JOIN persists p ON p.target_id = s.aggregate_id JOIN stored_in d ON d.source_id = p.source_id
 UNION ALL SELECT s.id, r.id, s.read_model_id FROM storage_requirement s JOIN reader r ON r.read_model_id = s.read_model_id JOIN stored_in d ON d.source_id = r.id

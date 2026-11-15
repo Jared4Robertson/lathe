@@ -4,7 +4,6 @@
 import { changed } from '../../../platform/data/rows.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { StandardRepository } from '../repository.ts';
-import type { AddStandard } from './add-standard.ts';
 import type { ChangeStandard } from './change-standard.ts';
 import type { RemoveStandard } from './remove-standard.ts';
 import type { AddStandardRule } from './add-standard-rule.ts';
@@ -13,14 +12,6 @@ import type { RemoveStandardRule } from './remove-standard-rule.ts';
 import type { AddStandardRuleTest } from './add-standard-rule-test.ts';
 import type { ChangeStandardRuleTest } from './change-standard-rule-test.ts';
 import type { RemoveStandardRuleTest } from './remove-standard-rule-test.ts';
-
-/** Adds a standard to its product, with no rules yet. */
-export function addStandard(tx: Transaction, input: AddStandard): void {
-  const standards = new StandardRepository(tx);
-  if (tx.record(input.product_id)?.kind !== 'product') tx.refuse('missing', `there is no product ${input.product_id}`);
-  const standard = standards.create({ root: input.id, standard: input, rules: [], ruleTests: [] });
-  standards.save(standard);
-}
 
 /** Changes a standard's title or description. Its product never changes. */
 export function changeStandard(tx: Transaction, input: ChangeStandard): void {

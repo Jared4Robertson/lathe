@@ -62,6 +62,8 @@
 {"id":"LA-MOD-MOD87","title":"lathe/src/domain-modeling/specification/commands","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/specification/commands","group_name":"Specification"}
 {"id":"LA-MOD-MOD88","title":"lathe/src/domain-modeling/storage-requirement/commands","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/storage-requirement/commands","group_name":"Storage requirement"}
 {"id":"LA-MOD-MOD89","title":"lathe/src/domain-modeling/value-object/commands","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/value-object/commands","group_name":"Value object"}
+{"id":"LA-MOD-MOD90","title":"lathe/src/domain-modeling/guarantee/model.ts","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/guarantee/model.ts","group_name":"Guarantee"}
+{"id":"LA-MOD-MOD91","title":"lathe/src/domain-modeling/guarantee/commands","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/guarantee/commands","group_name":"Guarantee"}
 {"id":"LA-PLT-MOD01","title":"app/src/shell/useNarrow.ts","domain_id":"LA-PLT","file":"app/src/shell/useNarrow.ts","group_name":"Panel"}
 {"id":"LA-PLT-MOD02","title":"app/src/theme/apply.ts","domain_id":"LA-PLT","file":"app/src/theme/apply.ts","group_name":"Themes"}
 {"id":"LA-PLT-MOD03","title":"app/src/theme/contrast.ts","domain_id":"LA-PLT","file":"app/src/theme/contrast.ts","group_name":"Themes"}

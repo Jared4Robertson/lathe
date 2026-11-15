@@ -22,6 +22,7 @@ import { DomainPage } from '../domain-modeling/domain/DomainPage';
 import { addressOf, focusOf, type FocusRoute } from './address';
 import { focusTrail } from './HeaderStrip';
 import { CardChanges } from '../changes/CardChanges';
+import { PLATFORM_SECTIONS } from '../../../lathe/src/exploring/folder-tree/read-model';
 
 // The wiki card (LA-V96): the one card, the focused record's or group's wiki page, with its editing,
 // floating over the right of the open space above whichever stage shows, in one constant spot just under the stage's toolbar row, its height a steady share of
@@ -239,7 +240,8 @@ function GroupWiki({ index, gid }: { index: RecordIndex; gid: string }) {
   const members = groupMembers(index, gid);
   const parentRecord = index.byId.get(parent)!;
   const group = treeGroup(index, gid);
-  const stage = group?.role === 'stage' ? index.meta.stages.find((s) => groupName(index, gid) === s.label) : undefined;
+  // A stage, or a platform domain's section, says what it holds.
+  const stage = group?.role === 'stage' ? (index.meta.stages.find((s) => gid.split('/')[1] === s.stage) ?? PLATFORM_SECTIONS.find((p) => gid.split('/')[1] === p.section)) : undefined;
   const description = kind ? index.meta.kinds.get(kind)?.description : stage?.description;
   // In a stage or its folders, a row folds only what is of its own stage, as in the nav; under a record, all its children.
   const nested = group?.role === 'kind' && index.byId.has(parent) && parentRecord.kind !== 'product' && parentRecord.kind !== 'domain' ? undefined : (r: RecordSummary) => foldedChildren(index, r);

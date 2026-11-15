@@ -44,6 +44,8 @@
 {"id":"LA-MOD-EN10-TB","title":"domain_event","entity_id":"LA-MOD-EN10","name":"domain_event","storage":"table","file":"lathe/schema/004-domain-model.sql"}
 {"id":"LA-MOD-EN110-TB","title":"storage_requirement","entity_id":"LA-MOD-EN110","name":"storage_requirement","storage":"table","file":"lathe/schema/004-domain-model.sql"}
 {"id":"LA-MOD-EN111-TB","title":"storage_requirement_test","entity_id":"LA-MOD-EN111","name":"storage_requirement_test","storage":"table","file":"lathe/schema/008-test-plan.sql"}
+{"id":"LA-MOD-EN113-TB","title":"guarantee","entity_id":"LA-MOD-EN113","name":"guarantee","storage":"table","file":"lathe/schema/004-domain-model.sql"}
+{"id":"LA-MOD-EN114-TB","title":"guarantee_test","entity_id":"LA-MOD-EN114","name":"guarantee_test","storage":"table","file":"lathe/schema/008-test-plan.sql"}
 {"id":"LA-MOD-EN30-TB","title":"term","entity_id":"LA-MOD-EN30","name":"term","storage":"table","file":"lathe/schema/004-domain-model.sql"}
 {"id":"LA-MOD-EN31-TB","title":"value_object","entity_id":"LA-MOD-EN31","name":"value_object","storage":"table","file":"lathe/schema/004-domain-model.sql"}
 {"id":"LA-MOD-EN32-TB","title":"value_object_field","entity_id":"LA-MOD-EN32","name":"value_object_field","storage":"table","file":"lathe/schema/004-domain-model.sql"}
@@ -81,6 +83,7 @@
 {"id":"LA-MOD-RM29-TB","title":"ValueObjectTable","read_model_id":"LA-MOD-RM29","name":"ValueObjectTable","storage":"in memory","file":"lathe/src/domain-modeling/value-object/read-model.ts"}
 {"id":"LA-MOD-RM30-TB","title":"ReadModelTable","read_model_id":"LA-MOD-RM30","name":"ReadModelTable","storage":"in memory","file":"lathe/src/domain-modeling/read-model/read-model.ts"}
 {"id":"LA-MOD-RM42-TB","title":"StorageRequirementTable","read_model_id":"LA-MOD-RM42","name":"StorageRequirementTable","storage":"in memory","file":"lathe/src/domain-modeling/storage-requirement/read-model.ts"}
+{"id":"LA-MOD-RM44-TB","title":"GuaranteeTable","read_model_id":"LA-MOD-RM44","name":"GuaranteeTable","storage":"in memory","file":"lathe/src/domain-modeling/guarantee/read-model.ts"}
 {"id":"LA-MOD-TB30","title":"serves","domain_id":"LA-MOD","name":"serves","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-MOD-TB31","title":"persists","domain_id":"LA-MOD","name":"persists","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-MOD-TB40","title":"has_one","domain_id":"LA-MOD","name":"has_one","storage":"table","file":"lathe/schema/010-links.sql"}

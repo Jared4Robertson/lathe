@@ -119,6 +119,10 @@
 {"read_model_id":"LA-MOD-RM42","position":3,"name":"Builder","meaning":"The repository or reader that builds it, with its file and the data store it names.","type":"text","required":false}
 {"read_model_id":"LA-MOD-RM42","position":4,"name":"Tests","meaning":"Its storage requirement tests, each with the test data sets it starts from.","type":"text","required":true}
 {"read_model_id":"LA-MOD-RM42","position":5,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the requirement.","type":"text","required":true}
+{"read_model_id":"LA-MOD-RM44","position":1,"name":"Guarantee","meaning":"The guarantee's row: its ID, title, domain and statement.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-MOD-RM44","position":2,"name":"Kept by","meaning":"The building blocks that keep it, by ID.","type":"text","required":true}
+{"read_model_id":"LA-MOD-RM44","position":3,"name":"Tests","meaning":"Its guarantee tests, each with the test data sets it starts from.","type":"text","required":true}
+{"read_model_id":"LA-MOD-RM44","position":4,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the guarantee: the guarantee or one of its tests.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM01","position":1,"name":"Data folder","meaning":"Where the product's data files were read from, as `lathe.config.json` names it.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM01","position":2,"name":"Records","meaning":"Every record with its kind, columns, part rows, parent, product and domain.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM01","position":3,"name":"Links","meaning":"Every link, with its relation and both ends.","type":"text","required":true}

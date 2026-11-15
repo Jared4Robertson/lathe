@@ -4,7 +4,7 @@ export const ADD_STANDARD_IDENTITY = {
   id: 'LA-TEC-CMD200',
   slice: { aggregate: 'LA-TEC-A3', name: 'standard' },
   name: 'add-standard',
-  description: 'Adds a standard to its product, with no rules yet.',
+  description: 'Adds a standard to its product, or to a platform domain of it, with no rules yet; refused unless exactly one of the two is given.',
   method: 'POST',
   route: '/api/standard/add-standard',
 } as const;

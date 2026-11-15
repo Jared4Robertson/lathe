@@ -12,6 +12,7 @@ import { DOMAIN_EVENT_COMMANDS } from './domain-modeling/domain-event/commands/i
 import { ENDPOINT_COMMANDS } from './interface-design/endpoint/commands/index.ts';
 import { ENTRY_POINT_COMMANDS } from './technical-specification/entry-point/commands/index.ts';
 import { EXTENSION_RECORD_COMMANDS } from './product/extension-record/commands/index.ts';
+import { GUARANTEE_COMMANDS } from './domain-modeling/guarantee/commands/index.ts';
 import { INTEGRATION_COMMANDS } from './interface-design/integration/commands/index.ts';
 import { INTERFACE_COMMANDS } from './product/interface/commands/index.ts';
 import { JOURNEY_COMMANDS } from './product/journey/commands/index.ts';
@@ -49,6 +50,7 @@ import { LIST_ESSENTIAL_RECORDS } from './checking/essential-review/queries.ts';
 import { GET_EXTENSION_RECORD, LIST_EXTENSION_RECORDS, NEXT_EXTENSION_RECORD_ID } from './product/extension-record/queries.ts';
 import { LIST_TRACED_ADDRESSES } from './traceability/file-facts/queries.ts';
 import { GET_FOLDER_TREE } from './exploring/folder-tree/queries.ts';
+import { GET_GUARANTEE, LIST_GUARANTEES, NEXT_GUARANTEE_ID } from './domain-modeling/guarantee/queries.ts';
 import { GET_INTEGRATION, LIST_INTEGRATIONS, NEXT_INTEGRATION_ID } from './interface-design/integration/queries.ts';
 import { GET_JOURNEY, LIST_JOURNEYS, NEXT_JOURNEY_ID } from './product/journey/queries.ts';
 import { GET_META_MODEL } from './platform/meta-model/queries.ts';
@@ -88,6 +90,7 @@ const COMMANDS = [
   ...ENDPOINT_COMMANDS,
   ...ENTRY_POINT_COMMANDS,
   ...EXTENSION_RECORD_COMMANDS,
+  ...GUARANTEE_COMMANDS,
   ...INTEGRATION_COMMANDS,
   ...INTERFACE_COMMANDS,
   ...JOURNEY_COMMANDS,
@@ -153,6 +156,9 @@ export const ALL_QUERIES: readonly AnyQuery[] = [
   NEXT_EXTENSION_RECORD_ID,
   LIST_TRACED_ADDRESSES,
   GET_FOLDER_TREE,
+  GET_GUARANTEE,
+  LIST_GUARANTEES,
+  NEXT_GUARANTEE_ID,
   GET_INTEGRATION,
   LIST_INTEGRATIONS,
   NEXT_INTEGRATION_ID,

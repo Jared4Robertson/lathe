@@ -315,6 +315,12 @@
 {"source_id":"LA-MOD-UC170","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
 {"source_id":"LA-MOD-UC171","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
 {"source_id":"LA-MOD-UC172","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
+{"source_id":"LA-MOD-UC173","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
+{"source_id":"LA-MOD-UC174","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
+{"source_id":"LA-MOD-UC175","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
+{"source_id":"LA-MOD-UC176","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
+{"source_id":"LA-MOD-UC177","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
+{"source_id":"LA-MOD-UC178","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
 {"source_id":"LA-MOD-UC20","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
 {"source_id":"LA-MOD-UC20","target_id":"LA-PAT-AGGREGATE-TESTS"}
 {"source_id":"LA-MOD-UC20","target_id":"LA-PAT-FIELD-INPUTS"}

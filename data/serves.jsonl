@@ -49,6 +49,8 @@
 {"source_id":"LA-JR06","target_id":"LA-BO07"}
 {"source_id":"LA-MOD-A10","target_id":"LA-BO06"}
 {"source_id":"LA-MOD-A22","target_id":"LA-BO06"}
+{"source_id":"LA-MOD-A24","target_id":"LA-BO06"}
+{"source_id":"LA-MOD-A24","target_id":"LA-BO11"}
 {"source_id":"LA-MOD-A4","target_id":"LA-BO06"}
 {"source_id":"LA-MOD-A5","target_id":"LA-BO06"}
 {"source_id":"LA-MOD-A6","target_id":"LA-BO06"}

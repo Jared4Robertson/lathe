@@ -157,6 +157,9 @@ function parentOf(page: DomainPage, kind: DomainKind, id: string): string {
 }
 
 
+/** The kinds a platform domain never holds, which its page offers no Add for. */
+const BUSINESS_ONLY: ReadonlySet<string> = new Set(['use_case', 'aggregate', 'read_model']);
+
 type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: Inside } | { mode: 'adopt'; kind: string } | { mode: 'move' } | { mode: 'remove' };
 
 /** A record of the domain with its actions; a form or the remove question shows in place of its page. */
@@ -193,7 +196,10 @@ export function DomainEditor({ index, page, children }: { index: RecordIndex; pa
   }
   // A domain service has one service: once it has it, there is nothing more to add of that kind.
   const adds = addedUnder(index.meta, kind, INSIDE).filter((k) => k !== 'service' || !page.domainServices.find((s) => s.domainService.id === id)?.service);
-  const others = othersAddedUnder(index.meta, kind);
+  // A platform domain is described by its guarantees and holds no use case, aggregate or read model; only a platform
+  // domain makes a guarantee (LA-STD-MODELING-R21).
+  const platform = kind === 'domain' && page.domain.platform === true;
+  const others = othersAddedUnder(index.meta, kind).filter((k) => (platform ? !BUSINESS_ONLY.has(k) : k !== 'guarantee'));
   return (
     <>
       <div className="record-actions" role="toolbar" aria-label={`Change ${id}`} ref={toolbar}>
