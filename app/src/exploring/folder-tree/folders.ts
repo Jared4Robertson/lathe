@@ -167,8 +167,38 @@ export const navGroupKey = (id: string) => `group:${id}`;
 /** Every folder of an owner, the stages' then the loose ones. */
 export const allFolders = (folders: OwnerFolders): Folder[] => [...folders.stages.flatMap((s) => s.folders), ...folders.loose];
 
-/** The key, and graph address, of the folder holding a product's own stages, what it shares: "TL/shared". */
+/** The key, and graph address, of the folder holding a product's own stages but Discovery, what it shares: "TL/shared". */
 export const sharedKey = (productId: string) => `${productId}/shared`;
+
+/** The stage a product's own records of Discovery sit in, which the nav, the product page and the graph show on its own, never in Shared. */
+const DISCOVERY: Stage = 'discovery';
+
+/** A product's own Discovery stage (its business outcomes and journeys), or null when it holds no records. */
+export function discoveryOf(index: RecordIndex, productId: string): StageFolders | null {
+  return ownerFolders(index, productId).stages.find((s) => s.stage === DISCOVERY && s.count > 0) ?? null;
+}
+
+/** A product's own stages that hold records, but Discovery: what Shared holds. */
+export const sharedStages = (index: RecordIndex, productId: string): StageFolders[] =>
+  ownerFolders(index, productId).stages.filter((s) => s.stage !== DISCOVERY && s.count > 0);
+
+/** The domains marked platform in the space's folder tree, by ID, looked up once per tree answer. */
+const platformsOf = new WeakMap<FolderTree, Set<string>>();
+
+/** Whether a domain is marked platform: the nav, the product page and the graph list it after the business domains, under Platform. */
+export function isPlatform(index: RecordIndex, domainId: string): boolean {
+  let known = platformsOf.get(index.folders);
+  if (!known) {
+    known = new Set(index.folders.domains.filter((d) => d.platform).map((d) => d.owner));
+    platformsOf.set(index.folders, known);
+  }
+  return known.has(domainId);
+}
+
+/** The space's domains by position, split into the business domains (Domains) and those marked platform (Platform). */
+export function domainSections(index: RecordIndex): { business: RecordSummary[]; platform: RecordSummary[] } {
+  return { business: index.domains.filter((d) => !isPlatform(index, d.id)), platform: index.domains.filter((d) => isPlatform(index, d.id)) };
+}
 
 /** A stage's label, from the meta model ("Domain model"). */
 export const stageLabel = (index: RecordIndex, stage: string) => index.meta.stages.find((s) => s.stage === stage)?.label ?? stage.replaceAll('-', ' ');
@@ -183,9 +213,10 @@ export function folderPath(index: RecordIndex, kind: string): string[] {
 }
 
 /**
- * The keys of the nav rows that hold a record, from the outside in: its domain (for a record in a domain), its stage
- * and its folder (none for a stage that shows its records directly), and for a use case the heading of its aggregate or
- * read model. A record folded under another opens the branch of the one listed.
+ * The keys of the nav rows that hold a record, from the outside in: its domain (for a record in a domain) or Shared, its
+ * stage and its folder (none for a stage that shows its records directly), and for a use case the heading of its
+ * aggregate or read model; for a product's own record of Discovery, its folder alone, a row of the nav's Discovery. A
+ * record folded under another opens the branch of the one listed.
  */
 export function branchOf(index: RecordIndex, id: string): string[] {
   const record = index.byId.get(id);
@@ -203,6 +234,7 @@ export function branchOf(index: RecordIndex, id: string): string[] {
     if (stage) {
       const folder = stage.folders.find((f) => f.records.some((x) => x.id === at))!;
       const group = folder.groups?.find((g) => g.records.some((x) => x.id === at))?.group;
+      if (!record.domain && stage.stage === DISCOVERY) return stage.direct ? [] : [folder.key];
       return [...head, stage.key, ...(stage.direct ? [] : [folder.key]), ...(group ? [navGroupKey(group.id)] : [])];
     }
     const loose = folders.loose.find((f) => f.records.some((x) => x.id === at));

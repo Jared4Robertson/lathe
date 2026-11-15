@@ -148,6 +148,9 @@ describe('every drawn box shows its name', () => {
           expect(v.zoom, `${layout.name} ${n.id}`).toBeLessThanOrEqual(maxZoomFor(map));
           expect(v.zoom, `${layout.name} ${n.id}`).toBeGreaterThanOrEqual(MIN_ZOOM);
           if (layout.name === 'Tree' && (n.text < treeText(n.w) * (1 - 1e-9) || v.zoom >= (640 - 2 * FRAME_PADDING) / n.h * (1 - 1e-9) || v.zoom <= childZoom(map, n.id) * (1 + 1e-9))) continue;
+          // In Nested, a box with more children than read with it whole frames the first of them readably (LA-V93-R77):
+          // its children set its frame, so its header reads larger, as in the Tree.
+          if (layout.name === 'Nested' && n.children.length > 0 && v.zoom <= childZoom(map, n.id) * (1 + 1e-9)) continue;
           // A framed Nested leaf has no header: its label, centered, is at most a tenth of its side on screen (LA-EXP-DS07).
           if (layout.name === 'Nested' && n.children.length === 0) {
             const px = n.text * v.zoom * TITLE_FONT;

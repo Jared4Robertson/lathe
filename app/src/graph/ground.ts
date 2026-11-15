@@ -1,5 +1,5 @@
 import { type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
-import { foldedChildren, ownerFolders, sharedKey, type Folder } from '../exploring/folder-tree/folders';
+import { discoveryOf, domainSections, foldedChildren, ownerFolders, sharedKey, sharedStages, type Folder, type StageFolders } from '../exploring/folder-tree/folders';
 import { composes } from './composition';
 import { composedOrder } from './sequence';
 import type { MapNode, PlacedMap, TreeGeometry, TreeShape } from './map';
@@ -7,9 +7,10 @@ import { keepPlaces, type Was } from './keep-places';
 import { linesIn, textHeight, LABEL_PAD_BLOCK, BORDER, type MapLabel, type WrappedLabel } from './text';
 
 // The Graph's Map layout (LA-EXP-DS12), the third beside Tree and Nested, read as people read a map: the product is the
-// ground; each domain a district on it (a labeled area, not a box), the product's shared records a district of their
-// own; in a district its stages are neighborhoods, left to right in stage order, and in a stage its folders are areas,
-// one under another. Records stand on the areas, every leaf record one size, readable at street level (zoom 1, the
+// ground; its Discovery a district on it (a labeled area, not a box), then each domain, the business ones and then
+// those marked platform, then the product's shared records a district of their own; in a district its stages are
+// neighborhoods, in stage order in lines about the screen's shape, and in a stage its folders are areas, one under
+// another. Records stand on the areas, every leaf record one size, readable at street level (zoom 1, the
 // default); a record nests in its parent only when it is its composition (composition.ts), and a container is exactly
 // as big as what it holds, packed in reading order. Everything else a record is joined to is a link, drawn as a line
 // when it is relevant (GraphPage.tsx).
@@ -68,8 +69,9 @@ export interface GroundTree {
 const trees = new WeakMap<RecordIndex, GroundTree>();
 
 /**
- * The Map's tree of a product's space, built once per index: the product's ground; its Shared district (its own stages
- * and loose folders) and each domain's; in each its stages' neighborhoods (with records, in stage order) and loose
+ * The Map's tree of a product's space, built once per index: the product's ground; its Discovery district (its
+ * Discovery stage's folders), each domain's (the business ones, then those marked platform) and its Shared district
+ * (its other own stages and loose folders); in each its stages' neighborhoods (with records, in stage order) and loose
  * folders; in each stage its folders' areas (or the records of a stage with one folder); in each area its records, by
  * the nav's folder tree, each record holding its composition (composition.ts, kind by kind, a journey's or flow's steps path by path and by
  * position, sequence.ts) and followed in its area by the
@@ -110,22 +112,31 @@ export function groundTree(index: RecordIndex): GroundTree {
     for (const r of records) if (!nested(r)) addRecord(area, area, r);
   };
   const addFolder = (up: string, f: Folder) => { if (add(up, f.key, 'area')) addRecords(f.key, f.records); };
-  const addOwner = (owner: string, district: string) => {
-    const folders = ownerFolders(index, owner);
-    for (const stage of folders.stages) {
+  const addStages = (district: string, stages: readonly StageFolders[]) => {
+    for (const stage of stages) {
       if (stage.count === 0 || !add(district, stage.key, 'neighborhood')) continue;
       if (stage.direct) addRecords(stage.key, stage.direct.records);
       else for (const f of stage.folders) if (f.count > 0) addFolder(stage.key, f);
     }
-    for (const f of folders.loose) addFolder(district, f);
+  };
+  const addOwner = (owner: string, district: string, stages = ownerFolders(index, owner).stages) => {
+    addStages(district, stages);
+    for (const f of ownerFolders(index, owner).loose) addFolder(district, f);
   };
   role.set(product.id, 'ground');
-  const shared = ownerFolders(index, product.id);
-  if (shared.stages.some((s) => s.count > 0) || shared.loose.length > 0) {
-    add(product.id, sharedKey(product.id), 'district');
-    addOwner(product.id, sharedKey(product.id));
+  // The product's Discovery is a district of its own, its folders its areas, as the nav lists it apart from Shared.
+  const discovery = discoveryOf(index, product.id);
+  if (discovery && add(product.id, discovery.key, 'district')) {
+    if (discovery.direct) addRecords(discovery.key, discovery.direct.records);
+    else for (const f of discovery.folders) if (f.count > 0) addFolder(discovery.key, f);
   }
-  for (const d of index.domains) if (add(product.id, d.id, 'district')) addOwner(d.id, d.id);
+  const { business, platform } = domainSections(index);
+  for (const d of [...business, ...platform]) if (add(product.id, d.id, 'district')) addOwner(d.id, d.id);
+  const shared = sharedStages(index, product.id);
+  if (shared.length > 0 || ownerFolders(index, product.id).loose.length > 0) {
+    add(product.id, sharedKey(product.id), 'district');
+    addOwner(product.id, sharedKey(product.id), shared);
+  }
 
   // A stage or folder whose records are all held elsewhere is not drawn.
   const prune = (id: string): boolean => {
@@ -193,9 +204,6 @@ export function packRows(sizes: readonly Size[], most: number, gap: number): { a
   }
   return { at, w, h: sizes.length === 0 ? 0 : y + row };
 }
-
-/** Boxes side by side, their tops aligned, `gap` apart. */
-const packRow = (sizes: readonly Size[], gap: number) => packRows(sizes, Infinity, gap);
 
 /**
  * Boxes in rows, in reading order, `gap` apart, the rows as wide as keeps the whole about PACK_ASPECT (its room's area
@@ -270,7 +278,7 @@ export function placeGround(shape: TreeShape, labelOf: (i: number) => MapLabel, 
     const was = before(i);
     if (!was || (role === 'record' && was.header === 0)) return null;
     const room = { width: was.width - 2 * insetX(role), height: was.height - was.header - insetBottom(role) };
-    const laid = keepPlaces(kids.map((k, n) => ({ id: String(shape.children[i][n]), width: k.w, height: k.h })), (c) => before(Number(c)), { gap, aspect: PACK_ASPECT, room, fill: true, beside: role === 'district' ? 'right' : 'shape' });
+    const laid = keepPlaces(kids.map((k, n) => ({ id: String(shape.children[i][n]), width: k.w, height: k.h })), (c) => before(Number(c)), { gap, aspect: PACK_ASPECT, room, fill: true });
     return laid && { at: laid.children.map((c) => ({ x: c.x, y: c.y })), w: laid.width, h: laid.height };
   };
 
@@ -288,14 +296,12 @@ export function placeGround(shape: TreeShape, labelOf: (i: number) => MapLabel, 
       return (size[i] = { w, h: header[i] + packed.h + RECORD_PAD });
     }
     const level = LEVEL[role];
-    // A ground in rows of districts; a district's neighborhoods left to right, in stage order; a neighborhood's areas and
-    // an area's records (or a stage's with one folder) in rows, in reading order, kept about the screen's shape.
+    // A ground in rows of districts; a district's neighborhoods, a neighborhood's areas and an area's records (or a
+    // stage's with one folder) in lines, in reading order (a district's in stage order), kept about the screen's shape.
     const holdsRecords = own.length > 0 && own.every((c) => roleOf(c) === 'record');
     const packed = keptInside(i, role, kids, holdsRecords ? RECORD_GAP : level.gap) ?? (role === 'ground'
       ? packGrid(kids, Math.max(1, Math.ceil(Math.sqrt(kids.length))), level.gap)
-      : role === 'district'
-        ? packRow(kids, level.gap)
-        : holdsRecords
+      : holdsRecords
           ? packShaped(kids, AREA_COLUMNS, RECORD_GAP)
           : packShaped(kids, 1, level.gap));
     header[i] = level.head;

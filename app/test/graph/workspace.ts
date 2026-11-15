@@ -1,6 +1,6 @@
 import { recordIndexOf } from '../read-view';
 import type { ServedData } from '../read-view';
-import { addRows } from '../fixtures/load';
+import { addRows, setRow } from '../fixtures/load';
 import { modelWorkspace } from '../fixtures/model';
 
 // The graph tests' workspace: the `model` fixture (fixtures/model.ts), product P with domains P-D and
@@ -32,6 +32,14 @@ export const groupedWorkspace = (): ServedData => {
 
 /** The test workspace with a second use case that has seven UC requirements and nothing else: one kind, so no groups. */
 export const manyOfOneKindWorkspace = (): ServedData => withReturns(7);
+
+/** The test workspace with a business outcome and a journey of the product, its Discovery, and P-D marked platform. */
+export const discoveryAndPlatformWorkspace = (): ServedData => {
+  const w = testWorkspace();
+  addRows(w, 'business_outcome', { id: 'P-BO01', title: 'More things lent', product_id: 'P', statement: 'Members borrow more things.', measure: 'Loans a month.', target: 'Twice as many.' });
+  addRows(w, 'journey', { id: 'P-JR01', title: 'Borrow a thing', product_id: 'P', trigger: 'A member wants a thing.', result: 'The member has the thing.' });
+  return setRow(w, 'domain', 'P-D', { platform: true });
+};
 
 /** A map's groups of siblings (LA-EXP-DS06): its roots, then each parent's children, in the tree's order. */
 export function siblingGroups<N extends { children: readonly string[] }>(map: { roots: readonly string[]; nodes: ReadonlyMap<string, N> }): N[][] {

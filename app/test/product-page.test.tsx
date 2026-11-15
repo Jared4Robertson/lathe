@@ -1,12 +1,29 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { main, openApp, section, stageOf } from './helpers';
+import { workspace } from './fixtures/workspace';
+import { setRow } from './fixtures/load';
 
 const card = (title: string) => within(section(/^Domains/)).getByText(title).closest('.card') as HTMLElement;
 const bars = (element: HTMLElement) =>
   [...element.querySelectorAll('.bar')].map((bar) => [...bar.children].map((c) => c.textContent).filter(Boolean).join(' '));
 
 describe('product page', () => {
+  it('LA-V51-R15-T01 The product page lists its platform domains under Platform, after its Domains, and no Platform when it has none', async () => {
+    await openApp('/DM', { data: setRow(workspace(), 'domain', 'DM-PAY', { platform: true }) });
+    expect(await screen.findByRole('heading', { level: 1, name: 'Demo shop' })).toBeInTheDocument();
+    const titles = (name: string) => [...screen.getByRole('list', { name }).querySelectorAll(':scope > .card strong')].map((t) => t.textContent);
+    expect(titles('Domains')).toEqual(['Shopping']);
+    expect(titles('Platform')).toEqual(['Paying']);
+    const headings = within(main()).getAllByRole('heading', { level: 2 }).map((h) => h.textContent ?? '');
+    const at = (name: string) => headings.findIndex((h) => h.startsWith(name));
+    expect(at('Domains')).toBeGreaterThan(-1);
+    expect(at('Platform')).toBe(at('Domains') + 1);
+    await openApp('/DM');
+    expect(await screen.findByRole('heading', { level: 1, name: 'Demo shop' })).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'Platform' })).toBeNull();
+  });
+
   it('LA-V51-R01-T01 The product page shows each domain as a card with its coverage bars and counts', async () => {
     await openApp('/DM');
     expect(await screen.findByRole('heading', { level: 1, name: 'Demo shop' })).toBeInTheDocument();

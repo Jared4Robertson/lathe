@@ -1,11 +1,11 @@
 import { kindLabel, type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
-import { foldedChildren, ownerFolders, sharedKey, type Folder } from '../exploring/folder-tree/folders';
+import { discoveryOf, domainSections, foldedChildren, ownerFolders, sharedKey, sharedStages, type Folder, type StageFolders } from '../exploring/folder-tree/folders';
 import type { UseCaseGroup } from '../../../lathe/src/exploring/placement';
 import { plural } from '../plural';
 import { mapChange, patchMap, sameItems, type MapChange } from '../exploring/record-summaries/map-change';
 
-// The graph's tree is the nav's tree: a product holds its Shared folder (its own stages, what it shares),
-// its domains, then its open questions; a domain holds its stages, then the folders outside every
+// The graph's tree is the nav's tree: a product holds its Discovery stage, its domains (the business ones, then
+// those marked platform), its Shared folder (its other own stages, what it shares), then its open questions; a domain holds its stages, then the folders outside every
 // stage (open questions); a stage holds one folder per kind, or the records of its only folder itself; a folder holds the records that start a
 // branch of the stage, by the same folder model the nav, the domain page and the group pages read
 // (the Folder tree read, exploring/folder-tree/folders.ts). Every stage and folder shown is a level of the tree, like a file explorer, and is a
@@ -29,7 +29,7 @@ export interface TreeGroup {
   /** The nearest record above it (its domain, product or parent record). */
   owner: string;
   /**
-   * 'shared' (a product's Shared folder, holding its own stages), 'stage', 'folder' (a stage's folder of one kind) or
+   * 'shared' (a product's Shared folder, holding its own stages but Discovery), 'stage', 'folder' (a stage's folder of one kind) or
    * 'kind' (a record's group of one kind of child, or a folder outside the stages) or 'use-case-group' (a folder's use
    * cases whose results belong to one aggregate or read model).
    */
@@ -125,9 +125,8 @@ export function treeOf(index: RecordIndex): Tree {
     addRecords(folder.key, folder, owner);
   };
 
-  /** A domain's or a product's stages with records, each with its folders with records, under `under` (the owner, or the product's Shared folder). */
-  const addStages = (ownerId: string, under = ownerId) => {
-    const { stages } = ownerFolders(index, ownerId);
+  /** Stages of a domain or a product, each with its folders with records, under `under` (the owner, or the product's Shared folder). */
+  const addStages = (ownerId: string, stages: readonly StageFolders[], under = ownerId) => {
     for (const stage of stages) {
       if (stage.count === 0) continue;
       add(under, stage.key);
@@ -145,20 +144,24 @@ export function treeOf(index: RecordIndex): Tree {
   // The space's product: the index is one product's space.
   for (const product of [index.byId.get(index.product)].filter((p): p is RecordSummary => !!p)) {
     visited.add(product.id);
-    // What the product shares, its stages in one group (Shared), so the product splits its height between it and its
-    // domains rather than among every stage and domain.
-    const own = ownerFolders(index, product.id).stages.filter((s) => s.count > 0);
+    // Its Discovery stage first, on its own, as the nav lists it.
+    const discovery = discoveryOf(index, product.id);
+    if (discovery) addStages(product.id, [discovery]);
+    const { business, platform } = domainSections(index);
+    for (const d of [...business, ...platform]) {
+      if (!add(product.id, d.id)) continue;
+      visited.add(d.id);
+      addStages(d.id, ownerFolders(index, d.id).stages);
+      addLoose(d.id);
+    }
+    // What else the product shares, its other stages in one group (Shared), so the product splits its height between it
+    // and its domains rather than among every stage and domain.
+    const own = sharedStages(index, product.id);
     if (own.length > 0) {
       const shared = sharedKey(product.id);
       add(product.id, shared);
       group(shared, { label: 'Shared', kind: null, count: own.reduce((n, s) => n + s.count, 0), members: own.flatMap((s) => s.folders.flatMap((f) => f.records)), owner: product.id, role: 'shared' });
-      addStages(product.id, shared);
-    }
-    for (const d of index.domains) {
-      if (!add(product.id, d.id)) continue;
-      visited.add(d.id);
-      addStages(d.id);
-      addLoose(d.id);
+      addStages(product.id, own, shared);
     }
     addLoose(product.id);
   }
