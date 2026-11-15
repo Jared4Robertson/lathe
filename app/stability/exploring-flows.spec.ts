@@ -322,7 +322,7 @@ test.describe('Exploring flows', () => {
     const rail = page.locator('nav#nav .rail-spaces');
     await expect(rail.locator('a.space-item')).toHaveCount(2);
     await expect(rail.locator('a.space-item[data-space="TL"]')).toBeVisible();
-    // The same workspace with its own product alone: no rail, the product at the top of the nav.
+    // The same workspace with its own product alone: no rail, the product in the nav's head after the brand.
     await page.route('**/api/product/list-products*', async (route) => {
       const answer = await route.fetch();
       const products = (await answer.json()) as { id: string }[];
@@ -331,7 +331,8 @@ test.describe('Exploring flows', () => {
     await page.reload();
     await nav(page).getByRole('link', { name: 'Lathe', exact: true }).first().waitFor();
     await expect(page.locator('nav#nav .space-rail')).toHaveCount(0);
-    await expect(nav(page).locator('.space-items a[href="/LA"] .space-mark')).toBeVisible();
+    await expect(nav(page).locator('.nav-head a.nav-head-space[href="/LA"] .space-mark')).toBeVisible();
+    await expect(nav(page).locator('.space-items a[href="/LA"]')).toHaveCount(0);
     await page.unroute('**/api/product/list-products*');
   });
 

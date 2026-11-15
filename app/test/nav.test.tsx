@@ -38,7 +38,7 @@ describe('side navigation', () => {
     expect(within(within(nav()).getByRole('list', { name: 'Spaces' })).getAllByRole('link').map((a) => a.querySelector('.sr-only')!.textContent)).toEqual(['Demo shop', 'Notebook']);
     fireEvent.click(within(nav()).getByRole('button', { name: 'Expand the navigation' }));
     expect(nav().className).not.toContain('is-rail');
-    expect(within(nav().querySelector<HTMLElement>('.nav-space')!).getByRole('link', { name: 'Demo shop' })).toHaveAttribute('href', '/DM');
+    expect(within(nav().querySelector<HTMLElement>('.nav-space')!).getByRole('list', { name: 'Domains of Demo shop' })).toBeInTheDocument();
   });
 
   it('LA-V90-R05-T02 On a narrow screen the nav is a full-screen sheet opened from a menu button, closed by Escape, a click outside or choosing a page', async () => {
@@ -79,9 +79,10 @@ describe('side navigation', () => {
     // Each domain shows its count of records beside its link, whose name stays the domain's.
     const domains = within(nav()).getByRole('list', { name: 'Domains of Demo shop' });
     expect(within(domains).getByRole('link', { name: 'Shopping' }).closest('.nav-row')!.querySelector('.nav-badge')).toHaveTextContent(/^\d+ records$/);
-    // The current space has no heading of its own: its overview is its first row.
+    // The current space has no heading or row of its own: the rail names it, and Health is its first section.
     expect(within(nav()).queryByRole('button', { name: /^Demo shop/ })).toBeNull();
-    expect(nav().querySelector('.nav-space a')).toHaveAttribute('href', '/DM');
+    expect(nav().querySelector('.nav-space a[href="/DM"]')).toBeNull();
+    expect(nav().querySelector('.space-items')!.firstElementChild).toHaveAttribute('aria-labelledby', 'nav-section-health');
 
     // A tool open over the page is marked open in Health.
     await openApp('/DM?panel=checks');
