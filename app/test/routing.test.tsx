@@ -56,11 +56,12 @@ describe('routing', () => {
     expect(within(nav).queryByText('Tools')).toBeNull();
     expect(within(nav).queryByText('Diagrams')).toBeNull();
 
-    // The current space's section: its product, then its domains; another product is only in the rail.
+    // The current space's section: its domains, the product itself named only in the rail; another product is only in the rail.
     const items = nav.querySelector<HTMLElement>('.space-items')!;
-    const demo = within(items).getByRole('link', { name: 'Demo shop' });
+    expect(within(items).queryByRole('link', { name: 'Demo shop' })).toBeNull();
+    const demo = within(within(nav).getByRole('list', { name: 'Spaces' })).getByRole('link', { name: 'Demo shop' });
     expect(demo).toHaveAttribute('href', '/DM');
-    expect(demo).toHaveAttribute('aria-current', 'page');
+    expect(demo).toHaveAttribute('aria-current', 'true');
     const domains = within(within(within(items).getByRole('region', { name: 'Domains' })).getByRole('list', { name: 'Domains of Demo shop' })).getAllByRole('link');
     expect(domains.map((a) => [a.textContent, a.getAttribute('href')])).toEqual([
       ['Paying', '/DM-PAY'],

@@ -31,9 +31,9 @@ import { overlaysOf, panelHref } from '../views/overlays';
 
 // The side navigation. At its far left, when the workspace shows two or more products, is the space
 // rail: one square icon per product (each product is its own space); with one product there is no
-// rail, the panel takes its width, and the product's name and icon head the panel. The panel is all
-// the current space's: a Go to button that opens quick find (QuickOpen.tsx) on
-// the space, its overview, then five sections under headings that never fold (LA-V90-R16): Health (the Dashboard, Checks
+// rail, the panel takes its width, and the product's icon and name sit in its head after the Lathe brand
+// (LA-V90-R72). The panel is all the current space's: a Go to button that opens quick find (QuickOpen.tsx) on
+// the space, then five sections under headings that never fold (LA-V90-R16): Health (the Dashboard, Checks
 // and the product's open questions), Discovery (its Business outcomes and Journeys folders), Domains (each business
 // domain folded into its stages and their folders), Platform (each domain marked platform, likewise) and Shared (what
 // the product shares, in Shared, and its other groups), and a footer with Appearance and where the specs come from (the record format is a command and a
@@ -221,7 +221,16 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
       {showRail && rail}
       <div className="nav-panel">
         <div className="nav-head">
-          <Link to={HOME_PATH} className="brand"><LatheLogo /> <span>Lathe</span></Link>
+          <div className="nav-head-title">
+            <Link to={HOME_PATH} className="brand"><LatheLogo /> <span>Lathe</span></Link>
+            {/* With one product there is no rail to name it, so the head does, after the brand. */}
+            {!showRail && space && <>
+              <span className="nav-head-sep" aria-hidden="true">/</span>
+              <Link to={addressOf(space.id)} className="nav-head-space" aria-current={here(path, addressOf(space.id))} title={space.title}>
+                <SpaceMark space={space} size={18} /> <span className="nav-label">{space.title}</span>
+              </Link>
+            </>}
+          </div>
           <Tooltip label={drawer ? 'Close the navigation' : 'Collapse the navigation'} command="toggleNav">
             <Button
               variant="icon"
@@ -240,7 +249,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
         </Button>
         <div className="nav-scroll" ref={scroller} aria-busy={!loaded || undefined}>
           {loaded && <>
-          {/* The current space needs no heading of its own: its first row, its name and icon, is its overview. */}
+          {/* The current space needs no heading or row of its own: the rail names it, or the head with one product. */}
           <div className="nav-space">
             {spec.error && !index && <p className="error">{spec.error}</p>}
             {/* In the drawer the Dashboard and Checks are in its footer, so Health does not list them again. */}
@@ -332,7 +341,7 @@ function currentBranch(index: RecordIndex, path: string): string[] {
 }
 
 /**
- * The current space in the panel: its overview, then its five sections. Health: the tools given (the Dashboard and
+ * The current space in the panel: its five sections. Health: the tools given (the Dashboard and
  * Checks) and the product's open questions. Discovery: the folders of its own Discovery stage (Business outcomes,
  * Journeys). Domains: each domain not marked platform with its count, folding its stages (Domain model, Use cases,
  * Interface design, Technical specification, Test plan) and its open questions. Platform: each domain marked platform,
@@ -483,15 +492,6 @@ function SpaceItems({ index, space, path, reveal, tools }: { index: RecordIndex;
 
   return (
     <div className="space-items" data-space={space.id}>
-      <ul>
-        <li>
-          <NavRow depth={0} selected={path === addressOf(space.id)}>
-            <Link to={addressOf(space.id)} aria-current={here(path, addressOf(space.id))} title={space.title}>
-              <SpaceMark space={space} size={18} /> <span className="nav-label">{space.title}</span>
-            </Link>
-          </NavRow>
-        </li>
-      </ul>
       {health.length > 0 && (
         <NavSection id="health" title="Health">
           <ul className="nav-tree nav-health" aria-label={`Health of ${space.title}`}>{health}</ul>

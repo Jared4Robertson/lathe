@@ -40,7 +40,7 @@
 {"id":"LA-EXP-UC01-FL-S02","title":"They open a domain: its records by stage, its coverage gaps and problems","flow_id":"LA-EXP-UC01-FL","path":"main","position":2}
 {"id":"LA-EXP-UC01-FL-S03","title":"The Reader types in the search box, and the records filter by ID or title","flow_id":"LA-EXP-UC01-FL","path":"main","position":3}
 {"id":"LA-EXP-UC01-FL-S05","title":"They open the record they found","flow_id":"LA-EXP-UC01-FL","path":"main","position":4}
-{"id":"LA-EXP-UC01-FL-S06","title":"Under the current space the nav lists the product page, Discovery, each domain (the business ones, then Platform's), which unfolds into its five stages with counts, and Shared","flow_id":"LA-EXP-UC01-FL","path":"main","position":5}
+{"id":"LA-EXP-UC01-FL-S06","title":"Under the current space the nav lists Health, Discovery, each domain (the business ones, then Platform's), which unfolds into its five stages with counts, and Shared","flow_id":"LA-EXP-UC01-FL","path":"main","position":5}
 {"id":"LA-EXP-UC01-FL-S07","title":"The nav lists the use cases under Use cases, under a heading for the aggregate or read model of their results","flow_id":"LA-EXP-UC01-FL","path":"main","position":6}
 {"id":"LA-EXP-UC01-FL-S08","title":"The domain page heads its records with the same stages","flow_id":"LA-EXP-UC01-FL","path":"main","position":7}
 {"id":"LA-EXP-UC01-FL-S09","title":"The domain page lists Technical specification by technical kind","flow_id":"LA-EXP-UC01-FL","path":"main","position":8}

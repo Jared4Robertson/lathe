@@ -86,18 +86,25 @@ describe('product spaces', () => {
     expect(css).toMatch(/\.space-item\[aria-current\]::before/);
   });
 
-  it('LA-V90-R72-T01 The rail shows with two or more products; with one there is none, and the product heads the nav', async () => {
+  it('LA-V90-R72-T01 The rail shows with two or more products; with one there is none, and the nav head names the product', async () => {
     await openApp('/DM', { data: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(nav().querySelector('.space-rail')).not.toBeNull();
-    // One product: no rail, the panel the whole nav, the product's name and icon its first row.
+    // With the rail, the head shows the brand alone.
+    expect(nav().querySelector('.nav-head-space')).toBeNull();
+    // One product: no rail, the panel the whole nav, the product's icon and name in the head after the brand.
     await openApp('/P', { data: modelWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Product' });
     expect(nav().querySelector('.space-rail')).toBeNull();
     expect(within(nav()).queryByRole('list', { name: 'Spaces' })).toBeNull();
-    const head = within(panel()).getByRole('link', { name: 'Product' });
-    expect(head).toHaveAttribute('href', '/P');
-    expect(head.querySelector('.space-mark')).toHaveTextContent('P');
+    const head = within(nav().querySelector<HTMLElement>('.nav-head')!);
+    expect(head.getAllByRole('link').map((a) => a.textContent?.trim())).toEqual(['Lathe', 'P Product']);
+    const product = head.getByRole('link', { name: 'Product' });
+    expect(product).toHaveAttribute('href', '/P');
+    expect(product).toHaveAttribute('aria-current', 'page');
+    expect(product.querySelector('.space-mark')).toHaveTextContent('P');
+    // The panel has no row of the product's own.
+    expect(panel().querySelector('a[href="/P"]')).toBeNull();
     // Collapsed, the nav keeps its buttons and lists no spaces.
     fireEvent.click(within(nav()).getByRole('button', { name: 'Collapse the navigation' }));
     expect(within(nav()).getByRole('button', { name: 'Expand the navigation' })).toBeInTheDocument();
@@ -119,7 +126,8 @@ describe('product spaces', () => {
   it('LA-V90-R10-T01 Choosing a space scopes the nav to its domains, stages, use cases and groups', async () => {
     await openApp('/DM', { data: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    expect(within(nav().querySelector<HTMLElement>('.nav-space')!).getByRole('link', { name: 'Demo shop' })).toHaveAttribute('href', '/DM');
+    expect(spaceLink('Demo shop')).toHaveAttribute('href', '/DM');
+    expect(within(nav().querySelector<HTMLElement>('.nav-space')!).queryByRole('link', { name: 'Demo shop' })).toBeNull();
     expect(within(within(panel()).getByRole('list', { name: 'Domains of Demo shop' })).getAllByRole('link', { name: /^(Paying|Shopping)$/ }).map((a) => a.textContent)).toEqual(['Paying', 'Shopping']);
     // Use cases in their domain's Use cases stage, under their aggregates by ID and then their read models, each by ID.
     const user = userEvent.setup();
@@ -137,7 +145,7 @@ describe('product spaces', () => {
 
     await userEvent.setup().click(spaceLink('Notebook'));
     expect(window.location.pathname).toBe('/NF');
-    expect(within(nav().querySelector<HTMLElement>('.nav-space')!).getByRole('link', { name: 'Notebook' })).toHaveAttribute('href', '/NF');
+    expect(spaceLink('Notebook')).toHaveAttribute('aria-current', 'true');
     expect(within(panel()).getByRole('link', { name: 'Notes' })).toBeInTheDocument();
     expect(within(nav()).queryByRole('link', { name: 'Shopping' })).toBeNull();
     expect(within(nav()).queryByRole('list', { name: 'Health of Demo shop' })).toBeNull();
