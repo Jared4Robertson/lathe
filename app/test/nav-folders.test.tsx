@@ -9,7 +9,7 @@ import { workspace } from './fixtures/workspace';
 import { modelIndex } from './fixtures/model';
 import { patternWorkspace } from './fixtures/patterns';
 import { main, openApp, stageOf } from './helpers';
-import { addRows } from './fixtures/load';
+import { addRows, setRow } from './fixtures/load';
 import { recordIndexOf } from './read-view';
 
 // The side nav and the domain page read in the five stages: what the product shares in its own
@@ -176,6 +176,53 @@ describe('folders by stage', () => {
     await openApp('/NF');
     await screen.findByRole('heading', { level: 1, name: 'Notebook' });
     expect(within(panel()).queryByRole('list', { name: 'Shared in Notebook' })).toBeNull();
+  });
+
+  /** The demo shop with two business outcomes and a journey, its Discovery. */
+  const withDiscovery = () => {
+    const w = workspace();
+    addRows(w, 'business_outcome',
+      { id: 'DM-BO01', title: 'More baskets paid', product_id: 'DM', statement: 'More baskets are paid for.', measure: 'Baskets paid a week.', target: 'Half again.' },
+      { id: 'DM-BO02', title: 'Fewer refunds', product_id: 'DM', statement: 'Fewer orders are refunded.', measure: 'Refunds a week.', target: 'Half as many.' });
+    addRows(w, 'journey', { id: 'DM-JR01', title: 'Buy a basket', product_id: 'DM', trigger: 'A shopper wants something.', result: 'The basket is paid for.' });
+    return w;
+  };
+
+  it('LA-V90-R16-T03 Discovery lists the product\'s Business outcomes and Journeys, between Health and Domains, never in Shared', async () => {
+    await openApp('/DM', { data: withDiscovery() });
+    await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
+    expect(within(panel()).getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual(['Health', 'Discovery', 'Domains', 'Shared']);
+    const discovery = list('Discovery of Demo shop');
+    expect(rows(discovery)).toEqual(['Business outcomes2', 'Journeys1']);
+    const user = userEvent.setup();
+    await user.click(head(discovery, /^Business outcomes/));
+    expect(within(list('Business outcomes of Demo shop')).getByRole('link', { name: 'More baskets paid' })).toHaveAttribute('href', '/DM-BO01');
+    // Shared holds the product's other own stages, no Discovery.
+    await user.click(head(list('Shared in Demo shop'), /^Shared/));
+    expect(rows(list('Stages of Demo shop'))).not.toContainEqual(expect.stringMatching(/^Discovery/));
+    // A journey's page opens its folder under Discovery.
+    await openApp('/DM-JR01', { data: withDiscovery() });
+    await screen.findByRole('heading', { level: 1, name: 'Buy a basket' });
+    expect(within(await findList('Journeys of Demo shop')).getByRole('link', { name: 'Buy a basket' })).toHaveAttribute('aria-current', 'page');
+    // A product with no business outcome or journey shows no Discovery.
+    await openApp('/NF');
+    await screen.findByRole('heading', { level: 1, name: 'Notebook' });
+    expect(within(panel()).queryByRole('heading', { level: 2, name: 'Discovery' })).toBeNull();
+  });
+
+  it('LA-V90-R16-T04 Platform lists the domains marked platform, after Domains, each unfolding into its stages', async () => {
+    await openApp('/DM', { data: setRow(workspace(), 'domain', 'DM-PAY', { platform: true }) });
+    await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
+    expect(within(panel()).getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual(['Health', 'Domains', 'Platform', 'Shared']);
+    expect(within(list('Domains of Demo shop')).getAllByRole('link').map((a) => a.textContent)).toEqual(['Shopping']);
+    expect(within(list('Platform of Demo shop')).getAllByRole('link').map((a) => a.textContent)).toEqual(['Paying']);
+    const user = userEvent.setup();
+    await user.click(within(list('Platform of Demo shop')).getByRole('button', { name: 'Unfold Paying' }));
+    expect(rows(list('Folders of Paying'))[0]).toMatch(/^Domain model/);
+    // A product with no domain marked platform shows no Platform.
+    await openApp('/DM');
+    await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
+    expect(within(panel()).queryByRole('heading', { level: 2, name: 'Platform' })).toBeNull();
   });
 
   it("LA-V90-R18-T02 A pattern rule's page opens the product's own Use cases", async () => {

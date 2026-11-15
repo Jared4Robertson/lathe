@@ -76,6 +76,7 @@ function summaryOf(index: RecordIndex, page: Domain): { lead?: string; facts: Fa
           { label: 'Product', value: <RecordLink index={index} id={page.domain.product_id} /> },
           { label: 'Position', value: page.domain.position },
           { label: 'Subdomain', value: page.domain.subdomain_type },
+          ...(page.domain.platform ? [{ label: 'Platform', value: 'yes' }] : []),
           { label: 'Holds', value: `${count(page.useCases.reduce((n, g) => n + g.useCases.length, 0), 'use case', 'use cases')}, ${count(page.terms.length, 'term', 'terms')}` },
         ],
       };

@@ -67,8 +67,8 @@ export interface FolderTree {
   product: string;
   /** What the product shares. */
   shared: OwnerFolders;
-  /** Each domain, by position, with its title. */
-  domains: (OwnerFolders & { title: string })[];
+  /** Each domain, by position, with its title and whether it is marked platform (the nav lists those under Platform). */
+  domains: (OwnerFolders & { title: string; platform: boolean })[];
 }
 
 /** The read model's table, kept in memory: each product's tree, by product. */
@@ -165,7 +165,7 @@ export function folderTreeTableFrom(view: ReadView): FolderTreeTable {
     products.set(product.id, {
       product: product.id,
       shared: ownerFolders(product, space.filter((r) => r.domain === null && r.kind !== 'product' && r.product === product.id)),
-      domains: domains.map((d) => ({ ...ownerFolders(d, groupOf(inDomain, d.id).filter((r) => r.id !== d.id)), title: d.title })),
+      domains: domains.map((d) => ({ ...ownerFolders(d, groupOf(inDomain, d.id).filter((r) => r.id !== d.id)), title: d.title, platform: d.row.platform === true })),
     });
   }
   return { products };

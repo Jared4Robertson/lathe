@@ -65,7 +65,7 @@
 {"id":"LA-IXD-CMD346","title":"Change a UI component","entity_id":"LA-IXD-EN59","description":"Changes a UI component's title, file or description, or the views it renders, the view requirements it builds, the standard rules it meets, the packages it uses or its helper files (each list whole)."}
 {"id":"LA-IXD-CMD347","title":"Remove a UI component","entity_id":"LA-IXD-EN59","description":"Removes a UI component whole: the links it starts, the packages it uses and its helper files. Refused while anything outside it references what is in it."}
 {"id":"LA-MOD-CMD160","title":"Add a domain","entity_id":"LA-MOD-EN04","description":"Adds a domain to its product at a position, with nothing in it yet."}
-{"id":"LA-MOD-CMD161","title":"Change a domain","entity_id":"LA-MOD-EN04","description":"Changes a domain's title, position, subdomain type, description or notes. Its product never changes."}
+{"id":"LA-MOD-CMD161","title":"Change a domain","entity_id":"LA-MOD-EN04","description":"Changes a domain's title, position, subdomain type, platform mark, description or notes. Its product never changes."}
 {"id":"LA-MOD-CMD162","title":"Remove a domain","entity_id":"LA-MOD-EN04","description":"Removes a domain whole: its terms, domain services with their services and tests, repositories, and the links they start. Refused while anything outside it references what is in it."}
 {"id":"LA-MOD-CMD166","title":"Add a term","entity_id":"LA-MOD-EN30","description":"Adds a term to its domain's glossary, with what it means there and the terms it builds on."}
 {"id":"LA-MOD-CMD167","title":"Change a term","entity_id":"LA-MOD-EN30","description":"Changes a term's title, meaning or group, or the terms it builds on (the whole list)."}

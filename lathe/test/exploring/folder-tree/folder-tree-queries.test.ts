@@ -53,6 +53,12 @@ describe('LA-EXP-UC01-R06-T02 The folder tree read gives Shared and each domain 
     expect(first.domains.map((d) => d.owner)).toEqual(['EX-ACCT', 'EX-LEND']);
   });
 
+  it('says which domains are marked platform, so the nav lists them under Platform', async () => {
+    const platform = { id: 'EX-PLT', title: 'Platform', product_id: 'EX', position: 2, subdomain_type: 'supporting', platform: true, description: 'The shell the domains stand on.' };
+    const t = await tree({ ...DATA, domain: [...DATA.domain, platform] });
+    expect(t.domains.map((d) => `${d.owner} ${d.platform}`)).toEqual(['EX-LEND false', 'EX-PLT true']);
+  });
+
   it('folds an aggregate\'s entities and invariants under it, and keeps empty folders only where a kind can start a branch', async () => {
     const domainModel = stage((await tree()).domains[0], 'domain-model');
     const aggregates = domainModel.folders.find((f) => f.kind === 'aggregate')!;

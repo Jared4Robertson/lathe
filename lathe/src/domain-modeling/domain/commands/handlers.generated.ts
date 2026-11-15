@@ -33,11 +33,11 @@ export function addDomain(tx: Transaction, input: AddDomain): void {
   domains.save(domain);
 }
 
-/** Changes a domain's title, position, subdomain type, description or notes. Its product never changes. */
+/** Changes a domain's title, position, subdomain type, platform mark, description or notes. Its product never changes. */
 export function changeDomain(tx: Transaction, input: ChangeDomain): void {
   const domains = new DomainRepository(tx);
   const domain = domains.load(input.id) ?? tx.refuse('missing', `there is no domain ${input.id}`);
-  domain.domain = changed(domain.domain, input, ['title', 'position', 'subdomain_type', 'description', 'notes']);
+  domain.domain = changed(domain.domain, input, ['title', 'position', 'subdomain_type', 'platform', 'description', 'notes']);
   holdToRules(tx, domain);
   domains.save(domain);
 }

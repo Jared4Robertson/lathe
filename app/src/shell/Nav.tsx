@@ -9,7 +9,7 @@ import { parseSpecRoute } from '../views/spec-route';
 import { kindLabel, type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
 import { type DataState } from '../exploring/record-summaries/reads';
 import type { Stage } from '../../../lathe/src/platform/data/schema';
-import { branchOf, navGroupKey, ownerFolders, sharedKey, type Folder, type FolderGroup, type StageFolders } from '../exploring/folder-tree/folders';
+import { branchOf, discoveryOf, domainSections, navGroupKey, ownerFolders, sharedKey, sharedStages, type Folder, type FolderGroup, type StageFolders } from '../exploring/folder-tree/folders';
 import { StageMark } from '../specs/parts';
 import { useProblems } from '../checking/problems/reads';
 import { changeCounts, useChanges } from '../changes/changes';
@@ -33,9 +33,10 @@ import { overlaysOf, panelHref } from '../views/overlays';
 // rail: one square icon per product (each product is its own space); with one product there is no
 // rail, the panel takes its width, and the product's name and icon head the panel. The panel is all
 // the current space's: a Go to button that opens quick find (QuickOpen.tsx) on
-// the space, its overview, then three sections under headings that never fold (LA-V90-R16): Health (the Dashboard, Checks
-// and the product's open questions), Domains (each folded into its stages and their folders) and Shared (what the
-// product shares, in Shared, and its other groups), and a footer with Appearance and where the specs come from (the record format is a command and a
+// the space, its overview, then five sections under headings that never fold (LA-V90-R16): Health (the Dashboard, Checks
+// and the product's open questions), Discovery (its Business outcomes and Journeys folders), Domains (each business
+// domain folded into its stages and their folders), Platform (each domain marked platform, likewise) and Shared (what
+// the product shares, in Shared, and its other groups), and a footer with Appearance and where the specs come from (the record format is a command and a
 // link in the shortcuts sheet). The nav
 // collapses to the rail alone (remembered; with one product it holds no spaces), and on a narrow
 // screen it is a drawer that keeps the rail, with Checks and Changes in its footer, always in sight above Appearance
@@ -331,17 +332,18 @@ function currentBranch(index: RecordIndex, path: string): string[] {
 }
 
 /**
- * The current space in the panel: its overview, then its three sections. Health: the tools given (the Dashboard and
- * Checks) and the product's open questions. Domains: each domain with its count, folding its stages (Domain model, Use
- * cases, Interface design, Technical specification, Test plan) and its open questions. Shared: its own stages (its
- * business outcomes and what it shares, such as patterns, standards, and the value objects and views two or more
- * domains use), then its other groups. A section with no rows is left out. Each stage holds one folder per kind, each listing the records
+ * The current space in the panel: its overview, then its five sections. Health: the tools given (the Dashboard and
+ * Checks) and the product's open questions. Discovery: the folders of its own Discovery stage (Business outcomes,
+ * Journeys). Domains: each domain not marked platform with its count, folding its stages (Domain model, Use cases,
+ * Interface design, Technical specification, Test plan) and its open questions. Platform: each domain marked platform,
+ * the same way. Shared: its other own stages (what it shares, such as patterns, standards, and the value objects and
+ * views two or more domains use), then its other groups. A section with no rows is left out. Each stage holds one folder per kind, each listing the records
  * that start a branch of the stage; a stage with one folder lists its records itself. One level shows by default; every stage and folder folds on its
  * own (remembered for the session) and shows its count, and the current page's branch opens itself.
  * A stage or folder with no records is left out. Names and order come from the schema's stages and kinds.
  */
 function SpaceItems({ index, space, path, reveal, tools }: { index: RecordIndex; space: Space; path: string; reveal: boolean; tools: ReactNode[] }) {
-  const domains = index.product === space.id ? index.domains : [];
+  const { business, platform } = index.product === space.id ? domainSections(index) : { business: [], platform: [] };
   const own = ownerFolders(index, space.id);
   // With Highlight changes on, each row counts the records under it that are new, changed or removed (changes/rollup.ts).
   const { highlight, byId: changed } = useChanges();
@@ -423,7 +425,8 @@ function SpaceItems({ index, space, path, reveal, tools }: { index: RecordIndex;
       )}
     </NavFolder>
   ));
-  const ownStages = own.stages.filter((s) => s.count > 0);
+  const discovery = discoveryOf(index, space.id);
+  const ownStages = sharedStages(index, space.id);
   // The product's open questions sit in Health; any other group of the product's own children, in Shared.
   const questions = own.loose.find((f) => f.kind === 'question') ?? null;
   const groups = own.loose.filter((f) => f !== questions);
@@ -440,6 +443,42 @@ function SpaceItems({ index, space, path, reveal, tools }: { index: RecordIndex;
       </li>
     );
   };
+  // A domain with its count, folding its stages and its open questions: a row of Domains or of Platform.
+  const domainRow = (domain: RecordSummary) => {
+    const key = `domain:${domain.id}`;
+    const open = isOpen(key);
+    const bodyId = `nav-domain-${domain.id.replace(/[^A-Za-z0-9_-]/g, '-')}`;
+    // The folders are looked up once per tree answer, so each domain's count costs nothing after the first draw.
+    const { stages, loose } = ownerFolders(index, domain.id);
+    const count = stages.reduce((n, s) => n + s.count, 0) + loose.reduce((n, f) => n + f.count, 0);
+    return (
+      <li key={domain.id}>
+        <NavRow
+          depth={0}
+          selected={path === addressOf(domain.id)}
+          holds={holds(key)}
+          chevron={(
+            <button type="button" className="nav-chevron" aria-expanded={open} aria-controls={bodyId} aria-label={`${open ? 'Fold' : 'Unfold'} ${domain.title}`} onClick={() => toggle(key)}>
+              <Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} />
+            </button>
+          )}
+        >
+          <Link to={addressOf(domain.id)} aria-current={here(path, addressOf(domain.id))} title={domain.title}>
+            <span className="nav-label">{domain.title}</span>
+          </Link>
+          {/* Beside the link, so the link's name stays the domain's; the word is for a screen reader. */}
+          <span className="nav-badge quiet">{count}<span className="sr-only"> {count === 1 ? 'record' : 'records'}</span></span>
+        </NavRow>
+        <NavChanges depth={0} counts={rolled?.ofDomain(domain.id)} />
+        {open && (
+          <ul className="nav-tree" id={bodyId} aria-label={`Folders of ${domain.title}`}>
+            {stageRows(stages, domain.title, 1)}
+            {loose.map((f) => folderRow(f, domain.title, 1))}
+          </ul>
+        )}
+      </li>
+    );
+};
   const health = [...tools.map((row, i) => <li key={i}>{row}</li>), ...(questions ? [groupRowOf(questions, 'help')] : [])];
 
   return (
@@ -458,44 +497,24 @@ function SpaceItems({ index, space, path, reveal, tools }: { index: RecordIndex;
           <ul className="nav-tree nav-health" aria-label={`Health of ${space.title}`}>{health}</ul>
         </NavSection>
       )}
-      {domains.length > 0 && (
+      {discovery && (
+        <NavSection id="discovery" title={discovery.label}>
+          <ul className="nav-tree nav-discovery" aria-label={`${discovery.label} of ${space.title}`}>
+            {discovery.folders.filter((f) => f.count > 0).map((f) => folderRow(f, space.title, 0))}
+          </ul>
+        </NavSection>
+      )}
+      {business.length > 0 && (
         <NavSection id="domains" title="Domains">
           <ul className="nav-tree nav-domains" aria-label={`Domains of ${space.title}`}>
-            {domains.map((domain) => {
-              const key = `domain:${domain.id}`;
-              const open = isOpen(key);
-              const bodyId = `nav-domain-${domain.id.replace(/[^A-Za-z0-9_-]/g, '-')}`;
-              // The folders are looked up once per tree answer, so each domain's count costs nothing after the first draw.
-              const { stages, loose } = ownerFolders(index, domain.id);
-              const count = stages.reduce((n, s) => n + s.count, 0) + loose.reduce((n, f) => n + f.count, 0);
-              return (
-                <li key={domain.id}>
-                  <NavRow
-                    depth={0}
-                    selected={path === addressOf(domain.id)}
-                    holds={holds(key)}
-                    chevron={(
-                      <button type="button" className="nav-chevron" aria-expanded={open} aria-controls={bodyId} aria-label={`${open ? 'Fold' : 'Unfold'} ${domain.title}`} onClick={() => toggle(key)}>
-                        <Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} />
-                      </button>
-                    )}
-                  >
-                    <Link to={addressOf(domain.id)} aria-current={here(path, addressOf(domain.id))} title={domain.title}>
-                      <span className="nav-label">{domain.title}</span>
-                    </Link>
-                    {/* Beside the link, so the link's name stays the domain's; the word is for a screen reader. */}
-                    <span className="nav-badge quiet">{count}<span className="sr-only"> {count === 1 ? 'record' : 'records'}</span></span>
-                  </NavRow>
-                  <NavChanges depth={0} counts={rolled?.ofDomain(domain.id)} />
-                  {open && (
-                    <ul className="nav-tree" id={bodyId} aria-label={`Folders of ${domain.title}`}>
-                      {stageRows(stages, domain.title, 1)}
-                      {loose.map((f) => folderRow(f, domain.title, 1))}
-                    </ul>
-                  )}
-                </li>
-              );
-            })}
+            {business.map(domainRow)}
+          </ul>
+        </NavSection>
+      )}
+      {platform.length > 0 && (
+        <NavSection id="platform" title="Platform">
+          <ul className="nav-tree nav-platform" aria-label={`Platform of ${space.title}`}>
+            {platform.map(domainRow)}
           </ul>
         </NavSection>
       )}

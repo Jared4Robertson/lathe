@@ -3,7 +3,7 @@ import { composes } from '../../src/graph/composition';
 import { groundTree, LEAF_H, LEAF_W, LEVEL, RECORD_PAD, type GroundMap, type GroundNode } from '../../src/graph/ground';
 import { compareIds, type RecordIndex } from '../../src/exploring/record-summaries/record-index';
 import { recordIndexOf } from '../read-view';
-import { groupedWorkspace, testIndex } from './workspace';
+import { discoveryAndPlatformWorkspace, groupedWorkspace, testIndex } from './workspace';
 import { groundMap } from './maps';
 
 // The Graph's Map layout (LA-EXP-DS12): districts as ground, every leaf record one size, a record nesting in its parent
@@ -91,7 +91,7 @@ describe('the Map\'s sizes, bottom-up', () => {
 describe('the Map\'s districts', () => {
   const kids = (map: GroundMap, id: string): GroundNode[] => map.nodes.get(id)!.children.map((c) => map.nodes.get(c)!);
 
-  it('LA-EXP-DS12-T02 The product is the ground; its shared records a district first, then each domain a district, in ID order', () => {
+  it('LA-EXP-DS12-T02 The product is the ground; each domain a district, in order, then its shared records a district last', () => {
     const index = testIndex();
     const map = groundMap(index);
     const ground = map.nodes.get(map.roots[0])!;
@@ -99,10 +99,18 @@ describe('the Map\'s districts', () => {
     expect(ground.role).toBe('ground');
     const districts = kids(map, 'P');
     expect(districts.every((d) => d.role === 'district')).toBe(true);
-    expect(districts.map((d) => d.id)).toEqual(['P/shared', ...index.domains.map((d) => d.id).sort(compareIds)]);
+    expect(districts.map((d) => d.id)).toEqual([...index.domains.map((d) => d.id).sort(compareIds), 'P/shared']);
   });
 
-  it('LA-EXP-DS12-T02 A district\'s stages are neighborhoods left to right in stage order, a stage\'s folders areas inside it', () => {
+  it('LA-V93-R74-T03 The product\'s Discovery is a district of its own, first, its folders its areas; platform domains come after the business ones, Shared last', () => {
+    const index = recordIndexOf(discoveryAndPlatformWorkspace());
+    const map = groundMap(index);
+    expect(kids(map, 'P').map((d) => `${d.id} ${d.role}`)).toEqual(['P/discovery district', 'P-E district', 'P-D district', 'P/shared district']);
+    expect(kids(map, 'P/discovery').map((a) => `${a.id} ${a.role}`)).toEqual(['P/discovery/business_outcome area', 'P/discovery/journey area']);
+    expect(kids(map, 'P/shared').map((n) => n.id)).not.toContain('P/discovery');
+  });
+
+  it('LA-EXP-DS12-T02 A district\'s stages are neighborhoods in stage order, in lines read left to right, a stage\'s folders areas inside it', () => {
     for (const index of indexes()) {
       const map = groundMap(index);
       const rank = (id: string) => index.meta.stages.findIndex((s) => s.stage === id.split('/')[1]);
@@ -110,8 +118,10 @@ describe('the Map\'s districts', () => {
         const hoods = kids(map, d.id).filter((n) => n.role === 'neighborhood');
         for (let i = 1; i < hoods.length; i++) {
           expect(rank(hoods[i].id)).toBeGreaterThan(rank(hoods[i - 1].id));
-          expect(hoods[i].x).toBeGreaterThan(hoods[i - 1].x + hoods[i - 1].w);
-          expect(hoods[i].y).toBe(hoods[i - 1].y);
+          // Right of the one before on its line, or on a line of its own below it.
+          const [a, b] = [hoods[i - 1], hoods[i]];
+          if (b.y === a.y) expect(b.x).toBeGreaterThan(a.x + a.w);
+          else expect(b.y).toBeGreaterThan(a.y);
         }
         for (const h of hoods) for (const a of kids(map, h.id)) expect(['area', 'record']).toContain(a.role);
       }

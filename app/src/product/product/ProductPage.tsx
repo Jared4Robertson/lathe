@@ -16,7 +16,7 @@ import { coverageMetrics, openQuestionsMetric, outcomesServedMetric, problemMetr
 import { useProblems } from '../../checking/problems/reads';
 import { RecordFrame } from '../../specs/RecordContent';
 import { problemsUnder, StageSections } from '../../specs/SpecPages';
-import { ownerFolders } from '../../exploring/folder-tree/folders';
+import { isPlatform, sharedStages } from '../../exploring/folder-tree/folders';
 import { addressOf } from '../../views/address';
 import { kindInProduct, ProductEditor, type DeclarationActions, type ProductRecordKind } from './ProductEditor';
 import { useTraceRows } from '../../traceability/trace/reads';
@@ -218,8 +218,11 @@ function ProductContent({ index, page, actions }: { index: RecordIndex; page: Pr
   useScrollToHash(page);
   const problems = problemsUnder(index, 'product', id);
   // Its discovery (business outcomes and journeys) has a section of its own, so Shared holds the other stages.
-  const shared = ownerFolders(index, id).stages.filter((s) => s.stage !== 'discovery' && s.count > 0);
+  const shared = sharedStages(index, id);
   const ownCount = shared.reduce((n, s) => n + s.count, 0);
+  // Its domains marked platform have a section of their own, after the business domains, as in the nav.
+  const business = page.domains.filter((d) => !isPlatform(index, d.id));
+  const platform = page.domains.filter((d) => isPlatform(index, d.id));
   return (
     <div className="spec-body" data-aggregate="product">
       <Text index={index} id={id} source={page.product.description} field="description" />
@@ -229,17 +232,15 @@ function ProductContent({ index, page, actions }: { index: RecordIndex; page: Pr
         <BusinessOutcomes index={index} page={page} />
         <Journeys index={index} product={id} />
       </Section>
-      <Section id="domains" title="Domains" count={page.domains.length}>
-        {page.domains.length === 0 && <p className="hint">No domains yet.</p>}
-        <CardGrid label="Domains">
-          {page.domains.map((d) => (
-            <Card key={d.id} href={addressOf(d.id)} title={<><code>{d.id}</code><strong>{d.title}</strong></>}>
-              <CoverageBars coverage={index.coverage.get(d.id)} />
-              <ProblemBadge problems={problems.filter((p) => index.byId.get(p.record!)?.domain === d.id)} />
-            </Card>
-          ))}
-        </CardGrid>
+      <Section id="domains" title="Domains" count={business.length}>
+        {business.length === 0 && <p className="hint">No domains yet.</p>}
+        <DomainCards index={index} domains={business} problems={problems} label="Domains" />
       </Section>
+      {platform.length > 0 && (
+        <Section id="platform" title="Platform" count={platform.length}>
+          <DomainCards index={index} domains={platform} problems={problems} label="Platform" />
+        </Section>
+      )}
       {ownCount > 0 && (
         <Section title="Shared" count={ownCount} className="product-shared">
           <p className="hint">Patterns and standards, and the records with no owner that two or more domains use, or none, with what sits under them.</p>
@@ -258,6 +259,20 @@ function ProductContent({ index, page, actions }: { index: RecordIndex; page: Pr
         <ProblemList index={index} problems={problems} />
       </Section>
     </div>
+  );
+}
+
+/** Domains as cards, each opening its page, with its coverage and problems. */
+function DomainCards({ index, domains, problems, label }: { index: RecordIndex; domains: Product['domains']; problems: ReturnType<typeof problemsUnder>; label: string }) {
+  return (
+    <CardGrid label={label}>
+      {domains.map((d) => (
+        <Card key={d.id} href={addressOf(d.id)} title={<><code>{d.id}</code><strong>{d.title}</strong></>}>
+          <CoverageBars coverage={index.coverage.get(d.id)} />
+          <ProblemBadge problems={problems.filter((p) => index.byId.get(p.record!)?.domain === d.id)} />
+        </Card>
+      ))}
+    </CardGrid>
   );
 }
 

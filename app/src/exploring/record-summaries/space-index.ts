@@ -32,7 +32,7 @@ export interface RecordsChange {
 /** The folder tree's change: the owners that changed, each other one as its place in the tree the page holds. */
 export interface FoldersChange {
   shared: OwnerFolders | null;
-  domains: ((OwnerFolders & { title: string }) | number)[];
+  domains: (FolderTree['domains'][number] | number)[];
 }
 
 /** What the builder sends after a read: the change from the state the page holds (`base`), or from nothing. */
@@ -131,7 +131,7 @@ export function foldersChange(before: FolderTree | null, next: FolderTree): Fold
     shared: before && textOf(before.shared) === textOf(next.shared) ? null : next.shared,
     domains: next.domains.map((d) => {
       const i = at.get(d.owner);
-      return i !== undefined && before!.domains[i].title === d.title && textOf(before!.domains[i]) === textOf(d) ? i : d;
+      return i !== undefined && before!.domains[i].title === d.title && before!.domains[i].platform === d.platform && textOf(before!.domains[i]) === textOf(d) ? i : d;
     }),
   };
 }

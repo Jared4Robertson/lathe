@@ -11,7 +11,7 @@ import { treeChildren, treeParent } from '../../src/graph/tree';
 import { labelLines } from '../../src/graph/text';
 import { ownerFolders } from '../../src/exploring/folder-tree/folders';
 import { openApp, startAtDepth } from '../helpers';
-import { testIndex, testWorkspace } from './workspace';
+import { discoveryAndPlatformWorkspace, testIndex, testWorkspace } from './workspace';
 import { boxElement, boxElements, drawnBox, graphHost, isCenter, scene } from './scene';
 
 // The graph's tree is the nav's tree, depth counts its levels below the focus, and the picture is
@@ -81,8 +81,8 @@ describe('the graph tree, its depth and its camera', () => {
     expect(treeChildren(index, 'P-D-EN03')).toEqual(['P-D-CMD01', 'P-D-CMD02']);
     expect(treeParent(index, 'P-D-CMD01')).toBe('P-D-EN03');
     expect(treeChildren(index, 'P-D-CMD04')).toEqual(['P-D-PO01']);
-    // The product: its Shared folder (its own stages: the value object both domains use, the product's interface), then its domains.
-    expect(treeChildren(index, 'P')).toEqual(['P/shared', 'P-D', 'P-E']);
+    // The product: its domains, then its Shared folder (its own stages: the value object both domains use, the product's interface).
+    expect(treeChildren(index, 'P')).toEqual(['P-D', 'P-E', 'P/shared']);
     expect(treeChildren(index, 'P/shared')).toEqual(['P/domain-model', 'P/interface-design', 'P/technical-specification', 'P/test-plan']);
     expect(groupLabel(index, 'P/shared')).toBe('Shared (4)');
     expect(labelLines(index, 'P/shared').meta).toBe('Folder · P');
@@ -94,6 +94,18 @@ describe('the graph tree, its depth and its camera', () => {
     for (const id of ['P', 'P/shared', 'P/domain-model', 'P-D', 'P-D/domain-model', 'P-D/use-cases', 'P-D-UC01', 'P-D/test-plan', 'P-D/interface-design', 'P-D-A3', 'P/technical-specification']) {
       for (const c of treeChildren(index, id)) expect(treeParent(index, c)).toBe(id);
     }
+  });
+
+  it('LA-EXP-DS04-T04 The product holds its Discovery stage first, its business domains, its platform domains, then Shared, as the nav lists them', () => {
+    const index = recordIndexOf(discoveryAndPlatformWorkspace());
+    // P-D is marked platform, so it comes after P-E though its position is first; Discovery is no part of Shared.
+    expect(treeChildren(index, 'P')).toEqual(['P/discovery', 'P-E', 'P-D', 'P/shared']);
+    expect(treeChildren(index, 'P/discovery')).toEqual(['P/discovery/business_outcome', 'P/discovery/journey']);
+    expect(treeParent(index, 'P-BO01')).toBe('P/discovery/business_outcome');
+    expect(treeParent(index, 'P/discovery')).toBe('P');
+    expect(labelLines(index, 'P/discovery').meta).toBe('Stage · P');
+    expect(treeChildren(index, 'P/shared')).toEqual(['P/domain-model', 'P/interface-design', 'P/technical-specification', 'P/test-plan']);
+    expect(groupLabel(index, 'P/shared')).toBe('Shared (4)');
   });
 
   it('LA-EXP-DS09-T09 LA-EXP-DS10-T03 Every drawn box carries its label and is a keyboard stop; the summary counts the framed picture', async () => {

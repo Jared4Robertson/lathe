@@ -13,7 +13,7 @@ export const CHANGE_DOMAIN_IDENTITY = {
   id: 'LA-MOD-CMD161',
   slice: { aggregate: 'LA-MOD-A4', name: 'domain' },
   name: 'change-domain',
-  description: 'Changes a domain\'s title, position, subdomain type, description or notes. Its product never changes.',
+  description: 'Changes a domain\'s title, position, subdomain type, platform mark, description or notes. Its product never changes.',
   method: 'POST',
   route: '/api/domain/change-domain',
 } as const;
