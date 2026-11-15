@@ -43,7 +43,7 @@
   /* The stage's toolbar row, one height on every stage, so the wiki card's top is known before the row is measured. */
   --tools-row: 42px;
   /* The floating panels over the stage (LA-V96): their inset from the window and each other, their surfaces (the dense
-     ones, the nav, the tab panel and the chat, nearer opaque than the wiki card), their blur and shadow,
+     ones, the nav and the tab panel, nearer opaque than the wiki card), their blur and shadow,
      and the header strip's height. The surfaces are the sheet's color, so every theme sets them in light and dark. The
      blur is strong enough that the stage behind reads as shape and color only: muted text keeps WCAG 2.2 AA (4.5:1)
      over every built-in theme's fills and over dense content (about a quarter ink over the paper) once blurred. */
@@ -93,7 +93,7 @@ html, body, #root { height: 100%; height: 100dvh; margin: 0; }
 html { font-size: calc(var(--text-size) * 16 / 15); }
 body { background: var(--paper); color: var(--ink); font: var(--text-size)/var(--line-height) var(--body); }
 :root {
-  /* (Used by a record's History in the wiki card and by the chat's change previews.) */
+  /* (Used by a record's History in the wiki card and by the Changes panel's cards.) */
   /* A change's values before and after: tints of the accent tokens, so every theme sets them. */
   --change-after-bg: color-mix(in srgb, var(--steel) 16%, transparent);
   --change-before-bg: color-mix(in srgb, var(--spark) 16%, transparent);
@@ -106,17 +106,16 @@ body { background: var(--paper); color: var(--ink); font: var(--text-size)/var(-
 }
 /* The app (LA-V96): the stage behind everything, the nav and the page's panels floating over it, inset from the window
    and each other by --float-inset. Nothing replaces the stage (LA-PAT-APP-UX-R20): a tool (Checks, Appearance, the theme
-   editor) floats over it right of the nav, keeping --tool-space clear, and the products picker is a card over it. In the desktop app the chat panel floats at the right edge, the full height, and the
-   page's panels keep --chat-space clear of it, as they keep --nav-space clear of the nav. On a phone the shell is a top
+   editor) floats over it right of the nav, keeping --tool-space clear, and the products picker is a card over it. The
+   page's panels keep --nav-space clear of the nav. On a phone the shell is a top
    bar above the page, with drawers. */
-.app { position: relative; height: 100%; box-sizing: border-box; overflow: hidden; background: var(--shell); --nav-space: calc(var(--nav-width, 336px) + 2 * var(--float-inset)); --chat-space: var(--float-inset); }
-.app.with-chat { --chat-space: calc(var(--chat-width, 400px) + 2 * var(--float-inset)); }
+.app { position: relative; height: 100%; box-sizing: border-box; overflow: hidden; background: var(--shell); --nav-space: calc(var(--nav-width, 336px) + 2 * var(--float-inset)); }
 .app.nav-collapsed { --nav-space: calc(var(--rail-width) + 2 * var(--float-inset)); }
 .app:not(.is-narrow) > .menu { position: absolute; z-index: 20; top: var(--float-inset); bottom: var(--float-inset); left: var(--float-inset); width: var(--nav-width, 336px); }
 .app.nav-collapsed:not(.is-narrow) > .menu { width: var(--rail-width); }
 .app.has-tabs { --tab-panel-height: calc(var(--page-bar-height) + var(--strip-height)); }
 .app:not(.is-narrow) > .app-nav-handle { position: absolute; z-index: 21; top: var(--float-inset); bottom: var(--float-inset); left: calc(var(--nav-space) - var(--float-inset)); width: var(--float-inset); }
-.app:not(.is-narrow) > main { position: absolute; top: var(--float-inset); right: var(--chat-space); bottom: var(--float-inset); left: var(--nav-space); }
+.app:not(.is-narrow) > main { position: absolute; top: var(--float-inset); right: var(--float-inset); bottom: var(--float-inset); left: var(--nav-space); }
 .app:not(.is-narrow) > main.stage-page { inset: 0; }
 /* Frosted panels: mostly opaque, the stage showing through as shape and color behind a blur; the dense ones (the nav,
    the tab panel, a stage's tools) closer to opaque than the wiki card. Opaque under reduced transparency. */
@@ -1001,16 +1000,16 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* ---------- The stage and the panels over it (LA-V96, app/src/views/FocusPage.tsx) ----------
    The stage fills the window behind everything. The tab panel (the page bar, then the header strip) floats across the
    top from the nav to the right edge, so its controls never move. Below it, on the right, from the open space outward:
-   the wiki card, a third of the space right of the nav wide until resized, then (in the desktop app) the chat; the nav stays alone on the left. The stage measures what they leave (openSpace.ts) and sets
+   the wiki card, a third of the space right of the nav wide until resized; the nav stays alone on the left. The stage measures what they leave (openSpace.ts) and sets
    --open-* and --frame-* on itself, where its own tools float. */
 .stage-layout { position: absolute; inset: 0; --below-strip: calc(2 * var(--float-inset) + var(--tab-panel-height)); }
 .focus-stage { position: absolute; inset: 0; z-index: 0; overflow: hidden; background: var(--paper); }
 .tab-body { position: absolute; inset: 0; pointer-events: none; }
 .tab-body > * { pointer-events: auto; }
-.stage-layout:not(.is-phone) > .page-bar { position: absolute; z-index: 3; top: var(--float-inset); left: var(--nav-space); right: var(--chat-space); border: 1px solid var(--float-border); border-bottom: 0; border-radius: var(--panel-radius) var(--panel-radius) 0 0; }
+.stage-layout:not(.is-phone) > .page-bar { position: absolute; z-index: 3; top: var(--float-inset); left: var(--nav-space); right: var(--float-inset); border: 1px solid var(--float-border); border-bottom: 0; border-radius: var(--panel-radius) var(--panel-radius) 0 0; }
 /* The header strip (HeaderStrip.tsx): directly under the active tab, one line: the trail, the kind, ID and title (cut
    with an ellipsis, whole in its tooltip), and the stage's counts at the right. */
-.header-strip { position: absolute; z-index: 3; top: calc(var(--float-inset) + var(--page-bar-height)); left: var(--nav-space); right: var(--chat-space); box-sizing: border-box; height: var(--strip-height); display: flex; align-items: center; gap: 6px; padding: 0 10px; border: 1px solid var(--float-border); border-radius: 0 0 var(--panel-radius) var(--panel-radius); font-size: 0.8rem; white-space: nowrap; }
+.header-strip { position: absolute; z-index: 3; top: calc(var(--float-inset) + var(--page-bar-height)); left: var(--nav-space); right: var(--float-inset); box-sizing: border-box; height: var(--strip-height); display: flex; align-items: center; gap: 6px; padding: 0 10px; border: 1px solid var(--float-border); border-radius: 0 0 var(--panel-radius) var(--panel-radius); font-size: 0.8rem; white-space: nowrap; }
 /* On the web the header strip is the tab panel's one row, as high as a page bar, its controls at the right after the counts. */
 .stage-layout.one-place:not(.is-phone) .header-strip { top: var(--float-inset); height: var(--page-bar-height); padding-right: 4px; border-radius: var(--panel-radius); }
 .header-strip .page-bar-actions { margin-left: 8px; }
@@ -1037,16 +1036,16 @@ a.row-link.row-link:focus-visible { outline: none; }
 .header-strip-id { flex: none; font: 500 0.74rem var(--mono); }
 .header-strip-title { min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; font: 600 0.8rem/1.3 var(--body); color: var(--ink); }
 .header-strip-counts { flex: 0 1000 auto; min-width: min(13rem, 35%); text-align: right; margin-left: auto; overflow: hidden; text-overflow: ellipsis; color: var(--muted); font-variant-numeric: tabular-nums; }
-/* The wiki card (WikiCard.tsx), a callout in the map in one constant spot: left of the chat (or the window's edge) by --card-gap, its top just under the stage's toolbar row by --card-gap-y (--tools-foot, which
+/* The wiki card (WikiCard.tsx), a callout in the map in one constant spot: left of the window's edge by --card-gap, its top just under the stage's toolbar row by --card-gap-y (--tools-foot, which
    the open space's measure sets, openSpace.ts), never following the focus. Its height is a steady share of the
    stage, never its content's: 60% as a summary and 85% expanded, kept above the foot by --card-gap-y; content longer
    scrolls inside, shorter leaves room below. The sheet's round corners, a border all round in the focused box's own color (its outline's, so the box, the
    leader line and the card read as one object) and a lifting shadow; its handle at its left edge. */
 .wiki-panel {
   --card-top: calc(var(--tools-foot, calc(var(--below-strip) + var(--tools-row))) + var(--card-gap-y));
-  position: absolute; z-index: 2; top: var(--card-top); right: calc(var(--chat-space) - var(--float-inset) + var(--card-gap));
+  position: absolute; z-index: 2; top: var(--card-top); right: var(--card-gap);
   box-sizing: border-box; width: var(--card-width, clamp(var(--card-min), calc((100% - var(--nav-space)) / 3), 640px)); min-width: var(--card-min);
-  max-width: calc(100% - var(--nav-space) - var(--tool-space, 0px) - var(--chat-space) - var(--stage-min) - var(--float-inset) - var(--card-gap));
+  max-width: calc(100% - var(--nav-space) - var(--tool-space, 0px) - var(--float-inset) - var(--stage-min) - var(--float-inset) - var(--card-gap));
   height: min(60%, 100% - var(--card-top) - var(--card-gap-y)); display: flex; flex-direction: column; border: 2px solid var(--card-accent, var(--rule)); border-radius: var(--sheet-radius);
 }
 .wiki-panel.is-expanded { height: min(85%, 100% - var(--card-top) - var(--card-gap-y)); }
@@ -1066,12 +1065,12 @@ a.row-link.row-link:focus-visible { outline: none; }
 .wiki-panel.is-sheet::before { content: none; }
 /* A stage's toolbar floats inside the open space, at its top (views/StageChrome.tsx), above everything the stage draws (its column names, camera and edge hints), so its popovers open over them. */
 .stage-tools { position: absolute; z-index: 8; box-sizing: border-box; left: var(--open-left, 0px); max-width: calc(100% - var(--open-left, 0px) - var(--open-right, 0px)); border: 1px solid var(--float-border); border-radius: var(--panel-radius); }
-/* A stage's own toolbar has the open space's whole width at the top as its room (right of the nav, left of the chat; the
+/* A stage's own toolbar has the open space's whole width at the top as its room (right of the nav; the
    wiki card sits below its row), a zero-high strip the toolbar measures its tiers against. It sits centered on the
    whole stage while it fits there, whatever panels are open; when it is wider than that it stays inside the room, against
-   the nav or the chat, rather than fold its walk away. */
-.stage-tools-room { position: absolute; z-index: 8; top: var(--open-top, 0px); left: var(--open-left, 0px); right: var(--chat-space, 0px); height: 0; container-type: inline-size; }
-.stage-tools[data-stage-tools="top"] { top: 0; left: 0; height: var(--tools-row); padding: 6px 10px; width: max-content; max-width: 100cqw; translate: clamp(0px, 50cqw + (var(--chat-space, 0px) - var(--open-left, 0px)) / 2 - 50%, 100cqw - 100%) 0; }
+   the nav or the window's edge, rather than fold its walk away. */
+.stage-tools-room { position: absolute; z-index: 8; top: var(--open-top, 0px); left: var(--open-left, 0px); right: var(--float-inset); height: 0; container-type: inline-size; }
+.stage-tools[data-stage-tools="top"] { top: 0; left: 0; height: var(--tools-row); padding: 6px 10px; width: max-content; max-width: 100cqw; translate: clamp(0px, 50cqw + (var(--float-inset) - var(--open-left, 0px)) / 2 - 50%, 100cqw - 100%) 0; }
 /* The stages fill the stage; what they draw sits in the frame, the open space less their tools. */
 .focus-stage > :is(.graph-page, .erd-page, .trace-page), .focus-stage > .graph-page > .graph-workspace, .focus-stage .graph-workspace > .graph-canvas, .focus-stage .erd-page > :is(.erd-canvas, .erd-empty) { position: absolute; inset: 0; min-height: 0; }
 .focus-stage .stage-camera { left: calc(var(--frame-left, 0px) + 4px); bottom: var(--stage-foot); }
@@ -1092,7 +1091,7 @@ a.row-link.row-link:focus-visible { outline: none; }
   .stage-layout.is-phone > .focus-stage .stage-walk-bar { padding-right: calc(max(8px, env(safe-area-inset-right)) + var(--camera-row) + var(--key-slot) + 12px); }
   .stage-layout.is-phone > .focus-stage .stage-camera { z-index: 10; grid-template-columns: none; grid-auto-flow: column; left: auto; right: calc(max(8px, env(safe-area-inset-right)) + var(--key-slot) + 6px); bottom: calc(5px + env(safe-area-inset-bottom)); border: 0; box-shadow: none; }
 }
-.stage-page > .focus-missing { position: absolute; top: var(--float-inset); right: var(--chat-space); bottom: var(--float-inset); left: var(--nav-space); background: var(--paper); }
+.stage-page > .focus-missing { position: absolute; top: var(--float-inset); right: var(--float-inset); bottom: var(--float-inset); left: var(--nav-space); background: var(--paper); }
 .stage-page > .error { position: absolute; z-index: 5; bottom: var(--float-inset); left: var(--nav-space); margin: 0; }
 /* On a phone the stage fills what the bars leave. */
 .stage-layout.is-phone { position: static; height: 100%; display: flex; flex-direction: column; }
@@ -1122,7 +1121,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* The tools' widths (App.tsx's TOOL_WIDTHS, which the crowding rule counts); on a phone each is a sheet. */
 @media (min-width: 901px) {
   .tool-panel.checks-panel, .tool-panel.changes-panel { width: 380px; }
-  .tool-panel.theme-panel { width: 600px; max-width: calc(100% - var(--nav-space) - var(--chat-space)); }
+  .tool-panel.theme-panel { width: 600px; max-width: calc(100% - var(--nav-space) - var(--float-inset)); }
   .tool-panel.appearance-popover { width: 360px; }
 }
 .tool-panel-head { flex: none; display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 4px 4px 4px 14px; border-bottom: 1px solid var(--float-border); }

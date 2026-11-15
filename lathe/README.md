@@ -59,7 +59,7 @@ A write through the CLI or an MCP tool runs the checks before and after it, and 
 
 - **The CLI.** `lathe <aggregate> <command>`, such as `lathe use-case add-flow-step`, with flags and help from the command's fields (`lathe use-case --help`, `lathe use-case add-flow-step --help`); its queries the same way, such as `lathe use-case get-use-case --id TL-LEND-UC01`. `--json` prints the result as JSON. A command takes its fields as JSON instead of flags with `--json -` (stdin) or `--json <file>`: the arguments of its MCP tool. Text keeps its quotes, newlines and backticks, the validation and refusals are the flags', and JSON given with field flags as well is bad usage.
 - **The app.** Each record's page has its aggregate's own editor, which sends its aggregate's commands to `POST /api/<aggregate>/<command>`.
-- **The Claude Code plugin.** Its MCP server (`lathe mcp`) has one tool per command and query, named `<aggregate>_<command>`, such as `use_case_add_flow_step`, and the `check` tool. The package ships the plugin in `dist/plugin`; its read tools are marked `readOnlyHint`, and with `LATHE_VIEW_ONLY=1` (the desktop chat's View only mode) the server lists only the queries and the check, and refuses every command.
+- **The Claude Code plugin.** Its MCP server (`lathe mcp`) has one tool per command and query, named `<aggregate>_<command>`, such as `use_case_add_flow_step`, and the `check` tool. The package ships the plugin in `dist/plugin`; its read tools are marked `readOnlyHint`.
 - **Code.** `runCommand` runs one of `ALL_COMMANDS` on an open store:
 
 ```ts
@@ -98,7 +98,6 @@ A driver that cannot start, because this checkout's `lathe` is not installed, st
 | `merge-data <base> <ours> <theirs> <path>` | Git's merge driver for the data files (see [The merge driver](#the-merge-driver)). |
 | `mcp` | Serves every aggregate's commands and queries, and the check, as MCP tools over stdio, for the Claude Code plugin. |
 | `<aggregate> <command>` | An aggregate's command or query, such as `use-case add-flow-step` (see [Changing the data](#changing-the-data)). |
-| `app focus`, `app open <id> [--stage graph\|erd\|trace]` | The MCP tools `app_focus` and `app_open` from a shell: what the Reader is looking at in the desktop app's window, and opening a record there. They work in the desktop app's chat, which gives its Claude Code the window's bridge (`LATHE_APP_BRIDGE`, `LATHE_APP_TOKEN`); with no window connected they are refused and exit 1. `--json` prints the result as JSON. |
 
 A usage mistake (a missing option, an unknown command, a bad port) exits 2.
 

@@ -55,11 +55,12 @@ describe('LA-STD-PRINCIPLES-R04-T03 icons', () => {
     const table = readFileSync(ICONS_FILE, 'utf8').match(/const PATHS[^{]*\{([\s\S]*?)\n\};/)![1];
     const icons = [...table.matchAll(/^\s+'?([a-z][a-z-]*)'?:/gm)].map((m) => m[1]);
     expect(icons.length).toBeGreaterThan(10);
-    // Where an icon is named: an Icon's or a control's name or icon attribute, an icon map, and the
-    // page bar, which draws each stage's icon by the stage's name.
+    // Where an icon is named: an Icon's or a control's name or icon attribute, an icon map, the nav's group
+    // rows (groupRowOf's icon) and the page bar, which draws each stage's icon by the stage's name.
     const drawn = new Set([
       ...[...outsideIcons.matchAll(/\b(?:name|icon)=(?:"([^"]+)"|\{([^}]+)\})/g)].flatMap((m) => (m[1] ? [m[1]] : quoted(m[2]))),
       ...[...outsideIcons.matchAll(/\bicon:\s*'([^']+)'/g)].map((m) => m[1]),
+      ...[...outsideIcons.matchAll(/\bgroupRowOf\([^,()]+,\s*'([^']+)'\)/g)].map((m) => m[1]),
       ...STAGE_NAMES,
     ]);
     expect(icons.filter((name) => !drawn.has(name))).toEqual([]);

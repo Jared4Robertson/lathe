@@ -18,11 +18,9 @@
 {"id":"LA-EXP-UC102-FL","title":"Cycle through the tabs","use_case_id":"LA-EXP-UC102"}
 {"id":"LA-EXP-UC103-FL","title":"Duplicate a tab","use_case_id":"LA-EXP-UC103"}
 {"id":"LA-EXP-UC104-FL","title":"Resize the wiki card","use_case_id":"LA-EXP-UC104"}
-{"id":"LA-EXP-UC105-FL","title":"Resize the chat","use_case_id":"LA-EXP-UC105"}
 {"id":"LA-EXP-UC106-FL","title":"Turn Highlight changes on or off","use_case_id":"LA-EXP-UC106"}
 {"id":"LA-EXP-UC107-FL","title":"Choose the Changes baseline","use_case_id":"LA-EXP-UC107"}
 {"id":"LA-EXP-UC108-FL","title":"Note where a tab was","use_case_id":"LA-EXP-UC108"}
-{"id":"LA-EXP-UC109-FL","title":"Review Claude's changes","use_case_id":"LA-EXP-UC109"}
 {"id":"LA-EXP-UC11-FL","title":"Read a domain as an ERD","use_case_id":"LA-EXP-UC11"}
 {"id":"LA-EXP-UC12-FL","title":"Look up a record's history","use_case_id":"LA-EXP-UC12"}
 {"id":"LA-EXP-UC15-FL","title":"Watch the spec change","use_case_id":"LA-EXP-UC15"}
@@ -187,17 +185,10 @@
 {"id":"LA-PLT-UC12-FL","title":"Start Lathe with hot reload","use_case_id":"LA-PLT-UC12"}
 {"id":"LA-PLT-UC17-FL","title":"Upgrade a product's data","use_case_id":"LA-PLT-UC17"}
 {"id":"LA-PLT-UC18-FL","title":"Start the plugin's tools in a product repo","use_case_id":"LA-PLT-UC18"}
-{"id":"LA-PLT-UC19-FL","title":"Send a message to Claude","use_case_id":"LA-PLT-UC19"}
-{"id":"LA-PLT-UC20-FL","title":"Listen for a dictated message","use_case_id":"LA-PLT-UC20"}
-{"id":"LA-PLT-UC22-FL","title":"Capture the stage","use_case_id":"LA-PLT-UC22"}
 {"id":"LA-PLT-UC23-FL","title":"Serve the spec from a product repo","use_case_id":"LA-PLT-UC23"}
 {"id":"LA-PLT-UC24-FL","title":"Bind a key","use_case_id":"LA-PLT-UC24"}
 {"id":"LA-PLT-UC25-FL","title":"Open a record's data file in the editor","use_case_id":"LA-PLT-UC25"}
-{"id":"LA-PLT-UC26-FL","title":"Choose the voice phrases","use_case_id":"LA-PLT-UC26"}
-{"id":"LA-PLT-UC27-FL","title":"Undo Claude's turn","use_case_id":"LA-PLT-UC27"}
 {"id":"LA-PLT-UC28-FL","title":"Clear the recent folders","use_case_id":"LA-PLT-UC28"}
-{"id":"LA-PLT-UC29-FL","title":"Open a record for the Owner","use_case_id":"LA-PLT-UC29"}
-{"id":"LA-PLT-UC30-FL","title":"Sign the agent in","use_case_id":"LA-PLT-UC30"}
 {"id":"LA-PLT-UC31-FL","title":"Show or hide a panel","use_case_id":"LA-PLT-UC31"}
 {"id":"LA-PLT-UC32-FL","title":"Choose a color mode","use_case_id":"LA-PLT-UC32"}
 {"id":"LA-PLT-UC33-FL","title":"Duplicate a theme","use_case_id":"LA-PLT-UC33"}
@@ -209,12 +200,6 @@
 {"id":"LA-PLT-UC39-FL","title":"Turn scroll to zoom on or off","use_case_id":"LA-PLT-UC39"}
 {"id":"LA-PLT-UC40-FL","title":"Save a window's place","use_case_id":"LA-PLT-UC40"}
 {"id":"LA-PLT-UC41-FL","title":"Close a product window","use_case_id":"LA-PLT-UC41"}
-{"id":"LA-PLT-UC42-FL","title":"Stop Claude's turn","use_case_id":"LA-PLT-UC42"}
-{"id":"LA-PLT-UC43-FL","title":"Answer a permission prompt","use_case_id":"LA-PLT-UC43"}
-{"id":"LA-PLT-UC44-FL","title":"Open a Claude Code session","use_case_id":"LA-PLT-UC44"}
-{"id":"LA-PLT-UC45-FL","title":"Choose the chat's permission mode","use_case_id":"LA-PLT-UC45"}
-{"id":"LA-PLT-UC46-FL","title":"Choose the chat's model and effort","use_case_id":"LA-PLT-UC46"}
-{"id":"LA-PLT-UC47-FL","title":"Take a message out of the queue","use_case_id":"LA-PLT-UC47"}
 {"id":"LA-PLT-UC48-FL","title":"Remove a binding","use_case_id":"LA-PLT-UC48"}
 {"id":"LA-PLT-UC49-FL","title":"Reset a shortcut","use_case_id":"LA-PLT-UC49"}
 {"id":"LA-PLT-UC50-FL","title":"Reset all shortcuts","use_case_id":"LA-PLT-UC50"}
@@ -222,11 +207,6 @@
 {"id":"LA-PLT-UC52-FL","title":"Copy a record's ID","use_case_id":"LA-PLT-UC52"}
 {"id":"LA-PLT-UC53-FL","title":"Choose an editor","use_case_id":"LA-PLT-UC53"}
 {"id":"LA-PLT-UC54-FL","title":"Open the settings file","use_case_id":"LA-PLT-UC54"}
-{"id":"LA-PLT-UC55-FL","title":"Turn voice activation on or off","use_case_id":"LA-PLT-UC55"}
-{"id":"LA-PLT-UC56-FL","title":"Turn Quick mode on or off","use_case_id":"LA-PLT-UC56"}
-{"id":"LA-PLT-UC57-FL","title":"Give the sign-in code","use_case_id":"LA-PLT-UC57"}
-{"id":"LA-PLT-UC58-FL","title":"Cancel the sign-in","use_case_id":"LA-PLT-UC58"}
-{"id":"LA-PLT-UC59-FL","title":"Sign the agent out","use_case_id":"LA-PLT-UC59"}
 {"id":"LA-PRD-UC04-FL","title":"Declare a product kind","use_case_id":"LA-PRD-UC04"}
 {"id":"LA-PRD-UC101-FL","title":"Add a product","use_case_id":"LA-PRD-UC101"}
 {"id":"LA-PRD-UC102-FL","title":"Change a product kind","use_case_id":"LA-PRD-UC102"}
