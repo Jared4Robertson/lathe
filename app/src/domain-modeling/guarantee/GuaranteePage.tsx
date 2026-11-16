@@ -44,6 +44,7 @@ function summaryOf(index: RecordIndex, page: Guarantee): { lead?: string; facts:
     lead: page.guarantee.statement,
     facts: [
       { label: 'Maker', value: <RecordLink index={index} id={page.maker.id} /> },
+      ...(page.maker.kind === 'domain' ? [] : [{ label: 'Consumers', value: page.guarantee.consumers ?? 'None named yet' }]),
       { label: 'Kept by', value: page.keptBy.length },
       { label: 'Guarantee tests', value: page.tests.length },
     ],
