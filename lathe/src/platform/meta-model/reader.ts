@@ -1,4 +1,4 @@
-// The Meta model read model's reader (LA-PLT-RM08-RD): the one way the Meta model query reaches the read model's
+// The Meta model read model's reader (LA-PRD-RM08-RD): the one way the Meta model query reaches the read model's
 // storage. The query handler depends only on the MetaModelReader interface; the query runner injects the reader the
 // query's definition makes (`reader`). Today's implementation reads the projection's table, kept in memory and built
 // on each read.

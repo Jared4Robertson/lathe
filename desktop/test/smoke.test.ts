@@ -118,7 +118,7 @@ describe.skipIf(process.platform !== 'darwin')('The desktop app opens a product 
     expect(result.error).toBeUndefined();
   }, 120_000);
 
-  it('LA-PLT-PO01-T starts the window\'s own app server, which answers GET /api/product/list-products', () => {
+  it('LA-WBN-PO01-T starts the window\'s own app server, which answers GET /api/product/list-products', () => {
     expect(result.url).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/$/);
     expect(result.url).not.toContain(':5199');
     expect(result.apiSpecStatus).toBe(200);
@@ -134,7 +134,7 @@ describe.skipIf(process.platform !== 'darwin')('The desktop app opens a product 
     expect(result.title).toBe(`Smoke Shop — ${product.replace(os.homedir(), '~')}`);
   });
 
-  it('LA-WBN-UC11-R05-T01 bridges only window.latheDesktop, with no Node in the page', () => {
+  it('LA-PLT-GU05-T01 LA-WBN-UC11-R05-T01 bridges only window.latheDesktop, with no Node in the page', () => {
     expect(result.bridge?.keys).toEqual(['copyRecordId', 'isDesktop', 'onCommand', 'onFullScreen', 'openRecordInEditor', 'platform', 'revealRecord', 'setChrome', 'setErrorCount', 'setMenuKeys', 'showRecordMenu']);
     expect(result.bridge?.hasOnCommand).toBe(true);
     expect(result.bridge?.nodeInPage).toBe(false);

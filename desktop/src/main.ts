@@ -610,7 +610,7 @@ if (!SMOKE && !app.requestSingleInstanceLock()) {
     event.preventDefault();
     if (quit === 'stopping') return;
     quit = 'stopping';
-    // Quitting stops each window's server as closing it would (LA-PLT-PO02).
+    // Quitting stops each window's server as closing it would (LA-WBN-PO02).
     for (const entry of openWindows().values()) void stopAppServer(appServers, { folder: entry.folder }, log);
     void settleWithin([...appServers.load().stopping], QUIT_TIMEOUT).then((all) => {
       if (!all) log(`Lathe: quitting without waiting longer for a server to stop (${QUIT_TIMEOUT / 1000} s).`);

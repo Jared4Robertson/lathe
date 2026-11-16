@@ -483,7 +483,6 @@
 {"source_id":"LA-MOD-UC59","target_id":"LA-PAT-AGGREGATE-TESTS"}
 {"source_id":"LA-MOD-UC60","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
 {"source_id":"LA-MOD-UC60","target_id":"LA-PAT-AGGREGATE-TESTS"}
-{"source_id":"LA-PLT","target_id":"LA-PAT-AGGREGATE-QUERIES"}
 {"source_id":"LA-PLT","target_id":"LA-PAT-APP-CODE"}
 {"source_id":"LA-PLT","target_id":"LA-PAT-APP-UX"}
 {"source_id":"LA-PRD","target_id":"LA-PAT-AGGREGATE-QUERIES"}

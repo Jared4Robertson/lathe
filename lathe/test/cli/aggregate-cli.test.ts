@@ -21,7 +21,7 @@ const files = (root: string) => Object.fromEntries(readdirSync(path.join(root, '
 
 // Each test runs the CLI in its own process on a fresh store: past vitest's 5 s on a busy machine.
 describe('fields as JSON', () => {
-  it('LA-PLT-UC18-R03-T01 text with quotes, newlines and backticks given as JSON is written exactly, from stdin or a file, in the tool\'s shape', async () => {
+  it('LA-PRD-UC18-R03-T01 text with quotes, newlines and backticks given as JSON is written exactly, from stdin or a file, in the tool\'s shape', async () => {
     const root = writeData(everyKind());
     const text = 'The library MUST say "no" when it\'s lent:\n\t`lent` tools — and naïve ones — are refused.';
     // From stdin: the same object the MCP tool takes, and the result as JSON.

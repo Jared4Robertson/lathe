@@ -8,7 +8,7 @@ import { expectStable, openPage, step } from './measure';
 import { FOCUS, GRAPH_CANVAS, keepData, RECORD, SHELL } from './scenarios';
 import { cameraOf, focusDrawn, graphDrawn, sceneOf } from './scene';
 
-// Platform's and Workbench's flow tests that happen in the app (LA-PLT-UC03-FL, and Workbench's LA-WBN-UC06-FL, UC07-FL and UC24-FL, with the flows split from them): one per flow, each
+// Platform's and Workbench's flow tests that happen in the app (LA-WBN-UC03-FL, and Workbench's LA-WBN-UC06-FL, UC07-FL and UC24-FL, with the flows split from them): one per flow, each
 // walking its main path in Chromium over the suite's copy of Lathe's data. The flows run through
 // the CLI or the server alone are proved in lathe/test/cli/platform-flows.test.ts, and the native
 // menus in the desktop smoke test.
@@ -57,7 +57,7 @@ async function drag(page: Page, from: { x: number; y: number }, to: { x: number;
 }
 
 test.describe('Platform and Workbench flows in the app', () => {
-  test('LA-PLT-UC03-FL-T LA-PAT-PAGE-STEPS-R01-T04 the page shows the files on disk: an Agent\'s write reloads it in place, and data that cannot load is said so', async ({ page }) => {
+  test('LA-WBN-UC03-FL-T LA-PAT-PAGE-STEPS-R01-T04 the page shows the files on disk: an Agent\'s write reloads it in place, and data that cannot load is said so', async ({ page }) => {
     const restore = keepData();
     try {
       await openPage(page, '/LA-EXP-UC03');

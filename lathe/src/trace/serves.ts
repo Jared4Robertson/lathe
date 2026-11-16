@@ -24,7 +24,8 @@
 // journeys it serves through. A guarantee, which a platform domain makes and no use case reaches, serves the outcomes of
 // the records of other domains that rely on it: those linked to one of the building blocks that keep it, in either
 // direction, by any relation but kept_by (a repository stored in its data store, a requirement its shared module
-// implements); its guarantee tests serve them through it. The engine fills record_serves with it before the checks run (the serves-no-outcome
+// implements), or the pattern rules they carry out, which the domains that follow the pattern owe; its guarantee tests
+// serve them through it. The engine fills record_serves with it before the checks run (the serves-no-outcome
 // check reads it), and the Serves read model's projection (LA-TRC-RM12-PJ) answers from it.
 import type { ReadView } from '../platform/data/rules.ts';
 import type { Row } from '../platform/data/rows.ts';
@@ -118,7 +119,7 @@ export function servesOf(view: Pick<ReadView, 'schema' | 'rows' | 'readerOf'>): 
     for (const g of guarantees) {
       const guarantee = String(g.id);
       const relying = (keptBy.get(guarantee) ?? []).flatMap((block) => ends.get(block) ?? [])
-        .filter((id) => { const domain = placed.get(id)?.domain; return domain != null && domain !== g.domain_id; });
+        .filter((id) => { const at = placed.get(id); return at?.kind === 'pattern_rule' || (at?.domain != null && at.domain !== g.domain_id); });
       for (const id of relying) {
         const s = served.get(id);
         if (!s) continue;

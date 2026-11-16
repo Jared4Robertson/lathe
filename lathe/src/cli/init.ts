@@ -1,4 +1,4 @@
-// `lathe init` (LA-PLT-CMD21): sets Lathe up in a product repo. It writes lathe.config.json, with this Lathe's schema
+// `lathe init` (LA-PRD-CMD21): sets Lathe up in a product repo. It writes lathe.config.json, with this Lathe's schema
 // version and the data folder, when the repo has none, and then adds the product with the Product aggregate's own
 // command, Add a product (LA-PRD-CMD120).
 import path from 'node:path';

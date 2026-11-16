@@ -111,7 +111,7 @@ async function crashAt(root: string, at: Crash, steps: Step[]) {
 }
 
 // Each test writes and loads a store whole after a crash: seconds alone, longer on a busy machine, so past vitest's 5 s.
-describe('the spec data store saves each change whole or not at all, through a crash at any point of its write', () => {
+describe('LA-PLT-GU01-T01 the spec data store saves each change whole or not at all, through a crash at any point of its write', () => {
   it.each<[string, Change]>([
   ['LA-PRD-A1-SR01-T02', { steps: [['product', 'change-product', { id: 'TL', title: 'Kept whole' }], ['product', 'add-question', { ...product('TL-Q90'), owner: 'Librarian', description: 'A question kept whole.' }]] }],
   ['LA-UCS-A2-SR01-T02', { steps: [['pattern', 'remove-pattern-rule', { id: 'TL-PAT-LIBRARIAN-ACTION-R01' }]] }],

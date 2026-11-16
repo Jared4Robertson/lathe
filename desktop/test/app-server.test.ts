@@ -1,4 +1,4 @@
-// The App server aggregate (LA-PLT-A7): its repository keeps the servers in memory, its commands and policies go
+// The App server aggregate (LA-WBN-A7): its repository keeps the servers in memory, its commands and policies go
 // through it, and its rule refuses a server of the shell's own on 5199.
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:net';
@@ -23,7 +23,7 @@ let files = 0;
 const repository = () => new AppServerRepository({ ports: () => path.join(temp, `ports-${files++}.json`) });
 const server = (url: string, label = 'serve'): AppServer => ({ url, label, stop: vi.fn(async () => {}) });
 
-describe('LA-PLT-INV06-T A server the shell starts never listens on 5199: the App server\'s repository keeps the servers in memory', () => {
+describe('LA-WBN-INV06-T A server the shell starts never listens on 5199: the App server\'s repository keeps the servers in memory', () => {
   it('starts a folder\'s server once, and stops it, keeping the stop until it settles', async () => {
     const servers = repository();
     const start = vi.fn(async () => ({ server: server('http://127.0.0.1:6001'), lathe: 'bundled Lathe 1.0.0' }));
@@ -47,7 +47,7 @@ describe('LA-PLT-INV06-T A server the shell starts never listens on 5199: the Ap
     expect(appServerProblems({ running: new Map([['/p/b', { server: server('http://localhost:5199', 'shared dev server'), lathe: 'x' }]]), stopping: new Set(), ports: {} })).toEqual([]);
   });
 
-  it('LA-PLT-PO01-T LA-PLT-PO02-T when a window opens its server starts, and when it closes its server stops', async () => {
+  it('LA-WBN-PO01-T LA-WBN-PO02-T when a window opens its server starts, and when it closes its server stops', async () => {
     const servers = repository();
     const serveWindow = vi.fn(async () => {});
     await onWindowOpenedStartAppServer({ folder: '/p/a', window: window('/p/a') }, serveWindow);
@@ -58,15 +58,15 @@ describe('LA-PLT-INV06-T A server the shell starts never listens on 5199: the Ap
   });
 });
 
-describe('LA-PLT-INV06-T A server of the shell\'s own gets a free port, never 5199', () => {
-  it('LA-PLT-INV06-T never picks port 5199 for a server of its own', async () => {
+describe('LA-WBN-INV06-T A server of the shell\'s own gets a free port, never 5199', () => {
+  it('LA-WBN-INV06-T never picks port 5199 for a server of its own', async () => {
     expect(SHARED_PORT).toBe(5199);
     const port = await freePort();
     expect(port).toBeGreaterThan(0);
     expect(port).not.toBe(5199);
   });
 
-  it('LA-PLT-INV06-T skips a port it is told to avoid', async () => {
+  it('LA-WBN-INV06-T skips a port it is told to avoid', async () => {
     const taken: Server = createServer();
     await new Promise<void>((resolve) => taken.listen(0, '127.0.0.1', resolve));
     const address = taken.address();
@@ -77,8 +77,8 @@ describe('LA-PLT-INV06-T A server of the shell\'s own gets a free port, never 51
   });
 });
 
-describe('LA-PLT-A7-SR02 each folder\'s server keeps its port across launches, so the page keeps its origin and its local storage', () => {
-  it('LA-PLT-A7-SR02-T01 keeps the port a folder\'s server got, starts it there on the next launch, and takes a free one when it is taken', async () => {
+describe('LA-WBN-A7-SR02 each folder\'s server keeps its port across launches, so the page keeps its origin and its local storage', () => {
+  it('LA-WBN-A7-SR02-T01 keeps the port a folder\'s server got, starts it there on the next launch, and takes a free one when it is taken', async () => {
     const file = path.join(temp, 'kept-ports.json');
     const first = new AppServerRepository({ ports: () => file });
     const start = vi.fn(async (port: number | undefined) => ({ server: server(`http://127.0.0.1:${port ?? 6201}`), lathe: 'x' }));

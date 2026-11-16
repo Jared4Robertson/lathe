@@ -1,4 +1,4 @@
-// The Meta model read model (LA-PLT-RM08), shaped for the app: Lathe's kinds (with each product's own) in the order
+// The Meta model read model (LA-PRD-RM08), shaped for the app: Lathe's kinds (with each product's own) in the order
 // people read them, the six stages, every pair of kinds each relation may link with its labels both ways, and each
 // table's columns as its fields' inputs take them. It is what the schema declares, never the rows: every page names a
 // kind by its label, places it in its stage, words a link by its relation's labels and draws a field by its column.

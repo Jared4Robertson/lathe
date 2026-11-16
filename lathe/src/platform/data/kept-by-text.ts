@@ -1,6 +1,6 @@
 // What is read from a file's text, kept by the text: every checks' run and load reads the repo's files again (its
 // test files, the files that serve routes), and most are as they were, so what was read from each is not read again
-// (LA-PLT-UC01-R03). The text itself is the key, so a changed file is read afresh; nothing read is ever changed.
+// (LA-WBN-UC01-R03). The text itself is the key, so a changed file is read afresh; nothing read is ever changed.
 
 /** The most texts one reading keeps; past it, it starts again (more than a repo has files of one sort). */
 const KEPT_TEXTS = 5000;

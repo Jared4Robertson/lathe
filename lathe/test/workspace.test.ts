@@ -1,4 +1,4 @@
-// A workspace that shows several products (LA-PLT-UC02-R08 to R11): lathe.config.json's products lists the other
+// A workspace that shows several products (LA-PRD-UC02-R08 to R11): lathe.config.json's products lists the other
 // products' folders, each loaded, checked, traced and written in its own folder, and served beside the workspace's own.
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -69,7 +69,7 @@ afterEach(async () => {
 });
 
 describe('a workspace of several products', () => {
-  it('LA-PLT-UC02-R08-T01 A workspace loads each listed product from its own folder, and refuses a listing that is wrong', async () => {
+  it('LA-PRD-UC02-R08-T01 A workspace loads each listed product from its own folder, and refuses a listing that is wrong', async () => {
     const root = workspace();
     expect(loadConfig(root).products).toEqual([path.join(root, SHOP)]);
     expect(workspaceProducts(root).map((c) => c.dataDir)).toEqual([path.join(root, 'data'), path.join(root, SHOP, 'data')]);
@@ -93,7 +93,7 @@ describe('a workspace of several products', () => {
     await expect(loadProducts(twice, { latheDataDir: null })).rejects.toThrow('The product WS is in two folders, . and examples/shop');
   });
 
-  it('LA-PLT-UC02-R09-T01 lathe check reports each product of the workspace, then them all', () => {
+  it('LA-PRD-UC02-R09-T01 lathe check reports each product of the workspace, then them all', () => {
     // A domain with no product is refused by the shop's store: an error in the shop alone.
     const root = workspace({ ...shop, domain: [{ id: 'SH-SELL', title: 'Selling', subdomain_type: 'core', description: 'Selling parts to customers.' }] });
     const broken = lathe('check', '--root', root);
@@ -111,7 +111,7 @@ describe('a workspace of several products', () => {
     expect(fixed.stdout).toMatch(/\nAll 2 products: 0 errors, \d+ warnings?\.\n$/);
   });
 
-  it('LA-PLT-UC02-R10-T01 The workspace traces no file of a listed product\'s folder', async () => {
+  it('LA-PRD-UC02-R10-T01 The workspace traces no file of a listed product\'s folder', async () => {
     const shopCode = prefixed(SHOP, {
       'src/code.ts': 'export {};\n',
       'src/router.ts': "app.get('/basket', show);\n",
@@ -138,7 +138,7 @@ describe('a workspace of several products', () => {
     expect(() => loadConfig(root)).toThrow(/examples\/shop is another product's folder/);
   });
 
-  it('LA-PLT-UC23-R03-T01 The API serves every product of the workspace, writes to each product\'s folder and watches each', async () => {
+  it('LA-WBN-UC23-R03-T01 The API serves every product of the workspace, writes to each product\'s folder and watches each', async () => {
     const root = workspace();
     opened.push(root);
     // A product's reads come from its own folder.
@@ -161,7 +161,7 @@ describe('a workspace of several products', () => {
     expect(watchTargets(root)).toEqual(expect.arrayContaining([path.join(root, 'data'), path.join(root, SHOP, 'data')]));
   });
 
-  it('LA-PLT-UC23-R03-T02 A read of the whole workspace joins every product\'s schema and refuses one product in two folders', async () => {
+  it('LA-WBN-UC23-R03-T02 A read of the whole workspace joins every product\'s schema and refuses one product in two folders', async () => {
     const shopKind: Data = {
       ...shop,
       product_kind: [{ name: 'shelf', product_id: 'SH', label: 'Shelf', description: 'A shelf in the shop.', parent_kind: 'domain', obligation: false, complexity: 'essential' }],

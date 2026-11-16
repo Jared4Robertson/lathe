@@ -1,4 +1,4 @@
-// The Meta model read (LA-PLT-RM08, LA-PLT-QRY11): every kind in reading order with its label, stage and parents, the
+// The Meta model read (LA-PRD-RM08, LA-PRD-QRY11): every kind in reading order with its label, stage and parents, the
 // six stages, each relation's pairs with their words both ways, and each table's columns, read from the schema through
 // the read model's reader, as the app names and draws every record and field.
 import { afterEach, describe, expect, it } from 'vitest';

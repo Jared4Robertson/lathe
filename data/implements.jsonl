@@ -109,6 +109,8 @@
 {"source_id":"LA-PLT-MOD44","target_id":"LA-V110-R02"}
 {"source_id":"LA-PLT-MOD45","target_id":"LA-WBN-UC03-R02"}
 {"source_id":"LA-PLT-MOD52","target_id":"LA-CHK-UC11-R01"}
+{"source_id":"LA-PLT-MOD57","target_id":"LA-PRD-A10-SR01"}
+{"source_id":"LA-PLT-MOD57","target_id":"LA-PRD-UC02-R02"}
 {"source_id":"LA-PRD-MOD84","target_id":"LA-PRD-A24-SR01"}
 {"source_id":"LA-PRD-MOD86","target_id":"LA-PRD-UC33-R01"}
 {"source_id":"LA-PRD-MOD87","target_id":"LA-PRD-UC33-R01"}

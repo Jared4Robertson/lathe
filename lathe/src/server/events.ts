@@ -1,6 +1,6 @@
-// What the server announces when the data changes: Data files changed (LA-PLT-EV06), sent as `spec:changed` to every
+// What the server announces when the data changes: Data files changed (LA-PRD-EV06), sent as `spec:changed` to every
 // page (GET /api/events for `lathe serve`, Vite's channel in development). It names the tables whose rows changed and
-// the read models whose answers may have changed, so a page reads again only those (LA-PLT-UC03-R02).
+// the read models whose answers may have changed, so a page reads again only those (LA-WBN-UC03-R02).
 
 /** The name every page hears the change by. */
 export const DATA_CHANGED = 'spec:changed';

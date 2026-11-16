@@ -1,4 +1,4 @@
-// The validated-build stamps (LA-PLT-UC01-R17): a load of data files whose whole build passed, exactly as they are,
+// The validated-build stamps (LA-WBN-UC01-R17): a load of data files whose whole build passed, exactly as they are,
 // reads their rows without building them again, and answers as the whole build does; a changed file is built whole
 // and refused as before, and a stamp that does not name its key is never used.
 import { execFile } from 'node:child_process';
@@ -65,7 +65,7 @@ async function load(root: string, dir: string) {
 
 // Each test builds a store whole, as a cold CLI does: seconds alone, longer on a busy machine, so past vitest's 5 s.
 describe('validated builds', () => {
-  it('LA-PLT-UC01-R17-T01 Files a whole build passed load without building again, and answer exactly as the whole build does', async () => {
+  it('LA-WBN-UC01-R17-T01 Files a whole build passed load without building again, and answer exactly as the whole build does', async () => {
     const root = writeData(everyKind());
     const dir = cacheFolder();
     const whole = await load(root, dir);
@@ -77,7 +77,7 @@ describe('validated builds', () => {
     expect(stamps(dir)).toHaveLength(1);
   });
 
-  it('LA-PLT-UC01-R17-T01 A changed file is built whole: refused as before when it breaks a rule, and stamped anew when it passes', async () => {
+  it('LA-WBN-UC01-R17-T01 A changed file is built whole: refused as before when it breaks a rule, and stamped anew when it passes', async () => {
     const root = writeData(everyKind());
     const dir = cacheFolder();
     await load(root, dir);
@@ -103,7 +103,7 @@ describe('validated builds', () => {
     expect((await load(root, dir)).built).toBe(false);
   });
 
-  it('LA-PLT-UC01-R17-T01 A stamp that does not name its key, garbage or empty, is never used: the files are built whole and stamped again', async () => {
+  it('LA-WBN-UC01-R17-T01 A stamp that does not name its key, garbage or empty, is never used: the files are built whole and stamped again', async () => {
     const root = writeData(everyKind());
     const dir = cacheFolder();
     const whole = await load(root, dir);
@@ -116,7 +116,7 @@ describe('validated builds', () => {
     }
   });
 
-  it('LA-PLT-UC01-R17-T01 A cold CLI command answers and refuses as the whole build does', async () => {
+  it('LA-WBN-UC01-R17-T01 A cold CLI command answers and refuses as the whole build does', async () => {
     const root = writeData(everyKind());
     const dir = cacheFolder();
     const bin = path.resolve(import.meta.dirname, '../../bin/lathe.ts');

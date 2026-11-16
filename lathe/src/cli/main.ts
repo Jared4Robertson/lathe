@@ -124,13 +124,13 @@ async function startServer() {
   running.server.on('listening', () => {
     console.log(`Lathe is serving ${root} at http://${LOOPBACK_HOST}:${port}`);
     if (!network) return;
-    // Opt-in only (LA-PLT-UC23-R04): each address other devices on the network open, read-only for them.
+    // Opt-in only (LA-WBN-UC23-R04): each address other devices on the network open, read-only for them.
     const urls = networkUrls(networkInterfaces(), port);
     if (!urls.length) console.log('No network address was found: other devices cannot reach it yet.');
     for (const url of urls) console.log(`On the network (read only): ${url}`);
   });
   running.server.on('error', (error) => fail(`Could not start the server: ${error.message}`));
-  // Stopped from a terminal: stop cleanly (LA-PLT-UC23-R02), then end by the same signal, as before. A second signal,
+  // Stopped from a terminal: stop cleanly (LA-WBN-UC23-R02), then end by the same signal, as before. A second signal,
   // or a stop that takes longer than STOP_TIMEOUT, ends it at once.
   for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     process.once(signal, () => {

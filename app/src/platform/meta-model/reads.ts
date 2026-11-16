@@ -4,7 +4,7 @@ import type { ColumnDescription } from '../../../../lathe/src/platform/data/sche
 
 export type { MetaKind, MetaModel, MetaRelation, MetaStage };
 
-// The Meta model read (LA-PLT-RM08, get-meta-model): every kind with its label, stage and parents, the six stages, the
+// The Meta model read (LA-PRD-RM08, get-meta-model): every kind with its label, stage and parents, the six stages, the
 // relations' pairs with their words both ways, and each table's columns. Every page names a kind, places it in its stage,
 // words a link and draws a field from it, never from a record's row.
 

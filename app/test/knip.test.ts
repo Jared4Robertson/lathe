@@ -25,7 +25,7 @@ function runKnip(pkg: string) {
   return { status: run.status, output: `${run.stdout ?? ''}${run.stderr ?? ''}${run.error ? String(run.error) : ''}`.trim() };
 }
 
-describe('LA-STD-PRINCIPLES-R04-T02 what serves no purpose is removed', () => {
+describe('LA-PLT-GU06-T01 LA-STD-PRINCIPLES-R04-T02 what serves no purpose is removed', () => {
   describe('LA-PAT-APP-CODE-R21-T01 No unused files, exports or dependencies', () => {
     for (const pkg of ['app', 'lathe', 'desktop']) {
       it(`knip finds nothing unused in ${pkg}/`, () => {

@@ -1,6 +1,6 @@
 // ID order: the one way Lathe sorts record IDs, with the numbers inside them compared by value (UC2 before UC10). One
 // collator, made once: `localeCompare` with options builds one on every comparison, which costs seconds when a large
-// product's records are sorted (LA-PLT-UC03-R05).
+// product's records are sorted (LA-WBN-UC03-R05).
 const collator = new Intl.Collator('en', { numeric: true });
 
 /** Two IDs (or any texts) in ID order. */
@@ -15,7 +15,7 @@ const KEPT_ORDERS = 4;
 
 /**
  * Each ID's place in ID order (IDs the collator holds equal share one), for sorting many records by ID by number
- * rather than by comparing their texts again (LA-PLT-UC03-R05). An order worked out for a set holding every one of the
+ * rather than by comparing their texts again (LA-WBN-UC03-R05). An order worked out for a set holding every one of the
  * IDs is reused: its places keep the IDs in the same order.
  */
 export function idOrder(ids: Iterable<string>): ReadonlyMap<string, number> {

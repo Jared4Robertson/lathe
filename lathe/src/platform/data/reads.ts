@@ -1,6 +1,6 @@
 // What a rule or a read model's projection read: the tables it asked for, so a change to other tables leaves its
 // result standing. A reload reruns only the aggregates' rules whose tables changed, and only the projections whose
-// tables changed are built again (LA-PLT-UC03-R03).
+// tables changed are built again (LA-WBN-UC03-R03).
 //
 // The tables are learned by running the code, not declared beside it, so they cannot drift from it: each run reads
 // the data through a view that notes every table it asks for. A record looked up by its ID reads each kind's table it

@@ -206,13 +206,17 @@ WHERE NOT EXISTS (SELECT 1 FROM journey_step s WHERE s.journey_id = j.id AND s.p
 WHERE d.platform AND NOT EXISTS (SELECT 1 FROM guarantee g WHERE g.domain_id = d.id)`),
   // A guarantee is there because another domain relies on it: one of its building blocks is linked to a record of
   // another domain (a repository stored in its data store, a requirement its shared module implements, a handler its
-  // generator writes), in either direction, by any relation but kept_by.
-  gap('guarantee-relied-on-by-nothing', 'domain-model', ['guarantee'], 'A guarantee no other domain relies on: none of its building blocks is linked to a record of another domain.',
-    `SELECT g.id, 'Guarantee ' || g.id || ' is relied on by no other domain: none of the building blocks that keep it is linked to a record of another domain. Link what uses them, or remove the guarantee.' AS message FROM guarantee g
+  // generator writes), in either direction, by any relation but kept_by, or carries out a pattern rule another domain
+  // owes (a test runner's configuration that proves the rules of the patterns its use cases follow).
+  gap('guarantee-relied-on-by-nothing', 'domain-model', ['guarantee'], 'A guarantee no other domain relies on: none of its building blocks is linked to a record of another domain or carries out a pattern rule another domain owes.',
+    `SELECT g.id, 'Guarantee ' || g.id || ' is relied on by no other domain: none of the building blocks that keep it is linked to a record of another domain or carries out a pattern rule another domain owes. Link what uses them, or remove the guarantee.' AS message FROM guarantee g
 WHERE NOT EXISTS (
   SELECT 1 FROM kept_by k JOIN link l ON l.relation <> 'kept_by' AND k.target_id IN (l.source_id, l.target_id)
   JOIN record_scope o ON o.id = CASE WHEN l.source_id = k.target_id THEN l.target_id ELSE l.source_id END
-  WHERE k.source_id = g.id AND o.domain_id IS NOT NULL AND o.domain_id <> g.domain_id)`),
+  WHERE k.source_id = g.id AND o.domain_id IS NOT NULL AND o.domain_id <> g.domain_id)
+  AND NOT EXISTS (
+  SELECT 1 FROM kept_by k JOIN meets m ON m.source_id = k.target_id JOIN owed_pattern_rules p ON p.id = m.target_id
+  WHERE k.source_id = g.id AND p.domain <> g.domain_id)`),
   gap('aggregate-without-root', 'domain-model', ['aggregate', 'entity'], 'An aggregate with no root entity.',
     `SELECT a.id, 'Aggregate ' || a.id || ' has no root entity.' AS message FROM aggregate a WHERE NOT EXISTS (SELECT 1 FROM entity e WHERE e.aggregate_id = a.id AND e.role = 'root')`),
   // A command changes its own aggregate only.

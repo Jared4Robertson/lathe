@@ -62,7 +62,7 @@ const VALIDATION_CONNECTIONS = 4;
 const schemaDatabases = new Map<string, Promise<{ schemaDb: string; schema: SchemaDescription }>>();
 let databases = 0;
 // One empty data database per schema database, copied while nothing waits on it, so a load or write starts filling
-// straight away. It holds the schema and the meta-model's rows, never a product's data (LA-PLT-UC01-R04).
+// straight away. It holds the schema and the meta-model's rows, never a product's data (LA-WBN-UC01-R04).
 const spares = new Map<string, Promise<string>>();
 // The work the engine does on no store's behalf (spares being copied, schema databases being built), until it
 // settles. closeEngine waits for it: native work still running when a process exits ends it with an engine error.
@@ -581,7 +581,7 @@ export class Store {
   }
 
   /**
-   * Reads the data files that changed since the tables were last read or written, and only their tables (LA-PLT-UC03-R03):
+   * Reads the data files that changed since the tables were last read or written, and only their tables (LA-WBN-UC03-R03):
    * a change set from one write, or a burst of them, is one reload. The changed tables are held at once to the keys
    * (each row's foreign keys, every row pointing into them, their unique keys, every ID once across kinds) and to the
    * rules of each aggregate that reads one of them; the database's checks, the integrity queries and every rule then
@@ -666,7 +666,7 @@ export class Store {
   }
 
   /**
-   * Whether a write's new state holds to everything its whole build holds it to, without building it (LA-PLT-UC03-R05):
+   * Whether a write's new state holds to everything its whole build holds it to, without building it (LA-WBN-UC03-R05):
    * the keys and the rules of each aggregate that reads a changed table (as a reload holds them), then, in a database
    * of views over the current data database with the tables that differ from it beside them, each such row's NOT NULL
    * and CHECK constraints, record_scope and every integrity query. When it holds, the write needs no database of its

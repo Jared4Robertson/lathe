@@ -1,5 +1,5 @@
 // Platform's flows that run through code, the CLI and the server, end to end along their main paths: loading the
-// workspace from a script (LA-PLT-UC01), setting Lathe up in a product repo (LA-PLT-UC02) and changing the data
+// workspace from a script (LA-WBN-UC01), setting Lathe up in a product repo (LA-PRD-UC02) and changing the data
 // through each aggregate's own commands (LA-PAT-HTTP-STEPS). `lathe serve` needs the built web app: when lathe/dist/app is missing,
 // the app's own Vite builds it there, as the package's build does. It is skipped, with a message, only when the app's
 // packages are not installed (app/node_modules).
@@ -139,7 +139,7 @@ async function eventsUntil(response: Response, wanted: string, timeoutMs: number
 }
 
 describe('Platform flows', () => {
-  it('LA-PLT-UC01-FL-T LA-PAT-PACKAGE-STEPS-R01-T01 LA-PAT-PACKAGE-STEPS-R01-T02 LA-PAT-PACKAGE-STEPS-R02-T01 LA-PAT-PACKAGE-STEPS-R02-T02 an Agent\'s script loads the workspace, sees refused data as data-refused errors, and loads again after a write', async () => {
+  it('LA-WBN-UC01-FL-T LA-PAT-PACKAGE-STEPS-R01-T01 LA-PAT-PACKAGE-STEPS-R01-T02 LA-PAT-PACKAGE-STEPS-R02-T01 LA-PAT-PACKAGE-STEPS-R02-T02 an Agent\'s script loads the workspace, sees refused data as data-refused errors, and loads again after a write', async () => {
     // A product with a record of nearly every kind, every obligation designed, built and proved.
     const root = await build(complete());
 
@@ -162,7 +162,7 @@ describe('Platform flows', () => {
     writeFileSync(file, good);
 
     // After a write through the Use case aggregate's own command, the next load sees it. Its timings are what the performance budgets
-    // judge (LA-PLT-UC01-R03, `npm --prefix lathe run test:perf`); here they are only taken.
+    // judge (LA-WBN-UC01-R03, `npm --prefix lathe run test:perf`); here they are only taken.
     const store = await openStore(root);
     try {
       await run(store, 'use-case change-use-case', { id: 'EX-LEND-UC01', title: 'Borrow a tool at the desk' });
@@ -175,7 +175,7 @@ describe('Platform flows', () => {
     expect(timings.total).toBeGreaterThan(0);
   }, 120_000);
 
-  it('LA-PLT-UC02-FL-T the Owner sets Lathe up in a product repo: init, the merge driver, the first records and a check', () => {
+  it('LA-PRD-UC02-FL-T the Owner sets Lathe up in a product repo: init, the merge driver, the first records and a check', () => {
     const root = temp('lathe-setup-');
     git(root, 'init', '-q');
 
@@ -198,7 +198,7 @@ describe('Platform flows', () => {
     expect(lathe(root, 'check').status).toBe(0);
   }, 120_000);
 
-  it.skipIf(!canServe)('LA-PLT-UC23-FL-T the Owner serves a product repo and stops it', async () => {
+  it.skipIf(!canServe)('LA-WBN-UC23-FL-T the Owner serves a product repo and stops it', async () => {
     const root = temp('lathe-serve-');
     git(root, 'init', '-q');
     ok(root, 'init', '--name', 'Tool Library', '--prefix', 'TL');

@@ -9,7 +9,7 @@ export type { ListedProblem, RecordSummary, SummaryLink };
 // A product's space as its pages name its records (the Record page pattern): the records of the Record summaries read
 // (LA-EXP-RM01, list-record-summaries) by ID, with their children and their links both ways; each record's problems
 // from the Problems read (LA-CHK-RM01, list-problems) and its gaps from the Coverage read (LA-TRC-RM01, get-coverage);
-// the meta model (LA-PLT-RM08) that names their kinds; and the Folder tree (LA-EXP-RM02) the nav and the graph read. It holds no column of a record beyond its summary: a page
+// the meta model (LA-PRD-RM08) that names their kinds; and the Folder tree (LA-EXP-RM02) the nav and the graph read. It holds no column of a record beyond its summary: a page
 // reads its record's fields through its aggregate's own query, a stage its own read (the folder tree, the ERD, the
 // traces). Built by layer (the records, the problems, the coverage), each when its own read changes, so a page that passes it as its reads' version reads again after every reload.
 
