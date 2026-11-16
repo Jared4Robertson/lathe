@@ -215,6 +215,61 @@ check('guarantee-without-building-block', () => {
   });
 });
 
+/**
+ * The complete product with a platform domain and what its lending domain ships: a generated component, EX-LEND-GC01,
+ * serving EX-BO01 and making one guarantee for its consumers, kept by the build and proved by a test.
+ */
+const SHIPPED: Data = {
+  generated_component: [{ id: 'EX-LEND-GC01', title: 'Loan adapter', domain_id: 'EX-LEND', description: 'The loan store the generator emits into every branch service.' }],
+  serves: [{ source_id: 'EX-LEND-GC01', target_id: 'EX-BO01' }],
+  guarantee: [{ id: 'EX-LEND-GC01-GU01', title: 'A loan is stored once', generated_component_id: 'EX-LEND-GC01', statement: 'The loan store it emits MUST store each loan once.', consumers: 'Every branch service built with it.' }],
+  kept_by: [{ source_id: 'EX-LEND-GC01-GU01', target_id: 'EX-PLAT-TOOL01' }],
+  guarantee_test: [{ id: 'EX-LEND-GC01-GU01-T01', title: 'A loan stored twice is refused', guarantee_id: 'EX-LEND-GC01-GU01', level: 'integration', state: 'not automated yet', when: 'Stores a loan twice.', then: 'Expects the second refused.' }],
+};
+const SHIPPED_GAPS = ['maker-without-guarantee', 'guarantee-names-no-consumer', 'guarantee-relied-on-by-nothing'];
+const shippedGaps = (ws: Workspace) => gaps(ws).filter((g) => SHIPPED_GAPS.some((name) => g.startsWith(`${name} `)));
+
+check('maker-in-platform-domain', () => {
+  it('LA-STD-MODELING-R24-T01 a generated component or a library in a platform domain is an error; one in a business domain is not', async () => {
+    const ws = await loadData(withPlatform(adding(SHIPPED, {
+      library: [{ id: 'EX-PLAT-LB01', title: 'Store runtime', domain_id: 'EX-PLAT', description: 'The store every domain imports.' }],
+      guarantee: [{ id: 'EX-PLAT-LB01-GU01', title: 'A change is kept', library_id: 'EX-PLAT-LB01', statement: 'It MUST keep every change.', consumers: 'Every domain.' }],
+      kept_by: [{ source_id: 'EX-PLAT-LB01-GU01', target_id: 'EX-PLAT-TOOL01' }],
+      guarantee_test: [{ id: 'EX-PLAT-LB01-GU01-T01', title: 'A change is kept', guarantee_id: 'EX-PLAT-LB01-GU01', level: 'integration', state: 'not automated yet', when: 'Writes a change.', then: 'Expects it kept.' }],
+    })));
+    expect(ofCheck(ws, 'maker-in-platform-domain')).toEqual([
+      { severity: 'error', check: 'maker-in-platform-domain', record: 'EX-PLAT-LB01', message: 'Library EX-PLAT-LB01 sits in platform domain EX-PLAT: a platform domain makes its promises to the other domains of its product itself, so move it to the business domain that ships it.' },
+    ]);
+  });
+});
+
+check('consumers-on-platform-guarantee', () => {
+  it("LA-STD-MODELING-R24-T02 a platform domain's guarantee that names consumers is an error; a library's that names none is a gap", async () => {
+    const data = withPlatform({
+      library: [{ id: 'EX-LEND-LB01', title: 'Reminder runtime', domain_id: 'EX-LEND', description: 'The reminder queue every branch service imports.' }],
+      guarantee: [{ id: 'EX-LEND-LB01-GU01', title: 'A reminder goes once', library_id: 'EX-LEND-LB01', statement: 'The queue MUST send each reminder once.' }],
+      kept_by: [{ source_id: 'EX-LEND-LB01-GU01', target_id: 'EX-PLAT-TOOL01' }],
+      guarantee_test: [{ id: 'EX-LEND-LB01-GU01-T01', title: 'A reminder sent twice goes once', guarantee_id: 'EX-LEND-LB01-GU01', level: 'integration', state: 'not automated yet', when: 'Sends a reminder twice.', then: 'Expects one sent.' }],
+    });
+    data.guarantee = data.guarantee!.map((g) => (g.id === 'EX-PLAT-GU01' ? { ...g, consumers: 'Every domain.' } : g));
+    const ws = await loadData(data);
+    expect(ofCheck(ws, 'consumers-on-platform-guarantee')).toEqual([
+      { severity: 'error', check: 'consumers-on-platform-guarantee', record: 'EX-PLAT-GU01', message: 'Guarantee EX-PLAT-GU01 is made by platform domain EX-PLAT and names consumers: the other domains that rely on it are found from links, so clear its consumers.' },
+    ]);
+    expect(shippedGaps(ws)).toEqual(['guarantee-names-no-consumer EX-LEND-LB01-GU01']);
+  });
+});
+
+check('maker-without-guarantee', () => {
+  it('LA-STD-MODELING-R24-T03 a generated component that makes no guarantee is a gap, and its guarantees serve what it serves', async () => {
+    const bare = await loadData(withPlatform(without(without(without(SHIPPED, 'guarantee', () => true), 'kept_by', () => true), 'guarantee_test', () => true)));
+    expect(shippedGaps(bare)).toEqual(['maker-without-guarantee EX-LEND-GC01']);
+    const ws = await loadData(withPlatform(SHIPPED));
+    expect(shippedGaps(ws)).toEqual([]);
+    expect(ofCheck(ws, 'serves-no-outcome').map((p) => p.record).filter((r) => r?.startsWith('EX-LEND-GC01'))).toEqual([]);
+  });
+});
+
 check('standard-in-business-domain', () => {
   it('LA-STD-MODELING-R23-T01 a standard under a business domain is an error; one under its product or a platform domain is not', async () => {
     const standard = (id: string, at: Record<string, string>) => ({ id, title: id.slice(7), ...at, type: 'engineering', description: 'How the build is kept.' });

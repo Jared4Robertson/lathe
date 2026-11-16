@@ -22,7 +22,7 @@ const converter: Converter = {
     for (const kind of obligations) {
       const children = under(kind);
       notes.todo(
-        `Your own kind ${kind} holds ${count(kind)} ${count(kind) === 1 ? 'record' : 'records'}: if each is a promise shared code keeps, of a platform domain, of a unit your generator emits or of a library you ship, write it as a guarantee of that maker (\`lathe domain add-generated-component\`, \`lathe domain add-library\`, \`lathe guarantee add-guarantee\`) with whom it is for (consumers), its guarantee tests${children.length ? ` (from ${children.join(', ')})` : ''} and the building blocks that keep it (kept_by), then remove the kind.`,
+        `Your own kind ${kind} holds ${count(kind)} ${count(kind) === 1 ? 'record' : 'records'}: if each is a promise shared code keeps, of a platform domain, of a unit your generator emits or of a library you ship, write it as a guarantee of that maker (\`lathe generated-component add-generated-component\`, \`lathe library add-library\`, \`lathe guarantee add-guarantee\`) with whom it is for (consumers), its guarantee tests${children.length ? ` (from ${children.join(', ')})` : ''} and the building blocks that keep it (kept_by), then remove the kind.`,
       );
     }
   },
