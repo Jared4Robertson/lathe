@@ -46,9 +46,9 @@ function synonymsIn(file: string, text: string): string[] {
 // heading that is neither a Lathe name nor listed here fails: name the concept, or add it here on purpose.
 const PLAIN_HEADINGS: ReadonlySet<string> = new Set([
   // Plain words that name no Lathe concept.
-  'Colors', 'Example', 'Input', 'Key', 'Motion', 'Result', 'Scroll', 'Shape and density', 'Tool', 'Type',
+  'Colors', 'Example', 'Key', 'Motion', 'Scroll', 'Shape and density', 'Type',
   'Fields', 'Files', 'History', 'Keys', 'Limits', 'Packages', 'Settings', 'Shared', 'Steps', 'Columns', 'Workspace',
-  'Keyboard shortcuts', 'Sessions in this folder', 'How records are kept', 'Where it sits', 'Other records', 'Helper files',
+  'Keyboard shortcuts', 'How records are kept', 'Where it sits', 'Other records', 'Helper files',
   'Coverage', 'Shared coverage', 'Key metrics', 'Tests automated', 'Outcomes served',
   // A Lathe name in a phrase saying which ones.
   'Allowed children', 'Allowed parents', 'Checks that concern it', 'Kinds it concerns', 'Links in', 'Links out', 'Owed by',
@@ -619,11 +619,10 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
   it('LA-PAT-APP-UX-R09-T01 LA-PAT-APP-UX-R09-T02 Actions look like actions: standalone actions are the one Button, and links stay links for navigation in context', async () => {
     // The controls that are not standalone actions, and so keep their own form: tab close buttons, toggles in a group,
     // fold chevrons, the nav's rows and rail, the sheet handle, the open-pages list, the title bar's command center and a
-    // card's title, stretched over its card (LA-PAT-APP-UX-R14), and the chat's session rows and tool rows.
+    // card's title, stretched over its card (LA-PAT-APP-UX-R14).
     // In the source no raw <button> may take the Button's own classes; on the page they are allowed.
     const ALLOWED = ['tab-close', 'tree-toggle', 'nav-chevron', 'nav-row', 'nav-folder-head', 'rail-item',
-      'view-segment', 'page-bar-pages', 'pages-open', 'sheet-handle', 'command-center', 'card-title',
-      'chat-session-open', 'chat-tool-row'];
+      'view-segment', 'page-bar-pages', 'pages-open', 'sheet-handle', 'command-center', 'card-title'];
     const allowed = `.button, .icon-button, ${ALLOWED.map((c) => `.${c}`).join(', ')}, [role="group"] button[aria-pressed]`;
 
     // The source: no old button styles, and every raw <button> outside Button.tsx is one of the allowed controls

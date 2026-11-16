@@ -66,9 +66,6 @@
 {"id":"LA-PLT-EN20-DM","title":"Settings","entity_id":"LA-PLT-EN20","file":"desktop/src/shell-settings/model.ts"}
 {"id":"LA-PLT-EN24-DM","title":"KeyBindings","entity_id":"LA-PLT-EN24","file":"app/src/platform/key-bindings/model.ts"}
 {"id":"LA-PLT-EN25-DM","title":"ShortcutBinding","entity_id":"LA-PLT-EN25","file":"app/src/platform/key-bindings/model.ts"}
-{"id":"LA-PLT-EN26-DM","title":"VoiceSettings","entity_id":"LA-PLT-EN26","file":"app/src/platform/voice-settings/model.ts"}
-{"id":"LA-PLT-EN27-DM","title":"WindowChat","entity_id":"LA-PLT-EN27","file":"desktop/src/window-chat/model.ts"}
-{"id":"LA-PLT-EN28-DM","title":"AgentSignIn","entity_id":"LA-PLT-EN28","file":"desktop/src/agent-sign-in/model.ts"}
 {"id":"LA-PRD-EN01-DM","title":"ProductRow","entity_id":"LA-PRD-EN01","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-PRD-EN02-DM","title":"ProductKindRow","entity_id":"LA-PRD-EN02","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-PRD-EN03-DM","title":"RoleRow","entity_id":"LA-PRD-EN03","file":"lathe/src/platform/data/tables.ts"}

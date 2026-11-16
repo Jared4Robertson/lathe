@@ -2,7 +2,6 @@ import type { Page } from '@playwright/test';
 import { expect, test } from '../stability/test';
 import { AGGREGATE, DOMAIN, EDITED, JOURNEY, JOURNEY_USE_CASE, PRODUCT, RECORD, REFERENCED } from '../stability/scenarios';
 import { audit, LOOKS, useLook, type Finding } from './axe';
-import { withChat } from './chat';
 import { asDesktop } from '../stability/desktop';
 import { showCard } from '../stability/measure';
 
@@ -238,33 +237,6 @@ const DESKTOP: State[] = [
     await page.locator('.header-strip .crumb-menu').waitFor();
     await page.locator('.stage-tools .stage-frame').waitFor({ state: 'attached' });
     await page.waitForTimeout(400);
-  } },
-  // The desktop app's chat (LA-V99), with a stand-in for the shell: a conversation with a tool call open and a
-  // permission prompt, and the session picker with its warning about a session open in another client.
-  { name: 'the chat, a conversation with a tool call open and a permission prompt', run: async (page) => {
-    await withChat(page, RECORD.slice(1));
-    await open(page, RECORD, '.chat-log .chat-item');
-    await page.locator('.chat-tool-row').first().click();
-    await page.locator('.chat-tool-body').waitFor();
-  } },
-  { name: 'the chat, its permission mode menu open', run: async (page) => {
-    await withChat(page, RECORD.slice(1));
-    await open(page, RECORD, '.chat-log .chat-item');
-    await page.getByRole('button', { name: /^Permission mode/ }).click();
-    await page.locator('.chat-mode-menu').waitFor();
-  } },
-  { name: 'the chat, the warning before Bypass, and its badge once on', run: async (page) => {
-    await withChat(page, RECORD.slice(1));
-    await open(page, RECORD, '.chat-log .chat-item');
-    await page.getByRole('button', { name: /^Permission mode/ }).click();
-    await page.locator('.chat-mode-item.is-bypass').click();
-    await page.locator('.chat-bypass-warning').waitFor();
-  } },
-  { name: 'the chat, its session picker warning of a session open elsewhere', run: async (page) => {
-    await withChat(page, RECORD.slice(1), 'picker');
-    await open(page, RECORD, '.chat-session-open');
-    await page.locator('.chat-session-open', { hasText: 'Plan the graph stage' }).click();
-    await page.locator('.chat-warning').waitFor();
   } },
   // The desktop app's tab strip (LA-V103-R07), with a stand-in for the shell: two tabs, the second opened by Cmd+click.
   { name: 'the desktop app\'s tab strip with two tabs', run: async (page) => {
