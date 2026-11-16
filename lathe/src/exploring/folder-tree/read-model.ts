@@ -60,7 +60,7 @@ export const PLATFORM_SECTIONS: readonly { section: PlatformSection; label: stri
   { section: 'standards', label: 'Standards', stage: 'technical-specification', holds: (k) => k === 'standard',
     description: 'The standards the platform domain holds, beside the guarantees their rules help keep: each still holds across the whole product.' },
   { section: 'quality-suites', label: 'Quality suites', stage: 'test-plan', holds: () => true,
-    description: 'The tests of the platform domain: its guarantee tests, and the pattern rule tests that prove the patterns it follows for the whole product, with the test data sets they start from.' },
+    description: 'The tests of the platform domain: its guarantee tests, with the test data sets they and the product\'s stability, accessibility and performance suites start from.' },
 ];
 
 /** The kinds only a platform domain holds, which a business domain shows no empty folder of. */
