@@ -7,7 +7,6 @@ import { forOneCommand } from '../platform/data/store.ts';
 import { coverageLines, productFolder } from './operations.ts';
 import { strictSummary, type ProductStrictness } from '../checking/product-setting/strictness.ts';
 import { INIT_NEXT, InitError, initProduct } from './init.ts';
-import { APP_USAGE, runAppCommand } from './app-tools.ts';
 import { AGGREGATE_COMMANDS, AGGREGATE_USAGE, runAggregateCommand } from './aggregates.ts';
 
 const USAGE = `Usage: lathe <command> [options]
@@ -36,13 +35,11 @@ Commands:
            Code plugin starts it).
 
 ${AGGREGATE_USAGE}
-${APP_USAGE}
 Options for every command:
   --root <dir>   The product repo (default: the current folder).
 `;
 
-// The aggregates' commands read their own flags, one per field, and the app commands theirs.
-const appCommand = process.argv[2] === 'app';
+// The aggregates' commands read their own flags, one per field.
 // `lathe check` runs the checks, and `lathe check <command>` one of the Check aggregate's commands: an aggregate whose
 // name is also one of the commands above is reached with a command after it.
 const TOP_COMMANDS = ['init', 'upgrade', 'check', 'serve', 'merge-data', 'mcp', 'help'];
@@ -50,7 +47,7 @@ const aggregateCommand =
   AGGREGATE_COMMANDS.includes(process.argv[2] ?? '') && (!TOP_COMMANDS.includes(process.argv[2]) || /^[a-z]/.test(process.argv[3] ?? ''));
 const { positionals, values } = parseArgs({
   allowPositionals: true,
-  args: appCommand || aggregateCommand ? [] : process.argv.slice(2),
+  args: aggregateCommand ? [] : process.argv.slice(2),
   options: {
     root: { type: 'string' },
     json: { type: 'boolean' },
@@ -185,8 +182,6 @@ if (command !== 'serve' && command !== 'mcp') forOneCommand();
 try {
   if (aggregateCommand) {
     process.exitCode = await runAggregateCommand(process.argv.slice(2));
-  } else if (appCommand) {
-    process.exitCode = await runAppCommand(process.argv.slice(2));
   } else if (values.help || command === 'help') {
     console.log(USAGE);
   } else if (command === 'check') {

@@ -16,11 +16,11 @@ const file = (name: string) => () => path.join(temp, name);
 const json = (name: string): unknown => JSON.parse(readFileSync(path.join(temp, name), 'utf8'));
 
 describe('LA-WBN-INV31-T A custom editor has its command', () => {
-  it('chooses an editor, keeping the rest of the file, and refuses a custom editor with no command', () => {
+  it('chooses an editor, and refuses a custom editor with no command', () => {
     const settings = new ShellSettingsRepository(file('settings.json'));
-    writeFileSync(path.join(temp, 'settings.json'), JSON.stringify({ editor: 'zed', claudePath: '/opt/claude' }));
+    writeFileSync(path.join(temp, 'settings.json'), JSON.stringify({ editor: 'zed' }));
     chooseEditor(settings, { editor: 'cursor' });
-    expect(settings.load()).toEqual({ editor: 'cursor', claudePath: '/opt/claude' });
+    expect(settings.load()).toEqual({ editor: 'cursor' });
     expect(() => chooseEditor(settings, { editor: 'custom' })).toThrow('A custom editor needs its command in settings.json.');
     expect(shellSettingsProblems({ editor: 'custom', editorCommand: 'subl' })).toEqual([]);
   });

@@ -100,4 +100,3 @@
 {"id":"LA-UCS-QRY138-CLI","title":"lathe pattern get-pattern","query_id":"LA-UCS-QRY138","usage":"lathe pattern get-pattern --<field> <value>… | lathe pattern get-pattern --json <file|->","mcp_tool":"pattern_get_pattern","file":"lathe/src/cli/aggregates.ts"}
 {"id":"LA-UCS-QRY139-CLI","title":"lathe pattern list-patterns","query_id":"LA-UCS-QRY139","usage":"lathe pattern list-patterns --<field> <value>… | lathe pattern list-patterns --json <file|->","mcp_tool":"pattern_list_patterns","file":"lathe/src/cli/aggregates.ts"}
 {"id":"LA-UCS-QRY140-CLI","title":"lathe pattern next-id","query_id":"LA-UCS-QRY140","usage":"lathe pattern next-id --<field> <value>… | lathe pattern next-id --json <file|->","mcp_tool":"pattern_next_id","file":"lathe/src/cli/aggregates.ts"}
-{"id":"LA-WBN-QRY09-CLI","title":"lathe app focus","query_id":"LA-WBN-QRY09","usage":"lathe app focus [--json]","mcp_tool":"app_focus","file":"lathe/src/cli/app-tools.ts"}

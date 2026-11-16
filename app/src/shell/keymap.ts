@@ -95,14 +95,6 @@ export const COMMANDS: readonly Command[] = [
   ...Array.from({ length: SPACE_KEYS }, (_, i): Command => ({ id: spaceCommandId(i + 1), title: `Switch to space ${i + 1}`, group: 'Navigate', keys: [`Alt+${i + 1}`], when: 'global', dynamic: true })),
   // View
   { id: 'toggleNav', title: 'Show or hide the navigation', group: 'View', keys: ['Mod+B'], menu: 0, when: 'global' },
-  // The desktop app's chat (LA-PLT-UC19), as VS Code's: Ctrl+Cmd+I on a Mac; Ctrl+Alt+C elsewhere. It shows the chat and focuses its message box.
-  { id: 'toggleChat', title: 'Show the chat with Claude, or hide it', group: 'View', keys: ['Ctrl+Meta+I'], otherKeys: ['Ctrl+Alt+C'], menu: 0, when: 'global' },
-  // Dictation in the chat (LA-PLT-UC20-R01), as VS Code's Start Dictation: listed only where the Mac recognizes speech on-device.
-  { id: 'dictate', title: 'Dictate a message to Claude, or stop dictating', group: 'View', keys: ['Mod+Alt+V'], when: 'global', dynamic: true },
-  // Point and ask, and Claude's changes (LA-PLT-UC19-R13, LA-EXP-UC109-R01): attach the box pointed at to the message; walk the last turn's changes on the stage.
-  { id: 'askClaude', title: 'Ask Claude about this: attach the focused record to the message', group: 'View', keys: ['Mod+Alt+K'], when: 'global', dynamic: true },
-  { id: 'askClaudeAboutRecord', title: 'Ask Claude about the record', group: 'View', keys: [], when: 'global', dynamic: true },
-  { id: 'reviewClaudeChanges', title: "Review Claude's changes: light the last turn's records on the stage and walk through them", group: 'View', keys: ['g r'], when: 'global', dynamic: true },
   // Ctrl is the Control key on a Mac too, where Cmd+W stays the browser's; elsewhere Ctrl+W closes the tab and Ctrl+G finds the next match, so Alt.
   { id: 'stageGraph', title: 'Graph stage', group: 'View', keys: ['Ctrl+G', 'Ctrl+1'], otherKeys: ['Alt+G', 'Ctrl+1'], menu: 1, when: 'page' },
   { id: 'stageErd', title: 'ERD stage', group: 'View', keys: ['Ctrl+E', 'Ctrl+2'], otherKeys: ['Alt+E', 'Ctrl+2'], menu: 1, when: 'page' },
@@ -247,9 +239,9 @@ export function isTyping(target: EventTarget | null): boolean {
 /**
  * Controls that use the arrow keys themselves, so a plain arrow inside one is theirs and never walks the stage: a field
  * that takes text or picks by arrows (every input but a checkbox and the buttons, a textarea, a select, editable text
- * such as the chat box), the composite widgets the ARIA practices give arrows to (a tree, grid, menu, menu bar, listbox,
+ * such as a message box), the composite widgets the ARIA practices give arrows to (a tree, grid, menu, menu bar, listbox,
  * combobox, tab list, radio group, slider, spin button and a focusable window splitter), a menu button, a modal dialog
- * (it holds the keyboard), and anything marked `data-arrows="own"` (a tree list, the chat log, the Trace
+ * (it holds the keyboard), and anything marked `data-arrows="own"` (a tree list, the Trace
  * stage's list, the breadcrumb's menu).
  */
 const ARROW_CONTROLS = [
@@ -281,8 +273,8 @@ export function usesArrows(target: EventTarget | null): boolean {
 
 /**
  * Controls that handle a plain Enter themselves, so Enter there is theirs and never toggles the wiki card (LA-V102-R02): a
- * link, a button, a summary, every field (a text field submits, a checkbox or radio is its own), editable text (the chat
- * box), the widgets that act on Enter (a menu and its items, a listbox and its options, a combobox, a tab, a tree and its
+ * link, a button, a summary, every field (a text field submits, a checkbox or radio is its own), editable text, the
+ * widgets that act on Enter (a menu and its items, a listbox and its options, a combobox, a tab, a tree and its
  * rows, a grid) and a modal dialog. A graph box is none of these: Enter on one is
  * the stage's (it focuses that box, and on the focus's own box goes on to the card).
  */

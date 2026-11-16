@@ -1,7 +1,7 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { recordIdAt } from '../src/shell/desktopRecord';
-import { desktopBridgeStub, facts, openApp } from './helpers';
+import { facts, openApp } from './helpers';
 import { workspace } from './fixtures/workspace';
 import type { LatheDesktop } from '../src/shell/desktop-bridge';
 
@@ -28,10 +28,7 @@ function desktop() {
     revealRecord: vi.fn<(id: string) => void>(),
     openRecordInEditor: vi.fn<(id: string) => void>(),
     copyRecordId: vi.fn<(id: string) => void>(),
-    showRecordMenu: vi.fn<(id: string) => void>(),
-    chat: desktopBridgeStub().chat,
-    voice: desktopBridgeStub().voice,
-    onAppRequest: () => () => {} };
+    showRecordMenu: vi.fn<(id: string) => void>() };
   host.latheDesktop = bridge;
   return { bridge, setFullScreen: (value: boolean) => fullScreen?.(value) };
 }

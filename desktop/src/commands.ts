@@ -22,7 +22,6 @@ export const VIEW_COMMANDS: readonly MenuCommand[] = [
   { id: 'stageTrace', label: 'Trace Stage' },
   { id: 'toggleWikiCard', label: 'Show or Collapse Wiki Card' },
   { id: 'toggleNav', label: 'Show or Hide Navigation' },
-  { id: 'toggleChat', label: 'Show or Hide Chat' },
 ];
 
 /**

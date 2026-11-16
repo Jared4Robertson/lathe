@@ -482,7 +482,6 @@
 {"source_id":"LA-PLT-TOOL16","target_id":"LA-STD-PRINCIPLES-R04"}
 {"source_id":"LA-PLT-TOOL17","target_id":"LA-STD-PRINCIPLES-R04"}
 {"source_id":"LA-PLT-TOOL19","target_id":"LA-STD-EXPERIENCE-R13"}
-{"source_id":"LA-PLT-TOOL20","target_id":"LA-PAT-AGGREGATE-COMMANDS-R11"}
 {"source_id":"LA-PRD-CMD120-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R14"}
 {"source_id":"LA-PRD-CMD121-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R14"}
 {"source_id":"LA-PRD-CMD122-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R14"}
@@ -858,7 +857,6 @@
 {"source_id":"LA-UI137","target_id":"LA-STD-EXPERIENCE-R13"}
 {"source_id":"LA-UI138","target_id":"LA-STD-EXPERIENCE-R13"}
 {"source_id":"LA-UI140","target_id":"LA-STD-EXPERIENCE-R13"}
-{"source_id":"LA-UI145","target_id":"LA-PAT-APP-CODE-R25"}
 {"source_id":"LA-UI149","target_id":"LA-PAT-APP-CODE-R01"}
 {"source_id":"LA-UI149","target_id":"LA-PAT-APP-UX-R20"}
 {"source_id":"LA-UI345","target_id":"LA-PAT-FIELD-INPUTS-R03"}
@@ -891,5 +889,4 @@
 {"source_id":"LA-WBN-CMD10-H","target_id":"LA-STD-EXPERIENCE-R09"}
 {"source_id":"LA-WBN-CMD10-H","target_id":"LA-STD-EXPERIENCE-R10"}
 {"source_id":"LA-WBN-CMD10-H","target_id":"LA-STD-EXPERIENCE-R11"}
-{"source_id":"LA-WBN-MOD13","target_id":"LA-STD-PRINCIPLES-R02"}
 {"source_id":"LA-WBN-MOD49","target_id":"LA-STD-PRINCIPLES-R01"}

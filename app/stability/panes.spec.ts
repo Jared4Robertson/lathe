@@ -68,7 +68,7 @@ test.describe('the stage and its panels', () => {
     await openPage(page, `${RECORD}?stage=graph`, STRIP);
     await page.locator(CARD).waitFor();
     expect(await crowded()).toBeNull();
-    // With the nav open (336 px) and no chat, the card at 360 px leaves the stage its 300 px down to about 1050 px.
+    // With the nav open (336 px), the card at 360 px leaves the stage its 300 px down to about 1050 px.
     for (const [width, expected] of [[1440, null], [1100, null], [960, 'card'], [1920, null]] as const) {
       await page.setViewportSize({ width, height: 900 });
       await expect.poll(crowded, { message: `collapsed for space at ${width} px` }).toBe(expected);

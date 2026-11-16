@@ -1,7 +1,6 @@
 // The desktop shell's main process: one window per product folder, each loading Lathe from its own
 // server (servers.ts), the native menus (menu.ts) and Dock (dock.ts), the launch view and error page
-// over a window (launch.ts), the record actions (records.ts, editor.ts), the chat panel's Claude Code
-// (chatSession.ts, claudeSessions.ts), the chat's voice (voice.ts), and the app bridge its tools reach the window by (bridge.ts). It only
+// over a window (launch.ts) and the record actions (records.ts, editor.ts). It only
 // wires Electron to the aggregates' commands, policies and queries: the open windows, their places and chrome
 // (product-window/), their servers (app-server/), the recent folders (recent-folders/) and the shell's settings
 // (shell-settings/), each kept by its own repository, the only code that reaches its storage.
@@ -9,10 +8,7 @@
 // Modes: `npm run start` and the packed app run serve() from the built Lathe package; `npm run dev`
 // (LATHE_DESKTOP_DEV=1) loads the app's Vite dev server instead, so app changes hot-reload.
 import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, nativeImage, nativeTheme, screen, session, shell, systemPreferences, WebContentsView, type MenuItemConstructorOptions, type WebContents } from 'electron';
-import { execFile, spawn } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
-import { readFileSync } from 'node:fs';
-import os from 'node:os';
+import { execFile } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { closeProductWindow } from './product-window/commands/close-product-window.ts';
@@ -43,31 +39,6 @@ import { chooseEditor } from './shell-settings/commands/choose-editor.ts';
 import { openSettingsFile } from './shell-settings/commands/open-settings-file.ts';
 import type { Editor } from './shell-settings/model.ts';
 import { ShellSettingsRepository } from './shell-settings/repository.ts';
-import { answerPermissionPrompt } from './window-chat/commands/answer-permission-prompt.ts';
-import { chooseChatMode } from './window-chat/commands/choose-chat-mode.ts';
-import { chooseChatModel } from './window-chat/commands/choose-chat-model.ts';
-import { endWindowChat } from './window-chat/commands/end-window-chat.ts';
-import { listenForVoice, type MayListen } from './window-chat/commands/listen-for-voice.ts';
-import { openChatSession, type Opening } from './window-chat/commands/open-chat-session.ts';
-import { sendMessageToClaude } from './window-chat/commands/send-message-to-claude.ts';
-import { stopClaudesTurn } from './window-chat/commands/stop-claudes-turn.ts';
-import { takeMessageOutOfQueue } from './window-chat/commands/take-message-out-of-queue.ts';
-import { startingMode, type WindowChat } from './window-chat/model.ts';
-import { onWindowClosedEndChat } from './window-chat/policies.ts';
-import { WindowChatRepository } from './window-chat/repository.ts';
-import { cancelSignIn } from './agent-sign-in/commands/cancel-sign-in.ts';
-import { giveSignInCode } from './agent-sign-in/commands/give-sign-in-code.ts';
-import { signAgentIn } from './agent-sign-in/commands/sign-agent-in.ts';
-import { signAgentOut } from './agent-sign-in/commands/sign-agent-out.ts';
-import { AgentSignInRepository } from './agent-sign-in/repository.ts';
-import { ClaudeLogin, claudeSignOut, NO_SIGN_IN, type SignInState } from './claudeLogin.ts';
-import { startBridge, type Bridge, type OpenAnswer, type OpenRequest } from './bridge.ts';
-import { chatPatch, transcriptItems, type ChatModelChoice, type ChatMode } from './chat.ts';
-import { captureStage } from './chatCapture.ts';
-import { listSkills } from './chatSkills.ts';
-import { appPluginDir, chatLatheFor, countLatheTools, sourceLathe, withLatheCli, type ChatLathe } from './chatLathe.ts';
-import { ChatSession } from './chatSession.ts';
-import { claudeSignedIn, findClaude, listSessions, processAlive, runningSessions, transcriptFile } from './claudeSessions.ts';
 import { chromeWindowOptions, startChrome, type Chrome } from './chrome.ts';
 import { keyPresses, type KeyPress } from './commands.ts';
 import { badgeFor, dockMenuTemplate } from './dock.ts';
@@ -80,7 +51,6 @@ import { optOutOfWindowRestoration } from './persistence.ts';
 import { recordDataFile, recordMenuTemplate } from './records.ts';
 import { latheFor, latheLabel, packageVersion, serveModulePath, settleWithin, startDev, startServe } from './servers.ts';
 import { reloadInProgress, runSmoke, smokeFile, writeSmoke, type SmokeResult } from './smoke.ts';
-import { helperBuilt, parseHelperLine, speechHelperPath, voicePlatform, VoiceListener, type Microphone } from './voice.ts';
 
 const DESKTOP_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const REPO_ROOT = path.resolve(DESKTOP_DIR, '..');
@@ -112,15 +82,11 @@ const userFile = (name: string) => () => path.join(app.getPath('userData'), name
 
 // The aggregates' repositories: the only code that reaches their storage.
 const productWindows = new ProductWindowRepository({ places: userFile('window-state.json'), chrome: userFile('chrome.json') });
-const windowChats = new WindowChatRepository({ modes: userFile('chat-modes.json') });
-const agentSignIns = new AgentSignInRepository();
 const appServers = new AppServerRepository({ ports: userFile('app-server-ports.json') });
 const recentFolders = new RecentFolderRepository(userFile('recent-folders.json'));
 const shellSettings = new ShellSettingsRepository(userFile('settings.json'));
 /** The open windows, by folder. */
 const openWindows = () => productWindows.load().open;
-/** A window's chat, once it has one. */
-const chatOf = (folder: string): WindowChat | undefined => windowChats.load().open.get(folder);
 
 let lastFocused: number | null = null;
 let about: { win: BrowserWindow; model: AboutModel } | null = null;
@@ -370,7 +336,6 @@ const windowOpenedReactions: WindowOpenedReactions = {
 };
 const windowClosedReactions: WindowClosedReactions = {
   onWindowClosedStopAppServer: (event) => onWindowClosedStopAppServer(event, appServers, log),
-  onWindowClosedEndChat: (event) => onWindowClosedEndChat(event, windowChats),
 };
 
 // --- Windows -------------------------------------------------------------------------------------
@@ -418,7 +383,7 @@ async function openFolder(input: string) {
     },
   });
   if (MAC) win.setRepresentedFilename(folder);
-  const entry: OpenWindow = { folder, product: names.length === 1 ? names[0] : path.basename(folder), win, errors: 0, launchRun: 0, key: randomUUID() };
+  const entry: OpenWindow = { folder, product: names.length === 1 ? names[0] : path.basename(folder), win, errors: 0, launchRun: 0 };
 
   // The window keeps the product's name and folder, whatever the page calls itself.
   win.on('page-title-updated', (event) => event.preventDefault());
@@ -451,10 +416,7 @@ async function openFolder(input: string) {
     lastFocused = win.id;
     updateBadge();
     refreshMenu();
-    chatOf(folder)?.voice?.front(true);
   });
-  // The chat listens only while its window is in front (LA-PLT-UC55-R01).
-  win.on('blur', () => chatOf(folder)?.voice?.front(false));
   win.on('close', () => {
     clearTimeout(saveTimer);
     keepWindowPlace(folder, win);
@@ -493,224 +455,11 @@ async function openFolder(input: string) {
   app.quit();
 }
 
-/** A window closed: Close a product window (which stops its server and ends its chat). */
+/** A window closed: Close a product window (which stops its server). */
 function windowClosed(entry: OpenWindow, id: number) {
   void closeProductWindow(productWindows, { folder: entry.folder }, windowClosedReactions);
   if (lastFocused === id) lastFocused = null;
   updateBadge();
-}
-
-// --- The chat panel and the app bridge -----------------------------------------------------------
-
-/** Where Claude Code keeps its files: the session store and the registry of running sessions. */
-const CLAUDE_HOME = () => process.env.LATHE_CLAUDE_HOME ?? path.join(os.homedir(), '.claude');
-/** How often, at most, a chat's changes are sent to its page while Claude writes. */
-const CHAT_FRAME_MS = 33;
-/** How long the bridge waits for a window's page to answer. */
-const PAGE_ANSWER_MS = 5000;
-
-let bridge: Promise<Bridge> | null = null;
-/** The channel of each of the app bridge's questions: one per query or command it asks the page. */
-const ASK_CHANNELS = { focus: 'lathe:ask-focus', open: 'lathe:ask-open' } as const;
-type AskChannel = (typeof ASK_CHANNELS)[keyof typeof ASK_CHANNELS];
-/** The bridge's questions waiting for a page's answer, each with the window and the channel asked on. */
-const pageAnswers = new Map<string, { entry: OpenWindow; channel: AskChannel; resolve: (answer: unknown) => void }>();
-
-/** Asks a window's page on a question's own channel (the preload's onAppRequest) and waits for its answer; null when it does not answer. */
-function askPage(entry: OpenWindow, channel: AskChannel, request: { open?: OpenRequest }): Promise<unknown> {
-  if (entry.win.isDestroyed()) return Promise.resolve(null);
-  const id = randomUUID();
-  return new Promise((resolve) => {
-    const timer = setTimeout(() => {
-      pageAnswers.delete(id);
-      resolve(null);
-    }, PAGE_ANSWER_MS);
-    pageAnswers.set(id, {
-      entry,
-      channel,
-      resolve: (answer) => {
-        clearTimeout(timer);
-        pageAnswers.delete(id);
-        resolve(answer);
-      },
-    });
-    entry.win.webContents.send(channel, { id, ...request });
-  });
-}
-
-const entryByKey = (key: string) => [...openWindows().values()].find((e) => e.key === key && !e.win.isDestroyed());
-
-function appBridge(): Promise<Bridge> {
-  bridge ??= startBridge({
-    focus: async (key) => {
-      const entry = entryByKey(key);
-      if (!entry) return null;
-      return (await askPage(entry, ASK_CHANNELS.focus, {})) ?? { connected: true, page: null };
-    },
-    open: async (key, request) => {
-      const entry = entryByKey(key);
-      if (!entry) return null;
-      const answer = (await askPage(entry, ASK_CHANNELS.open, { open: request })) as OpenAnswer | null;
-      if (answer && typeof answer.ok === 'boolean' && typeof answer.message === 'string') {
-        if (answer.ok) entry.win.focus();
-        return { ok: answer.ok, message: answer.message };
-      }
-      return { ok: false, message: 'The window did not answer.' };
-    },
-  });
-  return bridge;
-}
-
-// --- The chat's voice ----------------------------------------------------------------------------
-
-const SPEECH_HELPER = () => speechHelperPath(app.isPackaged ? { resourcesPath: process.resourcesPath } : null, DESKTOP_DIR);
-/** Whether the helper says this Mac can recognize speech on-device, asked once. */
-let speechProbe: Promise<{ onDevice: boolean; reason: string | null }> | null = null;
-
-function probeSpeech() {
-  speechProbe ??= new Promise((resolve) => {
-    execFile(SPEECH_HELPER(), ['probe'], { timeout: 10_000 }, (error, stdout) => {
-      const line = stdout.split('\n').map(parseHelperLine).find((l) => l?.type === 'support');
-      if (line?.type === 'support') resolve({ onDevice: line.onDevice, reason: line.reason });
-      else resolve({ onDevice: false, reason: error ? `The speech helper did not run: ${error.message}` : 'The speech helper did not answer.' });
-    });
-  });
-  return speechProbe;
-}
-
-/**
- * A recorded audio file heard in place of the microphone (LATHE_DESKTOP_SPEECH_FIXTURE), at the pace it was spoken: to
- * try dictation, and take its screenshots, without a microphone or its permission.
- */
-const SPEECH_FIXTURE = process.env.LATHE_DESKTOP_SPEECH_FIXTURE;
-const microphone = (): Microphone => (SPEECH_FIXTURE ? 'granted' : MAC ? systemPreferences.getMediaAccessStatus('microphone') : 'unknown') as Microphone;
-
-/**
- * Whether a window may listen (LA-PLT-UC20-R01): macOS 26 or later with the helper built and the Mac able to recognize
- * on-device, or why not; then macOS's microphone permission, which macOS asks for only when the page says it may.
- */
-async function voiceAllowed(ask: boolean): Promise<MayListen> {
-  const platform = voicePlatform(process.platform, os.release(), helperBuilt(SPEECH_HELPER()));
-  if (!platform.available) return { may: 'unavailable', reason: platform.reason ?? 'Dictation is not available.' };
-  const probe = await probeSpeech();
-  if (!probe.onDevice) return { may: 'unavailable', reason: probe.reason ?? 'This Mac cannot recognize speech on-device.' };
-  const mic = microphone();
-  if (mic === 'not-determined') {
-    if (!ask) return { may: 'unasked', reason: null };
-    if (!(await systemPreferences.askForMediaAccess('microphone'))) return { may: 'denied', reason: null };
-  }
-  if (mic === 'denied' || mic === 'restricted') return { may: 'denied', reason: null };
-  return { may: 'allowed', reason: null };
-}
-
-/** A window's listener, which runs the speech helper and tells the page what it hears; none once the window has gone. */
-function voiceListener(entry: OpenWindow): VoiceListener | null {
-  if (entry.win.isDestroyed()) return null;
-  return new VoiceListener(
-    () => spawn(SPEECH_HELPER(), SPEECH_FIXTURE ? ['file', SPEECH_FIXTURE, '--live'] : ['listen'], { stdio: ['pipe', 'pipe', 'ignore'] }),
-    (event) => { if (!entry.win.isDestroyed()) entry.win.webContents.send('lathe:voice', event); },
-    entry.win.isFocused(),
-  );
-}
-
-/** Sends the chat's changes to its page, at most once a frame. */
-function chatChanged(entry: OpenWindow) {
-  const chat = chatOf(entry.folder);
-  if (!chat || chat.timer) return;
-  chat.timer = setTimeout(() => {
-    chat.timer = undefined;
-    if (!chat.session || entry.win.isDestroyed()) return;
-    const state = chat.session.state;
-    entry.win.webContents.send('lathe:chat', chatPatch(chat.sent, state));
-    chat.sent = state;
-  }, CHAT_FRAME_MS);
-}
-
-const ourClaudes = () => new Set([...windowChats.load().open.values()].map((c) => c.session?.pid).filter((pid): pid is number => typeof pid === 'number'));
-
-/** Get the window's chat (LA-PLT-QRY10): the whole chat as one patch, for a page that (re)loads; the next patches follow it. */
-function wholeChat(entry: OpenWindow) {
-  const chat = chatOf(entry.folder);
-  if (!chat?.session) return null;
-  chat.sent = chat.session.state;
-  return chatPatch(null, chat.session.state);
-}
-
-/** The environment `claude` runs in: the shell's, with the CLI's own directory and the usual ones on the PATH. */
-function claudeEnvFor(claude: string): NodeJS.ProcessEnv {
-  const env: NodeJS.ProcessEnv = { ...process.env };
-  // An app started from the Finder has a short PATH.
-  env.PATH = [path.dirname(claude), env.PATH, '/opt/homebrew/bin', '/usr/local/bin', '/usr/bin', '/bin'].filter(Boolean).join(path.delimiter);
-  // Started from inside a Claude Code session (in development), the CLI would think it is nested.
-  delete env.CLAUDECODE;
-  return env;
-}
-
-/**
- * List a folder's Claude Code sessions (LA-PLT-QRY08): the `claude` the chat runs and whether it is signed in, the
- * folder's saved sessions, and the mode the folder's next chat starts in, for the panel's picker.
- */
-async function chatSessions(entry: OpenWindow) {
-  const settings = shellSettings.load();
-  const claude = findClaude(settings.claudePath, os.homedir(), process.env.PATH);
-  const home = CLAUDE_HOME();
-  const running = runningSessions(path.join(home, 'sessions'), processAlive, ourClaudes());
-  const current = chatOf(entry.folder)?.session?.state.sessionId ?? null;
-  const sessions = listSessions(path.join(home, 'projects'), entry.folder, running).map((s) => (s.id === current ? { ...s, openElsewhere: null } : s));
-  const signedIn = claude ? await claudeSignedIn(claude, claudeEnvFor(claude)) : null;
-  const signIn = agentSignIns.load().login?.state ?? NO_SIGN_IN;
-  return { claude, configured: !!settings.claudePath, signedIn, signIn, mode: startingMode(windowChats.load().modes, entry.folder), current, sessions };
-}
-
-/** Tells every product window how the agent's sign-in goes: the CLI's sign-in is the same for every folder. */
-function signInChanged(state: SignInState) {
-  for (const entry of openWindows().values()) if (!entry.win.isDestroyed()) entry.win.webContents.send('lathe:sign-in', state);
-}
-
-/** A sign-in of the user's `claude` (LA-PLT-UC30), not yet started; null without one. */
-function newClaudeLogin(): ClaudeLogin | null {
-  const claude = findClaude(shellSettings.load().claudePath, os.homedir(), process.env.PATH);
-  if (!claude) return null;
-  const env = claudeEnvFor(claude);
-  return new ClaudeLogin({ command: claude, env, signedIn: () => claudeSignedIn(claude, env), onChange: signInChanged });
-}
-
-/** Signs the user's `claude` out; null without one. */
-function claudeSignOutFor(): (() => Promise<boolean>) | null {
-  const claude = findClaude(shellSettings.load().claudePath, os.homedir(), process.env.PATH);
-  return claude ? () => claudeSignOut(claude, claudeEnvFor(claude)) : null;
-}
-
-/** The Lathe a window's chat brings (chatLathe.ts): the plugin and Lathe of the Lathe the window runs. */
-function chatLatheOf(entry: OpenWindow): ChatLathe {
-  if (DEV) return sourceLathe(REPO_ROOT);
-  return chatLatheFor(latheFor(entry.folder, bundledServe()), appPluginDir(REPO_ROOT, app.isPackaged ? { resourcesPath: process.resourcesPath } : null));
-}
-
-/** Makes a session for the window's chat, not yet started: a new one, or a saved one resumed or forked, with its history. */
-async function createChatSession(entry: OpenWindow, opening: Opening, setup: { mode: ChatMode; choice: ChatModelChoice | undefined }) {
-  const claude = findClaude(shellSettings.load().claudePath, os.homedir(), process.env.PATH);
-  if (!claude) return null;
-  let history: ReturnType<typeof transcriptItems> = [];
-  if (opening.mode !== 'new') {
-    const file = transcriptFile(path.join(CLAUDE_HOME(), 'projects'), entry.folder, opening.id);
-    if (!file) return null;
-    history = transcriptItems(readFileSync(file, 'utf8').split('\n'));
-  }
-  // The Lathe the window runs, its plugin loaded into every session (LA-PLT-UC44-R02), and the window's app bridge.
-  const lathe = chatLatheOf(entry);
-  const env = withLatheCli({ ...claudeEnvFor(claude), ...(await appBridge()).envFor(entry.key) }, lathe);
-  if (entry.win.isDestroyed()) return null;
-  const session = new ChatSession({
-    command: claude,
-    cwd: entry.folder,
-    env,
-    // A new chat starts in the mode the folder's last chat had (LA-PLT-UC45-R01), with the model and effort chosen.
-    setup: { pluginDir: lathe.pluginDir, mode: setup.mode, choice: setup.choice },
-    countTools: (runEnv) => countLatheTools({ pluginDir: lathe.pluginDir, cwd: entry.folder, env: runEnv, version: lathe.version }),
-    onChange: () => chatChanged(entry),
-  });
-  return { session, history };
 }
 
 // --- Record actions, the Dock and About ----------------------------------------------------------
@@ -748,7 +497,6 @@ function popupRecordMenu(window: OpenWindow, id: string, file: string | null) {
   const input = { folder: window.folder, request: { id } };
   const actions = {
     openInNewTab: () => sendCommandId(window.win, 'openRecordInNewTab', []),
-    askClaude: () => sendCommandId(window.win, 'askClaudeAboutRecord', []),
     reveal: () => void revealRecordDataFile(productWindows, input, dataFileOf, fileManager.reveal),
     openInEditor: () => void openRecordDataFile(productWindows, input, dataFileOf, openInEditor),
     copyId: () => copyRecordId(productWindows, input, fileManager.copy),
@@ -862,14 +610,9 @@ if (!SMOKE && !app.requestSingleInstanceLock()) {
     event.preventDefault();
     if (quit === 'stopping') return;
     quit = 'stopping';
-    // Quitting stops each window's server and ends its chat as closing it would (LA-PLT-PO02, LA-PLT-PO04).
-    for (const entry of openWindows().values()) {
-      void stopAppServer(appServers, { folder: entry.folder }, log);
-      void endWindowChat(windowChats, { folder: entry.folder });
-    }
-    if (bridge) void bridge.then((b) => b.close());
-    void cancelSignIn(agentSignIns);
-    void settleWithin([...appServers.load().stopping, ...windowChats.load().stopping], QUIT_TIMEOUT).then((all) => {
+    // Quitting stops each window's server as closing it would (LA-PLT-PO02).
+    for (const entry of openWindows().values()) void stopAppServer(appServers, { folder: entry.folder }, log);
+    void settleWithin([...appServers.load().stopping], QUIT_TIMEOUT).then((all) => {
       if (!all) log(`Lathe: quitting without waiting longer for a server to stop (${QUIT_TIMEOUT / 1000} s).`);
       quit = 'stopped';
       app.quit();
@@ -916,78 +659,6 @@ if (!SMOKE && !app.requestSingleInstanceLock()) {
     const entry = fromPage(event);
     if (entry) void showRecordMenu(productWindows, { folder: entry.folder, request: input }, dataFileOf, popupRecordMenu);
   });
-  // The chat panel (the preload's chat): each call from a product window's own page, about that window's chat.
-  const fromPageCall = (event: Electron.IpcMainInvokeEvent) => {
-    const entry = entryOf(event.sender);
-    return entry && event.senderFrame === entry.win.webContents.mainFrame ? entry : undefined;
-  };
-  ipcMain.handle('lathe:chat-sessions', (event) => {
-    const entry = fromPageCall(event);
-    return entry ? chatSessions(entry) : null;
-  });
-  ipcMain.handle('lathe:chat-open', (event, input: unknown) => {
-    const entry = fromPageCall(event);
-    return entry ? openChatSession(windowChats, { folder: entry.folder, request: input, create: (opening, setup) => createChatSession(entry, opening, setup) }) : false;
-  });
-  ipcMain.handle('lathe:chat-send', (event, input: unknown) => {
-    const entry = fromPageCall(event);
-    return !!entry && sendMessageToClaude(windowChats, { folder: entry.folder, message: input });
-  });
-  ipcMain.handle('lathe:chat-model', (event, input: unknown) => {
-    const entry = fromPageCall(event);
-    return !!entry && chooseChatModel(windowChats, { folder: entry.folder, choice: input });
-  });
-  ipcMain.handle('lathe:chat-unqueue', (event, id: unknown) => {
-    const entry = fromPageCall(event);
-    return !!entry && takeMessageOutOfQueue(windowChats, { folder: entry.folder, id });
-  });
-  // The skills and commands the "/" list shows, read from the files Claude Code reads them from.
-  ipcMain.handle('lathe:chat-skills', (event) => {
-    const entry = fromPageCall(event);
-    return entry ? listSkills({ home: CLAUDE_HOME(), folder: entry.folder, latheDir: chatLatheOf(entry).pluginDir }) : [];
-  });
-  // The stage as it is drawn (a rectangle of the page the page names), as a PNG, for a message.
-  ipcMain.handle('lathe:chat-capture', (event, rect: unknown) => {
-    const entry = fromPageCall(event);
-    return entry ? captureStage(entry.win.webContents, rect) : null;
-  });
-  ipcMain.handle('lathe:chat-answer', (event, input: unknown) => {
-    const entry = fromPageCall(event);
-    return !!entry && answerPermissionPrompt(windowChats, { folder: entry.folder, reply: input });
-  });
-  ipcMain.handle('lathe:chat-stop', (event) => {
-    const entry = fromPageCall(event);
-    return !!entry && stopClaudesTurn(windowChats, { folder: entry.folder });
-  });
-  ipcMain.handle('lathe:chat-mode', (event, mode: unknown) => {
-    const entry = fromPageCall(event);
-    return !!entry && chooseChatMode(windowChats, { folder: entry.folder, mode });
-  });
-  // The chat's agent sign-in (LA-PLT-UC30): one for the shell, asked for from any product window's own page.
-  ipcMain.handle('lathe:chat-sign-in', (event, method: unknown) => !!fromPageCall(event) && signAgentIn(agentSignIns, { method, create: newClaudeLogin }));
-  ipcMain.handle('lathe:chat-sign-in-code', (event, code: unknown) => !!fromPageCall(event) && giveSignInCode(agentSignIns, { code }));
-  ipcMain.handle('lathe:chat-sign-in-cancel', (event) => (fromPageCall(event) ? cancelSignIn(agentSignIns) : false));
-  ipcMain.handle('lathe:chat-sign-out', (event) => (fromPageCall(event) ? signAgentOut(agentSignIns, { signOut: claudeSignOutFor() }) : false));
-  // The chat's voice (the preload's voice): each call from a product window's own page, about that window.
-  ipcMain.handle('lathe:voice-listen', (event, on: unknown, ask: unknown) => {
-    const entry = fromPageCall(event);
-    return entry ? listenForVoice(windowChats, { folder: entry.folder, on, ask, allowed: voiceAllowed, listener: () => voiceListener(entry) }) : { listening: 'stopped', reason: null };
-  });
-  // A page that (re)loads asks for the whole chat.
-  ipcMain.handle('lathe:chat-state', (event) => {
-    const entry = fromPageCall(event);
-    return entry ? wholeChat(entry) : null;
-  });
-  // The page's answer to the app bridge's question (askPage), on the question's own channel.
-  const answered = (channel: AskChannel) => (event: Electron.IpcMainEvent, input: unknown) => {
-    const entry = fromPage(event);
-    if (!entry || !input || typeof input !== 'object') return;
-    const { id, answer } = input as { id?: unknown; answer?: unknown };
-    const waiting = typeof id === 'string' ? pageAnswers.get(id) : undefined;
-    if (waiting?.entry === entry && waiting.channel === channel) waiting.resolve(answer ?? null);
-  };
-  ipcMain.on('lathe:ask-focus', answered(ASK_CHANNELS.focus));
-  ipcMain.on('lathe:ask-open', answered(ASK_CHANNELS.open));
   // The error page's buttons, each on its command's own channel, run only when that page shows it.
   const fromErrorPage = (event: Electron.IpcMainEvent, input: unknown, action: LocalAction) => {
     const entry = [...openWindows().values()].find((e) => e.overlay?.view.webContents === event.sender);

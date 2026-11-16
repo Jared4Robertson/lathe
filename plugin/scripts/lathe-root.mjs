@@ -1,7 +1,5 @@
 // What the plugin's scripts share: finding the Lathe repo a path is in, its data folders, and how to run its
-// `lathe` command. Never through npx, so nothing is ever downloaded. The desktop app's chat names the Lathe its
-// window runs in LATHE_CLI (the package's bin script, run with this Node), so the tools match the window's Lathe,
-// the app's bundled copy included, whatever the folder has installed.
+// `lathe` command. Never through npx, so nothing is ever downloaded.
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 
@@ -44,14 +42,8 @@ export function dataDirs(root) {
 /** Whether root is the Lathe repo itself, where the CLI runs from source. */
 export const isLatheRepo = (root) => existsSync(path.join(root, 'lathe', 'bin', 'lathe.ts'));
 
-/** The Lathe bin script LATHE_CLI names, when it exists. */
-const namedCli = (env) => (env.LATHE_CLI && existsSync(env.LATHE_CLI) ? env.LATHE_CLI : null);
-
 /** How to run `lathe` for the repo at root ({ command, args, cwd }), or null when Lathe is not installed there. */
-export function findLathe(root, env = process.env) {
-  // The Lathe the desktop app's window runs.
-  const named = namedCli(env);
-  if (named) return { command: process.execPath, args: [named], cwd: root };
+export function findLathe(root) {
   // The Lathe repo: the CLI from source, as `npm --prefix lathe run lathe` runs it, without npm's start-up cost.
   if (isLatheRepo(root) && existsSync(path.join(root, 'lathe', 'node_modules'))) {
     return { command: process.execPath, args: [path.join(root, 'lathe', 'bin', 'lathe.ts')], cwd: path.join(root, 'lathe') };
@@ -67,15 +59,8 @@ export function findLathe(root, env = process.env) {
   }
 }
 
-/** The folder of the Lathe package the repo at root runs: the one holding LATHE_CLI's script, else lathe/ in the Lathe repo, else node_modules/@jaredrob/lathe here or above. */
-function latheDir(root, env) {
-  const named = namedCli(env);
-  if (named) {
-    for (let dir = path.dirname(named); ; dir = path.dirname(dir)) {
-      if (existsSync(path.join(dir, 'package.json'))) return dir;
-      if (path.dirname(dir) === dir) return null;
-    }
-  }
+/** The folder of the Lathe package the repo at root runs: lathe/ in the Lathe repo, else node_modules/@jaredrob/lathe here or above. */
+function latheDir(root) {
   if (isLatheRepo(root)) return path.join(root, 'lathe');
   let dir = root;
   for (;;) {
@@ -88,8 +73,8 @@ function latheDir(root, env) {
 }
 
 /** The Lathe installed for the repo at root: its package version and schema version (null when unknown), or null. */
-export function installedLathe(root, env = process.env) {
-  const dir = latheDir(root, env);
+export function installedLathe(root) {
+  const dir = latheDir(root);
   if (!dir) return null;
   let version;
   try {

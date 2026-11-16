@@ -1,5 +1,5 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
-import { createElement } from 'react';
+import { createElement, useSyncExternalStore } from 'react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SESSION_SETTINGS_STORAGE } from '../src/exploring/session-settings/model';
@@ -8,9 +8,6 @@ import { KeyBindingsRepository } from '../src/workbench/key-bindings/repository'
 import { APPEARANCE_STORAGE } from '../src/workbench/appearance/model';
 import { AppearanceRepository } from '../src/workbench/appearance/repository';
 import { PanelRepository } from '../src/workbench/panel/repository';
-import { VoiceSettingsRepository, voiceSettingsRepository } from '../src/platform/voice-settings/repository';
-import { useVoiceSettings } from '../src/platform/voice-settings/use-voice-settings';
-import { DEFAULT_VOICE_SETTINGS } from '../src/platform/voice-settings/model';
 import { SpaceRepository } from '../src/exploring/space/repository';
 import { desktopBridgeStub, openApp } from './helpers';
 import type { LatheDesktop } from '../src/shell/desktop-bridge';
@@ -96,20 +93,6 @@ describe('LA-EXP-A5-SR01 the desktop app\'s tabs are kept for the window\'s sess
   });
 });
 
-describe('LA-PLT-A15-SR01 the person\'s voice settings are kept in this browser', () => {
-  it('LA-PLT-A15-SR01-T01 the voice settings saved read back from local storage, and a malformed or blocked storage gives the defaults', () => {
-    const settings = { ...DEFAULT_VOICE_SETTINGS, activation: true, wake: 'Hey Lathe' };
-    new VoiceSettingsRepository().save(settings);
-    expect(window.sessionStorage.getItem('lathe:voice')).toBeNull();
-    expect(new VoiceSettingsRepository().load()).toEqual(settings);
-    window.localStorage.setItem('lathe:voice', '{"activation":"yes"}');
-    expect(new VoiceSettingsRepository().load()).toEqual(DEFAULT_VOICE_SETTINGS);
-    vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => { throw new Error('blocked'); });
-    expect(() => new VoiceSettingsRepository().save(settings)).not.toThrow();
-    expect(new VoiceSettingsRepository().load()).toEqual(DEFAULT_VOICE_SETTINGS);
-  });
-});
-
 describe('LA-EXP-A2-SR01 the space chosen last is kept in this browser, and each space\'s last page for the session alone', () => {
   it('LA-EXP-A2-SR01-T01 the chosen space reads back from local storage and its last page from session storage', () => {
     const memory = new SpaceRepository().load();
@@ -122,14 +105,15 @@ describe('LA-EXP-A2-SR01 the space chosen last is kept in this browser, and each
   });
 });
 
-describe('LA-PAT-APP-CODE-R25-T02 the Voice settings as a stable snapshot', () => {
-  it('reads a malformed stored value as the same defaults on each load, so React never warns', () => {
-    window.localStorage.setItem('lathe:voice', '{"activation":"yes"}');
+describe('LA-PAT-APP-CODE-R25-T02 the Key bindings as a stable snapshot', () => {
+  it('reads a malformed stored value, which the read rewrites, as the same value on each load, so React never warns', () => {
+    window.localStorage.setItem('lathe:keybindings', '{"toggleNav":"Ctrl+J","noSuchShortcut":["Ctrl+K"]}');
+    const repository = new KeyBindingsRepository();
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
     try {
-      const first = voiceSettingsRepository.load();
-      expect(voiceSettingsRepository.load()).toBe(first);
-      function Reader() { return createElement('span', null, useVoiceSettings().wake); }
+      const first = repository.load();
+      expect(repository.load()).toBe(first);
+      function Reader() { return createElement('span', null, String(useSyncExternalStore(repository.subscribe, repository.load).changed.length)); }
       render(createElement(Reader));
       expect(errors.mock.calls.flat().join('\n')).not.toMatch(/getSnapshot/);
     } finally {

@@ -31,7 +31,6 @@ import { takeMenuRecord } from '../shell/desktopRecord';
 import { usePreview } from './preview';
 import { WikiCard } from './WikiCard';
 import { Button } from '../components/Button';
-import { useViewState } from '../chat/appRequests';
 import { parseFormatPage } from '../format/reference';
 import { overlaysOf, pageHref } from './overlays';
 import { useChanges } from '../changes/changes';
@@ -174,7 +173,6 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
   // Panels never crowd the page (LA-PAT-APP-UX-R18): the wiki card collapses for space first; the Reader's
   // choice stays as set, and one they open while it is collapsed is held open.
   const { crowded, hold } = useRoom();
-  // What the stages tell the page: the node under the pointer, the one selected (for the chat's app_focus).
 
   // How the graph is laid out, the minimap and the wiki card's width are the window's, whatever the place; the depth,
   // the kind filters and the card's open and expanded state are the place's (LA-V93-R72): moving through the stage
@@ -229,9 +227,6 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
   useEffect(() => { if (narrow && toolOpen) setSheet(false); }, [narrow, toolOpen]);
   // A page opened from a tool's sheet shows in the wiki card's sheet (ToolPanel.tsx).
   useEffect(() => (narrow ? onCardSheetAsked(() => setSheet(true)) : undefined), [narrow]);
-
-  // What the page shows, for Claude's app_focus tool in the desktop chat (LA-WBN-UC29-R01).
-  useViewState({ focus, stage, wikiCard: cardShown });
 
   const [counts, setCounts] = useState('');
 

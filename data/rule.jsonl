@@ -35,9 +35,6 @@
 {"id":"LA-MOD-INV70-RL","title":"policy-hears-published","invariant_id":"LA-MOD-INV70","file":"lathe/src/domain-modeling/command/rules.ts"}
 {"id":"LA-MOD-INV80-RL","title":"read-model-fed-by-published","invariant_id":"LA-MOD-INV80","file":"lathe/src/domain-modeling/read-model/rules.ts"}
 {"id":"LA-PLT-INV06-RL","title":"server-not-on-5199","invariant_id":"LA-PLT-INV06","file":"desktop/src/app-server/rules.ts"}
-{"id":"LA-PLT-INV44-RL","title":"voice-phrases-distinct","invariant_id":"LA-PLT-INV44","file":"app/src/platform/voice-settings/rules.ts"}
-{"id":"LA-PLT-INV45-RL","title":"one-chat-per-window","invariant_id":"LA-PLT-INV45","file":"desktop/src/window-chat/rules.ts"}
-{"id":"LA-PLT-INV46-RL","title":"one-sign-in-at-a-time","invariant_id":"LA-PLT-INV46","file":"desktop/src/agent-sign-in/rules.ts"}
 {"id":"LA-PRD-INV186-RL","title":"title-from-field","invariant_id":"LA-PRD-INV186","file":"lathe/src/product/extension-record/rules.ts"}
 {"id":"LA-PRD-INV187-RL","title":"journey-step-id","invariant_id":"LA-PRD-INV187","file":"lathe/src/product/journey/rules.ts"}
 {"id":"LA-PRD-INV188-RL","title":"journey-test-id","invariant_id":"LA-PRD-INV188","file":"lathe/src/product/journey/rules.ts"}

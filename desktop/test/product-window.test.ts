@@ -21,10 +21,10 @@ const file = (name: string) => () => path.join(temp, name);
 const json = (name: string): unknown => JSON.parse(readFileSync(path.join(temp, name), 'utf8'));
 
 const window = (folder: string, extra: Partial<OpenWindow> = {}): OpenWindow =>
-  ({ folder, product: path.basename(folder), win: { id: folder } as unknown as OpenWindow['win'], errors: 0, launchRun: 0, key: folder, ...extra });
+  ({ folder, product: path.basename(folder), win: { id: folder } as unknown as OpenWindow['win'], errors: 0, launchRun: 0, ...extra });
 
 describe('LA-WBN-INV05-T Each folder has one window: the Product window\'s repository keeps the open windows in memory and the places and chrome in their files', () => {
-  it('opens a folder once, raising Product window opened to the recent folders and then the server, and closing raises Product window closed to the server and the chat', async () => {
+  it('opens a folder once, raising Product window opened to the recent folders and then the server, and closing raises Product window closed to the server', async () => {
     const windows = new ProductWindowRepository({ places: file('window-state.json'), chrome: file('chrome.json') });
     const heard: string[] = [];
     const reactions = {
@@ -36,10 +36,8 @@ describe('LA-WBN-INV05-T Each folder has one window: the Product window\'s repos
     await expect(openProductFolder(windows, { window: window('/p/a') }, reactions)).rejects.toThrow('/p/a already has a window.');
     expect([...windows.load().open.keys()]).toEqual(['/p/a']);
     const stop = vi.fn(async () => {});
-    const end = vi.fn(async () => {});
-    await closeProductWindow(windows, { folder: '/p/a' }, { onWindowClosedStopAppServer: stop, onWindowClosedEndChat: end });
+    await closeProductWindow(windows, { folder: '/p/a' }, { onWindowClosedStopAppServer: stop });
     expect(stop).toHaveBeenCalledWith({ folder: '/p/a' });
-    expect(end).toHaveBeenCalledWith({ folder: '/p/a' });
     expect(windows.load().open.size).toBe(0);
   });
 
