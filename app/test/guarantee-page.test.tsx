@@ -93,3 +93,21 @@ describe('LA-V158-R01-T01 a refused Guarantee command shows every reason, keeps 
     expect(commands).toHaveLength(1);
   });
 });
+
+describe("LA-V158-R04-T01 a guarantee's page names its maker and whom it is for", () => {
+  it('a generated component\'s guarantee says whom it is for, or that it names no one yet; a platform domain\'s shows no consumers', async () => {
+    const data = withGuarantee();
+    addRows(data, 'generated_component', { id: 'P-D-GC01', title: 'Order adapter', domain_id: 'P-D', description: 'The order store the generator emits.' });
+    addRows(data, 'guarantee',
+      { id: 'P-D-GC01-GU01', title: 'An order is stored once', generated_component_id: 'P-D-GC01', statement: 'It MUST store each order once.', consumers: 'Every branch service built with it.' },
+      { id: 'P-D-GC01-GU02', title: 'An order is read back whole', generated_component_id: 'P-D-GC01', statement: 'It MUST read each order back whole.' });
+    await openApp('/P-D-GC01-GU01', { data });
+    const fields = await within(main()).findByText('Every branch service built with it.');
+    expect(fields.closest('dl')).toHaveTextContent('MakerP-D-GC01');
+    await openApp('/P-D-GC01-GU02', { data });
+    await within(main()).findByText('It names no one yet.');
+    await openApp('/P-PLT-GU01', { data });
+    const maker = await within(main()).findByText('Maker');
+    expect(maker.closest('dl')).not.toHaveTextContent('Consumers');
+  });
+});

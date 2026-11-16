@@ -157,8 +157,8 @@ function parentOf(page: DomainPage, kind: DomainKind, id: string): string {
 }
 
 
-/** The kinds a platform domain never holds, which its page offers no Add for. */
-const BUSINESS_ONLY: ReadonlySet<string> = new Set(['use_case', 'aggregate', 'read_model']);
+/** The kinds a platform domain never holds, which its page offers no Add for: a platform domain makes its own guarantees, and ships no generated component or library. */
+const BUSINESS_ONLY: ReadonlySet<string> = new Set(['use_case', 'aggregate', 'read_model', 'generated_component', 'library']);
 
 /** The kinds only a platform domain holds, which a business domain's page offers no Add for. */
 const PLATFORM_ONLY: ReadonlySet<string> = new Set(['guarantee', 'standard']);
