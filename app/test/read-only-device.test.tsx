@@ -2,7 +2,7 @@ import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { openApp } from './helpers';
 
-// Another device on the network only reads (LA-PLT-UC23-R05): when the server marks its answers read-only, no editor
+// Another device on the network only reads (LA-WBN-UC23-R05): when the server marks its answers read-only, no editor
 // shows its actions, and nothing on screen announces it (LA-V61-R55).
 
 describe('LA-V61-R55-T01 a device the server marks read-only shows no write actions and no note', () => {

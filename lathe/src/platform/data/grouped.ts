@@ -1,6 +1,6 @@
 // Rows grouped by a key, built once per read: the one way an aggregate's builder (`…From`) or a projection reaches an
 // instance's rows. Filtering every row once per instance is quadratic, and on a large product it takes seconds
-// (LA-PLT-UC03-R05), so a builder groups each table once and reads each instance's rows by its key.
+// (LA-WBN-UC03-R05), so a builder groups each table once and reads each instance's rows by its key.
 import type { Row } from './rows.ts';
 
 /** The rows by the key each gives, each group in the rows' order (as a filter would keep them). */

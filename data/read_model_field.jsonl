@@ -119,32 +119,10 @@
 {"read_model_id":"LA-MOD-RM42","position":3,"name":"Builder","meaning":"The repository or reader that builds it, with its file and the data store it names.","type":"text","required":false}
 {"read_model_id":"LA-MOD-RM42","position":4,"name":"Tests","meaning":"Its storage requirement tests, each with the test data sets it starts from.","type":"text","required":true}
 {"read_model_id":"LA-MOD-RM42","position":5,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the requirement.","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM01","position":1,"name":"Data folder","meaning":"Where the product's data files were read from, as `lathe.config.json` names it.","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM01","position":2,"name":"Records","meaning":"Every record with its kind, columns, part rows, parent, product and domain.","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM01","position":3,"name":"Links","meaning":"Every link, with its relation and both ends.","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM01","position":4,"name":"Problems","meaning":"Every problem: its severity, check, record and message (Checking's RM01 Problems).","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM01","position":5,"name":"Coverage","meaning":"Per domain and obligation kind: designed, built, proved and the gaps (Traceability's).","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM01","position":6,"name":"Refusals","meaning":"The rows the store refused on load, each with its file, line and rule; while there are any, nothing else is checked.","type":"text","required":false}
-{"read_model_id":"LA-PLT-RM01","position":7,"name":"Errors","meaning":"How many problems are errors.","type":"whole number","required":true}
-{"read_model_id":"LA-PLT-RM02","position":1,"name":"Command ID","meaning":"The command.","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM02","position":2,"name":"Title","meaning":"What the palette and the sheet call it, or the title its handler gives (\"Switch to Lathe\").","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM02","position":3,"name":"Group","meaning":"Where the sheet lists it.","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM02","position":4,"name":"Shown keys","meaning":"Its keys as the person bound them, as the platform shows them (DS01).","type_value_object_id":"LA-VO61","required":false}
-{"read_model_id":"LA-PLT-RM02","position":5,"name":"ARIA keys","meaning":"What `aria-keyshortcuts` says; none for a sequence.","type":"text","required":false}
-{"read_model_id":"LA-PLT-RM02","position":6,"name":"Default keys","meaning":"Its keys on this platform before the person changed them.","type_value_object_id":"LA-VO61","required":false}
-{"read_model_id":"LA-PLT-RM02","position":7,"name":"Changed","meaning":"The person changed its keys: the sheet offers Reset.","type":"yes/no","required":true}
-{"read_model_id":"LA-PLT-RM02","position":8,"name":"Customizable","meaning":"The person may bind its keys: not the browser's own, nor an ARIA control's.","type":"yes/no","required":true}
-{"read_model_id":"LA-PLT-RM03","position":1,"name":"Theme ID","meaning":"The theme.","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM03","position":2,"name":"Name","meaning":"What it is called.","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM03","position":3,"name":"Built in","meaning":"Whether Lathe ships it.","type":"yes/no","required":true}
-{"read_model_id":"LA-PLT-RM03","position":4,"name":"In use","meaning":"Whether it is the chosen theme.","type":"yes/no","required":true}
-{"read_model_id":"LA-PLT-RM03","position":5,"name":"Color mode","meaning":"The mode in use.","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM04","position":1,"name":"Folder","meaning":"A recent folder, latest first.","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM04","position":2,"name":"Shown as","meaning":"The folder with the home folder as `~`.","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM08","position":1,"name":"Kind","meaning":"A kind: its label, stage, place in reading order, parent kinds and columns, whether it is an obligation, its ID scope and the product that declares it.","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM08","position":2,"name":"Stage","meaning":"A stage with its label and description, in order.","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM08","position":3,"name":"Relation","meaning":"A pair of kinds a relation may link, with its role and its words read from each end.","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM08","position":4,"name":"Columns","meaning":"Each table's columns, as their fields' inputs take them.","type":"text","required":true}
+{"read_model_id":"LA-MOD-RM44","position":1,"name":"Guarantee","meaning":"The guarantee's row: its ID, title, domain and statement.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-MOD-RM44","position":2,"name":"Kept by","meaning":"The building blocks that keep it, by ID.","type":"text","required":true}
+{"read_model_id":"LA-MOD-RM44","position":3,"name":"Tests","meaning":"Its guarantee tests, each with the test data sets it starts from.","type":"text","required":true}
+{"read_model_id":"LA-MOD-RM44","position":4,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the guarantee: the guarantee or one of its tests.","type":"text","required":true}
 {"read_model_id":"LA-PRD-RM01","position":1,"name":"Kinds","meaning":"Every kind, Lathe's and the product's, by stage and position, with its label, description, stage, parents and children, obligation, ID pattern, example and scope.","type":"text","required":true}
 {"read_model_id":"LA-PRD-RM01","position":2,"name":"Tables","meaning":"Each table's role, keys and columns with their types, values, references and descriptions.","type":"text","required":true}
 {"read_model_id":"LA-PRD-RM01","position":3,"name":"Relations","meaning":"Each relation's role, scope, labels, description and pairs.","type":"text","required":true}
@@ -152,6 +130,10 @@
 {"read_model_id":"LA-PRD-RM01","position":5,"name":"Checks","meaning":"Each check's name, severity, summary, explanation and kinds, Lathe's, the engine's own and the product's.","type":"text","required":true}
 {"read_model_id":"LA-PRD-RM02","position":1,"name":"ID","meaning":"The record.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-PRD-RM02","position":2,"name":"Data file","meaning":"The data file that holds its row.","type":"text","required":false}
+{"read_model_id":"LA-PRD-RM08","position":1,"name":"Kind","meaning":"A kind: its label, stage, place in reading order, parent kinds and columns, whether it is an obligation, its ID scope and the product that declares it.","type":"text","required":true}
+{"read_model_id":"LA-PRD-RM08","position":2,"name":"Stage","meaning":"A stage with its label and description, in order.","type":"text","required":true}
+{"read_model_id":"LA-PRD-RM08","position":3,"name":"Relation","meaning":"A pair of kinds a relation may link, with its role and its words read from each end.","type":"text","required":true}
+{"read_model_id":"LA-PRD-RM08","position":4,"name":"Columns","meaning":"Each table's columns, as their fields' inputs take them.","type":"text","required":true}
 {"read_model_id":"LA-PRD-RM21","position":1,"name":"Product","meaning":"The product's row.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-PRD-RM21","position":2,"name":"Roles","meaning":"Its roles, in order.","type":"text","required":true}
 {"read_model_id":"LA-PRD-RM21","position":3,"name":"Declarations","meaning":"Its product kinds with their fields, and its product relations.","type":"text","required":true}
@@ -256,3 +238,25 @@
 {"read_model_id":"LA-UCS-RM22","position":2,"name":"Settings","meaning":"Its settings in order, each a name and what a follower decides in it.","type":"text","required":true}
 {"read_model_id":"LA-UCS-RM22","position":3,"name":"Rules","meaning":"Its rules by ID, each with its tests and the test data sets they start from.","type":"text","required":true}
 {"read_model_id":"LA-UCS-RM22","position":4,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the pattern: the pattern, a pattern rule or a pattern rule test.","type":"text","required":true}
+{"read_model_id":"LA-WBN-RM01","position":1,"name":"Data folder","meaning":"Where the product's data files were read from, as `lathe.config.json` names it.","type":"text","required":true}
+{"read_model_id":"LA-WBN-RM01","position":2,"name":"Records","meaning":"Every record with its kind, columns, part rows, parent, product and domain.","type":"text","required":true}
+{"read_model_id":"LA-WBN-RM01","position":3,"name":"Links","meaning":"Every link, with its relation and both ends.","type":"text","required":true}
+{"read_model_id":"LA-WBN-RM01","position":4,"name":"Problems","meaning":"Every problem: its severity, check, record and message (Checking's RM01 Problems).","type":"text","required":true}
+{"read_model_id":"LA-WBN-RM01","position":5,"name":"Coverage","meaning":"Per domain and obligation kind: designed, built, proved and the gaps (Traceability's).","type":"text","required":true}
+{"read_model_id":"LA-WBN-RM01","position":6,"name":"Refusals","meaning":"The rows the store refused on load, each with its file, line and rule; while there are any, nothing else is checked.","type":"text","required":false}
+{"read_model_id":"LA-WBN-RM01","position":7,"name":"Errors","meaning":"How many problems are errors.","type":"whole number","required":true}
+{"read_model_id":"LA-WBN-RM02","position":1,"name":"Command ID","meaning":"The command.","type":"text","required":true}
+{"read_model_id":"LA-WBN-RM02","position":2,"name":"Title","meaning":"What the palette and the sheet call it, or the title its handler gives (\"Switch to Lathe\").","type":"text","required":true}
+{"read_model_id":"LA-WBN-RM02","position":3,"name":"Group","meaning":"Where the sheet lists it.","type":"text","required":true}
+{"read_model_id":"LA-WBN-RM02","position":4,"name":"Shown keys","meaning":"Its keys as the person bound them, as the platform shows them (DS01).","type_value_object_id":"LA-VO61","required":false}
+{"read_model_id":"LA-WBN-RM02","position":5,"name":"ARIA keys","meaning":"What `aria-keyshortcuts` says; none for a sequence.","type":"text","required":false}
+{"read_model_id":"LA-WBN-RM02","position":6,"name":"Default keys","meaning":"Its keys on this platform before the person changed them.","type_value_object_id":"LA-VO61","required":false}
+{"read_model_id":"LA-WBN-RM02","position":7,"name":"Changed","meaning":"The person changed its keys: the sheet offers Reset.","type":"yes/no","required":true}
+{"read_model_id":"LA-WBN-RM02","position":8,"name":"Customizable","meaning":"The person may bind its keys: not the browser's own, nor an ARIA control's.","type":"yes/no","required":true}
+{"read_model_id":"LA-WBN-RM03","position":1,"name":"Theme ID","meaning":"The theme.","type":"text","required":true}
+{"read_model_id":"LA-WBN-RM03","position":2,"name":"Name","meaning":"What it is called.","type":"text","required":true}
+{"read_model_id":"LA-WBN-RM03","position":3,"name":"Built in","meaning":"Whether Lathe ships it.","type":"yes/no","required":true}
+{"read_model_id":"LA-WBN-RM03","position":4,"name":"In use","meaning":"Whether it is the chosen theme.","type":"yes/no","required":true}
+{"read_model_id":"LA-WBN-RM03","position":5,"name":"Color mode","meaning":"The mode in use.","type":"text","required":true}
+{"read_model_id":"LA-WBN-RM04","position":1,"name":"Folder","meaning":"A recent folder, latest first.","type":"text","required":true}
+{"read_model_id":"LA-WBN-RM04","position":2,"name":"Shown as","meaning":"The folder with the home folder as `~`.","type":"text","required":true}

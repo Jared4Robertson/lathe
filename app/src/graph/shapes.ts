@@ -28,7 +28,7 @@ export type Shape =
   | 'diamond';
 
 /** A small glyph a kind adds before its eyebrow: a shape shared with another kind, told apart. */
-export type Mark = 'value' | 'gear' | 'lens' | 'marker' | 'ruler' | 'port' | 'target' | 'data' | 'plug' | 'route';
+export type Mark = 'value' | 'gear' | 'lens' | 'marker' | 'ruler' | 'port' | 'target' | 'data' | 'plug' | 'route' | 'seal';
 
 export interface KindShape { shape: Shape; mark?: Mark }
 
@@ -55,7 +55,7 @@ export const SHAPES: Readonly<Record<Shape, ShapeSpec>> = {
   folder: { name: 'a folder with a tab', kinds: 'Stage, folder or group, with its count', room: { l: 0, r: 0, t: 8, b: 0 }, draw: 'clipped', centered: false },
   double: { name: 'a double border', kinds: 'Aggregate', room: { l: 2, r: 2, t: 2, b: 2 }, draw: 'box', centered: false },
   box: { name: 'a plain box', kinds: 'Entity (a business outcome, journey, value object, read model, domain service, term, integration or test data set with its mark), and any kind a product adds', room: NO_ROOM, draw: 'box', centered: false },
-  octagon: { name: 'an octagon', kinds: 'Constraint, invariant, specification, pattern rule (a policy with a gear, a standard rule with a ruler)', room: NO_ROOM, draw: 'clipped', centered: false },
+  octagon: { name: 'an octagon', kinds: 'Constraint, invariant, specification, pattern rule (a policy with a gear, a standard rule with a ruler, a guarantee with a seal)', room: NO_ROOM, draw: 'clipped', centered: false },
   flag: { name: 'a flag, notched on the right', kinds: 'Domain event', room: { l: 0, r: 10, t: 0, b: 0 }, draw: 'clipped', centered: false },
   parallelogram: { name: 'a slanted box', kinds: 'Command (a query with a lens)', room: { l: 8, r: 8, t: 0, b: 0 }, draw: 'clipped', centered: false },
   stadium: { name: 'a stadium', kinds: 'Use case', room: { l: 4, r: 8, t: 0, b: 0 }, draw: 'radius', centered: true },
@@ -84,6 +84,7 @@ export const MARKS: Readonly<Record<Mark, string>> = {
   data: 'a cylinder: a test data set, drawn as a plain box',
   plug: 'a plug: an interface, drawn as a view',
   route: 'a route: a journey, its steps in order, drawn as a plain box',
+  seal: 'a seal: a guarantee, the promise a platform domain makes to every other domain, drawn as a rule',
 };
 
 const TECHNICAL: KindShape = { shape: 'component' };
@@ -107,6 +108,7 @@ const KIND_SHAPES: Readonly<Record<string, KindShape>> = {
   query: { shape: 'parallelogram', mark: 'lens' },
   policy: { shape: 'octagon', mark: 'gear' },
   domain_service: { shape: 'box', mark: 'gear' },
+  guarantee: { shape: 'octagon', mark: 'seal' },
   storage_requirement: { shape: 'page', mark: 'data' },
   term: { shape: 'box', mark: 'marker' },
   use_case: { shape: 'stadium' },
@@ -149,6 +151,7 @@ const KIND_SHAPES: Readonly<Record<string, KindShape>> = {
   specification_test: TEST,
   policy_test: TEST,
   domain_service_test: TEST,
+  guarantee_test: TEST,
   storage_requirement_test: TEST,
   use_case_test: TEST,
   view_test: TEST,

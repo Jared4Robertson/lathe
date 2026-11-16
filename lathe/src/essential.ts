@@ -11,7 +11,8 @@ import type { KindDescription } from './platform/data/schema.ts';
 /**
  * The group a kind's records are read in: the domain model, use cases, flows and every other essential kind (model);
  * a view and its requirements, on their interface by nature (view); an interface, an integration and an API
- * requirement, a contract with the outside world that names its mechanism (surface).
+ * requirement, a contract with the outside world that names its mechanism, and a guarantee, a platform domain's contract
+ * with every other domain (surface).
  */
 export type WordGroup = 'model' | 'view' | 'surface';
 
@@ -44,7 +45,8 @@ export function wordGroupOf(kind: KindDescription): WordGroup | null {
   if (['pattern', 'pattern_rule', 'slot'].includes(kind.name)) return null;
   if (kind.stage === 'test-plan' && kind.complexity === 'as-parent') return null;
   if (kind.name === 'view' || kind.name === 'view_requirement') return 'view';
-  if (['interface', 'integration', 'api_requirement'].includes(kind.name)) return 'surface';
+  // A guarantee is a platform domain's contract with every other domain, and names the mechanism it promises.
+  if (['interface', 'integration', 'api_requirement', 'guarantee'].includes(kind.name)) return 'surface';
   return 'model';
 }
 

@@ -1,7 +1,7 @@
 import type { RecordSummary, SummaryLink } from '../../../../lathe/src/exploring/record-summaries/read-model';
 import type { FolderTree, OwnerFolders } from '../../../../lathe/src/exploring/folder-tree/read-model';
 import type { StoreProblem } from '../../../../lathe/src/server/contract';
-import type { MetaModel } from '../../platform/meta-model/reads';
+import type { MetaModel } from '../../product/meta-model/reads';
 import { emptyTree, keepTree, patchTree, type Tree, type TreeChange } from '../../graph/tree';
 import type { InputChange, MapInput } from '../../graph/layout-input';
 import { coverageOf, problemsOf, type ListedProblem, type RecordIndex, type Records } from './record-index';

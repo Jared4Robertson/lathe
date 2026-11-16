@@ -1,4 +1,4 @@
-// The Recent folders aggregate (LA-PLT-A9): its repository keeps the list in recent-folders.json, its commands,
+// The Recent folders aggregate (LA-WBN-A9): its repository keeps the list in recent-folders.json, its commands,
 // policy and read model go through it, and its rule refuses a folder twice, a relative path or more than 10.
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import os from 'node:os';
@@ -22,7 +22,7 @@ const json = (name: string): unknown => JSON.parse(readFileSync(path.join(temp, 
 const window = (folder: string, extra: Partial<OpenWindow> = {}): OpenWindow =>
   ({ folder, product: path.basename(folder), win: { id: folder } as unknown as OpenWindow['win'], errors: 0, launchRun: 0, ...extra });
 
-describe('LA-PLT-INV14-T The recent folders list puts the latest first, each folder once, at most 10: the Recent folders\' repository keeps it in recent-folders.json', () => {
+describe('LA-WBN-INV14-T The recent folders list puts the latest first, each folder once, at most 10: the Recent folders\' repository keeps it in recent-folders.json', () => {
   it('adds and clears through the repository, and the read model lists them as the menu shows them', () => {
     const recents = new RecentFolderRepository(file('recent-folders.json'));
     addRecentFolder(recents, { folder: '/p/a' });
@@ -42,7 +42,7 @@ describe('LA-PLT-INV14-T The recent folders list puts the latest first, each fol
     expect(recentFoldersProblems(Array.from({ length: 11 }, (_, i) => `/f${i}`))).toEqual([{ rule: 'recent-folders-once-at-most-10', message: 'The recent folders list 11 folders, more than 10.' }]);
   });
 
-  it('LA-PLT-PO03-T when a folder opens it goes first in the recent folders, the system\'s recent documents and the menu', () => {
+  it('LA-WBN-PO03-T when a folder opens it goes first in the recent folders, the system\'s recent documents and the menu', () => {
     const recents = new RecentFolderRepository(file('recent-3.json'));
     const shell = { addRecentDocument: vi.fn(), recentFoldersChanged: vi.fn() };
     onWindowOpenedAddRecentFolder({ folder: '/p/c', window: window('/p/c') }, recents, shell);
@@ -52,7 +52,7 @@ describe('LA-PLT-INV14-T The recent folders list puts the latest first, each fol
   });
 });
 
-describe('LA-PLT-INV14-T The recent folders list puts the latest first, each folder once, at most 10', () => {
+describe('LA-WBN-INV14-T The recent folders list puts the latest first, each folder once, at most 10', () => {
   it('puts the folder opened last first', () => {
     expect(addRecent(['/a', '/b'], '/c')).toEqual(['/c', '/a', '/b']);
   });

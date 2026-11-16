@@ -1,5 +1,5 @@
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
-import { type MetaStage } from '../platform/meta-model/reads';
+import { type MetaStage } from '../product/meta-model/reads';
 import type { Stage } from '../../../lathe/src/platform/data/schema';
 import type { KeyEntry } from '../views/StageChrome';
 import { BOX_LOOKS, type BoxLook } from './paint';
@@ -43,7 +43,7 @@ const SHAPE_WORDS: Readonly<Record<Shape, string>> = {
 
 /** A mark's word in the key: what it tells apart. */
 const MARK_WORDS: Readonly<Record<Mark, string>> = {
-  value: 'Value', gear: 'Logic', lens: 'Read', marker: 'Term', ruler: 'Standard', port: 'Integration', target: 'Outcome', data: 'Test data', plug: 'Interface', route: 'Journey',
+  value: 'Value', gear: 'Logic', lens: 'Read', marker: 'Term', ruler: 'Standard', port: 'Integration', target: 'Outcome', data: 'Test data', plug: 'Interface', route: 'Journey', seal: 'Guarantee',
 };
 
 const BADGES: Readonly<Record<Badge, { sample: string; words: string; meaning: string }>> = {

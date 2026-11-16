@@ -68,7 +68,7 @@ describe('checks', () => {
     const files = loaded.records.filter((r) => typeof r.fields.file === 'string').length;
     const tests = loaded.records.filter((r) => r.kind.endsWith('_test')).length;
     expect(loaded.problems).toHaveLength(1);
-    expect(loaded.problems[0].message).toBe(`${loaded.records.length} ${loaded.links.length} ${tests} ${files}/${files} 12 14`);
+    expect(loaded.problems[0].message).toBe(`${loaded.records.length} ${loaded.links.length} ${tests} ${files}/${files} 12 15`);
   });
 
   it('LA-CHK-UC02-R03-T01 Every check runs, in position order, even after one fails', async () => {
@@ -178,7 +178,7 @@ describe('checks', () => {
 });
 
 describe('loading', () => {
-  it('LA-PLT-UC01-R01-T01 loadWorkspace returns the Workspace contract', () => {
+  it('LA-WBN-UC01-R01-T01 loadWorkspace returns the Workspace contract', () => {
     expect(Object.keys(ws).sort()).toEqual(['chains', 'coverage', 'kinds', 'links', 'problems', 'records', 'relations', 'stages']);
     expect(Object.keys(ws.chains[0]).sort()).toEqual(['build', 'design', 'files', 'links', 'obligation', 'tests']);
     expect(Object.keys(ws.kinds[0]).sort()).toEqual(['complexity', 'description', 'id_scope', 'kind', 'label', 'obligation', 'parent_kinds', 'position', 'required_fields', 'stage']);
@@ -253,7 +253,7 @@ describe('loading', () => {
     expect(added.problems).toEqual([]);
   });
 
-  it("LA-PLT-UC02-R03-T01 A product's own kind is a row of its own data, adding a table for that product only", async () => {
+  it("LA-PRD-UC02-R03-T01 A product's own kind is a row of its own data, adding a table for that product only", async () => {
     const own = await openStore(await withMemo());
     expect(own.rows('product_kind').map((r) => r.name)).toContain('memo');
     expect(own.schema.tables.memo).toBeDefined();
@@ -269,7 +269,7 @@ describe('loading', () => {
     await again.close();
   });
 
-  it('LA-PLT-UC01-R04-T01 Each load reads the files afresh and writes nothing', async () => {
+  it('LA-WBN-UC01-R04-T01 Each load reads the files afresh and writes nothing', async () => {
     const fresh = await build(complete());
     const before = listing(fresh);
     const first = await loadWorkspace(fresh);

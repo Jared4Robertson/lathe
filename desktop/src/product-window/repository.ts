@@ -1,4 +1,4 @@
-// The Product window's repository (LA-PLT-REPO04): the open windows in memory, as they live only while the shell
+// The Product window's repository (LA-WBN-REPO04): the open windows in memory, as they live only while the shell
 // runs, and the places and chrome in window-state.json and chrome.json in the shell's user data folder, read on the
 // first load and rewritten when a save changes them.
 import { parseSavedChrome, type SavedChrome } from '../chrome.ts';

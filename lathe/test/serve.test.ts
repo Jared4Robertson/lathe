@@ -12,7 +12,7 @@ import { PACKAGE_DIR } from '../src/index.ts';
 import type { WriteAnswer } from '../src/server/contract.ts';
 import type { DataChange } from '../src/server/events.ts';
 import { summariesIn, type RecordSummaries } from '../src/exploring/record-summaries/read-model.ts';
-import type { MetaModel } from '../src/platform/meta-model/read-model.ts';
+import type { MetaModel } from '../src/product/meta-model/read-model.ts';
 import { openStore, SCHEMA_DIR } from '../src/platform/data/index.ts';
 import { APP_DIR, serve, type LatheServer } from '../src/server/serve.ts';
 
@@ -87,7 +87,7 @@ async function readEvents(response: Response, wanted: string, timeoutMs: number)
 }
 
 describe.skipIf(!prebuilt && !canBuild)('lathe serve', () => {
-  it('LA-PLT-UC23-R01-T01 LA-INT67-T01 Serve serves the app, the spec API and change events for the product repo, hearing a data file change from the file system', async () => {
+  it('LA-WBN-UC23-R01-T01 LA-INT67-T01 Serve serves the app, the spec API and change events for the product repo, hearing a data file change from the file system', async () => {
     const page = await fetch(`${BASE}/`);
     expect(page.status).toBe(200);
     expect(page.headers.get('content-type')).toContain('text/html');

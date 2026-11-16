@@ -1,11 +1,11 @@
 import { act, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { bindKey } from '../src/platform/key-bindings/commands/bind-key';
+import { bindKey } from '../src/workbench/key-bindings/commands/bind-key';
 import { isMac } from '../src/shell/keymap';
 import { desktopBridgeStub, openApp } from './helpers';
 
 // The desktop app's menus run app commands by ID through the preload's onCommand (LA-V66-R02), and show the person's
-// keys, which the page sends again whenever the key bindings change (LA-PLT-PO05).
+// keys, which the page sends again whenever the key bindings change (LA-WBN-PO05).
 
 afterEach(() => { delete window.latheDesktop; });
 
@@ -30,7 +30,7 @@ describe('desktop menu commands', () => {
     expect(unsubscribed).toBe(true);
   });
 
-  it('LA-PLT-PO05-T A rebound key reaches the window\'s menu keys', async () => {
+  it('LA-WBN-PO05-T A rebound key reaches the window\'s menu keys', async () => {
     const setMenuKeys = vi.fn<(keys: Record<string, string[]>) => void>();
     window.latheDesktop = desktopBridgeStub({ setMenuKeys });
     await openApp('/DM-SHOP-UC01');

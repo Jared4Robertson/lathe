@@ -17,7 +17,10 @@ export function everyKind(): Data {
     product_setting: [{ product_id: 'TL', max_children: 15, max_entities_per_aggregate: 7, technology_words: [] }],
 
     // Domain model.
-    domain: [{ id: 'TL-LEND', title: 'Lending', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }],
+    domain: [
+      { id: 'TL-LEND', title: 'Lending', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'Lending tools to members and getting them back.' },
+      { id: 'TL-PLAT', title: 'Platform', product_id: 'TL', position: 9, subdomain_type: 'generic', platform: true, description: 'What every domain stands on: the store and the server.' },
+    ],
     aggregate: [
       { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', identity: 'Loan ID', description: 'One tool lent to one member, with its return.' },
       { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND', identity: 'Tool ID', description: 'A tool the library holds.' },
@@ -43,6 +46,7 @@ export function everyKind(): Data {
     read_model_field: [{ read_model_id: 'TL-LEND-RM01', position: 1, name: 'Days overdue', meaning: 'How late the loan is.', type: 'whole number', required: false }],
     query: [{ id: 'TL-LEND-QRY01', title: 'List free tools', read_model_id: 'TL-LEND-RM01', description: 'The tools no active loan names.' }],
     policy: [{ id: 'TL-LEND-PO01', title: 'Remind on loan', command_id: 'TL-LEND-CMD01', statement: 'Whenever a loan is opened, the library MUST open its reminder.' }],
+    guarantee: [{ id: 'TL-PLAT-GU01', title: 'Every change is saved whole', domain_id: 'TL-PLAT', statement: 'Every change a domain makes MUST be saved whole or not at all.' }],
     domain_service: [{ id: 'TL-LEND-DS01', title: 'Late fee', domain_id: 'TL-LEND', statement: 'The fee MUST be a day rate times the days late.' }],
     storage_requirement: [{ id: 'TL-LEND-A1-SR01', title: 'A loan is saved with its event', aggregate_id: 'TL-LEND-A1', statement: 'A loan MUST be saved with its outbox event, or neither.' }],
     term: [
@@ -126,6 +130,7 @@ export function everyKind(): Data {
     specification_test: [{ id: 'TL-LEND-SP01-T', title: 'Free tools', specification_id: 'TL-LEND-SP01', level: 'integration', state: 'not automated yet', when: 'Asks for free tools', then: 'Expects only the tool on no loan' }],
     policy_test: [{ id: 'TL-LEND-PO01-T', title: 'A reminder follows a loan', policy_id: 'TL-LEND-PO01', ...automated('test/policies.test.ts'), when: 'Opens a loan', then: 'Expects a reminder' }],
     storage_requirement_test: [{ id: 'TL-LEND-A1-SR01-T01', title: 'A failed save leaves nothing', storage_requirement_id: 'TL-LEND-A1-SR01', ...automated('test/loans.test.ts'), level: 'integration', when: 'Opens a loan whose event cannot be written', then: 'Expects neither saved' }],
+    guarantee_test: [{ id: 'TL-PLAT-GU01-T01', title: 'A failed change saves nothing', guarantee_id: 'TL-PLAT-GU01', ...automated('test/saving.test.ts'), level: 'integration', when: 'Saves a change that fails half way', then: 'Expects nothing saved' }],
     domain_service_test: [{ id: 'TL-LEND-DS01-T01', title: 'Three days late', domain_service_id: 'TL-LEND-DS01', ...automated('test/fees.test.ts'), when: 'Works out the fee for three days late', then: 'Expects three day rates' }],
     use_case_test: [{ id: 'TL-LEND-UC01-R01-T01', title: 'A lent tool is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'system', state: 'automated', file: 'test/borrow.test.ts', when: 'Borrows a tool on loan', then: 'Expects a refusal' }],
     view_test: [{ id: 'TL-V01-R01-T01', title: 'Free tools come first', view_requirement_id: 'TL-V01-R01', level: 'browser', state: 'automated', file: 'e2e/catalog.spec.ts', when: 'Opens the catalog', then: 'Expects the free tools first' }],
@@ -166,6 +171,7 @@ export function everyKind(): Data {
     meets: [{ source_id: 'TL-LEND-CMD01-H', target_id: 'TL-STD-CODE-R01' }],
     about: [{ source_id: 'TL-LEND-Q01', target_id: 'TL-LEND-UC01' }],
     serves: [{ source_id: 'TL-LEND-A1', target_id: 'TL-BO01' }],
+    kept_by: [{ source_id: 'TL-PLAT-GU01', target_id: 'TL-LEND-ENTRY01' }],
     carries_out: [{ source_id: 'TL-JR01-S01', target_id: 'TL-LEND-PO01' }],
     measured_by: [{ source_id: 'TL-BO01', target_id: 'TL-LEND-DS01-T01' }],
     starts_from: [{ source_id: 'TL-INT01-T01', target_id: 'TL-LEND-TD01' }],

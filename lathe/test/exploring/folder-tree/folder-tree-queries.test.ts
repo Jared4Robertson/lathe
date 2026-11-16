@@ -59,6 +59,35 @@ describe('LA-EXP-UC01-R06-T02 The folder tree read gives Shared and each domain 
     expect(t.domains.map((d) => `${d.owner} ${d.platform}`)).toEqual(['EX-LEND false', 'EX-PLT true']);
   });
 
+  it('LA-EXP-DS03-T10 reads a platform domain in its four sections in place of the stages, and a business domain with no empty Guarantees or Standards folder', async () => {
+    const platform = { id: 'EX-PLT', title: 'Platform', product_id: 'EX', position: 2, subdomain_type: 'supporting', platform: true, description: 'The shell the domains stand on.' };
+    const t = await tree({
+      ...DATA,
+      domain: [...DATA.domain, platform],
+      aggregate: [...DATA.aggregate, { id: 'EX-PLT-A1', title: 'Window', domain_id: 'EX-PLT', identity: 'Window ID', description: 'A window of the app.' }],
+      tooling: [{ id: 'EX-PLT-TOOL01', title: 'build', domain_id: 'EX-PLT', file: 'scripts/build.ts' }],
+      guarantee: [{ id: 'EX-PLT-GU01', title: 'Every domain is built the same way', domain_id: 'EX-PLT', statement: 'Every domain MUST be built the same way.' }],
+      guarantee_test: [{ id: 'EX-PLT-GU01-T01', title: 'The build writes every domain', guarantee_id: 'EX-PLT-GU01', level: 'integration', state: 'not automated yet', when: 'Builds.', then: 'Expects every domain written.' }],
+      kept_by: [{ source_id: 'EX-PLT-GU01', target_id: 'EX-PLT-TOOL01' }],
+      standard: [...(DATA.standard ?? []), { id: 'EX-STD-BUILD', title: 'Build', domain_id: 'EX-PLT', type: 'engineering', description: 'How the build is kept.' }],
+    });
+    const [lend, plt] = t.domains;
+    expect(plt.stages.map((s) => `${s.key} ${s.stage} ${s.section} ${s.count}`)).toEqual([
+      'EX-PLT/guarantees domain-model guarantees 1',
+      'EX-PLT/building-blocks technical-specification building-blocks 1',
+      'EX-PLT/standards technical-specification standards 1',
+      'EX-PLT/quality-suites test-plan quality-suites 1',
+    ]);
+    // Each section with one folder shows it directly; the aggregate it should not hold is in none of them.
+    expect(plt.stages.map((s) => s.direct)).toEqual([true, false, true, false]);
+    expect(plt.stages[0].folders[0].entries.map((e) => e.id)).toEqual(['EX-PLT-GU01']);
+    expect(plt.stages.flatMap((s) => s.folders.flatMap((f) => f.entries.map((e) => e.id)))).not.toContain('EX-PLT-A1');
+    expect(plt.stages[3].folders.find((f) => f.kind === 'guarantee_test')!.entries.map((e) => e.id)).toEqual(['EX-PLT-GU01-T01']);
+    expect(lend.stages.every((s) => s.section === null)).toBe(true);
+    expect(lend.stages.flatMap((s) => s.folders.map((f) => f.kind))).not.toContain('guarantee');
+    expect(lend.stages.flatMap((s) => s.folders.map((f) => f.kind))).not.toContain('standard');
+  });
+
   it('folds an aggregate\'s entities and invariants under it, and keeps empty folders only where a kind can start a branch', async () => {
     const domainModel = stage((await tree()).domains[0], 'domain-model');
     const aggregates = domainModel.folders.find((f) => f.kind === 'aggregate')!;

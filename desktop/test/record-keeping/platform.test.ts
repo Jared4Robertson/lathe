@@ -27,7 +27,7 @@ const opened = async (name: string, folder: string) => {
 };
 
 describe("Show a record's menu", () => {
-  it("LA-PLT-UC101-R01-T01 LA-PLT-UC101-FL-T A record's menu is shown over its window from the record's ID alone", async () => {
+  it("LA-WBN-UC101-R01-T01 LA-WBN-UC101-FL-T A record's menu is shown over its window from the record's ID alone", async () => {
     const windows = await opened('menu', '/p/a');
     const dataFileOf = vi.fn(async () => '/p/a/data/use_case.jsonl');
     const popup = vi.fn();
@@ -42,7 +42,7 @@ describe("Show a record's menu", () => {
 });
 
 describe('Reveal a product folder', () => {
-  it("LA-PLT-UC102-R01-T01 LA-PLT-UC102-FL-T Reveal shows the folder of the window it is asked from, and none else", async () => {
+  it("LA-WBN-UC102-R01-T01 LA-WBN-UC102-FL-T Reveal shows the folder of the window it is asked from, and none else", async () => {
     const windows = await opened('reveal', '/p/a');
     const reveal = vi.fn();
     revealProductFolder(windows, { folder: '/p/x' }, reveal);
@@ -53,7 +53,7 @@ describe('Reveal a product folder', () => {
 });
 
 describe("The policies' reactions", () => {
-  it("LA-PLT-PO20-T A theme's colors color the window's chrome, are kept for the system's appearance, and a refused color changes nothing", async () => {
+  it("LA-WBN-PO20-T A theme's colors color the window's chrome, are kept for the system's appearance, and a refused color changes nothing", async () => {
     const windows = await opened('chrome', '/p/a');
     const colors = { background: '#101418', foreground: '#E8ECF0' };
     expect(setWindowChrome(windows, { folder: '/p/a', chrome: colors, dark: true, platform: 'darwin' })).toEqual(colors);
@@ -65,7 +65,7 @@ describe("The policies' reactions", () => {
     expect(windows.load().chrome.dark).toEqual(colors);
   });
 
-  it("LA-PLT-PO21-T A window's error count is kept as a whole number the window's own page sent, and nothing else", async () => {
+  it("LA-WBN-PO21-T A window's error count is kept as a whole number the window's own page sent, and nothing else", async () => {
     const windows = await opened('errors', '/p/a');
     expect(reportErrorCount(windows, { folder: '/p/a', count: 7 })).toBe(true);
     expect(windows.load().open.get('/p/a')?.errors).toBe(7);

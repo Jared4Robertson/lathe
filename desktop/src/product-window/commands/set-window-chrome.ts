@@ -1,4 +1,4 @@
-// Set a window's chrome (LA-PLT-CMD13): the page's theme colors, checked, color the window's chrome and launch view,
+// Set a window's chrome (LA-WBN-CMD13): the page's theme colors, checked, color the window's chrome and launch view,
 // and are kept for the system's appearance, so the next window opens in them.
 import { applyChrome, type Chrome } from '../../chrome.ts';
 import type { ProductWindowRepository } from '../repository.ts';

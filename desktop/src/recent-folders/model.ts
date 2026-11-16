@@ -1,4 +1,4 @@
-// Recent folders (LA-PLT-A9): the folders opened last, latest first, each once, at most RECENT_LIMIT, which one
+// Recent folders (LA-WBN-A9): the folders opened last, latest first, each once, at most RECENT_LIMIT, which one
 // list serves every window (File › Open Recent, and the folder a launch opens).
 import path from 'node:path';
 

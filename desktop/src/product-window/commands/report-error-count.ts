@@ -1,4 +1,4 @@
-// Report a window's error count (LA-PLT-CMD14): the page's number of check errors, kept for the Dock badge.
+// Report a window's error count (LA-WBN-CMD14): the page's number of check errors, kept for the Dock badge.
 import { parseErrorCount } from '../../dock.ts';
 import type { ProductWindowRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';

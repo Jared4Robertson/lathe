@@ -15,7 +15,7 @@ import { SPECIFICATION_FIELDS } from './fields.generated';
 import { useNextSpecificationId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
-import { kindWord } from '../../platform/meta-model/reads';
+import { kindWord } from '../../product/meta-model/reads';
 
 // The Specification editor (LA-MOD-A5): the actions on a record of a specification, each sending one of the
 // aggregate's own commands, POST /api/specification/<command>, and nothing else. Edit sends its kind's Change with only

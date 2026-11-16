@@ -1,5 +1,5 @@
-// Close a product window (LA-PLT-CMD11): a closed window leaves the open windows, and the command raises Product
-// window closed (LA-PLT-EV05).
+// Close a product window (LA-WBN-CMD11): a closed window leaves the open windows, and the command raises Product
+// window closed (LA-WBN-EV05).
 import { raiseProductWindowClosed, type WindowClosedReactions } from '../events.ts';
 import type { ProductWindowRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';

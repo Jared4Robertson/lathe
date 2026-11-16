@@ -55,10 +55,10 @@ function declarationProblems(product: Product, view: ReadView): RuleProblem[] {
     (table === 'technical_record' && own.get(end)?.stage === 'technical-specification') ||
     (table === 'accidental_record' && (own.get(end)?.stage === 'technical-specification' || own.get(end)?.complexity === 'accidental')) ||
     (table === 'presents_source' && own.get(end)?.stage === 'interface-design');
-  // The provided_by, fills and generates pairs each own kind has without a declaration (platform/data/product-kinds.ts).
+  // The provided_by, fills, generates and kept_by pairs each own kind has without a declaration (platform/data/product-kinds.ts).
   const accounting = new Set(
     product.kinds.flatMap(({ row }) =>
-      accountingPairs(row.name, row.obligation === true, ownMember('accidental_record', row.name)).map((p) => p.join(' ')),
+      accountingPairs(row.name, row.obligation === true, ownMember('accidental_record', row.name), ownMember('technical_record', row.name)).map((p) => p.join(' ')),
     ),
   );
   const firstOf = new Map<string, ProductRelationRow>();
@@ -70,7 +70,7 @@ function declarationProblems(product: Product, view: ReadView): RuleProblem[] {
     }
     const existing = schema.relations[pair.name];
     if (accounting.has(`${pair.name} ${pair.source_kind} ${pair.target_kind}`)) {
-      relation(pair, `Every ${pair.name === 'provided_by' ? 'obligation or accidental' : 'accidental'} kind has the pair ${pair.name} from ${pair.source_kind} to ${pair.target_kind} already, as Lathe's own kinds do; drop the declaration.`);
+      relation(pair, `Every ${pair.name === 'provided_by' ? 'obligation or accidental' : pair.name === 'kept_by' ? 'technical' : 'accidental'} kind has the pair ${pair.name} from ${pair.source_kind} to ${pair.target_kind} already, as Lathe's own kinds do; drop the declaration.`);
       continue;
     }
     if (existing && existing.productId === null) {

@@ -1,5 +1,5 @@
-// LA-PLT-UC01-R03-T01 LA-PLT-UC01-R10-T01 LA-PLT-UC03-R05-T01: the engine's performance budgets (LA-PLT-UC01-R03,
-// LA-PLT-UC01-R10, LA-PLT-UC03-R05), measured: `npm --prefix lathe run test:perf`.
+// LA-WBN-UC01-R03-T01 LA-WBN-UC01-R10-T01 LA-WBN-UC03-R05-T01: the engine's performance budgets (LA-WBN-UC01-R03,
+// LA-WBN-UC01-R10, LA-WBN-UC03-R05), measured: `npm --prefix lathe run test:perf`.
 //
 // - Loading Lathe's own spec (a cold load: the data files read and loaded with every key and rule, then checked)
 //   takes under 2 s.
@@ -44,7 +44,7 @@ const repo = path.resolve(here, '../..');
 
 export const ENGINE_BUDGETS = { loadMs: 2000, reloadMs: 500, cliMs: 800, checkMs: 20000 } as const;
 /**
- * The large product's budgets (LA-PLT-UC03-R05). The edit's is the Owner's, and holds for the page's own writes too.
+ * The large product's budgets (LA-WBN-UC03-R05). The edit's is the Owner's, and holds for the page's own writes too.
  * The others are set from measurements on the dev machine (2026-10-29): without its three slow parts (the
  * term-used-unlinked check, the Use case rules and the record summaries' sort) a cold load with every check took about
  * 2.5 s, and so did the checks' run.
@@ -253,7 +253,7 @@ try {
   const live = await reload(lathe);
   judge("Lathe's spec, loaded again after a change", live.ms, ENGINE_BUDGETS.reloadMs, phases(live.timings));
   if (PROFILE) lines.push(`Steps of that load (1 ms and over):\n${profile(live.timings)}`);
-  judge('A cold CLI command (lathe use-case get-use-case)', cliGetUseCase(lathe, 'LA-PLT-UC01'), ENGINE_BUDGETS.cliMs, `median of ${RUNS} fresh processes`);
+  judge('A cold CLI command (lathe use-case get-use-case)', cliGetUseCase(lathe, 'LA-WBN-UC01'), ENGINE_BUDGETS.cliMs, `median of ${RUNS} fresh processes`);
   judge('The full check (lathe check)', cliCheck(lathe), ENGINE_BUDGETS.checkMs, 'one fresh process on Lathe\'s spec');
   const refs: number[] = [];
   for (let i = 0; i < RUNS; i++) { const t = performance.now(); await buildReference(lathe); refs.push(performance.now() - t); }

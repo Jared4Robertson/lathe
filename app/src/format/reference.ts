@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { ColumnDescription } from '../../../lathe/src/platform/data/schema';
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
-import { type MetaStage } from '../platform/meta-model/reads';
+import { type MetaStage } from '../product/meta-model/reads';
 import type { Stage } from '../../../lathe/src/platform/data/schema';
 import { pageHref } from '../views/overlays';
 import type { Reference } from '../../../lathe/src/reference';

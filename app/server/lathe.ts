@@ -20,7 +20,7 @@ const ENGINE_RELOAD_RETRY_MS = 1500;
 // so no restart is needed. Its packages resolve from lathe/node_modules. `root` is the workspace: vite.config.ts passes LATHE_ROOT, or this repo when it is not set, and
 // the API serves its product and each other product its lathe.config.json lists. When any of their data files change,
 // or the package's own data (Lathe's checks), the API reads only the changed tables again and the pages hear
-// spec:changed with what changed (LA-PLT-EV06); a change to the package's schema changes every read.
+// spec:changed with what changed (LA-PRD-EV06); a change to the package's schema changes every read.
 export function latheApi(root: string, engineDir = path.resolve(import.meta.dirname, '../../lathe')): Plugin {
   const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
   const fail = (res: import('node:http').ServerResponse, error: string) => {

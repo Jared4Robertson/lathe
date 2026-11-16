@@ -126,7 +126,7 @@ describe('dev API plugin', () => {
     expect((await request(m, '/api/use-case/change-use-case', { method: 'POST', body: '{}', headers: { 'content-type': 'text/plain' } })).status).toBe(415);
   });
 
-  it('LA-PLT-UC03-R01-T02 reads the data again when a file changes under it', async () => {
+  it('LA-WBN-UC03-R01-T02 reads the data again when a file changes under it', async () => {
     const fake = await start(async () => realApi, root);
     const file = path.join(root, 'data/use_case.jsonl');
     await writeFile(file, (await readFile(file, 'utf8')).replace('Write a note', 'Write a long note'));
@@ -142,7 +142,7 @@ describe('dev API plugin', () => {
     expect((await summaries(fake.middlewares[0])).status).toBe(200);
   });
 
-  it('LA-PLT-UC03-R01-T02 answers 500 with the reason when the engine cannot be loaded', async () => {
+  it('LA-WBN-UC03-R01-T02 answers 500 with the reason when the engine cannot be loaded', async () => {
     const broken = await start(async () => { throw new Error('Cannot find module @duckdb/node-api'); }, root);
     const spec = await summaries(broken.middlewares[0]);
     expect(spec.status).toBe(500);
@@ -150,7 +150,7 @@ describe('dev API plugin', () => {
     expect((await request(broken.middlewares[0], '/EX')).nextCalled).toBe(true);
   });
 
-  it('LA-PLT-UC03-R01-T01 The server reads a changed data file\'s table again and sends spec:changed naming it and the read models that read it; a change to the package\'s schema changes every read', async () => {
+  it('LA-WBN-UC03-R01-T01 The server reads a changed data file\'s table again and sends spec:changed naming it and the read models that read it; a change to the package\'s schema changes every read', async () => {
     const product = await mkdtemp(path.join(tmpdir(), 'lathe-app-watch-'));
     try {
       const data = path.join(product, 'data');
@@ -187,7 +187,7 @@ describe('dev API plugin', () => {
     }
   });
 
-  it('LA-PLT-UC03-R01-T01 reloads the engine once after a burst of changes to its code, schema or manifest, then tells the pages to read everything', async () => {
+  it('LA-WBN-UC03-R01-T01 reloads the engine once after a burst of changes to its code, schema or manifest, then tells the pages to read everything', async () => {
     const product = await mkdtemp(path.join(tmpdir(), 'lathe-app-engine-'));
     try {
       await writeFile(path.join(product, 'lathe.config.json'), `${JSON.stringify({ schema: SCHEMA_VERSION })}\n`);
@@ -217,7 +217,7 @@ describe('dev API plugin', () => {
     }
   });
 
-  it('LA-PLT-UC03-R01-T01 reloads the engine when closing the old one fails on a new schema version, and tries once more when the fresh one still refuses the data', async () => {
+  it('LA-WBN-UC03-R01-T01 reloads the engine when closing the old one fails on a new schema version, and tries once more when the fresh one still refuses the data', async () => {
     const product = await mkdtemp(path.join(tmpdir(), 'lathe-app-engine-'));
     try {
       await writeFile(path.join(product, 'lathe.config.json'), `${JSON.stringify({ schema: SCHEMA_VERSION })}\n`);

@@ -2,7 +2,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import { COMMANDS, ariaKeyShortcuts, formatBinding, resolveCommands } from '../src/shell/keymap';
-import { bindKey } from '../src/platform/key-bindings/commands/bind-key';
+import { bindKey } from '../src/workbench/key-bindings/commands/bind-key';
 import { TOOLTIP_DELAY } from '../src/shell/Tooltip';
 import { openApp } from './helpers';
 import { testWorkspace } from './graph/workspace';
@@ -102,7 +102,7 @@ describe('shortcut hints', () => {
       expect(tooltip().querySelector('kbd')).toHaveTextContent(shown);
     }
   };
-  it('LA-PLT-DS01-T01 Tooltips and palette rows show the keys for the platform: ⌃ ⌥ ⇧ ⌘ on a Mac, Ctrl+ elsewhere', proveLaPltDs01T01);
+  it('LA-WBN-DS01-T01 Tooltips and palette rows show the keys for the platform: ⌃ ⌥ ⇧ ⌘ on a Mac, Ctrl+ elsewhere', proveLaPltDs01T01);
   it('LA-V61-R13-T02 Tooltips and palette rows show the keys as the platform shows them', proveLaPltDs01T01);
 
   it('LA-V64-R02-T01 The command palette lists each command with its shortcut right-aligned in kbd styling', async () => {
@@ -180,7 +180,7 @@ describe('shortcut hints', () => {
     expect(within(screen.getByRole('group', { name: 'Depth' })).getByRole('button', { name: '3' })).toHaveAttribute('aria-keyshortcuts', 'Plus =');
     expect(screen.getByRole('button', { name: 'Frame the focus' })).toHaveAttribute('aria-keyshortcuts', '.');
   };
-  it('LA-PLT-DS01-T02 Every control with a shortcut carries aria-keyshortcuts from the keymap', proveLaPltDs01T02);
+  it('LA-WBN-DS01-T02 Every control with a shortcut carries aria-keyshortcuts from the keymap', proveLaPltDs01T02);
   it('LA-V61-R12-T01 Every control with a shortcut names the platform\'s keys in aria-keyshortcuts', proveLaPltDs01T02);
   it('LA-V61-R14-T01 Every control with a shortcut carries aria-keyshortcuts', proveLaPltDs01T02);
 

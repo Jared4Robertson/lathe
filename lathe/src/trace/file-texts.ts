@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 // The text of the product's files as the loads read them (the files records name, the test files, the source files'
 // heads and the routes in them), kept for the process by each file's size, change time and inode, so a load after a
 // change reads again only the files that changed, and what is worked out from a file's text (its test cases, the routes
-// it names, whether it names an ID) is worked out once per version of the file (LA-PLT-UC01-R03). Every load still
+// it names, whether it names an ID) is worked out once per version of the file (LA-WBN-UC01-R03). Every load still
 // looks at every file: a file is read again whenever its size, change time or inode differ from those it was read at.
 
 interface Kept { version: string; text: Promise<string>; derived: Map<string, unknown> }

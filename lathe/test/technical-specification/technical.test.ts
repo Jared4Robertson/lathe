@@ -162,7 +162,7 @@ describe('the technical specification', () => {
 
 describe('standards', () => {
   it('LA-TEC-UC16-R01-T01 A standard sits under the product, its rules under it and their tests under each rule, and technical records meet a rule', async () => {
-    expect(parentsOf(schema, 'standard')).toEqual(['product.product_id']);
+    expect(parentsOf(schema, 'standard')).toEqual(['product.product_id', 'domain.domain_id']);
     expect(parentsOf(schema, 'standard_rule')).toEqual(['standard.standard_id']);
     expect([schema.kinds.standard, schema.kinds.standard_rule].map((k) => [k.stage, k.idPattern, k.obligation])).toEqual([
       ['technical-specification', '<P>-STD-<name>', false],

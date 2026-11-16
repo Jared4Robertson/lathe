@@ -187,7 +187,7 @@ describe('a command', () => {
     });
   });
 
-  it('LA-PLT-UC02-R03-T02 declares a product kind in any stage, then adds its records', async () => {
+  it('LA-PRD-UC02-R03-T02 declares a product kind in any stage, then adds its records', async () => {
     const { store, root } = await fresh();
     await run(store, 'product declare-product-kind', {
       name: 'report',

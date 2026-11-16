@@ -4,7 +4,7 @@ import type { DataChange } from '../../lathe/src/server/events';
 import { useDataVersion } from '../src/exploring/record-summaries/reads';
 import { readModelChanges } from '../src/record/read';
 
-// The data's version after a write (LA-PLT-UC03-R02, LA-V61-R54): the server announces a write's change, naming the read models it
+// The data's version after a write (LA-WBN-UC03-R02, LA-V61-R54): the server announces a write's change, naming the read models it
 // touched, before it answers the write, so the page waits for that change and reads again only those read models.
 
 const listeners = vi.hoisted(() => new Set<(change: DataChange | null) => void>());

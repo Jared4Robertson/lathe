@@ -1,4 +1,4 @@
-// Save a window's place (LA-PLT-CMD12): a window's size and position, and whether it is maximized or full screen,
+// Save a window's place (LA-WBN-CMD12): a window's size and position, and whether it is maximized or full screen,
 // kept by folder for the next time it opens.
 import { saveWindow, type SavedWindow } from '../model.ts';
 import type { ProductWindowRepository } from '../repository.ts';

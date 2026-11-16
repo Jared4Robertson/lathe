@@ -1,4 +1,4 @@
-// Stop a window's app server (LA-PLT-CMD16): stops the server the shell started for a folder, keeping the stop until
+// Stop a window's app server (LA-WBN-CMD16): stops the server the shell started for a folder, keeping the stop until
 // it settles, so quitting can wait for it.
 import type { AppServerRepository } from '../repository.ts';
 

@@ -15,7 +15,7 @@ import { useNextPatternId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
 import { FillSlotForm } from '../../traceability/slot-filling/FillSlotForm';
-import { kindWord, addedUnder } from '../../platform/meta-model/reads';
+import { kindWord, addedUnder } from '../../product/meta-model/reads';
 
 // The Pattern editor (LA-UCS-A2): the actions on a record of a pattern, each sending one of the aggregate's own
 // commands, POST /api/pattern/<command>, and nothing else. Edit sends its kind's Change with only what changed; Add

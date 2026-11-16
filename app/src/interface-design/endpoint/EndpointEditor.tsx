@@ -15,7 +15,7 @@ import { ENDPOINT_FIELDS } from './fields.generated';
 import { useNextEndpointId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
-import { kindWord } from '../../platform/meta-model/reads';
+import { kindWord } from '../../product/meta-model/reads';
 
 // The Endpoint editor (LA-IXD-A13): the actions on a record of an endpoint, each sending one of the aggregate's own
 // commands, POST /api/endpoint/<command>, and nothing else. Edit sends its kind's Change with only what changed; Add

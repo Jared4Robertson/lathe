@@ -1,4 +1,4 @@
-// The Recent folders read model (LA-PLT-RM04): each recent folder with the name File › Open Recent shows for it.
+// The Recent folders read model (LA-WBN-RM04): each recent folder with the name File › Open Recent shows for it.
 import { displayPath } from '../folders.ts';
 import type { RecentFolders } from './model.ts';
 

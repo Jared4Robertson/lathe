@@ -1,4 +1,4 @@
-// How the server follows the data files (LA-PLT-UC03-R04, LA-PLT-UC03-R02): a change reloads only the changed tables
+// How the server follows the data files (LA-WBN-UC03-R04, LA-WBN-UC03-R02): a change reloads only the changed tables
 // and is announced at once with the read models it touched; the check rows and coverage then run in the background on
 // the data built whole, a burst of changes making one run once the reads it sets off have answered, and are announced
 // when ready. Data refused only by the whole build (an integrity query, a database check) is served until the build
@@ -16,7 +16,7 @@ import { writeData } from './helpers.ts';
 
 afterAll(() => closeStores());
 
-describe('LA-PLT-UC03-R04-T01 LA-PLT-UC03-R02-T01 the checks run in the background after a burst of changes, once, and are announced when ready, reads first', () => {
+describe('LA-PLT-GU03-T01 LA-WBN-UC03-R04-T01 LA-WBN-UC03-R02-T01 the checks run in the background after a burst of changes, once, and are announced when ready, reads first', () => {
   it('announces each reload at once, one checks\' run after a burst, and a refusal the whole build finds', async () => {
     const root = writeData(everyKind());
     const server = createServer((req, res) => void handleApi(root, req, res, new URL(req.url ?? '/', 'http://localhost').pathname));

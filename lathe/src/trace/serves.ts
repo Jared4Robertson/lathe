@@ -21,7 +21,11 @@
 // A journey serves its outcomes directly too, and through it: its steps and its journey test, each use case a step
 // carries out with all that use case reaches (as if its group served them), and each policy a handoff step carries
 // out with what the policy reaches (its command and that command's chain). Each record keeps the use cases and the
-// journeys it serves through. The engine fills record_serves with it before the checks run (the serves-no-outcome
+// journeys it serves through. A guarantee, which a platform domain makes and no use case reaches, serves the outcomes of
+// the records of other domains that rely on it: those linked to one of the building blocks that keep it, in either
+// direction, by any relation but kept_by (a repository stored in its data store, a requirement its shared module
+// implements), or the pattern rules they carry out, which the domains that follow the pattern owe; its guarantee tests
+// serve them through it. The engine fills record_serves with it before the checks run (the serves-no-outcome
 // check reads it), and the Serves read model's projection (LA-TRC-RM12-PJ) answers from it.
 import type { ReadView } from '../platform/data/rules.ts';
 import type { Row } from '../platform/data/rows.ts';
@@ -95,6 +99,32 @@ export function servesOf(view: Pick<ReadView, 'schema' | 'rows' | 'readerOf'>): 
       const useCase = useCases.get(target);
       if (useCase) for (const id of useCase.reached) mark(id, outcomes, target, journey);
       else for (const id of reach([target])) mark(id, outcomes, null, journey);
+    }
+  }
+  // A guarantee serves what the records of other domains that rely on it serve, with its tests.
+  const guarantees = rows('guarantee');
+  if (guarantees.length) {
+    const placed = placementOf(view);
+    const keptBy = index(rows('kept_by'), 'source_id', 'target_id');
+    const ends = new Map<string, string[]>();
+    for (const relation of Object.keys(view.schema.relations)) {
+      if (relation === 'kept_by') continue;
+      for (const l of rows(relation)) {
+        const [source, target] = [String(l.source_id), String(l.target_id)];
+        ends.set(source, [...(ends.get(source) ?? []), target]);
+        ends.set(target, [...(ends.get(target) ?? []), source]);
+      }
+    }
+    const testsOf = index(rows('guarantee_test'), 'guarantee_id', 'id');
+    for (const g of guarantees) {
+      const guarantee = String(g.id);
+      const relying = (keptBy.get(guarantee) ?? []).flatMap((block) => ends.get(block) ?? [])
+        .filter((id) => { const at = placed.get(id); return at?.kind === 'pattern_rule' || (at?.domain != null && at.domain !== g.domain_id); });
+      for (const id of relying) {
+        const s = served.get(id);
+        if (!s) continue;
+        for (const at of [guarantee, ...(testsOf.get(guarantee) ?? [])]) mark(at, [...s.outcomes], null, null);
+      }
     }
   }
   return new Map([...served].map(([id, s]) => [id, { outcomes: byId(s.outcomes), useCases: byId(s.useCases), journeys: byId(s.journeys) }]));

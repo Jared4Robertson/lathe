@@ -16,7 +16,7 @@ import { READ_MODEL_FIELDS } from './fields.generated';
 import { useNextReadModelId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
-import { kindWord } from '../../platform/meta-model/reads';
+import { kindWord } from '../../product/meta-model/reads';
 
 // The Read model editor (LA-MOD-A10): the actions on a record of a read model, each sending one of the aggregate's own
 // commands, POST /api/read-model/<command>, and nothing else. Edit sends its kind's Change with only what changed (a

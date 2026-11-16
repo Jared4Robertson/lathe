@@ -15,7 +15,7 @@ import { STORAGE_REQUIREMENT_FIELDS } from './fields.generated';
 import { useNextStorageRequirementId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
-import { kindWord } from '../../platform/meta-model/reads';
+import { kindWord } from '../../product/meta-model/reads';
 
 // The Storage requirement editor (LA-MOD-A22): the actions on a record of a storage requirement, each sending one of
 // the aggregate's own commands, POST /api/storage-requirement/<command>, and nothing else. Edit sends its kind's Change

@@ -479,7 +479,7 @@ describe('The stage domains\' flows', () => {
     expect(['TL-LEND-EP01', 'TL-V01', 'TL-INT01'].map(domainOf)).toEqual(['TL-LEND', 'TL-LEND', 'TL-LEND']);
   });
 
-  it('LA-PLT-UC104-FL-T merge two branches\' data', async () => {
+  it('LA-PRD-UC115-FL-T merge two branches\' data', async () => {
     const tl = product();
     await tl.seed(LENDING);
     const git = (...args: string[]) => {
