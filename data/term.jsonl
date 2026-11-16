@@ -64,7 +64,6 @@
 {"id":"LA-MOD-TM74","title":"Guarantee test","domain_id":"LA-MOD","meaning":"A test that proves a guarantee from another domain's side: what that domain relies on holds.","group_name":"Platform"}
 {"id":"LA-MOD-TM75","title":"Kept by","domain_id":"LA-MOD","meaning":"How a guarantee names the building blocks that keep it: the code or setup that makes its promise hold.","group_name":"Platform"}
 {"id":"LA-MOD-TM76","title":"Quality suite","domain_id":"LA-MOD","meaning":"The tests of a platform domain, read as a section of its own: its guarantee tests, and the tests that prove the patterns it follows for the whole product, such as the stability, accessibility and performance suites.","group_name":"Platform"}
-{"id":"LA-PLT-TM09","title":"App server","domain_id":"LA-PLT","meaning":"What a window or `lathe serve` runs Lathe from."}
 {"id":"LA-PRD-TM01","title":"Product","domain_id":"LA-PRD","meaning":"A set of specs about one piece of software, kept apart from every other: nothing in it points outside it.","group_name":"Use cases and design"}
 {"id":"LA-PRD-TM04","title":"Stage","domain_id":"LA-PRD","meaning":"One of the six steps of work, in order, that every kind belongs to, from discovery to the test plan.","group_name":"Records"}
 {"id":"LA-PRD-TM13","title":"Product kind","domain_id":"LA-PRD","meaning":"A kind a product declares for itself, in any stage, under any kind.","group_name":"Records"}
@@ -116,3 +115,4 @@
 {"id":"LA-WBN-TM06","title":"Color mode","domain_id":"LA-WBN","meaning":"System, Light or Dark: which of every theme's two sets shows."}
 {"id":"LA-WBN-TM07","title":"Product folder","domain_id":"LA-WBN","meaning":"A folder with a Lathe configuration or a data folder, which Lathe opens."}
 {"id":"LA-WBN-TM08","title":"Product window","domain_id":"LA-WBN","meaning":"One desktop window showing one product folder."}
+{"id":"LA-WBN-TM09","title":"App server","domain_id":"LA-WBN","meaning":"What a window or `lathe serve` runs Lathe from."}

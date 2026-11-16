@@ -35,7 +35,6 @@
 {"id":"LA-MOD-INV60-RL","title":"term-builds-on-itself","invariant_id":"LA-MOD-INV60","file":"lathe/src/domain-modeling/domain/rules.ts"}
 {"id":"LA-MOD-INV70-RL","title":"policy-hears-published","invariant_id":"LA-MOD-INV70","file":"lathe/src/domain-modeling/command/rules.ts"}
 {"id":"LA-MOD-INV80-RL","title":"read-model-fed-by-published","invariant_id":"LA-MOD-INV80","file":"lathe/src/domain-modeling/read-model/rules.ts"}
-{"id":"LA-PLT-INV06-RL","title":"server-not-on-5199","invariant_id":"LA-PLT-INV06","file":"desktop/src/app-server/rules.ts"}
 {"id":"LA-PRD-INV186-RL","title":"title-from-field","invariant_id":"LA-PRD-INV186","file":"lathe/src/product/extension-record/rules.ts"}
 {"id":"LA-PRD-INV187-RL","title":"journey-step-id","invariant_id":"LA-PRD-INV187","file":"lathe/src/product/journey/rules.ts"}
 {"id":"LA-PRD-INV188-RL","title":"journey-test-id","invariant_id":"LA-PRD-INV188","file":"lathe/src/product/journey/rules.ts"}
@@ -68,6 +67,7 @@
 {"id":"LA-WBN-INV03-RL","title":"built-in-theme-unchanged","invariant_id":"LA-WBN-INV03","file":"app/src/workbench/appearance/rules.ts"}
 {"id":"LA-WBN-INV04-RL","title":"chosen-theme-exists","invariant_id":"LA-WBN-INV04","file":"app/src/workbench/appearance/rules.ts"}
 {"id":"LA-WBN-INV05-RL","title":"one-window-per-folder","invariant_id":"LA-WBN-INV05","file":"desktop/src/product-window/rules.ts"}
+{"id":"LA-WBN-INV06-RL","title":"server-not-on-5199","invariant_id":"LA-WBN-INV06","file":"desktop/src/app-server/rules.ts"}
 {"id":"LA-WBN-INV14-RL","title":"recent-folders-once-at-most-10","invariant_id":"LA-WBN-INV14","file":"desktop/src/recent-folders/rules.ts"}
 {"id":"LA-WBN-INV30-RL","title":"panel-width-within-limits","invariant_id":"LA-WBN-INV30","file":"app/src/workbench/panel/rules.ts"}
 {"id":"LA-WBN-INV31-RL","title":"custom-editor-has-command","invariant_id":"LA-WBN-INV31","file":"desktop/src/shell-settings/rules.ts"}

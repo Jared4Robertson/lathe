@@ -29,7 +29,7 @@
 {"source_id":"LA-UCS-QRY101-CLI","target_id":"LA-UCS-QRY101"}
 {"source_id":"LA-UCS-QRY139-CLI","target_id":"LA-UCS-QRY139"}
 {"source_id":"LA-V01","target_id":"LA-PRD-QRY01"}
-{"source_id":"LA-V02","target_id":"LA-PLT-QRY11"}
+{"source_id":"LA-V02","target_id":"LA-PRD-QRY11"}
 {"source_id":"LA-V03","target_id":"LA-CHK-QRY10"}
 {"source_id":"LA-V100","target_id":"LA-EXP-CMD44"}
 {"source_id":"LA-V100","target_id":"LA-EXP-CMD45"}
@@ -402,9 +402,9 @@
 {"source_id":"LA-V65","target_id":"LA-WBN-CMD58"}
 {"source_id":"LA-V65","target_id":"LA-WBN-CMD59"}
 {"source_id":"LA-V65","target_id":"LA-WBN-QRY03"}
-{"source_id":"LA-V66","target_id":"LA-PLT-CMD16"}
 {"source_id":"LA-V66","target_id":"LA-WBN-CMD02"}
 {"source_id":"LA-V66","target_id":"LA-WBN-CMD10"}
+{"source_id":"LA-V66","target_id":"LA-WBN-CMD16"}
 {"source_id":"LA-V66","target_id":"LA-WBN-CMD20"}
 {"source_id":"LA-V66","target_id":"LA-WBN-QRY06"}
 {"source_id":"LA-V67","target_id":"LA-WBN-CMD02"}
@@ -413,10 +413,10 @@
 {"source_id":"LA-V67","target_id":"LA-WBN-CMD12"}
 {"source_id":"LA-V67","target_id":"LA-WBN-CMD13"}
 {"source_id":"LA-V68","target_id":"LA-WBN-CMD10"}
-{"source_id":"LA-V69","target_id":"LA-PLT-CMD15"}
 {"source_id":"LA-V69","target_id":"LA-WBN-CMD10"}
+{"source_id":"LA-V69","target_id":"LA-WBN-CMD15"}
 {"source_id":"LA-V69","target_id":"LA-WBN-CMD46"}
-{"source_id":"LA-V70","target_id":"LA-PLT-CMD15"}
+{"source_id":"LA-V70","target_id":"LA-WBN-CMD15"}
 {"source_id":"LA-V71","target_id":"LA-CHK-QRY02"}
 {"source_id":"LA-V71","target_id":"LA-WBN-QRY06"}
 {"source_id":"LA-V90","target_id":"LA-EXP-CMD01"}
@@ -451,7 +451,6 @@
 {"source_id":"LA-V91","target_id":"LA-TRC-QRY04"}
 {"source_id":"LA-V92","target_id":"LA-EXP-CMD01"}
 {"source_id":"LA-V92","target_id":"LA-EXP-QRY01"}
-{"source_id":"LA-V92","target_id":"LA-PLT-QRY07"}
 {"source_id":"LA-V92","target_id":"LA-PRD-QRY05"}
 {"source_id":"LA-V92","target_id":"LA-TRC-QRY02"}
 {"source_id":"LA-V92","target_id":"LA-TRC-QRY04"}
@@ -465,6 +464,7 @@
 {"source_id":"LA-V92","target_id":"LA-WBN-CMD43"}
 {"source_id":"LA-V92","target_id":"LA-WBN-CMD44"}
 {"source_id":"LA-V92","target_id":"LA-WBN-CMD45"}
+{"source_id":"LA-V92","target_id":"LA-WBN-QRY07"}
 {"source_id":"LA-V93","target_id":"LA-EXP-CMD01"}
 {"source_id":"LA-V93","target_id":"LA-EXP-CMD09"}
 {"source_id":"LA-V93","target_id":"LA-EXP-CMD28"}

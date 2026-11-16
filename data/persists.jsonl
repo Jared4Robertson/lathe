@@ -18,9 +18,8 @@
 {"source_id":"LA-MOD-REPO10","target_id":"LA-MOD-A10"}
 {"source_id":"LA-MOD-REPO22","target_id":"LA-MOD-A22"}
 {"source_id":"LA-MOD-REPO28","target_id":"LA-MOD-A24"}
-{"source_id":"LA-PLT-REPO05","target_id":"LA-PLT-A7"}
-{"source_id":"LA-PLT-REPO07","target_id":"LA-PLT-A10"}
 {"source_id":"LA-PRD-REPO01","target_id":"LA-PRD-A1"}
+{"source_id":"LA-PRD-REPO07","target_id":"LA-PRD-A10"}
 {"source_id":"LA-PRD-REPO16","target_id":"LA-PRD-A16"}
 {"source_id":"LA-PRD-REPO19","target_id":"LA-PRD-A19"}
 {"source_id":"LA-PRD-REPO24","target_id":"LA-PRD-A24"}
@@ -39,6 +38,7 @@
 {"source_id":"LA-WBN-REPO01","target_id":"LA-WBN-A2"}
 {"source_id":"LA-WBN-REPO03","target_id":"LA-WBN-A4"}
 {"source_id":"LA-WBN-REPO04","target_id":"LA-WBN-A6"}
+{"source_id":"LA-WBN-REPO05","target_id":"LA-WBN-A7"}
 {"source_id":"LA-WBN-REPO06","target_id":"LA-WBN-A9"}
 {"source_id":"LA-WBN-REPO20","target_id":"LA-WBN-A11"}
 {"source_id":"LA-WBN-REPO24","target_id":"LA-WBN-A14"}

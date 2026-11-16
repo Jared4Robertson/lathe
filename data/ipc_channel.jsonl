@@ -1,7 +1,7 @@
-{"id":"LA-PLT-CMD15-IPC","title":"lathe:retry-app-server","command_id":"LA-PLT-CMD15","file":"desktop/src/local-preload.cts"}
 {"id":"LA-WBN-CMD10-IPC","title":"lathe:open-product-folder","command_id":"LA-WBN-CMD10","file":"desktop/src/local-preload.cts"}
 {"id":"LA-WBN-CMD13-IPC","title":"lathe:set-chrome","command_id":"LA-WBN-CMD13","file":"desktop/src/preload.cts"}
 {"id":"LA-WBN-CMD14-IPC","title":"lathe:error-count","command_id":"LA-WBN-CMD14","file":"desktop/src/preload.cts"}
+{"id":"LA-WBN-CMD15-IPC","title":"lathe:retry-app-server","command_id":"LA-WBN-CMD15","file":"desktop/src/local-preload.cts"}
 {"id":"LA-WBN-CMD42-IPC","title":"lathe:reveal-record","command_id":"LA-WBN-CMD42","file":"desktop/src/preload.cts"}
 {"id":"LA-WBN-CMD43-IPC","title":"lathe:open-record-in-editor","command_id":"LA-WBN-CMD43","file":"desktop/src/preload.cts"}
 {"id":"LA-WBN-CMD44-IPC","title":"lathe:copy-record-id","command_id":"LA-WBN-CMD44","file":"desktop/src/preload.cts"}

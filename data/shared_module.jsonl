@@ -77,7 +77,6 @@
 {"id":"LA-PLT-MOD42","title":"lathe/src/server/access.ts","domain_id":"LA-PLT","file":"lathe/src/server/access.ts","group_name":"App server"}
 {"id":"LA-PLT-MOD44","title":"app/src/edit/write.ts","domain_id":"LA-PLT","file":"app/src/edit/write.ts","group_name":"Workspace"}
 {"id":"LA-PLT-MOD45","title":"app/src/record/read.ts","domain_id":"LA-PLT","file":"app/src/record/read.ts","group_name":"Workspace"}
-{"id":"LA-PLT-MOD51","title":"desktop/src/app-server/model.ts","domain_id":"LA-PLT","file":"desktop/src/app-server/model.ts","group_name":"App server"}
 {"id":"LA-PLT-MOD52","title":"lathe/src/cli/operations.ts","domain_id":"LA-PLT","file":"lathe/src/cli/operations.ts","group_name":"Product repo"}
 {"id":"LA-PRD-MOD20","title":"lathe/src/product/product/rules.ts","domain_id":"LA-PRD","file":"lathe/src/product/product/rules.ts","group_name":"Product"}
 {"id":"LA-PRD-MOD21","title":"lathe/src/product/product/commands/index.ts","domain_id":"LA-PRD","file":"lathe/src/product/product/commands/index.ts","group_name":"Product"}
@@ -144,4 +143,5 @@
 {"id":"LA-WBN-MOD48","title":"app/src/shell/desktop-bridge.ts","domain_id":"LA-WBN","file":"app/src/shell/desktop-bridge.ts","group_name":"Product window"}
 {"id":"LA-WBN-MOD49","title":"desktop/src/rules.ts","domain_id":"LA-WBN","file":"desktop/src/rules.ts","group_name":"Product window"}
 {"id":"LA-WBN-MOD50","title":"desktop/src/records.ts","domain_id":"LA-WBN","file":"desktop/src/records.ts","group_name":"Product window"}
+{"id":"LA-WBN-MOD51","title":"desktop/src/app-server/model.ts","domain_id":"LA-WBN","file":"desktop/src/app-server/model.ts","group_name":"App server"}
 {"id":"LA-WBN-MOD56","title":"app/src/components/useNoFling.ts","domain_id":"LA-WBN","file":"app/src/components/useNoFling.ts","group_name":"Appearance"}
