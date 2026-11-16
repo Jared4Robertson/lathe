@@ -1,3 +1,4 @@
+import type { Locator } from '@playwright/test';
 import { expect, test } from './test';
 import { openPage, showCard } from './measure';
 import { rowsOf, servedWorkspace, testsMetricText, testsText } from './flows';
@@ -28,6 +29,10 @@ const repo = path.resolve(import.meta.dirname, '../..');
 /** An Agent's write to the suite's copy, through the command layer. */
 const lathe = (...args: string[]) => execFileSync('node', [path.join(repo, 'lathe/bin/lathe.ts'), ...args, '--root', process.env.STABILITY_ROOT!], { stdio: 'pipe' }).toString();
 
+/** A domain's card on the product page: a domain marked platform is listed under Platform, the others under Domains (LA-V51-R15). */
+const domainCard = (wiki: Locator, d: Record<string, unknown>) =>
+  wiki.getByRole('list', { name: d.platform ? 'Platform' : 'Domains' }).locator('.card').filter({ has: wiki.page().getByRole('link', { name: `${d.id} ${d.title}` }) });
+
 test.describe('Traceability flows', () => {
   test('LA-TRC-UC01-R06-T01 the Reader sees how complete each domain is and what is undecided or broken', async ({ page }) => {
     const spec = await servedWorkspace();
@@ -36,7 +41,7 @@ test.describe('Traceability flows', () => {
     // LA-TRC-UC01-FL-S01: each domain's coverage by obligation kind, here its card's bars, as coverage counts them.
     const domains = rowsOf(spec, 'domain').filter((d) => d.product_id === 'LA');
     for (const d of domains) {
-      const card = wiki.getByRole('list', { name: 'Domains' }).locator('.card').filter({ has: page.getByRole('link', { name: `${d.id} ${d.title}` }) });
+      const card = domainCard(wiki, d);
       const c = spec.coverage.find((x) => x.domain === d.id)!;
       for (const o of c.obligations.filter((x) => x.total > 0 && !x.proof_only)) {
         await expect(card.locator(`.coverage-group[data-kind="${o.kind}"]`).getByRole('img', { name: `designed: ${o.designed} of ${o.total}` })).toBeVisible();
@@ -178,7 +183,7 @@ test.describe('Traceability flows', () => {
     await openPage(page, PRODUCT);
     const wiki = page.locator(WIKI);
     for (const d of rowsOf(spec, 'domain').filter((x) => x.product_id === 'LA')) {
-      const card = wiki.getByRole('list', { name: 'Domains' }).locator('.card').filter({ has: page.getByRole('link', { name: `${d.id} ${d.title}` }) });
+      const card = domainCard(wiki, d);
       await expect(card.getByLabel('Tests by state')).toHaveText(`Tests ${testsText(ofDomain(String(d.id)))}`);
     }
     // LA-TRC-UC06-FL-S03: the product's tests by state in total, here in its Key metrics.
