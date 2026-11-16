@@ -3,7 +3,6 @@ import type { GuaranteeRow } from '../../../platform/data/tables.ts';
 import { ADD_GUARANTEE_IDENTITY } from './identities.generated.ts';
 import { addGuarantee } from './handlers.generated.ts';
 
-/** A new guarantee: its row under exactly one maker, the building blocks that keep it and the standard rules it follows. */
 export type AddGuarantee = Pick<GuaranteeRow, 'id' | 'title' | 'domain_id' | 'generated_component_id' | 'library_id' | 'statement' | 'consumers' | 'group_name'> & { kept_by?: string[]; meets?: string[] };
 
 export const ADD_GUARANTEE = {

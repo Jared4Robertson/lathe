@@ -17,9 +17,21 @@ afterEach(async () => {
 
 const command = (name: string) => ALL_COMMANDS.find((c) => `${c.slice.name} ${c.name}` === name)!;
 
+/** The store fixture without what its lending domain ships: a generated component and a library have no Move. */
+function unshipped(): Data {
+  const data = everyKind();
+  const shipped = (id: unknown) => typeof id === 'string' && /^TL-LEND-(GC|LB)\d+/.test(id);
+  delete data.generated_component;
+  delete data.library;
+  for (const table of ['guarantee', 'guarantee_test', 'kept_by', 'serves']) {
+    data[table] = data[table]!.filter((r) => !shipped(r.id) && !shipped(r.source_id));
+  }
+  return data;
+}
+
 /** TL with a second domain, Catalog, a product kind that sits under a domain, and a second product. */
 const data = (): Data =>
-  adding(everyKind(), {
+  adding(unshipped(), {
     domain: [
       { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', position: 2, subdomain_type: 'supporting', description: 'The tools the library holds.' },
       { id: 'NX-E', title: 'Elsewhere', product_id: 'NX', position: 1, subdomain_type: 'generic', description: 'Work done in the second product.' },

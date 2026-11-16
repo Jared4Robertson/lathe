@@ -173,8 +173,10 @@ describe('standards', () => {
     // Every technical kind meets standard rules, and the pattern rules it carries out, but the data store, which names
     // no code (a rule it met could never be built).
     const sources = technical().filter((k) => k !== 'data_store').sort();
-    for (const target of ['standard_rule', 'pattern_rule']) expect(meets.pairs.filter((p) => p.target === target).map((p) => p.source).sort(), target).toEqual(sources);
-    expect(meets.pairs).toHaveLength(sources.length * 2);
+    // A guarantee meets a standard rule too, as the promise it makes, and carries out no pattern rule.
+    expect(meets.pairs.filter((p) => p.target === 'standard_rule').map((p) => p.source).sort()).toEqual([...sources, 'guarantee'].sort());
+    expect(meets.pairs.filter((p) => p.target === 'pattern_rule').map((p) => p.source).sort()).toEqual(sources);
+    expect(meets.pairs).toHaveLength(sources.length * 2 + 1);
     expect(parentsOf(schema, 'standard_rule_test')).toEqual(['standard_rule.standard_rule_id']);
     expect([schema.kinds.standard_rule_test].map((k) => [k.stage, k.idPattern, k.obligation])).toEqual([['test-plan', '<standard rule>-T<nn>', false]]);
     expect(ALLOWED_LEVELS.standard_rule_test).toEqual(['unit', 'integration', 'service', 'system', 'browser']);

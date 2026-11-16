@@ -437,7 +437,10 @@ export function sparse(): Data {
       { id: 'SP-P', title: 'Plumbing', product_id: 'SP', position: 3, subdomain_type: 'generic', platform: true, description: 'Nothing yet.' },
       { id: 'SP-Q', title: 'Store', product_id: 'SP', position: 4, subdomain_type: 'generic', platform: true, description: 'Keeping records.' },
     ],
-    guarantee: [{ id: 'SP-Q-GU01', title: 'Every change is saved whole', domain_id: 'SP-Q', statement: 'Every change MUST be saved whole.' }],
+    // A library that makes no guarantee, and a generated component whose guarantee names no consumer.
+    library: [{ id: 'SP-D-LB01', title: 'Runtime', domain_id: 'SP-D', description: 'Code services import.' }],
+    generated_component: [{ id: 'SP-D-GC01', title: 'Emitted store', domain_id: 'SP-D', description: 'A store the generator emits.' }],
+    guarantee: [{ id: 'SP-Q-GU01', title: 'Every change is saved whole', domain_id: 'SP-Q', statement: 'Every change MUST be saved whole.' }, { id: 'SP-D-GC01-GU01', title: 'Each row is stored once', generated_component_id: 'SP-D-GC01', statement: 'It MUST store each row once.' }],
     tooling: [{ id: 'SP-Q-TOOL01', title: 'store.config', domain_id: 'SP-Q', file: 'store.config' }],
     aggregate: [
       { id: 'SP-D-A1', title: 'Loan', domain_id: 'SP-D', identity: 'Loan ID', description: 'One tool lent to one member.' },

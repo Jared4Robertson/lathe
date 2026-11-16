@@ -33,7 +33,7 @@ describe('business outcomes', () => {
 
   it('LA-MOD-UC117-R02-T01 LA-MOD-UC162-R02-T01 An aggregate or read model serves any number of business outcomes, and an outcome is served by any number of them, of its own product', async () => {
     expect(schema.relations.serves).toMatchObject({ scope: 'product', role: null, forwardLabel: 'Serves', reverseLabel: 'Served by' });
-    expect(schema.relations.serves.pairs.map((p) => `${p.source}>${p.target}`)).toEqual(['aggregate>business_outcome', 'journey>business_outcome', 'read_model>business_outcome']);
+    expect(schema.relations.serves.pairs.map((p) => `${p.source}>${p.target}`)).toEqual(['aggregate>business_outcome', 'generated_component>business_outcome', 'journey>business_outcome', 'library>business_outcome', 'read_model>business_outcome']);
     const two = adding(everyKind(), {
       business_outcome: [{ id: 'TL-BO02', title: 'Tools back on time', product_id: 'TL', statement: 'Members return tools by their due date.', measure: 'Late returns per month.', target: 'Under one in twenty.' }],
       serves: [{ source_id: 'TL-LEND-A1', target_id: 'TL-BO02' }, { source_id: 'TL-LEND-RM01', target_id: 'TL-BO01' }, { source_id: 'TL-LEND-RM01', target_id: 'TL-BO02' }],

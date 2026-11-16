@@ -348,7 +348,7 @@ describe('LA-TRC-UC01-R05-T01 minimums', () => {
     expect(endpointGaps(privateApi)).toEqual([]);
     // Gaps are coverage, never problems; the sparse product serves no outcome, so what it holds is warned of apart
     // (serves-no-outcome), and accounts for none of its accidental records (accidental-not-accounted-for).
-    expect(ws.problems.filter((p) => !['serves-no-outcome', 'accidental-not-accounted-for'].includes(p.check)).map((p) => p.check).sort()).toEqual(['guarantee-without-building-block', 'guarantee-without-test', 'journey-of-one-use-case', 'not-built', 'not-built', 'not-built', 'not-built', 'not-proved', 'not-proved', 'not-proved', 'not-proved', 'outcome-target-undated', 'pattern-not-followed', 'value-object-unused']);
+    expect(ws.problems.filter((p) => !['serves-no-outcome', 'accidental-not-accounted-for'].includes(p.check)).map((p) => p.check).sort()).toEqual(['guarantee-without-building-block', 'guarantee-without-building-block', 'guarantee-without-test', 'guarantee-without-test', 'journey-of-one-use-case', 'not-built', 'not-built', 'not-built', 'not-built', 'not-built', 'not-proved', 'not-proved', 'not-proved', 'not-proved', 'not-proved', 'outcome-target-undated', 'pattern-not-followed', 'value-object-unused']);
   });
 
   it('LA-TRC-UC22-R03-T01 a journey without a test, one with no main path, one serving no outcome and a step carrying out nothing are each a gap saying what to write', async () => {
