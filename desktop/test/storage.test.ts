@@ -24,8 +24,8 @@ function userData(): (name: string) => () => string {
 
 const display = { x: 0, y: 0, width: 1728, height: 1080 };
 
-describe('LA-PLT-A6-SR01 a window\'s place is kept across launches', () => {
-  it('LA-PLT-A6-SR01-T01 a saved window reopens at its place after a relaunch, and a broken file is a fresh start', () => {
+describe('LA-WBN-A6-SR01 a window\'s place is kept across launches', () => {
+  it('LA-WBN-A6-SR01-T01 a saved window reopens at its place after a relaunch, and a broken file is a fresh start', () => {
     const file = userData();
     const files = { places: file('window-state.json'), chrome: file('chrome.json') };
     const first = new ProductWindowRepository(files);
@@ -40,8 +40,8 @@ describe('LA-PLT-A6-SR01 a window\'s place is kept across launches', () => {
   });
 });
 
-describe('LA-PLT-A9-SR01 the recent folders are kept across launches', () => {
-  it('LA-PLT-A9-SR01-T01 the recent list, latest first, reads back after a relaunch, and no half-written file is left', () => {
+describe('LA-WBN-A9-SR01 the recent folders are kept across launches', () => {
+  it('LA-WBN-A9-SR01-T01 the recent list, latest first, reads back after a relaunch, and no half-written file is left', () => {
     const file = userData()('recent-folders.json');
     new RecentFolderRepository(file).save(addRecent(addRecent([], '/p/a'), '/p/b'));
     expect(existsSync(`${file()}.tmp`)).toBe(false);

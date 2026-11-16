@@ -2,13 +2,13 @@
 // order at the point the event happens. No event bus: the command calls raise…, which calls each reaction by name.
 import type { OpenWindow } from './model.ts';
 
-/** Product window opened (LA-PLT-EV04): the reader opened a product folder, and it opened in a window of its own. */
+/** Product window opened (LA-WBN-EV04): the reader opened a product folder, and it opened in a window of its own. */
 export interface ProductWindowOpened {
   folder: string;
   window: OpenWindow;
 }
 
-/** Product window closed (LA-PLT-EV05): a product window closed, with its place saved for the next time. */
+/** Product window closed (LA-WBN-EV05): a product window closed, with its place saved for the next time. */
 export interface ProductWindowClosed {
   folder: string;
 }

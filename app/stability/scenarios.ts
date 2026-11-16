@@ -7,13 +7,13 @@ import { expect } from './test';
 export const PRODUCT = '/LA';
 export const DOMAIN = '/LA-EXP';
 /** A use case with requirements, links and a long body. */
-export const RECORD = '/LA-PLT-UC07';
+export const RECORD = '/LA-WBN-UC07';
 /** A use case others reference (pattern followings), so a request to remove it is refused and the data stays as it is. */
 export const REFERENCED = '/LA-MOD-UC02';
 /** An aggregate: its ERD stage draws its own diagram. */
 export const AGGREGATE = '/LA-EXP-A1';
 /** A UC requirement of RECORD: what the edit scenarios change, then put back. */
-export const EDITED = '/LA-PLT-UC07-R08';
+export const EDITED = '/LA-WBN-UC07-R08';
 
 /** Lathe's own journey "Take an idea to proof", with its steps in order, each carrying out a use case: the journeys scenario and the journey page's audit. */
 export const JOURNEY = '/LA-JR01';

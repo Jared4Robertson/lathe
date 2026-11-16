@@ -1,4 +1,4 @@
-// The Product window's rule (one-window-per-folder, LA-PLT-INV05): each folder has one window, open under its own folder.
+// The Product window's rule (one-window-per-folder, LA-WBN-INV05): each folder has one window, open under its own folder.
 import path from 'node:path';
 import { holdTo, type RuleProblem } from '../rules.ts';
 import type { ProductWindows } from './model.ts';

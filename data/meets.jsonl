@@ -442,9 +442,6 @@
 {"source_id":"LA-MOD-TOOL03","target_id":"LA-PAT-AGGREGATE-COMMANDS-R16"}
 {"source_id":"LA-MOD-TOOL03","target_id":"LA-PAT-FIELD-INPUTS-R03"}
 {"source_id":"LA-MOD-TOOL03","target_id":"LA-STD-PRINCIPLES-R06"}
-{"source_id":"LA-PLT-CMD10-H","target_id":"LA-STD-EXPERIENCE-R09"}
-{"source_id":"LA-PLT-CMD10-H","target_id":"LA-STD-EXPERIENCE-R10"}
-{"source_id":"LA-PLT-CMD10-H","target_id":"LA-STD-EXPERIENCE-R11"}
 {"source_id":"LA-PLT-CMD24-H","target_id":"LA-STD-ENGINEERING-R04"}
 {"source_id":"LA-PLT-ENTRY01","target_id":"LA-PAT-SHELL-ACTIONS-R01"}
 {"source_id":"LA-PLT-ENTRY01","target_id":"LA-STD-EXPERIENCE-R10"}
@@ -466,7 +463,6 @@
 {"source_id":"LA-PLT-MOD37","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-PLT-MOD37","target_id":"LA-STD-PRINCIPLES-R02"}
 {"source_id":"LA-PLT-MOD39","target_id":"LA-STD-PRINCIPLES-R01"}
-{"source_id":"LA-PLT-MOD49","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-PLT-MOD52","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-PLT-MOD52","target_id":"LA-STD-PRINCIPLES-R02"}
 {"source_id":"LA-PLT-QRY01-H","target_id":"LA-STD-ENGINEERING-R02"}
@@ -912,3 +908,7 @@
 {"source_id":"LA-UI79","target_id":"LA-STD-PRINCIPLES-R07"}
 {"source_id":"LA-UI92","target_id":"LA-STD-EXPERIENCE-R02"}
 {"source_id":"LA-UI97","target_id":"LA-STD-EXPERIENCE-R13"}
+{"source_id":"LA-WBN-CMD10-H","target_id":"LA-STD-EXPERIENCE-R09"}
+{"source_id":"LA-WBN-CMD10-H","target_id":"LA-STD-EXPERIENCE-R10"}
+{"source_id":"LA-WBN-CMD10-H","target_id":"LA-STD-EXPERIENCE-R11"}
+{"source_id":"LA-WBN-MOD49","target_id":"LA-STD-PRINCIPLES-R01"}

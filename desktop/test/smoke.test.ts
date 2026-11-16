@@ -124,17 +124,17 @@ describe.skipIf(process.platform !== 'darwin')('The desktop app opens a product 
     expect(result.apiSpecStatus).toBe(200);
   });
 
-  it('LA-PLT-PO03-T puts the opened folder in the recent folders', () => {
+  it('LA-WBN-PO03-T puts the opened folder in the recent folders', () => {
     const recent = JSON.parse(readFileSync(path.join(temp, 'user-data', 'recent-folders.json'), 'utf8'));
     expect(recent).toEqual([product]);
   });
 
-  it('LA-PLT-UC11-R02-T01 shows the product and names the window after it and its folder', () => {
+  it('LA-WBN-UC11-R02-T01 shows the product and names the window after it and its folder', () => {
     expect(result.text).toContain('Smoke Shop');
     expect(result.title).toBe(`Smoke Shop — ${product.replace(os.homedir(), '~')}`);
   });
 
-  it('LA-PLT-UC11-R05-T01 bridges only window.latheDesktop, with no Node in the page', () => {
+  it('LA-WBN-UC11-R05-T01 bridges only window.latheDesktop, with no Node in the page', () => {
     expect(result.bridge?.keys).toEqual(['copyRecordId', 'isDesktop', 'onCommand', 'onFullScreen', 'openRecordInEditor', 'platform', 'revealRecord', 'setChrome', 'setErrorCount', 'setMenuKeys', 'showRecordMenu']);
     expect(result.bridge?.hasOnCommand).toBe(true);
     expect(result.bridge?.nodeInPage).toBe(false);
@@ -177,7 +177,7 @@ describe.skipIf(process.platform !== 'darwin')('The desktop app opens a product 
     expect(result.dockIcon).toEqual({ file: path.join(desktop, 'build', 'icon.png'), width: 1024, height: 1024 });
   });
 
-  it('LA-PLT-UC41-R02-T01 quits cleanly, with exit code 0, while a reload is in progress', () => {
+  it('LA-WBN-UC41-R02-T01 quits cleanly, with exit code 0, while a reload is in progress', () => {
     expect(result.reloadAtQuit).toBe(true);
     // Before quitting waited for the servers, the engine's work outlived the process now and then, which ended it
     // with no exit code ("terminating due to uncaught exception of type Napi::Error").

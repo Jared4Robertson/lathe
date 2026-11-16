@@ -99,10 +99,10 @@ test.describe('keyboard', () => {
     await expect(page.locator('.header-strip h1').first()).toBeVisible();
     await page.keyboard.press('Control+k');
     await expect(page.locator('.quick-open input')).toBeFocused();
-    await page.keyboard.type('LA-PLT-UC07');
+    await page.keyboard.type('LA-WBN-UC07');
     await page.locator('.quick-open .palette-list li').first().waitFor();
     await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(/LA-PLT-UC07/);
+    await expect(page).toHaveURL(/LA-WBN-UC07/);
     await expect(page.locator('.header-strip h1').first()).toBeVisible();
     // LA-V61-R42-T01: after the move, focus is not lost on the body.
     expect((await focused(page)).tag).not.toBe('body');

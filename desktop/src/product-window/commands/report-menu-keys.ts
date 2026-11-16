@@ -1,4 +1,4 @@
-// Report a window's keys (LA-PLT-CMD59): the keys the person bound in the window's page, kept for the menu's key labels.
+// Report a window's keys (LA-WBN-CMD59): the keys the person bound in the window's page, kept for the menu's key labels.
 import { menuKeysFrom } from '../../menu.ts';
 import type { ProductWindowRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';

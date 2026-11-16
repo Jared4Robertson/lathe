@@ -181,38 +181,12 @@
 {"id":"LA-PLT-UC01-FL","title":"Load the workspace","use_case_id":"LA-PLT-UC01"}
 {"id":"LA-PLT-UC02-FL","title":"Set up Lathe in a product repo","use_case_id":"LA-PLT-UC02"}
 {"id":"LA-PLT-UC03-FL","title":"See the current data","use_case_id":"LA-PLT-UC03"}
-{"id":"LA-PLT-UC06-FL","title":"Resize a panel","use_case_id":"LA-PLT-UC06"}
-{"id":"LA-PLT-UC07-FL","title":"Choose a theme","use_case_id":"LA-PLT-UC07"}
-{"id":"LA-PLT-UC101-FL","title":"Show a record's menu","use_case_id":"LA-PLT-UC101"}
-{"id":"LA-PLT-UC102-FL","title":"Reveal a product folder","use_case_id":"LA-PLT-UC102"}
 {"id":"LA-PLT-UC103-FL","title":"Read a product's changed data files again","use_case_id":"LA-PLT-UC103"}
 {"id":"LA-PLT-UC104-FL","title":"Merge two branches' data","use_case_id":"LA-PLT-UC104"}
-{"id":"LA-PLT-UC11-FL","title":"Open a product in a window","use_case_id":"LA-PLT-UC11"}
 {"id":"LA-PLT-UC12-FL","title":"Start Lathe with hot reload","use_case_id":"LA-PLT-UC12"}
 {"id":"LA-PLT-UC17-FL","title":"Upgrade a product's data","use_case_id":"LA-PLT-UC17"}
 {"id":"LA-PLT-UC18-FL","title":"Start the plugin's tools in a product repo","use_case_id":"LA-PLT-UC18"}
 {"id":"LA-PLT-UC23-FL","title":"Serve the spec from a product repo","use_case_id":"LA-PLT-UC23"}
-{"id":"LA-PLT-UC24-FL","title":"Bind a key","use_case_id":"LA-PLT-UC24"}
-{"id":"LA-PLT-UC25-FL","title":"Open a record's data file in the editor","use_case_id":"LA-PLT-UC25"}
-{"id":"LA-PLT-UC28-FL","title":"Clear the recent folders","use_case_id":"LA-PLT-UC28"}
-{"id":"LA-PLT-UC31-FL","title":"Show or hide a panel","use_case_id":"LA-PLT-UC31"}
-{"id":"LA-PLT-UC32-FL","title":"Choose a color mode","use_case_id":"LA-PLT-UC32"}
-{"id":"LA-PLT-UC33-FL","title":"Duplicate a theme","use_case_id":"LA-PLT-UC33"}
-{"id":"LA-PLT-UC34-FL","title":"Edit a theme","use_case_id":"LA-PLT-UC34"}
-{"id":"LA-PLT-UC35-FL","title":"Export a theme","use_case_id":"LA-PLT-UC35"}
-{"id":"LA-PLT-UC36-FL","title":"Reset a theme","use_case_id":"LA-PLT-UC36"}
-{"id":"LA-PLT-UC37-FL","title":"Delete a theme","use_case_id":"LA-PLT-UC37"}
-{"id":"LA-PLT-UC38-FL","title":"Import a theme file","use_case_id":"LA-PLT-UC38"}
-{"id":"LA-PLT-UC39-FL","title":"Turn scroll to zoom on or off","use_case_id":"LA-PLT-UC39"}
-{"id":"LA-PLT-UC40-FL","title":"Save a window's place","use_case_id":"LA-PLT-UC40"}
-{"id":"LA-PLT-UC41-FL","title":"Close a product window","use_case_id":"LA-PLT-UC41"}
-{"id":"LA-PLT-UC48-FL","title":"Remove a binding","use_case_id":"LA-PLT-UC48"}
-{"id":"LA-PLT-UC49-FL","title":"Reset a shortcut","use_case_id":"LA-PLT-UC49"}
-{"id":"LA-PLT-UC50-FL","title":"Reset all shortcuts","use_case_id":"LA-PLT-UC50"}
-{"id":"LA-PLT-UC51-FL","title":"Reveal a record's data file","use_case_id":"LA-PLT-UC51"}
-{"id":"LA-PLT-UC52-FL","title":"Copy a record's ID","use_case_id":"LA-PLT-UC52"}
-{"id":"LA-PLT-UC53-FL","title":"Choose an editor","use_case_id":"LA-PLT-UC53"}
-{"id":"LA-PLT-UC54-FL","title":"Open the settings file","use_case_id":"LA-PLT-UC54"}
 {"id":"LA-PRD-UC04-FL","title":"Declare a product kind","use_case_id":"LA-PRD-UC04"}
 {"id":"LA-PRD-UC101-FL","title":"Add a product","use_case_id":"LA-PRD-UC101"}
 {"id":"LA-PRD-UC102-FL","title":"Change a product kind","use_case_id":"LA-PRD-UC102"}
@@ -330,3 +304,29 @@
 {"id":"LA-UCS-UC14-FL","title":"Move a UC requirement to another use case","use_case_id":"LA-UCS-UC14"}
 {"id":"LA-UCS-UC30-FL","title":"Change a use case test","use_case_id":"LA-UCS-UC30"}
 {"id":"LA-UCS-UC47-FL","title":"Remove a use case","use_case_id":"LA-UCS-UC47"}
+{"id":"LA-WBN-UC06-FL","title":"Resize a panel","use_case_id":"LA-WBN-UC06"}
+{"id":"LA-WBN-UC07-FL","title":"Choose a theme","use_case_id":"LA-WBN-UC07"}
+{"id":"LA-WBN-UC101-FL","title":"Show a record's menu","use_case_id":"LA-WBN-UC101"}
+{"id":"LA-WBN-UC102-FL","title":"Reveal a product folder","use_case_id":"LA-WBN-UC102"}
+{"id":"LA-WBN-UC11-FL","title":"Open a product in a window","use_case_id":"LA-WBN-UC11"}
+{"id":"LA-WBN-UC24-FL","title":"Bind a key","use_case_id":"LA-WBN-UC24"}
+{"id":"LA-WBN-UC25-FL","title":"Open a record's data file in the editor","use_case_id":"LA-WBN-UC25"}
+{"id":"LA-WBN-UC28-FL","title":"Clear the recent folders","use_case_id":"LA-WBN-UC28"}
+{"id":"LA-WBN-UC31-FL","title":"Show or hide a panel","use_case_id":"LA-WBN-UC31"}
+{"id":"LA-WBN-UC32-FL","title":"Choose a color mode","use_case_id":"LA-WBN-UC32"}
+{"id":"LA-WBN-UC33-FL","title":"Duplicate a theme","use_case_id":"LA-WBN-UC33"}
+{"id":"LA-WBN-UC34-FL","title":"Edit a theme","use_case_id":"LA-WBN-UC34"}
+{"id":"LA-WBN-UC35-FL","title":"Export a theme","use_case_id":"LA-WBN-UC35"}
+{"id":"LA-WBN-UC36-FL","title":"Reset a theme","use_case_id":"LA-WBN-UC36"}
+{"id":"LA-WBN-UC37-FL","title":"Delete a theme","use_case_id":"LA-WBN-UC37"}
+{"id":"LA-WBN-UC38-FL","title":"Import a theme file","use_case_id":"LA-WBN-UC38"}
+{"id":"LA-WBN-UC39-FL","title":"Turn scroll to zoom on or off","use_case_id":"LA-WBN-UC39"}
+{"id":"LA-WBN-UC40-FL","title":"Save a window's place","use_case_id":"LA-WBN-UC40"}
+{"id":"LA-WBN-UC41-FL","title":"Close a product window","use_case_id":"LA-WBN-UC41"}
+{"id":"LA-WBN-UC48-FL","title":"Remove a binding","use_case_id":"LA-WBN-UC48"}
+{"id":"LA-WBN-UC49-FL","title":"Reset a shortcut","use_case_id":"LA-WBN-UC49"}
+{"id":"LA-WBN-UC50-FL","title":"Reset all shortcuts","use_case_id":"LA-WBN-UC50"}
+{"id":"LA-WBN-UC51-FL","title":"Reveal a record's data file","use_case_id":"LA-WBN-UC51"}
+{"id":"LA-WBN-UC52-FL","title":"Copy a record's ID","use_case_id":"LA-WBN-UC52"}
+{"id":"LA-WBN-UC53-FL","title":"Choose an editor","use_case_id":"LA-WBN-UC53"}
+{"id":"LA-WBN-UC54-FL","title":"Open the settings file","use_case_id":"LA-WBN-UC54"}

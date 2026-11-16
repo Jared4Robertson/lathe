@@ -61,7 +61,7 @@ const SMOKE = smokeFile();
 const MAC = process.platform === 'darwin';
 /** How long the launch view waits for the page's specs before it says Lathe did not answer. */
 const LAUNCH_TIMEOUT = 120_000;
-/** The longest quitting waits for the windows' servers to stop (LA-PLT-UC41-R02). */
+/** The longest quitting waits for the windows' servers to stop (LA-WBN-UC41-R02). */
 const QUIT_TIMEOUT = 10_000;
 
 // Scroll bars float over the page, as the system's do.
@@ -448,7 +448,7 @@ async function openFolder(input: string) {
   });
   void openProductFolder(productWindows, { window: entry }, windowOpenedReactions);
   const result: SmokeResult = await smoke.catch((error: unknown) => ({ error: error instanceof Error ? error.message : String(error) }));
-  // It quits while a reload is in progress, as the reader might (LA-PLT-UC41-R02).
+  // It quits while a reload is in progress, as the reader might (LA-WBN-UC41-R02).
   const running = appServers.load().running.get(folder);
   if (running) result.reloadAtQuit = await reloadInProgress(running.server.url, entry.folder);
   writeSmoke(SMOKE, result);
@@ -603,7 +603,7 @@ if (!SMOKE && !app.requestSingleInstanceLock()) {
     if (openWindows().size === 0) void openOnLaunch();
   });
   // Quitting waits until every window's server has stopped, so no database work outlives the process, and then
-  // quits again; a server that hangs is given up on after QUIT_TIMEOUT (LA-PLT-UC41-R02).
+  // quits again; a server that hangs is given up on after QUIT_TIMEOUT (LA-WBN-UC41-R02).
   let quit: 'running' | 'stopping' | 'stopped' = 'running';
   app.on('before-quit', (event) => {
     if (quit === 'stopped') return;

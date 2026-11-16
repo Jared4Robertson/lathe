@@ -2,13 +2,13 @@ import './setup';
 import { describe, expect, it } from 'vitest';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { APPEARANCE_STORAGE } from '../../src/platform/appearance/model';
+import { APPEARANCE_STORAGE } from '../../src/workbench/appearance/model';
 import { openApp } from '../helpers';
 import { canvasOf, scene } from './scene';
 import { testWorkspace } from './workspace';
 import { erdDrawn, erdHost, erdScene } from '../erd-scene';
 
-// Scroll to zoom (LA-V62-R05, LA-PLT-CMD47): Appearance's switch and the palette's command turn it on or off, kept at
+// Scroll to zoom (LA-V62-R05, LA-WBN-CMD47): Appearance's switch and the palette's command turn it on or off, kept at
 // once; the key bar says what scroll does, and the wheel follows it on the Graph and the ERD alike (LA-V93-R07).
 
 /** A wheel event over a target, in the middle of the 1000 by 800 stage. */

@@ -18,14 +18,8 @@
 {"source_id":"LA-MOD-REPO10","target_id":"LA-MOD-A10"}
 {"source_id":"LA-MOD-REPO22","target_id":"LA-MOD-A22"}
 {"source_id":"LA-MOD-REPO28","target_id":"LA-MOD-A24"}
-{"source_id":"LA-PLT-REPO01","target_id":"LA-PLT-A2"}
-{"source_id":"LA-PLT-REPO03","target_id":"LA-PLT-A4"}
-{"source_id":"LA-PLT-REPO04","target_id":"LA-PLT-A6"}
 {"source_id":"LA-PLT-REPO05","target_id":"LA-PLT-A7"}
-{"source_id":"LA-PLT-REPO06","target_id":"LA-PLT-A9"}
 {"source_id":"LA-PLT-REPO07","target_id":"LA-PLT-A10"}
-{"source_id":"LA-PLT-REPO20","target_id":"LA-PLT-A11"}
-{"source_id":"LA-PLT-REPO24","target_id":"LA-PLT-A14"}
 {"source_id":"LA-PRD-REPO01","target_id":"LA-PRD-A1"}
 {"source_id":"LA-PRD-REPO16","target_id":"LA-PRD-A16"}
 {"source_id":"LA-PRD-REPO19","target_id":"LA-PRD-A19"}
@@ -42,3 +36,9 @@
 {"source_id":"LA-TST-REPO17","target_id":"LA-TST-A17"}
 {"source_id":"LA-UCS-REPO02","target_id":"LA-UCS-A2"}
 {"source_id":"LA-UCS-REPO11","target_id":"LA-UCS-A11"}
+{"source_id":"LA-WBN-REPO01","target_id":"LA-WBN-A2"}
+{"source_id":"LA-WBN-REPO03","target_id":"LA-WBN-A4"}
+{"source_id":"LA-WBN-REPO04","target_id":"LA-WBN-A6"}
+{"source_id":"LA-WBN-REPO06","target_id":"LA-WBN-A9"}
+{"source_id":"LA-WBN-REPO20","target_id":"LA-WBN-A11"}
+{"source_id":"LA-WBN-REPO24","target_id":"LA-WBN-A14"}

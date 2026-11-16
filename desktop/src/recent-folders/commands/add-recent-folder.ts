@@ -1,4 +1,4 @@
-// Add a recent folder (LA-PLT-CMD19): puts a folder first in the recent folders, each once, at most ten.
+// Add a recent folder (LA-WBN-CMD19): puts a folder first in the recent folders, each once, at most ten.
 import { addRecent } from '../model.ts';
 import type { RecentFolderRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';

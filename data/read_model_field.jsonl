@@ -130,21 +130,6 @@
 {"read_model_id":"LA-PLT-RM01","position":5,"name":"Coverage","meaning":"Per domain and obligation kind: designed, built, proved and the gaps (Traceability's).","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM01","position":6,"name":"Refusals","meaning":"The rows the store refused on load, each with its file, line and rule; while there are any, nothing else is checked.","type":"text","required":false}
 {"read_model_id":"LA-PLT-RM01","position":7,"name":"Errors","meaning":"How many problems are errors.","type":"whole number","required":true}
-{"read_model_id":"LA-PLT-RM02","position":1,"name":"Command ID","meaning":"The command.","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM02","position":2,"name":"Title","meaning":"What the palette and the sheet call it, or the title its handler gives (\"Switch to Lathe\").","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM02","position":3,"name":"Group","meaning":"Where the sheet lists it.","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM02","position":4,"name":"Shown keys","meaning":"Its keys as the person bound them, as the platform shows them (DS01).","type_value_object_id":"LA-VO61","required":false}
-{"read_model_id":"LA-PLT-RM02","position":5,"name":"ARIA keys","meaning":"What `aria-keyshortcuts` says; none for a sequence.","type":"text","required":false}
-{"read_model_id":"LA-PLT-RM02","position":6,"name":"Default keys","meaning":"Its keys on this platform before the person changed them.","type_value_object_id":"LA-VO61","required":false}
-{"read_model_id":"LA-PLT-RM02","position":7,"name":"Changed","meaning":"The person changed its keys: the sheet offers Reset.","type":"yes/no","required":true}
-{"read_model_id":"LA-PLT-RM02","position":8,"name":"Customizable","meaning":"The person may bind its keys: not the browser's own, nor an ARIA control's.","type":"yes/no","required":true}
-{"read_model_id":"LA-PLT-RM03","position":1,"name":"Theme ID","meaning":"The theme.","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM03","position":2,"name":"Name","meaning":"What it is called.","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM03","position":3,"name":"Built in","meaning":"Whether Lathe ships it.","type":"yes/no","required":true}
-{"read_model_id":"LA-PLT-RM03","position":4,"name":"In use","meaning":"Whether it is the chosen theme.","type":"yes/no","required":true}
-{"read_model_id":"LA-PLT-RM03","position":5,"name":"Color mode","meaning":"The mode in use.","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM04","position":1,"name":"Folder","meaning":"A recent folder, latest first.","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM04","position":2,"name":"Shown as","meaning":"The folder with the home folder as `~`.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM08","position":1,"name":"Kind","meaning":"A kind: its label, stage, place in reading order, parent kinds and columns, whether it is an obligation, its ID scope and the product that declares it.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM08","position":2,"name":"Stage","meaning":"A stage with its label and description, in order.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM08","position":3,"name":"Relation","meaning":"A pair of kinds a relation may link, with its role and its words read from each end.","type":"text","required":true}
@@ -260,3 +245,18 @@
 {"read_model_id":"LA-UCS-RM22","position":2,"name":"Settings","meaning":"Its settings in order, each a name and what a follower decides in it.","type":"text","required":true}
 {"read_model_id":"LA-UCS-RM22","position":3,"name":"Rules","meaning":"Its rules by ID, each with its tests and the test data sets they start from.","type":"text","required":true}
 {"read_model_id":"LA-UCS-RM22","position":4,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the pattern: the pattern, a pattern rule or a pattern rule test.","type":"text","required":true}
+{"read_model_id":"LA-WBN-RM02","position":1,"name":"Command ID","meaning":"The command.","type":"text","required":true}
+{"read_model_id":"LA-WBN-RM02","position":2,"name":"Title","meaning":"What the palette and the sheet call it, or the title its handler gives (\"Switch to Lathe\").","type":"text","required":true}
+{"read_model_id":"LA-WBN-RM02","position":3,"name":"Group","meaning":"Where the sheet lists it.","type":"text","required":true}
+{"read_model_id":"LA-WBN-RM02","position":4,"name":"Shown keys","meaning":"Its keys as the person bound them, as the platform shows them (DS01).","type_value_object_id":"LA-VO61","required":false}
+{"read_model_id":"LA-WBN-RM02","position":5,"name":"ARIA keys","meaning":"What `aria-keyshortcuts` says; none for a sequence.","type":"text","required":false}
+{"read_model_id":"LA-WBN-RM02","position":6,"name":"Default keys","meaning":"Its keys on this platform before the person changed them.","type_value_object_id":"LA-VO61","required":false}
+{"read_model_id":"LA-WBN-RM02","position":7,"name":"Changed","meaning":"The person changed its keys: the sheet offers Reset.","type":"yes/no","required":true}
+{"read_model_id":"LA-WBN-RM02","position":8,"name":"Customizable","meaning":"The person may bind its keys: not the browser's own, nor an ARIA control's.","type":"yes/no","required":true}
+{"read_model_id":"LA-WBN-RM03","position":1,"name":"Theme ID","meaning":"The theme.","type":"text","required":true}
+{"read_model_id":"LA-WBN-RM03","position":2,"name":"Name","meaning":"What it is called.","type":"text","required":true}
+{"read_model_id":"LA-WBN-RM03","position":3,"name":"Built in","meaning":"Whether Lathe ships it.","type":"yes/no","required":true}
+{"read_model_id":"LA-WBN-RM03","position":4,"name":"In use","meaning":"Whether it is the chosen theme.","type":"yes/no","required":true}
+{"read_model_id":"LA-WBN-RM03","position":5,"name":"Color mode","meaning":"The mode in use.","type":"text","required":true}
+{"read_model_id":"LA-WBN-RM04","position":1,"name":"Folder","meaning":"A recent folder, latest first.","type":"text","required":true}
+{"read_model_id":"LA-WBN-RM04","position":2,"name":"Shown as","meaning":"The folder with the home folder as `~`.","type":"text","required":true}

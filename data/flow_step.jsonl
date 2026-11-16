@@ -331,24 +331,10 @@
 {"id":"LA-PLT-UC03-FL-S02","title":"The open page loads the data again at the same address and shows the change","flow_id":"LA-PLT-UC03-FL","path":"main","position":3}
 {"id":"LA-PLT-UC03-FL-S05","title":"When the data cannot be loaded, the view says what is wrong rather than showing other data","flow_id":"LA-PLT-UC03-FL","path":"refused","position":1}
 {"id":"LA-PLT-UC03-FL-S06","title":"The changed data files are read again and the change is announced","flow_id":"LA-PLT-UC03-FL","path":"main","position":2}
-{"id":"LA-PLT-UC06-FL-S01","title":"The Reader drags the gap between two panels, or focuses it and steps it with the keys","flow_id":"LA-PLT-UC06-FL","path":"main","position":1}
-{"id":"LA-PLT-UC06-FL-S02","title":"Lathe remembers the sizes; a double press on the divider resets one","flow_id":"LA-PLT-UC06-FL","path":"main","position":2}
-{"id":"LA-PLT-UC07-FL-S01","title":"The Reader presses g then t and arrows through the themes, each shown on the whole app at once","flow_id":"LA-PLT-UC07-FL","path":"main","position":1}
-{"id":"LA-PLT-UC07-FL-S02","title":"They keep one with Enter, or put back the one before with Escape","flow_id":"LA-PLT-UC07-FL","path":"main","position":2}
-{"id":"LA-PLT-UC07-FL-S04","title":"They open Appearance from the nav's footer: every theme with a preview","flow_id":"LA-PLT-UC07-FL","path":"main","position":3}
-{"id":"LA-PLT-UC101-FL-S01","title":"The Reader opens the native menu of a record","flow_id":"LA-PLT-UC101-FL","path":"main","position":1}
-{"id":"LA-PLT-UC102-FL-S01","title":"The Reader chooses Reveal in Finder from the window's launch or error view","flow_id":"LA-PLT-UC102-FL","path":"main","position":1}
 {"id":"LA-PLT-UC103-FL-S01","title":"The Owner's change to the data files is noticed and the changed files are read again, and the kinds that changed announced","flow_id":"LA-PLT-UC103-FL","path":"main","position":1}
 {"id":"LA-PLT-UC104-FL-S01","title":"Git merges two branches and runs the merge driver for each data file","flow_id":"LA-PLT-UC104-FL","path":"main","position":1}
 {"id":"LA-PLT-UC104-FL-S02","title":"A real clash stops the merge, naming the key and both versions","flow_id":"LA-PLT-UC104-FL","path":"clash","position":1}
 {"id":"LA-PLT-UC104-FL-S03","title":"A driver whose lathe is not installed stops the merge, saying the file was not merged and how to merge it again","flow_id":"LA-PLT-UC104-FL","path":"not installed","position":1}
-{"id":"LA-PLT-UC11-FL-S01","title":"The Reader chooses File › Open Product Folder… and picks a folder","flow_id":"LA-PLT-UC11-FL","path":"main","position":1}
-{"id":"LA-PLT-UC11-FL-S02","title":"It opens in a window of its own, never white, titled with its products and folder, its content reaching the shell only through window.latheDesktop, and served by the product's own installed Lathe or the bundled copy, as About says","flow_id":"LA-PLT-UC11-FL","path":"main","position":2}
-{"id":"LA-PLT-UC11-FL-S04","title":"A link to another site opens in the system browser, and the window stays on Lathe","flow_id":"LA-PLT-UC11-FL","path":"main","position":3}
-{"id":"LA-PLT-UC11-FL-S05","title":"They come back to it from File › Open Recent","flow_id":"LA-PLT-UC11-FL","path":"main","position":4}
-{"id":"LA-PLT-UC11-FL-S06","title":"The next launch reopens the last folder","flow_id":"LA-PLT-UC11-FL","path":"main","position":5}
-{"id":"LA-PLT-UC11-FL-S09","title":"A folder that is not a product is refused with what is missing, and no window opens","flow_id":"LA-PLT-UC11-FL","path":"refused","position":1}
-{"id":"LA-PLT-UC11-FL-S12","title":"A workspace's folder opens with every product it lists, each a space, titled with them all","flow_id":"LA-PLT-UC11-FL","path":"workspace","position":1}
 {"id":"LA-PLT-UC12-FL-S01","title":"The Owner runs npm --prefix desktop run dev; a window loads the 5199 dev server when it serves the opened folder","flow_id":"LA-PLT-UC12-FL","path":"main","position":1}
 {"id":"LA-PLT-UC12-FL-S02","title":"A change to the main process or a preload restarts Electron","flow_id":"LA-PLT-UC12-FL","path":"main","position":2}
 {"id":"LA-PLT-UC12-FL-S03","title":"A change to a record reloads the view in every mode","flow_id":"LA-PLT-UC12-FL","path":"main","position":3}
@@ -365,34 +351,6 @@
 {"id":"LA-PLT-UC23-FL-S03","title":"lathe serve shows each product as a space, and writes each change to its own product's folder","flow_id":"LA-PLT-UC23-FL","path":"workspace","position":1}
 {"id":"LA-PLT-UC23-FL-S04","title":"The Owner runs lathe serve --network and opens one of the addresses it prints on a phone on the same Wi-Fi","flow_id":"LA-PLT-UC23-FL","path":"network","position":1}
 {"id":"LA-PLT-UC23-FL-S05","title":"The phone reads the spec and shows it reads only; a change from it is refused, and the Owner changes the spec from the machine Lathe runs on","flow_id":"LA-PLT-UC23-FL","path":"network","position":2}
-{"id":"LA-PLT-UC24-FL-S01","title":"The Reader presses ?; the shortcuts sheet lists every shortcut by group, with a search and each shortcut's keys to change","flow_id":"LA-PLT-UC24-FL","path":"main","position":1}
-{"id":"LA-PLT-UC24-FL-S02","title":"They choose a key in the sheet and press a new one, and the palette, the sheet and every hint show it at once","flow_id":"LA-PLT-UC24-FL","path":"main","position":2}
-{"id":"LA-PLT-UC24-FL-S03","title":"In a Product window the menus show the new keys beside their commands","flow_id":"LA-PLT-UC24-FL","path":"main","position":3,"interface_id":"LA-IF02"}
-{"id":"LA-PLT-UC25-FL-S01","title":"From a record they open its data file in the editor they chose","flow_id":"LA-PLT-UC25-FL","path":"main","position":2}
-{"id":"LA-PLT-UC25-FL-S02","title":"The shell finds the record's data file from its ID alone","flow_id":"LA-PLT-UC25-FL","path":"main","position":1}
-{"id":"LA-PLT-UC28-FL-S01","title":"The Reader opens File › Open Recent and reads the folders it lists","flow_id":"LA-PLT-UC28-FL","path":"main","position":1}
-{"id":"LA-PLT-UC28-FL-S02","title":"They clear the recent folders from File › Open Recent","flow_id":"LA-PLT-UC28-FL","path":"main","position":2}
-{"id":"LA-PLT-UC31-FL-S01","title":"Dragging the navigation small folds it to its rail","flow_id":"LA-PLT-UC31-FL","path":"main","position":1}
-{"id":"LA-PLT-UC31-FL-S02","title":"They collapse the wiki card; the stage takes its room and recenters, and the toggle brings it back","flow_id":"LA-PLT-UC31-FL","path":"main","position":2}
-{"id":"LA-PLT-UC32-FL-S01","title":"They switch Light, Dark or System from the palette","flow_id":"LA-PLT-UC32-FL","path":"main","position":1}
-{"id":"LA-PLT-UC33-FL-S01","title":"They duplicate the closest theme","flow_id":"LA-PLT-UC33-FL","path":"main","position":1}
-{"id":"LA-PLT-UC34-FL-S01","title":"They change its colors, fonts and density with the app changing around them, and a warning wherever text gets hard to read","flow_id":"LA-PLT-UC34-FL","path":"main","position":1}
-{"id":"LA-PLT-UC35-FL-S01","title":"They export it to share as a file","flow_id":"LA-PLT-UC35-FL","path":"main","position":1}
-{"id":"LA-PLT-UC36-FL-S01","title":"They reset their copy to the theme it came from","flow_id":"LA-PLT-UC36-FL","path":"main","position":1}
-{"id":"LA-PLT-UC37-FL-S01","title":"They delete their copy, after being asked","flow_id":"LA-PLT-UC37-FL","path":"main","position":1}
-{"id":"LA-PLT-UC38-FL-S01","title":"Someone else imports that file as a theme of their own","flow_id":"LA-PLT-UC38-FL","path":"main","position":1}
-{"id":"LA-PLT-UC39-FL-S01","title":"They turn Scroll to zoom on in Appearance, or from the palette, and scroll zooms every stage","flow_id":"LA-PLT-UC39-FL","path":"main","position":1}
-{"id":"LA-PLT-UC40-FL-S01","title":"They move or resize a window, which saves its size and place","flow_id":"LA-PLT-UC40-FL","path":"main","position":1}
-{"id":"LA-PLT-UC41-FL-S01","title":"They close the window: its place is kept, and its server stops","flow_id":"LA-PLT-UC41-FL","path":"main","position":1}
-{"id":"LA-PLT-UC41-FL-S02","title":"They quit, and the app exits once every window's server has stopped, as the policy that hears each window close stops it","flow_id":"LA-PLT-UC41-FL","path":"main","position":2}
-{"id":"LA-PLT-UC48-FL-S01","title":"They remove a key they no longer want from a shortcut in the sheet","flow_id":"LA-PLT-UC48-FL","path":"main","position":1}
-{"id":"LA-PLT-UC49-FL-S01","title":"They reset a changed shortcut to its own keys","flow_id":"LA-PLT-UC49-FL","path":"main","position":1}
-{"id":"LA-PLT-UC50-FL-S01","title":"They reset all shortcuts, after the sheet asks first","flow_id":"LA-PLT-UC50-FL","path":"main","position":1}
-{"id":"LA-PLT-UC51-FL-S01","title":"From a record they reveal its data file in the file manager; the shell takes only the ID and finds the file itself","flow_id":"LA-PLT-UC51-FL","path":"main","position":2}
-{"id":"LA-PLT-UC51-FL-S02","title":"The shell finds the data file to reveal from the record's ID alone","flow_id":"LA-PLT-UC51-FL","path":"main","position":1}
-{"id":"LA-PLT-UC52-FL-S01","title":"From a record they copy its ID to the clipboard","flow_id":"LA-PLT-UC52-FL","path":"main","position":1}
-{"id":"LA-PLT-UC53-FL-S01","title":"They choose the editor Open in editor uses, or a custom command, and the shell keeps it in its settings file","flow_id":"LA-PLT-UC53-FL","path":"main","position":1}
-{"id":"LA-PLT-UC54-FL-S01","title":"They open the settings file in the editor to fill in the custom command","flow_id":"LA-PLT-UC54-FL","path":"main","position":1}
 {"id":"LA-PRD-UC04-FL-S01","title":"The Owner declares a product kind with its fields, in a stage","flow_id":"LA-PRD-UC04-FL","path":"main","position":1}
 {"id":"LA-PRD-UC04-FL-S03","title":"The Owner reads the product's own kind whole, with its fields and relations, before declaring more","flow_id":"LA-PRD-UC04-FL","path":"main","position":2}
 {"id":"LA-PRD-UC04-FL-S05","title":"The Owner declares a kind or a relation a second time, and is refused naming the file and line of each","flow_id":"LA-PRD-UC04-FL","path":"refused","position":1}
@@ -689,3 +647,45 @@
 {"id":"LA-UCS-UC30-FL-S01","title":"A test says its size when it is not small, and marks itself smoke or external","flow_id":"LA-UCS-UC30-FL","path":"main","position":1}
 {"id":"LA-UCS-UC30-FL-S02","title":"The Agent names the file that runs an automated test","flow_id":"LA-UCS-UC30-FL","path":"automated","position":1}
 {"id":"LA-UCS-UC47-FL-S01","title":"Removing a use case a step carries out is refused, naming the step","flow_id":"LA-UCS-UC47-FL","path":"main","position":1}
+{"id":"LA-WBN-UC06-FL-S01","title":"The Reader drags the gap between two panels, or focuses it and steps it with the keys","flow_id":"LA-WBN-UC06-FL","path":"main","position":1}
+{"id":"LA-WBN-UC06-FL-S02","title":"Lathe remembers the sizes; a double press on the divider resets one","flow_id":"LA-WBN-UC06-FL","path":"main","position":2}
+{"id":"LA-WBN-UC07-FL-S01","title":"The Reader presses g then t and arrows through the themes, each shown on the whole app at once","flow_id":"LA-WBN-UC07-FL","path":"main","position":1}
+{"id":"LA-WBN-UC07-FL-S02","title":"They keep one with Enter, or put back the one before with Escape","flow_id":"LA-WBN-UC07-FL","path":"main","position":2}
+{"id":"LA-WBN-UC07-FL-S04","title":"They open Appearance from the nav's footer: every theme with a preview","flow_id":"LA-WBN-UC07-FL","path":"main","position":3}
+{"id":"LA-WBN-UC101-FL-S01","title":"The Reader opens the native menu of a record","flow_id":"LA-WBN-UC101-FL","path":"main","position":1}
+{"id":"LA-WBN-UC102-FL-S01","title":"The Reader chooses Reveal in Finder from the window's launch or error view","flow_id":"LA-WBN-UC102-FL","path":"main","position":1}
+{"id":"LA-WBN-UC11-FL-S01","title":"The Reader chooses File › Open Product Folder… and picks a folder","flow_id":"LA-WBN-UC11-FL","path":"main","position":1}
+{"id":"LA-WBN-UC11-FL-S02","title":"It opens in a window of its own, never white, titled with its products and folder, its content reaching the shell only through window.latheDesktop, and served by the product's own installed Lathe or the bundled copy, as About says","flow_id":"LA-WBN-UC11-FL","path":"main","position":2}
+{"id":"LA-WBN-UC11-FL-S04","title":"A link to another site opens in the system browser, and the window stays on Lathe","flow_id":"LA-WBN-UC11-FL","path":"main","position":3}
+{"id":"LA-WBN-UC11-FL-S05","title":"They come back to it from File › Open Recent","flow_id":"LA-WBN-UC11-FL","path":"main","position":4}
+{"id":"LA-WBN-UC11-FL-S06","title":"The next launch reopens the last folder","flow_id":"LA-WBN-UC11-FL","path":"main","position":5}
+{"id":"LA-WBN-UC11-FL-S09","title":"A folder that is not a product is refused with what is missing, and no window opens","flow_id":"LA-WBN-UC11-FL","path":"refused","position":1}
+{"id":"LA-WBN-UC11-FL-S12","title":"A workspace's folder opens with every product it lists, each a space, titled with them all","flow_id":"LA-WBN-UC11-FL","path":"workspace","position":1}
+{"id":"LA-WBN-UC24-FL-S01","title":"The Reader presses ?; the shortcuts sheet lists every shortcut by group, with a search and each shortcut's keys to change","flow_id":"LA-WBN-UC24-FL","path":"main","position":1}
+{"id":"LA-WBN-UC24-FL-S02","title":"They choose a key in the sheet and press a new one, and the palette, the sheet and every hint show it at once","flow_id":"LA-WBN-UC24-FL","path":"main","position":2}
+{"id":"LA-WBN-UC24-FL-S03","title":"In a Product window the menus show the new keys beside their commands","flow_id":"LA-WBN-UC24-FL","path":"main","position":3,"interface_id":"LA-IF02"}
+{"id":"LA-WBN-UC25-FL-S01","title":"From a record they open its data file in the editor they chose","flow_id":"LA-WBN-UC25-FL","path":"main","position":2}
+{"id":"LA-WBN-UC25-FL-S02","title":"The shell finds the record's data file from its ID alone","flow_id":"LA-WBN-UC25-FL","path":"main","position":1}
+{"id":"LA-WBN-UC28-FL-S01","title":"The Reader opens File › Open Recent and reads the folders it lists","flow_id":"LA-WBN-UC28-FL","path":"main","position":1}
+{"id":"LA-WBN-UC28-FL-S02","title":"They clear the recent folders from File › Open Recent","flow_id":"LA-WBN-UC28-FL","path":"main","position":2}
+{"id":"LA-WBN-UC31-FL-S01","title":"Dragging the navigation small folds it to its rail","flow_id":"LA-WBN-UC31-FL","path":"main","position":1}
+{"id":"LA-WBN-UC31-FL-S02","title":"They collapse the wiki card; the stage takes its room and recenters, and the toggle brings it back","flow_id":"LA-WBN-UC31-FL","path":"main","position":2}
+{"id":"LA-WBN-UC32-FL-S01","title":"They switch Light, Dark or System from the palette","flow_id":"LA-WBN-UC32-FL","path":"main","position":1}
+{"id":"LA-WBN-UC33-FL-S01","title":"They duplicate the closest theme","flow_id":"LA-WBN-UC33-FL","path":"main","position":1}
+{"id":"LA-WBN-UC34-FL-S01","title":"They change its colors, fonts and density with the app changing around them, and a warning wherever text gets hard to read","flow_id":"LA-WBN-UC34-FL","path":"main","position":1}
+{"id":"LA-WBN-UC35-FL-S01","title":"They export it to share as a file","flow_id":"LA-WBN-UC35-FL","path":"main","position":1}
+{"id":"LA-WBN-UC36-FL-S01","title":"They reset their copy to the theme it came from","flow_id":"LA-WBN-UC36-FL","path":"main","position":1}
+{"id":"LA-WBN-UC37-FL-S01","title":"They delete their copy, after being asked","flow_id":"LA-WBN-UC37-FL","path":"main","position":1}
+{"id":"LA-WBN-UC38-FL-S01","title":"Someone else imports that file as a theme of their own","flow_id":"LA-WBN-UC38-FL","path":"main","position":1}
+{"id":"LA-WBN-UC39-FL-S01","title":"They turn Scroll to zoom on in Appearance, or from the palette, and scroll zooms every stage","flow_id":"LA-WBN-UC39-FL","path":"main","position":1}
+{"id":"LA-WBN-UC40-FL-S01","title":"They move or resize a window, which saves its size and place","flow_id":"LA-WBN-UC40-FL","path":"main","position":1}
+{"id":"LA-WBN-UC41-FL-S01","title":"They close the window: its place is kept, and its server stops","flow_id":"LA-WBN-UC41-FL","path":"main","position":1}
+{"id":"LA-WBN-UC41-FL-S02","title":"They quit, and the app exits once every window's server has stopped, as the policy that hears each window close stops it","flow_id":"LA-WBN-UC41-FL","path":"main","position":2}
+{"id":"LA-WBN-UC48-FL-S01","title":"They remove a key they no longer want from a shortcut in the sheet","flow_id":"LA-WBN-UC48-FL","path":"main","position":1}
+{"id":"LA-WBN-UC49-FL-S01","title":"They reset a changed shortcut to its own keys","flow_id":"LA-WBN-UC49-FL","path":"main","position":1}
+{"id":"LA-WBN-UC50-FL-S01","title":"They reset all shortcuts, after the sheet asks first","flow_id":"LA-WBN-UC50-FL","path":"main","position":1}
+{"id":"LA-WBN-UC51-FL-S01","title":"From a record they reveal its data file in the file manager; the shell takes only the ID and finds the file itself","flow_id":"LA-WBN-UC51-FL","path":"main","position":2}
+{"id":"LA-WBN-UC51-FL-S02","title":"The shell finds the data file to reveal from the record's ID alone","flow_id":"LA-WBN-UC51-FL","path":"main","position":1}
+{"id":"LA-WBN-UC52-FL-S01","title":"From a record they copy its ID to the clipboard","flow_id":"LA-WBN-UC52-FL","path":"main","position":1}
+{"id":"LA-WBN-UC53-FL-S01","title":"They choose the editor Open in editor uses, or a custom command, and the shell keeps it in its settings file","flow_id":"LA-WBN-UC53-FL","path":"main","position":1}
+{"id":"LA-WBN-UC54-FL-S01","title":"They open the settings file in the editor to fill in the custom command","flow_id":"LA-WBN-UC54-FL","path":"main","position":1}

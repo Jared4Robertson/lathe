@@ -1,5 +1,5 @@
-// Open a product folder (LA-PLT-CMD10): a folder that checks opens in a window of its own, one per folder, and the
-// command raises Product window opened (LA-PLT-EV04) once the window is open.
+// Open a product folder (LA-WBN-CMD10): a folder that checks opens in a window of its own, one per folder, and the
+// command raises Product window opened (LA-WBN-EV04) once the window is open.
 import { raiseProductWindowOpened, type WindowOpenedReactions } from '../events.ts';
 import type { OpenWindow } from '../model.ts';
 import type { ProductWindowRepository } from '../repository.ts';

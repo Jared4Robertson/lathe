@@ -1,4 +1,4 @@
-// The Recent folders' rule (recent-folders-once-at-most-10, LA-PLT-INV14): each folder once, as a full path, at most
+// The Recent folders' rule (recent-folders-once-at-most-10, LA-WBN-INV14): each folder once, as a full path, at most
 // RECENT_LIMIT. Latest first is how addRecent builds the list.
 import path from 'node:path';
 import { holdTo, type RuleProblem } from '../rules.ts';

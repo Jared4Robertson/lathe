@@ -57,17 +57,8 @@
 {"id":"LA-MOD-EN68","title":"Domain service test","aggregate_id":"LA-MOD-A4","role":"child","description":"Proves its domain service: from the inputs given, the value or decision it returns."}
 {"id":"LA-MOD-EN90","title":"Reader","aggregate_id":"LA-MOD-A10","role":"child","description":"Reads its read model's table for the read model's query handlers: the one way they reach its storage. It reads only its own read model's table, which the projection alone fills."}
 {"id":"LA-MOD-EN96","title":"Rule","aggregate_id":"LA-MOD-A6","role":"child","description":"Its invariant in code: the rule in the aggregate's rules.ts that the aggregate's commands run before saving and every load runs over all data, named as its refusal names it. An invariant is built only through its rule."}
-{"id":"LA-PLT-EN02","title":"Panel","aggregate_id":"LA-PLT-A2","role":"root","description":"One part of the view's layout, which always shows the view's focus and can be hidden without losing it."}
-{"id":"LA-PLT-EN06","title":"Theme","aggregate_id":"LA-PLT-A4","role":"child","description":"One theme: a named set of token values with a light set and a dark set."}
-{"id":"LA-PLT-EN08","title":"Product window","aggregate_id":"LA-PLT-A6","role":"root","description":"One window showing one product folder."}
-{"id":"LA-PLT-EN09","title":"Recent folder","aggregate_id":"LA-PLT-A9","role":"child","in_root_table":true,"description":"One folder the person opened lately, for File › Open Recent and the next launch."}
 {"id":"LA-PLT-EN10","title":"App server","aggregate_id":"LA-PLT-A7","role":"root","description":"What one window loads Lathe from."}
-{"id":"LA-PLT-EN14","title":"Appearance","aggregate_id":"LA-PLT-A4","role":"root","description":"The person's appearance: the theme in use, the color mode and Scroll to zoom."}
-{"id":"LA-PLT-EN15","title":"Recent folders","aggregate_id":"LA-PLT-A9","role":"root","description":"The list of recent folders, one per shell."}
 {"id":"LA-PLT-EN16","title":"Product repo","aggregate_id":"LA-PLT-A10","role":"root","description":"A product repo: its root folder, the schema version its data is for, where its data files are, and the other products it shows as a workspace."}
-{"id":"LA-PLT-EN20","title":"Shell settings","aggregate_id":"LA-PLT-A11","role":"root","description":"The editor the shell opens data files in, its custom command, and where `claude` is."}
-{"id":"LA-PLT-EN24","title":"Key bindings","aggregate_id":"LA-PLT-A14","role":"root","description":"The person's key bindings: the shortcuts they changed, in the order first changed."}
-{"id":"LA-PLT-EN25","title":"Shortcut binding","aggregate_id":"LA-PLT-A14","role":"child","in_root_table":true,"description":"One shortcut whose keys the person changed: its keys now, or none when they left it without a key on purpose."}
 {"id":"LA-PRD-EN01","title":"Product","aggregate_id":"LA-PRD-A1","role":"root","description":"A product: the root of its specifications and its own space, whose records link only to each other, with the roles its use cases and interfaces name, the kinds and relations it declares, and its open questions."}
 {"id":"LA-PRD-EN02","title":"Product kind","aggregate_id":"LA-PRD-A1","role":"child","description":"A kind a product adds to Lathe's, such as a report or a terminal command. Its records sit under one parent kind, and its fields are its product kind fields."}
 {"id":"LA-PRD-EN03","title":"Role","aggregate_id":"LA-PRD-A1","role":"child","description":"A role the product's records name, such as Owner, Reader or Agent: a use case's actors and a question's owner. Specs name roles, never people."}
@@ -106,3 +97,12 @@
 {"id":"LA-UCS-EN69","title":"Use case test","aggregate_id":"LA-UCS-A11","role":"child","description":"Proves its UC requirement, at the level the use case is stated: what the actor does and what the product does in answer."}
 {"id":"LA-UCS-EN72","title":"Flow test","aggregate_id":"LA-UCS-A11","role":"child","description":"The use case's acceptance test: its flow's main path, end to end, through any one interface that offers the use case, at the level that fits that interface. How each other interface carries a step out is proved once per rule and domain by its pattern's rule tests."}
 {"id":"LA-UCS-EN74","title":"Pattern rule test","aggregate_id":"LA-UCS-A2","role":"child","description":"Proves its pattern rule in one domain that adopts the pattern: one test per pattern rule and adopting domain."}
+{"id":"LA-WBN-EN02","title":"Panel","aggregate_id":"LA-WBN-A2","role":"root","description":"One part of the view's layout, which always shows the view's focus and can be hidden without losing it."}
+{"id":"LA-WBN-EN06","title":"Theme","aggregate_id":"LA-WBN-A4","role":"child","description":"One theme: a named set of token values with a light set and a dark set."}
+{"id":"LA-WBN-EN08","title":"Product window","aggregate_id":"LA-WBN-A6","role":"root","description":"One window showing one product folder."}
+{"id":"LA-WBN-EN09","title":"Recent folder","aggregate_id":"LA-WBN-A9","role":"child","in_root_table":true,"description":"One folder the person opened lately, for File › Open Recent and the next launch."}
+{"id":"LA-WBN-EN14","title":"Appearance","aggregate_id":"LA-WBN-A4","role":"root","description":"The person's appearance: the theme in use, the color mode and Scroll to zoom."}
+{"id":"LA-WBN-EN15","title":"Recent folders","aggregate_id":"LA-WBN-A9","role":"root","description":"The list of recent folders, one per shell."}
+{"id":"LA-WBN-EN20","title":"Shell settings","aggregate_id":"LA-WBN-A11","role":"root","description":"The editor the shell opens data files in, its custom command, and where `claude` is."}
+{"id":"LA-WBN-EN24","title":"Key bindings","aggregate_id":"LA-WBN-A14","role":"root","description":"The person's key bindings: the shortcuts they changed, in the order first changed."}
+{"id":"LA-WBN-EN25","title":"Shortcut binding","aggregate_id":"LA-WBN-A14","role":"child","in_root_table":true,"description":"One shortcut whose keys the person changed: its keys now, or none when they left it without a key on purpose."}
