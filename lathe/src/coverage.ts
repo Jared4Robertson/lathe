@@ -218,7 +218,7 @@ WHERE g.domain_id IS NOT NULL AND NOT EXISTS (
   SELECT 1 FROM kept_by k JOIN meets m ON m.source_id = k.target_id JOIN owed_pattern_rules p ON p.id = m.target_id
   WHERE k.source_id = g.id AND p.domain <> g.domain_id)`),
   // A generated component's or a library's guarantee is for consumers outside the repo, whom no link can reach, so it
-  // names them (LA-STD-MODELING-R24); and a generated component or a library is there for the guarantees it makes.
+  // names them (LA-STD-MODELING-R22); and a generated component or a library is there for the guarantees it makes.
   gap('guarantee-names-no-consumer', 'domain-model', ['guarantee'], 'A generated component\'s or a library\'s guarantee that names no consumer.',
     `SELECT g.id, 'Guarantee ' || g.id || ' is made by ' || coalesce(g.generated_component_id, g.library_id) || ' for consumers outside the repo and names none: say whom it is for (consumers), such as every service built with it.' AS message FROM guarantee g
 WHERE g.domain_id IS NULL AND g.consumers IS NULL`),

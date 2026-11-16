@@ -230,7 +230,7 @@ const SHIPPED_GAPS = ['maker-without-guarantee', 'guarantee-names-no-consumer', 
 const shippedGaps = (ws: Workspace) => gaps(ws).filter((g) => SHIPPED_GAPS.some((name) => g.startsWith(`${name} `)));
 
 check('maker-in-platform-domain', () => {
-  it('LA-STD-MODELING-R24-T01 a generated component or a library in a platform domain is an error; one in a business domain is not', async () => {
+  it('LA-STD-MODELING-R22-T04 a generated component or a library in a platform domain is an error; one in a business domain is not', async () => {
     const ws = await loadData(withPlatform(adding(SHIPPED, {
       library: [{ id: 'EX-PLAT-LB01', title: 'Store runtime', domain_id: 'EX-PLAT', description: 'The store every domain imports.' }],
       guarantee: [{ id: 'EX-PLAT-LB01-GU01', title: 'A change is kept', library_id: 'EX-PLAT-LB01', statement: 'It MUST keep every change.', consumers: 'Every domain.' }],
@@ -244,7 +244,7 @@ check('maker-in-platform-domain', () => {
 });
 
 check('consumers-on-platform-guarantee', () => {
-  it("LA-STD-MODELING-R24-T02 a platform domain's guarantee that names consumers is an error; a library's that names none is a gap", async () => {
+  it("LA-STD-MODELING-R22-T05 a platform domain's guarantee that names consumers is an error; a library's that names none is a gap", async () => {
     const data = withPlatform({
       library: [{ id: 'EX-LEND-LB01', title: 'Reminder runtime', domain_id: 'EX-LEND', description: 'The reminder queue every branch service imports.' }],
       guarantee: [{ id: 'EX-LEND-LB01-GU01', title: 'A reminder goes once', library_id: 'EX-LEND-LB01', statement: 'The queue MUST send each reminder once.' }],
@@ -261,7 +261,7 @@ check('consumers-on-platform-guarantee', () => {
 });
 
 check('maker-without-guarantee', () => {
-  it('LA-STD-MODELING-R24-T03 a generated component that makes no guarantee is a gap, and its guarantees serve what it serves', async () => {
+  it('LA-STD-MODELING-R22-T06 a generated component that makes no guarantee is a gap, and its guarantees serve what it serves', async () => {
     const bare = await loadData(withPlatform(without(without(without(SHIPPED, 'guarantee', () => true), 'kept_by', () => true), 'guarantee_test', () => true)));
     expect(shippedGaps(bare)).toEqual(['maker-without-guarantee EX-LEND-GC01']);
     const ws = await loadData(withPlatform(SHIPPED));
