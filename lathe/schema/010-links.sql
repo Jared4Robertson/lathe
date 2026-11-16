@@ -39,8 +39,8 @@ CREATE TABLE builds (source_id VARCHAR NOT NULL REFERENCES ui_component (id), ta
 COMMENT ON TABLE builds IS 'The UI component builds the view requirement: its code does what the requirement says. A view requirement is built only through the components that build it, never through any component that renders its view.';
 CREATE TABLE follows (source_id VARCHAR NOT NULL REFERENCES follows_source (id), target_id VARCHAR NOT NULL REFERENCES pattern (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE follows IS 'The domain, use case or interface follows the pattern, and gives a value for each of its settings in setting_value rows. An interface''s pattern says how a step is carried out through it, and every domain with a use case the interface offers owes its rules.';
-CREATE TABLE meets (source_id VARCHAR NOT NULL REFERENCES technical_record (id), target_id VARCHAR NOT NULL REFERENCES meets_target (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE meets IS 'The technical record follows the rule: a standard rule, which it shows where the rule is applied and so designs; or a pattern rule it carries out, which is the essential record a generic piece of code (a shared component, an entry point, a build script) serves.';
+CREATE TABLE meets (source_id VARCHAR NOT NULL REFERENCES meets_source (id), target_id VARCHAR NOT NULL REFERENCES meets_target (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE meets IS 'The technical record, or the guarantee, follows the rule: a standard rule, which it shows where the rule is applied and so designs (a guarantee, as the promise it makes); or, for a technical record only, a pattern rule it carries out, which is the essential record a generic piece of code (a shared component, an entry point, a build script) serves.';
 CREATE TABLE persists (source_id VARCHAR NOT NULL UNIQUE REFERENCES repository (id), target_id VARCHAR NOT NULL UNIQUE REFERENCES aggregate (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE persists IS 'The repository loads and saves the aggregate, whole: one repository per aggregate, and one aggregate per repository.';
 CREATE TABLE stored_in (source_id VARCHAR NOT NULL UNIQUE REFERENCES stored_in_source (id), target_id VARCHAR NOT NULL REFERENCES data_store (id), PRIMARY KEY (source_id, target_id));
@@ -53,8 +53,10 @@ CREATE TABLE fills (source_id VARCHAR NOT NULL REFERENCES accidental_record (id)
 COMMENT ON TABLE fills IS 'The accidental record (a technical record, an endpoint or a data store), written by hand or set up by hand, fills the pattern''s slot against its contract: it is a fill, accidental complexity recorded where it is owed and counted as debt until the pattern can derive it. A record of a product''s own accidental kind, such as a shared module, fills a slot the same way, with no declaration. A standard and its rules fill no slot: an engineering standard is accounted for through the records that meet its rules.';
 CREATE TABLE generates (source_id VARCHAR NOT NULL REFERENCES tooling (id), target_id VARCHAR NOT NULL REFERENCES accidental_record (id), PRIMARY KEY (source_id, target_id), CHECK (source_id <> target_id));
 COMMENT ON TABLE generates IS 'The tooling record (a generator) writes the accidental record (a technical record''s code, or an endpoint''s route) from the spec: the record is derived, never written by hand. A record of a product''s own accidental kind, such as a shared module, is generated the same way, with no declaration.';
+CREATE TABLE made_by (source_id VARCHAR NOT NULL UNIQUE REFERENCES pattern (id), target_id VARCHAR NOT NULL REFERENCES maker (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE made_by IS 'The pattern''s fixed part is made by the maker: the shared code a platform domain, a generated component or a library ships, which every follower uses as it is. What that code keeps is a guarantee of the maker; what each follower''s own code must meet stays a rule of the pattern, and a rule a building block of the maker carries out (meets) restates one of its guarantees and is refused. A pattern names at most one maker; one with none is a fixed part written into each follower.';
 CREATE TABLE serves (source_id VARCHAR NOT NULL REFERENCES serves_source (id), target_id VARCHAR NOT NULL REFERENCES business_outcome (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE serves IS 'The aggregate, read model or journey serves the business outcome: what it is for. Each may serve several outcomes, and an outcome be served by several aggregates, read models and journeys.';
+COMMENT ON TABLE serves IS 'The aggregate, read model, journey, generated component or library serves the business outcome: what it is for. Each may serve several outcomes, and an outcome be served by several of them. A generated component''s or a library''s guarantees, and their tests, serve what it serves.';
 CREATE TABLE carries_out (source_id VARCHAR NOT NULL UNIQUE REFERENCES journey_step (id), target_id VARCHAR NOT NULL REFERENCES carries_out_target (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE carries_out IS 'The journey step carries out the use case or the policy, of its own product: at most one per step. A step that carries out nothing yet is a use case still to write.';
 CREATE TABLE measured_by (source_id VARCHAR NOT NULL REFERENCES business_outcome (id), target_id VARCHAR NOT NULL REFERENCES record_id (id), PRIMARY KEY (source_id, target_id));
@@ -92,6 +94,7 @@ INSERT INTO meta_relation VALUES
   ('provided_by', NULL, 'product', 'Provided by', 'Provides', NULL),
   ('fills', NULL, 'product', 'Fills', 'Filled by', NULL),
   ('generates', NULL, 'product', 'Generates', 'Generated by', NULL),
+  ('made_by', NULL, 'product', 'Made by', 'Makes the fixed part of', NULL),
   ('serves', NULL, 'product', 'Serves', 'Served by', NULL),
   ('carries_out', NULL, 'product', 'Carries out', 'Carried out in', NULL),
   ('measured_by', NULL, 'product', 'Measured by', 'Measures', NULL),
@@ -151,6 +154,12 @@ INSERT INTO meta_relation_pair VALUES
   ('serves', 'aggregate', 'business_outcome', 'The aggregate serves the business outcome: the use cases whose result is one of its commands are for it.'),
   ('serves', 'read_model', 'business_outcome', 'The read model serves the business outcome: the use cases whose result is one of its queries are for it.'),
   ('serves', 'journey', 'business_outcome', 'The journey serves the business outcome: its result is what the outcome measures.'),
+  ('serves', 'generated_component', 'business_outcome', 'The generated component serves the business outcome: what its consumers rely on it for moves it.'),
+  ('serves', 'library', 'business_outcome', 'The library serves the business outcome: what its consumers rely on it for moves it.'),
+  ('made_by', 'pattern', 'domain', 'The pattern''s fixed part is shared code of the platform domain.'),
+  ('made_by', 'pattern', 'generated_component', 'The pattern''s fixed part is code the generated component emits.'),
+  ('made_by', 'pattern', 'library', 'The pattern''s fixed part is code of the library.'),
+  ('meets', 'guarantee', 'standard_rule', 'The guarantee follows the standard rule: what it promises applies the rule.'),
   ('carries_out', 'journey_step', 'use_case', 'The step is the use case, taken by its actors.'),
   ('carries_out', 'journey_step', 'policy', 'The step is a handoff: the product itself acts, by the policy.'),
   ('measured_by', 'business_outcome', 'constraint_test', 'The business outcome is measured by the constraint test.'),

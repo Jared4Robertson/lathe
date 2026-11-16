@@ -108,7 +108,7 @@ export function productKindSql(
       `INSERT INTO meta_table VALUES (${literal(name)}, 'kind', NULL);`,
     );
     if (kind.obligation === true) statements.push(`INSERT INTO meta_supertype_member VALUES ('obligation', ${literal(name)});`);
-    if (kind.stage === 'technical-specification') statements.push(`INSERT INTO meta_supertype_member VALUES ('technical_record', ${literal(name)});`);
+    if (kind.stage === 'technical-specification') statements.push(`INSERT INTO meta_supertype_member VALUES ('technical_record', ${literal(name)});`, `INSERT INTO meta_supertype_member VALUES ('meets_source', ${literal(name)});`);
     const accidental = kind.stage === 'technical-specification' || kind.complexity === 'accidental';
     if (accidental) statements.push(`INSERT INTO meta_supertype_member VALUES ('accidental_record', ${literal(name)});`);
     if (kind.obligation === true || accidental) statements.push(`INSERT INTO meta_supertype_member VALUES ('provided_by_source', ${literal(name)});`);
