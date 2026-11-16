@@ -221,13 +221,13 @@ Domains and their aggregates, entities, value objects, rules (constraints, invar
 A part of the product with its own model, language and owner, for one business capability: what DDD calls a bounded context, or, marked platform, the plumbing the business domains stand on. Domains meet only through published events.
 
 - **Parents:** [`product`](#kind-product) (`product_id`)
-- **Children:** [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model), [`domain_service`](#kind-domain_service), [`guarantee`](#kind-guarantee), [`term`](#kind-term), [`use_case`](#kind-use_case), [`data_store`](#kind-data_store), [`repository`](#kind-repository), [`table`](#kind-table), [`entry_point`](#kind-entry_point), [`tooling`](#kind-tooling), [`standard`](#kind-standard), [`test_data_set`](#kind-test_data_set), [`question`](#kind-question)
+- **Children:** [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model), [`domain_service`](#kind-domain_service), [`generated_component`](#kind-generated_component), [`library`](#kind-library), [`guarantee`](#kind-guarantee), [`term`](#kind-term), [`use_case`](#kind-use_case), [`data_store`](#kind-data_store), [`repository`](#kind-repository), [`table`](#kind-table), [`entry_point`](#kind-entry_point), [`tooling`](#kind-tooling), [`standard`](#kind-standard), [`test_data_set`](#kind-test_data_set), [`question`](#kind-question)
 - **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-<D>`, such as `TL-LEND`; it starts with its parent's ID
 - **Links out:** Follows ([`follows`](#relation-follows))
-- **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`pattern-rule-test-outside-followers`](#check-pattern-rule-test-outside-followers), [`pattern-not-followed`](#check-pattern-not-followed), [`domain-named-for-technology`](#check-domain-named-for-technology), [`platform-holds-business-record`](#check-platform-holds-business-record), [`standard-in-business-domain`](#check-standard-in-business-domain)
+- **Links in:** Questions about this ([`about`](#relation-about)), Makes the fixed part of ([`made_by`](#relation-made_by))
+- **Checks:** [`pattern-rule-test-outside-followers`](#check-pattern-rule-test-outside-followers), [`pattern-not-followed`](#check-pattern-not-followed), [`domain-named-for-technology`](#check-domain-named-for-technology), [`platform-holds-business-record`](#check-platform-holds-business-record), [`standard-in-business-domain`](#check-standard-in-business-domain), [`maker-in-platform-domain`](#check-maker-in-platform-domain), [`pattern-made-by-business-domain`](#check-pattern-made-by-business-domain)
 - **Gaps:** [`domain-without-aggregate`](#gap-domain-without-aggregate), [`platform-without-guarantee`](#gap-platform-without-guarantee)
 
 <a id="table-domain"></a>
@@ -726,37 +726,100 @@ Domain logic that belongs to no single entity and is not a yes-or-no check, such
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `("trim"("statement") != '')`
 
+<a id="kind-generated_component"></a>
+
+### Generated component (`generated_component`)
+
+A unit of code the product's generator emits into code outside the repo, such as a database adapter written into every service built with it: what the product ships, so what it promises its consumers is the Owner's to decide. It makes guarantees to the outside consumers they name, and it sits in a business domain.
+
+- **Parents:** [`domain`](#kind-domain) (`domain_id`)
+- **Children:** [`guarantee`](#kind-guarantee)
+- **Complexity:** essential: what the problem itself demands, decided once per product
+- **Obligation:** no
+- **ID:** `<P>-<D>-GC<nn>`, such as `TL-CAT-GC01`; it starts with its domain's ID
+- **Links out:** Serves ([`serves`](#relation-serves))
+- **Links in:** Questions about this ([`about`](#relation-about)), Makes the fixed part of ([`made_by`](#relation-made_by))
+- **Checks:** [`maker-in-platform-domain`](#check-maker-in-platform-domain)
+- **Gaps:** [`maker-without-guarantee`](#gap-maker-without-guarantee)
+
+<a id="table-generated_component"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The generated component's ID: its domain's ID and GC<nn>, such as TL-CAT-GC01. |
+| `title` | VARCHAR | yes | Its name, such as PostgreSQL adapter. |
+| `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The business domain that ships it. |
+| `description` | VARCHAR | yes | What it emits and into what, in a sentence or two. |
+
+- **Key:** `id`
+- **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
+
+<a id="kind-library"></a>
+
+### Library (`library`)
+
+Code the product ships for code outside the repo to import, a runtime included, such as an outbox package every generated service imports: what the product ships, so what it promises its consumers is the Owner's to decide. It makes guarantees to the outside consumers they name, and it sits in a business domain.
+
+- **Parents:** [`domain`](#kind-domain) (`domain_id`)
+- **Children:** [`guarantee`](#kind-guarantee)
+- **Complexity:** essential: what the problem itself demands, decided once per product
+- **Obligation:** no
+- **ID:** `<P>-<D>-LB<nn>`, such as `TL-CAT-LB01`; it starts with its domain's ID
+- **Links out:** Serves ([`serves`](#relation-serves))
+- **Links in:** Questions about this ([`about`](#relation-about)), Makes the fixed part of ([`made_by`](#relation-made_by))
+- **Checks:** [`maker-in-platform-domain`](#check-maker-in-platform-domain)
+
+<a id="table-library"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The library's ID: its domain's ID and LB<nn>, such as TL-CAT-LB01. |
+| `title` | VARCHAR | yes | Its name, such as Outbox runtime. |
+| `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The business domain that ships it. |
+| `description` | VARCHAR | yes | What it holds and who imports it, in a sentence or two. |
+
+- **Key:** `id`
+- **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
+
 <a id="kind-guarantee"></a>
 
 ### Guarantee (`guarantee`)
 
-A promise a platform domain makes to every other domain of its product, such as every change being refused with every reason it breaks: what the other domains rely on and could not run without, and what would work unchanged in another product. A platform domain has no goals of its own, so it is described by its guarantees rather than by use cases and aggregates. The building blocks that keep it are named with kept_by, and its guarantee tests prove it.
+A promise kept by shared code, made by its maker: a platform domain, to every other domain of its product (such as every change being refused with every reason it breaks), or a generated component or a library, to the outside consumers it names (such as the database opener a component emits requiring verified TLS). A promise each follower's own code must meet is a pattern rule instead, and a promise is never stated both ways. The building blocks that keep it are named with kept_by, and its guarantee tests prove it.
 
-- **Parents:** [`domain`](#kind-domain) (`domain_id`)
+- **Parents:** [`domain`](#kind-domain) (`domain_id`), [`generated_component`](#kind-generated_component) (`generated_component_id`), [`library`](#kind-library) (`library_id`)
 - **Children:** [`guarantee_test`](#kind-guarantee_test)
 - **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** yes: designed, built and proved
-  - **Designed:** By construction, under its platform domain.
+  - **Designed:** By construction, under its maker.
   - **Built:** Every technical record that keeps it names a file that exists, and there is at least one; a data store that keeps it builds nothing a file shows.
   - **Proved:** One of its guarantee tests.
-- **ID:** `<P>-<D>-GU<nn>`, such as `TL-PLAT-GU01`; it starts with its domain's ID
-- **Links out:** Kept by ([`kept_by`](#relation-kept_by)), Provided by ([`provided_by`](#relation-provided_by))
+- **ID:** `<maker>-GU<nn>`, such as `TL-PLAT-GU01`; it starts with its parent's ID
+- **Links out:** Kept by ([`kept_by`](#relation-kept_by)), Meets ([`meets`](#relation-meets)), Provided by ([`provided_by`](#relation-provided_by))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`guarantee-without-test`](#check-guarantee-without-test), [`guarantee-without-building-block`](#check-guarantee-without-building-block)
-- **Gaps:** [`guarantee-relied-on-by-nothing`](#gap-guarantee-relied-on-by-nothing), [`building-block-keeps-no-guarantee`](#gap-building-block-keeps-no-guarantee)
+- **Checks:** [`guarantee-without-test`](#check-guarantee-without-test), [`guarantee-without-building-block`](#check-guarantee-without-building-block), [`consumers-on-platform-guarantee`](#check-consumers-on-platform-guarantee), [`pattern-rule-restates-guarantee`](#check-pattern-rule-restates-guarantee)
+- **Gaps:** [`guarantee-relied-on-by-nothing`](#gap-guarantee-relied-on-by-nothing), [`guarantee-names-no-consumer`](#gap-guarantee-names-no-consumer), [`building-block-keeps-no-guarantee`](#gap-building-block-keeps-no-guarantee)
 
 <a id="table-guarantee"></a>
 
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
-| `id` | VARCHAR → `record_id` | yes | The guarantee's ID: its domain's ID and GU<nn>, such as TL-PLAT-GU01. |
+| `id` | VARCHAR → `record_id` | yes | The guarantee's ID: its maker's ID and GU<nn>, such as TL-PLAT-GU01 or TL-CAT-GC01-GU01. |
 | `title` | VARCHAR | yes | The promise in a few words, such as Every change is checked whole. |
-| `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The platform domain that makes it. |
-| `statement` | VARCHAR | yes | What every other domain can rely on, stated with MUST, MUST NOT, SHOULD or MAY. |
+| `domain_id` | VARCHAR → [`domain`](#table-domain) | no | The platform domain that makes it; exactly one of domain, generated component and library is given. |
+| `generated_component_id` | VARCHAR → [`generated_component`](#table-generated_component) | no | The generated component that makes it; exactly one of domain, generated component and library is given. |
+| `library_id` | VARCHAR → [`library`](#table-library) | no | The library that makes it; exactly one of domain, generated component and library is given. |
+| `statement` | VARCHAR | yes | What the other domains, or the consumers it names, can rely on, stated with MUST, MUST NOT, SHOULD or MAY. |
+| `consumers` | VARCHAR | no | Whom a generated component's or a library's guarantee is for, outside the repo, where no link can reach them, such as every service whose archetype includes the component. A platform domain's guarantee names none: the other domains that rely on it are found from links. |
+| `group_name` | VARCHAR | no | A short heading it is shown under among its maker's guarantees, such as Transport or Audit. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `("trim"("statement") != '')`
+- **Rule:** `("trim"(consumers) != '')`
+- **Rule:** `(((CAST((domain_id IS NOT NULL) AS INTEGER) + CAST((generated_component_id IS NOT NULL) AS INTEGER)) + CAST((library_id IS NOT NULL) AS INTEGER)) = 1)`
 
 <a id="kind-storage_requirement"></a>
 
@@ -952,6 +1015,26 @@ A guarantee no building block keeps.
 
 A guarantee holds because of code or setup the platform domain owns, so it names at least one building block that keeps it: a technical record or a data store (LA-STD-MODELING-R22). Name the building blocks that make the promise hold with kept_by.
 
+<a id="check-consumers-on-platform-guarantee"></a>
+
+### `consumers-on-platform-guarantee`
+
+**Error** · Lathe's · Kinds: [`guarantee`](#kind-guarantee)
+
+A platform domain's guarantee that names consumers.
+
+A platform domain makes its guarantees to the other domains of its product, and who relies on one is found from the links of its building blocks; only a generated component's or a library's guarantee, made to consumers outside the repo, names them (LA-STD-MODELING-R22). Clear its consumers, or move the promise to the generated component or library that ships it.
+
+<a id="check-maker-in-platform-domain"></a>
+
+### `maker-in-platform-domain`
+
+**Error** · Lathe's · Kinds: [`generated_component`](#kind-generated_component), [`library`](#kind-library), [`domain`](#kind-domain)
+
+A generated component or a library that sits in a platform domain.
+
+A generated component or a library is what a business domain ships to consumers outside the repo; a platform domain makes its promises to the other domains of its product itself, as its own guarantees (LA-STD-MODELING-R22). Move it to the business domain that ships it, or write its promises as the platform domain's guarantees.
+
 ### Coverage gaps: domain model
 
 Each is reported in coverage, under the record that falls short, never as a problem.
@@ -960,7 +1043,9 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | --- | --- | --- |
 | <a id="gap-domain-without-aggregate"></a>`domain-without-aggregate` | [`domain`](#kind-domain), [`aggregate`](#kind-aggregate) | A business domain with no aggregate. |
 | <a id="gap-platform-without-guarantee"></a>`platform-without-guarantee` | [`domain`](#kind-domain), [`guarantee`](#kind-guarantee) | A platform domain with no guarantee. |
-| <a id="gap-guarantee-relied-on-by-nothing"></a>`guarantee-relied-on-by-nothing` | [`guarantee`](#kind-guarantee) | A guarantee no other domain relies on: none of its building blocks is linked to a record of another domain or carries out a pattern rule another domain owes. |
+| <a id="gap-guarantee-relied-on-by-nothing"></a>`guarantee-relied-on-by-nothing` | [`guarantee`](#kind-guarantee) | A platform domain's guarantee no other domain relies on: none of its building blocks is linked to a record of another domain or carries out a pattern rule another domain owes. |
+| <a id="gap-guarantee-names-no-consumer"></a>`guarantee-names-no-consumer` | [`guarantee`](#kind-guarantee) | A generated component's or a library's guarantee that names no consumer. |
+| <a id="gap-maker-without-guarantee"></a>`maker-without-guarantee` | [`generated_component`](#kind-generated_component), [`library`](#kind-library), [`guarantee`](#kind-guarantee) | A generated component or a library that makes no guarantee. |
 | <a id="gap-aggregate-without-root"></a>`aggregate-without-root` | [`aggregate`](#kind-aggregate), [`entity`](#kind-entity) | An aggregate with no root entity. |
 | <a id="gap-aggregate-without-command"></a>`aggregate-without-command` | [`aggregate`](#kind-aggregate), [`command`](#kind-command) | An aggregate no command changes. |
 | <a id="gap-entity-without-fields"></a>`entity-without-fields` | [`entity`](#kind-entity), `entity_field` | An entity with no fields. |
@@ -1132,10 +1217,10 @@ Behavior several use cases share, stated once: a fixed part, the settings each u
 - **Complexity:** essential: what the problem itself demands, decided once per product
 - **Obligation:** no
 - **ID:** `<P>-PAT-<name>`, such as `TL-PAT-LIBRARIAN-ACTION`; it starts with its parent's ID
-- **Links out:** none
+- **Links out:** Made by ([`made_by`](#relation-made_by))
 - **Links in:** Questions about this ([`about`](#relation-about)), Followed by ([`follows`](#relation-follows))
 - **Parts:** [`pattern_setting`](#table-pattern_setting)
-- **Checks:** [`pattern-setting-missing`](#check-pattern-setting-missing), [`pattern-not-followed`](#check-pattern-not-followed), [`pattern-candidate`](#check-pattern-candidate)
+- **Checks:** [`pattern-setting-missing`](#check-pattern-setting-missing), [`pattern-not-followed`](#check-pattern-not-followed), [`pattern-candidate`](#check-pattern-candidate), [`pattern-made-by-business-domain`](#check-pattern-made-by-business-domain), [`pattern-rule-restates-guarantee`](#check-pattern-rule-restates-guarantee)
 - **Gaps:** [`pattern-without-rule`](#gap-pattern-without-rule)
 
 <a id="table-pattern"></a>
@@ -1187,7 +1272,7 @@ One rule of a pattern. Every domain that follows the pattern owes it, with no ex
 - **ID:** `<pattern>-R<nn>`, such as `TL-PAT-LIBRARIAN-ACTION-R01`; it starts with its parent's ID
 - **Links out:** Provided by ([`provided_by`](#relation-provided_by))
 - **Links in:** Questions about this ([`about`](#relation-about)), Met by ([`meets`](#relation-meets))
-- **Checks:** [`pattern-rule-test-outside-followers`](#check-pattern-rule-test-outside-followers), [`lone-child`](#check-lone-child), [`serves-no-outcome`](#check-serves-no-outcome)
+- **Checks:** [`pattern-rule-test-outside-followers`](#check-pattern-rule-test-outside-followers), [`lone-child`](#check-lone-child), [`serves-no-outcome`](#check-serves-no-outcome), [`pattern-rule-restates-guarantee`](#check-pattern-rule-restates-guarantee)
 
 <a id="table-pattern_rule"></a>
 
@@ -1395,6 +1480,26 @@ A use case sits with its result (LA-STD-MODELING-R20): with the aggregate of its
 A use case, aggregate, read model or view in a platform domain.
 
 A platform domain is what every other domain stands on and could not run without, and would work unchanged in another product: it has no goals of its own, so it holds no use case, aggregate, read model or view and is described by its guarantees instead (LA-STD-MODELING-R21). A view is in a domain when the steps that happen in it are. Move the record to the business domain whose goal it serves, or write the promise it keeps for the other domains as a guarantee, with its tests and the building blocks that keep it, and remove the record.
+
+<a id="check-pattern-made-by-business-domain"></a>
+
+### `pattern-made-by-business-domain`
+
+**Error** · Lathe's · Kinds: [`pattern`](#kind-pattern), [`domain`](#kind-domain)
+
+A pattern whose fixed part is made by a domain not marked platform.
+
+A pattern's fixed part is shared code every follower uses as it is: a platform domain's, or what a generated component or a library ships. A business domain's code is its own use cases', so it makes no fixed part (LA-STD-MODELING-R25). Name the platform domain, generated component or library whose code the fixed part is, or name none when each follower writes it.
+
+<a id="check-pattern-rule-restates-guarantee"></a>
+
+### `pattern-rule-restates-guarantee`
+
+**Error** · Lathe's · Kinds: [`pattern_rule`](#kind-pattern_rule), [`guarantee`](#kind-guarantee), [`pattern`](#kind-pattern)
+
+A pattern rule that only building blocks of its pattern's maker carry out.
+
+A promise kept by shared code is a guarantee of that code's maker; a promise each follower's own code must meet is a pattern rule; a promise is never stated both ways (LA-STD-MODELING-R25). A rule carried out (meets) only by building blocks that keep the guarantees of the pattern's maker, and by no follower's own code, is kept by the maker's code, so it restates one of its guarantees. Merge the rule into that guarantee, with its tests, and keep in the pattern only what each follower writes in its slots.
 
 ### Coverage gaps: use cases
 
@@ -3778,6 +3883,21 @@ The guarantee is kept by the building block: a technical record or a data store 
 | [`guarantee`](#kind-guarantee) | [`ui_component`](#kind-ui_component) | The guarantee is kept by the UI component. |
 | [`guarantee`](#kind-guarantee) | [`value_type`](#kind-value_type) | The guarantee is kept by the value type. |
 
+<a id="relation-made_by"></a>
+
+### `made_by`
+
+The pattern's fixed part is made by the maker: the shared code a platform domain, a generated component or a library ships, which every follower uses as it is. What that code keeps is a guarantee of the maker; what each follower's own code must meet stays a rule of the pattern, and a rule a building block of the maker carries out (meets) restates one of its guarantees and is refused. A pattern names at most one maker; one with none is a fixed part written into each follower.
+
+- **Reads:** Made by / Makes the fixed part of
+- **Role:** none
+
+| From | To | Meaning |
+| --- | --- | --- |
+| [`pattern`](#kind-pattern) | [`domain`](#kind-domain) | The pattern's fixed part is shared code of the platform domain. |
+| [`pattern`](#kind-pattern) | [`generated_component`](#kind-generated_component) | The pattern's fixed part is code the generated component emits. |
+| [`pattern`](#kind-pattern) | [`library`](#kind-library) | The pattern's fixed part is code of the library. |
+
 <a id="relation-measured_by"></a>
 
 ### `measured_by`
@@ -3809,7 +3929,7 @@ The business outcome is measured by the test or record: a test of any kind, or a
 
 ### `meets`
 
-The technical record follows the rule: a standard rule, which it shows where the rule is applied and so designs; or a pattern rule it carries out, which is the essential record a generic piece of code (a shared component, an entry point, a build script) serves.
+The technical record, or the guarantee, follows the rule: a standard rule, which it shows where the rule is applied and so designs (a guarantee, as the promise it makes); or, for a technical record only, a pattern rule it carries out, which is the essential record a generic piece of code (a shared component, an entry point, a build script) serves.
 
 - **Reads:** Meets / Met by
 - **Role:** none
@@ -3830,6 +3950,7 @@ The technical record follows the rule: a standard rule, which it shows where the
 | [`event_handler`](#kind-event_handler) | [`standard_rule`](#kind-standard_rule) | The event handler follows the standard rule. |
 | [`event_type`](#kind-event_type) | [`pattern_rule`](#kind-pattern_rule) | The event type carries out the pattern rule. |
 | [`event_type`](#kind-event_type) | [`standard_rule`](#kind-standard_rule) | The event type follows the standard rule. |
+| [`guarantee`](#kind-guarantee) | [`standard_rule`](#kind-standard_rule) | The guarantee follows the standard rule: what it promises applies the rule. |
 | [`predicate`](#kind-predicate) | [`pattern_rule`](#kind-pattern_rule) | The predicate carries out the pattern rule. |
 | [`predicate`](#kind-predicate) | [`standard_rule`](#kind-standard_rule) | The predicate follows the standard rule. |
 | [`projection`](#kind-projection) | [`pattern_rule`](#kind-pattern_rule) | The projection carries out the pattern rule. |
@@ -4008,7 +4129,7 @@ The query selects the records that satisfy the specification, of its own domain.
 
 ### `serves`
 
-The aggregate, read model or journey serves the business outcome: what it is for. Each may serve several outcomes, and an outcome be served by several aggregates, read models and journeys.
+The aggregate, read model, journey, generated component or library serves the business outcome: what it is for. Each may serve several outcomes, and an outcome be served by several of them. A generated component's or a library's guarantees, and their tests, serve what it serves.
 
 - **Reads:** Serves / Served by
 - **Role:** none
@@ -4016,7 +4137,9 @@ The aggregate, read model or journey serves the business outcome: what it is for
 | From | To | Meaning |
 | --- | --- | --- |
 | [`aggregate`](#kind-aggregate) | [`business_outcome`](#kind-business_outcome) | The aggregate serves the business outcome: the use cases whose result is one of its commands are for it. |
+| [`generated_component`](#kind-generated_component) | [`business_outcome`](#kind-business_outcome) | The generated component serves the business outcome: what its consumers rely on it for moves it. |
 | [`journey`](#kind-journey) | [`business_outcome`](#kind-business_outcome) | The journey serves the business outcome: its result is what the outcome measures. |
+| [`library`](#kind-library) | [`business_outcome`](#kind-business_outcome) | The library serves the business outcome: what its consumers rely on it for moves it. |
 | [`read_model`](#kind-read_model) | [`business_outcome`](#kind-business_outcome) | The read model serves the business outcome: the use cases whose result is one of its queries are for it. |
 
 <a id="relation-starts_from"></a>
