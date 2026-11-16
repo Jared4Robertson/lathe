@@ -27,7 +27,7 @@ const files = (root: string) =>
 const mtimes = (root: string) => Object.fromEntries(readdirSync(path.join(root, 'data')).map((f) => [f, statSync(path.join(root, 'data', f)).mtimeMs]));
 
 describe('adding', () => {
-  it('LA-PAT-AGGREGATE-COMMANDS-R05-T01 LA-PAT-AGGREGATE-COMMANDS-R05-T04 LA-PAT-AGGREGATE-COMMANDS-R05-T05 LA-PAT-AGGREGATE-COMMANDS-R05-T06 LA-PAT-AGGREGATE-COMMANDS-R05-T07 LA-PAT-AGGREGATE-COMMANDS-R05-T08 adds a record, registers its ID and supertypes, and rewrites only its table file', async () => {
+  it('LA-PLT-GU01-T04 adds a record, registers its ID and supertypes, and rewrites only its table file', async () => {
     const { store, root } = await fresh();
     const before = mtimes(root);
     const result = await run(store, 'use-case add-uc-requirement', { id: 'TL-LEND-UC01-R02', title: 'Member is known', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse an unknown member.' });
@@ -43,7 +43,7 @@ describe('adding', () => {
     await store.close();
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R05-T01 LA-PAT-AGGREGATE-COMMANDS-R05-T04 LA-PAT-AGGREGATE-COMMANDS-R05-T05 LA-PAT-AGGREGATE-COMMANDS-R05-T06 LA-PAT-AGGREGATE-COMMANDS-R05-T07 LA-PAT-AGGREGATE-COMMANDS-R05-T08 adds a record of each new kind: one with no owner, one under either of two parents, and a test', async () => {
+  it('LA-PLT-GU01-T04 adds a record of each new kind: one with no owner, one under either of two parents, and a test', async () => {
     const { store } = await fresh();
     await run(store, 'specification add-specification', { id: 'TL-LEND-SP02', title: 'Member in good standing', statement: 'A member owes nothing.', reads: ['TL-LEND-A1'] });
     await run(store, 'endpoint add-endpoint', { id: 'TL-LEND-EP02', title: 'GET /tools/free', query_id: 'TL-LEND-QRY01', method: 'GET', route: '/tools/free', description: 'Answers 200 with the free tools.' });
@@ -57,7 +57,7 @@ describe('adding', () => {
     await store.close();
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R07-T01 LA-PAT-AGGREGATE-COMMANDS-R07-T04 LA-PAT-AGGREGATE-COMMANDS-R07-T05 LA-PAT-AGGREGATE-COMMANDS-R07-T06 LA-PAT-AGGREGATE-COMMANDS-R07-T07 LA-PAT-AGGREGATE-COMMANDS-R07-T08 refuses a record whose ID is taken and a record under a parent that does not exist', async () => {
+  it('LA-PLT-GU01-T04 refuses a record whose ID is taken and a record under a parent that does not exist', async () => {
     const { store } = await fresh();
     expect(await refusedBy(store, 'view add-view', { id: 'TL-V01', title: 'Again', description: 'The catalog again.' })).toEqual([expect.objectContaining({ rule: 'primary-key' })]);
     expect(await refusedBy(store, 'view add-view-requirement', { id: 'TL-V09-R01', title: 'Lost', view_id: 'TL-V09', statement: 'x' })).toEqual([expect.objectContaining({ rule: 'missing' })]);
@@ -137,7 +137,7 @@ describe('moving', () => {
 });
 
 describe('links', () => {
-  it('LA-PAT-AGGREGATE-COMMANDS-R05-T01 LA-PAT-AGGREGATE-COMMANDS-R05-T04 LA-PAT-AGGREGATE-COMMANDS-R05-T05 LA-PAT-AGGREGATE-COMMANDS-R05-T06 LA-PAT-AGGREGATE-COMMANDS-R05-T07 LA-PAT-AGGREGATE-COMMANDS-R05-T08 a record\'s links are inputs of its own change, keeping the file sorted by its key columns', async () => {
+  it('LA-PLT-GU01-T04 a record\'s links are inputs of its own change, keeping the file sorted by its key columns', async () => {
     const { store, root } = await fresh();
     await run(store, 'read-model change-query', { id: 'TL-LEND-QRY01', calls: ['TL-LEND-DS01'] });
     expect(readFileSync(path.join(root, 'data', 'calls.jsonl'), 'utf8')).toBe(
@@ -162,7 +162,7 @@ describe('links', () => {
     await store.close();
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R07-T01 LA-PAT-AGGREGATE-COMMANDS-R07-T04 LA-PAT-AGGREGATE-COMMANDS-R07-T05 LA-PAT-AGGREGATE-COMMANDS-R07-T06 LA-PAT-AGGREGATE-COMMANDS-R07-T07 LA-PAT-AGGREGATE-COMMANDS-R07-T08 refuses a link to another product', async () => {
+  it('LA-PLT-GU01-T04 refuses a link to another product', async () => {
     const { store } = await fresh();
     await run(store, 'product add-product', { id: 'LA', title: 'Lathe', description: 'A tool for writing specs.' });
     await run(store, 'domain add-domain', { id: 'LA-PRD', title: 'Product', product_id: 'LA', position: 1, subdomain_type: 'core', description: 'Writing the records of a spec.' });
@@ -174,7 +174,7 @@ describe('links', () => {
 
 describe('a command', () => {
   describe('LA-STD-PRINCIPLES-R01-T02 a refused command changes nothing', () => {
-    it('LA-PAT-AGGREGATE-COMMANDS-R03-T01 LA-PAT-AGGREGATE-COMMANDS-R03-T04 LA-PAT-AGGREGATE-COMMANDS-R03-T05 LA-PAT-AGGREGATE-COMMANDS-R03-T06 LA-PAT-AGGREGATE-COMMANDS-R03-T07 LA-PAT-AGGREGATE-COMMANDS-R03-T08 is all or nothing: a refused command leaves the data and the files as they were', async () => {
+    it('LA-PLT-GU01-T04 is all or nothing: a refused command leaves the data and the files as they were', async () => {
       const { store, root } = await fresh();
       const before = files(root);
       // An automated test with no file breaks the table's own rule at the commit, after the command has run.
@@ -237,7 +237,7 @@ describe('a command', () => {
     await store.close();
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R04-T01 LA-PAT-AGGREGATE-COMMANDS-R04-T04 LA-PAT-AGGREGATE-COMMANDS-R04-T05 LA-PAT-AGGREGATE-COMMANDS-R04-T06 LA-PAT-AGGREGATE-COMMANDS-R04-T07 LA-PAT-AGGREGATE-COMMANDS-R04-T08 refuses an aggregate with two roots, before any file changes', async () => {
+  it('LA-PLT-GU01-T04 refuses an aggregate with two roots, before any file changes', async () => {
     const { store } = await fresh();
     expect(await refusedBy(store, 'aggregate change-entity', { id: 'TL-LEND-EN02', role: 'root', in_root_table: null })).toEqual([
       expect.objectContaining({ rule: 'aggregate-root', table: 'aggregate', message: expect.stringContaining('aggregate TL-LEND-A1 has 2 root entities') }),
@@ -245,7 +245,7 @@ describe('a command', () => {
     await store.close();
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R06-T01 LA-PAT-AGGREGATE-COMMANDS-R06-T04 LA-PAT-AGGREGATE-COMMANDS-R06-T05 LA-PAT-AGGREGATE-COMMANDS-R06-T06 LA-PAT-AGGREGATE-COMMANDS-R06-T07 LA-PAT-AGGREGATE-COMMANDS-R06-T08 runs commands one after another, each on the state the one before left', async () => {
+  it('LA-PLT-GU01-T04 runs commands one after another, each on the state the one before left', async () => {
     const { store } = await fresh();
     await Promise.all([2, 3, 4].map((n) => run(store, 'view add-view', { id: `TL-V0${n}`, title: `View ${n}`, description: 'A page of the desk app.' })));
     expect(store.rows('view').map((v) => v.id)).toEqual(['TL-V01', 'TL-V02', 'TL-V03', 'TL-V04']);

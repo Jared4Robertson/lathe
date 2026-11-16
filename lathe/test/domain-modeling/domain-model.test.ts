@@ -112,7 +112,7 @@ describe('entities and value objects', () => {
     }
   });
 
-  it("LA-PAT-AGGREGATE-COMMANDS-R09-T01 LA-PAT-AGGREGATE-COMMANDS-R09-T04 LA-PAT-AGGREGATE-COMMANDS-R09-T05 LA-PAT-AGGREGATE-COMMANDS-R09-T06 LA-PAT-AGGREGATE-COMMANDS-R09-T07 LA-PAT-AGGREGATE-COMMANDS-R09-T08 An entity's fields are rows of their own table under it, read back in position order, each naming its column when it has one", async () => {
+  it("LA-PLT-GU02-T02 An entity's fields are rows of their own table under it, read back in position order, each naming its column when it has one", async () => {
     // Written out of order, read back by position.
     const shuffled = complete();
     shuffled.entity_field = [shuffled.entity_field[2], shuffled.entity_field[0], shuffled.entity_field[1], ...shuffled.entity_field.slice(3)];

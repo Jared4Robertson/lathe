@@ -46,7 +46,7 @@ const mtimes = (root: string) => Object.fromEntries(readdirSync(path.join(root, 
 const changed = (before: Record<string, number>, after: Record<string, number>) => Object.keys(after).filter((f) => after[f] !== before[f]);
 
 describe('in Traceability', () => {
-  it('LA-PAT-AGGREGATE-COMMANDS-R03-T02 a refused fill leaves the data and every file as they were', async () => {
+  it('LA-PLT-GU01-T05 a refused fill leaves the data and every file as they were', async () => {
     const { store, root } = await fresh();
     const before = files(root);
     expect(await refusedBy(store, 'slot-filling fill-slot', { record_id: 'TL-LEND-TOOL02', slot_id: 'TL-PAT-ACT-SL01' })).toEqual([expect.objectContaining({ rule: 'fill-is-hand-written' })]);
@@ -54,14 +54,14 @@ describe('in Traceability', () => {
     expect(files(root)).toEqual(before);
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R04-T02 a provider of the wrong kind is refused by the schema\'s own rules before any file changes', async () => {
+  it('LA-PLT-GU01-T05 a provider of the wrong kind is refused by the schema\'s own rules before any file changes', async () => {
     const { store, root } = await fresh();
     const before = mtimes(root);
     expect(await refusedBy(store, 'provision name-provider', { record_id: 'TL-STORE01', provider_id: 'TL-LEND-TOOL01' })).toEqual([expect.objectContaining({ rule: 'relation-pair' })]);
     expect(changed(before, mtimes(root))).toEqual([]);
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R05-T02 a fill rewrites only the fills file, its rows sorted by key', async () => {
+  it('LA-PLT-GU01-T05 a fill rewrites only the fills file, its rows sorted by key', async () => {
     const { store, root } = await fresh();
     const before = mtimes(root);
     await run(store, 'slot-filling fill-slot', { record_id: 'TL-LEND-TOOL03', slot_id: 'TL-PAT-ACT-SL01' });
@@ -73,7 +73,7 @@ describe('in Traceability', () => {
     );
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R06-T02 two writes at once each land on what the other left', async () => {
+  it('LA-PLT-GU01-T05 two writes at once each land on what the other left', async () => {
     const { store } = await fresh();
     await Promise.all([
       run(store, 'slot-filling fill-slot', { record_id: 'TL-LEND-TOOL03', slot_id: 'TL-PAT-ACT-SL01' }),
@@ -84,7 +84,7 @@ describe('in Traceability', () => {
     expect(store.rows('provided_by')).toEqual([{ source_id: 'TL-STORE01', target_id: 'TL-INT01' }]);
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R07-T02 a refused following names every problem, each with its rule, table and row', async () => {
+  it('LA-PLT-GU01-T05 a refused following names every problem, each with its rule, table and row', async () => {
     const { store } = await fresh();
     const problems = await refusedBy(store, 'pattern-following follow-pattern', { follower_id: 'TL-NONE', pattern_id: 'TL-PAT-NONE' });
     expect(problems).toEqual([
@@ -93,12 +93,12 @@ describe('in Traceability', () => {
     ]);
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R08-T02 a fill without its slot is refused on load, naming the file and line', async () => {
+  it('LA-PLT-GU02-T03 a fill without its slot is refused on load, naming the file and line', async () => {
     const problems = await refusals({ ...rows(), fills: [{ source_id: 'TL-LEND-TOOL03' }] });
     expect(problems).toEqual([expect.objectContaining({ rule: 'required', file: 'data/fills.jsonl', line: 1 })]);
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R09-T02 a following\'s setting values are rows of their own table under it, in the pattern\'s order', async () => {
+  it('LA-PLT-GU02-T03 a following\'s setting values are rows of their own table under it, in the pattern\'s order', async () => {
     const { store } = await fresh();
     await run(store, 'pattern-following follow-pattern', { follower_id: 'TL-LEND', pattern_id: 'TL-PAT-ACT', setting_values: [{ setting: 'result', value: 'The loan.' }, { setting: 'record', value: 'Loan' }] });
     expect(store.rows('follows')).toEqual([{ source_id: 'TL-LEND', target_id: 'TL-PAT-ACT' }]);
@@ -110,7 +110,7 @@ describe('in Traceability', () => {
 });
 
 describe('in Checking', () => {
-  it('LA-PAT-AGGREGATE-COMMANDS-R03-T03 refused limits leave the data and every file as they were', async () => {
+  it('LA-PLT-GU01-T05 refused limits leave the data and every file as they were', async () => {
     const { store, root } = await fresh();
     const before = files(root);
     expect((await refusedBy(store, 'product-setting set-limits', { product_id: 'TL', max_children: 0, max_entities_per_aggregate: 7 })).length).toBeGreaterThan(0);
@@ -118,14 +118,14 @@ describe('in Checking', () => {
     expect(files(root)).toEqual(before);
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R04-T03 limits for a product that does not exist are refused by the schema\'s own rules before any file changes', async () => {
+  it('LA-PLT-GU01-T05 limits for a product that does not exist are refused by the schema\'s own rules before any file changes', async () => {
     const { store, root } = await fresh();
     const before = mtimes(root);
     expect((await refusedBy(store, 'product-setting set-limits', { product_id: 'XX', max_children: 9, max_entities_per_aggregate: 7 })).length).toBeGreaterThan(0);
     expect(changed(before, mtimes(root))).toEqual([]);
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R05-T03 setting the limits rewrites only the product settings file', async () => {
+  it('LA-PLT-GU01-T05 setting the limits rewrites only the product settings file', async () => {
     const { store, root } = await fresh();
     const before = mtimes(root);
     const result = await run(store, 'product-setting set-limits', { product_id: 'TL', max_children: 12, max_entities_per_aggregate: 6 });
@@ -133,7 +133,7 @@ describe('in Checking', () => {
     expect(changed(before, mtimes(root))).toEqual(['product_setting.jsonl']);
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R06-T03 the limits and the technology words set at once are both kept', async () => {
+  it('LA-PLT-GU01-T05 the limits and the technology words set at once are both kept', async () => {
     const { store } = await fresh();
     await run(store, 'product-setting set-limits', { product_id: 'TL', max_children: 12, max_entities_per_aggregate: 6 });
     await Promise.all([
@@ -143,19 +143,19 @@ describe('in Checking', () => {
     expect(store.rows('product_setting')).toEqual([expect.objectContaining({ product_id: 'TL', max_children: 10, max_entities_per_aggregate: 5, technology_words: ['Hono'] })]);
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R07-T03 refused limits name the problem with its rule, table and row', async () => {
+  it('LA-PLT-GU01-T05 refused limits name the problem with its rule, table and row', async () => {
     const { store } = await fresh();
     expect(await refusedBy(store, 'product-setting set-limits', { product_id: 'TL', max_children: 0, max_entities_per_aggregate: 7 })).toEqual([
       expect.objectContaining({ rule: 'check', table: 'product_setting', key: 'TL', message: expect.stringContaining('max_children') }),
     ]);
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R08-T03 a product setting without its limits is refused on load, naming the file and line', async () => {
+  it('LA-PLT-GU02-T03 a product setting without its limits is refused on load, naming the file and line', async () => {
     const problems = await refusals({ ...rows(), product_setting: [{ product_id: 'TL', max_entities_per_aggregate: 7, technology_words: [] }] });
     expect(problems).toEqual([expect.objectContaining({ rule: 'required', file: 'data/product_setting.jsonl', line: 1 })]);
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R09-T03 a product\'s settings are one row of their own table under it, the words in order', async () => {
+  it('LA-PLT-GU02-T03 a product\'s settings are one row of their own table under it, the words in order', async () => {
     const { store } = await fresh();
     await run(store, 'product-setting set-technology-words', { product_id: 'TL', technology_words: ['Vite', 'Hono', 'Vite'] });
     expect(store.rows('product_setting')).toEqual([{ product_id: 'TL', max_children: 15, max_entities_per_aggregate: 7, technology_words: ['Hono', 'Vite'] }]);

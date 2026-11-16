@@ -29,7 +29,8 @@
 {"source_id":"LA-CHK-RM01-PJ","target_id":"LA-STD-NAMING-R05"}
 {"source_id":"LA-CHK-RM01-PJ","target_id":"LA-STD-NAMING-R06"}
 {"source_id":"LA-CHK-RM01-PJ","target_id":"LA-STD-NAMING-R07"}
-{"source_id":"LA-CHK-TB01","target_id":"LA-PAT-AGGREGATE-COMMANDS-R07"}
+{"source_id":"LA-CHK-TB01","target_id":"LA-STD-MODELING-R24"}
+{"source_id":"LA-CHK-TB01","target_id":"LA-STD-MODELING-R25"}
 {"source_id":"LA-CHK-TOOL01","target_id":"LA-STD-ENGINEERING-R01"}
 {"source_id":"LA-CHK-TOOL01","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-EXP-DS03-SV","target_id":"LA-STD-MODELING-R21"}
@@ -754,6 +755,7 @@
 {"source_id":"LA-TRC-RM01-PJ","target_id":"LA-STD-NAMING-R07"}
 {"source_id":"LA-TRC-RM02-TB","target_id":"LA-STD-MODELING-R21"}
 {"source_id":"LA-TRC-RM02-TB","target_id":"LA-STD-MODELING-R22"}
+{"source_id":"LA-TRC-RM02-TB","target_id":"LA-STD-MODELING-R24"}
 {"source_id":"LA-TRC-RM04-PJ","target_id":"LA-STD-PRINCIPLES-R03"}
 {"source_id":"LA-TRC-RM06-PJ","target_id":"LA-PAT-AGGREGATE-COMMANDS-R12"}
 {"source_id":"LA-TRC-RM06-PJ","target_id":"LA-STD-MODELING-R01"}
@@ -876,6 +878,7 @@
 {"source_id":"LA-UCS-EP539-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
 {"source_id":"LA-UCS-EP540-H","target_id":"LA-PAT-AGGREGATE-COMMANDS-R15"}
 {"source_id":"LA-UCS-MOD11","target_id":"LA-STD-PRINCIPLES-R01"}
+{"source_id":"LA-UCS-MOD35","target_id":"LA-STD-MODELING-R25"}
 {"source_id":"LA-UCS-RM11-RD","target_id":"LA-STD-MODELING-R11"}
 {"source_id":"LA-UCS-TB49","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-UCS-TB80","target_id":"LA-STD-PRINCIPLES-R01"}
