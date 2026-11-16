@@ -64,6 +64,10 @@
 {"id":"LA-MOD-MOD89","title":"lathe/src/domain-modeling/value-object/commands","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/value-object/commands","group_name":"Value object"}
 {"id":"LA-MOD-MOD90","title":"lathe/src/domain-modeling/guarantee/model.ts","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/guarantee/model.ts","group_name":"Guarantee"}
 {"id":"LA-MOD-MOD91","title":"lathe/src/domain-modeling/guarantee/commands","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/guarantee/commands","group_name":"Guarantee"}
+{"id":"LA-MOD-MOD92","title":"lathe/src/domain-modeling/generated-component/model.ts","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/generated-component/model.ts","group_name":"Generated component"}
+{"id":"LA-MOD-MOD93","title":"lathe/src/domain-modeling/generated-component/commands","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/generated-component/commands","group_name":"Generated component"}
+{"id":"LA-MOD-MOD94","title":"lathe/src/domain-modeling/library/model.ts","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/library/model.ts","group_name":"Library"}
+{"id":"LA-MOD-MOD95","title":"lathe/src/domain-modeling/library/commands","domain_id":"LA-MOD","file":"lathe/src/domain-modeling/library/commands","group_name":"Library"}
 {"id":"LA-PLT-MOD04","title":"app/src/events.ts","domain_id":"LA-PLT","file":"app/src/events.ts"}
 {"id":"LA-PLT-MOD07","title":"lathe/src/server/contract.ts","domain_id":"LA-PLT","file":"lathe/src/server/contract.ts"}
 {"id":"LA-PLT-MOD08","title":"plugin/scripts/lathe-root.mjs","domain_id":"LA-PLT","file":"plugin/scripts/lathe-root.mjs"}

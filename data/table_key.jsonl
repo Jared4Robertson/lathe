@@ -47,6 +47,10 @@
 {"table_id":"LA-MOD-EN113-TB","position":2,"type":"foreign","columns":["domain_id"],"target_table_id":"LA-MOD-EN04-TB"}
 {"table_id":"LA-MOD-EN114-TB","position":1,"type":"primary","columns":["id"]}
 {"table_id":"LA-MOD-EN114-TB","position":2,"type":"foreign","columns":["guarantee_id"],"target_table_id":"LA-MOD-EN113-TB"}
+{"table_id":"LA-MOD-EN115-TB","position":1,"type":"primary","columns":["id"]}
+{"table_id":"LA-MOD-EN115-TB","position":2,"type":"foreign","columns":["domain_id"],"target_table_id":"LA-MOD-EN04-TB"}
+{"table_id":"LA-MOD-EN116-TB","position":1,"type":"primary","columns":["id"]}
+{"table_id":"LA-MOD-EN116-TB","position":2,"type":"foreign","columns":["domain_id"],"target_table_id":"LA-MOD-EN04-TB"}
 {"table_id":"LA-MOD-EN30-TB","position":1,"type":"primary","columns":["id"]}
 {"table_id":"LA-MOD-EN30-TB","position":2,"type":"foreign","columns":["domain_id"],"target_table_id":"LA-MOD-EN04-TB"}
 {"table_id":"LA-MOD-EN31-TB","position":1,"type":"primary","columns":["id"]}

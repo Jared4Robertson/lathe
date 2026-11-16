@@ -23,8 +23,8 @@ import type { RemoveSlot } from './remove-slot.ts';
 export function addPattern(tx: Transaction, input: AddPattern): void {
   const patterns = new PatternRepository(tx);
   if (tx.record(input.product_id)?.kind !== 'product') tx.refuse('missing', `there is no product ${input.product_id}`);
-  const { settings = [], ...row } = input;
-  const pattern = patterns.create({ root: row.id, pattern: row, settings: settings, rules: [], ruleTests: [], slots: [] });
+  const { settings = [], made_by, ...row } = input;
+  const pattern = patterns.create({ root: row.id, pattern: row, settings: settings, madeBy: made_by ?? null, rules: [], ruleTests: [], slots: [] });
   holdToRules(tx, pattern);
   patterns.save(pattern);
 }
@@ -35,6 +35,7 @@ export function changePattern(tx: Transaction, input: ChangePattern): void {
   const pattern = patterns.load(input.id) ?? tx.refuse('missing', `there is no pattern ${input.id}`);
   pattern.pattern = changed(pattern.pattern, input, ['title', 'description', 'notes']);
   pattern.settings = input.settings ?? pattern.settings;
+  pattern.madeBy = input.made_by === undefined ? pattern.madeBy : input.made_by;
   holdToRules(tx, pattern);
   patterns.save(pattern);
 }

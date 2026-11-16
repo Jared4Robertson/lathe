@@ -10,6 +10,7 @@ export const PATTERN_FIELDS = {
     description: { kind: 'column', table: 'pattern', column: 'description', required: true, clearable: false },
     notes: { kind: 'column', table: 'pattern', column: 'notes', required: false, clearable: false },
     settings: { kind: 'parts', table: 'pattern_setting', columns: ['name', 'meaning'], description: 'Its settings in order, each a name (lower case with underscores) and what a follower decides in it.', required: false, clearable: false },
+    made_by: { kind: 'id', description: 'The maker of its fixed part, the shared code every follower uses as it is: a platform domain, a generated component or a library. None when each follower writes it.', required: false, clearable: false },
   },
   '/api/pattern/change-pattern': {
     id: { kind: 'column', table: 'pattern', column: 'id', required: true, clearable: false },
@@ -17,6 +18,7 @@ export const PATTERN_FIELDS = {
     description: { kind: 'column', table: 'pattern', column: 'description', required: false, clearable: false },
     notes: { kind: 'column', table: 'pattern', column: 'notes', required: false, clearable: true },
     settings: { kind: 'parts', table: 'pattern_setting', columns: ['name', 'meaning'], description: 'Its settings in order, each a name (lower case with underscores) and what a follower decides in it.', required: false, clearable: false },
+    made_by: { kind: 'id', description: 'The maker of its fixed part: a platform domain, a generated component or a library.', required: false, clearable: true },
   },
   '/api/pattern/remove-pattern': {
     id: { kind: 'column', table: 'pattern', column: 'id', required: true, clearable: false },

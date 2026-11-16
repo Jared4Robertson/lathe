@@ -46,6 +46,8 @@
 {"id":"LA-MOD-EN111-TB","title":"storage_requirement_test","entity_id":"LA-MOD-EN111","name":"storage_requirement_test","storage":"table","file":"lathe/schema/008-test-plan.sql"}
 {"id":"LA-MOD-EN113-TB","title":"guarantee","entity_id":"LA-MOD-EN113","name":"guarantee","storage":"table","file":"lathe/schema/004-domain-model.sql"}
 {"id":"LA-MOD-EN114-TB","title":"guarantee_test","entity_id":"LA-MOD-EN114","name":"guarantee_test","storage":"table","file":"lathe/schema/008-test-plan.sql"}
+{"id":"LA-MOD-EN115-TB","title":"generated_component","entity_id":"LA-MOD-EN115","name":"generated_component","storage":"table","file":"lathe/schema/004-domain-model.sql"}
+{"id":"LA-MOD-EN116-TB","title":"library","entity_id":"LA-MOD-EN116","name":"library","storage":"table","file":"lathe/schema/004-domain-model.sql"}
 {"id":"LA-MOD-EN30-TB","title":"term","entity_id":"LA-MOD-EN30","name":"term","storage":"table","file":"lathe/schema/004-domain-model.sql"}
 {"id":"LA-MOD-EN31-TB","title":"value_object","entity_id":"LA-MOD-EN31","name":"value_object","storage":"table","file":"lathe/schema/004-domain-model.sql"}
 {"id":"LA-MOD-EN32-TB","title":"value_object_field","entity_id":"LA-MOD-EN32","name":"value_object_field","storage":"table","file":"lathe/schema/004-domain-model.sql"}
@@ -84,6 +86,8 @@
 {"id":"LA-MOD-RM30-TB","title":"ReadModelTable","read_model_id":"LA-MOD-RM30","name":"ReadModelTable","storage":"in memory","file":"lathe/src/domain-modeling/read-model/read-model.ts"}
 {"id":"LA-MOD-RM42-TB","title":"StorageRequirementTable","read_model_id":"LA-MOD-RM42","name":"StorageRequirementTable","storage":"in memory","file":"lathe/src/domain-modeling/storage-requirement/read-model.ts"}
 {"id":"LA-MOD-RM44-TB","title":"GuaranteeTable","read_model_id":"LA-MOD-RM44","name":"GuaranteeTable","storage":"in memory","file":"lathe/src/domain-modeling/guarantee/read-model.ts"}
+{"id":"LA-MOD-RM45-TB","title":"GeneratedComponentTable","read_model_id":"LA-MOD-RM45","name":"GeneratedComponentTable","storage":"in memory","file":"lathe/src/domain-modeling/generated-component/read-model.ts"}
+{"id":"LA-MOD-RM46-TB","title":"LibraryTable","read_model_id":"LA-MOD-RM46","name":"LibraryTable","storage":"in memory","file":"lathe/src/domain-modeling/library/read-model.ts"}
 {"id":"LA-MOD-TB30","title":"serves","domain_id":"LA-MOD","name":"serves","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-MOD-TB31","title":"persists","domain_id":"LA-MOD","name":"persists","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-MOD-TB40","title":"has_one","domain_id":"LA-MOD","name":"has_one","storage":"table","file":"lathe/schema/010-links.sql"}

@@ -174,6 +174,12 @@
 {"id":"LA-MOD-CMD403","title":"Add a guarantee test","entity_id":"LA-MOD-EN114","description":"Adds a guarantee test under its guarantee, with the test data sets it starts from."}
 {"id":"LA-MOD-CMD404","title":"Change a guarantee test","entity_id":"LA-MOD-EN114","description":"Changes a guarantee test's way of running or the test data sets it starts from (the whole list)."}
 {"id":"LA-MOD-CMD405","title":"Remove a guarantee test","entity_id":"LA-MOD-EN114","description":"Removes a guarantee test and the links it starts. Refused while anything references it."}
+{"id":"LA-MOD-CMD406","title":"Add a generated component","entity_id":"LA-MOD-EN115","description":"Adds a generated component to a business domain: what the product emits for code outside the repo, with the business outcomes it serves."}
+{"id":"LA-MOD-CMD407","title":"Change a generated component","entity_id":"LA-MOD-EN115","description":"Changes a generated component's title or description, or the business outcomes it serves (the whole list). Its domain never changes."}
+{"id":"LA-MOD-CMD408","title":"Remove a generated component","entity_id":"LA-MOD-EN115","description":"Removes a generated component and the links it starts. Refused while anything references it, such as a guarantee it makes or a pattern whose fixed part it makes."}
+{"id":"LA-MOD-CMD409","title":"Add a library","entity_id":"LA-MOD-EN116","description":"Adds a library to a business domain: what the product holds for code outside the repo, with the business outcomes it serves."}
+{"id":"LA-MOD-CMD410","title":"Change a library","entity_id":"LA-MOD-EN116","description":"Changes a library's title or description, or the business outcomes it serves (the whole list). Its domain never changes."}
+{"id":"LA-MOD-CMD411","title":"Remove a library","entity_id":"LA-MOD-EN116","description":"Removes a library and the links it starts. Refused while anything references it, such as a guarantee it makes or a pattern whose fixed part it makes."}
 {"id":"LA-PRD-CMD120","title":"Add a product","entity_id":"LA-PRD-EN01","description":"Adds a product, the root of a set of specifications, with its roles."}
 {"id":"LA-PRD-CMD121","title":"Change a product","entity_id":"LA-PRD-EN01","description":"Changes a product's title, description, icon, color or notes, or its roles (the whole list)."}
 {"id":"LA-PRD-CMD122","title":"Declare a product kind","entity_id":"LA-PRD-EN02","description":"Declares a kind of the product's own, with its fields in order: the next load gives it a table of its own."}

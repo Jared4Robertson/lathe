@@ -25,7 +25,8 @@
 // the records of other domains that rely on it: those linked to one of the building blocks that keep it, in either
 // direction, by any relation but kept_by (a repository stored in its data store, a requirement its shared module
 // implements), or the pattern rules they carry out, which the domains that follow the pattern owe; its guarantee tests
-// serve them through it. The engine fills record_serves with it before the checks run (the serves-no-outcome
+// serve them through it. A generated component or a library serves its own outcomes, and the guarantees it makes its
+// outside consumers, with their tests, serve them through it. The engine fills record_serves with it before the checks run (the serves-no-outcome
 // check reads it), and the Serves read model's projection (LA-TRC-RM12-PJ) answers from it.
 import type { ReadView } from '../platform/data/rules.ts';
 import type { Row } from '../platform/data/rows.ts';
@@ -73,8 +74,8 @@ export function servesOf(view: Pick<ReadView, 'schema' | 'rows' | 'readerOf'>): 
   };
   const rows = (table: string): Row[] => (view.schema.tables[table] ? view.rows(table) : []);
   const servesOutcomes = index(rows('serves'), 'source_id', 'target_id');
-  // An aggregate or read model serves its own outcomes.
-  for (const group of [...rows('aggregate'), ...rows('read_model')].map((g) => String(g.id))) {
+  // An aggregate, a read model, a generated component or a library serves its own outcomes.
+  for (const group of [...rows('aggregate'), ...rows('read_model'), ...rows('generated_component'), ...rows('library')].map((g) => String(g.id))) {
     const outcomes = servesOutcomes.get(group);
     if (outcomes) mark(group, outcomes, null, null);
   }
@@ -118,6 +119,13 @@ export function servesOf(view: Pick<ReadView, 'schema' | 'rows' | 'readerOf'>): 
     const testsOf = index(rows('guarantee_test'), 'guarantee_id', 'id');
     for (const g of guarantees) {
       const guarantee = String(g.id);
+      // A guarantee a generated component or a library makes serves what its maker serves.
+      const maker = typeof g.generated_component_id === 'string' ? g.generated_component_id : typeof g.library_id === 'string' ? g.library_id : null;
+      if (maker !== null) {
+        const outcomes = servesOutcomes.get(maker) ?? [];
+        if (outcomes.length) for (const at of [guarantee, ...(testsOf.get(guarantee) ?? [])]) mark(at, outcomes, null, null);
+        continue;
+      }
       const relying = (keptBy.get(guarantee) ?? []).flatMap((block) => ends.get(block) ?? [])
         .filter((id) => { const at = placed.get(id); return at?.kind === 'pattern_rule' || (at?.domain != null && at.domain !== g.domain_id); });
       for (const id of relying) {

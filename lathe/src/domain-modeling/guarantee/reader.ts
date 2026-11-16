@@ -13,8 +13,8 @@ export interface GuaranteeReader {
   kindOf(id: string): string | undefined;
   /** The page of a record inside a guarantee, or undefined when no guarantee holds it. */
   page(id: string): GuaranteePage | undefined;
-  /** A domain's guarantees, by ID, or undefined when there is no such domain. */
-  guaranteesOf(domainId: string): GuaranteeSummary[] | undefined;
+  /** A maker's guarantees, by ID, or undefined when there is no such maker. */
+  guaranteesOf(makerId: string): GuaranteeSummary[] | undefined;
   /** The highest number in use after the prefix, as in <prefix>07, or 0 when none is. */
   highestAfter(prefix: string): number;
   /** How the IDs of a kind are written, read from the schema: its parents, and the letters and digits its ID ends in. */
@@ -40,8 +40,8 @@ export class InMemoryGuaranteeReader implements GuaranteeReader {
     return holding && { record: { id, kind: holding.kind }, ...this.table.guarantees.get(holding.root)! };
   }
 
-  guaranteesOf(domainId: string): GuaranteeSummary[] | undefined {
-    return this.table.domains.get(domainId);
+  guaranteesOf(makerId: string): GuaranteeSummary[] | undefined {
+    return this.table.makers.get(makerId);
   }
 
   idShape(kind: string): IdShape {

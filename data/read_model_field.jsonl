@@ -123,6 +123,12 @@
 {"read_model_id":"LA-MOD-RM44","position":2,"name":"Kept by","meaning":"The building blocks that keep it, by ID.","type":"text","required":true}
 {"read_model_id":"LA-MOD-RM44","position":3,"name":"Tests","meaning":"Its guarantee tests, each with the test data sets it starts from.","type":"text","required":true}
 {"read_model_id":"LA-MOD-RM44","position":4,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the guarantee: the guarantee or one of its tests.","type":"text","required":true}
+{"read_model_id":"LA-MOD-RM45","position":1,"name":"Generated component","meaning":"The generated component's row: its ID, title, domain and description.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-MOD-RM45","position":2,"name":"Serves","meaning":"The business outcomes it serves, by ID.","type":"text","required":true}
+{"read_model_id":"LA-MOD-RM45","position":3,"name":"Guarantees","meaning":"The guarantees it makes, each by ID with its title.","type":"text","required":true}
+{"read_model_id":"LA-MOD-RM46","position":1,"name":"Library","meaning":"The library's row: its ID, title, domain and description.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-MOD-RM46","position":2,"name":"Serves","meaning":"The business outcomes it serves, by ID.","type":"text","required":true}
+{"read_model_id":"LA-MOD-RM46","position":3,"name":"Guarantees","meaning":"The guarantees it makes, each by ID with its title.","type":"text","required":true}
 {"read_model_id":"LA-PRD-RM01","position":1,"name":"Kinds","meaning":"Every kind, Lathe's and the product's, by stage and position, with its label, description, stage, parents and children, obligation, ID pattern, example and scope.","type":"text","required":true}
 {"read_model_id":"LA-PRD-RM01","position":2,"name":"Tables","meaning":"Each table's role, keys and columns with their types, values, references and descriptions.","type":"text","required":true}
 {"read_model_id":"LA-PRD-RM01","position":3,"name":"Relations","meaning":"Each relation's role, scope, labels, description and pairs.","type":"text","required":true}
