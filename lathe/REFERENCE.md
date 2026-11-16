@@ -960,7 +960,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | --- | --- | --- |
 | <a id="gap-domain-without-aggregate"></a>`domain-without-aggregate` | [`domain`](#kind-domain), [`aggregate`](#kind-aggregate) | A business domain with no aggregate. |
 | <a id="gap-platform-without-guarantee"></a>`platform-without-guarantee` | [`domain`](#kind-domain), [`guarantee`](#kind-guarantee) | A platform domain with no guarantee. |
-| <a id="gap-guarantee-relied-on-by-nothing"></a>`guarantee-relied-on-by-nothing` | [`guarantee`](#kind-guarantee) | A guarantee no other domain relies on: none of its building blocks is linked to a record of another domain. |
+| <a id="gap-guarantee-relied-on-by-nothing"></a>`guarantee-relied-on-by-nothing` | [`guarantee`](#kind-guarantee) | A guarantee no other domain relies on: none of its building blocks is linked to a record of another domain or carries out a pattern rule another domain owes. |
 | <a id="gap-aggregate-without-root"></a>`aggregate-without-root` | [`aggregate`](#kind-aggregate), [`entity`](#kind-entity) | An aggregate with no root entity. |
 | <a id="gap-aggregate-without-command"></a>`aggregate-without-command` | [`aggregate`](#kind-aggregate), [`command`](#kind-command) | An aggregate no command changes. |
 | <a id="gap-entity-without-fields"></a>`entity-without-fields` | [`entity`](#kind-entity), `entity_field` | An entity with no fields. |
