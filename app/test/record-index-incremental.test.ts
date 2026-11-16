@@ -3,8 +3,8 @@ import type { RecordSummaries, SummaryLink } from '../../lathe/src/exploring/rec
 import type { FolderTree } from '../../lathe/src/exploring/folder-tree/read-model';
 import { compareIds, coverageOf, indexOf, problemsOf, recordsOf, type Records } from '../src/exploring/record-summaries/record-index';
 import { ownerFolders } from '../src/exploring/folder-tree/folders';
-import { indexMetaModel } from '../src/platform/meta-model/reads';
-import type { MetaModel } from '../src/platform/meta-model/reads';
+import { indexMetaModel } from '../src/product/meta-model/reads';
+import type { MetaModel } from '../src/product/meta-model/reads';
 
 // The record index worked out by what changed (record-index.ts recordsOf, the Folder tree look-up) gives what building
 // it afresh gives, and keeps what did not change as it was (LA-EXP-RM01-SR01).

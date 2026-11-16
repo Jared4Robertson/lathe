@@ -2,8 +2,8 @@
 // six stages, each relation's pairs with their words both ways, and each table's columns, read from the schema through
 // the read model's reader, as the app names and draws every record and field.
 import { afterEach, describe, expect, it } from 'vitest';
-import { GET_META_MODEL } from '../../../src/platform/meta-model/queries.ts';
-import type { MetaModel } from '../../../src/platform/meta-model/read-model.ts';
+import { GET_META_MODEL } from '../../../src/product/meta-model/queries.ts';
+import type { MetaModel } from '../../../src/product/meta-model/read-model.ts';
 import { runQuery } from '../../../src/platform/commands/run.ts';
 import type { Store } from '../../../src/platform/data/store.ts';
 import { closeTwoProducts, twoProducts } from '../../checking/problems/data-set.ts';

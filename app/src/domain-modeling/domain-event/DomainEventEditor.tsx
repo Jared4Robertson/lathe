@@ -14,7 +14,7 @@ import { DOMAIN_EVENT_FIELDS } from './fields.generated';
 import { useNextDomainEventId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
-import { kindWord } from '../../platform/meta-model/reads';
+import { kindWord } from '../../product/meta-model/reads';
 
 // The Domain event editor (LA-MOD-A7): the actions on a domain event or its event type, each sending one of the
 // aggregate's own commands, POST /api/domain-event/<command>, and nothing else. Edit sends its kind's Change with only

@@ -2,7 +2,7 @@
 // columns, as the app names and draws every record and field; answered from the read model through its reader
 // (reader.ts). Its handler never sees the data and changes nothing. This slice holds only the read, so it names its
 // read model where an aggregate's slice names its aggregate.
-import type { QueryDefinition } from '../commands/definition.ts';
+import type { QueryDefinition } from '../../platform/commands/definition.ts';
 import type { MetaModel } from './read-model.ts';
 import { metaModelReader, type MetaModelReader } from './reader.ts';
 import { GET_META_MODEL_IDENTITY } from './queries.generated.ts';

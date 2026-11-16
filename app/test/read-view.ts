@@ -3,18 +3,18 @@ import type { SchemaDescription } from '../../lathe/src/platform/data/schema';
 import type { Row } from '../../lathe/src/server/contract';
 import type { Coverage, Problem, TraceChain } from '../../lathe/src/types';
 import { answerQuery } from '../../lathe/src/platform/commands/run';
-import { GET_META_MODEL } from '../../lathe/src/platform/meta-model/queries';
+import { GET_META_MODEL } from '../../lathe/src/product/meta-model/queries';
 import { LIST_RECORD_SUMMARIES } from '../../lathe/src/exploring/record-summaries/queries';
 import { GET_FOLDER_TREE } from '../../lathe/src/exploring/folder-tree/queries';
 import { LIST_PROBLEMS } from '../../lathe/src/checking/problems/queries';
 import { GET_COVERAGE } from '../../lathe/src/traceability/coverage/queries';
-import type { MetaModel } from '../../lathe/src/platform/meta-model/read-model';
+import type { MetaModel } from '../../lathe/src/product/meta-model/read-model';
 import type { RecordSummaries } from '../../lathe/src/exploring/record-summaries/read-model';
 import type { FolderTree } from '../../lathe/src/exploring/folder-tree/read-model';
 import type { ProductProblems } from '../../lathe/src/checking/problems/read-model';
 import type { ProductCoverage } from '../../lathe/src/traceability/coverage/read-model';
 import { buildRecordIndex, type RecordIndex } from '../src/exploring/record-summaries/record-index';
-import { indexMetaModel } from '../src/platform/meta-model/reads';
+import { indexMetaModel } from '../src/product/meta-model/reads';
 
 /**
  * The data the test server serves (helpers.tsx serve): the schema, each product folder's rows, and the checks' run over

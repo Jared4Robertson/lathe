@@ -14,7 +14,7 @@ import { STANDARD_FIELDS } from './fields.generated';
 import { useNextStandardId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
-import { kindWord, addedUnder } from '../../platform/meta-model/reads';
+import { kindWord, addedUnder } from '../../product/meta-model/reads';
 
 // The Standard editor (LA-TEC-A3): the actions on a record of a standard, each sending one of the aggregate's own
 // commands, POST /api/standard/<command>, and nothing else. Edit sends its kind's Change with only what changed; Add

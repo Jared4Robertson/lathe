@@ -33,7 +33,17 @@ function sources(): { file: string; text: string; imports: string[] }[] {
 }
 
 const isRepository = (file: string) => file.endsWith('/repository.ts');
-const isHandler = (file: string) => /\/commands\/[^/]+\.ts$/.test(file) && !file.endsWith('/index.ts') && !file.includes('/platform/');
+/** The files of the command handlers Lathe's records name, such as `lathe init`'s and `lathe upgrade`'s outside a slice's commands. */
+const handlerFiles = (): Set<string> => new Set(data('command_handler').map((h) => String(h.file)));
+/** The repository files of the aggregates whose commands a handler file carries out, as the records say: a handler outside a slice's commands, such as `lathe init`'s, imports these. */
+function ownRepositories(file: string): Set<string> {
+  const aggregateOf = new Map(data('entity').map((e) => [String(e.id), String(e.aggregate_id)]));
+  const commandAggregate = new Map(data('command').map((c) => [String(c.id), aggregateOf.get(String(c.entity_id))]));
+  const aggregates = new Set(data('command_handler').filter((h) => h.file === file).map((h) => commandAggregate.get(String(h.command_id))));
+  const persisted = new Set(data('persists').filter((p) => aggregates.has(String(p.target_id))).map((p) => String(p.source_id)));
+  return new Set(data('repository').filter((r) => persisted.has(String(r.id))).map((r) => String(r.file)));
+}
+const isHandler = (file: string) => (/\/commands\/[^/]+\.ts$/.test(file) && !file.endsWith('/index.ts') && !file.includes('/platform/')) || handlerFiles().has(file);
 const sliceOf = (file: string) => path.dirname(file.replace(/\/commands\/[^/]+\.ts$/, '/x.ts'));
 
 /** Lathe's own data, by table. */
@@ -58,7 +68,7 @@ describe('LA-UCS-UC06-R12-T02 only repositories write data files, each handler l
   it('lets a handler import only its own aggregate\'s repository', () => {
     const crossing = files
       .filter((f) => isHandler(f.file))
-      .flatMap((f) => f.imports.filter((i) => isRepository(i) && !i.includes('/platform/') && path.dirname(i) !== sliceOf(f.file)).map((i) => `${f.file} imports ${i}`));
+      .flatMap((f) => f.imports.filter((i) => isRepository(i) && !i.includes('/platform/') && path.dirname(i) !== sliceOf(f.file) && !ownRepositories(f.file).has(i)).map((i) => `${f.file} imports ${i}`));
     expect(crossing).toEqual([]);
   });
 

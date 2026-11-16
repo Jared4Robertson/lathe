@@ -103,7 +103,7 @@
 {"id":"LA-PRD-EN115-TB","title":"journey","entity_id":"LA-PRD-EN115","name":"journey","storage":"table","file":"lathe/schema/003-product.sql"}
 {"id":"LA-PRD-EN116-TB","title":"journey_step","entity_id":"LA-PRD-EN116","name":"journey_step","storage":"table","file":"lathe/schema/003-product.sql"}
 {"id":"LA-PRD-EN117-TB","title":"journey_test","entity_id":"LA-PRD-EN117","name":"journey_test","storage":"table","file":"lathe/schema/008-test-plan.sql"}
-{"id":"LA-PRD-EN16-TB","title":"lathe.config.json","entity_id":"LA-PRD-EN16","name":"lathe.config.json","storage":"file","file":"lathe/src/platform/product-repo/repository.ts"}
+{"id":"LA-PRD-EN16-TB","title":"lathe.config.json","entity_id":"LA-PRD-EN16","name":"lathe.config.json","storage":"file","file":"lathe/src/product/product-repo/repository.ts"}
 {"id":"LA-PRD-EN23-TB","title":"question","entity_id":"LA-PRD-EN23","name":"question","storage":"table","file":"lathe/schema/009-questions.sql"}
 {"id":"LA-PRD-EN28-TB","title":"product_kind_field","entity_id":"LA-PRD-EN28","name":"product_kind_field","storage":"table","file":"lathe/schema/012-product-kinds.sql"}
 {"id":"LA-PRD-EN29-TB","title":"product_relation","entity_id":"LA-PRD-EN29","name":"product_relation","storage":"table","file":"lathe/schema/012-product-kinds.sql"}
@@ -112,7 +112,7 @@
 {"id":"LA-PRD-EN81-TB","title":"<kind>.jsonl","entity_id":"LA-PRD-EN81","name":"<kind>.jsonl","storage":"file","file":"lathe/src/product/extension-record/repository.ts"}
 {"id":"LA-PRD-RM01-TB","title":"Reference","read_model_id":"LA-PRD-RM01","name":"Reference","storage":"in memory","file":"lathe/src/index.ts"}
 {"id":"LA-PRD-RM02-TB","title":"RecordDataFileTable","read_model_id":"LA-PRD-RM02","name":"RecordDataFileTable","storage":"in memory","file":"lathe/src/product/record-data-file/read-model.ts"}
-{"id":"LA-PRD-RM08-TB","title":"MetaModelTable","read_model_id":"LA-PRD-RM08","name":"MetaModelTable","storage":"in memory","file":"lathe/src/platform/meta-model/read-model.ts"}
+{"id":"LA-PRD-RM08-TB","title":"MetaModelTable","read_model_id":"LA-PRD-RM08","name":"MetaModelTable","storage":"in memory","file":"lathe/src/product/meta-model/read-model.ts"}
 {"id":"LA-PRD-RM21-TB","title":"Product","read_model_id":"LA-PRD-RM21","name":"Product","storage":"in memory","file":"lathe/src/product/product/model.ts"}
 {"id":"LA-PRD-RM36-TB","title":"BusinessOutcome","read_model_id":"LA-PRD-RM36","name":"BusinessOutcome","storage":"in memory","file":"lathe/src/product/business-outcome/model.ts"}
 {"id":"LA-PRD-RM39-TB","title":"ExtensionRecord","read_model_id":"LA-PRD-RM39","name":"ExtensionRecord","storage":"in memory","file":"lathe/src/product/extension-record/model.ts"}

@@ -3,8 +3,8 @@
 // table's columns as its fields' inputs take them. It is what the schema declares, never the rows: every page names a
 // kind by its label, places it in its stage, words a link by its relation's labels and draws a field by its column.
 // The projection is the only code that reads the schema for the query, and the only code that writes the table.
-import type { ReadView } from '../data/rules.ts';
-import type { ColumnDescription, Complexity, IdScope, Stage } from '../data/schema.ts';
+import type { ReadView } from '../../platform/data/rules.ts';
+import type { ColumnDescription, Complexity, IdScope, Stage } from '../../platform/data/schema.ts';
 
 /** One kind. */
 export interface MetaKind {

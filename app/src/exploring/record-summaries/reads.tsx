@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { onLatheEvent } from '../../events';
-import { indexMetaModel, type MetaModel } from '../../platform/meta-model/reads';
+import { indexMetaModel, type MetaModel } from '../../product/meta-model/reads';
 import { forgetWithReads, readModelChanges, readModelsChanged, useVersionedRead } from '../../record/read';
 import { indexOf, type RecordIndex } from './record-index';
 import { checksOf, forgetMirrors, keepMirroredTree, mirrorOf, NO_COVERAGE, NO_PROBLEMS, putChange, putChecks, type Mirrored, type MirroredChecks } from './space-index';

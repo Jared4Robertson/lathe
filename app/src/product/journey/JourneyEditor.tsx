@@ -16,7 +16,7 @@ import { JOURNEY_FIELDS } from './fields.generated';
 import { useNextJourneyId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
-import { kindWord, addedUnder } from '../../platform/meta-model/reads';
+import { kindWord, addedUnder } from '../../product/meta-model/reads';
 
 // The Journey editor (LA-PRD-A25): the actions on a record of a journey, each sending one of the aggregate's own
 // commands, POST /api/journey/<command>, and nothing else. Edit sends its kind's Change with only what changed; Add

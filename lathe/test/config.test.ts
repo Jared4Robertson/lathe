@@ -4,7 +4,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { DEFAULT_TESTS, loadConfig, loadWorkspace, openStore, readConfig, SCHEMA_VERSION, SchemaVersionError, schemaVersionMessage } from '../src/index.ts';
-import { ProductRepoConfigRepository } from '../src/platform/product-repo/repository.ts';
+import { ProductRepoConfigRepository } from '../src/product/product-repo/repository.ts';
 import { removeData, writeData } from './helpers.ts';
 
 afterAll(removeData);

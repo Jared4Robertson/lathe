@@ -1,5 +1,5 @@
 import { lowerLabel } from '../../plural';
-import type { MetaKind, MetaModel, MetaRelation, MetaStage } from '../../../../lathe/src/platform/meta-model/read-model';
+import type { MetaKind, MetaModel, MetaRelation, MetaStage } from '../../../../lathe/src/product/meta-model/read-model';
 import type { ColumnDescription } from '../../../../lathe/src/platform/data/schema';
 
 export type { MetaKind, MetaModel, MetaRelation, MetaStage };

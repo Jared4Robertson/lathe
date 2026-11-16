@@ -1,4 +1,4 @@
-import type { MetaModel } from '../../platform/meta-model/reads';
+import type { MetaModel } from '../../product/meta-model/reads';
 import type { SpaceReply, SpaceRequest } from './space-index';
 
 // How the page asks the space's index builder (space-index.ts): its worker (space-index.worker.ts), or where there is

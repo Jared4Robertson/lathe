@@ -53,7 +53,7 @@ import { GET_FOLDER_TREE } from './exploring/folder-tree/queries.ts';
 import { GET_GUARANTEE, LIST_GUARANTEES, NEXT_GUARANTEE_ID } from './domain-modeling/guarantee/queries.ts';
 import { GET_INTEGRATION, LIST_INTEGRATIONS, NEXT_INTEGRATION_ID } from './interface-design/integration/queries.ts';
 import { GET_JOURNEY, LIST_JOURNEYS, NEXT_JOURNEY_ID } from './product/journey/queries.ts';
-import { GET_META_MODEL } from './platform/meta-model/queries.ts';
+import { GET_META_MODEL } from './product/meta-model/queries.ts';
 import { GET_PATTERN, LIST_PATTERNS, NEXT_PATTERN_ID } from './use-cases/pattern/queries.ts';
 import { GET_FOLLOWING, LIST_FOLLOWINGS, LIST_FOLLOWERS } from './traceability/pattern-following/queries.ts';
 import { LIST_PROBLEMS } from './checking/problems/queries.ts';

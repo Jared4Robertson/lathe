@@ -15,7 +15,7 @@ import { GUARANTEE_FIELDS } from './fields.generated';
 import { useNextGuaranteeId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
-import { kindWord } from '../../platform/meta-model/reads';
+import { kindWord } from '../../product/meta-model/reads';
 
 // The Guarantee editor (LA-MOD-A24): the actions on a guarantee or one of its tests, each sending one of the
 // aggregate's own commands, POST /api/guarantee/<command>, and nothing else. Edit sends its kind's Change with only

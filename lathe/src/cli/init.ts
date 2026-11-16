@@ -3,7 +3,7 @@
 // command, Add a product (LA-PRD-CMD120).
 import path from 'node:path';
 import { CONFIG_FILE, SCHEMA_VERSION } from '../config.ts';
-import { ProductRepoConfigRepository } from '../platform/product-repo/repository.ts';
+import { ProductRepoConfigRepository } from '../product/product-repo/repository.ts';
 import { ADD_PRODUCT } from '../product/product/commands/add-product.ts';
 import { InputError } from '../platform/commands/definition.ts';
 import { runCommand } from '../platform/commands/run.ts';

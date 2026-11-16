@@ -2,7 +2,7 @@
 // storage. The query handler depends only on the MetaModelReader interface; the query runner injects the reader the
 // query's definition makes (`reader`). Today's implementation reads the projection's table, kept in memory and built
 // on each read.
-import type { ReadView } from '../data/rules.ts';
+import type { ReadView } from '../../platform/data/rules.ts';
 import { metaModelTableFrom, type MetaModel, type MetaModelTable } from './read-model.ts';
 
 /** What the Meta model query reads, and all it reads. */

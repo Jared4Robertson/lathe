@@ -12,7 +12,7 @@ import { PACKAGE_DIR } from '../src/index.ts';
 import type { WriteAnswer } from '../src/server/contract.ts';
 import type { DataChange } from '../src/server/events.ts';
 import { summariesIn, type RecordSummaries } from '../src/exploring/record-summaries/read-model.ts';
-import type { MetaModel } from '../src/platform/meta-model/read-model.ts';
+import type { MetaModel } from '../src/product/meta-model/read-model.ts';
 import { openStore, SCHEMA_DIR } from '../src/platform/data/index.ts';
 import { APP_DIR, serve, type LatheServer } from '../src/server/serve.ts';
 

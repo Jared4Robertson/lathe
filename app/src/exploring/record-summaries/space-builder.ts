@@ -3,7 +3,7 @@ import type { FolderTree } from '../../../../lathe/src/exploring/folder-tree/rea
 import type { StoreProblem } from '../../../../lathe/src/server/contract';
 import type { ProductProblems } from '../../../../lathe/src/checking/problems/read-model';
 import type { ProductCoverage } from '../../../../lathe/src/traceability/coverage/read-model';
-import { indexMetaModel, type MetaIndex } from '../../platform/meta-model/reads';
+import { indexMetaModel, type MetaIndex } from '../../product/meta-model/reads';
 import { emptyTree, treeChange, treeOf, type Tree } from '../../graph/tree';
 import { inputChange, productInput, type MapInput } from '../../graph/layout-input';
 import { coverageOf, indexOf, problemsOf, recordsOf, type RecordIndex, type Records } from './record-index';

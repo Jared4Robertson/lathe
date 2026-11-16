@@ -14,7 +14,7 @@ import { USE_CASE_FIELDS } from './fields.generated';
 import { stepsOf, useNextId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
-import { kindWord, addedUnder } from '../../platform/meta-model/reads';
+import { kindWord, addedUnder } from '../../product/meta-model/reads';
 
 // The Use case editor (LA-UCS-A11): the actions on a record of a use case, each sending one of the aggregate's own
 // commands, POST /api/use-case/<command>, and nothing else. Edit sends its kind's Change with only what changed; Add

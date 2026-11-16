@@ -1,4 +1,4 @@
-import { type MetaRelation } from '../platform/meta-model/reads';
+import { type MetaRelation } from '../product/meta-model/reads';
 import { compareIds, type RecordIndex, type SummaryLink } from '../exploring/record-summaries/record-index';
 import { COLUMN_LINKS } from '../../../lathe/src/exploring/record-summaries/column-links';
 

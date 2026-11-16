@@ -16,7 +16,7 @@ import { DOMAIN_FIELDS } from './fields.generated';
 import { useNextDomainId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
-import { kindWord, addedUnder } from '../../platform/meta-model/reads';
+import { kindWord, addedUnder } from '../../product/meta-model/reads';
 
 // The Domain editor (LA-MOD-A4): the actions on a record of a domain, each sending one of the aggregate's own commands,
 // POST /api/domain/<command>, and nothing else. Edit sends its kind's Change with only what changed; Add opens an empty

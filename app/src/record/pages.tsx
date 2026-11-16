@@ -1,7 +1,7 @@
 import type { ComponentType, ReactNode } from 'react';
 import type { AggregateKind } from '../../../lathe/src/domain-modeling/aggregate/model';
 import type { CommandKind } from '../../../lathe/src/domain-modeling/command/model';
-import type { MetaIndex } from '../platform/meta-model/reads';
+import type { MetaIndex } from '../product/meta-model/reads';
 import type { StorageRequirementKind } from '../../../lathe/src/domain-modeling/storage-requirement/model';
 import { AddStorageRequirementForm } from '../domain-modeling/storage-requirement/StorageRequirementEditor';
 import { StorageRequirementPage } from '../domain-modeling/storage-requirement/StorageRequirementPage';

@@ -1,5 +1,5 @@
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
-import { type MetaStage } from '../platform/meta-model/reads';
+import { type MetaStage } from '../product/meta-model/reads';
 import type { Stage } from '../../../lathe/src/platform/data/schema';
 import type { KeyEntry } from '../views/StageChrome';
 import { BOX_LOOKS, type BoxLook } from './paint';

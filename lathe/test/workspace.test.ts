@@ -9,7 +9,7 @@ import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { loadConfig, loadProducts, openStore, SCHEMA_VERSION, workspaceProducts } from '../src/index.ts';
 import { closeStores, handleApi, watchTargets } from '../src/server/api.ts';
 import { summariesIn, type RecordSummaries } from '../src/exploring/record-summaries/read-model.ts';
-import type { MetaModel } from '../src/platform/meta-model/read-model.ts';
+import type { MetaModel } from '../src/product/meta-model/read-model.ts';
 import type { ProductCoverage } from '../src/traceability/coverage/read-model.ts';
 import { gatherRouteFacts } from '../src/trace/routes.ts';
 import { readPackageFacts } from '../src/trace/packages.ts';

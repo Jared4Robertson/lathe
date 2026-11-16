@@ -2,7 +2,7 @@ import type { RecordSummaries, RecordSummary, SummaryLink } from '../../../../la
 import type { ListedProblem, ProductProblems } from '../../../../lathe/src/checking/problems/read-model';
 import type { ProductCoverage, ScopeCoverage } from '../../../../lathe/src/traceability/coverage/read-model';
 import type { FolderTree } from '../../../../lathe/src/exploring/folder-tree/read-model';
-import type { MetaIndex } from '../../platform/meta-model/reads';
+import type { MetaIndex } from '../../product/meta-model/reads';
 
 export type { ListedProblem, RecordSummary, SummaryLink };
 

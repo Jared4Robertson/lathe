@@ -16,7 +16,7 @@ import { AGGREGATE_FIELDS } from './fields.generated';
 import { useNextAggregateId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
-import { kindWord, addedUnder } from '../../platform/meta-model/reads';
+import { kindWord, addedUnder } from '../../product/meta-model/reads';
 
 // The Aggregate editor (LA-MOD-A6): the actions on a record of an aggregate, each sending one of the aggregate's own
 // commands, POST /api/aggregate/<command>, and nothing else. Edit sends its kind's Change with only what changed (an
