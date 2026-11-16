@@ -47,12 +47,12 @@ function declarationProblems(product: Product, view: ReadView): RuleProblem[] {
   }
   const relation = (row: object, message: string) => problems.push({ rule: 'product-relation-own', table: 'product_relation', row: row as unknown as Row, message });
   // The supertypes an own kind joins as its tables are built (platform/data/product-kinds.ts): an obligation kind the
-  // obligation supertype, a kind of the technical specification the technical records, an accidental kind (one of
+  // obligation supertype, a kind of the technical specification the technical records (and the records that may meet a rule), an accidental kind (one of
   // the technical specification, or one that says it is accidental) the accidental records, and a kind of the
   // interface design the records that present commands and queries.
   const ownMember = (table: string, end: string) =>
     (table === 'obligation' && own.get(end)?.obligation === true) ||
-    (table === 'technical_record' && own.get(end)?.stage === 'technical-specification') ||
+    ((table === 'technical_record' || table === 'meets_source') && own.get(end)?.stage === 'technical-specification') ||
     (table === 'accidental_record' && (own.get(end)?.stage === 'technical-specification' || own.get(end)?.complexity === 'accidental')) ||
     (table === 'presents_source' && own.get(end)?.stage === 'interface-design');
   // The provided_by, fills, generates and kept_by pairs each own kind has without a declaration (platform/data/product-kinds.ts).
