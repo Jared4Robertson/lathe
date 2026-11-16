@@ -13,9 +13,8 @@ import { noteSpacesListed } from '../../src/exploring/space/commands/note-spaces
 import { spaceRepository } from '../../src/exploring/space/repository';
 import { chooseChangesBaseline, turnHighlightChangesOnOrOff } from '../../src/exploring/session-settings/commands/handlers.generated';
 import { markProductLookedAt } from '../../src/exploring/session-settings/commands/mark-product-looked-at';
-import { resizeChat } from '../../src/exploring/session-settings/commands/resize-chat';
 import { resizeWikiCard } from '../../src/exploring/session-settings/commands/resize-wiki-card';
-import { CARD_MAX, CARD_MIN, CHAT_MAX, CHAT_MIN } from '../../src/exploring/session-settings/model';
+import { CARD_MAX, CARD_MIN } from '../../src/exploring/session-settings/model';
 import { sessionSettingsRepository } from '../../src/exploring/session-settings/repository';
 import { DEFAULT_VIEW, hereOf, stepPlace } from '../../src/views/place';
 
@@ -63,7 +62,7 @@ describe('Duplicate a tab', () => {
   });
 });
 
-describe('Resize the wiki card and the chat', () => {
+describe('Resize the wiki card', () => {
   it('LA-EXP-UC104-R01-T01 LA-EXP-UC104-FL-T The wiki card stays within its limits, and reset brings back its default', () => {
     resizeWikiCard({ width: CARD_MAX + 500 });
     expect(sessionSettingsRepository.load().card.width).toBe(CARD_MAX);
@@ -71,15 +70,6 @@ describe('Resize the wiki card and the chat', () => {
     expect(sessionSettingsRepository.load().card.width).toBe(CARD_MIN);
     resizeWikiCard({ width: null });
     expect(sessionSettingsRepository.load().card.width).toBeNull();
-  });
-
-  it('LA-EXP-UC105-R01-T01 LA-EXP-UC105-FL-T The chat stays within its limits, and reset brings back its default', () => {
-    resizeChat({ width: CHAT_MAX + 500 });
-    expect(sessionSettingsRepository.load().chat.width).toBe(CHAT_MAX);
-    resizeChat({ width: 1 });
-    expect(sessionSettingsRepository.load().chat.width).toBe(CHAT_MIN);
-    resizeChat({ width: null });
-    expect(sessionSettingsRepository.load().chat.width).toBeNull();
   });
 });
 

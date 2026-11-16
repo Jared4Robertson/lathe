@@ -1,16 +1,10 @@
 // The MCP server the Claude Code plugin starts (`lathe mcp`): one tool per aggregate command and query
 // (use_case_add_flow_step, use_case_get_use_case; aggregates.ts), each running the one command or query it names, and
-// the check; under the desktop app's chat, also the app tools app_focus and app_open (app-tools.ts). It speaks
-// JSON-RPC 2.0 over stdio, one message per line. A tool's result is the rows its command changed, or what its query
-// read, or the refusal with every reason. Writes never commit: the Agent commits per task.
-//
-// View only (LA-PLT-UC45-R01): when the desktop app's chat runs with View only on, it sets LATHE_VIEW_ONLY=1 in the
-// CLI's environment, which this server inherits; then it lists only the reads (the check, every aggregate's queries
-// and the app tools) and refuses a command, saying the chat is View only, before anything is read or written.
+// the check. It speaks JSON-RPC 2.0 over stdio, one message per line. A tool's result is the rows its command
+// changed, or what its query read, or the refusal with every reason. Writes never commit: the Agent commits per task.
 import { createInterface } from 'node:readline';
 import { SchemaVersionError } from '../config.ts';
 import { aggregateTool, aggregateTools, runDefinition } from './aggregates.ts';
-import { APP_TOOLS, appBridgeFromEnv, callAppTool, isAppTool, type AppBridge } from './app-tools.ts';
 import type { SchemaDescription } from '../platform/data/schema.ts';
 import { check, checkText, readSchema, refusalText, type Outcome } from './operations.ts';
 
@@ -33,21 +27,10 @@ const CHECK_TOOL: Tool = {
   annotations: { readOnlyHint: true },
 };
 
-/** The environment variable that turns View only on: "1" lists only the reads and refuses every command. */
-const VIEW_ONLY_ENV = 'LATHE_VIEW_ONLY';
-
-/** Whether the environment asks for View only. */
-const viewOnlyFromEnv = (env: NodeJS.ProcessEnv = process.env) => env[VIEW_ONLY_ENV] === '1';
-
-/** What a command says when View only refuses it. */
-export const VIEW_ONLY_REFUSAL =
-  'Refused; nothing changed: this chat is View only, so it can read the spec but not change it. ' +
-  'Ask the Owner to turn View only off in the chat\'s header to make changes.';
-
-/** The tools: the check, then one per aggregate command and query, each with its input schema from its fields; in View only, no commands. */
-export function tools(schema: SchemaDescription, viewOnly = false): Tool[] {
+/** The tools: the check, then one per aggregate command and query, each with its input schema from its fields. */
+export function tools(schema: SchemaDescription): Tool[] {
   const own = aggregateTools(schema).map((t) => ({ ...t, annotations: { readOnlyHint: aggregateTool(t.name)?.kind === 'query' } }));
-  return [CHECK_TOOL, ...own.filter((t) => !viewOnly || t.annotations.readOnlyHint)];
+  return [CHECK_TOOL, ...own];
 }
 
 /** What tools/call returns: text for the Agent, the same as structured content, and isError on a refusal. */
@@ -65,14 +48,10 @@ function result<T>(outcome: Outcome<T>, describe: (value: T) => string, structur
   return { content: [{ type: 'text', text: describe(outcome.value) }], structuredContent: structured(outcome.value) };
 }
 
-/** Runs one tool on the repo at root; the app tools go to the window's bridge, when there is one; in View only, a command is refused. */
-export async function callTool(root: string, name: string, args: Record<string, unknown> = {}, app: AppBridge | null = null, viewOnly = false): Promise<ToolResult> {
-  if (isAppTool(name)) return callAppTool(app, name, args);
+/** Runs one tool on the repo at root. */
+export async function callTool(root: string, name: string, args: Record<string, unknown> = {}): Promise<ToolResult> {
   try {
     const own = aggregateTool(name);
-    if (own?.kind === 'command' && viewOnly) {
-      return { content: [{ type: 'text', text: VIEW_ONLY_REFUSAL }], structuredContent: { refused: true, problems: [{ rule: 'view-only', message: VIEW_ONLY_REFUSAL }] }, isError: true };
-    }
     if (own) return result(await runDefinition(root, own, args), (v) => v.text, (v) => (typeof v.json === 'object' && v.json !== null && !Array.isArray(v.json) ? { ...v.json } : { answer: v.json }));
     if (name !== CHECK_TOOL.name) throw new ArgumentError(`there is no tool ${name}`);
     const checked = await check(root);
@@ -95,14 +74,8 @@ interface Message {
   params?: { [key: string]: unknown };
 }
 
-/** Serves the tools for the repo at root over the given streams until input ends; the app tools only with an app bridge; only the reads in View only. */
-export async function serveMcp(
-  root: string,
-  input: NodeJS.ReadableStream = process.stdin,
-  output: NodeJS.WritableStream = process.stdout,
-  app: AppBridge | null = appBridgeFromEnv(),
-  viewOnly: boolean = viewOnlyFromEnv(),
-): Promise<void> {
+/** Serves the tools for the repo at root over the given streams until input ends. */
+export async function serveMcp(root: string, input: NodeJS.ReadableStream = process.stdin, output: NodeJS.WritableStream = process.stdout): Promise<void> {
   // A product whose data is for another schema version still gets a server: its one tool, check, says what to do.
   let mismatch: SchemaVersionError | null = null;
   let schema: SchemaDescription | null = await readSchema(root).catch((error: unknown) => {
@@ -126,16 +99,10 @@ export async function serveMcp(
             serverInfo: { name: 'lathe', version: '1.0.0' },
             instructions:
               (mismatch ? `${(mismatch as SchemaVersionError).message} Until then, only the check tool runs, and it says the same. ` : '') +
-              (viewOnly ? 'This chat is View only: these tools only read the spec, and nothing here can change it. ' : '') +
               'Lathe keeps the spec as typed data in data/*.jsonl. Change it only with these tools, never by editing the files. ' +
               'Each tool is one aggregate\'s command or query, named <aggregate>_<command> (use_case_add_flow_step, use_case_get_use_case): ' +
               'a command checks its aggregate\'s rules and is refused, with every reason, when it breaks them, and its answer lists the warnings it introduced (introduced): fix them at once; a query reads its aggregate\'s own read model. ' +
-              'Writes never commit; commit per task.' +
-              (app
-                ? " This server runs under the Lathe desktop app's chat, beside the Owner's window: app_focus says what the Owner is looking at there " +
-                  '(the page, the focused record, the stage and the selection) and app_open shows them a record. Use them for anything about the window; ' +
-                  'never search the code or the files to find what the window shows.'
-                : ''),
+              'Writes never commit; commit per task.',
           },
         });
         return;
@@ -144,12 +111,12 @@ export async function serveMcp(
         if (isRequest) reply(id, { result: {} });
         return;
       case 'tools/list':
-        reply(id, { result: { tools: [...(schema ? tools(schema, viewOnly) : [CHECK_TOOL]), ...(app ? APP_TOOLS : [])] } });
+        reply(id, { result: { tools: schema ? tools(schema) : [CHECK_TOOL] } });
         return;
       case 'tools/call': {
         const name = String(params.name ?? '');
         const args = (params.arguments ?? {}) as Record<string, unknown>;
-        const called = await callTool(root, name, args, app, viewOnly);
+        const called = await callTool(root, name, args);
         reply(id, { result: called });
         // A product's own kinds or relations changed: the tools' schemas change with them.
         const changes = (called.structuredContent?.changes ?? []) as { table: string }[];

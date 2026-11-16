@@ -4,7 +4,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Page } from '@playwright/test';
 import { expect, test } from './test';
-import { asDesktop } from './desktop';
 import { openPage, showCard } from './measure';
 import { EDITED, keepData, RECORD } from './scenarios';
 import { boxOf, sceneOf } from './scene';
@@ -43,11 +42,6 @@ async function expectCount(page: Page, count: number, options?: { timeout: numbe
   await expect(changesButton(page)).toHaveAccessibleName(`Changes ${count} records changed`, options);
   await expect(changesButton(page)).toBeVisible();
 }
-/** Opens the toolbar's More menu when a narrower toolbar (the chat open beside the stage) folded the Changes controls there. */
-async function reachChanges(page: Page) {
-  const more = page.locator('.focus-stage .stage-more');
-  if ((await more.locator('.changes-tools').count()) && !(await more.evaluate((d) => (d as HTMLDetailsElement).open))) await more.locator('summary').click();
-}
 const graphReady = (page: Page) => page.locator('.focus-stage .graph-flow[data-ready] .graph-box').first().waitFor();
 const changeOf = (page: Page, id: string) => page.evaluate((id) => {
   const host = document.querySelector('.focus-stage .graph-flow') as HTMLElement & { graphScene?: () => { boxes: { id: string; change: string | null }[] } };
@@ -55,7 +49,7 @@ const changeOf = (page: Page, id: string) => page.evaluate((id) => {
 }, id);
 
 test.describe('watching the spec change', () => {
-  test('LA-EXP-UC15-FL-T LA-EXP-UC19-FL-T An Agent\'s changes land on the stage, under Highlight changes, in the panel and the wiki card in the web app, and ] and [ walk them', async ({ page }) => {
+  test('LA-EXP-UC15-FL-T LA-EXP-UC19-FL-T LA-PAT-PAGE-STEPS-R01-T03 An Agent\'s changes land on the stage, under Highlight changes, in the panel and the wiki card in the web app, and ] and [ walk them', async ({ page }) => {
     const restore = keepData();
     try {
       commitCopy();
@@ -118,65 +112,6 @@ test.describe('watching the spec change', () => {
       const section = card.locator('.record-changes');
       await expect(section).toContainText('Changed since the last commit');
       await expect(section.locator('ins')).toContainText('Changed again while the Reader watched');
-    } finally {
-      restore();
-    }
-  });
-
-  test('LA-PAT-PAGE-STEPS-R01-T03 The desktop app marks the chat\'s changes on the stage and lists the turn\'s changes from the same diff', async ({ page }) => {
-    const restore = keepData();
-    try {
-      commitCopy();
-      // The desktop shell stood in for: its bridge, with a chat whose patches the test sends (window.chatPatch).
-      await asDesktop(page, (bridge) => {
-        window.localStorage.setItem('lathe:chat-collapsed', 'false');
-        window.sessionStorage.setItem('lathe:place', JSON.stringify({ depth: 1, hiddenKinds: [], card: { open: true, expanded: true } }));
-        let listener: ((patch: import('../src/chat/types').ChatPatch) => void) | null = null;
-        // The test sends a patch's session, status and items; the rest is as the shell sends it.
-        (window as unknown as { chatPatch: (patch: Pick<import('../src/chat/types').ChatPatch, 'reset' | 'sessionId' | 'status' | 'items'>) => void }).chatPatch = (patch) =>
-          listener?.({ mode: 'accept-reads', choice: { model: null, effort: null }, lathe: { status: 'counting', version: null }, queue: [], signedOut: false, ...patch });
-        bridge.chat = {
-          ...bridge.chat,
-          sessions: async () => ({ claude: '/usr/local/bin/claude', configured: false, signedIn: true, signIn: { status: 'idle', method: null, url: null, asksForCode: false, problem: null }, mode: 'accept-reads', current: 'session-1', sessions: [{ id: 'session-1', title: 'Watch list', updated: Date.now(), openElsewhere: null }] }),
-          open: async () => true, send: async () => true, answer: async () => true, stop: async () => true,
-          onPatch: (l) => { listener = l; return () => { listener = null; }; },
-        };
-      });
-      await openPage(page, `${RECORD}?stage=graph`);
-      await graphReady(page);
-      await reachChanges(page);
-      await tools(page).getByRole('button', { name: 'Follow' }).click();
-      const user = { kind: 'user', id: 'u1', text: 'Add a watch list and sharpen the requirement' };
-      const patch = (items: unknown[], status: string, reset = false) => page.evaluate(({ items, status, reset }) => (window as unknown as { chatPatch: (p: unknown) => void }).chatPatch({ reset, sessionId: 'session-1', status, items: items.map((item, at) => ({ at, item })) }), { items, status, reset });
-      await patch([], 'idle', true);
-      await patch([user], 'running');
-      // The chat's Agent writes through Lathe's command layer, as its MCP tools do.
-      agentChanges();
-      await expectCount(page, 2, { timeout: 20_000 });
-      // Follow glides to the newest change.
-      await page.waitForURL((u) => u.pathname === `/${REQUIREMENT}` || u.pathname === `/${ADDED}`, { timeout: 20_000 });
-      await patch([user, { kind: 'assistant', id: 'a1', text: 'Done.', streaming: false }], 'idle');
-      const turn = page.locator('.chat-changes');
-      await expect(turn.locator('summary')).toHaveText('2 records changed');
-      await expect(turn).toContainText(ADDED);
-      await expect(turn).toContainText(REQUIREMENT);
-      // By record (LA-PLT-UC19-R03): the changed requirement under its new title; its fields' old and new show in the panel and the card.
-      await expect(turn.locator('.chat-change.is-changed')).toContainText('Changed by the Agent while the Reader watched');
-
-      // The same records and fields in the Changes panel and the requirement's wiki card.
-      await tools(page).getByRole('button', { name: 'Highlight changes' }).click();
-      await expectCount(page, 2);
-      await changesButton(page).click();
-      const panel = page.getByRole('region', { name: 'Changes' });
-      await expect(panel).toContainText(ADDED);
-      await expect(panel.locator('ins').first()).toContainText('Changed by the Agent while the Reader watched');
-      await panel.getByRole('link', { name: new RegExp(REQUIREMENT) }).click();
-      await page.waitForURL((u) => u.pathname === EDITED);
-      // With the chat and the Changes panel open the card has collapsed to give the stage room; the Reader shows it.
-      const showTheCard = page.getByRole('button', { name: /^Show the wiki card/ });
-      if (await showTheCard.count()) await showTheCard.click();
-      await showCard(page, 'whole');
-      await expect(page.locator('.wiki-panel .record-changes ins')).toContainText('Changed by the Agent while the Reader watched');
     } finally {
       restore();
     }

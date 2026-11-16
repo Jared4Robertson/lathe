@@ -96,7 +96,7 @@
 {"id":"LA-MOD-TB47","title":"calls","domain_id":"LA-MOD","name":"calls","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-MOD-TB48","title":"fed_by","domain_id":"LA-MOD","name":"fed_by","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-MOD-TB88","title":"builds_on","domain_id":"LA-MOD","name":"builds_on","storage":"table","file":"lathe/schema/010-links.sql"}
-{"id":"LA-PLT-EN02-TB","title":"lathe:nav-*","entity_id":"LA-PLT-EN02","name":"lathe:nav-*, lathe:chat-collapsed","storage":"browser storage","file":"app/src/platform/panel/model.ts"}
+{"id":"LA-PLT-EN02-TB","title":"lathe:nav-*","entity_id":"LA-PLT-EN02","name":"lathe:nav-*","storage":"browser storage","file":"app/src/platform/panel/model.ts"}
 {"id":"LA-PLT-EN06-TB","title":"lathe:themes","entity_id":"LA-PLT-EN06","name":"lathe:themes","storage":"browser storage","file":"app/src/platform/appearance/model.ts"}
 {"id":"LA-PLT-EN08-TB","title":"window-state.json","entity_id":"LA-PLT-EN08","name":"window-state.json","storage":"file","file":"desktop/src/product-window/repository.ts"}
 {"id":"LA-PLT-EN10-TB","title":"running","entity_id":"LA-PLT-EN10","name":"running","storage":"in memory","file":"desktop/src/app-server/repository.ts"}
@@ -105,18 +105,11 @@
 {"id":"LA-PLT-EN16-TB","title":"lathe.config.json","entity_id":"LA-PLT-EN16","name":"lathe.config.json","storage":"file","file":"lathe/src/platform/product-repo/repository.ts"}
 {"id":"LA-PLT-EN20-TB","title":"settings.json","entity_id":"LA-PLT-EN20","name":"settings.json","storage":"file","file":"desktop/src/shell-settings/repository.ts"}
 {"id":"LA-PLT-EN24-TB","title":"lathe:keybindings","entity_id":"LA-PLT-EN24","name":"lathe:keybindings","storage":"browser storage","file":"app/src/platform/key-bindings/model.ts"}
-{"id":"LA-PLT-EN26-TB","title":"lathe:voice","entity_id":"LA-PLT-EN26","name":"lathe:voice","storage":"browser storage","file":"app/src/platform/voice-settings/model.ts"}
-{"id":"LA-PLT-EN27-TB","title":"chat-modes.json","entity_id":"LA-PLT-EN27","name":"chat-modes.json","storage":"file","file":"desktop/src/window-chat/repository.ts"}
-{"id":"LA-PLT-EN28-TB","title":"kept","entity_id":"LA-PLT-EN28","name":"kept","storage":"in memory","file":"desktop/src/agent-sign-in/repository.ts"}
 {"id":"LA-PLT-RM01-TB","title":"Workspace","read_model_id":"LA-PLT-RM01","name":"Workspace","storage":"in memory","file":"lathe/src/types.ts"}
 {"id":"LA-PLT-RM02-TB","title":"KeymapTable","read_model_id":"LA-PLT-RM02","name":"KeymapTable","storage":"in memory","file":"app/src/platform/key-bindings/read-model.ts"}
 {"id":"LA-PLT-RM03-TB","title":"ThemesTable","read_model_id":"LA-PLT-RM03","name":"ThemesTable","storage":"in memory","file":"app/src/platform/appearance/read-model.ts"}
 {"id":"LA-PLT-RM04-TB","title":"RecentFoldersTable","read_model_id":"LA-PLT-RM04","name":"RecentFoldersTable","storage":"in memory","file":"desktop/src/recent-folders/read-model.ts"}
-{"id":"LA-PLT-RM05-TB","title":"transcripts","read_model_id":"LA-PLT-RM05","name":"~/.claude/projects/<folder>/<session>.jsonl","storage":"file","file":"desktop/src/claudeSessions.ts"}
-{"id":"LA-PLT-RM06-TB","title":"latest","read_model_id":"LA-PLT-RM06","name":"latest","storage":"in memory","file":"app/src/chat/appRequests.ts"}
-{"id":"LA-PLT-RM07-TB","title":"ChatPatch","read_model_id":"LA-PLT-RM07","name":"ChatPatch","storage":"in memory","file":"desktop/src/chat.ts"}
 {"id":"LA-PLT-RM08-TB","title":"MetaModelTable","read_model_id":"LA-PLT-RM08","name":"MetaModelTable","storage":"in memory","file":"lathe/src/platform/meta-model/read-model.ts"}
-{"id":"LA-PLT-RM10-TB","title":"skillFiles","read_model_id":"LA-PLT-RM10","name":"skills/<name>/SKILL.md and commands/<name>.md","storage":"file","file":"desktop/src/chatSkills.ts"}
 {"id":"LA-PRD-EN01-TB","title":"product","entity_id":"LA-PRD-EN01","name":"product","storage":"table","file":"lathe/schema/003-product.sql"}
 {"id":"LA-PRD-EN02-TB","title":"product_kind","entity_id":"LA-PRD-EN02","name":"product_kind","storage":"table","file":"lathe/schema/012-product-kinds.sql"}
 {"id":"LA-PRD-EN03-TB","title":"role","entity_id":"LA-PRD-EN03","name":"role","storage":"table","file":"lathe/schema/003-product.sql"}

@@ -54,7 +54,7 @@ The [plugin README](plugin/README.md) lists every tool and skill.
 
 ## The desktop app
 
-Lathe also runs as a desktop app: an Electron shell around the web app and its server, one window per product folder, with tabs, native menus, and a chat panel that runs your own Claude Code with Lathe's tools. `npm --prefix desktop run dev` starts it; `npm --prefix desktop run pack` builds an unsigned `Lathe.app` for macOS. See the [desktop README](desktop/README.md).
+Lathe also runs as a desktop app: an Electron shell around the web app and its server, one window per product folder, with tabs and native menus. `npm --prefix desktop run dev` starts it; `npm --prefix desktop run pack` builds an unsigned `Lathe.app` for macOS. See the [desktop README](desktop/README.md).
 
 ## The example product
 

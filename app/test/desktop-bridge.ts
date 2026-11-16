@@ -18,28 +18,5 @@ export function desktopStandIn(): LatheDesktop {
     openRecordInEditor: () => {},
     copyRecordId: () => {},
     showRecordMenu: () => {},
-    chat: {
-      sessions: async () => ({ claude: null, configured: false, signedIn: null, signIn: { status: 'idle', method: null, url: null, asksForCode: false, problem: null }, mode: 'accept-reads', current: null, sessions: [] }),
-      open: async () => false,
-      send: async () => false,
-      answer: async () => false,
-      stop: async () => false,
-      setMode: async () => false,
-      setModel: async () => false,
-      unqueue: async () => false,
-      skills: async () => [],
-      captureStage: async () => null,
-      signIn: async () => false,
-      giveSignInCode: async () => false,
-      cancelSignIn: async () => false,
-      signOut: async () => false,
-      onSignIn: () => () => {},
-      onPatch: () => () => {},
-    },
-    voice: {
-      listen: async () => ({ listening: 'unavailable', reason: 'Not in tests.' }),
-      onEvent: () => () => {},
-    },
-    onAppRequest: () => () => {},
   };
 }

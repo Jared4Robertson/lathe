@@ -27,13 +27,7 @@ import { ChangesPanel } from './changes/ChangesPanel';
 import { ChangesProvider } from './changes/ChangesProvider';
 import { ProductsPicker } from './views/ProductsPicker';
 import { carryOverlays, overlaysOf, panelHref, useEscapeClosesTopmost } from './views/overlays';
-import { useWindowVoice, VoiceContext } from './chat/voice/useVoice';
-import { pointedAt, useAppRequests } from './chat/appRequests';
-import { chatChips } from './chat/chips';
-import { takeMenuRecord } from './shell/desktopRecord';
-import { CARD_MIN, CHAT_DEFAULT } from './exploring/session-settings/model';
-import { useSessionSettings } from './exploring/session-settings/use-session-settings';
-import { resizeChat } from './exploring/session-settings/commands/resize-chat';
+import { CARD_MIN } from './exploring/session-settings/model';
 import { CARD_GAP, CARD_GAP_Y, crowdedLabel, RoomContext, STAGE_MIN, useRoomState, toolWidthOf } from './views/openSpace';
 import { desktopBridge } from './shell/desktopChrome';
 import { addressOf, focusOf, HOME_PATH, isFocusRoute } from './views/address';
@@ -44,8 +38,6 @@ import { ThemeCommands } from './theme/ThemeCommands';
 const AppearancePopover = lazy(() => import('./theme/Appearance').then((m) => ({ default: m.AppearancePopover })));
 const DashboardPanel = lazy(() => import('./traceability/dashboard/DashboardPanel').then((m) => ({ default: m.DashboardPanel })));
 const ThemeEditorPanel = lazy(() => import('./theme/Appearance').then((m) => ({ default: m.ThemeEditorPanel })));
-// The chat panel is the desktop's alone (LA-PLT-UC19): a browser never loads its code, and the desktop loads it when the chat first shows.
-const ChatPanel = lazy(() => import('./chat/ChatPanel').then((m) => ({ default: m.ChatPanel })));
 
 // A move to another focus keeps the tool open over the stage (views/overlays.ts).
 setCarry(carryOverlays);
@@ -97,7 +89,7 @@ function Shell() {
 
   // The nav: collapsed to a rail (remembered), or a drawer on a narrow screen.
   const narrow = useNarrow();
-  const { nav: { collapsed, width: navWidth }, chat: { collapsed: chatCollapsed } } = useAggregate(panelRepository);
+  const { nav: { collapsed, width: navWidth } } = useAggregate(panelRepository);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
@@ -106,14 +98,9 @@ function Shell() {
   const closeDrawer = useCallback(() => { setDrawerOpen(false); setTimeout(() => menuButton.current?.focus(), 0); }, []);
   // An opened drawer takes focus (its Go to button); closing it gives focus back to the menu button.
   useEffect(() => { if (narrow && drawerOpen) setTimeout(() => navRef.current?.querySelector<HTMLElement>('.quick-find-button')?.focus(), 0); }, [narrow, drawerOpen]);
-  // The chat panel (LA-PLT-UC19): desktop only, never on a phone. Whether it shows is a Panel's (LA-PLT-UC06), kept
-  // from one launch to the next; its width is the session's setting.
-  const chatBridge = narrow ? null : desktopBridge()?.chat ?? null;
-  const { chat } = useSessionSettings();
-  const chatShown = !!chatBridge && !chatCollapsed;
   // Panels never crowd the page (LA-PAT-APP-UX-R18): the nav collapses to its rail for space last,
   // after the page's wiki card; the Reader's own choice (`collapsed`) stays as set.
-  const room = useRoomState({ nav: { open: !collapsed, width: navWidth, rail: NAV_RAIL }, chat: chatShown ? chat.width ?? CHAT_DEFAULT : null, tool: toolWidth }, narrow);
+  const room = useRoomState({ nav: { open: !collapsed, width: navWidth, rail: NAV_RAIL }, tool: toolWidth }, narrow);
   const { hold } = room;
   const navCrowded = room.crowded.has('nav');
   const navCollapsed = collapsed || navCrowded;
@@ -162,37 +149,6 @@ function Shell() {
     if (href && href.startsWith('/')) navigate(href);
     else announce(definitionKey.text ? `Focus a link first, then press ${definitionKey.text} to open its record.` : 'Focus a link first, then go to its record.');
   });
-  const chatInput = useRef<HTMLTextAreaElement>(null);
-  const chatPanel = () => document.getElementById('chat-panel');
-  // Focuses the chat's message box once it is drawn: the first show waits for the panel's code to load.
-  const focusChat = useCallback(() => {
-    let tries = 0;
-    const go = () => { if (chatInput.current) chatInput.current.focus(); else if (tries++ < 50) setTimeout(go, 20); };
-    setTimeout(go, 0);
-  }, []);
-  useCommand('toggleChat', () => {
-    // Open: focus the message box; open with focus elsewhere: focus it; with focus in it: hide it.
-    if (chatShown && chatPanel()?.contains(document.activeElement)) { showOrHidePanel({ panel: 'chat', shown: false }); announce('Chat hidden'); return; }
-    if (!chatShown) { showOrHidePanel({ panel: 'chat', shown: true }); announce('Chat shown'); }
-    focusChat();
-  }, !!chatBridge);
-  // The chat's voice (LA-PLT-UC20): voice activation wakes the chat, hidden or not, and focuses its message box.
-  const wakeChat = useCallback(() => {
-    showOrHidePanel({ panel: 'chat', shown: true });
-    focusChat();
-  }, [focusChat]);
-  const voice = useWindowVoice(chatBridge ? desktopBridge()?.voice ?? null : null, wakeChat, announce);
-  useCommand('dictate', () => { wakeChat(); voice?.toggle(); }, !!voice && voice.unavailable === null);
-  // Point and ask (LA-PLT-UC19-R13): the box pointed at, or the one the native menu was opened on, is attached to the message.
-  const attach = (id: string | null) => {
-    if (!id) { announce('Select a box or focus a record first'); return; }
-    chatChips.add(id);
-    wakeChat();
-    announce(`Asking Claude about ${id}`);
-  };
-  useCommand('askClaude', () => attach(pointedAt(spec.index)), !!chatBridge);
-  useCommand('askClaudeAboutRecord', () => attach(takeMenuRecord()), !!chatBridge);
-  useAppRequests(spec.index, spaces.current?.id ?? null);
   useCommand('nextProblem', () => stepProblem(1, announce));
   useCommand('previousProblem', () => stepProblem(-1, announce));
   useCommand('focusSearch', () => {
@@ -257,10 +213,9 @@ function Shell() {
     <SpaceCommands spaces={spaces} />
     <DesktopTitleBar index={spec.index} />
     <div
-      className={`app${desktopBridge() ? ' has-tabs' : ''}${navCollapsed && !narrow ? ' nav-collapsed' : ''}${narrow ? ' is-narrow' : ''}${chatShown ? ' with-chat' : ''}`}
+      className={`app${desktopBridge() ? ' has-tabs' : ''}${navCollapsed && !narrow ? ' nav-collapsed' : ''}${narrow ? ' is-narrow' : ''}`}
       style={{
         '--nav-width': `${navWidth}px`, '--rail-width': `${NAV_RAIL}px`, '--card-min': `${CARD_MIN}px`, '--stage-min': `${STAGE_MIN}px`, '--card-gap': `${CARD_GAP}px`, '--card-gap-y': `${CARD_GAP_Y}px`,
-        ...(chat.width !== null ? { '--chat-width': `${chat.width}px` } : {}),
         ...(toolWidth !== null && !narrow ? { '--tool-space': `${toolWidth + 8}px` } : {}),
       } as CSSProperties}
       data-crowded={room.crowded.size > 0 ? [...room.crowded].join(' ') : undefined}
@@ -310,21 +265,6 @@ function Shell() {
       {page}
       {isHome && <ProductsPicker version={spec.version} onClose={leaveHome} />}
       {toolPanel}
-      {chatShown && chatBridge && (
-        <VoiceContext.Provider value={voice}>
-        <Suspense fallback={null}>
-        <ChatPanel
-          bridge={chatBridge}
-          index={spec.index}
-          product={spaces.current?.id ?? null}
-          width={chat.width}
-          onWidth={(width) => resizeChat({ width })}
-          onClose={() => { showOrHidePanel({ panel: 'chat', shown: false }); announce('Chat hidden'); }}
-          input={chatInput}
-        />
-        </Suspense>
-        </VoiceContext.Provider>
-      )}
     </div>
     </RoomContext.Provider>
     </ChangesProvider>

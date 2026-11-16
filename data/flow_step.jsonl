@@ -85,15 +85,12 @@
 {"id":"LA-EXP-UC10-FL-S01","title":"The Reader moves through the stage, the links and quick find, and every move stays in the active tab","flow_id":"LA-EXP-UC10-FL","path":"main","position":1}
 {"id":"LA-EXP-UC10-FL-S02","title":"The Reader opens a box, a link or a found record in a new tab","flow_id":"LA-EXP-UC10-FL","path":"main","position":2}
 {"id":"LA-EXP-UC10-FL-S07","title":"A reload brings back each tab with its place and history","flow_id":"LA-EXP-UC10-FL","path":"main","position":3}
-{"id":"LA-EXP-UC10-FL-S08","title":"Cmd or Ctrl with a press on a record ID in Claude's answer opens the record in a new tab","flow_id":"LA-EXP-UC10-FL","path":"main","position":4,"interface_id":"LA-IF02"}
 {"id":"LA-EXP-UC102-FL-S01","title":"The Reader cycles to the next or the previous tab","flow_id":"LA-EXP-UC102-FL","path":"main","position":1}
 {"id":"LA-EXP-UC103-FL-S01","title":"The Reader duplicates the active tab","flow_id":"LA-EXP-UC103-FL","path":"main","position":1}
 {"id":"LA-EXP-UC104-FL-S01","title":"The Reader drags the wiki card's edge, or resets it to its default width","flow_id":"LA-EXP-UC104-FL","path":"main","position":1}
-{"id":"LA-EXP-UC105-FL-S01","title":"The Owner drags the chat panel's edge, or resets it to its default width","flow_id":"LA-EXP-UC105-FL","path":"main","position":1}
 {"id":"LA-EXP-UC106-FL-S01","title":"The Reader turns Highlight changes on or off in the Changes panel","flow_id":"LA-EXP-UC106-FL","path":"main","position":1}
 {"id":"LA-EXP-UC107-FL-S01","title":"The Reader chooses the Changes baseline in the Changes panel","flow_id":"LA-EXP-UC107-FL","path":"main","position":1}
 {"id":"LA-EXP-UC108-FL-S01","title":"The Reader scrolls the wiki card, and the active tab's entry notes where","flow_id":"LA-EXP-UC108-FL","path":"main","position":1}
-{"id":"LA-EXP-UC109-FL-S01","title":"After a turn that wrote, they review its changes: the stage lights those records alone and next and previous walk through them with their diffs","flow_id":"LA-EXP-UC109-FL","path":"main","position":1}
 {"id":"LA-EXP-UC11-FL-S01","title":"On a domain, aggregate or entity page the reader opens the ERD stage","flow_id":"LA-EXP-UC11-FL","path":"main","position":1}
 {"id":"LA-EXP-UC11-FL-S02","title":"A domain's ERD shows its aggregates as boundaries around their entities, and the relationship and reference lines between them","flow_id":"LA-EXP-UC11-FL","path":"main","position":2}
 {"id":"LA-EXP-UC11-FL-S03","title":"They select an aggregate's box: its entities with their fields, and the aggregates around it faded","flow_id":"LA-EXP-UC11-FL","path":"main","position":3}
@@ -363,16 +360,6 @@
 {"id":"LA-PLT-UC18-FL-S01","title":"Claude Code starts the plugin's launcher, which finds the product repo and starts its installed Lathe's tools","flow_id":"LA-PLT-UC18-FL","path":"main","position":1}
 {"id":"LA-PLT-UC18-FL-S02","title":"The Agent calls a tool; when the skills were written for another major version, the first result alone carries one warning naming both","flow_id":"LA-PLT-UC18-FL","path":"main","position":2}
 {"id":"LA-PLT-UC18-FL-S03","title":"The launcher says why it cannot start outside a Lathe repo","flow_id":"LA-PLT-UC18-FL","path":"refused","position":1}
-{"id":"LA-PLT-UC19-FL-S04","title":"They ask Claude in their own words; it answers as rich text, with their login, settings, skills, plugins and CLAUDE.md","flow_id":"LA-PLT-UC19-FL","path":"main","position":1}
-{"id":"LA-PLT-UC19-FL-S07","title":"Each tool call Claude makes shows as an entry that expands to its input and result","flow_id":"LA-PLT-UC19-FL","path":"main","position":3}
-{"id":"LA-PLT-UC19-FL-S10","title":"After the turn, the records it changed show as diffs, by record","flow_id":"LA-PLT-UC19-FL","path":"main","position":4}
-{"id":"LA-PLT-UC19-FL-S11","title":"A record ID in Claude's answer opens the record on the stage","flow_id":"LA-PLT-UC19-FL","path":"main","position":5}
-{"id":"LA-PLT-UC19-FL-S15","title":"Each message goes with what they are looking at, a chip they can remove; Claude starts from it, and uses the app tools for anything else about the window","flow_id":"LA-PLT-UC19-FL","path":"main","position":6}
-{"id":"LA-PLT-UC19-FL-S16","title":"They point at a box on the stage and choose Ask Claude About This (menu or key): the record joins the message as a chip, sent as context","flow_id":"LA-PLT-UC19-FL","path":"main","position":2}
-{"id":"LA-PLT-UC20-FL-S01","title":"The Owner dictates with the mic control or its key; the words appear in the message box as they speak, to edit and send","flow_id":"LA-PLT-UC20-FL","path":"main","position":1}
-{"id":"LA-PLT-UC20-FL-S05","title":"Where the Mac cannot recognize speech on-device, listening is refused with why, which the chat says, and the window's mic is disabled with it","flow_id":"LA-PLT-UC20-FL","path":"main","position":2}
-{"id":"LA-PLT-UC22-FL-S02","title":"They type a slash and pick a skill or command from the list, each with its one-line description","flow_id":"LA-PLT-UC22-FL","path":"main","position":1}
-{"id":"LA-PLT-UC22-FL-S05","title":"They paste an image or send the stage as an image, and it goes with the message","flow_id":"LA-PLT-UC22-FL","path":"main","position":2}
 {"id":"LA-PLT-UC23-FL-S01","title":"The Owner runs lathe serve to browse and edit the spec, with no build tools in the repo","flow_id":"LA-PLT-UC23-FL","path":"main","position":1}
 {"id":"LA-PLT-UC23-FL-S02","title":"They stop lathe serve from the terminal, and it closes the store before it ends","flow_id":"LA-PLT-UC23-FL","path":"main","position":2}
 {"id":"LA-PLT-UC23-FL-S03","title":"lathe serve shows each product as a space, and writes each change to its own product's folder","flow_id":"LA-PLT-UC23-FL","path":"workspace","position":1}
@@ -383,19 +370,10 @@
 {"id":"LA-PLT-UC24-FL-S03","title":"In a Product window the menus show the new keys beside their commands","flow_id":"LA-PLT-UC24-FL","path":"main","position":3,"interface_id":"LA-IF02"}
 {"id":"LA-PLT-UC25-FL-S01","title":"From a record they open its data file in the editor they chose","flow_id":"LA-PLT-UC25-FL","path":"main","position":2}
 {"id":"LA-PLT-UC25-FL-S02","title":"The shell finds the record's data file from its ID alone","flow_id":"LA-PLT-UC25-FL","path":"main","position":1}
-{"id":"LA-PLT-UC26-FL-S03","title":"They choose the wake phrase, such as \"Hey Lathe\", and the commands' words","flow_id":"LA-PLT-UC26-FL","path":"main","position":1}
-{"id":"LA-PLT-UC27-FL-S01","title":"They undo the turn in one step, or are told why it cannot be undone","flow_id":"LA-PLT-UC27-FL","path":"main","position":1}
 {"id":"LA-PLT-UC28-FL-S01","title":"The Reader opens File › Open Recent and reads the folders it lists","flow_id":"LA-PLT-UC28-FL","path":"main","position":1}
 {"id":"LA-PLT-UC28-FL-S02","title":"They clear the recent folders from File › Open Recent","flow_id":"LA-PLT-UC28-FL","path":"main","position":2}
-{"id":"LA-PLT-UC29-FL-S01","title":"The Agent asks what the Owner is looking at","flow_id":"LA-PLT-UC29-FL","path":"main","position":1}
-{"id":"LA-PLT-UC29-FL-S02","title":"The Agent opens a record in the window, on the stage it names","flow_id":"LA-PLT-UC29-FL","path":"main","position":2}
-{"id":"LA-PLT-UC30-FL-S01","title":"The Owner learns the chat's agent is not signed in: before a conversation starts, or in place of a turn's answer","flow_id":"LA-PLT-UC30-FL","path":"main","position":1}
-{"id":"LA-PLT-UC30-FL-S02","title":"They start signing in, with their subscription or a Console account","flow_id":"LA-PLT-UC30-FL","path":"main","position":2}
-{"id":"LA-PLT-UC30-FL-S03","title":"They finish signing in in the browser the sign-in opened, or open its page themselves","flow_id":"LA-PLT-UC30-FL","path":"main","position":3}
-{"id":"LA-PLT-UC30-FL-S05","title":"They learn the agent is signed in and the chat can start; or why the sign-in failed, and try again","flow_id":"LA-PLT-UC30-FL","path":"main","position":4}
 {"id":"LA-PLT-UC31-FL-S01","title":"Dragging the navigation small folds it to its rail","flow_id":"LA-PLT-UC31-FL","path":"main","position":1}
 {"id":"LA-PLT-UC31-FL-S02","title":"They collapse the wiki card; the stage takes its room and recenters, and the toggle brings it back","flow_id":"LA-PLT-UC31-FL","path":"main","position":2}
-{"id":"LA-PLT-UC31-FL-S03","title":"They show the chat with Claude from the title bar or its key, or hide it; the stage frames its focus in what the chat leaves, and the chat shows again on the next launch","flow_id":"LA-PLT-UC31-FL","path":"main","position":3,"interface_id":"LA-IF02"}
 {"id":"LA-PLT-UC32-FL-S01","title":"They switch Light, Dark or System from the palette","flow_id":"LA-PLT-UC32-FL","path":"main","position":1}
 {"id":"LA-PLT-UC33-FL-S01","title":"They duplicate the closest theme","flow_id":"LA-PLT-UC33-FL","path":"main","position":1}
 {"id":"LA-PLT-UC34-FL-S01","title":"They change its colors, fonts and density with the app changing around them, and a warning wherever text gets hard to read","flow_id":"LA-PLT-UC34-FL","path":"main","position":1}
@@ -407,15 +385,6 @@
 {"id":"LA-PLT-UC40-FL-S01","title":"They move or resize a window, which saves its size and place","flow_id":"LA-PLT-UC40-FL","path":"main","position":1}
 {"id":"LA-PLT-UC41-FL-S01","title":"They close the window: its place is kept, and its server stops","flow_id":"LA-PLT-UC41-FL","path":"main","position":1}
 {"id":"LA-PLT-UC41-FL-S02","title":"They quit, and the app exits once every window's server has stopped, as the policy that hears each window close stops it","flow_id":"LA-PLT-UC41-FL","path":"main","position":2}
-{"id":"LA-PLT-UC42-FL-S01","title":"They stop the turn under way","flow_id":"LA-PLT-UC42-FL","path":"main","position":1}
-{"id":"LA-PLT-UC43-FL-S01","title":"A tool that needs permission waits in the chat until they allow it once, allow it always in this chat, or deny it","flow_id":"LA-PLT-UC43-FL","path":"main","position":1}
-{"id":"LA-PLT-UC44-FL-S01","title":"The chat lists the folder's saved sessions by title and date, marking one another Claude client may have open","flow_id":"LA-PLT-UC44-FL","path":"main","position":1}
-{"id":"LA-PLT-UC44-FL-S02","title":"They resume a session, or fork the one open elsewhere; the saved conversation shows first","flow_id":"LA-PLT-UC44-FL","path":"main","position":2}
-{"id":"LA-PLT-UC44-FL-S03","title":"Each session loads the Lathe tools of the Lathe the window runs; the head shows how many, and from which Lathe","flow_id":"LA-PLT-UC44-FL","path":"main","position":3}
-{"id":"LA-PLT-UC44-FL-S04","title":"Before the first message, the empty chat says when Claude Code is not found or not signed in, with the fix","flow_id":"LA-PLT-UC44-FL","path":"main","position":4}
-{"id":"LA-PLT-UC45-FL-S01","title":"They choose a permission mode (Ask, Accept reads, Auto, Bypass after a warning, or View only); the session starts again in it, and the folder keeps it","flow_id":"LA-PLT-UC45-FL","path":"main","position":1}
-{"id":"LA-PLT-UC46-FL-S01","title":"They choose the model and the effort in the chat's head","flow_id":"LA-PLT-UC46-FL","path":"main","position":1}
-{"id":"LA-PLT-UC47-FL-S01","title":"They send more messages while Claude works: each waits in a queue above the message box, in order, until the turn ends; they can take one out, and Stop ends the turn under way","flow_id":"LA-PLT-UC47-FL","path":"main","position":1}
 {"id":"LA-PLT-UC48-FL-S01","title":"They remove a key they no longer want from a shortcut in the sheet","flow_id":"LA-PLT-UC48-FL","path":"main","position":1}
 {"id":"LA-PLT-UC49-FL-S01","title":"They reset a changed shortcut to its own keys","flow_id":"LA-PLT-UC49-FL","path":"main","position":1}
 {"id":"LA-PLT-UC50-FL-S01","title":"They reset all shortcuts, after the sheet asks first","flow_id":"LA-PLT-UC50-FL","path":"main","position":1}
@@ -424,11 +393,6 @@
 {"id":"LA-PLT-UC52-FL-S01","title":"From a record they copy its ID to the clipboard","flow_id":"LA-PLT-UC52-FL","path":"main","position":1}
 {"id":"LA-PLT-UC53-FL-S01","title":"They choose the editor Open in editor uses, or a custom command, and the shell keeps it in its settings file","flow_id":"LA-PLT-UC53-FL","path":"main","position":1}
 {"id":"LA-PLT-UC54-FL-S01","title":"They open the settings file in the editor to fill in the custom command","flow_id":"LA-PLT-UC54-FL","path":"main","position":1}
-{"id":"LA-PLT-UC55-FL-S01","title":"They turn on voice activation: \"Lathe\" after a pause wakes the chat while its window is in front; \"Lathe, send\", \"cancel\", \"scratch that\" and \"new line\" act on the draft","flow_id":"LA-PLT-UC55-FL","path":"main","position":1}
-{"id":"LA-PLT-UC56-FL-S01","title":"They turn on Quick mode: a dictated message sends by itself when they have finished, after a countdown any sound or key cancels","flow_id":"LA-PLT-UC56-FL","path":"main","position":1}
-{"id":"LA-PLT-UC57-FL-S01","title":"When the sign-in asks for the code the browser shows, they give it","flow_id":"LA-PLT-UC57-FL","path":"main","position":1}
-{"id":"LA-PLT-UC58-FL-S01","title":"They cancel the sign-in under way, which leaves everything as it was","flow_id":"LA-PLT-UC58-FL","path":"main","position":1}
-{"id":"LA-PLT-UC59-FL-S01","title":"They sign the agent out, so another account can sign in","flow_id":"LA-PLT-UC59-FL","path":"main","position":1}
 {"id":"LA-PRD-UC04-FL-S01","title":"The Owner declares a product kind with its fields, in a stage","flow_id":"LA-PRD-UC04-FL","path":"main","position":1}
 {"id":"LA-PRD-UC04-FL-S03","title":"The Owner reads the product's own kind whole, with its fields and relations, before declaring more","flow_id":"LA-PRD-UC04-FL","path":"main","position":2}
 {"id":"LA-PRD-UC04-FL-S05","title":"The Owner declares a kind or a relation a second time, and is refused naming the file and line of each","flow_id":"LA-PRD-UC04-FL","path":"refused","position":1}
