@@ -31,6 +31,7 @@ describe('LA-V159-R02-T01 a generated component shows its description, the outco
     await openApp('/P-D-GC01', { data: withMaker() });
     await within(main()).findByText('The order store the generator emits into every branch service.');
     expect(section(/^Guarantees/)).toHaveTextContent('P-D-GC01-GU01');
+    await within(main()).findByRole('heading', { name: /^Serves/ });
     expect(section(/^Serves/)).toHaveTextContent('P-BO09');
   });
 });

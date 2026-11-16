@@ -31,6 +31,7 @@ describe('LA-V160-R02-T01 a library shows its description, the outcomes it serve
     await openApp('/P-D-LB01', { data: withMaker() });
     await within(main()).findByText('The order queue every branch service imports.');
     expect(section(/^Guarantees/)).toHaveTextContent('P-D-LB01-GU01');
+    await within(main()).findByRole('heading', { name: /^Serves/ });
     expect(section(/^Serves/)).toHaveTextContent('P-BO09');
   });
 });
