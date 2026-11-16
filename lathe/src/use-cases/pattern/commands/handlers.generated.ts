@@ -19,7 +19,7 @@ import type { AddSlot } from './add-slot.ts';
 import type { ChangeSlot } from './change-slot.ts';
 import type { RemoveSlot } from './remove-slot.ts';
 
-/** Adds a pattern to its product, with its settings in order. */
+/** Adds a pattern to its product, with its settings in order and the maker of its fixed part. */
 export function addPattern(tx: Transaction, input: AddPattern): void {
   const patterns = new PatternRepository(tx);
   if (tx.record(input.product_id)?.kind !== 'product') tx.refuse('missing', `there is no product ${input.product_id}`);
@@ -29,7 +29,7 @@ export function addPattern(tx: Transaction, input: AddPattern): void {
   patterns.save(pattern);
 }
 
-/** Changes a pattern's title, description or notes, or its settings (the whole list, in order). Its product never changes. */
+/** Changes a pattern's title, description or notes, its settings (the whole list, in order) or the maker of its fixed part. Its product never changes. */
 export function changePattern(tx: Transaction, input: ChangePattern): void {
   const patterns = new PatternRepository(tx);
   const pattern = patterns.load(input.id) ?? tx.refuse('missing', `there is no pattern ${input.id}`);

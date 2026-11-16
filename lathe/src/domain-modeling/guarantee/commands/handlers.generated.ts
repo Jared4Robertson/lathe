@@ -11,7 +11,7 @@ import type { AddGuaranteeTest } from './add-guarantee-test.ts';
 import type { ChangeGuaranteeTest } from './change-guarantee-test.ts';
 import type { RemoveGuaranteeTest } from './remove-guarantee-test.ts';
 
-/** Adds a guarantee to a platform domain, with what every other domain can rely on and the building blocks that keep it. */
+/** Adds a guarantee to its maker (a platform domain, a generated component or a library), with what those who rely on it can rely on, whom it is for when its maker ships it outside the repo, the building blocks that keep it and the standard rules it follows. */
 export function addGuarantee(tx: Transaction, input: AddGuarantee): void {
   const guarantees = new GuaranteeRepository(tx);
   const { kept_by = [], meets = [], ...row } = input;
@@ -19,7 +19,7 @@ export function addGuarantee(tx: Transaction, input: AddGuarantee): void {
   guarantees.save(guarantee);
 }
 
-/** Changes a guarantee's title or statement, or the building blocks that keep it (the whole list). Its domain never changes. */
+/** Changes a guarantee's title, statement, consumers or group, or the building blocks that keep it or the standard rules it follows (each list whole). Its maker never changes. */
 export function changeGuarantee(tx: Transaction, input: ChangeGuarantee): void {
   const guarantees = new GuaranteeRepository(tx);
   const guarantee = guarantees.load(input.id) ?? tx.refuse('missing', `there is no guarantee ${input.id}`);

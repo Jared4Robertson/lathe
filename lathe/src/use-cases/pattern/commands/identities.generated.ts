@@ -4,7 +4,7 @@ export const ADD_PATTERN_IDENTITY = {
   id: 'LA-UCS-CMD190',
   slice: { aggregate: 'LA-UCS-A2', name: 'pattern' },
   name: 'add-pattern',
-  description: 'Adds a pattern to its product, with its settings in order.',
+  description: 'Adds a pattern to its product, with its settings in order and the maker of its fixed part.',
   method: 'POST',
   route: '/api/pattern/add-pattern',
 } as const;
@@ -13,7 +13,7 @@ export const CHANGE_PATTERN_IDENTITY = {
   id: 'LA-UCS-CMD191',
   slice: { aggregate: 'LA-UCS-A2', name: 'pattern' },
   name: 'change-pattern',
-  description: 'Changes a pattern\'s title, description or notes, or its settings (the whole list, in order). Its product never changes.',
+  description: 'Changes a pattern\'s title, description or notes, its settings (the whole list, in order) or the maker of its fixed part. Its product never changes.',
   method: 'POST',
   route: '/api/pattern/change-pattern',
 } as const;

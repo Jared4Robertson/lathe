@@ -275,8 +275,8 @@
 {"id":"LA-MOD-UC171-FL-S01","title":"The Owner changes a reader's title, file or description, the data store it reads in (null clears it), or the standard rules it meets, the packages it uses or its helper files (each the whole list) (LA-MOD-CMD298)","flow_id":"LA-MOD-UC171-FL","path":"main","position":1}
 {"id":"LA-MOD-UC172-FL-S01","title":"The Owner removes a read model's reader with the links it starts, the packages it uses and its helper files (LA-MOD-CMD299)","flow_id":"LA-MOD-UC172-FL","path":"main","position":1}
 {"id":"LA-MOD-UC173-FL-S01","title":"The Owner reads the guarantee whole, with its tests and the building blocks that keep it, before changing it","flow_id":"LA-MOD-UC173-FL","path":"main","position":1}
-{"id":"LA-MOD-UC173-FL-S02","title":"The Owner adds a guarantee to a platform domain, with the building blocks that keep it","flow_id":"LA-MOD-UC173-FL","path":"main","position":2}
-{"id":"LA-MOD-UC174-FL-S01","title":"The Owner changes a guarantee's title or statement, or the building blocks that keep it (the whole list)","flow_id":"LA-MOD-UC174-FL","path":"main","position":1}
+{"id":"LA-MOD-UC173-FL-S02","title":"The Owner adds a guarantee to its maker, with whom it is for and the building blocks that keep it","flow_id":"LA-MOD-UC173-FL","path":"main","position":2}
+{"id":"LA-MOD-UC174-FL-S01","title":"The Owner changes a guarantee's title, statement, consumers or group, or the building blocks that keep it or the standard rules it follows (each list whole)","flow_id":"LA-MOD-UC174-FL","path":"main","position":1}
 {"id":"LA-MOD-UC175-FL-S01","title":"The Owner removes a guarantee with its guarantee tests and the links they start","flow_id":"LA-MOD-UC175-FL","path":"main","position":1}
 {"id":"LA-MOD-UC176-FL-S01","title":"The Owner adds a guarantee test under its guarantee, with the test data sets it starts from","flow_id":"LA-MOD-UC176-FL","path":"main","position":1}
 {"id":"LA-MOD-UC177-FL-S01","title":"The Owner changes a guarantee test's way of running or the test data sets it starts from (the whole list)","flow_id":"LA-MOD-UC177-FL","path":"main","position":1}
