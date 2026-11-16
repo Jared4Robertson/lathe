@@ -43,7 +43,7 @@ const SHAPE_WORDS: Readonly<Record<Shape, string>> = {
 
 /** A mark's word in the key: what it tells apart. */
 const MARK_WORDS: Readonly<Record<Mark, string>> = {
-  value: 'Value', gear: 'Logic', lens: 'Read', marker: 'Term', ruler: 'Standard', port: 'Integration', target: 'Outcome', data: 'Test data', plug: 'Interface', route: 'Journey', seal: 'Guarantee',
+  value: 'Value', gear: 'Logic', lens: 'Read', marker: 'Term', ruler: 'Standard', port: 'Integration', target: 'Outcome', data: 'Test data', plug: 'Interface', route: 'Journey', seal: 'Guarantee', mold: 'Generated component', parcel: 'Library',
 };
 
 const BADGES: Readonly<Record<Badge, { sample: string; words: string; meaning: string }>> = {
