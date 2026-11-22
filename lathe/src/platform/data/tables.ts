@@ -1145,7 +1145,7 @@ export interface ProductKindRow {
   description: string;
   /** The kind its records sit under, their one parent: one of Lathe's or another product kind. Its table gets a required <parent_kind>_id column. */
   parent_kind: string;
-  /** The stage its records belong to, any of the six, if one; such as technical-specification for a kind of code Lathe has no kind for. */
+  /** The stage its records belong to, any of the six, if one; such as technical-specification for a kind of code Lathe has no kind for. A test-plan kind whose parent kind is an obligation kind is a test kind: each of its records proves its parent, as a test does, with no proof link. */
   stage?: "discovery" | "domain-model" | "use-cases" | "interface-design" | "technical-specification" | "test-plan";
   /** Whether a record of the kind is an obligation, to be designed, built and proved. An obligation kind joins the obligation supertype, and the records something outside the product may provide (provided_by_source). */
   obligation: boolean;

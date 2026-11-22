@@ -447,6 +447,59 @@ describe("a product's own obligation kinds", () => {
   });
 });
 
+describe("a product's own test kinds", () => {
+  // Three house rules: HR01 under a rule check in the test plan, with no proof link; HR02 under a rule script in the
+  // technical specification, which is no test kind; HR03 under a rule check that also links to it, the same proof.
+  const testKinds = () =>
+    adding(complete(), {
+      product_kind: [
+        { name: 'house_rule', product_id: 'EX', label: 'House rule', description: 'A rule of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: true, complexity: 'essential' },
+        { name: 'rule_check', product_id: 'EX', label: 'Rule check', description: 'A script that checks its rule.', parent_kind: 'house_rule', stage: 'test-plan', obligation: false, complexity: 'as-parent' },
+        { name: 'rule_script', product_id: 'EX', label: 'Rule script', description: 'A script that keeps its rule.', parent_kind: 'house_rule', stage: 'technical-specification', obligation: false, complexity: 'accidental' },
+      ],
+      product_kind_field: [
+        { kind: 'rule_check', position: 1, name: 'file', type: 'text', required: true, description: 'The file that runs it.' },
+        { kind: 'rule_script', position: 1, name: 'file', type: 'text', required: true, description: 'The file.' },
+      ],
+      product_relation: [
+        { name: 'checks_rule', source_kind: 'rule_check', target_kind: 'house_rule', product_id: 'EX', role: 'proof', forward_label: 'Checks', reverse_label: 'Checked by', description: 'The script checks the rule.' },
+      ],
+      house_rule: [
+        { id: 'EX-LEND-HR01', title: 'Quiet', domain_id: 'EX-LEND' },
+        { id: 'EX-LEND-HR02', title: 'Tidy', domain_id: 'EX-LEND' },
+        { id: 'EX-LEND-HR03', title: 'Calm', domain_id: 'EX-LEND' },
+      ],
+      rule_check: [
+        { id: 'EX-LEND-RC01', title: 'quiet check', house_rule_id: 'EX-LEND-HR01', file: 'test/quiet.test.ts' },
+        { id: 'EX-LEND-RC03', title: 'calm check', house_rule_id: 'EX-LEND-HR03', file: 'test/calm.test.ts' },
+      ],
+      rule_script: [{ id: 'EX-LEND-RS02', title: 'tidy.sh', house_rule_id: 'EX-LEND-HR02', file: 'bin/tidy.sh' }],
+      checks_rule: [{ source_id: 'EX-LEND-RC03', target_id: 'EX-LEND-HR03' }],
+    });
+  const provedBy = (ws: Workspace) => ws.coverage.find((c) => c.domain === 'EX-LEND')?.proved_by ?? {};
+
+  it('LA-TRC-UC01-R21-T01 in the test plan under an obligation kind prove their parent with no proof link, while their file names them', async () => {
+    const ws = await loadData(testKinds());
+    expect(obligation(ws, 'EX-LEND', 'house_rule')).toMatchObject({ total: 3, proved: 2 });
+    expect(gaps(ws).filter((g) => g.startsWith('proved'))).toEqual(['proved EX-LEND-HR02']);
+    expect([provedBy(ws)['EX-LEND-HR01'], provedBy(ws)['EX-LEND-HR02'], provedBy(ws)['EX-LEND-HR03']]).toEqual([['EX-LEND-RC01'], undefined, ['EX-LEND-RC03']]);
+    // The rule check whose file drops its ID no longer proves its rule; the one that also links to its rule is counted once.
+    const silent = await loadData(testKinds(), { silent: ['EX-LEND-RC01'] });
+    expect(obligation(silent, 'EX-LEND', 'house_rule')).toMatchObject({ total: 3, proved: 1 });
+  });
+
+  it('LA-TRC-UC01-R21-T02 in the test plan under an obligation kind, with no file, are tests not automated yet and prove nothing', async () => {
+    // The rule check's file is optional here, and a fourth rule's check is planned with none yet.
+    const planned = adding(changing(testKinds(), 'product_kind_field', (f) => f.kind === 'rule_check', { required: false }), {
+      house_rule: [{ id: 'EX-LEND-HR04', title: 'Still', domain_id: 'EX-LEND' }],
+      rule_check: [{ id: 'EX-LEND-RC04', title: 'still check', house_rule_id: 'EX-LEND-HR04' }],
+    });
+    const ws = await loadData(planned);
+    expect(obligation(ws, 'EX-LEND', 'house_rule')).toMatchObject({ total: 4, proved: 2, not_automated: 1 });
+    expect(gaps(ws).filter((g) => g.startsWith('proved'))).toEqual(['proved EX-LEND-HR02', 'proved EX-LEND-HR04']);
+  });
+});
+
 describe("a product's relations with a role, on Lathe's own obligation kinds", () => {
   // The standard rule loses what meets it and its own test, so only the product's links can cover it.
   const bareRule = () => without(without(complete(), 'meets', () => true), 'standard_rule_test', () => true);
