@@ -1,6 +1,7 @@
 import { plural } from '../plural';
 import { type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
 import type { Stage } from '../../../lathe/src/platform/data/schema';
+import { PLATFORM_SECTIONS } from '../../../lathe/src/exploring/folder-tree/read-model';
 import { byIdOrder, gapsOf, kindLabel } from '../exploring/record-summaries/record-index';
 import { treeChildren, treeGroup, treeOf, treeParent } from './tree';
 
@@ -76,8 +77,10 @@ export type BoxStage = Stage | 'structural';
 export function stageFor(index: RecordIndex, id: string, kind: string): BoxStage {
   const group = index.byId.has(id) ? undefined : treeGroup(index, id);
   if (group?.role === 'stage') {
-    const named = index.meta.stages.find((s) => s.stage === id.split('/')[1]);
-    return named ? named.stage : 'structural';
+    // A stage's key names it; a platform domain's section takes its stage's colors.
+    const part = id.split('/')[1];
+    const named = index.meta.stages.find((s) => s.stage === part)?.stage ?? PLATFORM_SECTIONS.find((p) => p.section === part)?.stage;
+    return named ?? 'structural';
   }
   const stage = stageOf(index, group ? group.kind ?? '' : kind);
   return stage === '' || stage === 'group' ? 'structural' : stage;

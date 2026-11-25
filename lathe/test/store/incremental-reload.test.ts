@@ -1,4 +1,4 @@
-// LA-PLT-UC03-R03-T01: a reload of only the changed files gives the same state as a load from scratch. Random change
+// LA-WBN-UC03-R03-T01: a reload of only the changed files gives the same state as a load from scratch. Random change
 // sets (a record retitled, a row removed or brought back, a key given twice, a line that is not JSON, a title the
 // integrity queries refuse, a file touched) are written to a product's data files; after each, one store reloads only
 // what changed and builds the result whole in the background, and a second store loads every file afresh. Both must
@@ -96,7 +96,7 @@ async function reloaded(store: Store, root: string): Promise<Outcome> {
 /** The data files as lines, by table. */
 const filesOf = (dir: string) => new Map(readdirSync(dir).filter((f) => f.endsWith('.jsonl')).map((f) => [f.slice(0, -'.jsonl'.length), readFileSync(path.join(dir, f), 'utf8').split('\n').filter(Boolean)]));
 
-describe('LA-PLT-UC03-R03-T01 a reload of only the changed files gives the same state, problems and coverage as a load from scratch', () => {
+describe('LA-WBN-UC03-R03-T01 a reload of only the changed files gives the same state, problems and coverage as a load from scratch', () => {
   it('applies random change sets both ways and compares them', async () => {
     const root = writeData(everyKind());
     const dir = path.join(root, 'data');
@@ -181,7 +181,7 @@ describe('LA-PLT-UC03-R03-T01 a reload of only the changed files gives the same 
   }, 240_000);
 });
 
-describe('LA-PLT-UC03-R03-T02 a reload reads only the changed tables, reruns only the rules that read them and rebuilds only the read models that read them', () => {
+describe('LA-WBN-UC03-R03-T02 a reload reads only the changed tables, reruns only the rules that read them and rebuilds only the read models that read them', () => {
   it('keeps the rest, and leaves the database to the whole build', async () => {
     const root = writeData(everyKind());
     const file = path.join(root, 'data', 'question.jsonl');
@@ -221,7 +221,7 @@ describe('LA-PLT-UC03-R03-T02 a reload reads only the changed tables, reruns onl
   });
 });
 
-describe("LA-PLT-UC03-R04-T02 a command's commit refuses what the whole build would, without building the data whole", () => {
+describe("LA-WBN-UC03-R04-T02 a command's commit refuses what the whole build would, without building the data whole", () => {
   it('holds a write over the data last built whole, refuses what an integrity query or a column constraint refuses, and leaves the database to the whole build', async () => {
     const root = writeData(everyKind());
     const steps: Record<string, number> = {};

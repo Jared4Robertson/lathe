@@ -24,7 +24,7 @@ function folder(name: string, files: Record<string, string> = {}, dirs: string[]
   return root;
 }
 
-describe('LA-PLT-SP01-T A folder opens only when it holds lathe.config.json or a data folder', () => {
+describe('LA-WBN-SP01-T A folder opens only when it holds lathe.config.json or a data folder', () => {
   it('opens a folder with lathe.config.json, reading its data folder', () => {
     const root = folder('configured', { 'lathe.config.json': '{ "data": "tables" }' });
     expect(checkFolder(root)).toEqual({ ok: true, dataDirs: [path.join(root, 'tables')] });
@@ -32,7 +32,7 @@ describe('LA-PLT-SP01-T A folder opens only when it holds lathe.config.json or a
     expect(checkFolder(plainConfig)).toEqual({ ok: true, dataDirs: [path.join(plainConfig, 'data')] });
   });
 
-  it('LA-PLT-UC11-R08-T01 opens a workspace with the data folder of each product it lists, from its own config', () => {
+  it('LA-WBN-UC11-R08-T01 opens a workspace with the data folder of each product it lists, from its own config', () => {
     const root = folder('workspace', {
       'lathe.config.json': '{ "products": ["examples/shop"] }',
       'examples/shop/lathe.config.json': '{ "data": "spec" }',

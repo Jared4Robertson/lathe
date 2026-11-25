@@ -16,10 +16,10 @@ import { pageHeading, TopBar } from './shell/MobileBar';
 import { QuickOpen } from './shell/QuickOpen';
 import { useThemeColor } from './shell/themeColor';
 import { useAggregate } from './shell/prefs';
-import { PANEL_LIMITS } from './platform/panel/model';
-import { panelRepository } from './platform/panel/repository';
-import { resizePanel } from './platform/panel/commands/resize-panel';
-import { showOrHidePanel } from './platform/panel/commands/show-or-hide-panel';
+import { PANEL_LIMITS } from './workbench/panel/model';
+import { panelRepository } from './workbench/panel/repository';
+import { resizePanel } from './workbench/panel/commands/resize-panel';
+import { showOrHidePanel } from './workbench/panel/commands/show-or-hide-panel';
 import { useNarrow } from './shell/useNarrow';
 import { FocusPage, StageBackdrop } from './views/FocusPage';
 import { ChecksPanel } from './views/ChecksPanel';
@@ -73,7 +73,7 @@ function Shell() {
       return answer;
     },
   }), [reload, mark]);
-  // Another device on the network only reads (LA-PLT-UC23-R05): it gets no writer, so no editor shows its actions.
+  // Another device on the network only reads (LA-WBN-UC23-R05): it gets no writer, so no editor shows its actions.
   const readOnly = useReadOnly();
   const spaces = useSpaceState(dataVersion.version, path, search);
   // Every page inside a space, and the nav, read the current space's own reads, never another product's.

@@ -3,10 +3,24 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { CONFIG_FILE, ProductRepoConfigRepository } from './platform/product-repo/repository.ts';
+/** The config file's name, at the product repo's root. */
+export const CONFIG_FILE = 'lathe.config.json';
 
-// The config file's name, kept by the Product repo's repository.
-export { CONFIG_FILE };
+/** Whether a folder holds a product repo's config. */
+const hasConfig = (root: string) => existsSync(path.join(root, CONFIG_FILE));
+
+/**
+ * A product repo's config as written, or undefined when it has none; refused when it is not JSON. Every load reads it
+ * here, the Platform's one reader of the file (LA-PLT-GU02); the Product repo's repository writes it.
+ */
+function storedConfig(root: string): unknown {
+  if (!hasConfig(root)) return undefined;
+  try {
+    return JSON.parse(readFileSync(path.join(root, CONFIG_FILE), 'utf8')) as unknown;
+  } catch (error) {
+    throw new Error(`${CONFIG_FILE} is not valid JSON: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
 
 export interface LatheConfig {
   /** The product repo's root. */
@@ -174,8 +188,7 @@ export function productTitles(dataDir: string): string[] {
 /** The product's config whatever its schema version: `lathe upgrade` and the desktop app's folder check read it this way. */
 export function readConfig(root: string): LatheConfig {
   root = path.resolve(root);
-  const repository = new ProductRepoConfigRepository(root);
-  const config = (repository.load() ?? {}) as ConfigFile;
+  const config = (storedConfig(root) ?? {}) as ConfigFile;
   if (typeof config !== 'object' || config === null || Array.isArray(config)) {
     throw new Error(`${CONFIG_FILE} must hold one JSON object, such as { "schema": 1, "data": "data" }.`);
   }
@@ -203,7 +216,7 @@ export function readConfig(root: string): LatheConfig {
   }
   // A config with no schema is for schema 1, the first versioned one. Lathe's own package, opened for its own
   // reference and checks with no config of its own, is always at its own schema.
-  const unnamed = root === PACKAGE_DIR && !repository.exists() ? SCHEMA_VERSION : 1;
+  const unnamed = root === PACKAGE_DIR && !hasConfig(root) ? SCHEMA_VERSION : 1;
   return {
     root,
     dataDir: path.resolve(root, (config.data as string | undefined) ?? 'data'),
@@ -227,7 +240,7 @@ function productFolders(root: string, value: unknown): string[] {
     const product = path.resolve(root, folder);
     if (product === root) throw new Error(`${shape} ${folder} is the workspace itself.`);
     if (roots.includes(product)) throw new Error(`${shape} ${folder} is listed twice.`);
-    if (!new ProductRepoConfigRepository(product).exists()) throw new Error(`${shape} ${folder} holds no ${CONFIG_FILE}.`);
+    if (!hasConfig(product)) throw new Error(`${shape} ${folder} holds no ${CONFIG_FILE}.`);
     roots.push(product);
   }
   return roots;
@@ -248,6 +261,6 @@ function packageFolders(root: string, value: unknown): string[] | null {
 
 /** Whether a folder, from the root, lies in another product's folder: it or a folder above it, below the root, holds its own lathe.config.json. */
 export function otherProductHolds(root: string, rel: string): boolean {
-  for (let at = rel; at !== '' && at !== '.'; at = path.dirname(at)) if (new ProductRepoConfigRepository(path.join(root, at)).exists()) return true;
+  for (let at = rel; at !== '' && at !== '.'; at = path.dirname(at)) if (hasConfig(path.join(root, at))) return true;
   return false;
 }

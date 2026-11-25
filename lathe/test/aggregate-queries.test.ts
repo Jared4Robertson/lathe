@@ -220,14 +220,6 @@ describe('Exploring follows Aggregate queries', () => {
   it('LA-PAT-AGGREGATE-QUERIES-R06-T03 each record a Exploring query reads by its ID can be found first', () => foundFirst('LA-EXP'));
 });
 
-describe('Platform follows Aggregate queries', () => {
-  it('LA-PAT-AGGREGATE-QUERIES-R01-T04 each Platform query is named on its own on every interface', () => namedOnItsOwn('LA-PLT'));
-  it('LA-PAT-AGGREGATE-QUERIES-R03-T04 asking each Platform query changes no row and no data file', () => changesNothing('LA-PLT'));
-  it('LA-PAT-AGGREGATE-QUERIES-R04-T04 each Platform query asked by an ID that names nothing is refused, naming it', () => refusesWhatItCannotFind('LA-PLT'));
-  it('LA-PAT-AGGREGATE-QUERIES-R05-T04 after a write, each Platform read model answers as it does over the data loaded afresh', () => staysCurrent('LA-PLT'));
-  it('LA-PAT-AGGREGATE-QUERIES-R06-T04 each record a Platform query reads by its ID can be found first', () => foundFirst('LA-PLT'));
-});
-
 describe('Traceability follows Aggregate queries', () => {
   it('LA-PAT-AGGREGATE-QUERIES-R01-T05 each Traceability query is named on its own on every interface', () => namedOnItsOwn('LA-TRC'));
   it('LA-PAT-AGGREGATE-QUERIES-R03-T05 asking each Traceability query changes no row and no data file', () => changesNothing('LA-TRC'));

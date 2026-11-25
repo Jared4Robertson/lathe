@@ -6,6 +6,7 @@ import { type RecordIndex } from '../../exploring/record-summaries/record-index'
 import { RecordLink } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
 import { DomainWiki } from '../../specs/SpecPages';
+import { ownerFolders } from '../../exploring/folder-tree/folders';
 import { DomainEditor } from './DomainEditor';
 import { useDomain } from './reads';
 
@@ -77,7 +78,10 @@ function summaryOf(index: RecordIndex, page: Domain): { lead?: string; facts: Fa
           { label: 'Position', value: page.domain.position },
           { label: 'Subdomain', value: page.domain.subdomain_type },
           ...(page.domain.platform ? [{ label: 'Platform', value: 'yes' }] : []),
-          { label: 'Holds', value: `${count(page.useCases.reduce((n, g) => n + g.useCases.length, 0), 'use case', 'use cases')}, ${count(page.terms.length, 'term', 'terms')}` },
+          // A platform domain is described by its guarantees, a business domain by its use cases.
+          { label: 'Holds', value: `${page.domain.platform
+            ? count(ownerFolders(index, id).stages.find((s) => s.section === 'guarantees')?.count ?? 0, 'guarantee', 'guarantees')
+            : count(page.useCases.reduce((n, g) => n + g.useCases.length, 0), 'use case', 'use cases')}, ${count(page.terms.length, 'term', 'terms')}` },
         ],
       };
     case 'term': {

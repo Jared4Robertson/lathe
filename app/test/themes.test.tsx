@@ -7,21 +7,21 @@ import { openApp } from './helpers';
 import { auditContrast } from '../src/theme/audit';
 import { STAGE_FILLS } from '../src/theme/tokens';
 import { themeCss } from '../src/theme/css';
-import { APPEARANCE_STORAGE } from '../src/platform/appearance/model';
-import { appearanceRepository } from '../src/platform/appearance/repository';
+import { APPEARANCE_STORAGE } from '../src/workbench/appearance/model';
+import { appearanceRepository } from '../src/workbench/appearance/repository';
 import { BUILT_IN_THEMES, LATHE, parseTheme, toFile } from '../src/theme/theme';
 import { RuleBroken } from '../src/shell/prefs';
-import { holdToRules } from '../src/platform/appearance/rules';
-import { themesReader } from '../src/platform/appearance/reader';
-import { getThemeFile, listThemes } from '../src/platform/appearance/queries';
-import { chooseColorMode, chooseTheme } from '../src/platform/appearance/commands/handlers.generated';
-import { duplicateTheme } from '../src/platform/appearance/commands/duplicate-theme';
-import { importThemeFile } from '../src/platform/appearance/commands/import-theme-file';
-import { editTheme } from '../src/platform/appearance/commands/edit-theme';
-import { resetTheme } from '../src/platform/appearance/commands/reset-theme';
-import { deleteTheme } from '../src/platform/appearance/commands/delete-theme';
+import { holdToRules } from '../src/workbench/appearance/rules';
+import { themesReader } from '../src/workbench/appearance/reader';
+import { getThemeFile, listThemes } from '../src/workbench/appearance/queries';
+import { chooseColorMode, chooseTheme } from '../src/workbench/appearance/commands/handlers.generated';
+import { duplicateTheme } from '../src/workbench/appearance/commands/duplicate-theme';
+import { importThemeFile } from '../src/workbench/appearance/commands/import-theme-file';
+import { editTheme } from '../src/workbench/appearance/commands/edit-theme';
+import { resetTheme } from '../src/workbench/appearance/commands/reset-theme';
+import { deleteTheme } from '../src/workbench/appearance/commands/delete-theme';
 
-// Themes (LA-PLT-UC07): choosing one with a live preview, the mode, the Appearance page and its
+// Themes (LA-WBN-UC07): choosing one with a live preview, the mode, the Appearance page and its
 // editor, files in and out, and the theme on the page before first paint.
 
 const press = (key: string, code: string, mods: Partial<Record<'ctrlKey' | 'altKey' | 'shiftKey' | 'metaKey', boolean>> = {}) =>
@@ -146,7 +146,7 @@ describe('themes', () => {
     expect(root().getAttribute('data-theme')).toBe('graphite');
   });
 
-  it('LA-PLT-INV03-T A built-in theme is changed only through a copy, and Reset puts the copy back to it, keeping its name', async () => {
+  it('LA-WBN-INV03-T A built-in theme is changed only through a copy, and Reset puts the copy back to it, keeping its name', async () => {
     await workshopCopy();
     expect(root().getAttribute('data-theme')).toBe('custom-workshop-copy');
     fireEvent.input(screen.getByLabelText('Accent, light'), { target: { value: '#123456' } });
@@ -157,7 +157,7 @@ describe('themes', () => {
     expect(BUILT_IN_THEMES[2].light['--steel']).toBe('#9C3F17');
   });
 
-  it('LA-PLT-INV04-T Deleting the theme in use goes back to Lathe', async () => {
+  it('LA-WBN-INV04-T Deleting the theme in use goes back to Lathe', async () => {
     await workshopCopy();
     fireEvent.click(screen.getByRole('button', { name: 'Delete…' }));
     fireEvent.click(within(screen.getByRole('group', { name: 'Confirm delete' })).getByRole('button', { name: 'Delete' }));
@@ -229,7 +229,7 @@ describe('themes', () => {
     return { muted, row };
   };
 
-  it('LA-PLT-DS02-T01 The contrast of a color on what it is drawn on is worked out against AA, per mode', async () => {
+  it('LA-WBN-DS02-T01 The contrast of a color on what it is drawn on is worked out against AA, per mode', async () => {
     const { row } = await paleMuted();
     expect(row.querySelectorAll('.contrast-warning')[0]).toHaveTextContent('1.99:1 on Paper; needs 4.5:1');
     // Only the light cell warns: the dark set is unchanged.
@@ -259,7 +259,7 @@ describe('themes', () => {
     expect(refused({ ...file, selectors: {} })).toMatch(/Unknown field: selectors/);
   });
 
-  it('LA-PLT-INV02-T A partial theme file takes Lathe\'s core colors for what it leaves out, in both modes', () => {
+  it('LA-WBN-INV02-T A partial theme file takes Lathe\'s core colors for what it leaves out, in both modes', () => {
     const partial = parseTheme({ format: 'lathe-theme', version: 1, name: 'Only ink', light: { '--ink': '#000000' } });
     expect(partial.ok && partial.theme.light['--paper']).toBe('#F4F6F5');
     expect(partial.ok && partial.theme.dark['--paper']).toBe('#11171B');
@@ -334,11 +334,11 @@ describe('themes', () => {
   });
 });
 
-// The Appearance aggregate's commands (LA-PLT-CMD03–09), each saved through AppearanceRepository, and the Themes reads.
+// The Appearance aggregate's commands (LA-WBN-CMD03–09), each saved through AppearanceRepository, and the Themes reads.
 
 const storedJson = (key: string) => JSON.parse(window.localStorage.getItem(key) ?? 'null');
 
-describe('LA-PLT-INV03-T the Appearance commands keep each change whole through its repository', () => {
+describe('LA-WBN-INV03-T the Appearance commands keep each change whole through its repository', () => {
   it('chooses a theme and a mode, writing the chosen theme\'s stylesheet for the early script', () => {
     chooseTheme({ id: 'midnight' });
     chooseColorMode({ mode: 'dark' });
@@ -373,20 +373,20 @@ describe('LA-PLT-INV03-T the Appearance commands keep each change whole through 
   });
 });
 
-describe('LA-PLT-INV02-T The Appearance refuses a theme without its light and dark sets', () => {
+describe('LA-WBN-INV02-T The Appearance refuses a theme without its light and dark sets', () => {
   it('refuses it with its reason', () => {
     const noDark = { ...LATHE, id: 'custom-x', builtIn: false, dark: undefined } as unknown as typeof LATHE;
     expect(() => holdToRules({ custom: [noDark], chosen: 'lathe', mode: 'system', scrollToZoom: false })).toThrow('Theme "Lathe" lacks its light or dark set.');
   });
 });
 
-describe('LA-PLT-INV03-T The Appearance refuses a built-in kept as the person\'s own', () => {
+describe('LA-WBN-INV03-T The Appearance refuses a built-in kept as the person\'s own', () => {
   it('refuses it with its reason', () => {
     expect(() => holdToRules({ custom: [{ ...LATHE }], chosen: 'lathe', mode: 'system', scrollToZoom: false })).toThrow('Theme "Lathe" is a built-in, which is never changed.');
   });
 });
 
-describe('LA-PLT-INV04-T The Appearance refuses a chosen theme that does not exist', () => {
+describe('LA-WBN-INV04-T The Appearance refuses a chosen theme that does not exist', () => {
   it('refuses it with its reason, and nothing is saved', () => {
     const before = window.localStorage.getItem(APPEARANCE_STORAGE.chosen.key);
     expect(() => chooseTheme({ id: 'gone' })).toThrow(RuleBroken);

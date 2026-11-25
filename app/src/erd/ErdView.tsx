@@ -1,6 +1,6 @@
 // The ERD stage of any address, /<id>?stage=erd (LA-V94).
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
-import { type MetaRelation } from '../platform/meta-model/reads';
+import { type MetaRelation } from '../product/meta-model/reads';
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { relationLabelOf } from '../specs/labels';
 import { useCameraGestures } from '../graph/gestures';

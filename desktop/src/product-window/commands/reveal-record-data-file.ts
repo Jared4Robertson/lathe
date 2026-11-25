@@ -1,4 +1,4 @@
-// Reveal a record's data file (LA-PLT-CMD42): shows the data file that holds a record in the system's file
+// Reveal a record's data file (LA-WBN-CMD42): shows the data file that holds a record in the system's file
 // manager, the file the window's engine names for the record's ID alone (LA-PAT-SHELL-ACTIONS-R01).
 import { parseRecordId } from '../../records.ts';
 import type { ProductWindowRepository } from '../repository.ts';

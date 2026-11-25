@@ -3,7 +3,7 @@ import type { StandardKind } from '../../../../lathe/src/technical-specification
 import type { StandardPage } from '../../../../lathe/src/technical-specification/standard/read-model';
 import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
-import { addInput, addOrChangeFields, changeInput, CommandForm, draftOf, emptyDraft, Fields, LONG, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
+import { addInput, addOrChangeFields, formFields, changeInput, CommandForm, draftOf, emptyDraft, Fields, LONG, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
 import { useWriter, type Writer, type CommandInputs, type CommandRoute } from '../../edit/write';
 import { navigate } from '../../router';
@@ -14,7 +14,7 @@ import { STANDARD_FIELDS } from './fields.generated';
 import { useNextStandardId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
-import { kindWord, addedUnder } from '../../platform/meta-model/reads';
+import { kindWord, addedUnder } from '../../product/meta-model/reads';
 
 // The Standard editor (LA-TEC-A3): the actions on a record of a standard, each sending one of the aggregate's own
 // commands, POST /api/standard/<command>, and nothing else. Edit sends its kind's Change with only what changed; Add
@@ -33,7 +33,8 @@ function fieldsOf(index: RecordIndex, product: string, kind: StandardKind, addin
   const F = STANDARD_FIELDS;
   switch (kind) {
     case 'standard':
-      return addOrChangeFields(adding, F['/api/standard/add-standard'], 'product_id', F['/api/standard/change-standard'], { description: LONG });
+      // Its parent, the product or a platform domain, is the page it is added from.
+      return adding ? formFields(F['/api/standard/add-standard'], ['product_id', 'domain_id'], { description: LONG }) : formFields(F['/api/standard/change-standard'], ['id'], { description: LONG });
     case 'standard_rule':
       return addOrChangeFields(adding, F['/api/standard/add-standard-rule'], 'standard_id', F['/api/standard/change-standard-rule'], { statement: LONG });
     case 'standard_rule_test':
@@ -90,7 +91,7 @@ function goesWith(page: StandardPage, kind: StandardKind, id: string): string[] 
 
 /** The record a removed one's page gives way to: what it sits under. */
 function parentOf(page: StandardPage, kind: StandardKind, id: string): string {
-  if (kind === 'standard') return page.standard.product_id;
+  if (kind === 'standard') return page.standard.domain_id ?? page.standard.product_id!;
   if (kind === 'standard_rule') return page.standard.id;
   return page.rules.find((r) => r.tests.some((t) => t.test.id === id))!.rule.id;
 }
@@ -110,7 +111,7 @@ export function StandardEditor({ index, page, children }: { index: RecordIndex; 
     setMode({ mode: 'view' });
     backToActions(`Change ${id}`, toolbar);
   };
-  const product = page.standard.product_id;
+  const product = index.byId.get(page.standard.id)?.product ?? '';
   if (mode.mode === 'change') {
     const specs = fieldsOf(index, product, kind, false);
     const current = currentOf(page, kind, id);
@@ -183,16 +184,19 @@ function AddForm({ index, product, kind, parent, onDone }: { index: RecordIndex;
 }
 
 /**
- * Add a standard to a product (from the product's page): the aggregate's own Add. A standard's ID is its product's,
- * STD and a name chosen for it, so the form starts it with the product's prefix and leaves the name to the person.
+ * Add a standard to a product or to a platform domain of it (from that page): the aggregate's own Add. A standard's ID
+ * is its product's, STD and a name chosen for it, under a platform domain too, so the form starts it with the product's
+ * prefix and leaves the name to the person.
  */
 export function AddStandardForm({ index, parent, onDone }: { index: RecordIndex; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
-  const [draft, setDraft] = useState<Draft>(() => ({ ...emptyDraft(), text: { id: `${parent}-STD-` } }));
-  const specs = fieldsOf(index, parent, 'standard', true);
+  const underDomain = index.byId.get(parent)?.kind === 'domain';
+  const product = underDomain ? index.byId.get(parent)?.product ?? '' : parent;
+  const [draft, setDraft] = useState<Draft>(() => ({ ...emptyDraft(), text: { id: `${product}-STD-` } }));
+  const specs = fieldsOf(index, product, 'standard', true);
   const submit = async () => {
-    const input = addInput(index, specs, draft, { product_id: parent });
+    const input = addInput(index, specs, draft, underDomain ? { domain_id: parent } : { product_id: parent });
     const answer = await send(writer, ADD.standard.route, input);
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;

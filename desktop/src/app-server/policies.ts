@@ -1,4 +1,4 @@
-// The App server's policies: when a window opens, start its server (LA-PLT-PO01); when it closes, stop it (LA-PLT-PO02).
+// The App server's policies: when a window opens, start its server (LA-WBN-PO01); when it closes, stop it (LA-WBN-PO02).
 import type { ProductWindowClosed, ProductWindowOpened } from '../product-window/events.ts';
 import { stopAppServer } from './commands/stop-app-server.ts';
 import type { AppServerRepository } from './repository.ts';

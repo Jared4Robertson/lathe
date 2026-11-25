@@ -1,4 +1,4 @@
-// Start a window's app server (LA-PLT-CMD15): starts the server a folder's window loads Lathe from, when it has none,
+// Start a window's app server (LA-WBN-CMD15): starts the server a folder's window loads Lathe from, when it has none,
 // on the port it listened on last time when that is free, and keeps the port it got for the next launch.
 import { isOwnPort, portOf, type RunningServer } from '../model.ts';
 import type { AppServerRepository } from '../repository.ts';

@@ -1,4 +1,4 @@
-// Open a record's data file in the editor (LA-PLT-CMD43): opens the data file that holds a record in the editor the
+// Open a record's data file in the editor (LA-WBN-CMD43): opens the data file that holds a record in the editor the
 // Shell settings name, the file the window's engine names for the record's ID alone (LA-PAT-SHELL-ACTIONS-R01).
 import { parseRecordId } from '../../records.ts';
 import type { ProductWindowRepository } from '../repository.ts';

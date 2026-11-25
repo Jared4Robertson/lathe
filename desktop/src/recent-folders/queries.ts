@@ -1,4 +1,4 @@
-// The Recent folders' query: List the recent folders (LA-PLT-QRY06), given only the read model's reader.
+// The Recent folders' query: List the recent folders (LA-WBN-QRY06), given only the read model's reader.
 import type { RecentFolderItem } from './read-model.ts';
 import type { RecentFoldersReader } from './reader.ts';
 

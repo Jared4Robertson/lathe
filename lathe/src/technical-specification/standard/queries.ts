@@ -76,7 +76,7 @@ export const NEXT_STANDARD_ID: QueryDefinition<{ kind: string; parent: string },
 /** A standard as text: its row, then each rule with what meets it and its tests. */
 function standardText(page: StandardPage): string {
   const { standard: row } = page;
-  const lines = [`Standard ${row.id}: ${row.title}`, `  product: ${row.product_id}`, `  description: ${row.description}`];
+  const lines = [`Standard ${row.id}: ${row.title}`, row.domain_id ? `  domain: ${row.domain_id}` : `  product: ${row.product_id}`, `  description: ${row.description}`];
   for (const r of page.rules) {
     lines.push(`Standard rule ${r.rule.id}: ${r.rule.title}${r.metBy.length ? ` [met by ${r.metBy.join(', ')}]` : ''}`);
     for (const t of r.tests) lines.push(`  standard rule test ${t.test.id}: ${t.test.title} (${t.test.state})`);

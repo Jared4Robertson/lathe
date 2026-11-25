@@ -210,7 +210,7 @@ describe('folders by stage', () => {
     expect(within(panel()).queryByRole('heading', { level: 2, name: 'Discovery' })).toBeNull();
   });
 
-  it('LA-V90-R16-T04 Platform lists the domains marked platform, after Domains, each unfolding into its stages', async () => {
+  it('LA-V90-R16-T04 Platform lists the domains marked platform, after Domains, each unfolding into its sections', async () => {
     await openApp('/DM', { data: setRow(workspace(), 'domain', 'DM-PAY', { platform: true }) });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(within(panel()).getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual(['Health', 'Domains', 'Platform', 'Shared']);
@@ -218,11 +218,37 @@ describe('folders by stage', () => {
     expect(within(list('Platform of Demo shop')).getAllByRole('link').map((a) => a.textContent)).toEqual(['Paying']);
     const user = userEvent.setup();
     await user.click(within(list('Platform of Demo shop')).getByRole('button', { name: 'Unfold Paying' }));
-    expect(rows(list('Folders of Paying'))[0]).toMatch(/^Domain model/);
+    // What a platform domain should not hold (its aggregate and use case here) is in none of its sections.
+    expect(rows(list('Folders of Paying')).filter((r) => /^(Domain model|Use cases)/.test(r ?? ''))).toEqual([]);
     // A product with no domain marked platform shows no Platform.
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(within(panel()).queryByRole('heading', { level: 2, name: 'Platform' })).toBeNull();
+  });
+
+  it('LA-V90-R16-T05 A platform domain unfolds into its Guarantees, Building blocks, Standards and Quality suites, with none of the stages', async () => {
+    const w = setRow(workspace(), 'domain', 'DM-PAY', { platform: true });
+    addRows(w, 'tooling', { id: 'DM-PAY-TOOL01', title: 'build', domain_id: 'DM-PAY', file: 'scripts/build.ts' });
+    addRows(w, 'guarantee', { id: 'DM-PAY-GU01', title: 'Every payment is checked whole', domain_id: 'DM-PAY', statement: 'Every payment MUST be checked whole.' });
+    addRows(w, 'guarantee_test', { id: 'DM-PAY-GU01-T01', title: 'A broken payment is refused', guarantee_id: 'DM-PAY-GU01', level: 'integration', state: 'not automated yet', when: 'Pays with a broken card.', then: 'Expects a refusal.' });
+    addRows(w, 'kept_by', { source_id: 'DM-PAY-GU01', target_id: 'DM-PAY-TOOL01' });
+    addRows(w, 'standard', { id: 'DM-STD-PAY', title: 'Paying', domain_id: 'DM-PAY', type: 'engineering', description: 'How payments are coded.' });
+    await openApp('/DM', { data: w });
+    await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
+    const user = userEvent.setup();
+    await user.click(within(list('Platform of Demo shop')).getByRole('button', { name: 'Unfold Paying' }));
+    expect(rows(list('Folders of Paying')).map((r) => r?.replace(/\d+$/, ''))).toEqual(['Guarantees', 'Building blocks', 'Standards', 'Quality suites']);
+    const index = recordIndexOf(w);
+    const sections = ownerFolders(index, 'DM-PAY').stages;
+    expect(sections.map((s) => `${s.key} ${s.label} ${s.stage}`)).toEqual([
+      'DM-PAY/guarantees Guarantees domain-model',
+      'DM-PAY/building-blocks Building blocks technical-specification',
+      'DM-PAY/standards Standards technical-specification',
+      'DM-PAY/quality-suites Quality suites test-plan',
+    ]);
+    expect(sections[0].direct?.records.map((r) => r.id)).toEqual(['DM-PAY-GU01']);
+    // The graph's tree holds the same sections, as the nav does; what the domain should not hold hangs from it as stored.
+    expect(treeChildren(index, 'DM-PAY').slice(0, 4)).toEqual(sections.map((s) => s.key));
   });
 
   it("LA-V90-R18-T02 A pattern rule's page opens the product's own Use cases", async () => {

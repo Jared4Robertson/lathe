@@ -140,7 +140,7 @@ INSERT INTO meta_table VALUES
 
 INSERT INTO meta_stage VALUES
   ('discovery', 1, 'Discovery', 'The business outcomes the product exists to achieve, each a measurable statement with its measure and target, which the aggregates and read models serve, and the journeys that reach them: the use cases and handoffs, in order, from a trigger to a result.'),
-  ('domain-model', 2, 'Domain model', 'Domains and their aggregates, entities, value objects, rules (constraints, invariants, specifications and policies), events, commands, read models, queries, domain services and glossary terms.'),
+  ('domain-model', 2, 'Domain model', 'Domains and their aggregates, entities, value objects, rules (constraints, invariants, specifications and policies), events, commands, read models, queries, domain services and glossary terms, and the guarantees a platform domain makes to every other domain.'),
   ('use-cases', 3, 'Use cases', 'The use cases of each domain, grouped by their results'' aggregates and read models, with their actors and UC requirements, each use case''s flow and its steps (how it is carried out, whatever the interface), and the patterns use cases and domains follow.'),
   ('interface-design', 4, 'Interface design', 'The product''s interfaces with the roles that use them and the use cases each offers, and the views, endpoints and integrations a flow''s steps reach through them, with their requirements.'),
   ('technical-specification', 5, 'Technical specification', 'The technical record that implements each design record, such as a command''s handler or an entity''s table, and the standards code meets.'),

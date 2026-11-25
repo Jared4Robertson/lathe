@@ -1,5 +1,5 @@
-// The Shell settings' rules: the editor is one Lathe knows (editor-is-known, LA-PLT-INV32), and a custom editor has its
-// command (custom-editor-has-command, LA-PLT-INV31).
+// The Shell settings' rules: the editor is one Lathe knows (editor-is-known, LA-WBN-INV32), and a custom editor has its
+// command (custom-editor-has-command, LA-WBN-INV31).
 import { holdTo, type RuleProblem } from '../rules.ts';
 import { EDITORS, type Settings } from './model.ts';
 

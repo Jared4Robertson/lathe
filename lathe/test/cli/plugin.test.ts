@@ -48,7 +48,7 @@ describe('the plugin', () => {
     for (const script of scripts) expect(existsSync(path.join(pluginDir, script))).toBe(true);
   });
 
-  it('LA-PLT-UC18-R04-T01 no skill tells the Agent to write spec files by hand', () => {
+  it('LA-PRD-UC18-R04-T01 no skill tells the Agent to write spec files by hand', () => {
     for (const skill of SKILLS) {
       const text = readFileSync(path.join(pluginDir, 'skills', skill, 'SKILL.md'), 'utf8');
       expect(text, skill).not.toMatch(/specs\/|```markdown|^---\nid:|YAML|header|FORMAT\.md|metaExtensions|kinds\.csv|relations\.csv|lathe format|\b(?!REFERENCE\.md\b)[\w-]+\.md\b/m);
@@ -56,7 +56,7 @@ describe('the plugin', () => {
     }
   });
 
-  it('LA-PLT-UC18-R04-T01 the skills keep only judgment: no tool names, and one pointer to the reference for lookups', () => {
+  it('LA-PRD-UC18-R04-T01 the skills keep only judgment: no tool names, and one pointer to the reference for lookups', () => {
     for (const skill of SKILLS) {
       const text = readFileSync(path.join(pluginDir, 'skills', skill, 'SKILL.md'), 'utf8');
       expect([...text.matchAll(TOOL_NAME)].map((m) => m[1]), skill).toEqual([]);
@@ -105,7 +105,7 @@ describe('the MCP launcher', () => {
     expect(messages[1].result.content[0].text).toBe('Product TL: Tool Library\n  description: A neighborhood tool library.');
   });
 
-  it('LA-PLT-UC18-R01-T01 LA-PLT-UC18-FL-T warns once, in the first tool result, when the installed Lathe is not the major version the skills were written for', async () => {
+  it('LA-PRD-UC18-R01-T01 LA-PRD-UC18-FL-T warns once, in the first tool result, when the installed Lathe is not the major version the skills were written for', async () => {
     // Each release sets the manifest's lathe.version with the package's version, so the two never drift.
     const skills: string = JSON.parse(readFileSync(path.join(pluginDir, '.claude-plugin', 'plugin.json'), 'utf8')).lathe.version;
     expect(skills).toBe(JSON.parse(readFileSync(path.join(here, '..', '..', 'package.json'), 'utf8')).version);
@@ -139,7 +139,7 @@ describe('the MCP launcher', () => {
     expect((await results(`${major}.9.1`)).calls).toEqual([['Product TL: Tool Library\n  description: A neighborhood tool library.'], ['Product TL: Tool Library\n  description: A neighborhood tool library.']]);
   });
 
-  it('LA-INT01-T03 LA-PLT-UC18-R02-T01 says why it cannot start outside a Lathe repo', () => {
+  it('LA-INT01-T03 LA-PRD-UC18-R02-T01 says why it cannot start outside a Lathe repo', () => {
     const empty = realpathSync(mkdtempSync(path.join(tmpdir(), 'lathe-plugin-none-')));
     roots.push(empty);
     const result = spawnSync(process.execPath, [path.join(pluginDir, 'scripts', 'mcp-server.mjs')], { env: { ...process.env, CLAUDE_PROJECT_DIR: empty }, encoding: 'utf8', input: '' });

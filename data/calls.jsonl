@@ -10,10 +10,6 @@
 {"source_id":"LA-EXP-RM03","target_id":"LA-EXP-DS06"}
 {"source_id":"LA-EXP-RM03","target_id":"LA-EXP-DS07"}
 {"source_id":"LA-EXP-RM03","target_id":"LA-EXP-DS12"}
-{"source_id":"LA-PLT-CMD07","target_id":"LA-PLT-DS02"}
-{"source_id":"LA-PLT-CMD10","target_id":"LA-PLT-DS03"}
-{"source_id":"LA-PLT-CMD10","target_id":"LA-PLT-DS04"}
-{"source_id":"LA-PLT-QRY03","target_id":"LA-PLT-DS01"}
 {"source_id":"LA-TRC-QRY01","target_id":"LA-TRC-DS01"}
 {"source_id":"LA-TRC-QRY01","target_id":"LA-TRC-DS02"}
 {"source_id":"LA-TRC-QRY02","target_id":"LA-TRC-DS03"}
@@ -22,3 +18,7 @@
 {"source_id":"LA-TRC-QRY20","target_id":"LA-TRC-DS06"}
 {"source_id":"LA-TRC-RM12","target_id":"LA-TRC-DS06"}
 {"source_id":"LA-TRC-RM14","target_id":"LA-TRC-DS06"}
+{"source_id":"LA-WBN-CMD07","target_id":"LA-WBN-DS02"}
+{"source_id":"LA-WBN-CMD10","target_id":"LA-WBN-DS03"}
+{"source_id":"LA-WBN-CMD10","target_id":"LA-WBN-DS04"}
+{"source_id":"LA-WBN-QRY03","target_id":"LA-WBN-DS01"}

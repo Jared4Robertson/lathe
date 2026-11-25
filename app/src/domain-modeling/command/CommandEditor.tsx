@@ -16,7 +16,7 @@ import { COMMAND_FIELDS } from './fields.generated';
 import { useNextCommandId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
-import { kindWord, addedUnder } from '../../platform/meta-model/reads';
+import { kindWord, addedUnder } from '../../product/meta-model/reads';
 
 // The Command editor (LA-MOD-A8): the actions on a record of a command, each sending one of the aggregate's own
 // commands, POST /api/command/<command>, and nothing else. Edit sends its kind's Change with only what changed (a

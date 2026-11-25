@@ -42,6 +42,7 @@ export const MARK_PATHS: Readonly<Record<Mark, string>> = {
   data: 'M1.5 2.5a4 1.5 0 1 0 8 0 4 1.5 0 1 0-8 0z M1.5 2.5v6a4 1.5 0 0 0 8 0v-6 M1.5 5.5a4 1.5 0 0 0 8 0',
   route: 'M2 9.5 5.5 5.5 9 3.5 M2 8.3a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 1 0 0-2.4z M5.5 4.3a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 1 0 0-2.4z M9 2.3a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 1 0 0-2.4z',
   plug: 'M3.5 1v2.5 M7.5 1v2.5 M2 3.5h7v2a3.5 3.5 0 0 1-7 0z M5.5 9v1.5',
+  seal: 'M5.5 1 9.5 2.5v3c0 2.3-1.7 4-4 4.5-2.3-.5-4-2.2-4-4.5v-3z M3.8 5.6l1.2 1.2 2.3-2.4',
 };
 
 /** A shape's mark, as a box shows it before its eyebrow or the key beside its meaning. */
@@ -53,7 +54,7 @@ export function ShapeIcon({ shape }: { shape: Shape }) {
   );
 }
 
-/** A kind's mark (a tag, a gear, a lens, a marker, a ruler, a port, a target, a cylinder, a plug, a route). */
+/** A kind's mark (a tag, a gear, a lens, a marker, a ruler, a port, a target, a cylinder, a plug, a route, a seal). */
 export function MarkIcon({ mark }: { mark: Mark }) {
   return (
     <svg className={`graph-mark-icon mark-${mark}`} viewBox="0 0 11 11" aria-hidden="true" focusable="false">

@@ -12,7 +12,7 @@ import { writeData } from '../../helpers.ts';
 afterAll(() => closeStores());
 
 describe("Read a product's changed data files again", () => {
-  it('LA-PLT-UC103-R01-T01 LA-PLT-UC103-FL-T Only the files that changed are read again, whoever changed them, and the kinds that changed are announced', async () => {
+  it('LA-PRD-UC114-R01-T01 LA-PRD-UC114-FL-T Only the files that changed are read again, whoever changed them, and the kinds that changed are announced', async () => {
     const root = writeData(everyKind());
     const server = createServer((req, res) => void handleApi(root, req, res, new URL(req.url ?? '/', 'http://localhost').pathname));
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));

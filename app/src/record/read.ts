@@ -22,7 +22,7 @@ const known = new Map<string, Kept>();
 
 // How many times each read model changed, by its slice's name (the `<slice>` of /api/<slice>/<query>), and how many
 // times every read model did at once. A read is read again for a new version of the data only when its own read model
-// changed since it was read (LA-PLT-UC03-R02): the server names the read models each change touches.
+// changed since it was read (LA-WBN-UC03-R02): the server names the read models each change touches.
 const changed = { all: 0, by: new Map<string, number>() };
 const readModelOf = (route: string) => route.split('/')[2] ?? '';
 /** How many times the read model of a query's route has changed: a read stamped with it stands until it moves. */

@@ -16,7 +16,7 @@ import { DOMAIN_FIELDS } from './fields.generated';
 import { useNextDomainId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
-import { kindWord, addedUnder } from '../../platform/meta-model/reads';
+import { kindWord, addedUnder } from '../../product/meta-model/reads';
 
 // The Domain editor (LA-MOD-A4): the actions on a record of a domain, each sending one of the aggregate's own commands,
 // POST /api/domain/<command>, and nothing else. Edit sends its kind's Change with only what changed; Add opens an empty
@@ -157,6 +157,12 @@ function parentOf(page: DomainPage, kind: DomainKind, id: string): string {
 }
 
 
+/** The kinds a platform domain never holds, which its page offers no Add for. */
+const BUSINESS_ONLY: ReadonlySet<string> = new Set(['use_case', 'aggregate', 'read_model']);
+
+/** The kinds only a platform domain holds, which a business domain's page offers no Add for. */
+const PLATFORM_ONLY: ReadonlySet<string> = new Set(['guarantee', 'standard']);
+
 type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: Inside } | { mode: 'adopt'; kind: string } | { mode: 'move' } | { mode: 'remove' };
 
 /** A record of the domain with its actions; a form or the remove question shows in place of its page. */
@@ -193,7 +199,10 @@ export function DomainEditor({ index, page, children }: { index: RecordIndex; pa
   }
   // A domain service has one service: once it has it, there is nothing more to add of that kind.
   const adds = addedUnder(index.meta, kind, INSIDE).filter((k) => k !== 'service' || !page.domainServices.find((s) => s.domainService.id === id)?.service);
-  const others = othersAddedUnder(index.meta, kind);
+  // A platform domain is described by its guarantees and holds no use case, aggregate or read model; only a platform
+  // domain makes a guarantee or holds a standard (LA-STD-MODELING-R21, R23).
+  const platform = kind === 'domain' && page.domain.platform === true;
+  const others = othersAddedUnder(index.meta, kind).filter((k) => (platform ? !BUSINESS_ONLY.has(k) : !PLATFORM_ONLY.has(k)));
   return (
     <>
       <div className="record-actions" role="toolbar" aria-label={`Change ${id}`} ref={toolbar}>

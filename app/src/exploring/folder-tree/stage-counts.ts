@@ -11,8 +11,12 @@ export type StageCounts = Record<string, Partial<Record<Stage, number>>>;
 
 const under = (entry: FolderEntry): number => entry.folded.reduce((n, e) => n + under(e), 1);
 
-const ownerCounts = (owner: OwnerFolders): Partial<Record<Stage, number>> =>
-  Object.fromEntries(owner.stages.map((s) => [s.stage, s.folders.reduce((n, f) => n + f.entries.reduce((m, e) => m + under(e), 0), 0)]));
+/** An owner's records by stage; a platform domain's two sections of one stage (Building blocks and Standards) add up. */
+function ownerCounts(owner: OwnerFolders): Partial<Record<Stage, number>> {
+  const counts: Partial<Record<Stage, number>> = {};
+  for (const s of owner.stages) counts[s.stage] = (counts[s.stage] ?? 0) + s.folders.reduce((n, f) => n + f.entries.reduce((m, e) => m + under(e), 0), 0);
+  return counts;
+}
 
 /** Every owner's records by stage. */
 export function stageCounts(tree: FolderTree): StageCounts {

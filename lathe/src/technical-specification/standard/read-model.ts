@@ -75,6 +75,8 @@ export function standardTableFrom(view: ReadView): StandardTable {
   const standards = new Map<string, StandardTree>();
   const holding = new Map<string, { root: string; kind: StandardKind }>();
   const products = new Map<string, StandardSummary[]>(view.rows('product').map((p) => [String(p.id), []]));
+  // A standard sits under its product or a platform domain of it, and is its product's either way.
+  const productOf = new Map(view.rows('domain').map((d) => [String(d.id), String(d.product_id)]));
   for (const standard of view.rows('standard') as unknown as StandardRow[]) {
     const root = standard.id;
     holding.set(root, { root, kind: 'standard' });
@@ -91,7 +93,7 @@ export function standardTableFrom(view: ReadView): StandardTable {
       for (const t of r.tests) holding.set(t.test.id, { root, kind: 'standard_rule_test' });
     }
     standards.set(root, tree);
-    products.get(standard.product_id)?.push({ id: standard.id, title: standard.title });
+    products.get(standard.product_id ?? productOf.get(standard.domain_id ?? '') ?? '')?.push({ id: standard.id, title: standard.title });
   }
   for (const list of products.values()) list.sort(byRecordId);
   const kinds = new Map<string, string>();
