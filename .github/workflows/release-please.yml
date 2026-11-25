@@ -1,6 +1,8 @@
 # Keeps a release PR open on main (the version bump and CHANGELOG.md, grouped by commit type, from commits anywhere in the repo); merging it tags
 # the release and publishes it on GitHub. Its settings are release-please-config.json and .release-please-manifest.json.
-# The bot signs off the release commit itself ("signoff" in the config) so the dco check passes. Nothing is published to npm.
+# release-please runs with a token from the GitHub App lathe-release, not the default Actions token: pull requests opened with the default
+# token start no workflows, so the gate, dco and pr-title checks the main ruleset requires would never run on the release PR.
+# The App's bot signs off the release commit itself ("signoff" in the config) so the dco check passes. Nothing is published to npm.
 name: release-please
 
 on:
@@ -15,8 +17,15 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
+      # actions/create-github-app-token v3.4.0, pinned by commit.
+      - uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc
+        id: app-token
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
       # googleapis/release-please-action v5.0.0, pinned by commit.
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7
         with:
+          token: ${{ steps.app-token.outputs.token }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
