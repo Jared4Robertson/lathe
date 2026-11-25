@@ -1,5 +1,17 @@
 # Changelog
 
+## [11.0.0](https://github.com/Jared4Robertson/lathe/compare/v10.0.0...v11.0.0) (2026-11-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* **domain-modeling:** generated components and libraries make guarantees for their consumers, and a pattern names its maker ([#26](https://github.com/Jared4Robertson/lathe/issues/26))
+
+### Features
+
+* **domain-modeling:** generated components and libraries make guarantees for their consumers, and a pattern names its maker ([#26](https://github.com/Jared4Robertson/lathe/issues/26)) ([6b744aa](https://github.com/Jared4Robertson/lathe/commit/6b744aa8da4f611fb992d15d11a86637704d7b4a))
+* **traceability:** a product's own test kind under an obligation kind proves its parent ([#25](https://github.com/Jared4Robertson/lathe/issues/25)) ([edeb04e](https://github.com/Jared4Robertson/lathe/commit/edeb04ee50acc157c53563406bb16e93a3ffcb02))
+
 ## [10.0.0](https://github.com/Jared4Robertson/lathe/compare/v9.0.0...v10.0.0) (2026-11-25)
 
 
