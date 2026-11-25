@@ -120,6 +120,67 @@ check('test-file-missing-id', () => {
   });
 });
 
+describe("a product's own test kind, in the test plan under an obligation kind", () => {
+  // A rule check sits in the test plan under a house rule, an obligation, and links to nothing: it proves its parent as
+  // a test does. A tool note sits in the test plan under the domain, which is no obligation, so it proves nothing.
+  const testKinds = () =>
+    adding(complete(), {
+      product_kind: [
+        { name: 'house_rule', product_id: 'EX', label: 'House rule', description: 'A rule of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: true, complexity: 'essential' },
+        { name: 'rule_check', product_id: 'EX', label: 'Rule check', description: 'A script that checks its rule.', parent_kind: 'house_rule', stage: 'test-plan', obligation: false, complexity: 'as-parent' },
+        { name: 'tool_note', product_id: 'EX', label: 'Tool note', description: 'A note on how a tool was tried.', parent_kind: 'domain', stage: 'test-plan', obligation: false, complexity: 'as-parent' },
+      ],
+      product_kind_field: [
+        { kind: 'rule_check', position: 1, name: 'file', type: 'text', required: true, description: 'The file that runs it.' },
+        { kind: 'tool_note', position: 1, name: 'file', type: 'text', required: true, description: 'The file that holds it.' },
+      ],
+      house_rule: [{ id: 'EX-LEND-HR01', title: 'Quiet', domain_id: 'EX-LEND' }],
+      rule_check: [{ id: 'EX-LEND-RC01', title: 'quiet check', house_rule_id: 'EX-LEND-HR01', file: 'test/quiet.test.ts' }],
+      tool_note: [{ id: 'EX-LEND-TN01', title: 'drill note', domain_id: 'EX-LEND', file: 'test/drill.test.ts' }],
+    });
+  const found = (ws: Workspace, name: string) => ofCheck(ws, name).map((p) => [p.severity, p.record]);
+
+  it('LA-TRC-UC05-R08-T01 has its file checked as a test\'s with no proof link; one under a kind that is no obligation does not', async () => {
+    const data = testKinds();
+    const clean = await loadData(data);
+    expect([...found(clean, 'test-file-missing'), ...found(clean, 'test-file-missing-id')]).toEqual([]);
+    // Neither file is written: only the rule check, which proves its rule, is a test whose file is missing.
+    const missing = await loadData(data, { missing: ['test/quiet.test.ts', 'test/drill.test.ts'] });
+    expect(found(missing, 'test-file-missing')).toEqual([['error', 'EX-LEND-RC01']]);
+    // Both files drop their IDs: again only the rule check is reported, though no proof link names it.
+    const silent = await loadData(data, { silent: ['EX-LEND-RC01', 'EX-LEND-TN01'] });
+    expect(found(silent, 'test-file-missing-id')).toEqual([['error', 'EX-LEND-RC01']]);
+    expect(ofCheck(silent, 'test-file-missing-id')[0].message).toBe(
+      "Rule check EX-LEND-RC01 names the file test/quiet.test.ts, but that file does not mention EX-LEND-RC01; put the ID in the test's name in the file.",
+    );
+  });
+
+  it('LA-TRC-UC05-R08-T02 names a test case in its file, as a test does; one under a kind that is no obligation does not', async () => {
+    const files = {
+      'test/quiet.test.ts': "it('EX-LEND-RC01 a loud loan is refused', () => {});\n",
+      'test/drill.test.ts': "it('EX-LEND-TN01 the drill was tried', () => {});\n",
+    };
+    const ws = await loadData(testKinds(), { files });
+    expect(ofCheck(ws, 'test-case-unnamed').map((p) => p.message.split(': the test case ')[0])).toEqual(['test/drill.test.ts:1']);
+  });
+
+  it('LA-TRC-UC05-R08-T03 a proof link still makes its source a proof, also when it repeats the parent', async () => {
+    const data = adding(testKinds(), {
+      product_relation: [
+        { name: 'checks_rule', source_kind: 'rule_check', target_kind: 'house_rule', product_id: 'EX', role: 'proof', forward_label: 'Checks', reverse_label: 'Checked by', description: 'The script checks the rule.' },
+        { name: 'notes_rule', source_kind: 'tool_note', target_kind: 'house_rule', product_id: 'EX', role: 'proof', forward_label: 'Notes', reverse_label: 'Noted by', description: 'The note shows the rule holds.' },
+      ],
+      checks_rule: [{ source_id: 'EX-LEND-RC01', target_id: 'EX-LEND-HR01' }],
+      notes_rule: [{ source_id: 'EX-LEND-TN01', target_id: 'EX-LEND-HR01' }],
+    });
+    const silent = await loadData(data, { silent: ['EX-LEND-RC01', 'EX-LEND-TN01'] });
+    expect(found(silent, 'test-file-missing-id')).toEqual([
+      ['error', 'EX-LEND-RC01'],
+      ['error', 'EX-LEND-TN01'],
+    ]);
+  });
+});
+
 check('test-case-unnamed', () => {
   const unnamed = (ws: Workspace) => ofCheck(ws, 'test-case-unnamed').map((p) => [p.severity, p.record, p.message.split(': the test case ')[0]]);
 

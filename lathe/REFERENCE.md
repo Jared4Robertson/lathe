@@ -3141,7 +3141,7 @@ Proves its standard rule in the product's code, such as a scan of the code for w
 
 A test's `file` exists, and so does that of a product kind's record that proves an obligation.
 
-For an automated or manual test a missing file is an error. A test that is not automated yet may name the file it will live in, so for it a missing file is a warning. The file must be a file under the product root, never a folder. A record of a product's own kind that proves an obligation and names a file is checked as an automated test is. Fix the path (relative to the product root), or write the file.
+For an automated or manual test a missing file is an error. A test that is not automated yet may name the file it will live in, so for it a missing file is a warning. The file must be a file under the product root, never a folder. A record of a product's own kind that proves an obligation and names a file is checked as an automated test is. Such a record is the source of a proof link, or a record of a product's own test kind: a kind in the test plan whose parent kind is an obligation kind, which proves its parent with no link. Fix the path (relative to the product root), or write the file.
 
 <a id="check-test-file-missing-id"></a>
 
@@ -3151,7 +3151,7 @@ For an automated or manual test a missing file is an error. A test that is not a
 
 An automated test's file names the test, and so does that of a product kind's record that proves an obligation, so the code can be traced back to it.
 
-A test proves exactly its parent, and its file names the test's own ID as a whole ID (TL-LEND-INV01-T, not inside TL-LEND-INV01-T2), so a reader of the code finds the record and a reader of the record finds the code. Until it does, the test proves nothing. A missing file is test-file-missing instead; manual tests and tests not automated yet are not checked here. A record of a product's own kind that proves an obligation and names a file is held to the same rule, since it counts as proof only when its file names it. Put the test's ID in the test's name in the file.
+A test proves exactly its parent, and its file names the test's own ID as a whole ID (TL-LEND-INV01-T, not inside TL-LEND-INV01-T2), so a reader of the code finds the record and a reader of the record finds the code. Until it does, the test proves nothing. A missing file is test-file-missing instead; manual tests and tests not automated yet are not checked here. A record of a product's own kind that proves an obligation and names a file is held to the same rule, since it counts as proof only when its file names it. Such a record is the source of a proof link, or a record of a product's own test kind: a kind in the test plan whose parent kind is an obligation kind, which proves its parent with no link. Put the test's ID in the test's name in the file.
 
 <a id="check-manual-test-file-silent"></a>
 
@@ -3211,7 +3211,7 @@ A test data set's file is the seed or fixture that builds it, a file or a folder
 
 A test case in the product's test files names a test whose file it is in, so every test in the code leads back to the record it proves.
 
-test-file-missing-id follows a test record to its code; this check follows the code back. The engine reads the product's test files (those matching the tests globs in lathe.config.json, by default **/*.test.{ts,tsx,js,mjs} and **/*.spec.{ts,tsx,js}, never in node_modules, dist or another product's folder, and every file a test record names) as text and finds each test case: a call of it or test, with its modifiers and each forms, whose name is a string or template literal, inside the describe calls around it. A test case must name, in its own name, its describes' names or its each rows, the ID of a test (or of a product kind's record that proves an obligation) whose file is the file it is in. One that names none proves nothing anyone can find. Start its name, or its describe's, with the ID of the test it proves, adding that test when the spec lacks it, or remove the test case if it proves nothing.
+test-file-missing-id follows a test record to its code; this check follows the code back. The engine reads the product's test files (those matching the tests globs in lathe.config.json, by default **/*.test.{ts,tsx,js,mjs} and **/*.spec.{ts,tsx,js}, never in node_modules, dist or another product's folder, and every file a test record names) as text and finds each test case: a call of it or test, with its modifiers and each forms, whose name is a string or template literal, inside the describe calls around it. A test case must name, in its own name, its describes' names or its each rows, the ID of a test (or of a product kind's record that proves an obligation, by a proof link or as a record of a test kind under it) whose file is the file it is in. One that names none proves nothing anyone can find. Start its name, or its describe's, with the ID of the test it proves, adding that test when the spec lacks it, or remove the test case if it proves nothing.
 
 <a id="check-test-title-not-a-result"></a>
 
@@ -3332,7 +3332,7 @@ A kind a product adds to Lathe's, such as a report or a CLI command. Its records
 | `label` | VARCHAR | yes | The kind's name as people read it, such as Report. |
 | `description` | VARCHAR | yes | What a record of the kind is. |
 | `parent_kind` | VARCHAR | yes | The kind its records sit under, their one parent: one of Lathe's or another product kind. Its table gets a required <parent_kind>_id column. |
-| `stage` | ENUM('discovery', 'domain-model', 'use-cases', 'interface-design', 'technical-specification', 'test-plan') | no | The stage its records belong to, any of the six, if one; such as technical-specification for a kind of code Lathe has no kind for. |
+| `stage` | ENUM('discovery', 'domain-model', 'use-cases', 'interface-design', 'technical-specification', 'test-plan') | no | The stage its records belong to, any of the six, if one; such as technical-specification for a kind of code Lathe has no kind for. A test-plan kind whose parent kind is an obligation kind is a test kind: each of its records proves its parent, as a test does, with no proof link. |
 | `obligation` | BOOLEAN | yes | Whether a record of the kind is an obligation, to be designed, built and proved. An obligation kind joins the obligation supertype, and the records something outside the product may provide (provided_by_source). |
 | `id_pattern` | VARCHAR | no | How its IDs are written, its own pattern, such as <command>-CLI. |
 | `id_example` | VARCHAR | no | An example ID. |

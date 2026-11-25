@@ -375,8 +375,12 @@ WHERE NOT EXISTS (SELECT 1 FROM journey_test t WHERE t.journey_id = j.id)`),
  * - obligation_own_built (id, built): each obligation's own build, before what it rests on.
  * - uc_requirement_flow (id, flow_id, fulfilled): each UC requirement with the flow of its use case, and whether a
  *   step of that flow fulfills it; designed means it does.
- * - obligation_proof (obligation_id, test_id, domain_id, state, counts): the tests of each obligation; counts when it
- *   is automated or manual, at an allowed level and backed.
+ * - parent_proof (source_id, target_id): each record of a product's own kind in the test plan whose parent kind is an
+ *   obligation kind, with that parent, which it proves as an automated test proves its parent, with no proof link: once
+ *   it names a file that exists and names its ID. One that names no file is a test not automated yet.
+ * - obligation_proof (obligation_id, test_id, domain_id, state, counts): the tests of each obligation, the sources of
+ *   its proof links and the records of a product's test kind under it; counts when it is automated or manual, at an
+ *   allowed level and backed.
  * - coverage_owed (product, domain, id, kind): each obligation a domain, or the product outside every domain, owes.
  * - coverage_proof (product, domain, id, test_id): the tests that count as an owed obligation's proof where it is owed
  *   (a pattern rule's naming the owing domain); the one answer to "proved", which coverage_item and the app read.
@@ -397,6 +401,15 @@ export function coverageViewsSql(schema: SchemaDescription): string {
     })
     .join('\nUNION ALL ');
   const lathe = list(LATHE_OBLIGATIONS);
+  // A product's own kind in the test plan whose parent kind is an obligation kind is a test kind of the product's: each
+  // of its records proves its parent, as one of Lathe's tests does, with no proof link.
+  const obligations = new Set(schema.supertypes.obligation ?? []);
+  const parentProof =
+    Object.values(schema.kinds)
+      .filter((k) => k.productId !== null && k.stage === 'test-plan' && k.parents.length === 1 && obligations.has(k.parents[0].kind) && schema.tables[k.name])
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((k) => `SELECT id AS source_id, ${sqlName(k.parents[0].column)} AS target_id FROM ${sqlName(k.name)}`)
+      .join('\nUNION ALL ') || 'SELECT NULL::VARCHAR AS source_id, NULL::VARCHAR AS target_id WHERE false';
   return `
 CREATE OR REPLACE TABLE test_run AS
 WITH run AS (
@@ -486,6 +499,11 @@ SELECT o.id,
       OR EXISTS (SELECT 1 FROM file_facts f WHERE f.record = i.impl_id AND f.helper AND NOT f.file_exists)))) AS built
 FROM obligation o;
 
+-- Each record of a product's own test kind with the obligation it proves: a kind in the test plan whose parent kind is
+-- an obligation kind proves its parent, with no proof link, as a test proves its parent.
+CREATE OR REPLACE TABLE parent_proof AS
+${parentProof};
+
 CREATE OR REPLACE TABLE obligation_proof AS
 WITH proofs AS (
   SELECT t.parent_id AS obligation_id, t.id AS test_id, t.domain_id, t.state, t.level_allowed AND t.backed AS valid
@@ -499,6 +517,14 @@ WITH proofs AS (
   FROM link l JOIN meta_relation r ON r.name = l.relation AND r.role = 'proof' JOIN obligation o ON o.id = l.target_id
   LEFT JOIN test_run t ON t.id = l.source_id LEFT JOIN file_facts f ON f.record = l.source_id AND NOT f.helper
   WHERE o.kind NOT IN (${lathe}) OR r.product_id IS NOT NULL
+  -- A record of a product's own test kind proves its parent once it names a file that exists and names it, as an
+  -- automated test does; one that names no file is a test not automated yet, and proves nothing. A proof link that
+  -- repeats the parent is the same proof, counted once.
+  UNION ALL SELECT p.target_id, p.source_id, NULL, CASE WHEN f.record IS NULL THEN 'not automated yet' ELSE 'automated' END,
+    coalesce(f.file_exists AND f.contains_id, false)
+  FROM parent_proof p JOIN obligation o ON o.id = p.target_id LEFT JOIN file_facts f ON f.record = p.source_id AND NOT f.helper
+  WHERE NOT EXISTS (SELECT 1 FROM link l JOIN meta_relation r ON r.name = l.relation AND r.role = 'proof'
+    WHERE l.source_id = p.source_id AND l.target_id = p.target_id)
 )
 SELECT *, state IN ('automated', 'manual') AND valid AS counts FROM proofs;
 
