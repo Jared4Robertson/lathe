@@ -33,7 +33,7 @@ Change the spec only with Lathe's MCP tools (or the `lathe` CLI), never by editi
 
 **Packages.** Every package a manifest lists, dev dependencies included, is accounted for by the technical record that uses it. A tool the product is checked or tested with goes on a tooling record.
 
-**Code no kind fits.** Entry points and tooling are Lathe's own kinds. Where nothing fits (a migration, a graph layout, a code generator), declare a kind of the product's own (`extend-the-meta-model`).
+**Code no kind fits.** Entry points and tooling are Lathe's own kinds. Where nothing fits (a migration, a graph layout, a code generator's files), declare a kind of the product's own (`extend-the-meta-model`). What a generator emits, or a library ships, to code outside the repo is not a technical record: it is a generated component or a library in the domain model, and each promise it makes is its guarantee; the generator's and the library's files keep those guarantees (`kept_by`).
 
 ## Naming
 

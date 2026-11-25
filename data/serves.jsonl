@@ -51,6 +51,10 @@
 {"source_id":"LA-MOD-A22","target_id":"LA-BO06"}
 {"source_id":"LA-MOD-A24","target_id":"LA-BO06"}
 {"source_id":"LA-MOD-A24","target_id":"LA-BO11"}
+{"source_id":"LA-MOD-A25","target_id":"LA-BO06"}
+{"source_id":"LA-MOD-A25","target_id":"LA-BO11"}
+{"source_id":"LA-MOD-A26","target_id":"LA-BO06"}
+{"source_id":"LA-MOD-A26","target_id":"LA-BO11"}
 {"source_id":"LA-MOD-A4","target_id":"LA-BO06"}
 {"source_id":"LA-MOD-A5","target_id":"LA-BO06"}
 {"source_id":"LA-MOD-A6","target_id":"LA-BO06"}

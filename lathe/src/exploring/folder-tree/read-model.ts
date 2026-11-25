@@ -7,7 +7,9 @@
 // has one place. A platform domain, which has no goals of its own, is read in its own four sections in place of the
 // stages (PLATFORM_SECTIONS): its Guarantees, its Building blocks (its technical records and data stores), its
 // Standards and its Quality suites (its tests); it shows no Discovery, Domain model, Use cases or Interface design, and
-// a business domain shows no empty Guarantees or Standards folder, which only a platform domain holds. A stage or section
+// a business domain shows no empty Guarantees or Standards folder, which only a platform domain holds, and no empty
+// Generated components or Libraries folder, since most domains ship none; a generated component's or a library's
+// guarantees fold under it. A stage or section
 // with only one folder shows that folder's records directly (LA-PAT-APP-UX-R15). Within a kind,
 // records with a position come in its order (flow steps path by path, the main path first), then by ID; use cases by
 // their group (their result's aggregate or read model: aggregates by ID, then read models by ID), each entry naming
@@ -65,6 +67,8 @@ export const PLATFORM_SECTIONS: readonly { section: PlatformSection; label: stri
 
 /** The kinds only a platform domain holds, which a business domain shows no empty folder of. */
 const PLATFORM_KINDS: ReadonlySet<string> = new Set(['guarantee', 'standard']);
+/** The kinds a business domain ships, which it shows a folder of only once it holds one: most domains ship none. */
+const SHIPPED_KINDS: ReadonlySet<string> = new Set(['generated_component', 'library']);
 
 /** One stage of a domain or of Shared, or one section of a platform domain. */
 export interface StageFolders {
@@ -175,9 +179,9 @@ export function folderTreeTableFrom(view: ReadView): FolderTreeTable {
       const folders = kinds
         .filter((k) => schema.kinds[k].stage === stage && !CONTAINERS.has(k) && holds(k))
         .map((k) => folderOf(`${key}/${k}`, k, groupOf(roots, k)))
-        // An empty folder only for a kind that can start a branch here, and of the kinds only a platform domain holds,
-        // only in a platform domain.
-        .filter((f) => f.count > 0 || (canStartIn(f.kind, owner.kind) && !(business && PLATFORM_KINDS.has(f.kind))));
+        // An empty folder only for a kind that can start a branch here, of the kinds only a platform domain holds only
+        // in a platform domain, and none of the kinds a domain ships.
+        .filter((f) => f.count > 0 || (canStartIn(f.kind, owner.kind) && !(business && PLATFORM_KINDS.has(f.kind)) && !SHIPPED_KINDS.has(f.kind)));
       return { key, stage, section, folders, direct: folders.length === 1, count: folders.reduce((n, f) => n + f.count, 0) };
     };
     const stages = (platform

@@ -86,7 +86,7 @@ const NO_COMMAND = {
 };
 
 describe('The stage domains\' flows through the MCP tools', () => {
-  it('LA-PAT-MCP-STEPS-R01-T01 LA-PAT-MCP-STEPS-R01-T05 LA-PAT-MCP-STEPS-R01-T06 LA-PAT-MCP-STEPS-R01-T07 LA-PAT-MCP-STEPS-R01-T08 LA-PAT-MCP-STEPS-R01-T09 split a product into domains through the MCP tools', async () => {
+  it('LA-PLT-GU04-T08 split a product into domains through the MCP tools', async () => {
     await walk([], async (a) => {
       // S01: the modeling skill's first step is to find the product's business capabilities.
       const skill = readFileSync(path.join(LATHE_DIR, '..', 'plugin', 'skills', 'model-a-domain', 'SKILL.md'), 'utf8');
@@ -109,7 +109,7 @@ describe('The stage domains\' flows through the MCP tools', () => {
     });
   });
 
-  it('LA-PAT-MCP-STEPS-R01-T01 LA-PAT-MCP-STEPS-R01-T05 LA-PAT-MCP-STEPS-R01-T06 LA-PAT-MCP-STEPS-R01-T07 LA-PAT-MCP-STEPS-R01-T08 LA-PAT-MCP-STEPS-R01-T09 declare a product\'s own kinds and relations through the MCP tools', async () => {
+  it('LA-PLT-GU04-T08 declare a product\'s own kinds and relations through the MCP tools', async () => {
     await walk(LENDING, async (a) => {
       const launcher = { kind: 'launcher', id: 'TL-LEND-EP1', parent_id: 'TL-LEND', values: { title: 'Start the lending service', file: 'src/main.ts' } };
       await a.refused('extension_record_add_extension_record', launcher);
@@ -129,7 +129,7 @@ describe('The stage domains\' flows through the MCP tools', () => {
     });
   });
 
-  it('LA-PAT-MCP-STEPS-R01-T01 LA-PAT-MCP-STEPS-R01-T05 LA-PAT-MCP-STEPS-R01-T06 LA-PAT-MCP-STEPS-R01-T07 LA-PAT-MCP-STEPS-R01-T08 LA-PAT-MCP-STEPS-R01-T09 organize a domain\'s use cases by aggregate and patterns through the MCP tools', async () => {
+  it('LA-PLT-GU04-T08 organize a domain\'s use cases by aggregate and patterns through the MCP tools', async () => {
     await walk([...LENDING, add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', domain_id: 'TL-LEND', goal: 'A member brings a tool back.', result_id: 'TL-LEND-CMD01' })], async (a) => {
       // S01: the domain's use cases by the aggregate their results sit in.
       expect((await a.ok('use_case_list_use_cases', { domain_id: 'TL-LEND' })).trim()).toBe('Aggregate TL-LEND-A1  Loan\n  TL-LEND-UC01  Borrow a tool\n  TL-LEND-UC02  Return a tool');
@@ -149,7 +149,7 @@ describe('The stage domains\' flows through the MCP tools', () => {
     });
   });
 
-  it('LA-PAT-MCP-STEPS-R01-T01 LA-PAT-MCP-STEPS-R01-T05 LA-PAT-MCP-STEPS-R01-T06 LA-PAT-MCP-STEPS-R01-T07 LA-PAT-MCP-STEPS-R01-T08 LA-PAT-MCP-STEPS-R01-T09 write a use case\'s flow as ordered steps through the MCP tools', async () => {
+  it('LA-PLT-GU04-T08 write a use case\'s flow as ordered steps through the MCP tools', async () => {
     await walk([
       ...LENDING,
       add('uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'The due date is set', use_case_id: 'TL-LEND-UC01', statement: 'The loan MUST be due two weeks after it opens.' }),
@@ -195,7 +195,7 @@ describe('The stage domains\' flows through the MCP tools', () => {
     });
   });
 
-  it('LA-PAT-MCP-STEPS-R01-T01 LA-PAT-MCP-STEPS-R01-T05 LA-PAT-MCP-STEPS-R01-T06 LA-PAT-MCP-STEPS-R01-T07 LA-PAT-MCP-STEPS-R01-T08 LA-PAT-MCP-STEPS-R01-T09 model each aggregate\'s entities and value objects through the MCP tools', async () => {
+  it('LA-PLT-GU04-T08 model each aggregate\'s entities and value objects through the MCP tools', async () => {
     await walk([
       add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }),
       add('aggregate', { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', identity: 'Loan ID', description: 'One tool lent to one member, with its return.' }),
@@ -229,7 +229,7 @@ describe('The stage domains\' flows through the MCP tools', () => {
     });
   });
 
-  it('LA-PAT-MCP-STEPS-R01-T01 LA-PAT-MCP-STEPS-R01-T05 LA-PAT-MCP-STEPS-R01-T06 LA-PAT-MCP-STEPS-R01-T07 LA-PAT-MCP-STEPS-R01-T08 LA-PAT-MCP-STEPS-R01-T09 model commands, the events they raise and the policies that hear them through the MCP tools', async () => {
+  it('LA-PLT-GU04-T08 model commands, the events they raise and the policies that hear them through the MCP tools', async () => {
     await walk([
       add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }),
       add('aggregate', { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', identity: 'Loan ID', description: 'One tool lent to one member, with its return.' }),
@@ -262,7 +262,7 @@ describe('The stage domains\' flows through the MCP tools', () => {
     });
   });
 
-  it('LA-PAT-MCP-STEPS-R01-T01 LA-PAT-MCP-STEPS-R01-T05 LA-PAT-MCP-STEPS-R01-T06 LA-PAT-MCP-STEPS-R01-T07 LA-PAT-MCP-STEPS-R01-T08 LA-PAT-MCP-STEPS-R01-T09 write the test plan, one test kind per thing tested, through the MCP tools', async () => {
+  it('LA-PLT-GU04-T08 write the test plan, one test kind per thing tested, through the MCP tools', async () => {
     await walk([
       ...LENDING,
       add('invariant', { id: 'TL-LEND-INV01', title: 'One active loan per tool', aggregate_id: 'TL-LEND-A1', statement: 'A tool MUST NOT have two active loans.' }),
@@ -289,7 +289,7 @@ describe('The stage domains\' flows through the MCP tools', () => {
     });
   });
 
-  it('LA-PAT-MCP-STEPS-R01-T01 LA-PAT-MCP-STEPS-R01-T05 LA-PAT-MCP-STEPS-R01-T06 LA-PAT-MCP-STEPS-R01-T07 LA-PAT-MCP-STEPS-R01-T08 LA-PAT-MCP-STEPS-R01-T09 write the engineering standards the code follows through the MCP tools', async () => {
+  it('LA-PLT-GU04-T08 write the engineering standards the code follows through the MCP tools', async () => {
     await walk([...LENDING, add('command_handler', { id: 'TL-LEND-CMD01-H', title: 'openLoan', command_id: 'TL-LEND-CMD01', file: 'src/loans.ts', description: 'Opens the loan in one transaction.' })], async (a) => {
       a.tl.write('src/loans.ts', '// TL-LEND-CMD01-H\n');
       a.tl.write('test/standards.test.ts', "it('TL-STD-LOG-R01-T01 no console.log in src');\n");
@@ -305,7 +305,7 @@ describe('The stage domains\' flows through the MCP tools', () => {
     });
   });
 
-  it('LA-PAT-MCP-STEPS-R01-T01 LA-PAT-MCP-STEPS-R01-T05 LA-PAT-MCP-STEPS-R01-T06 LA-PAT-MCP-STEPS-R01-T07 LA-PAT-MCP-STEPS-R01-T08 LA-PAT-MCP-STEPS-R01-T09 write the technical records that build the design through the MCP tools', async () => {
+  it('LA-PLT-GU04-T08 write the technical records that build the design through the MCP tools', async () => {
     await walk([
       ...LENDING,
       add('invariant', { id: 'TL-LEND-INV01', title: 'One active loan per tool', aggregate_id: 'TL-LEND-A1', statement: 'A tool MUST NOT have two active loans.' }),
@@ -328,7 +328,7 @@ describe('The stage domains\' flows through the MCP tools', () => {
     });
   });
 
-  it('LA-PAT-MCP-STEPS-R01-T01 LA-PAT-MCP-STEPS-R01-T05 LA-PAT-MCP-STEPS-R01-T06 LA-PAT-MCP-STEPS-R01-T07 LA-PAT-MCP-STEPS-R01-T08 LA-PAT-MCP-STEPS-R01-T09 write the views, endpoints and integrations a flow reaches through the MCP tools', async () => {
+  it('LA-PLT-GU04-T08 write the views, endpoints and integrations a flow reaches through the MCP tools', async () => {
     await walk([
       ...LENDING,
       add('interface', { id: 'TL-IF01', title: 'Loan desk', product_id: 'TL', kind: 'web app', description: 'The desk where librarians lend tools.', public: false }),
@@ -351,7 +351,7 @@ describe('The stage domains\' flows through the MCP tools', () => {
     });
   });
 
-  it('LA-PAT-MCP-STEPS-R01-T01 LA-PAT-MCP-STEPS-R01-T05 LA-PAT-MCP-STEPS-R01-T06 LA-PAT-MCP-STEPS-R01-T07 LA-PAT-MCP-STEPS-R01-T08 LA-PAT-MCP-STEPS-R01-T09 sort a domain\'s rules by what they do through the MCP tools', async () => {
+  it('LA-PLT-GU04-T08 sort a domain\'s rules by what they do through the MCP tools', async () => {
     await walk([
       ...LENDING,
       add('read_model', { id: 'TL-LEND-RM01', title: 'Free tools', domain_id: 'TL-LEND', description: 'The tools on no active loan.' }),
@@ -376,7 +376,7 @@ describe('The stage domains\' flows through the MCP tools', () => {
     });
   });
 
-  it('LA-PAT-MCP-STEPS-R01-T01 LA-PAT-MCP-STEPS-R01-T05 LA-PAT-MCP-STEPS-R01-T06 LA-PAT-MCP-STEPS-R01-T07 LA-PAT-MCP-STEPS-R01-T08 LA-PAT-MCP-STEPS-R01-T09 model read models, queries, domain services and terms through the MCP tools', async () => {
+  it('LA-PLT-GU04-T08 model read models, queries, domain services and terms through the MCP tools', async () => {
     await walk(LENDING, async (a) => {
       // S01: the read model with its fields, the aggregate it reads, and its query; another domain's query is refused.
       await a.ok('read_model_add_read_model', { id: 'TL-LEND-RM01', title: 'Loans by member', domain_id: 'TL-LEND', description: 'Each member\'s open loans.', fields: [{ name: 'Loan', meaning: 'Which loan.', type_aggregate_id: 'TL-LEND-A1', required: true }], reads: ['TL-LEND-A1'] });
@@ -393,7 +393,7 @@ describe('The stage domains\' flows through the MCP tools', () => {
     });
   });
 
-  it('LA-PAT-MCP-STEPS-R01-T01 LA-PAT-MCP-STEPS-R01-T05 LA-PAT-MCP-STEPS-R01-T06 LA-PAT-MCP-STEPS-R01-T07 LA-PAT-MCP-STEPS-R01-T08 LA-PAT-MCP-STEPS-R01-T09 write the business outcomes the product exists to achieve through the MCP tools', async () => {
+  it('LA-PLT-GU04-T08 write the business outcomes the product exists to achieve through the MCP tools', async () => {
     await walk(LENDING, async (a) => {
       // S01: a measurable outcome under the product; one without its measure is refused.
       expect(await a.ok('business_outcome_next_id', { product_id: 'TL' })).toBe('TL-BO01');
@@ -412,7 +412,7 @@ describe('The stage domains\' flows through the MCP tools', () => {
 });
 
 describe('Checking flows through the MCP tools', () => {
-  it('LA-PAT-MCP-STEPS-R01-T02 add a check through the MCP tools', async () => {
+  it('LA-PLT-GU04-T08 add a check through the MCP tools', async () => {
     await walk([...LENDING, add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND', identity: 'Tool ID', description: 'A tool the library holds.' })], async (a) => {
       // S01: the check as one row, with the Check aggregate's own command.
       expect(await a.ok('check_add_check', NO_COMMAND)).toContain('Added check aggregate-without-command');
@@ -422,7 +422,7 @@ describe('Checking flows through the MCP tools', () => {
     });
   });
 
-  it('LA-PAT-MCP-STEPS-R01-T02 find structural problems through the MCP tools', async () => {
+  it('LA-PLT-GU04-T08 find structural problems through the MCP tools', async () => {
     // Stages written at different times: a view nothing uses yet, a use case with no flow, a test at a level its kind
     // does not allow, and a policy hearing an event of a stored aggregate that is delivered in process.
     await walk([
@@ -459,7 +459,7 @@ describe('Checking flows through the MCP tools', () => {
     });
   });
 
-  it('LA-PAT-MCP-STEPS-R01-T02 add a product\'s own checks through the MCP tools', async () => {
+  it('LA-PLT-GU04-T08 add a product\'s own checks through the MCP tools', async () => {
     await walk([...LENDING, add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND', identity: 'Tool ID', description: 'A tool the library holds.' })], async (a) => {
       // S02: a house rule as a check row with the product's product_id.
       await a.ok('check_add_check', NO_COMMAND);
@@ -488,7 +488,7 @@ describe('Checking flows through the MCP tools', () => {
     });
   });
 
-  it('LA-PAT-MCP-STEPS-R01-T02 keep each level of the spec a useful size through the MCP tools', async () => {
+  it('LA-PLT-GU04-T08 keep each level of the spec a useful size through the MCP tools', async () => {
     await walk([
       ...LENDING,
       add('entity', { id: 'TL-LEND-EN02', title: 'Return', aggregate_id: 'TL-LEND-A1', role: 'child', in_root_table: true, description: 'The tool coming back.' }),

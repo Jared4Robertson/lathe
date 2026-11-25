@@ -55,6 +55,10 @@ import { IntegrationPage } from '../interface-design/integration/IntegrationPage
 import type { ReadModelKind } from '../../../lathe/src/domain-modeling/read-model/model';
 import type { SpecificationKind } from '../../../lathe/src/domain-modeling/specification/model';
 import type { GuaranteeKind } from '../../../lathe/src/domain-modeling/guarantee/model';
+import { AddGeneratedComponentForm } from '../domain-modeling/generated-component/GeneratedComponentEditor';
+import { GeneratedComponentPage } from '../domain-modeling/generated-component/GeneratedComponentPage';
+import { AddLibraryForm } from '../domain-modeling/library/LibraryEditor';
+import { LibraryPage } from '../domain-modeling/library/LibraryPage';
 import { AddGuaranteeForm } from '../domain-modeling/guarantee/GuaranteeEditor';
 import { GuaranteePage } from '../domain-modeling/guarantee/GuaranteePage';
 import type { ValueObjectKind } from '../../../lathe/src/domain-modeling/value-object/model';
@@ -87,7 +91,7 @@ export interface AggregatePageProps {
 }
 
 /** The kinds with an aggregate page. */
-type PagedKind = UseCaseKind | DomainKind | 'test_data_set' | PatternKind | StandardKind | 'product' | 'question' | 'interface' | 'business_outcome' | 'entry_point' | 'tooling' | SpecificationKind | GuaranteeKind | ValueObjectKind | ReadModelKind | 'table' | AggregateKind | DomainEventKind | CommandKind | ViewKind | 'ui_component' | EndpointKind | IntegrationKind | JourneyKind | StorageRequirementKind | 'data_store';
+type PagedKind = UseCaseKind | DomainKind | 'test_data_set' | PatternKind | StandardKind | 'product' | 'question' | 'interface' | 'business_outcome' | 'entry_point' | 'tooling' | SpecificationKind | 'generated_component' | 'library' | GuaranteeKind | ValueObjectKind | ReadModelKind | 'table' | AggregateKind | DomainEventKind | CommandKind | ViewKind | 'ui_component' | EndpointKind | IntegrationKind | JourneyKind | StorageRequirementKind | 'data_store';
 
 /** Each kind with its aggregate's page. */
 const PAGES: { readonly [K in PagedKind]: ComponentType<AggregatePageProps> } = {
@@ -147,6 +151,8 @@ const PAGES: { readonly [K in PagedKind]: ComponentType<AggregatePageProps> } = 
   specification: SpecificationPage,
   predicate: SpecificationPage,
   specification_test: SpecificationPage,
+  generated_component: GeneratedComponentPage,
+  library: LibraryPage,
   guarantee: GuaranteePage,
   guarantee_test: GuaranteePage,
   value_object: ValueObjectPage,
@@ -181,7 +187,7 @@ export interface AggregateAdderProps {
 }
 
 /** Each aggregate root added from the page of what it sits under, with its aggregate's Add form. */
-const ADDERS: { readonly [K in 'use_case' | 'domain' | 'test_data_set' | 'pattern' | 'standard' | 'business_outcome' | 'journey' | 'question' | 'entry_point' | 'tooling' | 'specification' | 'guarantee' | 'value_object' | 'read_model' | 'table' | 'aggregate' | 'domain_event' | 'command' | 'view' | 'ui_component' | 'endpoint' | 'integration' | 'storage_requirement' | 'data_store']: ComponentType<AggregateAdderProps> } = {
+const ADDERS: { readonly [K in 'use_case' | 'domain' | 'test_data_set' | 'pattern' | 'standard' | 'business_outcome' | 'journey' | 'question' | 'entry_point' | 'tooling' | 'specification' | 'generated_component' | 'library' | 'guarantee' | 'value_object' | 'read_model' | 'table' | 'aggregate' | 'domain_event' | 'command' | 'view' | 'ui_component' | 'endpoint' | 'integration' | 'storage_requirement' | 'data_store']: ComponentType<AggregateAdderProps> } = {
   use_case: AddUseCaseForm,
   domain: AddDomainForm,
   test_data_set: AddTestDataSetForm,
@@ -200,6 +206,8 @@ const ADDERS: { readonly [K in 'use_case' | 'domain' | 'test_data_set' | 'patter
   endpoint: AddEndpointForm,
   integration: AddIntegrationForm,
   specification: AddSpecificationForm,
+  generated_component: AddGeneratedComponentForm,
+  library: AddLibraryForm,
   guarantee: AddGuaranteeForm,
   value_object: AddValueObjectForm,
   read_model: AddReadModelForm,

@@ -10,9 +10,10 @@
 //   the text the write sets: an add's title and lead, a change's only where it changes them. accidental-in-essential
 //   warns of every record in the data, whatever text it names the word in;
 // - essential-links-accidental: a link the write adds from an essential record to an accidental one, or a product
-//   relation it declares from an essential kind to an accidental kind. Only measured_by and kept_by may: what
-//   measures an outcome may be a report or a script, and a guarantee, a platform domain's contract with every other
-//   domain, names the building blocks that keep it, as its kind's business (LA-STD-PRINCIPLES-R05).
+//   relation it declares from an essential kind to an accidental kind. Only measured_by, kept_by and meets may: what
+//   measures an outcome may be a report or a script, and a guarantee, its maker's contract with those who rely on it,
+//   names the building blocks that keep it and the standard rules it follows, as its kind's business
+//   (LA-STD-PRINCIPLES-R05).
 //
 // A use case is one role invoking one command, or asking one query: its result (LA-STD-MODELING-R15):
 // - use-case-invokes-another-command: an invokes link the write adds from a step to a command that is not its use
@@ -38,7 +39,7 @@ export interface WriteRule {
 }
 
 /** The relations whose links may run from an essential record to an accidental one. */
-const ESSENTIAL_TO_ACCIDENTAL: ReadonlySet<string> = new Set(['measured_by', 'kept_by']);
+const ESSENTIAL_TO_ACCIDENTAL: ReadonlySet<string> = new Set(['measured_by', 'kept_by', 'meets']);
 
 /** The title of the interface a variant step names, which is the step's to name; undefined for any other record. */
 function ownInterfaceOf(view: ReadView, kind: string, row: Row): string | undefined {

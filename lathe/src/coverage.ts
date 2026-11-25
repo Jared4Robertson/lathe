@@ -79,7 +79,7 @@ export const OBLIGATION_COVERAGE: Readonly<Record<string, { designed: string; bu
   policy: { designed: 'By construction, under its command.', built: 'Its event handler names a file that exists.', proved: 'Its policy test.' },
   domain_service: { designed: 'By construction, under its domain.', built: 'Its service names a file that exists.', proved: 'One of its domain service tests.' },
   guarantee: {
-    designed: 'By construction, under its platform domain.',
+    designed: 'By construction, under its maker.',
     built: 'Every technical record that keeps it names a file that exists, and there is at least one; a data store that keeps it builds nothing a file shows.',
     proved: 'One of its guarantee tests.',
   },
@@ -208,15 +208,24 @@ WHERE d.platform AND NOT EXISTS (SELECT 1 FROM guarantee g WHERE g.domain_id = d
   // another domain (a repository stored in its data store, a requirement its shared module implements, a handler its
   // generator writes), in either direction, by any relation but kept_by, or carries out a pattern rule another domain
   // owes (a test runner's configuration that proves the rules of the patterns its use cases follow).
-  gap('guarantee-relied-on-by-nothing', 'domain-model', ['guarantee'], 'A guarantee no other domain relies on: none of its building blocks is linked to a record of another domain or carries out a pattern rule another domain owes.',
+  gap('guarantee-relied-on-by-nothing', 'domain-model', ['guarantee'], 'A platform domain\'s guarantee no other domain relies on: none of its building blocks is linked to a record of another domain or carries out a pattern rule another domain owes.',
     `SELECT g.id, 'Guarantee ' || g.id || ' is relied on by no other domain: none of the building blocks that keep it is linked to a record of another domain or carries out a pattern rule another domain owes. Link what uses them, or remove the guarantee.' AS message FROM guarantee g
-WHERE NOT EXISTS (
+WHERE g.domain_id IS NOT NULL AND NOT EXISTS (
   SELECT 1 FROM kept_by k JOIN link l ON l.relation <> 'kept_by' AND k.target_id IN (l.source_id, l.target_id)
   JOIN record_scope o ON o.id = CASE WHEN l.source_id = k.target_id THEN l.target_id ELSE l.source_id END
   WHERE k.source_id = g.id AND o.domain_id IS NOT NULL AND o.domain_id <> g.domain_id)
   AND NOT EXISTS (
   SELECT 1 FROM kept_by k JOIN meets m ON m.source_id = k.target_id JOIN owed_pattern_rules p ON p.id = m.target_id
   WHERE k.source_id = g.id AND p.domain <> g.domain_id)`),
+  // A generated component's or a library's guarantee is for consumers outside the repo, whom no link can reach, so it
+  // names them (LA-STD-MODELING-R22); and a generated component or a library is there for the guarantees it makes.
+  gap('guarantee-names-no-consumer', 'domain-model', ['guarantee'], 'A generated component\'s or a library\'s guarantee that names no consumer.',
+    `SELECT g.id, 'Guarantee ' || g.id || ' is made by ' || coalesce(g.generated_component_id, g.library_id) || ' for consumers outside the repo and names none: say whom it is for (consumers), such as every service built with it.' AS message FROM guarantee g
+WHERE g.domain_id IS NULL AND g.consumers IS NULL`),
+  gap('maker-without-guarantee', 'domain-model', ['generated_component', 'library', 'guarantee'], 'A generated component or a library that makes no guarantee.',
+    `SELECT m.id, m.label || ' ' || m.id || ' makes no guarantee: write each promise its consumers rely on as a guarantee of it, or remove it.' AS message FROM (
+  SELECT id, 'Generated component' AS label FROM generated_component UNION ALL SELECT id, 'Library' FROM library) m
+WHERE NOT EXISTS (SELECT 1 FROM guarantee g WHERE m.id IN (g.generated_component_id, g.library_id))`),
   gap('aggregate-without-root', 'domain-model', ['aggregate', 'entity'], 'An aggregate with no root entity.',
     `SELECT a.id, 'Aggregate ' || a.id || ' has no root entity.' AS message FROM aggregate a WHERE NOT EXISTS (SELECT 1 FROM entity e WHERE e.aggregate_id = a.id AND e.role = 'root')`),
   // A command changes its own aggregate only.

@@ -4,7 +4,7 @@ export const ADD_GUARANTEE_IDENTITY = {
   id: 'LA-MOD-CMD400',
   slice: { aggregate: 'LA-MOD-A24', name: 'guarantee' },
   name: 'add-guarantee',
-  description: 'Adds a guarantee to a platform domain, with what every other domain can rely on and the building blocks that keep it.',
+  description: 'Adds a guarantee to its maker (a platform domain, a generated component or a library), with what those who rely on it can rely on, whom it is for when its maker ships it outside the repo, the building blocks that keep it and the standard rules it follows.',
   method: 'POST',
   route: '/api/guarantee/add-guarantee',
 } as const;
@@ -13,7 +13,7 @@ export const CHANGE_GUARANTEE_IDENTITY = {
   id: 'LA-MOD-CMD401',
   slice: { aggregate: 'LA-MOD-A24', name: 'guarantee' },
   name: 'change-guarantee',
-  description: 'Changes a guarantee\'s title or statement, or the building blocks that keep it (the whole list). Its domain never changes.',
+  description: 'Changes a guarantee\'s title, statement, consumers or group, or the building blocks that keep it or the standard rules it follows (each list whole). Its maker never changes.',
   method: 'POST',
   route: '/api/guarantee/change-guarantee',
 } as const;

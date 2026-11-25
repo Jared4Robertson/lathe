@@ -811,6 +811,18 @@ export interface FulfillsRow {
   target_id: string;
 }
 
+/** A unit of code the product's generator emits into code outside the repo, such as a database adapter written into every service built with it: what the product ships, so what it promises its consumers is the Owner's to decide. It makes guarantees to the outside consumers they name, and it sits in a business domain. */
+export interface GeneratedComponentRow {
+  /** The generated component's ID: its domain's ID and GC<nn>, such as TL-CAT-GC01. */
+  id: string;
+  /** Its name, such as PostgreSQL adapter. */
+  title: string;
+  /** The business domain that ships it. */
+  domain_id: string;
+  /** What it emits and into what, in a sentence or two. */
+  description: string;
+}
+
 /** A dev script or config file outside the running product: a build, a generator, a watcher, or a config of the tools it is checked and tested with, such as a type checker's or a test runner's. Its title and file say what it is. */
 export interface ToolingRow {
   /** The tooling record's ID: its domain's ID and TOOL<nn>, such as TL-LEND-TOOL01. */
@@ -829,16 +841,36 @@ export interface GeneratesRow {
   target_id: string;
 }
 
-/** A promise a platform domain makes to every other domain of its product, such as every change being refused with every reason it breaks: what the other domains rely on and could not run without, and what would work unchanged in another product. A platform domain has no goals of its own, so it is described by its guarantees rather than by use cases and aggregates. The building blocks that keep it are named with kept_by, and its guarantee tests prove it. */
+/** Code the product ships for code outside the repo to import, a runtime included, such as an outbox package every generated service imports: what the product ships, so what it promises its consumers is the Owner's to decide. It makes guarantees to the outside consumers they name, and it sits in a business domain. */
+export interface LibraryRow {
+  /** The library's ID: its domain's ID and LB<nn>, such as TL-CAT-LB01. */
+  id: string;
+  /** Its name, such as Outbox runtime. */
+  title: string;
+  /** The business domain that ships it. */
+  domain_id: string;
+  /** What it holds and who imports it, in a sentence or two. */
+  description: string;
+}
+
+/** A promise kept by shared code, made by its maker: a platform domain, to every other domain of its product (such as every change being refused with every reason it breaks), or a generated component or a library, to the outside consumers it names (such as the database opener a component emits requiring verified TLS). A promise each follower's own code must meet is a pattern rule instead, and a promise is never stated both ways. The building blocks that keep it are named with kept_by, and its guarantee tests prove it. */
 export interface GuaranteeRow {
-  /** The guarantee's ID: its domain's ID and GU<nn>, such as TL-PLAT-GU01. */
+  /** The guarantee's ID: its maker's ID and GU<nn>, such as TL-PLAT-GU01 or TL-CAT-GC01-GU01. */
   id: string;
   /** The promise in a few words, such as Every change is checked whole. */
   title: string;
-  /** The platform domain that makes it. */
-  domain_id: string;
-  /** What every other domain can rely on, stated with MUST, MUST NOT, SHOULD or MAY. */
+  /** The platform domain that makes it; exactly one of domain, generated component and library is given. */
+  domain_id?: string;
+  /** The generated component that makes it; exactly one of domain, generated component and library is given. */
+  generated_component_id?: string;
+  /** The library that makes it; exactly one of domain, generated component and library is given. */
+  library_id?: string;
+  /** What the other domains, or the consumers it names, can rely on, stated with MUST, MUST NOT, SHOULD or MAY. */
   statement: string;
+  /** Whom a generated component's or a library's guarantee is for, outside the repo, where no link can reach them, such as every service whose archetype includes the component. A platform domain's guarantee names none: the other domains that rely on it are found from links. */
+  consumers?: string;
+  /** A short heading it is shown under among its maker's guarantees, such as Transport or Audit. */
+  group_name?: string;
 }
 
 /** Proves its guarantee: from another domain's side, what it can rely on holds, such as a change that breaks a rule being refused with every reason and no data file changed. */
@@ -1021,13 +1053,19 @@ export interface KeptByRow {
   target_id: string;
 }
 
+/** The pattern's fixed part is made by the maker: the shared code a platform domain, a generated component or a library ships, which every follower uses as it is. What that code keeps is a guarantee of the maker; what each follower's own code must meet stays a rule of the pattern, and a rule a building block of the maker carries out (meets) restates one of its guarantees and is refused. A pattern names at most one maker; one with none is a fixed part written into each follower. */
+export interface MadeByRow {
+  source_id: string;
+  target_id: string;
+}
+
 /** The business outcome is measured by the test or record: a test of any kind, or a record of a product's own kind (a report, a script, a check row) once the product adds that pair with a product_relation named measured_by. An outcome may be measured by several, and one test or record measure several outcomes. */
 export interface MeasuredByRow {
   source_id: string;
   target_id: string;
 }
 
-/** The technical record follows the rule: a standard rule, which it shows where the rule is applied and so designs; or a pattern rule it carries out, which is the essential record a generic piece of code (a shared component, an entry point, a build script) serves. */
+/** The technical record, or the guarantee, follows the rule: a standard rule, which it shows where the rule is applied and so designs (a guarantee, as the promise it makes); or, for a technical record only, a pattern rule it carries out, which is the essential record a generic piece of code (a shared component, an entry point, a build script) serves. */
 export interface MeetsRow {
   source_id: string;
   target_id: string;
@@ -1379,7 +1417,7 @@ export interface SelectsByRow {
   target_id: string;
 }
 
-/** The aggregate, read model or journey serves the business outcome: what it is for. Each may serve several outcomes, and an outcome be served by several aggregates, read models and journeys. */
+/** The aggregate, read model, journey, generated component or library serves the business outcome: what it is for. Each may serve several outcomes, and an outcome be served by several of them. A generated component's or a library's guarantees, and their tests, serve what it serves. */
 export interface ServesRow {
   source_id: string;
   target_id: string;
@@ -1784,8 +1822,10 @@ export interface TableRows {
   follows: FollowsRow;
   uc_requirement: UcRequirementRow;
   fulfills: FulfillsRow;
+  generated_component: GeneratedComponentRow;
   tooling: ToolingRow;
   generates: GeneratesRow;
+  library: LibraryRow;
   guarantee: GuaranteeRow;
   guarantee_test: GuaranteeTestRow;
   has_many: HasManyRow;
@@ -1799,6 +1839,7 @@ export interface TableRows {
   invokes: InvokesRow;
   journey_test: JourneyTestRow;
   kept_by: KeptByRow;
+  made_by: MadeByRow;
   measured_by: MeasuredByRow;
   meets: MeetsRow;
   offers: OffersRow;

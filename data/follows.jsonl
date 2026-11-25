@@ -16,10 +16,7 @@
 {"source_id":"LA-EXP","target_id":"LA-PAT-APP-UX"}
 {"source_id":"LA-IF01","target_id":"LA-PAT-PAGE-STEPS"}
 {"source_id":"LA-IF02","target_id":"LA-PAT-PAGE-STEPS"}
-{"source_id":"LA-IF03","target_id":"LA-PAT-CLI-STEPS"}
-{"source_id":"LA-IF04","target_id":"LA-PAT-MCP-STEPS"}
 {"source_id":"LA-IF05","target_id":"LA-PAT-HTTP-STEPS"}
-{"source_id":"LA-IF06","target_id":"LA-PAT-PACKAGE-STEPS"}
 {"source_id":"LA-IXD","target_id":"LA-PAT-AGGREGATE-QUERIES"}
 {"source_id":"LA-IXD-UC101","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
 {"source_id":"LA-IXD-UC101","target_id":"LA-PAT-AGGREGATE-TESTS"}
@@ -321,6 +318,12 @@
 {"source_id":"LA-MOD-UC176","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
 {"source_id":"LA-MOD-UC177","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
 {"source_id":"LA-MOD-UC178","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
+{"source_id":"LA-MOD-UC179","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
+{"source_id":"LA-MOD-UC180","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
+{"source_id":"LA-MOD-UC181","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
+{"source_id":"LA-MOD-UC182","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
+{"source_id":"LA-MOD-UC183","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
+{"source_id":"LA-MOD-UC184","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
 {"source_id":"LA-MOD-UC20","target_id":"LA-PAT-AGGREGATE-COMMANDS"}
 {"source_id":"LA-MOD-UC20","target_id":"LA-PAT-AGGREGATE-TESTS"}
 {"source_id":"LA-MOD-UC20","target_id":"LA-PAT-FIELD-INPUTS"}

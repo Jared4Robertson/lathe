@@ -1,5 +1,5 @@
 // The Guarantee aggregate's own reads, each answered from its read model (LA-MOD-RM44) through its reader (reader.ts),
-// which the query runner gives each handler: a guarantee whole as its page reads it, the guarantees of a domain, and
+// which the query runner gives each handler: a guarantee whole as its page reads it, the guarantees of a maker, and
 // the next free ID for a guarantee or a guarantee test. A handler never sees the data, a repository or the aggregate's
 // model; each changes nothing.
 import { id, type QueryDefinition } from '../../platform/commands/definition.ts';
@@ -30,15 +30,15 @@ export const GET_GUARANTEE: QueryDefinition<{ id: string }, GuaranteePage, Guara
   text: guaranteeText,
 };
 
-/** The guarantees of a domain, by ID. */
-export function listGuarantees(reader: GuaranteeReader, input: { domain_id: string }): GuaranteeSummary[] {
-  return reader.guaranteesOf(input.domain_id) ?? refuse('missing', `there is no domain ${input.domain_id}`);
+/** The guarantees of a maker, by ID. */
+export function listGuarantees(reader: GuaranteeReader, input: { maker_id: string }): GuaranteeSummary[] {
+  return reader.guaranteesOf(input.maker_id) ?? refuse('missing', `there is no domain, generated component or library ${input.maker_id}`);
 }
 
-/** List the guarantees of a domain (LA-MOD-QRY229). */
-export const LIST_GUARANTEES: QueryDefinition<{ domain_id: string }, GuaranteeSummary[], GuaranteeReader> = {
+/** List a maker's guarantees (LA-MOD-QRY229). */
+export const LIST_GUARANTEES: QueryDefinition<{ maker_id: string }, GuaranteeSummary[], GuaranteeReader> = {
   ...LIST_GUARANTEES_IDENTITY,
-  input: { domain_id: id('The domain.', 'required') },
+  input: { maker_id: id('The maker: a platform domain, a generated component or a library.', 'required') },
   reader: guaranteeReader,
   run: listGuarantees,
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No guarantees.'),
@@ -48,14 +48,14 @@ export const LIST_GUARANTEES: QueryDefinition<{ domain_id: string }, GuaranteeSu
 const KINDS: readonly string[] = ['guarantee', 'guarantee_test'];
 
 /**
- * The next free ID for a record of one of the aggregate's kinds under its parent: a guarantee's is its domain's ID, GU
+ * The next free ID for a record of one of the aggregate's kinds under its parent: a guarantee's is its maker's ID, GU
  * and one past the highest number in use; a guarantee test's is its guarantee's ID, T and one past the highest.
  */
 export function nextGuaranteeId(reader: GuaranteeReader, input: { kind: string; parent: string }): string {
   if (!KINDS.includes(input.kind)) refuse('kind', `${input.kind} is not a kind of the Guarantee aggregate; its kinds are ${KINDS.join(', ')}`);
   const shape = reader.idShape(input.kind);
   const parentKind = reader.kindOf(input.parent);
-  if (parentKind !== shape.parents[0]) refuse('parent', `a ${input.kind} sits under a ${shape.parents[0]}, and ${input.parent} is ${parentKind ? `${article(parentKind)} ${parentKind}` : 'no record'}`);
+  if (parentKind === undefined || !shape.parents.includes(parentKind)) refuse('parent', `a ${input.kind} sits under ${shape.parents.map((p) => `${article(p)} ${p}`).join(' or ')}, and ${input.parent} is ${parentKind ? `${article(parentKind)} ${parentKind}` : 'no record'}`);
   return onePast(reader, `${input.parent}-${shape.letters}`, shape);
 }
 
@@ -64,7 +64,7 @@ export const NEXT_GUARANTEE_ID: QueryDefinition<{ kind: string; parent: string }
   ...NEXT_GUARANTEE_ID_IDENTITY,
   input: {
     kind: id('The kind: guarantee or guarantee_test.', 'required'),
-    parent: id('The record it will sit under: a domain for a guarantee, else the guarantee.', 'required'),
+    parent: id('The record it will sit under: its maker for a guarantee (a platform domain, a generated component or a library), else the guarantee.', 'required'),
   },
   reader: guaranteeReader,
   run: nextGuaranteeId,
@@ -74,8 +74,11 @@ export const NEXT_GUARANTEE_ID: QueryDefinition<{ kind: string; parent: string }
 /** A guarantee as text: its row, the building blocks that keep it, then its tests. */
 function guaranteeText(page: GuaranteePage): string {
   const { guarantee: row } = page;
-  const lines = [`Guarantee ${row.id}: ${row.title}`, `  domain: ${row.domain_id}`, `  statement: ${row.statement}`];
+  const lines = [`Guarantee ${row.id}: ${row.title}`, `  made by: ${page.maker.id}`, `  statement: ${row.statement}`];
+  if (row.consumers) lines.push(`  consumers: ${row.consumers}`);
+  if (row.group_name) lines.push(`  group: ${row.group_name}`);
   if (page.keptBy.length) lines.push(`  kept by: ${page.keptBy.join(', ')}`);
+  if (page.meets.length) lines.push(`  meets: ${page.meets.join(', ')}`);
   for (const { test, startsFrom } of page.tests) {
     lines.push(`Guarantee test ${test.id}: ${test.title} (${test.level}, ${test.state})${startsFrom.length ? ` [${startsFrom.map((x) => `starts from ${x}`).join('; ')}]` : ''}`);
   }

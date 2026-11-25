@@ -73,6 +73,8 @@ describe('the spec data store keeps every change through a restart, and a refuse
   ['LA-MOD-A4-SR01-T01', change('domain', 'domain', 'TL-LEND')],
   ['LA-MOD-A5-SR01-T01', change('specification', 'specification', 'TL-LEND-SP01')],
   ['LA-MOD-A24-SR01-T01', { ...add('guarantee', 'guarantee', { id: 'TL-PLAT-GU01', title: 'Kept', domain_id: 'TL-PLAT', statement: 'Every change MUST be kept through a restart.' }), setup: [PLATFORM] }],
+  ['LA-MOD-A25-SR01-T01', add('generated-component', 'generated_component', { id: 'TL-LEND-GC01', title: 'Kept', domain_id: 'TL-LEND', description: 'A unit the generator emits, kept through a restart.' })],
+  ['LA-MOD-A26-SR01-T01', add('library', 'library', { id: 'TL-LEND-LB01', title: 'Kept', domain_id: 'TL-LEND', description: 'Code shipped for import, kept through a restart.' })],
   ['LA-MOD-A6-SR01-T01', change('aggregate', 'aggregate', 'TL-LEND-A1')],
   ['LA-MOD-A7-SR01-T01', change('domain-event', 'domain_event', 'TL-LEND-EV01', 'title', 'Member kept')],
   ['LA-MOD-A8-SR01-T01', change('command', 'command', 'TL-LEND-CMD01')],

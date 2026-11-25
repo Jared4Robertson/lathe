@@ -73,7 +73,7 @@ describe('LA-V120-R02-T01 the Domain editor writes only through the aggregate\'s
     const { commands } = await openApp('/DM-SHOP', { data: withDomain(), command: () => ({ answer: ok }) });
     const actions = await toolbar('DM-SHOP');
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add…', 'Remove']);
-    expect(await addChoices(user, actions)).toEqual(['Term', 'Domain service', 'Repository', 'Aggregate', 'Specification', 'Read model', 'Use case', 'Data store', 'Table', 'Entry point', 'Tooling', 'Test data set', 'Open question']);
+    expect(await addChoices(user, actions)).toEqual(['Term', 'Domain service', 'Repository', 'Aggregate', 'Specification', 'Read model', 'Generated component', 'Library', 'Use case', 'Data store', 'Table', 'Entry point', 'Tooling', 'Test data set', 'Open question']);
     await chooseAdd(user, actions, 'Repository');
     const form = screen.getByRole('form', { name: 'Add a repository' });
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-SHOP-REPO02'));

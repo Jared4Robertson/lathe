@@ -77,6 +77,7 @@ export const NEXT_PATTERN_ID: QueryDefinition<{ kind: string; parent: string }, 
 function patternText(page: PatternPage): string {
   const { pattern: row } = page;
   const lines = [`Pattern ${row.id}: ${row.title}`, `  product: ${row.product_id}`, `  description: ${row.description}`];
+  if (page.madeBy) lines.push(`  made by: ${page.madeBy}`);
   if (row.notes) lines.push(`  notes: ${row.notes}`);
   page.settings.forEach((s, at) => lines.push(`  setting ${at + 1}. ${s.name}: ${s.meaning}`));
   for (const r of page.rules) {

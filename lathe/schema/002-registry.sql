@@ -26,7 +26,7 @@ COMMENT ON TABLE test IS 'Every test, of each test kind: what may start from a t
 COMMENT ON TABLE technical_record IS 'The records of the technical specification: Lathe''s technical kinds and a product''s own kinds of that stage. Only they meet a standard rule, showing where the rule is applied, and only they name the packages they use.';
 
 CREATE TABLE serves_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
-COMMENT ON TABLE serves_source IS 'The records that serve business outcomes: aggregates and read models, through the use cases that sit with them, and journeys, which say in what order it happens.';
+COMMENT ON TABLE serves_source IS 'The records that serve business outcomes: aggregates and read models, through the use cases that sit with them, journeys, which say in what order it happens, and generated components and libraries, through the guarantees they make their consumers.';
 CREATE TABLE carries_out_target (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
 COMMENT ON TABLE carries_out_target IS 'What a journey step carries out: a use case, or a policy (a handoff, where the product itself acts).';
 CREATE TABLE exchanges_with_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
@@ -36,6 +36,10 @@ CREATE TABLE stored_in_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FO
 COMMENT ON TABLE stored_in_source IS 'The records that are kept in a data store: repositories, readers and tables.';
 CREATE TABLE accidental_record (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
 COMMENT ON TABLE accidental_record IS 'The records of an accidental kind, which is derived (generates), provided (provided_by) or a fill at a slot (fills): the technical records, endpoints and data stores, Lathe''s kinds and a product''s own accidental kinds.';
+CREATE TABLE meets_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
+COMMENT ON TABLE meets_source IS 'The records that may follow a rule (meets): the technical records, and guarantees, which follow a standard rule in what they promise.';
+CREATE TABLE maker (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
+COMMENT ON TABLE maker IS 'The records that make guarantees and may make a pattern''s fixed part (made_by): domains (a platform domain), generated components and libraries.';
 CREATE TABLE meets_target (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
 COMMENT ON TABLE meets_target IS 'The rules a technical record may follow (meets): a standard''s rules, and a pattern''s rules, which a generic piece of code such as a shared component, an entry point or a build script carries out.';
 CREATE TABLE provided_by_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
@@ -45,7 +49,7 @@ COMMENT ON TABLE presents_source IS 'The records that present commands and queri
 
 INSERT INTO meta_table VALUES ('record_id', 'registry', NULL);
 INSERT INTO meta_table
-  SELECT name, 'supertype', NULL FROM (VALUES ('obligation'), ('operation'), ('reads_source'), ('calls_source'), ('follows_source'), ('technical_record'), ('test'), ('serves_source'), ('carries_out_target'), ('exchanges_with_source'), ('stored_in_source'), ('accidental_record'), ('meets_target'), ('provided_by_source'), ('presents_source')) AS t (name);
+  SELECT name, 'supertype', NULL FROM (VALUES ('obligation'), ('operation'), ('reads_source'), ('calls_source'), ('follows_source'), ('technical_record'), ('test'), ('serves_source'), ('carries_out_target'), ('exchanges_with_source'), ('stored_in_source'), ('accidental_record'), ('meets_source'), ('maker'), ('meets_target'), ('provided_by_source'), ('presents_source')) AS t (name);
 INSERT INTO meta_supertype_member
   SELECT 'obligation', kind FROM (VALUES ('constraint'), ('invariant'), ('specification'), ('policy'), ('domain_service'), ('guarantee'),
     ('storage_requirement'), ('uc_requirement'), ('view_requirement'), ('api_requirement'), ('pattern_rule'), ('standard_rule')) AS t (kind)
@@ -59,7 +63,8 @@ INSERT INTO meta_supertype_member
   UNION ALL SELECT 'test', kind FROM (VALUES ('constraint_test'), ('invariant_test'), ('specification_test'), ('policy_test'),
     ('domain_service_test'), ('guarantee_test'), ('storage_requirement_test'), ('use_case_test'), ('view_test'), ('endpoint_test'), ('flow_test'), ('journey_test'),
     ('integration_test'), ('pattern_rule_test'), ('standard_rule_test')) AS t (kind)
-  UNION ALL SELECT 'serves_source', kind FROM (VALUES ('aggregate'), ('read_model'), ('journey')) AS t (kind)
+  UNION ALL SELECT 'serves_source', kind FROM (VALUES ('aggregate'), ('read_model'), ('journey'), ('generated_component'), ('library')) AS t (kind)
+  UNION ALL SELECT 'maker', kind FROM (VALUES ('domain'), ('generated_component'), ('library')) AS t (kind)
   UNION ALL SELECT 'carries_out_target', kind FROM (VALUES ('use_case'), ('policy')) AS t (kind)
   UNION ALL SELECT 'exchanges_with_source', kind FROM (VALUES ('flow_step'), ('policy')) AS t (kind)
   UNION ALL SELECT 'stored_in_source', kind FROM (VALUES ('repository'), ('reader'), ('table')) AS t (kind)
@@ -67,6 +72,8 @@ INSERT INTO meta_supertype_member
   UNION ALL SELECT 'presents_source', 'view';
 INSERT INTO meta_supertype_member
   SELECT 'accidental_record', kind FROM meta_supertype_member WHERE supertype = 'technical_record'
+  UNION ALL SELECT 'meets_source', kind FROM meta_supertype_member WHERE supertype = 'technical_record'
+  UNION ALL SELECT 'meets_source', 'guarantee'
   UNION ALL SELECT 'accidental_record', kind FROM (VALUES ('endpoint'), ('data_store')) AS t (kind);
 INSERT INTO meta_supertype_member
   SELECT 'provided_by_source', kind FROM meta_supertype_member WHERE supertype IN ('accidental_record', 'obligation')

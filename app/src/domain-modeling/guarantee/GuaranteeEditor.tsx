@@ -21,7 +21,8 @@ import { kindWord } from '../../product/meta-model/reads';
 // aggregate's own commands, POST /api/guarantee/<command>, and nothing else. Edit sends its kind's Change with only
 // what changed; Add opens an empty form for a guarantee test, with the next free ID read from the aggregate (next-id),
 // and sends its Add; Remove says what goes with the record and sends its Remove. The aggregate has no Move. A guarantee
-// is added from its platform domain's page (AddGuaranteeForm). A refusal shows every reason the command gave, in its
+// is added from its maker's page (AddGuaranteeForm): a platform domain's, a generated component's or a library's, and
+// only a generated component's or a library's names whom it is for (consumers). A refusal shows every reason the command gave, in its
 // own words, keeps what was entered, and changes nothing.
 
 /** The records of the product of the kinds, as choices. */
@@ -31,14 +32,29 @@ const choices = (index: RecordIndex, product: string, kinds: (kind: string) => b
 /** Whether a kind's records may keep a guarantee: the technical records and data stores, a building block's kinds. */
 const buildingBlock = (index: RecordIndex) => (kind: string) => index.meta.kinds.get(kind)?.stage === 'technical-specification' && kind !== 'standard' && kind !== 'standard_rule';
 
-/** The fields each kind's Add and Change take, from their inputs; the hints add long text and the choices. */
-function fieldsOf(index: RecordIndex, product: string, kind: GuaranteeKind, adding: boolean): FieldSpec[] {
+/** The column of a guarantee that names its maker, by the maker's kind. */
+const MAKER_COLUMN = { domain: 'domain_id', generated_component: 'generated_component_id', library: 'library_id' } as const;
+type MakerKind = keyof typeof MAKER_COLUMN;
+const makerKind = (index: RecordIndex, id: string): MakerKind => {
+  const kind = index.byId.get(id)?.kind;
+  return kind === 'generated_component' || kind === 'library' ? kind : 'domain';
+};
+
+/** The fields each kind's Add and Change take, from their inputs; the hints add long text and the choices. A platform domain's guarantee names no consumers. */
+function fieldsOf(index: RecordIndex, product: string, kind: GuaranteeKind, adding: boolean, maker: MakerKind = 'domain'): FieldSpec[] {
   const F = GUARANTEE_FIELDS;
   switch (kind) {
     case 'guarantee': {
-      // Its domain is the page it is added from.
-      const hints = { statement: LONG, kept_by: { label: 'Kept by', choices: choices(index, product, buildingBlock(index)) } };
-      return adding ? formFields(F['/api/guarantee/add-guarantee'], ['domain_id'], hints) : formFields(F['/api/guarantee/change-guarantee'], ['id'], hints);
+      // Its maker is the page it is added from.
+      const hints = {
+        statement: LONG, consumers: LONG,
+        kept_by: { label: 'Kept by', choices: choices(index, product, buildingBlock(index)) },
+        meets: { label: 'Meets', choices: choices(index, product, (k) => k === 'standard_rule') },
+      };
+      const inside = maker === 'domain' ? (['consumers'] as const) : [];
+      return adding
+        ? formFields(F['/api/guarantee/add-guarantee'], ['domain_id', 'generated_component_id', 'library_id', ...inside], hints)
+        : formFields(F['/api/guarantee/change-guarantee'], ['id', ...inside], hints);
     }
     case 'guarantee_test':
       return addOrChangeFields(adding, F['/api/guarantee/add-guarantee-test'], 'guarantee_id', F['/api/guarantee/change-guarantee-test'], {
@@ -49,7 +65,7 @@ function fieldsOf(index: RecordIndex, product: string, kind: GuaranteeKind, addi
 
 /** The record's current values, by its input's field names: its row's columns and the links it starts. */
 function currentOf(page: GuaranteePage, kind: GuaranteeKind, id: string): Record<string, unknown> {
-  if (kind === 'guarantee') return { ...page.guarantee, kept_by: page.keptBy };
+  if (kind === 'guarantee') return { ...page.guarantee, kept_by: page.keptBy, meets: page.meets };
   const { test, startsFrom } = page.tests.find((t) => t.test.id === id)!;
   return { ...test, starts_from: startsFrom };
 }
@@ -86,7 +102,7 @@ export function GuaranteeEditor({ index, page, children }: { index: RecordIndex;
   };
   const product = index.byId.get(page.guarantee.id)?.product ?? '';
   if (mode.mode === 'change') {
-    const specs = fieldsOf(index, product, kind, false);
+    const specs = fieldsOf(index, product, kind, false, page.maker.kind);
     const current = currentOf(page, kind, id);
     const submit = async (draft: Draft) => {
       const input = changeInput(index, specs, draft, current, { id });
@@ -101,7 +117,7 @@ export function GuaranteeEditor({ index, page, children }: { index: RecordIndex;
   // A guarantee holds any number of tests; a test holds nothing.
   const adds = kind === 'guarantee' ? ['guarantee_test'] : [];
   const goes = kind === 'guarantee' ? page.tests.map((t) => t.test.id) : [];
-  const then = kind === 'guarantee' ? page.guarantee.domain_id : page.guarantee.id;
+  const then = kind === 'guarantee' ? page.maker.id : page.guarantee.id;
   return (
     <>
       <div className="record-actions" role="toolbar" aria-label={`Change ${id}`} ref={toolbar}>
@@ -159,7 +175,7 @@ function AddTestForm({ index, product, parent, onDone }: { index: RecordIndex; p
   );
 }
 
-/** Add a guarantee to a platform domain (from the domain's page): the aggregate's own Add, its ID the next free one. */
+/** Add a guarantee to its maker (from the maker's page): the aggregate's own Add, its ID the next free one, its maker named in the column its kind takes. */
 export function AddGuaranteeForm({ index, parent, onDone }: { index: RecordIndex; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
@@ -168,9 +184,10 @@ export function AddGuaranteeForm({ index, parent, onDone }: { index: RecordIndex
   useEffect(() => {
     if (next.state === 'read') setDraft((d) => (d.text.id ? d : { ...d, text: { ...d.text, id: next.answer } }));
   }, [next]);
-  const specs = fieldsOf(index, index.byId.get(parent)?.product ?? '', 'guarantee', true);
+  const maker = makerKind(index, parent);
+  const specs = fieldsOf(index, index.byId.get(parent)?.product ?? '', 'guarantee', true, maker);
   const submit = async () => {
-    const input = addInput(index, specs, draft, { domain_id: parent });
+    const input = addInput(index, specs, draft, { [MAKER_COLUMN[maker]]: parent });
     const answer = await send(writer, '/api/guarantee/add-guarantee', input);
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;

@@ -14,6 +14,8 @@ const SINGLE: Record<string, string> = {
   '/api/business-outcome/next-id': 'business_outcome',
   '/api/entry-point/next-id': 'entry_point',
   '/api/tooling/next-id': 'tooling',
+  '/api/generated-component/next-id': 'generated_component',
+  '/api/library/next-id': 'library',
   '/api/test-data-set/next-id': 'test_data_set',
   '/api/ui-component/next-id': 'ui_component',
   '/api/table/next-id': 'table',
@@ -24,7 +26,7 @@ describe('LA-UCS-UC09-R01-T02 next-id queries and the schema', () => {
     const store = await openStore(REPO, { dataDir: path.join(REPO, 'data') });
     try {
       const queries = ALL_QUERIES.filter((q) => q.route.endsWith('/next-id') && !q.route.includes('extension-record'));
-      expect(queries.length).toBe(24);
+      expect(queries.length).toBe(26);
       const covered = new Set<string>();
       for (const [kind, described] of Object.entries(store.schema.kinds)) {
         if (!/<n+>$/.test(described.idPattern?.split(/,? or /).pop() ?? '')) continue;

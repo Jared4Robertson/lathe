@@ -9,7 +9,8 @@ import { useGuarantee } from './reads';
 
 // The Guarantee page (LA-MOD-A24's page, LA-V158): a guarantee or one of its tests, at its address (/<id>), drawn from
 // the guarantee read whole (GET /api/guarantee/get-guarantee) and changed only through its own commands
-// (GuaranteeEditor). A guarantee shows its statement and its guarantee tests (or that none is written yet), the
+// (GuaranteeEditor). A guarantee shows its maker, its statement, whom it is for when a generated component or a library
+// makes it (its consumers, or that it names no one yet), and its guarantee tests (or that none is written yet), the
 // building blocks that keep it among its links (Kept by); a guarantee test its scenario and what it starts from. What
 // every record's page holds around that (traceability, problems, facts and links) is the Record page's (RecordFrame).
 
@@ -20,8 +21,13 @@ function Content({ index, page }: { index: RecordIndex; page: Guarantee }) {
     const { test, startsFrom } = page.tests.find((t) => t.test.id === id)!;
     return <TestScenario index={index} id={id} when={test.when} then={test.then} notes={test.notes} startsFrom={startsFrom} />;
   }
+  const outside = page.maker.kind !== 'domain';
   return (
     <>
+      <dl className="fields">
+        <div data-field="maker"><dt>Maker</dt><dd><RecordLink index={index} id={page.maker.id} /></dd></div>
+        {outside && <div data-field="consumers"><dt>Consumers</dt><dd>{page.guarantee.consumers ?? <span className="hint">It names no one yet.</span>}</dd></div>}
+      </dl>
       <Text index={index} id={id} source={page.guarantee.statement} field="statement" />
       <RowsSection index={index} title="Guarantee tests" ids={page.tests.map((t) => t.test.id)} label={`The guarantee tests of ${id}`} empty="Its guarantee tests are not written yet." />
     </>
@@ -37,7 +43,8 @@ function summaryOf(index: RecordIndex, page: Guarantee): { lead?: string; facts:
   return {
     lead: page.guarantee.statement,
     facts: [
-      { label: 'Domain', value: <RecordLink index={index} id={page.guarantee.domain_id} /> },
+      { label: 'Maker', value: <RecordLink index={index} id={page.maker.id} /> },
+      ...(page.maker.kind === 'domain' ? [] : [{ label: 'Consumers', value: page.guarantee.consumers ?? 'None named yet' }]),
       { label: 'Kept by', value: page.keptBy.length },
       { label: 'Guarantee tests', value: page.tests.length },
     ],

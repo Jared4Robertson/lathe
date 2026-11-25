@@ -23,7 +23,7 @@ describe('the Guarantee aggregate', () => {
     const added = await refusedBy(store, 'guarantee add-guarantee', { id: 'TL-LEND-GU01', title: 'Loans are kept', domain_id: 'TL-LEND', statement: 'Every loan MUST be kept.' });
     expect(added).toEqual([expect.objectContaining({
       rule: 'guarantee-in-platform-domain',
-      message: 'TL-LEND is not marked platform, so it makes no guarantee and TL-LEND-GU01 cannot sit in it: a guarantee sits in a platform domain, and a business domain is described by its use cases and aggregates',
+      message: 'TL-LEND is not marked platform, so it makes no guarantee and TL-LEND-GU01 cannot sit in it: a guarantee a domain makes sits in a platform domain, and a business domain makes one only through a generated component or a library it ships',
     })]);
     const unmarked = await refusedBy(store, 'domain change-domain', { id: 'TL-PLAT', platform: null });
     expect(unmarked).toEqual([expect.objectContaining({ rule: 'guarantee-in-platform-domain' })]);
@@ -38,10 +38,14 @@ describe('the Guarantee aggregate', () => {
       id: 'TL-PLAT-GU01-T02', title: 'A change that fails saves nothing on restart', guarantee_id: 'TL-PLAT-GU01', level: 'system', state: 'not automated yet',
       when: 'Stops the program half way through a change.', then: 'Expects the data as it was before the change.', starts_from: ['TL-LEND-TD01'],
     });
-    expect(runQuery(store, LIST_GUARANTEES, { domain_id: 'TL-PLAT' })).toEqual([{ id: 'TL-PLAT-GU01', title: 'Every change is saved whole' }]);
-    expect(runQuery(store, LIST_GUARANTEES, { domain_id: 'TL-LEND' })).toEqual([]);
-    const page = runQuery(store, GET_GUARANTEE, { id: 'TL-PLAT-GU01-T02' }) as { record: unknown; keptBy: string[]; tests: { test: { id: string }; startsFrom: string[] }[] };
+    expect(runQuery(store, LIST_GUARANTEES, { maker_id: 'TL-PLAT' })).toEqual([{ id: 'TL-PLAT-GU01', title: 'Every change is saved whole' }]);
+    expect(runQuery(store, LIST_GUARANTEES, { maker_id: 'TL-LEND' })).toEqual([]);
+    const page = runQuery(store, GET_GUARANTEE, { id: 'TL-PLAT-GU01-T02' }) as { record: unknown; maker: unknown; keptBy: string[]; tests: { test: { id: string }; startsFrom: string[] }[] };
     expect(page.record).toEqual({ id: 'TL-PLAT-GU01-T02', kind: 'guarantee_test' });
+    expect(page.maker).toEqual({ id: 'TL-PLAT', kind: 'domain' });
+    expect(runQuery(store, LIST_GUARANTEES, { maker_id: 'TL-LEND-GC01' })).toEqual([{ id: 'TL-LEND-GC01-GU01', title: 'A loan is stored once' }]);
+    expect((runQuery(store, GET_GUARANTEE, { id: 'TL-LEND-GC01-GU01' }) as { maker: unknown }).maker).toEqual({ id: 'TL-LEND-GC01', kind: 'generated_component' });
+    expect(runQuery(store, NEXT_GUARANTEE_ID, { kind: 'guarantee', parent: 'TL-LEND-GC01' })).toBe('TL-LEND-GC01-GU02');
     expect(page.keptBy).toEqual(['TL-LEND-ENTRY01']);
     expect(page.tests.map((t) => [t.test.id, t.startsFrom])).toEqual([['TL-PLAT-GU01-T01', []], ['TL-PLAT-GU01-T02', ['TL-LEND-TD01']]]);
     expect(runQuery(store, NEXT_GUARANTEE_ID, { kind: 'guarantee', parent: 'TL-PLAT' })).toBe('TL-PLAT-GU02');
@@ -54,13 +58,13 @@ describe('the Guarantee aggregate', () => {
   it('LA-MOD-UC174-R01-T02 LA-MOD-UC175-R01-T02 LA-MOD-UC177-R01-T02 LA-MOD-UC178-R01-T02 changes and removes a guarantee and its tests through its own commands only', async () => {
     const store = await openStore(writeData(everyKind()));
     await run(store, 'guarantee change-guarantee', { id: 'TL-PLAT-GU01', title: 'Every change is kept whole', kept_by: ['TL-LEND-ENTRY01', 'TL-LEND-TOOL01'] });
-    expect(store.rows('kept_by')).toEqual([{ source_id: 'TL-PLAT-GU01', target_id: 'TL-LEND-ENTRY01' }, { source_id: 'TL-PLAT-GU01', target_id: 'TL-LEND-TOOL01' }]);
+    expect(store.rows('kept_by').filter((k) => k.source_id === 'TL-PLAT-GU01')).toEqual([{ source_id: 'TL-PLAT-GU01', target_id: 'TL-LEND-ENTRY01' }, { source_id: 'TL-PLAT-GU01', target_id: 'TL-LEND-TOOL01' }]);
     await run(store, 'guarantee change-guarantee-test', { id: 'TL-PLAT-GU01-T01', state: 'not automated yet', file: null });
     expect(store.rows('guarantee_test')[0]).toMatchObject({ state: 'not automated yet' });
     await run(store, 'guarantee remove-guarantee-test', { id: 'TL-PLAT-GU01-T01' });
-    expect(store.rows('guarantee_test')).toEqual([]);
+    expect(store.rows('guarantee_test').filter((g) => g.guarantee_id === 'TL-PLAT-GU01')).toEqual([]);
     await run(store, 'guarantee remove-guarantee', { id: 'TL-PLAT-GU01' });
-    expect([store.rows('guarantee'), store.rows('kept_by')]).toEqual([[], []]);
+    expect([store.rows('guarantee'), store.rows('kept_by')].map((rows) => rows.filter((r) => r.id === 'TL-PLAT-GU01' || r.source_id === 'TL-PLAT-GU01'))).toEqual([[], []]);
     await store.close();
   });
 });

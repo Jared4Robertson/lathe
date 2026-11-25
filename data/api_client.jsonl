@@ -31,6 +31,10 @@
 {"id":"LA-MOD-EP622-CL","title":"useNextStorageRequirementId","endpoint_id":"LA-MOD-EP622","file":"app/src/domain-modeling/storage-requirement/reads.ts"}
 {"id":"LA-MOD-EP628-CL","title":"useGuarantee","endpoint_id":"LA-MOD-EP628","file":"app/src/domain-modeling/guarantee/reads.ts"}
 {"id":"LA-MOD-EP630-CL","title":"useNextGuaranteeId","endpoint_id":"LA-MOD-EP630","file":"app/src/domain-modeling/guarantee/reads.ts"}
+{"id":"LA-MOD-EP631-CL","title":"useGeneratedComponent","endpoint_id":"LA-MOD-EP631","file":"app/src/domain-modeling/generated-component/reads.ts"}
+{"id":"LA-MOD-EP633-CL","title":"useNextGeneratedComponentId","endpoint_id":"LA-MOD-EP633","file":"app/src/domain-modeling/generated-component/reads.ts"}
+{"id":"LA-MOD-EP634-CL","title":"useLibrary","endpoint_id":"LA-MOD-EP634","file":"app/src/domain-modeling/library/reads.ts"}
+{"id":"LA-MOD-EP636-CL","title":"useNextLibraryId","endpoint_id":"LA-MOD-EP636","file":"app/src/domain-modeling/library/reads.ts"}
 {"id":"LA-PRD-EP411-CL","title":"useDataState('/api/meta-model/get-meta-model')","endpoint_id":"LA-PRD-EP411","file":"app/src/exploring/record-summaries/reads.tsx"}
 {"id":"LA-PRD-EP510-CL","title":"useProduct","endpoint_id":"LA-PRD-EP510","file":"app/src/product/product/reads.ts"}
 {"id":"LA-PRD-EP511-CL","title":"useInterfaces","endpoint_id":"LA-PRD-EP511","file":"app/src/product/product/reads.ts"}

@@ -149,10 +149,14 @@
 {"entity_id":"LA-MOD-EN111","position":5,"name":"When","meaning":"What the test does, opening with any state it sets up beyond the test data sets it starts from.","type":"text","required":true}
 {"entity_id":"LA-MOD-EN111","position":6,"name":"Then","meaning":"What the test expects.","type":"text","required":true}
 {"entity_id":"LA-MOD-EN111","position":7,"name":"Notes","meaning":"Longer notes on the test, such as when to run it.","type":"text","required":false}
-{"entity_id":"LA-MOD-EN113","position":1,"name":"ID","meaning":"The guarantee's ID: its domain's ID and GU<nn>, such as TL-PLAT-GU01.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-MOD-EN113","position":1,"name":"ID","meaning":"The guarantee's ID: its maker's ID and GU<nn>, such as TL-PLAT-GU01 or TL-CAT-GC01-GU01.","type_value_object_id":"LA-VO01","required":true}
 {"entity_id":"LA-MOD-EN113","position":2,"name":"Title","meaning":"The promise in a few words, such as Every change is checked whole.","type_value_object_id":"LA-VO02","required":true}
-{"entity_id":"LA-MOD-EN113","position":3,"name":"Domain","meaning":"The platform domain that makes it.","type_aggregate_id":"LA-MOD-A4","required":true,"column_name":"domain_id"}
-{"entity_id":"LA-MOD-EN113","position":4,"name":"Statement","meaning":"What every other domain can rely on, stated with MUST, MUST NOT, SHOULD or MAY.","type_value_object_id":"LA-VO03","required":true}
+{"entity_id":"LA-MOD-EN113","position":3,"name":"Domain","meaning":"The platform domain that makes it; exactly one of domain, generated component and library is given.","type_aggregate_id":"LA-MOD-A4","required":false,"column_name":"domain_id"}
+{"entity_id":"LA-MOD-EN113","position":4,"name":"Generated component","meaning":"The generated component that makes it; exactly one of domain, generated component and library is given.","type_aggregate_id":"LA-MOD-A25","required":false,"column_name":"generated_component_id"}
+{"entity_id":"LA-MOD-EN113","position":5,"name":"Library","meaning":"The library that makes it; exactly one of domain, generated component and library is given.","type_aggregate_id":"LA-MOD-A26","required":false,"column_name":"library_id"}
+{"entity_id":"LA-MOD-EN113","position":6,"name":"Statement","meaning":"What the other domains, or the consumers it names, can rely on, stated with MUST, MUST NOT, SHOULD or MAY.","type_value_object_id":"LA-VO03","required":true}
+{"entity_id":"LA-MOD-EN113","position":7,"name":"Consumers","meaning":"Whom a generated component's or a library's guarantee is for, outside the repo, such as every service built with it; a platform domain's guarantee names none.","type":"text","required":false}
+{"entity_id":"LA-MOD-EN113","position":8,"name":"Group name","meaning":"A short heading it is shown under among its maker's guarantees, such as Transport or Audit.","type_value_object_id":"LA-VO18","required":false}
 {"entity_id":"LA-MOD-EN114","position":1,"name":"ID","meaning":"The test's ID: its guarantee's ID and T<nn>, such as TL-PLAT-GU01-T01.","type_value_object_id":"LA-VO01","required":true}
 {"entity_id":"LA-MOD-EN114","position":2,"name":"Title","meaning":"What the test shows, in a sentence.","type_value_object_id":"LA-VO02","required":true}
 {"entity_id":"LA-MOD-EN114","position":3,"name":"Guarantee","meaning":"The guarantee it proves.","type_value_object_id":"LA-VO01","required":true,"column_name":"guarantee_id"}
@@ -160,6 +164,14 @@
 {"entity_id":"LA-MOD-EN114","position":5,"name":"When","meaning":"What the test does, opening with any state it sets up beyond the test data sets it starts from.","type":"text","required":true}
 {"entity_id":"LA-MOD-EN114","position":6,"name":"Then","meaning":"What the test expects.","type":"text","required":true}
 {"entity_id":"LA-MOD-EN114","position":7,"name":"Notes","meaning":"Longer notes on the test, such as when to run it.","type":"text","required":false}
+{"entity_id":"LA-MOD-EN115","position":1,"name":"ID","meaning":"The generated component's ID: its domain's ID and GC<nn>, such as TL-CAT-GC01.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-MOD-EN115","position":2,"name":"Title","meaning":"Its name, such as Catalog adapter.","type_value_object_id":"LA-VO02","required":true}
+{"entity_id":"LA-MOD-EN115","position":3,"name":"Domain","meaning":"The business domain that ships it.","type_aggregate_id":"LA-MOD-A4","required":true,"column_name":"domain_id"}
+{"entity_id":"LA-MOD-EN115","position":4,"name":"Description","meaning":"What it emits and into what, in a sentence or two.","type":"text","required":true}
+{"entity_id":"LA-MOD-EN116","position":1,"name":"ID","meaning":"The library's ID: its domain's ID and LB<nn>, such as TL-CAT-LB01.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-MOD-EN116","position":2,"name":"Title","meaning":"Its name, such as Outbox runtime.","type_value_object_id":"LA-VO02","required":true}
+{"entity_id":"LA-MOD-EN116","position":3,"name":"Domain","meaning":"The business domain that ships it.","type_aggregate_id":"LA-MOD-A4","required":true,"column_name":"domain_id"}
+{"entity_id":"LA-MOD-EN116","position":4,"name":"Description","meaning":"What it holds and who imports it, in a sentence or two.","type":"text","required":true}
 {"entity_id":"LA-MOD-EN30","position":1,"name":"ID","meaning":"The term's ID, such as TL-LEND-TM01.","type_value_object_id":"LA-VO01","required":true}
 {"entity_id":"LA-MOD-EN30","position":2,"name":"Title","meaning":"The term, such as Loan.","type_value_object_id":"LA-VO02","required":true}
 {"entity_id":"LA-MOD-EN30","position":3,"name":"Domain","meaning":"The domain whose language it belongs to.","type_value_object_id":"LA-VO01","required":true,"column_name":"domain_id"}

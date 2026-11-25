@@ -12,6 +12,8 @@
 {"source_id":"LA-MOD-QRY180-CLI","target_id":"LA-PAT-AGGREGATE-QUERIES-R06"}
 {"source_id":"LA-MOD-QRY221-CLI","target_id":"LA-PAT-AGGREGATE-QUERIES-R06"}
 {"source_id":"LA-MOD-QRY229-CLI","target_id":"LA-PAT-AGGREGATE-QUERIES-R06"}
+{"source_id":"LA-MOD-QRY232-CLI","target_id":"LA-PAT-AGGREGATE-QUERIES-R06"}
+{"source_id":"LA-MOD-QRY235-CLI","target_id":"LA-PAT-AGGREGATE-QUERIES-R06"}
 {"source_id":"LA-PRD-QRY111-CLI","target_id":"LA-PAT-AGGREGATE-QUERIES-R06"}
 {"source_id":"LA-PRD-QRY113-CLI","target_id":"LA-PAT-AGGREGATE-QUERIES-R06"}
 {"source_id":"LA-PRD-QRY116-CLI","target_id":"LA-PAT-AGGREGATE-QUERIES-R06"}

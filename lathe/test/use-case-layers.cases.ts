@@ -1,5 +1,5 @@
 // The Use case aggregate's commands and queries, reached by name from the CLI, the MCP tools and HTTP. Their cases are
-// proved by LA-PAT-AGGREGATE-COMMANDS-R01-T01, which runs them from lathe/test/command-layers.test.ts.
+// proved by LA-PLT-GU04-T02, which runs them from lathe/test/command-layers.test.ts.
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { expect, it } from 'vitest';

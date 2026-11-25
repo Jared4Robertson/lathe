@@ -147,6 +147,12 @@
 {"id":"LA-MOD-UC176-FL","title":"Add a guarantee test","use_case_id":"LA-MOD-UC176"}
 {"id":"LA-MOD-UC177-FL","title":"Change a guarantee test","use_case_id":"LA-MOD-UC177"}
 {"id":"LA-MOD-UC178-FL","title":"Remove a guarantee test","use_case_id":"LA-MOD-UC178"}
+{"id":"LA-MOD-UC179-FL","title":"Add a generated component","use_case_id":"LA-MOD-UC179"}
+{"id":"LA-MOD-UC180-FL","title":"Change a generated component","use_case_id":"LA-MOD-UC180"}
+{"id":"LA-MOD-UC181-FL","title":"Remove a generated component","use_case_id":"LA-MOD-UC181"}
+{"id":"LA-MOD-UC182-FL","title":"Add a library","use_case_id":"LA-MOD-UC182"}
+{"id":"LA-MOD-UC183-FL","title":"Change a library","use_case_id":"LA-MOD-UC183"}
+{"id":"LA-MOD-UC184-FL","title":"Remove a library","use_case_id":"LA-MOD-UC184"}
 {"id":"LA-MOD-UC20-FL","title":"Add a specification","use_case_id":"LA-MOD-UC20"}
 {"id":"LA-MOD-UC21-FL","title":"Add a read model","use_case_id":"LA-MOD-UC21"}
 {"id":"LA-MOD-UC24-FL","title":"Add a value object","use_case_id":"LA-MOD-UC24"}

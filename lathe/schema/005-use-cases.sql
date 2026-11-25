@@ -104,11 +104,11 @@ COMMENT ON COLUMN slot.statement IS 'Its contract: what every fill MUST do, in o
 COMMENT ON COLUMN slot.fills_vary_by_design IS 'Why its fills are written per record by design, in one sentence, such as Each UI component builds its own view''s requirements. Given only when every fill holds what is its own record''s alone, never what fills repeat; pattern-candidate then skips the slot and its page says so. None when its fills should repeat, so three of them are a pattern candidate.';
 
 INSERT INTO meta_kind VALUES
-  ('use_case', 'Use case', 'use-cases', 21, false, '<P>-<D>-UC<nn>', 'TL-LEND-UC01', 'domain', NULL, 'essential'),
-  ('uc_requirement', 'UC requirement', 'use-cases', 22, true, '<use case>-R<nn>', 'TL-LEND-UC01-R01', 'parent', NULL, 'essential'),
-  ('pattern', 'Pattern', 'use-cases', 25, false, '<P>-PAT-<name>', 'TL-PAT-LIBRARIAN-ACTION', 'parent', NULL, 'essential'),
-  ('pattern_rule', 'Pattern rule', 'use-cases', 26, true, '<pattern>-R<nn>', 'TL-PAT-LIBRARIAN-ACTION-R01', 'parent', NULL, 'essential'),
-  ('slot', 'Slot', 'use-cases', 27, false, '<pattern>-SL<nn>', 'TL-PAT-LIBRARIAN-ACTION-SL01', 'parent', NULL, 'essential');
+  ('use_case', 'Use case', 'use-cases', 23, false, '<P>-<D>-UC<nn>', 'TL-LEND-UC01', 'domain', NULL, 'essential'),
+  ('uc_requirement', 'UC requirement', 'use-cases', 24, true, '<use case>-R<nn>', 'TL-LEND-UC01-R01', 'parent', NULL, 'essential'),
+  ('pattern', 'Pattern', 'use-cases', 27, false, '<P>-PAT-<name>', 'TL-PAT-LIBRARIAN-ACTION', 'parent', NULL, 'essential'),
+  ('pattern_rule', 'Pattern rule', 'use-cases', 28, true, '<pattern>-R<nn>', 'TL-PAT-LIBRARIAN-ACTION-R01', 'parent', NULL, 'essential'),
+  ('slot', 'Slot', 'use-cases', 29, false, '<pattern>-SL<nn>', 'TL-PAT-LIBRARIAN-ACTION-SL01', 'parent', NULL, 'essential');
 INSERT INTO meta_kind_parent VALUES
   ('use_case', 'domain', 1, 'domain_id'),
   ('uc_requirement', 'use_case', 1, 'use_case_id'),

@@ -180,17 +180,50 @@ COMMENT ON COLUMN domain_service.title IS 'What it works out, such as Late fee.'
 COMMENT ON COLUMN domain_service.domain_id IS 'The domain it belongs to.';
 COMMENT ON COLUMN domain_service.statement IS 'What it must work out, from what, stated with MUST, SHOULD or MAY.';
 
-CREATE TABLE guarantee (
+CREATE TABLE generated_component (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   domain_id VARCHAR NOT NULL REFERENCES domain (id),
-  statement VARCHAR NOT NULL CHECK (trim(statement) <> '')
+  description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
-COMMENT ON TABLE guarantee IS 'A promise a platform domain makes to every other domain of its product, such as every change being refused with every reason it breaks: what the other domains rely on and could not run without, and what would work unchanged in another product. A platform domain has no goals of its own, so it is described by its guarantees rather than by use cases and aggregates. The building blocks that keep it are named with kept_by, and its guarantee tests prove it.';
-COMMENT ON COLUMN guarantee.id IS 'The guarantee''s ID: its domain''s ID and GU<nn>, such as TL-PLAT-GU01.';
+COMMENT ON TABLE generated_component IS 'A unit of code the product''s generator emits into code outside the repo, such as a database adapter written into every service built with it: what the product ships, so what it promises its consumers is the Owner''s to decide. It makes guarantees to the outside consumers they name, and it sits in a business domain.';
+COMMENT ON COLUMN generated_component.id IS 'The generated component''s ID: its domain''s ID and GC<nn>, such as TL-CAT-GC01.';
+COMMENT ON COLUMN generated_component.title IS 'Its name, such as PostgreSQL adapter.';
+COMMENT ON COLUMN generated_component.domain_id IS 'The business domain that ships it.';
+COMMENT ON COLUMN generated_component.description IS 'What it emits and into what, in a sentence or two.';
+
+CREATE TABLE library (
+  id VARCHAR PRIMARY KEY REFERENCES record_id (id),
+  title VARCHAR NOT NULL CHECK (trim(title) <> ''),
+  domain_id VARCHAR NOT NULL REFERENCES domain (id),
+  description VARCHAR NOT NULL CHECK (trim(description) <> '')
+);
+COMMENT ON TABLE library IS 'Code the product ships for code outside the repo to import, a runtime included, such as an outbox package every generated service imports: what the product ships, so what it promises its consumers is the Owner''s to decide. It makes guarantees to the outside consumers they name, and it sits in a business domain.';
+COMMENT ON COLUMN library.id IS 'The library''s ID: its domain''s ID and LB<nn>, such as TL-CAT-LB01.';
+COMMENT ON COLUMN library.title IS 'Its name, such as Outbox runtime.';
+COMMENT ON COLUMN library.domain_id IS 'The business domain that ships it.';
+COMMENT ON COLUMN library.description IS 'What it holds and who imports it, in a sentence or two.';
+
+CREATE TABLE guarantee (
+  id VARCHAR PRIMARY KEY REFERENCES record_id (id),
+  title VARCHAR NOT NULL CHECK (trim(title) <> ''),
+  domain_id VARCHAR REFERENCES domain (id),
+  generated_component_id VARCHAR REFERENCES generated_component (id),
+  library_id VARCHAR REFERENCES library (id),
+  statement VARCHAR NOT NULL CHECK (trim(statement) <> ''),
+  consumers VARCHAR CHECK (trim(consumers) <> ''),
+  group_name VARCHAR,
+  CHECK ((domain_id IS NOT NULL)::INTEGER + (generated_component_id IS NOT NULL)::INTEGER + (library_id IS NOT NULL)::INTEGER = 1)
+);
+COMMENT ON TABLE guarantee IS 'A promise kept by shared code, made by its maker: a platform domain, to every other domain of its product (such as every change being refused with every reason it breaks), or a generated component or a library, to the outside consumers it names (such as the database opener a component emits requiring verified TLS). A promise each follower''s own code must meet is a pattern rule instead, and a promise is never stated both ways. The building blocks that keep it are named with kept_by, and its guarantee tests prove it.';
+COMMENT ON COLUMN guarantee.id IS 'The guarantee''s ID: its maker''s ID and GU<nn>, such as TL-PLAT-GU01 or TL-CAT-GC01-GU01.';
 COMMENT ON COLUMN guarantee.title IS 'The promise in a few words, such as Every change is checked whole.';
-COMMENT ON COLUMN guarantee.domain_id IS 'The platform domain that makes it.';
-COMMENT ON COLUMN guarantee.statement IS 'What every other domain can rely on, stated with MUST, MUST NOT, SHOULD or MAY.';
+COMMENT ON COLUMN guarantee.domain_id IS 'The platform domain that makes it; exactly one of domain, generated component and library is given.';
+COMMENT ON COLUMN guarantee.generated_component_id IS 'The generated component that makes it; exactly one of domain, generated component and library is given.';
+COMMENT ON COLUMN guarantee.library_id IS 'The library that makes it; exactly one of domain, generated component and library is given.';
+COMMENT ON COLUMN guarantee.statement IS 'What the other domains, or the consumers it names, can rely on, stated with MUST, MUST NOT, SHOULD or MAY.';
+COMMENT ON COLUMN guarantee.consumers IS 'Whom a generated component''s or a library''s guarantee is for, outside the repo, where no link can reach them, such as every service whose archetype includes the component. A platform domain''s guarantee names none: the other domains that rely on it are found from links.';
+COMMENT ON COLUMN guarantee.group_name IS 'A short heading it is shown under among its maker''s guarantees, such as Transport or Audit.';
 
 CREATE TABLE storage_requirement (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
@@ -352,9 +385,11 @@ INSERT INTO meta_kind VALUES
   ('query', 'Query', 'domain-model', 15, false, '<P>-<D>-QRY<nn>', 'TL-LEND-QRY01', 'domain', NULL, 'essential'),
   ('policy', 'Policy', 'domain-model', 16, true, '<P>-<D>-PO<nn>', 'TL-LEND-PO01', 'domain', NULL, 'essential'),
   ('domain_service', 'Domain service', 'domain-model', 17, true, '<P>-<D>-DS<nn>', 'TL-LEND-DS01', 'domain', NULL, 'essential'),
-  ('guarantee', 'Guarantee', 'domain-model', 18, true, '<P>-<D>-GU<nn>', 'TL-PLAT-GU01', 'domain', NULL, 'essential'),
-  ('storage_requirement', 'Storage requirement', 'domain-model', 19, true, '<aggregate or read model>-SR<nn>', 'TL-LEND-A1-SR01', 'parent', NULL, 'essential'),
-  ('term', 'Term', 'domain-model', 20, false, '<P>-<D>-TM<nn>', 'TL-LEND-TM01', 'domain', NULL, 'essential');
+  ('generated_component', 'Generated component', 'domain-model', 18, false, '<P>-<D>-GC<nn>', 'TL-CAT-GC01', 'domain', NULL, 'essential'),
+  ('library', 'Library', 'domain-model', 19, false, '<P>-<D>-LB<nn>', 'TL-CAT-LB01', 'domain', NULL, 'essential'),
+  ('guarantee', 'Guarantee', 'domain-model', 20, true, '<maker>-GU<nn>', 'TL-PLAT-GU01', 'parent', NULL, 'essential'),
+  ('storage_requirement', 'Storage requirement', 'domain-model', 21, true, '<aggregate or read model>-SR<nn>', 'TL-LEND-A1-SR01', 'parent', NULL, 'essential'),
+  ('term', 'Term', 'domain-model', 22, false, '<P>-<D>-TM<nn>', 'TL-LEND-TM01', 'domain', NULL, 'essential');
 INSERT INTO meta_kind_parent VALUES
   ('domain', 'product', 1, 'product_id'),
   ('aggregate', 'domain', 1, 'domain_id'),
@@ -367,7 +402,11 @@ INSERT INTO meta_kind_parent VALUES
   ('query', 'read_model', 1, 'read_model_id'),
   ('policy', 'command', 1, 'command_id'),
   ('domain_service', 'domain', 1, 'domain_id'),
+  ('generated_component', 'domain', 1, 'domain_id'),
+  ('library', 'domain', 1, 'domain_id'),
   ('guarantee', 'domain', 1, 'domain_id'),
+  ('guarantee', 'generated_component', 2, 'generated_component_id'),
+  ('guarantee', 'library', 3, 'library_id'),
   ('storage_requirement', 'aggregate', 1, 'aggregate_id'),
   ('storage_requirement', 'read_model', 2, 'read_model_id'),
   ('term', 'domain', 1, 'domain_id');
@@ -377,4 +416,4 @@ INSERT INTO meta_table VALUES
   ('invariant', 'kind', NULL), ('specification', 'kind', NULL), ('domain_event', 'kind', NULL),
   ('event_field', 'part', 'domain_event_id'), ('command', 'kind', NULL), ('read_model', 'kind', NULL),
   ('read_model_field', 'part', 'read_model_id'), ('query', 'kind', NULL), ('policy', 'kind', NULL),
-  ('domain_service', 'kind', NULL), ('guarantee', 'kind', NULL), ('storage_requirement', 'kind', NULL), ('term', 'kind', NULL);
+  ('domain_service', 'kind', NULL), ('generated_component', 'kind', NULL), ('library', 'kind', NULL), ('guarantee', 'kind', NULL), ('storage_requirement', 'kind', NULL), ('term', 'kind', NULL);

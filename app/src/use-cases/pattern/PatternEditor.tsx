@@ -34,12 +34,20 @@ const dataSets = (index: RecordIndex, product: string): Choice[] =>
 const domains = (index: RecordIndex, product: string): Choice[] =>
   index.domains.filter((r) => r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
+/** What may make a pattern's fixed part: the product's platform domains, generated components and libraries. */
+const makers = (index: RecordIndex, product: string): Choice[] => {
+  const platform = new Set(index.folders.domains.filter((d) => d.platform).map((d) => d.owner));
+  return [...index.byId.values()]
+    .filter((r) => r.product === product && (platform.has(r.id) || r.kind === 'generated_component' || r.kind === 'library'))
+    .map((r) => ({ id: r.id, title: r.title }));
+};
+
 /** The fields each kind's Add and Change take, from their inputs; the hints add long text and the choices. */
 function fieldsOf(index: RecordIndex, product: string, kind: PatternKind, adding: boolean): FieldSpec[] {
   const F = PATTERN_FIELDS;
   switch (kind) {
     case 'pattern':
-      return addOrChangeFields(adding, F['/api/pattern/add-pattern'], 'product_id', F['/api/pattern/change-pattern'], { description: LONG, notes: LONG });
+      return addOrChangeFields(adding, F['/api/pattern/add-pattern'], 'product_id', F['/api/pattern/change-pattern'], { description: LONG, notes: LONG, made_by: { label: 'Made by', choices: makers(index, product) } });
     case 'pattern_rule':
       return addOrChangeFields(adding, F['/api/pattern/add-pattern-rule'], 'pattern_id', F['/api/pattern/change-pattern-rule'], { statement: LONG, notes: LONG });
     case 'pattern_rule_test': {
@@ -56,7 +64,7 @@ function fieldsOf(index: RecordIndex, product: string, kind: PatternKind, adding
 function currentOf(page: PatternPage, kind: PatternKind, id: string): Record<string, unknown> {
   switch (kind) {
     case 'pattern':
-      return { ...page.pattern, settings: page.settings };
+      return { ...page.pattern, settings: page.settings, made_by: page.madeBy };
     case 'pattern_rule':
       return { ...page.rules.find((r) => r.rule.id === id)!.rule };
     case 'pattern_rule_test': {

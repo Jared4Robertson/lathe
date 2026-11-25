@@ -31,6 +31,8 @@ export interface PatternRuleOnPage {
 /** A pattern whole, as its page shows it: its row, its settings in order, its rules by ID and its slots by ID. */
 export interface PatternTree {
   pattern: PatternRow;
+  /** The maker of its fixed part, by ID; null when each follower writes it. */
+  madeBy: string | null;
   settings: SettingOnPage[];
   rules: PatternRuleOnPage[];
   slots: SlotRow[];
@@ -73,6 +75,7 @@ export function patternTableFrom(view: ReadView): PatternTable {
   const rules = grouped<PatternRuleRow>(view.rows('pattern_rule'), 'pattern_id');
   const tests = grouped<PatternRuleTestRow>(view.rows('pattern_rule_test'), 'pattern_rule_id');
   const slots = grouped<SlotRow>(view.rows('slot'), 'pattern_id');
+  const madeBy = new Map(view.rows('made_by').map((l) => [String(l.source_id), String(l.target_id)]));
   const patterns = new Map<string, PatternTree>();
   const holding = new Map<string, { root: string; kind: PatternKind }>();
   const products = new Map<string, PatternSummary[]>(view.rows('product').map((p) => [String(p.id), []]));
@@ -81,6 +84,7 @@ export function patternTableFrom(view: ReadView): PatternTable {
     holding.set(root, { root, kind: 'pattern' });
     const tree: PatternTree = {
       pattern,
+      madeBy: madeBy.get(root) ?? null,
       settings: [...(settings.get(root) ?? [])].sort((a, b) => a.position - b.position).map((s) => ({ name: s.name, meaning: s.meaning })),
       rules: [...(rules.get(root) ?? [])].sort(byRecordId).map((rule) => ({
         rule,

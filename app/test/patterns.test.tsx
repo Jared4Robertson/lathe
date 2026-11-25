@@ -228,3 +228,23 @@ describe('pattern pages (the Pattern page, LA-V122)', () => {
     expect(await within(section(/^Followed by/)).findByText(/No use case follows this pattern/)).toBeInTheDocument();
   });
 });
+
+describe("LA-V122-R10-T01 a pattern's page names its maker, and Edit sends the maker chosen", () => {
+  it('shows a Made by link to the platform domain, and Edit clears it with one Change a pattern', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event');
+    const user = userEvent.setup();
+    const data = twoDomains();
+    addRows(data, 'domain', { id: 'DM-PLT', title: 'Platform', product_id: 'DM', position: 9, subdomain_type: 'generic', platform: true, description: 'What every domain stands on.' });
+    addRows(data, 'made_by', { source_id: 'DM-PAT-AUDIT', target_id: 'DM-PLT' });
+    const ok = { ok: true as const, tables: [], files: [], changes: [] };
+    const { commands } = await openApp('/DM-PAT-AUDIT', { data, command: () => ({ answer: ok }) });
+    await within(main()).findByRole('heading', { name: /^Made by/ });
+    expect(section(/^Made by/)).toHaveTextContent('DM-PLT');
+    await user.click(within(await screen.findByRole('toolbar', { name: 'Change DM-PAT-AUDIT' })).getByRole('button', { name: 'Edit' }));
+    const form = screen.getByRole('form', { name: 'Edit DM-PAT-AUDIT' });
+    expect(within(form).getByRole('combobox', { name: /^Made by/ })).toHaveValue('DM-PLT');
+    await user.selectOptions(within(form).getByRole('combobox', { name: /^Made by/ }), '');
+    await user.click(within(form).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(commands).toEqual([{ route: '/api/pattern/change-pattern', input: { id: 'DM-PAT-AUDIT', made_by: null } }]));
+  });
+});

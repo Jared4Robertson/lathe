@@ -889,4 +889,37 @@ describe('the schema version', () => {
     expect(await run10to11(tables)).toEqual({ changes: [], todos: [] });
     expect(tables).toEqual(upgraded);
   });
+
+  it("LA-STD-ENGINEERING-R04-T23 11-to-12 changes no row, asks to move each of a product's own obligation kinds to guarantees of their makers, and does nothing to data already upgraded", async () => {
+    const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 11);
+    const run11to12 = async (data: Record<string, Record<string, unknown>[]>) => {
+      const changes: string[] = [];
+      const todos: string[] = [];
+      await step!.converter.files!(
+        { tables: () => Object.keys(data), read: (table) => data[table] ?? [], write: (table, rows) => void (data[table] = rows) },
+        { changed: (text) => changes.push(text), todo: (text) => todos.push(text) },
+      );
+      return { changes, todos };
+    };
+    const tables: Record<string, Record<string, unknown>[]> = {
+      product_kind: [
+        { name: 'output_contract', obligation: true, parent_kind: 'registry_component' },
+        { name: 'output_contract_test', obligation: false, parent_kind: 'output_contract' },
+        { name: 'registry_component', obligation: false, parent_kind: 'domain' },
+      ],
+      output_contract: [{ id: 'ST-SUP-RC01-OC01' }, { id: 'ST-SUP-RC01-OC02' }],
+    };
+    const before = structuredClone(tables);
+    const { changes, todos } = await run11to12(tables);
+    expect(tables).toEqual(before);
+    expect(changes).toEqual(['A guarantee may be made by a generated component or a library, for the outside consumers it names, as well as by a platform domain.']);
+    expect(todos).toEqual([
+      'Your own kind output_contract holds 2 records: if each is a promise shared code keeps, of a platform domain, of a unit your generator emits or of a library you ship, write it as a guarantee of that maker (`lathe generated-component add-generated-component`, `lathe library add-library`, `lathe guarantee add-guarantee`) with whom it is for (consumers), its guarantee tests (from output_contract_test) and the building blocks that keep it (kept_by), then remove the kind.',
+    ]);
+    expect(await run11to12({ product_kind: [tables.product_kind[2]] })).toEqual({ changes: [], todos: [] });
+
+    // Data already upgraded, a generated component written, is left as it is.
+    tables.generated_component = [{ id: 'ST-SUP-GC01', domain_id: 'ST-SUP' }];
+    expect(await run11to12(tables)).toEqual({ changes: [], todos: [] });
+  });
 });

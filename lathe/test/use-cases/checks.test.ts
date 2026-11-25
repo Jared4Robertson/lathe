@@ -302,3 +302,48 @@ check('step-order', () => {
     ]);
   });
 });
+
+/** The complete product with a platform domain whose build keeps one guarantee, and a generated component and a library its lending domain ships. */
+const MAKERS: Data = {
+  domain: [{ id: 'EX-PLAT', title: 'Platform', product_id: 'EX', position: 2, subdomain_type: 'generic', platform: true, description: 'What every domain stands on: the build and the store.' }],
+  tooling: [{ id: 'EX-PLAT-TOOL01', title: 'build', domain_id: 'EX-PLAT', file: 'scripts/build.ts' }],
+  guarantee: [{ id: 'EX-PLAT-GU01', title: 'Every domain is built the same way', domain_id: 'EX-PLAT', statement: 'The code every domain keeps its records with MUST be written by the build.' }],
+  kept_by: [{ source_id: 'EX-PLAT-GU01', target_id: 'EX-PLAT-TOOL01' }],
+  generated_component: [{ id: 'EX-LEND-GC01', title: 'Loan adapter', domain_id: 'EX-LEND', description: 'The loan store the generator emits.' }],
+  library: [{ id: 'EX-LEND-LB01', title: 'Reminder runtime', domain_id: 'EX-LEND', description: 'The reminder queue services import.' }],
+};
+const pattern = (id: string): Data => ({
+  pattern: [{ id, title: id.slice(7), product_id: 'EX', description: 'Behavior several use cases share.' }],
+  pattern_rule: [{ id: `${id}-R01`, title: `${id.slice(7)} holds`, pattern_id: id, statement: 'It MUST hold.' }],
+});
+
+check('pattern-made-by-business-domain', () => {
+  it('LA-STD-MODELING-R25-T01 a pattern made by a business domain is an error; one made by a platform domain, a generated component or a library is not', async () => {
+    let data = adding(complete(), MAKERS);
+    for (const id of ['EX-PAT-BIZ', 'EX-PAT-PLT', 'EX-PAT-GEN', 'EX-PAT-LIB']) data = adding(data, pattern(id));
+    data = adding(data, { made_by: [
+      { source_id: 'EX-PAT-BIZ', target_id: 'EX-LEND' }, { source_id: 'EX-PAT-PLT', target_id: 'EX-PLAT' },
+      { source_id: 'EX-PAT-GEN', target_id: 'EX-LEND-GC01' }, { source_id: 'EX-PAT-LIB', target_id: 'EX-LEND-LB01' },
+    ] });
+    expect(ofCheck(await loadData(data), 'pattern-made-by-business-domain')).toEqual([
+      { severity: 'error', check: 'pattern-made-by-business-domain', record: 'EX-PAT-BIZ', message: 'Pattern EX-PAT-BIZ is made by EX-LEND, which is not marked platform: name the platform domain, generated component or library whose shared code its fixed part is.' },
+    ]);
+  });
+});
+
+check('pattern-rule-restates-guarantee', () => {
+  it("LA-STD-MODELING-R25-T02 a pattern rule only a building block of its pattern's maker carries out is an error naming the guarantee it restates", async () => {
+    const data = adding(adding(complete(), MAKERS), {
+      made_by: [{ source_id: 'EX-PAT-ACT', target_id: 'EX-PLAT' }],
+      meets: [{ source_id: 'EX-PLAT-TOOL01', target_id: 'EX-PAT-ACT-R01' }],
+    });
+    expect(ofCheck(await loadData(data), 'pattern-rule-restates-guarantee')).toEqual([
+      {
+        severity: 'error', check: 'pattern-rule-restates-guarantee', record: 'EX-PAT-ACT-R01',
+        message: "Pattern rule EX-PAT-ACT-R01 is carried out only by building blocks of EX-PLAT, the maker of the pattern's fixed part, such as EX-PLAT-TOOL01, which keeps guarantee EX-PLAT-GU01: what the shared code keeps is a guarantee, so merge the rule into it and keep in the pattern only what each follower's own code must meet.",
+      },
+    ]);
+    const shared = adding(data, { meets: [{ source_id: 'EX-LEND-CMD01-H', target_id: 'EX-PAT-ACT-R01' }] });
+    expect(ofCheck(await loadData(shared), 'pattern-rule-restates-guarantee')).toEqual([]);
+  });
+});

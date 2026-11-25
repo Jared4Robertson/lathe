@@ -43,11 +43,13 @@ A well-defined pattern is a function: the pattern plus its configuration gives t
 
 When a product's code is produced by a generator (from a schema, a service declaration, or the product's own records), keep one rule in view: the records own the essential complexity (why and what); the generator owns the accidental complexity (how it is wired). Hand-written code that is only wiring is a candidate for the generator, not for more records.
 
-Declare the generator's side as kinds of the product's own, in the technical specification:
+What the product ships and promises is Lathe's own, in the domain model of the business domain that ships it; declare no kind of your own for it:
 
-- **The generator** (one record per generator, with its file and the command that runs it). It implements the design records it reads; link the records it reads to it, so a change to a record shows which generator emits from it.
-- **An output contract**: one rule about the shape of the code the generator emits ("every emitted handler returns a result and never throws"). It is an obligation, proved by a contract test that runs the generator and checks the emitted code, not by testing each emitted file. This is the rule the generator's users depend on, so it is written once, at the generator.
-- **A runtime package**: the library the emitted code imports. Its contract is likewise an obligation with a test, and the emitted code is only correct against a pinned version of it. Account for it as a package of the technical record that uses it.
+- **A generated component** (`generated-component add-generated-component`, `<P>-<D>-GC<nn>`): one unit the generator emits into code outside the repo, such as an adapter every service built with it holds. It serves the business outcomes it names.
+- **A library** (`library add-library`, `<P>-<D>-LB<nn>`): code the product ships for code outside the repo to import, a runtime included; the emitted code is only correct against a pinned version of it.
+- **Each promise either makes** is a **guarantee** of it (`guarantee add-guarantee --generated_component_id` or `--library_id`, `<maker>-GU<nn>`), one sentence with MUST ("the database opener it emits MUST require verified TLS"), naming whom it is for in `consumers` ("every service whose archetype includes it"), since no link reaches code outside the repo. Prove it with guarantee tests that run the generator or the library and check what comes out, not by testing each emitted file; name the files that keep it with `kept_by`. A guarantee that names no consumer is a gap; a generated component or library that makes none is a gap; one in a platform domain is an error.
+
+Declare the generator's side as kinds of the product's own, in the technical specification: **the generator's files** and **the library's files** (one record per file, with what in it keeps which guarantees), each named on the guarantees it keeps with `kept_by`, which a product's own technical kind may do with no declaration. A product kind of its own for promises (an "output contract") is a guarantee in disguise: `lathe upgrade` lists each such obligation kind as a to-do.
 
 Rules for the emitted files themselves:
 

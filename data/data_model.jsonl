@@ -28,6 +28,8 @@
 {"id":"LA-MOD-EN111-DM","title":"StorageRequirementTestRow","entity_id":"LA-MOD-EN111","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-MOD-EN113-DM","title":"GuaranteeRow","entity_id":"LA-MOD-EN113","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-MOD-EN114-DM","title":"GuaranteeTestRow","entity_id":"LA-MOD-EN114","file":"lathe/src/platform/data/tables.ts"}
+{"id":"LA-MOD-EN115-DM","title":"GeneratedComponentRow","entity_id":"LA-MOD-EN115","file":"lathe/src/platform/data/tables.ts"}
+{"id":"LA-MOD-EN116-DM","title":"LibraryRow","entity_id":"LA-MOD-EN116","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-MOD-EN30-DM","title":"TermRow","entity_id":"LA-MOD-EN30","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-MOD-EN31-DM","title":"ValueObjectRow","entity_id":"LA-MOD-EN31","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-MOD-EN32-DM","title":"ValueObjectFieldRow","entity_id":"LA-MOD-EN32","file":"lathe/src/platform/data/tables.ts"}

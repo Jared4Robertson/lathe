@@ -55,7 +55,7 @@ describe('fields as JSON', () => {
 }, 30_000);
 
 describe('a refusal', () => {
-  it('LA-PAT-AGGREGATE-COMMANDS-R02-T01 LA-PAT-AGGREGATE-COMMANDS-R02-T04 LA-PAT-AGGREGATE-COMMANDS-R02-T05 LA-PAT-AGGREGATE-COMMANDS-R02-T06 LA-PAT-AGGREGATE-COMMANDS-R02-T07 LA-PAT-AGGREGATE-COMMANDS-R02-T08 LA-PAT-CLI-STEPS-R02-T01 LA-PAT-CLI-STEPS-R02-T05 LA-PAT-CLI-STEPS-R02-T06 LA-PAT-CLI-STEPS-R02-T07 LA-PAT-CLI-STEPS-R02-T08 LA-PAT-CLI-STEPS-R02-T09 LA-PAT-MCP-STEPS-R02-T01 LA-PAT-MCP-STEPS-R02-T05 LA-PAT-MCP-STEPS-R02-T06 LA-PAT-MCP-STEPS-R02-T07 LA-PAT-MCP-STEPS-R02-T08 LA-PAT-MCP-STEPS-R02-T09 a command the aggregate refuses prints every reason with its rule, exits 1, and changes nothing', async () => {
+  it('LA-PLT-GU01-T03 LA-PLT-GU04-T06 a command the aggregate refuses prints every reason with its rule, exits 1, and changes nothing', async () => {
     const root = writeData(everyKind());
     const before = files(root);
     const refusals = [

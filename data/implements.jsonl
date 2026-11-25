@@ -93,6 +93,14 @@
 {"source_id":"LA-MOD-MOD91","target_id":"LA-MOD-UC176-R01"}
 {"source_id":"LA-MOD-MOD91","target_id":"LA-MOD-UC177-R01"}
 {"source_id":"LA-MOD-MOD91","target_id":"LA-MOD-UC178-R01"}
+{"source_id":"LA-MOD-MOD92","target_id":"LA-MOD-A25-SR01"}
+{"source_id":"LA-MOD-MOD93","target_id":"LA-MOD-UC179-R01"}
+{"source_id":"LA-MOD-MOD93","target_id":"LA-MOD-UC180-R01"}
+{"source_id":"LA-MOD-MOD93","target_id":"LA-MOD-UC181-R01"}
+{"source_id":"LA-MOD-MOD94","target_id":"LA-MOD-A26-SR01"}
+{"source_id":"LA-MOD-MOD95","target_id":"LA-MOD-UC182-R01"}
+{"source_id":"LA-MOD-MOD95","target_id":"LA-MOD-UC183-R01"}
+{"source_id":"LA-MOD-MOD95","target_id":"LA-MOD-UC184-R01"}
 {"source_id":"LA-PLT-MOD04","target_id":"LA-WBN-UC03-R01"}
 {"source_id":"LA-PLT-MOD08","target_id":"LA-PRD-UC18-R01"}
 {"source_id":"LA-PLT-MOD08","target_id":"LA-PRD-UC18-R02"}
