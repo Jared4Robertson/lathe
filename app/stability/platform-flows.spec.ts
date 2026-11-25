@@ -8,7 +8,7 @@ import { expectStable, openPage, step } from './measure';
 import { FOCUS, GRAPH_CANVAS, keepData, RECORD, SHELL } from './scenarios';
 import { cameraOf, focusDrawn, graphDrawn, sceneOf } from './scene';
 
-// Platform's flow tests that happen in the app (LA-PLT-UC03-FL, UC06-FL, UC07-FL and UC24-FL, with the flows split from them): one per flow, each
+// Platform's and Workbench's flow tests that happen in the app (LA-WBN-UC03-FL, and Workbench's LA-WBN-UC06-FL, UC07-FL and UC24-FL, with the flows split from them): one per flow, each
 // walking its main path in Chromium over the suite's copy of Lathe's data. The flows run through
 // the CLI or the server alone are proved in lathe/test/cli/platform-flows.test.ts, and the native
 // menus in the desktop smoke test.
@@ -56,8 +56,8 @@ async function drag(page: Page, from: { x: number; y: number }, to: { x: number;
   await page.mouse.up();
 }
 
-test.describe('Platform flows in the app', () => {
-  test('LA-PLT-UC03-FL-T LA-PAT-PAGE-STEPS-R01-T04 the page shows the files on disk: an Agent\'s write reloads it in place, and data that cannot load is said so', async ({ page }) => {
+test.describe('Platform and Workbench flows in the app', () => {
+  test('LA-WBN-UC03-FL-T LA-PAT-PAGE-STEPS-R01-T04 the page shows the files on disk: an Agent\'s write reloads it in place, and data that cannot load is said so', async ({ page }) => {
     const restore = keepData();
     try {
       await openPage(page, '/LA-EXP-UC03');
@@ -116,7 +116,7 @@ test.describe('Platform flows in the app', () => {
     await expect(sheet.getByRole('rowheader', { name: 'Command palette' })).toBeVisible();
   });
 
-  test('LA-STD-EXPERIENCE-R06-T02 LA-PLT-UC24-FL-T see each command\'s shortcut where it is used: a tooltip, the palette, the screen reader, a rebinding followed everywhere', async ({ page }) => {
+  test('LA-STD-EXPERIENCE-R06-T02 LA-WBN-UC24-FL-T see each command\'s shortcut where it is used: a tooltip, the palette, the screen reader, a rebinding followed everywhere', async ({ page }) => {
     await openPage(page, RECORD);
     const graphButton = page.getByRole('group', { name: 'Stage' }).getByRole('button', { name: 'Graph' });
     await graphButton.hover();
@@ -186,7 +186,7 @@ test.describe('Platform flows in the app', () => {
     await page.waitForURL((u) => u.pathname !== start);
   });
 
-  test('LA-PLT-UC06-FL-T LA-PLT-UC31-FL-T LA-PLT-UC31-R01-T01 arrange the panels: drag and step an edge, sizes kept, reset by double-click, fold by dragging small, collapse the wiki card', async ({ page }) => {
+  test('LA-WBN-UC06-FL-T LA-WBN-UC31-FL-T LA-WBN-UC31-R01-T01 arrange the panels: drag and step an edge, sizes kept, reset by double-click, fold by dragging small, collapse the wiki card', async ({ page }) => {
     await openPage(page, RECORD);
     const handle = page.getByRole('separator', { name: 'Resize the navigation' });
     const start = Number(await handle.getAttribute('aria-valuenow'));
@@ -219,7 +219,7 @@ test.describe('Platform flows in the app', () => {
     await expect(page.locator('.wiki-panel')).toBeVisible();
   });
 
-  test('LA-PLT-UC07-FL-T LA-PLT-UC32-FL-T LA-PLT-UC32-R01-T01 LA-PLT-UC33-FL-T LA-PLT-UC33-R01-T01 LA-PLT-UC34-FL-T LA-PLT-UC34-R01-T01 LA-PLT-UC35-FL-T LA-PLT-UC35-R01-T01 LA-PLT-UC36-FL-T LA-PLT-UC36-R01-T01 LA-PLT-UC37-FL-T LA-PLT-UC37-R01-T01 LA-PLT-UC38-FL-T LA-PLT-UC38-R01-T01 set how Lathe looks: g t, Escape, the palette, Appearance, duplicate, change, reset, delete, export, import', async ({ page, browser }) => {
+  test('LA-WBN-UC07-FL-T LA-PAT-PAGE-STEPS-R01-T11 LA-WBN-UC32-FL-T LA-WBN-UC32-R01-T01 LA-WBN-UC33-FL-T LA-WBN-UC33-R01-T01 LA-WBN-UC34-FL-T LA-WBN-UC34-R01-T01 LA-WBN-UC35-FL-T LA-WBN-UC35-R01-T01 LA-WBN-UC36-FL-T LA-WBN-UC36-R01-T01 LA-WBN-UC37-FL-T LA-WBN-UC37-R01-T01 LA-WBN-UC38-FL-T LA-WBN-UC38-R01-T01 set how Lathe looks: g t, Escape, the palette, Appearance, duplicate, change, reset, delete, export, import', async ({ page, browser }) => {
     await openPage(page, RECORD);
     const html = page.locator('html');
     const before = await html.getAttribute('data-theme');
@@ -302,11 +302,11 @@ test.describe('Platform flows in the app', () => {
       await expect(page.getByRole('banner')).toBeVisible();
       // Search from the top bar, and open a use case.
       await page.getByRole('banner').getByRole('button', { name: 'Quick find' }).tap();
-      await page.locator('.quick-open input').fill('LA-PLT-UC07');
-      const hit = page.locator('.quick-open .palette-list li').filter({ hasText: /LA-PLT-UC07(?![-\d])/ }).first();
+      await page.locator('.quick-open input').fill('LA-WBN-UC07');
+      const hit = page.locator('.quick-open .palette-list li').filter({ hasText: /LA-WBN-UC07(?![-\d])/ }).first();
       await hit.waitFor();
       await hit.tap();
-      await page.waitForURL((u) => u.pathname === '/LA-PLT-UC07');
+      await page.waitForURL((u) => u.pathname === '/LA-WBN-UC07');
       // The stage fills the screen under the bars; the wiki card opens as a bottom sheet.
       const stage = (await page.locator('.focus-stage').boundingBox())!;
       expect(stage.width).toBeGreaterThan(360);
@@ -353,7 +353,7 @@ test.describe('Platform flows in the app', () => {
       await page.goBack();
       await page.waitForURL((u) => u.pathname === `/${node!.id}`);
       await page.goBack();
-      await page.waitForURL((u) => u.pathname === '/LA-PLT-UC07');
+      await page.waitForURL((u) => u.pathname === '/LA-WBN-UC07');
       // A tablet in landscape keeps the floating panels, with targets sized for a finger.
       await page.setViewportSize({ width: 1180, height: 820 });
       await expect(page.locator('nav#nav')).toBeVisible();

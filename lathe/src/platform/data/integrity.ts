@@ -120,7 +120,7 @@ const MATERIALIZED_VIEWS = ['record_parent', 'link', 'record_text', 'record_comp
  * The store's views over every kind or relation (record_parent, link, record_text, and record_complexity over
  * record_parent), each made a table of the same name and rows once a data database's rows are in: a data database never
  * changes after its load, so each is worked out once rather than by every integrity query and check that reads it, and
- * DuckDB plans a query over one table rather than a union of every kind's (LA-PLT-UC01-R03). In dependency order, so
+ * DuckDB plans a query over one table rather than a union of every kind's (LA-WBN-UC01-R03). In dependency order, so
  * record_complexity is made from the record_parent table.
  */
 export const materializeViewsSql = (): string =>

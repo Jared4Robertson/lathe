@@ -1,4 +1,4 @@
-// App server (LA-PLT-A7): what each window loads Lathe from, by folder, while the shell runs (servers.ts starts
+// App server (LA-WBN-A7): what each window loads Lathe from, by folder, while the shell runs (servers.ts starts
 // them), the stops in progress, closed windows' too, which quitting waits for, and the port each folder's server last
 // listened on, kept across launches: the page's origin is http://127.0.0.1:<port>, and the browser keeps a page's local
 // storage (the person's theme, key bindings, panels, scroll to zoom) by origin, so the same port keeps them.

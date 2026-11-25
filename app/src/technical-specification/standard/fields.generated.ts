@@ -6,7 +6,8 @@ export const STANDARD_FIELDS = {
   '/api/standard/add-standard': {
     id: { kind: 'column', table: 'standard', column: 'id', required: true, clearable: false },
     title: { kind: 'column', table: 'standard', column: 'title', required: true, clearable: false },
-    product_id: { kind: 'column', table: 'standard', column: 'product_id', required: true, clearable: false },
+    product_id: { kind: 'column', table: 'standard', column: 'product_id', required: false, clearable: false },
+    domain_id: { kind: 'column', table: 'standard', column: 'domain_id', required: false, clearable: false },
     type: { kind: 'column', table: 'standard', column: 'type', required: true, clearable: false },
     description: { kind: 'column', table: 'standard', column: 'description', required: true, clearable: false },
   },

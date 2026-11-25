@@ -1,8 +1,8 @@
 import type { DataChange } from '../../lathe/src/server/events';
 
 // Calls back when the specs change on disk or by a write: through Vite's hot-reload channel in development, or
-// through the server-sent events of `lathe serve` otherwise (GET /api/events, LA-PLT-EP02-CL). Each change names the
-// tables and read models it changed (Data files changed, LA-PLT-EV06); null is a change to everything. The channel
+// through the server-sent events of `lathe serve` otherwise (GET /api/events, LA-WBN-EP02-CL). Each change names the
+// tables and read models it changed (Data files changed, LA-PRD-EV06); null is a change to everything. The channel
 // greets each page with an empty change when it opens (again after a reconnect, when anything may have changed).
 export type LatheEvent = 'spec:changed';
 

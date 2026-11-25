@@ -1,4 +1,4 @@
-// The App server's rule (server-not-on-5199, LA-PLT-INV06): a server the shell starts never listens on 5199, the
+// The App server's rule (server-not-on-5199, LA-WBN-INV06): a server the shell starts never listens on 5199, the
 // owner's dev server's port, which the shell only shares.
 import { SHARED_PORT } from '../devSource.ts';
 import { holdTo, type RuleProblem } from '../rules.ts';

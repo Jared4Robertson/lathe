@@ -91,7 +91,7 @@ function summaryOf(index: RecordIndex, page: Standard): { lead?: string; facts: 
   const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   switch (kind) {
     case 'standard':
-      return { lead: page.standard.description, facts: [{ label: 'Product', value: <RecordLink index={index} id={page.standard.product_id} /> }, { label: 'Holds', value: count(page.rules.length, 'rule', 'rules') }] };
+      return { lead: page.standard.description, facts: [page.standard.domain_id ? { label: 'Domain', value: <RecordLink index={index} id={page.standard.domain_id} /> } : { label: 'Product', value: <RecordLink index={index} id={page.standard.product_id!} /> }, { label: 'Holds', value: count(page.rules.length, 'rule', 'rules') }] };
     case 'standard_rule': {
       const r = ruleOf(page, id);
       return { lead: r.rule.statement, facts: [{ label: 'Standard', value: <RecordLink index={index} id={page.standard.id} /> }, { label: 'Met by', value: count(r.metBy.length, 'record', 'records') }, { label: 'Tests', value: r.tests.length }] };

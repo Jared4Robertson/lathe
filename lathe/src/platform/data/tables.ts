@@ -829,6 +829,48 @@ export interface GeneratesRow {
   target_id: string;
 }
 
+/** A promise a platform domain makes to every other domain of its product, such as every change being refused with every reason it breaks: what the other domains rely on and could not run without, and what would work unchanged in another product. A platform domain has no goals of its own, so it is described by its guarantees rather than by use cases and aggregates. The building blocks that keep it are named with kept_by, and its guarantee tests prove it. */
+export interface GuaranteeRow {
+  /** The guarantee's ID: its domain's ID and GU<nn>, such as TL-PLAT-GU01. */
+  id: string;
+  /** The promise in a few words, such as Every change is checked whole. */
+  title: string;
+  /** The platform domain that makes it. */
+  domain_id: string;
+  /** What every other domain can rely on, stated with MUST, MUST NOT, SHOULD or MAY. */
+  statement: string;
+}
+
+/** Proves its guarantee: from another domain's side, what it can rely on holds, such as a change that breaks a rule being refused with every reason and no data file changed. */
+export interface GuaranteeTestRow {
+  /** The test's ID: its guarantee's ID and T<nn>, such as TL-PLAT-GU01-T01. */
+  id: string;
+  /** What the test shows, in a sentence. */
+  title: string;
+  /** The guarantee it proves. */
+  guarantee_id: string;
+  /** How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. */
+  level: "unit" | "integration" | "service" | "system" | "browser";
+  /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
+  state: "automated" | "manual" | "not automated yet";
+  /** The file that runs it, from the product root; an automated test must name one. */
+  file?: string;
+  /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
+  manual_reason?: string;
+  /** How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). */
+  size?: "volume" | "worst case";
+  /** Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. */
+  smoke?: boolean;
+  /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
+  external?: boolean;
+  /** What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from). */
+  when: string;
+  /** What the test expects. */
+  then: string;
+  /** Longer notes on the test, such as when to run it. */
+  notes?: string;
+}
+
 /** The entity holds any number of the other entity, as parts of it (one to many). */
 export interface HasManyRow {
   source_id: string;
@@ -971,6 +1013,12 @@ export interface JourneyTestRow {
   expected_result: string;
   /** Longer notes on the test, such as when to run it. */
   notes?: string;
+}
+
+/** The guarantee is kept by the building block: a technical record or a data store whose code or setup makes the promise hold for every other domain, such as the runner every command goes through. A guarantee is built through the building blocks that keep it, and a building block of a platform domain keeps at least one of its guarantees. A record of a product's own technical kind, such as a shared module, keeps a guarantee the same way, with no declaration; another of the product's own kinds, once the product adds the pair with a product_relation named kept_by. */
+export interface KeptByRow {
+  source_id: string;
+  target_id: string;
 }
 
 /** The business outcome is measured by the test or record: a test of any kind, or a record of a product's own kind (a report, a script, a check row) once the product adds that pair with a product_relation named measured_by. An outcome may be measured by several, and one test or record measure several outcomes. */
@@ -1393,12 +1441,14 @@ export interface SpecificationTestRow {
 
 /** A library of rules that holds across the product, such as exact money, a latency budget, logging, error handling or naming. Its type says whether its rules are essential (a quality) or accidental (engineering). What follows one of its rules meets it. A standard is the rules that code follows, not code, so it fills no slot: an engineering standard is accounted for through the records that meet its rules. */
 export interface StandardRow {
-  /** The standard's ID, such as TL-STD-CODE. */
+  /** The standard's ID: its product's ID, STD and its name, such as TL-STD-CODE, under its product or a platform domain alike. */
   id: string;
   /** The standard's name. */
   title: string;
-  /** The product it belongs to. */
-  product_id: string;
+  /** The product it sits under, as its own; exactly one of product and domain is given. */
+  product_id?: string;
+  /** The platform domain that holds it, beside the guarantees its rules help keep: a standard still holds across the whole product wherever it sits; exactly one of product and domain is given. */
+  domain_id?: string;
   /** quality: what the product's people need of it whatever it is built with, such as exact money, auditability or a latency budget (essential); engineering: how it is built, such as logging, naming or how code is laid out (accidental). */
   type: "quality" | "engineering";
   /** What the standard covers, in a paragraph. */
@@ -1736,6 +1786,8 @@ export interface TableRows {
   fulfills: FulfillsRow;
   tooling: ToolingRow;
   generates: GeneratesRow;
+  guarantee: GuaranteeRow;
+  guarantee_test: GuaranteeTestRow;
   has_many: HasManyRow;
   has_one: HasOneRow;
   hears: HearsRow;
@@ -1746,6 +1798,7 @@ export interface TableRows {
   invariant_test: InvariantTestRow;
   invokes: InvokesRow;
   journey_test: JourneyTestRow;
+  kept_by: KeptByRow;
   measured_by: MeasuredByRow;
   meets: MeetsRow;
   offers: OffersRow;

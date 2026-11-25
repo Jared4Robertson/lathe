@@ -15,7 +15,7 @@ import { VALUE_OBJECT_FIELDS } from './fields.generated';
 import { useNextValueObjectId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
-import { kindWord } from '../../platform/meta-model/reads';
+import { kindWord } from '../../product/meta-model/reads';
 
 // The Value object editor (LA-MOD-A9): the actions on a record of a value object, each sending one of the aggregate's
 // own commands, POST /api/value-object/<command>, and nothing else. Edit sends its kind's Change with only what changed

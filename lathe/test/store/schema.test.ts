@@ -84,7 +84,7 @@ describe('the schema description', () => {
   it('LA-STD-ENGINEERING-R03-T05 makes each obligation kind a member of the obligation supertype', () => {
     const obligations = Object.values(schema.kinds).filter((k) => k.obligation).map((k) => k.name).sort();
     expect(obligations).toEqual(schema.supertypes.obligation);
-    expect(obligations).toEqual(['api_requirement', 'constraint', 'domain_service', 'invariant', 'pattern_rule', 'policy', 'specification', 'standard_rule', 'storage_requirement', 'uc_requirement', 'view_requirement']);
+    expect(obligations).toEqual(['api_requirement', 'constraint', 'domain_service', 'guarantee', 'invariant', 'pattern_rule', 'policy', 'specification', 'standard_rule', 'storage_requirement', 'uc_requirement', 'view_requirement']);
   });
 
   it("LA-STD-ENGINEERING-R03-T03 fits each relation's pairs to its link table's ends", () => {

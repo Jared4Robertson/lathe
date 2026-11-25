@@ -142,7 +142,7 @@ describe('lathe check', () => {
 });
 
 describe('lathe init', () => {
-  it('LA-PLT-UC02-R01-T01 Init writes a config and a first product record through the store, and refuses bad or repeated input', () => {
+  it('LA-PRD-UC02-R01-T01 Init writes a config and a first product record through the store, and refuses bad or repeated input', () => {
     const root = writeData({});
     rmSync(path.join(root, 'lathe.config.json'));
     const first = lathe('init', '--root', root, '--name', 'Tool Library', '--prefix', 'TL');

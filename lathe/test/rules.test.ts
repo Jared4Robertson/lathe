@@ -199,12 +199,12 @@ describe('LA-MOD-INV186-T a second domain at a position of its product is refuse
     await runCommand(on, ADD_DOMAIN, { ...second, position: 2 });
     expect(await refused(on, CHANGE_DOMAIN, { id: 'TL-CAT', position: 1 }, 'domain')).toEqual([{ rule: 'domain-position', message }]);
     await runCommand(on, CHANGE_DOMAIN, { id: 'TL-CAT', position: 3 });
-    expect(on.rows('domain').map((d) => `${d.id} ${d.position}`).sort()).toEqual(['TL-CAT 3', 'TL-LEND 1']);
+    expect(on.rows('domain').map((d) => `${d.id} ${d.position}`).sort()).toEqual(['TL-CAT 3', 'TL-LEND 1', 'TL-PLAT 9']);
   });
 
   it('is refused on load by the unique key under it; another product may use the position', async () => {
     const problems = await refusals(adding(everyKind(), { domain: [second] }));
-    expect(problems).toEqual([expect.objectContaining({ rule: 'unique', table: 'domain', key: 'TL-CAT', file: 'data/domain.jsonl', line: 2 })]);
+    expect(problems).toEqual([expect.objectContaining({ rule: 'unique', table: 'domain', key: 'TL-CAT', file: 'data/domain.jsonl', line: 3 })]);
     expect(await refusals(adding(everyKind(), { product: [{ id: 'XX', title: 'Other', description: 'Another product.' }], domain: [{ ...second, id: 'XX-CAT', product_id: 'XX' }] }))).toEqual([]);
   });
 });

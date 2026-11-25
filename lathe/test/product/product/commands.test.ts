@@ -251,8 +251,8 @@ describe('LA-MOD-UC02-R10-T01 a product page lists its domains by position, not 
     const accounts = { id: 'TL-ACCT', title: 'Accounts', product_id: 'TL', position: 2, subdomain_type: 'generic', description: 'Who may borrow.' };
     const store = await storeAt(writeData(adding(everyKind(), { domain: [accounts] })));
     const page = () => (runQuery(store, GET_PRODUCT, { id: 'TL' }) as ReturnType<typeof GET_PRODUCT.run>).domains.map((d) => d.id);
-    expect(page()).toEqual(['TL-LEND', 'TL-ACCT']);
+    expect(page()).toEqual(['TL-LEND', 'TL-ACCT', 'TL-PLAT']);
     await runCommand(store, CHANGE_DOMAIN, { id: 'TL-LEND', position: 3 });
-    expect(page()).toEqual(['TL-ACCT', 'TL-LEND']);
+    expect(page()).toEqual(['TL-ACCT', 'TL-LEND', 'TL-PLAT']);
   });
 });

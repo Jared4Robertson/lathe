@@ -14,7 +14,7 @@ import { VIEW_FIELDS } from './fields.generated';
 import { useNextViewId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
-import { kindWord, addedUnder } from '../../platform/meta-model/reads';
+import { kindWord, addedUnder } from '../../product/meta-model/reads';
 
 // The View editor (LA-IXD-A12): the actions on a record of a view, each sending one of the aggregate's own commands,
 // POST /api/view/<command>, and nothing else. Edit sends its kind's Change with only what changed; Add opens an empty

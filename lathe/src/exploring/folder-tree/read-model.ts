@@ -4,7 +4,11 @@
 // records that start a branch of that stage: those whose parent is the domain or product itself, is of another stage,
 // or is none (a kind with no owner). What sits under a record in the same stage folds under it (an aggregate's
 // entities, commands and events); what sits under it in a later stage is listed in that stage's folder. So every record
-// has one place. A stage with only one folder shows that folder's records directly (LA-PAT-APP-UX-R15). Within a kind,
+// has one place. A platform domain, which has no goals of its own, is read in its own four sections in place of the
+// stages (PLATFORM_SECTIONS): its Guarantees, its Building blocks (its technical records and data stores), its
+// Standards and its Quality suites (its tests); it shows no Discovery, Domain model, Use cases or Interface design, and
+// a business domain shows no empty Guarantees or Standards folder, which only a platform domain holds. A stage or section
+// with only one folder shows that folder's records directly (LA-PAT-APP-UX-R15). Within a kind,
 // records with a position come in its order (flow steps path by path, the main path first), then by ID; use cases by
 // their group (their result's aggregate or read model: aggregates by ID, then read models by ID), each entry naming
 // its group, then by ID; terms bottom-up, each after the terms it builds on. The projection is the only code that reads the source rows
@@ -41,11 +45,35 @@ export interface Folder {
   count: number;
 }
 
-/** One stage of a domain or of Shared. */
+/** The sections a platform domain is read in, in order, in place of the stages. */
+export type PlatformSection = 'guarantees' | 'building-blocks' | 'standards' | 'quality-suites';
+
+/**
+ * A platform domain's sections: each its name (its key's last part), its label and what it holds, the stage whose
+ * colors it takes, and the kinds of that stage it lists.
+ */
+export const PLATFORM_SECTIONS: readonly { section: PlatformSection; label: string; description: string; stage: Stage; holds: (kind: string) => boolean }[] = [
+  { section: 'guarantees', label: 'Guarantees', stage: 'domain-model', holds: (k) => k === 'guarantee',
+    description: 'The promises the platform domain makes to every other domain: what they rely on and could not run without, each proved by its guarantee tests and kept by its building blocks.' },
+  { section: 'building-blocks', label: 'Building blocks', stage: 'technical-specification', holds: (k) => k !== 'standard' && k !== 'standard_rule',
+    description: 'The technical records and data stores of the platform domain: the code and setup its guarantees rest on, each keeping at least one of them.' },
+  { section: 'standards', label: 'Standards', stage: 'technical-specification', holds: (k) => k === 'standard',
+    description: 'The standards the platform domain holds, beside the guarantees their rules help keep: each still holds across the whole product.' },
+  { section: 'quality-suites', label: 'Quality suites', stage: 'test-plan', holds: () => true,
+    description: 'The tests of the platform domain: its guarantee tests, with the test data sets they and the product\'s stability, accessibility and performance suites start from.' },
+];
+
+/** The kinds only a platform domain holds, which a business domain shows no empty folder of. */
+const PLATFORM_KINDS: ReadonlySet<string> = new Set(['guarantee', 'standard']);
+
+/** One stage of a domain or of Shared, or one section of a platform domain. */
 export interface StageFolders {
-  /** "DM-SHOP/domain-model". */
+  /** "DM-SHOP/domain-model", or a platform domain's section: "DM-PLAT/building-blocks". */
   key: string;
+  /** The stage, or the stage whose colors a platform domain's section takes. */
   stage: Stage;
+  /** The platform domain's section it is; null for a stage. */
+  section: PlatformSection | null;
   /** One folder per kind of the stage that can start a branch here, in kind order; empty ones too. */
   folders: Folder[];
   /** Whether it shows its one folder's records directly, with no folder level between. */
@@ -141,15 +169,21 @@ export function folderTreeTableFrom(view: ReadView): FolderTreeTable {
   };
   const ownerFolders = (owner: Placed, owned: Placed[]): OwnerFolders => {
     const roots = groupBy(owned.filter(startsBranch), (r) => r.kind);
-    const stages = [...schema.stages].sort((a, b) => a.position - b.position).map((s): StageFolders => {
-      const key = `${owner.id}/${s.name}`;
+    const platform = owner.kind === 'domain' && owner.row.platform === true;
+    const business = owner.kind === 'domain' && !platform;
+    const sectionOf = (key: string, stage: Stage, section: PlatformSection | null, holds: (kind: string) => boolean): StageFolders => {
       const folders = kinds
-        .filter((k) => schema.kinds[k].stage === s.name && !CONTAINERS.has(k))
+        .filter((k) => schema.kinds[k].stage === stage && !CONTAINERS.has(k) && holds(k))
         .map((k) => folderOf(`${key}/${k}`, k, groupOf(roots, k)))
-        // An empty folder only for a kind that can start a branch here.
-        .filter((f) => f.count > 0 || canStartIn(f.kind, owner.kind));
-      return { key, stage: s.name, folders, direct: folders.length === 1, count: folders.reduce((n, f) => n + f.count, 0) };
-    }).filter((s) => s.folders.length > 0);
+        // An empty folder only for a kind that can start a branch here, and of the kinds only a platform domain holds,
+        // only in a platform domain.
+        .filter((f) => f.count > 0 || (canStartIn(f.kind, owner.kind) && !(business && PLATFORM_KINDS.has(f.kind))));
+      return { key, stage, section, folders, direct: folders.length === 1, count: folders.reduce((n, f) => n + f.count, 0) };
+    };
+    const stages = (platform
+      ? PLATFORM_SECTIONS.map((p) => sectionOf(`${owner.id}/${p.section}`, p.stage, p.section, p.holds))
+      : [...schema.stages].sort((a, b) => a.position - b.position).map((s) => sectionOf(`${owner.id}/${s.name}`, s.name, null, () => true))
+    ).filter((s) => s.folders.length > 0);
     const looseKinds = kinds.filter((k) => stageOf(k) === null && roots.has(k));
     return { owner: owner.id, stages, loose: looseKinds.map((k) => folderOf(`${owner.id}/${k}`, k, groupOf(roots, k))) };
   };

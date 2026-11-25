@@ -55,8 +55,9 @@ describe('domains', () => {
     expect(column.description).toContain('Left out otherwise');
     expect(good.records.find((r) => r.id === 'EX-LEND')!.fields.platform).toBeUndefined();
     const domain = everyKind().domain[0];
-    expect(await refusals(withTable(everyKind(), 'domain', [{ ...domain, platform: true }]))).toEqual([]);
-    expect(await refusals(withTable(everyKind(), 'domain', [{ ...domain, platform: false }]))).toEqual([
+    const others = everyKind().domain.slice(1);
+    expect(await refusals(withTable(everyKind(), 'domain', [{ ...domain, platform: true }, ...others]))).toEqual([]);
+    expect(await refusals(withTable(everyKind(), 'domain', [{ ...domain, platform: false }, ...others]))).toEqual([
       expect.objectContaining({ file: 'data/domain.jsonl', line: 1 }),
     ]);
   });

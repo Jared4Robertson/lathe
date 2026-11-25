@@ -2,7 +2,7 @@
 // problem, and changes one thing to break the rule. LA-PAT-AGGREGATE-TESTS-R04: each of the domain's check rows is tested here.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Workspace } from '../../src/index.ts';
-import { adding, complete, gaps, loadData, ofCheck, records, removeData, without } from '../helpers.ts';
+import { adding, complete, gaps, loadData, ofCheck, records, removeData, without, type Data } from '../helpers.ts';
 
 afterAll(removeData);
 
@@ -134,5 +134,94 @@ check('specification-title-article', () => {
     const found = ofCheck(await loadData(data), 'specification-title-article');
     expect(records(found)).toEqual(['EX-LEND-SP02', 'EX-LEND-SP03']);
     expect(found[0].message).toBe('Specification EX-LEND-SP02 is titled "The tool is free", which starts with "The"; name the condition with no article, such as "Tool is available".');
+  });
+});
+
+/**
+ * The complete product with a platform domain, EX-PLAT, described by one guarantee: proved by its test and kept by
+ * its building block, a tooling record that writes one of the lending domain's repositories, so EX-LEND relies on it.
+ */
+const PLATFORM: Data = {
+  domain: [{ id: 'EX-PLAT', title: 'Platform', product_id: 'EX', position: 2, subdomain_type: 'generic', platform: true, description: 'What every domain stands on: the build and the store.' }],
+  tooling: [{ id: 'EX-PLAT-TOOL01', title: 'build', domain_id: 'EX-PLAT', file: 'scripts/build.ts' }],
+  provided_by: [{ source_id: 'EX-PLAT-TOOL01', target_id: 'EX-INT02' }],
+  generates: [{ source_id: 'EX-PLAT-TOOL01', target_id: 'EX-LEND-REPO01' }],
+  guarantee: [{ id: 'EX-PLAT-GU01', title: 'Every domain is built the same way', domain_id: 'EX-PLAT', statement: 'The code every domain keeps its records with MUST be written by the build, the same way for each.' }],
+  kept_by: [{ source_id: 'EX-PLAT-GU01', target_id: 'EX-PLAT-TOOL01' }],
+  guarantee_test: [{ id: 'EX-PLAT-GU01-T01', title: 'What the build writes keeps a loan', guarantee_id: 'EX-PLAT-GU01', level: 'integration', state: 'automated', file: 'test/build.test.ts', when: 'Builds the repositories and saves a loan.', then: 'Expects the loan read back.' }],
+};
+const withPlatform = (more: Data = {}) => adding(adding(complete(), PLATFORM), more);
+const MINE = ['platform-holds-business-record', 'guarantee-without-test', 'guarantee-without-building-block', 'standard-in-business-domain'];
+const PLATFORM_GAPS = ['platform-without-guarantee', 'guarantee-relied-on-by-nothing', 'building-block-keeps-no-guarantee', 'domain-without-aggregate'];
+const platformGaps = (ws: Workspace) => gaps(ws).filter((g) => PLATFORM_GAPS.some((name) => g.startsWith(`${name} `)));
+
+check('platform-holds-business-record', () => {
+  it('LA-STD-MODELING-R21-T01 a use case, aggregate or read model in a platform domain is an error naming the domain; a platform domain with only guarantees and building blocks has no problem and no gap', async () => {
+    const ws = await loadData(withPlatform());
+    expect(ws.problems).toEqual([]);
+    expect(platformGaps(ws)).toEqual([]);
+    const held = await loadData(withPlatform({
+      aggregate: [{ id: 'EX-PLAT-A1', title: 'Window', domain_id: 'EX-PLAT', identity: 'Window ID', description: 'A window of the app.' }],
+      read_model: [{ id: 'EX-PLAT-RM01', title: 'Open windows', domain_id: 'EX-PLAT', description: 'The windows open now.' }],
+    }));
+    expect(ofCheck(held, 'platform-holds-business-record')).toEqual([
+      {
+        severity: 'error', check: 'platform-holds-business-record', record: 'EX-PLAT-A1',
+        message: 'Platform domain EX-PLAT holds aggregate EX-PLAT-A1: a platform domain has no goals of its own, so it is described by its guarantees. Move it to the business domain whose goal it serves, or write the promise it keeps as a guarantee and remove it.',
+      },
+      {
+        severity: 'error', check: 'platform-holds-business-record', record: 'EX-PLAT-RM01',
+        message: 'Platform domain EX-PLAT holds read model EX-PLAT-RM01: a platform domain has no goals of its own, so it is described by its guarantees. Move it to the business domain whose goal it serves, or write the promise it keeps as a guarantee and remove it.',
+      },
+    ]);
+  });
+
+  it('LA-STD-MODELING-R21-T02 a platform domain with no guarantee is a gap, and needs no aggregate; a business domain with no aggregate is still a gap', async () => {
+    const ws = await loadData(adding(complete(), {
+      domain: [
+        { id: 'EX-PLAT', title: 'Platform', product_id: 'EX', position: 2, subdomain_type: 'generic', platform: true, description: 'What every domain stands on.' },
+        { id: 'EX-SHOP', title: 'Shop', product_id: 'EX', position: 3, subdomain_type: 'supporting', description: 'Selling spare parts.' },
+      ],
+    }));
+    expect(platformGaps(ws)).toEqual(['domain-without-aggregate EX-SHOP', 'platform-without-guarantee EX-PLAT']);
+  });
+});
+
+check('guarantee-without-test', () => {
+  it('LA-STD-MODELING-R22-T01 a guarantee with no guarantee test is an error, and is not proved', async () => {
+    const ws = await loadData(without(withPlatform(), 'guarantee_test', () => true));
+    expect(ofCheck(ws, 'guarantee-without-test')).toEqual([
+      { severity: 'error', check: 'guarantee-without-test', record: 'EX-PLAT-GU01', message: "Guarantee EX-PLAT-GU01 has no guarantee test: add the test that shows, from another domain's side, that the promise holds." },
+    ]);
+    expect(gaps(ws)).toContain('proved EX-PLAT-GU01');
+  });
+});
+
+check('guarantee-without-building-block', () => {
+  it('LA-STD-MODELING-R22-T02 a guarantee no building block keeps is an error, and is not built; the building block it lost keeps no guarantee, a gap', async () => {
+    const ws = await loadData(without(withPlatform(), 'kept_by', () => true));
+    expect(ofCheck(ws, 'guarantee-without-building-block')).toEqual([
+      { severity: 'error', check: 'guarantee-without-building-block', record: 'EX-PLAT-GU01', message: 'Guarantee EX-PLAT-GU01 is kept by no building block: name the technical records or data stores that make the promise hold (kept_by).' },
+    ]);
+    expect(gaps(ws)).toContain('built EX-PLAT-GU01');
+    expect(platformGaps(ws)).toEqual(['building-block-keeps-no-guarantee EX-PLAT-TOOL01', 'guarantee-relied-on-by-nothing EX-PLAT-GU01']);
+  });
+
+  it('LA-STD-MODELING-R22-T03 a guarantee none of whose building blocks another domain links to is a gap; a building block of the platform domain that keeps none of its guarantees is a gap', async () => {
+    const ws = await loadData(adding(without(withPlatform(), 'generates', (l) => l.source_id === 'EX-PLAT-TOOL01'), {
+      data_store: [{ id: 'EX-PLAT-STORE01', title: 'cacheDir', domain_id: 'EX-PLAT', kind: 'file folder', description: 'A folder of build caches.' }],
+    }));
+    expect(platformGaps(ws)).toEqual(['building-block-keeps-no-guarantee EX-PLAT-STORE01', 'guarantee-relied-on-by-nothing EX-PLAT-GU01']);
+  });
+});
+
+check('standard-in-business-domain', () => {
+  it('LA-STD-MODELING-R23-T01 a standard under a business domain is an error; one under its product or a platform domain is not', async () => {
+    const standard = (id: string, at: Record<string, string>) => ({ id, title: id.slice(7), ...at, type: 'engineering', description: 'How the build is kept.' });
+    const ws = await loadData(withPlatform({ standard: [standard('EX-STD-BUILD', { domain_id: 'EX-PLAT' }), standard('EX-STD-LEND', { domain_id: 'EX-LEND' })] }));
+    expect(ofCheck(ws, 'standard-in-business-domain')).toEqual([
+      { severity: 'error', check: 'standard-in-business-domain', record: 'EX-STD-LEND', message: 'Standard EX-STD-LEND sits under EX-LEND, which is not marked platform: a standard sits under its product or a platform domain.' },
+    ]);
+    expect(MINE.flatMap((name) => ofCheck(ws, name)).map((p) => p.record)).toEqual(['EX-STD-LEND']);
   });
 });

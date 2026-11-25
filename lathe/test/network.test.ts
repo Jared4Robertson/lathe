@@ -1,5 +1,5 @@
 // A server opened to the local network: `lathe serve --network` listens on every interface and prints the addresses
-// other devices open (LA-PLT-UC23-R04), and only this machine writes while other devices read (LA-PLT-UC23-R05). The
+// other devices open (LA-WBN-UC23-R04), and only this machine writes while other devices read (LA-WBN-UC23-R05). The
 // guard is driven with requests whose socket names the address they come from, as a server on the network sees them.
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
@@ -28,7 +28,7 @@ async function started(host: string): Promise<{ running: LatheServer; port: numb
   return { running, port, address };
 }
 
-describe('LA-PLT-UC23-R04-T01 lathe serve listens on this machine alone unless asked for the network, and lists its addresses', () => {
+describe('LA-WBN-UC23-R04-T01 lathe serve listens on this machine alone unless asked for the network, and lists its addresses', () => {
   const info = (address: string, family: 'IPv4' | 'IPv6', internal: boolean) => ({ address, family, internal, netmask: '', mac: '', cidr: null }) as NetworkInterfaceInfo;
 
   it('lists one address per non-internal IPv4 interface, in order, and none for loopback, IPv6 or a machine with no network', () => {
@@ -83,7 +83,7 @@ function response() {
 
 const ROUTE = '/api/use-case/add-use-case';
 
-describe('LA-PLT-UC23-R05-T01 only this machine writes; another device is refused and marked read-only', () => {
+describe('LA-PLT-GU04-T01 LA-WBN-UC23-R05-T01 only this machine writes; another device is refused and marked read-only', () => {
   it('takes the loopback addresses as this machine, and nothing else', () => {
     for (const address of ['127.0.0.1', '::1', '::ffff:127.0.0.1']) expect(fromThisMachine(address)).toBe(true);
     for (const address of ['192.168.1.20', '10.0.0.5', '::ffff:192.168.1.20', 'fe80::1', '127.0.0.2', undefined]) expect(fromThisMachine(address)).toBe(false);

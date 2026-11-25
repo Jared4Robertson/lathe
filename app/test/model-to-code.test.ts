@@ -1,4 +1,4 @@
-// Exploring's and Platform's app aggregates match their records one to one: each is reached only through its
+// Exploring's and Workbench's app aggregates match their records one to one: each is reached only through its
 // repository (its keys named only in its model's storage setting), each slice has one repository with a load and a
 // save, a command imports no other slice, each code-bound record names an identifier declared in its file, and each
 // command and policy function has its record.
@@ -10,8 +10,8 @@ import { describe, expect, it } from 'vitest';
 const APP = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const REPO = path.resolve(APP, '..');
 const SRC = path.join(APP, 'src');
-/** The folders that hold Exploring's and Platform's app slices, one folder per aggregate or read. */
-const SLICE_ROOTS = [path.join(SRC, 'exploring'), path.join(SRC, 'platform')];
+/** The folders that hold Exploring's and Workbench's app slices, one folder per aggregate or read. */
+const SLICE_ROOTS = [path.join(SRC, 'exploring'), path.join(SRC, 'workbench')];
 
 const sources = (dir: string): string[] =>
   readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? sources(path.join(dir, e.name)) : /\.tsx?$/.test(e.name) ? [path.join(dir, e.name)] : []));
@@ -35,7 +35,7 @@ const keysOf = (models: string[]): Map<string, string[]> => {
 };
 const CODE_KINDS = ['repository', 'command_handler', 'event_handler', 'query_handler', 'projection', 'reader', 'data_model', 'rule', 'adapter', 'value_type'];
 
-describe('LA-STD-PRINCIPLES-R02-T03 Each app aggregate of Exploring and Platform is reached only through its repository, and its handlers, policies and rules are the records\' one to one', () => {
+describe('LA-STD-PRINCIPLES-R02-T03 Each app aggregate of Exploring and Workbench is reached only through its repository, and its handlers, policies and rules are the records\' one to one', () => {
   const all = sources(SRC);
   const slices = SLICE_ROOTS.flatMap((root) => readdirSync(root, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => path.join(root, e.name)));
   const sliceOf = (file: string) => slices.find((s) => file.startsWith(s + path.sep));

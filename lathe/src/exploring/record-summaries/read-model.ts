@@ -49,7 +49,7 @@ type SummaryRow = RecordSummary[keyof RecordSummary][];
 /**
  * A product's space as its pages name its records. Each record is its values in the order of `columns`, which the
  * answer names once rather than once per record: a large product's space holds tens of thousands of records, and the
- * names would be four in ten of the answer's bytes (LA-PLT-UC03-R05).
+ * names would be four in ten of the answer's bytes (LA-WBN-UC03-R05).
  */
 export interface RecordSummaries {
   product: string;

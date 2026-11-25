@@ -15,7 +15,7 @@ import { INTEGRATION_FIELDS } from './fields.generated';
 import { useNextIntegrationId } from './reads';
 import '../../edit/edit.css';
 import { backToActions } from '../../edit/back-to-actions';
-import { kindWord } from '../../platform/meta-model/reads';
+import { kindWord } from '../../product/meta-model/reads';
 
 // The Integration editor (LA-IXD-A14): the actions on a record of an integration, each sending one of the aggregate's
 // own commands, POST /api/integration/<command>, and nothing else. Edit sends its kind's Change with only what changed;

@@ -433,7 +433,12 @@ export function sparse(): Data {
     domain: [
       { id: 'SP-D', title: 'Lending', product_id: 'SP', position: 1, subdomain_type: 'core', description: 'Lending tools.' },
       { id: 'SP-E', title: 'Empty', product_id: 'SP', position: 2, subdomain_type: 'generic', description: 'Nothing yet.' },
+      // A platform domain with no guarantee, and one whose guarantee no building block keeps, beside a building block that keeps none.
+      { id: 'SP-P', title: 'Plumbing', product_id: 'SP', position: 3, subdomain_type: 'generic', platform: true, description: 'Nothing yet.' },
+      { id: 'SP-Q', title: 'Store', product_id: 'SP', position: 4, subdomain_type: 'generic', platform: true, description: 'Keeping records.' },
     ],
+    guarantee: [{ id: 'SP-Q-GU01', title: 'Every change is saved whole', domain_id: 'SP-Q', statement: 'Every change MUST be saved whole.' }],
+    tooling: [{ id: 'SP-Q-TOOL01', title: 'store.config', domain_id: 'SP-Q', file: 'store.config' }],
     aggregate: [
       { id: 'SP-D-A1', title: 'Loan', domain_id: 'SP-D', identity: 'Loan ID', description: 'One tool lent to one member.' },
       { id: 'SP-D-A2', title: 'Tool', domain_id: 'SP-D', identity: 'Tool ID', description: 'A tool the library holds.' },

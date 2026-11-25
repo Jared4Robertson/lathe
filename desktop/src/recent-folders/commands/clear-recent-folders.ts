@@ -1,4 +1,4 @@
-// Clear the recent folders (LA-PLT-CMD20): File › Open Recent › Clear Menu empties the list.
+// Clear the recent folders (LA-WBN-CMD20): File › Open Recent › Clear Menu empties the list.
 import type { RecentFolderRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 

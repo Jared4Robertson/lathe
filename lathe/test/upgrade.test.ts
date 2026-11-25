@@ -1,4 +1,4 @@
-// `lathe upgrade` (LA-PLT-UC17, upgradeProduct in src/upgrade.ts): converters run in order from the product's schema
+// `lathe upgrade` (LA-PRD-UC17, upgradeProduct in src/upgrade.ts): converters run in order from the product's schema
 // version to the target on the raw rows, the converted data must load under the new schema, and only then is the
 // config's schema raised. What they cannot convert is a to-do; a working tree with changes is refused.
 import { spawnSync } from 'node:child_process';
@@ -40,7 +40,7 @@ function committedProduct(product: Record<string, unknown>): string {
 const productFile = (root: string) => readFileSync(path.join(root, 'data', 'product.jsonl'), 'utf8');
 
 describe('lathe upgrade', () => {
-  it('LA-PLT-UC17-R02-T01 runs the converters in order on the raw rows, checks the data loads, and raises the schema', async () => {
+  it('LA-PRD-UC17-R02-T01 runs the converters in order on the raw rows, checks the data loads, and raises the schema', async () => {
     // "blurb" is a column the current schema does not have: only a converter can move it.
     const root = committedProduct({ title: 'Tool Library', id: 'TL', blurb: 'Lends tools to members.' });
     const ran: string[] = [];
@@ -87,7 +87,7 @@ describe('lathe upgrade', () => {
     await expect(upgradeProduct(root, { converters, target: 2 })).rejects.toThrow('It needs a newer Lathe: update @jaredrob/lathe.');
   });
 
-  it('LA-PLT-UC17-R03-T01 lists what a converter cannot convert, and stops without raising the schema when the data no longer loads', async () => {
+  it('LA-PRD-UC17-R03-T01 lists what a converter cannot convert, and stops without raising the schema when the data no longer loads', async () => {
     const root = committedProduct({ id: 'TL', title: 'Tool Library', description: 'Lends tools to members.', notes: 'Delivered weekly.' });
     const todo: ConverterStep = {
       from: 1, to: 2, name: '1-to-2',
@@ -113,7 +113,7 @@ describe('lathe upgrade', () => {
     expect(git(gap, 'status', '--porcelain')).toBe('');
   });
 
-  it('LA-PLT-UC17-R04-T01 refuses a working tree with changes, or no git', async () => {
+  it('LA-PRD-UC17-R04-T01 refuses a working tree with changes, or no git', async () => {
     const converters: ConverterStep[] = [{ from: 1, to: 2, name: '1-to-2', converter: { files: () => {} } }];
     const root = committedProduct({ id: 'TL', title: 'Tool Library', description: 'Lends tools to members.' });
     writeFileSync(path.join(root, 'notes.md'), 'Unsaved work\n');
@@ -850,6 +850,43 @@ describe('the schema version', () => {
     tables.domain[1].platform = true;
     const upgraded = structuredClone(tables);
     expect(await run9to10(tables)).toEqual({ changes: [], todos: [] });
+    expect(tables).toEqual(upgraded);
+  });
+
+  it('LA-STD-ENGINEERING-R04-T22 10-to-11 changes no row, says the platform domains make no guarantee yet, asks to turn what each holds into guarantees, and does nothing to data already upgraded', async () => {
+    const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 10);
+    const run10to11 = async (data: Record<string, Record<string, unknown>[]>) => {
+      const changes: string[] = [];
+      const todos: string[] = [];
+      await step!.converter.files!(
+        { tables: () => Object.keys(data), read: (table) => data[table] ?? [], write: (table, rows) => void (data[table] = rows) },
+        { changed: (text) => changes.push(text), todo: (text) => todos.push(text) },
+      );
+      return { changes, todos };
+    };
+    const tables: Record<string, Record<string, unknown>[]> = {
+      domain: [
+        { id: 'TL-LEND', title: 'Lending', product_id: 'TL', position: 1, subdomain_type: 'core', description: 'Lending tools.' },
+        { id: 'TL-PLT', title: 'Platform', product_id: 'TL', position: 2, subdomain_type: 'supporting', platform: true, description: 'The shell.' },
+        { id: 'TL-STORE', title: 'Store', product_id: 'TL', position: 3, subdomain_type: 'generic', platform: true, description: 'The data store.' },
+      ],
+      use_case: [{ id: 'TL-PLT-UC01', domain_id: 'TL-PLT' }, { id: 'TL-PLT-UC02', domain_id: 'TL-PLT' }, { id: 'TL-LEND-UC01', domain_id: 'TL-LEND' }],
+      aggregate: [{ id: 'TL-PLT-A1', domain_id: 'TL-PLT' }],
+    };
+    const before = structuredClone(tables);
+    const { changes, todos } = await run10to11(tables);
+    expect(tables).toEqual(before);
+    expect(changes).toEqual(['A platform domain is described by its guarantees, each proved by its guarantee tests and kept by its building blocks: TL-PLT and TL-STORE have none yet.']);
+    expect(todos).toEqual([
+      'TL-PLT is a platform domain and holds 2 use cases and 1 aggregate: write each promise the other domains rely on as a guarantee (`lathe guarantee add-guarantee`) with its guarantee tests and the building blocks that keep it, then remove them.',
+      'Write each promise TL-STORE makes to the other domains as a guarantee (`lathe guarantee add-guarantee`), with its guarantee tests and the building blocks that keep it.',
+    ]);
+    expect(await run10to11({ domain: [tables.domain[0]] })).toEqual({ changes: [], todos: [] });
+
+    // Data already upgraded, a guarantee written, is left as it is.
+    tables.guarantee = [{ id: 'TL-STORE-GU01', domain_id: 'TL-STORE' }];
+    const upgraded = structuredClone(tables);
+    expect(await run10to11(tables)).toEqual({ changes: [], todos: [] });
     expect(tables).toEqual(upgraded);
   });
 });

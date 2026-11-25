@@ -1,6 +1,6 @@
 // The schema cache: the migrated schema databases, built once and kept as DuckDB files, so a process starts by
 // attaching one instead of running the migrations. It holds schemas only (tables, views, the meta-model's rows), never
-// a product's data (LA-PLT-UC01-R04). Beside them, the validated-build stamps: one small file per set of data files
+// a product's data (LA-WBN-UC01-R04). Beside them, the validated-build stamps: one small file per set of data files
 // whose whole build passed, named by a hash of the files' contents and of everything that judges them, so a load of
 // the same files reads their rows without building them again (see validatedKey).
 //

@@ -7,15 +7,15 @@
 //   GET  /api/reference           the workspace's own product's Reference (reference.ts): kinds, tables, relations, folders, checks
 //
 // Every write (each POST) is refused with 403 when it comes from another site's page or from another device: a server
-// opened to the network lets other devices read, and only this machine write (access.ts, LA-PLT-UC23-R05).
+// opened to the network lets other devices read, and only this machine write (access.ts, LA-WBN-UC23-R05).
 //
 // The root is a workspace: its own product, and each other product its lathe.config.json lists under products, each
 // read from and written to its own folder. The store of each product root is opened once and kept (on globalThis, so
 // it outlives a reload of this module in the dev server). When a data file changes, by a command or by anything else
 // (an editor, git, an Agent), the store reads only the changed files' tables again, and the server announces which
-// tables and read models changed (Data files changed, LA-PLT-EV06), so a page reads again only what changed. The check
+// tables and read models changed (Data files changed, LA-PRD-EV06), so a page reads again only what changed. The check
 // rows and coverage run in the background on the data built whole, a burst of changes making one run, once the reads
-// the change sets off have answered, and are announced when they are ready (LA-PLT-UC03-R03, R04).
+// the change sets off have answered, and are announced when they are ready (LA-WBN-UC03-R03, R04).
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { loadConfig, productClash, workspaceProducts, type LatheConfig } from '../config.ts';
 import { buildReference, readWorkspace } from '../index.ts';
@@ -76,7 +76,7 @@ export const CHECKS_DELAY_MS = 150;
 export const CHECKS_MAX_WAIT_MS = 1000;
 
 /**
- * Hears every change to the data of the products the workspace at root shows (Data files changed, LA-PLT-EV06): the
+ * Hears every change to the data of the products the workspace at root shows (Data files changed, LA-PRD-EV06): the
  * tables and read models a reload or a write changed, then the checks' read models once their run is ready. Returns
  * how to stop hearing them.
  */
@@ -323,7 +323,7 @@ const LOOPBACK = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
 
 /**
  * Whether a socket's remote address is this machine. A server opened to the network serves other devices too, and
- * the network has no sign-in, so only this machine writes (LA-PLT-UC23-R05).
+ * the network has no sign-in, so only this machine writes (LA-WBN-UC23-R05).
  */
 export function fromThisMachine(address: string | undefined): boolean {
   return address !== undefined && LOOPBACK.has(address);

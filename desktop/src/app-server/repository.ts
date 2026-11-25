@@ -1,4 +1,4 @@
-// The App server's repository (LA-PLT-REPO05): the running servers and the stops in memory, as a server lives only
+// The App server's repository (LA-WBN-REPO05): the running servers and the stops in memory, as a server lives only
 // while the shell runs, and each folder's port in app-server-ports.json in the shell's user data folder, read on the
 // first load and rewritten when a save changes it. Each load gives a copy of the whole, and each save replaces it.
 import { readJson, writeJson } from '../store.ts';

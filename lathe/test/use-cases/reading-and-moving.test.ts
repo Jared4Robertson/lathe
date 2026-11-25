@@ -289,7 +289,7 @@ describe('LA-TRC-UC21-R52-T01 a fill recorded by hand is listed as debt at its s
   });
 });
 
-describe('LA-PLT-UC01-R18-T01 loadWorkspace on data the store refuses returns no records and a data-refused error per refusal', () => {
+describe('LA-WBN-UC01-R18-T01 loadWorkspace on data the store refuses returns no records and a data-refused error per refusal', () => {
   it('loads nothing from a command under an entity that does not exist', async () => {
     const broken = data();
     broken.command = broken.command.map((c) => ({ ...c, entity_id: 'TL-LEND-EN09' }));

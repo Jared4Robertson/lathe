@@ -1,4 +1,4 @@
-import type { FolderEntry, FolderTree, Folder as TreeFolder, OwnerFolders as TreeOwner } from '../../../../lathe/src/exploring/folder-tree/read-model';
+import { PLATFORM_SECTIONS, type FolderEntry, type FolderTree, type Folder as TreeFolder, type OwnerFolders as TreeOwner, type PlatformSection } from '../../../../lathe/src/exploring/folder-tree/read-model';
 import type { Stage } from '../../../../lathe/src/platform/data/schema';
 import type { UseCaseGroup } from '../../../../lathe/src/exploring/placement';
 import { plural } from '../../plural';
@@ -33,7 +33,10 @@ export interface Folder {
 
 export interface StageFolders {
   key: string;
+  /** The stage, or the stage whose colors a platform domain's section takes. */
   stage: Stage;
+  /** The platform domain's section it is (Guarantees, Building blocks, Standards, Quality suites); null for a stage. */
+  section: PlatformSection | null;
   label: string;
   description: string;
   folders: Folder[];
@@ -96,8 +99,8 @@ function lookOwner(index: RecordIndex, owner: TreeOwner): Looked {
   const folders: OwnerFolders = {
     stages: owner.stages.map((s) => {
       const inStage = s.folders.map(folderOf);
-      const stage = index.meta.stages.find((m) => m.stage === s.stage);
-      return { key: s.key, stage: s.stage, label: stage?.label ?? s.stage.replaceAll('-', ' '), description: stage?.description ?? '', folders: inStage, direct: s.direct ? inStage[0] : null, count: s.count };
+      const named = s.section ? PLATFORM_SECTIONS.find((p) => p.section === s.section) : index.meta.stages.find((m) => m.stage === s.stage);
+      return { key: s.key, stage: s.stage, section: s.section, label: named?.label ?? s.stage.replaceAll('-', ' '), description: named?.description ?? '', folders: inStage, direct: s.direct ? inStage[0] : null, count: s.count };
     }),
     loose: owner.loose.map(folderOf),
   };

@@ -31,14 +31,14 @@ import {
   type Command,
 } from './keymap';
 import { RuleBroken, useAggregate } from './prefs';
-import { keyBindingsRepository } from '../platform/key-bindings/repository';
-import { keymapReader } from '../platform/key-bindings/reader';
-import { listKeyboardCommands } from '../platform/key-bindings/queries';
-import type { KeymapEntry } from '../platform/key-bindings/read-model';
-import { bindKey } from '../platform/key-bindings/commands/bind-key';
-import { removeBinding } from '../platform/key-bindings/commands/remove-binding';
-import { resetShortcut } from '../platform/key-bindings/commands/reset-shortcut';
-import { resetAllShortcuts } from '../platform/key-bindings/commands/reset-all-shortcuts';
+import { keyBindingsRepository } from '../workbench/key-bindings/repository';
+import { keymapReader } from '../workbench/key-bindings/reader';
+import { listKeyboardCommands } from '../workbench/key-bindings/queries';
+import type { KeymapEntry } from '../workbench/key-bindings/read-model';
+import { bindKey } from '../workbench/key-bindings/commands/bind-key';
+import { removeBinding } from '../workbench/key-bindings/commands/remove-binding';
+import { resetShortcut } from '../workbench/key-bindings/commands/reset-shortcut';
+import { resetAllShortcuts } from '../workbench/key-bindings/commands/reset-all-shortcuts';
 import type { Move } from '../views/levels';
 import { Link } from '../router';
 import { Button } from '../components/Button';

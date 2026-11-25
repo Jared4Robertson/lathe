@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { onLatheEvent } from '../../events';
-import { indexMetaModel, type MetaModel } from '../../platform/meta-model/reads';
+import { indexMetaModel, type MetaModel } from '../../product/meta-model/reads';
 import { forgetWithReads, readModelChanges, readModelsChanged, useVersionedRead } from '../../record/read';
 import { indexOf, type RecordIndex } from './record-index';
 import { checksOf, forgetMirrors, keepMirroredTree, mirrorOf, NO_COVERAGE, NO_PROBLEMS, putChange, putChecks, type Mirrored, type MirroredChecks } from './space-index';
@@ -199,7 +199,7 @@ type LayerRead<M> = { state: 'reading' } | { state: 'read'; mirrored: M } | { st
 
 /**
  * A layer of the space's index for the data's version, as the builder's changes made it: read again when one of its
- * read models changed since it was read (LA-PLT-UC03-R02), or the meta model did, one read at a time; until it answers,
+ * read models changed since it was read (LA-WBN-UC03-R02), or the meta model did, one read at a time; until it answers,
  * the mirror read before stays on screen.
  */
 function useSpaceLayer<M>(layer: Layer<M>, product: string | null, version: number, model: MetaModel | null): { read: LayerRead<M>; version: number | undefined } {

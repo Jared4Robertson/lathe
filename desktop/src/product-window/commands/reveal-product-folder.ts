@@ -1,4 +1,4 @@
-// Reveal a product folder (LA-PLT-CMD46): the error page's Reveal in Finder (or its name elsewhere) shows the
+// Reveal a product folder (LA-WBN-CMD46): the error page's Reveal in Finder (or its name elsewhere) shows the
 // window's own folder in the system's file manager.
 import type { ProductWindowRepository } from '../repository.ts';
 
