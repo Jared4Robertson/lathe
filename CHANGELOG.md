@@ -1,5 +1,24 @@
 # Changelog
 
+## [10.0.0](https://github.com/Jared4Robertson/lathe/compare/v9.0.0...v10.0.0) (2026-11-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* Platform is plumbing described by Guarantees, and Workbench becomes its own domain ([#24](https://github.com/Jared4Robertson/lathe/issues/24))
+* **desktop:** remove the desktop app's Claude chat, its voice, sign-in, app tools and turn undo ([#22](https://github.com/Jared4Robertson/lathe/issues/22))
+* **app:** the nav drops the product's overview row, and with one product its head names the product ([#20](https://github.com/Jared4Robertson/lathe/issues/20))
+* **app:** the nav lists Discovery and Platform in their own sections, and a domain may be marked platform ([#19](https://github.com/Jared4Robertson/lathe/issues/19))
+* **app:** the nav reads Health, Domains and Shared, under headings that never fold ([#17](https://github.com/Jared4Robertson/lathe/issues/17))
+
+### Features
+
+* **app:** the nav drops the product's overview row, and with one product its head names the product ([#20](https://github.com/Jared4Robertson/lathe/issues/20)) ([b1e09c1](https://github.com/Jared4Robertson/lathe/commit/b1e09c19f1f2294a328ed20e4f57d9d6acb3bc27))
+* **app:** the nav lists Discovery and Platform in their own sections, and a domain may be marked platform ([#19](https://github.com/Jared4Robertson/lathe/issues/19)) ([ff8b7c3](https://github.com/Jared4Robertson/lathe/commit/ff8b7c37346b794e7e35119bc0a3fc438af677b1))
+* **app:** the nav reads Health, Domains and Shared, under headings that never fold ([#17](https://github.com/Jared4Robertson/lathe/issues/17)) ([0a5177d](https://github.com/Jared4Robertson/lathe/commit/0a5177de4dd3aad54afa615da50961eba463cf20))
+* **desktop:** remove the desktop app's Claude chat, its voice, sign-in, app tools and turn undo ([#22](https://github.com/Jared4Robertson/lathe/issues/22)) ([1aba403](https://github.com/Jared4Robertson/lathe/commit/1aba40324da02faadb909ea0e7982517aedafa30))
+* Platform is plumbing described by Guarantees, and Workbench becomes its own domain ([#24](https://github.com/Jared4Robertson/lathe/issues/24)) ([a407246](https://github.com/Jared4Robertson/lathe/commit/a407246a3df0bf20e634eb9647d98a4d9013399c))
+
 ## [9.0.0](https://github.com/Jared4Robertson/lathe/compare/v8.0.0...v9.0.0) (2026-11-14)
 
 
