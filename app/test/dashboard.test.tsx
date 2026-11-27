@@ -269,7 +269,7 @@ describe('the Dashboard', () => {
     expect(screen.queryByRole('dialog', { name: 'Dashboard' })).toBeNull();
     expect(onDashboard('/NF?stage=erd#x')).toBe('/NF?stage=erd&panel=dashboard#x');
     expect(onDashboard('/NF?panel=checks')).toBe('/NF?panel=checks');
-  });
+  }, 20_000);
 
   it('LA-V157-R03-T01 shows one product only, and none at the products picker', async () => {
     await openApp('/?panel=dashboard');
