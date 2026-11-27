@@ -26,7 +26,7 @@ import { ChecksPanel } from './views/ChecksPanel';
 import { ChangesPanel } from './changes/ChangesPanel';
 import { ChangesProvider } from './changes/ChangesProvider';
 import { ProductsPicker } from './views/ProductsPicker';
-import { carryOverlays, overlaysOf, panelHref, useEscapeClosesTopmost } from './views/overlays';
+import { carryOverlays, onDashboard, overlaysOf, panelHref, useEscapeClosesTopmost } from './views/overlays';
 import { CARD_MIN } from './exploring/session-settings/model';
 import { CARD_GAP, CARD_GAP_Y, crowdedLabel, RoomContext, STAGE_MIN, useRoomState, toolWidthOf } from './views/openSpace';
 import { desktopBridge } from './shell/desktopChrome';
@@ -172,7 +172,10 @@ function Shell() {
   const backdropRef = useRef(backdropPath);
   backdropRef.current = backdropPath;
   useEffect(() => { setPatchBase(() => (window.location.pathname === HOME_PATH && backdropRef.current) || window.location.pathname); }, []);
-  const leaveHome = isHome && backdrop ? () => navigate(backdrop) : null;
+  // Back from the picker to a product left this session is back to its page; to the product of the last launch, it
+  // opens on its Dashboard (LA-V157-R01).
+  const leaveTo = spaces.last ? (spaces.lastPage(spaces.last.id) ?? onDashboard(addressOf(spaces.last.id))) : null;
+  const leaveHome = isHome && leaveTo ? () => navigate(leaveTo) : null;
   useEscapeClosesTopmost(leaveHome);
   const closeTool = useCallback(() => navigate(panelHref(null)), []);
 

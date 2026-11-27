@@ -281,14 +281,18 @@ test.describe('Exploring flows', () => {
     const rail = page.locator('.rail-spaces');
     const space = rail.locator('a.space-item[data-space="LA"]');
     await expect(space).toHaveAttribute('aria-current', /.+/);
-    // Leave the space for the products picker, over the space's dimmed stage; choosing the space opens its last page.
+    // Leave the space for the products picker, over the space's dimmed stage; choosing the space opens its last page,
+    // with its Dashboard over it, which Escape closes.
     await page.locator('nav#nav a.brand').click();
     await page.waitForURL((u) => u.pathname === '/');
     const picker = page.getByRole('dialog', { name: 'Products' });
     await expect(picker).toBeVisible();
     await expect(page.locator('.stage-layout.is-backdrop .focus-stage')).not.toBeEmpty();
     await picker.getByRole('link', { name: /^LA Lathe/ }).click();
-    await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03');
+    await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03' && u.search.includes('panel=dashboard'));
+    await expect(page.getByRole('dialog', { name: 'Dashboard' })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03' && !u.search.includes('panel=dashboard'));
     // Alt and its number, and Switch to in the palette.
     await page.locator('nav#nav a.brand').click();
     await page.waitForURL((u) => u.pathname === '/');

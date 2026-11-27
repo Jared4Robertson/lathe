@@ -9,7 +9,7 @@ import { needsAttention } from '../src/traceability/dashboard/attention';
 import { stageTable, heatOf, STAGES } from '../src/traceability/dashboard/stages';
 import { firstSentence } from '../src/traceability/dashboard/DashboardPanel';
 import { stageCounts } from '../src/exploring/folder-tree/stage-counts';
-import { carryOverlays, closeTopmostHref, overlaysOf, panelHref } from '../src/views/overlays';
+import { carryOverlays, closeTopmostHref, onDashboard, overlaysOf, panelHref } from '../src/views/overlays';
 import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { openApp } from './helpers';
@@ -209,7 +209,7 @@ describe('the Dashboard', () => {
     expect(within(facts as HTMLElement).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM#domains', '/DM#discovery', '/DM#roles', '/DM#interfaces']);
   });
 
-  it('LA-V157-R01-T01 opens and closes with its shortcut and Escape, focus going back, and the app never opens on it', async () => {
+  it('LA-V157-R01-T01 opens and closes with its shortcut and Escape, focus going back', async () => {
     const dashboardShut = () => expect(screen.queryByRole('dialog', { name: 'Dashboard' })).toBeNull();
     await openApp('/DM');
     dashboardShut();
@@ -229,6 +229,46 @@ describe('the Dashboard', () => {
     expect(document.querySelector('.app > .menu')?.hasAttribute('inert')).toBe(false);
     // Off a mac key: still its address.
     expect(closeTopmostHref('?panel=dashboard')).toBe(panelHref(null));
+  });
+
+  it('LA-V157-R13-T01 a product opens on its Dashboard, and an address opens as it says', async () => {
+    const user = userEvent.setup();
+    const stageShown = () => expect(document.querySelector('#main .stage-layout:not(.is-backdrop)')).not.toBeNull();
+    // Chosen in the picker: the product's stage with its Dashboard over it, and Escape closes it to that stage.
+    await openApp('/', { data: workspace() });
+    const picker = await screen.findByRole('dialog', { name: 'Products' });
+    const notebook = within(picker).getByRole('link', { name: /Notebook/ });
+    expect(notebook).toHaveAttribute('href', '/NF?panel=dashboard');
+    await user.click(notebook);
+    await waitFor(() => expect(window.location.pathname).toBe('/NF'));
+    expect(within(await dashboard()).getByRole('heading', { name: /NF/ })).toBeInTheDocument();
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Dashboard' })).toBeNull());
+    expect(window.location.pathname).toBe('/NF');
+    expect(window.location.search).not.toContain('panel=dashboard');
+    stageShown();
+    // Back from the picker to the product left this session: its page as it was.
+    await openApp('/', { data: workspace() });
+    await screen.findByRole('dialog', { name: 'Products' });
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(window.location.pathname).toBe('/NF'));
+    expect(screen.queryByRole('dialog', { name: 'Dashboard' })).toBeNull();
+    // A new launch (this session's pages gone): leaving the picker for the last product opens its Dashboard.
+    window.sessionStorage.removeItem('lathe:space-pages');
+    await openApp('/', { data: workspace() });
+    await screen.findByRole('dialog', { name: 'Products' });
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(window.location.pathname).toBe('/NF'));
+    expect(window.location.search).toContain('panel=dashboard');
+    expect(await dashboard()).toBeInTheDocument();
+    // An address opens as it says: a product's own with no Dashboard, one naming the Checks panel with Checks.
+    await openApp('/NF', { data: workspace() });
+    expect(screen.queryByRole('dialog', { name: 'Dashboard' })).toBeNull();
+    await openApp('/NF?panel=checks', { data: workspace() });
+    expect(await screen.findByRole('region', { name: 'Checks' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: 'Dashboard' })).toBeNull();
+    expect(onDashboard('/NF?stage=erd#x')).toBe('/NF?stage=erd&panel=dashboard#x');
+    expect(onDashboard('/NF?panel=checks')).toBe('/NF?panel=checks');
   });
 
   it('LA-V157-R03-T01 shows one product only, and none at the products picker', async () => {
