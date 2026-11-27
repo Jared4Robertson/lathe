@@ -52,6 +52,21 @@ export function panelHref(panel: ToolPanel | null, theme?: string): string {
   return `?${PANEL_PARAM}=${panel ?? ''}&${THEME_PARAM}=`;
 }
 
+/**
+ * A product's address as it opens: with its Dashboard over the stage (LA-V157-R01), unless the address names its own
+ * tool panel.
+ */
+export function onDashboard(address: string): string {
+  const hashAt = address.indexOf('#');
+  const hash = hashAt < 0 ? '' : address.slice(hashAt);
+  const bare = hashAt < 0 ? address : address.slice(0, hashAt);
+  const [path, query = ''] = bare.split('?');
+  const params = new URLSearchParams(query);
+  if (params.get(PANEL_PARAM)) return address;
+  params.set(PANEL_PARAM, 'dashboard');
+  return `${path}?${params.toString().replace(/%2F/gi, '/')}${hash}`;
+}
+
 /** The link that opens the Checks panel at one of its sections: its gaps, or its tests not automated yet. */
 export const checksSectionHref = (section: string) => `${panelHref('checks')}#${section}`;
 

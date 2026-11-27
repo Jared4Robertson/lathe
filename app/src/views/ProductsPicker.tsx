@@ -4,11 +4,12 @@ import { Card, CardGrid } from '../shell/Card';
 import { SpaceMark, useSpaces } from '../shell/spaces';
 import { useRead } from '../record/read';
 import { addressOf } from './address';
+import { onDashboard } from './overlays';
 
 // The products picker (LA-V97) at `/`, the app's one page of its own: a centered card over the stage
 // of the last product the Reader was in, dimmed behind it, or over an empty map on a first launch
 // (LA-PAT-APP-UX-R20). Every product, as the Product aggregate lists it, is a card that opens its space where the Reader
-// left it. It is a dialog
+// left it, with its Dashboard over it (LA-V157-R01). It is a dialog
 // like quick find (shell/commands.tsx): Escape or a click on the dimmed stage goes back to the
 // product behind it, when there is one.
 
@@ -31,7 +32,7 @@ export function ProductsPicker({ version, onClose }: { version: unknown; onClose
         {(spaces?.spaces ?? []).map((space) => (
             <Card
               key={space.id}
-              href={spaces?.lastPage(space.id) ?? addressOf(space.id)}
+              href={onDashboard(spaces?.lastPage(space.id) ?? addressOf(space.id))}
               current={spaces?.last?.id === space.id}
               media={<SpaceMark space={space} size={36} />}
               title={<><code>{space.id}</code><strong>{space.title}</strong></>}
